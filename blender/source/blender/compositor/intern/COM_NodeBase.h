@@ -20,8 +20,8 @@
  *		Monique Dewanchand
  */
 
-#ifndef _COM_NodeBase_h
-#define _COM_NodeBase_h
+#ifndef __COM_NODEBASE_H__
+#define __COM_NODEBASE_H__
 
 #include "COM_InputSocket.h"
 #include "COM_OutputSocket.h"
@@ -59,6 +59,11 @@ private:
 	 */
 	bNode *m_editorNode;
 
+	/**
+	 * @brief stores the reference to the SDNA bNode struct
+	 */
+	bNodeTree *m_editorNodeTree;
+
 protected:
 	/**
 	 * @brief get access to the vector of input sockets
@@ -71,24 +76,36 @@ protected:
 	inline vector<OutputSocket *>& getOutputSockets() { return this->m_outputsockets; }
 
 
-public:
+protected:
 	/**
 	 * @brief destructor
 	 * clean up memory related to this NodeBase.
 	 */
 	virtual ~NodeBase();
 	
+public:
 	/**
 	 * @brief get the reference to the SDNA bNode struct
 	 */
-	bNode *getbNode() {return m_editorNode;}
+	bNode *getbNode() const {return m_editorNode;}
+
+	/**
+	 * @brief get the reference to the SDNA bNodeTree struct
+	 */
+	bNodeTree *getbNodeTree() const {return m_editorNodeTree;}
 	
 	/**
 	 * @brief set the reference to the bNode
 	 * @note used in Node instances to receive the storage/settings and complex node for highlight during execution
 	 * @param bNode
 	 */
-	void setbNode(bNode *bNode) {this->m_editorNode = bNode;}
+	void setbNode(bNode *node) {this->m_editorNode = node;}
+	
+	/**
+	 * @brief set the reference to the bNodeTree
+	 * @param bNodeTree
+	 */
+	void setbNodeTree(bNodeTree *nodetree) {this->m_editorNodeTree = nodetree;}
 	
 	/**
 	 * @brief is this node an operation?
@@ -96,7 +113,7 @@ public:
 	 * @return [true:false]
 	 * @see NodeOperation
 	 */
-	virtual const int isOperation() const { return false; }
+	virtual const bool isOperation() const { return false; }
 	
 	/**
 	 * @brief check if this is an input node
@@ -165,4 +182,4 @@ protected:
 #endif
 };
 
-#endif
+#endif  /* __COM_NODEBASE_H__ */

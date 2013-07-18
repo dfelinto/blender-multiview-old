@@ -18,6 +18,7 @@
  *
  */
 #include "Value.h"
+#include "BoolValue.h"
 #include "FloatValue.h"
 #include "IntValue.h"
 #include "VectorValue.h"
@@ -134,16 +135,16 @@ effect: deletes the object
 }
 
 
-
-
+/* UNUSED */
+#if 0
 #define VALUE_SUB(val1, val2) (val1)->Calc(VALUE_SUB_OPERATOR, val2)
 #define VALUE_MUL(val1, val2) (val1)->Calc(VALUE_MUL_OPERATOR, val2)
 #define VALUE_DIV(val1, val2) (val1)->Calc(VALUE_DIV_OPERATOR, val2)
 #define VALUE_NEG(val1)       (val1)->Calc(VALUE_NEG_OPERATOR, val1)
 #define VALUE_POS(val1)       (val1)->Calc(VALUE_POS_OPERATOR, val1)
+#endif
 
-
-STR_String CValue::op2str (VALUE_OPERATOR op)
+STR_String CValue::op2str(VALUE_OPERATOR op)
 {
 	//pre:
 	//ret: the stringrepresentation of operator op
@@ -340,7 +341,7 @@ vector<STR_String> CValue::GetPropertyNames()
 // Clear all properties
 //
 void CValue::ClearProperties()
-{		
+{
 	// Check if we have any properties
 	if (m_pNamedPropertyArray == NULL)
 		return;
@@ -530,16 +531,23 @@ PyAttributeDef CValue::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-PyObject * CValue::pyattr_get_name(void * self_v, const KX_PYATTRIBUTE_DEF * attrdef)
+PyObject *CValue::pyattr_get_name(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	CValue * self = static_cast<CValue *> (self_v);
 	return PyUnicode_From_STR_String(self->GetName());
 }
 
-CValue* CValue::ConvertPythonToValue(PyObject* pyobj, const char *error_prefix)
+/**
+ * There are 2 reasons this could return NULL
+ * - unsupported type.
+ * - error converting (overflow).
+ *
+ * \param do_type_exception Use to skip raising an exception for unknown types.
+ */
+CValue *CValue::ConvertPythonToValue(PyObject *pyobj, const bool do_type_exception, const char *error_prefix)
 {
 
-	CValue* vallie = NULL;
+	CValue *vallie;
 	/* refcounting is broking here! - this crashes anyway, just store a python list for KX_GameObject */
 #if 0
 	if (PyList_Check(pyobj))
@@ -551,7 +559,7 @@ CValue* CValue::ConvertPythonToValue(PyObject* pyobj, const char *error_prefix)
 		Py_ssize_t numitems = PyList_GET_SIZE(pyobj);
 		for (i=0;i<numitems;i++)
 		{
-			PyObject* listitem = PyList_GetItem(pyobj,i); /* borrowed ref */
+			PyObject *listitem = PyList_GetItem(pyobj,i); /* borrowed ref */
 			CValue* listitemval = ConvertPythonToValue(listitem, error_prefix);
 			if (listitemval)
 			{
@@ -573,9 +581,21 @@ CValue* CValue::ConvertPythonToValue(PyObject* pyobj, const char *error_prefix)
 
 	} else
 #endif
+	/* note: Boolean check should go before Int check [#34677] */
+	if (PyBool_Check(pyobj))
+	{
+		vallie = new CBoolValue( (bool)PyLong_AsLongLong(pyobj) );
+	} else
 	if (PyFloat_Check(pyobj))
 	{
-		vallie = new CFloatValue( (float)PyFloat_AsDouble(pyobj) );
+		const double tval = PyFloat_AsDouble(pyobj);
+		if (tval > (double)FLT_MAX || tval < (double)-FLT_MAX) {
+			PyErr_Format(PyExc_OverflowError, "%soverflow converting from float, out of internal range", error_prefix);
+			vallie = NULL;
+		}
+		else {
+			vallie = new CFloatValue((float)tval);
+		}
 	} else
 	if (PyLong_Check(pyobj))
 	{
@@ -588,16 +608,19 @@ CValue* CValue::ConvertPythonToValue(PyObject* pyobj, const char *error_prefix)
 	if (PyObject_TypeCheck(pyobj, &CValue::Type)) /* Note, don't let these get assigned to GameObject props, must check elsewhere */
 	{
 		vallie = (static_cast<CValue *>(BGE_PROXY_REF(pyobj)))->AddRef();
-	} else
-	{
-		/* return an error value from the caller */
-		PyErr_Format(PyExc_TypeError, "%scould convert python value to a game engine property", error_prefix);
+	}
+	else {
+		if (do_type_exception) {
+			/* return an error value from the caller */
+			PyErr_Format(PyExc_TypeError, "%scould convert python value to a game engine property", error_prefix);
+		}
+		vallie = NULL;
 	}
 	return vallie;
 
 }
 
-PyObject* CValue::ConvertKeysToPython(void)
+PyObject *CValue::ConvertKeysToPython(void)
 {
 	if (m_pNamedPropertyArray)
 	{
@@ -636,5 +659,5 @@ void CValue::SetColorOperator(VALUE_OPERATOR op)
 void CValue::SetValue(CValue* newval)
 { 
 	// no one should get here
-	assertd(newval->GetNumber() == 10121969);	
+	assertd(newval->GetNumber() == 10121969);
 }

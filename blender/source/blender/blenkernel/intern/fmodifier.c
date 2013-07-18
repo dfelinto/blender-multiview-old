@@ -42,15 +42,12 @@
 #include "BLF_translation.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_noise.h"
 #include "BLI_math.h" /* windows needs for M_PI */
 #include "BLI_utildefines.h"
 
 #include "BKE_fcurve.h"
 #include "BKE_idprop.h"
-
-
-#define SMALL -1.0e-10
-#define SELECT 1
 
 /* ******************************** F-Modifiers ********************************* */
 
@@ -144,55 +141,34 @@ static void fcm_generator_verify(FModifier *fcm)
 	switch (data->mode) {
 		case FCM_GENERATOR_POLYNOMIAL: /* expanded polynomial expression */
 		{
+			const int arraysize_new = data->poly_order + 1;
 			/* arraysize needs to be order+1, so resize if not */
-			if (data->arraysize != (data->poly_order + 1)) {
-				float *nc;
-				
-				/* make new coefficients array, and copy over as much data as can fit */
-				nc = MEM_callocN(sizeof(float) * (data->poly_order + 1), "FMod_Generator_Coefs");
-				
+			if (data->arraysize != arraysize_new) {
 				if (data->coefficients) {
-					if ((int)data->arraysize > (data->poly_order + 1))
-						memcpy(nc, data->coefficients, sizeof(float) * (data->poly_order + 1));
-					else
-						memcpy(nc, data->coefficients, sizeof(float) * data->arraysize);
-						
-					/* free the old data */
-					MEM_freeN(data->coefficients);
-				}	
-				
-				/* set the new data */
-				data->coefficients = nc;
-				data->arraysize = data->poly_order + 1;
+					data->coefficients = MEM_recallocN(data->coefficients, sizeof(float) * arraysize_new);
+				}
+				else {
+					data->coefficients = MEM_callocN(sizeof(float) * arraysize_new, "FMod_Generator_Coefs");
+				}
+				data->arraysize = arraysize_new;
 			}
+			break;
 		}
-		break;
-		
 		case FCM_GENERATOR_POLYNOMIAL_FACTORISED: /* expanded polynomial expression */
 		{
-			/* arraysize needs to be 2*order, so resize if not */
-			if (data->arraysize != (data->poly_order * 2)) {
-				float *nc;
-				
-				/* make new coefficients array, and copy over as much data as can fit */
-				nc = MEM_callocN(sizeof(float) * (data->poly_order * 2), "FMod_Generator_Coefs");
-				
+			const int arraysize_new = data->poly_order * 2;
+			/* arraysize needs to be (2 * order), so resize if not */
+			if (data->arraysize != arraysize_new) {
 				if (data->coefficients) {
-					if (data->arraysize > (unsigned int)(data->poly_order * 2))
-						memcpy(nc, data->coefficients, sizeof(float) * (data->poly_order * 2));
-					else
-						memcpy(nc, data->coefficients, sizeof(float) * data->arraysize);
-						
-					/* free the old data */
-					MEM_freeN(data->coefficients);
-				}	
-				
-				/* set the new data */
-				data->coefficients = nc;
-				data->arraysize = data->poly_order * 2;
+					data->coefficients = MEM_recallocN(data->coefficients, sizeof(float) * arraysize_new);
+				}
+				else {
+					data->coefficients = MEM_callocN(sizeof(float) * arraysize_new, "FMod_Generator_Coefs");
+				}
+				data->arraysize = arraysize_new;
 			}
+			break;
 		}
-		break;
 	}
 }
 
@@ -279,7 +255,7 @@ static FModifierTypeInfo FMI_GENERATOR = {
 /* Built-In Function Generator F-Curve Modifier --------------------------- */
 
 /* This uses the general equation for equations:
- *   y = amplitude * fn(phase_multiplier*x + phase_offset) + y_offset
+ *   y = amplitude * fn(phase_multiplier * x + phase_offset) + y_offset
  *
  * where amplitude, phase_multiplier/offset, y_offset are user-defined coefficients,
  * x is the evaluation 'time', and 'y' is the resultant value
@@ -319,7 +295,7 @@ static void fcm_fn_generator_evaluate(FCurve *UNUSED(fcu), FModifier *fcm, float
 	 * WARNING: must perform special argument validation hereto guard against crashes  
 	 */
 	switch (data->type) {
-		/* simple ones */			
+		/* simple ones */
 		case FCM_GENERATOR_FN_SIN: /* sine wave */
 			fn = sin;
 			break;
@@ -503,6 +479,92 @@ static FModifierTypeInfo FMI_ENVELOPE = {
 	NULL, /* evaluate time */
 	fcm_envelope_evaluate /* evaluate */
 };
+
+/* exported function for finding points */
+
+/* Binary search algorithm for finding where to insert Envelope Data Point.
+ * Returns the index to insert at (data already at that index will be offset if replace is 0)
+ */
+#define BINARYSEARCH_FRAMEEQ_THRESH 0.0001f
+
+int BKE_fcm_envelope_find_index(FCM_EnvelopeData array[], float frame, int arraylen, bool *r_exists)
+{
+	int start = 0, end = arraylen;
+	int loopbreaker = 0, maxloop = arraylen * 2;
+
+	/* initialize exists-flag first */
+	*r_exists = false;
+
+	/* sneaky optimizations (don't go through searching process if...):
+	 * - keyframe to be added is to be added out of current bounds
+	 * - keyframe to be added would replace one of the existing ones on bounds
+	 */
+	if ((arraylen <= 0) || (array == NULL)) {
+		printf("Warning: binarysearch_fcm_envelopedata_index() encountered invalid array\n");
+		return 0;
+	}
+	else {
+		/* check whether to add before/after/on */
+		float framenum;
+
+		/* 'First' Point (when only one point, this case is used) */
+		framenum = array[0].time;
+		if (IS_EQT(frame, framenum, BINARYSEARCH_FRAMEEQ_THRESH)) {
+			*r_exists = true;
+			return 0;
+		}
+		else if (frame < framenum) {
+			return 0;
+		}
+
+		/* 'Last' Point */
+		framenum = array[(arraylen - 1)].time;
+		if (IS_EQT(frame, framenum, BINARYSEARCH_FRAMEEQ_THRESH)) {
+			*r_exists = true;
+			return (arraylen - 1);
+		}
+		else if (frame > framenum) {
+			return arraylen;
+		}
+	}
+
+
+	/* most of the time, this loop is just to find where to put it
+	 * - 'loopbreaker' is just here to prevent infinite loops
+	 */
+	for (loopbreaker = 0; (start <= end) && (loopbreaker < maxloop); loopbreaker++) {
+		/* compute and get midpoint */
+		int mid = start + ((end - start) / 2);  /* we calculate the midpoint this way to avoid int overflows... */
+		float midfra = array[mid].time;
+
+		/* check if exactly equal to midpoint */
+		if (IS_EQT(frame, midfra, BINARYSEARCH_FRAMEEQ_THRESH)) {
+			*r_exists = true;
+			return mid;
+		}
+
+		/* repeat in upper/lower half */
+		if (frame > midfra) {
+			start = mid + 1;
+		}
+		else if (frame < midfra) {
+			end = mid - 1;
+		}
+	}
+
+	/* print error if loop-limit exceeded */
+	if (loopbreaker == (maxloop - 1)) {
+		printf("Error: binarysearch_fcm_envelopedata_index() was taking too long\n");
+
+		// include debug info
+		printf("\tround = %d: start = %d, end = %d, arraylen = %d\n", loopbreaker, start, end, arraylen);
+	}
+
+	/* not found, so return where to place it */
+	return start;
+}
+#undef BINARYSEARCH_FRAMEEQ_THRESH
+
 
 /* Cycles F-Curve Modifier  --------------------------- */
 
@@ -965,8 +1027,8 @@ FModifierTypeInfo *get_fmodifier_typeinfo(int type)
 	}
 	
 	/* only return for valid types */
-	if ( (type >= FMODIFIER_TYPE_NULL) && 
-	     (type <= FMODIFIER_NUM_TYPES) )
+	if ((type >= FMODIFIER_TYPE_NULL) &&
+	    (type <  FMODIFIER_NUM_TYPES))
 	{
 		/* there shouldn't be any segfaults here... */
 		return fmodifiersTypeInfo[type];
@@ -1025,7 +1087,7 @@ FModifier *add_fmodifier(ListBase *modifiers, int type)
 	fcm->data = MEM_callocN(fmi->size, fmi->structName);
 	
 	/* init custom settings if necessary */
-	if (fmi->new_data)	
+	if (fmi->new_data)
 		fmi->new_data(fcm->data);
 		
 	/* return modifier for further editing */
@@ -1102,7 +1164,7 @@ int remove_fmodifier(ListBase *modifiers, FModifier *fcm)
 	if (modifiers) {
 		BLI_freelinkN(modifiers, fcm);
 		return 1;
-	} 
+	}
 	else {
 		/* XXX this case can probably be removed some day, as it shouldn't happen... */
 		printf("remove_fmodifier() - no modifier stack given\n");

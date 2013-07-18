@@ -28,12 +28,21 @@
  *  \ingroup DNA
  *  \since mar-2001
  *  \author nzc
+ *
+ * Structs for use by the 'Sequencer' (Video Editor)
+ *
+ * Note on terminology
+ * - #Sequence: video/effect/audio data you can select and manipulate in the sequencer.
+ * - #Sequence.machine: Strange name for the channel.
+ * - #Strip: The data referenced by the #Sequence
+ * - Meta Strip (SEQ_TYPE_META): Support for nesting Sequences.
  */
 
 #ifndef __DNA_SEQUENCE_TYPES_H__
 #define __DNA_SEQUENCE_TYPES_H__
 
 #include "DNA_defs.h"
+#include "DNA_color_types.h"
 #include "DNA_listBase.h"
 #include "DNA_vec_types.h"
 
@@ -98,14 +107,22 @@ typedef struct Strip {
 	StripProxy *proxy;
 	StripCrop *crop;
 	StripTransform *transform;
-	StripColorBalance *color_balance;
+	StripColorBalance *color_balance DNA_DEPRECATED;
+
+	/* color management */
+	ColorManagedColorspaceSettings colorspace_settings;
 } Strip;
 
-/* The sequence structure is the basic struct used by any strip. each of the strips uses a different sequence structure.*/
-/* WATCH IT: first part identical to ID (for use in ipo's)
- * the commend above is historic, probably we can drop the ID compatibility, but take care making this change */
-
-/* WATCH ITv2, this is really a 'Strip' in the UI!, name is highly confusing */
+/**
+ * The sequence structure is the basic struct used by any strip.
+ * each of the strips uses a different sequence structure.
+ *
+ * \warning The first part identical to ID (for use in ipo's)
+ * the commend above is historic, probably we can drop the ID compatibility,
+ * but take care making this change.
+ *
+ * \warning This is really a 'Strip' in the UI!, name is highly confusing.
+ */
 typedef struct Sequence {
 	struct Sequence *next, *prev;
 	void *tmp; /* tmp var for copying, and tagging for linked selection */
@@ -144,9 +161,6 @@ typedef struct Sequence {
 	/* pointers for effects: */
 	struct Sequence *seq1, *seq2, *seq3;
 
-	/* maks input for effects */
-	struct Sequence *mask_sequence;
-
 	ListBase seqbase;       /* list of strips for metastrips */
 
 	struct bSound *sound;   /* the linked "bSound" object */
@@ -166,7 +180,13 @@ typedef struct Sequence {
 	float blend_opacity;
 
 	/* is sfra needed anymore? - it looks like its only used in one place */
-	int sfra, pad;  /* starting frame according to the timeline of the scene. */
+	int sfra;  /* starting frame according to the timeline of the scene. */
+
+	char alpha_mode;
+	char pad[3];
+
+	/* modifiers */
+	ListBase modifiers;
 } Sequence;
 
 typedef struct MetaStack {
@@ -229,6 +249,62 @@ typedef struct SpeedControlVars {
 	int lastValidFrame;
 } SpeedControlVars;
 
+/* ***************** Sequence modifiers ****************** */
+
+typedef struct SequenceModifierData {
+	struct SequenceModifierData *next, *prev;
+	int type, flag;
+	char name[64]; /* MAX_NAME */
+
+	/* mask input, either sequence or maks ID */
+	int mask_input_type, pad;
+
+	struct Sequence *mask_sequence;
+	struct Mask     *mask_id;
+} SequenceModifierData;
+
+typedef struct ColorBalanceModifierData {
+	SequenceModifierData modifier;
+
+	StripColorBalance color_balance;
+	float color_multiply;
+} ColorBalanceModifierData;
+
+typedef struct CurvesModifierData {
+	SequenceModifierData modifier;
+
+	struct CurveMapping curve_mapping;
+} CurvesModifierData;
+
+typedef struct HueCorrectModifierData {
+	SequenceModifierData modifier;
+
+	struct CurveMapping curve_mapping;
+} HueCorrectModifierData;
+
+typedef struct BrightContrastModifierData {
+	SequenceModifierData modifier;
+
+	float bright;
+	float contrast;
+} BrightContrastModifierData;
+
+typedef struct SequencerMaskModifierData {
+	SequenceModifierData modifier;
+} SequencerMaskModifierData;
+
+/* ***************** Scopes ****************** */
+
+typedef struct SequencerScopes {
+	struct ImBuf *reference_ibuf;
+
+	struct ImBuf *zebra_ibuf;
+	struct ImBuf *waveform_ibuf;
+	struct ImBuf *sep_waveform_ibuf;
+	struct ImBuf *vector_ibuf;
+	struct ImBuf *histogram_ibuf;
+} SequencerScopes;
+
 #define MAXSEQ          32
 
 #define SELECT 1
@@ -242,7 +318,7 @@ typedef struct SpeedControlVars {
 
 /* SpeedControlVars->flags */
 #define SEQ_SPEED_INTEGRATE      1
-#define SEQ_SPEED_BLEND          2
+/* #define SEQ_SPEED_BLEND          2 */ /* DEPRECATED */
 #define SEQ_SPEED_COMPRESS_IPO_Y 4
 
 /* ***************** SEQUENCE ****************** */
@@ -254,7 +330,7 @@ typedef struct SpeedControlVars {
 #define SEQ_OVERLAP                 (1 << 3)
 #define SEQ_FILTERY                 (1 << 4)
 #define SEQ_MUTE                    (1 << 5)
-#define SEQ_MAKE_PREMUL             (1 << 6)
+#define SEQ_MAKE_PREMUL             (1 << 6) /* deprecated, used for compatibility code only */
 #define SEQ_REVERSE_FRAMES          (1 << 7)
 #define SEQ_IPO_FRAME_LOCKED        (1 << 8)
 #define SEQ_EFFECT_NOT_LOADED       (1 << 9)
@@ -266,11 +342,12 @@ typedef struct SpeedControlVars {
 #define SEQ_USE_PROXY               (1 << 15)
 #define SEQ_USE_TRANSFORM           (1 << 16)
 #define SEQ_USE_CROP                (1 << 17)
-#define SEQ_USE_COLOR_BALANCE       (1 << 18)
+/* #define SEQ_USE_COLOR_BALANCE       (1 << 18) */ /* DEPRECATED */
 #define SEQ_USE_PROXY_CUSTOM_DIR    (1 << 19)
 
 #define SEQ_USE_PROXY_CUSTOM_FILE   (1 << 21)
 #define SEQ_USE_EFFECT_DEFAULT_FADE (1 << 22)
+#define SEQ_USE_LINEAR_MODIFIERS    (1 << 23)
 
 // flags for whether those properties are animated or not
 #define SEQ_AUDIO_VOLUME_ANIMATED   (1 << 24)
@@ -304,6 +381,12 @@ typedef struct SpeedControlVars {
 #define SEQ_PROXY_TC_RECORD_RUN_NO_GAPS         8
 #define SEQ_PROXY_TC_ALL                        15
 
+/* seq->alpha_mode */
+enum {
+	SEQ_ALPHA_STRAIGHT = 0,
+	SEQ_ALPHA_PREMUL   = 1
+};
+
 /* seq->type WATCH IT: SEQ_TYPE_EFFECT BIT is used to determine if this is an effect strip!!! */
 enum {
 	SEQ_TYPE_IMAGE       = 0,
@@ -335,11 +418,6 @@ enum {
 	SEQ_TYPE_EFFECT_MAX  = 31
 };
 
-#define STRIPELEM_FAILED       0
-#define STRIPELEM_OK           1
-
-#define STRIPELEM_PREVIEW_DONE  1
-
 #define SEQ_MOVIECLIP_RENDER_UNDISTORTED (1 << 0)
 #define SEQ_MOVIECLIP_RENDER_STABILIZED  (1 << 1)
 
@@ -352,5 +430,28 @@ enum {
 
 #define SEQ_HAS_PATH(_seq) (ELEM4((_seq)->type, SEQ_TYPE_MOVIE, SEQ_TYPE_IMAGE, SEQ_TYPE_SOUND_RAM, SEQ_TYPE_SOUND_HD))
 
-#endif
+/* modifiers */
 
+/* SequenceModifierData->type */
+enum {
+	seqModifierType_ColorBalance   = 1,
+	seqModifierType_Curves         = 2,
+	seqModifierType_HueCorrect     = 3,
+	seqModifierType_BrightContrast = 4,
+	seqModifierType_Mask           = 5,
+
+	NUM_SEQUENCE_MODIFIER_TYPES
+};
+
+/* SequenceModifierData->flag */
+enum {
+	SEQUENCE_MODIFIER_MUTE      = (1 << 0),
+	SEQUENCE_MODIFIER_EXPANDED  = (1 << 1),
+};
+
+enum {
+	SEQUENCE_MASK_INPUT_STRIP   = 0,
+	SEQUENCE_MASK_INPUT_ID      = 1
+};
+
+#endif  /* __DNA_SEQUENCE_TYPES_H__ */

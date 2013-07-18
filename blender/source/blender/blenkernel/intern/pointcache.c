@@ -43,6 +43,7 @@
 #include "DNA_object_types.h"
 #include "DNA_object_force.h"
 #include "DNA_particle_types.h"
+#include "DNA_rigidbody_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_smoke_types.h"
 
@@ -50,6 +51,8 @@
 #include "BLI_threads.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
 
 #include "PIL_time.h"
 
@@ -69,9 +72,12 @@
 #include "BKE_scene.h"
 #include "BKE_smoke.h"
 #include "BKE_softbody.h"
-#include "BKE_utildefines.h"
 
 #include "BIK_api.h"
+
+#ifdef WITH_BULLET
+#  include "RBI_api.h"
+#endif
 
 /* both in intern */
 #ifdef WITH_SMOKE
@@ -250,9 +256,9 @@ static int  ptcache_particle_write(int index, void *psys_v, void **data, int cfr
 	if (data[BPHYS_DATA_INDEX] && (cfra < pa->time - step || cfra > pa->dietime + step))
 		return 0;
 
-	times[0]= pa->time;
-	times[1]= pa->dietime;
-	times[2]= pa->lifetime;
+	times[0] = pa->time;
+	times[1] = pa->dietime;
+	times[2] = pa->lifetime;
 
 	PTCACHE_DATA_FROM(data, BPHYS_DATA_INDEX, &index);
 	PTCACHE_DATA_FROM(data, BPHYS_DATA_LOCATION, pa->state.co);
@@ -273,7 +279,7 @@ static void ptcache_particle_read(int index, void *psys_v, void **data, float cf
 	ParticleSystem *psys= psys_v;
 	ParticleData *pa;
 	BoidParticle *boid;
-	float timestep = 0.04f*psys->part->timetweak;
+	float timestep = 0.04f * psys->part->timetweak;
 
 	if (index >= psys->totpart)
 		return;
@@ -309,8 +315,9 @@ static void ptcache_particle_read(int index, void *psys_v, void **data, float cf
 		pa->lifetime = times[2];
 	}
 
-	if (boid)
+	if (boid) {
 		PTCACHE_DATA_TO(data, BPHYS_DATA_BOIDS, 0, &boid->data);
+	}
 
 	/* determine velocity from previous location */
 	if (data[BPHYS_DATA_LOCATION] && !data[BPHYS_DATA_VELOCITY]) {
@@ -334,7 +341,7 @@ static void ptcache_particle_interpolate(int index, void *psys_v, void **data, f
 	ParticleSystem *psys= psys_v;
 	ParticleData *pa;
 	ParticleKey keys[4];
-	float dfra, timestep = 0.04f*psys->part->timetweak;
+	float dfra, timestep = 0.04f * psys->part->timetweak;
 
 	if (index >= psys->totpart)
 		return;
@@ -533,43 +540,72 @@ static int  ptcache_smoke_totpoint(void *smoke_v, int UNUSED(cfra))
 	SmokeDomainSettings *sds = smd->domain;
 	
 	if (sds->fluid) {
-		return sds->res[0]*sds->res[1]*sds->res[2];
+		return sds->base_res[0]*sds->base_res[1]*sds->base_res[2];
 	}
 	else
 		return 0;
 }
+
+#define SMOKE_CACHE_VERSION "1.04"
+
 static int  ptcache_smoke_write(PTCacheFile *pf, void *smoke_v)
 {	
 	SmokeModifierData *smd= (SmokeModifierData *)smoke_v;
 	SmokeDomainSettings *sds = smd->domain;
 	int ret = 0;
+	int fluid_fields = smoke_get_data_flags(sds);
+
+	/* version header */
+	ptcache_file_write(pf, SMOKE_CACHE_VERSION, 4, sizeof(char));
+	ptcache_file_write(pf, &fluid_fields, 1, sizeof(int));
+	ptcache_file_write(pf, &sds->active_fields, 1, sizeof(int));
+	ptcache_file_write(pf, &sds->res, 3, sizeof(int));
+	ptcache_file_write(pf, &sds->dx, 1, sizeof(float));
 	
 	if (sds->fluid) {
 		size_t res = sds->res[0]*sds->res[1]*sds->res[2];
-		float dt, dx, *dens, *densold, *heat, *heatold, *vx, *vy, *vz, *vxold, *vyold, *vzold;
+		float dt, dx, *dens, *react, *fuel, *flame, *heat, *heatold, *vx, *vy, *vz, *r, *g, *b;
 		unsigned char *obstacles;
 		unsigned int in_len = sizeof(float)*(unsigned int)res;
-		unsigned char *out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len)*4, "pointcache_lzo_buffer");
+		unsigned char *out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len) * 4, "pointcache_lzo_buffer");
 		//int mode = res >= 1000000 ? 2 : 1;
 		int mode=1;		// light
 		if (sds->cache_comp == SM_CACHE_HEAVY) mode=2;	// heavy
 
-		smoke_export(sds->fluid, &dt, &dx, &dens, &densold, &heat, &heatold, &vx, &vy, &vz, &vxold, &vyold, &vzold, &obstacles);
+		smoke_export(sds->fluid, &dt, &dx, &dens, &react, &flame, &fuel, &heat, &heatold, &vx, &vy, &vz, &r, &g, &b, &obstacles);
 
 		ptcache_file_compressed_write(pf, (unsigned char *)sds->shadow, in_len, out, mode);
 		ptcache_file_compressed_write(pf, (unsigned char *)dens, in_len, out, mode);
-		ptcache_file_compressed_write(pf, (unsigned char *)densold, in_len, out, mode);	
-		ptcache_file_compressed_write(pf, (unsigned char *)heat, in_len, out, mode);
-		ptcache_file_compressed_write(pf, (unsigned char *)heatold, in_len, out, mode);
+		if (fluid_fields & SM_ACTIVE_HEAT) {
+			ptcache_file_compressed_write(pf, (unsigned char *)heat, in_len, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)heatold, in_len, out, mode);
+		}
+		if (fluid_fields & SM_ACTIVE_FIRE) {
+			ptcache_file_compressed_write(pf, (unsigned char *)flame, in_len, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)fuel, in_len, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)react, in_len, out, mode);
+		}
+		if (fluid_fields & SM_ACTIVE_COLORS) {
+			ptcache_file_compressed_write(pf, (unsigned char *)r, in_len, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)g, in_len, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)b, in_len, out, mode);
+		}
 		ptcache_file_compressed_write(pf, (unsigned char *)vx, in_len, out, mode);
 		ptcache_file_compressed_write(pf, (unsigned char *)vy, in_len, out, mode);
 		ptcache_file_compressed_write(pf, (unsigned char *)vz, in_len, out, mode);
-		ptcache_file_compressed_write(pf, (unsigned char *)vxold, in_len, out, mode);
-		ptcache_file_compressed_write(pf, (unsigned char *)vyold, in_len, out, mode);
-		ptcache_file_compressed_write(pf, (unsigned char *)vzold, in_len, out, mode);
 		ptcache_file_compressed_write(pf, (unsigned char *)obstacles, (unsigned int)res, out, mode);
 		ptcache_file_write(pf, &dt, 1, sizeof(float));
 		ptcache_file_write(pf, &dx, 1, sizeof(float));
+		ptcache_file_write(pf, &sds->p0, 3, sizeof(float));
+		ptcache_file_write(pf, &sds->p1, 3, sizeof(float));
+		ptcache_file_write(pf, &sds->dp0, 3, sizeof(float));
+		ptcache_file_write(pf, &sds->shift, 3, sizeof(int));
+		ptcache_file_write(pf, &sds->obj_shift_f, 3, sizeof(float));
+		ptcache_file_write(pf, &sds->obmat, 16, sizeof(float));
+		ptcache_file_write(pf, &sds->base_res, 3, sizeof(int));
+		ptcache_file_write(pf, &sds->res_min, 3, sizeof(int));
+		ptcache_file_write(pf, &sds->res_max, 3, sizeof(int));
+		ptcache_file_write(pf, &sds->active_color, 3, sizeof(float));
 
 		MEM_freeN(out);
 		
@@ -580,7 +616,7 @@ static int  ptcache_smoke_write(PTCacheFile *pf, void *smoke_v)
 		int res_big_array[3];
 		int res_big;
 		int res = sds->res[0]*sds->res[1]*sds->res[2];
-		float *dens, *densold, *tcu, *tcv, *tcw;
+		float *dens, *react, *fuel, *flame, *tcu, *tcv, *tcw, *r, *g, *b;
 		unsigned int in_len = sizeof(float)*(unsigned int)res;
 		unsigned int in_len_big;
 		unsigned char *out;
@@ -594,11 +630,20 @@ static int  ptcache_smoke_write(PTCacheFile *pf, void *smoke_v)
 
 		in_len_big = sizeof(float) * (unsigned int)res_big;
 
-		smoke_turbulence_export(sds->wt, &dens, &densold, &tcu, &tcv, &tcw);
+		smoke_turbulence_export(sds->wt, &dens, &react, &flame, &fuel, &r, &g, &b, &tcu, &tcv, &tcw);
 
 		out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len_big), "pointcache_lzo_buffer");
 		ptcache_file_compressed_write(pf, (unsigned char *)dens, in_len_big, out, mode);
-		ptcache_file_compressed_write(pf, (unsigned char *)densold, in_len_big, out, mode);	
+		if (fluid_fields & SM_ACTIVE_FIRE) {
+			ptcache_file_compressed_write(pf, (unsigned char *)flame, in_len_big, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)fuel, in_len_big, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)react, in_len_big, out, mode);
+		}
+		if (fluid_fields & SM_ACTIVE_COLORS) {
+			ptcache_file_compressed_write(pf, (unsigned char *)r, in_len_big, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)g, in_len_big, out, mode);
+			ptcache_file_compressed_write(pf, (unsigned char *)b, in_len_big, out, mode);
+		}
 		MEM_freeN(out);
 
 		out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len), "pointcache_lzo_buffer");
@@ -612,38 +657,184 @@ static int  ptcache_smoke_write(PTCacheFile *pf, void *smoke_v)
 
 	return ret;
 }
-static int ptcache_smoke_read(PTCacheFile *pf, void *smoke_v)
+
+/* read old smoke cache from 2.64 */
+static int ptcache_smoke_read_old(PTCacheFile *pf, void *smoke_v)
 {
 	SmokeModifierData *smd= (SmokeModifierData *)smoke_v;
 	SmokeDomainSettings *sds = smd->domain;
 	
 	if (sds->fluid) {
 		size_t res = sds->res[0]*sds->res[1]*sds->res[2];
-		float dt, dx, *dens, *densold, *heat, *heatold, *vx, *vy, *vz, *vxold, *vyold, *vzold;
+		float dt, dx, *dens, *heat, *heatold, *vx, *vy, *vz;
 		unsigned char *obstacles;
 		unsigned int out_len = (unsigned int)res * sizeof(float);
+		float *tmp_array = MEM_callocN(out_len, "Smoke old cache tmp");
+
+		int fluid_fields = smoke_get_data_flags(sds);
+
+		/* Part part of the new cache header */
+		sds->active_color[0] = 0.7f;
+		sds->active_color[1] = 0.7f;
+		sds->active_color[2] = 0.7f;
 		
-		smoke_export(sds->fluid, &dt, &dx, &dens, &densold, &heat, &heatold, &vx, &vy, &vz, &vxold, &vyold, &vzold, &obstacles);
+		smoke_export(sds->fluid, &dt, &dx, &dens, NULL, NULL, NULL, &heat, &heatold, &vx, &vy, &vz, NULL, NULL, NULL, &obstacles);
 
 		ptcache_file_compressed_read(pf, (unsigned char *)sds->shadow, out_len);
 		ptcache_file_compressed_read(pf, (unsigned char*)dens, out_len);
-		ptcache_file_compressed_read(pf, (unsigned char*)densold, out_len);
-		ptcache_file_compressed_read(pf, (unsigned char*)heat, out_len);
-		ptcache_file_compressed_read(pf, (unsigned char*)heatold, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char*)tmp_array, out_len);
+
+		if (fluid_fields & SM_ACTIVE_HEAT)
+		{
+			ptcache_file_compressed_read(pf, (unsigned char*)heat, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char*)heatold, out_len);
+		}
+		else
+		{
+			ptcache_file_compressed_read(pf, (unsigned char*)tmp_array, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char*)tmp_array, out_len);
+		}
 		ptcache_file_compressed_read(pf, (unsigned char*)vx, out_len);
 		ptcache_file_compressed_read(pf, (unsigned char*)vy, out_len);
 		ptcache_file_compressed_read(pf, (unsigned char*)vz, out_len);
-		ptcache_file_compressed_read(pf, (unsigned char*)vxold, out_len);
-		ptcache_file_compressed_read(pf, (unsigned char*)vyold, out_len);
-		ptcache_file_compressed_read(pf, (unsigned char*)vzold, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char*)tmp_array, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char*)tmp_array, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char*)tmp_array, out_len);
 		ptcache_file_compressed_read(pf, (unsigned char*)obstacles, (unsigned int)res);
 		ptcache_file_read(pf, &dt, 1, sizeof(float));
 		ptcache_file_read(pf, &dx, 1, sizeof(float));
 
+		MEM_freeN(tmp_array);
+
 		if (pf->data_types & (1<<BPHYS_DATA_SMOKE_HIGH) && sds->wt) {
 			int res = sds->res[0]*sds->res[1]*sds->res[2];
 			int res_big, res_big_array[3];
-			float *dens, *densold, *tcu, *tcv, *tcw;
+			float *dens, *tcu, *tcv, *tcw;
+			unsigned int out_len = sizeof(float)*(unsigned int)res;
+			unsigned int out_len_big;
+			unsigned char *tmp_array_big;
+
+			smoke_turbulence_get_res(sds->wt, res_big_array);
+			res_big = res_big_array[0]*res_big_array[1]*res_big_array[2];
+			out_len_big = sizeof(float) * (unsigned int)res_big;
+
+			tmp_array_big = MEM_callocN(out_len_big, "Smoke old cache tmp");
+
+			smoke_turbulence_export(sds->wt, &dens, NULL, NULL, NULL, NULL, NULL, NULL, &tcu, &tcv, &tcw);
+
+			ptcache_file_compressed_read(pf, (unsigned char*)dens, out_len_big);
+			ptcache_file_compressed_read(pf, (unsigned char*)tmp_array_big, out_len_big);
+
+			ptcache_file_compressed_read(pf, (unsigned char*)tcu, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char*)tcv, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char*)tcw, out_len);
+
+			MEM_freeN(tmp_array_big);
+		}
+	}
+
+	return 1;	
+}
+
+static int ptcache_smoke_read(PTCacheFile *pf, void *smoke_v)
+{
+	SmokeModifierData *smd= (SmokeModifierData *)smoke_v;
+	SmokeDomainSettings *sds = smd->domain;
+	char version[4];
+	int ch_res[3];
+	float ch_dx;
+	int fluid_fields = smoke_get_data_flags(sds);
+	int cache_fields = 0;
+	int active_fields = 0;
+	int reallocate = 0;
+
+	/* version header */
+	ptcache_file_read(pf, version, 4, sizeof(char));
+	if (strncmp(version, SMOKE_CACHE_VERSION, 4))
+	{
+		/* reset file pointer */
+		fseek(pf->fp, -4, SEEK_CUR);
+		return ptcache_smoke_read_old(pf, smoke_v);
+	}
+
+	/* fluid info */
+	ptcache_file_read(pf, &cache_fields, 1, sizeof(int));
+	ptcache_file_read(pf, &active_fields, 1, sizeof(int));
+	ptcache_file_read(pf, &ch_res, 3, sizeof(int));
+	ptcache_file_read(pf, &ch_dx, 1, sizeof(float));
+
+	/* check if resolution has changed */
+	if (sds->res[0] != ch_res[0] ||
+		sds->res[1] != ch_res[1] ||
+		sds->res[2] != ch_res[2]) {
+		if (sds->flags & MOD_SMOKE_ADAPTIVE_DOMAIN)
+			reallocate = 1;
+		else
+			return 0;
+	}
+	/* check if active fields have changed */
+	if (fluid_fields != cache_fields ||
+		active_fields != sds->active_fields)
+		reallocate = 1;
+
+	/* reallocate fluid if needed*/
+	if (reallocate) {
+		sds->active_fields = active_fields | cache_fields;
+		smoke_reallocate_fluid(sds, ch_dx, ch_res, 1);
+		sds->dx = ch_dx;
+		VECCOPY(sds->res, ch_res);
+		sds->total_cells = ch_res[0]*ch_res[1]*ch_res[2];
+		if (sds->flags & MOD_SMOKE_HIGHRES) {
+			smoke_reallocate_highres_fluid(sds, ch_dx, ch_res, 1);
+		}
+	}
+	
+	if (sds->fluid) {
+		size_t res = sds->res[0]*sds->res[1]*sds->res[2];
+		float dt, dx, *dens, *react, *fuel, *flame, *heat, *heatold, *vx, *vy, *vz, *r, *g, *b;
+		unsigned char *obstacles;
+		unsigned int out_len = (unsigned int)res * sizeof(float);
+		
+		smoke_export(sds->fluid, &dt, &dx, &dens, &react, &flame, &fuel, &heat, &heatold, &vx, &vy, &vz, &r, &g, &b, &obstacles);
+
+		ptcache_file_compressed_read(pf, (unsigned char *)sds->shadow, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char *)dens, out_len);
+		if (cache_fields & SM_ACTIVE_HEAT) {
+			ptcache_file_compressed_read(pf, (unsigned char *)heat, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)heatold, out_len);
+		}
+		if (cache_fields & SM_ACTIVE_FIRE) {
+			ptcache_file_compressed_read(pf, (unsigned char *)flame, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)fuel, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)react, out_len);
+		}
+		if (cache_fields & SM_ACTIVE_COLORS) {
+			ptcache_file_compressed_read(pf, (unsigned char *)r, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)g, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)b, out_len);
+		}
+		ptcache_file_compressed_read(pf, (unsigned char *)vx, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char *)vy, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char *)vz, out_len);
+		ptcache_file_compressed_read(pf, (unsigned char *)obstacles, (unsigned int)res);
+		ptcache_file_read(pf, &dt, 1, sizeof(float));
+		ptcache_file_read(pf, &dx, 1, sizeof(float));
+		ptcache_file_read(pf, &sds->p0, 3, sizeof(float));
+		ptcache_file_read(pf, &sds->p1, 3, sizeof(float));
+		ptcache_file_read(pf, &sds->dp0, 3, sizeof(float));
+		ptcache_file_read(pf, &sds->shift, 3, sizeof(int));
+		ptcache_file_read(pf, &sds->obj_shift_f, 3, sizeof(float));
+		ptcache_file_read(pf, &sds->obmat, 16, sizeof(float));
+		ptcache_file_read(pf, &sds->base_res, 3, sizeof(int));
+		ptcache_file_read(pf, &sds->res_min, 3, sizeof(int));
+		ptcache_file_read(pf, &sds->res_max, 3, sizeof(int));
+		ptcache_file_read(pf, &sds->active_color, 3, sizeof(float));
+	}
+
+	if (pf->data_types & (1<<BPHYS_DATA_SMOKE_HIGH) && sds->wt) {
+			int res = sds->res[0]*sds->res[1]*sds->res[2];
+			int res_big, res_big_array[3];
+			float *dens, *react, *fuel, *flame, *tcu, *tcv, *tcw, *r, *g, *b;
 			unsigned int out_len = sizeof(float)*(unsigned int)res;
 			unsigned int out_len_big;
 
@@ -651,16 +842,24 @@ static int ptcache_smoke_read(PTCacheFile *pf, void *smoke_v)
 			res_big = res_big_array[0]*res_big_array[1]*res_big_array[2];
 			out_len_big = sizeof(float) * (unsigned int)res_big;
 
-			smoke_turbulence_export(sds->wt, &dens, &densold, &tcu, &tcv, &tcw);
+			smoke_turbulence_export(sds->wt, &dens, &react, &flame, &fuel, &r, &g, &b, &tcu, &tcv, &tcw);
 
-			ptcache_file_compressed_read(pf, (unsigned char*)dens, out_len_big);
-			ptcache_file_compressed_read(pf, (unsigned char*)densold, out_len_big);
+			ptcache_file_compressed_read(pf, (unsigned char *)dens, out_len_big);
+			if (cache_fields & SM_ACTIVE_FIRE) {
+				ptcache_file_compressed_read(pf, (unsigned char *)flame, out_len_big);
+				ptcache_file_compressed_read(pf, (unsigned char *)fuel, out_len_big);
+				ptcache_file_compressed_read(pf, (unsigned char *)react, out_len_big);
+			}
+			if (cache_fields & SM_ACTIVE_COLORS) {
+				ptcache_file_compressed_read(pf, (unsigned char *)r, out_len_big);
+				ptcache_file_compressed_read(pf, (unsigned char *)g, out_len_big);
+				ptcache_file_compressed_read(pf, (unsigned char *)b, out_len_big);
+			}
 
-			ptcache_file_compressed_read(pf, (unsigned char*)tcu, out_len);
-			ptcache_file_compressed_read(pf, (unsigned char*)tcv, out_len);
-			ptcache_file_compressed_read(pf, (unsigned char*)tcw, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)tcu, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)tcv, out_len);
+			ptcache_file_compressed_read(pf, (unsigned char *)tcw, out_len);
 		}
-	}
 
 	return 1;
 }
@@ -686,7 +885,7 @@ static int  ptcache_dynamicpaint_write(PTCacheFile *pf, void *dp_v)
 	int cache_compress = 1;
 
 	/* version header */
-	ptcache_file_write(pf, DPAINT_CACHE_VERSION, 1, sizeof(char)*4);
+	ptcache_file_write(pf, DPAINT_CACHE_VERSION, 1, sizeof(char) * 4);
 
 	if (surface->format != MOD_DPAINT_SURFACE_F_IMAGESEQ && surface->data) {
 		int total_points=surface->data->total_points;
@@ -725,8 +924,11 @@ static int ptcache_dynamicpaint_read(PTCacheFile *pf, void *dp_v)
 	char version[4];
 	
 	/* version header */
-	ptcache_file_read(pf, version, 1, sizeof(char)*4);
-	if (strncmp(version, DPAINT_CACHE_VERSION, 4)) {printf("Dynamic Paint: Invalid cache version: %s!\n", version); return 0;}
+	ptcache_file_read(pf, version, 1, sizeof(char) * 4);
+	if (strncmp(version, DPAINT_CACHE_VERSION, 4)) {
+		printf("Dynamic Paint: Invalid cache version: %s!\n", version);
+		return 0;
+	}
 
 	if (surface->format != MOD_DPAINT_SURFACE_F_IMAGESEQ && surface->data) {
 		unsigned int data_len;
@@ -754,10 +956,101 @@ static int ptcache_dynamicpaint_read(PTCacheFile *pf, void *dp_v)
 			return 0;
 		}
 
-		ptcache_file_compressed_read(pf, (unsigned char*)surface->data->type_data, data_len*surface->data->total_points);
+		ptcache_file_compressed_read(pf, (unsigned char *)surface->data->type_data, data_len*surface->data->total_points);
 
 	}
 	return 1;
+}
+
+/* Rigid Body functions */
+static int  ptcache_rigidbody_write(int index, void *rb_v, void **data, int UNUSED(cfra))
+{
+	RigidBodyWorld *rbw = rb_v;
+	Object *ob = NULL;
+	
+	if (rbw->objects)
+		ob = rbw->objects[index];
+	
+	if (ob && ob->rigidbody_object) {
+		RigidBodyOb *rbo = ob->rigidbody_object;
+		
+		if (rbo->type == RBO_TYPE_ACTIVE) {
+#ifdef WITH_BULLET
+			RB_body_get_position(rbo->physics_object, rbo->pos);
+			RB_body_get_orientation(rbo->physics_object, rbo->orn);
+#endif
+			PTCACHE_DATA_FROM(data, BPHYS_DATA_LOCATION, rbo->pos);
+			PTCACHE_DATA_FROM(data, BPHYS_DATA_ROTATION, rbo->orn);
+		}
+	}
+
+	return 1;
+}
+static void ptcache_rigidbody_read(int index, void *rb_v, void **data, float UNUSED(cfra), float *old_data)
+{
+	RigidBodyWorld *rbw = rb_v;
+	Object *ob = NULL;
+	
+	if (rbw->objects)
+		ob = rbw->objects[index];
+	
+	if (ob && ob->rigidbody_object) {
+		RigidBodyOb *rbo = ob->rigidbody_object;
+		
+		if (rbo->type == RBO_TYPE_ACTIVE) {
+			
+			if (old_data) {
+				memcpy(rbo->pos, data, 3 * sizeof(float));
+				memcpy(rbo->orn, data + 3, 4 * sizeof(float));
+			}
+			else {
+				PTCACHE_DATA_TO(data, BPHYS_DATA_LOCATION, 0, rbo->pos);
+				PTCACHE_DATA_TO(data, BPHYS_DATA_ROTATION, 0, rbo->orn);
+			}
+		}
+	}
+}
+static void ptcache_rigidbody_interpolate(int index, void *rb_v, void **data, float cfra, float cfra1, float cfra2, float *old_data)
+{
+	RigidBodyWorld *rbw = rb_v;
+	Object *ob = NULL;
+	ParticleKey keys[4];
+	float dfra;
+	
+	if (rbw->objects)
+		ob = rbw->objects[index];
+	
+	if (ob && ob->rigidbody_object) {
+		RigidBodyOb *rbo = ob->rigidbody_object;
+		
+		if (rbo->type == RBO_TYPE_ACTIVE) {
+			
+			copy_v3_v3(keys[1].co, rbo->pos);
+			copy_v3_v3(keys[1].rot, rbo->orn);
+			
+			if (old_data) {
+				memcpy(keys[2].co, data, 3 * sizeof(float));
+				memcpy(keys[2].rot, data + 3, 4 * sizeof(float));
+			}
+			else {
+				BKE_ptcache_make_particle_key(keys+2, 0, data, cfra2);
+			}
+			
+			dfra = cfra2 - cfra1;
+		
+			psys_interpolate_particle(-1, keys, (cfra - cfra1) / dfra, keys, 1);
+			interp_qt_qtqt(keys->rot, keys[1].rot, keys[2].rot, (cfra - cfra1) / dfra);
+			
+			copy_v3_v3(rbo->pos, keys->co);
+			copy_v3_v3(rbo->orn, keys->rot);
+		}
+	}
+}
+static int ptcache_rigidbody_totpoint(void *rb_v, int UNUSED(cfra))
+{
+	RigidBodyWorld *rbw = rb_v;
+	
+	return rbw->numbodies;
 }
 
 /* Creating ID's */
@@ -965,6 +1258,42 @@ void BKE_ptcache_id_from_dynamicpaint(PTCacheID *pid, Object *ob, DynamicPaintSu
 	pid->max_step = 1;
 }
 
+void BKE_ptcache_id_from_rigidbody(PTCacheID *pid, Object *ob, RigidBodyWorld *rbw)
+{
+	
+	memset(pid, 0, sizeof(PTCacheID));
+	
+	pid->ob= ob;
+	pid->calldata= rbw;
+	pid->type= PTCACHE_TYPE_RIGIDBODY;
+	pid->cache= rbw->pointcache;
+	pid->cache_ptr= &rbw->pointcache;
+	pid->ptcaches= &rbw->ptcaches;
+	pid->totpoint= pid->totwrite= ptcache_rigidbody_totpoint;
+	
+	pid->write_point			= ptcache_rigidbody_write;
+	pid->read_point				= ptcache_rigidbody_read;
+	pid->interpolate_point		= ptcache_rigidbody_interpolate;
+	
+	pid->write_stream			= NULL;
+	pid->read_stream			= NULL;
+	
+	pid->write_extra_data		= NULL;
+	pid->read_extra_data		= NULL;
+	pid->interpolate_extra_data	= NULL;
+	
+	pid->write_header			= ptcache_basic_header_write;
+	pid->read_header			= ptcache_basic_header_read;
+	
+	pid->data_types= (1<<BPHYS_DATA_LOCATION) | (1<<BPHYS_DATA_ROTATION);
+	pid->info_types= 0;
+	
+	pid->stack_index = pid->cache->index;
+	
+	pid->default_step = 1;
+	pid->max_step = 1;
+}
+
 void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int duplis)
 {
 	PTCacheID *pid;
@@ -1026,11 +1355,18 @@ void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int dup
 			}
 		}
 	}
+	
+	if (scene && ob->rigidbody_object && scene->rigidbody_world) {
+		pid = MEM_callocN(sizeof(PTCacheID), "PTCacheID");
+		BKE_ptcache_id_from_rigidbody(pid, ob, scene->rigidbody_world);
+		BLI_addtail(lb, pid);
+	}
 
 	if (scene && (duplis-- > 0) && (ob->transflag & OB_DUPLI)) {
 		ListBase *lb_dupli_ob;
 
-		if ((lb_dupli_ob=object_duplilist(scene, ob))) {
+		/* don't update the dupli groups, we only want their pid's */
+		if ((lb_dupli_ob = object_duplilist_ex(scene, ob, FALSE, FALSE))) {
 			DupliObject *dob;
 			for (dob= lb_dupli_ob->first; dob; dob= dob->next) {
 				if (dob->ob != ob) { /* avoids recursive loops with dupliframes: bug 22988 */
@@ -1052,23 +1388,24 @@ void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int dup
 /* Takes an Object ID and returns a unique name
  * - id: object id
  * - cfra: frame for the cache, can be negative
- * - stack_index: index in the modifier stack. we can have cache for more then one stack_index
+ * - stack_index: index in the modifier stack. we can have cache for more than one stack_index
  */
 
 #define MAX_PTCACHE_PATH FILE_MAX
-#define MAX_PTCACHE_FILE ((FILE_MAX)*2)
+#define MAX_PTCACHE_FILE (FILE_MAX * 2)
 
 static int ptcache_path(PTCacheID *pid, char *filename)
 {
-	Library *lib= (pid->ob)? pid->ob->id.lib: NULL;
+	Library *lib = (pid->ob) ? pid->ob->id.lib : NULL;
 	const char *blendfilename= (lib && (pid->cache->flag & PTCACHE_IGNORE_LIBPATH)==0) ? lib->filepath: G.main->name;
 	size_t i;
 
 	if (pid->cache->flag & PTCACHE_EXTERNAL) {
 		strcpy(filename, pid->cache->path);
 
-		if (strncmp(filename, "//", 2)==0)
+		if (BLI_path_is_rel(filename)) {
 			BLI_path_abs(filename, blendfilename);
+		}
 
 		return BLI_add_slash(filename); /* new strlen() */
 	}
@@ -1110,7 +1447,7 @@ static int ptcache_filename(PTCacheID *pid, char *filename, int cfra, short do_p
 		newname += len;
 	}
 	if (pid->cache->name[0] == '\0' && (pid->cache->flag & PTCACHE_EXTERNAL)==0) {
-		idname = (pid->ob->id.name+2);
+		idname = (pid->ob->id.name + 2);
 		/* convert chars to hex so they are always a valid filename */
 		while ('\0' != *idname) {
 			BLI_snprintf(newname, MAX_PTCACHE_FILE, "%02X", (char)(*idname++));
@@ -1150,7 +1487,7 @@ static PTCacheFile *ptcache_file_open(PTCacheID *pid, int mode, int cfra)
 {
 	PTCacheFile *pf;
 	FILE *fp = NULL;
-	char filename[(FILE_MAX)*2];
+	char filename[FILE_MAX * 2];
 
 #ifndef DURIAN_POINTCACHE_LIB_OK
 	/* don't allow writing for linked objects */
@@ -1203,7 +1540,7 @@ static int ptcache_file_compressed_read(PTCacheFile *pf, unsigned char *result, 
 	size_t out_len = len;
 #endif
 	unsigned char *in;
-	unsigned char *props = MEM_callocN(16*sizeof(char), "tmp");
+	unsigned char *props = MEM_callocN(16 * sizeof(char), "tmp");
 
 	ptcache_file_read(pf, &compressed, 1, sizeof(unsigned char));
 	if (compressed) {
@@ -1246,7 +1583,7 @@ static int ptcache_file_compressed_write(PTCacheFile *pf, unsigned char *in, uns
 	int r = 0;
 	unsigned char compressed = 0;
 	size_t out_len= 0;
-	unsigned char *props = MEM_callocN(16*sizeof(char), "tmp");
+	unsigned char *props = MEM_callocN(16 * sizeof(char), "tmp");
 	size_t sizeOfIt = 5;
 
 	(void)mode; /* unused when building w/o compression */
@@ -1256,7 +1593,7 @@ static int ptcache_file_compressed_write(PTCacheFile *pf, unsigned char *in, uns
 	if (mode == 1) {
 		LZO_HEAP_ALLOC(wrkmem, LZO1X_MEM_COMPRESS);
 		
-		r = lzo1x_1_compress(in, (lzo_uint)in_len, out, (lzo_uint *)&out_len, wrkmem);	
+		r = lzo1x_1_compress(in, (lzo_uint)in_len, out, (lzo_uint *)&out_len, wrkmem);
 		if (!(r == LZO_E_OK) || (out_len >= in_len))
 			compressed = 0;
 		else
@@ -1267,7 +1604,7 @@ static int ptcache_file_compressed_write(PTCacheFile *pf, unsigned char *in, uns
 	if (mode == 2) {
 		
 		r = LzmaCompress(out, &out_len, in, in_len, //assume sizeof(char)==1....
-						props, &sizeOfIt, 5, 1 << 24, 3, 0, 2, 32, 2);
+		                 props, &sizeOfIt, 5, 1 << 24, 3, 0, 2, 32, 2);
 
 		if (!(r == SZ_OK) || (out_len >= in_len))
 			compressed = 0;
@@ -1432,7 +1769,7 @@ void BKE_ptcache_mem_pointers_incr(PTCacheMem *pm)
 
 	for (i=0; i<BPHYS_TOT_DATA; i++) {
 		if (pm->cur[i])
-			pm->cur[i] = (char*)pm->cur[i] + ptcache_data_size[i];
+			pm->cur[i] = (char *)pm->cur[i] + ptcache_data_size[i];
 	}
 }
 int  BKE_ptcache_mem_pointers_seek(int point_index, PTCacheMem *pm)
@@ -1450,7 +1787,7 @@ int  BKE_ptcache_mem_pointers_seek(int point_index, PTCacheMem *pm)
 	}
 
 	for (i=0; i<BPHYS_TOT_DATA; i++)
-		pm->cur[i] = data_types & (1<<i) ? (char*)pm->data[i] + index * ptcache_data_size[i] : NULL;
+		pm->cur[i] = data_types & (1<<i) ? (char *)pm->data[i] + index * ptcache_data_size[i] : NULL;
 
 	return 1;
 }
@@ -1592,7 +1929,7 @@ static PTCacheMem *ptcache_disk_frame_to_mem(PTCacheID *pid, int cfra)
 			for (i=0; i<BPHYS_TOT_DATA; i++) {
 				unsigned int out_len = pm->totpoint*ptcache_data_size[i];
 				if (pf->data_types & (1<<i))
-					ptcache_file_compressed_read(pf, (unsigned char*)(pm->data[i]), out_len);
+					ptcache_file_compressed_read(pf, (unsigned char *)(pm->data[i]), out_len);
 			}
 		}
 		else {
@@ -1623,7 +1960,7 @@ static PTCacheMem *ptcache_disk_frame_to_mem(PTCacheID *pid, int cfra)
 			extra->data = MEM_callocN(extra->totdata * ptcache_extra_datasize[extra->type], "Pointcache extradata->data");
 
 			if (pf->flag & PTCACHE_TYPEFLAG_COMPRESS)
-				ptcache_file_compressed_read(pf, (unsigned char*)(extra->data), extra->totdata*ptcache_extra_datasize[extra->type]);
+				ptcache_file_compressed_read(pf, (unsigned char *)(extra->data), extra->totdata*ptcache_extra_datasize[extra->type]);
 			else
 				ptcache_file_read(pf, extra->data, extra->totdata, ptcache_extra_datasize[extra->type]);
 
@@ -1679,8 +2016,8 @@ static int ptcache_mem_frame_to_disk(PTCacheID *pid, PTCacheMem *pm)
 			for (i=0; i<BPHYS_TOT_DATA; i++) {
 				if (pm->data[i]) {
 					unsigned int in_len = pm->totpoint*ptcache_data_size[i];
-					unsigned char *out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len)*4, "pointcache_lzo_buffer");
-					ptcache_file_compressed_write(pf, (unsigned char*)(pm->data[i]), in_len, out, pid->cache->compression);
+					unsigned char *out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len) * 4, "pointcache_lzo_buffer");
+					ptcache_file_compressed_write(pf, (unsigned char *)(pm->data[i]), in_len, out, pid->cache->compression);
 					MEM_freeN(out);
 				}
 			}
@@ -1712,8 +2049,8 @@ static int ptcache_mem_frame_to_disk(PTCacheID *pid, PTCacheMem *pm)
 
 			if (pid->cache->compression) {
 				unsigned int in_len = extra->totdata * ptcache_extra_datasize[extra->type];
-				unsigned char *out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len)*4, "pointcache_lzo_buffer");
-				ptcache_file_compressed_write(pf, (unsigned char*)(extra->data), in_len, out, pid->cache->compression);
+				unsigned char *out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len) * 4, "pointcache_lzo_buffer");
+				ptcache_file_compressed_write(pf, (unsigned char *)(extra->data), in_len, out, pid->cache->compression);
 				MEM_freeN(out);
 			}
 			else {
@@ -1924,18 +2261,16 @@ int BKE_ptcache_read(PTCacheID *pid, float cfra)
 		pid->cache->simframe = cfra2;
 	}
 
-	if ((pid->cache->flag & PTCACHE_QUICK_CACHE)==0) {
-		cfrai = (int)cfra;
-		/* clear invalid cache frames so that better stuff can be simulated */
-		if (pid->cache->flag & PTCACHE_OUTDATED) {
-			BKE_ptcache_id_clear(pid, PTCACHE_CLEAR_AFTER, cfrai);
-		}
-		else if (pid->cache->flag & PTCACHE_FRAMES_SKIPPED) {
-			if (cfra <= pid->cache->last_exact)
-				pid->cache->flag &= ~PTCACHE_FRAMES_SKIPPED;
+	cfrai = (int)cfra;
+	/* clear invalid cache frames so that better stuff can be simulated */
+	if (pid->cache->flag & PTCACHE_OUTDATED) {
+		BKE_ptcache_id_clear(pid, PTCACHE_CLEAR_AFTER, cfrai);
+	}
+	else if (pid->cache->flag & PTCACHE_FRAMES_SKIPPED) {
+		if (cfra <= pid->cache->last_exact)
+			pid->cache->flag &= ~PTCACHE_FRAMES_SKIPPED;
 
-			BKE_ptcache_id_clear(pid, PTCACHE_CLEAR_AFTER, MAX2(cfrai, pid->cache->last_exact));
-		}
+		BKE_ptcache_id_clear(pid, PTCACHE_CLEAR_AFTER, MAX2(cfrai, pid->cache->last_exact));
 	}
 
 	return ret;
@@ -2166,7 +2501,7 @@ void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 	/* clear all files in the temp dir with the prefix of the ID and the ".bphys" suffix */
 	switch (mode) {
 	case PTCACHE_CLEAR_ALL:
-	case PTCACHE_CLEAR_BEFORE:	
+	case PTCACHE_CLEAR_BEFORE:
 	case PTCACHE_CLEAR_AFTER:
 		if (pid->cache->flag & PTCACHE_DISK_CACHE) {
 			ptcache_path(pid, path);
@@ -2185,7 +2520,7 @@ void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 						if (mode == PTCACHE_CLEAR_ALL) {
 							pid->cache->last_exact = MIN2(pid->cache->startframe, 0);
 							BLI_join_dirfile(path_full, sizeof(path_full), path, de->d_name);
-							BLI_delete(path_full, 0, 0);
+							BLI_delete(path_full, false, false);
 						}
 						else {
 							/* read the number of the file */
@@ -2201,7 +2536,7 @@ void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 								{
 									
 									BLI_join_dirfile(path_full, sizeof(path_full), path, de->d_name);
-									BLI_delete(path_full, 0, 0);
+									BLI_delete(path_full, false, false);
 									if (pid->cache->cached_frames && frame >=sta && frame <= end)
 										pid->cache->cached_frames[frame-sta] = 0;
 								}
@@ -2255,7 +2590,7 @@ void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 		if (pid->cache->flag & PTCACHE_DISK_CACHE) {
 			if (BKE_ptcache_id_exist(pid, cfra)) {
 				ptcache_filename(pid, filename, cfra, 1, 1); /* no path */
-				BLI_delete(filename, 0, 0);
+				BLI_delete(filename, false, false);
 			}
 		}
 		else {
@@ -2270,7 +2605,7 @@ void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 				}
 			}
 		}
-		if (pid->cache->cached_frames && cfra>=sta && cfra<=end)
+		if (pid->cache->cached_frames && cfra >= sta && cfra <= end)
 			pid->cache->cached_frames[cfra-sta] = 0;
 		break;
 	}
@@ -2357,7 +2692,7 @@ void BKE_ptcache_id_time(PTCacheID *pid, Scene *scene, float cfra, int *startfra
 		if (MEM_allocN_len(cache->cached_frames) != sizeof(char) * (cache->endframe-cache->startframe+1)) {
 			MEM_freeN(cache->cached_frames);
 			cache->cached_frames = NULL;
-		}	
+		}
 	}
 
 	if (cache->cached_frames==NULL && cache->endframe > cache->startframe) {
@@ -2429,9 +2764,7 @@ int  BKE_ptcache_id_reset(Scene *scene, PTCacheID *pid, int mode)
 	after= 0;
 
 	if (mode == PTCACHE_RESET_DEPSGRAPH) {
-		if (!(cache->flag & PTCACHE_BAKED) && !BKE_ptcache_get_continue_physics()) {
-			if (cache->flag & PTCACHE_QUICK_CACHE)
-				clear= 1;
+		if (!(cache->flag & PTCACHE_BAKED)) {
 
 			after= 1;
 		}
@@ -2439,12 +2772,7 @@ int  BKE_ptcache_id_reset(Scene *scene, PTCacheID *pid, int mode)
 		cache->flag |= PTCACHE_OUTDATED;
 	}
 	else if (mode == PTCACHE_RESET_BAKED) {
-		if (!BKE_ptcache_get_continue_physics()) {
-			reset= 1;
-			clear= 1;
-		}
-		else
-			cache->flag |= PTCACHE_OUTDATED;
+		cache->flag |= PTCACHE_OUTDATED;
 	}
 	else if (mode == PTCACHE_RESET_OUTDATED) {
 		reset = 1;
@@ -2465,10 +2793,12 @@ int  BKE_ptcache_id_reset(Scene *scene, PTCacheID *pid, int mode)
 			sbFreeSimulation(pid->calldata);
 		else if (pid->type == PTCACHE_TYPE_PARTICLES)
 			psys_reset(pid->calldata, PSYS_RESET_DEPSGRAPH);
+#if 0
 		else if (pid->type == PTCACHE_TYPE_SMOKE_DOMAIN)
 			smokeModifier_reset(pid->calldata);
 		else if (pid->type == PTCACHE_TYPE_SMOKE_HIGHRES)
 			smokeModifier_reset_turbulence(pid->calldata);
+#endif
 		else if (pid->type == PTCACHE_TYPE_DYNAMICPAINT)
 			dynamicPaint_clearSurface((DynamicPaintSurface*)pid->calldata);
 	}
@@ -2495,7 +2825,7 @@ int  BKE_ptcache_object_reset(Scene *scene, Object *ob, int mode)
 	}
 
 	for (psys=ob->particlesystem.first; psys; psys=psys->next) {
-		/* children or just redo can be calculated without reseting anything */
+		/* children or just redo can be calculated without resetting anything */
 		if (psys->recalc & PSYS_RECALC_REDO || psys->recalc & PSYS_RECALC_CHILD)
 			skip = 1;
 		/* Baked cloth hair has to be checked too, because we don't want to reset */
@@ -2539,6 +2869,14 @@ int  BKE_ptcache_object_reset(Scene *scene, Object *ob, int mode)
 		}
 	}
 
+	if (scene->rigidbody_world && (ob->rigidbody_object || ob->rigidbody_constraint)) {
+		if (ob->rigidbody_object)
+			ob->rigidbody_object->flag |= RBO_FLAG_NEEDS_RESHAPE;
+		BKE_ptcache_id_from_rigidbody(&pid, ob, scene->rigidbody_world);
+		/* only flag as outdated, resetting should happen on start frame */
+		pid.cache->flag |= PTCACHE_OUTDATED;
+	}
+
 	if (ob->type == OB_ARMATURE)
 		BIK_clear_cache(ob->pose);
 
@@ -2570,7 +2908,7 @@ void BKE_ptcache_remove(void)
 			}
 			else if (strstr(de->d_name, PTCACHE_EXT)) { /* do we have the right extension?*/
 				BLI_join_dirfile(path_full, sizeof(path_full), path, de->d_name);
-				BLI_delete(path_full, 0, 0);
+				BLI_delete(path_full, false, false);
 			}
 			else {
 				rmdir = 0; /* unknown file, don't remove the dir */
@@ -2584,32 +2922,8 @@ void BKE_ptcache_remove(void)
 	}
 	
 	if (rmdir) {
-		BLI_delete(path, 1, 0);
+		BLI_delete(path, true, false);
 	}
-}
-
-/* Continuous Interaction */
-
-static int CONTINUE_PHYSICS = 0;
-
-void BKE_ptcache_set_continue_physics(Main *bmain, Scene *scene, int enable)
-{
-	Object *ob;
-
-	if (CONTINUE_PHYSICS != enable) {
-		CONTINUE_PHYSICS = enable;
-
-		if (CONTINUE_PHYSICS == 0) {
-			for (ob=bmain->object.first; ob; ob=ob->id.next)
-				if (BKE_ptcache_object_reset(scene, ob, PTCACHE_RESET_OUTDATED))
-					DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-		}
-	}
-}
-
-int  BKE_ptcache_get_continue_physics(void)
-{
-	return CONTINUE_PHYSICS;
 }
 
 /* Point Cache handling */
@@ -2662,36 +2976,66 @@ void BKE_ptcache_free_list(ListBase *ptcaches)
 	}
 }
 
-static PointCache *ptcache_copy(PointCache *cache)
+static PointCache *ptcache_copy(PointCache *cache, int copy_data)
 {
 	PointCache *ncache;
 
 	ncache= MEM_dupallocN(cache);
 
-	/* hmm, should these be copied over instead? */
 	ncache->mem_cache.first = NULL;
 	ncache->mem_cache.last = NULL;
-	ncache->cached_frames = NULL;
-	ncache->edit = NULL;
 
-	ncache->flag= 0;
-	ncache->simframe= 0;
+	if (copy_data == FALSE) {
+		ncache->mem_cache.first = NULL;
+		ncache->mem_cache.last = NULL;
+		ncache->cached_frames = NULL;
+
+		/* flag is a mix of user settings and simulator/baking state */
+		ncache->flag= ncache->flag & (PTCACHE_DISK_CACHE|PTCACHE_EXTERNAL|PTCACHE_IGNORE_LIBPATH);
+		ncache->simframe= 0;
+	}
+	else {
+		PTCacheMem *pm;
+
+		for (pm = cache->mem_cache.first; pm; pm = pm->next) {
+			PTCacheMem *pmn = MEM_dupallocN(pm);
+			int i;
+
+			for (i = 0; i < BPHYS_TOT_DATA; i++) {
+				if (pmn->data[i])
+					pmn->data[i] = MEM_dupallocN(pm->data[i]);
+			}
+
+			BKE_ptcache_mem_pointers_init(pm);
+
+			BLI_addtail(&ncache->mem_cache, pmn);
+		}
+
+		if (ncache->cached_frames)
+			ncache->cached_frames = MEM_dupallocN(cache->cached_frames);
+	}
+
+	/* hmm, should these be copied over instead? */
+	ncache->edit = NULL;
 
 	return ncache;
 }
+
 /* returns first point cache */
-PointCache *BKE_ptcache_copy_list(ListBase *ptcaches_new, ListBase *ptcaches_old)
+PointCache *BKE_ptcache_copy_list(ListBase *ptcaches_new, ListBase *ptcaches_old, int copy_data)
 {
 	PointCache *cache = ptcaches_old->first;
 
 	ptcaches_new->first = ptcaches_new->last = NULL;
 
 	for (; cache; cache=cache->next)
-		BLI_addtail(ptcaches_new, ptcache_copy(cache));
+		BLI_addtail(ptcaches_new, ptcache_copy(cache, copy_data));
 
 	return ptcaches_new->first;
 }
 
+/* Disabled this code; this is being called on scene_update_tagged, and that in turn gets called on 
+ * every user action changing stuff, and then it runs a complete bake??? (ton) */
 
 /* Baking */
 void BKE_ptcache_quick_cache_all(Main *bmain, Scene *scene)
@@ -2774,8 +3118,9 @@ static void *ptcache_bake_thread(void *ptr)
 	}
 
 	if (use_timer) {
+		/* start with newline because of \r above */
 		ptcache_dt_to_str(run, PIL_check_seconds_timer()-stime);
-		printf("Bake %s %s (%i frames simulated).\n", (data->break_operation ? "canceled after" : "finished in"), run, *data->cfra_ptr-sfra);
+		printf("\nBake %s %s (%i frames simulated).\n", (data->break_operation ? "canceled after" : "finished in"), run, *data->cfra_ptr-sfra);
 	}
 
 	data->thread_ended = TRUE;
@@ -2783,7 +3128,7 @@ static void *ptcache_bake_thread(void *ptr)
 }
 
 /* if bake is not given run simulations to current frame */
-void BKE_ptcache_bake(PTCacheBaker* baker)
+void BKE_ptcache_bake(PTCacheBaker *baker)
 {
 	Main *bmain = baker->main;
 	Scene *scene = baker->scene;
@@ -2875,7 +3220,7 @@ void BKE_ptcache_bake(PTCacheBaker* baker)
 					}
 
 					if ((cache->flag & PTCACHE_REDO_NEEDED || (cache->flag & PTCACHE_SIMULATION_VALID)==0) &&
-					    ((cache->flag & PTCACHE_QUICK_CACHE)==0 || render || bake))
+					    (render || bake))
 					{
 						BKE_ptcache_id_clear(pid, PTCACHE_CLEAR_ALL, 0);
 					}
@@ -3194,8 +3539,9 @@ void BKE_ptcache_load_external(PTCacheID *pid)
 		cache->endframe = end;
 		cache->totpoint = 0;
 
-		if (pid->type == PTCACHE_TYPE_SMOKE_DOMAIN)
-			; /*necessary info in every file*/
+		if (pid->type == PTCACHE_TYPE_SMOKE_DOMAIN) {
+			/* necessary info in every file */
+		}
 		/* read totpoint from info file (frame 0) */
 		else if (info) {
 			pf= ptcache_file_open(pid, PTCACHE_FILE_READ, 0);
@@ -3243,18 +3589,18 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 	if (cache->flag & PTCACHE_EXTERNAL) {
 		int cfra = cache->startframe;
 
-		for (; cfra<=cache->endframe; cfra++) {
+		for (; cfra <= cache->endframe; cfra++) {
 			if (BKE_ptcache_id_exist(pid, cfra))
 				totframes++;
 		}
 
 		/* smoke doesn't use frame 0 as info frame so can't check based on totpoint */
 		if (pid->type == PTCACHE_TYPE_SMOKE_DOMAIN && totframes)
-			BLI_snprintf(cache->info, sizeof(cache->info), "%i frames found!", totframes);
+			BLI_snprintf(cache->info, sizeof(cache->info), IFACE_("%i frames found!"), totframes);
 		else if (totframes && cache->totpoint)
-			BLI_snprintf(cache->info, sizeof(cache->info), "%i points found!", cache->totpoint);
+			BLI_snprintf(cache->info, sizeof(cache->info), IFACE_("%i points found!"), cache->totpoint);
 		else
-			BLI_snprintf(cache->info, sizeof(cache->info), "No valid data to read!");
+			BLI_strncpy(cache->info, IFACE_("No valid data to read!"), sizeof(cache->info));
 		return;
 	}
 
@@ -3263,23 +3609,23 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 			int totpoint = pid->totpoint(pid->calldata, 0);
 
 			if (cache->totpoint > totpoint)
-				BLI_snprintf(mem_info, sizeof(mem_info), "%i cells + High Resolution cached", totpoint);
+				BLI_snprintf(mem_info, sizeof(mem_info), IFACE_("%i cells + High Resolution cached"), totpoint);
 			else
-				BLI_snprintf(mem_info, sizeof(mem_info), "%i cells cached", totpoint);
+				BLI_snprintf(mem_info, sizeof(mem_info), IFACE_("%i cells cached"), totpoint);
 		}
 		else {
 			int cfra = cache->startframe;
 
-			for (; cfra<=cache->endframe; cfra++) {
+			for (; cfra <= cache->endframe; cfra++) {
 				if (BKE_ptcache_id_exist(pid, cfra))
 					totframes++;
 			}
 
-			BLI_snprintf(mem_info, sizeof(mem_info), "%i frames on disk", totframes);
+			BLI_snprintf(mem_info, sizeof(mem_info), IFACE_("%i frames on disk"), totframes);
 		}
 	}
 	else {
-		PTCacheMem *pm = cache->mem_cache.first;		
+		PTCacheMem *pm = cache->mem_cache.first;
 		float bytes = 0.0f;
 		int i, mb;
 		
@@ -3299,17 +3645,18 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 
 		mb = (bytes > 1024.0f * 1024.0f);
 
-		BLI_snprintf(mem_info, sizeof(mem_info), "%i frames in memory (%.1f %s)",
+		BLI_snprintf(mem_info, sizeof(mem_info), IFACE_("%i frames in memory (%.1f %s)"),
 		             totframes,
 		             bytes / (mb ? 1024.0f * 1024.0f : 1024.0f),
-		             mb ? "Mb" : "kb");
+		             mb ? IFACE_("Mb") : IFACE_("kb"));
 	}
 
 	if (cache->flag & PTCACHE_OUTDATED) {
-		BLI_snprintf(cache->info, sizeof(cache->info), "%s, cache is outdated!", mem_info);
+		BLI_snprintf(cache->info, sizeof(cache->info), IFACE_("%s, cache is outdated!"), mem_info);
 	}
 	else if (cache->flag & PTCACHE_FRAMES_SKIPPED) {
-		BLI_snprintf(cache->info, sizeof(cache->info), "%s, not exact since frame %i.", mem_info, cache->last_exact);
+		BLI_snprintf(cache->info, sizeof(cache->info), IFACE_("%s, not exact since frame %i"),
+		             mem_info, cache->last_exact);
 	}
 	else {
 		BLI_snprintf(cache->info, sizeof(cache->info), "%s.", mem_info);
@@ -3331,4 +3678,3 @@ void BKE_ptcache_invalidate(PointCache *cache)
 		cache->last_exact = MIN2(cache->startframe, 0);
 	}
 }
-

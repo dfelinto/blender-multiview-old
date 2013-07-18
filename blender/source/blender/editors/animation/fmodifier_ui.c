@@ -74,13 +74,6 @@
 #define B_REDR                  1
 #define B_FMODIFIER_REDRAW      20
 
-/* macro for use here to draw background box and set height */
-// XXX for now, roundbox has it's callback func set to NULL to not intercept events
-#define DRAW_BACKDROP(height) \
-	{ \
-		uiDefBut(block, ROUNDBOX, B_REDR, "", -3, yco - height, width + 3, height - 1, NULL, 5.0, 0.0, 12.0, (float)rb_col, ""); \
-	} (void)0
-
 /* callback to verify modifier data */
 static void validate_fmodifier_cb(bContext *UNUSED(C), void *fcm_v, void *UNUSED(arg))
 {
@@ -118,6 +111,7 @@ static void draw_modifier__generator(uiLayout *layout, ID *id, FModifier *fcm, s
 	uiBlock *block;
 	uiBut *but;
 	PointerRNA ptr;
+	short bwidth = width - 30; /* max button width */
 	
 	/* init the RNA-pointer */
 	RNA_pointer_create(id, &RNA_FModifierFunctionGenerator, fcm, &ptr);
@@ -126,10 +120,10 @@ static void draw_modifier__generator(uiLayout *layout, ID *id, FModifier *fcm, s
 	/* col = uiLayoutColumn(layout, TRUE); */ /* UNUSED */
 	block = uiLayoutGetBlock(layout);
 	uiBlockBeginAlign(block);
-	but = uiDefButR(block, MENU, B_FMODIFIER_REDRAW, NULL, 0, 0, width - 30, UI_UNIT_Y, &ptr, "mode", -1, 0, 0, -1, -1, NULL);
+	but = uiDefButR(block, MENU, B_FMODIFIER_REDRAW, NULL, 0, 0, bwidth, UI_UNIT_Y, &ptr, "mode", -1, 0, 0, -1, -1, NULL);
 	uiButSetFunc(but, validate_fmodifier_cb, fcm, NULL);
-		
-	uiDefButR(block, TOG, B_FMODIFIER_REDRAW, NULL, 0, 0, width - 30, UI_UNIT_Y, &ptr, "use_additive", -1, 0, 0, -1, -1, NULL);
+	
+	uiDefButR(block, TOG, B_FMODIFIER_REDRAW, NULL, 0, 0, bwidth, UI_UNIT_Y, &ptr, "use_additive", -1, 0, 0, -1, -1, NULL);
 	uiBlockEndAlign(block);
 	
 	/* now add settings for individual modes */
@@ -139,15 +133,26 @@ static void draw_modifier__generator(uiLayout *layout, ID *id, FModifier *fcm, s
 			float *cp = NULL;
 			char xval[32];
 			unsigned int i;
+			int maxXWidth;
 			
 			/* draw polynomial order selector */
 			row = uiLayoutRow(layout, FALSE);
 			block = uiLayoutGetBlock(row);
-			but = uiDefButI(block, NUM, B_FMODIFIER_REDRAW, IFACE_("Poly Order:"), 10, 0, width - 30, 19,
+			but = uiDefButI(block, NUM, B_FMODIFIER_REDRAW, IFACE_("Poly Order:"), 10, 0, bwidth, 20,
 			                &data->poly_order, 1, 100, 0, 0,
 			                TIP_("'Order' of the Polynomial (for a polynomial with n terms, 'order' is n-1)"));
 			uiButSetFunc(but, validate_fmodifier_cb, fcm, NULL);
 			
+			
+			/* calculate maximum width of label for "x^n" labels */
+			if (data->arraysize > 2) {
+				BLI_snprintf(xval, sizeof(xval), "x^%u", data->arraysize);
+				maxXWidth = UI_GetStringWidth(xval) + 10; /* XXX: UI_GetStringWidth is not accurate */
+			}
+			else {
+				/* basic size (just "x") */
+				maxXWidth = UI_GetStringWidth("x") + 10; 
+			}
 			
 			/* draw controls for each coefficient and a + sign at end of row */
 			row = uiLayoutRow(layout, TRUE);
@@ -155,34 +160,35 @@ static void draw_modifier__generator(uiLayout *layout, ID *id, FModifier *fcm, s
 			
 			cp = data->coefficients;
 			for (i = 0; (i < data->arraysize) && (cp); i++, cp++) {
-				/* To align with first line */
+				/* To align with first line... */
 				if (i)
-					uiDefBut(block, LABEL, 1, "   ", 0, 0, 50, 20, NULL, 0.0, 0.0, 0, 0, "");
+					uiDefBut(block, LABEL, 1, "   ", 0, 0, 40, 20, NULL, 0.0, 0.0, 0, 0, "");
 				else
-					uiDefBut(block, LABEL, 1, "y =", 0, 0, 50, 20, NULL, 0.0, 0.0, 0, 0, "");
+					uiDefBut(block, LABEL, 1, "y =", 0, 0, 40, 20, NULL, 0.0, 0.0, 0, 0, "");
+				
 				/* coefficient */
-				uiDefButF(block, NUM, B_FMODIFIER_REDRAW, "", 0, 0, 150, 20, cp, -UI_FLT_MAX, UI_FLT_MAX,
+				uiDefButF(block, NUM, B_FMODIFIER_REDRAW, "", 0, 0, bwidth / 2, 20, cp, -UI_FLT_MAX, UI_FLT_MAX,
 				          10, 3, TIP_("Coefficient for polynomial"));
 				
 				/* 'x' param (and '+' if necessary) */
 				if (i == 0)
-					strcpy(xval, "");
+					BLI_strncpy(xval, "", sizeof(xval));
 				else if (i == 1)
-					strcpy(xval, "x");
+					BLI_strncpy(xval, "x", sizeof(xval));
 				else
-					sprintf(xval, "x^%u", i);
-				uiDefBut(block, LABEL, 1, xval, 0, 0, 50, 20, NULL, 0.0, 0.0, 0, 0, TIP_("Power of x"));
+					BLI_snprintf(xval, sizeof(xval), "x^%u", i);
+				uiDefBut(block, LABEL, 1, xval, 0, 0, maxXWidth, 20, NULL, 0.0, 0.0, 0, 0, TIP_("Power of x"));
 				
 				if ( (i != (data->arraysize - 1)) || ((i == 0) && data->arraysize == 2) ) {
-					uiDefBut(block, LABEL, 1, "+", 0, 0, 30, 20, NULL, 0.0, 0.0, 0, 0, "");
+					uiDefBut(block, LABEL, 1, "+", 0, 0, 20, 20, NULL, 0.0, 0.0, 0, 0, "");
 					
 					/* next coefficient on a new row */
 					row = uiLayoutRow(layout, TRUE);
 					block = uiLayoutGetBlock(row);
 				}
 				else {
-					/* For alignement in UI! */
-					uiDefBut(block, LABEL, 1, " ", 0, 0, 30, 20, NULL, 0.0, 0.0, 0, 0, "");
+					/* For alignment in UI! */
+					uiDefBut(block, LABEL, 1, " ", 0, 0, 20, 20, NULL, 0.0, 0.0, 0, 0, "");
 				}
 			}
 			break;
@@ -225,16 +231,16 @@ static void draw_modifier__generator(uiLayout *layout, ID *id, FModifier *fcm, s
 				uiDefButF(block, NUM, B_FMODIFIER_REDRAW, "", 0, 0, 100, 20, cp + 1, -UI_FLT_MAX, UI_FLT_MAX,
 				          10, 3, TIP_("Second coefficient"));
 				
-				/* closing bracket and '+' sign */
+				/* closing bracket and multiplication sign */
 				if ( (i != (data->poly_order - 1)) || ((i == 0) && data->poly_order == 2) ) {
-					uiDefBut(block, LABEL, 1, ") +", 0, 0, 30, 20, NULL, 0.0, 0.0, 0, 0, "");
+					uiDefBut(block, LABEL, 1, ") \xc3\x97", 0, 0, 40, 20, NULL, 0.0, 0.0, 0, 0, "");
 					
 					/* set up new row for the next pair of coefficients */
 					row = uiLayoutRow(layout, TRUE);
 					block = uiLayoutGetBlock(row);
 				}
 				else 
-					uiDefBut(block, LABEL, 1, ")", 0, 0, 20, 20, NULL, 0.0, 0.0, 0, 0, "");
+					uiDefBut(block, LABEL, 1, ")  ", 0, 0, 40, 20, NULL, 0.0, 0.0, 0, 0, "");
 			}
 		}
 		break;
@@ -321,88 +327,7 @@ static void draw_modifier__noise(uiLayout *layout, ID *id, FModifier *fcm, short
 	uiItemR(col, &ptr, "depth", 0, NULL, ICON_NONE);
 }
 
-/* --------------- */
-
-#define BINARYSEARCH_FRAMEEQ_THRESH 0.0001f
-
-/* Binary search algorithm for finding where to insert Envelope Data Point.
- * Returns the index to insert at (data already at that index will be offset if replace is 0)
- */
-static int binarysearch_fcm_envelopedata_index(FCM_EnvelopeData array[], float frame, int arraylen, short *exists)
-{
-	int start = 0, end = arraylen;
-	int loopbreaker = 0, maxloop = arraylen * 2;
-	
-	/* initialize exists-flag first */
-	*exists = 0;
-	
-	/* sneaky optimisations (don't go through searching process if...):
-	 *	- keyframe to be added is to be added out of current bounds
-	 *	- keyframe to be added would replace one of the existing ones on bounds
-	 */
-	if ((arraylen <= 0) || (array == NULL)) {
-		printf("Warning: binarysearch_fcm_envelopedata_index() encountered invalid array\n");
-		return 0;
-	}
-	else {
-		/* check whether to add before/after/on */
-		float framenum;
-		
-		/* 'First' Point (when only one point, this case is used) */
-		framenum = array[0].time;
-		if (IS_EQT(frame, framenum, BINARYSEARCH_FRAMEEQ_THRESH)) {
-			*exists = 1;
-			return 0;
-		}
-		else if (frame < framenum)
-			return 0;
-			
-		/* 'Last' Point */
-		framenum = array[(arraylen - 1)].time;
-		if (IS_EQT(frame, framenum, BINARYSEARCH_FRAMEEQ_THRESH)) {
-			*exists = 1;
-			return (arraylen - 1);
-		}
-		else if (frame > framenum)
-			return arraylen;
-	}
-	
-	
-	/* most of the time, this loop is just to find where to put it
-	 *  - 'loopbreaker' is just here to prevent infinite loops
-	 */
-	for (loopbreaker = 0; (start <= end) && (loopbreaker < maxloop); loopbreaker++) {
-		/* compute and get midpoint */
-		int mid = start + ((end - start) / 2);  /* we calculate the midpoint this way to avoid int overflows... */
-		float midfra = array[mid].time;
-		
-		/* check if exactly equal to midpoint */
-		if (IS_EQT(frame, midfra, BINARYSEARCH_FRAMEEQ_THRESH)) {
-			*exists = 1;
-			return mid;
-		}
-		
-		/* repeat in upper/lower half */
-		if (frame > midfra)
-			start = mid + 1;
-		else if (frame < midfra)
-			end = mid - 1;
-	}
-	
-	/* print error if loop-limit exceeded */
-	if (loopbreaker == (maxloop - 1)) {
-		printf("Error: binarysearch_fcm_envelopedata_index() was taking too long\n");
-		
-		// include debug info 
-		printf("\tround = %d: start = %d, end = %d, arraylen = %d\n", loopbreaker, start, end, arraylen);
-	}
-	
-	/* not found, so return where to place it */
-	return start;
-}
-
 /* callback to add new envelope data point */
-// TODO: should we have a separate file for things like this?
 static void fmod_envelope_addpoint_cb(bContext *C, void *fcm_dv, void *UNUSED(arg))
 {
 	Scene *scene = CTX_data_scene(C);
@@ -418,8 +343,8 @@ static void fmod_envelope_addpoint_cb(bContext *C, void *fcm_dv, void *UNUSED(ar
 	
 	/* check that no data exists for the current frame... */
 	if (env->data) {
-		short exists = -1;
-		int i = binarysearch_fcm_envelopedata_index(env->data, (float)(scene->r.cfra), env->totvert, &exists);
+		bool exists;
+		int i = BKE_fcm_envelope_find_index(env->data, (float)(scene->r.cfra), env->totvert, &exists);
 		
 		/* binarysearch_...() will set exists by default to 0, so if it is non-zero, that means that the point exists already */
 		if (exists)
@@ -659,9 +584,9 @@ void ANIM_uiTemplate_fmodifier_draw(uiLayout *layout, ID *id, ListBase *modifier
 		
 		/* name */
 		if (fmi)
-			uiItemL(sub, fmi->name, ICON_NONE);
+			uiItemL(sub, IFACE_(fmi->name), ICON_NONE);
 		else
-			uiItemL(sub, "<Unknown Modifier>", ICON_NONE);
+			uiItemL(sub, IFACE_("<Unknown Modifier>"), ICON_NONE);
 		
 		/* right-align ------------------------------------------- */
 		sub = uiLayoutRow(row, TRUE);

@@ -43,8 +43,17 @@
 #define SMHASH_CELL_UNUSED  ((void *)0x7FFFFFFF)
 #define SMHASH_CELL_FREE    ((void *)0x7FFFFFFD)
 
-#define SMHASH_NONZERO(n) ((n) + !(n))
-#define SMHASH_NEXT(h, hoff) ABS(((h) + ((hoff = SMHASH_NONZERO(hoff * 2) + 1), hoff)))
+#ifdef __GNUC__
+#  pragma GCC diagnostic ignored "-Wstrict-overflow"
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
+
+/* typically this re-assigns 'h' */
+#define SMHASH_NEXT(h, hoff)  ( \
+	CHECK_TYPE_INLINE(&(h),    unsigned int), \
+	CHECK_TYPE_INLINE(&(hoff), unsigned int), \
+	((h) + (((hoff) = ((hoff) * 2) + 1), (hoff))) \
+	)
 
 extern unsigned int hashsizes[];
 
@@ -69,10 +78,6 @@ void BLI_smallhash_init(SmallHash *hash)
 /*NOTE: does *not* free *hash itself!  only the direct data!*/
 void BLI_smallhash_release(SmallHash *hash)
 {
-	if (hash == NULL) {
-		return;
-	}
-
 	if (hash->table != hash->stacktable) {
 		MEM_freeN(hash->table);
 	}
@@ -80,10 +85,10 @@ void BLI_smallhash_release(SmallHash *hash)
 
 void BLI_smallhash_insert(SmallHash *hash, uintptr_t key, void *item)
 {
-	int h, hoff = 1;
+	unsigned int h, hoff = 1;
 
 	if (hash->size < hash->used * 3) {
-		int newsize = hashsizes[++hash->curhash];
+		unsigned int newsize = hashsizes[++hash->curhash];
 		SmallHashEntry *tmp;
 		int i = 0;
 
@@ -108,7 +113,7 @@ void BLI_smallhash_insert(SmallHash *hash, uintptr_t key, void *item)
 				continue;
 			}
 
-			h = ABS((int)(tmp[i].key));
+			h = (unsigned int)(tmp[i].key);
 			hoff = 1;
 			while (!ELEM(hash->table[h % newsize].val, SMHASH_CELL_UNUSED, SMHASH_CELL_FREE)) {
 				h = SMHASH_NEXT(h, hoff);
@@ -125,7 +130,7 @@ void BLI_smallhash_insert(SmallHash *hash, uintptr_t key, void *item)
 		}
 	}
 
-	h = ABS((int)key);
+	h = (unsigned int)(key);
 	hoff = 1;
 
 	while (!ELEM(hash->table[h % hash->size].val, SMHASH_CELL_UNUSED, SMHASH_CELL_FREE)) {
@@ -141,9 +146,9 @@ void BLI_smallhash_insert(SmallHash *hash, uintptr_t key, void *item)
 
 void BLI_smallhash_remove(SmallHash *hash, uintptr_t key)
 {
-	int h, hoff = 1;
+	unsigned int h, hoff = 1;
 
-	h = ABS((int)key);
+	h = (unsigned int)(key);
 
 	while ((hash->table[h % hash->size].key != key) ||
 	       (hash->table[h % hash->size].val == SMHASH_CELL_UNUSED))
@@ -162,14 +167,10 @@ void BLI_smallhash_remove(SmallHash *hash, uintptr_t key)
 
 void *BLI_smallhash_lookup(SmallHash *hash, uintptr_t key)
 {
-	int h, hoff = 1;
+	unsigned int h, hoff = 1;
 	void *v;
 
-	h = ABS((int)key);
-
-	if (hash->table == NULL) {
-		return NULL;
-	}
+	h = (unsigned int)(key);
 
 	while ((hash->table[h % hash->size].key != key) ||
 	       (hash->table[h % hash->size].val == SMHASH_CELL_UNUSED))
@@ -192,12 +193,8 @@ void *BLI_smallhash_lookup(SmallHash *hash, uintptr_t key)
 
 int BLI_smallhash_haskey(SmallHash *hash, uintptr_t key)
 {
-	int h = ABS((int)key);
-	int hoff = 1;
-
-	if (hash->table == NULL) {
-		return 0;
-	}
+	unsigned int h = (unsigned int)(key);
+	unsigned int hoff = 1;
 
 	while ((hash->table[h % hash->size].key != key) ||
 	       (hash->table[h % hash->size].val == SMHASH_CELL_UNUSED))
@@ -214,14 +211,14 @@ int BLI_smallhash_haskey(SmallHash *hash, uintptr_t key)
 
 int BLI_smallhash_count(SmallHash *hash)
 {
-	return hash->used;
+	return (int)hash->used;
 }
 
 void *BLI_smallhash_iternext(SmallHashIter *iter, uintptr_t *key)
 {
 	while (iter->i < iter->hash->size) {
-		if (    (iter->hash->table[iter->i].val != SMHASH_CELL_UNUSED) &&
-		        (iter->hash->table[iter->i].val != SMHASH_CELL_FREE))
+		if ((iter->hash->table[iter->i].val != SMHASH_CELL_UNUSED) &&
+		    (iter->hash->table[iter->i].val != SMHASH_CELL_FREE))
 		{
 			if (key) {
 				*key = iter->hash->table[iter->i].key;

@@ -72,7 +72,7 @@ class QuickFur(Operator):
             )
 
     def execute(self, context):
-        fake_context = bpy.context.copy()
+        fake_context = context.copy()
         mesh_objects = [obj for obj in context.selected_objects
                         if obj.type == 'MESH']
 
@@ -161,7 +161,7 @@ class QuickExplode(Operator):
             )
 
     def execute(self, context):
-        fake_context = bpy.context.copy()
+        fake_context = context.copy()
         obj_act = context.active_object
 
         if obj_act is None or obj_act.type != 'MESH':
@@ -299,7 +299,6 @@ class QuickSmoke(Operator):
     style = EnumProperty(
             name="Smoke Style",
             items=(('STREAM', "Stream", ""),
-                   ('PUFF', "Puff", ""),
                    ('FIRE', "Fire", ""),
                    ),
             default='STREAM',
@@ -312,7 +311,7 @@ class QuickSmoke(Operator):
             )
 
     def execute(self, context):
-        fake_context = bpy.context.copy()
+        fake_context = context.copy()
         mesh_objects = [obj for obj in context.selected_objects
                         if obj.type == 'MESH']
         min_co = Vector((100000.0, 100000.0, 100000.0))
@@ -328,20 +327,9 @@ class QuickSmoke(Operator):
             bpy.ops.object.modifier_add(fake_context, type='SMOKE')
             obj.modifiers[-1].smoke_type = 'FLOW'
 
-            psys = obj.particle_systems[-1]
-            if self.style == 'PUFF':
-                psys.settings.frame_end = psys.settings.frame_start
-                psys.settings.emit_from = 'VOLUME'
-                psys.settings.distribution = 'RAND'
-            elif self.style == 'FIRE':
-                psys.settings.effector_weights.gravity = -1
-                psys.settings.lifetime = 5
-                psys.settings.count = 100000
+            if self.style == 'FIRE':
+                obj.modifiers[-1].flow_settings.smoke_flow_type = 'FIRE'
 
-                obj.modifiers[-2].flow_settings.initial_velocity = True
-                obj.modifiers[-2].flow_settings.temperature = 2
-
-            psys.settings.use_render_emitter = self.show_flows
             if not self.show_flows:
                 obj.draw_type = 'WIRE'
 
@@ -361,8 +349,6 @@ class QuickSmoke(Operator):
         bpy.ops.object.modifier_add(type='SMOKE')
         obj.modifiers[-1].smoke_type = 'DOMAIN'
         if self.style == 'FIRE':
-            obj.modifiers[-1].domain_settings.use_dissolve_smoke = True
-            obj.modifiers[-1].domain_settings.dissolve_speed = 20
             obj.modifiers[-1].domain_settings.use_high_resolution = True
 
         # create a volume material with a voxel data texture for the domain
@@ -373,37 +359,46 @@ class QuickSmoke(Operator):
         mat.type = 'VOLUME'
         mat.volume.density = 0
         mat.volume.density_scale = 5
+        mat.volume.step_size = 0.1
 
         tex = bpy.data.textures.new("Smoke Density", 'VOXEL_DATA')
         tex.voxel_data.domain_object = obj
+        tex.voxel_data.interpolation = 'TRICUBIC_BSPLINE'
 
         tex_slot = mat.texture_slots.add()
         tex_slot.texture = tex
         tex_slot.use_map_color_emission = False
         tex_slot.use_map_density = True
+        tex_slot.use_map_color_reflection = True
 
-        # for fire add a second texture for emission and emission color
-        if self.style == 'FIRE':
-            mat.volume.emission = 5
-            tex = bpy.data.textures.new("Smoke Heat", 'VOXEL_DATA')
-            tex.voxel_data.domain_object = obj
-            tex.use_color_ramp = True
+        # for fire add a second texture for flame emission
+        mat.volume.emission_color = Vector((0.0, 0.0, 0.0))
+        tex = bpy.data.textures.new("Flame", 'VOXEL_DATA')
+        tex.voxel_data.domain_object = obj
+        tex.voxel_data.smoke_data_type = 'SMOKEFLAME'
+        tex.voxel_data.interpolation = 'TRICUBIC_BSPLINE'
+        tex.use_color_ramp = True
 
-            tex_slot = mat.texture_slots.add()
-            tex_slot.texture = tex
+        tex_slot = mat.texture_slots.add()
+        tex_slot.texture = tex
 
-            ramp = tex.color_ramp
+        # add color ramp for flame color
+        ramp = tex.color_ramp
+        # dark orange
+        elem = ramp.elements.new(0.333)
+        elem.color[0] = 0.2
+        elem.color[1] = 0.03
+        elem.color[2] = 0
+        elem.color[3] = 1
+        # yellow glow
+        elem = ramp.elements.new(0.666)
+        elem.color[0] = elem.color[3] = 1
+        elem.color[1] = 0.65
+        elem.color[2] = 0.25
 
-            elem = ramp.elements.new(0.333)
-            elem.color[0] = elem.color[3] = 1
-            elem.color[1] = elem.color[2] = 0
-
-            elem = ramp.elements.new(0.666)
-            elem.color[0] = elem.color[1] = elem.color[3] = 1
-            elem.color[2] = 0
-
-            mat.texture_slots[1].use_map_emission = True
-            mat.texture_slots[1].blend_type = 'MULTIPLY'
+        mat.texture_slots[1].use_map_density = True
+        mat.texture_slots[1].use_map_emission = True
+        mat.texture_slots[1].emission_factor = 5
 
         return {'FINISHED'}
 
@@ -439,11 +434,11 @@ class QuickFluid(Operator):
             )
 
     def execute(self, context):
-        fake_context = bpy.context.copy()
+        fake_context = context.copy()
         mesh_objects = [obj for obj in context.selected_objects
                         if (obj.type == 'MESH' and not 0.0 in obj.dimensions)]
-        min_co = Vector((100000, 100000, 100000))
-        max_co = Vector((-100000, -100000, -100000))
+        min_co = Vector((100000.0, 100000.0, 100000.0))
+        max_co = -min_co
 
         if not mesh_objects:
             self.report({'ERROR'}, "Select at least one mesh object")
@@ -510,6 +505,6 @@ class QuickFluid(Operator):
         mat.raytrace_transparency.depth = 4
 
         if self.start_baking:
-            bpy.ops.fluid.bake()
+            bpy.ops.fluid.bake('INVOKE_DEFAULT')
 
         return {'FINISHED'}

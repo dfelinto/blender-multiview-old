@@ -42,14 +42,18 @@ __device float voronoi_distance(NodeDistanceMetric distance_metric, float3 d, fl
 
 /* Voronoi / Worley like */
 
-__device_noinline void voronoi(float3 p, NodeDistanceMetric distance_metric, float e, float da[4], float3 pa[4])
+__device_noinline float4 voronoi_Fn(float3 p, float e, int n1, int n2)
 {
+	float da[4];
+	float3 pa[4];
+	NodeDistanceMetric distance_metric = NODE_VORONOI_DISTANCE_SQUARED;
+
 	/* returns distances in da and point coords in pa */
 	int xx, yy, zz, xi, yi, zi;
 
-	xi = (int)floorf(p.x);
-	yi = (int)floorf(p.y);
-	zi = (int)floorf(p.z);
+	xi = floor_to_int(p.x);
+	yi = floor_to_int(p.y);
+	zi = floor_to_int(p.z);
 
 	da[0] = 1e10f;
 	da[1] = 1e10f;
@@ -105,33 +109,20 @@ __device_noinline void voronoi(float3 p, NodeDistanceMetric distance_metric, flo
 			}
 		}
 	}
+
+	float4 result = make_float4(pa[n1].x, pa[n1].y, pa[n1].z, da[n1]);
+
+	if(n2 != -1)
+		result = make_float4(pa[n2].x, pa[n2].y, pa[n2].z, da[n2]) - result;
+
+	return result;
 }
 
-__device float voronoi_Fn(float3 p, int n)
-{
-	float da[4];
-	float3 pa[4];
-
-	voronoi(p, NODE_VORONOI_DISTANCE_SQUARED, 0, da, pa);
-
-	return da[n];
-}
-
-__device float voronoi_FnFn(float3 p, int n1, int n2)
-{
-	float da[4];
-	float3 pa[4];
-
-	voronoi(p, NODE_VORONOI_DISTANCE_SQUARED, 0, da, pa);
-
-	return da[n2] - da[n1];
-}
-
-__device float voronoi_F1(float3 p) { return voronoi_Fn(p, 0); }
-__device float voronoi_F2(float3 p) { return voronoi_Fn(p, 1); }
-__device float voronoi_F3(float3 p) { return voronoi_Fn(p, 2); }
-__device float voronoi_F4(float3 p) { return voronoi_Fn(p, 3); }
-__device float voronoi_F1F2(float3 p) { return voronoi_FnFn(p, 0, 1); }
+__device float voronoi_F1(float3 p) { return voronoi_Fn(p, 0.0f, 0, -1).w; }
+__device float voronoi_F2(float3 p) { return voronoi_Fn(p, 0.0f, 1, -1).w; }
+__device float voronoi_F3(float3 p) { return voronoi_Fn(p, 0.0f, 2, -1).w; }
+__device float voronoi_F4(float3 p) { return voronoi_Fn(p, 0.0f, 3, -1).w; }
+__device float voronoi_F1F2(float3 p) { return voronoi_Fn(p, 0.0f, 0, 1).w; }
 
 __device float voronoi_Cr(float3 p)
 {
@@ -195,7 +186,7 @@ __device float noise_wave(NodeWaveBasis wave, float a)
 	}
 	else if(wave == NODE_WAVE_SAW) {
 		float b = 2.0f*M_PI_F;
-		int n = (int)(a / b);
+		int n = float_to_int(a / b);
 		a -= n*b;
 		if(a < 0.0f) a += b;
 
@@ -221,7 +212,7 @@ __device_noinline float noise_turbulence(float3 p, NodeNoiseBasis basis, float o
 	int i, n;
 
 	octaves = clamp(octaves, 0.0f, 16.0f);
-	n = (int)octaves;
+	n = float_to_int(octaves);
 
 	for(i = 0; i <= n; i++) {
 		float t = noise_basis(fscale*p, basis);

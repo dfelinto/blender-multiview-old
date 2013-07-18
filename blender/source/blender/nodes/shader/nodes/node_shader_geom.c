@@ -37,7 +37,7 @@
 /* **************** GEOMETRY  ******************** */
 
 /* output socket type definition */
-static bNodeSocketTemplate sh_node_geom_out[]= {
+static bNodeSocketTemplate sh_node_geom_out[] = {
 	{	SOCK_VECTOR, 0, N_("Global")},
 	{	SOCK_VECTOR, 0, N_("Local")},
 	{	SOCK_VECTOR, 0, N_("View")},
@@ -51,20 +51,20 @@ static bNodeSocketTemplate sh_node_geom_out[]= {
 };
 
 /* node execute callback */
-static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
+static void node_shader_exec_geom(void *data, int UNUSED(thread), bNode *node, bNodeExecData *UNUSED(execdata), bNodeStack **UNUSED(in), bNodeStack **out)
 {
 	if (data) {
-		ShadeInput *shi= ((ShaderCallData *)data)->shi;
-		NodeGeometry *ngeo= (NodeGeometry*)node->storage;
-		ShadeInputUV *suv= &shi->uv[shi->actuv];
+		ShadeInput *shi = ((ShaderCallData *)data)->shi;
+		NodeGeometry *ngeo = (NodeGeometry *)node->storage;
+		ShadeInputUV *suv = &shi->uv[shi->actuv];
 		static float defaultvcol[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 		int i;
 
 		if (ngeo->uvname[0]) {
 			/* find uv map by name */
 			for (i = 0; i < shi->totuv; i++) {
-				if (strcmp(shi->uv[i].name, ngeo->uvname)==0) {
-					suv= &shi->uv[i];
+				if (strcmp(shi->uv[i].name, ngeo->uvname) == 0) {
+					suv = &shi->uv[i];
 					break;
 				}
 			}
@@ -80,76 +80,75 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 
 		if (shi->totcol) {
 			/* find vertex color layer by name */
-			ShadeInputCol *scol= &shi->col[0];
+			ShadeInputCol *scol = &shi->col[0];
 
 			if (ngeo->colname[0]) {
 				for (i = 0; i < shi->totcol; i++) {
-					if (strcmp(shi->col[i].name, ngeo->colname)==0) {
-						scol= &shi->col[i];
+					if (strcmp(shi->col[i].name, ngeo->colname) == 0) {
+						scol = &shi->col[i];
 						break;
 					}
 				}
 			}
 
 			copy_v3_v3(out[GEOM_OUT_VCOL]->vec, scol->col);
-			out[GEOM_OUT_VCOL]->vec[3]= scol->col[3];
-			out[GEOM_OUT_VCOL_ALPHA]->vec[0]= scol->col[3];
+			out[GEOM_OUT_VCOL]->vec[3] = scol->col[3];
+			out[GEOM_OUT_VCOL_ALPHA]->vec[0] = scol->col[3];
 		}
 		else {
 			memcpy(out[GEOM_OUT_VCOL]->vec, defaultvcol, sizeof(defaultvcol));
-			out[GEOM_OUT_VCOL_ALPHA]->vec[0]= 1.0f;
+			out[GEOM_OUT_VCOL_ALPHA]->vec[0] = 1.0f;
 		}
 		
 		if (shi->osatex) {
-			out[GEOM_OUT_GLOB]->data= shi->dxgl;
-			out[GEOM_OUT_GLOB]->datatype= NS_OSA_VECTORS;
-			out[GEOM_OUT_LOCAL]->data= shi->dxco;
-			out[GEOM_OUT_LOCAL]->datatype= NS_OSA_VECTORS;
-			out[GEOM_OUT_VIEW]->data= &shi->dxview;
-			out[GEOM_OUT_VIEW]->datatype= NS_OSA_VALUES;
-			out[GEOM_OUT_ORCO]->data= shi->dxlo;
-			out[GEOM_OUT_ORCO]->datatype= NS_OSA_VECTORS;
-			out[GEOM_OUT_UV]->data= suv->dxuv;
-			out[GEOM_OUT_UV]->datatype= NS_OSA_VECTORS;
-			out[GEOM_OUT_NORMAL]->data= shi->dxno;
-			out[GEOM_OUT_NORMAL]->datatype= NS_OSA_VECTORS;
+			out[GEOM_OUT_GLOB]->data = shi->dxgl;
+			out[GEOM_OUT_GLOB]->datatype = NS_OSA_VECTORS;
+			out[GEOM_OUT_LOCAL]->data = shi->dxco;
+			out[GEOM_OUT_LOCAL]->datatype = NS_OSA_VECTORS;
+			out[GEOM_OUT_VIEW]->data = &shi->dxview;
+			out[GEOM_OUT_VIEW]->datatype = NS_OSA_VALUES;
+			out[GEOM_OUT_ORCO]->data = shi->dxlo;
+			out[GEOM_OUT_ORCO]->datatype = NS_OSA_VECTORS;
+			out[GEOM_OUT_UV]->data = suv->dxuv;
+			out[GEOM_OUT_UV]->datatype = NS_OSA_VECTORS;
+			out[GEOM_OUT_NORMAL]->data = shi->dxno;
+			out[GEOM_OUT_NORMAL]->datatype = NS_OSA_VECTORS;
 		}
 		
 		/* front/back, normal flipping was stored */
-		out[GEOM_OUT_FRONTBACK]->vec[0]= (shi->flippednor)? 0.0f: 1.0f;
+		out[GEOM_OUT_FRONTBACK]->vec[0] = (shi->flippednor) ? 0.0f : 1.0f;
 	}
 }
 
-static void node_shader_init_geometry(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void node_shader_init_geometry(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	node->storage= MEM_callocN(sizeof(NodeGeometry), "NodeGeometry");
+	node->storage = MEM_callocN(sizeof(NodeGeometry), "NodeGeometry");
 }
 
-static int gpu_shader_geom(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_geom(GPUMaterial *mat, bNode *node, bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
-	NodeGeometry *ngeo= (NodeGeometry*)node->storage;
+	NodeGeometry *ngeo = (NodeGeometry *)node->storage;
 	GPUNodeLink *orco = GPU_attribute(CD_ORCO, "");
 	GPUNodeLink *mtface = GPU_attribute(CD_MTFACE, ngeo->uvname);
 	GPUNodeLink *mcol = GPU_attribute(CD_MCOL, ngeo->colname);
 
 	return GPU_stack_link(mat, "geom", in, out,
-		GPU_builtin(GPU_VIEW_POSITION), GPU_builtin(GPU_VIEW_NORMAL),
-		GPU_builtin(GPU_INVERSE_VIEW_MATRIX), orco, mtface, mcol);
+	                      GPU_builtin(GPU_VIEW_POSITION), GPU_builtin(GPU_VIEW_NORMAL),
+	                      GPU_builtin(GPU_INVERSE_VIEW_MATRIX), orco, mtface, mcol);
 }
 
 /* node type definition */
-void register_node_type_sh_geom(bNodeTreeType *ttype)
+void register_node_type_sh_geom(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_GEOMETRY, "Geometry", NODE_CLASS_INPUT, NODE_OPTIONS);
+	sh_node_type_base(&ntype, SH_NODE_GEOMETRY, "Geometry", NODE_CLASS_INPUT, 0);
 	node_type_compatibility(&ntype, NODE_OLD_SHADING);
 	node_type_socket_templates(&ntype, NULL, sh_node_geom_out);
-	node_type_size(&ntype, 120, 80, 160);
 	node_type_init(&ntype, node_shader_init_geometry);
 	node_type_storage(&ntype, "NodeGeometry", node_free_standard_storage, node_copy_standard_storage);
-	node_type_exec(&ntype, node_shader_exec_geom);
+	node_type_exec(&ntype, NULL, NULL, node_shader_exec_geom);
 	node_type_gpu(&ntype, gpu_shader_geom);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

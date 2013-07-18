@@ -76,7 +76,6 @@ extern "C"
 #include "SCA_IActuator.h"
 #include "RAS_MeshObject.h"
 #include "RAS_OpenGLRasterizer.h"
-#include "RAS_VAOpenGLRasterizer.h"
 #include "RAS_ListRasterizer.h"
 #include "RAS_GLExtensionManager.h"
 #include "KX_PythonInit.h"
@@ -261,14 +260,14 @@ bool GPG_Application::startScreenSaverPreview(
 		}
 
 		SetParent(ghost_hwnd, parentWindow);
-		LONG style = GetWindowLong(ghost_hwnd, GWL_STYLE);
-		LONG exstyle = GetWindowLong(ghost_hwnd, GWL_EXSTYLE);
+		LONG_PTR style = GetWindowLongPtr(ghost_hwnd, GWL_STYLE);
+		LONG_PTR exstyle = GetWindowLongPtr(ghost_hwnd, GWL_EXSTYLE);
 
 		RECT adjrc = { 0, 0, windowWidth, windowHeight };
 		AdjustWindowRectEx(&adjrc, style, FALSE, exstyle);
 
 		style = (style & (~(WS_POPUP|WS_OVERLAPPEDWINDOW|WS_OVERLAPPED|WS_CAPTION|WS_SYSMENU|WS_THICKFRAME|WS_MINIMIZEBOX|WS_MAXIMIZEBOX|WS_TILEDWINDOW ))) | WS_CHILD;
-		SetWindowLong(ghost_hwnd, GWL_STYLE, style);
+		SetWindowLongPtr(ghost_hwnd, GWL_STYLE, style);
 		SetWindowPos(ghost_hwnd, NULL, adjrc.left, adjrc.top, 0, 0, SWP_NOZORDER|SWP_NOSIZE|SWP_NOACTIVATE);
 
 		/* Check the size of the client rectangle of the window and resize the window
@@ -309,20 +308,21 @@ bool GPG_Application::startScreenSaverFullScreen(
 
 #endif
 
-bool GPG_Application::startWindow(STR_String& title,
-	int windowLeft,
-	int windowTop,
-	int windowWidth,
-	int windowHeight,
-	const bool stereoVisual,
-	const int stereoMode,
-	const GHOST_TUns16 samples)
+bool GPG_Application::startWindow(
+        STR_String& title,
+        int windowLeft,
+        int windowTop,
+        int windowWidth,
+        int windowHeight,
+        const bool stereoVisual,
+        const int stereoMode,
+        const GHOST_TUns16 samples)
 {
 	bool success;
 	// Create the main window
 	//STR_String title ("Blender Player - GHOST");
 	m_mainWindow = fSystem->createWindow(title, windowLeft, windowTop, windowWidth, windowHeight, GHOST_kWindowStateNormal,
-		GHOST_kDrawingContextTypeOpenGL, stereoVisual, samples);
+	                                     GHOST_kDrawingContextTypeOpenGL, stereoVisual, false, samples);
 	if (!m_mainWindow) {
 		printf("error: could not create main window\n");
 		exit(-1);
@@ -341,16 +341,18 @@ bool GPG_Application::startWindow(STR_String& title,
 	return success;
 }
 
-bool GPG_Application::startEmbeddedWindow(STR_String& title,
-	const GHOST_TEmbedderWindowID parentWindow, 
-	const bool stereoVisual, 
-	const int stereoMode,
-	const GHOST_TUns16 samples) {
+bool GPG_Application::startEmbeddedWindow(
+        STR_String& title,
+        const GHOST_TEmbedderWindowID parentWindow,
+        const bool stereoVisual,
+        const int stereoMode,
+        const GHOST_TUns16 samples)
+{
 	GHOST_TWindowState state = GHOST_kWindowStateNormal;
 	if (parentWindow != 0)
 		state = GHOST_kWindowStateEmbedded;
 	m_mainWindow = fSystem->createWindow(title, 0, 0, 0, 0, state,
-		GHOST_kDrawingContextTypeOpenGL, stereoVisual, samples, parentWindow);
+	                                     GHOST_kDrawingContextTypeOpenGL, stereoVisual, false, samples, parentWindow);
 
 	if (!m_mainWindow) {
 		printf("error: could not create main window\n");
@@ -367,13 +369,13 @@ bool GPG_Application::startEmbeddedWindow(STR_String& title,
 
 
 bool GPG_Application::startFullScreen(
-		int width,
-		int height,
-		int bpp,int frequency,
-		const bool stereoVisual,
-		const int stereoMode,
-		const GHOST_TUns16 samples,
-		bool useDesktop)
+        int width,
+        int height,
+        int bpp,int frequency,
+        const bool stereoVisual,
+        const int stereoMode,
+        const GHOST_TUns16 samples,
+        bool useDesktop)
 {
 	bool success;
 	GHOST_TUns32 sysWidth=0, sysHeight=0;
@@ -387,6 +389,7 @@ bool GPG_Application::startFullScreen(
 
 	fSystem->beginFullScreen(setting, &m_mainWindow, stereoVisual, samples);
 	m_mainWindow->setCursorVisibility(false);
+	/* note that X11 ignores this (it uses a window internally for fullscreen) */
 	m_mainWindow->setState(GHOST_kWindowStateFullScreen);
 
 	success = initEngine(m_mainWindow, stereoMode);
@@ -479,7 +482,7 @@ bool GPG_Application::processEvent(GHOST_IEvent* event)
 
 		//			// first check if we want to exit
 		//			m_exitRequested = m_ketsjiengine->GetExitCode();
-		//			
+		//
 		//			// kick the engine
 		//			bool renderFrame = m_ketsjiengine->NextFrame();
 		//			if (renderFrame)
@@ -500,6 +503,7 @@ bool GPG_Application::processEvent(GHOST_IEvent* event)
 				GHOST_Rect bnds;
 				window->getClientBounds(bnds);
 				m_canvas->Resize(bnds.getWidth(), bnds.getHeight());
+				m_ketsjiengine->Resize();
 			}
 			}
 			break;
@@ -546,7 +550,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 			return false;
 		
 		// SYS_WriteCommandLineInt(syshandle, "fixedtime", 0);
-		// SYS_WriteCommandLineInt(syshandle, "vertexarrays",1);		
+		// SYS_WriteCommandLineInt(syshandle, "vertexarrays",1);
 		GameData *gm= &m_startScene->gm;
 		bool properties	= (SYS_GetCommandLineInt(syshandle, "show_properties", 0) != 0);
 		bool profile = (SYS_GetCommandLineInt(syshandle, "show_profile", 0) != 0);
@@ -555,7 +559,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		bool showPhysics = (gm->flag & GAME_SHOW_PHYSICS);
 		SYS_WriteCommandLineInt(syshandle, "show_physics", showPhysics);
 
-		bool fixed_framerate= (SYS_GetCommandLineInt(syshandle, "fixed_framerate", fixedFr) != 0);
+		bool fixed_framerate= (SYS_GetCommandLineInt(syshandle, "fixedtime", fixedFr) != 0);
 		bool frameRate = (SYS_GetCommandLineInt(syshandle, "show_framerate", 0) != 0);
 		bool useLists = (SYS_GetCommandLineInt(syshandle, "displaylists", gm->flag & GAME_DISPLAY_LISTS) != 0);
 		bool nodepwarnings = (SYS_GetCommandLineInt(syshandle, "ignore_deprecation_warnings", 1) != 0);
@@ -576,22 +580,18 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 				
 		m_canvas->Init();
 		if (gm->flag & GAME_SHOW_MOUSE)
-			m_canvas->SetMouseState(RAS_ICanvas::MOUSE_NORMAL);				
+			m_canvas->SetMouseState(RAS_ICanvas::MOUSE_NORMAL);
 
 		m_rendertools = new GPC_RenderTools();
 		if (!m_rendertools)
 			goto initFailed;
 		
-		if (useLists) {
-			if (GLEW_VERSION_1_1)
-				m_rasterizer = new RAS_ListRasterizer(m_canvas, true);
-			else
-				m_rasterizer = new RAS_ListRasterizer(m_canvas);
-		}
-		else if (GLEW_VERSION_1_1)
-			m_rasterizer = new RAS_VAOpenGLRasterizer(m_canvas);
+		//Don't use displaylists with VBOs
+		//If auto starts using VBOs, make sure to check for that here
+		if (useLists && gm->raster_storage != RAS_STORE_VBO)
+			m_rasterizer = new RAS_ListRasterizer(m_canvas, false, gm->raster_storage);
 		else
-			m_rasterizer = new RAS_OpenGLRasterizer(m_canvas);
+			m_rasterizer = new RAS_OpenGLRasterizer(m_canvas, gm->raster_storage);
 
 		/* Stereo parameters - Eye Separation from the UI - stereomode from the command-line/UI */
 		m_rasterizer->SetStereoMode((RAS_IRasterizer::StereoMode) stereoMode);
@@ -682,7 +682,7 @@ bool GPG_Application::startEngine(void)
 	
 	// Temporary hack to disable banner display for NaN approved content.
 	/*
-	m_canvas->SetBannerDisplayEnabled(true);	
+	m_canvas->SetBannerDisplayEnabled(true);
 	Camera* cam;
 	cam = (Camera*)scene->camera->data;
 	if (cam) {
@@ -709,6 +709,8 @@ bool GPG_Application::startEngine(void)
 			m_sceneconverter->SetMaterials(true);
 		if (m_blenderglslmat && (m_globalSettings->matmode == GAME_MAT_GLSL))
 			m_sceneconverter->SetGLSLMaterials(true);
+		if (m_startScene->gm.flag & GAME_NO_MATERIAL_CACHING)
+			m_sceneconverter->SetCacheMaterials(false);
 
 		KX_Scene* startscene = new KX_Scene(m_keyboard,
 			m_mouse,
@@ -731,7 +733,7 @@ bool GPG_Application::startEngine(void)
 		// Set the GameLogic.globalDict from marshal'd data, so we can
 		// load new blend files and keep data in GameLogic.globalDict
 		loadGamePythonConfig(m_pyGlobalDictString, m_pyGlobalDictString_Length);
-#endif		
+#endif
 		m_sceneconverter->ConvertScene(
 			startscene,
 			m_rendertools,

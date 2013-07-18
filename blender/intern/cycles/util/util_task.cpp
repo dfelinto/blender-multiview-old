@@ -21,6 +21,15 @@
 #include "util_system.h"
 #include "util_task.h"
 
+//#define THREADING_DEBUG_ENABLED
+
+#ifdef THREADING_DEBUG_ENABLED
+#include <stdio.h>
+#define THREADING_DEBUG(...) do { printf(__VA_ARGS__); fflush(stdout); } while(0)
+#else
+#define THREADING_DEBUG(...)
+#endif
+
 CCL_NAMESPACE_BEGIN
 
 /* Task Pool */
@@ -95,8 +104,11 @@ void TaskPool::wait_work()
 		if(num == 0)
 			break;
 
-		if(!found_entry)
+		if(!found_entry) {
+			THREADING_DEBUG("num==%d, Waiting for condition in TaskPool::wait_work !found_entry\n", num);
 			num_cond.wait(num_lock);
+			THREADING_DEBUG("num==%d, condition wait done in TaskPool::wait_work !found_entry\n", num);
+		}
 	}
 }
 
@@ -109,8 +121,11 @@ void TaskPool::cancel()
 	{
 		thread_scoped_lock num_lock(num_mutex);
 
-		while(num)
+		while(num) {
+			THREADING_DEBUG("num==%d, Waiting for condition in TaskPool::cancel\n", num);
 			num_cond.wait(num_lock);
+			THREADING_DEBUG("num==%d condition wait done in TaskPool::cancel\n", num);
+		}
 	}
 
 	do_cancel = false;
@@ -134,8 +149,10 @@ void TaskPool::num_decrease(int done)
 	num -= done;
 
 	assert(num >= 0);
-	if(num == 0)
+	if(num == 0) {
+		THREADING_DEBUG("num==%d, notifying all in TaskPool::num_decrease\n", num);
 		num_cond.notify_all();
+	}
 
 	num_mutex.unlock();
 }
@@ -144,6 +161,7 @@ void TaskPool::num_increase()
 {
 	thread_scoped_lock num_lock(num_mutex);
 	num++;
+	THREADING_DEBUG("num==%d, notifying all in TaskPool::num_increase\n", num);
 	num_cond.notify_all();
 }
 
@@ -152,7 +170,6 @@ void TaskPool::num_increase()
 thread_mutex TaskScheduler::mutex;
 int TaskScheduler::users = 0;
 vector<thread*> TaskScheduler::threads;
-vector<int> TaskScheduler::thread_level;
 volatile bool TaskScheduler::do_exit = false;
 
 list<TaskScheduler::Entry> TaskScheduler::queue;
@@ -168,17 +185,20 @@ void TaskScheduler::init(int num_threads)
 	if(users == 0) {
 		do_exit = false;
 
-		/* launch threads that will be waiting for work */
-		if(num_threads == 0)
+		if(num_threads == 0) {
+			/* automatic number of threads will be main thread + num cores */
 			num_threads = system_cpu_thread_count();
-
-		threads.resize(num_threads);
-		thread_level.resize(num_threads);
-
-		for(size_t i = 0; i < threads.size(); i++) {
-			threads[i] = new thread(function_bind(&TaskScheduler::thread_run, i));
-			thread_level[i] = 0;
 		}
+		else {
+			/* main thread will also work, for fixed threads we count it too */
+			num_threads -= 1;
+		}
+
+		/* launch threads that will be waiting for work */
+		threads.resize(num_threads);
+
+		for(size_t i = 0; i < threads.size(); i++)
+			threads[i] = new thread(function_bind(&TaskScheduler::thread_run, i));
 	}
 	
 	users++;
@@ -202,7 +222,6 @@ void TaskScheduler::exit()
 		}
 
 		threads.clear();
-		thread_level.clear();
 	}
 }
 

@@ -26,6 +26,46 @@
 
 /** \file blender/blenkernel/intern/mask_rasterize.c
  *  \ingroup bke
+ *
+ * This module exposes a rasterizer that works as a black box - implementation details are confined to this file,
+ *
+ * The basic method to access is:
+ * - create & initialize a handle from a #Mask datablock.
+ * - execute pixel lookups.
+ * - free the handle.
+ *
+ * This file is admittedly a bit confusticated, in quite few areas speed was chosen over readability,
+ * though it is commented - so shouldn't be so hard to see whats going on.
+ *
+ *
+ * Implementation:
+ *
+ * To rasterize the mask its converted into geometry that use a ray-cast for each pixel lookup.
+ *
+ * Initially 'kdopbvh' was used but this ended up being too slow.
+ *
+ * To gain some extra speed we take advantage of a few shortcuts that can be made rasterizing masks specifically.
+ * - all triangles are known to be completely white - so no depth check is done on triangle intersection.
+ * - all quads are known to be feather outlines - the 1 and 0 depths are known by the vertex order in the quad,
+ * - there is no color - just a value for each mask pixel.
+ * - the mask spacial structure always maps to space 0-1 on X and Y axis.
+ * - bucketing is used to speed up lookups for geometry.
+ *
+ * Other Details:
+ * - used unsigned values all over for some extra speed on some arch's.
+ * - anti-aliasing is faked, just ensuring at least one pixel feather - avoids oversampling.
+ * - initializing the spacial structure doesn't need to be as optimized as pixel lookups are.
+ * - mask lookups need not be pixel aligned so any sub-pixel values from x/y (0 - 1), can be found.
+ *   (perhaps masks can be used as a vector texture in 3D later on)
+ *
+ *
+ * Currently, to build the spacial structure we have to calculate the total number of faces ahead of time.
+ *
+ * This is getting a bit complicated with the addition of unfilled splines and end capping -
+ * If large changes are needed here we would be better off using an iterable
+ * BLI_mempool for triangles and converting to a contiguous array afterwards.
+ *
+ * - Campbell
  */
 
 #include "MEM_guardedalloc.h"
@@ -44,6 +84,10 @@
 #include "BLI_linklist.h"
 
 #include "BKE_mask.h"
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
 
 /* this is rather and annoying hack, use define to isolate it.
  * problem is caused by scanfill removing edges on us. */
@@ -64,7 +108,7 @@
 
 /* for debugging add... */
 #ifndef NDEBUG
-/* 	printf("%u %u %u %u\n", _t[0], _t[1], _t[2], _t[3]); \ */
+/* printf("%u %u %u %u\n", _t[0], _t[1], _t[2], _t[3]); \ */
 #  define FACE_ASSERT(face, vert_max)                    \
 {                                                        \
 	unsigned int *_t = face;                             \
@@ -173,7 +217,7 @@ MaskRasterHandle *BKE_maskrasterize_handle_new(void)
 {
 	MaskRasterHandle *mr_handle;
 
-	mr_handle = MEM_callocN(sizeof(MaskRasterHandle), STRINGIFY(MaskRasterHandle));
+	mr_handle = MEM_callocN(sizeof(MaskRasterHandle), "MaskRasterHandle");
 
 	return mr_handle;
 }
@@ -213,9 +257,9 @@ void BKE_maskrasterize_handle_free(MaskRasterHandle *mr_handle)
 }
 
 
-void maskrasterize_spline_differentiate_point_outset(float (*diff_feather_points)[2], float (*diff_points)[2],
-                                                     const unsigned int tot_diff_point, const float ofs,
-                                                     const short do_test)
+static void maskrasterize_spline_differentiate_point_outset(float (*diff_feather_points)[2], float (*diff_points)[2],
+                                                            const unsigned int tot_diff_point, const float ofs,
+                                                            const short do_test)
 {
 	unsigned int k_prev = tot_diff_point - 2;
 	unsigned int k_curr = tot_diff_point - 1;
@@ -370,8 +414,8 @@ static void layer_bucket_init(MaskRasterLayer *layer, const float pixel_size)
 {
 	MemArena *arena = BLI_memarena_new(1 << 16, __func__);
 
-	const float bucket_dim_x = layer->bounds.xmax - layer->bounds.xmin;
-	const float bucket_dim_y = layer->bounds.ymax - layer->bounds.ymin;
+	const float bucket_dim_x = BLI_rctf_size_x(&layer->bounds);
+	const float bucket_dim_y = BLI_rctf_size_y(&layer->bounds);
 
 	layer->buckets_x = (bucket_dim_x / pixel_size) / (float)BUCKET_PIXELS_PER_CELL;
 	layer->buckets_y = (bucket_dim_y / pixel_size) / (float)BUCKET_PIXELS_PER_CELL;
@@ -388,7 +432,7 @@ static void layer_bucket_init(MaskRasterLayer *layer, const float pixel_size)
 		/* width and height of each bucket */
 		const float bucket_size_x = (bucket_dim_x + FLT_EPSILON) / layer->buckets_x;
 		const float bucket_size_y = (bucket_dim_y + FLT_EPSILON) / layer->buckets_y;
-		const float bucket_max_rad = (maxf(bucket_size_x, bucket_size_y) * M_SQRT2) + FLT_EPSILON;
+		const float bucket_max_rad = (max_ff(bucket_size_x, bucket_size_y) * (float)M_SQRT2) + FLT_EPSILON;
 		const float bucket_max_rad_squared = bucket_max_rad * bucket_max_rad;
 
 		unsigned int *face = &layer->face_array[0][0];
@@ -411,10 +455,10 @@ static void layer_bucket_init(MaskRasterLayer *layer, const float pixel_size)
 				const float *v2 = cos[face[1]];
 				const float *v3 = cos[face[2]];
 
-				xmin = minf(v1[0], minf(v2[0], v3[0]));
-				xmax = maxf(v1[0], maxf(v2[0], v3[0]));
-				ymin = minf(v1[1], minf(v2[1], v3[1]));
-				ymax = maxf(v1[1], maxf(v2[1], v3[1]));
+				xmin = min_ff(v1[0], min_ff(v2[0], v3[0]));
+				xmax = max_ff(v1[0], max_ff(v2[0], v3[0]));
+				ymin = min_ff(v1[1], min_ff(v2[1], v3[1]));
+				ymax = max_ff(v1[1], max_ff(v2[1], v3[1]));
 			}
 			else {
 				const float *v1 = cos[face[0]];
@@ -422,10 +466,10 @@ static void layer_bucket_init(MaskRasterLayer *layer, const float pixel_size)
 				const float *v3 = cos[face[2]];
 				const float *v4 = cos[face[3]];
 
-				xmin = minf(v1[0], minf(v2[0], minf(v3[0], v4[0])));
-				xmax = maxf(v1[0], maxf(v2[0], maxf(v3[0], v4[0])));
-				ymin = minf(v1[1], minf(v2[1], minf(v3[1], v4[1])));
-				ymax = maxf(v1[1], maxf(v2[1], maxf(v3[1], v4[1])));
+				xmin = min_ff(v1[0], min_ff(v2[0], min_ff(v3[0], v4[0])));
+				xmax = max_ff(v1[0], max_ff(v2[0], max_ff(v3[0], v4[0])));
+				ymin = min_ff(v1[1], min_ff(v2[1], min_ff(v3[1], v4[1])));
+				ymax = max_ff(v1[1], max_ff(v2[1], max_ff(v3[1], v4[1])));
 			}
 
 
@@ -463,7 +507,7 @@ static void layer_bucket_init(MaskRasterLayer *layer, const float pixel_size)
 							BLI_assert(bucket_index < bucket_tot);
 
 							/* check if the bucket intersects with the face */
-							/* note: there is a tradeoff here since checking box/tri intersections isn't
+							/* note: there is a trade off here since checking box/tri intersections isn't
 							 * as optimal as it could be, but checking pixels against faces they will never intersect
 							 * with is likely the greater slowdown here - so check if the cell intersects the face */
 							if (layer_bucket_isect_test(layer, face_index,
@@ -520,7 +564,7 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
                                    const short do_feather)
 {
 	const rctf default_bounds = {0.0f, 1.0f, 0.0f, 1.0f};
-	const float pixel_size = 1.0f / MIN2(width, height);
+	const float pixel_size = 1.0f / (float)min_ii(width, height);
 	const float asp_xy[2] = {(do_aspect_correct && width > height) ? (float)height / (float)width  : 1.0f,
 	                         (do_aspect_correct && width < height) ? (float)width  / (float)height : 1.0f};
 
@@ -528,8 +572,8 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 	MaskLayer *masklay;
 	unsigned int masklay_index;
 
-	mr_handle->layers_tot = BLI_countlist(&mask->masklayers);
-	mr_handle->layers = MEM_mallocN(sizeof(MaskRasterLayer) * mr_handle->layers_tot, STRINGIFY(MaskRasterLayer));
+	mr_handle->layers_tot = (unsigned int)BLI_countlist(&mask->masklayers);
+	mr_handle->layers = MEM_mallocN(sizeof(MaskRasterLayer) * mr_handle->layers_tot, "MaskRasterLayer");
 	BLI_rctf_init_minmax(&mr_handle->bounds);
 
 	for (masklay = mask->masklayers.first, masklay_index = 0; masklay; masklay = masklay->next, masklay_index++) {
@@ -562,7 +606,7 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 			continue;
 		}
 
-		tot_splines = BLI_countlist(&masklay->splines);
+		tot_splines = (unsigned int)BLI_countlist(&masklay->splines);
 		open_spline_ranges = MEM_callocN(sizeof(*open_spline_ranges) * tot_splines, __func__);
 
 		BLI_scanfill_begin(&sf_ctx);
@@ -572,10 +616,11 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 			const unsigned int is_fill = (spline->flag & MASK_SPLINE_NOFILL) == 0;
 
 			float (*diff_points)[2];
-			int tot_diff_point;
+			unsigned int tot_diff_point;
 
 			float (*diff_feather_points)[2];
-			int tot_diff_feather_points;
+			float (*diff_feather_points_flip)[2];
+			unsigned int tot_diff_feather_points;
 
 			const unsigned int resol_a = BKE_mask_spline_resolution(spline, width, height) / 4;
 			const unsigned int resol_b = BKE_mask_spline_feather_resolution(spline, width, height) / 4;
@@ -586,7 +631,7 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 
 			if (do_feather) {
 				diff_feather_points = BKE_mask_spline_feather_differentiated_points_with_resolution_ex(
-				                          spline, &tot_diff_feather_points, resol);
+				                          spline, &tot_diff_feather_points, resol, FALSE);
 				BLI_assert(diff_feather_points);
 			}
 			else {
@@ -635,7 +680,8 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 				if (do_mask_aa == TRUE) {
 					if (do_feather == FALSE) {
 						tot_diff_feather_points = tot_diff_point;
-						diff_feather_points = MEM_mallocN(sizeof(*diff_feather_points) * tot_diff_feather_points,
+						diff_feather_points = MEM_mallocN(sizeof(*diff_feather_points) *
+						                                  (size_t)tot_diff_feather_points,
 						                                  __func__);
 						/* add single pixel feather */
 						maskrasterize_spline_differentiate_point_outset(diff_feather_points, diff_points,
@@ -649,6 +695,11 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 				}
 
 				if (is_fill) {
+					/* applt intersections depending on fill settings */
+					if (spline->flag & MASK_SPLINE_NOINTERSECT) {
+						BKE_mask_spline_feather_collapse_inner_loops(spline, diff_feather_points, tot_diff_feather_points);
+					}
+
 					copy_v2_v2(co, diff_points[0]);
 					sf_vert_prev = BLI_scanfill_vert_add(&sf_ctx, co);
 					sf_vert_prev->tmp.u = sf_vert_tot;
@@ -710,10 +761,26 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 					/* unfilled spline */
 					if (diff_feather_points) {
 
-						float co_diff[3];
+						float co_diff[2];
 
 						float co_feather[3];
 						co_feather[2] = 1.0f;
+
+						if (spline->flag & MASK_SPLINE_NOINTERSECT) {
+							diff_feather_points_flip = MEM_mallocN(sizeof(float) * 2 * tot_diff_feather_points, "diff_feather_points_flip");
+
+							for (j = 0; j < tot_diff_point; j++) {
+								sub_v2_v2v2(co_diff, diff_points[j], diff_feather_points[j]);
+								add_v2_v2v2(diff_feather_points_flip[j], diff_points[j], co_diff);
+							}
+
+							BKE_mask_spline_feather_collapse_inner_loops(spline, diff_feather_points,      tot_diff_feather_points);
+							BKE_mask_spline_feather_collapse_inner_loops(spline, diff_feather_points_flip, tot_diff_feather_points);
+						}
+						else {
+							diff_feather_points_flip = NULL;
+						}
+
 
 						open_spline_ranges[open_spline_index].vertex_offset = sf_vert_tot;
 						open_spline_ranges[open_spline_index].vertex_total = tot_diff_point;
@@ -738,8 +805,14 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 
 
 							/* feather vert B */
-							sub_v2_v2v2(co_diff, co, co_feather);
-							add_v2_v2v2(co_feather, co, co_diff);
+							if (diff_feather_points_flip) {
+								copy_v2_v2(co_feather, diff_feather_points_flip[j]);
+							}
+							else {
+								sub_v2_v2v2(co_diff, co, co_feather);
+								add_v2_v2v2(co_feather, co, co_diff);
+							}
+
 							sf_vert = BLI_scanfill_vert_add(&sf_ctx, co_feather);
 							sf_vert->tmp.u = sf_vert_tot;
 							sf_vert->keyindex = SF_KEYINDEX_TEMP_ID;
@@ -750,6 +823,11 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 
 						if (!is_cyclic) {
 							tot_feather_quads -= 2;
+						}
+
+						if (diff_feather_points_flip) {
+							MEM_freeN(diff_feather_points_flip);
+							diff_feather_points_flip = NULL;
 						}
 
 						/* cap ends */
@@ -832,9 +910,9 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 		{
 			unsigned int (*face_array)[4], *face;  /* access coords */
 			float        (*face_coords)[3], *cos; /* xy, z 0-1 (1.0 == filled) */
-			int sf_tri_tot;
+			unsigned int sf_tri_tot;
 			rctf bounds;
-			int face_index;
+			unsigned int face_index;
 
 			/* now we have all the splines */
 			face_coords = MEM_mallocN((sizeof(float) * 3) * sf_vert_tot, "maskrast_face_coords");
@@ -860,9 +938,9 @@ void BKE_maskrasterize_handle_init(MaskRasterHandle *mr_handle, struct Mask *mas
 			}
 
 			/* main scan-fill */
-			sf_tri_tot = BLI_scanfill_calc_ex(&sf_ctx, FALSE, zvec);
+			sf_tri_tot = (unsigned int)BLI_scanfill_calc_ex(&sf_ctx, BLI_SCANFILL_CALC_HOLES, zvec);
 
-			face_array = MEM_mallocN(sizeof(*face_array) * (sf_tri_tot + tot_feather_quads), "maskrast_face_index");
+			face_array = MEM_mallocN(sizeof(*face_array) * ((size_t)sf_tri_tot + (size_t)tot_feather_quads), "maskrast_face_index");
 			face_index = 0;
 
 			/* faces */
@@ -1135,7 +1213,7 @@ static float maskrasterize_layer_isect(unsigned int *face, float (*cos)[3], cons
 
 			/* needs work */
 #if 1
-			/* quad check fails for bowtie, so keep using 2 tri checks */
+			/* quad check fails for bow-tie, so keep using 2 tri checks */
 			//if (isect_point_quad_v2(xy, cos[face[0]], cos[face[1]], cos[face[2]], cos[face[3]]))
 			if (isect_point_tri_v2(xy, cos[face[0]], cos[face[1]], cos[face[2]]) ||
 			    isect_point_tri_v2(xy, cos[face[0]], cos[face[2]], cos[face[3]]))
@@ -1143,7 +1221,7 @@ static float maskrasterize_layer_isect(unsigned int *face, float (*cos)[3], cons
 				return maskrasterize_layer_z_depth_quad(xy, cos[face[0]], cos[face[1]], cos[face[2]], cos[face[3]]);
 			}
 #elif 1
-			/* don't use isect_point_tri_v2_cw because we could have bowtie quads */
+			/* don't use isect_point_tri_v2_cw because we could have bow-tie quads */
 
 			if (isect_point_tri_v2(xy, cos[face[0]], cos[face[1]], cos[face[2]])) {
 				return maskrasterize_layer_z_depth_tri(xy, cos[face[0]], cos[face[1]], cos[face[2]]);
@@ -1163,7 +1241,7 @@ static float maskrasterize_layer_isect(unsigned int *face, float (*cos)[3], cons
 
 BLI_INLINE unsigned int layer_bucket_index_from_xy(MaskRasterLayer *layer, const float xy[2])
 {
-	BLI_assert(BLI_in_rctf_v(&layer->bounds, xy));
+	BLI_assert(BLI_rctf_isect_pt_v(&layer->bounds, xy));
 
 	return ( (unsigned int)((xy[0] - layer->bounds.xmin) * layer->buckets_xy_scalar[0])) +
 	       (((unsigned int)((xy[1] - layer->bounds.ymin) * layer->buckets_xy_scalar[1])) * layer->buckets_x);
@@ -1200,7 +1278,7 @@ static float layer_bucket_depth_from_xy(MaskRasterLayer *layer, const float xy[2
 float BKE_maskrasterize_handle_sample(MaskRasterHandle *mr_handle, const float xy[2])
 {
 	/* can't do this because some layers may invert */
-	/* if (BLI_in_rctf_v(&mr_handle->bounds, xy)) */
+	/* if (BLI_rctf_isect_pt_v(&mr_handle->bounds, xy)) */
 
 	const unsigned int layers_tot = mr_handle->layers_tot;
 	unsigned int i;
@@ -1213,7 +1291,7 @@ float BKE_maskrasterize_handle_sample(MaskRasterHandle *mr_handle, const float x
 		float value_layer;
 
 		/* also used as signal for unused layer (when render is disabled) */
-		if (layer->alpha != 0.0f && BLI_in_rctf_v(&layer->bounds, xy)) {
+		if (layer->alpha != 0.0f && BLI_rctf_isect_pt_v(&layer->bounds, xy)) {
 			value_layer = 1.0f - layer_bucket_depth_from_xy(layer, xy);
 
 			switch (layer->falloff) {
@@ -1249,8 +1327,11 @@ float BKE_maskrasterize_handle_sample(MaskRasterHandle *mr_handle, const float x
 		}
 
 		switch (layer->blend) {
-			case MASK_BLEND_MERGE:
+			case MASK_BLEND_MERGE_ADD:
 				value += value_layer * (1.0f - value);
+				break;
+			case MASK_BLEND_MERGE_SUBTRACT:
+				value -= value_layer * value;
 				break;
 			case MASK_BLEND_ADD:
 				value += value_layer;
@@ -1259,10 +1340,10 @@ float BKE_maskrasterize_handle_sample(MaskRasterHandle *mr_handle, const float x
 				value -= value_layer;
 				break;
 			case MASK_BLEND_LIGHTEN:
-				value = maxf(value, value_layer);
+				value = max_ff(value, value_layer);
 				break;
 			case MASK_BLEND_DARKEN:
-				value = minf(value, value_layer);
+				value = min_ff(value, value_layer);
 				break;
 			case MASK_BLEND_MUL:
 				value *= value_layer;

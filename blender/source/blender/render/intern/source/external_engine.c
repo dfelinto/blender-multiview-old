@@ -1,4 +1,5 @@
 /*
+
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,6 +56,7 @@
 #include "RE_engine.h"
 #include "RE_pipeline.h"
 
+#include "initrender.h"
 #include "render_types.h"
 #include "render_result.h"
 
@@ -63,7 +65,7 @@
 static RenderEngineType internal_render_type = {
 	NULL, NULL,
 	"BLENDER_RENDER", N_("Blender Render"), RE_INTERNAL,
-	NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL,
 	{NULL, NULL, NULL}
 };
 
@@ -72,7 +74,7 @@ static RenderEngineType internal_render_type = {
 static RenderEngineType internal_game_type = {
 	NULL, NULL,
 	"BLENDER_GAME", N_("Blender Game"), RE_INTERNAL | RE_GAME,
-	NULL, NULL, NULL, NULL,
+	NULL, NULL, NULL, NULL, NULL,
 	{NULL, NULL, NULL}
 };
 
@@ -113,7 +115,7 @@ RenderEngineType *RE_engines_find(const char *idname)
 	type = BLI_findstring(&R_engines, idname, offsetof(RenderEngineType, idname));
 	if (!type)
 		type = &internal_render_type;
-
+	
 	return type;
 }
 
@@ -127,8 +129,19 @@ int RE_engine_is_external(Render *re)
 
 RenderEngine *RE_engine_create(RenderEngineType *type)
 {
+	return RE_engine_create_ex(type, FALSE);
+}
+
+RenderEngine *RE_engine_create_ex(RenderEngineType *type, bool use_for_viewport)
+{
 	RenderEngine *engine = MEM_callocN(sizeof(RenderEngine), "RenderEngine");
 	engine->type = type;
+
+	if (use_for_viewport) {
+		engine->flag |= RE_ENGINE_USED_FOR_VIEWPORT;
+
+		BLI_begin_threaded_malloc();
+	}
 
 	return engine;
 }
@@ -137,9 +150,13 @@ void RE_engine_free(RenderEngine *engine)
 {
 #ifdef WITH_PYTHON
 	if (engine->py_instance) {
-		BPY_DECREF(engine->py_instance);
+		BPY_DECREF_RNA_INVALIDATE(engine->py_instance);
 	}
 #endif
+
+	if (engine->flag & RE_ENGINE_USED_FOR_VIEWPORT) {
+		BLI_end_threaded_malloc();
+	}
 
 	if (engine->text)
 		MEM_freeN(engine->text);
@@ -149,7 +166,24 @@ void RE_engine_free(RenderEngine *engine)
 
 /* Render Results */
 
-RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h)
+static RenderPart *get_part_from_result(Render *re, RenderResult *result)
+{
+	RenderPart *pa;
+
+	for (pa = re->parts.first; pa; pa = pa->next) {
+		if (result->tilerect.xmin == pa->disprect.xmin - re->disprect.xmin &&
+		    result->tilerect.ymin == pa->disprect.ymin - re->disprect.ymin &&
+		    result->tilerect.xmax == pa->disprect.xmax - re->disprect.xmin &&
+		    result->tilerect.ymax == pa->disprect.ymax - re->disprect.ymin)
+		{
+			return pa;
+		}
+	}
+
+	return NULL;
+}
+
+RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h, const char *layername)
 {
 	Render *re = engine->re;
 	RenderResult *result;
@@ -172,16 +206,25 @@ RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, 
 	disprect.ymin = y;
 	disprect.ymax = y + h;
 
-	result = render_result_new(re, &disprect, 0, RR_USE_MEM);
+	result = render_result_new(re, &disprect, 0, RR_USE_MEM, layername);
+
+	/* todo: make this thread safe */
 
 	/* can be NULL if we CLAMP the width or height to 0 */
 	if (result) {
+		RenderPart *pa;
+
 		BLI_addtail(&engine->fullresult, result);
 
 		result->tilerect.xmin += re->disprect.xmin;
 		result->tilerect.xmax += re->disprect.xmin;
 		result->tilerect.ymin += re->disprect.ymin;
 		result->tilerect.ymax += re->disprect.ymin;
+
+		pa = get_part_from_result(re, result);
+
+		if (pa)
+			pa->status = PART_STATUS_IN_PROGRESS;
 	}
 
 	return result;
@@ -197,25 +240,37 @@ void RE_engine_update_result(RenderEngine *engine, RenderResult *result)
 	}
 }
 
-void RE_engine_end_result(RenderEngine *engine, RenderResult *result)
+void RE_engine_end_result(RenderEngine *engine, RenderResult *result, int cancel)
 {
 	Render *re = engine->re;
 
-	if (!result)
+	if (!result) {
 		return;
+	}
 
 	/* merge. on break, don't merge in result for preview renders, looks nicer */
-	if (!(re->test_break(re->tbh) && (re->r.scemode & R_PREVIEWBUTS)))
-		render_result_merge(re->result, result);
+	if (!cancel) {
+		/* for exr tile render, detect tiles that are done */
+		RenderPart *pa = get_part_from_result(re, result);
 
-	/* draw */
-	if (!re->test_break(re->tbh)) {
-		result->renlay = result->layers.first; /* weak, draws first layer always */
-		re->display_draw(re->ddh, result, NULL);
+		if (pa)
+			pa->status = PART_STATUS_READY;
+
+		if (re->result->do_exr_tile)
+			render_result_exr_file_merge(re->result, result);
+		else if (!(re->test_break(re->tbh) && (re->r.scemode & R_BUTS_PREVIEW)))
+			render_result_merge(re->result, result);
+
+		/* draw */
+		if (!re->test_break(re->tbh)) {
+			result->renlay = result->layers.first; /* weak, draws first layer always */
+			re->display_draw(re->ddh, result, NULL);
+		}
 	}
 
 	/* free */
-	render_result_free_list(&engine->fullresult, result);
+	BLI_remlink(&engine->fullresult, result);
+	render_result_free(result);
 }
 
 /* Cancel */
@@ -269,9 +324,70 @@ void RE_engine_update_progress(RenderEngine *engine, float progress)
 	}
 }
 
+void RE_engine_update_memory_stats(RenderEngine *engine, float mem_used, float mem_peak)
+{
+	Render *re = engine->re;
+
+	if (re) {
+		re->i.mem_used = mem_used;
+		re->i.mem_peak = mem_peak;
+	}
+}
+
 void RE_engine_report(RenderEngine *engine, int type, const char *msg)
 {
-	BKE_report(engine->re->reports, type, msg);
+	Render *re = engine->re;
+
+	if (re)
+		BKE_report(engine->re->reports, type, msg);
+	else if (engine->reports)
+		BKE_report(engine->reports, type, msg);
+}
+
+void RE_engine_get_current_tiles(Render *re, int *total_tiles_r, rcti **tiles_r)
+{
+	RenderPart *pa;
+	int total_tiles = 0;
+	rcti *tiles = NULL;
+	int allocation_size = 0, allocation_step = BLENDER_MAX_THREADS;
+
+	if (re->engine && (re->engine->flag & RE_ENGINE_HIGHLIGHT_TILES) == 0) {
+		*total_tiles_r = 0;
+		*tiles_r = NULL;
+		return;
+	}
+
+	for (pa = re->parts.first; pa; pa = pa->next) {
+		if (pa->status == PART_STATUS_IN_PROGRESS) {
+			if (total_tiles >= allocation_size) {
+				if (tiles == NULL)
+					tiles = MEM_mallocN(allocation_step * sizeof(rcti), "current engine tiles");
+				else
+					tiles = MEM_reallocN(tiles, (total_tiles + allocation_step) * sizeof(rcti));
+
+				allocation_size += allocation_step;
+			}
+
+			tiles[total_tiles] = pa->disprect;
+
+			if (pa->crop) {
+				tiles[total_tiles].xmin += pa->crop;
+				tiles[total_tiles].ymin += pa->crop;
+				tiles[total_tiles].xmax -= pa->crop;
+				tiles[total_tiles].ymax -= pa->crop;
+			}
+
+			total_tiles++;
+		}
+	}
+
+	*total_tiles_r = total_tiles;
+	*tiles_r = tiles;
+}
+
+RenderData *RE_engine_get_render_data(Render *re)
+{
+	return &re->r;
 }
 
 /* Render */
@@ -280,26 +396,58 @@ int RE_engine_render(Render *re, int do_all)
 {
 	RenderEngineType *type = RE_engines_find(re->r.engine);
 	RenderEngine *engine;
+	int persistent_data = re->r.mode & R_PERSISTENT_DATA;
 
 	/* verify if we can render */
 	if (!type->render)
 		return 0;
-	if ((re->r.scemode & R_PREVIEWBUTS) && !(type->flag & RE_USE_PREVIEW))
+	if ((re->r.scemode & R_BUTS_PREVIEW) && !(type->flag & RE_USE_PREVIEW))
 		return 0;
 	if (do_all && !(type->flag & RE_USE_POSTPROCESS))
 		return 0;
 	if (!do_all && (type->flag & RE_USE_POSTPROCESS))
 		return 0;
 
+	/* update animation here so any render layer animation is applied before
+	 * creating the render result */
+	if ((re->r.scemode & (R_NO_FRAME_UPDATE | R_BUTS_PREVIEW)) == 0) {
+		unsigned int lay = re->lay;
+
+		/* don't update layers excluded on all render layers */
+		if (type->flag & RE_USE_EXCLUDE_LAYERS) {
+			SceneRenderLayer *srl;
+			unsigned int non_excluded_lay = 0;
+
+			if (re->r.scemode & R_SINGLE_LAYER) {
+				srl = BLI_findlink(&re->r.layers, re->r.actlay);
+				if (srl)
+					non_excluded_lay |= ~srl->lay_exclude;
+			}
+			else {
+				for (srl = re->r.layers.first; srl; srl = srl->next)
+					if (!(srl->layflag & SCE_LAY_DISABLE))
+						non_excluded_lay |= ~srl->lay_exclude;
+			}
+
+			lay &= non_excluded_lay;
+		}
+
+		BKE_scene_update_for_newframe(re->main, re->scene, lay);
+	}
+
 	/* create render result */
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	if (re->result == NULL || !(re->r.scemode & R_PREVIEWBUTS)) {
+	if (re->result == NULL || !(re->r.scemode & R_BUTS_PREVIEW)) {
+		int savebuffers;
+
 		if (re->result)
 			render_result_free(re->result);
-		re->result = render_result_new(re, &re->disprect, 0, 0);
+
+		savebuffers = (re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM;
+		re->result = render_result_new(re, &re->disprect, 0, savebuffers, RR_ALL_LAYERS);
 	}
 	BLI_rw_mutex_unlock(&re->resultmutex);
-	
+
 	if (re->result == NULL)
 		return 1;
 
@@ -309,26 +457,59 @@ int RE_engine_render(Render *re, int do_all)
 	re->i.totface = re->i.totvert = re->i.totstrand = re->i.totlamp = re->i.tothalo = 0;
 
 	/* render */
-	engine = RE_engine_create(type);
+	engine = re->engine;
+
+	if (!engine) {
+		engine = RE_engine_create(type);
+		re->engine = engine;
+	}
+
+	engine->flag |= RE_ENGINE_RENDERING;
+
+	/* TODO: actually link to a parent which shouldn't happen */
 	engine->re = re;
 
 	if (re->flag & R_ANIMATION)
 		engine->flag |= RE_ENGINE_ANIMATION;
-	if (re->r.scemode & R_PREVIEWBUTS)
+	if (re->r.scemode & R_BUTS_PREVIEW)
 		engine->flag |= RE_ENGINE_PREVIEW;
 	engine->camera_override = re->camera_override;
 
-	if ((re->r.scemode & (R_NO_FRAME_UPDATE | R_PREVIEWBUTS)) == 0)
-		BKE_scene_update_for_newframe(re->main, re->scene, re->lay);
+	engine->resolution_x = re->winx;
+	engine->resolution_y = re->winy;
+
+	RE_parts_init(re, FALSE);
+	engine->tile_x = re->partx;
+	engine->tile_y = re->party;
+
+	if (re->result->do_exr_tile)
+		render_result_exr_file_begin(re);
 
 	if (type->update)
 		type->update(engine, re->main, re->scene);
+	
 	if (type->render)
 		type->render(engine, re->scene);
 
+	engine->tile_x = 0;
+	engine->tile_y = 0;
+	engine->flag &= ~RE_ENGINE_RENDERING;
+
 	render_result_free_list(&engine->fullresult, engine->fullresult.first);
 
-	RE_engine_free(engine);
+	/* re->engine becomes zero if user changed active render engine during render */
+	if (!persistent_data || !re->engine) {
+		RE_engine_free(engine);
+		re->engine = NULL;
+	}
+
+	if (re->result->do_exr_tile) {
+		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+		render_result_exr_file_end(re);
+		BLI_rw_mutex_unlock(&re->resultmutex);
+	}
+
+	RE_parts_free(re);
 
 	if (BKE_reports_contain(re->reports, RPT_ERROR))
 		G.is_break = TRUE;

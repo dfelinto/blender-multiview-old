@@ -61,9 +61,9 @@ public:
 	virtual CValue* GetReplica();
 	virtual void ProcessReplica();
 	
-	void SetBlendTime (float newtime);
-	void SetLocalTime (float curtime);
-	void ResetStartTime (float curtime);
+	void SetBlendTime(float newtime);
+	void SetLocalTime(float curtime);
+	void ResetStartTime(float curtime);
 	
 	bAction*	GetAction() { return m_action; }
 	void		SetAction(bAction* act) { m_action= act; }
@@ -108,7 +108,7 @@ public:
 				return 1;
 		}
 	}
-#endif // WITH_PYTHON
+#endif  /* WITH_PYTHON */
 	
 protected:
 	MT_Point3	m_lastpos;

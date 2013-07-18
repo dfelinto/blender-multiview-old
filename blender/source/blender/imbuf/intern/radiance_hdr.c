@@ -43,6 +43,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_fileops.h"
 
 #include "imbuf.h"
@@ -53,6 +54,9 @@
 #include "IMB_allocimbuf.h"
 #include "IMB_filetype.h"
 
+#include "IMB_colormanagement.h"
+#include "IMB_colormanagement_intern.h"
+
 /* needed constants */
 #define MINELEN 8
 #define MAXELEN 0x7fff
@@ -62,7 +66,6 @@
 #define BLU 2
 #define EXP 3
 #define COLXS 128
-#define STR_MAX 540
 typedef unsigned char RGBE[4];
 typedef float fCOLOR[3];
 
@@ -151,7 +154,7 @@ static void FLOAT2RGBE(fCOLOR fcol, RGBE rgbe)
 	if (d <= 1e-32f)
 		rgbe[RED] = rgbe[GRN] = rgbe[BLU] = rgbe[EXP] = 0;
 	else {
-		d = frexp(d, &e) * 256.f / d;
+		d = (float)frexp(d, &e) * 256.0f / d;
 		rgbe[RED] = (unsigned char)(fcol[RED] * d);
 		rgbe[GRN] = (unsigned char)(fcol[GRN] * d);
 		rgbe[BLU] = (unsigned char)(fcol[BLU] * d);
@@ -165,13 +168,13 @@ int imb_is_a_hdr(unsigned char *buf)
 {
 	/* For recognition, Blender only loads first 32 bytes, so use #?RADIANCE id instead */
 	/* update: actually, the 'RADIANCE' part is just an optional program name, the magic word is really only the '#?' part */
-	//if (strstr((char*)buf, "#?RADIANCE")) return 1;
+	//if (strstr((char *)buf, "#?RADIANCE")) return 1;
 	if (strstr((char *)buf, "#?")) return 1;
-	// if (strstr((char*)buf, "32-bit_rle_rgbe")) return 1;
+	// if (strstr((char *)buf, "32-bit_rle_rgbe")) return 1;
 	return 0;
 }
 
-struct ImBuf *imb_loadhdr(unsigned char *mem, size_t size, int flags)
+struct ImBuf *imb_loadhdr(unsigned char *mem, size_t size, int flags, char colorspace[IM_MAX_SPACE])
 {
 	struct ImBuf *ibuf;
 	RGBE *sline;
@@ -184,6 +187,8 @@ struct ImBuf *imb_loadhdr(unsigned char *mem, size_t size, int flags)
 	char oriY[80], oriX[80];
 
 	if (imb_is_a_hdr((void *)mem)) {
+		colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_FLOAT);
+
 		/* find empty line, next line is resolution info */
 		for (x = 1; x < size; x++) {
 			if ((mem[x - 1] == '\n') && (mem[x] == '\n')) {
@@ -207,7 +212,9 @@ struct ImBuf *imb_loadhdr(unsigned char *mem, size_t size, int flags)
 
 			if (ibuf == NULL) return NULL;
 			ibuf->ftype = RADHDR;
-			ibuf->profile = IB_PROFILE_LINEAR_RGB;
+
+			if (flags & IB_alphamode_detect)
+				ibuf->flags |= IB_alphamode_premul;
 
 			if (flags & IB_test) return ibuf;
 
@@ -312,7 +319,9 @@ static int fwritecolrs(FILE *file, int width, int channels, unsigned char *ibufs
 				putc((unsigned char)(128 + cnt), file);
 				putc(rgbe_scan[beg][i], file);
 			}
-			else cnt = 0;
+			else {
+				cnt = 0;
+			}
 		}
 	}
 	MEM_freeN(rgbe_scan);

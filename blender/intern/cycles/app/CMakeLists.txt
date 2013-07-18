@@ -9,6 +9,8 @@ set(INC
 	../render
 	../subd
 )
+set(INC_SYS
+)
 
 set(LIBRARIES
 	cycles_device
@@ -33,11 +35,8 @@ if(WITH_CYCLES_OSL)
 	list(APPEND LIBRARIES cycles_kernel_osl ${OSL_LIBRARIES})
 endif()
 
-if(WITH_CYCLES_PARTIO)
-	list(APPEND LIBRARIES ${PARTIO_LIBRARIES})
-endif()
-
 include_directories(${INC})
+include_directories(SYSTEM ${INC_SYS})
 
 if(WITH_CYCLES_TEST)
 	set(SRC

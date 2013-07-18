@@ -94,9 +94,9 @@ static void generatTile_FFT(float* const noiseTileData, std::string filename)
 			for (int x = 0; x < xRes; x++)
 			{
 				int index = x + y * xRes + z * xRes * yRes;
-				float diff[] = {abs(x - xRes/2), 
-				abs(y - yRes/2), 
-				abs(z - zRes/2)};
+				float diff[] = {(float)abs(x - xRes / 2),
+				                (float)abs(y - yRes / 2),
+				                (float)abs(z - zRes / 2)};
 				float radius = sqrtf(diff[0] * diff[0] + 
 				diff[1] * diff[1] + 
 				diff[2] * diff[2]) / (xRes / 2);
@@ -167,6 +167,8 @@ static void generatTile_FFT(float* const noiseTileData, std::string filename)
 			for (int x = 0; x < xRes; x++, index++)
 				noise[index] -= forward[index][0] / totalCells;
 
+	// fill noiseTileData
+	memcpy(noiseTileData, noise, sizeof(float) * totalCells);
 	// save out the noise tile
 	saveTile(noise, filename);
 	

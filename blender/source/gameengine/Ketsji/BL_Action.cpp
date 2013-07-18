@@ -36,7 +36,6 @@
 
 // These three are for getting the action from the logic manager
 #include "KX_Scene.h"
-#include "KX_PythonInit.h"
 #include "SCA_LogicManager.h"
 
 extern "C" {
@@ -44,6 +43,10 @@ extern "C" {
 #include "BKE_action.h"
 #include "RNA_access.h"
 #include "RNA_define.h"
+
+// Needed for material IPOs
+#include "BKE_material.h"
+#include "DNA_material_types.h"
 }
 
 BL_Action::BL_Action(class KX_GameObject* gameobj)
@@ -52,7 +55,6 @@ BL_Action::BL_Action(class KX_GameObject* gameobj)
 	m_pose(NULL),
 	m_blendpose(NULL),
 	m_blendinpose(NULL),
-	m_ptrrna(NULL),
 	m_obj(gameobj),
 	m_startframe(0.f),
 	m_endframe(0.f),
@@ -68,24 +70,6 @@ BL_Action::BL_Action(class KX_GameObject* gameobj)
 	m_done(true),
 	m_calc_localtime(true)
 {
-	if (m_obj->GetGameObjectType() == SCA_IObject::OBJ_ARMATURE)
-	{
-		BL_ArmatureObject *obj = (BL_ArmatureObject*)m_obj;
-
-		m_ptrrna = new PointerRNA();
-		RNA_id_pointer_create(&obj->GetArmatureObject()->id, m_ptrrna);
-	}
-	else
-	{
-		BL_DeformableGameObject *obj = (BL_DeformableGameObject*)m_obj;
-		BL_ShapeDeformer *shape_deformer = dynamic_cast<BL_ShapeDeformer*>(obj->GetDeformer());
-
-		if (shape_deformer)
-		{
-			m_ptrrna = new PointerRNA();
-			RNA_id_pointer_create(&shape_deformer->GetKey()->id, m_ptrrna);
-		}
-	}
 }
 
 BL_Action::~BL_Action()
@@ -96,8 +80,6 @@ BL_Action::~BL_Action()
 		game_free_pose(m_blendpose);
 	if (m_blendinpose)
 		game_free_pose(m_blendinpose);
-	if (m_ptrrna)
-		delete m_ptrrna;
 	ClearControllerList();
 }
 
@@ -132,8 +114,10 @@ bool BL_Action::Play(const char* name,
 	m_priority = priority;
 	bAction* prev_action = m_action;
 
+	KX_Scene* kxscene = m_obj->GetScene();
+
 	// First try to load the action
-	m_action = (bAction*)KX_GetActiveScene()->GetLogicManager()->GetActionByName(name);
+	m_action = (bAction*)kxscene->GetLogicManager()->GetActionByName(name);
 	if (!m_action)
 	{
 		printf("Failed to load action: %s\n", name);
@@ -151,32 +135,66 @@ bool BL_Action::Play(const char* name,
 			&& m_priority == priority && m_speed == playback_speed)
 		return false;
 
-	if (prev_action != m_action)
-	{
-		// First get rid of any old controllers
-		ClearControllerList();
+	// First get rid of any old controllers
+	ClearControllerList();
 
-		// Create an SG_Controller
-		SG_Controller *sg_contr = BL_CreateIPO(m_action, m_obj, KX_GetActiveScene()->GetSceneConverter());
+	// Create an SG_Controller
+	SG_Controller *sg_contr = BL_CreateIPO(m_action, m_obj, kxscene->GetSceneConverter());
+	m_sg_contr_list.push_back(sg_contr);
+	m_obj->GetSGNode()->AddSGController(sg_contr);
+	sg_contr->SetObject(m_obj->GetSGNode());
+
+	// Try obcolor
+	sg_contr = BL_CreateObColorIPO(m_action, m_obj, kxscene->GetSceneConverter());
+	if (sg_contr) {
 		m_sg_contr_list.push_back(sg_contr);
 		m_obj->GetSGNode()->AddSGController(sg_contr);
 		sg_contr->SetObject(m_obj->GetSGNode());
+	}
 
-		// Extra controllers
-		if (m_obj->GetGameObjectType() == SCA_IObject::OBJ_LIGHT)
-		{
-			sg_contr = BL_CreateLampIPO(m_action, m_obj, KX_GetActiveScene()->GetSceneConverter());
-			m_sg_contr_list.push_back(sg_contr);
-			m_obj->GetSGNode()->AddSGController(sg_contr);
-			sg_contr->SetObject(m_obj->GetSGNode());
+	// Now try materials
+	if (m_obj->GetBlenderObject()->totcol==1) {
+		Material *mat = give_current_material(m_obj->GetBlenderObject(), 1);
+		if (mat) {
+			sg_contr = BL_CreateMaterialIpo(m_action, mat, 0, m_obj, kxscene->GetSceneConverter());
+			if (sg_contr) {
+				m_sg_contr_list.push_back(sg_contr);
+				m_obj->GetSGNode()->AddSGController(sg_contr);
+				sg_contr->SetObject(m_obj->GetSGNode());
+			}
 		}
-		else if (m_obj->GetGameObjectType() == SCA_IObject::OBJ_CAMERA)
-		{
-			sg_contr = BL_CreateCameraIPO(m_action, m_obj, KX_GetActiveScene()->GetSceneConverter());
-			m_sg_contr_list.push_back(sg_contr);
-			m_obj->GetSGNode()->AddSGController(sg_contr);
-			sg_contr->SetObject(m_obj->GetSGNode());
+	} else {
+		Material *mat;
+		STR_HashedString matname;
+
+		for (int matidx = 1; matidx <= m_obj->GetBlenderObject()->totcol; ++matidx) {
+			mat = give_current_material(m_obj->GetBlenderObject(), matidx);
+			if (mat) {
+				matname = mat->id.name;
+				sg_contr = BL_CreateMaterialIpo(m_action, mat, matname.hash(), m_obj, kxscene->GetSceneConverter());
+				if (sg_contr) {
+					m_sg_contr_list.push_back(sg_contr);
+					m_obj->GetSGNode()->AddSGController(sg_contr);
+					sg_contr->SetObject(m_obj->GetSGNode());
+				}
+			}
 		}
+	}
+
+	// Extra controllers
+	if (m_obj->GetGameObjectType() == SCA_IObject::OBJ_LIGHT)
+	{
+		sg_contr = BL_CreateLampIPO(m_action, m_obj, kxscene->GetSceneConverter());
+		m_sg_contr_list.push_back(sg_contr);
+		m_obj->GetSGNode()->AddSGController(sg_contr);
+		sg_contr->SetObject(m_obj->GetSGNode());
+	}
+	else if (m_obj->GetGameObjectType() == SCA_IObject::OBJ_CAMERA)
+	{
+		sg_contr = BL_CreateCameraIPO(m_action, m_obj, kxscene->GetSceneConverter());
+		m_sg_contr_list.push_back(sg_contr);
+		m_obj->GetSGNode()->AddSGController(sg_contr);
+		sg_contr->SetObject(m_obj->GetSGNode());
 	}
 	
 	m_ipo_flags = ipo_flags;
@@ -200,7 +218,7 @@ bool BL_Action::Play(const char* name,
 			// Now that we have the previous blend shape saved, we can clear out the key to avoid any
 			// further interference.
 			KeyBlock *kb;
-			for (kb=(KeyBlock*)shape_deformer->GetKey()->block.first; kb; kb=(KeyBlock*)kb->next)
+			for (kb=(KeyBlock *)shape_deformer->GetKey()->block.first; kb; kb=(KeyBlock *)kb->next)
 				kb->curval = 0.f;
 		}
 	}
@@ -319,9 +337,9 @@ void BL_Action::BlendShape(Key* key, float srcweight, std::vector<float>& blends
 	
 	dstweight = 1.0F - srcweight;
 	//printf("Dst: %f\tSrc: %f\n", srcweight, dstweight);
-	for (it=blendshape.begin(), kb = (KeyBlock*)key->block.first; 
+	for (it=blendshape.begin(), kb = (KeyBlock *)key->block.first; 
 	     kb && it != blendshape.end();
-	     kb = (KeyBlock*)kb->next, it++)
+	     kb = (KeyBlock *)kb->next, it++)
 	{
 		//printf("OirgKeys: %f\t%f\n", kb->curval, (*it));
 		kb->curval = kb->curval * dstweight + (*it) * srcweight;
@@ -352,29 +370,27 @@ void BL_Action::Update(float curtime)
 	}
 
 	// Handle wrap around
-	if (m_localtime < min(m_startframe, m_endframe) || m_localtime > max(m_startframe, m_endframe))
-	{
-		switch(m_playmode)
-		{
-		case ACT_MODE_PLAY:
-			// Clamp
-			m_localtime = m_endframe;
-			m_done = true;
-			break;
-		case ACT_MODE_LOOP:
-			// Put the time back to the beginning
-			m_localtime = m_startframe;
-			m_starttime = curtime;
-			break;
-		case ACT_MODE_PING_PONG:
-			// Swap the start and end frames
-			float temp = m_startframe;
-			m_startframe = m_endframe;
-			m_endframe = temp;
+	if (m_localtime < min(m_startframe, m_endframe) || m_localtime > max(m_startframe, m_endframe)) {
+		switch (m_playmode) {
+			case ACT_MODE_PLAY:
+				// Clamp
+				m_localtime = m_endframe;
+				m_done = true;
+				break;
+			case ACT_MODE_LOOP:
+				// Put the time back to the beginning
+				m_localtime = m_startframe;
+				m_starttime = curtime;
+				break;
+			case ACT_MODE_PING_PONG:
+				// Swap the start and end frames
+				float temp = m_startframe;
+				m_startframe = m_endframe;
+				m_endframe = temp;
 
-			m_starttime = curtime;
+				m_starttime = curtime;
 
-			break;
+				break;
 		}
 	}
 
@@ -389,7 +405,11 @@ void BL_Action::Update(float curtime)
 			bPose *temp = arm->pose;
 
 			arm->pose = m_pose;
-			animsys_evaluate_action(m_ptrrna, m_action, NULL, m_localtime);
+
+			PointerRNA ptrrna;
+			RNA_id_pointer_create(&arm->id, &ptrrna);
+
+			animsys_evaluate_action(&ptrrna, m_action, NULL, m_localtime);
 
 			arm->pose = temp;
 		}
@@ -428,8 +448,10 @@ void BL_Action::Update(float curtime)
 		{
 			Key *key = shape_deformer->GetKey();
 
+			PointerRNA ptrrna;
+			RNA_id_pointer_create(&key->id, &ptrrna);
 
-			animsys_evaluate_action(m_ptrrna, m_action, NULL, m_localtime);
+			animsys_evaluate_action(&ptrrna, m_action, NULL, m_localtime);
 
 			// Handle blending between shape actions
 			if (m_blendin && m_blendframe < m_blendin)
@@ -441,7 +463,7 @@ void BL_Action::Update(float curtime)
 				// We go through and clear out the keyblocks so there isn't any interference
 				// from other shape actions
 				KeyBlock *kb;
-				for (kb=(KeyBlock*)key->block.first; kb; kb=(KeyBlock*)kb->next)
+				for (kb=(KeyBlock *)key->block.first; kb; kb=(KeyBlock *)kb->next)
 					kb->curval = 0.f;
 
 				// Now blend the shape
@@ -460,4 +482,7 @@ void BL_Action::Update(float curtime)
 
 		m_obj->UpdateIPO(m_localtime, m_ipo_flags & ACT_IPOFLAG_CHILD);
 	}
+
+	if (m_done)
+		ClearControllerList();
 }

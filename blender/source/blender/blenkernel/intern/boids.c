@@ -101,13 +101,15 @@ static int rule_goal_avoid(BoidRule *rule, BoidBrainData *bbd, BoidValues *val, 
 				break;
 			}
 		}
-		else if (rule->type == eBoidRuleType_Goal && eob == bpa->ground)
-			; /* skip current object */
+		else if (rule->type == eBoidRuleType_Goal && eob == bpa->ground) {
+			/* skip current object */
+		}
 		else if (pd->forcefield == PFIELD_BOID && mul * pd->f_strength > 0.0f && get_effector_data(cur, &cur_efd, &epoint, 0)) {
 			float temp = mul * pd->f_strength * effector_falloff(cur, &cur_efd, &epoint, bbd->part->effector_weights);
 
-			if (temp == 0.0f)
-				; /* do nothing */
+			if (temp == 0.0f) {
+				/* do nothing */
+			}
 			else if (temp > priority) {
 				priority = temp;
 				eff = cur;
@@ -232,9 +234,9 @@ static int rule_avoid_collision(BoidRule *rule, BoidBrainData *bbd, BoidValues *
 			if (dot_v3v3(col.pce.nor, pa->prev_state.ave) < -0.99f) {
 				/* don't know why, but uneven range [0.0, 1.0] */
 				/* works much better than even [-1.0, 1.0] */
-				bbd->wanted_co[0] = BLI_frand();
-				bbd->wanted_co[1] = BLI_frand();
-				bbd->wanted_co[2] = BLI_frand();
+				bbd->wanted_co[0] = BLI_rng_get_float(bbd->rng);
+				bbd->wanted_co[1] = BLI_rng_get_float(bbd->rng);
+				bbd->wanted_co[2] = BLI_rng_get_float(bbd->rng);
 			}
 			else {
 				copy_v3_v3(bbd->wanted_co, col.pce.nor);
@@ -556,9 +558,9 @@ static int rule_average_speed(BoidRule *rule, BoidBrainData *bbd, BoidValues *va
 
 	if (asbr->wander > 0.0f) {
 		/* abuse pa->r_ave for wandering */
-		bpa->wander[0] += asbr->wander * (-1.0f + 2.0f * BLI_frand());
-		bpa->wander[1] += asbr->wander * (-1.0f + 2.0f * BLI_frand());
-		bpa->wander[2] += asbr->wander * (-1.0f + 2.0f * BLI_frand());
+		bpa->wander[0] += asbr->wander * (-1.0f + 2.0f * BLI_rng_get_float(bbd->rng));
+		bpa->wander[1] += asbr->wander * (-1.0f + 2.0f * BLI_rng_get_float(bbd->rng));
+		bpa->wander[2] += asbr->wander * (-1.0f + 2.0f * BLI_rng_get_float(bbd->rng));
 
 		normalize_v3(bpa->wander);
 
@@ -584,9 +586,9 @@ static int rule_average_speed(BoidRule *rule, BoidBrainData *bbd, BoidValues *va
 
 		/* may happen at birth */
 		if (dot_v2v2(bbd->wanted_co, bbd->wanted_co)==0.0f) {
-			bbd->wanted_co[0] = 2.0f*(0.5f - BLI_frand());
-			bbd->wanted_co[1] = 2.0f*(0.5f - BLI_frand());
-			bbd->wanted_co[2] = 2.0f*(0.5f - BLI_frand());
+			bbd->wanted_co[0] = 2.0f*(0.5f - BLI_rng_get_float(bbd->rng));
+			bbd->wanted_co[1] = 2.0f*(0.5f - BLI_rng_get_float(bbd->rng));
+			bbd->wanted_co[2] = 2.0f*(0.5f - BLI_rng_get_float(bbd->rng));
 		}
 		
 		/* leveling */
@@ -661,7 +663,7 @@ static int rule_fight(BoidRule *rule, BoidBrainData *bbd, BoidValues *val, Parti
 
 		/* attack if in range */
 		if (closest_dist <= bbd->part->boids->range + pa->size + enemy_pa->size) {
-			float damage = BLI_frand();
+			float damage = BLI_rng_get_float(bbd->rng);
 			float enemy_dir[3];
 
 			normalize_v3_v3(enemy_dir, bbd->wanted_co);
@@ -954,7 +956,8 @@ void boid_brain(BoidBrainData *bbd, int p, ParticleData *pa)
 	//	}
 	//}
 
-	bbd->wanted_co[0]=bbd->wanted_co[1]=bbd->wanted_co[2]=bbd->wanted_speed=0.0f;
+	zero_v3(bbd->wanted_co);
+	bbd->wanted_speed = 0.0f;
 
 	/* create random seed for every particle & frame */
 	rand = (int)(PSYS_FRAND(psys->seed + p) * 1000);
@@ -988,7 +991,8 @@ void boid_brain(BoidBrainData *bbd, int p, ParticleData *pa)
 					add_v3_v3(wanted_co, bbd->wanted_co);
 					wanted_speed += bbd->wanted_speed;
 					n++;
-					bbd->wanted_co[0]=bbd->wanted_co[1]=bbd->wanted_co[2]=bbd->wanted_speed=0.0f;
+					zero_v3(bbd->wanted_co);
+					bbd->wanted_speed = 0.0f;
 				}
 			}
 
@@ -1160,15 +1164,15 @@ void boid_body(BoidBrainData *bbd, ParticleData *pa)
 			/* choose random direction to turn if wanted velocity */
 			/* is directly behind regardless of z-coordinate */
 			if (dot_v2v2(old_dir2, wanted_dir2) < -0.99f) {
-				wanted_dir[0] = 2.0f*(0.5f - BLI_frand());
-				wanted_dir[1] = 2.0f*(0.5f - BLI_frand());
-				wanted_dir[2] = 2.0f*(0.5f - BLI_frand());
+				wanted_dir[0] = 2.0f*(0.5f - BLI_rng_get_float(bbd->rng));
+				wanted_dir[1] = 2.0f*(0.5f - BLI_rng_get_float(bbd->rng));
+				wanted_dir[2] = 2.0f*(0.5f - BLI_rng_get_float(bbd->rng));
 				normalize_v3(wanted_dir);
 			}
 
 			/* constrain direction with maximum angular velocity */
 			angle = saacos(dot_v3v3(old_dir, wanted_dir));
-			angle = minf(angle, val.max_ave);
+			angle = min_ff(angle, val.max_ave);
 
 			cross_v3_v3v3(nor, old_dir, wanted_dir);
 			axis_angle_to_quat(q, nor, angle);
@@ -1264,9 +1268,9 @@ void boid_body(BoidBrainData *bbd, ParticleData *pa)
 		{
 			float grav[3];
 
-			grav[0]= 0.0f;
-			grav[1]= 0.0f;
-			grav[2]= bbd->sim->scene->physics_settings.gravity[2] < 0.0f ? -1.0f : 0.0f;
+			grav[0] = 0.0f;
+			grav[1] = 0.0f;
+			grav[2] = bbd->sim->scene->physics_settings.gravity[2] < 0.0f ? -1.0f : 0.0f;
 
 			/* don't take forward acceleration into account (better banking) */
 			if (dot_v3v3(bpa->data.acc, pa->state.vel) > 0.0f) {
@@ -1307,9 +1311,9 @@ void boid_body(BoidBrainData *bbd, ParticleData *pa)
 		{
 			float grav[3];
 
-			grav[0]= 0.0f;
-			grav[1]= 0.0f;
-			grav[2]= bbd->sim->scene->physics_settings.gravity[2] < 0.0f ? -1.0f : 0.0f;
+			grav[0] = 0.0f;
+			grav[1] = 0.0f;
+			grav[2] = bbd->sim->scene->physics_settings.gravity[2] < 0.0f ? -1.0f : 0.0f;
 
 
 			/* gather apparent gravity */

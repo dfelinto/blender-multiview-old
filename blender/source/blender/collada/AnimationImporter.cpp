@@ -38,6 +38,8 @@
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_action.h"
 #include "BKE_armature.h"
 #include "BKE_fcurve.h"
@@ -136,7 +138,7 @@ void AnimationImporter::animation_to_fcurves(COLLADAFW::AnimationCurve *curve)
 							bez.ipo = BEZT_IPO_BEZ;
 						else 
 							bez.ipo = BEZT_IPO_CONST;
-						//bez.h1 = bez.h2 = HD_AUTO; 	
+						//bez.h1 = bez.h2 = HD_AUTO;
 					}
 					else {
 						bez.h1 = bez.h2 = HD_AUTO; 
@@ -217,7 +219,8 @@ void AnimationImporter::add_fcurves_to_object(Object *ob, std::vector<FCurve *>&
 					BLI_strncpy(grp->name, bone_name, sizeof(grp->name));
 					
 					BLI_addtail(&act->groups, grp);
-					BLI_uniquename(&act->groups, grp, "Group", '.', offsetof(bActionGroup, name), 64);
+					BLI_uniquename(&act->groups, grp, CTX_DATA_(BLF_I18NCONTEXT_ID_ACTION, "Group"), '.',
+					               offsetof(bActionGroup, name), 64);
 				}
 				
 				/* add F-Curve to group */
@@ -561,7 +564,7 @@ void AnimationImporter:: Assign_transform_animations(COLLADAFW::Transformation *
 
 		case COLLADAFW::Transformation::MATRIX:
 			/*{
-			   COLLADAFW::Matrix* mat = (COLLADAFW::Matrix*)transform;
+			   COLLADAFW::Matrix *mat = (COLLADAFW::Matrix*)transform;
 			   COLLADABU::Math::Matrix4 mat4 = mat->getMatrix();
 			   switch (binding->animationClass) {
 			   case COLLADAFW::AnimationList::TRANSFORM:
@@ -617,7 +620,7 @@ void AnimationImporter:: Assign_color_animations(const COLLADAFW::UniqueId& list
 		//Add the curves of the current animation to the object
 		for (iter = animcurves.begin(); iter != animcurves.end(); iter++) {
 			FCurve *fcu = *iter;
-			BLI_addtail(AnimCurves, fcu);	
+			BLI_addtail(AnimCurves, fcu);
 		}
 	}
 
@@ -683,12 +686,11 @@ void AnimationImporter::Assign_lens_animations(const COLLADAFW::UniqueId& listid
 				for (unsigned int i = 0; i < fcu->totvert; i++) {
 
 					double input_fov = fcu->bezt[i].vec[1][1];
-					double xfov = (fov_type == CAMERA_YFOV) ? aspect * input_fov : input_fov;
 
-					// fov is in degrees, cam->lens is in millimiters
-					double fov = fov_to_focallength(DEG2RADF(input_fov), cam->sensor_x);
+					// NOTE: Needs more testing (As we curretnly have no official test data for this)
+					double xfov = (fov_type == CAMERA_YFOV) ? (2.0f * atanf(aspect * tanf(DEG2RADF(input_fov) * 0.5f))) : DEG2RADF(input_fov);
 
-					fcu->bezt[i].vec[1][1] = fov;
+					fcu->bezt[i].vec[1][1] = fov_to_focallength(xfov, cam->sensor_x);
 				}
 
 				BLI_addtail(AnimCurves, fcu);
@@ -786,7 +788,7 @@ void AnimationImporter::apply_matrix_curves(Object *ob, std::vector<FCurve *>& a
 
 			// calc M
 			calc_joint_parent_mat_rest(par, NULL, root, node);
-			mult_m4_m4m4(temp, par, matfra);
+			mul_m4_m4m4(temp, par, matfra);
 
 			// evaluate_joint_world_transform_at_frame(temp, NULL, node, fra);
 
@@ -845,7 +847,7 @@ void AnimationImporter::apply_matrix_curves(Object *ob, std::vector<FCurve *>& a
  * This function returns the aspet ration from the Collada camera.
  *
  * Note:COLLADA allows to specify either XFov, or YFov alone. 
- * In tghat case the aspect ratio can be determined from 
+ * In that case the aspect ratio can be determined from
  * the viewport aspect ratio (which is 1:1 ?)
  * XXX: check this: its probably wrong!
  * If both values are specified, then the aspect ration is simply xfov/yfov
@@ -855,14 +857,13 @@ static const double get_aspect_ratio(const COLLADAFW::Camera *camera)
 {
 	double aspect =  camera->getAspectRatio().getValue();
 
-	if(aspect == 0)
-	{
+	if (aspect == 0) {
 		const double yfov   =  camera->getYFov().getValue();
 
-		if(yfov == 0)
-			aspect=1; // assume yfov and xfov are equal
-		else
-		{
+		if (yfov == 0) {
+			aspect = 1; // assume yfov and xfov are equal
+		}
+		else {
 			const double xfov   =  camera->getXFov().getValue();
 			if (xfov==0)
 				aspect = 1;
@@ -886,7 +887,7 @@ void AnimationImporter::translate_Animations(COLLADAFW::Node *node,
 	COLLADAFW::Node *root = root_map.find(uid) == root_map.end() ? node : root_map[uid];
 
 	Object *ob;
-	if(is_joint)
+	if (is_joint)
 		ob = armature_importer->get_armature_for_joint(root);
 	else
 		ob = object_map.find(uid) == object_map.end() ? NULL : object_map.find(uid)->second;
@@ -942,7 +943,6 @@ void AnimationImporter::translate_Animations(COLLADAFW::Node *node,
 					else {				
 
 						if (is_joint) {
-
 							add_bone_animation_sampled(ob, animcurves, root, node, transform);
 						}
 						else {
@@ -1095,7 +1095,7 @@ void AnimationImporter::translate_Animations(COLLADAFW::Node *node,
 					}
 				}
 			}
-		}	
+		}
 	}
 }
 
@@ -1115,8 +1115,8 @@ void AnimationImporter::add_bone_animation_sampled(Object *ob, std::vector<FCurv
 		for (iter = animcurves.begin(); iter != animcurves.end(); iter++) {
 			FCurve *fcu = *iter;
 
-			fcurve_deg_to_rad(fcu);		 
-		}					
+			fcurve_deg_to_rad(fcu);
+		}
 	}
 
 
@@ -1194,9 +1194,9 @@ void AnimationImporter::add_bone_animation_sampled(Object *ob, std::vector<FCurv
 
 		// calc M
 		calc_joint_parent_mat_rest(par, NULL, root, node);
-		mult_m4_m4m4(temp, par, matfra);
+		mul_m4_m4m4(temp, par, matfra);
 
-		// evaluate_joint_world_transform_at_frame(temp, NULL,, node, fra);
+		// evaluate_joint_world_transform_at_frame(temp, NULL, node, fra);
 
 		// calc special matrix
 		mul_serie_m4(mat, irest, temp, irest_dae, rest, NULL, NULL, NULL, NULL);
@@ -1529,9 +1529,9 @@ Object *AnimationImporter::translate_animation_OLD(COLLADAFW::Node *node,
 
 			// calc M
 			calc_joint_parent_mat_rest(par, NULL, root, node);
-			mult_m4_m4m4(temp, par, matfra);
+			mul_m4_m4m4(temp, par, matfra);
 
-			// evaluate_joint_world_transform_at_frame(temp, NULL,, node, fra);
+			// evaluate_joint_world_transform_at_frame(temp, NULL, node, fra);
 
 			// calc special matrix
 			mul_serie_m4(mat, irest, temp, irest_dae, rest, NULL, NULL, NULL, NULL);
@@ -1678,14 +1678,12 @@ void AnimationImporter::evaluate_transform_at_frame(float mat[4][4], COLLADAFW::
 				default:
 					fprintf(stderr, "unsupported transformation type %d\n", type);
 			}
-			// dae_matrix_to_mat4(tm, m);
-			
 		}
 
 		float temp[4][4];
 		copy_m4_m4(temp, mat);
 
-		mult_m4_m4m4(mat, temp, m);
+		mul_m4_m4m4(mat, temp, m);
 	}
 }
 
@@ -1849,7 +1847,7 @@ void AnimationImporter::get_joint_rest_mat(float mat[4][4], COLLADAFW::Node *roo
 
 		calc_joint_parent_mat_rest(par, NULL, root, node);
 		get_node_mat(m, node, NULL, NULL);
-		mult_m4_m4m4(mat, par, m);
+		mul_m4_m4m4(mat, par, m);
 	}
 }
 
@@ -1868,7 +1866,7 @@ bool AnimationImporter::calc_joint_parent_mat_rest(float mat[4][4], float par[4]
 		if (par) {
 			float temp[4][4];
 			get_node_mat(temp, node, NULL, NULL);
-			mult_m4_m4m4(m, par, temp);
+			mul_m4_m4m4(m, par, temp);
 		}
 		else {
 			get_node_mat(m, node, NULL, NULL);
@@ -1893,7 +1891,7 @@ Object *AnimationImporter::get_joint_object(COLLADAFW::Node *root, COLLADAFW::No
 		job->lay = BKE_scene_base_find(scene, job)->lay = 2;
 
 		mul_v3_fl(job->size, 0.5f);
-		job->recalc |= OB_RECALC_OB;
+		DAG_id_tag_update(&job->id, OB_RECALC_OB);
 
 		verify_adt_action((ID *)&job->id, 1);
 
@@ -1906,7 +1904,7 @@ Object *AnimationImporter::get_joint_object(COLLADAFW::Node *root, COLLADAFW::No
 			float temp[4][4], ipar[4][4];
 			invert_m4_m4(ipar, par_job->obmat);
 			copy_m4_m4(temp, mat);
-			mult_m4_m4m4(mat, ipar, temp);
+			mul_m4_m4m4(mat, ipar, temp);
 		}
 
 		TransformBase::decompose(mat, job->loc, NULL, job->quat, job->size);
@@ -1914,14 +1912,14 @@ Object *AnimationImporter::get_joint_object(COLLADAFW::Node *root, COLLADAFW::No
 		if (par_job) {
 			job->parent = par_job;
 
-			par_job->recalc |= OB_RECALC_OB;
+			DAG_id_tag_update(&par_job->id, OB_RECALC_OB);
 			job->parsubstr[0] = 0;
 		}
 
 		BKE_object_where_is_calc(scene, job);
 
 		// after parenting and layer change
-		DAG_scene_sort(CTX_data_main(C), scene);
+		DAG_relations_tag_update(CTX_data_main(C));
 
 		joint_objects[node->getUniqueId()] = job;
 	}
@@ -1939,7 +1937,7 @@ bool AnimationImporter::evaluate_joint_world_transform_at_frame(float mat[4][4],
 	if (par) {
 		float temp[4][4];
 		evaluate_transform_at_frame(temp, node, node == end ? fra : 0.0f);
-		mult_m4_m4m4(m, par, temp);
+		mul_m4_m4m4(m, par, temp);
 	}
 	else {
 		evaluate_transform_at_frame(m, node, node == end ? fra : 0.0f);
@@ -1973,14 +1971,15 @@ void AnimationImporter::add_bone_fcurve(Object *ob, COLLADAFW::Node *node, FCurv
 	if (grp == NULL) {
 		/* Add a new group, and make it active */
 		grp = (bActionGroup *)MEM_callocN(sizeof(bActionGroup), "bActionGroup");
-					
+
 		grp->flag = AGRP_SELECTED;
 		BLI_strncpy(grp->name, bone_name, sizeof(grp->name));
-					
+
 		BLI_addtail(&act->groups, grp);
-		BLI_uniquename(&act->groups, grp, "Group", '.', offsetof(bActionGroup, name), 64);
+		BLI_uniquename(&act->groups, grp, CTX_DATA_(BLF_I18NCONTEXT_ID_ACTION, "Group"), '.',
+		               offsetof(bActionGroup, name), 64);
 	}
-				
+
 	/* add F-Curve to group */
 	action_groups_add_channel(act, grp, fcu);
 }

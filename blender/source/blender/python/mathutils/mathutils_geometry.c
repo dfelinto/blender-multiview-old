@@ -46,14 +46,12 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
-#define SWAP_FLOAT(a, b, tmp) tmp = a; a = b; b = tmp
-
 /*-------------------------DOC STRINGS ---------------------------*/
 PyDoc_STRVAR(M_Geometry_doc,
 "The Blender geometry module"
 );
 
-//---------------------------------INTERSECTION FUNCTIONS--------------------
+/* ---------------------------------INTERSECTION FUNCTIONS-------------------- */
 
 PyDoc_STRVAR(M_Geometry_intersect_ray_tri_doc,
 ".. function:: intersect_ray_tri(v1, v2, v3, ray, orig, clip=True)\n"
@@ -253,10 +251,86 @@ static PyObject *M_Geometry_intersect_line_line(PyObject *UNUSED(self), PyObject
 	}
 }
 
+/* Line-Line intersection using algorithm from mathworld.wolfram.com */
 
+PyDoc_STRVAR(M_Geometry_intersect_sphere_sphere_2d_doc,
+".. function:: intersect_sphere_sphere_2d(p_a, radius_a, p_b, radius_b)\n"
+"\n"
+"   Returns 2 points on between intersecting circles.\n"
+"\n"
+"   :arg p_a: Center of the first circle\n"
+"   :type p_a: :class:`mathutils.Vector`\n"
+"   :arg radius_a: Radius of the first circle\n"
+"   :type radius_a: float\n"
+"   :arg p_b: Center of the second circle\n"
+"   :type p_b: :class:`mathutils.Vector`\n"
+"   :arg radius_b: Radius of the second circle\n"
+"   :type radius_b: float\n"
+"   :rtype: tuple of :class:`mathutils.Vector`'s or None when there is no intersection\n"
+);
+static PyObject *M_Geometry_intersect_sphere_sphere_2d(PyObject *UNUSED(self), PyObject *args)
+{
+	PyObject *ret;
+	VectorObject *vec_a, *vec_b;
+	float *v_a, *v_b;
+	float rad_a, rad_b;
+	float v_ab[2];
+	float dist;
 
+	if (!PyArg_ParseTuple(args, "O!fO!f:intersect_sphere_sphere_2d",
+	                      &vector_Type, &vec_a, &rad_a,
+	                      &vector_Type, &vec_b, &rad_b))
+	{
+		return NULL;
+	}
 
-//----------------------------geometry.normal() -------------------
+	if (BaseMath_ReadCallback(vec_a) == -1 ||
+	    BaseMath_ReadCallback(vec_b) == -1)
+	{
+		return NULL;
+	}
+
+	ret = PyTuple_New(2);
+
+	v_a = vec_a->vec;
+	v_b = vec_b->vec;
+
+	sub_v2_v2v2(v_ab, v_b, v_a);
+	dist = len_v2(v_ab);
+
+	if (/* out of range */
+	    (dist > rad_a + rad_b) ||
+	    /* fully-contained in the other */
+	    (dist < abs(rad_a - rad_b)) ||
+	    /* co-incident */
+	    (dist < FLT_EPSILON))
+	{
+		/* out of range */
+		PyTuple_SET_ITEM(ret, 0,  Py_None); Py_INCREF(Py_None);
+		PyTuple_SET_ITEM(ret, 1,  Py_None); Py_INCREF(Py_None);
+	}
+	else {
+		const float dist_delta = ((rad_a * rad_a) - (rad_b * rad_b) + (dist * dist)) / (2.0f * dist);
+		const float h = powf(fabsf((rad_a * rad_a) - (dist_delta * dist_delta)), 0.5f);
+		float i_cent[2];
+		float i1[2], i2[2];
+
+		i_cent[0] = v_a[0] + ((v_ab[0] * dist_delta) / dist);
+		i_cent[1] = v_a[1] + ((v_ab[1] * dist_delta) / dist);
+
+		i1[0] = i_cent[0] + h * v_ab[1] / dist;
+		i1[1] = i_cent[1] - h * v_ab[0] / dist;
+
+		i2[0] = i_cent[0] - h * v_ab[1] / dist;
+		i2[1] = i_cent[1] + h * v_ab[0] / dist;
+
+		PyTuple_SET_ITEM(ret, 0, Vector_CreatePyObject(i1, 2, Py_NEW, NULL));
+		PyTuple_SET_ITEM(ret, 1, Vector_CreatePyObject(i2, 2, Py_NEW, NULL));
+	}
+
+	return ret;
+}
+
 PyDoc_STRVAR(M_Geometry_normal_doc,
 ".. function:: normal(v1, v2, v3, v4=None)\n"
 "\n"
@@ -340,7 +414,7 @@ static PyObject *M_Geometry_normal(PyObject *UNUSED(self), PyObject *args)
 	return Vector_CreatePyObject(n, 3, Py_NEW, NULL);
 }
 
-//--------------------------------- AREA FUNCTIONS--------------------
+/* --------------------------------- AREA FUNCTIONS-------------------- */
 
 PyDoc_STRVAR(M_Geometry_area_tri_doc,
 ".. function:: area_tri(v1, v2, v3)\n"
@@ -393,6 +467,51 @@ static PyObject *M_Geometry_area_tri(PyObject *UNUSED(self), PyObject *args)
 	}
 }
 
+PyDoc_STRVAR(M_Geometry_volume_tetrahedron_doc,
+".. function:: volume_tetrahedron(v1, v2, v3, v4)\n"
+"\n"
+"   Return the volume formed by a tetrahedron (points can be in any order).\n"
+"\n"
+"   :arg v1: Point1\n"
+"   :type v1: :class:`mathutils.Vector`\n"
+"   :arg v2: Point2\n"
+"   :type v2: :class:`mathutils.Vector`\n"
+"   :arg v3: Point3\n"
+"   :type v3: :class:`mathutils.Vector`\n"
+"   :arg v4: Point4\n"
+"   :type v4: :class:`mathutils.Vector`\n"
+"   :rtype: float\n"
+);
+static PyObject *M_Geometry_volume_tetrahedron(PyObject *UNUSED(self), PyObject *args)
+{
+	VectorObject *vec1, *vec2, *vec3, *vec4;
+
+	if (!PyArg_ParseTuple(args, "O!O!O!O!:volume_tetrahedron",
+	                      &vector_Type, &vec1,
+	                      &vector_Type, &vec2,
+	                      &vector_Type, &vec3,
+	                      &vector_Type, &vec4))
+	{
+		return NULL;
+	}
+
+	if (vec1->size < 3 || vec2->size < 3 || vec3->size < 3 || vec4->size < 3) {
+		PyErr_SetString(PyExc_ValueError,
+		                "geometry.volume_tetrahedron(...): "
+		                " can't use 2D Vectors");
+		return NULL;
+	}
+
+	if (BaseMath_ReadCallback(vec1) == -1 ||
+	    BaseMath_ReadCallback(vec2) == -1 ||
+	    BaseMath_ReadCallback(vec3) == -1 ||
+	    BaseMath_ReadCallback(vec4) == -1)
+	{
+		return NULL;
+	}
+
+	return PyFloat_FromDouble(volume_tetrahedron_v3(vec1->vec, vec2->vec, vec3->vec, vec4->vec));
+}
 
 PyDoc_STRVAR(M_Geometry_intersect_line_line_2d_doc,
 ".. function:: intersect_line_line_2d(lineA_p1, lineA_p2, lineB_p1, lineB_p2)\n"
@@ -660,8 +779,8 @@ static PyObject *M_Geometry_intersect_line_sphere_2d(PyObject *UNUSED(self), PyO
 	float sphere_radius;
 	int clip = TRUE;
 
-	float isect_a[3];
-	float isect_b[3];
+	float isect_a[2];
+	float isect_b[2];
 
 	if (!PyArg_ParseTuple(args, "O!O!O!f|i:intersect_line_sphere_2d",
 	                      &vector_Type, &line_a,
@@ -679,24 +798,24 @@ static PyObject *M_Geometry_intersect_line_sphere_2d(PyObject *UNUSED(self), PyO
 		return NULL;
 	}
 	else {
-		short use_a = TRUE;
-		short use_b = TRUE;
+		bool use_a = true;
+		bool use_b = true;
 		float lambda;
 
 		PyObject *ret = PyTuple_New(2);
 
 		switch (isect_line_sphere_v2(line_a->vec, line_b->vec, sphere_co->vec, sphere_radius, isect_a, isect_b)) {
 			case 1:
-				if (!(!clip || (((lambda = line_point_factor_v2(isect_a, line_a->vec, line_b->vec)) >= 0.0f) && (lambda <= 1.0f)))) use_a = FALSE;
+				if (!(!clip || (((lambda = line_point_factor_v2(isect_a, line_a->vec, line_b->vec)) >= 0.0f) && (lambda <= 1.0f)))) use_a = false;
 				use_b = FALSE;
 				break;
 			case 2:
-				if (!(!clip || (((lambda = line_point_factor_v2(isect_a, line_a->vec, line_b->vec)) >= 0.0f) && (lambda <= 1.0f)))) use_a = FALSE;
-				if (!(!clip || (((lambda = line_point_factor_v2(isect_b, line_a->vec, line_b->vec)) >= 0.0f) && (lambda <= 1.0f)))) use_b = FALSE;
+				if (!(!clip || (((lambda = line_point_factor_v2(isect_a, line_a->vec, line_b->vec)) >= 0.0f) && (lambda <= 1.0f)))) use_a = false;
+				if (!(!clip || (((lambda = line_point_factor_v2(isect_b, line_a->vec, line_b->vec)) >= 0.0f) && (lambda <= 1.0f)))) use_b = false;
 				break;
 			default:
-				use_a = FALSE;
-				use_b = FALSE;
+				use_a = false;
+				use_b = false;
 		}
 
 		if (use_a) { PyTuple_SET_ITEM(ret, 0,  Vector_CreatePyObject(isect_a, 2, Py_NEW, NULL)); }
@@ -728,6 +847,7 @@ static PyObject *M_Geometry_intersect_point_line(PyObject *UNUSED(self), PyObjec
 	float pt_in[3], pt_out[3], l1[3], l2[3];
 	float lambda;
 	PyObject *ret;
+	int size = 2;
 	
 	if (!PyArg_ParseTuple(args, "O!O!O!:intersect_point_line",
 	                      &vector_Type, &pt,
@@ -745,20 +865,20 @@ static PyObject *M_Geometry_intersect_point_line(PyObject *UNUSED(self), PyObjec
 	}
 
 	/* accept 2d verts */
-	if (pt->size == 3) {     copy_v3_v3(pt_in, pt->vec); }
-	else { pt_in[2] = 0.0f;  copy_v2_v2(pt_in, pt->vec); }
+	if (pt->size >= 3)     { copy_v3_v3(pt_in, pt->vec); size = 3; }
+	else                   { copy_v2_v2(pt_in, pt->vec); pt_in[2] = 0.0f; }
 	
-	if (line_1->size == 3) { copy_v3_v3(l1, line_1->vec); }
-	else { l1[2] = 0.0f;     copy_v2_v2(l1, line_1->vec); }
+	if (line_1->size >= 3) { copy_v3_v3(l1, line_1->vec); size = 3; }
+	else                   { copy_v2_v2(l1, line_1->vec); l1[2] = 0.0f; }
 	
-	if (line_2->size == 3) { copy_v3_v3(l2, line_2->vec); }
-	else { l2[2] = 0.0f;     copy_v2_v2(l2, line_2->vec); }
+	if (line_2->size >= 3) { copy_v3_v3(l2, line_2->vec); size = 3; }
+	else                   { copy_v2_v2(l2, line_2->vec); l2[2] = 0.0f; }
 	
 	/* do the calculation */
 	lambda = closest_to_line_v3(pt_out, pt_in, l1, l2);
 	
 	ret = PyTuple_New(2);
-	PyTuple_SET_ITEM(ret, 0, Vector_CreatePyObject(pt_out, 3, Py_NEW, NULL));
+	PyTuple_SET_ITEM(ret, 0, Vector_CreatePyObject(pt_out, size, Py_NEW, NULL));
 	PyTuple_SET_ITEM(ret, 1, PyFloat_FromDouble(lambda));
 	return ret;
 }
@@ -978,11 +1098,13 @@ static PyObject *M_Geometry_points_in_planes(PyObject *UNUSED(self), PyObject *a
 
 		float n1n2[3], n2n3[3], n3n1[3];
 		float potentialVertex[3];
-		char *planes_used = MEM_callocN(sizeof(char) * len, __func__);
+		char *planes_used = PyMem_Malloc(sizeof(char) * len);
 
 		/* python */
 		PyObject *py_verts = PyList_New(0);
 		PyObject *py_plene_index = PyList_New(0);
+
+		memset(planes_used, 0, sizeof(char) * len);
 
 		for (i = 0; i < len; i++) {
 			const float *N1 = planes[i];
@@ -1036,7 +1158,7 @@ static PyObject *M_Geometry_points_in_planes(PyObject *UNUSED(self), PyObject *a
 				Py_DECREF(item);
 			}
 		}
-		MEM_freeN(planes_used);
+		PyMem_Free(planes_used);
 
 		{
 			PyObject *ret = PyTuple_New(2);
@@ -1105,7 +1227,7 @@ static PyObject *M_Geometry_interpolate_bezier(PyObject *UNUSED(self), PyObject 
 		return NULL;
 	}
 
-	dims = MAX4(vec_k1->size, vec_h1->size, vec_h2->size, vec_k2->size);
+	dims = max_iiii(vec_k1->size, vec_h1->size, vec_h2->size, vec_k2->size);
 
 	for (i = 0; i < vec_k1->size; i++) k1[i] = vec_k1->vec[i];
 	for (i = 0; i < vec_h1->size; i++) h1[i] = vec_h1->vec[i];
@@ -1221,7 +1343,8 @@ static PyObject *M_Geometry_tessellate_polygon(PyObject *UNUSED(self), PyObject 
 	}
 	else if (totpoints) {
 		/* now make the list to return */
-		BKE_displist_fill(&dispbase, &dispbase, 0);
+		/* TODO, add normal arg */
+		BKE_displist_fill(&dispbase, &dispbase, NULL, false);
 
 		/* The faces are stored in a new DisplayList
 		 * thats added to the head of the listbase */
@@ -1379,7 +1502,9 @@ static PyMethodDef M_Geometry_methods[] = {
 	{"intersect_line_sphere", (PyCFunction) M_Geometry_intersect_line_sphere, METH_VARARGS, M_Geometry_intersect_line_sphere_doc},
 	{"intersect_line_sphere_2d", (PyCFunction) M_Geometry_intersect_line_sphere_2d, METH_VARARGS, M_Geometry_intersect_line_sphere_2d_doc},
 	{"distance_point_to_plane", (PyCFunction) M_Geometry_distance_point_to_plane, METH_VARARGS, M_Geometry_distance_point_to_plane_doc},
+	{"intersect_sphere_sphere_2d", (PyCFunction) M_Geometry_intersect_sphere_sphere_2d, METH_VARARGS, M_Geometry_intersect_sphere_sphere_2d_doc},
 	{"area_tri", (PyCFunction) M_Geometry_area_tri, METH_VARARGS, M_Geometry_area_tri_doc},
+	{"volume_tetrahedron", (PyCFunction) M_Geometry_volume_tetrahedron, METH_VARARGS, M_Geometry_volume_tetrahedron_doc},
 	{"normal", (PyCFunction) M_Geometry_normal, METH_VARARGS, M_Geometry_normal_doc},
 	{"barycentric_transform", (PyCFunction) M_Geometry_barycentric_transform, METH_VARARGS, M_Geometry_barycentric_transform_doc},
 	{"points_in_planes", (PyCFunction) M_Geometry_points_in_planes, METH_VARARGS, M_Geometry_points_in_planes_doc},

@@ -33,6 +33,7 @@ GaussianAlphaYBlurOperation::GaussianAlphaYBlurOperation() : BlurBaseOperation(C
 {
 	this->m_gausstab = NULL;
 	this->m_rad = 0;
+	this->m_falloff = -1;  /* intentionally invalid, so we can detect uninitialized values */
 }
 
 void *GaussianAlphaYBlurOperation::initializeTileData(rcti *rect)
@@ -54,8 +55,7 @@ void GaussianAlphaYBlurOperation::initExecution()
 
 	if (this->m_sizeavailable) {
 		float rad = this->m_size * this->m_data->sizey;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -68,8 +68,7 @@ void GaussianAlphaYBlurOperation::updateGauss()
 	if (this->m_gausstab == NULL) {
 		updateSize();
 		float rad = this->m_size * this->m_data->sizey;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -78,8 +77,7 @@ void GaussianAlphaYBlurOperation::updateGauss()
 	if (this->m_distbuf_inv == NULL) {
 		updateSize();
 		float rad = this->m_size * this->m_data->sizex;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_distbuf_inv = BlurBaseOperation::make_dist_fac_inverse(rad, this->m_falloff);
@@ -103,11 +101,9 @@ void GaussianAlphaYBlurOperation::executePixel(float output[4], int x, int y, vo
 	int miny = y - this->m_rad;
 	int maxy = y + this->m_rad;
 	int minx = x;
-	int maxx = x;
 	miny = max(miny, inputBuffer->getRect()->ymin);
 	minx = max(minx, inputBuffer->getRect()->xmin);
-	maxy = min(maxy, inputBuffer->getRect()->ymax);
-	maxx = min(maxx, inputBuffer->getRect()->xmax);
+	maxy = min(maxy, inputBuffer->getRect()->ymax - 1);
 
 	/* *** this is the main part which is different to 'GaussianYBlurOperation'  *** */
 	int step = getStep();
@@ -120,7 +116,7 @@ void GaussianAlphaYBlurOperation::executePixel(float output[4], int x, int y, vo
 	float value_max = finv_test(buffer[(x * 4) + (y * 4 * bufferwidth)], do_invert); /* init with the current color to avoid unneeded lookups */
 	float distfacinv_max = 1.0f; /* 0 to 1 */
 
-	for (int ny = miny; ny < maxy; ny += step) {
+	for (int ny = miny; ny <= maxy; ny += step) {
 		int bufferindex = ((minx - bufferstartx) * 4) + ((ny - bufferstarty) * 4 * bufferwidth);
 
 		const int index = (ny - y) + this->m_rad;
@@ -183,8 +179,8 @@ bool GaussianAlphaYBlurOperation::determineDependingAreaOfInterest(rcti *input, 
 		if (this->m_sizeavailable && this->m_gausstab != NULL) {
 			newInput.xmax = input->xmax;
 			newInput.xmin = input->xmin;
-			newInput.ymax = input->ymax + this->m_rad;
-			newInput.ymin = input->ymin - this->m_rad;
+			newInput.ymax = input->ymax + this->m_rad + 1;
+			newInput.ymin = input->ymin - this->m_rad - 1;
 		}
 		else {
 			newInput.xmax = this->getWidth();

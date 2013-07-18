@@ -27,6 +27,10 @@
 
 /** \file DNA_action_types.h
  *  \ingroup DNA
+ *
+ * Define actions data-block for the animation system.
+ * A collection of animation curves and drivers to be assigned to data-blocks
+ * or sequenced in the non-linear-editor (NLA).
  */
 
 #ifndef __DNA_ACTION_TYPES_H__
@@ -155,7 +159,9 @@ typedef enum eMotionPaths_ViewFlag {
 	/* show keyframe/frame numbers */
 	MOTIONPATH_VIEW_KFNOS       = (1 << 2),
 	/* find keyframes in whole action (instead of just in matching group name) */
-	MOTIONPATH_VIEW_KFACT       = (1 << 3)
+	MOTIONPATH_VIEW_KFACT       = (1 << 3),
+	/* draw lines on path */
+	MOTIONPATH_VIEW_LINES       = (1 << 4)
 } eMotionPath_ViewFlag;
 
 /* bAnimVizSettings->path_bakeflag */
@@ -372,7 +378,7 @@ typedef enum ePose_Flags {
 
 /* bPose->iksolver and bPose->ikparam->iksolver */
 typedef enum ePose_IKSolverType {
-	IKSOLVER_LEGACY = 0,
+	IKSOLVER_STANDARD = 0,
 	IKSOLVER_ITASC = 1
 } ePose_IKSolverType;
 
@@ -556,6 +562,8 @@ typedef enum eDopeSheet_FilterFlag {
 	ADS_FILTER_NONTREE          = (1 << 19),
 	ADS_FILTER_NOTEX            = (1 << 20),
 	ADS_FILTER_NOSPK            = (1 << 21),
+	ADS_FILTER_NOLINESTYLE      = (1 << 22),
+	ADS_FILTER_NOMODIFIERS      = (1 << 23),
 
 	/* NLA-specific filters */
 	ADS_FILTER_NLA_NOACT        = (1 << 25),  /* if the AnimData block has no NLA data, don't include to just show Action-line */
@@ -563,9 +571,10 @@ typedef enum eDopeSheet_FilterFlag {
 	/* general filtering 3 */
 	ADS_FILTER_INCL_HIDDEN      = (1 << 26),  /* include 'hidden' channels too (i.e. those from hidden Objects/Bones) */
 	ADS_FILTER_BY_FCU_NAME      = (1 << 27),  /* for F-Curves, filter by the displayed name (i.e. to isolate all Location curves only) */
+	ADS_FILTER_ONLY_ERRORS		= (1 << 28),  /* show only F-Curves which are disabled/have errors - for debugging drivers */
 	
 	/* combination filters (some only used at runtime) */
-	ADS_FILTER_NOOBDATA = (ADS_FILTER_NOCAM | ADS_FILTER_NOMAT | ADS_FILTER_NOLAM | ADS_FILTER_NOCUR | ADS_FILTER_NOPART | ADS_FILTER_NOARM | ADS_FILTER_NOSPK)
+	ADS_FILTER_NOOBDATA = (ADS_FILTER_NOCAM | ADS_FILTER_NOMAT | ADS_FILTER_NOLAM | ADS_FILTER_NOCUR | ADS_FILTER_NOPART | ADS_FILTER_NOARM | ADS_FILTER_NOSPK | ADS_FILTER_NOMODIFIERS)
 } eDopeSheet_FilterFlag;	
 
 /* DopeSheet general flags */
@@ -604,11 +613,11 @@ typedef enum eSAction_Flag {
 	/* draw time in seconds instead of time in frames */
 	SACTION_DRAWTIME = (1 << 2),
 	/* don't filter action channels according to visibility */
-	//SACTION_NOHIDE = (1<<3), // XXX depreceated... old animation system
+	//SACTION_NOHIDE = (1<<3), // XXX deprecated... old animation system
 	/* don't kill overlapping keyframes after transform */
 	SACTION_NOTRANSKEYCULL = (1 << 4),
 	/* don't include keyframes that are out of view */
-	//SACTION_HORIZOPTIMISEON = (1<<5), // XXX depreceated... old irrelevant trick
+	//SACTION_HORIZOPTIMISEON = (1<<5), // XXX deprecated... old irrelevant trick
 	/* show pose-markers (local to action) in Action Editor mode  */
 	SACTION_POSEMARKERS_SHOW = (1 << 6),
 	/* don't draw action channels using group colors (where applicable) */
@@ -653,7 +662,7 @@ typedef enum eAnimEdit_AutoSnap {
 /* ************************************************ */
 /* Legacy Data */
 
-/* WARNING: Action Channels are now depreceated... they were part of the old animation system!
+/* WARNING: Action Channels are now deprecated... they were part of the old animation system!
  *        (ONLY USED FOR DO_VERSIONS...)
  * 
  * Action Channels belong to Actions. They are linked with an IPO block, and can also own 
@@ -688,4 +697,4 @@ typedef enum ACHAN_FLAG {
 	ACHAN_MOVED     = (1 << 31)
 } ACHAN_FLAG; 
 
-#endif
+#endif  /* __DNA_ACTION_TYPES_H__ */

@@ -31,8 +31,8 @@
 #ifndef __SCA_LOGICMANAGER_H__
 #define __SCA_LOGICMANAGER_H__
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable:4786)
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
 #endif 
 
 #include <vector>
@@ -52,7 +52,7 @@ using namespace std;
 typedef std::list<class SCA_IController*> controllerlist;
 typedef std::map<class SCA_ISensor*,controllerlist > sensormap_t;
 
-/** 
+/**
  * This manager handles sensor, controllers and actuators.
  * logic executes each frame the following way:
  * find triggering sensors
@@ -63,7 +63,7 @@ typedef std::map<class SCA_ISensor*,controllerlist > sensormap_t;
  * clear triggering sensors
  * clear triggered controllers
  * (actuators may be active during a longer timeframe)
-*/
+ */
 
 #include "SCA_ILogicBrick.h"
 #include "SCA_IActuator.h"
@@ -117,8 +117,8 @@ public:
 	void	RemoveGameObject(const STR_String& gameobjname);
 
 	/**
-	* remove Logic Bricks from the running logicmanager
-	*/
+	 * remove Logic Bricks from the running logicmanager
+	 */
 	void	RemoveSensor(SCA_ISensor* sensor);
 	void	RemoveController(SCA_IController* controller);
 	void	RemoveActuator(SCA_IActuator* actuator);
@@ -151,5 +151,4 @@ public:
 #endif
 };
 
-#endif //__SCA_LOGICMANAGER_H__
-
+#endif  /* __SCA_LOGICMANAGER_H__ */

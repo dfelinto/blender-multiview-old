@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -81,6 +81,9 @@ def create_qtc_project_main():
     else:
         includes, defines = cmake_advanced_info()
 
+        if (includes, defines) == (None, None):
+            return
+
         # for some reason it doesnt give all internal includes
         includes = list(set(includes) | set(os.path.dirname(f)
                         for f in files_rel if is_c_header(f)))
@@ -105,7 +108,13 @@ def create_qtc_project_main():
 
         qtc_cfg = os.path.join(PROJECT_DIR, "%s.config" % FILE_NAME)
         f = open(qtc_cfg, 'w')
-        f.write("// ADD PREDEFINED MACROS HERE!\n")
+        f.write("// ADD PREDEFINED MACROS TO %s_custom.config!\n" % FILE_NAME)
+        qtc_custom_cfg = os.path.join(PROJECT_DIR, "%s_custom.config" % FILE_NAME)
+        if os.path.exists(qtc_custom_cfg):
+            fc = open(qtc_custom_cfg, 'r')
+            f.write(fc.read())
+            fc.close()
+            f.write("\n")
         defines_final = [("#define %s %s" % (item[0], quote_define(item[1]))) for item in defines]
         if sys.platform != "win32":
             defines_final += cmake_compiler_defines()

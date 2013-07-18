@@ -43,6 +43,7 @@
 
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
+#include "DNA_world_types.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
@@ -63,10 +64,13 @@
 #include "RE_pipeline.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
+#include "IMB_colormanagement.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
 
+#include "BIF_gl.h"
+#include "BIF_glutil.h"
 
 #include "GPU_extensions.h"
 
@@ -131,6 +135,9 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 	int sizex = oglrender->sizex;
 	int sizey = oglrender->sizey;
 	const short view_context = (v3d != NULL);
+	bool draw_bgpic = true;
+	bool draw_sky = (scene->r.alphamode == R_ADDSKY);
+	unsigned char *rect = NULL;
 
 	rr = RE_AcquireResultRead(oglrender->re);
 
@@ -143,30 +150,39 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 		ibuf = BKE_sequencer_give_ibuf(context, CFRA, chanshown);
 
 		if (ibuf) {
+			ImBuf *linear_ibuf;
+
 			BLI_assert((oglrender->sizex == ibuf->x) && (oglrender->sizey == ibuf->y));
 
-			if (ibuf->rect_float == NULL) {
-				/* internally sequencer working in sRGB space and stores both bytes and float
-				 * buffers in sRGB space, but if byte->float onversion doesn't happen in sequencer
-				 * (e.g. when adding image sequence/movie into sequencer) there'll be only
-				 * byte buffer and profile will still indicate sRGB->linear space conversion is needed
-				 * here we're ensure there'll be no conversion happen and float buffer would store
-				 * linear frame (sergey) */
-				ibuf->profile = IB_PROFILE_NONE;
-				IMB_float_from_rect(ibuf);
+			linear_ibuf = IMB_dupImBuf(ibuf);
+			IMB_freeImBuf(ibuf);
+
+			if (linear_ibuf->rect_float == NULL) {
+				/* internally sequencer working in display space and stores both bytes and float buffers in that space.
+				 * It is possible that byte->float onversion didn't happen in sequencer (e.g. when adding image sequence/movie
+				 * into sequencer) there'll be only byte buffer. Create float buffer from existing byte buffer, making it linear
+				 */
+
+				IMB_float_from_rect(linear_ibuf);
+			}
+			else {
+				/* ensure float buffer is in linear space, not in display space */
+				BKE_sequencer_imbuf_from_sequencer_space(scene, linear_ibuf);
 			}
 
-			memcpy(rr->rectf, ibuf->rect_float, sizeof(float) * 4 * oglrender->sizex * oglrender->sizey);
+			memcpy(rr->rectf, linear_ibuf->rect_float, sizeof(float) * 4 * oglrender->sizex * oglrender->sizey);
 
-			IMB_freeImBuf(ibuf);
+			IMB_freeImBuf(linear_ibuf);
 		}
 	}
 	else if (view_context) {
+		ED_view3d_draw_offscreen_init(scene, v3d);
+
 		GPU_offscreen_bind(oglrender->ofs); /* bind */
 
 		/* render 3d view */
 		if (rv3d->persp == RV3D_CAMOB && v3d->camera) {
-			/*int is_ortho= scene->r.mode & R_ORTHO;*/
+			/*int is_ortho = scene->r.mode & R_ORTHO;*/
 			camera = v3d->camera;
 			RE_GetCameraWindow(oglrender->re, camera, scene->r.cfra, winmat);
 			
@@ -175,28 +191,32 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 			rctf viewplane;
 			float clipsta, clipend;
 
-			int is_ortho = ED_view3d_viewplane_get(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend);
+			int is_ortho = ED_view3d_viewplane_get(v3d, rv3d, sizex, sizey, &viewplane, &clipsta, &clipend, NULL);
 			if (is_ortho) orthographic_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, -clipend, clipend);
 			else perspective_m4(winmat, viewplane.xmin, viewplane.xmax, viewplane.ymin, viewplane.ymax, clipsta, clipend);
 		}
 
-		if ((scene->r.mode & R_OSA) == 0) { 
-			ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat, TRUE);
-			GPU_offscreen_read_pixels(oglrender->ofs, GL_FLOAT, rr->rectf);
+		rect = MEM_mallocN(sizex * sizey * sizeof(unsigned char) * 4, "offscreen rect");
+
+		if ((scene->r.mode & R_OSA) == 0) {
+			ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat, draw_bgpic, draw_sky);
+			GPU_offscreen_read_pixels(oglrender->ofs, GL_UNSIGNED_BYTE, rect);
 		}
 		else {
 			/* simple accumulation, less hassle then FSAA FBO's */
 			static float jit_ofs[32][2];
 			float winmat_jitter[4][4];
-			float *accum_buffer = MEM_mallocN(sizex * sizey * sizeof(float) * 4, "accum1");
-			float *accum_tmp = MEM_mallocN(sizex * sizey * sizeof(float) * 4, "accum2");
-			int j;
+			int *accum_buffer = MEM_mallocN(sizex * sizey * sizeof(int) * 4, "accum1");
+			int i, j;
 
 			BLI_jitter_init(jit_ofs[0], scene->r.osa);
 
 			/* first sample buffer, also initializes 'rv3d->persmat' */
-			ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat, TRUE);
-			GPU_offscreen_read_pixels(oglrender->ofs, GL_FLOAT, accum_buffer);
+			ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat, draw_bgpic, draw_sky);
+			GPU_offscreen_read_pixels(oglrender->ofs, GL_UNSIGNED_BYTE, rect);
+
+			for (i = 0; i < sizex * sizey * 4; i++)
+				accum_buffer[i] = rect[i];
 
 			/* skip the first sample */
 			for (j = 1; j < scene->r.osa; j++) {
@@ -205,15 +225,17 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 				                    (jit_ofs[j][0] * 2.0f) / sizex,
 				                    (jit_ofs[j][1] * 2.0f) / sizey);
 
-				ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat_jitter, TRUE);
-				GPU_offscreen_read_pixels(oglrender->ofs, GL_FLOAT, accum_tmp);
-				add_vn_vn(accum_buffer, accum_tmp, sizex * sizey * sizeof(float));
+				ED_view3d_draw_offscreen(scene, v3d, ar, sizex, sizey, NULL, winmat_jitter, draw_bgpic, draw_sky);
+				GPU_offscreen_read_pixels(oglrender->ofs, GL_UNSIGNED_BYTE, rect);
+
+				for (i = 0; i < sizex * sizey * 4; i++)
+					accum_buffer[i] += rect[i];
 			}
 
-			mul_vn_vn_fl(rr->rectf, accum_buffer, sizex * sizey * sizeof(float), 1.0f / scene->r.osa);
+			for (i = 0; i < sizex * sizey * 4; i++)
+				rect[i] = accum_buffer[i] / scene->r.osa;
 
 			MEM_freeN(accum_buffer);
-			MEM_freeN(accum_tmp);
 		}
 
 		GPU_offscreen_unbind(oglrender->ofs); /* unbind */
@@ -221,38 +243,43 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 	else {
 		/* shouldnt suddenly give errors mid-render but possible */
 		char err_out[256] = "unknown";
-		ImBuf *ibuf_view = ED_view3d_draw_offscreen_imbuf_simple(scene, scene->camera, oglrender->sizex, oglrender->sizey, IB_rectfloat, OB_SOLID, TRUE, err_out);
+		ImBuf *ibuf_view = ED_view3d_draw_offscreen_imbuf_simple(scene, scene->camera, oglrender->sizex, oglrender->sizey,
+		                                                         IB_rect, OB_SOLID, FALSE, TRUE,
+		                                                         (draw_sky) ? R_ADDSKY: R_ALPHAPREMUL, err_out);
 		camera = scene->camera;
 
 		if (ibuf_view) {
-			memcpy(rr->rectf, ibuf_view->rect_float, sizeof(float) * 4 * oglrender->sizex * oglrender->sizey);
+			/* steal rect reference from ibuf */
+			rect = (unsigned char *)ibuf_view->rect;
+			ibuf_view->mall &= ~IB_rect;
+
 			IMB_freeImBuf(ibuf_view);
 		}
 		else {
 			fprintf(stderr, "%s: failed to get buffer, %s\n", __func__, err_out);
 		}
 	}
-	
-	/* rr->rectf is now filled with image data */
-
-	if ((scene->r.stamp & R_STAMP_ALL) && (scene->r.stamp & R_STAMP_DRAW))
-		BKE_stamp_buf(scene, camera, NULL, rr->rectf, rr->rectx, rr->recty, 4);
 
 	/* note on color management:
 	 *
 	 * OpenGL renders into sRGB colors, but render buffers are expected to be
-	 * linear if color management is enabled. So we convert to linear here, so
-	 * the conversion back to bytes using the color management flag can make it
-	 * sRGB again, and so that e.g. openexr saving also saves the correct linear
-	 * float buffer. */
+	 * linear So we convert to linear here, so the conversion back to bytes can make it
+	 * sRGB (or other display space) again, and so that e.g. openexr saving also saves the
+	 * correct linear float buffer.
+	 */
 
-	if (oglrender->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT) {
-		int predivide = 0; /* no alpha */
-
-		IMB_buffer_float_from_float(rr->rectf, rr->rectf,
-		                            4, IB_PROFILE_LINEAR_RGB, IB_PROFILE_SRGB, predivide,
-		                            oglrender->sizex, oglrender->sizey, oglrender->sizex, oglrender->sizex);
+	if (rect) {
+		/* sequencer has got trickier conversion happened above
+		 * also assume opengl's space matches byte buffer color space */
+		IMB_buffer_float_from_byte(rr->rectf, rect,
+		                           IB_PROFILE_LINEAR_RGB, IB_PROFILE_SRGB, true,
+		                           oglrender->sizex, oglrender->sizey, oglrender->sizex, oglrender->sizex);
 	}
+
+	/* rr->rectf is now filled with image data */
+
+	if ((scene->r.stamp & R_STAMP_ALL) && (scene->r.stamp & R_STAMP_DRAW))
+		BKE_stamp_buf(scene, camera, rect, rr->rectf, rr->rectx, rr->recty, 4);
 
 	RE_ReleaseResult(oglrender->re);
 
@@ -260,8 +287,15 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 	ibuf = BKE_image_acquire_ibuf(oglrender->ima, &oglrender->iuser, &lock);
 
 	if (ibuf) {
-		image_buffer_rect_update(scene, rr, ibuf, NULL);
+		/* update display buffer */
+		if (ibuf->rect == NULL)
+			imb_addrectImBuf(ibuf);
 
+		IMB_partial_display_buffer_update(ibuf, rr->rectf, rect, rr->rectx, 0, 0,
+		                                  &scene->view_settings, &scene->display_settings,
+		                                  0, 0, rr->rectx, rr->recty, true);
+
+		/* write file for animation */
 		if (oglrender->write_still) {
 			char name[FILE_MAX];
 			int ok;
@@ -270,14 +304,17 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 				IMB_color_to_bw(ibuf);
 			}
 
-			BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, scene->r.im_format.imtype, scene->r.scemode & R_EXTENSION, FALSE);
+			BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE);
 			ok = BKE_imbuf_write_as(ibuf, name, &scene->r.im_format, TRUE); /* no need to stamp here */
 			if (ok) printf("OpenGL Render written to '%s'\n", name);
 			else printf("OpenGL Render failed to write '%s'\n", name);
 		}
 	}
 	
-	BKE_image_release_ibuf(oglrender->ima, lock);
+	BKE_image_release_ibuf(oglrender->ima, ibuf, lock);
+
+	if (rect)
+		MEM_freeN(rect);
 }
 
 static int screen_opengl_render_init(bContext *C, wmOperator *op)
@@ -297,7 +334,7 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 	char err_out[256] = "unknown";
 
 	if (G.background) {
-		BKE_report(op->reports, RPT_ERROR, "Can't use OpenGL render in background mode (no opengl context)");
+		BKE_report(op->reports, RPT_ERROR, "Cannot use OpenGL render in background mode (no opengl context)");
 		return 0;
 	}
 
@@ -318,12 +355,12 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 	}
 
 	if (!is_animation && is_write_still && BKE_imtype_is_movie(scene->r.im_format.imtype)) {
-		BKE_report(op->reports, RPT_ERROR, "Can't write a single file with an animation format selected");
+		BKE_report(op->reports, RPT_ERROR, "Cannot write a single file with an animation format selected");
 		return 0;
 	}
 
-	/* stop all running jobs, currently previews frustrate Render */
-	WM_jobs_stop_all(CTX_wm_manager(C));
+	/* stop all running jobs, except screen one. currently previews frustrate Render */
+	WM_jobs_kill_all_except(CTX_wm_manager(C), CTX_wm_screen(C));
 
 	/* create offscreen buffer */
 	sizex = (scene->r.size * scene->r.xsch) / 100;
@@ -333,7 +370,7 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 	ofs = GPU_offscreen_create(sizex, sizey, err_out);
 
 	if (!ofs) {
-		BKE_reportf(op->reports, RPT_ERROR, "Failed to create OpenGL offscreen buffer, %s", err_out);
+		BKE_reportf(op->reports, RPT_ERROR, "Failed to create OpenGL off-screen buffer, %s", err_out);
 		return 0;
 	}
 
@@ -370,8 +407,7 @@ static int screen_opengl_render_init(bContext *C, wmOperator *op)
 		oglrender->rv3d = oglrender->ar->regiondata;
 
 		/* MUST be cleared on exit */
-		oglrender->scene->customdata_mask_modal = (ED_view3d_datamask(oglrender->scene, oglrender->v3d) |
-		                                           ED_view3d_object_datamask(oglrender->scene));
+		oglrender->scene->customdata_mask_modal = ED_view3d_datamask(oglrender->scene, oglrender->v3d);
 
 		/* apply immediately in case we're rendering from a script,
 		 * running notifiers again will overwrite */
@@ -470,7 +506,7 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 	Main *bmain = CTX_data_main(C);
 	OGLRender *oglrender = op->customdata;
 	Scene *scene = oglrender->scene;
-	ImBuf *ibuf;
+	ImBuf *ibuf, *ibuf_save = NULL;
 	void *lock;
 	char name[FILE_MAX];
 	int ok = 0;
@@ -494,7 +530,7 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 	is_movie = BKE_imtype_is_movie(scene->r.im_format.imtype);
 
 	if (!is_movie) {
-		BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, scene->r.im_format.imtype, scene->r.scemode & R_EXTENSION, TRUE);
+		BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE);
 
 		if ((scene->r.mode & R_NO_OVERWRITE) && BLI_exists(name)) {
 			printf("skipping existing frame \"%s\"\n", name);
@@ -505,10 +541,6 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 			return 1;
 		}
 	}
-
-	/* update animated image textures for gpu, etc,
-	 * call before BKE_scene_update_for_newframe so modifiers with textures don't lag 1 frame */
-	ED_image_update_frame(bmain, CFRA);
 
 	BKE_scene_update_for_newframe(bmain, scene, screen_opengl_layers(oglrender));
 
@@ -536,26 +568,48 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 	ibuf = BKE_image_acquire_ibuf(oglrender->ima, &oglrender->iuser, &lock);
 
 	if (ibuf) {
+		int needs_free = FALSE;
+
+		ibuf_save = ibuf;
+
+		if (is_movie || !BKE_imtype_requires_linear_float(scene->r.im_format.imtype)) {
+			ibuf_save = IMB_colormanagement_imbuf_for_write(ibuf, TRUE, TRUE, &scene->view_settings,
+			                                                &scene->display_settings, &scene->r.im_format);
+
+			needs_free = TRUE;
+		}
+
 		/* color -> grayscale */
 		/* editing directly would alter the render view */
 		if (scene->r.im_format.planes == R_IMF_PLANES_BW) {
-			ImBuf *ibuf_bw = IMB_dupImBuf(ibuf);
+			ImBuf *ibuf_bw = IMB_dupImBuf(ibuf_save);
 			IMB_color_to_bw(ibuf_bw);
-			// IMB_freeImBuf(ibuf); /* owned by the image */
-			ibuf = ibuf_bw;
+
+			if (needs_free)
+				IMB_freeImBuf(ibuf_save);
+
+			ibuf_save = ibuf_bw;
 		}
 		else {
 			/* this is lightweight & doesnt re-alloc the buffers, only do this
 			 * to save the correct bit depth since the image is always RGBA */
-			ImBuf *ibuf_cpy = IMB_allocImBuf(ibuf->x, ibuf->y, scene->r.im_format.planes, 0);
-			ibuf_cpy->rect = ibuf->rect;
-			ibuf_cpy->rect_float = ibuf->rect_float;
-			ibuf_cpy->zbuf_float = ibuf->zbuf_float;
-			ibuf = ibuf_cpy;
+			ImBuf *ibuf_cpy = IMB_allocImBuf(ibuf_save->x, ibuf_save->y, scene->r.im_format.planes, 0);
+
+			ibuf_cpy->rect = ibuf_save->rect;
+			ibuf_cpy->rect_float = ibuf_save->rect_float;
+			ibuf_cpy->zbuf_float = ibuf_save->zbuf_float;
+
+			if (needs_free) {
+				ibuf_cpy->mall = ibuf_save->mall;
+				ibuf_save->mall = 0;
+				IMB_freeImBuf(ibuf_save);
+			}
+
+			ibuf_save = ibuf_cpy;
 		}
 
 		if (is_movie) {
-			ok = oglrender->mh->append_movie(&scene->r, SFRA, CFRA, (int *)ibuf->rect,
+			ok = oglrender->mh->append_movie(&scene->r, PSFRA, CFRA, (int *)ibuf_save->rect,
 			                                 oglrender->sizex, oglrender->sizey, oglrender->reports);
 			if (ok) {
 				printf("Append frame %d", scene->r.cfra);
@@ -563,7 +617,7 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 			}
 		}
 		else {
-			ok = BKE_imbuf_write_stamp(scene, camera, ibuf, name, &scene->r.im_format);
+			ok = BKE_imbuf_write_stamp(scene, camera, ibuf_save, name, &scene->r.im_format);
 
 			if (ok == 0) {
 				printf("Write error: cannot save %s\n", name);
@@ -575,11 +629,11 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 			}
 		}
 
-		/* imbuf knows which rects are not part of ibuf */
-		IMB_freeImBuf(ibuf);
+		if (needs_free)
+			IMB_freeImBuf(ibuf_save);
 	}
 
-	BKE_image_release_ibuf(oglrender->ima, lock);
+	BKE_image_release_ibuf(oglrender->ima, ibuf, lock);
 
 	/* movie stats prints have no line break */
 	printf("\n");
@@ -597,7 +651,7 @@ static int screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 }
 
 
-static int screen_opengl_render_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int screen_opengl_render_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	OGLRender *oglrender = op->customdata;
 	int anim = RNA_boolean_get(op->ptr, "animation");
@@ -636,7 +690,7 @@ static int screen_opengl_render_modal(bContext *C, wmOperator *op, wmEvent *even
 	return OPERATOR_RUNNING_MODAL;
 }
 
-static int screen_opengl_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int screen_opengl_render_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	OGLRender *oglrender;
 	int anim = RNA_boolean_get(op->ptr, "animation");
@@ -684,7 +738,7 @@ static int screen_opengl_render_exec(bContext *C, wmOperator *op)
 		}
 	}
 
-	// no redraw needed, we leave state as we entered it
+	/* no redraw needed, we leave state as we entered it */
 //	ED_update_for_newframe(C, 1);
 	WM_event_add_notifier(C, NC_SCENE | ND_RENDER_RESULT, CTX_data_scene(C));
 

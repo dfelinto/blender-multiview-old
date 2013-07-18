@@ -29,20 +29,20 @@
 
 /* **************** OUTPUT ******************** */
 
-static bNodeSocketTemplate sh_node_tex_magic_in[]= {
+static bNodeSocketTemplate sh_node_tex_magic_in[] = {
 	{	SOCK_VECTOR, 1, N_("Vector"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
 	{	SOCK_FLOAT, 1, N_("Scale"),			5.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f},
 	{	SOCK_FLOAT, 1, N_("Distortion"),	1.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f},
 	{	-1, 0, ""	}
 };
 
-static bNodeSocketTemplate sh_node_tex_magic_out[]= {
+static bNodeSocketTemplate sh_node_tex_magic_out[] = {
 	{	SOCK_RGBA, 0, N_("Color"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	SOCK_FLOAT, 0, N_("Fac"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
-static void node_shader_init_tex_magic(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void node_shader_init_tex_magic(bNodeTree *UNUSED(ntree), bNode *node)
 {
 	NodeTexMagic *tex = MEM_callocN(sizeof(NodeTexMagic), "NodeTexMagic");
 	default_tex_mapping(&tex->base.tex_mapping);
@@ -52,9 +52,9 @@ static void node_shader_init_tex_magic(bNodeTree *UNUSED(ntree), bNode* node, bN
 	node->storage = tex;
 }
 
-static int node_shader_gpu_tex_magic(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
+static int node_shader_gpu_tex_magic(GPUMaterial *mat, bNode *node, bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
-	NodeTexMagic *tex = (NodeTexMagic*)node->storage;
+	NodeTexMagic *tex = (NodeTexMagic *)node->storage;
 	float depth = tex->depth;
 
 	if (!in[0].link)
@@ -66,18 +66,16 @@ static int node_shader_gpu_tex_magic(GPUMaterial *mat, bNode *node, GPUNodeStack
 }
 
 /* node type definition */
-void register_node_type_sh_tex_magic(bNodeTreeType *ttype)
+void register_node_type_sh_tex_magic(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_TEX_MAGIC, "Magic Texture", NODE_CLASS_TEXTURE, NODE_OPTIONS);
+	sh_node_type_base(&ntype, SH_NODE_TEX_MAGIC, "Magic Texture", NODE_CLASS_TEXTURE, 0);
 	node_type_compatibility(&ntype, NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_tex_magic_in, sh_node_tex_magic_out);
-	node_type_size(&ntype, 150, 60, 200);
 	node_type_init(&ntype, node_shader_init_tex_magic);
 	node_type_storage(&ntype, "NodeTexMagic", node_free_standard_storage, node_copy_standard_storage);
-	node_type_exec(&ntype, NULL);
 	node_type_gpu(&ntype, node_shader_gpu_tex_magic);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

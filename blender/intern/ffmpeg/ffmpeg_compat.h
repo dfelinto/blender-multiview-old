@@ -29,10 +29,17 @@
 #endif
 /* end sanity check */
 
+/* visual studio 2012 does not define inline for C */
+#ifdef _MSC_VER
+#define FFMPEG_INLINE static __inline
+#else
+#define FFMPEG_INLINE static inline
+#endif
 
 #include <libavcodec/avcodec.h>
 #include <libavutil/rational.h>
 #include <libavutil/opt.h>
+#include <libavutil/mathematics.h>
 
 #if (LIBAVFORMAT_VERSION_MAJOR > 52) || ((LIBAVFORMAT_VERSION_MAJOR >= 52) && (LIBAVFORMAT_VERSION_MINOR >= 101))
 #define FFMPEG_HAVE_PARSE_UTILS 1
@@ -71,16 +78,134 @@
 #define FFMPEG_SWSCALE_COLOR_SPACE_SUPPORT
 #endif
 
+#if ((LIBAVCODEC_VERSION_MAJOR > 54) || (LIBAVCODEC_VERSION_MAJOR >= 54) && (LIBAVCODEC_VERSION_MINOR > 14))
+#define FFMPEG_HAVE_CANON_H264_RESOLUTION_FIX
+#endif
+
+#if ((LIBAVCODEC_VERSION_MAJOR > 53) || (LIBAVCODEC_VERSION_MAJOR >= 53) && (LIBAVCODEC_VERSION_MINOR >= 60))
+#define FFMPEG_HAVE_ENCODE_AUDIO2
+#endif
+
+#if ((LIBAVCODEC_VERSION_MAJOR > 53) || (LIBAVCODEC_VERSION_MAJOR >= 53) && (LIBAVCODEC_VERSION_MINOR >= 42))
+#define FFMPEG_HAVE_DECODE_AUDIO4
+#endif
+
 #if ((LIBAVUTIL_VERSION_MAJOR > 51) || (LIBAVUTIL_VERSION_MAJOR == 51) && (LIBAVUTIL_VERSION_MINOR >= 32))
 #define FFMPEG_FFV1_ALPHA_SUPPORTED
+#define FFMPEG_SAMPLE_FMT_S16P_SUPPORTED
+#else
+
+FFMPEG_INLINE
+int av_sample_fmt_is_planar(enum AVSampleFormat sample_fmt)
+{
+	/* no planar formats in FFmpeg < 0.9 */
+	return 0;
+}
+
+#endif
+
+FFMPEG_INLINE
+int av_get_cropped_height_from_codec(AVCodecContext *pCodecCtx)
+{
+	int y = pCodecCtx->height;
+
+#ifndef FFMPEG_HAVE_CANON_H264_RESOLUTION_FIX
+/* really bad hack to remove this dreadfull black bar at the bottom
+   with Canon footage and old ffmpeg versions.
+   (to fix this properly in older ffmpeg versions one has to write a new
+   demuxer...) 
+	   
+   see the actual fix here for reference:
+
+   http://git.libav.org/?p=libav.git;a=commit;h=30f515091c323da59c0f1b533703dedca2f4b95d
+
+   We do our best to apply this only to matching footage.
+*/
+	if (pCodecCtx->width == 1920 && 
+	    pCodecCtx->height == 1088 &&
+	    pCodecCtx->pix_fmt == PIX_FMT_YUVJ420P &&
+	    pCodecCtx->codec_id == CODEC_ID_H264 ) {
+		y = 1080;
+	}
+#endif
+
+	return y;
+}
+
+#if ((LIBAVUTIL_VERSION_MAJOR < 51) || (LIBAVUTIL_VERSION_MAJOR == 51) && (LIBAVUTIL_VERSION_MINOR < 22))
+FFMPEG_INLINE
+int av_opt_set(void *obj, const char *name, const char *val, int search_flags)
+{
+	const AVOption *rv = NULL;
+	av_set_string3(obj, name, val, 1, &rv);
+	return rv != NULL;
+}
+
+FFMPEG_INLINE
+int av_opt_set_int(void *obj, const char *name, int64_t val, int search_flags)
+{
+	const AVOption *rv = NULL;
+	rv = av_set_int(obj, name, val);
+	return rv != NULL;
+}
+
+FFMPEG_INLINE
+int av_opt_set_double(void *obj, const char *name, double val, int search_flags)
+{
+	const AVOption *rv = NULL;
+	rv = av_set_double(obj, name, val);
+	return rv != NULL;
+}
+
+#define AV_OPT_TYPE_INT     FF_OPT_TYPE_INT
+#define AV_OPT_TYPE_INT64   FF_OPT_TYPE_INT64
+#define AV_OPT_TYPE_STRING  FF_OPT_TYPE_STRING
+#define AV_OPT_TYPE_CONST   FF_OPT_TYPE_CONST
+#define AV_OPT_TYPE_DOUBLE  FF_OPT_TYPE_DOUBLE
+#define AV_OPT_TYPE_FLOAT   FF_OPT_TYPE_FLOAT
+#endif
+
+#if ((LIBAVUTIL_VERSION_MAJOR < 51) || (LIBAVUTIL_VERSION_MAJOR == 51) && (LIBAVUTIL_VERSION_MINOR < 54))
+FFMPEG_INLINE
+enum AVSampleFormat av_get_packed_sample_fmt(enum AVSampleFormat sample_fmt)
+{
+    if (sample_fmt < 0 || sample_fmt >= AV_SAMPLE_FMT_NB)
+        return AV_SAMPLE_FMT_NONE;
+    return sample_fmt;
+}
 #endif
 
 #if ((LIBAVFORMAT_VERSION_MAJOR < 53) || ((LIBAVFORMAT_VERSION_MAJOR == 53) && (LIBAVFORMAT_VERSION_MINOR < 24)) || ((LIBAVFORMAT_VERSION_MAJOR == 53) && (LIBAVFORMAT_VERSION_MINOR < 24) && (LIBAVFORMAT_VERSION_MICRO < 2)))
 #define avformat_close_input(x) av_close_input_file(*(x))
 #endif
 
+#if ((LIBAVCODEC_VERSION_MAJOR < 53) || (LIBAVCODEC_VERSION_MAJOR == 53 && LIBAVCODEC_VERSION_MINOR < 35))
+FFMPEG_INLINE
+int avcodec_open2(AVCodecContext *avctx, AVCodec *codec, AVDictionary **options)
+{
+	/* TODO: no options are taking into account */
+	return avcodec_open(avctx, codec);
+}
+#endif
+
+#if ((LIBAVFORMAT_VERSION_MAJOR < 53) || (LIBAVFORMAT_VERSION_MAJOR == 53 && LIBAVFORMAT_VERSION_MINOR < 21))
+FFMPEG_INLINE
+AVStream *avformat_new_stream(AVFormatContext *s, AVCodec *c)
+{
+	/* TODO: no codec is taking into account */
+	return av_new_stream(s, 0);
+}
+
+FFMPEG_INLINE
+int avformat_find_stream_info(AVFormatContext *ic, AVDictionary **options)
+{
+	/* TODO: no options are taking into account */
+	return av_find_stream_info(ic);
+}
+#endif
+
 #if ((LIBAVFORMAT_VERSION_MAJOR > 53) || ((LIBAVFORMAT_VERSION_MAJOR == 53) && (LIBAVFORMAT_VERSION_MINOR > 32)) || ((LIBAVFORMAT_VERSION_MAJOR == 53) && (LIBAVFORMAT_VERSION_MINOR == 24) && (LIBAVFORMAT_VERSION_MICRO >= 100)))
-static inline
+FFMPEG_INLINE
 void my_update_cur_dts(AVFormatContext *s, AVStream *ref_st, int64_t timestamp)
 {
 	int i;
@@ -94,11 +219,25 @@ void my_update_cur_dts(AVFormatContext *s, AVStream *ref_st, int64_t timestamp)
 	}
 }
 
-static inline
+FFMPEG_INLINE
 void av_update_cur_dts(AVFormatContext *s, AVStream *ref_st, int64_t timestamp)
 {
 	my_update_cur_dts(s, ref_st, timestamp);
 }
+#endif
+
+#if ((LIBAVCODEC_VERSION_MAJOR < 54) || (LIBAVCODEC_VERSION_MAJOR == 54 && LIBAVCODEC_VERSION_MINOR < 28))
+FFMPEG_INLINE
+void avcodec_free_frame(AVFrame **frame)
+{
+	/* don't need to do anything with old AVFrame
+	 * since it does not have malloced members */
+	(void)frame;
+}
+#endif
+
+#if ((LIBAVCODEC_VERSION_MAJOR > 54) || (LIBAVCODEC_VERSION_MAJOR == 54 && LIBAVCODEC_VERSION_MINOR >= 13))
+#define FFMPEG_HAVE_FRAME_CHANNEL_LAYOUT
 #endif
 
 #ifndef FFMPEG_HAVE_AVIO
@@ -110,7 +249,7 @@ void av_update_cur_dts(AVFormatContext *s, AVStream *ref_st, int64_t timestamp)
 #endif
 
 /* there are some version inbetween, which have avio_... functions but no
-   AVIO_FLAG_... */
+ * AVIO_FLAG_... */
 #ifndef AVIO_FLAG_WRITE
 #define AVIO_FLAG_WRITE URL_WRONLY
 #endif
@@ -145,7 +284,7 @@ void av_update_cur_dts(AVFormatContext *s, AVStream *ref_st, int64_t timestamp)
 #endif
 
 #ifndef FFMPEG_HAVE_DECODE_AUDIO3
-static inline 
+FFMPEG_INLINE 
 int avcodec_decode_audio3(AVCodecContext *avctx, int16_t *samples,
 			  int *frame_size_ptr, AVPacket *avpkt)
 {
@@ -156,7 +295,7 @@ int avcodec_decode_audio3(AVCodecContext *avctx, int16_t *samples,
 #endif
 
 #ifndef FFMPEG_HAVE_DECODE_VIDEO2
-static inline
+FFMPEG_INLINE
 int avcodec_decode_video2(AVCodecContext *avctx, AVFrame *picture,
                          int *got_picture_ptr,
                          AVPacket *avpkt)
@@ -166,7 +305,7 @@ int avcodec_decode_video2(AVCodecContext *avctx, AVFrame *picture,
 }
 #endif
 
-static inline
+FFMPEG_INLINE
 int64_t av_get_pts_from_frame(AVFormatContext *avctx, AVFrame * picture)
 {
 	int64_t pts = picture->pkt_pts;
@@ -181,5 +320,10 @@ int64_t av_get_pts_from_frame(AVFormatContext *avctx, AVFrame * picture)
 	(void)avctx;
 	return pts;
 }
+
+/* obsolete constant formerly defined in FFMpeg libavcodec/avcodec.h */
+#ifndef AVCODEC_MAX_AUDIO_FRAME_SIZE
+# define AVCODEC_MAX_AUDIO_FRAME_SIZE 192000 // 1 second of 48khz 32bit audio
+#endif
 
 #endif

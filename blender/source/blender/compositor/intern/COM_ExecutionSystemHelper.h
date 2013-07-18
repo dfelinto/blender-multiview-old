@@ -48,14 +48,14 @@ public:
 	 * @param tree bNodeTree to add
 	 * @return Node representing the "Compositor node" of the maintree. or NULL when a subtree is added
 	 */
-	static void addbNodeTree(ExecutionSystem &system, int nodes_start, bNodeTree *tree, bNode *groupnode);
+	static void addbNodeTree(ExecutionSystem &system, int nodes_start, bNodeTree *tree, bNodeInstanceKey parent_key);
 
 	/**
 	 * @brief add an editor node to the system.
 	 * this node is converted to a Node instance.
 	 * and the converted node is returned
 	 *
-	 * @param bNode node to add
+	 * @param b_node node to add
 	 * @return Node that represents the bNode or null when not able to convert.
 	 */
 	static Node *addNode(vector<Node *>& nodes, bNode *b_node, bool isInActiveGroup, bool fast);

@@ -39,6 +39,15 @@ enum {
 	SUBD_STRAIGHT_CUT
 };
 
+/* aligned with PROP_SMOOTH and friends */
+enum {
+	SUBD_FALLOFF_SMOOTH = 0,
+	SUBD_FALLOFF_SPHERE,
+	SUBD_FALLOFF_ROOT,
+	SUBD_FALLOFF_SHARP,
+	SUBD_FALLOFF_LIN,
+};
+
 enum {
 	SUBDIV_SELECT_ORIG,
 	SUBDIV_SELECT_INNER,
@@ -46,14 +55,36 @@ enum {
 	SUBDIV_SELECT_LOOPCUT
 };
 
+enum {
+	SIM_CMP_EQ = 0,
+	SIM_CMP_GT,
+	SIM_CMP_LT
+};
+
+/* subdivide_edgering */
+enum {
+	/* just subdiv */
+	SUBD_RING_INTERP_LINEAR,
+
+	/* single bezier spline - curve follows bezier rotation */
+	SUBD_RING_INTERP_PATH,
+
+	/* beziers based on adjacent faces (fallback to tangent) */
+	SUBD_RING_INTERP_SURF,
+};
+
 /* similar face selection slot values */
 enum {
 	SIMFACE_MATERIAL = 201,
 	SIMFACE_IMAGE,
 	SIMFACE_AREA,
+	SIMFACE_SIDES,
 	SIMFACE_PERIMETER,
 	SIMFACE_NORMAL,
-	SIMFACE_COPLANAR
+	SIMFACE_COPLANAR,
+#ifdef WITH_FREESTYLE
+	SIMFACE_FREESTYLE
+#endif
 };
 
 /* similar edge selection slot values */
@@ -65,7 +96,10 @@ enum {
 	SIMEDGE_CREASE,
 	SIMEDGE_BEVEL,
 	SIMEDGE_SEAM,
-	SIMEDGE_SHARP
+	SIMEDGE_SHARP,
+#ifdef WITH_FREESTYLE
+	SIMEDGE_FREESTYLE
+#endif
 };
 
 /* similar vertex selection slot values */
@@ -76,35 +110,25 @@ enum {
 	SIMVERT_EDGE
 };
 
+/* Poke face center calculation */
 enum {
-	OPUVC_AXIS_X = 1,
-	OPUVC_AXIS_Y
+	BMOP_POKE_MEAN_WEIGHTED = 0,
+	BMOP_POKE_MEAN,
+	BMOP_POKE_BOUNDS
 };
 
-enum {
-	DIRECTION_CW = 1,
-	DIRECTION_CCW
-};
-
-/* vertex path selection values */
-enum {
-	VPATH_SELECT_EDGE_LENGTH = 0,
-	VPATH_SELECT_TOPOLOGICAL
-};
-
-extern BMOpDefine *opdefines[];
-extern int bmesh_total_ops;
+extern const BMOpDefine *bmo_opdefines[];
+extern const int         bmo_opdefines_total;
 
 /*------specific operator helper functions-------*/
-
-struct Object;
-
 void BM_mesh_esubdivide(BMesh *bm, const char edge_hflag,
-                        float smooth, float fractal, float along_normal,
-                        int numcuts,
-                        int seltype, int cornertype,
-                        const short use_singleedge, const short use_gridfill,
-                        int seed);
+                        const float smooth, const short smooth_falloff, const bool use_smooth_even,
+                        const float fractal, const float along_normal,
+                        const int numcuts,
+                        const int seltype, const int cornertype,
+                        const short use_single_edge, const short use_grid_fill,
+                        const short use_only_quads,
+                        const int seed);
 
 #include "intern/bmesh_operator_api_inline.h"
 

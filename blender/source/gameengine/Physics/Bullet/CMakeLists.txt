@@ -37,7 +37,6 @@ set(INC
 	../../../blender/blenkernel
 	../../../blender/blenlib
 	../../../blender/makesdna
-	../../../../extern/bullet2/src
 	../../../../intern/container
 	../../../../intern/guardedalloc
 	../../../../intern/moto/include
@@ -60,7 +59,10 @@ set(SRC
 )
 
 if(WITH_BULLET)
-	add_definitions(-DUSE_BULLET)
+	list(APPEND INC_SYS
+		${BULLET_INCLUDE_DIRS}
+	)
+	add_definitions(-DWITH_BULLET)
 endif()
 
 blender_add_lib(ge_phys_bullet "${SRC}" "${INC}" "${INC_SYS}")

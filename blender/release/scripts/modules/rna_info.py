@@ -148,7 +148,9 @@ class InfoStructRNA:
         import types
         functions = []
         for identifier, attr in self._get_py_visible_attrs():
-            if type(attr) in {types.FunctionType, types.MethodType}:
+            # methods may be python wrappers to C functions
+            attr_func = getattr(attr, "__func__", attr)
+            if type(attr_func) in {types.FunctionType, types.MethodType}:
                 functions.append((identifier, attr))
         return functions
 
@@ -156,7 +158,9 @@ class InfoStructRNA:
         import types
         functions = []
         for identifier, attr in self._get_py_visible_attrs():
-            if type(attr) in {types.BuiltinMethodType, types.BuiltinFunctionType}:
+            # methods may be python wrappers to C functions
+            attr_func = getattr(attr, "__func__", attr)
+            if type(attr_func) in {types.BuiltinMethodType, types.BuiltinFunctionType}:
                 functions.append((identifier, attr))
         return functions
 
@@ -249,7 +253,7 @@ class InfoPropertyRNA:
 
     def get_arg_default(self, force=True):
         default = self.default_str
-        if default and (force or self.is_required == False):
+        if default and (force or self.is_required is False):
             return "%s=%s" % (self.identifier, default)
         return self.identifier
 
@@ -493,7 +497,7 @@ def BuildRNAInfo():
 
     # Arrange so classes are always defined in the correct order
     deps_ok = False
-    while deps_ok == False:
+    while deps_ok is False:
         deps_ok = True
         rna_done = set()
 

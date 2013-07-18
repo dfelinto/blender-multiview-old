@@ -161,7 +161,18 @@ private:
 	 * @see openCL
 	 */
 	bool m_initialized;
-	
+
+	/**
+	 * @brief denotes boundary for border compositing
+	 * @note measured in pixel space
+	 */
+	rcti m_viewerBorder;
+
+	/**
+	 * @brief start time of execution
+	 */
+	double m_executionStartTime;
+
 	// methods
 	/**
 	 * @brief check whether parameter operation can be added to the execution group
@@ -193,7 +204,7 @@ private:
 	
 	/**
 	 * @brief try to schedule a specific chunk.
-	 * @note scheduling succeeds when all input requirements are met and the chunks hasen't been scheduled yet.
+	 * @note scheduling succeeds when all input requirements are met and the chunks hasn't been scheduled yet.
 	 * @param graph
 	 * @param xChunk
 	 * @param yChunk
@@ -245,7 +256,7 @@ public:
 	
 	/**
 	 * @brief add an operation to this ExecutionGroup
-	 * @note this method will add input of the operations recursivly
+	 * @note this method will add input of the operations recursively
 	 * @note this method can create multiple ExecutionGroup's
 	 * @param system
 	 * @param operation
@@ -335,6 +346,11 @@ public:
 	 * @see determineChunkRect
 	 */
 	MemoryBuffer *allocateOutputBuffer(int chunkNumber, rcti *rect);
+
+	/**
+	 * @brief print execution statistics to stdout when running in a background mode
+	 */
+	void printBackgroundStats(void);
 	
 	/**
 	 * @brief after a chunk is executed the needed resources can be freed or unlocked.
@@ -369,7 +385,7 @@ public:
 	/**
 	 * @brief this method determines the MemoryProxy's where this execution group depends on.
 	 * @note After this method determineDependingAreaOfInterest can be called to determine
-	 * @note the area of the MemoryProxy.creator thas has to be executed.
+	 * @note the area of the MemoryProxy.creator that has to be executed.
 	 * @param memoryProxies result
 	 */
 	void determineDependingMemoryProxies(vector<MemoryProxy *> *memoryProxies);
@@ -394,6 +410,14 @@ public:
 	 * @see ExecutionSystem.execute
 	 */
 	CompositorPriority getRenderPriotrity();
+
+	/**
+	 * @brief set border for viewer operation
+	 * @note all the coordinates are assumed to be in normalized space
+	 */
+	void setViewerBorder(float xmin, float xmax, float ymin, float ymax);
+
+	void setRenderBorder(float xmin, float xmax, float ymin, float ymax);
 
 #ifdef WITH_CXX_GUARDEDALLOC
 	MEM_CXX_CLASS_ALLOC_FUNCS("COM:ExecutionGroup")

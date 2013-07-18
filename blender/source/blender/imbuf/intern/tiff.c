@@ -57,9 +57,14 @@
 #include "IMB_filetype.h"
 #include "IMB_filter.h"
 
+#include "IMB_colormanagement.h"
+#include "IMB_colormanagement_intern.h"
+
 #include "tiffio.h"
 
-
+#ifdef WIN32
+#include "utfconv.h"
+#endif
 
 /***********************
  * Local declarations. *
@@ -109,7 +114,7 @@ static int imb_tiff_DummyMapProc(thandle_t fd, tdata_t *pbase, toff_t *psize)
  * Reads data from an in-memory TIFF file.
  *
  * \param handle: Handle of the TIFF file (pointer to ImbTIFFMemFile).
- * \param data:   Buffer to contain data (treat as void*).
+ * \param data:   Buffer to contain data (treat as (void *)).
  * \param n:      Number of bytes to read.
  *
  * \return: Number of bytes actually read.
@@ -371,7 +376,7 @@ static void imb_read_tiff_resolution(ImBuf *ibuf, TIFF *image)
  * This method is most flexible and can handle multiple different bit depths 
  * and RGB channel orderings.
  */
-static int imb_read_tiff_pixels(ImBuf *ibuf, TIFF *image, int premul)
+static int imb_read_tiff_pixels(ImBuf *ibuf, TIFF *image)
 {
 	ImBuf *tmpibuf;
 	int success = 0;
@@ -384,6 +389,23 @@ static int imb_read_tiff_pixels(ImBuf *ibuf, TIFF *image, int premul)
 	TIFFGetField(image, TIFFTAG_BITSPERSAMPLE, &bitspersample);
 	TIFFGetField(image, TIFFTAG_SAMPLESPERPIXEL, &spp);     /* number of 'channels' */
 	TIFFGetField(image, TIFFTAG_PLANARCONFIG, &config);
+
+	if (spp == 4) {
+		/* HACK: this is really tricky hack, which is only needed to force libtiff
+		 *       do not touch RGB channels when there's alpha channel present
+		 *       The thing is: libtiff will premul RGB if alpha mode is set to
+		 *       unassociated, which really conflicts with blender's assumptions
+		 *
+		 *       Alternative would be to unpremul after load, but it'll be really
+		 *       lossy and unwanted behavior
+		 *
+		 *       So let's keep this thing here for until proper solution is found (sergey)
+		 */
+
+		unsigned short extraSampleTypes[1];
+		extraSampleTypes[0] = EXTRASAMPLE_ASSOCALPHA;
+		TIFFSetField(image, TIFFTAG_EXTRASAMPLES, 1, extraSampleTypes);
+	}
 
 	imb_read_tiff_resolution(ibuf, image);
 
@@ -462,16 +484,10 @@ static int imb_read_tiff_pixels(ImBuf *ibuf, TIFF *image, int premul)
 		_TIFFfree(sbuf);
 
 	if (success) {
-		ibuf->profile = (bitspersample == 32) ? IB_PROFILE_LINEAR_RGB : IB_PROFILE_SRGB;
-
 		/* Code seems to be not needed for 16 bits tif, on PPC G5 OSX (ton) */
 		if (bitspersample < 16)
 			if (ENDIAN_ORDER == B_ENDIAN)
 				IMB_convert_rgba_to_abgr(tmpibuf);
-		if (premul) {
-			IMB_premultiply_alpha(tmpibuf);
-			ibuf->flags |= IB_premul;
-		}
 		
 		/* assign rect last */
 		if (tmpibuf->rect_float)
@@ -506,7 +522,7 @@ void imb_inittiff(void)
  *
  * \return: A newly allocated ImBuf structure if successful, otherwise NULL.
  */
-ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags)
+ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags, char colorspace[IM_MAX_SPACE])
 {
 	TIFF *image = NULL;
 	ImBuf *ibuf = NULL, *hbuf;
@@ -524,6 +540,9 @@ ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags)
 	}
 	if (imb_is_a_tiff(mem) == 0)
 		return NULL;
+
+	/* both 8 and 16 bit PNGs are default to standard byte colorspace */
+	colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_BYTE);
 
 	image = imb_tiff_client_open(&memFile, mem, size);
 
@@ -549,6 +568,18 @@ ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags)
 		        "image.\n");
 		TIFFClose(image);
 		return NULL;
+	}
+
+	/* get alpha mode from file header */
+	if (flags & IB_alphamode_detect) {
+		if (spp == 4) {
+			unsigned short extra, *extraSampleTypes;
+
+			TIFFGetField(image, TIFFTAG_EXTRASAMPLES, &extra, &extraSampleTypes);
+
+			if (extraSampleTypes[0] == EXTRASAMPLE_ASSOCALPHA)
+				ibuf->flags |= IB_alphamode_premul;
+		}
 	}
 
 	/* if testing, we're done */
@@ -579,9 +610,6 @@ ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags)
 					hbuf->miplevel = level;
 					hbuf->ftype = ibuf->ftype;
 					ibuf->mipmap[level - 1] = hbuf;
-
-					if (flags & IB_premul)
-						hbuf->flags |= IB_premul;
 				}
 				else
 					hbuf = ibuf;
@@ -602,7 +630,7 @@ ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags)
 	}
 
 	/* read pixels */
-	if (!(ibuf->flags & IB_tilecache) && !imb_read_tiff_pixels(ibuf, image, 0)) {
+	if (!(ibuf->flags & IB_tilecache) && !imb_read_tiff_pixels(ibuf, image)) {
 		fprintf(stderr, "imb_loadtiff: Failed to read tiff image.\n");
 		TIFFClose(image);
 		return NULL;
@@ -638,9 +666,6 @@ void imb_loadtiletiff(ImBuf *ibuf, unsigned char *mem, size_t size, int tx, int 
 				if (TIFFReadRGBATile(image, tx * ibuf->tilex, (ibuf->ytiles - 1 - ty) * ibuf->tiley, rect) == 1) {
 					if (ibuf->tiley > ibuf->y)
 						memmove(rect, rect + ibuf->tilex * (ibuf->tiley - ibuf->y), sizeof(int) * ibuf->tilex * ibuf->y);
-
-					if (ibuf->flags & IB_premul)
-						IMB_premultiply_rect(rect, 32, ibuf->tilex, ibuf->tiley);
 				}
 				else
 					printf("imb_loadtiff: failed to read tiff tile at mipmap level %d\n", ibuf->miplevel);
@@ -683,8 +708,6 @@ int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 	float *fromf = NULL;
 	float xres, yres;
 	int x, y, from_i, to_i, i;
-	int extraSampleTypes[1] = { EXTRASAMPLE_ASSOCALPHA };
-	
 
 	/* check for a valid number of bytes per pixel.  Like the PNG writer,
 	 * the TIFF writer supports 1, 3 or 4 bytes per pixel, corresponding
@@ -712,7 +735,13 @@ int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 	}
 	else {
 		/* create image as a file */
+#ifdef WIN32
+		wchar_t *wname = alloc_utf16_from_8(name, 0);
+		image = TIFFOpenW(wname, "w");
+		free(wname);
+#else
 		image = TIFFOpen(name, "w");
+#endif
 	}
 	if (image == NULL) {
 		fprintf(stderr,
@@ -751,6 +780,13 @@ int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 	TIFFSetField(image, TIFFTAG_SAMPLESPERPIXEL, samplesperpixel);
 
 	if (samplesperpixel == 4) {
+		unsigned short extraSampleTypes[1];
+
+		if (bitspersample == 16)
+			extraSampleTypes[0] = EXTRASAMPLE_ASSOCALPHA;
+		else
+			extraSampleTypes[0] = EXTRASAMPLE_UNASSALPHA;
+
 		/* RGBA images */
 		TIFFSetField(image, TIFFTAG_EXTRASAMPLES, 1,
 		             extraSampleTypes);
@@ -778,10 +814,14 @@ int imb_savetiff(ImBuf *ibuf, const char *name, int flags)
 				/* convert from float source */
 				float rgb[4];
 				
-				if (ibuf->profile == IB_PROFILE_LINEAR_RGB)
-					linearrgb_to_srgb_v3_v3(rgb, &fromf[from_i]);
-				else
+				if (ibuf->float_colorspace) {
+					/* float buffer was managed already, no need in color space conversion */
 					copy_v3_v3(rgb, &fromf[from_i]);
+				}
+				else {
+					/* standard linear-to-srgb conversion if float buffer wasn't managed */
+					linearrgb_to_srgb_v3_v3(rgb, &fromf[from_i]);
+				}
 
 				rgb[3] = fromf[from_i + 3];
 

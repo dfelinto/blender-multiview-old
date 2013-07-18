@@ -39,7 +39,8 @@ public:
 	void Initialize(
 		class KX_Scene*	scene,
 		BL_Material*	mat,
-		GameSettings*	game
+		GameSettings*	game,
+		int				lightlayer
 	);
 
 	virtual ~KX_BlenderMaterial();
@@ -95,22 +96,15 @@ public:
 		MT_Scalar ref, MT_Scalar emit, MT_Scalar alpha
 	);
 	
-	virtual void Replace_IScene(SCA_IScene *val)
-	{
-		mScene= static_cast<KX_Scene *>(val);
-		if (mBlenderShader)
-		{
-			mBlenderShader->SetScene(mScene);
-		}
-	};
+	virtual void Replace_IScene(SCA_IScene *val);
 
 #ifdef WITH_PYTHON
 	// --------------------------------
-	virtual PyObject* py_repr(void) { return PyUnicode_From_STR_String(mMaterial->matname); }
+	virtual PyObject *py_repr(void) { return PyUnicode_From_STR_String(mMaterial->matname); }
 
-	static PyObject* pyattr_get_shader(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
-	static PyObject* pyattr_get_materialIndex(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
-	static PyObject* pyattr_get_blending(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static PyObject *pyattr_get_shader(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static PyObject *pyattr_get_materialIndex(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
+	static PyObject *pyattr_get_blending(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef);
 	static int       pyattr_set_blending(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value);
 
 	KX_PYMETHOD_DOC(KX_BlenderMaterial, getShader);
@@ -119,11 +113,11 @@ public:
 	KX_PYMETHOD_DOC(KX_BlenderMaterial, setTexture);
 
 	KX_PYMETHOD_DOC(KX_BlenderMaterial, setBlending);
-#endif // WITH_PYTHON
+#endif  /* WITH_PYTHON */
 
 	// --------------------------------
 	// pre calculate to avoid pops/lag at startup
-	virtual void OnConstruction(int layer);
+	virtual void OnConstruction();
 
 	static void	EndFrame();
 
@@ -137,10 +131,11 @@ private:
 	unsigned int	mBlendFunc[2];
 	bool			mModified;
 	bool			mConstructed;			// if false, don't clean on exit
+	int				mLightLayer;
 
 	void InitTextures();
 
-	void SetBlenderGLSLShader(int layer);
+	void SetBlenderGLSLShader();
 
 	void ActivatGLMaterials( RAS_IRasterizer* rasty )const;
 	void ActivateTexGen( RAS_IRasterizer *ras ) const;

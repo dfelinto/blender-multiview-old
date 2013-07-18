@@ -42,7 +42,6 @@
 #include "BLI_math.h"
 #include "BLI_kdopbvh.h"
 #include "BLI_utildefines.h"
-#include "BLI_bpath.h"
 
 #include "DNA_key_types.h"
 #include "DNA_object_types.h"
@@ -56,7 +55,6 @@
 
 #include "IMB_imbuf.h"
 
-#include "BKE_utildefines.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_ocean.h"
@@ -150,7 +148,7 @@ void default_color_mapping(ColorMapping *colormap)
 {
 	memset(colormap, 0, sizeof(ColorMapping));
 
-	init_colorband(&colormap->coba, 1);
+	init_colorband(&colormap->coba, true);
 
 	colormap->bright = 1.0;
 	colormap->contrast = 1.0;
@@ -165,7 +163,7 @@ void default_color_mapping(ColorMapping *colormap)
 
 /* ****************** COLORBAND ******************* */
 
-void init_colorband(ColorBand *coba, int rangetype)
+void init_colorband(ColorBand *coba, bool rangetype)
 {
 	int a;
 	
@@ -207,7 +205,7 @@ void init_colorband(ColorBand *coba, int rangetype)
 	
 }
 
-ColorBand *add_colorband(int rangetype)
+ColorBand *add_colorband(bool rangetype)
 {
 	ColorBand *coba;
 	
@@ -258,7 +256,9 @@ int do_colorband(const ColorBand *coba, float in, float out[4])
 				left.pos = 0.0f;
 				cbd2 = &left;
 			}
-			else cbd2 = cbd1 - 1;
+			else {
+				cbd2 = cbd1 - 1;
+			}
 			
 			if (in >= cbd1->pos && coba->ipotype < 2) {
 				out[0] = cbd1->r;
@@ -339,7 +339,7 @@ void colorband_table_RGBA(ColorBand *coba, float **array, int *size)
 		do_colorband(coba, (float)a / (float)CM_TABLE, &(*array)[a * 4]);
 }
 
-int vergcband(const void *a1, const void *a2)
+static int vergcband(const void *a1, const void *a2)
 {
 	const CBData *x1 = a1, *x2 = a2;
 
@@ -542,9 +542,8 @@ void tex_set_type(Tex *tex, int type)
 
 /* ------------------------------------------------------------------------- */
 
-Tex *add_texture(const char *name)
+Tex *add_texture(Main *bmain, const char *name)
 {
-	Main *bmain = G.main;
 	Tex *tex;
 
 	tex = BKE_libblock_alloc(&bmain->tex, ID_TE, name);
@@ -572,7 +571,7 @@ void default_mtex(MTex *mtex)
 	mtex->size[1] = 1.0;
 	mtex->size[2] = 1.0;
 	mtex->tex = NULL;
-	mtex->texflag = MTEX_3TAP_BUMP | MTEX_BUMP_OBJECTSPACE;
+	mtex->texflag = MTEX_3TAP_BUMP | MTEX_BUMP_OBJECTSPACE | MTEX_MAPTO_BOUNDS;
 	mtex->colormodel = 0;
 	mtex->r = 1.0;
 	mtex->g = 0.0;
@@ -617,6 +616,7 @@ void default_mtex(MTex *mtex)
 	mtex->gravityfac = 1.0f;
 	mtex->fieldfac = 1.0f;
 	mtex->normapspace = MTEX_NSPACE_TANGENT;
+	mtex->brush_map_mode = MTEX_MAP_MODE_TILED;
 }
 
 
@@ -647,7 +647,7 @@ MTex *add_mtex_id(ID *id, int slot)
 	
 	if (slot == -1) {
 		/* find first free */
-		int i;		
+		int i;
 		for (i = 0; i < MAX_MTEX; i++) {
 			if (!mtex_ar[i]) {
 				slot = i;
@@ -695,7 +695,7 @@ Tex *BKE_texture_copy(Tex *tex)
 
 	if (tex->nodetree) {
 		if (tex->nodetree->execdata) {
-			ntreeTexEndExecTree(tex->nodetree->execdata, 1);
+			ntreeTexEndExecTree(tex->nodetree->execdata);
 		}
 		texn->nodetree = ntreeCopyTree(tex->nodetree);
 	}
@@ -804,6 +804,10 @@ void BKE_texture_make_local(Tex *tex)
 			if (br->id.lib) is_lib = TRUE;
 			else is_local = TRUE;
 		}
+		if (br->mask_mtex.tex == tex) {
+			if (br->id.lib) is_lib = TRUE;
+			else is_local = TRUE;
+		}
 		br = br->id.next;
 	}
 	pa = bmain->particle.first;
@@ -877,6 +881,13 @@ void BKE_texture_make_local(Tex *tex)
 					tex->id.us--;
 				}
 			}
+			if (br->mask_mtex.tex == tex) {
+				if (br->id.lib == NULL) {
+					br->mask_mtex.tex = tex_new;
+					tex_new->id.us++;
+					tex->id.us--;
+				}
+			}
 			br = br->id.next;
 		}
 		pa = bmain->particle.first;
@@ -910,19 +921,21 @@ void autotexname(Tex *tex)
 		if (tex->use_nodes) {
 			new_id(&bmain->tex, (ID *)tex, "Noddy");
 		}
-		else
-		if (tex->type == TEX_IMAGE) {
+		else if (tex->type == TEX_IMAGE) {
 			ima = tex->ima;
 			if (ima) {
-				BLI_strncpy(di, ima->name, sizeof(di));
-				BLI_splitdirstring(di, fi);
+				BLI_split_file_part(ima->name, fi, sizeof(fi));
 				strcpy(di, "I.");
 				strcat(di, fi);
 				new_id(&bmain->tex, (ID *)tex, di);
 			}
-			else new_id(&bmain->tex, (ID *)tex, texstr[tex->type]);
+			else {
+				new_id(&bmain->tex, (ID *)tex, texstr[tex->type]);
+			}
 		}
-		else new_id(&bmain->tex, (ID *)tex, texstr[tex->type]);
+		else {
+			new_id(&bmain->tex, (ID *)tex, texstr[tex->type]);
+		}
 	}
 }
 #endif
@@ -1074,19 +1087,21 @@ void set_current_material_texture(Material *ma, Tex *newtex)
 {
 	Tex *tex = NULL;
 	bNode *node;
-	
-	if (ma && ma->use_nodes && ma->nodetree) {
-		node = nodeGetActiveID(ma->nodetree, ID_TE);
 
-		if (node) {
-			tex = (Tex *)node->id;
-			id_us_min(&tex->id);
+	if ((ma->use_nodes && ma->nodetree) &&
+	    (node = nodeGetActiveID(ma->nodetree, ID_TE)))
+	{
+		tex = (Tex *)node->id;
+		id_us_min(&tex->id);
+		if (newtex) {
 			node->id = &newtex->id;
 			id_us_plus(&newtex->id);
-			ma = NULL;
+		}
+		else {
+			node->id = NULL;
 		}
 	}
-	if (ma) {
+	else {
 		int act = (int)ma->texact;
 
 		tex = (ma->mtex[act]) ? ma->mtex[act]->tex : NULL;
@@ -1281,7 +1296,7 @@ PointDensity *BKE_add_pointdensity(void)
 	pd->noise_depth = 1;
 	pd->noise_fac = 1.0f;
 	pd->noise_influence = TEX_PD_NOISE_STATIC;
-	pd->coba = add_colorband(1);
+	pd->coba = add_colorband(true);
 	pd->speed_scale = 1.0f;
 	pd->totpoints = 0;
 	pd->object = NULL;
@@ -1292,7 +1307,7 @@ PointDensity *BKE_add_pointdensity(void)
 	pd->falloff_curve->preset = CURVE_PRESET_LINE;
 	pd->falloff_curve->cm->flag &= ~CUMA_EXTEND_EXTRAPOLATE;
 	curvemap_reset(pd->falloff_curve->cm, &pd->falloff_curve->clipr, pd->falloff_curve->preset, CURVEMAP_SLOPE_POSITIVE);
-	curvemapping_changed(pd->falloff_curve, 0);
+	curvemapping_changed(pd->falloff_curve, FALSE);
 
 	return pd;
 } 
@@ -1405,10 +1420,10 @@ void BKE_free_oceantex(struct OceanTex *ot)
 
 
 /* ------------------------------------------------------------------------- */
-int BKE_texture_dependsOnTime(const struct Tex *texture)
+bool BKE_texture_dependsOnTime(const struct Tex *texture)
 {
 	if (texture->ima &&
-	         ELEM(texture->ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE))
+	    ELEM(texture->ima->source, IMA_SRC_SEQUENCE, IMA_SRC_MOVIE))
 	{
 		return 1;
 	}

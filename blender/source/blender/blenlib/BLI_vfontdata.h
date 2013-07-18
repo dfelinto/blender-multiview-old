@@ -39,14 +39,8 @@
 struct PackedFile;
 struct VFont;
 
-#define MAX_VF_CHARS 256
-
 typedef struct VFontData {
 	ListBase characters;
-	// ListBase nurbsbase[MAX_VF_CHARS];
-	// float	    resol[MAX_VF_CHARS];
-	// float	    width[MAX_VF_CHARS];
-	// float	    *points[MAX_VF_CHARS];
 	char name[128];
 } VFontData;
 
@@ -59,20 +53,6 @@ typedef struct VChar {
 	float           *points;
 } VChar;
 
-struct TmpFont {
-	struct TmpFont *next, *prev;
-	struct PackedFile *pf;
-	struct VFont *vfont;
-};
-
-/**
- * Construct a new VFontData structure from 
- * Freetype font data in a PackedFile.
- * 
- * \param pf The font data.
- * \retval A new VFontData structure, or NULL
- * if unable to load.
- */
 VFontData *BLI_vfontdata_from_freetypefont(struct PackedFile *pf);
 
 int BLI_vfontchar_from_freetypefont(struct VFont *vfont, unsigned long character);

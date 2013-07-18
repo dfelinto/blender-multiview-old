@@ -61,11 +61,6 @@
 #include "strand.h"
 #include "zbuf.h"
 
-/* to be removed */
-void hoco_to_zco(ZSpan *zspan, float *zco, float *hoco);
-void zspan_scanconvert_strand(ZSpan *zspan, void *handle, float *v1, float *v2, float *v3, void (*func)(void *, int, int, float, float, float) );
-void zbufsinglewire(ZSpan *zspan, int obi, int zvlnr, float *ho1, float *ho2);
-
 /* *************** */
 
 static float strand_eval_width(Material *ma, float strandco)
@@ -343,7 +338,7 @@ StrandShadeCache *strand_shade_cache_create(void)
 void strand_shade_cache_free(StrandShadeCache *cache)
 {
 	BLI_ghash_free(cache->refcounthash, NULL, NULL);
-	BLI_ghash_free(cache->resulthash, (GHashKeyFreeFP)MEM_freeN, NULL);
+	BLI_ghash_free(cache->resulthash, MEM_freeN, NULL);
 	BLI_memarena_free(cache->memarena);
 	MEM_freeN(cache);
 }
@@ -382,7 +377,7 @@ static void strand_shade_get(Render *re, StrandShadeCache *cache, ShadeSample *s
 	/* lower reference count and remove if not needed anymore by any samples */
 	(*refcount)--;
 	if (*refcount == 0) {
-		BLI_ghash_remove(cache->resulthash, &pair, (GHashKeyFreeFP)MEM_freeN, NULL);
+		BLI_ghash_remove(cache->resulthash, &pair, MEM_freeN, NULL);
 		BLI_ghash_remove(cache->refcounthash, &pair, NULL, NULL);
 	}
 }
@@ -417,7 +412,7 @@ void strand_shade_unref(StrandShadeCache *cache, ObjectInstanceRen *obi, StrandV
 
 	(*refcount)--;
 	if (*refcount == 0) {
-		BLI_ghash_remove(cache->resulthash, &pair, (GHashKeyFreeFP)MEM_freeN, NULL);
+		BLI_ghash_remove(cache->resulthash, &pair, MEM_freeN, NULL);
 		BLI_ghash_remove(cache->refcounthash, &pair, NULL, NULL);
 	}
 }
@@ -454,6 +449,7 @@ typedef struct StrandPart {
 	int sample;
 	int shadow;
 	float (*jit)[2];
+	int samples;
 
 	StrandSegment *segment;
 	float t[3], s[3];
@@ -480,13 +476,13 @@ static int compare_strand_segment(const void *poin1, const void *poin2)
 		return 1;
 }
 
-static void do_strand_point_project(float winmat[][4], ZSpan *zspan, float *co, float *hoco, float *zco)
+static void do_strand_point_project(float winmat[4][4], ZSpan *zspan, float *co, float *hoco, float *zco)
 {
 	projectvert(co, winmat, hoco);
 	hoco_to_zco(zspan, zco, hoco);
 }
 
-static void strand_project_point(float winmat[][4], float winx, float winy, StrandPoint *spoint)
+static void strand_project_point(float winmat[4][4], float winx, float winy, StrandPoint *spoint)
 {
 	float div;
 
@@ -526,7 +522,7 @@ static APixstrand *addpsAstrand(ZSpan *zspan)
 
 static void do_strand_fillac(void *handle, int x, int y, float u, float v, float z)
 {
-	StrandPart *spart= (StrandPart*)handle;
+	StrandPart *spart= (StrandPart *)handle;
 	StrandShadeCache *cache= spart->cache;
 	StrandSegment *sseg= spart->segment;
 	APixstrand *apn, *apnew;
@@ -550,7 +546,7 @@ static void do_strand_fillac(void *handle, int x, int y, float u, float v, float
 		bufferz= 0x7FFFFFFF;
 		if (spart->rectmask) maskz= 0x7FFFFFFF;
 		
-		if (*rd) {	
+		if (*rd) {
 			for (ps= (PixStr *)(*rd); ps; ps= ps->next) {
 				if (mask & ps->mask) {
 					bufferz= ps->z;
@@ -607,7 +603,7 @@ static void do_strand_fillac(void *handle, int x, int y, float u, float v, float
 }
 
 /* width is calculated in hoco space, to ensure strands are visible */
-static int strand_test_clip(float winmat[][4], ZSpan *UNUSED(zspan), float *bounds, float *co, float *zcomp, float widthx, float widthy)
+static int strand_test_clip(float winmat[4][4], ZSpan *UNUSED(zspan), float *bounds, float *co, float *zcomp, float widthx, float widthy)
 {
 	float hoco[4];
 	int clipflag= 0;
@@ -667,31 +663,27 @@ static void do_scanconvert_strand(Render *UNUSED(re), StrandPart *spart, ZSpan *
 	zspan_scanconvert_strand(zspan, spart, jco1, jco3, jco4, do_strand_fillac);
 }
 
-static void strand_render(Render *re, StrandSegment *sseg, float winmat[][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandPoint *p1, StrandPoint *p2)
+static void strand_render(Render *re, StrandSegment *sseg, float winmat[4][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandPoint *p1, StrandPoint *p2)
 {
 	if (spart) {
 		float t= p2->t;
 		float dt= p2->t - p1->t;
 		int a;
 
-		if (re->osa) {
-			for (a=0; a<re->osa; a++)
-				do_scanconvert_strand(re, spart, zspan, t, dt, p1->zco2, p1->zco1, p2->zco1, p2->zco2, a);
-		}
-		else
-			do_scanconvert_strand(re, spart, zspan, t, dt, p1->zco2, p1->zco1, p2->zco1, p2->zco2, 0);
+		for (a=0; a<spart->samples; a++)
+			do_scanconvert_strand(re, spart, zspan, t, dt, p1->zco2, p1->zco1, p2->zco1, p2->zco2, a);
 	}
 	else {
 		float hoco1[4], hoco2[4];
 		int a, obi, index;
-  
+
 		obi= sseg->obi - re->objectinstance;
 		index= sseg->strand->index;
 
 		projectvert(p1->co, winmat, hoco1);
 		projectvert(p2->co, winmat, hoco2);
 
-  
+
 		for (a=0; a<totzspan; a++) {
 #if 0
 			/* render both strand and single pixel wire to counter aliasing */
@@ -704,7 +696,7 @@ static void strand_render(Render *re, StrandSegment *sseg, float winmat[][4], St
 	}
 }
 
-static int strand_segment_recursive(Render *re, float winmat[][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandSegment *sseg, StrandPoint *p1, StrandPoint *p2, int depth)
+static int strand_segment_recursive(Render *re, float winmat[4][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandSegment *sseg, StrandPoint *p1, StrandPoint *p2, int depth)
 {
 	StrandPoint p;
 	StrandBuffer *buffer= sseg->buffer;
@@ -753,7 +745,7 @@ static int strand_segment_recursive(Render *re, float winmat[][4], StrandPart *s
 	return 1;
 }
 
-void render_strand_segment(Render *re, float winmat[][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandSegment *sseg)
+void render_strand_segment(Render *re, float winmat[4][4], StrandPart *spart, ZSpan *zspan, int totzspan, StrandSegment *sseg)
 {
 	StrandBuffer *buffer= sseg->buffer;
 	StrandPoint *p1= &sseg->point1;
@@ -791,7 +783,7 @@ void render_strand_segment(Render *re, float winmat[][4], StrandPart *spart, ZSp
 }
 
 /* render call to fill in strands */
-int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBase *apsmbase, unsigned int lay, int UNUSED(negzmask), float winmat[][4], int winx, int winy, int UNUSED(sample), float (*jit)[2], float clipcrop, int shadow, StrandShadeCache *cache)
+int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBase *apsmbase, unsigned int lay, int UNUSED(negzmask), float winmat[4][4], int winx, int winy, int samples, float (*jit)[2], float clipcrop, int shadow, StrandShadeCache *cache)
 {
 	ObjectRen *obr;
 	ObjectInstanceRen *obi;
@@ -825,6 +817,7 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 	spart.cache= cache;
 	spart.shadow= shadow;
 	spart.jit= jit;
+	spart.samples= samples;
 
 	zbuf_alloc_span(&zspan, pa->rectx, pa->recty, clipcrop);
 
@@ -865,7 +858,7 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 
 		/* compute matrix and try clipping whole object */
 		if (obi->flag & R_TRANSFORMED)
-			mult_m4_m4m4(obwinmat, winmat, obi->mat);
+			mul_m4_m4m4(obwinmat, winmat, obi->mat);
 		else
 			copy_m4_m4(obwinmat, winmat);
 
@@ -983,7 +976,7 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 
 /* *************** */
 
-StrandSurface *cache_strand_surface(Render *re, ObjectRen *obr, DerivedMesh *dm, float mat[][4], int timeoffset)
+StrandSurface *cache_strand_surface(Render *re, ObjectRen *obr, DerivedMesh *dm, float mat[4][4], int timeoffset)
 {
 	StrandSurface *mesh;
 	MFace *mface;

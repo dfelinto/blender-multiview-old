@@ -46,6 +46,7 @@
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_depsgraph.h"
+#include "BKE_global.h"
 #include "BKE_material.h"
 #include "BKE_mesh.h"
 #include "BKE_object.h"
@@ -75,7 +76,7 @@ static void VertexIt_Destruct(CSG_VertexIteratorDescriptor *iterator)
 	if (iterator->it) {
 		/* deallocate memory for iterator */
 		MEM_freeN(iterator->it);
-		iterator->it = 0;
+		iterator->it = NULL;
 	}
 	iterator->Done = NULL;
 	iterator->Fill = NULL;
@@ -126,11 +127,11 @@ static void VertexIt_Construct(CSG_VertexIteratorDescriptor *output, DerivedMesh
 {
 
 	VertexIt *it;
-	if (output == 0) return;
+	if (output == NULL) return;
 
 	/* allocate some memory for blender iterator */
 	it = (VertexIt *)(MEM_mallocN(sizeof(VertexIt), "Boolean_VIt"));
-	if (it == 0) {
+	if (it == NULL) {
 		return;
 	}
 	/* assign blender specific variables */
@@ -220,11 +221,11 @@ static void FaceIt_Construct(
         CSG_FaceIteratorDescriptor *output, DerivedMesh *dm, int offset, Object *ob)
 {
 	FaceIt *it;
-	if (output == 0) return;
+	if (output == NULL) return;
 
 	/* allocate some memory for blender iterator */
 	it = (FaceIt *)(MEM_mallocN(sizeof(FaceIt), "Boolean_FIt"));
-	if (it == 0) {
+	if (it == NULL) {
 		return;
 	}
 	/* assign blender specific variables */
@@ -295,7 +296,7 @@ static Object *AddNewBlenderMesh(Scene *scene, Base *base)
 	basen->flag &= ~SELECT;
 				
 	/* Initialize the mesh data associated with this object. */
-	ob_new->data = BKE_mesh_add("Mesh");
+	ob_new->data = BKE_mesh_add(G.main, "Mesh");
 
 	/* Finally assign the object type. */
 	ob_new->type = OB_MESH;
@@ -305,7 +306,7 @@ static Object *AddNewBlenderMesh(Scene *scene, Base *base)
 
 static void InterpCSGFace(
         DerivedMesh *dm, DerivedMesh *orig_dm, int index, int orig_index, int nr,
-        float mapmat[][4])
+        float mapmat[4][4])
 {
 	float obco[3], *co[4], *orig_co[4], w[4][4];
 	MFace *mface, *orig_mface;
@@ -344,8 +345,8 @@ static void InterpCSGFace(
 static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
         CSG_FaceIteratorDescriptor *face_it,
         CSG_VertexIteratorDescriptor *vertex_it,
-        float parinv[][4],
-        float mapmat[][4],
+        float parinv[4][4],
+        float mapmat[4][4],
         Material **mat,
         int *totmat,
         DerivedMesh *dm1,
@@ -361,9 +362,9 @@ static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
 
 	/* create a new DerivedMesh */
 	result = CDDM_new(vertex_it->num_elements, 0, face_it->num_elements, 0, 0);
-	CustomData_merge(&dm1->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~(CD_MASK_NORMAL | CD_MASK_POLYINDEX | CD_MASK_ORIGINDEX),
+	CustomData_merge(&dm1->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~CD_MASK_ORIGINDEX,
 	                 CD_DEFAULT, face_it->num_elements);
-	CustomData_merge(&dm2->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~(CD_MASK_NORMAL | CD_MASK_POLYINDEX | CD_MASK_ORIGINDEX),
+	CustomData_merge(&dm2->faceData, &result->faceData, CD_MASK_DERIVEDMESH & ~CD_MASK_ORIGINDEX,
 	                 CD_DEFAULT, face_it->num_elements);
 
 	/* step through the vertex iterators: */
@@ -484,7 +485,7 @@ static DerivedMesh *ConvertCSGDescriptorsToDerivedMesh(
 	DM_ensure_tessface(result);
 #endif
 
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 
 	return result;
 }
@@ -525,7 +526,7 @@ static DerivedMesh *NewBooleanDerivedMesh_intern(
 	 * we need to compute the inverse transform from global to ob (inv_mat),
 	 * and the transform from ob to ob_select for use in interpolation (map_mat) */
 	invert_m4_m4(inv_mat, ob->obmat);
-	mult_m4_m4m4(map_mat, inv_mat, ob_select->obmat);
+	mul_m4_m4m4(map_mat, inv_mat, ob_select->obmat);
 	invert_m4_m4(inv_mat, ob_select->obmat);
 
 	{
@@ -624,7 +625,7 @@ int NewBooleanMesh(Scene *scene, Base *base, Base *base_select, int int_op_type)
 	ob_new = AddNewBlenderMesh(scene, base_select);
 	me_new = ob_new->data;
 
-	DM_to_mesh(result, me_new, ob_new);
+	DM_to_mesh(result, me_new, ob_new, CD_MASK_MESH);
 	result->release(result);
 
 	dm->release(dm);

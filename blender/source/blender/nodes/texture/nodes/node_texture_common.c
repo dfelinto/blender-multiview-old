@@ -33,11 +33,16 @@
 
 #include "DNA_node_types.h"
 
+#include "BLI_utildefines.h"
+
 #include "BKE_node.h"
 
 #include "node_texture_util.h"
+#include "NOD_common.h"
 #include "node_common.h"
 #include "node_exec.h"
+
+#include "RNA_access.h"
 
 static void copy_stack(bNodeStack *to, bNodeStack *from)
 {
@@ -53,61 +58,74 @@ static void copy_stack(bNodeStack *to, bNodeStack *from)
 
 /**** GROUP ****/
 
-static void *group_initexec(bNode *node)
+static void *group_initexec(bNodeExecContext *context, bNode *node, bNodeInstanceKey key)
 {
-	bNodeTree *ngroup= (bNodeTree*)node->id;
+	bNodeTree *ngroup = (bNodeTree *)node->id;
 	void *exec;
 	
 	if (!ngroup)
 		return NULL;
 	
 	/* initialize the internal node tree execution */
-	exec = ntreeTexBeginExecTree(ngroup, 0);
+	exec = ntreeTexBeginExecTree_internal(context, ngroup, key);
 	
 	return exec;
 }
 
 static void group_freeexec(bNode *UNUSED(node), void *nodedata)
 {
-	bNodeTreeExec*gexec= (bNodeTreeExec*)nodedata;
+	bNodeTreeExec *gexec = (bNodeTreeExec *)nodedata;
 	
-	ntreeTexEndExecTree(gexec, 0);
+	ntreeTexEndExecTree_internal(gexec);
 }
 
 /* Copy inputs to the internal stack.
  * This is a shallow copy, no buffers are duplicated here!
  */
-static void group_copy_inputs(bNode *node, bNodeStack **in, bNodeStack *gstack)
+static void group_copy_inputs(bNode *gnode, bNodeStack **in, bNodeStack *gstack)
 {
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
+	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
 	int a;
-	for (sock=node->inputs.first, a=0; sock; sock=sock->next, ++a) {
-		if (sock->groupsock) {
-			ns = node_get_socket_stack(gstack, sock->groupsock);
-			copy_stack(ns, in[a]);
+	
+	for (node = ngroup->nodes.first; node; node = node->next) {
+		if (node->type == NODE_GROUP_INPUT) {
+			for (sock = node->outputs.first, a = 0; sock; sock = sock->next, ++a) {
+				ns = node_get_socket_stack(gstack, sock);
+				if (ns)
+					copy_stack(ns, in[a]);
+			}
 		}
 	}
 }
 
 /* Copy internal results to the external outputs.
  */
-static void group_copy_outputs(bNode *node, bNodeStack **out, bNodeStack *gstack)
+static void group_copy_outputs(bNode *gnode, bNodeStack **out, bNodeStack *gstack)
 {
+	bNodeTree *ngroup = (bNodeTree *)gnode->id;
+	bNode *node;
 	bNodeSocket *sock;
 	bNodeStack *ns;
 	int a;
-	for (sock=node->outputs.first, a=0; sock; sock=sock->next, ++a) {
-		if (sock->groupsock) {
-			ns = node_get_socket_stack(gstack, sock->groupsock);
-			copy_stack(out[a], ns);
+	
+	for (node = ngroup->nodes.first; node; node = node->next) {
+		if (node->type == NODE_GROUP_OUTPUT && (node->flag & NODE_DO_OUTPUT)) {
+			for (sock = node->inputs.first, a = 0; sock; sock = sock->next, ++a) {
+				ns = node_get_socket_stack(gstack, sock);
+				if (ns)
+					copy_stack(out[a], ns);
+			}
+			break;  /* only one active output node */
 		}
 	}
 }
 
-static void group_execute(void *data, int thread, struct bNode *node, void *nodedata, struct bNodeStack **in, struct bNodeStack **out)
+static void group_execute(void *data, int thread, struct bNode *node, bNodeExecData *execdata, struct bNodeStack **in, struct bNodeStack **out)
 {
-	bNodeTreeExec *exec= (bNodeTreeExec*)nodedata;
+	bNodeTreeExec *exec = execdata->data;
 	bNodeThreadStack *nts;
 	
 	if (!exec)
@@ -118,7 +136,7 @@ static void group_execute(void *data, int thread, struct bNode *node, void *node
 	 */
 	{
 		bNode *inode;
-		for (inode=exec->nodetree->nodes.first; inode; inode=inode->next)
+		for (inode = exec->nodetree->nodes.first; inode; inode = inode->next)
 			inode->need_exec = 1;
 	}
 	
@@ -131,145 +149,27 @@ static void group_execute(void *data, int thread, struct bNode *node, void *node
 	ntreeReleaseThreadStack(nts);
 }
 
-void register_node_type_tex_group(bNodeTreeType *ttype)
+void register_node_type_tex_group(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, NODE_GROUP, "Group", NODE_CLASS_GROUP, NODE_OPTIONS|NODE_CONST_OUTPUT);
-	node_type_socket_templates(&ntype, NULL, NULL);
-	node_type_size(&ntype, 120, 60, 200);
-	node_type_label(&ntype, node_group_label);
-	node_type_init(&ntype, node_group_init);
-	node_type_valid(&ntype, node_group_valid);
-	node_type_template(&ntype, node_group_template);
-	node_type_update(&ntype, NULL, node_group_verify);
-	node_type_group_edit(&ntype, node_group_edit_get, node_group_edit_set, node_group_edit_clear);
-	node_type_exec_new(&ntype, group_initexec, group_freeexec, group_execute);
-	
-	nodeRegisterType(ttype, &ntype);
-}
-
-
-/**** FOR LOOP ****/
-
-#if 0 /* XXX loop nodes don't work nicely with current trees */
-static void forloop_execute(void *data, int thread, struct bNode *node, void *nodedata, struct bNodeStack **in, struct bNodeStack **out)
-{
-	bNodeTreeExec *exec= (bNodeTreeExec*)nodedata;
-	bNodeThreadStack *nts;
-	int iterations= (int)in[0]->vec[0];
-	bNodeSocket *sock;
-	bNodeStack *ns;
-	int iteration;
-	
-	/* XXX same behavior as trunk: all nodes inside group are executed.
-	 * it's stupid, but just makes it work. compo redesign will do this better.
+	/* NB: cannot use sh_node_type_base for node group, because it would map the node type
+	 * to the shared NODE_GROUP integer type id.
 	 */
-	{
-		bNode *inode;
-		for (inode=exec->nodetree->nodes.first; inode; inode=inode->next)
-			inode->need_exec = 1;
-	}
+	node_type_base_custom(&ntype, "TextureNodeGroup", "Group", NODE_CLASS_GROUP, NODE_CONST_OUTPUT);
+	ntype.type = NODE_GROUP;
+	ntype.poll = tex_node_poll_default;
+	ntype.poll_instance = node_group_poll_instance;
+	ntype.update_internal_links = node_update_internal_links_default;
+	ntype.ext.srna = RNA_struct_find("TextureNodeGroup");
+	BLI_assert(ntype.ext.srna != NULL);
+	RNA_struct_blender_type_set(ntype.ext.srna, &ntype);
 	
-	nts = ntreeGetThreadStack(exec, thread);
-	
-	/* "Iteration" socket */
-	sock = exec->nodetree->inputs.first;
-	ns = node_get_socket_stack(nts->stack, sock);
-	
-//	group_copy_inputs(node, in, nts->stack);
-	for (iteration=0; iteration < iterations; ++iteration) {
-		/* first input contains current iteration counter */
-		ns->vec[0] = (float)iteration;
-		ns->vec[1]=ns->vec[2]=ns->vec[3] = 0.0f;
-		
-//		if (iteration > 0)
-//			loop_init_iteration(exec->nodetree, nts->stack);
-//		ntreeExecThreadNodes(exec, nts, data, thread);
-	}
-//	loop_copy_outputs(node, in, out, exec->stack);
-	
-	ntreeReleaseThreadStack(nts);
-}
-
-void register_node_type_tex_forloop(bNodeTreeType *ttype)
-{
-	static bNodeType ntype;
-
-	node_type_base(ttype, &ntype, NODE_FORLOOP, "For", NODE_CLASS_GROUP, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, NULL, NULL);
-	node_type_size(&ntype, 120, 60, 200);
+	node_type_size(&ntype, 120, 60, 400);
 	node_type_label(&ntype, node_group_label);
-	node_type_init(&ntype, node_forloop_init);
-	node_type_valid(&ntype, node_group_valid);
-	node_type_template(&ntype, node_forloop_template);
 	node_type_update(&ntype, NULL, node_group_verify);
-	node_type_tree(&ntype, node_forloop_init_tree, node_loop_update_tree);
-	node_type_group_edit(&ntype, node_group_edit_get, node_group_edit_set, node_group_edit_clear);
-	node_type_exec_new(&ntype, group_initexec, group_freeexec, forloop_execute);
+	node_type_exec(&ntype, group_initexec, group_freeexec, group_execute);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }
-#endif
-
-/**** WHILE LOOP ****/
-
-#if 0 /* XXX loop nodes don't work nicely with current trees */
-static void whileloop_execute(void *data, int thread, struct bNode *node, void *nodedata, struct bNodeStack **in, struct bNodeStack **out)
-{
-	bNodeTreeExec *exec= (bNodeTreeExec*)nodedata;
-	bNodeThreadStack *nts;
-	int condition= (in[0]->vec[0] > 0.0f);
-	bNodeSocket *sock;
-	bNodeStack *ns;
-	int iteration;
-	
-	/* XXX same behavior as trunk: all nodes inside group are executed.
-	 * it's stupid, but just makes it work. compo redesign will do this better.
-	 */
-	{
-		bNode *inode;
-		for (inode=exec->nodetree->nodes.first; inode; inode=inode->next)
-			inode->need_exec = 1;
-	}
-	
-	nts = ntreeGetThreadStack(exec, thread);
-	
-	/* "Condition" socket */
-	sock = exec->nodetree->outputs.first;
-	ns = node_get_socket_stack(nts->stack, sock);
-	
-	iteration = 0;
-//	group_copy_inputs(node, in, nts->stack);
-	while (condition && iteration < node->custom1) {
-//		if (iteration > 0)
-//			loop_init_iteration(exec->nodetree, nts->stack);
-//		ntreeExecThreadNodes(exec, nts, data, thread);
-		
-		condition = (ns->vec[0] > 0.0f);
-		++iteration;
-	}
-//	loop_copy_outputs(node, in, out, exec->stack);
-	
-	ntreeReleaseThreadStack(nts);
-}
-
-void register_node_type_tex_whileloop(bNodeTreeType *ttype)
-{
-	static bNodeType ntype;
-
-	node_type_base(ttype, &ntype, NODE_WHILELOOP, "While", NODE_CLASS_GROUP, NODE_OPTIONS);
-	node_type_socket_templates(&ntype, NULL, NULL);
-	node_type_size(&ntype, 120, 60, 200);
-	node_type_label(&ntype, node_group_label);
-	node_type_init(&ntype, node_whileloop_init);
-	node_type_valid(&ntype, node_group_valid);
-	node_type_template(&ntype, node_whileloop_template);
-	node_type_update(&ntype, NULL, node_group_verify);
-	node_type_tree(&ntype, node_whileloop_init_tree, node_loop_update_tree);
-	node_type_group_edit(&ntype, node_group_edit_get, node_group_edit_set, node_group_edit_clear);
-	node_type_exec_new(&ntype, group_initexec, group_freeexec, whileloop_execute);
-	
-	nodeRegisterType(ttype, &ntype);
-}
-#endif

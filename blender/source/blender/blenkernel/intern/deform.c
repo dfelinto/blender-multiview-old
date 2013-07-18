@@ -33,17 +33,23 @@
 #include <string.h>
 #include <math.h>
 #include <ctype.h>
+#include <stdlib.h>
+#include <stddef.h>
 
 #include "MEM_guardedalloc.h"
 
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_deform.h"
-
-#include "BLI_blenlib.h"
+#include "BLI_listbase.h"
+#include "BLI_math.h"
+#include "BLI_path_util.h"
+#include "BLI_string.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
+#include "BKE_deform.h"  /* own include */
 
 void defgroup_copy_list(ListBase *outbase, ListBase *inbase)
 {
@@ -122,7 +128,7 @@ void defvert_copy_index(MDeformVert *dvert_dst, const MDeformVert *dvert_src, co
 /* only sync over matching weights, don't add or remove groups
  * warning, loop within loop.
  */
-void defvert_sync(MDeformVert *dvert_dst, const MDeformVert *dvert_src, int use_verify)
+void defvert_sync(MDeformVert *dvert_dst, const MDeformVert *dvert_src, const bool use_verify)
 {
 	if (dvert_src->totweight && dvert_dst->totweight) {
 		int i;
@@ -141,7 +147,7 @@ void defvert_sync(MDeformVert *dvert_dst, const MDeformVert *dvert_src, int use_
 
 /* be sure all flip_map values are valid */
 void defvert_sync_mapped(MDeformVert *dvert_dst, const MDeformVert *dvert_src,
-                         const int *flip_map, const int flip_map_len, const int use_verify)
+                         const int *flip_map, const int flip_map_len, const bool use_verify)
 {
 	if (dvert_src->totweight && dvert_dst->totweight) {
 		int i;
@@ -204,13 +210,15 @@ void defvert_normalize(MDeformVert *dvert)
 	}
 }
 
-void defvert_normalize_lock(MDeformVert *dvert, const int def_nr_lock)
+void defvert_normalize_lock_single(MDeformVert *dvert, const int def_nr_lock)
 {
 	if (dvert->totweight <= 0) {
 		/* nothing */
 	}
 	else if (dvert->totweight == 1) {
-		dvert->dw[0].weight = 1.0f;
+		if (def_nr_lock != 0) {
+			dvert->dw[0].weight = 1.0f;
+		}
 	}
 	else {
 		MDeformWeight *dw_lock = NULL;
@@ -236,6 +244,50 @@ void defvert_normalize_lock(MDeformVert *dvert, const int def_nr_lock)
 			float scalar = (1.0f / tot_weight) * lock_iweight;
 			for (i = dvert->totweight, dw = dvert->dw; i != 0; i--, dw++) {
 				if (dw != dw_lock) {
+					dw->weight *= scalar;
+
+					/* in case of division errors with very low weights */
+					CLAMP(dw->weight, 0.0f, 1.0f);
+				}
+			}
+		}
+	}
+}
+
+void defvert_normalize_lock_map(MDeformVert *dvert, const bool *lock_flags, const int defbase_tot)
+{
+	if (dvert->totweight <= 0) {
+		/* nothing */
+	}
+	else if (dvert->totweight == 1) {
+		if (LIKELY(defbase_tot >= 1) && lock_flags[0]) {
+			dvert->dw[0].weight = 1.0f;
+		}
+	}
+	else {
+		MDeformWeight *dw;
+		unsigned int i;
+		float tot_weight = 0.0f;
+		float lock_iweight = 0.0f;
+
+		for (i = dvert->totweight, dw = dvert->dw; i != 0; i--, dw++) {
+			if ((dw->def_nr < defbase_tot) && (lock_flags[dw->def_nr] == FALSE)) {
+				tot_weight += dw->weight;
+			}
+			else {
+				/* invert after */
+				lock_iweight += dw->weight;
+			}
+		}
+
+		lock_iweight = max_ff(0.0f, 1.0f - lock_iweight);
+
+		if (tot_weight > 0.0f) {
+			/* paranoid, should be 1.0 but in case of float error clamp anyway */
+
+			float scalar = (1.0f / tot_weight) * lock_iweight;
+			for (i = dvert->totweight, dw = dvert->dw; i != 0; i--, dw++) {
+				if ((dw->def_nr < defbase_tot) && (lock_flags[dw->def_nr] == FALSE)) {
 					dw->weight *= scalar;
 
 					/* in case of division errors with very low weights */
@@ -287,41 +339,16 @@ void defvert_flip_merged(MDeformVert *dvert, const int *flip_map, const int flip
 
 bDeformGroup *defgroup_find_name(Object *ob, const char *name)
 {
-	/* return a pointer to the deform group with this name
-	 * or return NULL otherwise.
-	 */
-	bDeformGroup *curdef;
-
-	for (curdef = ob->defbase.first; curdef; curdef = curdef->next) {
-		if (!strcmp(curdef->name, name)) {
-			return curdef;
-		}
-	}
-	return NULL;
+	return BLI_findstring(&ob->defbase, name, offsetof(bDeformGroup, name));
 }
 
 int defgroup_name_index(Object *ob, const char *name)
 {
-	/* Return the location of the named deform group within the list of
-	 * deform groups. This function is a combination of BLI_findlink and
-	 * defgroup_find_name. The other two could be called instead, but that
-	 * require looping over the vertexgroups twice.
-	 */
-	bDeformGroup *curdef;
-	int def_nr;
-
-	if (name && name[0] != '\0') {
-		for (curdef = ob->defbase.first, def_nr = 0; curdef; curdef = curdef->next, def_nr++) {
-			if (!strcmp(curdef->name, name))
-				return def_nr;
-		}
-	}
-
-	return -1;
+	return (name) ? BLI_findstringindex(&ob->defbase, name, offsetof(bDeformGroup, name)) : -1;
 }
 
 /* note, must be freed */
-int *defgroup_flip_map(Object *ob, int *flip_map_len, int use_default)
+int *defgroup_flip_map(Object *ob, int *flip_map_len, const bool use_default)
 {
 	int defbase_tot = *flip_map_len = BLI_countlist(&ob->defbase);
 
@@ -359,7 +386,7 @@ int *defgroup_flip_map(Object *ob, int *flip_map_len, int use_default)
 }
 
 /* note, must be freed */
-int *defgroup_flip_map_single(Object *ob, int *flip_map_len, int use_default, int defgroup)
+int *defgroup_flip_map_single(Object *ob, int *flip_map_len, const bool use_default, int defgroup)
 {
 	int defbase_tot = *flip_map_len = BLI_countlist(&ob->defbase);
 
@@ -381,7 +408,7 @@ int *defgroup_flip_map_single(Object *ob, int *flip_map_len, int use_default, in
 		if (strcmp(name, dg->name)) {
 			flip_num = defgroup_name_index(ob, name);
 
-			if (flip_num >= 0) {
+			if (flip_num != -1) {
 				map[defgroup] = flip_num;
 				map[flip_num] = defgroup;
 			}
@@ -391,7 +418,7 @@ int *defgroup_flip_map_single(Object *ob, int *flip_map_len, int use_default, in
 	}
 }
 
-int defgroup_flip_index(Object *ob, int index, int use_default)
+int defgroup_flip_index(Object *ob, int index, const bool use_default)
 {
 	bDeformGroup *dg = BLI_findlink(&ob->defbase, index);
 	int flip_index = -1;
@@ -407,22 +434,22 @@ int defgroup_flip_index(Object *ob, int index, int use_default)
 	return (flip_index == -1 && use_default) ? index : flip_index;
 }
 
-static int defgroup_find_name_dupe(const char *name, bDeformGroup *dg, Object *ob)
+static bool defgroup_find_name_dupe(const char *name, bDeformGroup *dg, Object *ob)
 {
 	bDeformGroup *curdef;
 
 	for (curdef = ob->defbase.first; curdef; curdef = curdef->next) {
 		if (dg != curdef) {
 			if (!strcmp(curdef->name, name)) {
-				return 1;
+				return true;
 			}
 		}
 	}
 
-	return 0;
+	return false;
 }
 
-static int defgroup_unique_check(void *arg, const char *name)
+static bool defgroup_unique_check(void *arg, const char *name)
 {
 	struct {Object *ob; void *dg; } *data = arg;
 	return defgroup_find_name_dupe(name, data->dg, data->ob);
@@ -434,7 +461,7 @@ void defgroup_unique_name(bDeformGroup *dg, Object *ob)
 	data.ob = ob;
 	data.dg = dg;
 
-	BLI_uniquename_cb(defgroup_unique_check, &data, "Group", '.', dg->name, sizeof(dg->name));
+	BLI_uniquename_cb(defgroup_unique_check, &data, DATA_("Group"), '.', dg->name, sizeof(dg->name));
 }
 
 static int is_char_sep(const char c)
@@ -739,4 +766,94 @@ void defvert_clear(MDeformVert *dvert)
 	}
 
 	dvert->totweight = 0;
+}
+
+/**
+ * \return The first group index shared by both deform verts
+ * or -1 if none are found.
+ */
+int defvert_find_shared(const MDeformVert *dvert_a, const MDeformVert *dvert_b)
+{
+	if (dvert_a->totweight && dvert_b->totweight) {
+		MDeformWeight *dw = dvert_a->dw;
+		unsigned int i;
+
+		for (i = dvert_a->totweight; i != 0; i--, dw++) {
+			if (dw->weight > 0.0f && defvert_find_weight(dvert_b, dw->def_nr) > 0.0f) {
+				return dw->def_nr;
+			}
+		}
+	}
+
+	return -1;
+}
+
+/**
+ * return true if has no weights
+ */
+bool defvert_is_weight_zero(const struct MDeformVert *dvert, const int defgroup_tot)
+{
+	MDeformWeight *dw = dvert->dw;
+	unsigned int i;
+	for (i = dvert->totweight; i != 0; i--, dw++) {
+		if (dw->weight != 0.0f) {
+			/* check the group is in-range, happens on rare situations */
+			if (LIKELY(dw->def_nr < defgroup_tot)) {
+				return false;
+			}
+		}
+	}
+	return true;
+}
+
+/* -------------------------------------------------------------------- */
+/* Defvert Array functions */
+
+void BKE_defvert_array_copy(MDeformVert *dst, const MDeformVert *src, int copycount)
+{
+	/* Assumes dst is already set up */
+	int i;
+
+	if (!src || !dst)
+		return;
+
+	memcpy(dst, src, copycount * sizeof(MDeformVert));
+
+	for (i = 0; i < copycount; i++) {
+		if (src[i].dw) {
+			dst[i].dw = MEM_mallocN(sizeof(MDeformWeight) * src[i].totweight, "copy_deformWeight");
+			memcpy(dst[i].dw, src[i].dw, sizeof(MDeformWeight) * src[i].totweight);
+		}
+	}
+
+}
+
+void BKE_defvert_array_free_elems(MDeformVert *dvert, int totvert)
+{
+	/* Instead of freeing the verts directly,
+	 * call this function to delete any special
+	 * vert data */
+	int i;
+
+	if (!dvert)
+		return;
+
+	/* Free any special data from the verts */
+	for (i = 0; i < totvert; i++) {
+		if (dvert[i].dw) MEM_freeN(dvert[i].dw);
+	}
+}
+
+void BKE_defvert_array_free(MDeformVert *dvert, int totvert)
+{
+	/* Instead of freeing the verts directly,
+	 * call this function to delete any special
+	 * vert data */
+	if (!dvert)
+		return;
+
+	/* Free any special data from the verts */
+	BKE_defvert_array_free_elems(dvert, totvert);
+
+	MEM_freeN(dvert);
 }

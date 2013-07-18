@@ -49,6 +49,7 @@
 
 struct ARegion;
 struct wmWindow;
+struct wmWindowManager;
 
 /**
  * 2D Blender device context abstraction. 
@@ -58,16 +59,18 @@ struct wmWindow;
 class KX_BlenderCanvas : public RAS_ICanvas
 {
 private:
-	/** Rect that defines the area used for rendering,
-	    relative to the context */
+	/**
+	 * Rect that defines the area used for rendering,
+	 * relative to the context */
 	RAS_Rect m_displayarea;
+	int m_viewport[4];
 
 public:
 	/* Construct a new canvas.
 	 * 
 	 * \param area The Blender ARegion to run the game within.
 	 */
-	KX_BlenderCanvas(struct wmWindow* win, class RAS_Rect &rect, struct ARegion* ar);
+	KX_BlenderCanvas(struct wmWindowManager *wm, struct wmWindow* win, class RAS_Rect &rect, struct ARegion* ar);
 	~KX_BlenderCanvas();
 
 		void 
@@ -82,6 +85,14 @@ public:
 		int width,
 		int height
 	);
+
+		void
+	SetFullScreen(
+		bool enable
+	);
+
+		bool
+	GetFullScreen();
 
 		void
 	BeginFrame(
@@ -151,6 +162,15 @@ public:
 		int x2, int y2
 	);
 
+		void
+	UpdateViewPort(
+		int x1, int y1,
+		int x2, int y2
+	);
+
+		const int*
+	GetViewPort();
+
 		void 
 	SetMouseState(
 		RAS_MouseState mousestate
@@ -167,30 +187,22 @@ public:
 		const char* filename
 	);
 	
-	/**
-	 * Nothing needs be done for BlenderCanvas
-	 * Begin/End Draw, as the game engine GL context
-	 * is always current/active.
-	 */
-
 		bool 
 	BeginDraw(
-	) {
-			return true;
-	};
+	);
 
 		void 
 	EndDraw(
-	) {
-	};
+	);
 
 private:
 	/** Blender area the game engine is running within */
+	struct wmWindowManager *m_wm;
 	struct wmWindow* m_win;
 	RAS_Rect	m_frame_rect;
 	RAS_Rect 	m_area_rect;
-	short		m_area_left;
-	short		m_area_top;
+	int			m_area_left;
+	int			m_area_top;
 
 
 #ifdef WITH_CXX_GUARDEDALLOC
@@ -198,5 +210,4 @@ private:
 #endif
 };
 
-#endif // __KX_BLENDERCANVAS_H__
-
+#endif  /* __KX_BLENDERCANVAS_H__ */

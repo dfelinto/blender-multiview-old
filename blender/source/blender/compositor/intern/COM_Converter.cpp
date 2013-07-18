@@ -56,6 +56,7 @@
 #include "COM_Converter.h"
 #include "COM_CropNode.h"
 #include "COM_DefocusNode.h"
+#include "COM_DespeckleNode.h"
 #include "COM_DifferenceMatteNode.h"
 #include "COM_DilateErodeNode.h"
 #include "COM_DirectionalBlurNode.h"
@@ -82,6 +83,7 @@
 #include "COM_LuminanceMatteNode.h"
 #include "COM_MapUVNode.h"
 #include "COM_MapValueNode.h"
+#include "COM_MapRangeNode.h"
 #include "COM_MaskNode.h"
 #include "COM_MathNode.h"
 #include "COM_MixNode.h"
@@ -118,10 +120,11 @@
 #include "COM_ViewLevelsNode.h"
 #include "COM_ViewerNode.h"
 #include "COM_ZCombineNode.h"
+#include "COM_PixelateNode.h"
 
 Node *Converter::convert(bNode *b_node, bool fast)
 {
-	Node *node;
+	Node *node = NULL;
 
 	if (b_node->flag & NODE_MUTED) {
 		node = new MuteNode(b_node);
@@ -223,6 +226,10 @@ Node *Converter::convert(bNode *b_node, bool fast)
 		case NODE_GROUP:
 			node = new GroupNode(b_node);
 			break;
+		case NODE_GROUP_INPUT:
+		case NODE_GROUP_OUTPUT:
+			/* handled in GroupNode::ungroup */
+			break;
 		case CMP_NODE_NORMAL:
 			node = new NormalNode(b_node);
 			break;
@@ -307,6 +314,9 @@ Node *Converter::convert(bNode *b_node, bool fast)
 		case CMP_NODE_INPAINT:
 			node = new InpaintNode(b_node);
 			break;
+		case CMP_NODE_DESPECKLE:
+			node = new DespeckleNode(b_node);
+			break;
 		case CMP_NODE_LENSDIST:
 			node = new LensDistortionNode(b_node);
 			break;
@@ -345,6 +355,9 @@ Node *Converter::convert(bNode *b_node, bool fast)
 			break;
 		case CMP_NODE_MAP_VALUE:
 			node = new MapValueNode(b_node);
+			break;
+		case CMP_NODE_MAP_RANGE:
+			node = new MapRangeNode(b_node);
 			break;
 		case CMP_NODE_TRANSFORM:
 			node = new TransformNode(b_node);
@@ -386,6 +399,9 @@ Node *Converter::convert(bNode *b_node, bool fast)
 			node = new TrackPositionNode(b_node);
 			break;
 		/* not inplemented yet */
+		case CMP_NODE_PIXELATE:
+			node = new PixelateNode(b_node);
+			break;
 		default:
 			node = new MuteNode(b_node);
 			break;
@@ -496,7 +512,8 @@ void Converter::convertResolution(SocketConnection *connection, ExecutionSystem 
 			system->addOperation(sxop);
 			system->addOperation(syop);
 
-			unsigned int resolution[2] = {fromWidth, fromHeight};
+			unsigned int resolution[2] = {fromOperation->getWidth(),
+			                              fromOperation->getHeight()};
 			scaleOperation->setResolution(resolution);
 			sxop->setResolution(resolution);
 			syop->setResolution(resolution);
@@ -518,7 +535,8 @@ void Converter::convertResolution(SocketConnection *connection, ExecutionSystem 
 		system->addOperation(xop);
 		system->addOperation(yop);
 
-		unsigned int resolution[2] = {toWidth, toHeight};
+		unsigned int resolution[2] = {toOperation->getWidth(),
+		                              toOperation->getHeight()};
 		translateOperation->setResolution(resolution);
 		xop->setResolution(resolution);
 		yop->setResolution(resolution);

@@ -35,6 +35,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_anim_types.h"
+#include "DNA_armature_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_constraint_types.h"
 #include "DNA_group_types.h"
@@ -43,6 +44,7 @@
 #include "DNA_material_types.h"
 #include "DNA_meta_types.h"
 #include "DNA_particle_types.h"
+#include "DNA_rigidbody_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_speaker_types.h"
 #include "DNA_world_types.h"
@@ -54,6 +56,8 @@
 #include "BLI_linklist.h"
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
 
 #include "BKE_action.h"
 #include "BKE_animsys.h"
@@ -82,7 +86,7 @@
 #include "BKE_scene.h"
 #include "BKE_speaker.h"
 #include "BKE_texture.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -137,11 +141,11 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 		em = me->edit_btmesh;
 
 		EDBM_mesh_normals_update(em);
-		BMEdit_RecalcTessellation(em);
+		BKE_editmesh_tessface_calc(em);
 
 		/* derivedMesh might be needed for solving parenting,
 		 * so re-create it here */
-		makeDerivedMesh(scene, obedit, em, CD_MASK_BAREMESH, 0);
+		makeDerivedMesh(scene, obedit, em, CD_MASK_BAREMESH | CD_MASK_ORIGINDEX, 0);
 
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
@@ -212,7 +216,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 		}
 	}
 	
-	if (v4 || !((v1 && v2 == 0 && v3 == 0) || (v1 && v2 && v3)) ) {
+	if (v4 || !((v1 && v2 == 0 && v3 == 0) || (v1 && v2 && v3))) {
 		BKE_report(op->reports, RPT_ERROR, "Select either 1 or 3 vertices to parent to");
 		return OPERATOR_CANCELLED;
 	}
@@ -220,7 +224,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
 	{
 		if (ob != obedit) {
-			ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+			DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 			par = obedit->parent;
 			
 			while (par) {
@@ -257,7 +261,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 	
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 
 	WM_event_add_notifier(C, NC_OBJECT, NULL);
 
@@ -283,7 +287,7 @@ void OBJECT_OT_vertex_parent_set(wmOperatorType *ot)
 /********************** Make Proxy Operator *************************/
 
 /* set the object to proxify */
-static int make_proxy_invoke(bContext *C, wmOperator *op, wmEvent *evt)
+static int make_proxy_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = ED_object_active_context(C);
@@ -296,12 +300,12 @@ static int make_proxy_invoke(bContext *C, wmOperator *op, wmEvent *evt)
 	if (ob->dup_group && ob->dup_group->id.lib) {
 		/* gives menu with list of objects in group */
 		//proxy_group_objects_menu(C, op, ob, ob->dup_group);
-		WM_enum_search_invoke(C, op, evt);
+		WM_enum_search_invoke(C, op, event);
 		return OPERATOR_CANCELLED;
 
 	}
 	else if (ob->id.lib) {
-		uiPopupMenu *pup = uiPupMenuBegin(C, "OK?", ICON_QUESTION);
+		uiPopupMenu *pup = uiPupMenuBegin(C, IFACE_("OK?"), ICON_QUESTION);
 		uiLayout *layout = uiPupMenuLayout(pup);
 		
 		/* create operator menu item with relevant properties filled in */
@@ -341,7 +345,7 @@ static int make_proxy_exec(bContext *C, wmOperator *op)
 		char name[MAX_ID_NAME + 4];
 		
 		/* Add new object for the proxy */
-		newob = BKE_object_add(scene, OB_EMPTY);
+		newob = BKE_object_add(bmain, scene, OB_EMPTY);
 
 		BLI_snprintf(name, sizeof(name), "%s_proxy", ((ID *)(gob ? gob : ob))->name + 2);
 
@@ -354,14 +358,14 @@ static int make_proxy_exec(bContext *C, wmOperator *op)
 		
 		/* remove base, leave user count of object, it gets linked in BKE_object_make_proxy */
 		if (gob == NULL) {
-			BLI_remlink(&scene->base, oldbase);
+			BKE_scene_base_unlink(scene, oldbase);
 			MEM_freeN(oldbase);
 		}
 		
 		BKE_object_make_proxy(newob, ob, gob);
 		
 		/* depsgraph flushes are needed for the new data */
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 		DAG_id_tag_update(&newob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 		WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, newob);
 	}
@@ -423,37 +427,99 @@ void OBJECT_OT_proxy_make(wmOperatorType *ot)
 
 /********************** Clear Parent Operator ******************* */
 
+typedef enum eObClearParentTypes {
+	CLEAR_PARENT_ALL = 0,
+	CLEAR_PARENT_KEEP_TRANSFORM,
+	CLEAR_PARENT_INVERSE
+} eObClearParentTypes;
+
 EnumPropertyItem prop_clear_parent_types[] = {
-	{0, "CLEAR", 0, "Clear Parent", ""},
-	{1, "CLEAR_KEEP_TRANSFORM", 0, "Clear and Keep Transformation", ""},
-	{2, "CLEAR_INVERSE", 0, "Clear Parent Inverse", ""},
+	{CLEAR_PARENT_ALL, "CLEAR", 0, "Clear Parent", ""},
+	{CLEAR_PARENT_KEEP_TRANSFORM, "CLEAR_KEEP_TRANSFORM", 0, "Clear and Keep Transformation", ""},
+	{CLEAR_PARENT_INVERSE, "CLEAR_INVERSE", 0, "Clear Parent Inverse", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
+/* Helper for ED_object_parent_clear() - Remove deform-modifiers associated with parent */
+static void object_remove_parent_deform_modifiers(Object *ob, const Object *par)
+{
+	if (ELEM3(par->type, OB_ARMATURE, OB_LATTICE, OB_CURVE)) {
+		ModifierData *md, *mdn;
+		
+		/* assume that we only need to remove the first instance of matching deform modifier here */
+		for (md = ob->modifiers.first; md; md = mdn) {
+			short free = FALSE;
+			
+			mdn = md->next;
+			
+			/* need to match types (modifier + parent) and references */
+			if ((md->type == eModifierType_Armature) && (par->type == OB_ARMATURE)) {
+				ArmatureModifierData *amd = (ArmatureModifierData *)md;
+				if (amd->object == par) {
+					free = TRUE;
+				}
+			}
+			else if ((md->type == eModifierType_Lattice) && (par->type == OB_LATTICE)) {
+				LatticeModifierData *lmd = (LatticeModifierData *)md;
+				if (lmd->object == par) {
+					free = TRUE;
+				}
+			}
+			else if ((md->type == eModifierType_Curve) && (par->type == OB_CURVE)) {
+				CurveModifierData *cmd = (CurveModifierData *)md;
+				if (cmd->object == par) {
+					free = TRUE;
+				}
+			}
+			
+			/* free modifier if match */
+			if (free) {
+				BLI_remlink(&ob->modifiers, md);
+				modifier_free(md);
+			}
+		}
+	}
+}
+
 void ED_object_parent_clear(Object *ob, int type)
 {
-
 	if (ob->parent == NULL)
 		return;
+	
+	switch (type) {
+		case CLEAR_PARENT_ALL:
+		{
+			/* for deformers, remove corresponding modifiers to prevent a large number of modifiers building up */
+			object_remove_parent_deform_modifiers(ob, ob->parent);
+			
+			/* clear parenting relationship completely */
+			ob->parent = NULL;
+		}
+		break;
 		
-	if (type == 0) {
-		ob->parent = NULL;
-	}
-	else if (type == 1) {
-		ob->parent = NULL;
-		BKE_object_apply_mat4(ob, ob->obmat, TRUE, FALSE);
-	}
-	else if (type == 2)
-		unit_m4(ob->parentinv);
+		case CLEAR_PARENT_KEEP_TRANSFORM:
+		{
+			/* remove parent, and apply the parented transform result as object's local transforms */
+			ob->parent = NULL;
+			BKE_object_apply_mat4(ob, ob->obmat, TRUE, FALSE);
+		}
+		break;
 		
-	ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+		case CLEAR_PARENT_INVERSE:
+		{
+			/* object stays parented, but the parent inverse (i.e. offset from parent to retain binding state) is cleared */
+			unit_m4(ob->parentinv);
+		}
+		break;
+	}
+	
+	DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 }
 
 /* note, poll should check for editable scene */
 static int parent_clear_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	int type = RNA_enum_get(op->ptr, "type");
 
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
@@ -462,8 +528,7 @@ static int parent_clear_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 
-	DAG_scene_sort(bmain, scene);
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	WM_event_add_notifier(C, NC_OBJECT | ND_PARENT, NULL);
 	return OPERATOR_FINISHED;
@@ -485,7 +550,7 @@ void OBJECT_OT_parent_clear(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
-	ot->prop = RNA_def_enum(ot->srna, "type", prop_clear_parent_types, 0, "Type", "");
+	ot->prop = RNA_def_enum(ot->srna, "type", prop_clear_parent_types, CLEAR_PARENT_ALL, "Type", "");
 }
 
 /* ******************** Make Parent Operator *********************** */
@@ -515,6 +580,7 @@ EnumPropertyItem prop_make_parent_types[] = {
 	{PAR_ARMATURE_AUTO, "ARMATURE_AUTO", 0, "   With Automatic Weights", ""},
 	{PAR_ARMATURE_ENVELOPE, "ARMATURE_ENVELOPE", 0, "   With Envelope Weights", ""},
 	{PAR_BONE, "BONE", 0, "Bone", ""},
+	{PAR_BONE_RELATIVE, "BONE_RELATIVE", 0, "Bone Relative", ""},
 	{PAR_CURVE, "CURVE", 0, "Curve Deform", ""},
 	{PAR_FOLLOW, "FOLLOW", 0, "Follow Path", ""},
 	{PAR_PATH_CONST, "PATH_CONST", 0, "Path Constraint", ""},
@@ -525,12 +591,12 @@ EnumPropertyItem prop_make_parent_types[] = {
 };
 
 int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object *ob, Object *par,
-                         int partype, int xmirror)
+                         int partype, int xmirror, int keep_transform)
 {
 	bPoseChannel *pchan = NULL;
 	int pararm = ELEM4(partype, PAR_ARMATURE, PAR_ARMATURE_NAME, PAR_ARMATURE_ENVELOPE, PAR_ARMATURE_AUTO);
 	
-	par->recalc |= OB_RECALC_OB;
+	DAG_id_tag_update(&par->id, OB_RECALC_OB);
 	
 	/* preconditions */
 	if (partype == PAR_FOLLOW || partype == PAR_PATH_CONST) {
@@ -543,8 +609,10 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 				cu->flag |= CU_PATH | CU_FOLLOW;
 				BKE_displist_make_curveTypes(scene, par, 0);  /* force creation of path data */
 			}
-			else cu->flag |= CU_FOLLOW;
-			
+			else {
+				cu->flag |= CU_FOLLOW;
+			}
+
 			/* if follow, add F-Curve for ctime (i.e. "eval_time") so that path-follow works */
 			if (partype == PAR_FOLLOW) {
 				/* get or create F-Curve */
@@ -559,13 +627,13 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 			/* fall back on regular parenting now (for follow only) */
 			if (partype == PAR_FOLLOW)
 				partype = PAR_OBJECT;
-		}		
+		}
 	}
-	else if (partype == PAR_BONE) {
+	else if (ELEM(partype, PAR_BONE, PAR_BONE_RELATIVE)) {
 		pchan = BKE_pose_channel_active(par);
 		
 		if (pchan == NULL) {
-			BKE_report(reports, RPT_ERROR, "No active Bone");
+			BKE_report(reports, RPT_ERROR, "No active bone");
 			return 0;
 		}
 	}
@@ -577,10 +645,14 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 		}
 		else {
 			Object workob;
-			
+
 			/* apply transformation of previous parenting */
-			/* BKE_object_apply_mat4(ob, ob->obmat); */ /* removed because of bug [#23577] */
-			
+			if (keep_transform) {
+				/* was removed because of bug [#23577],
+				 * but this can be handy in some cases too [#32616], so make optional */
+				BKE_object_apply_mat4(ob, ob->obmat, FALSE, FALSE);
+			}
+
 			/* set the parent (except for follow-path constraint option) */
 			if (partype != PAR_PATH_CONST) {
 				ob->parent = par;
@@ -600,31 +672,54 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 				 * NOTE: the old (2.4x) method was to set ob->partype = PARSKEL, creating the virtual modifiers
 				 */
 				ob->partype = PAROBJECT; /* note, dna define, not operator property */
-				//ob->partype= PARSKEL; /* note, dna define, not operator property */
+				//ob->partype = PARSKEL; /* note, dna define, not operator property */
 				
-				/* BUT, to keep the deforms, we need a modifier, and then we need to set the object that it uses */
+				/* BUT, to keep the deforms, we need a modifier, and then we need to set the object that it uses 
+				 * - We need to ensure that the modifier we're adding doesn't already exist, so we check this by
+				 *   assuming that the parent is selected too...
+				 */
 				// XXX currently this should only happen for meshes, curves, surfaces, and lattices - this stuff isn't available for metas yet
 				if (ELEM5(ob->type, OB_MESH, OB_CURVE, OB_SURF, OB_FONT, OB_LATTICE)) {
 					ModifierData *md;
 					
 					switch (partype) {
 						case PAR_CURVE: /* curve deform */
-							md = ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Curve);
-							((CurveModifierData *)md)->object = par;
+							if ( modifiers_isDeformedByCurve(ob) != par) {
+								md = ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Curve);
+								if (md) {
+									((CurveModifierData *)md)->object = par;
+								}
+							}
 							break;
 						case PAR_LATTICE: /* lattice deform */
-							md = ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Lattice);
-							((LatticeModifierData *)md)->object = par;
+							if (modifiers_isDeformedByLattice(ob) != par) {
+								md = ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Lattice);
+								if (md) {
+									((LatticeModifierData *)md)->object = par;
+								}
+							}
 							break;
 						default: /* armature deform */
-							md = ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Armature);
-							((ArmatureModifierData *)md)->object = par;
+							if (modifiers_isDeformedByArmature(ob) != par) {
+								md = ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Armature);
+								if (md) {
+									((ArmatureModifierData *)md)->object = par;
+								}
+							}
 							break;
 					}
 				}
 			}
-			else if (partype == PAR_BONE)
+			else if (partype == PAR_BONE) {
 				ob->partype = PARBONE;  /* note, dna define, not operator property */
+				if (pchan->bone)
+					pchan->bone->flag &= ~BONE_RELATIVE_PARENTING;
+			}
+			else if (partype == PAR_BONE_RELATIVE) {
+				ob->partype = PARBONE;  /* note, dna define, not operator property */
+				if (pchan->bone)
+					pchan->bone->flag |= BONE_RELATIVE_PARENTING;
+			}
 			else
 				ob->partype = PAROBJECT;  /* note, dna define, not operator property */
 			
@@ -634,17 +729,15 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 				bFollowPathConstraint *data;
 				float cmat[4][4], vec[3];
 				
-				con = add_ob_constraint(ob, "AutoPath", CONSTRAINT_TYPE_FOLLOWPATH);
+				con = BKE_add_ob_constraint(ob, "AutoPath", CONSTRAINT_TYPE_FOLLOWPATH);
 				
 				data = con->data;
 				data->tar = par;
 				
-				get_constraint_target_matrix(scene, con, 0, CONSTRAINT_OBTYPE_OBJECT, NULL, cmat, scene->r.cfra);
+				BKE_get_constraint_target_matrix(scene, con, 0, CONSTRAINT_OBTYPE_OBJECT, NULL, cmat, scene->r.cfra);
 				sub_v3_v3v3(vec, ob->obmat[3], cmat[3]);
 				
-				ob->loc[0] = vec[0];
-				ob->loc[1] = vec[1];
-				ob->loc[2] = vec[2];
+				copy_v3_v3(ob->loc, vec);
 			}
 			else if (pararm && ob->type == OB_MESH && par->type == OB_ARMATURE) {
 				if (partype == PAR_ARMATURE_NAME)
@@ -668,7 +761,7 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 				invert_m4_m4(ob->parentinv, workob.obmat);
 			}
 			
-			ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA;
+			DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA);
 		}
 	}
 
@@ -682,11 +775,12 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 	Object *par = ED_object_active_context(C);
 	int partype = RNA_enum_get(op->ptr, "type");
 	int xmirror = RNA_boolean_get(op->ptr, "xmirror");
+	int keep_transform = RNA_boolean_get(op->ptr, "keep_transform");
 	int ok = 1;
 
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
 	{
-		if (!ED_object_parent_set(op->reports, bmain, scene, ob, par, partype, xmirror)) {
+		if (!ED_object_parent_set(op->reports, bmain, scene, ob, par, partype, xmirror, keep_transform)) {
 			ok = 0;
 			break;
 		}
@@ -696,8 +790,7 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 	if (!ok)
 		return OPERATOR_CANCELLED;
 
-	DAG_scene_sort(bmain, scene);
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	WM_event_add_notifier(C, NC_OBJECT | ND_PARENT, NULL);
 
@@ -705,30 +798,43 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 }
 
 
-static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
+static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *UNUSED(event))
 {
 	Object *ob = ED_object_active_context(C);
-	uiPopupMenu *pup = uiPupMenuBegin(C, "Set Parent To", ICON_NONE);
+	uiPopupMenu *pup = uiPupMenuBegin(C, IFACE_("Set Parent To"), ICON_NONE);
 	uiLayout *layout = uiPupMenuLayout(pup);
-	
-	uiLayoutSetOperatorContext(layout, WM_OP_EXEC_DEFAULT);
-	uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_OBJECT);
-	
+
+	wmOperatorType *ot = WM_operatortype_find("OBJECT_OT_parent_set", TRUE);
+	PointerRNA opptr;
+
+#if 0
+	uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_OBJECT);
+#else
+	opptr = uiItemFullO_ptr(layout, ot, IFACE_("Object"), ICON_NONE, NULL, WM_OP_EXEC_DEFAULT, UI_ITEM_O_RETURN_PROPS);
+	RNA_enum_set(&opptr, "type", PAR_OBJECT);
+	RNA_boolean_set(&opptr, "keep_transform", FALSE);
+
+	opptr = uiItemFullO_ptr(layout, ot, IFACE_("Object (Keep Transform)"), ICON_NONE, NULL, WM_OP_EXEC_DEFAULT,
+	                        UI_ITEM_O_RETURN_PROPS);
+	RNA_enum_set(&opptr, "type", PAR_OBJECT);
+	RNA_boolean_set(&opptr, "keep_transform", TRUE);
+#endif
 	/* ob becomes parent, make the associated menus */
 	if (ob->type == OB_ARMATURE) {
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_ARMATURE);
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_ARMATURE_NAME);
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_ARMATURE_ENVELOPE);
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_ARMATURE_AUTO);
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_BONE);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_ARMATURE);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_ARMATURE_NAME);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_ARMATURE_ENVELOPE);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_ARMATURE_AUTO);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_BONE);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_BONE_RELATIVE);
 	}
 	else if (ob->type == OB_CURVE) {
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_CURVE);
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_FOLLOW);
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_PATH_CONST);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_CURVE);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_FOLLOW);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_PATH_CONST);
 	}
 	else if (ob->type == OB_LATTICE) {
-		uiItemEnumO(layout, "OBJECT_OT_parent_set", NULL, 0, "type", PAR_LATTICE);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_LATTICE);
 	}
 	
 	uiPupMenuEnd(C, pup);
@@ -736,20 +842,20 @@ static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSE
 	return OPERATOR_CANCELLED;
 }
 
-static int parent_set_draw_check_prop(PointerRNA *ptr, PropertyRNA *prop)
+static bool parent_set_draw_check_prop(PointerRNA *ptr, PropertyRNA *prop)
 {
 	const char *prop_id = RNA_property_identifier(prop);
 	int type = RNA_enum_get(ptr, "type");
 
 	/* Only show XMirror for PAR_ARMATURE_ENVELOPE and PAR_ARMATURE_AUTO! */
-	if (strcmp(prop_id, "xmirror") == 0) {
+	if (STREQ(prop_id, "xmirror")) {
 		if (ELEM(type, PAR_ARMATURE_ENVELOPE, PAR_ARMATURE_AUTO))
-			return TRUE;
+			return true;
 		else
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 static void parent_set_ui(bContext *C, wmOperator *op)
@@ -783,6 +889,9 @@ void OBJECT_OT_parent_set(wmOperatorType *ot)
 	RNA_def_enum(ot->srna, "type", prop_make_parent_types, 0, "Type", "");
 	RNA_def_boolean(ot->srna, "xmirror", FALSE, "X Mirror",
 	                "Apply weights symmetrically along X axis, for Envelope/Automatic vertex groups creation");
+	RNA_def_boolean(ot->srna, "keep_transform", FALSE, "Keep Transform",
+	                "Apply transformation before parenting");
+
 }
 
 /* ************ Make Parent Without Inverse Operator ******************* */
@@ -792,7 +901,7 @@ static int parent_noinv_set_exec(bContext *C, wmOperator *op)
 	Main *bmain = CTX_data_main(C);
 	Object *par = ED_object_active_context(C);
 	
-	par->recalc |= OB_RECALC_OB;
+	DAG_id_tag_update(&par->id, OB_RECALC_OB);
 	
 	/* context iterator */
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
@@ -807,7 +916,7 @@ static int parent_noinv_set_exec(bContext *C, wmOperator *op)
 				memset(ob->loc, 0, 3 * sizeof(float));
 				
 				/* set recalc flags */
-				ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA;
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA);
 				
 				/* set parenting type for object - object only... */
 				ob->parent = par;
@@ -817,8 +926,7 @@ static int parent_noinv_set_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 	
-	DAG_scene_sort(bmain, CTX_data_scene(C));
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -844,7 +952,6 @@ void OBJECT_OT_parent_no_inverse_set(wmOperatorType *ot)
 
 static int object_slow_parent_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
@@ -854,13 +961,12 @@ static int object_slow_parent_clear_exec(bContext *C, wmOperator *UNUSED(op))
 				ob->partype -= PARSLOW;
 				BKE_object_where_is_calc(scene, ob);
 				ob->partype |= PARSLOW;
-				ob->recalc |= OB_RECALC_OB;
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 			}
 		}
 	}
 	CTX_DATA_END;
 
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_SCENE, scene);
 	
 	return OPERATOR_FINISHED;
@@ -887,7 +993,6 @@ void OBJECT_OT_slow_parent_clear(wmOperatorType *ot)
 
 static int object_slow_parent_set_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
@@ -895,12 +1000,11 @@ static int object_slow_parent_set_exec(bContext *C, wmOperator *UNUSED(op))
 		if (ob->parent)
 			ob->partype |= PARSLOW;
 
-		ob->recalc |= OB_RECALC_OB;
+		DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 		
 	}
 	CTX_DATA_END;
 
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_SCENE, scene);
 	
 	return OPERATOR_FINISHED;
@@ -935,11 +1039,10 @@ static EnumPropertyItem prop_clear_track_types[] = {
 static int object_track_clear_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	int type = RNA_enum_get(op->ptr, "type");
 
 	if (CTX_data_edit_object(C)) {
-		BKE_report(op->reports, RPT_ERROR, "Operation cannot be performed in EditMode");
+		BKE_report(op->reports, RPT_ERROR, "Operation cannot be performed in edit mode");
 		return OPERATOR_CANCELLED;
 	}
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
@@ -948,13 +1051,13 @@ static int object_track_clear_exec(bContext *C, wmOperator *op)
 		
 		/* remove track-object for old track */
 		ob->track = NULL;
-		ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+		DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 		
 		/* also remove all tracking constraints */
 		for (con = ob->constraints.last; con; con = pcon) {
 			pcon = con->prev;
 			if (ELEM3(con->type, CONSTRAINT_TYPE_TRACKTO, CONSTRAINT_TYPE_LOCKTRACK, CONSTRAINT_TYPE_DAMPTRACK))
-				remove_constraint(&ob->constraints, con);
+				BKE_remove_constraint(&ob->constraints, con);
 		}
 		
 		if (type == 1)
@@ -962,8 +1065,7 @@ static int object_track_clear_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 
-	DAG_ids_flush_update(bmain, 0);
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 
 	return OPERATOR_FINISHED;
@@ -972,7 +1074,7 @@ static int object_track_clear_exec(bContext *C, wmOperator *op)
 void OBJECT_OT_track_clear(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name = "Clear track";
+	ot->name = "Clear Track";
 	ot->description = "Clear tracking constraint or flag from object";
 	ot->idname = "OBJECT_OT_track_clear";
 	
@@ -1000,7 +1102,6 @@ static EnumPropertyItem prop_make_track_types[] = {
 static int track_set_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	Object *obact = ED_object_active_context(C);
 	
 	int type = RNA_enum_get(op->ptr, "type");
@@ -1012,11 +1113,11 @@ static int track_set_exec(bContext *C, wmOperator *op)
 		CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
 		{
 			if (ob != obact) {
-				con = add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_DAMPTRACK);
+				con = BKE_add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_DAMPTRACK);
 
 				data = con->data;
 				data->tar = obact;
-				ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 				
 				/* Lamp, Camera and Speaker track differently by default */
 				if (ob->type == OB_LAMP || ob->type == OB_CAMERA || ob->type == OB_SPEAKER)
@@ -1032,11 +1133,11 @@ static int track_set_exec(bContext *C, wmOperator *op)
 		CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
 		{
 			if (ob != obact) {
-				con = add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_TRACKTO);
+				con = BKE_add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_TRACKTO);
 
 				data = con->data;
 				data->tar = obact;
-				ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 				
 				/* Lamp, Camera and Speaker track differently by default */
 				if (ob->type == OB_LAMP || ob->type == OB_CAMERA || ob->type == OB_SPEAKER) {
@@ -1054,11 +1155,11 @@ static int track_set_exec(bContext *C, wmOperator *op)
 		CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
 		{
 			if (ob != obact) {
-				con = add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_LOCKTRACK);
+				con = BKE_add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_LOCKTRACK);
 
 				data = con->data;
 				data->tar = obact;
-				ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+				DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 				
 				/* Lamp, Camera and Speaker track differently by default */
 				if (ob->type == OB_LAMP || ob->type == OB_CAMERA || ob->type == OB_SPEAKER) {
@@ -1070,8 +1171,7 @@ static int track_set_exec(bContext *C, wmOperator *op)
 		CTX_DATA_END;
 	}
 	
-	DAG_scene_sort(bmain, scene);
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -1128,7 +1228,7 @@ static unsigned int move_to_layer_init(bContext *C, wmOperator *op)
 	return lay;
 }
 
-static int move_to_layer_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int move_to_layer_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	View3D *v3d = CTX_wm_view3d(C);
 	if (v3d && v3d->localvd) {
@@ -1163,7 +1263,7 @@ static int move_to_layer_exec(bContext *C, wmOperator *op)
 			base->object->lay = lay;
 			base->object->flag &= ~SELECT;
 			base->flag &= ~SELECT;
-			/* if (base->object->type==OB_LAMP) is_lamp = TRUE; */
+			/* if (base->object->type == OB_LAMP) is_lamp = TRUE; */
 		}
 		CTX_DATA_END;
 	}
@@ -1176,7 +1276,7 @@ static int move_to_layer_exec(bContext *C, wmOperator *op)
 			local = base->lay & 0xFF000000;
 			base->lay = lay + local;
 			base->object->lay = lay;
-			/* if (base->object->type==OB_LAMP) is_lamp = TRUE; */
+			/* if (base->object->type == OB_LAMP) is_lamp = TRUE; */
 		}
 		CTX_DATA_END;
 	}
@@ -1186,7 +1286,7 @@ static int move_to_layer_exec(bContext *C, wmOperator *op)
 	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, scene);
 	WM_event_add_notifier(C, NC_SCENE | ND_LAYER_CONTENT, scene);
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 
 	return OPERATOR_FINISHED;
 }
@@ -1249,21 +1349,20 @@ Base *ED_object_scene_link(Scene *scene, Object *ob)
 
 static int make_links_scene_exec(bContext *C, wmOperator *op)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene_to = BLI_findlink(&CTX_data_main(C)->scene, RNA_enum_get(op->ptr, "scene"));
 
 	if (scene_to == NULL) {
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find scene");
+		BKE_report(op->reports, RPT_ERROR, "Could not find scene");
 		return OPERATOR_CANCELLED;
 	}
 
 	if (scene_to == CTX_data_scene(C)) {
-		BKE_report(op->reports, RPT_ERROR, "Can't link objects into the same scene");
+		BKE_report(op->reports, RPT_ERROR, "Cannot link objects into the same scene");
 		return OPERATOR_CANCELLED;
 	}
 
 	if (scene_to->id.lib) {
-		BKE_report(op->reports, RPT_ERROR, "Can't link objects into a linked scene");
+		BKE_report(op->reports, RPT_ERROR, "Cannot link objects into a linked scene");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -1273,7 +1372,8 @@ static int make_links_scene_exec(bContext *C, wmOperator *op)
 	}
 	CTX_DATA_END;
 
-	DAG_ids_flush_update(bmain, 0);
+	/* redraw the 3D view because the object center points are colored differently */
+	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, NULL);
 
 	/* one day multiple scenes will be visible, then we should have some update function for them */
 	return OPERATOR_FINISHED;
@@ -1360,9 +1460,9 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 						ob_dst->data = id;
 
 						/* if amount of material indices changed: */
-						test_object_materials(ob_dst->data);
+						test_object_materials(bmain, ob_dst->data);
 
-						ob_dst->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&ob_dst->id, OB_RECALC_DATA);
 						break;
 					case MAKE_LINKS_MATERIALS:
 						/* new approach, using functions from kernel */
@@ -1385,7 +1485,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 						/* now add in the groups from the link nodes */
 						for (group_node = ob_groups; group_node; group_node = group_node->next) {
 							if (ob_dst->dup_group != group_node->link) {
-								add_to_group(group_node->link, ob_dst, scene, base_dst);
+								BKE_group_object_add(group_node->link, ob_dst, scene, base_dst);
 							}
 							else {
 								is_cycle = TRUE;
@@ -1401,7 +1501,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 						break;
 					case MAKE_LINKS_MODIFIERS:
 						BKE_object_link_modifiers(ob_dst, ob_src);
-						ob_dst->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+						DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 						break;
 					case MAKE_LINKS_FONTS:
 					{
@@ -1421,7 +1521,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 						cu_dst->vfontbi = cu_src->vfontbi;
 						id_us_plus((ID *)cu_dst->vfontbi);
 
-						ob_dst->recalc |= OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME;
+						DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 						break;
 					}
 				}
@@ -1440,10 +1540,10 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 		}
 	}
 
-	DAG_scene_sort(bmain, scene);
-	
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, CTX_wm_view3d(C));
+	WM_event_add_notifier(C, NC_OBJECT, NULL);
+
 	return OPERATOR_FINISHED;
 }
 
@@ -1502,23 +1602,25 @@ void OBJECT_OT_make_links_data(wmOperatorType *ot)
 
 /**************************** Make Single User ********************************/
 
-static void single_object_users(Scene *scene, View3D *v3d, int flag)	
+static void single_object_users(Main *bmain, Scene *scene, View3D *v3d, int flag, bool copy_groups)
 {
 	Base *base;
 	Object *ob, *obn;
+	Group *group, *groupn;
+	GroupObject *go;
 	
 	clear_sca_new_poins();  /* sensor/contr/act */
+
+	/* newid may still have some trash from Outliner tree building,
+	 * so clear that first to avoid errors [#26002] */
+	for (ob = bmain->object.first; ob; ob = ob->id.next)
+		ob->id.newid = NULL;
 
 	/* duplicate (must set newid) */
 	for (base = FIRSTBASE; base; base = base->next) {
 		ob = base->object;
 		
-		/* newid may still have some trash from Outliner tree building,
-		 * so clear that first to avoid errors [#26002]
-		 */
-		ob->id.newid = NULL;
-		
-		if ( (base->flag & flag) == flag) {
+		if ((base->flag & flag) == flag) {
 			if (ob->id.lib == NULL && ob->id.us > 1) {
 				/* base gets copy of object */
 				obn = BKE_object_copy(ob);
@@ -1527,11 +1629,37 @@ static void single_object_users(Scene *scene, View3D *v3d, int flag)
 			}
 		}
 	}
+
+	/* duplicate groups that consist entirely of duplicated objects */
+	for (group = bmain->group.first; group; group = group->id.next) {
+		group->id.newid = NULL;
+
+		if (copy_groups && group->gobject.first) {
+			bool all_duplicated = true;
+
+			for (go = group->gobject.first; go; go = go->next) {
+				if (!(go->ob && (go->ob->id.newid))) {
+					all_duplicated = false;
+					break;
+				}
+			}
+
+			if (all_duplicated) {
+				groupn = BKE_group_copy(group);
+
+				for (go = groupn->gobject.first; go; go = go->next)
+					go->ob = (Object *)go->ob->id.newid;
+			}
+		}
+	}
+
+	/* group pointers in scene */
+	BKE_scene_groups_relink(scene);
 	
 	ID_NEW(scene->camera);
 	if (v3d) ID_NEW(v3d->camera);
 	
-	/* object pointers */
+	/* object and group pointers */
 	for (base = FIRSTBASE; base; base = base->next) {
 		BKE_object_relink(base->object);
 	}
@@ -1541,16 +1669,17 @@ static void single_object_users(Scene *scene, View3D *v3d, int flag)
 
 /* not an especially efficient function, only added so the single user
  * button can be functional.*/
-void ED_object_single_user(Scene *scene, Object *ob)
+void ED_object_single_user(Main *bmain, Scene *scene, Object *ob)
 {
 	Base *base;
+	bool copy_groups = false;
 
 	for (base = FIRSTBASE; base; base = base->next) {
 		if (base->object == ob) base->flag |=  OB_DONE;
 		else base->flag &= ~OB_DONE;
 	}
 
-	single_object_users(scene, NULL, OB_DONE);
+	single_object_users(bmain, scene, NULL, OB_DONE, copy_groups);
 }
 
 static void new_id_matar(Material **matar, int totcol)
@@ -1583,6 +1712,7 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 	//Camera *cam;
 	Base *base;
 	Mesh *me;
+	Lattice *lat;
 	ID *id;
 	int a;
 
@@ -1592,10 +1722,8 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 			id = ob->data;
 			
 			if (id && id->us > 1 && id->lib == NULL) {
-				ob->recalc = OB_RECALC_DATA;
-				
-				BKE_copy_animdata_id_action(id);
-				
+				DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+
 				switch (ob->type) {
 					case OB_LAMP:
 						ob->data = la = BKE_lamp_copy(ob->data);
@@ -1609,10 +1737,9 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 						ob->data = BKE_camera_copy(ob->data);
 						break;
 					case OB_MESH:
-						ob->data = BKE_mesh_copy(ob->data);
-						//me= ob->data;
-						//if (me && me->key)
-						//	ipo_idnew(me->key->ipo);	/* drivers */
+						ob->data = me = BKE_mesh_copy(ob->data);
+						if (me->key)
+							BKE_copy_animdata_id_action((ID *)me->key);
 						break;
 					case OB_MBALL:
 						ob->data = BKE_mball_copy(ob->data);
@@ -1623,12 +1750,16 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 						ob->data = cu = BKE_curve_copy(ob->data);
 						ID_NEW(cu->bevobj);
 						ID_NEW(cu->taperobj);
+						if (cu->key)
+							BKE_copy_animdata_id_action((ID *)cu->key);
 						break;
 					case OB_LATTICE:
-						ob->data = BKE_lattice_copy(ob->data);
+						ob->data = lat = BKE_lattice_copy(ob->data);
+						if (lat->key)
+							BKE_copy_animdata_id_action((ID *)lat->key);
 						break;
 					case OB_ARMATURE:
-						ob->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 						ob->data = BKE_armature_copy(ob->data);
 						BKE_pose_rebuild(ob, ob->data);
 						break;
@@ -1640,7 +1771,14 @@ static void single_obdata_users(Main *bmain, Scene *scene, int flag)
 							printf("ERROR %s: can't copy %s\n", __func__, id->name);
 						return;
 				}
-				
+
+				/* Copy animation data after object data became local,
+				 * otherwise old and new object data will share the same
+				 * AnimData structure, which is not what we want.
+				 *                                             (sergey)
+				 */
+				BKE_copy_animdata_id_action((ID *)ob->data);
+
 				id->us--;
 				id->newid = ob->data;
 				
@@ -1664,7 +1802,7 @@ static void single_object_action_users(Scene *scene, int flag)
 	for (base = FIRSTBASE; base; base = base->next) {
 		ob = base->object;
 		if (ob->id.lib == NULL && (flag == 0 || (base->flag & SELECT)) ) {
-			ob->recalc = OB_RECALC_DATA;
+			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			BKE_copy_animdata_id_action(&ob->id);
 		}
 	}
@@ -1808,9 +1946,9 @@ static void single_mat_users_expand(Main *bmain)
 }
 
 /* used for copying scenes */
-void ED_object_single_users(Main *bmain, Scene *scene, int full)
+void ED_object_single_users(Main *bmain, Scene *scene, bool full, bool copy_groups)
 {
-	single_object_users(scene, NULL, 0);
+	single_object_users(bmain, scene, NULL, 0, copy_groups);
 
 	if (full) {
 		single_obdata_users(bmain, scene, 0);
@@ -1830,11 +1968,11 @@ static void make_local_makelocalmaterial(Material *ma)
 	AnimData *adt;
 	int b;
 	
-	id_make_local(&ma->id, 0);
+	id_make_local(&ma->id, false);
 	
 	for (b = 0; b < MAX_MTEX; b++)
 		if (ma->mtex[b] && ma->mtex[b]->tex)
-			id_make_local(&ma->mtex[b]->tex->id, 0);
+			id_make_local(&ma->mtex[b]->tex->id, false);
 	
 	adt = BKE_animdata_from_id(&ma->id);
 	if (adt) BKE_animdata_make_local(adt);
@@ -1860,7 +1998,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 	int a, b, mode = RNA_enum_get(op->ptr, "type");
 	
 	if (mode == MAKE_LOCAL_ALL) {
-		BKE_library_make_local(bmain, NULL, 0); /* NULL is all libs */
+		BKE_library_make_local(bmain, NULL, false); /* NULL is all libs */
 		WM_event_add_notifier(C, NC_WINDOW, NULL);
 		return OPERATOR_FINISHED;
 	}
@@ -1870,7 +2008,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 	CTX_DATA_BEGIN (C, Object *, ob, selected_objects)
 	{
 		if (ob->id.lib)
-			id_make_local(&ob->id, 0);
+			id_make_local(&ob->id, false);
 	}
 	CTX_DATA_END;
 	
@@ -1888,7 +2026,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 		id = ob->data;
 			
 		if (id && (ELEM(mode, MAKE_LOCAL_SELECT_OBDATA, MAKE_LOCAL_SELECT_OBDATA_MATERIAL))) {
-			id_make_local(id, 0);
+			id_make_local(id, false);
 			adt = BKE_animdata_from_id(id);
 			if (adt) BKE_animdata_make_local(adt);
 			
@@ -1904,7 +2042,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 		}
 
 		for (psys = ob->particlesystem.first; psys; psys = psys->next)
-			id_make_local(&psys->part->id, 0);
+			id_make_local(&psys->part->id, false);
 
 		adt = BKE_animdata_from_id(&ob->id);
 		if (adt) BKE_animdata_make_local(adt);
@@ -1919,7 +2057,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 
 				for (b = 0; b < MAX_MTEX; b++)
 					if (la->mtex[b] && la->mtex[b]->tex)
-						id_make_local(&la->mtex[b]->tex->id, 0);
+						id_make_local(&la->mtex[b]->tex->id, false);
 			}
 			else {
 				for (a = 0; a < ob->totcol; a++) {
@@ -1979,9 +2117,10 @@ static int make_single_user_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	View3D *v3d = CTX_wm_view3d(C); /* ok if this is NULL */
 	int flag = RNA_enum_get(op->ptr, "type"); /* 0==ALL, SELECTED==selected objecs */
+	bool copy_groups = false;
 
 	if (RNA_boolean_get(op->ptr, "object"))
-		single_object_users(scene, v3d, flag);
+		single_object_users(bmain, scene, v3d, flag, copy_groups);
 
 	if (RNA_boolean_get(op->ptr, "obdata"))
 		single_obdata_users(bmain, scene, flag);
@@ -2032,9 +2171,8 @@ void OBJECT_OT_make_single_user(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "animation", 0, "Object Animation", "Make animation data local to each object");
 }
 
-static int drop_named_material_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int drop_named_material_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	Main *bmain = CTX_data_main(C);
 	Base *base = ED_view3d_give_base_under_cursor(C, event->mval);
 	Material *ma;
 	char name[MAX_ID_NAME - 2];
@@ -2046,9 +2184,8 @@ static int drop_named_material_invoke(bContext *C, wmOperator *op, wmEvent *even
 	
 	assign_material(base->object, ma, 1, BKE_MAT_ASSIGN_USERPREF);
 	
-	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, CTX_wm_view3d(C));
-	WM_event_add_notifier(C, NC_MATERIAL | ND_SHADING, ma);
+	WM_event_add_notifier(C, NC_MATERIAL | ND_SHADING_LINKS, ma);
 	
 	return OPERATOR_FINISHED;
 }
@@ -2068,7 +2205,7 @@ void OBJECT_OT_drop_named_material(wmOperatorType *ot)
 	ot->poll = ED_operator_objectmode;
 	
 	/* flags */
-	ot->flag = OPTYPE_UNDO;
+	ot->flag = OPTYPE_UNDO | OPTYPE_INTERNAL;
 	
 	/* properties */
 	RNA_def_string(ot->srna, "name", "Material", MAX_ID_NAME - 2, "Name", "Material name to assign");

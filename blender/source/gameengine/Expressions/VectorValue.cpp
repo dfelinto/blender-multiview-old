@@ -15,8 +15,8 @@
  *
  */
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable:4786)
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
 #endif
 
 #include "Value.h"
@@ -47,7 +47,7 @@ CVectorValue::CVectorValue(float x,float y,float z, AllocationTYPE alloctype)
 	m_vec[KX_Z] = m_transformedvec[KX_Z] = z;
 	
 }
-CVectorValue::CVectorValue(double vec[],const char *name,AllocationTYPE alloctype)
+CVectorValue::CVectorValue(double vec[3], const char *name,AllocationTYPE alloctype)
 {
 	
 	SetCustomFlag1(false);//FancyOutput=false;
@@ -65,7 +65,7 @@ CVectorValue::CVectorValue(double vec[],const char *name,AllocationTYPE alloctyp
 	SetName(name);
 }
 
-CVectorValue::CVectorValue(double vec[],AllocationTYPE alloctype)
+CVectorValue::CVectorValue(double vec[3], AllocationTYPE alloctype)
 {
 	
 	SetCustomFlag1(false);//FancyOutput=false;
@@ -96,61 +96,60 @@ CValue* CVectorValue::CalcFinal(VALUE_DATA_TYPE dtype, VALUE_OPERATOR op, CValue
 {
 	CValue *ret = NULL;
 	
-	switch(op)
-	{ 
-	case VALUE_ADD_OPERATOR: 
+	switch (op) {
+		case VALUE_ADD_OPERATOR:
 		{
 			switch (dtype)
 			{
-			case VALUE_EMPTY_TYPE:
-			case VALUE_VECTOR_TYPE: 
+				case VALUE_EMPTY_TYPE:
+				case VALUE_VECTOR_TYPE:
 				{
 					ret = new CVectorValue(
-						val->GetVector3()[KX_X] + GetVector3()[KX_X],
-						val->GetVector3()[KX_Y] + GetVector3()[KX_Y],
-						val->GetVector3()[KX_Z] + GetVector3()[KX_Z],
-						CValue::HEAPVALUE);
+					            val->GetVector3()[KX_X] + GetVector3()[KX_X],
+					            val->GetVector3()[KX_Y] + GetVector3()[KX_Y],
+					            val->GetVector3()[KX_Z] + GetVector3()[KX_Z],
+					            CValue::HEAPVALUE);
 					ret->SetName(GetName());
 					break;
 				}
-			
-			default: 
-				ret = new CErrorValue(val->GetText() + op2str(op) +	GetText());
+
+				default:
+					ret = new CErrorValue(val->GetText() + op2str(op) +	GetText());
 			}
 			break;
 		}
-	case VALUE_MUL_OPERATOR:
+		case VALUE_MUL_OPERATOR:
 		{
 			switch (dtype)
 			{
 				
-			case VALUE_EMPTY_TYPE:
-			case VALUE_VECTOR_TYPE: 
+				case VALUE_EMPTY_TYPE:
+				case VALUE_VECTOR_TYPE:
 				{
 					//MT_Vector3 supports 'scaling' by another vector, instead of using general transform, Gino?
 					//ret = new CVectorValue(val->GetVector3().Scaled(GetVector3()),GetName());
 					break;
 				}
-			case VALUE_FLOAT_TYPE: 
+				case VALUE_FLOAT_TYPE:
 				{
 					ret = new CVectorValue(
-						val->GetVector3()[KX_X] * GetVector3()[KX_X],
-						val->GetVector3()[KX_Y] * GetVector3()[KX_Y],
-						val->GetVector3()[KX_Z] * GetVector3()[KX_Z],
-						CValue::HEAPVALUE);
+					            val->GetVector3()[KX_X] * GetVector3()[KX_X],
+					            val->GetVector3()[KX_Y] * GetVector3()[KX_Y],
+					            val->GetVector3()[KX_Z] * GetVector3()[KX_Z],
+					            CValue::HEAPVALUE);
 					ret->SetName(GetName());
 					break;
 				}
-			
-			default: 
-				ret = new CErrorValue(val->GetText() + op2str(op) +	GetText());
+
+				default:
+					ret = new CErrorValue(val->GetText() + op2str(op) +	GetText());
 			}
 			break;
 
 		}
-	
-	default:
-		ret = new CErrorValue(val->GetText() + op2str(op) +	GetText());
+
+		default:
+			ret = new CErrorValue(val->GetText() + op2str(op) +	GetText());
 	}
 
 	

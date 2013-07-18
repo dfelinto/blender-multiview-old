@@ -28,22 +28,28 @@
 #include "../node_shader_util.h"
 
 static bNodeSocketTemplate outputs[] = {
-    { SOCK_FLOAT,  0, "Index" },
-    { SOCK_FLOAT,  0, "Age" },
-    { SOCK_FLOAT,  0, "Lifetime" },
-    { -1, 0, "" }
-};
+	{ SOCK_FLOAT,  0, "Index" },
+	{ SOCK_FLOAT,  0, "Age" },
+	{ SOCK_FLOAT,  0, "Lifetime" },
+	{ SOCK_VECTOR,  0, "Location" },
+#if 0	/* quaternion sockets not yet supported */
+	{ SOCK_QUATERNION,  0, "Rotation" },
+#endif
+	{ SOCK_FLOAT,  0, "Size" },
+	{ SOCK_VECTOR,  0, "Velocity" },
+	{ SOCK_VECTOR,  0, "Angular Velocity" },
+	{ -1, 0, "" }
+	};
 
 /* node type definition */
-void register_node_type_sh_particle_info(bNodeTreeType *ttype)
+void register_node_type_sh_particle_info(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_PARTICLE_INFO, "Particle Info", NODE_CLASS_INPUT, 0);
+	sh_node_type_base(&ntype, SH_NODE_PARTICLE_INFO, "Particle Info", NODE_CLASS_INPUT, 0);
 	node_type_compatibility(&ntype, NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, NULL, outputs);
-	node_type_size(&ntype, 150, 60, 200);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }
 

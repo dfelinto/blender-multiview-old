@@ -29,24 +29,32 @@ from bpy.props import (StringProperty,
 
 from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
 
+from bpy.app.translations import pgettext_tip as tip_
+
 
 class MESH_OT_delete_edgeloop(Operator):
     """Delete an edge loop by merging the faces on each side """ \
     """to a single face loop"""
     bl_idname = "mesh.delete_edgeloop"
     bl_label = "Delete Edge Loop"
+    bl_options = {'UNDO', 'REGISTER'}
 
     @classmethod
     def poll(cls, context):
         return bpy.ops.transform.edge_slide.poll()
 
     def execute(self, context):
-        if 'FINISHED' in bpy.ops.transform.edge_slide(value=1.0):
+        mesh = context.object.data
+        use_mirror_x = mesh.use_mirror_x
+        mesh.use_mirror_x = False
+        if 'FINISHED' in bpy.ops.transform.edge_slide(value=1.0, correct_uv=True):
             bpy.ops.mesh.select_more()
             bpy.ops.mesh.remove_doubles()
-            return {'FINISHED'}
-
-        return {'CANCELLED'}
+            ret = {'FINISHED'}
+        else:
+            ret = {'CANCELLED'}
+        mesh.use_mirror_x = use_mirror_x
+        return ret
 
 rna_path_prop = StringProperty(
         name="Context Attributes",
@@ -495,18 +503,16 @@ class WM_MT_context_menu_enum(Menu):
 
     def draw(self, context):
         data_path = self.data_path
-        value = context_path_validate(bpy.context, data_path)
+        value = context_path_validate(context, data_path)
         if value is Ellipsis:
             return {'PASS_THROUGH'}
         base_path, prop_string = data_path.rsplit(".", 1)
         value_base = context_path_validate(context, base_path)
+        prop = value_base.bl_rna.properties[prop_string]
 
-        values = [(i.name, i.identifier) for i in value_base.bl_rna.properties[prop_string].enum_items]
-
-        for name, identifier in values:
-            props = self.layout.operator("wm.context_set_enum", text=name)
-            props.data_path = data_path
-            props.value = identifier
+        layout = self.layout
+        layout.label(prop.name, icon=prop.icon)
+        layout.prop(value_base, prop_string, expand=True)
 
 
 class WM_OT_context_menu_enum(Operator):
@@ -608,9 +614,9 @@ class WM_OT_context_collection_boolean_set(Operator):
             except:
                 continue
 
-            if value_orig == True:
+            if value_orig is True:
                 is_set = True
-            elif value_orig == False:
+            elif value_orig is False:
                 pass
             else:
                 self.report({'WARNING'}, "Non boolean value found: %s[ ].%s" %
@@ -735,7 +741,7 @@ class WM_OT_context_modal_mouse(Operator):
 
         if not self._values:
             self.report({'WARNING'}, "Nothing to operate on: %s[ ].%s" %
-                    (self.data_path_iter, self.data_path_item))
+                        (self.data_path_iter, self.data_path_item))
 
             return {'CANCELLED'}
         else:
@@ -790,7 +796,7 @@ class WM_OT_path_open(Operator):
             return {'CANCELLED'}
 
         if sys.platform[:3] == "win":
-            subprocess.Popen(["start", filepath], shell=True)
+            os.startfile(filepath)
         elif sys.platform == "darwin":
             subprocess.Popen(["open", filepath])
         else:
@@ -816,25 +822,42 @@ def _wm_doc_get_id(doc_id, do_url=True, url_prefix=""):
     elif len(id_split) == 2:  # rna, class.prop
         class_name, class_prop = id_split
 
+        # an operator (common case - just button referencing an op)
         if hasattr(bpy.types, class_name.upper() + "_OT_" + class_prop):
             if do_url:
                 url = ("%s/bpy.ops.%s.html#bpy.ops.%s.%s" % (url_prefix, class_name, class_name, class_prop))
             else:
                 rna = "bpy.ops.%s.%s" % (class_name, class_prop)
         else:
+            rna_class = getattr(bpy.types, class_name)
 
-            # detect if this is a inherited member and use that name instead
-            rna_parent = getattr(bpy.types, class_name).bl_rna
-            rna_prop = rna_parent.properties[class_prop]
-            rna_parent = rna_parent.base
-            while rna_parent and rna_prop == rna_parent.properties.get(class_prop):
-                class_name = rna_parent.identifier
-                rna_parent = rna_parent.base
-
-            if do_url:
-                url = ("%s/bpy.types.%s.html#bpy.types.%s.%s" % (url_prefix, class_name, class_name, class_prop))
+            # an operator setting (selected from a running operator), rare case
+            # note: Py defined operators are subclass of Operator,
+            #       C defined operators are subclass of OperatorProperties.
+            #       we may need to check on this at some point.
+            if issubclass(rna_class, (bpy.types.Operator, bpy.types.OperatorProperties)):
+                # note: ignore the prop name since we don't have a way to link into it
+                class_name, class_prop = class_name.split("_OT_", 1)
+                class_name = class_name.lower()
+                if do_url:
+                    url = ("%s/bpy.ops.%s.html#bpy.ops.%s.%s" % (url_prefix, class_name, class_name, class_prop))
+                else:
+                    rna = "bpy.ops.%s.%s" % (class_name, class_prop)
             else:
-                rna = ("bpy.types.%s.%s" % (class_name, class_prop))
+                # an RNA setting, common case
+
+                # detect if this is a inherited member and use that name instead
+                rna_parent = rna_class.bl_rna
+                rna_prop = rna_parent.properties[class_prop]
+                rna_parent = rna_parent.base
+                while rna_parent and rna_prop == rna_parent.properties.get(class_prop):
+                    class_name = rna_parent.identifier
+                    rna_parent = rna_parent.base
+
+                if do_url:
+                    url = ("%s/bpy.types.%s.html#bpy.types.%s.%s" % (url_prefix, class_name, class_name, class_prop))
+                else:
+                    rna = ("bpy.types.%s.%s" % (class_name, class_prop))
 
     return url if do_url else rna
 
@@ -847,41 +870,44 @@ class WM_OT_doc_view_manual(Operator):
     doc_id = doc_id
 
     @staticmethod
-    def _find_reference(rna_id, url_mapping):
-        print("online manual check for: '%s'... " % rna_id)
+    def _find_reference(rna_id, url_mapping, verbose=True):
+        if verbose:
+            print("online manual check for: '%s'... " % rna_id)
         from fnmatch import fnmatch
         for pattern, url_suffix in url_mapping:
             if fnmatch(rna_id, pattern):
-                print("            match found: '%s' --> '%s'" % (pattern, url_suffix))
+                if verbose:
+                    print("            match found: '%s' --> '%s'" % (pattern, url_suffix))
                 return url_suffix
-        print("match not found")
+        if verbose:
+            print("match not found")
         return None
+
+    @staticmethod
+    def _lookup_rna_url(rna_id, verbose=True):
+        for prefix, url_manual_mapping in bpy.utils.manual_map():
+            rna_ref = WM_OT_doc_view_manual._find_reference(rna_id, url_manual_mapping, verbose=verbose)
+            if rna_ref is not None:
+                url = prefix + rna_ref
+                return url
 
     def execute(self, context):
         rna_id = _wm_doc_get_id(self.doc_id, do_url=False)
         if rna_id is None:
             return {'PASS_THROUGH'}
 
-        import rna_wiki_reference
-        rna_ref = self._find_reference(rna_id, rna_wiki_reference.url_manual_mapping)
+        url = self._lookup_rna_url(rna_id)
 
-        if rna_ref is None:
-            self.report({'WARNING'}, "No reference available '%s', "
-                                     "Update info in %r" %
-                                     (self.doc_id, rna_wiki_reference.__file__))
-
-        import sys
-        del sys.modules["rna_wiki_reference"]
-
-        if rna_ref is None:
+        if url is None:
+            self.report({'WARNING'}, "No reference available %r, "
+                                     "Update info in 'rna_wiki_reference.py' "
+                                     " or callback to bpy.utils.manual_map()" %
+                                     self.doc_id)
             return {'CANCELLED'}
         else:
-            url = rna_wiki_reference.url_manual_prefix + rna_ref
-
-        import webbrowser
-        webbrowser.open(url)
-
-        return {'FINISHED'}
+            import webbrowser
+            webbrowser.open(url)
+            return {'FINISHED'}
 
 
 class WM_OT_doc_view(Operator):
@@ -1012,10 +1038,10 @@ rna_max = FloatProperty(
 
 
 class WM_OT_properties_edit(Operator):
-    """Internal use (edit a property data_path)"""
     bl_idname = "wm.properties_edit"
     bl_label = "Edit Property"
-    bl_options = {'REGISTER'}  # only because invoke_props_popup requires.
+    # register only because invoke_props_popup requires.
+    bl_options = {'REGISTER', 'INTERNAL'}
 
     data_path = rna_path
     property = rna_property
@@ -1023,7 +1049,7 @@ class WM_OT_properties_edit(Operator):
     min = rna_min
     max = rna_max
     description = StringProperty(
-            name="Tip",
+            name="Tooltip",
             )
 
     def execute(self, context):
@@ -1039,6 +1065,8 @@ class WM_OT_properties_edit(Operator):
 
         try:
             value_eval = eval(value)
+            # assert else None -> None, not "None", see [#33431]
+            assert(type(value_eval) in {str, float, int, bool, tuple, list})
         except:
             value_eval = value
 
@@ -1098,10 +1126,9 @@ class WM_OT_properties_edit(Operator):
 
 
 class WM_OT_properties_add(Operator):
-    """Internal use (edit a property data_path)"""
     bl_idname = "wm.properties_add"
     bl_label = "Add Property"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'INTERNAL'}
 
     data_path = rna_path
 
@@ -1119,16 +1146,23 @@ class WM_OT_properties_add(Operator):
 
             return prop_new
 
-        property = unique_name(item.keys())
+        prop = unique_name(item.keys())
 
-        item[property] = 1.0
+        item[prop] = 1.0
+
+        # not essential, but without this we get [#31661]
+        prop_ui = rna_idprop_ui_prop_get(item, prop)
+        prop_ui["soft_min"] = prop_ui["min"] = 0.0
+        prop_ui["soft_max"] = prop_ui["max"] = 1.0
+
         return {'FINISHED'}
 
 
 class WM_OT_properties_context_change(Operator):
-    "Change the context tab in a Properties Window"
+    "Jump to a different tab inside the properties editor"
     bl_idname = "wm.properties_context_change"
     bl_label = ""
+    bl_options = {'INTERNAL'}
 
     context = StringProperty(
             name="Context",
@@ -1144,7 +1178,7 @@ class WM_OT_properties_remove(Operator):
     """Internal use (edit a property data_path)"""
     bl_idname = "wm.properties_remove"
     bl_label = "Remove Property"
-    bl_options = {'UNDO'}
+    bl_options = {'UNDO', 'INTERNAL'}
 
     data_path = rna_path
     property = rna_property
@@ -1165,9 +1199,10 @@ class WM_OT_keyconfig_activate(Operator):
             )
 
     def execute(self, context):
-        bpy.utils.keyconfig_set(self.filepath)
-        return {'FINISHED'}
-
+        if bpy.utils.keyconfig_set(self.filepath, report=self.report):
+            return {'FINISHED'}
+        else:
+            return {'CANCELLED'}
 
 class WM_OT_appconfig_default(Operator):
     bl_idname = "wm.appconfig_default"
@@ -1237,18 +1272,15 @@ class WM_OT_copy_prev_settings(Operator):
         else:
             shutil.copytree(path_src, path_dst, symlinks=True)
 
-            # in 2.57 and earlier windows installers, system scripts were copied
-            # into the configuration directory, don't want to copy those
-            system_script = os.path.join(path_dst, "scripts/modules/bpy_types.py")
-            if os.path.isfile(system_script):
-                shutil.rmtree(os.path.join(path_dst, "scripts"))
-                shutil.rmtree(os.path.join(path_dst, "plugins"))
+            # reload recent-files.txt
+            bpy.ops.wm.read_history()
 
             # don't loose users work if they open the splash later.
             if bpy.data.is_saved is bpy.data.is_dirty is False:
                 bpy.ops.wm.read_homefile()
             else:
                 self.report({'INFO'}, "Reload Start-Up file to restore settings")
+
             return {'FINISHED'}
 
         return {'CANCELLED'}
@@ -1279,7 +1311,7 @@ class WM_OT_blenderplayer_start(Operator):
             return {'CANCELLED'}
 
         filepath = os.path.join(bpy.app.tempdir, "game.blend")
-        bpy.ops.wm.save_as_mainfile(filepath=filepath, check_existing=False, copy=True)
+        bpy.ops.wm.save_as_mainfile('EXEC_DEFAULT', filepath=filepath, copy=True)
         subprocess.call([player_path, filepath])
         return {'FINISHED'}
 
@@ -1355,9 +1387,10 @@ class WM_OT_keyconfig_import(Operator):
             return {'CANCELLED'}
 
         # sneaky way to check we're actually running the code.
-        bpy.utils.keyconfig_set(path)
-
-        return {'FINISHED'}
+        if bpy.utils.keyconfig_set(path, report=self.report):
+            return {'FINISHED'}
+        else:
+            return {'CANCELLED'}
 
     def invoke(self, context, event):
         wm = context.window_manager
@@ -1602,7 +1635,7 @@ class WM_OT_addon_disable(Operator):
 
 
 class WM_OT_theme_install(Operator):
-    "Install a theme"
+    "Load and apply a Blender XML theme file"
     bl_idname = "wm.theme_install"
     bl_label = "Install Theme..."
 
@@ -1663,7 +1696,7 @@ class WM_OT_theme_install(Operator):
 class WM_OT_addon_install(Operator):
     "Install an addon"
     bl_idname = "wm.addon_install"
-    bl_label = "Install Addon..."
+    bl_label = "Install from File..."
 
     overwrite = BoolProperty(
             name="Overwrite",
@@ -1721,7 +1754,7 @@ class WM_OT_addon_install(Operator):
             # don't use bpy.utils.script_paths("addons") because we may not be able to write to it.
             path_addons = bpy.utils.user_resource('SCRIPTS', "addons", create=True)
         else:
-            path_addons = bpy.context.user_preferences.filepaths.script_directory
+            path_addons = context.user_preferences.filepaths.script_directory
             if path_addons:
                 path_addons = os.path.join(path_addons, "addons")
 
@@ -1730,8 +1763,11 @@ class WM_OT_addon_install(Operator):
             return {'CANCELLED'}
 
         # create dir is if missing.
-        if not os.path.exists(path_addons):
-            os.makedirs(path_addons)
+        try:
+            os.makedirs(path_addons, exist_ok=True)
+        except:
+            import traceback
+            traceback.print_exc()
 
         # Check if we are installing from a target path,
         # doing so causes 2+ addons of same name or when the same from/to
@@ -1768,12 +1804,6 @@ class WM_OT_addon_install(Operator):
 
             try:  # extract the file to "addons"
                 file_to_extract.extractall(path_addons)
-
-                # zip files can create this dir with metadata, don't need it
-                macosx_dir = os.path.join(path_addons, '__MACOSX')
-                if os.path.isdir(macosx_dir):
-                    shutil.rmtree(macosx_dir)
-
             except:
                 traceback.print_exc()
                 return {'CANCELLED'}
@@ -1817,8 +1847,11 @@ class WM_OT_addon_install(Operator):
         # in case a new module path was created to install this addon.
         bpy.utils.refresh_script_paths()
 
-        # TODO, should not be a warning.
-        #~ self.report({'WARNING'}, "File installed to '%s'\n" % path_dest)
+        # print message
+        msg = tip_("Modules Installed from %r into %r (%s)") % (pyfile, path_addons, ", ".join(sorted(addons_new)))
+        print(msg)
+        self.report({'INFO'}, msg)
+
         return {'FINISHED'}
 
     def invoke(self, context, event):

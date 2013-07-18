@@ -39,12 +39,12 @@
 #include "BLI_voronoi.h"
 #include "BLI_utildefines.h"
 
-#define VORONOI_EPS 1e-2
+#define VORONOI_EPS 1e-2f
 
 enum {
 	voronoiEventType_Site = 0,
 	voronoiEventType_Circle = 1
-} voronoiEventType;
+};
 
 typedef struct VoronoiEvent {
 	struct VoronoiEvent *next, *prev;
@@ -259,9 +259,9 @@ static float voronoi_getXOfEdge(VoronoiProcess *process, VoronoiParabola *par, f
 	x2 = (-b - sqrtf(disc)) / (2 * a);
 
 	if (p[1] < r[1])
-		ry = maxf(x1, x2);
+		ry = max_ff(x1, x2);
 	else
-		ry = minf(x1, x2);
+		ry = min_ff(x1, x2);
 
 	return ry;
 }
@@ -480,7 +480,7 @@ static void voronoi_removeParabola(VoronoiProcess *process, VoronoiEvent *event)
 	voronoi_checkCircle(process, p2);
 }
 
-void voronoi_finishEdge(VoronoiProcess *process, VoronoiParabola *parabola)
+static void voronoi_finishEdge(VoronoiProcess *process, VoronoiParabola *parabola)
 {
 	float mx;
 
@@ -490,9 +490,9 @@ void voronoi_finishEdge(VoronoiProcess *process, VoronoiParabola *parabola)
 	}
 
 	if (parabola->edge->direction[0] > 0.0f)
-		mx = MAX2(process->width, parabola->edge->start[0] + 10);
+		mx = max_ff(process->width, parabola->edge->start[0] + 10);
 	else
-		mx = MIN2(0.0, parabola->edge->start[0] - 10);
+		mx = min_ff(0.0f, parabola->edge->start[0] - 10.0f);
 
 	parabola->edge->end[0] = mx;
 	parabola->edge->end[1] = mx * parabola->edge->f + parabola->edge->g;
@@ -503,12 +503,12 @@ void voronoi_finishEdge(VoronoiProcess *process, VoronoiParabola *parabola)
 	MEM_freeN(parabola);
 }
 
-void voronoi_clampEdgeVertex(int width, int height, float *coord, float *other_coord)
+static void voronoi_clampEdgeVertex(int width, int height, float *coord, float *other_coord)
 {
 	const float corners[4][2] = {{0.0f, 0.0f},
-								 {width - 1, 0.0f},
-								 {width - 1, height - 1},
-								 {0.0f, height - 1}};
+	                             {width - 1, 0.0f},
+	                             {width - 1, height - 1},
+	                             {0.0f, height - 1}};
 	int i;
 
 	if (IN_RANGE_INCL(coord[0], 0, width - 1) && IN_RANGE_INCL(coord[1], 0, height - 1)) {
@@ -541,7 +541,7 @@ void voronoi_clampEdgeVertex(int width, int height, float *coord, float *other_c
 	}
 }
 
-void voronoi_clampEdges(ListBase *edges, int width, int height, ListBase *clamped_edges)
+static void voronoi_clampEdges(ListBase *edges, int width, int height, ListBase *clamped_edges)
 {
 	VoronoiEdge *edge;
 
@@ -609,9 +609,9 @@ static int voronoi_getNextSideCoord(ListBase *edges, float coord[2], int dim, in
 static void voronoi_createBoundaryEdges(ListBase *edges, int width, int height)
 {
 	const float corners[4][2] = {{width - 1, 0.0f},
-								 {width - 1, height - 1},
-								 {0.0f, height - 1},
-								 {0.0f, 0.0f}};
+	                             {width - 1, height - 1},
+	                             {0.0f, height - 1},
+	                             {0.0f, 0.0f}};
 	int i, dim = 0, dir = 1;
 
 	float coord[2] = {0.0f, 0.0f};

@@ -43,7 +43,7 @@
  * Center for the Neural Basis of Cognition (CNBC) 
  * http://www.python.org/doc/PyCPP.html
  *
-------------------------------*/
+ * ----------------------------- */
 #include <stdlib.h>
 #include <stddef.h>
 
@@ -103,7 +103,7 @@ void PyObjectPlus::InvalidateProxy()		// check typename of each parent
 
 /*------------------------------
  * PyObjectPlus Type		-- Every class, even the abstract one should have a Type
-------------------------------*/
+ * ----------------------------- */
 
 
 PyTypeObject PyObjectPlus::Type = {
@@ -118,16 +118,16 @@ PyTypeObject PyObjectPlus::Type = {
 	0,								/* setattrfunc tp_setattr; */
 	0,								/* tp_compare */ /* DEPRECATED in python 3.0! */
 	py_base_repr,					/* tp_repr */
-	0,0,0,0,0,0,0,0,0,				/* Method suites for standard classes */
-	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,/* long tp_flags; */
-	0,0,0,0,
+	0, 0, 0, 0, 0, 0, 0, 0, 0,		/* Method suites for standard classes */
+	Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE, /* long tp_flags; */
+	0, 0, 0, 0,
 	/* weak reference enabler */
 #ifdef USE_WEAKREFS
 	offsetof(PyObjectPlus_Proxy, in_weakreflist),	/* long tp_weaklistoffset; */
 #else
 	0,
 #endif
-	0,0,
+	0, 0,
 	Methods,
 	0,
 	0,
@@ -145,7 +145,7 @@ PyObject *PyObjectPlus::py_base_repr(PyObject *self)			// This should be the ent
 }
 
 
-PyObject * PyObjectPlus::py_base_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
+PyObject *PyObjectPlus::py_base_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	PyTypeObject *base_type;
 	PyObjectPlus_Proxy *base = NULL;
@@ -170,7 +170,7 @@ PyObject * PyObjectPlus::py_base_new(PyTypeObject *type, PyObject *args, PyObjec
 	 *
 	 * */
 	base_type= Py_TYPE(base);
-	while(base_type && !BGE_PROXY_CHECK_TYPE(base_type))
+	while (base_type && !BGE_PROXY_CHECK_TYPE(base_type))
 		base_type= base_type->tp_base;
 
 	if (base_type==NULL || !BGE_PROXY_CHECK_TYPE(base_type)) {
@@ -217,8 +217,8 @@ PyObject * PyObjectPlus::py_base_new(PyTypeObject *type, PyObject *args, PyObjec
 }
 
 /**
-  * \param self A PyObjectPlus_Proxy
-  */
+ * \param self A PyObjectPlus_Proxy
+ */
 void PyObjectPlus::py_base_dealloc(PyObject *self)				// python wrapper
 {
 #ifdef USE_WEAKREFS
@@ -259,10 +259,10 @@ void PyObjectPlus::py_base_dealloc(PyObject *self)				// python wrapper
  * PyObjectPlus Methods 	-- Every class, even the abstract one should have a Methods
 ------------------------------*/
 PyMethodDef PyObjectPlus::Methods[] = {
-  {NULL, NULL}		/* Sentinel */
+	{NULL, NULL}		/* Sentinel */
 };
 
-#define attr_invalid (&(PyObjectPlus::Attributes[0]))
+#define BGE_PY_ATTR_INVALID (&(PyObjectPlus::Attributes[0]))
 PyAttributeDef PyObjectPlus::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("invalid",		PyObjectPlus, pyattr_get_invalid),
 	{NULL} //Sentinel
@@ -270,7 +270,7 @@ PyAttributeDef PyObjectPlus::Attributes[] = {
 
 
 
-PyObject* PyObjectPlus::pyattr_get_invalid(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *PyObjectPlus::pyattr_get_invalid(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	return PyBool_FromLong(self_v ? 0:1);
 }
@@ -281,7 +281,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 	PyObjectPlus *ref= (BGE_PROXY_REF(self_py));
 	char* ptr = (attrdef->m_usePtr) ? (char*)BGE_PROXY_PTR(self_py) : (char*)ref;
 	if (ptr == NULL || (BGE_PROXY_PYREF(self_py) && (ref==NULL || !ref->py_is_valid()))) {
-		if (attrdef == attr_invalid)
+		if (attrdef == BGE_PY_ATTR_INVALID)
 			Py_RETURN_TRUE; // don't bother running the function
 
 		PyErr_SetString(PyExc_SystemError, BGE_PROXY_ERROR_MSG);
@@ -303,7 +303,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 	ptr += attrdef->m_offset;
 	if (attrdef->m_length > 1)
 	{
-		PyObject* resultlist = PyList_New(attrdef->m_length);
+		PyObject *resultlist = PyList_New(attrdef->m_length);
 		for (unsigned int i=0; i<attrdef->m_length; i++)
 		{
 			switch (attrdef->m_type) {
@@ -311,14 +311,14 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 				{
 					bool *val = reinterpret_cast<bool*>(ptr);
 					ptr += sizeof(bool);
-					PyList_SET_ITEM(resultlist,i,PyLong_FromSsize_t(*val));
+					PyList_SET_ITEM(resultlist, i, PyBool_FromLong(*val));
 					break;
 				}
 			case KX_PYATTRIBUTE_TYPE_SHORT:
 				{
 					short int *val = reinterpret_cast<short int*>(ptr);
 					ptr += sizeof(short int);
-					PyList_SET_ITEM(resultlist,i,PyLong_FromSsize_t(*val));
+					PyList_SET_ITEM(resultlist, i, PyLong_FromLong(*val));
 					break;
 				}
 			case KX_PYATTRIBUTE_TYPE_ENUM:
@@ -333,14 +333,14 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 				{
 					int *val = reinterpret_cast<int*>(ptr);
 					ptr += sizeof(int);
-					PyList_SET_ITEM(resultlist,i,PyLong_FromSsize_t(*val));
+					PyList_SET_ITEM(resultlist, i, PyLong_FromLong(*val));
 					break;
 				}
 			case KX_PYATTRIBUTE_TYPE_FLOAT:
 				{
 					float *val = reinterpret_cast<float*>(ptr);
 					ptr += sizeof(float);
-					PyList_SET_ITEM(resultlist,i,PyFloat_FromDouble(*val));
+					PyList_SET_ITEM(resultlist, i, PyFloat_FromDouble(*val));
 					break;
 				}
 			default:
@@ -381,17 +381,17 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 				}
 				if (attrdef->m_imax)
 					bval = !bval;
-				return PyLong_FromSsize_t(bval);
+				return PyBool_FromLong(bval);
 			}
 		case KX_PYATTRIBUTE_TYPE_BOOL:
 			{
 				bool *val = reinterpret_cast<bool*>(ptr);
-				return PyLong_FromSsize_t(*val);
+				return PyBool_FromLong(*val);
 			}
 		case KX_PYATTRIBUTE_TYPE_SHORT:
 			{
 				short int *val = reinterpret_cast<short int*>(ptr);
-				return PyLong_FromSsize_t(*val);
+				return PyLong_FromLong(*val);
 			}
 		case KX_PYATTRIBUTE_TYPE_ENUM:
 			// enum are like int, just make sure the field size is the same
@@ -403,7 +403,7 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 		case KX_PYATTRIBUTE_TYPE_INT:
 			{
 				int *val = reinterpret_cast<int*>(ptr);
-				return PyLong_FromSsize_t(*val);
+				return PyLong_FromLong(*val);
 			}
 		case KX_PYATTRIBUTE_TYPE_FLOAT:
 			{
@@ -420,10 +420,10 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 #ifdef USE_MATHUTILS
 						return Vector_CreatePyObject(val, attrdef->m_imax, Py_NEW, NULL);
 #else
-						PyObject* resultlist = PyList_New(attrdef->m_imax);
+						PyObject *resultlist = PyList_New(attrdef->m_imax);
 						for (unsigned int i=0; i<attrdef->m_imax; i++)
 						{
-							PyList_SET_ITEM(resultlist,i,PyFloat_FromDouble(val[i]));
+							PyList_SET_ITEM(resultlist, i, PyFloat_FromDouble(val[i]));
 						}
 						return resultlist;
 #endif
@@ -437,15 +437,15 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 #ifdef USE_MATHUTILS
 					return Matrix_CreatePyObject(val, attrdef->m_imin, attrdef->m_imax, Py_WRAP, NULL);
 #else
-					PyObject* collist = PyList_New(attrdef->m_imin);
+					PyObject *collist = PyList_New(attrdef->m_imin);
 					for (unsigned int i=0; i<attrdef->m_imin; i++)
 					{
-						PyObject* col = PyList_New(attrdef->m_imax);
+						PyObject *col = PyList_New(attrdef->m_imax);
 						for (unsigned int j=0; j<attrdef->m_imax; j++)
 						{
-							PyList_SET_ITEM(col,j,PyFloat_FromDouble(val[j]));
+							PyList_SET_ITEM(col, j, PyFloat_FromDouble(val[j]));
 						}
-						PyList_SET_ITEM(collist,i,col);
+						PyList_SET_ITEM(collist, i, col);
 						val += attrdef->m_imax;
 					}
 					return collist;
@@ -460,10 +460,10 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 				val->getValue(fval);
 				return Vector_CreatePyObject(fval, 3, Py_NEW, NULL);
 #else
-				PyObject* resultlist = PyList_New(3);
+				PyObject *resultlist = PyList_New(3);
 				for (unsigned int i=0; i<3; i++)
 				{
-					PyList_SET_ITEM(resultlist,i,PyFloat_FromDouble((*val)[i]));
+					PyList_SET_ITEM(resultlist, i, PyFloat_FromDouble((*val)[i]));
 				}
 				return resultlist;
 #endif
@@ -486,8 +486,8 @@ PyObject *PyObjectPlus::py_get_attrdef(PyObject *self_py, const PyAttributeDef *
 
 static bool py_check_attr_float(float *var, PyObject *value, const PyAttributeDef *attrdef)
 {
-	double val = PyFloat_AsDouble(value);
-	if (val == -1.0 && PyErr_Occurred())
+	float val = PyFloat_AsDouble(value);
+	if (val == -1.0f && PyErr_Occurred())
 	{
 		PyErr_Format(PyExc_TypeError, "expected float value for attribute \"%s\"", attrdef->m_name);
 		return false;
@@ -583,7 +583,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 					ptr += sizeof(bool);
 					if (PyLong_Check(item)) 
 					{
-						*var = (PyLong_AsSsize_t(item) != 0);
+						*var = (PyLong_AsLong(item) != 0);
 					} 
 					else if (PyBool_Check(item))
 					{
@@ -602,7 +602,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 					ptr += sizeof(short int);
 					if (PyLong_Check(item)) 
 					{
-						long val = PyLong_AsSsize_t(item);
+						int val = PyLong_AsLong(item);
 						if (attrdef->m_clamp)
 						{
 							if (val < attrdef->m_imin)
@@ -638,7 +638,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 					ptr += sizeof(int);
 					if (PyLong_Check(item)) 
 					{
-						long val = PyLong_AsSsize_t(item);
+						int val = PyLong_AsLong(item);
 						if (attrdef->m_clamp)
 						{
 							if (val < attrdef->m_imin)
@@ -664,13 +664,13 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				{
 					float *var = reinterpret_cast<float*>(ptr);
 					ptr += sizeof(float);
-					double val = PyFloat_AsDouble(item);
-					if (val == -1.0 && PyErr_Occurred())
+					float val = PyFloat_AsDouble(item);
+					if (val == -1.0f && PyErr_Occurred())
 					{
 						PyErr_Format(PyExc_TypeError, "expected a float for attribute \"%s\"", attrdef->m_name);
 						goto UNDO_AND_ERROR;
 					}
-					else if (attrdef->m_clamp) 
+					else if (attrdef->m_clamp)
 					{
 						if (val < attrdef->m_fmin)
 							val = attrdef->m_fmin;
@@ -786,7 +786,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				bool *var = reinterpret_cast<bool*>(ptr);
 				if (PyLong_Check(value)) 
 				{
-					*var = (PyLong_AsSsize_t(value) != 0);
+					*var = (PyLong_AsLong(value) != 0);
 				} 
 				else if (PyBool_Check(value))
 				{
@@ -804,7 +804,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				bool bval;
 				if (PyLong_Check(value)) 
 				{
-					bval = (PyLong_AsSsize_t(value) != 0);
+					bval = (PyLong_AsLong(value) != 0);
 				} 
 				else if (PyBool_Check(value))
 				{
@@ -847,7 +847,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				short int *var = reinterpret_cast<short int*>(ptr);
 				if (PyLong_Check(value)) 
 				{
-					long val = PyLong_AsSsize_t(value);
+					int val = PyLong_AsLong(value);
 					if (attrdef->m_clamp)
 					{
 						if (val < attrdef->m_imin)
@@ -882,7 +882,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				int *var = reinterpret_cast<int*>(ptr);
 				if (PyLong_Check(value)) 
 				{
-					long val = PyLong_AsSsize_t(value);
+					int val = PyLong_AsLong(value);
 					if (attrdef->m_clamp)
 					{
 						if (val < attrdef->m_imin)
@@ -985,10 +985,10 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 				for (int i=0; i<3; i++)
 				{
 					item = PySequence_GetItem(value, i); /* new ref */
-					double val = PyFloat_AsDouble(item);
+					float val = PyFloat_AsDouble(item);
 					Py_DECREF(item);
 					item = NULL;
-					if (val == -1.0 && PyErr_Occurred())
+					if (val == -1.0f && PyErr_Occurred())
 					{
 						PyErr_Format(PyExc_TypeError, "expected a sequence of 3 floats for attribute \"%s\"", attrdef->m_name);
 						goto RESTORE_AND_ERROR;
@@ -1100,7 +1100,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 	}
 	if (undoBuffer)
 		free(undoBuffer);
-	return 0;	
+	return 0;
 }
 
 
@@ -1110,7 +1110,7 @@ int PyObjectPlus::py_set_attrdef(PyObject *self_py, PyObject *value, const PyAtt
 ------------------------------*/
 PyObject *PyObjectPlus::py_repr(void)
 {
-	PyErr_SetString(PyExc_SystemError, "Representation not overridden by object.");  
+	PyErr_SetString(PyExc_SystemError, "Representation not overridden by object.");
 	return NULL;
 }
 
@@ -1139,7 +1139,7 @@ PyObject *PyObjectPlus::NewProxyPlus_Ext(PyObjectPlus *self, PyTypeObject *tp, v
 	if (!self) 
 	{
 		// in case of proxy without reference to game object
-		PyObject* proxy = reinterpret_cast<PyObject *>PyObject_NEW( PyObjectPlus_Proxy, tp);
+		PyObject *proxy = reinterpret_cast<PyObject *>PyObject_NEW( PyObjectPlus_Proxy, tp);
 		BGE_PROXY_PYREF(proxy) = false;
 		BGE_PROXY_PYOWNS(proxy) = py_owns;
 		BGE_PROXY_REF(proxy) = NULL; 
@@ -1187,7 +1187,7 @@ void PyObjectPlus::SetDeprecationWarnings(bool ignoreDeprecationWarnings)
 	m_ignore_deprecation_warnings = ignoreDeprecationWarnings;
 }
 
-void PyObjectPlus::ShowDeprecationWarning_func(const char* old_way,const char* new_way)
+void PyObjectPlus::ShowDeprecationWarning_func(const char *old_way, const char *new_way)
 {
 	printf("Method %s is deprecated, please use %s instead.\n", old_way, new_way);
 	PyC_LineSpit();
@@ -1198,8 +1198,7 @@ void PyObjectPlus::ClearDeprecationWarning()
 	WarnLink *wlink_next;
 	WarnLink *wlink = GetDeprecationWarningLinkFirst();
 	
-	while(wlink)
-	{
+	while (wlink) {
 		wlink->warn_done= false; /* no need to NULL the link, its cleared before adding to the list next time round */
 		wlink_next= reinterpret_cast<WarnLink *>(wlink->link);
 		wlink->link= NULL;
@@ -1208,8 +1207,8 @@ void PyObjectPlus::ClearDeprecationWarning()
 	NullDeprecationWarning();
 }
 
-WarnLink*		m_base_wlink_first= NULL;
-WarnLink*		m_base_wlink_last= NULL;
+static WarnLink *m_base_wlink_first = NULL;
+static WarnLink *m_base_wlink_last = NULL;
 
 WarnLink*		PyObjectPlus::GetDeprecationWarningLinkFirst(void) {return m_base_wlink_first;}
 WarnLink*		PyObjectPlus::GetDeprecationWarningLinkLast(void) {return m_base_wlink_last;}

@@ -35,38 +35,31 @@
 
 /* **************** Translate  ******************** */
 
-static bNodeSocketTemplate cmp_node_translate_in[]= {
+static bNodeSocketTemplate cmp_node_translate_in[] = {
 	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
 	{	SOCK_FLOAT, 1, N_("X"),	0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_NONE},
 	{	SOCK_FLOAT, 1, N_("Y"),	0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
-static bNodeSocketTemplate cmp_node_translate_out[]= {
+static bNodeSocketTemplate cmp_node_translate_out[] = {
 	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
-static void node_composit_exec_translate(void *UNUSED(data), bNode *UNUSED(node), bNodeStack **in, bNodeStack **out)
+static void node_composit_init_translate(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	if (in[0]->data) {
-		CompBuf *cbuf= in[0]->data;
-		CompBuf *stackbuf= pass_on_compbuf(cbuf);
-	
-		stackbuf->xof+= (int)floor(in[1]->vec[0]);
-		stackbuf->yof+= (int)floor(in[2]->vec[0]);
-		
-		out[0]->data= stackbuf;
-	}
+	NodeTranslateData *data = MEM_callocN(sizeof(NodeTranslateData), "node translate data");
+	node->storage = data;
 }
 
-void register_node_type_cmp_translate(bNodeTreeType *ttype)
+void register_node_type_cmp_translate(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, CMP_NODE_TRANSLATE, "Translate", NODE_CLASS_DISTORT, NODE_OPTIONS);
+	cmp_node_type_base(&ntype, CMP_NODE_TRANSLATE, "Translate", NODE_CLASS_DISTORT, 0);
 	node_type_socket_templates(&ntype, cmp_node_translate_in, cmp_node_translate_out);
-	node_type_size(&ntype, 140, 100, 320);
-	node_type_exec(&ntype, node_composit_exec_translate);
+	node_type_init(&ntype, node_composit_init_translate);
+	node_type_storage(&ntype, "NodeTranslateData", node_free_standard_storage, node_copy_standard_storage);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

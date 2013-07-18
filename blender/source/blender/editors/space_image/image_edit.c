@@ -33,12 +33,14 @@
 #include "DNA_scene_types.h"
 
 #include "BLI_math.h"
+#include "BLI_rect.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
+#include "BKE_library.h"
 
 #include "IMB_imbuf_types.h"
 
@@ -77,8 +79,7 @@ void ED_space_image_set(SpaceImage *sima, Scene *scene, Object *obedit, Image *i
 	if (sima->image)
 		BKE_image_signal(sima->image, &sima->iuser, IMA_SIGNAL_USER_NEW_IMAGE);
 
-	if (sima->image && sima->image->id.us == 0)
-		sima->image->id.us = 1;
+	id_us_ensure_real((ID *)sima->image);
 
 	if (obedit)
 		WM_main_add_notifier(NC_GEOM | ND_DATA, obedit->data);
@@ -96,8 +97,7 @@ void ED_space_image_set_mask(bContext *C, SpaceImage *sima, Mask *mask)
 	sima->mask_info.mask = mask;
 
 	/* weak, but same as image/space */
-	if (sima->mask_info.mask && sima->mask_info.mask->id.us == 0)
-		sima->mask_info.mask->id.us = 1;
+	id_us_ensure_real((ID *)sima->mask_info.mask);
 
 	if (C) {
 		WM_event_add_notifier(C, NC_MASK | NA_SELECTED, mask);
@@ -116,17 +116,23 @@ ImBuf *ED_space_image_acquire_buffer(SpaceImage *sima, void **lock_r)
 #endif
 		ibuf = BKE_image_acquire_ibuf(sima->image, &sima->iuser, lock_r);
 
-		if (ibuf && (ibuf->rect || ibuf->rect_float))
-			return ibuf;
+		if (ibuf) {
+			if (ibuf->rect || ibuf->rect_float)
+				return ibuf;
+
+			BKE_image_release_ibuf(sima->image, ibuf, NULL);
+		}
 	}
+	else
+		*lock_r = NULL;
 
 	return NULL;
 }
 
-void ED_space_image_release_buffer(SpaceImage *sima, void *lock)
+void ED_space_image_release_buffer(SpaceImage *sima, ImBuf *ibuf, void *lock)
 {
 	if (sima && sima->image)
-		BKE_image_release_ibuf(sima->image, lock);
+		BKE_image_release_ibuf(sima->image, ibuf, lock);
 }
 
 int ED_space_image_has_buffer(SpaceImage *sima)
@@ -137,30 +143,9 @@ int ED_space_image_has_buffer(SpaceImage *sima)
 
 	ibuf = ED_space_image_acquire_buffer(sima, &lock);
 	has_buffer = (ibuf != NULL);
-	ED_space_image_release_buffer(sima, lock);
+	ED_space_image_release_buffer(sima, ibuf, lock);
 
 	return has_buffer;
-}
-
-void ED_image_get_size(Image *ima, int *width, int *height)
-{
-	ImBuf *ibuf = NULL;
-	void *lock;
-
-	if (ima)
-		ibuf = BKE_image_acquire_ibuf(ima, NULL, &lock);
-
-	if (ibuf && ibuf->x > 0 && ibuf->y > 0) {
-		*width = ibuf->x;
-		*height = ibuf->y;
-	}
-	else {
-		*width  = IMG_SIZE_FALLBACK;
-		*height = IMG_SIZE_FALLBACK;
-	}
-
-	if (ima)
-		BKE_image_release_ibuf(ima, lock);
 }
 
 void ED_space_image_get_size(SpaceImage *sima, int *width, int *height)
@@ -181,8 +166,8 @@ void ED_space_image_get_size(SpaceImage *sima, int *width, int *height)
 		*height = (scene->r.ysch * scene->r.size) / 100;
 
 		if ((scene->r.mode & R_BORDER) && (scene->r.mode & R_CROP)) {
-			*width *= (scene->r.border.xmax - scene->r.border.xmin);
-			*height *= (scene->r.border.ymax - scene->r.border.ymin);
+			*width  *= BLI_rctf_size_x(&scene->r.border);
+			*height *= BLI_rctf_size_y(&scene->r.border);
 		}
 
 	}
@@ -193,7 +178,7 @@ void ED_space_image_get_size(SpaceImage *sima, int *width, int *height)
 		*height = IMG_SIZE_FALLBACK;
 	}
 
-	ED_space_image_release_buffer(sima, lock);
+	ED_space_image_release_buffer(sima, ibuf, lock);
 }
 
 void ED_space_image_get_size_fl(SpaceImage *sima, float size[2])
@@ -204,23 +189,16 @@ void ED_space_image_get_size_fl(SpaceImage *sima, float size[2])
 	size[1] = size_i[1];
 }
 
-void ED_image_get_aspect(Image *ima, float *aspx, float *aspy)
-{
-	*aspx = *aspy = 1.0;
-
-	if ((ima == NULL) || (ima->type == IMA_TYPE_R_RESULT) || (ima->type == IMA_TYPE_COMPOSITE) ||
-	    (ima->aspx == 0.0f || ima->aspy == 0.0f))
-	{
-		return;
-	}
-
-	/* x is always 1 */
-	*aspy = ima->aspy / ima->aspx;
-}
 
 void ED_space_image_get_aspect(SpaceImage *sima, float *aspx, float *aspy)
 {
-	ED_image_get_aspect(ED_space_image(sima), aspx, aspy);
+	Image *ima = sima->image;
+	if ((ima == NULL) || (ima->aspx == 0.0f || ima->aspy == 0.0f)) {
+		*aspx = *aspy = 1.0;
+	}
+	else {
+		BKE_image_get_aspect(ima, aspx, aspy);
+	}
 }
 
 void ED_space_image_get_zoom(SpaceImage *sima, ARegion *ar, float *zoomx, float *zoomy)
@@ -229,8 +207,8 @@ void ED_space_image_get_zoom(SpaceImage *sima, ARegion *ar, float *zoomx, float 
 
 	ED_space_image_get_size(sima, &width, &height);
 
-	*zoomx = (float)(ar->winrct.xmax - ar->winrct.xmin + 1) / (float)((ar->v2d.cur.xmax - ar->v2d.cur.xmin) * width);
-	*zoomy = (float)(ar->winrct.ymax - ar->winrct.ymin + 1) / (float)((ar->v2d.cur.ymax - ar->v2d.cur.ymin) * height);
+	*zoomx = (float)(BLI_rcti_size_x(&ar->winrct) + 1) / (float)(BLI_rctf_size_x(&ar->v2d.cur) * width);
+	*zoomy = (float)(BLI_rcti_size_y(&ar->winrct) + 1) / (float)(BLI_rctf_size_y(&ar->v2d.cur) * height);
 }
 
 void ED_space_image_get_uv_aspect(SpaceImage *sima, float *aspx, float *aspy)
@@ -253,15 +231,21 @@ void ED_space_image_get_uv_aspect(SpaceImage *sima, float *aspx, float *aspy)
 	}
 }
 
-void ED_image_get_uv_aspect(Image *ima, float *aspx, float *aspy)
+void ED_image_get_uv_aspect(Image *ima, ImageUser *iuser, float *aspx, float *aspy)
 {
-	int w, h;
+	if (ima) {
+		int w, h;
 
-	ED_image_get_aspect(ima, aspx, aspy);
-	ED_image_get_size(ima, &w, &h);
+		BKE_image_get_aspect(ima, aspx, aspy);
+		BKE_image_get_size(ima, iuser, &w, &h);
 
-	*aspx *= (float)w;
-	*aspy *= (float)h;
+		*aspx *= (float)w;
+		*aspy *= (float)h;
+	}
+	else {
+		*aspx = 1.0f;
+		*aspy = 1.0f;
+	}
 }
 
 /* takes event->mval */
@@ -326,7 +310,7 @@ int ED_space_image_show_uvedit(SpaceImage *sima, Object *obedit)
 		return 0;
 
 	if (obedit && obedit->type == OB_MESH) {
-		struct BMEditMesh *em = BMEdit_FromObject(obedit);
+		struct BMEditMesh *em = BKE_editmesh_from_object(obedit);
 		int ret;
 
 		ret = EDBM_mtexpoly_check(em);
@@ -344,7 +328,7 @@ int ED_space_image_show_uvshadow(SpaceImage *sima, Object *obedit)
 
 	if (ED_space_image_show_paint(sima))
 		if (obedit && obedit->type == OB_MESH) {
-			struct BMEditMesh *em = BMEdit_FromObject(obedit);
+			struct BMEditMesh *em = BKE_editmesh_from_object(obedit);
 			int ret;
 
 			ret = EDBM_mtexpoly_check(em);
@@ -389,20 +373,3 @@ int ED_space_image_maskedit_mask_poll(bContext *C)
 	return FALSE;
 }
 
-/******************** TODO ********************/
-
-/* XXX notifier? */
-
-/* goes over all ImageUsers, and sets frame numbers if auto-refresh is set */
-
-static void image_update_frame(struct Image *UNUSED(ima), struct ImageUser *iuser, void *customdata)
-{
-	int cfra = *(int *)customdata;
-
-	BKE_image_user_check_frame_calc(iuser, cfra, 0);
-}
-
-void ED_image_update_frame(const Main *mainp, int cfra)
-{
-	BKE_image_walk_all_users(mainp, &cfra, image_update_frame);
-}

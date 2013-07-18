@@ -1,6 +1,9 @@
 
 set(INC
 	.
+)
+
+set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 	${OPENGL_INCLUDE_DIR}
 )
@@ -49,6 +52,7 @@ set(SRC_HEADERS
 	util_path.h
 	util_progress.h
 	util_set.h
+	util_stats.h
 	util_string.h
 	util_system.h
 	util_task.h
@@ -56,11 +60,12 @@ set(SRC_HEADERS
 	util_time.h
 	util_transform.h
 	util_types.h
-	util_view.h
 	util_vector.h
+	util_view.h
 	util_xml.h
 )
 
 include_directories(${INC})
+include_directories(SYSTEM ${INC_SYS})
 
 add_library(cycles_util ${SRC} ${SRC_HEADERS})

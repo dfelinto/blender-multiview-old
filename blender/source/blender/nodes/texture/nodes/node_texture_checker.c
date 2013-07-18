@@ -34,13 +34,13 @@
 #include "NOD_texture.h"
 #include <math.h>
 
-static bNodeSocketTemplate inputs[]= {
+static bNodeSocketTemplate inputs[] = {
 	{ SOCK_RGBA, 1, N_("Color1"), 1.0f, 0.0f, 0.0f, 1.0f },
 	{ SOCK_RGBA, 1, N_("Color2"), 1.0f, 1.0f, 1.0f, 1.0f },
 	{ SOCK_FLOAT, 1, N_("Size"),   0.5f, 0.0f, 0.0f, 0.0f,  0.0f, 100.0f, PROP_UNSIGNED },
 	{ -1, 0, "" }
 };
-static bNodeSocketTemplate outputs[]= {
+static bNodeSocketTemplate outputs[] = {
 	{ SOCK_RGBA, 0, N_("Color") },
 	{ -1, 0, "" }
 };
@@ -62,22 +62,21 @@ static void colorfn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **
 	}
 	else {
 		tex_input_rgba(out, in[1], p, thread);
-	} 
+	}
 }
 
-static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **out)
 {
-	tex_output(node, in, out[0], &colorfn, data);
+	tex_output(node, execdata, in, out[0], &colorfn, data);
 }
 
-void register_node_type_tex_checker(bNodeTreeType *ttype)
+void register_node_type_tex_checker(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, TEX_NODE_CHECKER, "Checker", NODE_CLASS_PATTERN, NODE_PREVIEW|NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_CHECKER, "Checker", NODE_CLASS_PATTERN, NODE_PREVIEW);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 100, 60, 150);
-	node_type_exec(&ntype, exec);
+	node_type_exec(&ntype, NULL, NULL, exec);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

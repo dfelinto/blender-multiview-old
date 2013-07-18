@@ -65,6 +65,17 @@ __device_inline float3 triangle_normal_MT(KernelGlobals *kg, int tri_index, int 
 #endif
 }
 
+/* Return 3 triangle vertex locations */
+__device_inline void triangle_vertices(KernelGlobals *kg, int tri_index, float3 P[3])
+{
+	/* load triangle vertices */
+	float3 tri_vindex = float4_to_float3(kernel_tex_fetch(__tri_vindex, tri_index));
+
+	P[0] = float4_to_float3(kernel_tex_fetch(__tri_verts, __float_as_int(tri_vindex.x)));
+	P[1] = float4_to_float3(kernel_tex_fetch(__tri_verts, __float_as_int(tri_vindex.y)));
+	P[2] = float4_to_float3(kernel_tex_fetch(__tri_verts, __float_as_int(tri_vindex.z)));
+}
+
 __device_inline float3 triangle_smooth_normal(KernelGlobals *kg, int tri_index, float u, float v)
 {
 	/* load triangle vertices */
@@ -177,96 +188,6 @@ __device float3 triangle_attribute_float3(KernelGlobals *kg, const ShaderData *s
 
 		return make_float3(0.0f, 0.0f, 0.0f);
 	}
-}
-
-/* motion */
-
-__device int triangle_find_attribute(KernelGlobals *kg, ShaderData *sd, uint id)
-{
-	/* find attribute by unique id */
-	uint attr_offset = sd->object*kernel_data.bvh.attributes_map_stride;
-	uint4 attr_map = kernel_tex_fetch(__attributes_map, attr_offset);
-
-	while(attr_map.x != id)
-		attr_map = kernel_tex_fetch(__attributes_map, ++attr_offset);
-
-	/* return result */
-	return (attr_map.y == ATTR_ELEMENT_NONE) ? (int)ATTR_STD_NOT_FOUND : attr_map.z;
-}
-
-__device float4 triangle_motion_vector(KernelGlobals *kg, ShaderData *sd)
-{
-	float3 motion_pre = sd->P, motion_post = sd->P;
-
-	/* deformation motion */
-	int offset_pre = triangle_find_attribute(kg, sd, ATTR_STD_MOTION_PRE);
-	int offset_post = triangle_find_attribute(kg, sd, ATTR_STD_MOTION_POST);
-
-	if(offset_pre != ATTR_STD_NOT_FOUND)
-		motion_pre = triangle_attribute_float3(kg, sd, ATTR_ELEMENT_VERTEX, offset_pre, NULL, NULL);
-	if(offset_post != ATTR_STD_NOT_FOUND)
-		motion_post = triangle_attribute_float3(kg, sd, ATTR_ELEMENT_VERTEX, offset_post, NULL, NULL);
-
-	/* object motion. note that depending on the mesh having motion vectors, this
-	 * transformation was set match the world/object space of motion_pre/post */
-	Transform tfm;
-	
-	tfm = object_fetch_transform(kg, sd->object, TIME_INVALID, OBJECT_TRANSFORM_MOTION_PRE);
-	motion_pre = transform_point(&tfm, motion_pre);
-
-	tfm = object_fetch_transform(kg, sd->object, TIME_INVALID, OBJECT_TRANSFORM_MOTION_POST);
-	motion_post = transform_point(&tfm, motion_post);
-
-	float3 P;
-
-	/* camera motion, for perspective/orthographic motion.pre/post will be a
-	 * world-to-raster matrix, for panorama it's world-to-camera */
-	if (kernel_data.cam.type != CAMERA_PANORAMA) {
-		tfm = kernel_data.cam.worldtoraster;
-		P = transform_perspective(&tfm, sd->P);
-
-		tfm = kernel_data.cam.motion.pre;
-		motion_pre = transform_perspective(&tfm, motion_pre);
-
-		tfm = kernel_data.cam.motion.post;
-		motion_post = transform_perspective(&tfm, motion_post);
-	}
-	else {
-		tfm = kernel_data.cam.worldtocamera;
-		P = normalize(transform_point(&tfm, sd->P));
-		P = float2_to_float3(direction_to_panorama(kg, P));
-		P.x *= kernel_data.cam.width;
-		P.y *= kernel_data.cam.height;
-
-		tfm = kernel_data.cam.motion.pre;
-		motion_pre = normalize(transform_point(&tfm, motion_pre));
-		motion_pre = float2_to_float3(direction_to_panorama(kg, motion_pre));
-		motion_pre.x *= kernel_data.cam.width;
-		motion_pre.y *= kernel_data.cam.height;
-
-		tfm = kernel_data.cam.motion.post;
-		motion_post = normalize(transform_point(&tfm, motion_post));
-		motion_post = float2_to_float3(direction_to_panorama(kg, motion_post));
-		motion_post.x *= kernel_data.cam.width;
-		motion_post.y *= kernel_data.cam.height;
-	}
-
-	motion_pre = motion_pre - P;
-	motion_post = P - motion_post;
-
-	return make_float4(motion_pre.x, motion_pre.y, motion_post.x, motion_post.y);
-}
-
-__device float3 triangle_uv(KernelGlobals *kg, ShaderData *sd)
-{
-	int offset_uv = triangle_find_attribute(kg, sd, ATTR_STD_UV);
-
-	if(offset_uv == ATTR_STD_NOT_FOUND)
-		return make_float3(0.0f, 0.0f, 0.0f);
-
-	float3 uv = triangle_attribute_float3(kg, sd, ATTR_ELEMENT_CORNER, offset_uv, NULL, NULL);
-	uv.z = 1.0f;
-	return uv;
 }
 
 CCL_NAMESPACE_END

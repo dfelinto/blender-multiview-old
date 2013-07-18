@@ -47,6 +47,7 @@
 #endif // __APPLE__
 #include "KX_KetsjiEngine.h"
 #include "KX_PythonInit.h"
+#include "KX_PythonMain.h"
 
 /**********************************
 * Begin Blender include block
@@ -56,10 +57,11 @@ extern "C"
 {
 #endif  // __cplusplus
 #include "MEM_guardedalloc.h"
-#include "BKE_blender.h"	
-#include "BKE_global.h"	
-#include "BKE_icons.h"	
-#include "BKE_node.h"	
+#include "BKE_blender.h"
+#include "BKE_global.h"
+#include "BKE_icons.h"
+#include "BKE_image.h"
+#include "BKE_node.h"
 #include "BKE_report.h"
 #include "BKE_library.h"
 #include "BLI_threads.h"
@@ -97,7 +99,6 @@ extern char datatoc_bfont_ttf[];
 #include "RAS_IRasterizer.h"
 
 #include "BKE_main.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_define.h"
 
@@ -119,11 +120,11 @@ static void mem_error_cb(const char *errorStr)
 
 #ifdef WIN32
 typedef enum {
-  SCREEN_SAVER_MODE_NONE = 0,
-  SCREEN_SAVER_MODE_PREVIEW,
-  SCREEN_SAVER_MODE_SAVER,
-  SCREEN_SAVER_MODE_CONFIGURATION,
-  SCREEN_SAVER_MODE_PASSWORD,
+	SCREEN_SAVER_MODE_NONE = 0,
+	SCREEN_SAVER_MODE_PREVIEW,
+	SCREEN_SAVER_MODE_SAVER,
+	SCREEN_SAVER_MODE_CONFIGURATION,
+	SCREEN_SAVER_MODE_PASSWORD,
 } ScreenSaverMode;
 
 static ScreenSaverMode scr_saver_mode = SCREEN_SAVER_MODE_NONE;
@@ -172,7 +173,7 @@ static BOOL scr_saver_init(int argc, char **argv)
 
 #endif /* WIN32 */
 
-void usage(const char* program, bool isBlenderPlayer)
+static void usage(const char* program, bool isBlenderPlayer)
 {
 	const char * consoleoption;
 	const char * example_filename = "";
@@ -194,7 +195,7 @@ void usage(const char* program, bool isBlenderPlayer)
 	}
 	
 	printf("usage:   %s [-w [w h l t]] [-f [fw fh fb ff]] %s[-g gamengineoptions] "
-		"[-s stereomode] [-m aasamples] %s\n", program, consoleoption, example_filename);
+	       "[-s stereomode] [-m aasamples] %s\n", program, consoleoption, example_filename);
 	printf("  -h: Prints this command summary\n\n");
 	printf("  -w: display in a window\n");
 	printf("       --Optional parameters--\n"); 
@@ -223,7 +224,7 @@ void usage(const char* program, bool isBlenderPlayer)
 	printf("       --Optional parameters--\n");
 	printf("       angle    = field of view in degrees\n");
 	printf("       tilt     = tilt angle in degrees\n");
-	printf("       warpdata = a file to use for warping the image (absolute path)\n");	
+	printf("       warpdata = a file to use for warping the image (absolute path)\n");
 	printf("       mode: fisheye                (Fisheye)\n");
 	printf("             truncatedfront         (Front-Truncated)\n");
 	printf("             truncatedrear          (Rear-Truncated)\n");
@@ -257,10 +258,10 @@ void usage(const char* program, bool isBlenderPlayer)
 static void get_filename(int argc, char **argv, char *filename)
 {
 #ifdef __APPLE__
-/* On Mac we park the game file (called game.blend) in the application bundle.
-* The executable is located in the bundle as well.
-* Therefore, we can locate the game relative to the executable.
-	*/
+	/* On Mac we park the game file (called game.blend) in the application bundle.
+	 * The executable is located in the bundle as well.
+	 * Therefore, we can locate the game relative to the executable.
+	 */
 	int srclen = ::strlen(argv[0]);
 	int len = 0;
 	char *gamefile = NULL;
@@ -330,6 +331,40 @@ static BlendFileData *load_game_data(const char *progname, char *filename = NULL
 	BKE_reports_clear(&reports);
 	
 	return bfd;
+}
+
+static bool GPG_NextFrame(GHOST_ISystem* system, GPG_Application *app, int &exitcode, STR_String &exitstring, GlobalSettings *gs)
+{
+	bool run = true;
+	system->processEvents(false);
+	system->dispatchEvents();
+	app->EngineNextFrame();
+	if ((exitcode = app->getExitRequested())) {
+		run = false;
+		exitstring = app->getExitString();
+		*gs = *app->getGlobalSettings();
+	}
+	return run;
+}
+
+struct GPG_NextFrameState {
+	GHOST_ISystem* system;
+	GPG_Application *app;
+	GlobalSettings *gs;
+} gpg_nextframestate;
+
+static int GPG_PyNextFrame(void *state0)
+{
+	GPG_NextFrameState *state = (GPG_NextFrameState *) state0;
+	int exitcode;
+	STR_String exitstring;
+	bool run = GPG_NextFrame(state->system, state->app, exitcode, exitstring, state->gs);
+	if (run) return 0;  
+	else {
+		if (exitcode) 
+			fprintf(stderr, "Exit code %d: %s\n", exitcode, exitstring.ReadPtr());
+		return 1;
+	}
 }
 
 int main(int argc, char** argv)
@@ -412,11 +447,15 @@ int main(int argc, char** argv)
 	G.main = NULL;
 
 	IMB_init();
+	BKE_images_init();
+
+#ifdef WITH_FFMPEG
+	IMB_ffmpeg_init();
+#endif
 
 	// Setup builtin font for BLF (mostly copied from creator.c, wm_init_exit.c and interface_style.c)
 	BLF_init(11, U.dpi);
 	BLF_lang_init();
-	BLF_lang_encoding("");
 	BLF_lang_set("");
 
 	BLF_load_mem("default", (unsigned char*)datatoc_bfont_ttf, datatoc_bfont_ttf_size);
@@ -436,7 +475,7 @@ int main(int argc, char** argv)
 			break;
 		case SCREEN_SAVER_MODE_PASSWORD:
 			/* This is W95 only, which we currently do not support.
-			   Fall-back to normal screen saver behavior in that case... */
+			 * Fall-back to normal screen saver behavior in that case... */
 		case SCREEN_SAVER_MODE_SAVER:
 			fullScreen = true;
 			fullScreenParFound = true;
@@ -457,6 +496,8 @@ int main(int argc, char** argv)
 
 	// XXX this one too
 	U.anisotropic_filter = 2;
+	// enable fast mipmap generation
+	U.use_gpu_mipmap = 1;
 
 	sound_init_once();
 
@@ -571,7 +612,7 @@ int main(int argc, char** argv)
 			case 'i':
 				i++;
 				if ( (i + 1) <= validArguments )
-					parentWindow = atoi(argv[i++]); 
+					parentWindow = atoi(argv[i++]);
 				else {
 					error = true;
 					printf("error: too few options for parent window argument.\n");
@@ -604,10 +645,10 @@ int main(int argc, char** argv)
 					stereomode = (RAS_IRasterizer::StereoMode) atoi(argv[i]);
 					if (stereomode < RAS_IRasterizer::RAS_STEREO_NOSTEREO || stereomode >= RAS_IRasterizer::RAS_STEREO_MAXSTEREO)
 						stereomode = RAS_IRasterizer::RAS_STEREO_NOSTEREO;
-					
+
 					if (!strcmp(argv[i], "nostereo"))  // ok, redundant but clear
 						stereomode = RAS_IRasterizer::RAS_STEREO_NOSTEREO;
-					
+
 					// only the hardware pageflip method needs a stereo window
 					else if (!strcmp(argv[i], "hwpageflip")) {
 						stereomode = RAS_IRasterizer::RAS_STEREO_QUADBUFFERED;
@@ -615,22 +656,22 @@ int main(int argc, char** argv)
 					}
 					else if (!strcmp(argv[i], "syncdoubling"))
 						stereomode = RAS_IRasterizer::RAS_STEREO_ABOVEBELOW;
-					
+
 					else if (!strcmp(argv[i], "anaglyph"))
 						stereomode = RAS_IRasterizer::RAS_STEREO_ANAGLYPH;
-					
+
 					else if (!strcmp(argv[i], "sidebyside"))
 						stereomode = RAS_IRasterizer::RAS_STEREO_SIDEBYSIDE;
-					
+
 					else if (!strcmp(argv[i], "vinterlace"))
 						stereomode = RAS_IRasterizer::RAS_STEREO_VINTERLACE;
-					
+
 #if 0
-					// future stuff
-					else if (!strcmp(argv[i], "stencil")
-						stereomode = RAS_STEREO_STENCIL;
+//					// future stuff
+//					else if (!strcmp(argv[i], "stencil")
+//						stereomode = RAS_STEREO_STENCIL;
 #endif
-					
+
 					i++;
 					stereoParFound = true;
 					stereoFlag = STEREO_ENABLED;
@@ -692,7 +733,7 @@ int main(int argc, char** argv)
 			i++;
 		}
 	}
-	
+
 	if ((windowWidth < kMinWindowWidth) || (windowHeight < kMinWindowHeight))
 	{
 		error = true;
@@ -715,23 +756,22 @@ int main(int argc, char** argv)
 		//fullScreen = false;		// Can't use full screen
 #endif
 
-		if (SYS_GetCommandLineInt(syshandle, "nomipmap", 0))
-		{
+		if (SYS_GetCommandLineInt(syshandle, "nomipmap", 0)) {
 			GPU_set_mipmap(0);
 		}
 
 		GPU_set_anisotropic(U.anisotropic_filter);
+		GPU_set_gpu_mipmapping(U.use_gpu_mipmap);
 		
 		// Create the system
-		if (GHOST_ISystem::createSystem() == GHOST_kSuccess)
-		{
+		if (GHOST_ISystem::createSystem() == GHOST_kSuccess) {
 			GHOST_ISystem* system = GHOST_ISystem::getSystem();
 			assertd(system);
 			
 			if (!fullScreenWidth || !fullScreenHeight)
 				system->getMainDisplayDimensions(fullScreenWidth, fullScreenHeight);
 			// process first batch of events. If the user
-			// drops a file on top off the blenderplayer icon, we 
+			// drops a file on top off the blenderplayer icon, we
 			// receive an event with the filename
 			
 			system->processEvents(0);
@@ -756,8 +796,7 @@ int main(int argc, char** argv)
 				// those may change during the game and persist after using Game Actuator
 				GlobalSettings gs;
 
-				do
-				{
+				do {
 					// Read the Blender file
 					BlendFileData *bfd;
 					
@@ -772,19 +811,17 @@ int main(int argc, char** argv)
 						
 						bfd = load_game_data(basedpath);
 
-						if (!bfd)
-						{
+						if (!bfd) {
 							// just add "//" in front of it
 							char temppath[242];
 							strcpy(temppath, "//");
 							strcat(temppath, basedpath);
-				
+
 							BLI_path_abs(temppath, pathname);
 							bfd = load_game_data(temppath);
 						}
 					}
-					else
-					{
+					else {
 						bfd = load_game_data(BLI_program_path(), filename[0]? filename: NULL);
 					}
 					
@@ -794,13 +831,11 @@ int main(int argc, char** argv)
 						usage(argv[0], isBlenderPlayer);
 						error = true;
 						exitcode = KX_EXIT_REQUEST_QUIT_GAME;
-					} 
-					else 
-					{
+					}
+					else {
 #ifdef WIN32
 #if !defined(DEBUG)
-						if (closeConsole)
-						{
+						if (closeConsole) {
 							system->toggleConsole(0); // Close a console window
 						}
 #endif // !defined(DEBUG)
@@ -824,8 +859,7 @@ int main(int argc, char** argv)
 						titlename = maggie->name;
 						
 						// Check whether the game should be displayed full-screen
-						if ((!fullScreenParFound) && (!windowParFound))
-						{
+						if ((!fullScreenParFound) && (!windowParFound)) {
 							// Only use file settings when command line did not override
 							if ((scene->gm.playerflag & GAME_PLAYER_FULLSCREEN)) {
 								//printf("fullscreen option found in Blender file\n");
@@ -845,16 +879,16 @@ int main(int argc, char** argv)
 						
 						
 						// Check whether the game should be displayed in stereo
-						if (!stereoParFound)
-						{
+						if (!stereoParFound) {
 							if (scene->gm.stereoflag == STEREO_ENABLED) {
 								stereomode = (RAS_IRasterizer::StereoMode) scene->gm.stereomode;
 								if (stereomode == RAS_IRasterizer::RAS_STEREO_QUADBUFFERED)
 									stereoWindow = true;
 							}
 						}
-						else
-							gs.stereoflag = STEREO_ENABLED;
+						else {
+							scene->gm.stereoflag = STEREO_ENABLED;
+						}
 
 						if (!samplesParFound)
 							aasamples = scene->gm.aasamples;
@@ -867,11 +901,10 @@ int main(int argc, char** argv)
 							if (domeTilt > -180)
 								gs.dome.tilt = domeTilt;
 							if (domeMode > 0)
-								gs.dome.mode = domeMode;
-							if (domeWarp)
-							{
+								scene->gm.dome.mode = domeMode;
+							if (domeWarp) {
 								//XXX to do: convert relative to absolute path
-								domeText= BKE_text_load(domeWarp, "");
+								domeText= BKE_text_load(G.main, domeWarp, "");
 								if (!domeText)
 									printf("error: invalid warpdata text file - %s\n", domeWarp);
 								else
@@ -888,23 +921,21 @@ int main(int argc, char** argv)
 #ifdef WITH_PYTHON
 						setGamePythonPath(G.main->name);
 #endif
-						if (firstTimeRunning)
-						{
+						if (firstTimeRunning) {
 							firstTimeRunning = false;
 
-							if (fullScreen)
-							{
+							if (fullScreen) {
 #ifdef WIN32
 								if (scr_saver_mode == SCREEN_SAVER_MODE_SAVER)
 								{
 									app.startScreenSaverFullScreen(fullScreenWidth, fullScreenHeight, fullScreenBpp, fullScreenFrequency,
-										stereoWindow, stereomode, aasamples);
+									                               stereoWindow, stereomode, aasamples);
 								}
 								else
 #endif
 								{
 									app.startFullScreen(fullScreenWidth, fullScreenHeight, fullScreenBpp, fullScreenFrequency,
-										stereoWindow, stereomode, aasamples, (scene->gm.playerflag & GAME_PLAYER_DESKTOP_RESOLUTION));
+									                    stereoWindow, stereomode, aasamples, (scene->gm.playerflag & GAME_PLAYER_DESKTOP_RESOLUTION));
 								}
 							}
 							else
@@ -928,8 +959,7 @@ int main(int argc, char** argv)
 								vector<STR_String> parts = path.Explode('\\');
 #endif // WIN32                        
 								STR_String title;
-								if (parts.size())
-								{
+								if (parts.size()) {
 									title = parts[parts.size()-1];
 									parts = title.Explode('.');
 									if (parts.size() > 1)
@@ -937,8 +967,7 @@ int main(int argc, char** argv)
 										title = parts[0];
 									}
 								}
-								else
-								{
+								else {
 									title = "blenderplayer";
 								}
 #ifdef WIN32
@@ -949,16 +978,15 @@ int main(int argc, char** argv)
 								else
 #endif
 								{
-																										if (parentWindow != 0)
+									if (parentWindow != 0)
 										app.startEmbeddedWindow(title, parentWindow, stereoWindow, stereomode, aasamples);
 									else
 										app.startWindow(title, windowLeft, windowTop, windowWidth, windowHeight,
-										stereoWindow, stereomode, aasamples);
+										                stereoWindow, stereomode, aasamples);
 								}
 							}
 						}
-						else
-						{
+						else {
 							app.StartGameEngine(stereomode);
 							exitcode = KX_EXIT_REQUEST_NO_REQUEST;
 						}
@@ -968,26 +996,45 @@ int main(int argc, char** argv)
 						
 						// Enter main loop
 						bool run = true;
-						while (run)
-						{
-							system->processEvents(false);
-							system->dispatchEvents();
-							app.EngineNextFrame();
+						char *python_main = NULL;
+						pynextframestate.state = NULL;
+						pynextframestate.func = NULL;
+#ifdef WITH_PYTHON
+						python_main = KX_GetPythonMain(scene);
+#endif // WITH_PYTHON
+						if (python_main) {
+							char *python_code = KX_GetPythonCode(maggie, python_main);
+							if (python_code) {
+#ifdef WITH_PYTHON
+								gpg_nextframestate.system = system;
+								gpg_nextframestate.app = &app;
+								gpg_nextframestate.gs = &gs;
+								pynextframestate.state = &gpg_nextframestate;
+								pynextframestate.func = &GPG_PyNextFrame;
 
-							if ((exitcode = app.getExitRequested()))
-							{
-								run = false;
-								exitstring = app.getExitString();
-								gs = *app.getGlobalSettings();
+								printf("Yielding control to Python script '%s'...\n", python_main);
+								PyRun_SimpleString(python_code);
+								printf("Exit Python script '%s'\n", python_main);
+#endif // WITH_PYTHON
+								MEM_freeN(python_code);
+							}
+							else {
+								fprintf(stderr, "ERROR: cannot yield control to Python: no Python text data block named '%s'\n", python_main);
+							}
+						}
+						else {
+							while (run) {
+								run = GPG_NextFrame(system, &app, exitcode, exitstring, &gs);
 							}
 						}
 						app.StopGameEngine();
 
-						/* 'app' is freed automatic when out of scope. 
+						/* 'app' is freed automatic when out of scope.
 						 * removal is needed else the system will free an already freed value */
 						system->removeEventConsumer(&app);
 
 						BLO_blendfiledata_free(bfd);
+						if (python_main) MEM_freeN(python_main);
 					}
 				} while (exitcode == KX_EXIT_REQUEST_RESTART_GAME || exitcode == KX_EXIT_REQUEST_START_OTHER_GAME);
 			}
@@ -997,7 +1044,8 @@ int main(int argc, char** argv)
 
 			// Dispose the system
 			GHOST_ISystem::disposeSystem();
-		} else {
+		}
+		else {
 			error = true;
 			printf("error: couldn't create a system.\n");
 		}
@@ -1009,9 +1057,12 @@ int main(int argc, char** argv)
 
 #ifdef WITH_INTERNATIONAL
 	BLF_free_unifont();
+	BLF_free_unifont_mono();
+	BLF_lang_free();
 #endif
 
 	IMB_exit();
+	BKE_images_exit();
 	free_nodesystem();
 
 	SYS_DeleteSystem(syshandle);
@@ -1025,5 +1076,3 @@ int main(int argc, char** argv)
 
 	return error ? -1 : 0;
 }
-
-

@@ -1,15 +1,15 @@
 // Copyright (c) 2011 libmv authors.
-// 
+//
 // Permission is hereby granted, free of charge, to any person obtaining a copy
 // of this software and associated documentation files (the "Software"), to
 // deal in the Software without restriction, including without limitation the
 // rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
 // sell copies of the Software, and to permit persons to whom the Software is
 // furnished to do so, subject to the following conditions:
-// 
+//
 // The above copyright notice and this permission notice shall be included in
 // all copies or substantial portions of the Software.
-// 
+//
 // THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
 // IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
 // FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
@@ -17,6 +17,8 @@
 // LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
+
+#include "libmv/simple_pipeline/initialize_reconstruction.h"
 
 #include "libmv/base/vector.h"
 #include "libmv/logging/logging.h"
@@ -29,22 +31,6 @@
 
 namespace libmv {
 namespace {
-
-void CoordinatesForMarkersInImage(const vector<Marker> &markers,
-                                  int image,
-                                  Mat *coordinates) {
-  vector<Vec2> coords;
-  for (int i = 0; i < markers.size(); ++i) {
-    const Marker &marker = markers[i];
-    if (markers[i].image == image) {
-      coords.push_back(Vec2(marker.x, marker.y));
-    }
-  }
-  coordinates->resize(2, coords.size());
-  for (int i = 0; i < coords.size(); i++) {
-    coordinates->col(i) = coords[i];
-  }
-}
 
 void GetImagesInMarkers(const vector<Marker> &markers,
                         int *image1, int *image2) {
@@ -82,20 +68,8 @@ bool EuclideanReconstructTwoFrames(const vector<Marker> &markers,
   NormalizedEightPointSolver(x1, x2, &F);
 
   // The F matrix should be an E matrix, but squash it just to be sure.
-  Eigen::JacobiSVD<Mat3> svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
-
-  // See Hartley & Zisserman page 294, result 11.1, which shows how to get the
-  // closest essential matrix to a matrix that is "almost" an essential matrix.
-  double a = svd.singularValues()(0);
-  double b = svd.singularValues()(1);
-  double s = (a + b) / 2.0;
-  LG << "Initial reconstruction's rotation is non-euclidean by "
-     << (((a - b) / std::max(a, b)) * 100) << "%; singular values:"
-     << svd.singularValues().transpose();
-
-  Vec3 diag;
-  diag << s, s, 0;
-  Mat3 E = svd.matrixU() * diag.asDiagonal() * svd.matrixV().transpose();
+  Mat3 E;
+  FundamentalToEssential(F, &E);
 
   // Recover motion between the two images. Since this function assumes a
   // calibrated camera, use the identity for K.
@@ -124,7 +98,8 @@ namespace {
 Mat3 DecodeF(const Vec9 &encoded_F) {
   // Decode F and force it to be rank 2.
   Map<const Mat3> full_rank_F(encoded_F.data(), 3, 3);
-  Eigen::JacobiSVD<Mat3> svd(full_rank_F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  Eigen::JacobiSVD<Mat3> svd(full_rank_F,
+                             Eigen::ComputeFullU | Eigen::ComputeFullV);
   Vec3 diagonal = svd.singularValues();
   diagonal(2) = 0;
   Mat3 F = svd.matrixU() * diagonal.asDiagonal() * svd.matrixV().transpose();
@@ -145,7 +120,7 @@ struct FundamentalSampsonCostFunction {
   Vec operator()(const Vec9 &encoded_F) const {
     // Decode F and force it to be rank 2.
     Mat3 F = DecodeF(encoded_F);
-    
+
     Vec residuals(markers.size() / 2);
     residuals.setZero();
     for (int i = 0; i < markers.size() / 2; ++i) {

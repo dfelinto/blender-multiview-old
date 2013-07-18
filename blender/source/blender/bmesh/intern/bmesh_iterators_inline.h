@@ -35,7 +35,7 @@
 /**
  * \brief Iterator Step
  *
- * Calls an iterators step fucntion to return the next element.
+ * Calls an iterators step function to return the next element.
  */
 BLI_INLINE void *BM_iter_step(BMIter *iter)
 {
@@ -50,132 +50,104 @@ BLI_INLINE void *BM_iter_step(BMIter *iter)
  * it with the appropriate function pointers based
  * upon its type.
  */
-BLI_INLINE int BM_iter_init(BMIter *iter, BMesh *bm, const char itype, void *data)
+BLI_INLINE bool BM_iter_init(BMIter *iter, BMesh *bm, const char itype, void *data)
 {
 	/* int argtype; */
 	iter->itype = itype;
-	iter->bm = bm;
 
 	/* inlining optimizes out this switch when called with the defined type */
 	switch ((BMIterType)itype) {
 		case BM_VERTS_OF_MESH:
 			BLI_assert(bm != NULL);
 			BLI_assert(data == NULL);
-			iter->begin = bmiter__vert_of_mesh_begin;
-			iter->step =  bmiter__vert_of_mesh_step;
+			iter->begin = (BMIter__begin_cb)bmiter__vert_of_mesh_begin;
+			iter->step  = (BMIter__step_cb)bmiter__vert_of_mesh_step;
+			iter->data.vert_of_mesh.bm = bm;
 			break;
 		case BM_EDGES_OF_MESH:
 			BLI_assert(bm != NULL);
 			BLI_assert(data == NULL);
-			iter->begin = bmiter__edge_of_mesh_begin;
-			iter->step =  bmiter__edge_of_mesh_step;
+			iter->begin = (BMIter__begin_cb)bmiter__edge_of_mesh_begin;
+			iter->step  = (BMIter__step_cb)bmiter__edge_of_mesh_step;
+			iter->data.edge_of_mesh.bm = bm;
 			break;
 		case BM_FACES_OF_MESH:
 			BLI_assert(bm != NULL);
 			BLI_assert(data == NULL);
-			iter->begin = bmiter__face_of_mesh_begin;
-			iter->step =  bmiter__face_of_mesh_step;
+			iter->begin = (BMIter__begin_cb)bmiter__face_of_mesh_begin;
+			iter->step  = (BMIter__step_cb)bmiter__face_of_mesh_step;
+			iter->data.face_of_mesh.bm = bm;
 			break;
 		case BM_EDGES_OF_VERT:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__edge_of_vert_begin;
-			iter->step =  bmiter__edge_of_vert_step;
-			iter->vdata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__edge_of_vert_begin;
+			iter->step  = (BMIter__step_cb)bmiter__edge_of_vert_step;
+			iter->data.edge_of_vert.vdata = (BMVert *)data;
 			break;
 		case BM_FACES_OF_VERT:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__face_of_vert_begin;
-			iter->step =  bmiter__face_of_vert_step;
-			iter->vdata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__face_of_vert_begin;
+			iter->step  = (BMIter__step_cb)bmiter__face_of_vert_step;
+			iter->data.face_of_vert.vdata = (BMVert *)data;
 			break;
 		case BM_LOOPS_OF_VERT:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__loop_of_vert_begin;
-			iter->step =  bmiter__loop_of_vert_step;
-			iter->vdata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__loop_of_vert_begin;
+			iter->step  = (BMIter__step_cb)bmiter__loop_of_vert_step;
+			iter->data.loop_of_vert.vdata = (BMVert *)data;
 			break;
 		case BM_VERTS_OF_EDGE:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__vert_of_edge_begin;
-			iter->step =  bmiter__vert_of_edge_step;
-			iter->edata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__vert_of_edge_begin;
+			iter->step  = (BMIter__step_cb)bmiter__vert_of_edge_step;
+			iter->data.vert_of_edge.edata = (BMEdge *)data;
 			break;
 		case BM_FACES_OF_EDGE:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__face_of_edge_begin;
-			iter->step =  bmiter__face_of_edge_step;
-			iter->edata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__face_of_edge_begin;
+			iter->step  = (BMIter__step_cb)bmiter__face_of_edge_step;
+			iter->data.face_of_edge.edata = (BMEdge *)data;
 			break;
 		case BM_VERTS_OF_FACE:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__vert_of_face_begin;
-			iter->step =  bmiter__vert_of_face_step;
-			iter->pdata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__vert_of_face_begin;
+			iter->step  = (BMIter__step_cb)bmiter__vert_of_face_step;
+			iter->data.vert_of_face.pdata = (BMFace *)data;
 			break;
 		case BM_EDGES_OF_FACE:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__edge_of_face_begin;
-			iter->step =  bmiter__edge_of_face_step;
-			iter->pdata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__edge_of_face_begin;
+			iter->step  = (BMIter__step_cb)bmiter__edge_of_face_step;
+			iter->data.edge_of_face.pdata = (BMFace *)data;
 			break;
 		case BM_LOOPS_OF_FACE:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__loop_of_face_begin;
-			iter->step =  bmiter__loop_of_face_step;
-			iter->pdata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__loop_of_face_begin;
+			iter->step  = (BMIter__step_cb)bmiter__loop_of_face_step;
+			iter->data.loop_of_face.pdata = (BMFace *)data;
 			break;
 		case BM_LOOPS_OF_LOOP:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__loops_of_loop_begin;
-			iter->step =  bmiter__loops_of_loop_step;
-			iter->ldata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__loop_of_loop_begin;
+			iter->step  = (BMIter__step_cb)bmiter__loop_of_loop_step;
+			iter->data.loop_of_loop.ldata = (BMLoop *)data;
 			break;
 		case BM_LOOPS_OF_EDGE:
-			if (UNLIKELY(!data)) {
-				return FALSE;
-			}
-
-			iter->begin = bmiter__loops_of_edge_begin;
-			iter->step =  bmiter__loops_of_edge_step;
-			iter->edata = data;
+			BLI_assert(data != NULL);
+			iter->begin = (BMIter__begin_cb)bmiter__loop_of_edge_begin;
+			iter->step  = (BMIter__step_cb)bmiter__loop_of_edge_step;
+			iter->data.loop_of_edge.edata = (BMEdge *)data;
 			break;
 		default:
 			/* should never happen */
 			BLI_assert(0);
-			return FALSE;
+			return false;
 			break;
 	}
 	
 	iter->begin(iter);
 
-	return TRUE;
+	return true;
 }
 
 /**

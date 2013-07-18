@@ -7,9 +7,9 @@ set(INC
 	../util
 	../subd
 	../../guardedalloc
+	../../mikktspace
 	../../../source/blender/makesdna
 	../../../source/blender/makesrna
-	../../../source/blender/blenloader
 	${CMAKE_BINARY_DIR}/source/blender/makesrna/intern
 )
 
@@ -23,6 +23,7 @@ set(SRC
 	blender_mesh.cpp
 	blender_object.cpp
 	blender_particles.cpp
+	blender_curves.cpp
 	blender_python.cpp
 	blender_session.cpp
 	blender_shader.cpp
@@ -37,7 +38,7 @@ set(SRC
 set(ADDON_FILES
 	addon/__init__.py
 	addon/engine.py 
-	addon/enums.py
+	addon/osl.py
 	addon/presets.py
 	addon/properties.py
 	addon/ui.py

@@ -39,7 +39,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -242,6 +241,8 @@ static void graph_main_area_draw(const bContext *C, ARegion *ar)
 	grid = UI_view2d_grid_calc(CTX_data_scene(C), v2d, unitx, V2D_GRID_NOCLAMP, unity, V2D_GRID_NOCLAMP, ar->winx, ar->winy);
 	UI_view2d_grid_draw(v2d, grid, V2D_GRIDLINES_ALL);
 	
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
+
 	/* draw data */
 	if (ANIM_animdata_get_context(C, &ac)) {
 		/* draw ghost curves */
@@ -293,8 +294,12 @@ static void graph_main_area_draw(const bContext *C, ARegion *ar)
 	
 	/* preview range */
 	UI_view2d_view_ortho(v2d);
-	ANIM_draw_previewrange(C, v2d);
+	ANIM_draw_previewrange(C, v2d, 0);
 	
+	/* callback */
+	UI_view2d_view_ortho(v2d);
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_VIEW);
+
 	/* reset view matrix */
 	UI_view2d_view_restore(C);
 	
@@ -308,6 +313,12 @@ static void graph_main_area_draw(const bContext *C, ARegion *ar)
 static void graph_channel_area_init(wmWindowManager *wm, ARegion *ar)
 {
 	wmKeyMap *keymap;
+	
+	/* make sure we keep the hide flags */
+	ar->v2d.scroll |= (V2D_SCROLL_RIGHT | V2D_SCROLL_BOTTOM);
+	ar->v2d.scroll &= ~(V2D_SCROLL_LEFT | V2D_SCROLL_TOP);	/* prevent any noise of past */
+	ar->v2d.scroll |= V2D_SCROLL_HORIZONTAL_HIDE;
+	ar->v2d.scroll |= V2D_SCROLL_VERTICAL_HIDE;
 	
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_LIST, ar->winx, ar->winy);
 	
@@ -441,7 +452,7 @@ static void graph_listener(ScrArea *sa, wmNotifier *wmn)
 				ED_area_tag_refresh(sa);
 			break;
 		case NC_SCENE:
-			switch (wmn->data) {	
+			switch (wmn->data) {
 				case ND_OB_ACTIVE:  /* selection changed, so force refresh to flush (needs flag set to do syncing)  */
 				case ND_OB_SELECT:
 					sipo->flag |= SIPO_TEMP_NEEDCHANSYNC;
@@ -461,7 +472,7 @@ static void graph_listener(ScrArea *sa, wmNotifier *wmn)
 					ED_area_tag_refresh(sa);
 					break;
 				case ND_TRANSFORM:
-					break; /*do nothing*/					
+					break; /*do nothing*/
 					
 				default: /* just redrawing the view will do */
 					ED_area_tag_redraw(sa);
@@ -563,13 +574,13 @@ static void graph_refresh(const bContext *C, ScrArea *sa)
 					
 					switch (fcu->array_index) {
 						case 0:
-							col[0] = 1.0f; col[1] = 0.0f; col[2] = 0.0f;
+							UI_GetThemeColor3fv(TH_AXIS_X, col);
 							break;
 						case 1:
-							col[0] = 0.0f; col[1] = 1.0f; col[2] = 0.0f;
+							UI_GetThemeColor3fv(TH_AXIS_Y, col);
 							break;
 						case 2:
-							col[0] = 0.0f; col[1] = 0.0f; col[2] = 1.0f;
+							UI_GetThemeColor3fv(TH_AXIS_Z, col);
 							break;
 						default:
 							/* 'unknown' color - bluish so as to not conflict with handles */

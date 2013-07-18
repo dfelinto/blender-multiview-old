@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -27,9 +27,12 @@ import subprocess
 import sys
 import os
 
+USE_QUIET = (os.environ.get("QUIET", None) is not None)
+
 CHECKER_IGNORE_PREFIX = [
     "extern",
     "intern/moto",
+    "blender/intern/opennl",
     ]
 
 CHECKER_BIN = "cppcheck"
@@ -38,10 +41,13 @@ CHECKER_ARGS = [
     # not sure why this is needed, but it is.
     "-I" + os.path.join(project_source_info.SOURCE_DIR, "extern", "glew", "include"),
     "--suppress=*:%s/extern/glew/include/GL/glew.h:241" % project_source_info.SOURCE_DIR,
-    # "--max-configs=1",  # speeds up execution
+    "--max-configs=1",  # speeds up execution
     #  "--check-config", # when includes are missing
-    #  "--enable=all",  # if you want sixty hundred pedantic suggestions
+    "--enable=all",  # if you want sixty hundred pedantic suggestions
     ]
+
+if USE_QUIET:
+    CHECKER_ARGS.append("--quiet")
 
 
 def main():
@@ -50,22 +56,23 @@ def main():
     check_commands = []
     for c, inc_dirs, defs in source_info:
         cmd = ([CHECKER_BIN] +
-                CHECKER_ARGS +
+               CHECKER_ARGS +
                [c] +
                [("-I%s" % i) for i in inc_dirs] +
                [("-D%s" % d) for d in defs]
-              )
+               )
 
         check_commands.append((c, cmd))
 
     process_functions = []
 
     def my_process(i, c, cmd):
-        percent = 100.0 * (i / (len(check_commands) - 1))
-        percent_str = "[" + ("%.2f]" % percent).rjust(7) + " %:"
+        if not USE_QUIET:
+            percent = 100.0 * (i / (len(check_commands) - 1))
+            percent_str = "[" + ("%.2f]" % percent).rjust(7) + " %:"
 
-        sys.stdout.flush()
-        sys.stdout.write("%s " % percent_str)
+            sys.stdout.flush()
+            sys.stdout.write("%s " % percent_str)
 
         return subprocess.Popen(cmd)
 
@@ -73,6 +80,8 @@ def main():
         process_functions.append((my_process, (i, c, cmd)))
 
     project_source_info.queue_processes(process_functions)
+
+    print("Finished!")
 
 
 if __name__ == "__main__":

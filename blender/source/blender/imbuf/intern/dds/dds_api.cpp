@@ -29,8 +29,13 @@
 #include <dds_api.h>
 #include <Stream.h>
 #include <DirectDrawSurface.h>
+#include <FlipDXT.h>
 #include <stdio.h> // printf
 #include <fstream>
+
+#if defined (WIN32) && !defined(FREE_WINDOWS)
+#include "utfconv.h"
+#endif
 
 extern "C" {
 
@@ -39,8 +44,10 @@ extern "C" {
 #include "IMB_imbuf.h"
 #include "IMB_allocimbuf.h"
 
+#include "IMB_colormanagement.h"
+#include "IMB_colormanagement_intern.h"
 
-int imb_save_dds(struct ImBuf * ibuf, const char *name, int flags)
+int imb_save_dds(struct ImBuf *ibuf, const char *name, int flags)
 {
 	return(0); /* todo: finish this function */
 
@@ -49,7 +56,15 @@ int imb_save_dds(struct ImBuf * ibuf, const char *name, int flags)
 	if (ibuf->rect == 0) return (0);
 
 	/* open file for writing */
-	std::ofstream fildes(name);
+	std::ofstream fildes;
+
+#if defined (WIN32) && !defined(FREE_WINDOWS)
+	wchar_t *wname = alloc_utf16_from_8(name, 0);
+	fildes.open(wname);
+	free(wname);
+#else
+	fildes.open(name);
+#endif
 
 	/* write header */
 	fildes << "DDS ";
@@ -68,9 +83,9 @@ int imb_is_a_dds(unsigned char *mem) // note: use at most first 32 bytes
 	return(1);
 }
 
-struct ImBuf *imb_load_dds(unsigned char *mem, size_t size, int flags)
+struct ImBuf *imb_load_dds(unsigned char *mem, size_t size, int flags, char colorspace[IM_MAX_SPACE])
 {
-	struct ImBuf * ibuf = 0;
+	struct ImBuf *ibuf = NULL;
 	DirectDrawSurface dds(mem, size); /* reads header */
 	unsigned char bits_per_pixel;
 	unsigned int *rect;
@@ -80,6 +95,12 @@ struct ImBuf *imb_load_dds(unsigned char *mem, size_t size, int flags)
 	unsigned char *cp = (unsigned char *) &col;
 	Color32 pixel;
 	Color32 *pixels = 0;
+
+	/* OCIO_TODO: never was able to save DDS, so can't test loading
+	 *            but profile used to be set to sRGB and can't see rect_float here, so
+	 *            default byte space should work fine
+	 */
+	colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_BYTE);
 
 	if (!imb_is_a_dds(mem))
 		return (0);
@@ -115,14 +136,13 @@ struct ImBuf *imb_load_dds(unsigned char *mem, size_t size, int flags)
 			if (pixel.a != 255) {
 				bits_per_pixel = 32;
 				break;
-			};
-		};
-	};
+			}
+		}
+	}
 	ibuf = IMB_allocImBuf(dds.width(), dds.height(), bits_per_pixel, 0); 
 	if (ibuf == 0) return(0); /* memory allocation failed */
 
 	ibuf->ftype = DDS;
-	ibuf->profile = IB_PROFILE_SRGB;
 	ibuf->dds_data.fourcc = dds.fourCC();
 	ibuf->dds_data.nummipmaps = dds.mipmapCount();
 
@@ -143,13 +163,18 @@ struct ImBuf *imb_load_dds(unsigned char *mem, size_t size, int flags)
 			rect[i] = col;
 		}
 
-		if (ibuf->dds_data.fourcc != FOURCC_DDS)
-			ibuf->dds_data.data = (unsigned char*)dds.readData(ibuf->dds_data.size);
+		if (ibuf->dds_data.fourcc != FOURCC_DDS) {
+			ibuf->dds_data.data = (unsigned char *)dds.readData(ibuf->dds_data.size);
+
+			/* flip compressed texture */
+			FlipDXTCImage(dds.width(), dds.height(), dds.mipmapCount(), dds.fourCC(), ibuf->dds_data.data);
+		}
 		else {
 			ibuf->dds_data.data = NULL;
 			ibuf->dds_data.size = 0;
 		}
 
+		/* flip uncompressed texture */
 		IMB_flipy(ibuf);
 	}
 

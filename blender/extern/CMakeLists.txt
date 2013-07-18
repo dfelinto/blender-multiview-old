@@ -27,14 +27,20 @@
 remove_strict_flags()
 
 add_subdirectory(colamd)
+add_subdirectory(rangetree)
+add_subdirectory(wcwidth)
+add_subdirectory(libmv)
 
 if(WITH_BULLET)
-	add_subdirectory(bullet2)
+	if(NOT WITH_SYSTEM_BULLET)
+		add_subdirectory(bullet2)
+	endif()
 endif()
 
-if(WITH_MOD_CLOTH_ELTOPO)
-	add_subdirectory(eltopo)
-endif()
+# now only available in a branch
+#if(WITH_MOD_CLOTH_ELTOPO)
+#	add_subdirectory(eltopo)
+#endif()
 
 if(WITH_BINRELOC)
 	add_subdirectory(binreloc)
@@ -62,10 +68,6 @@ endif()
 
 if(WITH_LZMA)
 	add_subdirectory(lzma)
-endif()
-
-if(WITH_LIBMV)
-	add_subdirectory(libmv)
 endif()
 
 if(WITH_MOD_BOOLEAN)

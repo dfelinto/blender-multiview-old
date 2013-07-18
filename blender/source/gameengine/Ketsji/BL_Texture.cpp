@@ -47,7 +47,7 @@ static int power_of_2_min_i(int num)
 {
 	while (!is_power_of_2_i(num))
 		num= num&(num-1);
-	return num;	
+	return num;
 }
 
 // Place holder for a full texture manager
@@ -60,6 +60,7 @@ public:
 
 typedef std::map<char*, BL_TextureObject> BL_TextureMap;
 static BL_TextureMap g_textureManager;
+static GLint g_max_units = -1;
 
 
 BL_Texture::BL_Texture()
@@ -109,7 +110,7 @@ bool BL_Texture::InitFromImage(int unit,  Image *img, bool mipmap)
 		return mOk;
 	}
 
-	ibuf= BKE_image_get_ibuf(img, NULL);
+	ibuf= BKE_image_acquire_ibuf(img, NULL, NULL);
 	if (ibuf==NULL)
 	{
 		img->ok = 0;
@@ -128,6 +129,7 @@ bool BL_Texture::InitFromImage(int unit,  Image *img, bool mipmap)
 	if (mTexture != 0) {
 		glBindTexture(GL_TEXTURE_2D, mTexture );
 		Validate();
+		BKE_image_release_ibuf(img, ibuf, NULL);
 		return mOk;
 	}
 
@@ -140,6 +142,7 @@ bool BL_Texture::InitFromImage(int unit,  Image *img, bool mipmap)
 			mTexture = mapLook->second.gl_texture;
 			glBindTexture(GL_TEXTURE_2D, mTexture);
 			mOk = IsValid();
+			BKE_image_release_ibuf(img, ibuf, NULL);
 			return mOk;
 		}
 	}
@@ -166,6 +169,9 @@ bool BL_Texture::InitFromImage(int unit,  Image *img, bool mipmap)
 	glDisable(GL_TEXTURE_2D);
 	ActivateUnit(0);
 	Validate();
+
+	BKE_image_release_ibuf(img, ibuf, NULL);
+
 	return mOk;
 }
 
@@ -193,7 +199,7 @@ void BL_Texture::InitGLTex(unsigned int *pix,int x,int y,bool mipmap)
 	glTexEnvi(GL_TEXTURE_ENV, GL_TEXTURE_ENV_MODE, GL_MODULATE);
 }
 
-void BL_Texture::InitGLCompressedTex(ImBuf* ibuf, bool mipmap)
+void BL_Texture::InitGLCompressedTex(ImBuf *ibuf, bool mipmap)
 {
 #ifndef WITH_DDS
 	// Fall back to uncompressed if DDS isn't enabled
@@ -251,7 +257,7 @@ bool BL_Texture::InitCubeMap(int unit,  EnvMap *cubemap)
 		return mOk;
 	}
 
-	ImBuf *ibuf= BKE_image_get_ibuf(cubemap->ima, NULL);
+	ImBuf *ibuf= BKE_image_acquire_ibuf(cubemap->ima, NULL, NULL);
 	if (ibuf==0)
 	{
 		cubemap->ima->ok = 0;
@@ -274,6 +280,7 @@ bool BL_Texture::InitCubeMap(int unit,  EnvMap *cubemap)
 			mTexture = mapLook->second.gl_texture;
 			glBindTexture(GL_TEXTURE_CUBE_MAP_ARB, mTexture);
 			mOk = IsValid();
+			BKE_image_release_ibuf(cubemap->ima, ibuf, NULL);
 			return mOk;
 		}
 	}
@@ -307,6 +314,7 @@ bool BL_Texture::InitCubeMap(int unit,  EnvMap *cubemap)
 
 		my_free_envmapdata(cubemap);
 		mOk = false;
+		BKE_image_release_ibuf(cubemap->ima, ibuf, NULL);
 		return mOk;
 	}
 
@@ -341,6 +349,9 @@ bool BL_Texture::InitCubeMap(int unit,  EnvMap *cubemap)
 	ActivateUnit(0);
 
 	mOk = IsValid();
+
+	BKE_image_release_ibuf(cubemap->ima, ibuf, NULL);
+
 	return mOk;
 }
 
@@ -369,14 +380,17 @@ unsigned int BL_Texture::GetTextureType() const
 
 int BL_Texture::GetMaxUnits()
 {
-	GLint unit=0;
-
-	if (GLEW_ARB_multitexture) {
-		glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &unit);
-		return (MAXTEX>=unit?unit:MAXTEX);
+	if (g_max_units < 0) {
+		GLint unit;
+		if (GLEW_ARB_multitexture) {
+			glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, &unit);
+			g_max_units = (MAXTEX>=unit)?unit:MAXTEX;
+		} else {
+			g_max_units = 0;
+		}
 	}
 
-	return 0;
+	return g_max_units;
 }
 
 void BL_Texture::ActivateFirst()
@@ -427,7 +441,7 @@ void BL_Texture::DisableAllTextures()
 		glMatrixMode(GL_TEXTURE);
 		glLoadIdentity();
 		glMatrixMode(GL_MODELVIEW);
-		glDisable(GL_TEXTURE_2D);	
+		glDisable(GL_TEXTURE_2D);
 		glDisable(GL_TEXTURE_GEN_S);
 		glDisable(GL_TEXTURE_GEN_T);
 		glDisable(GL_TEXTURE_GEN_R);
@@ -447,14 +461,14 @@ void BL_Texture::ActivateTexture()
 
 	if (mType == GL_TEXTURE_CUBE_MAP_ARB && GLEW_ARB_texture_cube_map)
 	{
-		glBindTexture( GL_TEXTURE_CUBE_MAP_ARB, mTexture );	
+		glBindTexture( GL_TEXTURE_CUBE_MAP_ARB, mTexture );
 		glEnable(GL_TEXTURE_CUBE_MAP_ARB);
 	}
 	else {
 		if (GLEW_ARB_texture_cube_map )
 			glDisable(GL_TEXTURE_CUBE_MAP_ARB);
 
-		glBindTexture( GL_TEXTURE_2D, mTexture );	
+		glBindTexture( GL_TEXTURE_2D, mTexture );
 		glEnable(GL_TEXTURE_2D);
 	}
 }
@@ -562,7 +576,7 @@ void BL_Texture::setTexEnv(BL_Material *mat, bool modulate)
 		using_alpha = true;
 	}
 
-	switch( mat->blend_mode[mUnit] ) {
+	switch (mat->blend_mode[mUnit]) {
 		case BLEND_MIX:
 			{
 				// ------------------------------
@@ -646,9 +660,11 @@ int BL_Texture::GetPow2(int n)
 void BL_Texture::SplitEnvMap(EnvMap *map)
 {
 	if (!map || !map->ima || (map->ima && !map->ima->ok)) return;
-	ImBuf *ibuf= BKE_image_get_ibuf(map->ima, NULL);
-	if (ibuf)
+	ImBuf *ibuf= BKE_image_acquire_ibuf(map->ima, NULL, NULL);
+	if (ibuf) {
 		my_envmap_split_ima(map, ibuf);
+		BKE_image_release_ibuf(map->ima, ibuf, NULL);
+	}
 }
 
 unsigned int BL_Texture::mDisableState = 0;
@@ -659,7 +675,7 @@ void my_envmap_split_ima(EnvMap *env, ImBuf *ibuf)
 {
 	int dx, part;
 	
-	my_free_envmapdata(env);	
+	my_free_envmapdata(env);
 	
 	dx= ibuf->y;
 	dx/= 2;
@@ -670,7 +686,7 @@ void my_envmap_split_ima(EnvMap *env, ImBuf *ibuf)
 	}
 	else {
 		for (part=0; part<6; part++) {
-			env->cube[part]= IMB_allocImBuf(dx, dx, 24, IB_rect);
+			env->cube[part] = IMB_allocImBuf(dx, dx, 24, IB_rect);
 		}
 		IMB_rectcpy(env->cube[0], ibuf, 
 			0, 0, 0, 0, dx, dx);
@@ -698,7 +714,7 @@ void my_free_envmapdata(EnvMap *env)
 		ImBuf *ibuf= env->cube[part];
 		if (ibuf) {
 			IMB_freeImBuf(ibuf);
-			env->cube[part]= NULL;
+			env->cube[part] = NULL;
 		}
 	}
 	env->ok= 0;

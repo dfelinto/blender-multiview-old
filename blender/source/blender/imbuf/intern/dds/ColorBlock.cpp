@@ -57,7 +57,7 @@ ColorBlock::ColorBlock()
 }
 
 /// Init the color block from an array of colors.
-ColorBlock::ColorBlock(const uint * linearImage)
+ColorBlock::ColorBlock(const uint *linearImage)
 {
 	for (uint i = 0; i < 16; i++) {
 		color(i) = Color32(linearImage[i]);
@@ -74,17 +74,17 @@ ColorBlock::ColorBlock(const ColorBlock & block)
 
 
 /// Initialize this color block.
-ColorBlock::ColorBlock(const Image * img, uint x, uint y)
+ColorBlock::ColorBlock(const Image *img, uint x, uint y)
 {
 	init(img, x, y);
 }
 
-void ColorBlock::init(const Image * img, uint x, uint y)
+void ColorBlock::init(const Image *img, uint x, uint y)
 {
 	init(img->width(), img->height(), (const uint *)img->pixels(), x, y);
 }
 
-void ColorBlock::init(uint w, uint h, const uint * data, uint x, uint y)
+void ColorBlock::init(uint w, uint h, const uint *data, uint x, uint y)
 {
 	const uint bw = min(w - x, 4U);
 	const uint bh = min(h - y, 4U);
@@ -105,7 +105,7 @@ void ColorBlock::init(uint w, uint h, const uint * data, uint x, uint y)
 	}
 }
 
-void ColorBlock::init(uint w, uint h, const float * data, uint x, uint y)
+void ColorBlock::init(uint w, uint h, const float *data, uint x, uint y)
 {
 	const uint bw = min(w - x, 4U);
 	const uint bh = min(h - y, 4U);
@@ -245,7 +245,7 @@ bool ColorBlock::hasAlpha() const
 #if 0
 
 /// Get diameter color range.
-void ColorBlock::diameterRange(Color32 * start, Color32 * end) const
+void ColorBlock::diameterRange(Color32 *start, Color32 *end) const
 {
 	Color32 c0, c1;
 	uint best_dist = 0;
@@ -266,7 +266,7 @@ void ColorBlock::diameterRange(Color32 * start, Color32 * end) const
 }
 
 /// Get luminance color range.
-void ColorBlock::luminanceRange(Color32 * start, Color32 * end) const
+void ColorBlock::luminanceRange(Color32 *start, Color32 *end) const
 {
 	Color32 minColor, maxColor;
 	uint minLuminance, maxLuminance;
@@ -292,7 +292,7 @@ void ColorBlock::luminanceRange(Color32 * start, Color32 * end) const
 }
 
 /// Get color range based on the bounding box. 
-void ColorBlock::boundsRange(Color32 * start, Color32 * end) const
+void ColorBlock::boundsRange(Color32 *start, Color32 *end) const
 {
 	Color32 minColor(255, 255, 255);
 	Color32 maxColor(0, 0, 0);
@@ -326,7 +326,7 @@ void ColorBlock::boundsRange(Color32 * start, Color32 * end) const
 }
 
 /// Get color range based on the bounding box. 
-void ColorBlock::boundsRangeAlpha(Color32 * start, Color32 * end) const
+void ColorBlock::boundsRangeAlpha(Color32 *start, Color32 *end) const
 {
 	Color32 minColor(255, 255, 255, 255);
 	Color32 maxColor(0, 0, 0, 0);
@@ -387,13 +387,13 @@ void ColorBlock::sortColorsByAbsoluteValue()
 
 
 /*/// Find extreme colors in the given axis.
-void ColorBlock::computeRange(Vector3::Arg axis, Color32 * start, Color32 * end) const
+void ColorBlock::computeRange(Vector3::Arg axis, Color32 *start, Color32 *end) const
 {
 	
 	int mini, maxi;
 	mini = maxi = 0;
 	
-	float min, max;	
+	float min, max;
 	min = max = dot(Vector3(m_color[0].r, m_color[0].g, m_color[0].b), axis);
 
 	for (uint i = 1; i < 16; i++)

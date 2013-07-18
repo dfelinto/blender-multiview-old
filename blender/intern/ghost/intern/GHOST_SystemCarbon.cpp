@@ -32,8 +32,8 @@
 
 /**
  * Copyright (C) 2001 NaN Technologies B.V.
- * @author	Maarten Gribnau
- * @date	May 7, 2001
+ * \author	Maarten Gribnau
+ * \date	May 7, 2001
  */
 
 #include <Carbon/Carbon.h>
@@ -126,7 +126,7 @@ static GHOST_TKey convertKey(int rawCode)
 	 */
 	static UInt32 dummy = 0;
 	Handle transData = (Handle) GetScriptManagerVariable(smKCHRCache);
-	unsigned char vk = KeyTranslate(transData, rawCode, &dummy);	
+	unsigned char vk = KeyTranslate(transData, rawCode, &dummy);
 	/* Map numpad based on rawcodes first, otherwise they
 	 * look like non-numpad events.
 	 * Added too: mapping the number keys, for french keyboards etc (ton)
@@ -396,6 +396,11 @@ void GHOST_SystemCarbon::getMainDisplayDimensions(GHOST_TUns32& width, GHOST_TUn
 	height = bnds.bottom - bnds.top;
 }
 
+void GHOST_SystemCarbon::getAllDisplayDimensions(GHOST_TUns32& width, GHOST_TUns32& height) const
+{
+	/* TODO */
+	getMainDisplayDimensions(width, height);
+}
 
 GHOST_IWindow *GHOST_SystemCarbon::createWindow(
 		const STR_String& title,
@@ -406,6 +411,7 @@ GHOST_IWindow *GHOST_SystemCarbon::createWindow(
 		GHOST_TWindowState state,
 		GHOST_TDrawingContextType type,
 		bool stereoVisual,
+		const bool exclusive,
 		const GHOST_TUns16 numOfAASamples,
 		const GHOST_TEmbedderWindowID parentWindow)
 {
@@ -990,7 +996,7 @@ bool GHOST_SystemCarbon::handleMouseDown(EventRef event)
 			/*
 			 * The DragWindow() routine creates a lot of kEventWindowBoundsChanged
 			 * events. By setting m_ignoreWindowSizedMessages these are suppressed.
-			 * @see GHOST_SystemCarbon::handleWindowEvent(EventRef event)
+			 * \see GHOST_SystemCarbon::handleWindowEvent(EventRef event)
 			 */
 			/* even worse: scale window also generates a load of events, and nothing 
 			 * is handled (read: client's event proc called) until you release mouse (ton) */

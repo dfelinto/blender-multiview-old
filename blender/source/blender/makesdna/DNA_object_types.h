@@ -56,6 +56,7 @@ struct ParticleSystem;
 struct DerivedMesh;
 struct SculptSession;
 struct bGPdata;
+struct RigidBodyOb;
 
 
 /* Vertex Groups - Name Info */
@@ -117,7 +118,7 @@ typedef struct Object {
 	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	/* struct Path *path; */
 	struct BoundBox *bb;
-	struct bAction *action  DNA_DEPRECATED;	 // XXX depreceated... old animation system
+	struct bAction *action  DNA_DEPRECATED;	 // XXX deprecated... old animation system
 	struct bAction *poselib;
 	struct bPose *pose;  /* pose data, armature objects only */
 	void *data;  /* pointer to objects data - an 'ID' or NULL */
@@ -127,8 +128,8 @@ typedef struct Object {
 	bAnimVizSettings avs;	/* settings for visualization of object-transform animation */
 	bMotionPath *mpath;		/* motion path cache for this object */
 	
-	ListBase constraintChannels  DNA_DEPRECATED; // XXX depreceated... old animation system
-	ListBase effect  DNA_DEPRECATED;             // XXX depreceated... keep for readfile
+	ListBase constraintChannels  DNA_DEPRECATED; // XXX deprecated... old animation system
+	ListBase effect  DNA_DEPRECATED;             // XXX deprecated... keep for readfile
 	ListBase disp;      /* list of DispList, used by lattice, metaballs curve & surfaces */
 	ListBase defbase;   /* list of bDeformGroup (vertex groups) names and flag only */
 	ListBase modifiers; /* list of ModifierData structures */
@@ -170,15 +171,15 @@ typedef struct Object {
 	float sf; /* sf is time-offset */
 
 	short flag;			/* copy of Base */
-	short colbits DNA_DEPRECATED;		/* deprecated */
+	short colbits DNA_DEPRECATED;		/* deprecated, use 'matbits' */
 	
 	short transflag, protectflag;	/* transformation settings and transform locks  */
 	short trackflag, upflag;
 	short nlaflag;				/* used for DopeSheet filtering settings (expanded/collapsed) */
-	short ipoflag;				// xxx depreceated... old animation system
+	short ipoflag;				// xxx deprecated... old animation system
 	short scaflag;				/* ui state for game logic */
 	char scavisflag;			/* more display settings for game logic */
-	char pad5;
+	char depsflag;
 
 	int dupon, dupoff, dupsta, dupend;
 
@@ -209,17 +210,17 @@ typedef struct Object {
 	float step_height;
 	float jump_speed;
 	float fall_speed;
-	char pad1[4];
+
+	/** Collision mask settings */
+	unsigned short col_group, col_mask;
 
 	short rotmode;		/* rotation mode - uses defines set out in DNA_action_types.h for PoseChannel rotations... */
 
 	char boundtype;            /* bounding box use for drawing */
 	char collision_boundtype;  /* bounding box type used for collision */
 
-	char  restrictflag;	/* for restricting view, select, render etc. accessible in outliner */
-
+	short dtx;			/* viewport draw extra settings */
 	char dt;			/* viewport draw type */
-	char dtx;			/* viewport draw extra settings */
 	char empty_drawtype;
 	float empty_drawsize;
 	float dupfacesca;	/* dupliface scale */
@@ -239,13 +240,14 @@ typedef struct Object {
 
 	struct BulletSoftBody *bsoft;	/* settings for game engine bullet soft body */
 
+	char restrictflag;		/* for restricting view, select, render etc. accessible in outliner */
+	char recalc;			/* dependency flag */
 	short softflag;			/* softbody settings */
-	short recalc;			/* dependency flag */
 	float anisotropicFriction[3];
 
 	ListBase constraints;		/* object constraints */
-	ListBase nlastrips  DNA_DEPRECATED;			// XXX depreceated... old animation system
-	ListBase hooks  DNA_DEPRECATED;				// XXX depreceated... old animation system
+	ListBase nlastrips  DNA_DEPRECATED;			// XXX deprecated... old animation system
+	ListBase hooks  DNA_DEPRECATED;				// XXX deprecated... old animation system
 	ListBase particlesystem;	/* particle systems */
 	
 	struct PartDeflect *pd;		/* particle deflector/attractor/collision data */
@@ -269,6 +271,9 @@ typedef struct Object {
 	ListBase gpulamp;		/* runtime, for glsl lamp display only */
 	ListBase pc_ids;
 	ListBase *duplilist;	/* for temporary dupli list storage, only for use by RNA API */
+	
+	struct RigidBodyOb *rigidbody_object;		/* settings for Bullet rigid body */
+	struct RigidBodyCon *rigidbody_constraint;	/* settings for Bullet constraint */
 
 	float ima_ofs[2];		/* offset for image empties */
 } Object;
@@ -295,22 +300,19 @@ typedef struct ObHook {
 typedef struct DupliObject {
 	struct DupliObject *next, *prev;
 	struct Object *ob;
-	unsigned int origlay;
-	int index;
+	unsigned int origlay, pad;
 	float mat[4][4], omat[4][4];
 	float orco[3], uv[2];
 
 	short type; /* from Object.transflag */
 	char no_draw, animated;
 
-	/* Lowest-level particle index.
-	 * Note: This is needed for particle info in shaders.
-	 * Otherwise dupli groups in particle systems would override the
-	 * index value from higher dupli levels. Would be nice to have full generic access
-	 * to all dupli levels somehow, but for now this should cover most use-cases.
-	 */
-	int particle_index;
-	int pad;
+	/* persistent identifier for a dupli object, for inter-frame matching of
+	 * objects with motion blur, or inter-update matching for syncing */
+	int persistent_id[8]; /* MAX_DUPLI_RECUR */
+
+	/* particle this dupli was generated from */
+	struct ParticleSystem *particle_system;
 } DupliObject;
 
 /* **************** OBJECT ********************* */
@@ -349,6 +351,9 @@ typedef struct DupliObject {
 #define OB_DATA_SUPPORT_ID(_id_type) \
 	(ELEM8(_id_type, ID_ME, ID_CU, ID_MB, ID_LA, ID_SPK, ID_CA, ID_LT, ID_AR))
 
+#define OB_DATA_SUPPORT_ID_CASE \
+	ID_ME: case ID_CU: case ID_MB: case ID_LA: case ID_SPK: case ID_CA: case ID_LT: case ID_AR
+
 /* partype: first 4 bits: type */
 #define PARTYPE			15
 #define PAROBJECT		0
@@ -378,6 +383,7 @@ typedef struct DupliObject {
 #define OB_DUPLIPARTS		2048
 #define OB_RENDER_DUPLI		4096
 #define OB_NO_CONSTRAINTS	8192 /* runtime constraints disable */
+#define OB_NO_PSYS_UPDATE	16384 /* hack to work around particle issue */
 
 /* (short) ipoflag */
 /* XXX: many old flags for features removed due to incompatibility
@@ -406,17 +412,19 @@ typedef struct DupliObject {
 
 #define OB_PAINT		100	/* temporary used in draw code */
 
-/* dtx: flags, char! */
-#define OB_AXIS			2
-#define OB_TEXSPACE		4
-#define OB_DRAWNAME		8
-#define OB_DRAWIMAGE	16
+/* dtx: flags (short) */
+#define OB_DRAWBOUNDOX		(1 << 0)
+#define OB_AXIS				(1 << 1)
+#define OB_TEXSPACE			(1 << 2)
+#define OB_DRAWNAME			(1 << 3)
+#define OB_DRAWIMAGE		(1 << 4)
 	/* for solid+wire display */
-#define OB_DRAWWIRE		32
-	/* for overdraw */
-#define OB_DRAWXRAY		64
+#define OB_DRAWWIRE			(1 << 5)
+	/* for overdraw s*/
+#define OB_DRAWXRAY			(1 << 6)
 	/* enable transparent draw */
-#define OB_DRAWTRANSP	128
+#define OB_DRAWTRANSP		(1 << 7)
+#define OB_DRAW_ALL_EDGES	(1 << 8)  /* only for meshes currently */
 
 /* empty_drawtype: no flags */
 #define OB_ARROWS		1
@@ -478,6 +486,9 @@ typedef struct DupliObject {
 /* controller state */
 #define OB_MAX_STATES		30
 
+/* collision masks */
+#define OB_MAX_COL_MASKS	8
+
 /* ob->gameflag */
 #define OB_DYNAMIC		1
 #define OB_CHILD		2
@@ -526,6 +537,10 @@ typedef struct DupliObject {
 #define OB_BODY_TYPE_SENSOR			6
 #define OB_BODY_TYPE_NAVMESH		7
 #define OB_BODY_TYPE_CHARACTER			8
+
+/* ob->depsflag */
+#define OB_DEPS_EXTRA_OB_RECALC		1
+#define OB_DEPS_EXTRA_DATA_RECALC	2
 
 /* ob->scavisflag */
 #define OB_VIS_SENS		1

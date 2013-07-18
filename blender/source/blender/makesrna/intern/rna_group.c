@@ -24,14 +24,15 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
+
+#include "DNA_group_types.h"
+
+#include "BLI_utildefines.h"
 
 #include "RNA_define.h"
 
 #include "rna_internal.h"
-
-#include "DNA_group_types.h"
 
 #ifdef RNA_RUNTIME
 
@@ -53,8 +54,8 @@ static PointerRNA rna_Group_objects_get(CollectionPropertyIterator *iter)
 
 static void rna_Group_objects_link(Group *group, bContext *C, ReportList *reports, Object *object)
 {
-	if (!add_to_group(group, object, CTX_data_scene(C), NULL)) {
-		BKE_reportf(reports, RPT_ERROR, "Object \"%s\" already in group \"%s\"", object->id.name + 2, group->id.name + 2);
+	if (!BKE_group_object_add(group, object, CTX_data_scene(C), NULL)) {
+		BKE_reportf(reports, RPT_ERROR, "Object '%s' already in group '%s'", object->id.name + 2, group->id.name + 2);
 		return;
 	}
 
@@ -63,8 +64,8 @@ static void rna_Group_objects_link(Group *group, bContext *C, ReportList *report
 
 static void rna_Group_objects_unlink(Group *group, bContext *C, ReportList *reports, Object *object)
 {
-	if (!rem_from_group(group, object, CTX_data_scene(C), NULL)) {
-		BKE_reportf(reports, RPT_ERROR, "Object \"%s\" not in group \"%s\"", object->id.name + 2, group->id.name + 2);
+	if (!BKE_group_object_unlink(group, object, CTX_data_scene(C), NULL)) {
+		BKE_reportf(reports, RPT_ERROR, "Object '%s' not in group '%s'", object->id.name + 2, group->id.name + 2);
 		return;
 	}
 

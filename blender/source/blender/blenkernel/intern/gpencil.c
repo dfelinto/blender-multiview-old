@@ -39,6 +39,8 @@
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_gpencil_types.h"
 
 #include "BKE_global.h"
@@ -87,6 +89,7 @@ void free_gpencil_frames(bGPDlayer *gpl)
 		free_gpencil_strokes(gpf);
 		BLI_freelinkN(&gpl->frames, gpf);
 	}
+	gpl->actframe = NULL;
 }
 
 /* Free all of the gp-layers for a viewport (list should be &gpd->layers or so) */
@@ -163,7 +166,7 @@ bGPDframe *gpencil_frame_addnew(bGPDlayer *gpl, int cframe)
 }
 
 /* add a new gp-layer and make it the active layer */
-bGPDlayer *gpencil_layer_addnew(bGPdata *gpd)
+bGPDlayer *gpencil_layer_addnew(bGPdata *gpd, const char *name, int setactive)
 {
 	bGPDlayer *gpl;
 	
@@ -182,11 +185,12 @@ bGPDlayer *gpencil_layer_addnew(bGPdata *gpd)
 	gpl->thickness = 3;
 	
 	/* auto-name */
-	strcpy(gpl->info, "GP_Layer");
-	BLI_uniquename(&gpd->layers, gpl, "GP_Layer", '.', offsetof(bGPDlayer, info), sizeof(gpl->info));
+	BLI_strncpy(gpl->info, name, sizeof(gpl->info));
+	BLI_uniquename(&gpd->layers, gpl, DATA_("GP_Layer"), '.', offsetof(bGPDlayer, info), sizeof(gpl->info));
 	
 	/* make this one the active one */
-	gpencil_layer_setactive(gpd, gpl);
+	if (setactive)
+		gpencil_layer_setactive(gpd, gpl);
 	
 	/* return layer */
 	return gpl;
@@ -509,15 +513,13 @@ void gpencil_layer_setactive(bGPdata *gpd, bGPDlayer *active)
 }
 
 /* delete the active gp-layer */
-void gpencil_layer_delactive(bGPdata *gpd)
+void gpencil_layer_delete(bGPdata *gpd, bGPDlayer *gpl)
 {
-	bGPDlayer *gpl = gpencil_layer_getactive(gpd);
-	
 	/* error checking */
 	if (ELEM(NULL, gpd, gpl)) 
 		return;
 	
-	/* free layer */	
+	/* free layer */
 	free_gpencil_frames(gpl);
 	BLI_freelinkN(&gpd->layers, gpl);
 }

@@ -53,8 +53,7 @@ void GaussianXBlurOperation::initExecution()
 
 	if (this->m_sizeavailable) {
 		float rad = this->m_size * this->m_data->sizex;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -66,8 +65,7 @@ void GaussianXBlurOperation::updateGauss()
 	if (this->m_gausstab == NULL) {
 		updateSize();
 		float rad = this->m_size * this->m_data->sizex;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -85,18 +83,16 @@ void GaussianXBlurOperation::executePixel(float output[4], int x, int y, void *d
 	int bufferstarty = inputBuffer->getRect()->ymin;
 
 	int miny = y;
-	int maxy = y;
 	int minx = x - this->m_rad;
 	int maxx = x + this->m_rad;
 	miny = max(miny, inputBuffer->getRect()->ymin);
 	minx = max(minx, inputBuffer->getRect()->xmin);
-	maxy = min(maxy, inputBuffer->getRect()->ymax);
-	maxx = min(maxx, inputBuffer->getRect()->xmax);
+	maxx = min(maxx, inputBuffer->getRect()->xmax - 1);
 
 	int step = getStep();
 	int offsetadd = getOffsetAdd();
 	int bufferindex = ((minx - bufferstartx) * 4) + ((miny - bufferstarty) * 4 * bufferwidth);
-	for (int nx = minx, index = (minx - x) + this->m_rad; nx < maxx; nx += step, index += step) {
+	for (int nx = minx, index = (minx - x) + this->m_rad; nx <= maxx; nx += step, index += step) {
 		const float multiplier = this->m_gausstab[index];
 		madd_v4_v4fl(color_accum, &buffer[bufferindex], multiplier);
 		multiplier_accum += multiplier;
@@ -108,8 +104,10 @@ void GaussianXBlurOperation::executePixel(float output[4], int x, int y, void *d
 void GaussianXBlurOperation::deinitExecution()
 {
 	BlurBaseOperation::deinitExecution();
-	MEM_freeN(this->m_gausstab);
-	this->m_gausstab = NULL;
+	if (this->m_gausstab) {
+		MEM_freeN(this->m_gausstab);
+		this->m_gausstab = NULL;
+	}
 
 	deinitMutex();
 }
@@ -131,8 +129,8 @@ bool GaussianXBlurOperation::determineDependingAreaOfInterest(rcti *input, ReadB
 	}
 	{
 		if (this->m_sizeavailable && this->m_gausstab != NULL) {
-			newInput.xmax = input->xmax + this->m_rad;
-			newInput.xmin = input->xmin - this->m_rad;
+			newInput.xmax = input->xmax + this->m_rad + 1;
+			newInput.xmin = input->xmin - this->m_rad - 1;
 			newInput.ymax = input->ymax;
 			newInput.ymin = input->ymin;
 		}

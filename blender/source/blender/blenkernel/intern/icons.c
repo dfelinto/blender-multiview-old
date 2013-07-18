@@ -49,7 +49,9 @@
 #include "BKE_icons.h"
 #include "BKE_global.h" /* only for G.background test */
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
+
+#include "GPU_extensions.h"
 
 /* GLOBALS */
 
@@ -65,7 +67,7 @@ static void icon_free(void *val)
 	Icon *icon = val;
 
 	if (icon) {
-		if (icon->drawinfo_free) {		
+		if (icon->drawinfo_free) {
 			icon->drawinfo_free(icon->drawinfo);
 		}
 		else if (icon->drawinfo) {
@@ -138,7 +140,10 @@ void BKE_previewimg_freefunc(void *link)
 				MEM_freeN(prv->rect[i]);
 				prv->rect[i] = NULL;
 			}
+			if (prv->gputexture[i])
+				GPU_texture_free(prv->gputexture[i]);
 		}
+		
 		MEM_freeN(prv);
 	}
 }
@@ -165,6 +170,7 @@ PreviewImage *BKE_previewimg_copy(PreviewImage *prv)
 			else {
 				prv_img->rect[i] = NULL;
 			}
+			prv_img->gputexture[i] = NULL;
 		}
 	}
 	return prv_img;
@@ -255,7 +261,7 @@ void BKE_icon_changed(int id)
 				prv->changed_timestamp[i]++;
 			}
 		}
-	}	
+	}
 }
 
 int BKE_icon_getid(struct ID *id)

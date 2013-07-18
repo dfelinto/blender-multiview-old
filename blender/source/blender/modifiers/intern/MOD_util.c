@@ -74,7 +74,7 @@ void get_texture_value(Tex *texture, float *tex_co, TexResult *texres)
 	int result_type;
 
 	/* no node textures for now */
-	result_type = multitex_ext_safe(texture, tex_co, texres);
+	result_type = multitex_ext_safe(texture, tex_co, texres, NULL);
 
 	/* if the texture gave an RGB value, we assume it didn't give a valid
 	 * intensity, since this is in the context of modifiers don't use perceptual color conversion.
@@ -184,11 +184,9 @@ DerivedMesh *get_cddm(Object *ob, struct BMEditMesh *em, DerivedMesh *dm, float 
 	else {
 		dm = CDDM_copy(dm);
 		CDDM_apply_vert_coords(dm, vertexCos);
+		dm->dirty |= DM_DIRTY_NORMALS;
 	}
 
-	if (dm)
-		CDDM_calc_normals(dm);
-	
 	return dm;
 }
 
@@ -199,12 +197,12 @@ DerivedMesh *get_dm(Object *ob, struct BMEditMesh *em, DerivedMesh *dm, float (*
 		return dm;
 
 	if (ob->type == OB_MESH) {
-		if (em) dm = CDDM_from_BMEditMesh(em, ob->data, FALSE, FALSE);
+		if (em) dm = CDDM_from_editbmesh(em, FALSE, FALSE);
 		else dm = CDDM_from_mesh((struct Mesh *)(ob->data), ob);
 
 		if (vertexCos) {
 			CDDM_apply_vert_coords(dm, vertexCos);
-			//CDDM_calc_normals(dm);
+			dm->dirty |= DM_DIRTY_NORMALS;
 		}
 		
 		if (orco)
@@ -222,7 +220,7 @@ void modifier_get_vgroup(Object *ob, DerivedMesh *dm, const char *name, MDeformV
 	*defgrp_index = defgroup_name_index(ob, name);
 	*dvert = NULL;
 
-	if (*defgrp_index >= 0) {
+	if (*defgrp_index != -1) {
 		if (ob->type == OB_LATTICE)
 			*dvert = BKE_lattice_deform_verts_get(ob);
 		else if (dm)
@@ -277,5 +275,9 @@ void modifier_type_init(ModifierTypeInfo *types[])
 	INIT_TYPE(DynamicPaint);
 	INIT_TYPE(Remesh);
 	INIT_TYPE(Skin);
+	INIT_TYPE(LaplacianSmooth);
+	INIT_TYPE(Triangulate);
+	INIT_TYPE(UVWarp);
+	INIT_TYPE(MeshCache);
 #undef INIT_TYPE
 }

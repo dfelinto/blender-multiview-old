@@ -50,7 +50,9 @@
 #include "ED_datafiles.h"
 #include "ED_types.h"
 
+#include "UI_interface.h"
 #include "UI_resources.h"
+#include "UI_view2d.h"
 
 #include "console_intern.h"
 
@@ -79,12 +81,12 @@ typedef struct ConsoleDrawContext {
 	int cwidth;
 	int lheight;
 	int console_width;
-	int winx;
 	int ymin, ymax;
 #if 0 /* used by textview, may use later */
+	int winx;
 	int *xy; // [2]
 	int *sel; // [2]
-	int *pos_pick; // bottom of view == 0, top of file == combine chars, end of line is lower then start. 
+	int *pos_pick;  /* bottom of view == 0, top of file == combine chars, end of line is lower then start. */
 	int *mval; // [2]
 	int draw;
 #endif
@@ -94,12 +96,14 @@ void console_scrollback_prompt_begin(struct SpaceConsole *sc, ConsoleLine *cl_du
 {
 	/* fake the edit line being in the scroll buffer */
 	ConsoleLine *cl = sc->history.last;
+	int prompt_len = strlen(sc->prompt);
+	
 	cl_dummy->type = CONSOLE_LINE_INPUT;
-	cl_dummy->len = cl_dummy->len_alloc = strlen(sc->prompt) + cl->len;
+	cl_dummy->len = prompt_len + cl->len;
 	cl_dummy->len_alloc = cl_dummy->len + 1;
 	cl_dummy->line = MEM_mallocN(cl_dummy->len_alloc, "cl_dummy");
-	memcpy(cl_dummy->line, sc->prompt, (cl_dummy->len_alloc - cl->len));
-	memcpy(cl_dummy->line + ((cl_dummy->len_alloc - cl->len)) - 1, cl->line, cl->len + 1);
+	memcpy(cl_dummy->line, sc->prompt, prompt_len);
+	memcpy(cl_dummy->line + prompt_len, cl->line, cl->len + 1);
 	BLI_addtail(&sc->scrollback, cl_dummy);
 }
 void console_scrollback_prompt_end(struct SpaceConsole *sc, ConsoleLine *cl_dummy) 
@@ -109,15 +113,12 @@ void console_scrollback_prompt_end(struct SpaceConsole *sc, ConsoleLine *cl_dumm
 }
 
 #define CONSOLE_DRAW_MARGIN 4
-#define CONSOLE_DRAW_SCROLL 16
-
-
 
 /* console textview callbacks */
 static int console_textview_begin(TextViewContext *tvc)
 {
 	SpaceConsole *sc = (SpaceConsole *)tvc->arg1;
-	tvc->lheight = sc->lheight;
+	tvc->lheight = sc->lheight * UI_DPI_FAC;
 	tvc->sel_start = sc->sel_start;
 	tvc->sel_end = sc->sel_end;
 	
@@ -144,8 +145,29 @@ static int console_textview_line_get(struct TextViewContext *tvc, const char **l
 	ConsoleLine *cl = (ConsoleLine *)tvc->iter;
 	*line = cl->line;
 	*len = cl->len;
-
+	// printf("'%s' %d\n", *line, cl->len);
+	BLI_assert(cl->line[cl->len] == '\0' && (cl->len == 0 || cl->line[cl->len - 1] != '\0'));
 	return 1;
+}
+
+static void console_cursor_wrap_offset(const char *str, int width, int *row, int *column, const char *end)
+{
+	int col;
+
+	for (; *str; str += BLI_str_utf8_size_safe(str)) {
+		col = BLI_str_utf8_char_width_safe(str);
+
+		if (*column + col > width) {
+			(*row)++;
+			*column = 0;
+		}
+
+		if (end && str >= end)
+			break;
+
+		*column += col;
+	}
+	return;
 }
 
 static int console_textview_line_color(struct TextViewContext *tvc, unsigned char fg[3], unsigned char UNUSED(bg[3]))
@@ -156,23 +178,18 @@ static int console_textview_line_color(struct TextViewContext *tvc, unsigned cha
 	if (tvc->iter_index == 0) {
 		const SpaceConsole *sc = (SpaceConsole *)tvc->arg1;
 		const ConsoleLine *cl = (ConsoleLine *)sc->history.last;
-		const int prompt_len = strlen(sc->prompt);
-		const int cursor_loc = cl->cursor + prompt_len;
+		int offl = 0, offc = 0;
 		int xy[2] = {CONSOLE_DRAW_MARGIN, CONSOLE_DRAW_MARGIN};
 		int pen[2];
 		xy[1] += tvc->lheight / 6;
 
-		/* account for wrapping */
-		if (cl->len < tvc->console_width) {
-			/* simple case, no wrapping */
-			pen[0] = tvc->cwidth * cursor_loc;
-			pen[1] = -2;
-		}
-		else {
-			/* wrap */
-			pen[0] = tvc->cwidth * (cursor_loc % tvc->console_width);
-			pen[1] = -2 + (((cl->len / tvc->console_width) - (cursor_loc / tvc->console_width)) * tvc->lheight);
-		}
+		console_cursor_wrap_offset(sc->prompt, tvc->console_width, &offl, &offc, NULL);
+		console_cursor_wrap_offset(cl->line, tvc->console_width, &offl, &offc, cl->line + cl->cursor);
+		pen[0] = tvc->cwidth * offc;
+		pen[1] = -2 - tvc->lheight * offl;
+
+		console_cursor_wrap_offset(cl->line + cl->cursor, tvc->console_width, &offl, &offc, NULL);
+		pen[1] += tvc->lheight * offl;
 
 		/* cursor */
 		UI_GetThemeColor3ubv(TH_CONSOLE_CURSOR, fg);
@@ -190,8 +207,13 @@ static int console_textview_line_color(struct TextViewContext *tvc, unsigned cha
 	return TVC_LINE_FG;
 }
 
+static void console_textview_const_colors(TextViewContext *UNUSED(tvc), unsigned char bg_sel[4])
+{
+	UI_GetThemeColor4ubv(TH_CONSOLE_SELECT, bg_sel);
+}
 
-static int console_textview_main__internal(struct SpaceConsole *sc, ARegion *ar, int draw, int mval[2], void **mouse_pick, int *pos_pick)
+static int console_textview_main__internal(struct SpaceConsole *sc, ARegion *ar, int draw,
+                                           int mval[2], void **mouse_pick, int *pos_pick)
 {
 	ConsoleLine cl_dummy = {NULL};
 	int ret = 0;
@@ -206,6 +228,7 @@ static int console_textview_main__internal(struct SpaceConsole *sc, ARegion *ar,
 	tvc.step = console_textview_step;
 	tvc.line_get = console_textview_line_get;
 	tvc.line_color = console_textview_line_color;
+	tvc.const_colors = console_textview_const_colors;
 
 	tvc.arg1 = sc;
 	tvc.arg2 = NULL;
@@ -213,10 +236,10 @@ static int console_textview_main__internal(struct SpaceConsole *sc, ARegion *ar,
 	/* view */
 	tvc.sel_start = sc->sel_start;
 	tvc.sel_end = sc->sel_end;
-	tvc.lheight = sc->lheight;
+	tvc.lheight = sc->lheight * UI_DPI_FAC;
 	tvc.ymin = v2d->cur.ymin;
 	tvc.ymax = v2d->cur.ymax;
-	tvc.winx = ar->winx;
+	tvc.winx = ar->winx - V2D_SCROLL_WIDTH;
 
 	console_scrollback_prompt_begin(sc, &cl_dummy);
 	ret = textview_draw(&tvc, draw, mval, mouse_pick, pos_pick);
@@ -238,13 +261,13 @@ int console_textview_height(struct SpaceConsole *sc, ARegion *ar)
 	return console_textview_main__internal(sc, ar, 0,  mval, NULL, NULL);
 }
 
-int console_char_pick(struct SpaceConsole *sc, ARegion *ar, int mval[2])
+int console_char_pick(struct SpaceConsole *sc, ARegion *ar, const int mval[2])
 {
 	int pos_pick = 0;
 	void *mouse_pick = NULL;
 	int mval_clamp[2];
 
-	mval_clamp[0] = CLAMPIS(mval[0], CONSOLE_DRAW_MARGIN, ar->winx - (CONSOLE_DRAW_SCROLL + CONSOLE_DRAW_MARGIN));
+	mval_clamp[0] = CLAMPIS(mval[0], CONSOLE_DRAW_MARGIN, ar->winx - CONSOLE_DRAW_MARGIN);
 	mval_clamp[1] = CLAMPIS(mval[1], CONSOLE_DRAW_MARGIN, ar->winy - CONSOLE_DRAW_MARGIN);
 
 	console_textview_main__internal(sc, ar, 0, mval_clamp, &mouse_pick, &pos_pick);

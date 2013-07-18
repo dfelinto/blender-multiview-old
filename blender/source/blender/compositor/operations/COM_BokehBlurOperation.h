@@ -20,8 +20,9 @@
  *		Monique Dewanchand
  */
 
-#ifndef _COM_BokehBokehBlurOperation_h
-#define _COM_BokehBlurOperation_h
+#ifndef __COM_BOKEHBLUROPERATION_H__
+#define __COM_BOKEHBLUROPERATION_H__
+
 #include "COM_NodeOperation.h"
 #include "COM_QualityStepHelper.h"
 
@@ -59,6 +60,9 @@ public:
 
 	void setSize(float size) { this->m_size = size; this->m_sizeavailable = true; }
 	
-	void executeOpenCL(OpenCLDevice *device, MemoryBuffer *outputMemoryBuffer, cl_mem clOutputBuffer, MemoryBuffer **inputMemoryBuffers, list<cl_mem> *clMemToCleanUp, list<cl_kernel> *clKernelsToCleanUp);
+	void executeOpenCL(OpenCLDevice *device,
+	                   MemoryBuffer *outputMemoryBuffer, cl_mem clOutputBuffer,
+	                   MemoryBuffer **inputMemoryBuffers, list<cl_mem> *clMemToCleanUp,
+	                   list<cl_kernel> *clKernelsToCleanUp);
 };
 #endif

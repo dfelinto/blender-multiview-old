@@ -189,7 +189,6 @@ elseif(APPLE)
 		if(WITH_INPUT_NDOF)
 			list(APPEND SRC
 				intern/GHOST_NDOFManagerCocoa.mm
-
 				intern/GHOST_NDOFManagerCocoa.h
 			)
 		endif()
@@ -272,6 +271,9 @@ elseif(UNIX)
 
 	if(WITH_X11_XINPUT)
 		add_definitions(-DWITH_X11_XINPUT)
+		list(APPEND INC_SYS
+			${X11_Xinput_INCLUDE_PATH}
+		)
 	endif()
 
 elseif(WIN32)

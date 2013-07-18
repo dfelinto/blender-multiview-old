@@ -28,16 +28,15 @@ set(INC
 	.
 	intern
 	../blenkernel
-	../blenkernel/intern
 	../blenlib
 	../blenfont
-	../blenloader
 	../makesdna
 	../makesrna
 	../bmesh
 	../render/extern/include
 	../../../intern/elbeem/extern
 	../../../intern/guardedalloc
+	../../../intern/opennl/extern
 )
 
 set(INC_SYS
@@ -63,8 +62,13 @@ set(SRC
 	intern/MOD_fluidsim.c
 	intern/MOD_fluidsim_util.c
 	intern/MOD_hook.c
+	intern/MOD_laplaciansmooth.c
 	intern/MOD_lattice.c
 	intern/MOD_mask.c
+	intern/MOD_meshcache.c
+	intern/MOD_meshcache_mdd.c
+	intern/MOD_meshcache_pc2.c
+	intern/MOD_meshcache_util.c
 	intern/MOD_meshdeform.c
 	intern/MOD_mirror.c
 	intern/MOD_multires.c
@@ -84,7 +88,9 @@ set(SRC
 	intern/MOD_solidify.c
 	intern/MOD_subsurf.c
 	intern/MOD_surface.c
+	intern/MOD_triangulate.c
 	intern/MOD_util.c
+	intern/MOD_uvwarp.c
 	intern/MOD_uvproject.c
 	intern/MOD_warp.c
 	intern/MOD_wave.c
@@ -96,6 +102,7 @@ set(SRC
 	MOD_modifiertypes.h
 	intern/MOD_boolean_util.h
 	intern/MOD_fluidsim_util.h
+	intern/MOD_meshcache_util.h
 	intern/MOD_util.h
 	intern/MOD_weightvg_util.h
 )
@@ -114,13 +121,6 @@ if(WITH_MOD_REMESH)
 	add_definitions(-DWITH_MOD_REMESH)
 	list(APPEND INC
 		../../../intern/dualcon
-	)
-endif()
-
-if(WITH_MOD_DECIMATE)
-	add_definitions(-DWITH_MOD_DECIMATE)
-	list(APPEND INC
-		../../../intern/decimation/extern
 	)
 endif()
 
@@ -143,10 +143,6 @@ endif()
 
 if(WITH_INTERNATIONAL)
 	add_definitions(-DWITH_INTERNATIONAL)
-endif()
-
-if(WITH_OPENMP)
-	add_definitions(-DPARALLEL=1)
 endif()
 
 blender_add_lib(bf_modifiers "${SRC}" "${INC}" "${INC_SYS}")

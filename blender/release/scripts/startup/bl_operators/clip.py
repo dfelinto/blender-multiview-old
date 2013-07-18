@@ -57,7 +57,7 @@ def CLIP_set_viewport_background(context, all_screens, clip, clip_user):
         space_v3d.show_background_images = True
 
     CLIP_spaces_walk(context, all_screens, 'VIEW_3D', 'VIEW_3D',
-                      set_background, clip, clip_user)
+                     set_background, clip, clip_user)
 
 
 def CLIP_camera_for_clip(context, clip):
@@ -329,7 +329,7 @@ object's movement caused by this constraint"""
 
         if not con:
             self.report({'ERROR'},
-                "Motion Tracking constraint to be converted not found")
+                        "Motion Tracking constraint to be converted not found")
 
             return {'CANCELLED'}
 
@@ -341,7 +341,7 @@ object's movement caused by this constraint"""
 
         if not clip:
             self.report({'ERROR'},
-                "Movie clip to use tracking data from isn't set")
+                        "Movie clip to use tracking data from isn't set")
 
             return {'CANCELLED'}
 
@@ -461,9 +461,9 @@ class CLIP_OT_setup_tracking_scene(Operator):
         scene.camera = camob
 
         camob.matrix_local = (Matrix.Translation((7.481, -6.508, 5.344)) *
-            Matrix.Rotation(0.815, 4, 'Z') *
-            Matrix.Rotation(0.011, 4, 'Y') *
-            Matrix.Rotation(1.109, 4, 'X'))
+                              Matrix.Rotation(0.815, 4, 'Z') *
+                              Matrix.Rotation(0.011, 4, 'Y') *
+                              Matrix.Rotation(1.109, 4, 'X'))
 
         return camob
 
@@ -576,25 +576,25 @@ class CLIP_OT_setup_tracking_scene(Operator):
         need_stabilization = False
 
         # create nodes
-        rlayer_fg = self._findOrCreateNode(tree, 'R_LAYERS')
-        rlayer_bg = tree.nodes.new(type='R_LAYERS')
-        composite = self._findOrCreateNode(tree, 'COMPOSITE')
+        rlayer_fg = self._findOrCreateNode(tree, 'CompositorNodeRLayers')
+        rlayer_bg = tree.nodes.new(type='CompositorNodeRLayers')
+        composite = self._findOrCreateNode(tree, 'CompositorNodeComposite')
 
-        movieclip = tree.nodes.new(type='MOVIECLIP')
-        distortion = tree.nodes.new(type='MOVIEDISTORTION')
+        movieclip = tree.nodes.new(type='CompositorNodeMovieClip')
+        distortion = tree.nodes.new(type='CompositorNodeMovieDistortion')
 
         if need_stabilization:
-            stabilize = tree.nodes.new(type='STABILIZE2D')
+            stabilize = tree.nodes.new(type='CompositorNodeStabilize2D')
 
-        scale = tree.nodes.new(type='SCALE')
-        invert = tree.nodes.new(type='INVERT')
-        add_ao = tree.nodes.new(type='MIX_RGB')
-        add_shadow = tree.nodes.new(type='MIX_RGB')
-        mul_shadow = tree.nodes.new(type='MIX_RGB')
-        mul_image = tree.nodes.new(type='MIX_RGB')
-        vector_blur = tree.nodes.new(type='VECBLUR')
-        alphaover = tree.nodes.new(type='ALPHAOVER')
-        viewer = tree.nodes.new(type='VIEWER')
+        scale = tree.nodes.new(type='CompositorNodeScale')
+        invert = tree.nodes.new(type='CompositorNodeInvert')
+        add_ao = tree.nodes.new(type='CompositorNodeMixRGB')
+        add_shadow = tree.nodes.new(type='CompositorNodeMixRGB')
+        mul_shadow = tree.nodes.new(type='CompositorNodeMixRGB')
+        mul_image = tree.nodes.new(type='CompositorNodeMixRGB')
+        vector_blur = tree.nodes.new(type='CompositorNodeVecBlur')
+        alphaover = tree.nodes.new(type='CompositorNodeAlphaOver')
+        viewer = tree.nodes.new(type='CompositorNodeViewer')
 
         # setup nodes
         movieclip.clip = clip
@@ -614,13 +614,17 @@ class CLIP_OT_setup_tracking_scene(Operator):
         rlayer_fg.layer = "Foreground"
 
         add_ao.blend_type = 'ADD'
+        add_ao.show_preview = False
         add_shadow.blend_type = 'ADD'
+        add_shadow.show_preview = False
 
         mul_shadow.blend_type = 'MULTIPLY'
         mul_shadow.inputs["Fac"].default_value = 0.8
+        mul_shadow.show_preview = False
 
         mul_image.blend_type = 'MULTIPLY'
         mul_image.inputs["Fac"].default_value = 0.8
+        mul_image.show_preview = False
 
         vector_blur.factor = 0.75
 
@@ -629,7 +633,7 @@ class CLIP_OT_setup_tracking_scene(Operator):
 
         if need_stabilization:
             tree.links.new(distortion.outputs["Image"],
-                stabilize.inputs["Image"])
+                           stabilize.inputs["Image"])
             tree.links.new(stabilize.outputs["Image"], scale.inputs["Image"])
         else:
             tree.links.new(distortion.outputs["Image"], scale.inputs["Image"])
@@ -711,6 +715,10 @@ class CLIP_OT_setup_tracking_scene(Operator):
 
         # ensure no nodes were creates on position of existing node
         self._offsetNodes(tree)
+
+        scene.render.alpha_mode = 'TRANSPARENT'
+        if scene.cycles:
+            scene.cycles.film_transparent = True
 
     @staticmethod
     def _createMesh(scene, name, vertices, faces):

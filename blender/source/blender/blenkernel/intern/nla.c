@@ -45,6 +45,8 @@
 #include "BLI_string.h"
 #include "BLI_ghash.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_anim_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_sound_types.h"
@@ -264,7 +266,7 @@ NlaTrack *add_nlatrack(AnimData *adt, NlaTrack *prev)
 	
 	/* must have unique name, but we need to seed this */
 	strcpy(nlt->name, "NlaTrack");
-	BLI_uniquename(&adt->nla_tracks, nlt, "NlaTrack", '.', offsetof(NlaTrack, name), sizeof(nlt->name));
+	BLI_uniquename(&adt->nla_tracks, nlt, DATA_("NlaTrack"), '.', offsetof(NlaTrack, name), sizeof(nlt->name));
 	
 	/* return the new track */
 	return nlt;
@@ -423,7 +425,7 @@ static float nlastrip_get_frame_actionclip(NlaStrip *strip, float cframe, short 
 				return strip->actstart;
 			}
 			else {
-				/* - the 'fmod(..., actlength*scale)' is needed to get the repeats working
+				/* - the 'fmod(..., actlength * scale)' is needed to get the repeats working
 				 * - the '/ scale' is needed to ensure that scaling influences the timing within the repeat
 				 */
 				return strip->actend - fmodf(cframe - strip->start, actlength * scale) / scale;
@@ -446,7 +448,7 @@ static float nlastrip_get_frame_actionclip(NlaStrip *strip, float cframe, short 
 				return strip->actend;
 			}
 			else {
-				/* - the 'fmod(..., actlength*scale)' is needed to get the repeats working
+				/* - the 'fmod(..., actlength * scale)' is needed to get the repeats working
 				 * - the '/ scale' is needed to ensure that scaling influences the timing within the repeat
 				 */
 				return strip->actstart + fmodf(cframe - strip->start, actlength * scale) / scale;
@@ -496,12 +498,12 @@ float nlastrip_get_frame(NlaStrip *strip, float cframe, short mode)
 		case NLASTRIP_TYPE_CLIP: /* action-clip (default) */
 		default:
 			return nlastrip_get_frame_actionclip(strip, cframe, mode);
-	}	
+	}
 }
 
 
 /* Non clipped mapping for strip-time <-> global time
- *	mode = eNlaTime_ConvertModesp[] -> NLATIME_CONVERT_*
+ *	mode = eNlaTime_ConvertModes -> NLATIME_CONVERT_*
  *
  * Public API method - perform this mapping using the given AnimData block
  * and perform any necessary sanity checks on the value
@@ -764,7 +766,7 @@ void BKE_nlastrips_clear_metas(ListBase *strips, short onlySel, short onlyTemp)
 }
 
 /* Add the given NLA-Strip to the given Meta-Strip, assuming that the
- * strip isn't attached to anyy list of strips 
+ * strip isn't attached to any list of strips
  */
 short BKE_nlameta_add_strip(NlaStrip *mstrip, NlaStrip *strip)
 {
@@ -1113,6 +1115,50 @@ short BKE_nlastrip_within_bounds(NlaStrip *strip, float min, float max)
 	return 1;
 }
 
+
+/* Ensure that strip doesn't overlap those around it after resizing by offsetting those which follow */
+static void nlastrip_fix_resize_overlaps(NlaStrip *strip)
+{
+	/* next strips - do this first, since we're often just getting longer */
+	if (strip->next) {
+		NlaStrip *nls = strip->next;
+		float offset = 0.0f;
+		
+		if (strip->end > nls->start) {
+			/* NOTE: need to ensure we don't have a fractional frame offset, even if that leaves a gap,
+			 * otherwise it will be very hard to get rid of later
+			 */
+			offset = ceilf(strip->end - nls->start);
+			
+			/* apply to times of all strips in this direction */
+			for (; nls; nls = nls->next) {
+				nls->start += offset;
+				nls->end   += offset;
+			}
+		}
+	}
+	
+	/* previous strips - same routine as before */
+	/* NOTE: when strip bounds are recalculated, this is not considered! */
+	if (strip->prev) {
+		NlaStrip *nls = strip->prev;
+		float offset = 0.0f;
+		
+		if (strip->start < nls->end) {
+			/* NOTE: need to ensure we don't have a fractional frame offset, even if that leaves a gap,
+			 * otherwise it will be very hard to get rid of later
+			 */
+			offset = ceilf(nls->end - strip->start);
+			
+			/* apply to times of all strips in this direction */
+			for (; nls; nls = nls->prev) {
+				nls->start -= offset;
+				nls->end   -= offset;
+			}
+		}
+	}
+}
+
 /* Recalculate the start and end frames for the current strip, after changing
  * the extents of the action or the mapping (repeats or scale factor) info
  */
@@ -1136,6 +1182,9 @@ void BKE_nlastrip_recalculate_bounds(NlaStrip *strip)
 	/* adjust endpoint of strip in response to this */
 	if (IS_EQF(mapping, 0.0f) == 0)
 		strip->end = (actlen * mapping) + strip->start;
+	
+	/* make sure we don't overlap our neighbours */
+	nlastrip_fix_resize_overlaps(strip);
 }
 
 /* Is the given NLA-strip the first one to occur for the given AnimData block */
@@ -1162,7 +1211,7 @@ static short nlastrip_is_first(AnimData *adt, NlaStrip *strip)
 			if (ns->start < strip->start)
 				return 0;
 		}
-	}	
+	}
 	
 	/* should be first now */
 	return 1;
@@ -1262,7 +1311,7 @@ void BKE_nlastrip_validate_fcurves(NlaStrip *strip)
 
 /* Sanity Validation ------------------------------------ */
 
-static int nla_editbone_name_check(void *arg, const char *name)
+static bool nla_editbone_name_check(void *arg, const char *name)
 {
 	return BLI_ghash_haskey((GHash *)arg, (void *)name);
 }
@@ -1301,7 +1350,7 @@ void BKE_nlastrip_validate_name(AnimData *adt, NlaStrip *strip)
 	}
 	
 	/* build a hash-table of all the strips in the tracks 
-	 *	- this is easier than iterating over all the tracks+strips hierarchy everytime
+	 *	- this is easier than iterating over all the tracks+strips hierarchy every time
 	 *	  (and probably faster)
 	 */
 	gh = BLI_ghash_str_new("nlastrip_validate_name gh");
@@ -1320,7 +1369,7 @@ void BKE_nlastrip_validate_name(AnimData *adt, NlaStrip *strip)
 	/* if the hash-table has a match for this name, try other names... 
 	 *	- in an extreme case, it might not be able to find a name, but then everything else in Blender would fail too :)
 	 */
-	BLI_uniquename_cb(nla_editbone_name_check, (void *)gh, "NlaStrip", '.', strip->name, sizeof(strip->name));
+	BLI_uniquename_cb(nla_editbone_name_check, (void *)gh, DATA_("NlaStrip"), '.', strip->name, sizeof(strip->name));
 
 	/* free the hash... */
 	BLI_ghash_free(gh, NULL, NULL);
@@ -1447,9 +1496,9 @@ void BKE_nla_validate_state(AnimData *adt)
 			if (strip->extendmode != NLASTRIP_EXTEND_NOTHING) {
 				/* 1) First strip must be set to extend hold, otherwise, stuff before acts dodgy
 				 * 2) Only overwrite extend mode if *not* changing it will most probably result in 
-				 * occlusion problems, which will occur iff
-				 *	- blendmode = REPLACE
-				 *	- all channels the same (this is fiddly to test, so is currently assumed)
+				 * occlusion problems, which will occur if...
+				 * - blendmode = REPLACE
+				 * - all channels the same (this is fiddly to test, so is currently assumed)
 				 *
 				 * Should fix problems such as [#29869]
 				 */
@@ -1491,7 +1540,7 @@ void BKE_nla_action_pushdown(AnimData *adt)
 	/* add a new NLA strip to the track, which references the active action */
 	strip = add_nlastrip_to_stack(adt, adt->action);
 	
-	/* do other necessary work on strip */	
+	/* do other necessary work on strip */
 	if (strip) {
 		/* clear reference to action now that we've pushed it onto the stack */
 		id_us_min(&adt->action->id);
@@ -1545,7 +1594,7 @@ short BKE_nla_tweakmode_enter(AnimData *adt)
 			/* now try to find active strip */
 			activeStrip = BKE_nlastrip_find_active(nlt);
 			break;
-		}	
+		}
 	}
 	
 	/* There are situations where we may have multiple strips selected and we want to enter tweakmode on all 
@@ -1563,7 +1612,7 @@ short BKE_nla_tweakmode_enter(AnimData *adt)
 				activeStrip = BKE_nlastrip_find_active(nlt);
 				break;
 			}
-		}	
+		}
 	}
 	if ((activeTrack) && (activeStrip == NULL)) {
 		/* no active strip in active or last selected track; compromise for first selected (assuming only single)... */
@@ -1632,7 +1681,22 @@ void BKE_nla_tweakmode_exit(AnimData *adt)
 	if ((adt->flag & ADT_NLA_EDIT_ON) == 0)
 		return;
 		
-	/* TODO: need to sync the user-strip with the new state of the action! */
+	/* sync the length of the user-strip with the new state of the action
+	 * but only if the user has explicitly asked for this to happen
+	 * (see [#34645] for things to be careful about)
+	 */
+	if ((adt->actstrip) && (adt->actstrip->flag & NLASTRIP_FLAG_SYNC_LENGTH)) {
+		strip = adt->actstrip;
+		
+		/* must be action-clip only (transitions don't have scale) */
+		if ((strip->type == NLASTRIP_TYPE_CLIP) && (strip->act)) {
+			/* recalculate the length of the action */
+			calc_action_range(strip->act, &strip->actstart, &strip->actend, 0);
+			
+			/* adjust the strip extents in response to this */
+			BKE_nlastrip_recalculate_bounds(strip);
+		}
+	}
 
 	/* for all Tracks, clear the 'disabled' flag
 	 * for all Strips, clear the 'tweak-user' flag
@@ -1660,7 +1724,7 @@ void BKE_nla_tweakmode_exit(AnimData *adt)
 
 /* Baking Tools ------------------------------------------- */
 
-static void UNUSED_FUNCTION(BKE_nla_bake) (Scene * scene, ID *UNUSED(id), AnimData * adt, int UNUSED(flag))
+static void UNUSED_FUNCTION(BKE_nla_bake) (Scene *scene, ID *UNUSED(id), AnimData *adt, int UNUSED(flag))
 {
 
 	/* verify that data is valid 

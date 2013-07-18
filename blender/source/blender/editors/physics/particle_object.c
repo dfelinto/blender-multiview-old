@@ -49,6 +49,7 @@
 #include "BKE_main.h"
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
+#include "BKE_report.h"
 
 
 #include "RNA_access.h"
@@ -98,21 +99,26 @@ void OBJECT_OT_particle_system_add(wmOperatorType *ot)
 
 static int particle_system_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= ED_object_context(C);
+	Object *ob = ED_object_context(C);
 	Scene *scene = CTX_data_scene(C);
-	int mode_orig = ob->mode;
+	int mode_orig;
+
 	if (!scene || !ob)
 		return OPERATOR_CANCELLED;
 
+	mode_orig = ob->mode;
 	object_remove_particle_system(scene, ob);
 
 	/* possible this isn't the active object
 	 * object_remove_particle_system() clears the mode on the last psys
-	 * */
-	if (mode_orig & OB_MODE_PARTICLE_EDIT)
-		if ((ob->mode & OB_MODE_PARTICLE_EDIT)==0)
-			if (scene->basact && scene->basact->object==ob)
+	 */
+	if (mode_orig & OB_MODE_PARTICLE_EDIT) {
+		if ((ob->mode & OB_MODE_PARTICLE_EDIT) == 0) {
+			if (scene->basact && scene->basact->object == ob) {
 				WM_event_add_notifier(C, NC_SCENE|ND_MODE|NS_MODE_OBJECT, NULL);
+			}
+		}
+	}
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
 	WM_event_add_notifier(C, NC_OBJECT|ND_POINTCACHE, ob);
@@ -145,7 +151,6 @@ static int psys_poll(bContext *C)
 
 static int new_particle_settings_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Scene *scene = CTX_data_scene(C);
 	Main *bmain= CTX_data_main(C);
 	ParticleSystem *psys;
 	ParticleSettings *part = NULL;
@@ -171,7 +176,7 @@ static int new_particle_settings_exec(bContext *C, wmOperator *UNUSED(op))
 
 	psys_check_boid_data(psys);
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -199,7 +204,6 @@ void PARTICLE_OT_new(wmOperatorType *ot)
 static int new_particle_target_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= ptr.data;
 	Object *ob = ptr.id.data;
@@ -220,7 +224,7 @@ static int new_particle_target_exec(bContext *C, wmOperator *UNUSED(op))
 
 	BLI_addtail(&psys->targets, pt);
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -245,7 +249,6 @@ void PARTICLE_OT_new_target(wmOperatorType *ot)
 static int remove_particle_target_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = CTX_data_scene(C);
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= ptr.data;
 	Object *ob = ptr.id.data;
@@ -269,7 +272,7 @@ static int remove_particle_target_exec(bContext *C, wmOperator *UNUSED(op))
 	if (pt)
 		pt->flag |= PTARGET_CURRENT;
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -307,7 +310,7 @@ static int target_move_up_exec(bContext *C, wmOperator *UNUSED(op))
 	for (; pt; pt=pt->next) {
 		if (pt->flag & PTARGET_CURRENT && pt->prev) {
 			BLI_remlink(&psys->targets, pt);
-			BLI_insertlink(&psys->targets, pt->prev->prev, pt);
+			BLI_insertlinkbefore(&psys->targets, pt->prev, pt);
 
 			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -345,7 +348,7 @@ static int target_move_down_exec(bContext *C, wmOperator *UNUSED(op))
 	for (; pt; pt=pt->next) {
 		if (pt->flag & PTARGET_CURRENT && pt->next) {
 			BLI_remlink(&psys->targets, pt);
-			BLI_insertlink(&psys->targets, pt->next, pt);
+			BLI_insertlinkafter(&psys->targets, pt->next, pt);
 
 			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, ob);
@@ -384,7 +387,7 @@ static int dupliob_move_up_exec(bContext *C, wmOperator *UNUSED(op))
 	for (dw=part->dupliweights.first; dw; dw=dw->next) {
 		if (dw->flag & PART_DUPLIW_CURRENT && dw->prev) {
 			BLI_remlink(&part->dupliweights, dw);
-			BLI_insertlink(&part->dupliweights, dw->prev->prev, dw);
+			BLI_insertlinkbefore(&part->dupliweights, dw->prev, dw);
 
 			WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, NULL);
 			break;
@@ -506,7 +509,7 @@ static int dupliob_move_down_exec(bContext *C, wmOperator *UNUSED(op))
 	for (dw=part->dupliweights.first; dw; dw=dw->next) {
 		if (dw->flag & PART_DUPLIW_CURRENT && dw->next) {
 			BLI_remlink(&part->dupliweights, dw);
-			BLI_insertlink(&part->dupliweights, dw->next, dw);
+			BLI_insertlinkafter(&part->dupliweights, dw->next, dw);
 
 			WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE, NULL);
 			break;
@@ -620,7 +623,7 @@ void PARTICLE_OT_disconnect_hair(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "all", 0, "All hair", "Disconnect all hair systems from the emitter mesh");
 }
 
-static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
+static int connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 {
 	ParticleSystemModifierData *psmd = psys_get_modifier(ob, psys);
 	ParticleData *pa;
@@ -630,34 +633,41 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	HairKey *key;
 	BVHTreeFromMesh bvhtree= {NULL};
 	BVHTreeNearest nearest;
-	MFace *mface;
+	MFace *mface, *mf;
+	MVert *mvert;
 	DerivedMesh *dm = NULL;
 	int numverts;
 	int i, k;
 	float hairmat[4][4], imat[4][4];
 	float v[4][3], vec[3];
 
-	if (!psys || !psys->part || psys->part->type != PART_HAIR)
-		return;
+	if (!psys || !psys->part || psys->part->type != PART_HAIR || !psmd->dm)
+		return FALSE;
 	
 	edit= psys->edit;
 	point=  edit ? edit->points : NULL;
 	
-	if (psmd->dm->deformedOnly)
+	if (psmd->dm->deformedOnly) {
 		/* we don't want to mess up psmd->dm when converting to global coordinates below */
-		dm= CDDM_copy(psmd->dm);
-	else
-		dm= mesh_get_derived_deform(scene, ob, CD_MASK_BAREMESH);
+		dm = psmd->dm;
+	}
+	else {
+		dm = mesh_get_derived_deform(scene, ob, CD_MASK_BAREMESH);
+	}
+	/* don't modify the original vertices */
+	dm = CDDM_copy(dm);
 
 	/* BMESH_ONLY, deform dm may not have tessface */
 	DM_ensure_tessface(dm);
 
+	numverts = dm->getNumVerts(dm);
 
-	numverts = dm->getNumVerts (dm);
+	mvert = dm->getVertArray(dm);
+	mface = dm->getTessFaceArray(dm);
 
 	/* convert to global coordinates */
 	for (i=0; i<numverts; i++)
-		mul_m4_v3(ob->obmat, CDDM_get_vert(dm, i)->co);
+		mul_m4_v3(ob->obmat, mvert[i].co);
 
 	bvhtree_from_mesh_faces(&bvhtree, dm, 0.0, 2, 6);
 
@@ -675,13 +685,13 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 			continue;
 		}
 
-		mface = CDDM_get_tessface(dm, nearest.index);
+		mf = &mface[nearest.index];
 
-		copy_v3_v3(v[0], CDDM_get_vert(dm, mface->v1)->co);
-		copy_v3_v3(v[1], CDDM_get_vert(dm, mface->v2)->co);
-		copy_v3_v3(v[2], CDDM_get_vert(dm, mface->v3)->co);
-		if (mface->v4) {
-			copy_v3_v3(v[3], CDDM_get_vert(dm, mface->v4)->co);
+		copy_v3_v3(v[0], mvert[mf->v1].co);
+		copy_v3_v3(v[1], mvert[mf->v2].co);
+		copy_v3_v3(v[2], mvert[mf->v3].co);
+		if (mf->v4) {
+			copy_v3_v3(v[3], mvert[mf->v4].co);
 			interp_weights_poly_v3(pa->fuv, v, 4, nearest.co);
 		}
 		else
@@ -719,6 +729,8 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	psys->flag &= ~PSYS_GLOBAL_HAIR;
 
 	PE_update_object(scene, ob, 0);
+
+	return TRUE;
 }
 
 static int connect_hair_exec(bContext *C, wmOperator *op)
@@ -728,18 +740,24 @@ static int connect_hair_exec(bContext *C, wmOperator *op)
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= NULL;
 	int all = RNA_boolean_get(op->ptr, "all");
+	int any_connected = FALSE;
 
 	if (!ob)
 		return OPERATOR_CANCELLED;
 
 	if (all) {
 		for (psys=ob->particlesystem.first; psys; psys=psys->next) {
-			connect_hair(scene, ob, psys);
+			any_connected |= connect_hair(scene, ob, psys);
 		}
 	}
 	else {
 		psys = ptr.data;
-		connect_hair(scene, ob, psys);
+		any_connected |= connect_hair(scene, ob, psys);
+	}
+
+	if (!any_connected) {
+		BKE_report(op->reports, RPT_ERROR, "Can't disconnect hair if particle system modifier is disabled");
+		return OPERATOR_CANCELLED;
 	}
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);

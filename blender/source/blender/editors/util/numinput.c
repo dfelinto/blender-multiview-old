@@ -130,6 +130,9 @@ short hasNumInput(NumInput *n)
 	return 0;
 }
 
+/**
+ * \warning \a vec must be set beforehand otherwise we risk uninitialized vars.
+ */
 void applyNumInput(NumInput *n, float *vec)
 {
 	short i, j;
@@ -160,7 +163,7 @@ void applyNumInput(NumInput *n, float *vec)
 	}
 }
 
-char handleNumInput(NumInput *n, wmEvent *event)
+char handleNumInput(NumInput *n, const wmEvent *event)
 {
 	float Val = 0;
 	short idx = n->idx, idx_max = n->idx_max;
@@ -279,7 +282,9 @@ char handleNumInput(NumInput *n, wmEvent *event)
 				if (!n->ctrl[idx])
 					n->ctrl[idx] = 1;
 
-				if (fabsf(n->val[idx]) > 9999999.0f) ;
+				if (fabsf(n->val[idx]) > 9999999.0f) {
+					/* pass */
+				}
 				else if (n->ctrl[idx] == 1) {
 					n->val[idx] *= 10;
 					n->val[idx] += Val;

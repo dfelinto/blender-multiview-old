@@ -29,14 +29,14 @@
 
 /* **************** OUTPUT ******************** */
 
-static bNodeSocketTemplate sh_node_output_material_in[]= {
+static bNodeSocketTemplate sh_node_output_material_in[] = {
 	{	SOCK_SHADER, 1, N_("Surface")},
 	{	SOCK_SHADER, 1, N_("Volume")},
 	{	SOCK_FLOAT, 1, N_("Displacement"),	0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
 	{	-1, 0, ""	}
 };
 
-static int node_shader_gpu_output_material(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack *in, GPUNodeStack *out)
+static int node_shader_gpu_output_material(GPUMaterial *mat, bNode *UNUSED(node), bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
 	GPUNodeLink *outlink;
 
@@ -48,21 +48,19 @@ static int node_shader_gpu_output_material(GPUMaterial *mat, bNode *UNUSED(node)
 
 
 /* node type definition */
-void register_node_type_sh_output_material(bNodeTreeType *ttype)
+void register_node_type_sh_output_material(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_OUTPUT_MATERIAL, "Material Output", NODE_CLASS_OUTPUT, 0);
+	sh_node_type_base(&ntype, SH_NODE_OUTPUT_MATERIAL, "Material Output", NODE_CLASS_OUTPUT, 0);
 	node_type_compatibility(&ntype, NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_output_material_in, NULL);
-	node_type_size(&ntype, 120, 60, 200);
 	node_type_init(&ntype, NULL);
 	node_type_storage(&ntype, "", NULL, NULL);
-	node_type_exec(&ntype, NULL);
 	node_type_gpu(&ntype, node_shader_gpu_output_material);
 
 	/* Do not allow muting output node. */
-	node_type_internal_connect(&ntype, NULL);
+	node_type_internal_links(&ntype, NULL);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

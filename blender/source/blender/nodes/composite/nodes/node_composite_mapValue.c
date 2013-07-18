@@ -33,65 +33,28 @@
 #include "node_composite_util.h"
 
 /* **************** MAP VALUE ******************** */
-static bNodeSocketTemplate cmp_node_map_value_in[]= {
+static bNodeSocketTemplate cmp_node_map_value_in[] = {
 	{	SOCK_FLOAT, 1, N_("Value"),			1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
-static bNodeSocketTemplate cmp_node_map_value_out[]= {
+static bNodeSocketTemplate cmp_node_map_value_out[] = {
 	{	SOCK_FLOAT, 0, N_("Value")},
 	{	-1, 0, ""	}
 };
 
-static void do_map_value(bNode *node, float *out, float *src)
+static void node_composit_init_map_value(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	TexMapping *texmap= node->storage;
-	
-	out[0]= (src[0] + texmap->loc[0])*texmap->size[0];
-	if (texmap->flag & TEXMAP_CLIP_MIN)
-		if (out[0]<texmap->min[0])
-			out[0]= texmap->min[0];
-	if (texmap->flag & TEXMAP_CLIP_MAX)
-		if (out[0]>texmap->max[0])
-			out[0]= texmap->max[0];
+	node->storage = add_tex_mapping();
 }
 
-static void node_composit_exec_map_value(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
-{
-	/* stack order in: valbuf */
-	/* stack order out: valbuf */
-	if (out[0]->hasoutput==0) return;
-	
-	/* input no image? then only value operation */
-	if (in[0]->data==NULL) {
-		do_map_value(node, out[0]->vec, in[0]->vec);
-	}
-	else {
-		/* make output size of input image */
-		CompBuf *cbuf= in[0]->data;
-		CompBuf *stackbuf= alloc_compbuf(cbuf->x, cbuf->y, CB_VAL, 1); /* allocs */
-		
-		composit1_pixel_processor(node, stackbuf, in[0]->data, in[0]->vec, do_map_value, CB_VAL);
-		
-		out[0]->data= stackbuf;
-	}
-}
-
-
-static void node_composit_init_map_value(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
-{
-	node->storage= add_tex_mapping();
-}
-
-void register_node_type_cmp_map_value(bNodeTreeType *ttype)
+void register_node_type_cmp_map_value(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, CMP_NODE_MAP_VALUE, "Map Value", NODE_CLASS_OP_VECTOR, NODE_OPTIONS);
+	cmp_node_type_base(&ntype, CMP_NODE_MAP_VALUE, "Map Value", NODE_CLASS_OP_VECTOR, 0);
 	node_type_socket_templates(&ntype, cmp_node_map_value_in, cmp_node_map_value_out);
-	node_type_size(&ntype, 100, 60, 150);
 	node_type_init(&ntype, node_composit_init_map_value);
 	node_type_storage(&ntype, "TexMapping", node_free_standard_storage, node_copy_standard_storage);
-	node_type_exec(&ntype, node_composit_exec_map_value);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

@@ -23,6 +23,8 @@
 #include "device.h"
 #include "device_intern.h"
 
+#include "buffers.h"
+
 #include "util_cuda.h"
 #include "util_debug.h"
 #include "util_map.h"
@@ -37,11 +39,13 @@ CCL_NAMESPACE_BEGIN
 class CUDADevice : public Device
 {
 public:
+	TaskPool task_pool;
 	CUdevice cuDevice;
 	CUcontext cuContext;
 	CUmodule cuModule;
 	map<device_ptr, bool> tex_interp_map;
 	int cuDevId;
+	bool first_error;
 
 	struct PixelMem {
 		GLuint cuPBO;
@@ -57,7 +61,7 @@ public:
 		return (CUdeviceptr)mem;
 	}
 
-	const char *cuda_error_string(CUresult result)
+	static const char *cuda_error_string(CUresult result)
 	{
 		switch(result) {
 			case CUDA_SUCCESS: return "No errors";
@@ -106,11 +110,19 @@ public:
 		}
 	}
 
-#ifdef NDEBUG
+/*#ifdef NDEBUG
 #define cuda_abort()
 #else
 #define cuda_abort() abort()
-#endif
+#endif*/
+	void cuda_error_documentation()
+	{
+		if(first_error) {
+			fprintf(stderr, "\nRefer to the Cycles GPU rendering documentation for possible solutions:\n");
+			fprintf(stderr, "http://wiki.blender.org/index.php/Doc:2.6/Manual/Render/Cycles/GPU_Rendering\n\n");
+			first_error = false;
+		}
+	}
 
 #define cuda_assert(stmt) \
 	{ \
@@ -121,27 +133,32 @@ public:
 			if(error_msg == "") \
 				error_msg = message; \
 			fprintf(stderr, "%s\n", message.c_str()); \
-			cuda_abort(); \
+			/*cuda_abort();*/ \
+			cuda_error_documentation(); \
 		} \
 	}
 
-	bool cuda_error(CUresult result)
+	bool cuda_error_(CUresult result, const string& stmt)
 	{
 		if(result == CUDA_SUCCESS)
 			return false;
 
-		string message = string_printf("CUDA error: %s", cuda_error_string(result));
+		string message = string_printf("CUDA error at %s: %s", stmt.c_str(), cuda_error_string(result));
 		if(error_msg == "")
 			error_msg = message;
 		fprintf(stderr, "%s\n", message.c_str());
+		cuda_error_documentation();
 		return true;
 	}
 
-	void cuda_error(const string& message)
+#define cuda_error(stmt) cuda_error_(stmt, #stmt)
+
+	void cuda_error_message(const string& message)
 	{
 		if(error_msg == "")
 			error_msg = message;
 		fprintf(stderr, "%s\n", message.c_str());
+		cuda_error_documentation();
 	}
 
 	void cuda_push_context()
@@ -154,8 +171,9 @@ public:
 		cuda_assert(cuCtxSetCurrent(NULL));
 	}
 
-	CUDADevice(DeviceInfo& info, bool background_)
+	CUDADevice(DeviceInfo& info, Stats &stats, bool background_) : Device(stats)
 	{
+		first_error = true;
 		background = background_;
 
 		cuDevId = info.num;
@@ -184,7 +202,7 @@ public:
 			}
 		}
 
-		if(cuda_error(result))
+		if(cuda_error_(result, "cuCtxCreate"))
 			return;
 
 		cuda_pop_context();
@@ -192,6 +210,8 @@ public:
 
 	~CUDADevice()
 	{
+		task_pool.stop();
+
 		cuda_push_context();
 		cuda_assert(cuCtxDetach(cuContext))
 	}
@@ -202,8 +222,8 @@ public:
 			int major, minor;
 			cuDeviceComputeCapability(&major, &minor, cuDevId);
 
-			if(major <= 1 && minor <= 2) {
-				cuda_error(string_printf("CUDA device supported only with compute capability 1.3 or up, found %d.%d.", major, minor));
+			if(major < 2) {
+				cuda_error_message(string_printf("CUDA device supported only with compute capability 2.0 or up, found %d.%d.", major, minor));
 				return false;
 			}
 		}
@@ -233,18 +253,21 @@ public:
 		if(path_exists(cubin))
 			return cubin;
 
-#if defined(WITH_CUDA_BINARIES) && defined(_WIN32)
-		if(major <= 1 && minor <= 2)
-			cuda_error(string_printf("CUDA device supported only compute capability 1.3 or up, found %d.%d.", major, minor));
-		else
-			cuda_error(string_printf("CUDA binary kernel for this graphics card compute capability (%d.%d) not found.", major, minor));
-		return "";
-#else
+#ifdef _WIN32
+		if(cuHavePrecompiledKernels()) {
+			if(major < 2)
+				cuda_error_message(string_printf("CUDA device requires compute capability 2.0 or up, found %d.%d. Your GPU is not supported.", major, minor));
+			else
+				cuda_error_message(string_printf("CUDA binary kernel for this graphics card compute capability (%d.%d) not found.", major, minor));
+			return "";
+		}
+#endif
+
 		/* if not, find CUDA compiler */
 		string nvcc = cuCompilerPath();
 
 		if(nvcc == "") {
-			cuda_error("CUDA nvcc compiler not found. Install CUDA toolkit in default location.");
+			cuda_error_message("CUDA nvcc compiler not found. Install CUDA toolkit in default location.");
 			return "";
 		}
 
@@ -264,20 +287,19 @@ public:
 			nvcc.c_str(), major, minor, machine, kernel.c_str(), cubin.c_str(), maxreg, include.c_str());
 
 		if(system(command.c_str()) == -1) {
-			cuda_error("Failed to execute compilation command, see console for details.");
+			cuda_error_message("Failed to execute compilation command, see console for details.");
 			return "";
 		}
 
 		/* verify if compilation succeeded */
 		if(!path_exists(cubin)) {
-			cuda_error("CUDA kernel compilation failed, see console for details.");
+			cuda_error_message("CUDA kernel compilation failed, see console for details.");
 			return "";
 		}
 
 		printf("Kernel compilation finished in %.2lfs.\n", time_dt() - starttime);
 
 		return cubin;
-#endif
 	}
 
 	bool load_kernels(bool experimental)
@@ -285,7 +307,8 @@ public:
 		/* check if cuda init succeeded */
 		if(cuContext == 0)
 			return false;
-
+		
+		/* check if GPU is supported with current feature set */
 		if(!support_device(experimental))
 			return false;
 
@@ -299,8 +322,8 @@ public:
 		cuda_push_context();
 
 		CUresult result = cuModuleLoad(&cuModule, cubin.c_str());
-		if(cuda_error(result))
-			cuda_error(string_printf("Failed loading CUDA kernel %s.", cubin.c_str()));
+		if(cuda_error_(result, "cuModuleLoad"))
+			cuda_error_message(string_printf("Failed loading CUDA kernel %s.", cubin.c_str()));
 
 		cuda_pop_context();
 
@@ -311,15 +334,18 @@ public:
 	{
 		cuda_push_context();
 		CUdeviceptr device_pointer;
-		cuda_assert(cuMemAlloc(&device_pointer, mem.memory_size()))
+		size_t size = mem.memory_size();
+		cuda_assert(cuMemAlloc(&device_pointer, size))
 		mem.device_pointer = (device_ptr)device_pointer;
+		stats.mem_alloc(size);
 		cuda_pop_context();
 	}
 
 	void mem_copy_to(device_memory& mem)
 	{
 		cuda_push_context();
-		cuda_assert(cuMemcpyHtoD(cuda_device_ptr(mem.device_pointer), (void*)mem.data_pointer, mem.memory_size()))
+		if(mem.device_pointer)
+			cuda_assert(cuMemcpyHtoD(cuda_device_ptr(mem.device_pointer), (void*)mem.data_pointer, mem.memory_size()))
 		cuda_pop_context();
 	}
 
@@ -329,8 +355,13 @@ public:
 		size_t size = elem*w*h;
 
 		cuda_push_context();
-		cuda_assert(cuMemcpyDtoH((uchar*)mem.data_pointer + offset,
-			(CUdeviceptr)((uchar*)mem.device_pointer + offset), size))
+		if(mem.device_pointer) {
+			cuda_assert(cuMemcpyDtoH((uchar*)mem.data_pointer + offset,
+				(CUdeviceptr)((uchar*)mem.device_pointer + offset), size))
+		}
+		else {
+			memset((char*)mem.data_pointer + offset, 0, size);
+		}
 		cuda_pop_context();
 	}
 
@@ -339,7 +370,8 @@ public:
 		memset((void*)mem.data_pointer, 0, mem.memory_size());
 
 		cuda_push_context();
-		cuda_assert(cuMemsetD8(cuda_device_ptr(mem.device_pointer), 0, mem.memory_size()))
+		if(mem.device_pointer)
+			cuda_assert(cuMemsetD8(cuda_device_ptr(mem.device_pointer), 0, mem.memory_size()))
 		cuda_pop_context();
 	}
 
@@ -351,6 +383,8 @@ public:
 			cuda_pop_context();
 
 			mem.device_pointer = 0;
+
+			stats.mem_free(mem.memory_size());
 		}
 	}
 
@@ -381,13 +415,18 @@ public:
 			default: assert(0); return;
 		}
 
-		CUtexref texref;
+		CUtexref texref = NULL;
 
 		cuda_push_context();
 		cuda_assert(cuModuleGetTexRef(&texref, cuModule, name))
 
+		if(!texref) {
+			cuda_pop_context();
+			return;
+		}
+
 		if(interpolation) {
-			CUarray handle;
+			CUarray handle = NULL;
 			CUDA_ARRAY_DESCRIPTOR desc;
 
 			desc.Width = mem.data_width;
@@ -396,6 +435,11 @@ public:
 			desc.NumChannels = mem.data_elements;
 
 			cuda_assert(cuArrayCreate(&handle, &desc))
+
+			if(!handle) {
+				cuda_pop_context();
+				return;
+			}
 
 			if(mem.data_height > 1) {
 				CUDA_MEMCPY2D param;
@@ -419,6 +463,8 @@ public:
 			cuda_assert(cuTexRefSetFlags(texref, CU_TRSF_NORMALIZED_COORDINATES))
 
 			mem.device_pointer = (device_ptr)handle;
+
+			stats.mem_alloc(size);
 		}
 		else {
 			cuda_pop_context();
@@ -458,6 +504,8 @@ public:
 
 				tex_interp_map.erase(tex_interp_map.find(mem.device_pointer));
 				mem.device_pointer = 0;
+
+				stats.mem_free(mem.memory_size());
 			}
 			else {
 				tex_interp_map.erase(tex_interp_map.find(mem.device_pointer));
@@ -466,13 +514,16 @@ public:
 		}
 	}
 
-	void path_trace(DeviceTask& task)
+	void path_trace(RenderTile& rtile, int sample)
 	{
+		if(have_error())
+			return;
+
 		cuda_push_context();
 
 		CUfunction cuPathTrace;
-		CUdeviceptr d_buffer = cuda_device_ptr(task.buffer);
-		CUdeviceptr d_rng_state = cuda_device_ptr(task.rng_state);
+		CUdeviceptr d_buffer = cuda_device_ptr(rtile.buffer);
+		CUdeviceptr d_rng_state = cuda_device_ptr(rtile.rng_state);
 
 		/* get kernel function */
 		cuda_assert(cuModuleGetFunction(&cuPathTrace, cuModule, "kernel_cuda_path_trace"))
@@ -486,29 +537,28 @@ public:
 		cuda_assert(cuParamSetv(cuPathTrace, offset, &d_rng_state, sizeof(d_rng_state)))
 		offset += sizeof(d_rng_state);
 
-		int sample = task.sample;
 		offset = align_up(offset, __alignof(sample));
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.sample))
-		offset += sizeof(task.sample);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, sample))
+		offset += sizeof(sample);
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.x))
-		offset += sizeof(task.x);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, rtile.x))
+		offset += sizeof(rtile.x);
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.y))
-		offset += sizeof(task.y);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, rtile.y))
+		offset += sizeof(rtile.y);
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.w))
-		offset += sizeof(task.w);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, rtile.w))
+		offset += sizeof(rtile.w);
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.h))
-		offset += sizeof(task.h);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, rtile.h))
+		offset += sizeof(rtile.h);
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.offset))
-		offset += sizeof(task.offset);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, rtile.offset))
+		offset += sizeof(rtile.offset);
 
-		cuda_assert(cuParamSeti(cuPathTrace, offset, task.stride))
-		offset += sizeof(task.stride);
+		cuda_assert(cuParamSeti(cuPathTrace, offset, rtile.stride))
+		offset += sizeof(rtile.stride);
 
 		cuda_assert(cuParamSetSize(cuPathTrace, offset))
 
@@ -520,23 +570,28 @@ public:
 		int xthreads = 8;
 		int ythreads = 8;
 #endif
-		int xblocks = (task.w + xthreads - 1)/xthreads;
-		int yblocks = (task.h + ythreads - 1)/ythreads;
+		int xblocks = (rtile.w + xthreads - 1)/xthreads;
+		int yblocks = (rtile.h + ythreads - 1)/ythreads;
 
 		cuda_assert(cuFuncSetCacheConfig(cuPathTrace, CU_FUNC_CACHE_PREFER_L1))
 		cuda_assert(cuFuncSetBlockShape(cuPathTrace, xthreads, ythreads, 1))
 		cuda_assert(cuLaunchGrid(cuPathTrace, xblocks, yblocks))
 
+		cuda_assert(cuCtxSynchronize())
+
 		cuda_pop_context();
 	}
 
-	void tonemap(DeviceTask& task)
+	void tonemap(DeviceTask& task, device_ptr buffer, device_ptr rgba)
 	{
+		if(have_error())
+			return;
+
 		cuda_push_context();
 
 		CUfunction cuFilmConvert;
-		CUdeviceptr d_rgba = map_pixels(task.rgba);
-		CUdeviceptr d_buffer = cuda_device_ptr(task.buffer);
+		CUdeviceptr d_rgba = map_pixels(rgba);
+		CUdeviceptr d_buffer = cuda_device_ptr(buffer);
 
 		/* get kernel function */
 		cuda_assert(cuModuleGetFunction(&cuFilmConvert, cuModule, "kernel_cuda_tonemap"))
@@ -555,9 +610,6 @@ public:
 
 		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.sample))
 		offset += sizeof(task.sample);
-
-		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.resolution))
-		offset += sizeof(task.resolution);
 
 		cuda_assert(cuParamSeti(cuFilmConvert, offset, task.x))
 		offset += sizeof(task.x);
@@ -601,6 +653,9 @@ public:
 
 	void shader(DeviceTask& task)
 	{
+		if(have_error())
+			return;
+
 		cuda_push_context();
 
 		CUfunction cuDisplace;
@@ -695,11 +750,13 @@ public:
 			
 			CUresult result = cuGraphicsGLRegisterBuffer(&pmem.cuPBOresource, pmem.cuPBO, CU_GRAPHICS_MAP_RESOURCE_FLAGS_NONE);
 
-			if(!cuda_error(result)) {
+			if(result == CUDA_SUCCESS) {
 				cuda_pop_context();
 
 				mem.device_pointer = pmem.cuTexId;
 				pixel_mem_map[mem.device_pointer] = pmem;
+
+				stats.mem_alloc(mem.memory_size());
 
 				return;
 			}
@@ -755,6 +812,8 @@ public:
 
 				pixel_mem_map.erase(pixel_mem_map.find(mem.device_pointer));
 				mem.device_pointer = 0;
+
+				stats.mem_free(mem.memory_size());
 
 				return;
 			}
@@ -820,43 +879,98 @@ public:
 		Device::draw_pixels(mem, y, w, h, dy, width, height, transparent);
 	}
 
+	void thread_run(DeviceTask *task)
+	{
+		if(task->type == DeviceTask::PATH_TRACE) {
+			RenderTile tile;
+			
+			/* keep rendering tiles until done */
+			while(task->acquire_tile(this, tile)) {
+				int start_sample = tile.start_sample;
+				int end_sample = tile.start_sample + tile.num_samples;
+
+				for(int sample = start_sample; sample < end_sample; sample++) {
+					if (task->get_cancel()) {
+						if(task->need_finish_queue == false)
+							break;
+					}
+
+					path_trace(tile, sample);
+
+					tile.sample = sample + 1;
+
+					task->update_progress(tile);
+				}
+
+				task->release_tile(tile);
+			}
+		}
+		else if(task->type == DeviceTask::SHADER) {
+			shader(*task);
+
+			cuda_push_context();
+			cuda_assert(cuCtxSynchronize())
+			cuda_pop_context();
+		}
+	}
+
+	class CUDADeviceTask : public DeviceTask {
+	public:
+		CUDADeviceTask(CUDADevice *device, DeviceTask& task)
+		: DeviceTask(task)
+		{
+			run = function_bind(&CUDADevice::thread_run, device, this);
+		}
+	};
+
 	void task_add(DeviceTask& task)
 	{
-		if(task.type == DeviceTask::TONEMAP)
-			tonemap(task);
-		else if(task.type == DeviceTask::PATH_TRACE)
-			path_trace(task);
-		else if(task.type == DeviceTask::SHADER)
-			shader(task);
+		if(task.type == DeviceTask::TONEMAP) {
+			/* must be done in main thread due to opengl access */
+			tonemap(task, task.buffer, task.rgba);
+
+			cuda_push_context();
+			cuda_assert(cuCtxSynchronize())
+			cuda_pop_context();
+		}
+		else {
+			task_pool.push(new CUDADeviceTask(this, task));
+		}
 	}
 
 	void task_wait()
 	{
-		cuda_push_context();
-
-		cuda_assert(cuCtxSynchronize())
-
-		cuda_pop_context();
+		task_pool.wait_work();
 	}
 
 	void task_cancel()
 	{
+		task_pool.cancel();
 	}
 };
 
-Device *device_cuda_create(DeviceInfo& info, bool background)
+Device *device_cuda_create(DeviceInfo& info, Stats &stats, bool background)
 {
-	return new CUDADevice(info, background);
+	return new CUDADevice(info, stats, background);
 }
 
 void device_cuda_info(vector<DeviceInfo>& devices)
 {
+	CUresult result;
 	int count = 0;
 
-	if(cuInit(0) != CUDA_SUCCESS)
+	result = cuInit(0);
+	if(result != CUDA_SUCCESS) {
+		if(result != CUDA_ERROR_NO_DEVICE)
+			fprintf(stderr, "CUDA cuInit: %s\n", CUDADevice::cuda_error_string(result));
 		return;
-	if(cuDeviceGetCount(&count) != CUDA_SUCCESS)
+	}
+
+	result = cuDeviceGetCount(&count);
+	if(result != CUDA_SUCCESS) {
+		fprintf(stderr, "CUDA cuDeviceGetCount: %s\n", CUDADevice::cuda_error_string(result));
 		return;
+	}
 	
 	vector<DeviceInfo> display_devices;
 	

@@ -37,15 +37,19 @@ class AttributeRequestSet;
 class Background;
 class Camera;
 class Device;
+class DeviceInfo;
 class Film;
-class Filter;
 class Integrator;
 class Light;
 class LightManager;
+class LookupTables;
 class Mesh;
 class MeshManager;
 class Object;
 class ObjectManager;
+class ParticleSystemManager;
+class ParticleSystem;
+class CurveSystemManager;
 class Shader;
 class ShaderManager;
 class Progress;
@@ -58,6 +62,7 @@ public:
 	device_vector<float4> bvh_nodes;
 	device_vector<uint> object_node;
 	device_vector<float4> tri_woop;
+	device_vector<uint> prim_segment;
 	device_vector<uint> prim_visibility;
 	device_vector<uint> prim_index;
 	device_vector<uint> prim_object;
@@ -68,8 +73,12 @@ public:
 	device_vector<float4> tri_vindex;
 	device_vector<float4> tri_verts;
 
+	device_vector<float4> curves;
+	device_vector<float4> curve_keys;
+
 	/* objects */
 	device_vector<float4> objects;
+	device_vector<float4> objects_vector;
 
 	/* attributes */
 	device_vector<uint4> attributes_map;
@@ -90,15 +99,15 @@ public:
 	device_vector<uint> shader_flag;
 	device_vector<uint> object_flag;
 
-	/* filter */
-	device_vector<float> filter_table;
+	/* lookup tables */
+	device_vector<float> lookup_table;
 
 	/* integrator */
 	device_vector<uint> sobol_directions;
 
 	/* images */
-	device_vector<uchar4> tex_image[TEX_NUM_IMAGES];
-	device_vector<float4> tex_float_image[TEX_NUM_FLOAT_IMAGES];
+	device_vector<uchar4> tex_image[TEX_EXTENDED_NUM_IMAGES];
+	device_vector<float4> tex_float_image[TEX_EXTENDED_NUM_FLOAT_IMAGES];
 
 	/* opencl images */
 	device_vector<uchar4> tex_image_packed;
@@ -116,6 +125,7 @@ public:
 	bool use_bvh_cache;
 	bool use_bvh_spatial_split;
 	bool use_qbvh;
+	bool persistent_data;
 
 	SceneParams()
 	{
@@ -135,7 +145,8 @@ public:
 		&& bvh_type == params.bvh_type
 		&& use_bvh_cache == params.use_bvh_cache
 		&& use_bvh_spatial_split == params.use_bvh_spatial_split
-		&& use_qbvh == params.use_qbvh); }
+		&& use_qbvh == params.use_qbvh
+		&& persistent_data == params.persistent_data); }
 };
 
 /* Scene */
@@ -144,7 +155,7 @@ class Scene {
 public:
 	/* data */
 	Camera *camera;
-	Filter *filter;
+	LookupTables *lookup_tables;
 	Film *film;
 	Background *background;
 	Integrator *integrator;
@@ -154,6 +165,7 @@ public:
 	vector<Mesh*> meshes;
 	vector<Shader*> shaders;
 	vector<Light*> lights;
+	vector<ParticleSystem*> particle_systems;
 
 	/* data managers */
 	ImageManager *image_manager;
@@ -161,6 +173,8 @@ public:
 	ShaderManager *shader_manager;
 	MeshManager *mesh_manager;
 	ObjectManager *object_manager;
+	ParticleSystemManager *particle_system_manager;
+	CurveSystemManager *curve_system_manager;
 
 	/* default shaders */
 	int default_surface;
@@ -179,7 +193,7 @@ public:
 	/* mutex must be locked manually by callers */
 	thread_mutex mutex;
 
-	Scene(const SceneParams& params);
+	Scene(const SceneParams& params, const DeviceInfo& device_info);
 	~Scene();
 
 	void device_update(Device *device, Progress& progress);
@@ -188,10 +202,16 @@ public:
 	void need_global_attributes(AttributeRequestSet& attributes);
 
 	enum MotionType { MOTION_NONE = 0, MOTION_PASS, MOTION_BLUR };
-	MotionType need_motion();
+	MotionType need_motion(bool advanced_shading = true);
 
 	bool need_update();
 	bool need_reset();
+
+	void reset();
+	void device_free();
+
+protected:
+	void free_memory(bool final);
 };
 
 CCL_NAMESPACE_END

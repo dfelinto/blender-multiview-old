@@ -22,14 +22,19 @@
 #include "device_memory.h"
 
 #include "util_string.h"
+#include "util_thread.h"
 #include "util_vector.h"
+
+#include "kernel_types.h"  /* for TEX_NUM_FLOAT_IMAGES */
 
 CCL_NAMESPACE_BEGIN
 
-#define TEX_NUM_FLOAT_IMAGES	5
 #define TEX_NUM_IMAGES			95
-#define TEX_IMAGE_MAX			(TEX_NUM_IMAGES + TEX_NUM_FLOAT_IMAGES)
-#define TEX_IMAGE_FLOAT_START	TEX_NUM_IMAGES
+#define TEX_IMAGE_BYTE_START	TEX_NUM_FLOAT_IMAGES
+
+#define TEX_EXTENDED_NUM_FLOAT_IMAGES	5
+#define TEX_EXTENDED_NUM_IMAGES			512
+#define TEX_EXTENDED_IMAGE_BYTE_START	TEX_EXTENDED_NUM_FLOAT_IMAGES
 
 /* color to use when textures are not found */
 #define TEX_IMAGE_MISSING_R 1
@@ -46,22 +51,36 @@ public:
 	ImageManager();
 	~ImageManager();
 
-	int add_image(const string& filename, bool& is_float);
-	void remove_image(const string& filename);
+	int add_image(const string& filename, void *builtin_data, bool animated, bool& is_float, bool& is_linear);
+	void remove_image(const string& filename, void *builtin_data);
+	bool is_float_image(const string& filename, void *builtin_data, bool& is_linear);
 
 	void device_update(Device *device, DeviceScene *dscene, Progress& progress);
 	void device_free(Device *device, DeviceScene *dscene);
 
 	void set_osl_texture_system(void *texture_system);
 	void set_pack_images(bool pack_images_);
+	void set_extended_image_limits(void);
+	bool set_animation_frame_update(int frame);
 
 	bool need_update;
 
+	boost::function<void(const string &filename, void *data, bool &is_float, int &width, int &height, int &channels)> builtin_image_info_cb;
+	boost::function<bool(const string &filename, void *data, unsigned char *pixels)> builtin_image_pixels_cb;
+	boost::function<bool(const string &filename, void *data, float *pixels)> builtin_image_float_pixels_cb;
 private:
+	int tex_num_images;
+	int tex_num_float_images;
+	int tex_image_byte_start;
+	thread_mutex device_mutex;
+	int animation_frame;
+
 	struct Image {
 		string filename;
+		void *builtin_data;
 
 		bool need_load;
+		bool animated;
 		int users;
 	};
 

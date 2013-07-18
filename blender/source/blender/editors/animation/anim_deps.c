@@ -50,7 +50,6 @@
 #include "BKE_global.h"
 #include "BKE_node.h"
 #include "BKE_sequencer.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 
@@ -88,7 +87,7 @@ void ANIM_list_elem_update(Scene *scene, bAnimListElem *ale)
 		
 		RNA_id_pointer_create(id, &id_ptr);
 			
-		if (RNA_path_resolve(&id_ptr, fcu->rna_path, &ptr, &prop))
+		if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop))
 			RNA_property_update_main(G.main, scene, &ptr, prop);
 	}
 	else {
@@ -143,7 +142,6 @@ static void animchan_sync_group(bAnimContext *ac, bAnimListElem *ale, bActionGro
 		/* check if there are bones, and whether the name matches any 
 		 * NOTE: this feature will only really work if groups by default contain the F-Curves for a single bone
 		 */
-		// TODO: if bone gets renamed, it would be best to be able to rename the group
 		if (ob->pose) {
 			bPoseChannel *pchan = BKE_pose_channel_find_name(ob->pose, agrp->name);
 			bArmature *arm = ob->data;
@@ -320,7 +318,6 @@ void ANIM_sync_animchannels_to_data(const bContext *C)
 	FCurve *active_fcurve = NULL;
 	
 	/* get animation context info for filtering the channels */
-	// TODO: check on whether we need to set the area specially instead, since active area might not be ok?
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return;
 	

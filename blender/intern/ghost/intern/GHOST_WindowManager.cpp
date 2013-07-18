@@ -32,8 +32,8 @@
 
 /**
  * Copyright (C) 2001 NaN Technologies B.V.
- * @author	Maarten Gribnau
- * @date	May 11, 2001
+ * \author	Maarten Gribnau
+ * \date	May 11, 2001
  */
 
 #include "GHOST_WindowManager.h"
@@ -130,11 +130,11 @@ GHOST_TSuccess GHOST_WindowManager::beginFullScreen(GHOST_IWindow *window,
 		m_fullScreenWindow = window;
 		m_activeWindowBeforeFullScreen = getActiveWindow();
 		setActiveWindow(m_fullScreenWindow);
+		m_fullScreenWindow->beginFullScreen();
 		success = GHOST_kSuccess;
 	}
 	return success;
 }
-
 
 GHOST_TSuccess GHOST_WindowManager::endFullScreen(void)
 {
@@ -143,6 +143,7 @@ GHOST_TSuccess GHOST_WindowManager::endFullScreen(void)
 		if (m_fullScreenWindow != 0) {
 			//GHOST_PRINT("GHOST_WindowManager::endFullScreen(): deleting full-screen window\n");
 			setWindowInactive(m_fullScreenWindow);
+			m_fullScreenWindow->endFullScreen();
 			delete m_fullScreenWindow;
 			//GHOST_PRINT("GHOST_WindowManager::endFullScreen(): done\n");
 			m_fullScreenWindow = 0;
@@ -195,7 +196,7 @@ GHOST_IWindow *GHOST_WindowManager::getWindowAssociatedWithOSWindow(void *osWind
 {
 	std::vector<GHOST_IWindow *>::iterator iter;
 
-	for (iter = m_windows.begin(); iter != m_windows.end(); iter++) {
+	for (iter = m_windows.begin(); iter != m_windows.end(); ++iter) {
 		if ((*iter)->getOSWindow() == osWindow)
 			return *iter;
 	}
@@ -208,7 +209,7 @@ bool GHOST_WindowManager::getAnyModifiedState()
 	bool isAnyModified = false;
 	std::vector<GHOST_IWindow *>::iterator iter;
 	
-	for (iter = m_windows.begin(); iter != m_windows.end(); iter++) {
+	for (iter = m_windows.begin(); iter != m_windows.end(); ++iter) {
 		if ((*iter)->getModifiedState())
 			isAnyModified = true;
 	}

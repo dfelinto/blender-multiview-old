@@ -22,28 +22,44 @@
 #include "buffers.h"
 #include "camera.h"
 #include "device.h"
+#include "integrator.h"
 #include "scene.h"
 #include "session.h"
 
 #include "util_foreach.h"
 #include "util_function.h"
+#include "util_math.h"
 #include "util_opengl.h"
 #include "util_task.h"
 #include "util_time.h"
 
 CCL_NAMESPACE_BEGIN
 
+/* Note about  preserve_tile_device option for tile manager:
+ * progressive refine and viewport rendering does requires tiles to
+ * always be allocated for the same device
+ */
 Session::Session(const SessionParams& params_)
 : params(params_),
-  tile_manager(params.progressive, params.samples, params.tile_size, params.min_size)
+  tile_manager(params.progressive, params.samples, params.tile_size, params.start_resolution,
+       params.background == false || params.progressive_refine, params.background, params.tile_order,
+       max(params.device.multi_devices.size(), 1)),
+  stats()
 {
 	device_use_gl = ((params.device.type != DEVICE_CPU) && !params.background);
 
 	TaskScheduler::init(params.threads);
 
-	device = Device::create(params.device, params.background, params.threads);
-	buffers = new RenderBuffers(device);
-	display = new DisplayBuffer(device);
+	device = Device::create(params.device, stats, params.background);
+
+	if(params.background) {
+		buffers = NULL;
+		display = NULL;
+	}
+	else {
+		buffers = new RenderBuffers(device);
+		display = new DisplayBuffer(device);
+	}
 
 	session_thread = NULL;
 	scene = NULL;
@@ -52,7 +68,6 @@ Session::Session(const SessionParams& params_)
 	reset_time = 0.0;
 	preview_time = 0.0;
 	paused_time = 0.0;
-	sample = 0;
 
 	delayed_reset.do_reset = false;
 	delayed_reset.samples = 0;
@@ -81,12 +96,15 @@ Session::~Session()
 		wait();
 	}
 
-	if(params.output_path != "") {
+	if(display && params.output_path != "") {
 		tonemap();
 
 		progress.set_status("Writing Image", params.output_path);
 		display->write(device, params.output_path);
 	}
+
+	foreach(RenderBuffers *buffers, tile_buffers)
+		delete buffers;
 
 	delete buffers;
 	delete display;
@@ -115,11 +133,13 @@ bool Session::ready_to_reset()
 
 void Session::reset_gpu(BufferParams& buffer_params, int samples)
 {
+	thread_scoped_lock pause_lock(pause_mutex);
+
 	/* block for buffer acces and reset immediately. we can't do this
 	 * in the thread, because we need to allocate an OpenGL buffer, and
 	 * that only works in the main thread */
-	thread_scoped_lock display_lock(display->mutex);
-	thread_scoped_lock buffers_lock(buffers->mutex);
+	thread_scoped_lock display_lock(display_mutex);
+	thread_scoped_lock buffers_lock(buffers_mutex);
 
 	display_outdated = true;
 	reset_time = time_dt();
@@ -135,7 +155,7 @@ void Session::reset_gpu(BufferParams& buffer_params, int samples)
 bool Session::draw_gpu(BufferParams& buffer_params)
 {
 	/* block for buffer access */
-	thread_scoped_lock display_lock(display->mutex);
+	thread_scoped_lock display_lock(display_mutex);
 
 	/* first check we already rendered something */
 	if(gpu_draw_ready) {
@@ -145,7 +165,7 @@ bool Session::draw_gpu(BufferParams& buffer_params)
 			/* for CUDA we need to do tonemapping still, since we can
 			 * only access GL buffers from the main thread */
 			if(gpu_need_tonemap) {
-				thread_scoped_lock buffers_lock(buffers->mutex);
+				thread_scoped_lock buffers_lock(buffers_mutex);
 				tonemap();
 				gpu_need_tonemap = false;
 				gpu_need_tonemap_cond.notify_all();
@@ -165,9 +185,12 @@ bool Session::draw_gpu(BufferParams& buffer_params)
 
 void Session::run_gpu()
 {
+	bool tiles_written = false;
+
 	start_time = time_dt();
 	reset_time = time_dt();
 	paused_time = 0.0;
+	last_update_time = time_dt();
 
 	if(!params.background)
 		progress.set_start_time(start_time + paused_time);
@@ -188,7 +211,12 @@ void Session::run_gpu()
 			 * wait for pause condition notify to wake up again */
 			thread_scoped_lock pause_lock(pause_mutex);
 
-			if(pause || no_tiles) {
+			if(!pause && !tile_manager.done()) {
+				/* reset could have happened after no_tiles was set, before this lock.
+				 * in this case we shall not wait for pause condition
+				 */
+			}
+			else if(pause || no_tiles) {
 				update_status_time(pause, no_tiles);
 
 				while(1) {
@@ -226,23 +254,18 @@ void Session::run_gpu()
 			/* buffers mutex is locked entirely while rendering each
 			 * sample, and released/reacquired on each iteration to allow
 			 * reset and draw in between */
-			thread_scoped_lock buffers_lock(buffers->mutex);
+			thread_scoped_lock buffers_lock(buffers_mutex);
 
 			/* update status and timing */
 			update_status_time();
 
 			/* path trace */
-			foreach(Tile& tile, tile_manager.state.tiles) {
-				path_trace(tile);
+			path_trace();
 
-				device->task_wait();
+			device->task_wait();
 
-				if(device->error_message() != "")
-					progress.set_cancel(device->error_message());
-
-				if(progress.get_cancel())
-					break;
-			}
+			if(device->error_message() != "")
+				progress.set_cancel(device->error_message());
 
 			/* update status and timing */
 			update_status_time();
@@ -264,10 +287,15 @@ void Session::run_gpu()
 			if(device->error_message() != "")
 				progress.set_cancel(device->error_message());
 
+			tiles_written = update_progressive_refine(progress.get_cancel());
+
 			if(progress.get_cancel())
 				break;
 		}
 	}
+
+	if(!tiles_written)
+		update_progressive_refine(true);
 }
 
 /* CPU Session */
@@ -275,6 +303,7 @@ void Session::run_gpu()
 void Session::reset_cpu(BufferParams& buffer_params, int samples)
 {
 	thread_scoped_lock reset_lock(delayed_reset.mutex);
+	thread_scoped_lock pause_lock(pause_mutex);
 
 	display_outdated = true;
 	reset_time = time_dt();
@@ -289,7 +318,7 @@ void Session::reset_cpu(BufferParams& buffer_params, int samples)
 
 bool Session::draw_cpu(BufferParams& buffer_params)
 {
-	thread_scoped_lock display_lock(display->mutex);
+	thread_scoped_lock display_lock(display_mutex);
 
 	/* first check we already rendered something */
 	if(display->draw_ready()) {
@@ -308,13 +337,140 @@ bool Session::draw_cpu(BufferParams& buffer_params)
 	return false;
 }
 
+bool Session::acquire_tile(Device *tile_device, RenderTile& rtile)
+{
+	if(progress.get_cancel()) {
+		if(params.progressive_refine == false) {
+			/* for progressive refine current sample should be finished for all tiles */
+			return false;
+		}
+	}
+
+	thread_scoped_lock tile_lock(tile_mutex);
+
+	/* get next tile from manager */
+	Tile tile;
+	int device_num = device->device_number(tile_device);
+
+	if(!tile_manager.next_tile(tile, device_num))
+		return false;
+	
+	/* fill render tile */
+	rtile.x = tile_manager.state.buffer.full_x + tile.x;
+	rtile.y = tile_manager.state.buffer.full_y + tile.y;
+	rtile.w = tile.w;
+	rtile.h = tile.h;
+	rtile.start_sample = tile_manager.state.sample;
+	rtile.num_samples = tile_manager.state.num_samples;
+	rtile.resolution = tile_manager.state.resolution_divider;
+
+	tile_lock.unlock();
+
+	/* in case of a permanent buffer, return it, otherwise we will allocate
+	 * a new temporary buffer */
+	if(!params.background) {
+		tile_manager.state.buffer.get_offset_stride(rtile.offset, rtile.stride);
+
+		rtile.buffer = buffers->buffer.device_pointer;
+		rtile.rng_state = buffers->rng_state.device_pointer;
+		rtile.rgba = display->rgba.device_pointer;
+		rtile.buffers = buffers;
+
+		device->map_tile(tile_device, rtile);
+
+		return true;
+	}
+
+	/* fill buffer parameters */
+	BufferParams buffer_params = tile_manager.params;
+	buffer_params.full_x = rtile.x;
+	buffer_params.full_y = rtile.y;
+	buffer_params.width = rtile.w;
+	buffer_params.height = rtile.h;
+
+	buffer_params.get_offset_stride(rtile.offset, rtile.stride);
+
+	RenderBuffers *tilebuffers;
+
+	/* allocate buffers */
+	if(params.progressive_refine) {
+		tile_lock.lock();
+
+		if(tile_buffers.size() == 0)
+			tile_buffers.resize(tile_manager.state.num_tiles, NULL);
+
+		tilebuffers = tile_buffers[tile.index];
+		if(tilebuffers == NULL) {
+			tilebuffers = new RenderBuffers(tile_device);
+			tile_buffers[tile.index] = tilebuffers;
+
+			tilebuffers->reset(tile_device, buffer_params);
+		}
+
+		tile_lock.unlock();
+	}
+	else {
+		tilebuffers = new RenderBuffers(tile_device);
+
+		tilebuffers->reset(tile_device, buffer_params);
+	}
+
+	rtile.buffer = tilebuffers->buffer.device_pointer;
+	rtile.rng_state = tilebuffers->rng_state.device_pointer;
+	rtile.rgba = 0;
+	rtile.buffers = tilebuffers;
+
+	/* this will tag tile as IN PROGRESS in blender-side render pipeline,
+	 * which is needed to highlight currently rendering tile before first
+	 * sample was processed for it
+	 */
+	update_tile_sample(rtile);
+
+	return true;
+}
+
+void Session::update_tile_sample(RenderTile& rtile)
+{
+	thread_scoped_lock tile_lock(tile_mutex);
+
+	if(update_render_tile_cb) {
+		if(params.progressive_refine == false) {
+			/* todo: optimize this by making it thread safe and removing lock */
+
+			update_render_tile_cb(rtile);
+		}
+	}
+
+	update_status_time();
+}
+
+void Session::release_tile(RenderTile& rtile)
+{
+	thread_scoped_lock tile_lock(tile_mutex);
+
+	if(write_render_tile_cb) {
+		if(params.progressive_refine == false) {
+			/* todo: optimize this by making it thread safe and removing lock */
+			write_render_tile_cb(rtile);
+
+			delete rtile.buffers;
+		}
+	}
+
+	update_status_time();
+}
+
 void Session::run_cpu()
 {
+	bool tiles_written = false;
+
+	last_update_time = time_dt();
+
 	{
 		/* reset once to start */
 		thread_scoped_lock reset_lock(delayed_reset.mutex);
-		thread_scoped_lock buffers_lock(buffers->mutex);
-		thread_scoped_lock display_lock(display->mutex);
+		thread_scoped_lock buffers_lock(buffers_mutex);
+		thread_scoped_lock display_lock(display_mutex);
 
 		reset_(delayed_reset.params, delayed_reset.samples);
 		delayed_reset.do_reset = false;
@@ -337,7 +493,16 @@ void Session::run_cpu()
 			 * wait for pause condition notify to wake up again */
 			thread_scoped_lock pause_lock(pause_mutex);
 
-			if(pause || no_tiles) {
+			if(!pause && delayed_reset.do_reset) {
+				/* reset once to start */
+				thread_scoped_lock reset_lock(delayed_reset.mutex);
+				thread_scoped_lock buffers_lock(buffers_mutex);
+				thread_scoped_lock display_lock(display_mutex);
+
+				reset_(delayed_reset.params, delayed_reset.samples);
+				delayed_reset.do_reset = false;
+			}
+			else if(pause || no_tiles) {
 				update_status_time(pause, no_tiles);
 
 				while(1) {
@@ -364,7 +529,7 @@ void Session::run_cpu()
 			/* buffers mutex is locked entirely while rendering each
 			 * sample, and released/reacquired on each iteration to allow
 			 * reset and draw in between */
-			thread_scoped_lock buffers_lock(buffers->mutex);
+			thread_scoped_lock buffers_lock(buffers_mutex);
 
 			/* update scene */
 			update_scene();
@@ -379,8 +544,7 @@ void Session::run_cpu()
 			update_status_time();
 
 			/* path trace */
-			foreach(Tile& tile, tile_manager.state.tiles)
-				path_trace(tile);
+			path_trace();
 
 			/* update status and timing */
 			update_status_time();
@@ -396,8 +560,8 @@ void Session::run_cpu()
 
 		{
 			thread_scoped_lock reset_lock(delayed_reset.mutex);
-			thread_scoped_lock buffers_lock(buffers->mutex);
-			thread_scoped_lock display_lock(display->mutex);
+			thread_scoped_lock buffers_lock(buffers_mutex);
+			thread_scoped_lock display_lock(display_mutex);
 
 			if(delayed_reset.do_reset) {
 				/* reset rendering if request from main thread */
@@ -406,16 +570,21 @@ void Session::run_cpu()
 			}
 			else if(need_tonemap) {
 				/* tonemap only if we do not reset, we don't we don't
-				 * wan't to show the result of an incomplete sample*/
+				 * want to show the result of an incomplete sample*/
 				tonemap();
 			}
 
 			if(device->error_message() != "")
 				progress.set_cancel(device->error_message());
+
+			tiles_written = update_progressive_refine(progress.get_cancel());
 		}
 
 		progress.set_update();
 	}
+
+	if(!tiles_written)
+		update_progressive_refine(true);
 }
 
 void Session::run()
@@ -442,6 +611,9 @@ void Session::run()
 
 	/* run */
 	if(!progress.get_cancel()) {
+		/* reset number of rendered samples */
+		progress.reset_sample();
+
 		if(device_use_gl)
 			run_gpu();
 		else
@@ -465,10 +637,12 @@ bool Session::draw(BufferParams& buffer_params)
 
 void Session::reset_(BufferParams& buffer_params, int samples)
 {
-	if(buffer_params.modified(buffers->params)) {
-		gpu_draw_ready = false;
-		buffers->reset(device, buffer_params);
-		display->reset(device, buffer_params);
+	if(buffers) {
+		if(buffer_params.modified(buffers->params)) {
+			gpu_draw_ready = false;
+			buffers->reset(device, buffer_params);
+			display->reset(device, buffer_params);
+		}
 	}
 
 	tile_manager.reset(buffer_params, samples);
@@ -476,7 +650,6 @@ void Session::reset_(BufferParams& buffer_params, int samples)
 	start_time = time_dt();
 	preview_time = 0.0;
 	paused_time = 0.0;
-	sample = 0;
 
 	if(!params.background)
 		progress.set_start_time(start_time + paused_time);
@@ -488,6 +661,15 @@ void Session::reset(BufferParams& buffer_params, int samples)
 		reset_gpu(buffer_params, samples);
 	else
 		reset_cpu(buffer_params, samples);
+
+	if(params.progressive_refine) {
+		thread_scoped_lock buffers_lock(buffers_mutex);
+
+		foreach(RenderBuffers *buffers, tile_buffers)
+			delete buffers;
+
+		tile_buffers.clear();
+	}
 }
 
 void Session::set_samples(int samples)
@@ -532,40 +714,82 @@ void Session::update_scene()
 {
 	thread_scoped_lock scene_lock(scene->mutex);
 
-	progress.set_status("Updating Scene");
-
 	/* update camera if dimensions changed for progressive render. the camera
 	 * knows nothing about progressive or cropped rendering, it just gets the
 	 * image dimensions passed in */
 	Camera *cam = scene->camera;
 	int width = tile_manager.state.buffer.full_width;
 	int height = tile_manager.state.buffer.full_height;
+	int resolution = tile_manager.state.resolution_divider;
 
 	if(width != cam->width || height != cam->height) {
 		cam->width = width;
 		cam->height = height;
+		cam->resolution = resolution;
 		cam->tag_update();
 	}
 
+	/* number of samples is needed by multi jittered sampling pattern */
+	Integrator *integrator = scene->integrator;
+
+	if(integrator->sampling_pattern == SAMPLING_PATTERN_CMJ) {
+		int aa_samples = tile_manager.num_samples;
+
+		if(aa_samples != integrator->aa_samples) {
+			integrator->aa_samples = aa_samples;
+			integrator->tag_update(scene);
+		}
+	}
+
 	/* update scene */
-	if(scene->need_update())
+	if(scene->need_update()) {
+		progress.set_status("Updating Scene");
 		scene->device_update(device, progress);
+	}
 }
 
 void Session::update_status_time(bool show_pause, bool show_done)
 {
 	int sample = tile_manager.state.sample;
-	int resolution = tile_manager.state.resolution;
+	int resolution = tile_manager.state.resolution_divider;
+	int num_tiles = tile_manager.state.num_tiles;
+	int tile = tile_manager.state.num_rendered_tiles;
 
 	/* update status */
 	string status, substatus;
 
-	if(!params.progressive)
-		substatus = "Path Tracing";
-	else if(params.samples == INT_MAX)
+	if(!params.progressive) {
+		bool is_gpu = params.device.type == DEVICE_CUDA || params.device.type == DEVICE_OPENCL;
+		bool is_multidevice = params.device.multi_devices.size() > 1;
+		bool is_cpu = params.device.type == DEVICE_CPU;
+
+		substatus = string_printf("Path Tracing Tile %d/%d", tile, num_tiles);
+
+		if((is_gpu && !is_multidevice) || (is_cpu && num_tiles == 1)) {
+			/* when rendering on GPU multithreading happens within single tile, as in
+			 * tiles are handling sequentially and in this case we could display
+			 * currently rendering sample number
+			 * this helps a lot from feedback point of view.
+			 * also display the info on CPU, when using 1 tile only
+			 */
+
+			int sample = progress.get_sample(), num_samples = tile_manager.num_samples;
+
+			if(tile > 1) {
+				/* sample counter is global for all tiles, subtract samples
+				 * from already finished tiles to get sample counter for
+				 * current tile only
+				 */
+				sample -= (tile - 1) * num_samples;
+			}
+
+			substatus += string_printf(", Sample %d/%d", sample, num_samples);
+		}
+	}
+	else if(tile_manager.num_samples == INT_MAX)
 		substatus = string_printf("Path Tracing Sample %d", sample+1);
 	else
-		substatus = string_printf("Path Tracing Sample %d/%d", sample+1, params.samples);
+		substatus = string_printf("Path Tracing Sample %d/%d", sample+1, tile_manager.num_samples);
 	
 	if(show_pause)
 		status = "Paused";
@@ -580,28 +804,30 @@ void Session::update_status_time(bool show_pause, bool show_done)
 	if(preview_time == 0.0 && resolution == 1)
 		preview_time = time_dt();
 	
-	double sample_time = (sample == 0)? 0.0: (time_dt() - preview_time - paused_time)/(sample);
+	double tile_time = (tile == 0 || sample == 0)? 0.0: (time_dt() - preview_time - paused_time) / sample;
 
 	/* negative can happen when we pause a bit before rendering, can discard that */
 	if(preview_time < 0.0) preview_time = 0.0;
 
-	progress.set_sample(sample + 1, sample_time);
+	progress.set_tile(tile, tile_time);
 }
 
-void Session::path_trace(Tile& tile)
+void Session::update_progress_sample()
+{
+	progress.increment_sample();
+}
+
+void Session::path_trace()
 {
 	/* add path trace task */
 	DeviceTask task(DeviceTask::PATH_TRACE);
-
-	task.x = tile_manager.state.buffer.full_x + tile.x;
-	task.y = tile_manager.state.buffer.full_y + tile.y;
-	task.w = tile.w;
-	task.h = tile.h;
-	task.buffer = buffers->buffer.device_pointer;
-	task.rng_state = buffers->rng_state.device_pointer;
-	task.sample = tile_manager.state.sample;
-	task.resolution = tile_manager.state.resolution;
-	tile_manager.state.buffer.get_offset_stride(task.offset, task.stride);
+	
+	task.acquire_tile = function_bind(&Session::acquire_tile, this, _1, _2);
+	task.release_tile = function_bind(&Session::release_tile, this, _1);
+	task.get_cancel = function_bind(&Progress::get_cancel, &this->progress);
+	task.update_tile_sample = function_bind(&Session::update_tile_sample, this, _1);
+	task.update_progress_sample = function_bind(&Session::update_progress_sample, this);
+	task.need_finish_queue = params.progressive_refine;
 
 	device->task_add(task);
 }
@@ -618,7 +844,6 @@ void Session::tonemap()
 	task.rgba = display->rgba.device_pointer;
 	task.buffer = buffers->buffer.device_pointer;
 	task.sample = tile_manager.state.sample;
-	task.resolution = tile_manager.state.resolution;
 	tile_manager.state.buffer.get_offset_stride(task.offset, task.stride);
 
 	if(task.w > 0 && task.h > 0) {
@@ -632,5 +857,49 @@ void Session::tonemap()
 	display_outdated = false;
 }
 
-CCL_NAMESPACE_END
+bool Session::update_progressive_refine(bool cancel)
+{
+	int sample = tile_manager.state.sample + 1;
+	bool write = sample == tile_manager.num_samples || cancel;
 
+	double current_time = time_dt();
+
+	if (current_time - last_update_time < 1.0) {
+		/* if last sample was processed, we need to write buffers anyway  */
+		if (!write)
+			return false;
+	}
+
+	if(params.progressive_refine) {
+		foreach(RenderBuffers *buffers, tile_buffers) {
+			RenderTile rtile;
+			rtile.buffers = buffers;
+			rtile.sample = sample;
+
+			if(write)
+				write_render_tile_cb(rtile);
+			else
+				update_render_tile_cb(rtile);
+		}
+	}
+
+	last_update_time = current_time;
+
+	return write;
+}
+
+void Session::device_free()
+{
+	scene->device_free();
+
+	foreach(RenderBuffers *buffers, tile_buffers)
+		delete buffers;
+
+	tile_buffers.clear();
+
+	/* used from background render only, so no need to
+	 * re-create render/display buffers here
+	 */
+}
+
+CCL_NAMESPACE_END

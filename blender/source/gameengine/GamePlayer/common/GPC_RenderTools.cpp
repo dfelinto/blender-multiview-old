@@ -163,7 +163,7 @@ void GPC_RenderTools::SetClientObject(RAS_IRasterizer *rasty, void* obj)
 	}
 }
 
-bool GPC_RenderTools::RayHit(KX_ClientObjectInfo* client, KX_RayCast* result, void * const data)
+bool GPC_RenderTools::RayHit(KX_ClientObjectInfo *client, KX_RayCast *result, void * const data)
 {
 	double* const oglmatrix = (double* const) data;
 	MT_Point3 resultpoint(result->m_hitPoint);
@@ -173,11 +173,11 @@ bool GPC_RenderTools::RayHit(KX_ClientObjectInfo* client, KX_RayCast* result, vo
 	left = (dir.cross(resultnormal)).safe_normalized();
 	// for the up vector, we take the 'resultnormal' returned by the physics
 	
-	double maat[16]={
-			left[0],        left[1],        left[2], 0,
-				dir[0],         dir[1],         dir[2], 0,
-		resultnormal[0],resultnormal[1],resultnormal[2], 0,
-				0,              0,              0, 1};
+	double maat[16] = {left[0],         left[1],         left[2],         0,
+	                   dir[0],          dir[1],          dir[2],          0,
+	                   resultnormal[0], resultnormal[1], resultnormal[2], 0,
+	                   0,               0,               0,               1};
+
 	glTranslated(resultpoint[0],resultpoint[1],resultpoint[2]);
 	//glMultMatrixd(oglmatrix);
 	glMultMatrixd(maat);
@@ -236,16 +236,16 @@ void GPC_RenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmatrix,in
 		left *= size[0];
 		dir  *= size[1];
 		up   *= size[2];
-		double maat[16]={
-			left[0], left[1],left[2], 0,
-				dir[0], dir[1],dir[2],0,
-				up[0],up[1],up[2],0,
-				0,0,0,1};
-			glTranslated(objpos[0],objpos[1],objpos[2]);
-			glMultMatrixd(maat);
-			
-	} else
-	{
+
+		double maat[16] = {left[0], left[1], left[2], 0,
+		                   dir[0],  dir[1],  dir[2],  0,
+		                   up[0],   up[1],   up[2],   0,
+		                   0,       0,       0,       1};
+
+		glTranslated(objpos[0],objpos[1],objpos[2]);
+		glMultMatrixd(maat);
+	}
+	else {
 		if (objectdrawmode & RAS_IPolyMaterial::SHADOW)
 		{
 			// shadow must be cast to the ground, physics system needed here!
@@ -282,6 +282,78 @@ void GPC_RenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmatrix,in
 		}
 	}
 }
+
+void GPC_RenderTools::RenderBox2D(int xco,
+										int yco,
+										int width,
+										int height,
+										float percentage)
+{
+	// Save and change OpenGL settings
+	int texture2D;
+	glGetIntegerv(GL_TEXTURE_2D, (GLint*)&texture2D);
+	glDisable(GL_TEXTURE_2D);
+	int fog;
+	glGetIntegerv(GL_FOG, (GLint*)&fog);
+	glDisable(GL_FOG);
+	
+	int light;
+	glGetIntegerv(GL_LIGHTING, (GLint*)&light);
+	glDisable(GL_LIGHTING);
+	
+	glDisable(GL_DEPTH_TEST);
+	
+	// Set up viewing settings
+	glMatrixMode(GL_PROJECTION);
+	glPushMatrix();
+	glLoadIdentity();
+	glOrtho(0, width, 0, height, -1, 1);
+	glMatrixMode(GL_MODELVIEW);
+	glPushMatrix();
+	glLoadIdentity();
+	
+	yco = height - yco;
+	int barsize = 50;
+	
+	// draw in black first
+	glColor3ub(0, 0, 0);
+	glBegin(GL_QUADS);
+	glVertex2f(xco + 1 + 1 + barsize * percentage, yco - 1 + 10);
+	glVertex2f(xco + 1, yco - 1 + 10);
+	glVertex2f(xco + 1, yco - 1);
+	glVertex2f(xco + 1 + 1 + barsize * percentage, yco - 1);
+	glEnd();
+	
+	glColor3ub(255, 255, 255);
+	glBegin(GL_QUADS);
+	glVertex2f(xco + 1 + barsize * percentage, yco + 10);
+	glVertex2f(xco, yco + 10);
+	glVertex2f(xco, yco);
+	glVertex2f(xco + 1 + barsize * percentage, yco);
+	glEnd();
+	
+	// Restore view settings
+	glMatrixMode(GL_PROJECTION);
+	glPopMatrix();
+	glMatrixMode(GL_MODELVIEW);
+	glPopMatrix();
+	
+	// Restore OpenGL Settings
+	if (fog)
+		glEnable(GL_FOG);
+	else
+		glDisable(GL_FOG);
+	
+	if (texture2D)
+		glEnable(GL_TEXTURE_2D);
+	else
+		glDisable(GL_TEXTURE_2D);
+	if (light)
+		glEnable(GL_LIGHTING);
+	else
+		glDisable(GL_LIGHTING);
+}
+
 
 void GPC_RenderTools::RenderText3D(	int fontid,
 									const char* text,
@@ -359,7 +431,8 @@ void GPC_RenderTools::RenderText2D(RAS_TEXT_RENDER_MODE mode,
 	glGetIntegerv(GL_LIGHTING, (GLint*)&light);
 	glDisable(GL_LIGHTING);
 
-	
+	glDisable(GL_DEPTH_TEST);
+
 	// Set up viewing settings
 	glMatrixMode(GL_PROJECTION);
 	glPushMatrix();
@@ -442,7 +515,7 @@ void GPC_RenderTools::PopMatrix()
 
 int GPC_RenderTools::applyLights(int objectlayer, const MT_Transform& viewmat)
 {
-	// taken from blender source, incompatibility between Blender Object / GameObject	
+	// taken from blender source, incompatibility between Blender Object / GameObject
 	KX_Scene* kxscene = (KX_Scene*)m_auxilaryClientInfo;
 	float glviewmat[16];
 	unsigned int count;

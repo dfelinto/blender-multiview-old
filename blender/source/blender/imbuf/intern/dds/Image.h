@@ -56,9 +56,9 @@ public:
 	
 	void allocate(uint w, uint h);
 #if 0
-	bool load(const char * name);
+	bool load(const char *name);
 	
-	void wrap(void * data, uint w, uint h);
+	void wrap(void *data, uint w, uint h);
 	void unwrap();
 #endif
 	
@@ -101,4 +101,4 @@ inline Color32 & Image::pixel(uint x, uint y)
 	return pixel(y * width() + x);
 }
 
-#endif // __IMAGE_H__
+#endif  /* __IMAGE_H__ */

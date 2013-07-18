@@ -33,6 +33,10 @@ __all__ = (
     "refresh_script_paths",
     "register_class",
     "register_module",
+    "register_manual_map",
+    "unregister_manual_map",
+    "make_rna_paths",
+    "manual_map",
     "resource_path",
     "script_path_user",
     "script_path_pref",
@@ -54,6 +58,7 @@ import sys as _sys
 
 import addon_utils as _addon_utils
 
+_user_preferences = _bpy.context.user_preferences
 _script_module_dirs = "startup", "modules"
 
 
@@ -129,8 +134,6 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
     """
     use_time = _bpy.app.debug_python
 
-    prefs = _bpy.context.user_preferences
-
     if use_time:
         import time
         t_main = time.time()
@@ -147,7 +150,7 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
         # to reload. note that they will only actually reload of the
         # modification time changes. This `won't` work for packages so...
         # its not perfect.
-        for module_name in [ext.module for ext in prefs.addons]:
+        for module_name in [ext.module for ext in _user_preferences.addons]:
             _addon_utils.disable(module_name, default_set=False)
 
     def register_module_call(mod):
@@ -213,26 +216,30 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
         for mod in _global_loaded_modules:
             test_reload(mod)
 
-        _global_loaded_modules[:] = []
+        del _global_loaded_modules[:]
 
-    for base_path in script_paths():
-        for path_subdir in _script_module_dirs:
-            path = _os.path.join(base_path, path_subdir)
-            if _os.path.isdir(path):
-                _sys_path_ensure(path)
+    from bpy_restrict_state import RestrictBlend
 
-                # only add this to sys.modules, don't run
-                if path_subdir == "modules":
-                    continue
+    with RestrictBlend():
+        for base_path in script_paths():
+            for path_subdir in _script_module_dirs:
+                path = _os.path.join(base_path, path_subdir)
+                if _os.path.isdir(path):
+                    _sys_path_ensure(path)
 
-                for mod in modules_from_path(path, loaded_modules):
-                    test_register(mod)
+                    # only add this to sys.modules, don't run
+                    if path_subdir == "modules":
+                        continue
+
+                    for mod in modules_from_path(path, loaded_modules):
+                        test_register(mod)
 
     # deal with addons separately
     _addon_utils.reset_all(reload_scripts)
 
     # run the active integration preset
-    filepath = preset_find(prefs.inputs.active_keyconfig, "keyconfig")
+    filepath = preset_find(_user_preferences.inputs.active_keyconfig,
+                           "keyconfig")
 
     if filepath:
         keyconfig_set(filepath)
@@ -261,7 +268,7 @@ def script_path_user():
 
 def script_path_pref():
     """returns the user preference or None"""
-    path = _bpy.context.user_preferences.filepaths.script_directory
+    path = _user_preferences.filepaths.script_directory
     return _os.path.normpath(path) if path else None
 
 
@@ -475,8 +482,9 @@ def preset_find(name, preset_path, display_name=False, ext=".py"):
                 return filepath
 
 
-def keyconfig_set(filepath):
+def keyconfig_set(filepath, report=None):
     from os.path import basename, splitext
+    from itertools import chain
 
     if _bpy.app.debug_python:
         print("loading preset:", filepath)
@@ -489,25 +497,36 @@ def keyconfig_set(filepath):
         keyfile = open(filepath)
         exec(compile(keyfile.read(), filepath, "exec"), {"__file__": filepath})
         keyfile.close()
+        error_msg = ""
     except:
         import traceback
-        traceback.print_exc()
+        error_msg = traceback.format_exc()
 
-    kc_new = [kc for kc in keyconfigs if kc not in keyconfigs_old][0]
+    if error_msg:
+        if report is not None:
+            report({'ERROR'}, error_msg)
+        print(error_msg)
 
-    kc_new.name = ""
+    kc_new = next(chain(iter(kc for kc in keyconfigs if kc not in keyconfigs_old), (None,)))
+    if kc_new is None:
+        if report is not None:
+            report({'ERROR'}, "Failed to load keymap %r" % filepath)
+        return False
+    else:
+        kc_new.name = ""
 
-    # remove duplicates
-    name = splitext(basename(filepath))[0]
-    while True:
-        kc_dupe = keyconfigs.get(name)
-        if kc_dupe:
-            keyconfigs.remove(kc_dupe)
-        else:
-            break
+        # remove duplicates
+        name = splitext(basename(filepath))[0]
+        while True:
+            kc_dupe = keyconfigs.get(name)
+            if kc_dupe:
+                keyconfigs.remove(kc_dupe)
+            else:
+                break
 
-    kc_new.name = name
-    keyconfigs.active = kc_new
+        kc_new.name = name
+        keyconfigs.active = kc_new
+        return True
 
 
 def user_resource(resource_type, path="", create=False):
@@ -595,3 +614,69 @@ def unregister_module(module, verbose=False):
             traceback.print_exc()
     if verbose:
         print("done.\n")
+
+
+# -----------------------------------------------------------------------------
+# Manual lookups, each function has to return a basepath and a sequence
+# of...
+
+# we start with the built-in default mapping
+def _blender_default_map():
+    import sys
+    import rna_wiki_reference as ref_mod
+    ret = (ref_mod.url_manual_prefix, ref_mod.url_manual_mapping)
+    # avoid storing in memory
+    del sys.modules["rna_wiki_reference"]
+    return ret
+
+# hooks for doc lookups
+_manual_map = [_blender_default_map]
+
+
+def register_manual_map(manual_hook):
+    _manual_map.append(manual_hook)
+
+
+def unregister_manual_map(manual_hook):
+    _manual_map.remove(manual_hook)
+
+
+def manual_map():
+    # reverse so default is called last
+    for cb in reversed(_manual_map):
+        try:
+            prefix, url_manual_mapping = cb()
+        except:
+            print("Error calling %r" % cb)
+            import traceback
+            traceback.print_exc()
+            continue
+
+        yield prefix, url_manual_mapping
+
+
+# Build an RNA path from struct/property/enum names.
+def make_rna_paths(struct_name, prop_name, enum_name):
+    """
+    Create RNA "paths" from given names.
+
+    :arg struct_name: Name of a RNA struct (like e.g. "Scene").
+    :type struct_name: string
+    :arg prop_name: Name of a RNA struct's property.
+    :type prop_name: string
+    :arg enum_name: Name of a RNA enum identifier.
+    :type enum_name: string
+    :return: A triple of three "RNA paths"
+       (most_complete_path, "struct.prop", "struct.prop:'enum'").
+       If no enum_name is given, the third element will always be void.
+    :rtype: tuple of strings
+    """
+    src = src_rna = src_enum = ""
+    if struct_name:
+        if prop_name:
+            src = src_rna = ".".join((struct_name, prop_name))
+            if enum_name:
+                src = src_enum = "{}:'{}'".format(src_rna, enum_name)
+        else:
+            src = src_rna = struct_name
+    return src, src_rna, src_enum

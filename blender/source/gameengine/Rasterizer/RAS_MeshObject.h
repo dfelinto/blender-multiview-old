@@ -32,9 +32,9 @@
 #ifndef __RAS_MESHOBJECT_H__
 #define __RAS_MESHOBJECT_H__
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-// disable the STL warnings ("debug information length > 255")
-#pragma warning (disable:4786)
+#ifdef _MSC_VER
+   /* disable the STL warnings ("debug information length > 255") */
+#  pragma warning (disable:4786)
 #endif
 
 #include <vector>
@@ -116,8 +116,7 @@ public:
 	virtual RAS_Polygon*	AddPolygon(RAS_MaterialBucket *bucket, int numverts);
 	virtual void			AddVertex(RAS_Polygon *poly, int i,
 							const MT_Point3& xyz,
-							const MT_Point2& uv,
-							const MT_Point2& uv2,
+							const MT_Point2 uvs[RAS_TexVert::MAX_UNIT],
 							const MT_Vector4& tangent,
 							const unsigned int rgbacolor,
 							const MT_Vector3& normal,
@@ -177,5 +176,4 @@ public:
 #endif
 };
 
-#endif //__RAS_MESHOBJECT_H__
-
+#endif  /* __RAS_MESHOBJECT_H__ */

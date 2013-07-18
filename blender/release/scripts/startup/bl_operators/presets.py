@@ -30,7 +30,7 @@ class AddPresetBase():
      - preset_subdir """
     # bl_idname = "script.preset_base_add"
     # bl_label = "Add a Python Preset"
-    bl_options = {'REGISTER'}  # only because invoke_props_popup requires.
+    bl_options = {'REGISTER', 'INTERNAL'} # only because invoke_props_popup requires. Also do not add to search menu.
 
     name = StringProperty(
             name="Name",
@@ -185,10 +185,12 @@ class ExecutePreset(Operator):
 
     filepath = StringProperty(
             subtype='FILE_PATH',
+            options={'SKIP_SAVE'},
             )
     menu_idname = StringProperty(
             name="Menu ID Name",
             description="ID name of the menu this was called from",
+            options={'SKIP_SAVE'},
             )
 
     def execute(self, context):
@@ -318,13 +320,13 @@ class AddPresetFluid(AddPresetBase, Operator):
     preset_menu = "FLUID_MT_presets"
 
     preset_defines = [
-    "fluid = bpy.context.fluid"
-    ]
+        "fluid = bpy.context.fluid"
+        ]
 
     preset_values = [
-    "fluid.settings.viscosity_base",
-    "fluid.settings.viscosity_exponent",
-    ]
+        "fluid.settings.viscosity_base",
+        "fluid.settings.viscosity_exponent",
+        ]
 
     preset_subdir = "fluid"
 
@@ -436,19 +438,19 @@ class AddPresetTrackingSettings(AddPresetBase, Operator):
     ]
 
     preset_values = [
-        "default_correlation_min",
-        "default_pattern_size",
-        "default_search_size",
-        "default_frames_limit",
-        "default_pattern_match",
-        "default_margin",
-        "default_motion_model",
-        "use_default_brute",
-        "use_default_normalization",
-        "use_default_mask",
-        "use_default_red_channel",
-        "use_default_green_channel",
-        "use_default_blue_channel"
+        "settings.default_correlation_min",
+        "settings.default_pattern_size",
+        "settings.default_search_size",
+        "settings.default_frames_limit",
+        "settings.default_pattern_match",
+        "settings.default_margin",
+        "settings.default_motion_model",
+        "settings.use_default_brute",
+        "settings.use_default_normalization",
+        "settings.use_default_mask",
+        "settings.use_default_red_channel",
+        "settings.use_default_green_channel",
+        "settings.use_default_blue_channel"
     ]
 
     preset_subdir = "tracking_settings"
@@ -475,7 +477,7 @@ class AddPresetNodeColor(AddPresetBase, Operator):
 class AddPresetInterfaceTheme(AddPresetBase, Operator):
     """Add a theme preset"""
     bl_idname = "wm.interface_theme_preset_add"
-    bl_label = "Add Tracking Settings Preset"
+    bl_label = "Add Theme Preset"
     preset_menu = "USERPREF_MT_interface_theme_presets"
     preset_subdir = "interface_theme"
 
@@ -504,7 +506,7 @@ class AddPresetKeyconfig(AddPresetBase, Operator):
 
 
 class AddPresetOperator(AddPresetBase, Operator):
-    """Add an Application Interaction Preset"""
+    """Add an Operator Preset"""
     bl_idname = "wm.operator_preset_add"
     bl_label = "Operator Preset"
     preset_menu = "WM_MT_operator_presets"
@@ -512,7 +514,7 @@ class AddPresetOperator(AddPresetBase, Operator):
     operator = StringProperty(
             name="Operator",
             maxlen=64,
-            options={'HIDDEN'},
+            options={'HIDDEN', 'SKIP_SAVE'},
             )
 
     preset_defines = [
@@ -552,6 +554,12 @@ class WM_MT_operator_presets(Menu):
 
     def draw(self, context):
         self.operator = context.active_operator.bl_idname
+
+        # dummy 'default' menu item
+        layout = self.layout
+        layout.operator("wm.operator_defaults")
+        layout.separator()
+
         Menu.draw_preset(self, context)
 
     @property

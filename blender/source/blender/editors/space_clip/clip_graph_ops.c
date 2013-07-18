@@ -130,7 +130,7 @@ static void find_nearest_tracking_segment_cb(void *userdata, MovieTrackingTrack 
 	copy_v2_v2(data->prev_co, co);
 }
 
-void find_nearest_tracking_segment_end_cb(void *userdata)
+static void find_nearest_tracking_segment_end_cb(void *userdata)
 {
 	MouseSelectUserData *data = userdata;
 
@@ -276,7 +276,7 @@ static int select_exec(bContext *C, wmOperator *op)
 	return mouse_select(C, co, extend);
 }
 
-static int select_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int select_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	float co[2];
@@ -321,7 +321,7 @@ static void border_select_cb(void *userdata, MovieTrackingTrack *UNUSED(track),
 {
 	BorderSelectuserData *data = (BorderSelectuserData *) userdata;
 
-	if (BLI_in_rctf(&data->rect, scene_framenr, val)) {
+	if (BLI_rctf_isect_pt(&data->rect, scene_framenr, val)) {
 		int flag = 0;
 
 		if (coord == 0)
@@ -580,11 +580,11 @@ static int view_all_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 
 	/* we need an extra "buffer" factor on either side so that the endpoints are visible */
-	extra = 0.01f * (v2d->cur.xmax - v2d->cur.xmin);
+	extra = 0.01f * BLI_rctf_size_x(&v2d->cur);
 	v2d->cur.xmin -= extra;
 	v2d->cur.xmax += extra;
 
-	extra = 0.01f * (v2d->cur.ymax - v2d->cur.ymin);
+	extra = 0.01f * BLI_rctf_size_y(&v2d->cur);
 	v2d->cur.ymin -= extra;
 	v2d->cur.ymax += extra;
 
@@ -610,7 +610,7 @@ void CLIP_OT_graph_view_all(wmOperatorType *ot)
 void ED_clip_graph_center_current_frame(Scene *scene, ARegion *ar)
 {
 	View2D *v2d = &ar->v2d;
-	float extra = (v2d->cur.xmax - v2d->cur.xmin) / 2.0f;
+	float extra = BLI_rctf_size_x(&v2d->cur) / 2.0f;
 
 	/* set extents of view to start/end frames */
 	v2d->cur.xmin = (float)CFRA - extra;

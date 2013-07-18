@@ -86,6 +86,7 @@ private:
 #ifdef WITH_PYTHON
 	/* borrowed from sys.modules["__main__"], don't manage ref's */
 	PyObject*					m_pythondictionary;
+	PyObject*					m_pyprofiledict;
 #endif
 	class SCA_IInputDevice*				m_keyboarddevice;
 	class SCA_IInputDevice*				m_mousedevice;
@@ -103,7 +104,7 @@ private:
 	/* The current list of scenes. */
 	KX_SceneList		m_scenes;
 	/* State variable recording the presence of object debug info in the current scene list. */
-	bool				m_propertiesPresent;	
+	bool				m_propertiesPresent;
 
 	bool				m_bInitialized;
 	int					m_activecam;
@@ -141,7 +142,7 @@ private:
 	int				m_drawingmode;
 	float			m_cameraZoom;
 	
-	bool			m_overrideCam;	
+	bool			m_overrideCam;
 	STR_String		m_overrideSceneName;
 	
 	bool			m_overrideCamUseOrtho;
@@ -225,8 +226,9 @@ public:
 	void			SetRenderTools(RAS_IRenderTools* rendertools);
 	void			SetRasterizer(RAS_IRasterizer* rasterizer);
 #ifdef WITH_PYTHON
-	void			SetPyNamespace(PyObject* pythondictionary);
+	void			SetPyNamespace(PyObject *pythondictionary);
 	PyObject*		GetPyNamespace() { return m_pythondictionary; }
+	PyObject*		GetPyProfileDict();
 #endif
 	void			SetSceneConverter(KX_ISceneConverter* sceneconverter);
 	void			SetAnimRecordMode(bool animation_record, int startFrame);
@@ -418,10 +420,17 @@ public:
 	void GetOverrideFrameColor(float& r, float& g, float& b) const;
 
 	KX_Scene*		CreateScene(const STR_String& scenename);
-	KX_Scene*		CreateScene(Scene *scene);
-	
-	GlobalSettings* GetGlobalSettings(void);
-	void SetGlobalSettings(GlobalSettings* gs);
+	KX_Scene*		CreateScene(Scene *scene, bool libloading=false);
+
+	GlobalSettings*	GetGlobalSettings(void);
+	void			SetGlobalSettings(GlobalSettings* gs);
+
+	/**
+	 * Invalidate all the camera matrices and handle other
+	 * needed changes when resized.
+	 * It's only called from Blenderplayer.
+	 */
+	void			Resize();
 
 protected:
 	/**
@@ -452,6 +461,4 @@ protected:
 #endif
 };
 
-#endif //__KX_KETSJIENGINE_H__
-
-
+#endif  /* __KX_KETSJIENGINE_H__ */

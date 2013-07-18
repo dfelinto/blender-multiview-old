@@ -94,7 +94,11 @@ public:
 	static void init(int num_threads = 0);
 	static void exit();
 
-	static int num_threads() { return threads.size(); }
+	/* number of threads that can work on tasks, main thread counts too */
+	static int num_threads() { return threads.size() + 1; }
+
+	/* test if any session is using the scheduler */
+	static bool active() { return users != 0; }
 
 protected:
 	friend class TaskPool;
@@ -107,7 +111,6 @@ protected:
 	static thread_mutex mutex;
 	static int users;
 	static vector<thread*> threads;
-	static vector<int> thread_level;
 	static volatile bool do_exit;
 
 	static list<Entry> queue;

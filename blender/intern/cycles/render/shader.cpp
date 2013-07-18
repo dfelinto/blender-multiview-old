@@ -16,6 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "bssrdf.h"
 #include "device.h"
 #include "graph.h"
 #include "light.h"
@@ -25,6 +26,7 @@
 #include "scene.h"
 #include "shader.h"
 #include "svm.h"
+#include "tables.h"
 
 #include "util_foreach.h"
 
@@ -46,8 +48,11 @@ Shader::Shader()
 	has_surface = false;
 	has_surface_transparent = false;
 	has_surface_emission = false;
+	has_surface_bssrdf = false;
 	has_volume = false;
 	has_displacement = false;
+
+	used = false;
 
 	need_update = true;
 	need_update_attributes = true;
@@ -61,6 +66,12 @@ Shader::~Shader()
 
 void Shader::set_graph(ShaderGraph *graph_)
 {
+	/* do this here already so that we can detect if mesh or object attributes
+	 * are needed, since the node attribute callbacks check if their sockets
+	 * are connected but proxy nodes should not count */
+	if(graph_)
+		graph_->remove_unneeded_nodes();
+
 	/* assign graph */
 	delete graph;
 	delete graph_bump;
@@ -98,23 +109,34 @@ void Shader::tag_update(Scene *scene)
 	}
 }
 
+void Shader::tag_used(Scene *scene)
+{
+	/* if an unused shader suddenly gets used somewhere, it needs to be
+	 * recompiled because it was skipped for compilation before */
+	if(!used) {
+		need_update = true;
+		scene->shader_manager->need_update = true;
+	}
+}
+
 /* Shader Manager */
 
 ShaderManager::ShaderManager()
 {
 	need_update = true;
+	bssrdf_table_offset = TABLE_OFFSET_INVALID;
 }
 
 ShaderManager::~ShaderManager()
 {
 }
 
-ShaderManager *ShaderManager::create(Scene *scene)
+ShaderManager *ShaderManager::create(Scene *scene, int shadingsystem)
 {
 	ShaderManager *manager;
 
 #ifdef WITH_OSL
-	if(scene->params.shadingsystem == SceneParams::OSL)
+	if(shadingsystem == SceneParams::OSL)
 		manager = new OSLShaderManager();
 	else
 #endif
@@ -161,9 +183,31 @@ int ShaderManager::get_shader_id(uint shader, Mesh *mesh, bool smooth)
 	return id;
 }
 
+void ShaderManager::device_update_shaders_used(Scene *scene)
+{
+	/* figure out which shaders are in use, so SVM/OSL can skip compiling them
+	 * for speed and avoid loading image textures into memory */
+	foreach(Shader *shader, scene->shaders)
+		shader->used = false;
+
+	scene->shaders[scene->default_surface]->used = true;
+	scene->shaders[scene->default_light]->used = true;
+	scene->shaders[scene->default_background]->used = true;
+	scene->shaders[scene->default_holdout]->used = true;
+	scene->shaders[scene->default_empty]->used = true;
+
+	foreach(Mesh *mesh, scene->meshes)
+		foreach(uint shader, mesh->used_shaders)
+			scene->shaders[shader]->used = true;
+
+	foreach(Light *light, scene->lights)
+		scene->shaders[light->shader]->used = true;
+}
+
 void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress)
 {
-	device_free_common(device, dscene);
+	device->tex_free(dscene->shader_flag);
+	dscene->shader_flag.clear();
 
 	if(scene->shaders.size() == 0)
 		return;
@@ -171,6 +215,7 @@ void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Sc
 	uint shader_flag_size = scene->shaders.size()*4;
 	uint *shader_flag = dscene->shader_flag.resize(shader_flag_size);
 	uint i = 0;
+	bool has_surface_bssrdf = false;
 
 	foreach(Shader *shader, scene->shaders) {
 		uint flag = 0;
@@ -183,6 +228,8 @@ void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Sc
 			flag |= SD_HAS_VOLUME;
 		if(shader->homogeneous_volume)
 			flag |= SD_HOMOGENEOUS_VOLUME;
+		if(shader->has_surface_bssrdf)
+			has_surface_bssrdf = true;
 
 		shader_flag[i++] = flag;
 		shader_flag[i++] = shader->pass_id;
@@ -191,10 +238,32 @@ void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Sc
 	}
 
 	device->tex_alloc("__shader_flag", dscene->shader_flag);
+
+	/* bssrdf lookup table */
+	KernelBSSRDF *kbssrdf = &dscene->data.bssrdf;
+
+	if(has_surface_bssrdf && bssrdf_table_offset == TABLE_OFFSET_INVALID) {
+		vector<float> table;
+
+		bssrdf_table_build(table);
+		bssrdf_table_offset = scene->lookup_tables->add_table(dscene, table);
+
+		kbssrdf->table_offset = (int)bssrdf_table_offset;
+		kbssrdf->num_attempts = BSSRDF_MAX_ATTEMPTS;
+	}
+	else if(!has_surface_bssrdf && bssrdf_table_offset != TABLE_OFFSET_INVALID) {
+		scene->lookup_tables->remove_table(bssrdf_table_offset);
+		bssrdf_table_offset = TABLE_OFFSET_INVALID;
+	}
 }
 
-void ShaderManager::device_free_common(Device *device, DeviceScene *dscene)
+void ShaderManager::device_free_common(Device *device, DeviceScene *dscene, Scene *scene)
 {
+	if(bssrdf_table_offset != TABLE_OFFSET_INVALID) {
+		scene->lookup_tables->remove_table(bssrdf_table_offset);
+		bssrdf_table_offset = TABLE_OFFSET_INVALID;
+	}
+
 	device->tex_free(dscene->shader_flag);
 	dscene->shader_flag.clear();
 }

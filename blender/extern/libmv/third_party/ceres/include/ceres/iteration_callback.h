@@ -28,8 +28,9 @@
 //
 // Author: sameeragarwal@google.com (Sameer Agarwal)
 //
-// When an iteration callback is specified, Ceres calls the callback after each
-// optimizer step and pass it an IterationSummary object, defined below.
+// When an iteration callback is specified, Ceres calls the callback
+// after each minimizer step (if the minimizer has not converged) and
+// passes it an IterationSummary object, defined below.
 
 #ifndef CERES_PUBLIC_ITERATION_CALLBACK_H_
 #define CERES_PUBLIC_ITERATION_CALLBACK_H_
@@ -41,18 +42,57 @@ namespace ceres {
 // This struct describes the state of the optimizer after each
 // iteration of the minimization.
 struct IterationSummary {
+  IterationSummary()
+      : iteration(0),
+        step_is_valid(false),
+        step_is_nonmonotonic(false),
+        step_is_successful(false),
+        cost(0.0),
+        cost_change(0.0),
+        gradient_max_norm(0.0),
+        step_norm(0.0),
+        eta(0.0),
+        step_size(0.0),
+        line_search_function_evaluations(0),
+        linear_solver_iterations(0),
+        iteration_time_in_seconds(0.0),
+        step_solver_time_in_seconds(0.0),
+        cumulative_time_in_seconds(0.0) {}
+
   // Current iteration number.
   int32 iteration;
 
-  // Whether or not the algorithm made progress in this iteration.
+  // Step was numerically valid, i.e., all values are finite and the
+  // step reduces the value of the linearized model.
+  //
+  // Note: step_is_valid is false when iteration = 0.
+  bool step_is_valid;
+
+  // Step did not reduce the value of the objective function
+  // sufficiently, but it was accepted because of the relaxed
+  // acceptance criterion used by the non-monotonic trust region
+  // algorithm.
+  //
+  // Note: step_is_nonmonotonic is false when iteration = 0;
+  bool step_is_nonmonotonic;
+
+  // Whether or not the minimizer accepted this step or not. If the
+  // ordinary trust region algorithm is used, this means that the
+  // relative reduction in the objective function value was greater
+  // than Solver::Options::min_relative_decrease. However, if the
+  // non-monotonic trust region algorithm is used
+  // (Solver::Options:use_nonmonotonic_steps = true), then even if the
+  // relative decrease is not sufficient, the algorithm may accept the
+  // step and the step is declared successful.
+  //
+  // Note: step_is_successful is false when iteration = 0.
   bool step_is_successful;
 
   // Value of the objective function.
   double cost;
 
   // Change in the value of the objective function in this
-  // iteration. This can be positive or negative. Negative change
-  // means that the step was not successful.
+  // iteration. This can be positive or negative.
   double cost_change;
 
   // Infinity norm of the gradient vector.
@@ -66,9 +106,10 @@ struct IterationSummary {
   // cost and the change in the cost of the linearized approximation.
   double relative_decrease;
 
-  // Value of the regularization parameter for Levenberg-Marquardt
-  // algorithm at the end of the current iteration.
-  double mu;
+  // Size of the trust region at the end of the current iteration. For
+  // the Levenberg-Marquardt algorithm, the regularization parameter
+  // mu = 1.0 / trust_region_radius.
+  double trust_region_radius;
 
   // For the inexact step Levenberg-Marquardt algorithm, this is the
   // relative accuracy with which the Newton(LM) step is solved. This
@@ -77,17 +118,25 @@ struct IterationSummary {
   // ignore it.
   double eta;
 
+  // Step sized computed by the line search algorithm.
+  double step_size;
+
+  // Number of function evaluations used by the line search algorithm.
+  int line_search_function_evaluations;
+
   // Number of iterations taken by the linear solver to solve for the
   // Newton step.
   int linear_solver_iterations;
 
-  // TODO(sameeragarwal): Change to use a higher precision timer using
-  // clock_gettime.
-  // Time (in seconds) spent inside the linear least squares solver.
-  int iteration_time_sec;
+  // Time (in seconds) spent inside the minimizer loop in the current
+  // iteration.
+  double iteration_time_in_seconds;
 
-  // Time (in seconds) spent inside the linear least squares solver.
-  int linear_solver_time_sec;
+  // Time (in seconds) spent inside the trust region step solver.
+  double step_solver_time_in_seconds;
+
+  // Time (in seconds) since the user called Solve().
+  double cumulative_time_in_seconds;
 };
 
 // Interface for specifying callbacks that are executed at the end of
@@ -133,7 +182,7 @@ struct IterationSummary {
 //                                    summary.gradient_max_norm,
 //                                    summary.step_norm,
 //                                    summary.relative_decrease,
-//                                    summary.mu,
+//                                    summary.trust_region_radius,
 //                                    summary.eta,
 //                                    summary.linear_solver_iterations);
 //       if (log_to_stdout_) {

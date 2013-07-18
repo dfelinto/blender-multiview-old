@@ -20,6 +20,7 @@
 
 import bpy
 from bpy.types import Panel
+from bpy.app.translations import contexts as i18n_contexts
 
 
 class PhysicButtonsPanel():
@@ -37,12 +38,20 @@ def physics_add(self, layout, md, name, type, typeicon, toggles):
     sub = layout.row(align=True)
     if md:
         sub.context_pointer_set("modifier", md)
-        sub.operator("object.modifier_remove", text=name, icon='X')
-        if(toggles):
+        sub.operator("object.modifier_remove", text=name, text_ctxt=i18n_contexts.default, icon='X')
+        if toggles:
             sub.prop(md, "show_render", text="")
             sub.prop(md, "show_viewport", text="")
     else:
-        sub.operator("object.modifier_add", text=name, icon=typeicon).type = type
+        sub.operator("object.modifier_add", text=name, text_ctxt=i18n_contexts.default, icon=typeicon).type = type
+
+
+def physics_add_special(self, layout, data, name, addop, removeop, typeicon):
+    sub = layout.row(align=True)
+    if data:
+        sub.operator(removeop, text=name, text_ctxt=i18n_contexts.default, icon='X')
+    else:
+        sub.operator(addop, text=name, text_ctxt=i18n_contexts.default, icon=typeicon)
 
 
 class PHYSICS_PT_add(PhysicButtonsPanel, Panel):
@@ -50,31 +59,42 @@ class PHYSICS_PT_add(PhysicButtonsPanel, Panel):
     bl_options = {'HIDE_HEADER'}
 
     def draw(self, context):
-        ob = context.object
+        obj = context.object
 
         layout = self.layout
         layout.label("Enable physics for:")
         split = layout.split()
         col = split.column()
 
-        if(context.object.field.type == 'NONE'):
+        if obj.field.type == 'NONE':
             col.operator("object.forcefield_toggle", text="Force Field", icon='FORCE_FORCE')
         else:
             col.operator("object.forcefield_toggle", text="Force Field", icon='X')
 
-        if(ob.type == 'MESH'):
+        if obj.type == 'MESH':
             physics_add(self, col, context.collision, "Collision", 'COLLISION', 'MOD_PHYSICS', False)
             physics_add(self, col, context.cloth, "Cloth", 'CLOTH', 'MOD_CLOTH', True)
             physics_add(self, col, context.dynamic_paint, "Dynamic Paint", 'DYNAMIC_PAINT', 'MOD_DYNAMICPAINT', True)
 
         col = split.column()
 
-        if(ob.type == 'MESH' or ob.type == 'LATTICE'or ob.type == 'CURVE'):
+        if obj.type in {'MESH', 'LATTICE', 'CURVE'}:
             physics_add(self, col, context.soft_body, "Soft Body", 'SOFT_BODY', 'MOD_SOFT', True)
 
-        if(ob.type == 'MESH'):
+        if obj.type == 'MESH':
             physics_add(self, col, context.fluid, "Fluid", 'FLUID_SIMULATION', 'MOD_FLUIDSIM', True)
             physics_add(self, col, context.smoke, "Smoke", 'SMOKE', 'MOD_SMOKE', True)
+
+            physics_add_special(self, col, obj.rigid_body, "Rigid Body",
+                                "rigidbody.object_add",
+                                "rigidbody.object_remove",
+                                'MESH_ICOSPHERE')  # XXX: need dedicated icon
+
+        # all types of objects can have rigid body constraint
+        physics_add_special(self, col, obj.rigid_body_constraint, "Rigid Body Constraint",
+                            "rigidbody.constraint_add",
+                            "rigidbody.constraint_remove",
+                            'CONSTRAINT')  # RB_TODO needs better icon
 
 
 # cache-type can be 'PSYS' 'HAIR' 'SMOKE' etc
@@ -84,11 +104,13 @@ def point_cache_ui(self, context, cache, enabled, cachetype):
 
     layout.context_pointer_set("point_cache", cache)
 
-    row = layout.row()
-    row.template_list(cache, "point_caches", cache.point_caches, "active_index", rows=2)
-    col = row.column(align=True)
-    col.operator("ptcache.add", icon='ZOOMIN', text="")
-    col.operator("ptcache.remove", icon='ZOOMOUT', text="")
+    if not cachetype == 'RIGID_BODY':
+        row = layout.row()
+        row.template_list("UI_UL_list", "point_caches", cache, "point_caches",
+                          cache.point_caches, "active_index", rows=2)
+        col = row.column(align=True)
+        col.operator("ptcache.add", icon='ZOOMIN', text="")
+        col.operator("ptcache.remove", icon='ZOOMOUT', text="")
 
     row = layout.row()
     if cachetype in {'PSYS', 'HAIR', 'SMOKE'}:
@@ -131,13 +153,13 @@ def point_cache_ui(self, context, cache, enabled, cachetype):
             row.enabled = enabled
             row.prop(cache, "frame_start")
             row.prop(cache, "frame_end")
-        if cachetype not in {'SMOKE', 'CLOTH', 'DYNAMIC_PAINT'}:
+        if cachetype not in {'SMOKE', 'CLOTH', 'DYNAMIC_PAINT', 'RIGID_BODY'}:
             row.prop(cache, "frame_step")
-            row.prop(cache, "use_quick_cache")
+
         if cachetype != 'SMOKE':
             layout.label(text=cache.info)
 
-        if cachetype not in {'SMOKE', 'DYNAMIC_PAINT'}:
+        if cachetype not in {'SMOKE', 'DYNAMIC_PAINT', 'RIGID_BODY'}:
             split = layout.split()
             split.enabled = enabled and bpy.data.is_saved
 
@@ -160,7 +182,7 @@ def point_cache_ui(self, context, cache, enabled, cachetype):
 
         col = split.column()
 
-        if cache.is_baked == True:
+        if cache.is_baked is True:
             col.operator("ptcache.free_bake", text="Free Bake")
         else:
             col.operator("ptcache.bake", text="Bake").bake = True
@@ -179,7 +201,7 @@ def point_cache_ui(self, context, cache, enabled, cachetype):
         col.operator("ptcache.bake_all", text="Update All To Frame").bake = False
 
 
-def effector_weights_ui(self, context, weights):
+def effector_weights_ui(self, context, weights, weight_type):
     layout = self.layout
 
     layout.prop(weights, "group")
@@ -200,6 +222,8 @@ def effector_weights_ui(self, context, weights):
     col.prop(weights, "wind", slider=True)
     col.prop(weights, "curve_guide", slider=True)
     col.prop(weights, "texture", slider=True)
+    if weight_type != 'SMOKE':
+        col.prop(weights, "smokeflow", slider=True)
 
     col = split.column()
     col.prop(weights, "harmonic", slider=True)

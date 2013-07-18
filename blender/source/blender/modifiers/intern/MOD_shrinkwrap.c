@@ -95,7 +95,7 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	return dataMask;
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	ShrinkwrapModifierData *smd = (ShrinkwrapModifierData *) md;
 	return !smd->target;
@@ -161,32 +161,41 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 		                 DAG_RL_OB_DATA | DAG_RL_DATA_DATA, "Shrinkwrap Modifier");
 }
 
+static bool dependsOnNormals(ModifierData *md)
+{
+	ShrinkwrapModifierData *smd = (ShrinkwrapModifierData *)md;
+
+	if (smd->target && smd->shrinkType == MOD_SHRINKWRAP_PROJECT)
+		return (smd->projAxis == MOD_SHRINKWRAP_PROJECT_OVER_NORMAL);
+	
+	return false;
+}
 
 ModifierTypeInfo modifierType_Shrinkwrap = {
-	/* name */ "Shrinkwrap",
-	/* structName */ "ShrinkwrapModifierData",
-	/* structSize */ sizeof(ShrinkwrapModifierData),
-	/* type */ eModifierTypeType_OnlyDeform,
-	/* flags */ eModifierTypeFlag_AcceptsMesh |
-	eModifierTypeFlag_AcceptsCVs |
-	eModifierTypeFlag_SupportsEditmode |
-	eModifierTypeFlag_EnableInEditmode,
+	/* name */              "Shrinkwrap",
+	/* structName */        "ShrinkwrapModifierData",
+	/* structSize */        sizeof(ShrinkwrapModifierData),
+	/* type */              eModifierTypeType_OnlyDeform,
+	/* flags */             eModifierTypeFlag_AcceptsMesh |
+	                        eModifierTypeFlag_AcceptsCVs |
+	                        eModifierTypeFlag_SupportsEditmode |
+	                        eModifierTypeFlag_EnableInEditmode,
 
-	/* copyData */ copyData,
-	/* deformVerts */ deformVerts,
-	/* deformMatrices */ NULL,
-	/* deformVertsEM */ deformVertsEM,
-	/* deformMatricesEM */ NULL,
-	/* applyModifier */ NULL,
-	/* applyModifierEM */ NULL,
-	/* initData */ initData,
-	/* requiredDataMask */ requiredDataMask,
-	/* freeData */ NULL,
-	/* isDisabled */ isDisabled,
-	/* updateDepgraph */ updateDepgraph,
-	/* dependsOnTime */ NULL,
-	/* dependsOnNormals */ NULL,
+	/* copyData */          copyData,
+	/* deformVerts */       deformVerts,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     deformVertsEM,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     NULL,
+	/* applyModifierEM */   NULL,
+	/* initData */          initData,
+	/* requiredDataMask */  requiredDataMask,
+	/* freeData */          NULL,
+	/* isDisabled */        isDisabled,
+	/* updateDepgraph */    updateDepgraph,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */  dependsOnNormals,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */ NULL,
-	/* foreachTexLink */ NULL,
+	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

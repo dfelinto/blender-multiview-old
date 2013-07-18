@@ -32,51 +32,29 @@
  *  \ingroup bli
  */
 
-#ifndef FALSE
-#  define FALSE 0
+/* avoid many includes for now */
+#include "BLI_sys_types.h"
+
+#ifndef NDEBUG /* for BLI_assert */
+#include <stdio.h>
 #endif
 
-#ifndef TRUE
-#  define TRUE 1
+/* useful for finding bad use of min/max */
+#if 0
+/* gcc only */
+#  define _TYPECHECK(a, b)  ((void)(((typeof(a) *)0) == ((typeof(b) *)0)))
+#  define MIN2(x, y)          (_TYPECHECK(x, y), (((x) < (y) ? (x) : (y))))
+#  define MAX2(x, y)          (_TYPECHECK(x, y), (((x) > (y) ? (x) : (y))))
 #endif
-
-
-#define ELEM(a, b, c)           ((a) == (b) || (a) == (c))
-#define ELEM3(a, b, c, d)       (ELEM(a, b, c) || (a) == (d) )
-#define ELEM4(a, b, c, d, e)    (ELEM(a, b, c) || ELEM(a, d, e) )
-#define ELEM5(a, b, c, d, e, f) (ELEM(a, b, c) || ELEM3(a, d, e, f) )
-#define ELEM6(a, b, c, d, e, f, g)      (ELEM(a, b, c) || ELEM4(a, d, e, f, g) )
-#define ELEM7(a, b, c, d, e, f, g, h)   (ELEM3(a, b, c, d) || ELEM4(a, e, f, g, h) )
-#define ELEM8(a, b, c, d, e, f, g, h, i)        (ELEM4(a, b, c, d, e) || ELEM4(a, f, g, h, i) )
-#define ELEM9(a, b, c, d, e, f, g, h, i, j)        (ELEM4(a, b, c, d, e) || ELEM5(a, f, g, h, i, j) )
-#define ELEM10(a, b, c, d, e, f, g, h, i, j, k)        (ELEM4(a, b, c, d, e) || ELEM6(a, f, g, h, i, j, k) )
-#define ELEM11(a, b, c, d, e, f, g, h, i, j, k, l)        (ELEM4(a, b, c, d, e) || ELEM7(a, f, g, h, i, j, k, l) )
-
-/* shift around elements */
-#define SHIFT3(type, a, b, c)  {                                              \
-		type tmp;                                                             \
-		tmp = a;                                                              \
-		a = c;                                                                \
-		c = b;                                                                \
-		b = tmp;                                                              \
-} (void)0
-#define SHIFT4(type, a, b, c, d)  {                                           \
-		type tmp;                                                             \
-		tmp = a;                                                              \
-		a = d;                                                                \
-		d = c;                                                                \
-		c = b;                                                                \
-		b = tmp;                                                              \
-} (void)0
 
 /* min/max */
-#define MIN2(x, y)               ( (x) < (y) ? (x) : (y) )
-#define MIN3(x, y, z)             MIN2(MIN2((x), (y)), (z) )
-#define MIN4(x, y, z, a)           MIN2(MIN2((x), (y)), MIN2((z), (a)) )
+#define MIN2(x, y)          ((x) < (y) ? (x) : (y))
+#define MIN3(x, y, z)       (MIN2(MIN2((x), (y)), (z)))
+#define MIN4(x, y, z, a)    (MIN2(MIN2((x), (y)), MIN2((z), (a))))
 
-#define MAX2(x, y)               ( (x) > (y) ? (x) : (y) )
-#define MAX3(x, y, z)             MAX2(MAX2((x), (y)), (z) )
-#define MAX4(x, y, z, a)           MAX2(MAX2((x), (y)), MAX2((z), (a)) )
+#define MAX2(x, y)          ((x) > (y) ? (x) : (y))
+#define MAX3(x, y, z)       (MAX2(MAX2((x), (y)), (z)))
+#define MAX4(x, y, z, a)    (MAX2(MAX2((x), (y)), MAX2((z), (a))))
 
 #define INIT_MINMAX(min, max) {                                               \
 		(min)[0] = (min)[1] = (min)[2] =  1.0e30f;                            \
@@ -113,9 +91,85 @@
 
 /* some math and copy defines */
 
-#ifndef SWAP
-#  define SWAP(type, a, b)       { type sw_ap; sw_ap = (a); (a) = (b); (b) = sw_ap; } (void)0
+/* Causes warning:
+ * incompatible types when assigning to type 'Foo' from type 'Bar'
+ * ... the compiler optimizes away the temp var */
+#ifdef __GNUC__
+#define CHECK_TYPE(var, type)  {  \
+	__typeof(var) *__tmp;         \
+	__tmp = (type *)NULL;         \
+	(void)__tmp;                  \
+} (void)0
+
+#define CHECK_TYPE_PAIR(var_a, var_b)  {  \
+	__typeof(var_a) *__tmp;               \
+	__tmp = (__typeof(var_b) *)NULL;      \
+	(void)__tmp;                          \
+} (void)0
+#else
+#  define CHECK_TYPE(var, type)
+#  define CHECK_TYPE_PAIR(var_a, var_b)
 #endif
+
+/* can be used in simple macros */
+#define CHECK_TYPE_INLINE(val, type) \
+	((void)(((type *)0) != (val)))
+
+#define SWAP(type, a, b)  {    \
+	type sw_ap;                \
+	CHECK_TYPE(a, type);       \
+	CHECK_TYPE(b, type);       \
+	sw_ap = (a);               \
+	(a) = (b);                 \
+	(b) = sw_ap;               \
+} (void)0
+
+/* swap with a temp value */
+#define SWAP_TVAL(tval, a, b)  {  \
+	CHECK_TYPE_PAIR(tval, a);     \
+	CHECK_TYPE_PAIR(tval, b);     \
+	(tval) = (a);                 \
+	(a) = (b);                    \
+	(b) = (tval);                 \
+} (void)0
+
+/* ELEM#(a, ...): is the first arg equal any of the others */
+#define ELEM(a, b, c)           ((a) == (b) || (a) == (c))
+#define ELEM3(a, b, c, d)       (ELEM(a, b, c) || (a) == (d) )
+#define ELEM4(a, b, c, d, e)    (ELEM(a, b, c) || ELEM(a, d, e) )
+#define ELEM5(a, b, c, d, e, f) (ELEM(a, b, c) || ELEM3(a, d, e, f) )
+#define ELEM6(a, b, c, d, e, f, g)      (ELEM(a, b, c) || ELEM4(a, d, e, f, g) )
+#define ELEM7(a, b, c, d, e, f, g, h)   (ELEM3(a, b, c, d) || ELEM4(a, e, f, g, h) )
+#define ELEM8(a, b, c, d, e, f, g, h, i)        (ELEM4(a, b, c, d, e) || ELEM4(a, f, g, h, i) )
+#define ELEM9(a, b, c, d, e, f, g, h, i, j)        (ELEM4(a, b, c, d, e) || ELEM5(a, f, g, h, i, j) )
+#define ELEM10(a, b, c, d, e, f, g, h, i, j, k)        (ELEM4(a, b, c, d, e) || ELEM6(a, f, g, h, i, j, k) )
+#define ELEM11(a, b, c, d, e, f, g, h, i, j, k, l)        (ELEM4(a, b, c, d, e) || ELEM7(a, f, g, h, i, j, k, l) )
+
+/* shift around elements */
+#define SHIFT3(type, a, b, c)  {                                              \
+	type tmp;                                                                 \
+	CHECK_TYPE(a, type);                                                      \
+	CHECK_TYPE(b, type);                                                      \
+	CHECK_TYPE(c, type);                                                      \
+	tmp = a;                                                                  \
+	a = c;                                                                    \
+	c = b;                                                                    \
+	b = tmp;                                                                  \
+} (void)0
+
+#define SHIFT4(type, a, b, c, d)  {                                           \
+	type tmp;                                                                 \
+	CHECK_TYPE(a, type);                                                      \
+	CHECK_TYPE(b, type);                                                      \
+	CHECK_TYPE(c, type);                                                      \
+	CHECK_TYPE(d, type);                                                      \
+	tmp = a;                                                                  \
+	a = d;                                                                    \
+	d = c;                                                                    \
+	c = b;                                                                    \
+	b = tmp;                                                                  \
+} (void)0
+
 
 #define ABS(a)          ( (a) < 0 ? (-(a)) : (a) )
 
@@ -167,25 +221,24 @@
 		*(v1 + 1) = *(v2 + 1) + *(v3 + 1) * (fac);                            \
 		*(v1 + 2) = *(v2 + 2) + *(v3 + 2) * (fac);                            \
 } (void)0
+#define VECMADD(v1, v2, v3, v4) {                                             \
+		*(v1) =   *(v2)   + *(v3) * (*(v4));                                     \
+		*(v1 + 1) = *(v2 + 1) + *(v3 + 1) * (*(v4 + 1));                         \
+		*(v1 + 2) = *(v2 + 2) + *(v3 + 2) * (*(v4 + 2));                         \
+} (void)0
 #define VECSUBFAC(v1, v2, v3, fac) {                                          \
 		*(v1) =   *(v2)   - *(v3) * (fac);                                    \
 		*(v1 + 1) = *(v2 + 1) - *(v3 + 1) * (fac);                            \
 		*(v1 + 2) = *(v2 + 2) - *(v3 + 2) * (fac);                            \
 } (void)0
 
-#define INPR(v1, v2) ( (v1)[0] * (v2)[0] + (v1)[1] * (v2)[1] + (v1)[2] * (v2)[2])
-
 /* some misc stuff.... */
-#define CLAMP(a, b, c)  if ((a) < (b)) (a) = (b); else if ((a) > (c)) (a) = (c)
+#define CLAMP(a, b, c)  {           \
+	if ((a) < (b)) (a) = (b);       \
+	else if ((a) > (c)) (a) = (c);  \
+} (void)0
 
 #define CLAMPIS(a, b, c) ((a) < (b) ? (b) : (a) > (c) ? (c) : (a))
-#define CLAMPTEST(a, b, c)                                                    \
-	if ((b) < (c)) {                                                          \
-		CLAMP(a, b, c);                                                       \
-	}                                                                         \
-	else {                                                                    \
-		CLAMP(a, c, b);                                                       \
-	} (void)0
 
 #define IS_EQ(a, b) ((fabs((double)(a) - (b)) >= (double) FLT_EPSILON) ? 0 : 1)
 #define IS_EQF(a, b) ((fabsf((float)(a) - (b)) >= (float) FLT_EPSILON) ? 0 : 1)
@@ -194,37 +247,31 @@
 #define IN_RANGE(a, b, c) ((b < c) ? ((b < a && a < c) ? 1 : 0) : ((c < a && a < b) ? 1 : 0))
 #define IN_RANGE_INCL(a, b, c) ((b < c) ? ((b <= a && a <= c) ? 1 : 0) : ((c <= a && a <= b) ? 1 : 0))
 
+/* unpack vector for args */
+#define UNPACK2(a)  ((a)[0]), ((a)[1])
+#define UNPACK3(a)  ((a)[0]), ((a)[1]), ((a)[2])
+#define UNPACK4(a)  ((a)[0]), ((a)[1]), ((a)[2]), ((a)[3])
+/* op may be '&' or '*' */
+#define UNPACK2OP(op, a)  op((a)[0]), op((a)[1])
+#define UNPACK3OP(op, a)  op((a)[0]), op((a)[1]), op((a)[2])
+#define UNPACK4OP(op, a)  op((a)[0]), op((a)[1]), op((a)[2]), op((a)[3])
+
+/* simple stack */
+#define STACK_DECLARE(stack)   unsigned int _##stack##_index
+#define STACK_INIT(stack)      ((void)stack, (void)((_##stack##_index) = 0))
+#define STACK_SIZE(stack)      ((void)stack, (_##stack##_index))
+#define STACK_PUSH(stack, val)  (void)((stack)[(_##stack##_index)++] = val)
+#define STACK_PUSH_RET(stack)  ((void)stack, ((stack)[(_##stack##_index)++]))
+#define STACK_PUSH_RET_PTR(stack)  ((void)stack, &((stack)[(_##stack##_index)++]))
+#define STACK_POP(stack)       ((_##stack##_index) ? ((stack)[--(_##stack##_index)]) : NULL)
+#define STACK_FREE(stack)      ((void)stack)
+
 /* array helpers */
-#define ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot)                 \
+#define ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot) \
 	(arr_dtype *)((char *)arr_start + (elem_size * (tot - 1)))
 
-#define ARRAY_HAS_ITEM(item, arr_start, arr_dtype, elem_size, tot) (          \
-		(item >= arr_start) &&                                                \
-		(item <= ARRAY_LAST_ITEM(arr_start, arr_dtype, elem_size, tot))       \
-	)
-
-/* This one rotates the bytes in an int64, int (32) and short (16) */
-#define SWITCH_INT64(a) {                                                     \
-		char s_i, *p_i;                                                       \
-		p_i = (char *)&(a);                                                   \
-		s_i = p_i[0]; p_i[0] = p_i[7]; p_i[7] = s_i;                          \
-		s_i = p_i[1]; p_i[1] = p_i[6]; p_i[6] = s_i;                          \
-		s_i = p_i[2]; p_i[2] = p_i[5]; p_i[5] = s_i;                          \
-		s_i = p_i[3]; p_i[3] = p_i[4]; p_i[4] = s_i;                          \
-	} (void)0
-
-#define SWITCH_INT(a) {                                                       \
-		char s_i, *p_i;                                                       \
-		p_i = (char *)&(a);                                                   \
-		s_i = p_i[0]; p_i[0] = p_i[3]; p_i[3] = s_i;                          \
-		s_i = p_i[1]; p_i[1] = p_i[2]; p_i[2] = s_i;                          \
-	} (void)0
-
-#define SWITCH_SHORT(a) {                                                     \
-		char s_i, *p_i;                                                       \
-		p_i = (char *)&(a);                                                   \
-		s_i = p_i[0]; p_i[0] = p_i[1]; p_i[1] = s_i;                          \
-	} (void)0
+#define ARRAY_HAS_ITEM(arr_item, arr_start, tot) \
+	((unsigned int)((arr_item) - (arr_start)) < (unsigned int)(tot))
 
 
 /* Warning-free macros for storing ints in pointers. Use these _only_
@@ -244,6 +291,16 @@
 #define STRINGIFY_ARG(x) "" #x
 #define STRINGIFY_APPEND(a, b) "" a #b
 #define STRINGIFY(x) STRINGIFY_APPEND("", x)
+
+
+/* generic strcmp macros */
+#define STREQ(a, b) (strcmp(a, b) == 0)
+#define STRCASEEQ(a, b) (strcasecmp(a, b) == 0)
+#define STREQLEN(a, b, n) (strncmp(a, b, n) == 0)
+#define STRCASEEQLEN(a, b, n) (strncasecmp(a, b, n) == 0)
+
+#define STRPREFIX(a, b) (strncmp((a), (b), strlen(b)) == 0)
+
 
 /* useful for debugging */
 #define AT __FILE__ ":" STRINGIFY(__LINE__)
@@ -276,11 +333,13 @@
 /*little macro so inline keyword works*/
 #if defined(_MSC_VER)
 #  define BLI_INLINE static __forceinline
-#elif defined(__GNUC__)
-#  define BLI_INLINE static inline __attribute((always_inline))
 #else
-/* #warning "MSC/GNUC defines not found, inline non-functional" */
-#  define BLI_INLINE static
+#  if (defined(__APPLE__) && defined(__ppc__))
+/* static inline __attribute__ here breaks osx ppc gcc42 build */
+#    define BLI_INLINE static __attribute__((always_inline))
+#  else
+#    define BLI_INLINE static inline __attribute__((always_inline))
+#  endif
 #endif
 
 
@@ -316,6 +375,14 @@
 #  define BLI_assert(a) (void)0
 #endif
 
+/* C++ can't use _Static_assert, expects static_assert() but c++0x only */
+#if (!defined(__cplusplus)) && (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 406))  /* gcc4.6+ only */
+#  define BLI_STATIC_ASSERT(a, msg) _Static_assert(a, msg);
+#else
+   /* TODO msvc, clang */
+#  define BLI_STATIC_ASSERT(a, msg)
+#endif
+
 /* hints for branch pradiction, only use in code that runs a _lot_ where */
 #ifdef __GNUC__
 #  define LIKELY(x)       __builtin_expect(!!(x), 1)
@@ -325,4 +392,4 @@
 #  define UNLIKELY(x)     (x)
 #endif
 
-#endif // __BLI_UTILDEFINES_H__
+#endif  /* __BLI_UTILDEFINES_H__ */

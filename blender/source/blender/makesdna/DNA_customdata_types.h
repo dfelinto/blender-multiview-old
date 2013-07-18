@@ -27,6 +27,8 @@
 
 /** \file DNA_customdata_types.h
  *  \ingroup DNA
+ *
+ * Used for custom mesh data types (stored per vert/edge/loop/face)
  */
 
 #ifndef __DNA_CUSTOMDATA_TYPES_H__
@@ -35,8 +37,6 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-
-#include "DNA_defs.h" /* USE_BMESH_FORWARD_COMPAT */
 
 /** descriptor and storage for a custom data layer */
 typedef struct CustomDataLayer {
@@ -48,7 +48,7 @@ typedef struct CustomDataLayer {
 	int active_clone; /* number of the layer to render*/
 	int active_mask; /* number of the layer to render*/
 	int uid;        /* shape keyblock unique id reference*/
-	char name[64];  /* layer name, MAX_CUSTOMDATA_LAYER_AAME */
+	char name[64];  /* layer name, MAX_CUSTOMDATA_LAYER_NAME */
 	void *data;     /* layer data */
 } CustomDataLayer;
 
@@ -63,7 +63,7 @@ typedef struct CustomDataExternal {
  * layers, each with a data type (e.g. MTFace, MDeformVert, etc.). */
 typedef struct CustomData {
 	CustomDataLayer *layers;      /* CustomDataLayers, ordered by type */
-	int typemap[37];              /* runtime only! - maps types to indices of first layer of that type,
+	int typemap[39];              /* runtime only! - maps types to indices of first layer of that type,
 	                               * MUST be >= CD_NUMTYPES, but we cant use a define here.
 	                               * Correct size is ensured in CustomData_update_typemap assert() */
 	int totlayer, maxlayer;       /* number of layers, size of layers array */
@@ -74,7 +74,7 @@ typedef struct CustomData {
 
 /* CustomData.type */
 #define CD_MVERT		0
-#define CD_MSTICKY		1
+#define CD_MSTICKY		1  /* DEPRECATED */
 #define CD_MDEFORMVERT	2
 #define CD_MEDGE		3
 #define CD_MFACE		4
@@ -82,7 +82,7 @@ typedef struct CustomData {
 #define CD_MCOL			6
 #define CD_ORIGINDEX	7
 #define CD_NORMAL		8
-#define CD_POLYINDEX	9
+//#define CD_POLYINDEX	9
 #define CD_PROP_FLT		10
 #define CD_PROP_INT		11
 #define CD_PROP_STR		12
@@ -114,11 +114,13 @@ typedef struct CustomData {
 #define CD_PAINT_MASK	34
 #define CD_GRID_PAINT_MASK	35
 #define CD_MVERT_SKIN	36
-#define CD_NUMTYPES		37
+#define CD_FREESTYLE_EDGE	37
+#define CD_FREESTYLE_FACE	38
+#define CD_NUMTYPES		39
 
 /* Bits for CustomDataMask */
 #define CD_MASK_MVERT		(1 << CD_MVERT)
-#define CD_MASK_MSTICKY		(1 << CD_MSTICKY)
+#define CD_MASK_MSTICKY		(1 << CD_MSTICKY)  /* DEPRECATED */
 #define CD_MASK_MDEFORMVERT	(1 << CD_MDEFORMVERT)
 #define CD_MASK_MEDGE		(1 << CD_MEDGE)
 #define CD_MASK_MFACE		(1 << CD_MFACE)
@@ -126,7 +128,7 @@ typedef struct CustomData {
 #define CD_MASK_MCOL		(1 << CD_MCOL)
 #define CD_MASK_ORIGINDEX	(1 << CD_ORIGINDEX)
 #define CD_MASK_NORMAL		(1 << CD_NORMAL)
-#define CD_MASK_POLYINDEX	(1 << CD_POLYINDEX)
+// #define CD_MASK_POLYINDEX	(1 << CD_POLYINDEX)
 #define CD_MASK_PROP_FLT	(1 << CD_PROP_FLT)
 #define CD_MASK_PROP_INT	(1 << CD_PROP_INT)
 #define CD_MASK_PROP_STR	(1 << CD_PROP_STR)
@@ -148,7 +150,7 @@ typedef struct CustomData {
 #define CD_MASK_SHAPEKEY	(1 << CD_SHAPEKEY)
 #define CD_MASK_BWEIGHT		(1 << CD_BWEIGHT)
 #define CD_MASK_CREASE		(1 << CD_CREASE)
-#define CD_MASK_ORIGSPACE_MLOOP	(1 << CD_ORIGSPACE_MLOOP)
+#define CD_MASK_ORIGSPACE_MLOOP	(1LL << CD_ORIGSPACE_MLOOP)
 #define CD_MASK_PREVIEW_MLOOPCOL (1LL << CD_PREVIEW_MLOOPCOL)
 #define CD_MASK_BM_ELEM_PYPTR (1LL << CD_BM_ELEM_PYPTR)
 /* BMESH ONLY END */
@@ -156,6 +158,8 @@ typedef struct CustomData {
 #define CD_MASK_PAINT_MASK		(1LL << CD_PAINT_MASK)
 #define CD_MASK_GRID_PAINT_MASK	(1LL << CD_GRID_PAINT_MASK)
 #define CD_MASK_MVERT_SKIN		(1LL << CD_MVERT_SKIN)
+#define CD_MASK_FREESTYLE_EDGE	(1LL << CD_FREESTYLE_EDGE)
+#define CD_MASK_FREESTYLE_FACE	(1LL << CD_FREESTYLE_FACE)
 
 /* CustomData.flag */
 
@@ -179,4 +183,4 @@ typedef struct CustomData {
 }
 #endif
 
-#endif
+#endif  /* __DNA_CUSTOMDATA_TYPES_H__ */

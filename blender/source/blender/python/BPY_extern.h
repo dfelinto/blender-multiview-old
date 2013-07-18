@@ -63,10 +63,11 @@ int BPY_is_pyconstraint(struct Text *text);
 
 void BPY_python_start(int argc, const char **argv);
 void BPY_python_end(void);
+void BPY_python_reset(struct bContext *C);
 
 /* 2.5 UI Scripts */
 int		BPY_filepath_exec(struct bContext *C, const char *filepath, struct ReportList *reports);
-int		BPY_text_exec(struct bContext *C, struct Text *text, struct ReportList *reports, const short do_jump);
+int		BPY_text_exec(struct bContext *C, struct Text *text, struct ReportList *reports, const bool do_jump);
 void	BPY_text_free_code(struct Text *text);
 void	BPY_modules_update(struct bContext *C); // XXX - annoying, need this for pointers that get out of date
 void	BPY_modules_load_user(struct bContext *C);
@@ -80,11 +81,17 @@ int		BPY_button_exec(struct bContext *C, const char *expr, double *value, const 
 int		BPY_string_exec(struct bContext *C, const char *expr);
 
 void	BPY_DECREF(void *pyob_ptr);	/* Py_DECREF() */
+void	BPY_DECREF_RNA_INVALIDATE(void *pyob_ptr);
 int		BPY_context_member_get(struct bContext *C, const char *member, struct bContextDataResult *result);
 void	BPY_context_set(struct bContext *C);
 void	BPY_context_update(struct bContext *C);
 
 void	BPY_id_release(struct ID *id);
+
+/* I18n for addons */
+#ifdef WITH_INTERNATIONAL
+const char *BPY_app_translations_py_pgettext(const char *msgctxt, const char *msgid);
+#endif
 
 #ifdef __cplusplus
 }				/* extern "C" */

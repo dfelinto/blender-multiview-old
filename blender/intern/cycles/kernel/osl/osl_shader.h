@@ -31,40 +31,34 @@
  * This means no thread state must be passed along in the kernel itself.
  */
 
-#include <OSL/oslexec.h>
-#include <OSL/oslclosure.h>
-
 #include "kernel_types.h"
-
-#include "util_map.h"
-#include "util_param.h"
-#include "util_vector.h"
 
 CCL_NAMESPACE_BEGIN
 
-namespace OSL = ::OSL;
-
-class OSLRenderServices;
 class Scene;
-class ShaderClosure;
-class ShaderData;
-class differential3;
-class KernelGlobals;
+
+struct ShaderClosure;
+struct ShaderData;
+struct differential3;
+struct KernelGlobals;
+
+struct OSLGlobals;
+struct OSLShadingSystem;
 
 class OSLShader {
 public:
 	/* init */
-	static void register_closures(OSL::ShadingSystem *ss);
+	static void register_closures(OSLShadingSystem *ss);
 
 	/* per thread data */
-	static void thread_init(KernelGlobals *kg);
+	static void thread_init(KernelGlobals *kg, KernelGlobals *kernel_globals, OSLGlobals *osl_globals);
 	static void thread_free(KernelGlobals *kg);
 
 	/* eval */
-	static void eval_surface(KernelGlobals *kg, ShaderData *sd, float randb, int path_flag);
-	static float3 eval_background(KernelGlobals *kg, ShaderData *sd, int path_flag);
-	static void eval_volume(KernelGlobals *kg, ShaderData *sd, float randb, int path_flag);
-	static void eval_displacement(KernelGlobals *kg, ShaderData *sd);
+	static void eval_surface(KernelGlobals *kg, ShaderData *sd, float randb, int path_flag, ShaderContext ctx);
+	static float3 eval_background(KernelGlobals *kg, ShaderData *sd, int path_flag, ShaderContext ctx);
+	static void eval_volume(KernelGlobals *kg, ShaderData *sd, float randb, int path_flag, ShaderContext ctx);
+	static void eval_displacement(KernelGlobals *kg, ShaderData *sd, ShaderContext ctx);
 
 	/* sample & eval */
 	static int bsdf_sample(const ShaderData *sd, const ShaderClosure *sc,
@@ -72,14 +66,15 @@ public:
 	                       float3& eval, float3& omega_in, differential3& domega_in, float& pdf);
 	static float3 bsdf_eval(const ShaderData *sd, const ShaderClosure *sc,
 	                        const float3& omega_in, float& pdf);
+	static void bsdf_blur(ShaderClosure *sc, float roughness);
 
 	static float3 emissive_eval(const ShaderData *sd, const ShaderClosure *sc);
 
-	static float3 volume_eval_phase(const ShaderData *sd, const ShaderClosure *sc,
+	static float3 volume_eval_phase(const ShaderClosure *sc,
 	                                const float3 omega_in, const float3 omega_out);
 
-	/* release */
-	static void release(KernelGlobals *kg, const ShaderData *sd);
+	/* attributes */
+	static int find_attribute(KernelGlobals *kg, const ShaderData *sd, uint id, AttributeElement *elem);
 };
 
 CCL_NAMESPACE_END

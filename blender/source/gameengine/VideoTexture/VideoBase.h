@@ -1,29 +1,33 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file VideoBase.h
  *  \ingroup bgevideotex
  */
- 
+
 #ifndef __VIDEOBASE_H__
 #define __VIDEOBASE_H__
 
@@ -62,13 +66,13 @@ public:
 	virtual ~VideoBase (void) {}
 
 	/// open video file
-	virtual void openFile (char * file)
+	virtual void openFile(char *file)
 	{
 		m_isFile = true;
 		m_status = SourceReady;
 	}
 	/// open video capture device
-	virtual void openCam (char * file, short camIdx)
+	virtual void openCam(char *file, short camIdx)
 	{
 		m_isFile = false;
 		m_status = SourceReady;
@@ -164,14 +168,14 @@ protected:
 
 
 // cast Image pointer to Video
-inline VideoBase * getVideo (PyImage * self)
+inline VideoBase *getVideo(PyImage *self)
 { return static_cast<VideoBase*>(self->m_image); }
 
 
 extern ExceptionID SourceVideoCreation;
 
 // object initialization
-template <class T> void Video_init (PyImage * self)
+template <class T> void Video_init(PyImage *self)
 {
 	// create source video object
 	if (self->m_image != NULL) delete self->m_image;
@@ -182,19 +186,22 @@ template <class T> void Video_init (PyImage * self)
 
 
 // video functions
-void Video_open (VideoBase * self, char * file, short captureID);
-PyObject * Video_play (PyImage * self);
-PyObject * Video_pause (PyImage * self);
-PyObject * Video_stop (PyImage * self);
-PyObject * Video_refresh (PyImage * self);
-PyObject * Video_getStatus (PyImage * self, void * closure);
-PyObject * Video_getRange (PyImage * self, void * closure);
-int Video_setRange (PyImage * self, PyObject * value, void * closure);
-PyObject * Video_getRepeat (PyImage * self, void * closure);
-int Video_setRepeat (PyImage * self, PyObject * value, void * closure);
-PyObject * Video_getFrameRate (PyImage * self, void * closure);
-int Video_setFrameRate (PyImage * self, PyObject * value, void * closure);
+void      Video_open(VideoBase *self, char *file, short captureID);
+PyObject *Video_play(PyImage *self);
+PyObject *Video_pause(PyImage *self);
+PyObject *Video_stop(PyImage *self);
+PyObject *Video_refresh(PyImage *self);
+PyObject *Video_getStatus(PyImage *self, void *closure);
+PyObject *Video_getRange(PyImage *self, void *closure);
+int       Video_setRange(PyImage *self, PyObject *value, void *closure);
+PyObject *Video_getRepeat(PyImage *self, void *closure);
+int       Video_setRepeat(PyImage *self, PyObject *value, void *closure);
+PyObject *Video_getFrameRate(PyImage *self, void *closure);
+int       Video_setFrameRate(PyImage *self, PyObject *value, void *closure);
 
+/* py api */
+extern PyTypeObject ImageRenderType;
+extern PyTypeObject ImageMirrorType;
+extern PyTypeObject ImageViewportType;
 
-#endif
-
+#endif  /* __VIDEOBASE_H__ */

@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -38,7 +38,7 @@ def main():
 
     file = open(filename, 'w')
 
-    if 0:
+    if 1:
         # blend file
         rna_xml.rna2xml(file.write,
                         root_rna=bpy.data,

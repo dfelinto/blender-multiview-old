@@ -36,14 +36,18 @@ extern "C" {
 
 /********************************* Init **************************************/
 
-#define MAT4_UNITY {{ 1.0, 0.0, 0.0, 0.0}, \
-					{ 0.0, 1.0, 0.0, 0.0}, \
-					{ 0.0, 0.0, 1.0, 0.0}, \
-					{ 0.0, 0.0, 0.0, 1.0}}
+#define MAT4_UNITY  {      \
+	{ 1.0, 0.0, 0.0, 0.0}, \
+	{ 0.0, 1.0, 0.0, 0.0}, \
+	{ 0.0, 0.0, 1.0, 0.0}, \
+	{ 0.0, 0.0, 0.0, 1.0}  \
+}
 
-#define MAT3_UNITY {{ 1.0, 0.0, 0.0}, \
-					{ 0.0, 1.0, 0.0}, \
-					{ 0.0, 0.0, 1.0}}
+#define MAT3_UNITY  { \
+	{ 1.0, 0.0, 0.0}, \
+	{ 0.0, 1.0, 0.0}, \
+	{ 0.0, 0.0, 1.0}  \
+}
 
 void zero_m3(float R[3][3]);
 void zero_m4(float R[4][4]);
@@ -70,10 +74,8 @@ void sub_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
 void mul_m3_m3m3(float R[3][3], float A[3][3], float B[3][3]);
 void mul_m4_m3m4(float R[4][4], float A[3][3], float B[4][4]);
 void mul_m4_m4m3(float R[4][4], float A[4][4], float B[3][3]);
-/* note: the A,B arguments are reversed compared to previous mul_m4_m4m4
- * function, for consistency with above functions & math notation. */
-void mult_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
-void mult_m3_m3m4(float R[3][3], float A[4][4], float B[3][3]);
+void mul_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
+void mul_m3_m3m4(float R[3][3], float A[4][4], float B[3][3]);
 
 void mul_serie_m3(float R[3][3],
                   float M1[3][3], float M2[3][3], float M3[3][3], float M4[3][3],
@@ -84,19 +86,27 @@ void mul_serie_m4(float R[4][4],
 
 void mul_m4_v3(float M[4][4], float r[3]);
 void mul_v3_m4v3(float r[3], float M[4][4], const float v[3]);
+void mul_v2_m4v3(float r[2], float M[4][4], const float v[3]);
+void mul_v2_m2v2(float r[2], float M[2][2], const float v[2]);
 void mul_mat3_m4_v3(float M[4][4], float r[3]);
 void mul_m4_v4(float M[4][4], float r[4]);
-void mul_v4_m4v4(float r[4], float M[4][4], float v[4]);
+void mul_v4_m4v4(float r[4], float M[4][4], const float v[4]);
 void mul_project_m4_v3(float M[4][4], float vec[3]);
+void mul_v2_project_m4_v3(float r[2], float M[4][4], const float vec[3]);
 
 void mul_m3_v3(float M[3][3], float r[3]);
-void mul_v3_m3v3(float r[3], float M[3][3], float a[3]);
+void mul_v3_m3v3(float r[3], float M[3][3], const float a[3]);
+void mul_v2_m3v3(float r[2], float M[3][3], const float a[3]);
 void mul_transposed_m3_v3(float M[3][3], float r[3]);
+void mul_transposed_mat3_m4_v3(float M[4][4], float r[3]);
 void mul_m3_v3_double(float M[3][3], double r[3]);
 
 void mul_m3_fl(float R[3][3], float f);
 void mul_m4_fl(float R[4][4], float f);
 void mul_mat3_m4_fl(float R[4][4], float f);
+
+int invert_m3_ex(float m[3][3], const float epsilon);
+int invert_m3_m3_ex(float m1[3][3], float m2[3][3], const float epsilon);
 
 int invert_m3(float R[3][3]);
 int invert_m3_m3(float R[3][3], float A[3][3]);
@@ -113,6 +123,8 @@ void mul_v4d_m4v4d(double r[4], float M[4][4], double v[4]);
 void transpose_m3(float R[3][3]);
 void transpose_m4(float R[4][4]);
 
+int compare_m4m4(float mat1[4][4], float mat2[4][4], float limit);
+
 void normalize_m3(float R[3][3]);
 void normalize_m3_m3(float R[3][3], float A[3][3]);
 void normalize_m4(float R[4][4]);
@@ -128,6 +140,7 @@ int is_orthonormal_m4(float mat[4][4]);
 
 int is_uniform_scaled_m3(float mat[3][3]);
 
+void adjoint_m2_m2(float R[2][2], float A[2][2]);
 void adjoint_m3_m3(float R[3][3], float A[3][3]);
 void adjoint_m4_m4(float R[4][4], float A[4][4]);
 
@@ -136,10 +149,14 @@ float determinant_m2(float a, float b,
 float determinant_m3(float a, float b, float c,
                      float d, float e, float f,
                      float g, float h, float i);
+float determinant_m3_array(float m[3][3]);
 float determinant_m4(float A[4][4]);
+
+#define PSEUDOINVERSE_EPSILON 1e-8f
 
 void svd_m4(float U[4][4], float s[4], float V[4][4], float A[4][4]);
 void pseudoinverse_m4_m4(float Ainv[4][4], float A[4][4], float epsilon);
+void pseudoinverse_m3_m3(float Ainv[3][3], float A[3][3], float epsilon);
 
 /****************************** Transformations ******************************/
 
@@ -157,10 +174,13 @@ void mat4_to_size(float r[3], float M[4][4]);
 
 void translate_m4(float mat[4][4], float tx, float ty, float tz);
 void rotate_m4(float mat[4][4], const char axis, const float angle);
+void rotate_m2(float mat[2][2], const float angle);
 
 
-void mat3_to_rot_size(float rot[3][3], float size[3], float mat3[][3]);
-void mat4_to_loc_rot_size(float loc[3], float rot[3][3], float size[3], float wmat[][4]);
+void mat3_to_rot_size(float rot[3][3], float size[3], float mat3[3][3]);
+void mat4_to_loc_rot_size(float loc[3], float rot[3][3], float size[3], float wmat[4][4]);
+void mat4_to_loc_quat(float loc[3], float quat[4], float wmat[4][4]);
+void mat4_decompose(float loc[3], float quat[4], float size[3], float wmat[4][4]);
 
 void loc_eul_size_to_mat4(float R[4][4],
                           const float loc[3], const float eul[3], const float size[3]);

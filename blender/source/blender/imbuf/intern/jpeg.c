@@ -37,6 +37,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_string.h"
 #include "BLI_fileops.h"
 
@@ -48,14 +49,21 @@
 #include "jpeglib.h" 
 #include "jerror.h"
 
-#define IS_jpg(x)       (x->ftype & JPG)
+#include "IMB_colormanagement.h"
+#include "IMB_colormanagement_intern.h"
+
+// #define IS_jpg(x)       (x->ftype & JPG) // UNUSED
 #define IS_stdjpg(x)    ((x->ftype & JPG_MSK) == JPG_STD)
-#define IS_vidjpg(x)    ((x->ftype & JPG_MSK) == JPG_VID)
+// #define IS_vidjpg(x)    ((x->ftype & JPG_MSK) == JPG_VID) // UNUSED
 #define IS_jstjpg(x)    ((x->ftype & JPG_MSK) == JPG_JST)
 #define IS_maxjpg(x)    ((x->ftype & JPG_MSK) == JPG_MAX)
 
 /* the types are from the jpeg lib */
-static void jpeg_error(j_common_ptr cinfo);
+static void jpeg_error(j_common_ptr cinfo)
+#ifdef __GNUC__
+__attribute__((noreturn));
+#endif
+;
 static void init_source(j_decompress_ptr cinfo);
 static boolean fill_input_buffer(j_decompress_ptr cinfo);
 static void skip_input_data(j_decompress_ptr cinfo, long num_bytes);
@@ -117,10 +125,12 @@ static void jpeg_error(j_common_ptr cinfo)
  * INPUT HANDLER FROM MEMORY
  *---------------------------------------------------------- */
 
+#if 0
 typedef struct {
 	unsigned char  *buffer;
 	int             filled;
 } buffer_struct;
+#endif
 
 typedef struct {
 	struct jpeg_source_mgr pub; /* public fields */
@@ -231,20 +241,20 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
  * If must suspend, take the specified action (typically "return FALSE").
  */
 #define INPUT_BYTE(cinfo, V, action)  \
-	MAKESTMT(MAKE_BYTE_AVAIL(cinfo,action); \
-		  bytes_in_buffer--; \
-		  V = GETJOCTET(*next_input_byte++); )
+	MAKESTMT(MAKE_BYTE_AVAIL(cinfo, action); \
+	         bytes_in_buffer--; \
+	         V = GETJOCTET(*next_input_byte++); )
 
 /* As above, but read two bytes interpreted as an unsigned 16-bit integer.
  * V should be declared unsigned int or perhaps INT32.
  */
 #define INPUT_2BYTES(cinfo, V, action)  \
-	MAKESTMT(MAKE_BYTE_AVAIL(cinfo,action); \
-		  bytes_in_buffer--; \
-		  V = ((unsigned int) GETJOCTET(*next_input_byte++)) << 8; \
-		  MAKE_BYTE_AVAIL(cinfo, action); \
-		  bytes_in_buffer--; \
-		  V += GETJOCTET(*next_input_byte++); )
+	MAKESTMT(MAKE_BYTE_AVAIL(cinfo, action); \
+	      bytes_in_buffer--; \
+	      V = ((unsigned int) GETJOCTET(*next_input_byte++)) << 8; \
+	      MAKE_BYTE_AVAIL(cinfo, action); \
+	      bytes_in_buffer--; \
+	      V += GETJOCTET(*next_input_byte++); )
 
 
 static boolean
@@ -345,25 +355,12 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 							g = *buffer++;
 							b = *buffer++;
 							k = *buffer++;
-							
-							k = 255 - k;
-							r -= k;
-							if (r & 0xffffff00) {
-								if (r < 0) r = 0;
-								else r = 255;
-							}
-							g -= k;
-							if (g & 0xffffff00) {
-								if (g < 0) g = 0;
-								else g = 255;
-							}
-							b -= k;
-							if (b & 0xffffff00) {
-								if (b < 0) b = 0;
-								else b = 255;
-							}
-							
-							rect[3] = 255 - k;
+
+							r = (r * k) / 255;
+							g = (g * k) / 255;
+							b = (b * k) / 255;
+
+							rect[3] = 255;
 							rect[2] = b;
 							rect[1] = g;
 							rect[0] = r;
@@ -378,6 +375,12 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 					goto next_stamp_marker;
 
 				/*
+				 * JPEG marker strings are not null-terminated,
+				 * create a null-terminated copy before going further
+				 */
+				str = BLI_strdupn((char *)marker->data, marker->data_length);
+
+				/*
 				 * Because JPEG format don't support the
 				 * pair "key/value" like PNG, we store the
 				 * stampinfo in a single "encode" string:
@@ -386,7 +389,7 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 				 * That is why we need split it to the
 				 * common key/value here.
 				 */
-				if (strncmp((char *) marker->data, "Blender", 7)) {
+				if (strncmp(str, "Blender", 7)) {
 					/*
 					 * Maybe the file have text that
 					 * we don't know "what it's", in that
@@ -396,12 +399,12 @@ static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int fla
 					 * the information when we write
 					 * it back to disk.
 					 */
-					IMB_metadata_add_field(ibuf, "None", (char *) marker->data);
+					IMB_metadata_add_field(ibuf, "None", str);
 					ibuf->flags |= IB_metadata;
+					MEM_freeN(str);
 					goto next_stamp_marker;
 				}
 
-				str = BLI_strdup((char *) marker->data);
 				key = strchr(str, ':');
 				/*
 				 * A little paranoid, but the file maybe
@@ -435,21 +438,22 @@ next_stamp_marker:
 		jpeg_destroy((j_common_ptr) cinfo);
 		if (ibuf) {
 			ibuf->ftype = ibuf_ftype;
-			ibuf->profile = IB_PROFILE_SRGB;
 		}
 	}
 
 	return(ibuf);
 }
 
-ImBuf *imb_load_jpeg(unsigned char *buffer, size_t size, int flags)
+ImBuf *imb_load_jpeg(unsigned char *buffer, size_t size, int flags, char colorspace[IM_MAX_SPACE])
 {
 	struct jpeg_decompress_struct _cinfo, *cinfo = &_cinfo;
 	struct my_error_mgr jerr;
 	ImBuf *ibuf;
 
 	if (!imb_is_a_jpeg(buffer)) return NULL;
-	
+
+	colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_BYTE);
+
 	cinfo->err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = jpeg_error;
 

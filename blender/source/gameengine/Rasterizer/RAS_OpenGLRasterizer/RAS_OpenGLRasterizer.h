@@ -32,8 +32,8 @@
 #ifndef __RAS_OPENGLRASTERIZER_H__
 #define __RAS_OPENGLRASTERIZER_H__
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable:4786)
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
 #endif
 
 #include "MT_CmMatrix4x4.h"
@@ -41,6 +41,7 @@
 using namespace std;
 
 #include "RAS_IRasterizer.h"
+#include "RAS_IStorage.h"
 #include "RAS_MaterialBucket.h"
 #include "RAS_ICanvas.h"
 
@@ -83,7 +84,6 @@ class RAS_OpenGLRasterizer : public RAS_IRasterizer
 	float			m_ambr;
 	float			m_ambg;
 	float			m_ambb;
-
 	double			m_time;
 	MT_Matrix4x4	m_viewmatrix;
 	MT_Matrix4x4	m_viewinvmatrix;
@@ -106,10 +106,13 @@ class RAS_OpenGLRasterizer : public RAS_IRasterizer
 	int	m_motionblur;
 	float	m_motionblurvalue;
 
+	bool m_usingoverrideshader;
+
 protected:
 	int				m_drawingmode;
 	TexCoGen		m_texco[RAS_MAX_TEXCO];
 	TexCoGen		m_attrib[RAS_MAX_ATTRIB];
+	int				m_attrib_layer[RAS_MAX_ATTRIB];
 	int				m_texco_num;
 	int				m_attrib_num;
 	//int				m_last_alphablend;
@@ -118,9 +121,16 @@ protected:
 	/** Stores the caching information for the last material activated. */
 	RAS_IPolyMaterial::TCachingInfo m_materialCachingInfo;
 
+	/**
+	 * Making use of a Strategy desing pattern for storage behavior.
+	 * Examples of concrete strategies: Vertex Arrays, VBOs, Immediate Mode*/
+	int				m_storage_type;
+	RAS_IStorage*	m_storage;
+	RAS_IStorage*	m_failsafe_storage; //So derived mesh can use immediate mode
+
 public:
 	double GetTime();
-	RAS_OpenGLRasterizer(RAS_ICanvas* canv);
+	RAS_OpenGLRasterizer(RAS_ICanvas* canv, int storage=RAS_AUTO_STORAGE);
 	virtual ~RAS_OpenGLRasterizer();
 
 	/*enum DrawType
@@ -169,8 +179,6 @@ public:
 						class RAS_MeshSlot& ms,
 						class RAS_IPolyMaterial* polymat,
 						class RAS_IRenderTools* rendertools);
-
-	void			IndexPrimitivesInternal(RAS_MeshSlot& ms, bool multi);
 
 	virtual void	SetProjectionMatrix(MT_CmMatrix4x4 & mat);
 	virtual void	SetProjectionMatrix(const MT_Matrix4x4 & mat);
@@ -282,7 +290,7 @@ public:
 		line.m_type = OglDebugShape::CIRCLE;
 		line.m_pos= center;
 		line.m_param = normal;
-		line.m_color = color;	
+		line.m_color = color;
 		line.m_param2.x() = radius;
 		line.m_param2.y() = (float) nsector;
 		m_debugShapes.push_back(line);
@@ -293,7 +301,7 @@ public:
 	virtual void SetTexCoordNum(int num);
 	virtual void SetAttribNum(int num);
 	virtual void SetTexCoord(TexCoGen coords, int unit);
-	virtual void SetAttrib(TexCoGen coords, int unit);
+	virtual void SetAttrib(TexCoGen coords, int unit, int layer = 0);
 
 	void TexCoord(const RAS_TexVert &tv);
 
@@ -320,12 +328,15 @@ public:
 	virtual void	SetAnisotropicFiltering(short level);
 	virtual short	GetAnisotropicFiltering();
 
+	virtual void	SetMipmapping(MipmapOption val);
+	virtual MipmapOption GetMipmapping();
+
+	virtual void	SetUsingOverrideShader(bool val);
+	virtual bool	GetUsingOverrideShader();
 
 #ifdef WITH_CXX_GUARDEDALLOC
 	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_OpenGLRasterizer")
 #endif
 };
 
-#endif //__RAS_OPENGLRASTERIZER_H__
-
-
+#endif  /* __RAS_OPENGLRASTERIZER_H__ */

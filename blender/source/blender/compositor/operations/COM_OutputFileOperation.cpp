@@ -31,9 +31,12 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 
+#include "DNA_color_types.h"
+
 extern "C" {
 	#include "MEM_guardedalloc.h"
 	#include "IMB_imbuf.h"
+	#include "IMB_colormanagement.h"
 	#include "IMB_imbuf_types.h"
 }
 
@@ -91,7 +94,8 @@ static void write_buffer_rect(rcti *rect, const bNodeTree *tree,
 
 
 OutputSingleLayerOperation::OutputSingleLayerOperation(
-    const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path)
+        const RenderData *rd, const bNodeTree *tree, DataType datatype, ImageFormatData *format, const char *path,
+        const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings)
 {
 	this->m_rd = rd;
 	this->m_tree = tree;
@@ -104,6 +108,9 @@ OutputSingleLayerOperation::OutputSingleLayerOperation(
 	
 	this->m_format = format;
 	BLI_strncpy(this->m_path, path, sizeof(this->m_path));
+
+	this->m_viewSettings = viewSettings;
+	this->m_displaySettings = displaySettings;
 }
 
 void OutputSingleLayerOperation::initExecution()
@@ -122,7 +129,7 @@ void OutputSingleLayerOperation::deinitExecution()
 	if (this->getWidth() * this->getHeight() != 0) {
 		
 		int size = get_datatype_size(this->m_datatype);
-		ImBuf *ibuf = IMB_allocImBuf(this->getWidth(), this->getHeight(), size * 8, 0);
+		ImBuf *ibuf = IMB_allocImBuf(this->getWidth(), this->getHeight(), this->m_format->planes, 0);
 		Main *bmain = G.main; /* TODO, have this passed along */
 		char filename[FILE_MAX];
 		
@@ -131,10 +138,10 @@ void OutputSingleLayerOperation::deinitExecution()
 		ibuf->mall |= IB_rectfloat; 
 		ibuf->dither = this->m_rd->dither_intensity;
 		
-		if (this->m_rd->color_mgt_flag & R_COLOR_MANAGEMENT)
-			ibuf->profile = IB_PROFILE_LINEAR_RGB;
-		
-		BKE_makepicstring(filename, this->m_path, bmain->name, this->m_rd->cfra, this->m_format->imtype,
+		IMB_colormanagement_imbuf_for_write(ibuf, TRUE, FALSE, m_viewSettings, m_displaySettings,
+		                                    this->m_format);
+
+		BKE_makepicstring(filename, this->m_path, bmain->name, this->m_rd->cfra, this->m_format,
 		                  (this->m_rd->scemode & R_EXTENSION), true);
 		
 		if (0 == BKE_imbuf_write(ibuf, filename, this->m_format))
@@ -142,7 +149,7 @@ void OutputSingleLayerOperation::deinitExecution()
 		else
 			printf("Saved: %s\n", filename);
 		
-		IMB_freeImBuf(ibuf);	
+		IMB_freeImBuf(ibuf);
 	}
 	this->m_outputBuffer = NULL;
 	this->m_imageInput = NULL;
@@ -159,7 +166,7 @@ OutputOpenExrLayer::OutputOpenExrLayer(const char *name_, DataType datatype_)
 }
 
 OutputOpenExrMultiLayerOperation::OutputOpenExrMultiLayerOperation(
-    const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec)
+        const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec)
 {
 	this->m_rd = rd;
 	this->m_tree = tree;
@@ -198,7 +205,7 @@ void OutputOpenExrMultiLayerOperation::deinitExecution()
 		char filename[FILE_MAX];
 		void *exrhandle = IMB_exr_get_handle();
 		
-		BKE_makepicstring(filename, this->m_path, bmain->name, this->m_rd->cfra, R_IMF_IMTYPE_MULTILAYER,
+		BKE_makepicstring_from_type(filename, this->m_path, bmain->name, this->m_rd->cfra, R_IMF_IMTYPE_MULTILAYER,
 		                  (this->m_rd->scemode & R_EXTENSION), true);
 		BLI_make_existing_file(filename);
 		

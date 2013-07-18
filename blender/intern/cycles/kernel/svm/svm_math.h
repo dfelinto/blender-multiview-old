@@ -18,58 +18,6 @@
 
 CCL_NAMESPACE_BEGIN
 
-__device float safe_asinf(float a)
-{
-	if(a <= -1.0f)
-		return -M_PI_2_F;
-	else if(a >= 1.0f)
-		return M_PI_2_F;
-
-	return asinf(a);
-}
-
-__device float safe_acosf(float a)
-{
-	if(a <= -1.0f)
-		return M_PI_F;
-	else if(a >= 1.0f)
-		return 0.0f;
-
-	return acosf(a);
-}
-
-__device float safe_powf(float a, float b)
-{
-	if(b == 0.0f)
-		return 1.0f;
-	if(a == 0.0f)
-		return 0.0f;
-	if(a < 0.0f && b != (int)b)
-		return 0.0f;
-	
-	return powf(a, b);
-}
-
-__device float safe_logf(float a, float b)
-{
-	if(a < 0.0f || b < 0.0f)
-		return 0.0f;
-
-	return logf(a)/logf(b);
-}
-
-__device float safe_divide(float a, float b)
-{
-	float result;
-
-	if(b == 0.0f)
-		result = 0.0f;
-	else
-		result = a/b;
-	
-	return result;
-}
-
 __device float svm_math(NodeMath type, float Fac1, float Fac2)
 {
 	float Fac;
@@ -108,6 +56,10 @@ __device float svm_math(NodeMath type, float Fac1, float Fac2)
 		Fac = Fac1 < Fac2;
 	else if(type == NODE_MATH_GREATER_THAN)
 		Fac = Fac1 > Fac2;
+	else if(type == NODE_MATH_MODULO)
+		Fac = safe_modulo(Fac1, Fac2);
+	else if(type == NODE_MATH_CLAMP)
+		Fac = clamp(Fac1, 0.0f, 1.0f);
 	else
 		Fac = 0.0f;
 	

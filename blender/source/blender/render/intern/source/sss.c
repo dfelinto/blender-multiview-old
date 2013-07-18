@@ -55,6 +55,8 @@
 #include "BLI_ghash.h"
 #include "BLI_memarena.h"
 
+#include "BLF_translation.h"
+
 #include "PIL_time.h"
 
 #include "DNA_material_types.h"
@@ -238,7 +240,9 @@ static void approximate_Rd_rgb(ScatterSettings **ss, float rr, float *rd)
 	float indexf, t, idxf;
 	int index;
 
-	if (rr > (RD_TABLE_RANGE_2*RD_TABLE_RANGE_2));
+	if (rr > (RD_TABLE_RANGE_2 * RD_TABLE_RANGE_2)) {
+		/* pass */
+	}
 	else if (rr > RD_TABLE_RANGE) {
 		rr= sqrt(rr);
 		indexf= rr*(RD_TABLE_SIZE/RD_TABLE_RANGE_2);
@@ -305,7 +309,7 @@ ScatterSettings *scatter_settings_new(float refl, float radius, float ior, float
 	ss->Fdr= -1.440f/ior*ior + 0.710f/ior + 0.668f + 0.0636f*ior;
 	ss->A= (1.0f + ss->Fdr)/(1.0f - ss->Fdr);
 	ss->ld= radius;
-	ss->ro= minf(refl, 0.999f);
+	ss->ro= min_ff(refl, 0.999f);
 	ss->color= ss->ro*reflfac + (1.0f-reflfac);
 
 	ss->alpha_= compute_reduced_albedo(ss);
@@ -379,7 +383,7 @@ static void add_radiance(ScatterTree *tree, float *frontrad, float *backrad, flo
 	}
 }
 
-static void traverse_octree(ScatterTree *tree, ScatterNode *node, float *co, int self, ScatterResult *result)
+static void traverse_octree(ScatterTree *tree, ScatterNode *node, const float co[3], int self, ScatterResult *result)
 {
 	float sub[3], dist;
 	int i, index = 0;
@@ -430,7 +434,7 @@ static void traverse_octree(ScatterTree *tree, ScatterNode *node, float *co, int
 	}
 }
 
-static void compute_radiance(ScatterTree *tree, float *co, float *rad)
+static void compute_radiance(ScatterTree *tree, const float co[3], float *rad)
 {
 	ScatterResult result;
 	float rdsum[3], backrad[3], backrdsum[3];
@@ -876,14 +880,14 @@ static void sss_create_tree_mat(Render *re, Material *mat)
 	re->sss_mat= mat;
 	re->i.partsdone = FALSE;
 
-	if (!(re->r.scemode & R_PREVIEWBUTS))
+	if (!(re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW)))
 		re->result= NULL;
 	BLI_rw_mutex_unlock(&re->resultmutex);
 
 	RE_TileProcessor(re);
 	
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	if (!(re->r.scemode & R_PREVIEWBUTS)) {
+	if (!(re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))) {
 		RE_FreeRenderResult(re->result);
 		re->result= rr;
 	}
@@ -933,7 +937,7 @@ static void sss_create_tree_mat(Render *re, Material *mat)
 		float error = mat->sss_error;
 
 		error= get_render_aosss_error(&re->r, error);
-		if ((re->r.scemode & R_PREVIEWBUTS) && error < 0.5f)
+		if ((re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW)) && error < 0.5f)
 			error= 0.5f;
 		
 		sss->ss[0]= scatter_settings_new(mat->sss_col[0], radius[0], ior, cfac, fw, bw);
@@ -992,7 +996,7 @@ void make_sss_tree(Render *re)
 	
 	re->sss_hash= BLI_ghash_ptr_new("make_sss_tree gh");
 
-	re->i.infostr= "SSS preprocessing";
+	re->i.infostr = IFACE_("SSS preprocessing");
 	re->stats_draw(re->sdh, &re->i);
 	
 	for (mat= re->main->mat.first; mat; mat= mat->id.next)
@@ -1014,7 +1018,7 @@ void free_sss(Render *re)
 	if (re->sss_hash) {
 		GHashIterator *it= BLI_ghashIterator_new(re->sss_hash);
 
-		while (!BLI_ghashIterator_isDone(it)) {
+		while (!BLI_ghashIterator_done(it)) {
 			sss_free_tree(BLI_ghashIterator_getValue(it));
 			BLI_ghashIterator_step(it);
 		}

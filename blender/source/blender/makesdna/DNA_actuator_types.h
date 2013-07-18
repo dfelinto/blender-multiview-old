@@ -27,6 +27,8 @@
 
 /** \file DNA_actuator_types.h
  *  \ingroup DNA
+ *
+ * #bActuator type is specifically for use by Object logic-bricks in the game-engine.
  */
 
 #ifndef __DNA_ACTUATOR_TYPES_H__
@@ -46,21 +48,21 @@ typedef struct bAddObjectActuator {
 	struct Object *ob;
 } bAddObjectActuator;
 
-typedef struct bActionActuator {								
-	struct bAction *act;	/* Pointer to action */				
-	short	type, flag;		/* Playback type */  // not in use
-	float	sta, end;		/* Start & End frames */			
-	char	name[64];		/* For property-driven playback, MAX_NAME */	
-	char	frameProp[64];	/* Set this property to the actions current frame, MAX_NAME */
-	short	blendin;		/* Number of frames of blending */
-	short	priority;		/* Execution priority */
-	short	layer;			/* Animation layer */
-	short	end_reset;	/* Ending the actuator (negative pulse) wont reset the the action to its starting frame */
-	short	strideaxis;		/* Displacement axis */
-	short	pad;
-	float	stridelength;	/* Displacement incurred by cycle */ // not in use
-	float	layer_weight;	/* How much of the previous layer to use for blending. (<0 = disable, 0 = add mode) */
-} bActionActuator;												
+typedef struct bActionActuator {
+	struct bAction *act;    /* Pointer to action */
+	short   type, flag;     /* Playback type */  // not in use
+	float   sta, end;       /* Start & End frames */
+	char    name[64];       /* For property-driven playback, MAX_NAME */
+	char    frameProp[64];  /* Set this property to the actions current frame, MAX_NAME */
+	short   blendin;        /* Number of frames of blending */
+	short   priority;       /* Execution priority */
+	short   layer;          /* Animation layer */
+	short   end_reset;      /* Ending the actuator (negative pulse) wont reset the the action to its starting frame */
+	short   strideaxis;     /* Displacement axis */
+	short   pad;
+	float   stridelength;   /* Displacement incurred by cycle */ // not in use
+	float   layer_weight;   /* How much of the previous layer to use for blending. (<0 = disable, 0 = add mode) */
+} bActionActuator;
 
 typedef struct Sound3D {
 	float min_gain;
@@ -261,7 +263,7 @@ typedef struct bActuator {
 	/**
 	 * For ipo's and props: to find out which object the actuator
 	 * belongs to */
-	struct Object *ob;		
+	struct Object *ob;
 	
 } bActuator;
 
@@ -277,10 +279,13 @@ typedef struct bActuator {
 #define ACT_ANG_VEL_LOCAL		32
 //#define ACT_ADD_LIN_VEL_LOCAL	64
 #define ACT_ADD_LIN_VEL			64
+#define ACT_ADD_CHAR_LOC		128
+#define ACT_CHAR_JUMP			256
 
 /* objectactuator->type */
-#define ACT_OBJECT_NORMAL	0
-#define ACT_OBJECT_SERVO	1
+#define ACT_OBJECT_NORMAL		0
+#define ACT_OBJECT_SERVO		1
+#define ACT_OBJECT_CHARACTER	2
 
 /* actuator->type */
 #define ACT_OBJECT		0
@@ -532,6 +537,4 @@ typedef struct bActuator {
 #define ACT_STEERING_AUTOMATICFACING   4
 #define ACT_STEERING_NORMALUP  8
 
-#endif
-
-
+#endif  /* __DNA_ACTUATOR_TYPES_H__ */

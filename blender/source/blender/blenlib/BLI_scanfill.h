@@ -72,7 +72,8 @@ typedef struct ScanFillVert {
 	float xy[2]; /* 2D copy of vertex location (using dominant axis) */
 	unsigned int keyindex; /* original index #, for restoring  key information */
 	short poly_nr;
-	unsigned char f, h;
+	unsigned char edge_tot;  /* number of edges using this vertex */
+	unsigned char f;
 } ScanFillVert;
 
 typedef struct ScanFillEdge {
@@ -94,30 +95,26 @@ typedef struct ScanFillFace {
 struct ScanFillVert *BLI_scanfill_vert_add(ScanFillContext *sf_ctx, const float vec[3]);
 struct ScanFillEdge *BLI_scanfill_edge_add(ScanFillContext *sf_ctx, struct ScanFillVert *v1, struct ScanFillVert *v2);
 
-int BLI_scanfill_begin(ScanFillContext *sf_ctx);
-int BLI_scanfill_calc(ScanFillContext *sf_ctx, const short do_quad_tri_speedup);
-int BLI_scanfill_calc_ex(ScanFillContext *sf_ctx, const short do_quad_tri_speedup,
-                         const float nor_proj[3]);
+enum {
+	BLI_SCANFILL_CALC_QUADTRI_FASTPATH = (1 << 0),
+
+	/* note: using BLI_SCANFILL_CALC_REMOVE_DOUBLES
+	 * Assumes ordered edges, otherwise we risk an eternal loop
+	 * removing double verts. - campbell */
+	BLI_SCANFILL_CALC_REMOVE_DOUBLES   = (1 << 1),
+
+	/* note: This flag removes checks for overlapping polygons.
+	 * when this flag is set, we'll never get back more faces then (totvert - 2) */
+	BLI_SCANFILL_CALC_HOLES            = (1 << 2)
+};
+void BLI_scanfill_begin(ScanFillContext *sf_ctx);
+int  BLI_scanfill_calc(ScanFillContext *sf_ctx, const int flag);
+int  BLI_scanfill_calc_ex(ScanFillContext *sf_ctx, const int flag,
+                          const float nor_proj[3]);
 void BLI_scanfill_end(ScanFillContext *sf_ctx);
 
 /* These callbacks are needed to make the lib finction properly */
-
-/**
- * Set a function taking a char* as argument to flag errors. If the
- * callback is not set, the error is discarded.
- * \param f The function to use as callback
- * \attention used in creator.c
- */
 void BLI_setErrorCallBack(void (*f)(const char *));
-
-/**
- * Set a function to be able to interrupt the execution of processing
- * in this module. If the function returns true, the execution will
- * terminate gracefully. If the callback is not set, interruption is
- * not possible.
- * \param f The function to use as callback
- * \attention used in creator.c
- */
 void BLI_setInterruptCallBack(int (*f)(void));
 
 #ifdef __cplusplus

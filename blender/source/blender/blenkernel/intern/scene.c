@@ -46,6 +46,7 @@
 #include "DNA_group_types.h"
 #include "DNA_node_types.h"
 #include "DNA_object_types.h"
+#include "DNA_rigidbody_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_sequence_types.h"
@@ -54,13 +55,22 @@
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
 #include "BLI_callbacks.h"
+#include "BLI_string.h"
+#include "BLI_threads.h"
+
+#include "BLF_translation.h"
 
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
+#include "BKE_action.h"
+#include "BKE_colortools.h"
 #include "BKE_depsgraph.h"
+#include "BKE_fcurve.h"
+#include "BKE_freestyle.h"
 #include "BKE_global.h"
 #include "BKE_group.h"
 #include "BKE_idprop.h"
+#include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_mask.h"
@@ -68,13 +78,15 @@
 #include "BKE_object.h"
 #include "BKE_paint.h"
 #include "BKE_pointcache.h"
+#include "BKE_rigidbody.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
+#include "BKE_sound.h"
 #include "BKE_world.h"
 
-#include "BKE_sound.h"
-
 #include "RE_engine.h"
+
+#include "IMB_colormanagement.h"
 
 //XXX #include "BIF_previewrender.h"
 //XXX #include "BIF_editseq.h"
@@ -111,15 +123,35 @@ void free_qtcodecdata(QuicktimeCodecData *qcd)
 	}
 }
 
+static void remove_sequencer_fcurves(Scene *sce)
+{
+	AnimData *adt = BKE_animdata_from_id(&sce->id);
+
+	if (adt && adt->action) {
+		FCurve *fcu, *nextfcu;
+		
+		for (fcu = adt->action->curves.first; fcu; fcu = nextfcu) {
+			nextfcu = fcu->next;
+			
+			if ((fcu->rna_path) && strstr(fcu->rna_path, "sequences_all")) {
+				action_groups_remove_channel(adt->action, fcu);
+				free_fcurve(fcu);
+			}
+		}
+	}
+}
+
 Scene *BKE_scene_copy(Scene *sce, int type)
 {
 	Scene *scen;
+	SceneRenderLayer *srl, *new_srl;
 	ToolSettings *ts;
 	Base *base, *obase;
 	
 	if (type == SCE_COPY_EMPTY) {
 		ListBase lb;
-		scen = BKE_scene_add(sce->id.name + 2);
+		/* XXX. main should become an arg */
+		scen = BKE_scene_add(G.main, sce->id.name + 2);
 		
 		lb = scen->r.layers;
 		scen->r = sce->r;
@@ -147,13 +179,17 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		scen->stats = NULL;
 		scen->fps_info = NULL;
 
+		if (sce->rigidbody_world)
+			scen->rigidbody_world = BKE_rigidbody_world_copy(sce->rigidbody_world);
+
 		BLI_duplicatelist(&(scen->markers), &(sce->markers));
 		BLI_duplicatelist(&(scen->transform_spaces), &(sce->transform_spaces));
 		BLI_duplicatelist(&(scen->r.layers), &(sce->r.layers));
 		BKE_keyingsets_copy(&(scen->keyingsets), &(sce->keyingsets));
 
 		if (sce->nodetree) {
-			scen->nodetree = ntreeCopyTree(sce->nodetree); /* copies actions */
+			/* ID's are managed on both copy and switch */
+			scen->nodetree = ntreeCopyTree(sce->nodetree);
 			ntreeSwitchID(scen->nodetree, &sce->id, &scen->id);
 		}
 
@@ -165,6 +201,25 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 	
 			obase = obase->next;
 			base = base->next;
+		}
+
+		/* copy color management settings */
+		BKE_color_managed_display_settings_copy(&scen->display_settings, &sce->display_settings);
+		BKE_color_managed_view_settings_copy(&scen->view_settings, &sce->view_settings);
+		BKE_color_managed_view_settings_copy(&scen->r.im_format.view_settings, &sce->r.im_format.view_settings);
+
+		BLI_strncpy(scen->sequencer_colorspace_settings.name, sce->sequencer_colorspace_settings.name,
+		            sizeof(scen->sequencer_colorspace_settings.name));
+
+		/* remove animation used by sequencer */
+		if (type != SCE_COPY_FULL)
+			remove_sequencer_fcurves(scen);
+
+		/* copy Freestyle settings */
+		new_srl = scen->r.layers.first;
+		for (srl = sce->r.layers.first; srl; srl = srl->next) {
+			BKE_freestyle_config_copy(&new_srl->freestyleConfig, &srl->freestyleConfig);
+			new_srl = new_srl->next;
 		}
 	}
 
@@ -244,10 +299,20 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 	return scen;
 }
 
+void BKE_scene_groups_relink(Scene *sce)
+{
+	if (sce->rigidbody_world)
+		BKE_rigidbody_world_groups_relink(sce->rigidbody_world);
+}
+
 /* do not free scene itself */
 void BKE_scene_free(Scene *sce)
 {
 	Base *base;
+	SceneRenderLayer *srl;
+
+	/* check all sequences */
+	BKE_sequencer_clear_scene_in_allseqs(G.main, sce);
 
 	base = sce->base.first;
 	while (base) {
@@ -272,6 +337,9 @@ void BKE_scene_free(Scene *sce)
 	BKE_free_animdata((ID *)sce);
 	BKE_keyingsets_free(&sce->keyingsets);
 	
+	if (sce->rigidbody_world)
+		BKE_rigidbody_free_world(sce->rigidbody_world);
+	
 	if (sce->r.avicodecdata) {
 		free_avicodecdata(sce->r.avicodecdata);
 		MEM_freeN(sce->r.avicodecdata);
@@ -286,6 +354,10 @@ void BKE_scene_free(Scene *sce)
 		IDP_FreeProperty(sce->r.ffcodecdata.properties);
 		MEM_freeN(sce->r.ffcodecdata.properties);
 		sce->r.ffcodecdata.properties = NULL;
+	}
+	
+	for (srl = sce->r.layers.first; srl; srl = srl->next) {
+		BKE_freestyle_config_free(&srl->freestyleConfig);
 	}
 	
 	BLI_freelistN(&sce->markers);
@@ -312,13 +384,10 @@ void BKE_scene_free(Scene *sce)
 		BKE_paint_free(&sce->toolsettings->imapaint.paint);
 
 		MEM_freeN(sce->toolsettings);
-		sce->toolsettings = NULL;	
+		sce->toolsettings = NULL;
 	}
 	
-	if (sce->theDag) {
-		free_forest(sce->theDag);
-		MEM_freeN(sce->theDag);
-	}
+	DAG_scene_free(sce);
 	
 	if (sce->nodetree) {
 		ntreeFreeTree(sce->nodetree);
@@ -331,14 +400,16 @@ void BKE_scene_free(Scene *sce)
 		MEM_freeN(sce->fps_info);
 
 	sound_destroy_scene(sce);
+
+	BKE_color_managed_view_settings_free(&sce->view_settings);
 }
 
-Scene *BKE_scene_add(const char *name)
+Scene *BKE_scene_add(Main *bmain, const char *name)
 {
-	Main *bmain = G.main;
 	Scene *sce;
 	ParticleEditSettings *pset;
 	int a;
+	const char *colorspace_name;
 
 	sce = BKE_libblock_alloc(&bmain->scene, ID_SCE, name);
 	sce->lay = sce->layact = 1;
@@ -352,15 +423,17 @@ Scene *BKE_scene_add(const char *name)
 	sce->r.ysch = 1080;
 	sce->r.xasp = 1;
 	sce->r.yasp = 1;
-	sce->r.xparts = 8;
-	sce->r.yparts = 8;
+	sce->r.tilex = 256;
+	sce->r.tiley = 256;
 	sce->r.mblur_samples = 1;
 	sce->r.filtertype = R_FILTER_MITCH;
 	sce->r.size = 50;
 
 	sce->r.im_format.planes = R_IMF_PLANES_RGB;
 	sce->r.im_format.imtype = R_IMF_IMTYPE_PNG;
+	sce->r.im_format.depth = R_IMF_CHAN_DEPTH_8;
 	sce->r.im_format.quality = 90;
+	sce->r.im_format.compress = 90;
 
 	sce->r.displaymode = R_OUTPUT_AREA;
 	sce->r.framapto = 100;
@@ -371,7 +444,14 @@ Scene *BKE_scene_add(const char *name)
 	sce->r.frs_sec_base = 1;
 	sce->r.edgeint = 10;
 	sce->r.ocres = 128;
+
+	/* OCIO_TODO: for forwards compatibility only, so if no tonecurve are used,
+	 *            images would look in the same way as in current blender
+	 *
+	 *            perhaps at some point should be completely deprecated?
+	 */
 	sce->r.color_mgt_flag |= R_COLOR_MANAGEMENT;
+
 	sce->r.gauss = 1.0;
 	
 	/* deprecated but keep for upwards compat */
@@ -380,10 +460,12 @@ Scene *BKE_scene_add(const char *name)
 	sce->r.postsat = 1.0;
 
 	sce->r.bake_mode = 1;    /* prevent to include render stuff here */
-	sce->r.bake_filter = 2;
+	sce->r.bake_filter = 16;
 	sce->r.bake_osa = 5;
 	sce->r.bake_flag = R_BAKE_CLEAR;
 	sce->r.bake_normal_space = R_BAKE_SPACE_TANGENT;
+	sce->r.bake_samples = 256;
+	sce->r.bake_biasdist = 0.001;
 	sce->r.scemode = R_DOCOMP | R_DOSEQ | R_EXTENSION;
 	sce->r.stamp = R_STAMP_TIME | R_STAMP_FRAME | R_STAMP_DATE | R_STAMP_CAMERA | R_STAMP_SCENE | R_STAMP_FILENAME | R_STAMP_RENDERTIME;
 	sce->r.stamp_font_id = 12;
@@ -413,7 +495,7 @@ Scene *BKE_scene_add(const char *name)
 	sce->toolsettings->cornertype = 1;
 	sce->toolsettings->degr = 90; 
 	sce->toolsettings->step = 9;
-	sce->toolsettings->turn = 1; 				
+	sce->toolsettings->turn = 1;
 	sce->toolsettings->extr_offs = 1; 
 	sce->toolsettings->doublimit = 0.001;
 	sce->toolsettings->segments = 32;
@@ -423,6 +505,7 @@ Scene *BKE_scene_add(const char *name)
 	sce->toolsettings->uvcalc_cubesize = 1.0f;
 	sce->toolsettings->uvcalc_mapdir = 1;
 	sce->toolsettings->uvcalc_mapalign = 1;
+	sce->toolsettings->uvcalc_margin = 0.001f;
 	sce->toolsettings->unwrapper = 1;
 	sce->toolsettings->select_thresh = 0.01f;
 	sce->toolsettings->jointrilimit = 0.8f;
@@ -446,6 +529,17 @@ Scene *BKE_scene_add(const char *name)
 	sce->toolsettings->skgen_subdivisions[0] = SKGEN_SUB_CORRELATION;
 	sce->toolsettings->skgen_subdivisions[1] = SKGEN_SUB_LENGTH;
 	sce->toolsettings->skgen_subdivisions[2] = SKGEN_SUB_ANGLE;
+
+	sce->toolsettings->statvis.overhang_axis = OB_NEGZ;
+	sce->toolsettings->statvis.overhang_min = 0;
+	sce->toolsettings->statvis.overhang_max = DEG2RADF(45.0f);
+	sce->toolsettings->statvis.thickness_max = 0.1f;
+	sce->toolsettings->statvis.thickness_samples = 1;
+	sce->toolsettings->statvis.distort_min = DEG2RADF(5.0f);
+	sce->toolsettings->statvis.distort_max = DEG2RADF(45.0f);
+
+	sce->toolsettings->statvis.sharp_min = DEG2RADF(90.0f);
+	sce->toolsettings->statvis.sharp_max = DEG2RADF(180.0f);
 
 	sce->toolsettings->proportional_size = 1.0f;
 
@@ -546,6 +640,14 @@ Scene *BKE_scene_add(const char *name)
 
 	sound_create_scene(sce);
 
+	/* color management */
+	colorspace_name = IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_DEFAULT_SEQUENCER);
+
+	BKE_color_managed_display_settings_init(&sce->display_settings);
+	BKE_color_managed_view_settings_init(&sce->view_settings);
+	BLI_strncpy(sce->sequencer_colorspace_settings.name, colorspace_name,
+	            sizeof(sce->sequencer_colorspace_settings.name));
+
 	return sce;
 }
 
@@ -584,12 +686,11 @@ void BKE_scene_set_background(Main *bmain, Scene *scene)
 	}
 
 	/* sort baselist */
-	DAG_scene_sort(bmain, scene);
+	DAG_scene_relations_rebuild(bmain, scene);
 	
 	/* ensure dags are built for sets */
-	for (sce = scene->set; sce; sce = sce->set)
-		if (sce->theDag == NULL)
-			DAG_scene_sort(bmain, sce);
+	for (sce = scene; sce; sce = sce->set)
+		DAG_scene_relations_update(bmain, sce);
 
 	/* copy layers and flags from bases to objects */
 	for (base = scene->base.first; base; base = base->next) {
@@ -632,9 +733,6 @@ void BKE_scene_unlink(Main *bmain, Scene *sce, Scene *newsce)
 		if (sce1->set == sce)
 			sce1->set = NULL;
 	
-	/* check all sequences */
-	BKE_sequencer_clear_scene_in_allseqs(bmain, sce);
-
 	/* check render layer nodes in other scenes */
 	clear_scene_in_nodes(bmain, sce);
 	
@@ -647,7 +745,7 @@ void BKE_scene_unlink(Main *bmain, Scene *sce, Scene *newsce)
 }
 
 /* used by metaballs
- * doesnt return the original duplicated object, only dupli's
+ * doesn't return the original duplicated object, only dupli's
  */
 int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 {
@@ -699,7 +797,9 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 			else {
 				if (*base && fase != F_DUPLI) {
 					*base = (*base)->next;
-					if (*base) *ob = (*base)->object;
+					if (*base) {
+						*ob = (*base)->object;
+					}
 					else {
 						if (fase == F_SCENE) {
 							/* (*scene) is finished, now do the set */
@@ -716,7 +816,9 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 				}
 			}
 			
-			if (*base == NULL) fase = F_START;
+			if (*base == NULL) {
+				fase = F_START;
+			}
 			else {
 				if (fase != F_DUPLI) {
 					if ( (*base)->object->transflag & OB_DUPLI) {
@@ -724,7 +826,7 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 						 * this enters eternal loop because of 
 						 * makeDispListMBall getting called inside of group_duplilist */
 						if ((*base)->object->dup_group == NULL) {
-							duplilist = object_duplilist((*scene), (*base)->object);
+							duplilist = object_duplilist((*scene), (*base)->object, FALSE);
 							
 							dupob = duplilist->first;
 
@@ -840,7 +942,7 @@ char *BKE_scene_find_marker_name(Scene *scene, int frame)
 }
 
 /* return the current marker for this frame,
- * we can have more then 1 marker per frame, this just returns the first :/ */
+ * we can have more than 1 marker per frame, this just returns the first :/ */
 char *BKE_scene_find_last_marker_name(Scene *scene, int frame)
 {
 	TimeMarker *marker, *best_marker = NULL;
@@ -870,6 +972,18 @@ Base *BKE_scene_base_add(Scene *sce, Object *ob)
 	b->lay = ob->lay;
 
 	return b;
+}
+
+void BKE_scene_base_unlink(Scene *sce, Base *base)
+{
+	/* remove rigid body constraint from world before removing object */
+	if (base->object->rigidbody_constraint)
+		BKE_rigidbody_remove_constraint(sce, base->object);
+	/* remove rigid body object from world before removing object */
+	if (base->object->rigidbody_object)
+		BKE_rigidbody_remove_object(sce, base->object);
+	
+	BLI_remlink(&sce->base, base);
 }
 
 void BKE_scene_base_deselect_all(Scene *sce)
@@ -927,7 +1041,7 @@ float BKE_scene_frame_get_from_ctime(Scene *scene, const float frame)
 {
 	float ctime = frame;
 	ctime += scene->r.subframe;
-	ctime *= scene->r.framelen;	
+	ctime *= scene->r.framelen;
 	
 	return ctime;
 }
@@ -965,12 +1079,79 @@ static void scene_update_drivers(Main *UNUSED(bmain), Scene *scene)
 		if (adt && adt->drivers.first)
 			BKE_animsys_evaluate_animdata(scene, nid, adt, ctime, ADT_RECALC_DRIVERS);
 	}
+
+	/* world nodes */
+	if (scene->world && scene->world->nodetree) {
+		ID *nid = (ID *)scene->world->nodetree;
+		AnimData *adt = BKE_animdata_from_id(nid);
+		
+		if (adt && adt->drivers.first)
+			BKE_animsys_evaluate_animdata(scene, nid, adt, ctime, ADT_RECALC_DRIVERS);
+	}
+}
+
+/* deps hack - do extra recalcs at end */
+static void scene_depsgraph_hack(Scene *scene, Scene *scene_parent)
+{
+	Base *base;
+		
+	scene->customdata_mask = scene_parent->customdata_mask;
+	
+	/* sets first, we allow per definition current scene to have
+	 * dependencies on sets, but not the other way around. */
+	if (scene->set)
+		scene_depsgraph_hack(scene->set, scene_parent);
+	
+	for (base = scene->base.first; base; base = base->next) {
+		Object *ob = base->object;
+		
+		if (ob->depsflag) {
+			int recalc = 0;
+			// printf("depshack %s\n", ob->id.name + 2);
+			
+			if (ob->depsflag & OB_DEPS_EXTRA_OB_RECALC)
+				recalc |= OB_RECALC_OB;
+			if (ob->depsflag & OB_DEPS_EXTRA_DATA_RECALC)
+				recalc |= OB_RECALC_DATA;
+			
+			ob->recalc |= recalc;
+			BKE_object_handle_update(scene_parent, ob);
+			
+			if (ob->dup_group && (ob->transflag & OB_DUPLIGROUP)) {
+				GroupObject *go;
+				
+				for (go = ob->dup_group->gobject.first; go; go = go->next) {
+					if (go->ob)
+						go->ob->recalc |= recalc;
+				}
+				BKE_group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
+			}
+		}
+	}
+
+}
+
+static void scene_rebuild_rbw_recursive(Scene *scene, float ctime)
+{
+	if (scene->set)
+		scene_rebuild_rbw_recursive(scene->set, ctime);
+
+	if (BKE_scene_check_rigidbody_active(scene))
+		BKE_rigidbody_rebuild_world(scene, ctime);
+}
+
+static void scene_do_rb_simulation_recursive(Scene *scene, float ctime)
+{
+	if (scene->set)
+		scene_do_rb_simulation_recursive(scene->set, ctime);
+
+	if (BKE_scene_check_rigidbody_active(scene))
+		BKE_rigidbody_do_simulation(scene, ctime);
 }
 
 static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scene_parent)
 {
 	Base *base;
-	
 	
 	scene->customdata_mask = scene_parent->customdata_mask;
 
@@ -983,13 +1164,15 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 	for (base = scene->base.first; base; base = base->next) {
 		Object *ob = base->object;
 		
-		BKE_object_handle_update(scene_parent, ob);
+		BKE_object_handle_update_ex(scene_parent, ob, scene->rigidbody_world);
 		
 		if (ob->dup_group && (ob->transflag & OB_DUPLIGROUP))
-			group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
+			BKE_group_handle_recalc_and_update(scene_parent, ob, ob->dup_group);
 			
-		/* always update layer, so that animating layers works */
-		base->lay = ob->lay;
+		/* always update layer, so that animating layers works (joshua july 2010) */
+		/* XXX commented out, this has depsgraph issues anyway - and this breaks setting scenes
+		 * (on scene-set, the base-lay is copied to ob-lay (ton nov 2012) */
+		// base->lay = ob->lay;
 	}
 	
 	/* scene drivers... */
@@ -999,24 +1182,32 @@ static void scene_update_tagged_recursive(Main *bmain, Scene *scene, Scene *scen
 	sound_update_scene(scene);
 
 	/* update masking curves */
-	BKE_mask_update_scene(bmain, scene, FALSE);
+	BKE_mask_update_scene(bmain, scene);
+	
 }
 
 /* this is called in main loop, doing tagged updates before redraw */
 void BKE_scene_update_tagged(Main *bmain, Scene *scene)
 {
+	Scene *sce_iter;
+	
 	/* keep this first */
 	BLI_callback_exec(bmain, &scene->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
+
+	/* (re-)build dependency graph if needed */
+	for (sce_iter = scene; sce_iter; sce_iter = sce_iter->set)
+		DAG_scene_relations_update(bmain, sce_iter);
 
 	/* flush recalc flags to dependencies */
 	DAG_ids_flush_tagged(bmain);
 
-	scene->physics_settings.quick_cache_step = 0;
+	/* removed calls to quick_cache, see pointcache.c */
 	
 	/* clear "LIB_DOIT" flag from all materials, to prevent infinite recursion problems later 
 	 * when trying to find materials with drivers that need evaluating [#32017] 
 	 */
 	tag_main_idcode(bmain, ID_MA, FALSE);
+	tag_main_idcode(bmain, ID_LA, FALSE);
 
 	/* update all objects: drivers, matrices, displists, etc. flags set
 	 * by depgraph or manual, no layer check here, gets correct flushed
@@ -1034,10 +1225,6 @@ void BKE_scene_update_tagged(Main *bmain, Scene *scene)
 			BKE_animsys_evaluate_animdata(scene, &scene->id, adt, ctime, 0);
 	}
 	
-	/* quick point cache updates */
-	if (scene->physics_settings.quick_cache_step)
-		BKE_ptcache_quick_cache_all(bmain, scene);
-
 	/* notify editors and python about recalc */
 	BLI_callback_exec(bmain, &scene->id, BLI_CB_EVT_SCENE_UPDATE_POST);
 	DAG_ids_check_recalc(bmain, scene, FALSE);
@@ -1056,15 +1243,23 @@ void BKE_scene_update_for_newframe(Main *bmain, Scene *sce, unsigned int lay)
 	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_FRAME_CHANGE_PRE);
 	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_PRE);
 
+	/* update animated image textures for particles, modifiers, gpu, etc,
+	 * call this at the start so modifiers with textures don't lag 1 frame */
+	BKE_image_update_frame(bmain, sce->r.cfra);
+	
+	/* rebuild rigid body worlds before doing the actual frame update
+	 * this needs to be done on start frame but animation playback usually starts one frame later
+	 * we need to do it here to avoid rebuilding the world on every simulation change, which can be very expensive
+	 */
+	scene_rebuild_rbw_recursive(sce, ctime);
+
 	sound_set_cfra(sce->r.cfra);
 	
 	/* clear animation overrides */
 	/* XXX TODO... */
 
-	for (sce_iter = sce; sce_iter; sce_iter = sce_iter->set) {
-		if (sce_iter->theDag == NULL)
-			DAG_scene_sort(bmain, sce_iter);
-	}
+	for (sce_iter = sce; sce_iter; sce_iter = sce_iter->set)
+		DAG_scene_relations_update(bmain, sce_iter);
 
 	/* flush recalc flags to dependencies, if we were only changing a frame
 	 * this would not be necessary, but if a user or a script has modified
@@ -1084,10 +1279,22 @@ void BKE_scene_update_for_newframe(Main *bmain, Scene *sce, unsigned int lay)
 	 * such as Scene->World->MTex/Texture) can still get correctly overridden.
 	 */
 	BKE_animsys_evaluate_all_animation(bmain, sce, ctime);
-	/*...done with recusrive funcs */
+	/*...done with recursive funcs */
+
+	/* clear "LIB_DOIT" flag from all materials, to prevent infinite recursion problems later 
+	 * when trying to find materials with drivers that need evaluating [#32017] 
+	 */
+	tag_main_idcode(bmain, ID_MA, FALSE);
+	tag_main_idcode(bmain, ID_LA, FALSE);
+
+	/* run rigidbody sim */
+	/* NOTE: current position is so that rigidbody sim affects other objects, might change in the future */
+	scene_do_rb_simulation_recursive(sce, ctime);
 
 	/* BKE_object_handle_update() on all objects, groups and sets */
 	scene_update_tagged_recursive(bmain, sce, sce);
+
+	scene_depsgraph_hack(sce, sce);
 
 	/* notify editors and python about recalc */
 	BLI_callback_exec(bmain, &sce->id, BLI_CB_EVT_SCENE_UPDATE_POST);
@@ -1105,17 +1312,18 @@ SceneRenderLayer *BKE_scene_add_render_layer(Scene *sce, const char *name)
 	SceneRenderLayer *srl;
 
 	if (!name)
-		name = "RenderLayer";
+		name = DATA_("RenderLayer");
 
 	srl = MEM_callocN(sizeof(SceneRenderLayer), "new render layer");
 	BLI_strncpy(srl->name, name, sizeof(srl->name));
-	BLI_uniquename(&sce->r.layers, srl, "RenderLayer", '.', offsetof(SceneRenderLayer, name), sizeof(srl->name));
+	BLI_uniquename(&sce->r.layers, srl, DATA_("RenderLayer"), '.', offsetof(SceneRenderLayer, name), sizeof(srl->name));
 	BLI_addtail(&sce->r.layers, srl);
 
 	/* note, this is also in render, pipeline.c, to make layer when scenedata doesnt have it */
 	srl->lay = (1 << 20) - 1;
 	srl->layflag = 0x7FFF;   /* solid ztra halo edge strand */
 	srl->passflag = SCE_PASS_COMBINED | SCE_PASS_Z;
+	BKE_freestyle_config_init(&srl->freestyleConfig);
 
 	return srl;
 }
@@ -1162,7 +1370,7 @@ int BKE_scene_remove_render_layer(Main *bmain, Scene *scene, SceneRenderLayer *s
 int get_render_subsurf_level(RenderData *r, int lvl)
 {
 	if (r->mode & R_SIMPLIFY)
-		return MIN2(r->simplify_subsurf, lvl);
+		return min_ii(r->simplify_subsurf, lvl);
 	else
 		return lvl;
 }
@@ -1178,7 +1386,7 @@ int get_render_child_particle_number(RenderData *r, int num)
 int get_render_shadow_samples(RenderData *r, int samples)
 {
 	if ((r->mode & R_SIMPLIFY) && samples > 0)
-		return MIN2(r->simplify_shadowsamples, samples);
+		return min_ii(r->simplify_shadowsamples, samples);
 	else
 		return samples;
 }
@@ -1240,3 +1448,56 @@ void BKE_scene_base_flag_from_objects(struct Scene *scene)
 		base = base->next;
 	}
 }
+
+void BKE_scene_disable_color_management(Scene *scene)
+{
+	ColorManagedDisplaySettings *display_settings = &scene->display_settings;
+	ColorManagedViewSettings *view_settings = &scene->view_settings;
+	const char *view;
+	const char *none_display_name;
+
+	none_display_name = IMB_colormanagement_display_get_none_name();
+
+	BLI_strncpy(display_settings->display_device, none_display_name, sizeof(display_settings->display_device));
+
+	view = IMB_colormanagement_view_get_default_name(display_settings->display_device);
+
+	if (view) {
+		BLI_strncpy(view_settings->view_transform, view, sizeof(view_settings->view_transform));
+	}
+}
+
+int BKE_scene_check_color_management_enabled(const Scene *scene)
+{
+	return strcmp(scene->display_settings.display_device, "None") != 0;
+}
+
+int BKE_scene_check_rigidbody_active(const Scene *scene)
+{
+	return scene && scene->rigidbody_world && scene->rigidbody_world->group && !(scene->rigidbody_world->flag & RBW_FLAG_MUTED);
+}
+
+int BKE_render_num_threads(const RenderData *rd)
+{
+	int threads;
+
+	/* override set from command line? */
+	threads = BLI_system_num_threads_override_get();
+
+	if (threads > 0)
+		return threads;
+
+	/* fixed number of threads specified in scene? */
+	if (rd->mode & R_FIXED_THREADS)
+		threads = rd->threads;
+	else
+		threads = BLI_system_thread_count();
+	
+	return max_ii(threads, 1);
+}
+
+int BKE_scene_num_threads(const Scene *scene)
+{
+	return BKE_render_num_threads(&scene->r);
+}
+

@@ -108,7 +108,7 @@ bool KX_RaySensor::IsPositiveTrigger()
 	return result;
 }
 
-bool KX_RaySensor::RayHit(KX_ClientObjectInfo* client, KX_RayCast* result, void * const data)
+bool KX_RaySensor::RayHit(KX_ClientObjectInfo *client, KX_RayCast *result, void * const data)
 {
 
 	KX_GameObject* hitKXObj = client->m_gameobject;
@@ -153,7 +153,7 @@ bool KX_RaySensor::RayHit(KX_ClientObjectInfo* client, KX_RayCast* result, void 
 /* this function is used to pre-filter the object before casting the ray on them.
  * This is useful for "X-Ray" option when we want to see "through" unwanted object.
  */
-bool KX_RaySensor::NeedRayCast(KX_ClientObjectInfo* client)
+bool KX_RaySensor::NeedRayCast(KX_ClientObjectInfo *client)
 {
 	if (client->m_type > KX_ClientObjectInfo::ACTOR)
 	{
@@ -361,7 +361,7 @@ PyAttributeDef KX_RaySensor::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-PyObject* KX_RaySensor::pyattr_get_hitobject(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *KX_RaySensor::pyattr_get_hitobject(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_RaySensor* self = static_cast<KX_RaySensor*>(self_v);
 	if (self->m_hitObject)

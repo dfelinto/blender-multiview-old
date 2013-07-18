@@ -115,7 +115,7 @@ RAS_MeshObject::RAS_MeshObject(Mesh* mesh)
 		int count=0;
 		// initialize weight cache for shape objects
 		// count how many keys in this mesh
-		for (kb= (KeyBlock*)m_mesh->key->block.first; kb; kb= (KeyBlock*)kb->next)
+		for (kb= (KeyBlock *)m_mesh->key->block.first; kb; kb= (KeyBlock *)kb->next)
 			count++;
 		m_cacheWeightIndex.resize(count,-1);
 	}
@@ -129,7 +129,7 @@ RAS_MeshObject::~RAS_MeshObject()
 	{
 		KeyBlock *kb;
 		// remove the weight cache to avoid memory leak 
-		for (kb= (KeyBlock*)m_mesh->key->block.first; kb; kb= (KeyBlock*)kb->next) {
+		for (kb = (KeyBlock *)m_mesh->key->block.first; kb; kb = (KeyBlock *)kb->next) {
 			if (kb->weights) 
 				MEM_freeN(kb->weights);
 			kb->weights= NULL;
@@ -173,7 +173,7 @@ const STR_String& RAS_MeshObject::GetMaterialName(unsigned int matid)
 
 RAS_MeshMaterial* RAS_MeshObject::GetMeshMaterial(unsigned int matid)
 {
-	if (m_materials.size() > 0 && (matid < m_materials.size()))
+	if ((m_materials.empty() == false) && (matid < m_materials.size()))
 	{
 		list<RAS_MeshMaterial>::iterator it = m_materials.begin();
 		while (matid--) ++it;
@@ -324,15 +324,14 @@ void RAS_MeshObject::SetVertexColor(RAS_IPolyMaterial* mat,MT_Vector4 rgba)
 
 void RAS_MeshObject::AddVertex(RAS_Polygon *poly, int i,
 								const MT_Point3& xyz,
-								const MT_Point2& uv,
-								const MT_Point2& uv2,
+								const MT_Point2 uvs[RAS_TexVert::MAX_UNIT],
 								const MT_Vector4& tangent,
 								const unsigned int rgba,
 								const MT_Vector3& normal,
 								bool flat,
 								int origindex)
 {
-	RAS_TexVert texvert(xyz, uv, uv2, tangent, rgba, normal, flat, origindex);
+	RAS_TexVert texvert(xyz, uvs, tangent, rgba, normal, flat, origindex);
 	RAS_MeshMaterial *mmat;
 	RAS_DisplayArray *darray;
 	RAS_MeshSlot *slot;
@@ -536,18 +535,18 @@ void RAS_MeshObject::SortPolygons(RAS_MeshSlot& ms, const MT_Transform &transfor
 		const MT_Vector3 pnorm(transform.getBasis()[2]);
 		// unneeded: const MT_Scalar pval = transform.getOrigin()[2];
 
-		vector<polygonSlot> slots(totpoly);
+		vector<polygonSlot> poly_slots(totpoly);
 
 		/* get indices and z into temporary array */
 		for (j=0; j<totpoly; j++)
-			slots[j].get(it.vertex, it.index, j*nvert, nvert, pnorm);
+			poly_slots[j].get(it.vertex, it.index, j*nvert, nvert, pnorm);
 
 		/* sort (stable_sort might be better, if flickering happens?) */
-		std::sort(slots.begin(), slots.end(), backtofront());
+		std::sort(poly_slots.begin(), poly_slots.end(), backtofront());
 
 		/* get indices from temporary array again */
 		for (j=0; j<totpoly; j++)
-			slots[j].set(it.index, j*nvert, nvert);
+			poly_slots[j].set(it.index, j*nvert, nvert);
 	}
 }
 
@@ -584,7 +583,7 @@ void RAS_MeshObject::CheckWeightCache(Object* obj)
 	if (!m_mesh->key)
 		return;
 
-	for (kbindex=0, kb= (KeyBlock*)m_mesh->key->block.first; kb; kb= (KeyBlock*)kb->next, kbindex++)
+	for (kbindex = 0, kb = (KeyBlock *)m_mesh->key->block.first; kb; kb = kb->next, kbindex++)
 	{
 		// first check the cases where the weight must be cleared
 		if (kb->vgroup[0] == 0 ||
@@ -608,7 +607,7 @@ void RAS_MeshObject::CheckWeightCache(Object* obj)
 			weights= (float*)MEM_mallocN(totvert*sizeof(float), "weights");
 		
 			for (i=0; i < totvert; i++, dv++) {
-				weights[i]= defvert_find_weight(dv, defindex);
+				weights[i] = defvert_find_weight(dv, defindex);
 			}
 
 			kb->weights = weights;

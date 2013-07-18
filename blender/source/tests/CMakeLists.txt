@@ -27,11 +27,11 @@ set(TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/../lib/tests)
 set(TEST_OUT_DIR ${CMAKE_BINARY_DIR}/tests)
 
 # ugh, any better way to do this on testing only?
-execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TEST_OUT_DIR}) 
+execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TEST_OUT_DIR})
 
-#~ if(NOT IS_DIRECTORY ${TEST_SRC_DIR})
-#~ 	message(FATAL_ERROR "CMake test directory not found!")
-#~ endif()
+#~	if(NOT IS_DIRECTORY ${TEST_SRC_DIR})
+#~		message(FATAL_ERROR "CMake test directory not found!")
+#~	endif()
 
 # all calls to blender use this
 if(APPLE)
@@ -46,6 +46,10 @@ set(TEST_BLENDER_EXE ${TEST_BLENDER_EXE} --background -noaudio --factory-startup
 
 # ------------------------------------------------------------------------------
 # GENERAL PYTHON CORRECTNESS TESTS
+add_test(script_load_keymap ${TEST_BLENDER_EXE}
+	--python ${CMAKE_CURRENT_LIST_DIR}/bl_keymap_completeness.py
+)
+
 add_test(script_load_addons ${TEST_BLENDER_EXE}
 	--python ${CMAKE_CURRENT_LIST_DIR}/bl_load_addons.py
 )

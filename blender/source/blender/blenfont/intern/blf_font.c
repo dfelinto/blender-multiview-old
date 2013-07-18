@@ -43,17 +43,24 @@
 
 #include "DNA_vec_types.h"
 
-
-#include "BLI_blenlib.h"
-#include "BLI_linklist.h"  /* linknode */
+#include "BLI_listbase.h"
 #include "BLI_math.h"
+#include "BLI_rect.h"
+#include "BLI_string.h"
+#include "BLI_string_utf8.h"
+#include "BLI_linklist.h"  /* linknode */
 
 #include "BIF_gl.h"
 #include "BLF_api.h"
 
+#include "IMB_colormanagement.h"
+
 #include "blf_internal_types.h"
 #include "blf_internal.h"
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
 
 /* freetype2 handle ONLY for this file!. */
 static FT_Library ft_lib;
@@ -68,12 +75,12 @@ void blf_font_exit(void)
 	FT_Done_FreeType(ft_lib);
 }
 
-void blf_font_size(FontBLF *font, int size, int dpi)
+void blf_font_size(FontBLF *font, unsigned int size, unsigned int dpi)
 {
 	GlyphCacheBLF *gc;
 	FT_Error err;
 
-	err = FT_Set_Char_Size(font->face, 0, (size * 64), dpi, dpi);
+	err = FT_Set_Char_Size(font->face, 0, (FT_F26Dot6)(size * 64), dpi, dpi);
 	if (err) {
 		/* FIXME: here we can go through the fixed size and choice a close one */
 		printf("The current font don't support the size, %d and dpi, %d\n", size, dpi);
@@ -152,12 +159,12 @@ static void blf_font_ensure_ascii_table(FontBLF *font)
 		                   _kern_mode,                                           \
 		                   &(_delta)) == 0)                                      \
 		{                                                                        \
-			_pen_x += delta.x >> 6;                                              \
+			_pen_x += _delta.x >> 6;                                             \
 		}                                                                        \
 	}                                                                            \
 } (void)0
 
-void blf_font_draw(FontBLF *font, const char *str, unsigned int len)
+void blf_font_draw(FontBLF *font, const char *str, size_t len)
 {
 	unsigned int c;
 	GlyphBLF *g, *g_prev = NULL;
@@ -170,7 +177,7 @@ void blf_font_draw(FontBLF *font, const char *str, unsigned int len)
 
 	blf_font_ensure_ascii_table(font);
 
-	while (str[i] && i < len) {
+	while ((i < len) && str[i]) {
 		BLF_UTF8_NEXT_FAST(font, g, str, i, c, glyph_ascii_table);
 
 		if (c == BLI_UTF8_ERR)
@@ -189,7 +196,7 @@ void blf_font_draw(FontBLF *font, const char *str, unsigned int len)
 }
 
 /* faster version of blf_font_draw, ascii only for view dimensions */
-void blf_font_draw_ascii(FontBLF *font, const char *str, unsigned int len)
+void blf_font_draw_ascii(FontBLF *font, const char *str, size_t len)
 {
 	unsigned char c;
 	GlyphBLF *g, *g_prev = NULL;
@@ -215,6 +222,40 @@ void blf_font_draw_ascii(FontBLF *font, const char *str, unsigned int len)
 	}
 }
 
+/* use fixed column width, but an utf8 character may occupy multiple columns */
+int blf_font_draw_mono(FontBLF *font, const char *str, size_t len, int cwidth)
+{
+	unsigned int c;
+	GlyphBLF *g;
+	int col, columns = 0;
+	int pen_x = 0, pen_y = 0;
+	size_t i = 0;
+	GlyphBLF **glyph_ascii_table = font->glyph_cache->glyph_ascii_table;
+
+	blf_font_ensure_ascii_table(font);
+
+	while ((i < len) && str[i]) {
+		BLF_UTF8_NEXT_FAST(font, g, str, i, c, glyph_ascii_table);
+
+		if (c == BLI_UTF8_ERR)
+			break;
+		if (g == NULL)
+			continue;
+
+		/* do not return this loop if clipped, we want every character tested */
+		blf_glyph_render(font, g, (float)pen_x, (float)pen_y);
+
+		col = BLI_wcwidth((wchar_t)c);
+		if (col < 0)
+			col = 1;
+
+		columns += col;
+		pen_x += cwidth * col;
+	}
+
+	return columns;
+}
+
 /* Sanity checks are done by BLF_draw_buffer() */
 void blf_font_buffer(FontBLF *font, const char *str)
 {
@@ -229,9 +270,9 @@ void blf_font_buffer(FontBLF *font, const char *str)
 	FontBufInfoBLF *buf_info = &font->buf_info;
 	float b_col_float[4];
 	const unsigned char b_col_char[4] = {buf_info->col[0] * 255,
-										 buf_info->col[1] * 255,
-										 buf_info->col[2] * 255,
-										 buf_info->col[3] * 255};
+	                                     buf_info->col[1] * 255,
+	                                     buf_info->col[2] * 255,
+	                                     buf_info->col[3] * 255};
 
 	unsigned char *cbuf;
 	int chx, chy;
@@ -242,12 +283,13 @@ void blf_font_buffer(FontBLF *font, const char *str)
 
 	blf_font_ensure_ascii_table(font);
 
-	/* another buffer spesific call for color conversion */
-	if (buf_info->do_color_management) {
-		srgb_to_linearrgb_v4(b_col_float, buf_info->col);
+	/* another buffer specific call for color conversion */
+	if (buf_info->display) {
+		copy_v4_v4(b_col_float, buf_info->col);
+		IMB_colormanagement_display_to_scene_linear_v3(b_col_float, buf_info->display);
 	}
 	else {
-		copy_v4_v4(b_col_float, buf_info->col);
+		srgb_to_linearrgb_v4(b_col_float, buf_info->col);
 	}
 
 	while (str[i]) {
@@ -425,8 +467,8 @@ void blf_font_width_and_height(FontBLF *font, const char *str, float *width, flo
 	}
 
 	blf_font_boundbox(font, str, &box);
-	*width = ((box.xmax - box.xmin) * xa);
-	*height = ((box.ymax - box.ymin) * ya);
+	*width  = (BLI_rctf_size_x(&box) * xa);
+	*height = (BLI_rctf_size_y(&box) * ya);
 }
 
 float blf_font_width(FontBLF *font, const char *str)
@@ -440,7 +482,7 @@ float blf_font_width(FontBLF *font, const char *str)
 		xa = 1.0f;
 
 	blf_font_boundbox(font, str, &box);
-	return (box.xmax - box.xmin) * xa;
+	return BLI_rctf_size_x(&box) * xa;
 }
 
 float blf_font_height(FontBLF *font, const char *str)
@@ -454,7 +496,7 @@ float blf_font_height(FontBLF *font, const char *str)
 		ya = 1.0f;
 
 	blf_font_boundbox(font, str, &box);
-	return (box.ymax - box.ymin) * ya;
+	return BLI_rctf_size_y(&box) * ya;
 }
 
 float blf_font_fixed_width(FontBLF *font)

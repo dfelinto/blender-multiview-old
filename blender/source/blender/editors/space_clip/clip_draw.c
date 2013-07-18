@@ -37,11 +37,7 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_context.h"
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
-#include "BKE_mask.h"
-
+#include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
 
@@ -50,6 +46,11 @@
 #include "BLI_string.h"
 #include "BLI_rect.h"
 #include "BLI_math_base.h"
+
+#include "BKE_context.h"
+#include "BKE_movieclip.h"
+#include "BKE_tracking.h"
+#include "BKE_mask.h"
 
 #include "ED_screen.h"
 #include "ED_clip.h"
@@ -102,11 +103,11 @@ static void draw_keyframe(int frame, int cfra, int sfra, float framelen, int wid
 	if (width == 1) {
 		glBegin(GL_LINES);
 		glVertex2i(x, 0);
-		glVertex2i(x, height);
+		glVertex2i(x, height * UI_DPI_FAC);
 		glEnd();
 	}
 	else {
-		glRecti(x, 0, x + width, height);
+		glRecti(x, 0, x + width, height * UI_DPI_FAC);
 	}
 }
 
@@ -116,6 +117,7 @@ static void draw_movieclip_cache(SpaceClip *sc, ARegion *ar, MovieClip *clip, Sc
 	int *points, totseg, i, a;
 	float sfra = SFRA, efra = EFRA, framelen = ar->winx / (efra - sfra + 1);
 	MovieTracking *tracking = &clip->tracking;
+	MovieTrackingObject *act_object = BKE_tracking_object_get_active(tracking);
 	MovieTrackingTrack *act_track = BKE_tracking_track_get_active(&clip->tracking);
 	MovieTrackingReconstruction *reconstruction = BKE_tracking_get_active_reconstruction(tracking);
 
@@ -123,7 +125,7 @@ static void draw_movieclip_cache(SpaceClip *sc, ARegion *ar, MovieClip *clip, Sc
 
 	/* cache background */
 	glColor4ub(128, 128, 255, 64);
-	glRecti(0, 0, ar->winx, 8);
+	glRecti(0, 0, ar->winx, 8 * UI_DPI_FAC);
 
 	/* cached segments -- could be usefu lto debug caching strategies */
 	BKE_movieclip_get_cache_segments(clip, &sc->user, &totseg, &points);
@@ -136,7 +138,7 @@ static void draw_movieclip_cache(SpaceClip *sc, ARegion *ar, MovieClip *clip, Sc
 			x1 = (points[a * 2] - sfra) / (efra - sfra + 1) * ar->winx;
 			x2 = (points[a * 2 + 1] - sfra + 1) / (efra - sfra + 1) * ar->winx;
 
-			glRecti(x1, 0, x2, 8);
+			glRecti(x1, 0, x2, 8 * UI_DPI_FAC);
 		}
 	}
 
@@ -173,7 +175,7 @@ static void draw_movieclip_cache(SpaceClip *sc, ARegion *ar, MovieClip *clip, Sc
 				else
 					glColor4ub(255, 255, 0, 96);
 
-				glRecti((i - sfra + clip->start_frame - 1) * framelen, 0, (i - sfra + clip->start_frame) * framelen, 4);
+				glRecti((i - sfra + clip->start_frame - 1) * framelen, 0, (i - sfra + clip->start_frame) * framelen, 4 * UI_DPI_FAC);
 			}
 		}
 	}
@@ -201,7 +203,7 @@ static void draw_movieclip_cache(SpaceClip *sc, ARegion *ar, MovieClip *clip, Sc
 			}
 
 			if (!ok)
-				glRecti((i - sfra + clip->start_frame - 1) * framelen, 0, (i - sfra + clip->start_frame) * framelen, 8);
+				glRecti((i - sfra + clip->start_frame - 1) * framelen, 0, (i - sfra + clip->start_frame) * framelen, 8 * UI_DPI_FAC);
 		}
 	}
 
@@ -211,14 +213,14 @@ static void draw_movieclip_cache(SpaceClip *sc, ARegion *ar, MovieClip *clip, Sc
 	x = (sc->user.framenr - sfra) / (efra - sfra + 1) * ar->winx;
 
 	UI_ThemeColor(TH_CFRAME);
-	glRecti(x, 0, x + framelen, 8);
+	glRecti(x, 0, x + ceilf(framelen), 8 * UI_DPI_FAC);
 
-	clip_draw_curfra_label(sc->user.framenr, x, 8.0f);
+	clip_draw_curfra_label(sc->user.framenr, x, 8.0f * UI_DPI_FAC);
 
 	/* solver keyframes */
 	glColor4ub(175, 255, 0, 255);
-	draw_keyframe(tracking->settings.keyframe1 + clip->start_frame - 1, CFRA, sfra, framelen, 2);
-	draw_keyframe(tracking->settings.keyframe2 + clip->start_frame - 1, CFRA, sfra, framelen, 2);
+	draw_keyframe(act_object->keyframe1 + clip->start_frame - 1, CFRA, sfra, framelen, 2);
+	draw_keyframe(act_object->keyframe2 + clip->start_frame - 1, CFRA, sfra, framelen, 2);
 
 	/* movie clip animation */
 	if ((sc->mode == SC_MODE_MASKEDIT) && sc->mask_info.mask) {
@@ -242,22 +244,16 @@ static void draw_movieclip_notes(SpaceClip *sc, ARegion *ar)
 			strcpy(str, "Locked");
 	}
 
-	if (str[0])
-		ED_region_info_draw(ar, str, block, 0.6f);
-}
-
-static void verify_buffer_float(ImBuf *ibuf)
-{
-	if (ibuf->rect_float && (ibuf->rect == NULL || (ibuf->userflags & IB_RECT_INVALID))) {
-		IMB_rect_from_float(ibuf);
+	if (str[0]) {
+		float fill_color[4] = {0.0f, 0.0f, 0.0f, 0.6f};
+		ED_region_info_draw(ar, str, block, fill_color);
 	}
 }
 
-static void draw_movieclip_buffer(SpaceClip *sc, ARegion *ar, ImBuf *ibuf,
+static void draw_movieclip_buffer(const bContext *C, SpaceClip *sc, ARegion *ar, ImBuf *ibuf,
                                   int width, int height, float zoomx, float zoomy)
 {
 	int x, y;
-	MovieClip *clip = ED_space_clip_get_clip(sc);
 
 	/* find window pixel coordinates of origin */
 	UI_view2d_to_region_no_clip(&ar->v2d, 0.0f, 0.0f, &x, &y);
@@ -267,45 +263,44 @@ static void draw_movieclip_buffer(SpaceClip *sc, ARegion *ar, ImBuf *ibuf,
 		glRectf(x, y, x + zoomx * width, y + zoomy * height);
 	}
 	else {
-		verify_buffer_float(ibuf);
+		MovieClip *clip = ED_space_clip_get_clip(sc);
+		int filter = GL_LINEAR;
 
-		if (ibuf->rect) {
-			int need_fallback = 1;
+		/* checkerboard for case alpha */
+		if (ibuf->planes == 32) {
+			glEnable(GL_BLEND);
+			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-			if (ED_space_clip_texture_buffer_supported(sc)) {
-				if (ED_space_clip_load_movieclip_buffer(sc, ibuf)) {
-					glPushMatrix();
-					glTranslatef(x, y, 0.0f);
-					glScalef(zoomx, zoomy, 1.0f);
-
-					glBegin(GL_QUADS);
-					glTexCoord2f(0.0f, 0.0f); glVertex2f(0.0f,  0.0f);
-					glTexCoord2f(1.0f, 0.0f); glVertex2f(width, 0.0f);
-					glTexCoord2f(1.0f, 1.0f); glVertex2f(width, height);
-					glTexCoord2f(0.0f, 1.0f); glVertex2f(0.0f,  height);
-					glEnd();
-
-					glPopMatrix();
-
-					ED_space_clip_unload_movieclip_buffer(sc);
-
-					need_fallback = 0;
-				}
-			}
-
-			/* if texture buffers aren't efficiently supported or texture is too large to
-			 * be binder fallback to simple draw pixels solution */
-			if (need_fallback) {
-				/* set zoom */
-				glPixelZoom(zoomx * width / ibuf->x, zoomy * height / ibuf->y);
-
-				glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_RGBA, GL_UNSIGNED_BYTE, ibuf->rect);
-
-				/* reset zoom */
-				glPixelZoom(1.0f, 1.0f);
-			}
+			fdrawcheckerboard(x, y, x + zoomx * ibuf->x, y + zoomy * ibuf->y);
 		}
+
+		/* non-scaled proxy shouldn't use filtering */
+		if ((clip->flag & MCLIP_USE_PROXY) == 0 ||
+		    ELEM(sc->user.render_size, MCLIP_PROXY_RENDER_SIZE_FULL, MCLIP_PROXY_RENDER_SIZE_100))
+		{
+			filter = GL_NEAREST;
+		}
+
+		/* set zoom */
+		glPixelZoom(zoomx * width / ibuf->x, zoomy * height / ibuf->y);
+
+		glaDrawImBuf_glsl_ctx(C, ibuf, x, y, filter);
+
+		/* reset zoom */
+		glPixelZoom(1.0f, 1.0f);
+
+		if (ibuf->planes == 32)
+			glDisable(GL_BLEND);
 	}
+}
+
+static void draw_stabilization_border(SpaceClip *sc, ARegion *ar, int width, int height, float zoomx, float zoomy)
+{
+	int x, y;
+	MovieClip *clip = ED_space_clip_get_clip(sc);
+
+	/* find window pixel coordinates of origin */
+	UI_view2d_to_region_no_clip(&ar->v2d, 0.0f, 0.0f, &x, &y);
 
 	/* draw boundary border for frame if stabilization is enabled */
 	if (sc->flag & SC_SHOW_STABLE && clip->tracking.stabilization.flag & TRACKING_2D_STABILIZATION) {
@@ -716,7 +711,7 @@ static float get_shortest_pattern_side(MovieTrackingMarker *marker)
 
 		cur_len = len_v2v2(marker->pattern_corners[i], marker->pattern_corners[next]);
 
-		len = minf(cur_len, len);
+		len = min_ff(cur_len, len);
 	}
 
 	return len;
@@ -788,11 +783,11 @@ static void draw_marker_slide_zones(SpaceClip *sc, MovieTrackingTrack *track, Mo
 	dy = 6.0f / height / sc->zoom;
 
 	side = get_shortest_pattern_side(marker);
-	patdx = minf(dx * 2.0f / 3.0f, side / 6.0f);
-	patdy = minf(dy * 2.0f / 3.0f, side * width / height / 6.0f);
+	patdx = min_ff(dx * 2.0f / 3.0f, side / 6.0f) * UI_DPI_FAC;
+	patdy = min_ff(dy * 2.0f / 3.0f, side * width / height / 6.0f) * UI_DPI_FAC;
 
-	searchdx = minf(dx, (marker->search_max[0] - marker->search_min[0]) / 6.0f);
-	searchdy = minf(dy, (marker->search_max[1] - marker->search_min[1]) / 6.0f);
+	searchdx = min_ff(dx, (marker->search_max[0] - marker->search_min[0]) / 6.0f) * UI_DPI_FAC;
+	searchdy = min_ff(dy, (marker->search_max[1] - marker->search_min[1]) / 6.0f) * UI_DPI_FAC;
 
 	px[0] = 1.0f / sc->zoom / width / sc->scale;
 	px[1] = 1.0f / sc->zoom / height / sc->scale;
@@ -936,7 +931,7 @@ static void draw_marker_texts(SpaceClip *sc, MovieTrackingTrack *track, MovieTra
 	if (state[0])
 		BLI_snprintf(str, sizeof(str), "%s: %s", track->name, state);
 	else
-		BLI_snprintf(str, sizeof(str), "%s", track->name);
+		BLI_strncpy(str, track->name, sizeof(str));
 
 	BLF_position(fontid, pos[0], pos[1], 0.0f);
 	BLF_draw(fontid, str, sizeof(str));
@@ -958,12 +953,12 @@ static void draw_marker_texts(SpaceClip *sc, MovieTrackingTrack *track, MovieTra
 static void view2d_to_region_float(View2D *v2d, float x, float y, float *regionx, float *regiony)
 {
 	/* express given coordinates as proportional values */
-	x = -v2d->cur.xmin / (v2d->cur.xmax - v2d->cur.xmin);
-	y = -v2d->cur.ymin / (v2d->cur.ymax - v2d->cur.ymin);
+	x = -v2d->cur.xmin / BLI_rctf_size_x(&v2d->cur);
+	y = -v2d->cur.ymin / BLI_rctf_size_y(&v2d->cur);
 
 	/* convert proportional distances to screen coordinates */
-	*regionx = v2d->mask.xmin + x * (v2d->mask.xmax - v2d->mask.xmin);
-	*regiony = v2d->mask.ymin + y * (v2d->mask.ymax - v2d->mask.ymin);
+	*regionx = v2d->mask.xmin + x * BLI_rcti_size_x(&v2d->mask);
+	*regiony = v2d->mask.ymin + y * BLI_rcti_size_y(&v2d->mask);
 }
 
 static void draw_tracking_tracks(SpaceClip *sc, ARegion *ar, MovieClip *clip,
@@ -1127,7 +1122,7 @@ static void draw_tracking_tracks(SpaceClip *sc, ARegion *ar, MovieClip *clip,
 
 				if (MARKER_VISIBLE(sc, track, marker)) {
 					float npos[2];
-					copy_v4_v4(vec, track->bundle_pos);
+					copy_v3_v3(vec, track->bundle_pos);
 					vec[3] = 1;
 
 					mul_v4_m4v4(pos, mat, vec);
@@ -1276,7 +1271,7 @@ static void draw_distortion(SpaceClip *sc, ARegion *ar, MovieClip *clip,
 
 			BKE_tracking_undistort_v2(tracking, pos, tpos);
 
-			DO_MINMAX2(tpos, min, max);
+			minmax_v2v2_v2(min, max, tpos);
 		}
 
 		copy_v2_v2(pos, min);
@@ -1433,15 +1428,16 @@ void clip_draw_main(const bContext *C, SpaceClip *sc, ARegion *ar)
 		ibuf = ED_space_clip_get_stable_buffer(sc, sc->loc, &sc->scale, &sc->angle);
 
 		if (ibuf) {
-			float loc[2];
+			float translation[2];
 			float aspect = clip->tracking.camera.pixel_aspect;
 
 			if (width != ibuf->x)
-				mul_v2_v2fl(loc, sc->loc, (float)width / ibuf->x);
+				mul_v2_v2fl(translation, sc->loc, (float)width / ibuf->x);
 			else
-				copy_v2_v2(loc, sc->loc);
+				copy_v2_v2(translation, sc->loc);
 
-			BKE_tracking_stabilization_data_to_mat4(width, height, aspect, loc, sc->scale, sc->angle, sc->stabmat);
+			BKE_tracking_stabilization_data_to_mat4(width, height, aspect,
+			                                        translation, sc->scale, sc->angle, sc->stabmat);
 
 			unit_m4(smat);
 			smat[0][0] = 1.0f / width;
@@ -1461,7 +1457,7 @@ void clip_draw_main(const bContext *C, SpaceClip *sc, ARegion *ar)
 	}
 
 	if (ibuf) {
-		draw_movieclip_buffer(sc, ar, ibuf, width, height, zoomx, zoomy);
+		draw_movieclip_buffer(C, sc, ar, ibuf, width, height, zoomx, zoomy);
 		IMB_freeImBuf(ibuf);
 	}
 	else {
@@ -1469,6 +1465,7 @@ void clip_draw_main(const bContext *C, SpaceClip *sc, ARegion *ar)
 	}
 
 	if (width && height) {
+		draw_stabilization_border(sc, ar, width, height, zoomx, zoomy);
 		draw_tracking_tracks(sc, ar, clip, width, height, zoomx, zoomy);
 		draw_distortion(sc, ar, clip, width, height, zoomx, zoomy);
 	}
@@ -1488,7 +1485,7 @@ void clip_draw_grease_pencil(bContext *C, int onlyv2d)
 
 	if (onlyv2d) {
 		/* if manual calibration is used then grease pencil data is already
-		 * drawed in draw_distortion */
+		 * drawn in draw_distortion */
 		if ((sc->flag & SC_MANUAL_CALIBRATION) == 0 || sc->mode != SC_MODE_DISTORTION) {
 			glPushMatrix();
 			glMultMatrixf(sc->unistabmat);

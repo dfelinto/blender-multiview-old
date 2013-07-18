@@ -59,16 +59,13 @@ typedef struct World {
 	float horr, horg, horb;
 	float zenr, zeng, zenb;
 	float ambr, ambg, ambb;
-	float pad2;
 
-	unsigned int fastcol;	
-	
 	/**
 	 * Exposure= mult factor. unused now, but maybe back later. Kept in to be upward compat.
 	 * New is exp/range control. linfac & logfac are constants... don't belong in
 	 * file, but allocating 8 bytes for temp mem isn't useful either.
 	 */
-	float exposure, exp, range;	
+	float exposure, exp, range;
 	float linfac, logfac;
 
 	/**
@@ -129,7 +126,7 @@ typedef struct World {
 	struct PreviewImage *preview;
 
 	/* nodes */
-	struct bNodeTree *nodetree;	
+	struct bNodeTree *nodetree;
 
 } World;
 
@@ -189,7 +186,7 @@ typedef struct World {
 #define WOMAP_HORIZ		2
 #define WOMAP_ZENUP		4
 #define WOMAP_ZENDOWN	8
-#define WOMAP_MIST		16 /* Deprecated */
+// #define WOMAP_MIST		16 /* Deprecated */
 
 /* flag */
 #define WO_DS_EXPAND	(1<<0)

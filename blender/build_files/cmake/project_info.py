@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -26,8 +26,8 @@
 Example Win32 usage:
  c:\Python32\python.exe c:\blender_dev\blender\build_files\cmake\cmake_qtcreator_project.py c:\blender_dev\cmake_build
 
-example linux usage
- python .~/blenderSVN/blender/build_files/cmake/cmake_qtcreator_project.py ~/blenderSVN/cmake
+Example Linux usage:
+ python ~/blenderSVN/blender/build_files/cmake/cmake_qtcreator_project.py ~/blenderSVN/cmake
 """
 
 __all__ = (
@@ -97,7 +97,7 @@ def is_cmake(filename):
 
 def is_c_header(filename):
     ext = splitext(filename)[1]
-    return (ext in (".h", ".hpp", ".hxx"))
+    return (ext in {".h", ".hpp", ".hxx", ".hh"})
 
 
 def is_py(filename):
@@ -112,7 +112,7 @@ def is_glsl(filename):
 
 def is_c(filename):
     ext = splitext(filename)[1]
-    return (ext in (".c", ".cpp", ".cxx", ".m", ".mm", ".rc", ".cc", ".inl"))
+    return (ext in {".c", ".cpp", ".cxx", ".m", ".mm", ".rc", ".cc", ".inl", ".osl"})
 
 
 def is_c_any(filename):
@@ -133,22 +133,35 @@ def cmake_advanced_info():
     """ Extracr includes and defines from cmake.
     """
 
+    make_exe = cmake_cache_var("CMAKE_MAKE_PROGRAM")
+    make_exe_basename = os.path.basename(make_exe)
+
     def create_eclipse_project():
         print("CMAKE_DIR %r" % CMAKE_DIR)
         if sys.platform == "win32":
             cmd = 'cmake "%s" -G"Eclipse CDT4 - MinGW Makefiles"' % CMAKE_DIR
         else:
-            cmd = 'cmake "%s" -G"Eclipse CDT4 - Unix Makefiles"' % CMAKE_DIR
+            if make_exe_basename.startswith(("make", "gmake")):
+                cmd = 'cmake "%s" -G"Eclipse CDT4 - Unix Makefiles"' % CMAKE_DIR
+            elif make_exe_basename.startswith("ninja"):
+                cmd = 'cmake "%s" -G"Eclipse CDT4 - Ninja"' % CMAKE_DIR
+            else:
+                raise Exception("Unknown make program %r" % make_exe)
 
         os.system(cmd)
+        return join(CMAKE_DIR, ".cproject")
 
     includes = []
     defines = []
 
-    create_eclipse_project()
+    project_path = create_eclipse_project()
+
+    if not exists(project_path):
+        print("Generating Eclipse Prokect File Failed: %r not found" % project_path)
+        return None, None
 
     from xml.dom.minidom import parse
-    tree = parse(join(CMAKE_DIR, ".cproject"))
+    tree = parse(project_path)
 
     # to check on nicer xml
     # f = open(".cproject_pretty", 'w')

@@ -54,12 +54,12 @@ void draw_nla_channel_list(bContext *C, bAnimContext *ac, ARegion *ar);
 /* nla_select.c */
 
 /* defines for left-right select tool */
-enum {
+enum eNlaEdit_LeftRightSelect_Mode {
 	NLAEDIT_LRSEL_TEST  = -1,
 	NLAEDIT_LRSEL_NONE,
 	NLAEDIT_LRSEL_LEFT,
 	NLAEDIT_LRSEL_RIGHT
-} eNlaEdit_LeftRightSelect_Mode;
+};
 
 /* --- */
 
@@ -71,14 +71,13 @@ void NLA_OT_click_select(wmOperatorType *ot);
 /* **************************************** */
 /* nla_edit.c */
 
-/* defines for snap strips
- */
-enum {
+/* defines for snap strips */
+enum eNlaEdit_Snap_Mode {
 	NLAEDIT_SNAP_CFRA = 1,
 	NLAEDIT_SNAP_NEAREST_FRAME,
 	NLAEDIT_SNAP_NEAREST_SECOND,
 	NLAEDIT_SNAP_NEAREST_MARKER
-} eNlaEdit_Snap_Mode;
+};
 
 /* --- */
 
@@ -122,10 +121,17 @@ void NLA_OT_fmodifier_paste(wmOperatorType *ot);
 /* **************************************** */
 /* nla_channels.c */
 
+bool nlaedit_add_tracks_existing(bAnimContext *ac, bool above_sel);
+bool nlaedit_add_tracks_empty(bAnimContext *ac);
+
+/* --- */
+
 void NLA_OT_channels_click(wmOperatorType *ot);
 
 void NLA_OT_tracks_add(wmOperatorType *ot);
-void NLA_OT_delete_tracks(wmOperatorType *ot);
+void NLA_OT_tracks_delete(wmOperatorType *ot);
+
+void NLA_OT_selected_objects_add(wmOperatorType *ot);
 
 /* **************************************** */
 /* nla_ops.c */

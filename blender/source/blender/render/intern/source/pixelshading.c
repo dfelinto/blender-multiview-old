@@ -162,7 +162,7 @@ static void render_lighting_halo(HaloRen *har, float col_r[3])
 					copy_v3_v3(lvrot, lv);
 					mul_m3_v3(lar->imat, lvrot);
 					
-					x = maxf(fabsf(lvrot[0]/lvrot[2]), fabsf(lvrot[1]/lvrot[2]));
+					x = max_ff(fabsf(lvrot[0]/lvrot[2]), fabsf(lvrot[1]/lvrot[2]));
 					/* 1.0/(sqrt(1+x*x)) is equivalent to cos(atan(x)) */
 					
 					inpr= 1.0/(sqrt(1.0f+x*x));
@@ -286,7 +286,7 @@ int shadeHaloFloat(HaloRen *har, float col[4], int zz,
 	/* fill in col */
 	float t, zn, radist, ringf=0.0f, linef=0.0f, alpha, si, co;
 	int a;
-   
+
 	if (R.wrld.mode & WO_MIST) {
 		if (har->type & HA_ONLYSKY) {
 			/* stars but no mist */
@@ -614,7 +614,7 @@ void shadeSkyPixel(float collector[4], float fx, float fy, short thread)
 		copy_v3_v3(collector, &R.wrld.horr);
 
 		collector[3] = 0.0f;
-	} 
+	}
 	else {
 		/* 2. */
 

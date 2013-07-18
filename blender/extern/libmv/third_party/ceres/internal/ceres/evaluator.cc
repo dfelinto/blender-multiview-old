@@ -28,14 +28,18 @@
 //
 // Author: keir@google.com (Keir Mierle)
 
-#include <glog/logging.h>
-#include "ceres/evaluator.h"
+#include <vector>
 #include "ceres/block_evaluate_preparer.h"
 #include "ceres/block_jacobian_writer.h"
 #include "ceres/compressed_row_jacobian_writer.h"
-#include "ceres/scratch_evaluate_preparer.h"
+#include "ceres/compressed_row_sparse_matrix.h"
+#include "ceres/crs_matrix.h"
 #include "ceres/dense_jacobian_writer.h"
+#include "ceres/evaluator.h"
+#include "ceres/internal/port.h"
 #include "ceres/program_evaluator.h"
+#include "ceres/scratch_evaluate_preparer.h"
+#include "glog/logging.h"
 
 namespace ceres {
 namespace internal {
@@ -47,6 +51,7 @@ Evaluator* Evaluator::Create(const Evaluator::Options& options,
                              string* error) {
   switch (options.linear_solver_type) {
     case DENSE_QR:
+    case DENSE_NORMAL_CHOLESKY:
       return new ProgramEvaluator<ScratchEvaluatePreparer,
                                   DenseJacobianWriter>(options,
                                                        program);

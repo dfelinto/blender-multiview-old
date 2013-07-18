@@ -23,6 +23,8 @@
 #include "device_intern.h"
 #include "device_network.h"
 
+#include "buffers.h"
+
 #include "util_foreach.h"
 #include "util_list.h"
 #include "util_map.h"
@@ -44,14 +46,14 @@ public:
 	list<SubDevice> devices;
 	device_ptr unique_ptr;
 
-	MultiDevice(DeviceInfo& info, bool background_)
-	: unique_ptr(1)
+	MultiDevice(DeviceInfo& info, Stats &stats, bool background_)
+	: Device(stats), unique_ptr(1)
 	{
 		Device *device;
 		background = background_;
 
 		foreach(DeviceInfo& subinfo, info.multi_devices) {
-			device = Device::create(subinfo, background);
+			device = Device::create(subinfo, stats, background);
 			devices.push_back(SubDevice(device));
 		}
 
@@ -255,6 +257,30 @@ public:
 		rgba.device_pointer = tmp;
 	}
 
+	void map_tile(Device *sub_device, RenderTile& tile)
+	{
+		foreach(SubDevice& sub, devices) {
+			if(sub.device == sub_device) {
+				if(tile.buffer) tile.buffer = sub.ptr_map[tile.buffer];
+				if(tile.rng_state) tile.rng_state = sub.ptr_map[tile.rng_state];
+				if(tile.rgba) tile.rgba = sub.ptr_map[tile.rgba];
+			}
+		}
+	}
+
+	int device_number(Device *sub_device)
+	{
+		int i = 0;
+
+		foreach(SubDevice& sub, devices) {
+			if(sub.device == sub_device)
+				return i;
+			i++;
+		}
+
+		return -1;
+	}
+
 	void task_add(DeviceTask& task)
 	{
 		list<DeviceTask> tasks;
@@ -266,7 +292,6 @@ public:
 				tasks.pop_front();
 
 				if(task.buffer) subtask.buffer = sub.ptr_map[task.buffer];
-				if(task.rng_state) subtask.rng_state = sub.ptr_map[task.rng_state];
 				if(task.rgba) subtask.rgba = sub.ptr_map[task.rgba];
 				if(task.shader_input) subtask.shader_input = sub.ptr_map[task.shader_input];
 				if(task.shader_output) subtask.shader_output = sub.ptr_map[task.shader_output];
@@ -289,9 +314,9 @@ public:
 	}
 };
 
-Device *device_multi_create(DeviceInfo& info, bool background)
+Device *device_multi_create(DeviceInfo& info, Stats &stats, bool background)
 {
-	return new MultiDevice(info, background);
+	return new MultiDevice(info, stats, background);
 }
 
 static bool device_multi_add(vector<DeviceInfo>& devices, DeviceType type, bool with_display, bool with_advanced_shading, const char *id_fmt, int num)

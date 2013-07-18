@@ -41,8 +41,10 @@
 
 #include <stdlib.h>
 
+#include "BLI_utildefines.h"
 #include "BLI_path_util.h"
 #include "BLI_fileops.h"
+#include "BLI_string.h"
 
 #include "DNA_userdef_types.h"
 #include "BKE_global.h"
@@ -81,6 +83,7 @@ const char *imb_ext_image[] = {
 #endif
 #ifdef WITH_OPENJPEG
 	".jp2",
+	".j2c",
 #endif
 #ifdef WITH_HDR
 	".hdr",
@@ -208,7 +211,12 @@ int IMB_ispic(const char *filename)
 
 static int isavi(const char *name)
 {
+#ifdef WITH_AVI
 	return AVI_is_avi(name);
+#else
+	(void)name;
+	return FALSE;
+#endif
 }
 
 #ifdef WITH_QUICKTIME
@@ -220,31 +228,59 @@ static int isqtime(const char *name)
 
 #ifdef WITH_FFMPEG
 
-void silence_log_ffmpeg(int quiet)
+#ifdef _MSC_VER
+#define va_copy(dst, src) ((dst) = (src))
+#endif
+
+/* BLI_vsnprintf in ffmpeg_log_callback() causes invalid warning */
+#ifdef __GNUC__
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wmissing-format-attribute"
+#endif
+
+static char ffmpeg_last_error[1024];
+
+static void ffmpeg_log_callback(void *ptr, int level, const char *format, va_list arg)
 {
-	if (quiet) {
-		av_log_set_level(AV_LOG_QUIET);
+	if (ELEM(level, AV_LOG_FATAL, AV_LOG_ERROR)) {
+		size_t n;
+		va_list arg2;
+
+		va_copy(arg2, arg);
+
+		n = BLI_vsnprintf(ffmpeg_last_error, sizeof(ffmpeg_last_error), format, arg2);
+
+		/* strip trailing \n */
+		ffmpeg_last_error[n - 1] = '\0';
 	}
-	else {
-		av_log_set_level(AV_LOG_DEBUG);
+
+	if (G.debug & G_DEBUG_FFMPEG) {
+		/* call default logger to print all message to console */
+		av_log_default_callback(ptr, level, format, arg);
 	}
 }
 
-extern void do_init_ffmpeg(void);
-void do_init_ffmpeg(void)
+#ifdef __GNUC__
+#  pragma GCC diagnostic pop
+#endif
+
+void IMB_ffmpeg_init(void)
 {
-	static int ffmpeg_init = 0;
-	if (!ffmpeg_init) {
-		ffmpeg_init = 1;
-		av_register_all();
-		avdevice_register_all();
-		if ((G.debug & G_DEBUG_FFMPEG) == 0) {
-			silence_log_ffmpeg(1);
-		}
-		else {
-			silence_log_ffmpeg(0);
-		}
-	}
+	av_register_all();
+	avdevice_register_all();
+
+	ffmpeg_last_error[0] = '\0';
+
+	if (G.debug & G_DEBUG_FFMPEG)
+		av_log_set_level(AV_LOG_DEBUG);
+
+	/* set own callback which could store last error to report to UI */
+	av_log_set_callback(ffmpeg_log_callback);
+}
+
+const char *IMB_ffmpeg_last_error(void)
+{
+	return ffmpeg_last_error;
 }
 
 static int isffmpeg(const char *filename)
@@ -255,14 +291,13 @@ static int isffmpeg(const char *filename)
 	AVCodec *pCodec;
 	AVCodecContext *pCodecCtx;
 
-	do_init_ffmpeg();
-
 	if (BLI_testextensie(filename, ".swf") ||
 	    BLI_testextensie(filename, ".jpg") ||
 	    BLI_testextensie(filename, ".png") ||
 	    BLI_testextensie(filename, ".dds") ||
 	    BLI_testextensie(filename, ".tga") ||
 	    BLI_testextensie(filename, ".bmp") ||
+	    BLI_testextensie(filename, ".tif") ||
 	    BLI_testextensie(filename, ".exr") ||
 	    BLI_testextensie(filename, ".cin") ||
 	    BLI_testextensie(filename, ".wav"))
@@ -275,8 +310,8 @@ static int isffmpeg(const char *filename)
 		return 0;
 	}
 
-	if (av_find_stream_info(pFormatCtx) < 0) {
-		if (UTIL_DEBUG) fprintf(stderr, "isffmpeg: av_find_stream_info failed\n");
+	if (avformat_find_stream_info(pFormatCtx, NULL) < 0) {
+		if (UTIL_DEBUG) fprintf(stderr, "isffmpeg: avformat_find_stream_info failed\n");
 		av_close_input_file(pFormatCtx);
 		return 0;
 	}
@@ -309,7 +344,7 @@ static int isffmpeg(const char *filename)
 		return 0;
 	}
 
-	if (avcodec_open(pCodecCtx, pCodec) < 0) {
+	if (avcodec_open2(pCodecCtx, pCodec, NULL) < 0) {
 		av_close_input_file(pFormatCtx);
 		return 0;
 	}
@@ -398,7 +433,7 @@ int IMB_isanim(const char *filename)
 				type = imb_get_anim_type(filename);
 			}
 			else {
-				return(FALSE);			
+				return(FALSE);
 			}
 		}
 		else { /* no quicktime */

@@ -27,11 +27,12 @@
  *  \ingroup bli
  */
 
+#ifndef __MATH_GEOM_INLINE_C__
+#define __MATH_GEOM_INLINE_C__
 
 #include "BLI_math.h"
 
-#ifndef __MATH_GEOM_INLINE_C__
-#define __MATH_GEOM_INLINE_C__
+#include <string.h>
 
 /****************************** Spherical Harmonics **************************/
 
@@ -135,6 +136,53 @@ MINLINE void madd_sh_shfl(float r[9], const float sh[9], const float f)
 	copy_sh_sh(tmp, sh);
 	mul_sh_fl(tmp, f);
 	add_sh_shsh(r, r, tmp);
+}
+
+MINLINE int max_axis_v3(const float vec[3])
+{
+	const float x = vec[0];
+	const float y = vec[1];
+	const float z = vec[2];
+	return ((x > y) ?
+	       ((x > z) ? 0 : 2) :
+	       ((y > z) ? 1 : 2));
+}
+
+MINLINE int min_axis_v3(const float vec[3])
+{
+	const float x = vec[0];
+	const float y = vec[1];
+	const float z = vec[2];
+	return ((x < y) ?
+	       ((x < z) ? 0 : 2) :
+	       ((y < z) ? 1 : 2));
+}
+
+/**
+ * Simple method to find how many tri's we need when we already know the corner+poly count.
+ *
+ * Formula is:
+ *
+ *   tri = ((corner_count / poly_count) - 2) * poly_count;
+ *
+ * Use doubles since this is used for allocating and we
+ * don't want float precision to give incorrect results.
+ *
+ * \param poly_count The number of ngon's/tris (1-2 sided faces will give incorrect results)
+ * \param corner_count - also known as loops in BMesh/DNA
+ */
+MINLINE int poly_to_tri_count(const int poly_count, const int corner_count)
+{
+	if (poly_count != 0) {
+		const double poly_count_d   = (double)poly_count;
+		const double corner_count_d = (double)corner_count;
+		BLI_assert(poly_count   > 0);
+		BLI_assert(corner_count > 0);
+		return (int)((((corner_count_d / poly_count_d) - 2.0) * poly_count_d) + 0.5);
+	}
+	else {
+		return 0;
+	}
 }
 
 #endif /* __MATH_GEOM_INLINE_C__ */

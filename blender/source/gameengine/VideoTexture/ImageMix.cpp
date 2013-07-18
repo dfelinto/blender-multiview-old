@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/ImageMix.cpp
  *  \ingroup bgevideotex
@@ -38,12 +42,12 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 
 // cast ImageSource pointer to ImageSourceMix
-inline ImageSourceMix * getImageSourceMix (ImageSource * src)
+inline ImageSourceMix *getImageSourceMix(ImageSource *src)
 { return static_cast<ImageSourceMix*>(src); }
 
 
 // get weight
-short ImageMix::getWeight (const char * id)
+short ImageMix::getWeight(const char *id)
 {
 	// find source
 	ImageSourceList::iterator src = findSource(id);
@@ -52,7 +56,7 @@ short ImageMix::getWeight (const char * id)
 }
 
 // set weight
-bool ImageMix::setWeight (const char * id, short weight)
+bool ImageMix::setWeight(const char *id, short weight)
 {
 	// find source
 	ImageSourceList::iterator src = findSource(id);
@@ -65,10 +69,10 @@ bool ImageMix::setWeight (const char * id, short weight)
 
 ExceptionID ImageSizesNotMatch;
 
-ExpDesc ImageSizesNotMatchDesc (ImageSizesNotMatch, "Image sizes of sources are different");
+ExpDesc ImageSizesNotMatchDesc(ImageSizesNotMatch, "Image sizes of sources are different");
 
 // calculate image from sources and set its availability
-void ImageMix::calcImage (unsigned int texId, double ts)
+void ImageMix::calcImage(unsigned int texId, double ts)
 {
 	// check source sizes
 	if (!checkSourceSizes()) THRWEXCP(ImageSizesNotMatch, S_OK);
@@ -101,19 +105,19 @@ void ImageMix::calcImage (unsigned int texId, double ts)
 
 
 // cast Image pointer to ImageMix
-inline ImageMix * getImageMix (PyImage * self)
+inline ImageMix * getImageMix(PyImage *self)
 { return static_cast<ImageMix*>(self->m_image); }
 
 
 // python methods
 
 // get source weight
-PyObject * getWeight (PyImage * self, PyObject * args)
+static PyObject *getWeight(PyImage *self, PyObject *args)
 {
 	// weight
 	short weight = 0;
 	// get arguments
-	char * id;
+	char *id;
 	if (!PyArg_ParseTuple(args, "s:getWeight", &id))
 		return NULL;
 	if (self->m_image != NULL)
@@ -125,10 +129,10 @@ PyObject * getWeight (PyImage * self, PyObject * args)
 
 
 // set source weight
-PyObject * setWeight (PyImage * self, PyObject * args)
+static PyObject *setWeight(PyImage *self, PyObject *args)
 {
 	// get arguments
-	char * id;
+	char *id;
 	short weight = 0;
 	if (!PyArg_ParseTuple(args, "sh:setWeight", &id, &weight))
 		return NULL;
@@ -146,8 +150,7 @@ PyObject * setWeight (PyImage * self, PyObject * args)
 
 
 // methods structure
-static PyMethodDef imageMixMethods[] =
-{ 
+static PyMethodDef imageMixMethods[] = {
 	{"getSource", (PyCFunction)Image_getSource, METH_VARARGS, "get image source"},
 	{"setSource", (PyCFunction)Image_setSource, METH_VARARGS, "set image source"},
 	{"getWeight", (PyCFunction)getWeight, METH_VARARGS, "get image source weight"},
@@ -157,8 +160,8 @@ static PyMethodDef imageMixMethods[] =
 	{NULL}
 };
 // attributes structure
-static PyGetSetDef imageMixGetSets[] =
-{ // attributes from ImageBase class
+static PyGetSetDef imageMixGetSets[] = {
+	// attributes from ImageBase class
 	{(char*)"valid", (getter)Image_valid, NULL, (char*)"bool to tell if an image is available", NULL},
 	{(char*)"image", (getter)Image_getImage, NULL, (char*)"image data", NULL},
 	{(char*)"size", (getter)Image_getSize, NULL, (char*)"image size", NULL},
@@ -170,11 +173,10 @@ static PyGetSetDef imageMixGetSets[] =
 
 
 // define python type
-PyTypeObject ImageMixType =
-{ 
+PyTypeObject ImageMixType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"VideoTexture.ImageMix",   /*tp_name*/
-	sizeof(PyImage),          /*tp_basicsize*/
+	sizeof(PyImage),           /*tp_basicsize*/
 	0,                         /*tp_itemsize*/
 	(destructor)Image_dealloc, /*tp_dealloc*/
 	0,                         /*tp_print*/
@@ -192,16 +194,16 @@ PyTypeObject ImageMixType =
 	0,                         /*tp_setattro*/
 	&imageBufferProcs,         /*tp_as_buffer*/
 	Py_TPFLAGS_DEFAULT,        /*tp_flags*/
-	"Image mixer",       /* tp_doc */
-	0,		               /* tp_traverse */
-	0,		               /* tp_clear */
-	0,		               /* tp_richcompare */
-	0,		               /* tp_weaklistoffset */
-	0,		               /* tp_iter */
-	0,		               /* tp_iternext */
-	imageMixMethods,    /* tp_methods */
-	0,                   /* tp_members */
-	imageMixGetSets,          /* tp_getset */
+	"Image mixer",             /* tp_doc */
+	0,		                   /* tp_traverse */
+	0,		                   /* tp_clear */
+	0,		                   /* tp_richcompare */
+	0,		                   /* tp_weaklistoffset */
+	0,		                   /* tp_iter */
+	0,		                   /* tp_iternext */
+	imageMixMethods,           /* tp_methods */
+	0,                         /* tp_members */
+	imageMixGetSets,           /* tp_getset */
 	0,                         /* tp_base */
 	0,                         /* tp_dict */
 	0,                         /* tp_descr_get */
@@ -209,6 +211,6 @@ PyTypeObject ImageMixType =
 	0,                         /* tp_dictoffset */
 	(initproc)Image_init<ImageMix>,     /* tp_init */
 	0,                         /* tp_alloc */
-	Image_allocNew,           /* tp_new */
+	Image_allocNew,            /* tp_new */
 };
 

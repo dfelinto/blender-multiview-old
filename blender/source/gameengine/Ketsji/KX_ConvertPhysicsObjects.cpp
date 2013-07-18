@@ -29,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable : 4786)
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
 #endif
 
 #include "MT_assert.h"
@@ -54,10 +54,11 @@
 #include "KX_MotionState.h" // bridge between motionstate and scenegraph node
 
 extern "C"{
+	#include "BLI_utildefines.h"
 	#include "BKE_DerivedMesh.h"
 }
 
-#ifdef USE_BULLET
+#ifdef WITH_BULLET
 #include "BulletSoftBody/btSoftBody.h"
 
 #include "CcdPhysicsEnvironment.h"
@@ -67,8 +68,8 @@ extern "C"{
 #include "KX_BulletPhysicsController.h"
 #include "btBulletDynamicsCommon.h"
 
-							#ifdef WIN32
-#if _MSC_VER >= 1310
+#ifdef WIN32
+#if defined(_MSC_VER) && (_MSC_VER >= 1310)
 //only use SIMD Hull code under Win32
 //#define TEST_HULL 1
 #ifdef TEST_HULL
@@ -282,7 +283,7 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 			relativeRot.getValue(rot);
 			shapeInfo->m_childTrans.getBasis().setFromOpenGLSubMatrix(rot);
 
-			parentShapeInfo->AddShape(shapeInfo);	
+			parentShapeInfo->AddShape(shapeInfo);
 			compoundShape->addChildShape(shapeInfo->m_childTrans,bm);
 			//do some recalc?
 			//recalc inertia for rigidbody
@@ -439,7 +440,7 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 	{
 		env->addCcdPhysicsController( physicscontroller);
 	}
-	physicscontroller->setNewClientInfo(gameobj->getClientInfo());		
+	physicscontroller->setNewClientInfo(gameobj->getClientInfo());
 	{
 		btRigidBody* rbody = physicscontroller->GetRigidBody();
 
@@ -573,4 +574,4 @@ bool KX_ReInstanceBulletShapeFromMesh(KX_GameObject *gameobj, KX_GameObject *fro
 	spc->ReplaceControllerShape(bm);
 	return true;
 }
-#endif // USE_BULLET
+#endif // WITH_BULLET

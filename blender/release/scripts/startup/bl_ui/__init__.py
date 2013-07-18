@@ -24,8 +24,9 @@ if "bpy" in locals():
     from imp import reload as _reload
     for val in _modules_loaded.values():
         _reload(val)
-_modules = (
+_modules = [
     "properties_animviz",
+    "properties_constraint",
     "properties_data_armature",
     "properties_data_bone",
     "properties_data_camera",
@@ -40,7 +41,6 @@ _modules = (
     "properties_game",
     "properties_mask_common",
     "properties_material",
-    "properties_object_constraint",
     "properties_object",
     "properties_particle",
     "properties_physics_cloth",
@@ -48,9 +48,12 @@ _modules = (
     "properties_physics_dynamicpaint",
     "properties_physics_field",
     "properties_physics_fluid",
+    "properties_physics_rigidbody",
+    "properties_physics_rigidbody_constraint",
     "properties_physics_smoke",
     "properties_physics_softbody",
     "properties_render",
+    "properties_render_layer",
     "properties_scene",
     "properties_texture",
     "properties_world",
@@ -72,14 +75,16 @@ _modules = (
     "space_userpref",
     "space_view3d",
     "space_view3d_toolbar",
-)
-__import__(name=__name__, fromlist=_modules)
-_namespace = globals()
-_modules_loaded = {name: _namespace[name] for name in _modules}
-del _namespace
-
+]
 
 import bpy
+
+if bpy.app.build_options.freestyle:
+    _modules.append("properties_freestyle")
+__import__(name=__name__, fromlist=_modules)
+_namespace = globals()
+_modules_loaded = {name: _namespace[name] for name in _modules if name != 'bpy'}
+del _namespace
 
 
 def register():
@@ -92,10 +97,11 @@ def register():
     def addon_filter_items(self, context):
         import addon_utils
 
-        items = [('All', "All", ""),
-                 ('Enabled', "Enabled", ""),
-                 ('Disabled', "Disabled", ""),
-                ]
+        items = [('All', "All", "All Addons"),
+                 ('User', "User", "All Addons Installed by User"),
+                 ('Enabled', "Enabled", "All Enabled Addons"),
+                 ('Disabled', "Disabled", "All Disabled Addons"),
+                 ]
 
         items_unique = set()
 
@@ -119,8 +125,8 @@ def register():
     WindowManager.addon_support = EnumProperty(
             items=[('OFFICIAL', "Official", "Officially supported"),
                    ('COMMUNITY', "Community", "Maintained by community developers"),
-                   ('TESTING', "Testing", "Newly contributed scripts (excluded from release builds)"),
-                  ],
+                   ('TESTING', "Testing", "Newly contributed scripts (excluded from release builds)")
+                   ],
             name="Support",
             description="Display support level",
             default={'OFFICIAL', 'COMMUNITY'},
@@ -131,3 +137,11 @@ def register():
 
 def unregister():
     bpy.utils.unregister_module(__name__)
+
+
+# Define a default UIList, when a list does not need any custom drawing...
+# Keep in sync with its #defined name in UI_interface.h
+class UI_UL_list(bpy.types.UIList):
+    pass
+
+bpy.utils.register_class(UI_UL_list)

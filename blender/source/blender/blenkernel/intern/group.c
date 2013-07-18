@@ -94,15 +94,23 @@ void BKE_group_unlink(Group *group)
 		
 		/* ensure objects are not in this group */
 		for (; base; base = base->next) {
-			if (rem_from_group(group, base->object, sce, base) && find_group(base->object, NULL) == NULL) {
+			if (BKE_group_object_unlink(group, base->object, sce, base) &&
+			    BKE_group_object_find(NULL, base->object) == NULL)
+			{
 				base->object->flag &= ~OB_FROMGROUP;
 				base->flag &= ~OB_FROMGROUP;
 			}
-		}			
+		}
 		
 		for (srl = sce->r.layers.first; srl; srl = srl->next) {
+			FreestyleLineSet *lineset;
+
 			if (srl->light_override == group)
 				srl->light_override = NULL;
+			for (lineset = srl->freestyleConfig.linesets.first; lineset; lineset = lineset->next) {
+				if (lineset->group == group)
+					lineset->group = NULL;
+			}
 		}
 	}
 	
@@ -110,16 +118,6 @@ void BKE_group_unlink(Group *group)
 		
 		if (ob->dup_group == group) {
 			ob->dup_group = NULL;
-#if 0       /* XXX OLD ANIMSYS, NLASTRIPS ARE NO LONGER USED */
-			{
-				bActionStrip *strip;
-				/* duplicator strips use a group object, we remove it */
-				for (strip = ob->nlastrips.first; strip; strip = strip->next) {
-					if (strip->object)
-						strip->object = NULL;
-				}
-			}
-#endif
 		}
 		
 		for (psys = ob->particlesystem.first; psys; psys = psys->next) {
@@ -137,11 +135,11 @@ void BKE_group_unlink(Group *group)
 	group->id.us = 0;
 }
 
-Group *add_group(const char *name)
+Group *BKE_group_add(Main *bmain, const char *name)
 {
 	Group *group;
 	
-	group = BKE_libblock_alloc(&G.main->group, ID_GR, name);
+	group = BKE_libblock_alloc(&bmain->group, ID_GR, name);
 	group->layer = (1 << 20) - 1;
 	return group;
 }
@@ -150,14 +148,14 @@ Group *BKE_group_copy(Group *group)
 {
 	Group *groupn;
 
-	groupn = MEM_dupallocN(group);
+	groupn = BKE_libblock_copy(&group->id);
 	BLI_duplicatelist(&groupn->gobject, &group->gobject);
 
 	return groupn;
 }
 
 /* external */
-static int add_to_group_internal(Group *group, Object *ob)
+static int group_object_add_internal(Group *group, Object *ob)
 {
 	GroupObject *go;
 	
@@ -178,9 +176,9 @@ static int add_to_group_internal(Group *group, Object *ob)
 	return TRUE;
 }
 
-int add_to_group(Group *group, Object *object, Scene *scene, Base *base)
+bool BKE_group_object_add(Group *group, Object *object, Scene *scene, Base *base)
 {
-	if (add_to_group_internal(group, object)) {
+	if (group_object_add_internal(group, object)) {
 		if ((object->flag & OB_FROMGROUP) == 0) {
 
 			if (scene && base == NULL)
@@ -191,15 +189,15 @@ int add_to_group(Group *group, Object *object, Scene *scene, Base *base)
 			if (base)
 				base->flag |= OB_FROMGROUP;
 		}
-		return 1;
+		return true;
 	}
 	else {
-		return 0;
+		return false;
 	}
 }
 
 /* also used for (ob == NULL) */
-static int rem_from_group_internal(Group *group, Object *ob)
+static int group_object_unlink_internal(Group *group, Object *ob)
 {
 	GroupObject *go, *gon;
 	int removed = 0;
@@ -219,11 +217,11 @@ static int rem_from_group_internal(Group *group, Object *ob)
 	return removed;
 }
 
-int rem_from_group(Group *group, Object *object, Scene *scene, Base *base)
+bool BKE_group_object_unlink(Group *group, Object *object, Scene *scene, Base *base)
 {
-	if (rem_from_group_internal(group, object)) {
+	if (group_object_unlink_internal(group, object)) {
 		/* object can be NULL */
-		if (object && find_group(object, NULL) == NULL) {
+		if (object && BKE_group_object_find(NULL, object) == NULL) {
 			if (scene && base == NULL)
 				base = BKE_scene_base_find(scene, object);
 
@@ -232,23 +230,24 @@ int rem_from_group(Group *group, Object *object, Scene *scene, Base *base)
 			if (base)
 				base->flag &= ~OB_FROMGROUP;
 		}
-		return 1;
+		return true;
 	}
 	else {
-		return 0;
+		return false;
 	}
 }
 
-int object_in_group(Object *ob, Group *group)
+bool BKE_group_object_exists(Group *group, Object *ob)
 {
 	if (group == NULL || ob == NULL) {
-		return FALSE;
+		return false;
 	}
-
-	return (BLI_findptr(&group->gobject, ob, offsetof(GroupObject, ob)) != NULL);
+	else {
+		return (BLI_findptr(&group->gobject, ob, offsetof(GroupObject, ob)) != NULL);
+	}
 }
 
-Group *find_group(Object *ob, Group *group)
+Group *BKE_group_object_find(Group *group, Object *ob)
 {
 	if (group)
 		group = group->id.next;
@@ -256,14 +255,14 @@ Group *find_group(Object *ob, Group *group)
 		group = G.main->group.first;
 	
 	while (group) {
-		if (object_in_group(ob, group))
+		if (BKE_group_object_exists(group, ob))
 			return group;
 		group = group->id.next;
 	}
 	return NULL;
 }
 
-void group_tag_recalc(Group *group)
+void BKE_group_tag_recalc(Group *group)
 {
 	GroupObject *go;
 	
@@ -275,7 +274,7 @@ void group_tag_recalc(Group *group)
 	}
 }
 
-int group_is_animated(Object *UNUSED(parent), Group *group)
+bool BKE_group_is_animated(Group *group, Object *UNUSED(parent))
 {
 	GroupObject *go;
 
@@ -286,9 +285,9 @@ int group_is_animated(Object *UNUSED(parent), Group *group)
 
 	for (go = group->gobject.first; go; go = go->next)
 		if (go->ob && go->ob->proxy)
-			return 1;
+			return true;
 
-	return 0;
+	return false;
 }
 
 #if 0 // add back when timeoffset & animsys work again
@@ -337,7 +336,7 @@ static void group_replaces_nla(Object *parent, Object *target, char mode)
  * you can draw everything, leaves tags in objects to signal it needs further updating */
 
 /* note: does not work for derivedmesh and render... it recreates all again in convertblender.c */
-void group_handle_recalc_and_update(Scene *scene, Object *UNUSED(parent), Group *group)
+void BKE_group_handle_recalc_and_update(Scene *scene, Object *UNUSED(parent), Group *group)
 {
 	GroupObject *go;
 	
@@ -383,57 +382,3 @@ void group_handle_recalc_and_update(Scene *scene, Object *UNUSED(parent), Group 
 		}
 	}
 }
-
-#if 0
-Object *group_get_member_with_action(Group *group, bAction *act)
-{
-	GroupObject *go;
-	
-	if (group == NULL || act == NULL) return NULL;
-	
-	for (go = group->gobject.first; go; go = go->next) {
-		if (go->ob) {
-			if (go->ob->action == act)
-				return go->ob;
-			if (go->ob->nlastrips.first) {
-				bActionStrip *strip;
-				
-				for (strip = go->ob->nlastrips.first; strip; strip = strip->next) {
-					if (strip->act == act)
-						return go->ob;
-				}
-			}
-		}
-	}
-	return NULL;
-}
-
-/* if group has NLA, we try to map the used objects in NLA to group members */
-/* this assuming that object has received a new group link */
-void group_relink_nla_objects(Object *ob)
-{
-	Group *group;
-	GroupObject *go;
-	bActionStrip *strip;
-	
-	if (ob == NULL || ob->dup_group == NULL) return;
-	group = ob->dup_group;
-	
-	for (strip = ob->nlastrips.first; strip; strip = strip->next) {
-		if (strip->object) {
-			for (go = group->gobject.first; go; go = go->next) {
-				if (go->ob) {
-					if (strcmp(go->ob->id.name, strip->object->id.name) == 0)
-						break;
-				}
-			}
-			if (go)
-				strip->object = go->ob;
-			else
-				strip->object = NULL;
-		}
-			
-	}
-}
-
-#endif

@@ -44,7 +44,13 @@ struct anim;
 struct Scene;
 struct Object;
 struct ImageFormatData;
+struct ImagePool;
 struct Main;
+
+#define IMA_MAX_SPACE       64
+
+void   BKE_images_init(void);
+void   BKE_images_exit(void);
 
 /* call from library */
 void    BKE_image_free(struct Image *me);
@@ -55,15 +61,18 @@ int     BKE_imbuf_alpha_test(struct ImBuf *ibuf);
 int     BKE_imbuf_write_stamp(struct Scene *scene, struct Object *camera, struct ImBuf *ibuf, const char *name, struct ImageFormatData *imf);
 int     BKE_imbuf_write(struct ImBuf *ibuf, const char *name, struct ImageFormatData *imf);
 int     BKE_imbuf_write_as(struct ImBuf *ibuf, const char *name, struct ImageFormatData *imf, const short is_copy);
-void    BKE_makepicstring(char *string, const char *base, const char *relbase, int frame, const char imtype, const short use_ext, const short use_frames);
-int     BKE_add_image_extension(char *string, const char imtype);
+void    BKE_makepicstring(char *string, const char *base, const char *relbase, int frame, const struct ImageFormatData *im_format, const short use_ext, const short use_frames);
+void    BKE_makepicstring_from_type(char *string, const char *base, const char *relbase, int frame, const char imtype, const short use_ext, const short use_frames);
+int     BKE_add_image_extension(char *string, const struct ImageFormatData *im_format);
+int     BKE_add_image_extension_from_type(char *string, const char imtype);
 char    BKE_ftype_to_imtype(const int ftype);
 int     BKE_imtype_to_ftype(const char imtype);
 
-int     BKE_imtype_is_movie(const char imtype);
+bool    BKE_imtype_is_movie(const char imtype);
 int     BKE_imtype_supports_zbuf(const char imtype);
 int     BKE_imtype_supports_compress(const char imtype);
 int     BKE_imtype_supports_quality(const char imtype);
+int     BKE_imtype_requires_linear_float(const char imtype);
 char    BKE_imtype_valid_channels(const char imtype);
 char    BKE_imtype_valid_depths(const char imtype);
 
@@ -72,7 +81,7 @@ char    BKE_imtype_from_arg(const char *arg);
 void    BKE_imformat_defaults(struct ImageFormatData *im_format);
 void    BKE_imbuf_to_image_format(struct ImageFormatData *im_format, const struct ImBuf *imbuf);
 
-struct anim *openanim(const char *name, int flags, int streamindex);
+struct anim *openanim(const char *name, int flags, int streamindex, char colorspace[IMA_MAX_SPACE]);
 
 void    BKE_image_de_interlace(struct Image *ima, int odd);
 
@@ -106,6 +115,12 @@ struct RenderResult;
 #define IMA_TYPE_R_RESULT   4
 #define IMA_TYPE_COMPOSITE  5
 
+enum {
+	IMA_GENTYPE_BLANK = 0,
+	IMA_GENTYPE_GRID = 1,
+	IMA_GENTYPE_GRID_COLOR = 2
+};
+
 /* ima->ok */
 #define IMA_OK              1
 #define IMA_OK_LOADED       2
@@ -118,27 +133,35 @@ struct RenderResult;
 #define IMA_SIGNAL_SRC_CHANGE       5
 /* image-user gets a new image, check settings */
 #define IMA_SIGNAL_USER_NEW_IMAGE   6
+#define IMA_SIGNAL_COLORMANAGE      7
 
 #define IMA_CHAN_FLAG_BW    1
 #define IMA_CHAN_FLAG_RGB   2
 #define IMA_CHAN_FLAG_ALPHA 4
 
-/* depending Image type, and (optional) ImageUser setting it returns ibuf */
-/* always call to make signals work */
-struct ImBuf *BKE_image_get_ibuf(struct Image *ima, struct ImageUser *iuser);
+/* checks whether there's an image buffer for given image and user */
+int BKE_image_has_ibuf(struct Image *ima, struct ImageUser *iuser);
 
 /* same as above, but can be used to retrieve images being rendered in
  * a thread safe way, always call both acquire and release */
 struct ImBuf *BKE_image_acquire_ibuf(struct Image *ima, struct ImageUser *iuser, void **lock_r);
-void BKE_image_release_ibuf(struct Image *ima, void *lock);
+void BKE_image_release_ibuf(struct Image *ima, struct ImBuf *ibuf, void *lock);
+
+struct ImagePool *BKE_image_pool_new(void);
+void BKE_image_pool_free(struct ImagePool *pool);
+struct ImBuf *BKE_image_pool_acquire_ibuf(struct Image *ima, struct ImageUser *iuser, struct ImagePool *pool);
+void BKE_image_pool_release_ibuf(struct Image *ima, struct ImBuf *ibuf, struct ImagePool *pool);
+
+/* set an alpha mode based on file extension */
+void BKE_image_alpha_mode_from_extension(struct Image *image);
 
 /* returns a new image or NULL if it can't load */
-struct Image *BKE_image_load(const char *filepath);
+struct Image *BKE_image_load(struct Main *bmain, const char *filepath);
 /* returns existing Image when filename/type is same (frame optional) */
 struct Image *BKE_image_load_exists(const char *filepath);
 
 /* adds image, adds ibuf, generates color or pattern */
-struct Image *BKE_image_add_generated(unsigned int width, unsigned int height, const char *name, int depth, int floatbuf, short uvtestgrid, float color[4]);
+struct Image *BKE_image_add_generated(struct Main *bmain, unsigned int width, unsigned int height, const char *name, int depth, int floatbuf, short gen_type, float color[4]);
 /* adds image from imbuf, owns imbuf */
 struct Image *BKE_image_add_from_imbuf(struct ImBuf *ibuf);
 
@@ -159,6 +182,7 @@ void BKE_image_user_frame_calc(struct ImageUser *iuser, int cfra, int fieldnr);
 void BKE_image_user_check_frame_calc(struct ImageUser *iuser, int cfra, int fieldnr);
 int  BKE_image_user_frame_get(const struct ImageUser *iuser, int cfra, int fieldnr, short *r_is_in_range);
 void BKE_image_user_file_path(struct ImageUser *iuser, struct Image *ima, char *path); 
+void BKE_image_update_frame(const struct Main *bmain, int cfra);
 
 /* sets index offset for multilayer files */
 struct RenderPass *BKE_image_multilayer_index(struct RenderResult *rr, struct ImageUser *iuser);
@@ -185,7 +209,7 @@ void BKE_image_memorypack(struct Image *ima);
 void BKE_image_print_memlist(void);
 
 /* empty image block, of similar type and filename */
-struct Image *BKE_image_copy(struct Image *ima);
+struct Image *BKE_image_copy(struct Main *bmain, struct Image *ima);
 
 /* merge source into dest, and free source */
 void BKE_image_merge(struct Image *dest, struct Image *source);
@@ -196,11 +220,21 @@ int BKE_image_scale(struct Image *image, int width, int height);
 /* check if texture has alpha (depth=32) */
 int BKE_image_has_alpha(struct Image *image);
 
+void BKE_image_get_size(struct Image *image, struct ImageUser *iuser, int *width, int *height);
+void BKE_image_get_size_fl(struct Image *image, struct ImageUser *iuser, float size[2]);
+void BKE_image_get_aspect(struct Image *image, float *aspx, float *aspy);
+
 /* image_gen.c */
 void BKE_image_buf_fill_color(unsigned char *rect, float *rect_float, int width, int height, const float color[4]);
 void BKE_image_buf_fill_checker(unsigned char *rect, float *rect_float, int height, int width);
 void BKE_image_buf_fill_checker_color(unsigned char *rect, float *rect_float, int height, int width);
 
+/* Cycles hookup */
+unsigned char *BKE_image_get_pixels_for_frame(struct Image *image, int frame);
+float *BKE_image_get_float_pixels_for_frame(struct Image *image, int frame);
+
+/* Guess offset for the first frame in the sequence */
+int BKE_image_sequence_guess_offset(struct Image *image);
 #ifdef __cplusplus
 }
 #endif

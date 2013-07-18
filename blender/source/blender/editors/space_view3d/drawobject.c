@@ -27,10 +27,6 @@
  *  \ingroup spview3d
  */
 
-
-#include <string.h>
-#include <math.h>
-
 #include "MEM_guardedalloc.h"
 
 #include "DNA_camera_types.h"
@@ -40,21 +36,15 @@
 #include "DNA_lattice_types.h"
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
-#include "DNA_meshdata_types.h"
 #include "DNA_meta_types.h"
+#include "DNA_rigidbody_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_smoke_types.h"
-#include "DNA_speaker_types.h"
 #include "DNA_world_types.h"
-#include "DNA_armature_types.h"
 #include "DNA_object_types.h"
 
-#include "BLI_utildefines.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_edgehash.h"
-#include "BLI_rand.h"
-#include "BLI_utildefines.h"
 
 #include "BKE_anim.h"  /* for the where_on_path function */
 #include "BKE_armature.h"
@@ -79,12 +69,9 @@
 #include "BKE_pointcache.h"
 #include "BKE_scene.h"
 #include "BKE_unit.h"
-#include "BKE_movieclip.h"
 #include "BKE_tracking.h"
 
-#include "BKE_tessmesh.h"
-
-#include "smoke_API.h"
+#include "BKE_editmesh.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -100,15 +87,14 @@
 #include "ED_screen.h"
 #include "ED_sculpt.h"
 #include "ED_types.h"
-#include "ED_curve.h" /* for curve_editnurbs */
 
 #include "UI_resources.h"
+#include "UI_interface_icons.h"
 
 #include "WM_api.h"
-#include "wm_subwindow.h"
 #include "BLF_api.h"
 
-#include "view3d_intern.h"  /* own include */
+#include "view3d_intern.h"  /* bad level include */
 
 typedef enum eWireDrawMode {
 	OBDRAW_WIRE_OFF = 0,
@@ -116,33 +102,11 @@ typedef enum eWireDrawMode {
 	OBDRAW_WIRE_ON_DEPTH = 2
 } eWireDrawMode;
 
-/* user data structures for derived mesh callbacks */
-typedef struct foreachScreenVert_userData {
-	void (*func)(void *userData, BMVert *eve, int x, int y, int index);
-	void *userData;
-	ViewContext vc;
-	eV3DClipTest clipVerts;
-} foreachScreenVert_userData;
-
-typedef struct foreachScreenEdge_userData {
-	void (*func)(void *userData, BMEdge *eed, int x0, int y0, int x1, int y1, int index);
-	void *userData;
-	ViewContext vc;
-	rcti win_rect; /* copy of: vc.ar->winx/winy, use for faster tests, minx/y will always be 0 */
-	eV3DClipTest clipVerts;
-} foreachScreenEdge_userData;
-
-typedef struct foreachScreenFace_userData {
-	void (*func)(void *userData, BMFace *efa, int x, int y, int index);
-	void *userData;
-	ViewContext vc;
-} foreachScreenFace_userData;
-
 typedef struct drawDMVerts_userData {
-	BMEditMesh *em; /* BMESH BRANCH ONLY */
+	BMEditMesh *em;
 
-	int sel;
 	BMVert *eve_act;
+	char sel;
 
 	/* cached theme values */
 	unsigned char th_editmesh_active[4];
@@ -157,20 +121,25 @@ typedef struct drawDMVerts_userData {
 } drawDMVerts_userData;
 
 typedef struct drawDMEdgesSel_userData {
-	BMEditMesh *em; /* BMESH BRANCH ONLY */
+	BMEditMesh *em;
 
 	unsigned char *baseCol, *selCol, *actCol;
 	BMEdge *eed_act;
 } drawDMEdgesSel_userData;
 
 typedef struct drawDMFacesSel_userData {
+#ifdef WITH_FREESTYLE
+	unsigned char *cols[4];
+#else
 	unsigned char *cols[3];
+#endif
 
-	DerivedMesh *dm; /* BMESH BRANCH ONLY */
-	BMEditMesh *em;  /* BMESH BRANCH ONLY */
+	DerivedMesh *dm;
+	BMEditMesh *em;
 
 	BMFace *efa_act;
-	int *orig_index;
+	int *orig_index_mf_to_mpoly;
+	int *orig_index_mp_to_orig;
 } drawDMFacesSel_userData;
 
 typedef struct drawDMNormal_userData {
@@ -205,190 +174,90 @@ static void ob_wire_color_blend_theme_id(const unsigned char ob_wire_col[4], con
 }
 
 /* this condition has been made more complex since editmode can draw textures */
-static int check_object_draw_texture(Scene *scene, View3D *v3d, int drawtype)
+static bool check_object_draw_texture(Scene *scene, View3D *v3d, int drawtype)
 {
 	/* texture and material draw modes */
-	if (ELEM(v3d->drawtype, OB_TEXTURE, OB_MATERIAL) && drawtype > OB_SOLID)
-		return TRUE;
+	if (ELEM(v3d->drawtype, OB_TEXTURE, OB_MATERIAL) && drawtype > OB_SOLID) {
+		return true;
+	}
 
 	/* textured solid */
-	if (v3d->drawtype == OB_SOLID && (v3d->flag2 & V3D_SOLID_TEX) && !BKE_scene_use_new_shading_nodes(scene))
-		return TRUE;
+	if ((v3d->drawtype == OB_SOLID) &&
+	    (v3d->flag2 & V3D_SOLID_TEX) &&
+	    (BKE_scene_use_new_shading_nodes(scene) == false))
+	{
+		return true;
+	}
 	
-	return FALSE;
+	if (v3d->flag2 & V3D_SHOW_SOLID_MATCAP) {
+		return true;
+	}
+	
+	return false;
 }
 
-static int check_ob_drawface_dot(Scene *sce, View3D *vd, char dt)
+static bool check_ob_drawface_dot(Scene *sce, View3D *vd, char dt)
 {
 	if ((sce->toolsettings->selectmode & SCE_SELECT_FACE) == 0)
-		return 0;
+		return false;
 
 	if (G.f & G_BACKBUFSEL)
-		return 0;
+		return false;
 
 	if ((vd->flag & V3D_ZBUF_SELECT) == 0)
-		return 1;
+		return true;
 
 	/* if its drawing textures with zbuf sel, then don't draw dots */
 	if (dt == OB_TEXTURE && vd->drawtype == OB_TEXTURE)
-		return 0;
+		return false;
 
 	if ((vd->drawtype >= OB_SOLID) && (vd->flag2 & V3D_SOLID_TEX))
-		return 0;
+		return false;
 
-	return 1;
+	return true;
 }
 
-/* ************* only use while object drawing **************
- * or after running ED_view3d_init_mats_rv3d
- * */
-static void view3d_project_short_clip(ARegion *ar, const float vec[3], short adr[2], int is_local)
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-	
-	adr[0] = IS_CLIPPED;
-	
-	/* clipplanes in eye space */
-	if (rv3d->rflag & RV3D_CLIPPING) {
-		if (ED_view3d_clipping_test(rv3d, vec, is_local))
-			return;
-	}
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	
-	mul_m4_v4(rv3d->persmatob, vec4);
-	
-	/* clipplanes in window space */
-	if (vec4[3] > (float)BL_NEAR_CLIP) {    /* is the NEAR clipping cutoff for picking */
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-		
-		if (fx > 0 && fx < ar->winx) {
-			
-			fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-			
-			if (fy > 0.0f && fy < (float)ar->winy) {
-				adr[0] = (short)floorf(fx);
-				adr[1] = (short)floorf(fy);
-			}
-		}
-	}
-}
-
-/* BMESH NOTE: this function is unused in bmesh only */
-
-/* only use while object drawing */
-static void UNUSED_FUNCTION(view3d_project_short_noclip) (ARegion * ar, const float vec[3], short adr[2])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-	
-	adr[0] = IS_CLIPPED;
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	
-	mul_m4_v4(rv3d->persmatob, vec4);
-	
-	if (vec4[3] > (float)BL_NEAR_CLIP) {    /* is the NEAR clipping cutoff for picking */
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-		
-		if (fx > -32700 && fx < 32700) {
-			
-			fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-			
-			if (fy > -32700.0f && fy < 32700.0f) {
-				adr[0] = (short)floorf(fx);
-				adr[1] = (short)floorf(fy);
-			}
-		}
-	}
-}
-
-/* same as view3d_project_short_clip but use persmat instead of persmatob for projection */
-static void view3d_project_short_clip_persmat(ARegion *ar, const float vec[3], short adr[2], int is_local)
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-
-	adr[0] = IS_CLIPPED;
-
-	/* clipplanes in eye space */
-	if (rv3d->rflag & RV3D_CLIPPING) {
-		if (ED_view3d_clipping_test(rv3d, vec, is_local))
-			return;
-	}
-
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-
-	mul_m4_v4(rv3d->persmat, vec4);
-
-	/* clipplanes in window space */
-	if (vec4[3] > (float)BL_NEAR_CLIP) {    /* is the NEAR clipping cutoff for picking */
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-
-		if (fx > 0 && fx < ar->winx) {
-
-			fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-
-			if (fy > 0.0f && fy < (float)ar->winy) {
-				adr[0] = (short)floorf(fx);
-				adr[1] = (short)floorf(fy);
-			}
-		}
-	}
-}
 /* ************************ */
 
 /* check for glsl drawing */
 
-int draw_glsl_material(Scene *scene, Object *ob, View3D *v3d, const short dt)
+bool draw_glsl_material(Scene *scene, Object *ob, View3D *v3d, const char dt)
 {
 	if (!GPU_glsl_support())
-		return 0;
+		return false;
 	if (G.f & G_PICKSEL)
-		return 0;
+		return false;
 	if (!check_object_draw_texture(scene, v3d, dt))
-		return 0;
+		return false;
 	if (ob == OBACT && (ob && ob->mode & OB_MODE_WEIGHT_PAINT))
-		return 0;
+		return false;
+	
+	if (v3d->flag2 & V3D_SHOW_SOLID_MATCAP)
+		return true;
+	
 	if (BKE_scene_use_new_shading_nodes(scene))
-		return 0;
+		return false;
 	
 	return (scene->gm.matmode == GAME_MAT_GLSL) && (dt > OB_SOLID);
 }
 
-static int check_alpha_pass(Base *base)
+static bool check_alpha_pass(Base *base)
 {
 	if (base->flag & OB_FROMDUPLI)
-		return 0;
+		return false;
 
 	if (G.f & G_PICKSEL)
-		return 0;
-	
+		return false;
+
+	if (base->object->mode & OB_MODE_ALL_PAINT)
+		return false;
+
 	return (base->object->dtx & OB_DRAWTRANSP);
 }
 
 /***/
-static unsigned int colortab[24] =
-{0x0,       0xFF88FF, 0xFFBBFF,
- 0x403000,  0xFFFF88, 0xFFFFBB,
- 0x104040,  0x66CCCC, 0x77CCCC,
- 0x104010,  0x55BB55, 0x66FF66,
- 0xFFFFFF};
-
-
-static float cube[8][3] = {
-	{-1.0, -1.0, -1.0},
-	{-1.0, -1.0,  1.0},
-	{-1.0,  1.0,  1.0},
-	{-1.0,  1.0, -1.0},
-	{ 1.0, -1.0, -1.0},
-	{ 1.0, -1.0,  1.0},
-	{ 1.0,  1.0,  1.0},
-	{ 1.0,  1.0, -1.0},
+static const unsigned int colortab[] = {
+	0x0, 0x403000, 0xFFFF88
 };
 
 /* ----------------- OpenGL Circle Drawing - Tables for Optimized Drawing Speed ------------------ */
@@ -667,7 +536,7 @@ void drawaxes(float size, char drawtype)
 static void draw_empty_image(Object *ob, const short dflag, const unsigned char ob_wire_col[4])
 {
 	Image *ima = (Image *)ob->data;
-	ImBuf *ibuf = ima ? BKE_image_get_ibuf(ima, NULL) : NULL;
+	ImBuf *ibuf = ima ? BKE_image_acquire_ibuf(ima, NULL, NULL) : NULL;
 
 	float scale, ofs_x, ofs_y, sca_x, sca_y;
 	int ima_x, ima_y;
@@ -717,44 +586,58 @@ static void draw_empty_image(Object *ob, const short dflag, const unsigned char 
 	glTranslatef(0.0f,  0.0f,  0.0f);
 
 	/* Calculate Image scale */
-	scale = (ob->empty_drawsize / (float)MAX2(ima_x * sca_x, ima_y * sca_y));
+	scale = (ob->empty_drawsize / max_ff((float)ima_x * sca_x, (float)ima_y * sca_y));
 
 	/* Set the object scale */
 	glScalef(scale * sca_x, scale * sca_y, 1.0f);
 
 	if (ibuf && ibuf->rect) {
+		const bool use_clip = (U.glalphaclip != 1.0f);
 		/* Setup GL params */
 		glEnable(GL_BLEND);
 		glBlendFunc(GL_SRC_ALPHA,  GL_ONE_MINUS_SRC_ALPHA);
+
+		if (use_clip) {
+			glEnable(GL_ALPHA_TEST);
+			glAlphaFunc(GL_GREATER, U.glalphaclip);
+		}
 
 		/* Use the object color and alpha */
 		glColor4fv(ob->col);
 
 		/* Draw the Image on the screen */
-		glaDrawPixelsTex(ofs_x, ofs_y, ima_x, ima_y, GL_UNSIGNED_BYTE, ibuf->rect);
+		glaDrawPixelsTex(ofs_x, ofs_y, ima_x, ima_y, GL_RGBA, GL_UNSIGNED_BYTE, GL_LINEAR, ibuf->rect);
 		glPixelTransferf(GL_ALPHA_SCALE, 1.0f);
 
 		glDisable(GL_BLEND);
+
+		if (use_clip) {
+			glDisable(GL_ALPHA_TEST);
+			glAlphaFunc(GL_GREATER, 0.0f);
+		}
 	}
 
 	if ((dflag & DRAW_CONSTCOLOR) == 0) {
 		glColor3ubv(ob_wire_col);
-
-		/* Calculate the outline vertex positions */
-		glBegin(GL_LINE_LOOP);
-		glVertex2f(ofs_x, ofs_y);
-		glVertex2f(ofs_x + ima_x, ofs_y);
-		glVertex2f(ofs_x + ima_x, ofs_y + ima_y);
-		glVertex2f(ofs_x, ofs_y + ima_y);
-		glEnd();
 	}
+
+	/* Calculate the outline vertex positions */
+	glBegin(GL_LINE_LOOP);
+	glVertex2f(ofs_x, ofs_y);
+	glVertex2f(ofs_x + ima_x, ofs_y);
+	glVertex2f(ofs_x + ima_x, ofs_y + ima_y);
+	glVertex2f(ofs_x, ofs_y + ima_y);
+	glEnd();
+
 
 	/* Reset GL settings */
 	glMatrixMode(GL_MODELVIEW);
 	glPopMatrix();
+
+	BKE_image_release_ibuf(ima, ibuf, NULL);
 }
 
-static void circball_array_fill(float verts[CIRCLE_RESOL][3], const float cent[3], float rad, float tmat[][4])
+static void circball_array_fill(float verts[CIRCLE_RESOL][3], const float cent[3], float rad, float tmat[4][4])
 {
 	float vx[3], vy[3];
 	float *viter = (float *)verts;
@@ -770,7 +653,7 @@ static void circball_array_fill(float verts[CIRCLE_RESOL][3], const float cent[3
 	}
 }
 
-void drawcircball(int mode, const float cent[3], float rad, float tmat[][4])
+void drawcircball(int mode, const float cent[3], float rad, float tmat[4][4])
 {
 	float verts[CIRCLE_RESOL][3];
 
@@ -871,7 +754,7 @@ void view3d_cached_text_draw_add(const float co[3],
 	memcpy(++vos, str, alloc_len);
 }
 
-void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, int depth_write, float mat[][4])
+void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, bool depth_write, float mat[4][4])
 {
 	RegionView3D *rv3d = ar->regiondata;
 	ListBase *strings = &CachedText[CachedTextLevel - 1];
@@ -883,13 +766,17 @@ void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, int depth_write, floa
 		if (mat && !(vos->flag & V3D_CACHE_TEXT_WORLDSPACE))
 			mul_m4_v3(mat, vos->vec);
 
-		if (vos->flag & V3D_CACHE_TEXT_GLOBALSPACE)
-			view3d_project_short_clip_persmat(ar, vos->vec, vos->sco, (vos->flag & V3D_CACHE_TEXT_LOCALCLIP) != 0);
-		else
-			view3d_project_short_clip(ar, vos->vec, vos->sco, (vos->flag & V3D_CACHE_TEXT_LOCALCLIP) != 0);
-
-		if (vos->sco[0] != IS_CLIPPED)
+		if (ED_view3d_project_short_ex(ar,
+		                               (vos->flag & V3D_CACHE_TEXT_GLOBALSPACE) ? rv3d->persmat : rv3d->persmatob,
+		                               (vos->flag & V3D_CACHE_TEXT_LOCALCLIP) != 0,
+		                               vos->vec, vos->sco,
+		                               V3D_PROJ_TEST_CLIP_BB | V3D_PROJ_TEST_CLIP_WIN | V3D_PROJ_TEST_CLIP_NEAR) == V3D_PROJ_RET_OK)
+		{
 			tot++;
+		}
+		else {
+			vos->sco[0] = IS_CLIPPED;
+		}
 	}
 
 	if (tot) {
@@ -921,17 +808,6 @@ void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, int depth_write, floa
 		}
 		
 		for (vos = strings->first; vos; vos = vos->next) {
-			/* too slow, reading opengl info while drawing is very bad,
-			 * better to see if we can use the zbuffer while in pixel space - campbell */
-#if 0
-			if (v3d->zbuf && (vos->flag & V3D_CACHE_TEXT_ZBUF)) {
-				gluProject(vos->vec[0], vos->vec[1], vos->vec[2], mats.modelview, mats.projection, (GLint *)mats.viewport, &ux, &uy, &uz);
-				glReadPixels(ar->winrct.xmin + vos->mval[0] + vos->xoffs, ar->winrct.ymin + vos->mval[1], 1, 1, GL_DEPTH_COMPONENT, GL_FLOAT, &depth);
-
-				if (uz > depth)
-					continue;
-			}
-#endif
 			if (vos->sco[0] != IS_CLIPPED) {
 				const char *str = (char *)(vos + 1);
 
@@ -954,7 +830,9 @@ void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, int depth_write, floa
 		if (depth_write) {
 			if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
 		}
-		else glDepthMask(1);
+		else {
+			glDepthMask(1);
+		}
 		
 		glMatrixMode(GL_PROJECTION);
 		glPopMatrix();
@@ -974,29 +852,7 @@ void view3d_cached_text_draw_end(View3D *v3d, ARegion *ar, int depth_write, floa
 
 /* ******************** primitive drawing ******************* */
 
-static void drawcube(void)
-{
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[0]); glVertex3fv(cube[1]); glVertex3fv(cube[2]); glVertex3fv(cube[3]);
-	glVertex3fv(cube[0]); glVertex3fv(cube[4]); glVertex3fv(cube[5]); glVertex3fv(cube[6]);
-	glVertex3fv(cube[7]); glVertex3fv(cube[4]);
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[1]); glVertex3fv(cube[5]);
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[2]); glVertex3fv(cube[6]);
-	glEnd();
-
-	glBegin(GL_LINE_STRIP);
-	glVertex3fv(cube[3]); glVertex3fv(cube[7]);
-	glEnd();
-}
-
-/* draws a cube on given the scaling of the cube, assuming that 
+/* draws a cube on given the scaling of the cube, assuming that
  * all required matrices have been set (used for drawing empties)
  */
 static void drawcube_size(float size)
@@ -1055,7 +911,7 @@ static void drawcube_size(const float size[3])
 }
 #endif
 
-static void drawshadbuflimits(Lamp *la, float mat[][4])
+static void drawshadbuflimits(Lamp *la, float mat[4][4])
 {
 	float sta[3], end[3], lavec[3];
 
@@ -1203,7 +1059,7 @@ static void draw_transp_spot_volume(Lamp *la, float x, float z)
 }
 
 static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
-                     const short dt, const short dflag, const unsigned char ob_wire_col[4])
+                     const char dt, const short dflag, const unsigned char ob_wire_col[4])
 {
 	Object *ob = base->object;
 	const float pixsize = ED_view3d_pixel_size(rv3d, ob->obmat[3]);
@@ -1216,13 +1072,13 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 	unsigned char col[4];
 	/* cone can't be drawn for duplicated lamps, because duplilist would be freed to */
 	/* the moment of view3d_draw_transp() call */
-	const short is_view = (rv3d->persp == RV3D_CAMOB && v3d->camera == base->object);
-	const short drawcone = ((dt > OB_WIRE) &&
-	                        !(G.f & G_PICKSEL) &&
-	                        (la->type == LA_SPOT) &&
-	                        (la->mode & LA_SHOW_CONE) &&
-	                        !(base->flag & OB_FROMDUPLI) &&
-	                        !is_view);
+	const bool is_view = (rv3d->persp == RV3D_CAMOB && v3d->camera == base->object);
+	const bool drawcone = ((dt > OB_WIRE) &&
+	                       !(G.f & G_PICKSEL) &&
+	                       (la->type == LA_SPOT) &&
+	                       (la->mode & LA_SHOW_CONE) &&
+	                       !(base->flag & OB_FROMDUPLI) &&
+	                       !is_view);
 
 	if (drawcone && !v3d->transp) {
 		/* in this case we need to draw delayed */
@@ -1380,8 +1236,10 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 			glVertex3fv(tvec);
 			glEnd();
 		}
-		else circ(0.0, 0.0, fabsf(z));
-		
+		else {
+			circ(0.0, 0.0, fabsf(z));
+		}
+
 		/* draw the circle/square representing spotbl */
 		if (la->type == LA_SPOT) {
 			float spotblcirc = fabs(z) * (1 - pow(la->spotblend, 2));
@@ -1408,6 +1266,13 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 			glBegin(GL_LINE_STRIP);
 			glVertex3fv(lvec_clip);
 			glVertex3fv(vvec_clip);
+			glEnd();
+		}
+		/* Else, draw spot direction (using distance as end limit, same as for Area lamp). */
+		else {
+			glBegin(GL_LINE_STRIP);
+			glVertex3f(0.0, 0.0, -circrad);
+			glVertex3f(0.0, 0.0, -la->dist);
 			glEnd();
 		}
 	}
@@ -1479,7 +1344,7 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 
 	setlinestyle(0);
 	
-	if ((la->type == LA_SPOT) && (la->mode & LA_SHAD_BUF) && (is_view == FALSE)) {
+	if ((la->type == LA_SPOT) && (la->mode & LA_SHAD_BUF) && (is_view == false)) {
 		drawshadbuflimits(la, ob->obmat);
 	}
 	
@@ -1511,21 +1376,23 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 	}
 }
 
-static void draw_limit_line(float sta, float end, unsigned int col)
+static void draw_limit_line(float sta, float end, const short dflag, unsigned int col)
 {
 	glBegin(GL_LINES);
 	glVertex3f(0.0, 0.0, -sta);
 	glVertex3f(0.0, 0.0, -end);
 	glEnd();
 
-	glPointSize(3.0);
-	glBegin(GL_POINTS);
-	cpack(col);
-	glVertex3f(0.0, 0.0, -sta);
-	glVertex3f(0.0, 0.0, -end);
-	glEnd();
-	glPointSize(1.0);
-}		
+	if (!(dflag & DRAW_PICKING)) {
+		glPointSize(3.0);
+		glBegin(GL_POINTS);
+		cpack(col);
+		glVertex3f(0.0, 0.0, -sta);
+		glVertex3f(0.0, 0.0, -end);
+		glEnd();
+		glPointSize(1.0);
+	}
+}
 
 
 /* yafray: draw camera focus point (cross, similar to aqsis code in tuhopuu) */
@@ -1542,7 +1409,7 @@ static void draw_focus_cross(float dist, float size)
 
 #ifdef VIEW3D_CAMERA_BORDER_HACK
 unsigned char view3d_camera_border_hack_col[3];
-short view3d_camera_border_hack_test = FALSE;
+bool view3d_camera_border_hack_test = false;
 #endif
 
 /* ****************** draw clip data *************** */
@@ -1573,7 +1440,7 @@ static void draw_bundle_sphere(void)
 static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D *v3d,
                                                 MovieClip *clip, MovieTrackingObject *tracking_object,
                                                 const short dflag, const unsigned char ob_wire_col[4],
-                                                int *global_track_index, int draw_selected)
+                                                int *global_track_index, bool draw_selected)
 {
 	MovieTracking *tracking = &clip->tracking;
 	MovieTrackingTrack *track;
@@ -1581,11 +1448,19 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 	unsigned char col_unsel[4], col_sel[4];
 	int tracknr = *global_track_index;
 	ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, tracking_object);
+	float camera_size[3];
 
 	UI_GetThemeColor4ubv(TH_TEXT, col_unsel);
 	UI_GetThemeColor4ubv(TH_SELECT, col_sel);
 
 	BKE_tracking_get_camera_object_matrix(scene, base->object, mat);
+
+	/* we're compensating camera size for bundles size,
+	 * to make it so bundles are always displayed with the same size
+	 */
+	copy_v3_v3(camera_size, base->object->size);
+	if ((tracking_object->flag & TRACKING_OBJECT_CAMERA) == 0)
+		mul_v3_fl(camera_size, tracking_object->scale);
 
 	glPushMatrix();
 
@@ -1621,7 +1496,9 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 
 		glPushMatrix();
 		glTranslatef(track->bundle_pos[0], track->bundle_pos[1], track->bundle_pos[2]);
-		glScalef(v3d->bundle_size / 0.05f, v3d->bundle_size / 0.05f, v3d->bundle_size / 0.05f);
+		glScalef(v3d->bundle_size / 0.05f / camera_size[0],
+		         v3d->bundle_size / 0.05f / camera_size[1],
+		         v3d->bundle_size / 0.05f / camera_size[2]);
 
 		if (v3d->drawtype == OB_WIRE) {
 			glDisable(GL_LIGHTING);
@@ -1728,7 +1605,7 @@ static void draw_viewport_object_reconstruction(Scene *scene, Base *base, View3D
 
 static void draw_viewport_reconstruction(Scene *scene, Base *base, View3D *v3d, MovieClip *clip,
                                          const short dflag, const unsigned char ob_wire_col[4],
-                                         int draw_selected)
+                                         const bool draw_selected)
 {
 	MovieTracking *tracking = &clip->tracking;
 	MovieTrackingObject *tracking_object;
@@ -1777,13 +1654,13 @@ static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base
 	float vec[4][3], asp[2], shift[2], scale[3];
 	int i;
 	float drawsize;
-	const short is_view = (rv3d->persp == RV3D_CAMOB && ob == v3d->camera);
+	const bool is_view = (rv3d->persp == RV3D_CAMOB && ob == v3d->camera);
 	MovieClip *clip = BKE_object_movieclip_get(scene, base->object, 0);
 
 	/* draw data for movie clip set as active for scene */
 	if (clip) {
-		draw_viewport_reconstruction(scene, base, v3d, clip, dflag, ob_wire_col, FALSE);
-		draw_viewport_reconstruction(scene, base, v3d, clip, dflag, ob_wire_col, TRUE);
+		draw_viewport_reconstruction(scene, base, v3d, clip, dflag, ob_wire_col, false);
+		draw_viewport_reconstruction(scene, base, v3d, clip, dflag, ob_wire_col, true);
 	}
 
 #ifdef VIEW3D_CAMERA_BORDER_HACK
@@ -1798,7 +1675,7 @@ static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base
 			glGetFloatv(GL_CURRENT_COLOR, col);
 			rgb_float_to_uchar(view3d_camera_border_hack_col, col);
 		}
-		view3d_camera_border_hack_test = TRUE;
+		view3d_camera_border_hack_test = true;
 		return;
 	}
 #endif
@@ -1865,10 +1742,9 @@ static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base
 		glEnd();
 	}
 
-	if (dflag == 0) {
-		if (cam->flag & (CAM_SHOWLIMITS + CAM_SHOWMIST)) {
+	if ((dflag & DRAW_SCENESET) == 0) {
+		if (cam->flag & (CAM_SHOWLIMITS | CAM_SHOWMIST)) {
 			float nobmat[4][4];
-			World *wrld;
 
 			/* draw in normalized object matrix space */
 			copy_m4_m4(nobmat, ob->obmat);
@@ -1879,15 +1755,17 @@ static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base
 			glMultMatrixf(nobmat);
 
 			if (cam->flag & CAM_SHOWLIMITS) {
-				draw_limit_line(cam->clipsta, cam->clipend, 0x77FFFF);
+				draw_limit_line(cam->clipsta, cam->clipend, dflag, 0x77FFFF);
 				/* qdn: was yafray only, now also enabled for Blender to be used with defocus composite node */
 				draw_focus_cross(BKE_camera_object_dof_distance(ob), cam->drawsize);
 			}
 
-			wrld = scene->world;
-			if (cam->flag & CAM_SHOWMIST)
-				if (wrld) draw_limit_line(wrld->miststa, wrld->miststa + wrld->mistdist, 0xFFFFFF);
-
+			if (cam->flag & CAM_SHOWMIST) {
+				World *world = scene->world;
+				if (world) {
+					draw_limit_line(world->miststa, world->miststa + world->mistdist, dflag, 0xFFFFFF);
+				}
+			}
 			glPopMatrix();
 		}
 	}
@@ -1935,13 +1813,15 @@ static void drawspeaker(Scene *UNUSED(scene), View3D *UNUSED(v3d), RegionView3D 
 	glDisable(GL_BLEND);
 }
 
-static void lattice_draw_verts(Lattice *lt, DispList *dl, short sel)
+static void lattice_draw_verts(Lattice *lt, DispList *dl, BPoint *actbp, short sel)
 {
 	BPoint *bp = lt->def;
 	float *co = dl ? dl->verts : NULL;
 	int u, v, w;
 
-	UI_ThemeColor(sel ? TH_VERTEX_SELECT : TH_VERTEX);
+	const int color = sel ? TH_VERTEX_SELECT : TH_VERTEX;
+	UI_ThemeColor(color);
+
 	glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE));
 	bglBegin(GL_POINTS);
 
@@ -1953,7 +1833,13 @@ static void lattice_draw_verts(Lattice *lt, DispList *dl, short sel)
 				int uxt = (u == 0 || u == lt->pntsu - 1);
 				if (!(lt->flag & LT_OUTSIDE) || uxt || vxt || wxt) {
 					if (bp->hide == 0) {
-						if ((bp->f1 & SELECT) == sel) {
+						/* check for active BPoint and ensure selected */
+						if ((bp == actbp) && (bp->f1 & SELECT)) {
+							UI_ThemeColor(TH_LASTSEL_POINT);
+							bglVertex3fv(dl ? co : bp->vec);
+							UI_ThemeColor(color);
+						}
+						else if ((bp->f1 & SELECT) == sel) {
 							bglVertex3fv(dl ? co : bp->vec);
 						}
 					}
@@ -1966,34 +1852,13 @@ static void lattice_draw_verts(Lattice *lt, DispList *dl, short sel)
 	bglEnd();
 }
 
-void lattice_foreachScreenVert(ViewContext *vc, void (*func)(void *userData, BPoint *bp, int x, int y), void *userData)
-{
-	Object *obedit = vc->obedit;
-	Lattice *lt = obedit->data;
-	BPoint *bp = lt->editlatt->latt->def;
-	DispList *dl = BKE_displist_find(&obedit->disp, DL_VERTS);
-	float *co = dl ? dl->verts : NULL;
-	int i, N = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
-	short s[2] = {IS_CLIPPED, 0};
-
-	ED_view3d_clipping_local(vc->rv3d, obedit->obmat); /* for local clipping lookups */
-
-	for (i = 0; i < N; i++, bp++, co += 3) {
-		if (bp->hide == 0) {
-			view3d_project_short_clip(vc->ar, dl ? co : bp->vec, s, TRUE);
-			if (s[0] != IS_CLIPPED)
-				func(userData, bp, s[0], s[1]);
-		}
-	}
-}
-
-static void drawlattice__point(Lattice *lt, DispList *dl, int u, int v, int w, int use_wcol)
+static void drawlattice__point(Lattice *lt, DispList *dl, int u, int v, int w, int actdef_wcol)
 {
 	int index = ((w * lt->pntsv + v) * lt->pntsu) + u;
 
-	if (use_wcol) {
+	if (actdef_wcol) {
 		float col[3];
-		MDeformWeight *mdw = defvert_find_index(lt->dvert + index, use_wcol - 1);
+		MDeformWeight *mdw = defvert_find_index(lt->dvert + index, actdef_wcol - 1);
 		
 		weight_to_rgb(col, mdw ? mdw->weight : 0.0f);
 		glColor3fv(col);
@@ -2014,7 +1879,8 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 	Lattice *lt = ob->data;
 	DispList *dl;
 	int u, v, w;
-	int use_wcol = FALSE, is_edit = (lt->editlatt != NULL);
+	int actdef_wcol = 0;
+	const bool is_edit = (lt->editlatt != NULL);
 
 	/* now we default make displist, this will modifiers work for non animated case */
 	if (ob->disp.first == NULL)
@@ -2024,10 +1890,10 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 	if (is_edit) {
 		lt = lt->editlatt->latt;
 
-		cpack(0x004000);
+		UI_ThemeColor(TH_WIRE_EDIT);
 		
 		if (ob->defbase.first && lt->dvert) {
-			use_wcol = ob->actdef;
+			actdef_wcol = ob->actdef;
 			glShadeModel(GL_SMOOTH);
 		}
 	}
@@ -2041,16 +1907,16 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 				int uxt = (u == 0 || u == lt->pntsu - 1);
 
 				if (w && ((uxt || vxt) || !(lt->flag & LT_OUTSIDE))) {
-					drawlattice__point(lt, dl, u, v, w - 1, use_wcol);
-					drawlattice__point(lt, dl, u, v, w, use_wcol);
+					drawlattice__point(lt, dl, u, v, w - 1, actdef_wcol);
+					drawlattice__point(lt, dl, u, v, w, actdef_wcol);
 				}
 				if (v && ((uxt || wxt) || !(lt->flag & LT_OUTSIDE))) {
-					drawlattice__point(lt, dl, u, v - 1, w, use_wcol);
-					drawlattice__point(lt, dl, u, v, w, use_wcol);
+					drawlattice__point(lt, dl, u, v - 1, w, actdef_wcol);
+					drawlattice__point(lt, dl, u, v, w, actdef_wcol);
 				}
 				if (u && ((vxt || wxt) || !(lt->flag & LT_OUTSIDE))) {
-					drawlattice__point(lt, dl, u - 1, v, w, use_wcol);
-					drawlattice__point(lt, dl, u, v, w, use_wcol);
+					drawlattice__point(lt, dl, u - 1, v, w, actdef_wcol);
+					drawlattice__point(lt, dl, u, v, w, actdef_wcol);
 				}
 			}
 		}
@@ -2058,70 +1924,22 @@ static void drawlattice(Scene *scene, View3D *v3d, Object *ob)
 	glEnd();
 	
 	/* restoration for weight colors */
-	if (use_wcol)
+	if (actdef_wcol)
 		glShadeModel(GL_FLAT);
 
 	if (is_edit) {
+		BPoint *actbp = BKE_lattice_active_point_get(lt);
+
 		if (v3d->zbuf) glDisable(GL_DEPTH_TEST);
 		
-		lattice_draw_verts(lt, dl, 0);
-		lattice_draw_verts(lt, dl, 1);
+		lattice_draw_verts(lt, dl, actbp, 0);
+		lattice_draw_verts(lt, dl, actbp, 1);
 		
 		if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
 	}
 }
 
 /* ***************** ******************** */
-
-/* Note! - foreach funcs should be called while drawing or directly after
- * if not, ED_view3d_init_mats_rv3d() can be used for selection tools
- * but would not give correct results with dupli's for eg. which don't
- * use the object matrix in the usual way */
-static void mesh_foreachScreenVert__mapFunc(void *userData, int index, const float co[3],
-                                            const float UNUSED(no_f[3]), const short UNUSED(no_s[3]))
-{
-	foreachScreenVert_userData *data = userData;
-	BMVert *eve = EDBM_vert_at_index(data->vc.em, index);
-
-	if (!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
-		short s[2] = {IS_CLIPPED, 0};
-
-		if (data->clipVerts != V3D_CLIP_TEST_OFF) {
-			view3d_project_short_clip(data->vc.ar, co, s, TRUE);
-		}
-		else {
-			float co2[2];
-			mul_v3_m4v3(co2, data->vc.obedit->obmat, co);
-			project_short_noclip(data->vc.ar, co2, s);
-		}
-
-		if (s[0] != IS_CLIPPED)
-			data->func(data->userData, eve, s[0], s[1], index);
-	}
-}
-
-void mesh_foreachScreenVert(
-        ViewContext *vc,
-        void (*func)(void *userData, BMVert *eve, int x, int y, int index),
-        void *userData, eV3DClipTest clipVerts)
-{
-	foreachScreenVert_userData data;
-	DerivedMesh *dm = editbmesh_get_derived_cage(vc->scene, vc->obedit, vc->em, CD_MASK_BAREMESH);
-	
-	data.vc = *vc;
-	data.func = func;
-	data.userData = userData;
-	data.clipVerts = clipVerts;
-
-	if (clipVerts != V3D_CLIP_TEST_OFF)
-		ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat);  /* for local clipping lookups */
-
-	EDBM_index_arrays_init(vc->em, 1, 0, 0);
-	dm->foreachMappedVert(dm, mesh_foreachScreenVert__mapFunc, &data);
-	EDBM_index_arrays_free(vc->em);
-
-	dm->release(dm);
-}
 
 /*  draw callback */
 static void drawSelectedVertices__mapFunc(void *userData, int index, const float co[3],
@@ -2151,166 +1969,9 @@ static void drawSelectedVertices(DerivedMesh *dm, Mesh *me)
 	glEnd();
 }
 
-static void mesh_foreachScreenEdge__mapFunc(void *userData, int index, const float v0co[3], const float v1co[3])
-{
-	foreachScreenEdge_userData *data = userData;
-	BMEdge *eed = EDBM_edge_at_index(data->vc.em, index);
-
-	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
-		short s[2][2];
-
-		if (data->clipVerts == V3D_CLIP_TEST_RV3D_CLIPPING) {
-			view3d_project_short_clip(data->vc.ar, v0co, s[0], TRUE);
-			view3d_project_short_clip(data->vc.ar, v1co, s[1], TRUE);
-		}
-		else {
-			float v1_co[3], v2_co[3];
-
-			mul_v3_m4v3(v1_co, data->vc.obedit->obmat, v0co);
-			mul_v3_m4v3(v2_co, data->vc.obedit->obmat, v1co);
-
-			project_short_noclip(data->vc.ar, v1_co, s[0]);
-			project_short_noclip(data->vc.ar, v2_co, s[1]);
-
-			if (data->clipVerts == V3D_CLIP_TEST_REGION) {
-				/* make an int copy */
-				int s_int[2][2] = {{s[0][0], s[0][1]},
-				                   {s[1][0], s[1][1]}};
-				if (!BLI_rcti_isect_segment(&data->win_rect, s_int[0], s_int[1])) {
-					return;
-				}
-			}
-		}
-
-		data->func(data->userData, eed, s[0][0], s[0][1], s[1][0], s[1][1], index);
-	}
-}
-
-void mesh_foreachScreenEdge(
-        ViewContext *vc,
-        void (*func)(void *userData, BMEdge *eed, int x0, int y0, int x1, int y1, int index),
-        void *userData, eV3DClipTest clipVerts)
-{
-	foreachScreenEdge_userData data;
-	DerivedMesh *dm = editbmesh_get_derived_cage(vc->scene, vc->obedit, vc->em, CD_MASK_BAREMESH);
-
-	data.vc = *vc;
-
-	data.win_rect.xmin = 0;
-	data.win_rect.ymin = 0;
-	data.win_rect.xmax = vc->ar->winx;
-	data.win_rect.ymax = vc->ar->winy;
-
-	data.func = func;
-	data.userData = userData;
-	data.clipVerts = clipVerts;
-
-	if (clipVerts != V3D_CLIP_TEST_OFF)
-		ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat);  /* for local clipping lookups */
-
-	EDBM_index_arrays_init(vc->em, 0, 1, 0);
-	dm->foreachMappedEdge(dm, mesh_foreachScreenEdge__mapFunc, &data);
-	EDBM_index_arrays_free(vc->em);
-
-	dm->release(dm);
-}
-
-static void mesh_foreachScreenFace__mapFunc(void *userData, int index, const float cent[3], const float UNUSED(no[3]))
-{
-	foreachScreenFace_userData *data = userData;
-	BMFace *efa = EDBM_face_at_index(data->vc.em, index);
-
-	if (efa && !BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
-		float cent2[3];
-		short s[2];
-
-		mul_v3_m4v3(cent2, data->vc.obedit->obmat, cent);
-		project_short(data->vc.ar, cent2, s);
-
-		if (s[0] != IS_CLIPPED) {
-			data->func(data->userData, efa, s[0], s[1], index);
-		}
-	}
-}
-
-void mesh_foreachScreenFace(
-        ViewContext *vc,
-        void (*func)(void *userData, BMFace *efa, int x, int y, int index),
-        void *userData)
-{
-	foreachScreenFace_userData data;
-	DerivedMesh *dm = editbmesh_get_derived_cage(vc->scene, vc->obedit, vc->em, CD_MASK_BAREMESH);
-
-	data.vc = *vc;
-	data.func = func;
-	data.userData = userData;
-
-	//if (clipVerts)
-	ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
-
-	EDBM_index_arrays_init(vc->em, 0, 0, 1);
-	dm->foreachMappedFaceCenter(dm, mesh_foreachScreenFace__mapFunc, &data);
-	EDBM_index_arrays_free(vc->em);
-
-	dm->release(dm);
-}
-
-void nurbs_foreachScreenVert(
-    ViewContext *vc,
-    void (*func)(void *userData, Nurb *nu, BPoint *bp, BezTriple *bezt, int beztindex, int x, int y),
-    void *userData)
-{
-	Curve *cu = vc->obedit->data;
-	short s[2] = {IS_CLIPPED, 0};
-	Nurb *nu;
-	int i;
-	ListBase *nurbs = BKE_curve_editNurbs_get(cu);
-
-	ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat); /* for local clipping lookups */
-
-	for (nu = nurbs->first; nu; nu = nu->next) {
-		if (nu->type == CU_BEZIER) {
-			for (i = 0; i < nu->pntsu; i++) {
-				BezTriple *bezt = &nu->bezt[i];
-
-				if (bezt->hide == 0) {
-					
-					if (cu->drawflag & CU_HIDE_HANDLES) {
-						view3d_project_short_clip(vc->ar, bezt->vec[1], s, TRUE);
-						if (s[0] != IS_CLIPPED)
-							func(userData, nu, NULL, bezt, 1, s[0], s[1]);
-					}
-					else {
-						view3d_project_short_clip(vc->ar, bezt->vec[0], s, TRUE);
-						if (s[0] != IS_CLIPPED)
-							func(userData, nu, NULL, bezt, 0, s[0], s[1]);
-						view3d_project_short_clip(vc->ar, bezt->vec[1], s, TRUE);
-						if (s[0] != IS_CLIPPED)
-							func(userData, nu, NULL, bezt, 1, s[0], s[1]);
-						view3d_project_short_clip(vc->ar, bezt->vec[2], s, TRUE);
-						if (s[0] != IS_CLIPPED)
-							func(userData, nu, NULL, bezt, 2, s[0], s[1]);
-					}
-				}
-			}
-		}
-		else {
-			for (i = 0; i < nu->pntsu * nu->pntsv; i++) {
-				BPoint *bp = &nu->bp[i];
-
-				if (bp->hide == 0) {
-					view3d_project_short_clip(vc->ar, bp->vec, s, TRUE);
-					if (s[0] != IS_CLIPPED)
-						func(userData, nu, bp, NULL, -1, s[0], s[1]);
-				}
-			}
-		}
-	}
-}
-
 /* ************** DRAW MESH ****************** */
 
-/* First section is all the "simple" draw routines, 
+/* First section is all the "simple" draw routines,
  * ones that just pass some sort of primitive to GL,
  * with perhaps various options to control lighting,
  * color, etc.
@@ -2377,13 +2038,13 @@ static void draw_dm_face_normals(BMEditMesh *em, Scene *scene, Object *ob, Deriv
 static void draw_dm_face_centers__mapFunc(void *userData, int index, const float cent[3], const float UNUSED(no[3]))
 {
 	BMFace *efa = EDBM_face_at_index(((void **)userData)[0], index);
-	int sel = *(((int **)userData)[1]);
+	const char sel = *(((char **)userData)[1]);
 	
 	if (efa && !BM_elem_flag_test(efa, BM_ELEM_HIDDEN) && BM_elem_flag_test(efa, BM_ELEM_SELECT) == sel) {
 		bglVertex3fv(cent);
 	}
 }
-static void draw_dm_face_centers(BMEditMesh *em, DerivedMesh *dm, int sel)
+static void draw_dm_face_centers(BMEditMesh *em, DerivedMesh *dm, char sel)
 {
 	void *ptrs[2] = {em, &sel};
 
@@ -2404,9 +2065,7 @@ static void draw_dm_vert_normals__mapFunc(void *userData, int index, const float
 			copy_v3_v3(no, no_f);
 		}
 		else {
-			no[0] = no_s[0] / 32767.0f;
-			no[1] = no_s[1] / 32767.0f;
-			no[2] = no_s[2] / 32767.0f;
+			normal_short_to_float_v3(no, no_s);
 		}
 
 		if (!data->uniform_scale) {
@@ -2486,7 +2145,7 @@ static void draw_dm_verts__mapFunc(void *userData, int index, const float co[3],
 	}
 }
 
-static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, int sel, BMVert *eve_act,
+static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, const char sel, BMVert *eve_act,
                           RegionView3D *rv3d)
 {
 	drawDMVerts_userData data;
@@ -2504,7 +2163,7 @@ static void draw_dm_verts(BMEditMesh *em, DerivedMesh *dm, int sel, BMVert *eve_
 	/* For skin root drawing */
 	data.has_vskin = CustomData_has_layer(&em->bm->vdata, CD_MVERT_SKIN);
 	/* view-aligned matrix */
-	mult_m4_m4m4(data.imat, rv3d->viewmat, em->ob->obmat);
+	mul_m4_m4m4(data.imat, rv3d->viewmat, em->ob->obmat);
 	invert_m4(data.imat);
 
 	bglBegin(GL_POINTS);
@@ -2545,7 +2204,7 @@ static DMDrawOption draw_dm_edges_sel__setDrawOptions(void *userData, int index)
 		return DM_DRAW_OPTION_SKIP;
 	}
 }
-static void draw_dm_edges_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *baseCol, 
+static void draw_dm_edges_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *baseCol,
                               unsigned char *selCol, unsigned char *actCol, BMEdge *eed_act)
 {
 	drawDMEdgesSel_userData data;
@@ -2567,7 +2226,7 @@ static DMDrawOption draw_dm_edges__setDrawOptions(void *userData, int index)
 		return DM_DRAW_OPTION_NORMAL;
 }
 
-static void draw_dm_edges(BMEditMesh *em, DerivedMesh *dm) 
+static void draw_dm_edges(BMEditMesh *em, DerivedMesh *dm)
 {
 	dm->drawMappedEdges(dm, draw_dm_edges__setDrawOptions, em);
 }
@@ -2632,6 +2291,44 @@ static void draw_dm_edges_sharp(BMEditMesh *em, DerivedMesh *dm)
 	dm->drawMappedEdges(dm, draw_dm_edges_sharp__setDrawOptions, em);
 }
 
+#ifdef WITH_FREESTYLE
+
+static int draw_dm_test_freestyle_edge_mark(BMEditMesh *em, BMEdge *eed)
+{
+	FreestyleEdge *fed = CustomData_bmesh_get(&em->bm->edata, eed->head.data, CD_FREESTYLE_EDGE);
+	if (!fed)
+		return 0;
+	return (fed->flag & FREESTYLE_EDGE_MARK) != 0;
+}
+
+/* Draw only Freestyle feature edges */
+static DMDrawOption draw_dm_edges_freestyle__setDrawOptions(void *userData, int index)
+{
+	BMEdge *eed = EDBM_edge_at_index(userData, index);
+
+	if (!eed)
+		return DM_DRAW_OPTION_SKIP;
+
+	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN) && draw_dm_test_freestyle_edge_mark(userData, eed))
+		return DM_DRAW_OPTION_NORMAL;
+	else
+		return DM_DRAW_OPTION_SKIP;
+}
+
+static void draw_dm_edges_freestyle(BMEditMesh *em, DerivedMesh *dm)
+{
+	dm->drawMappedEdges(dm, draw_dm_edges_freestyle__setDrawOptions, em);
+}
+
+static int draw_dm_test_freestyle_face_mark(BMEditMesh *em, BMFace *efa)
+{
+	FreestyleFace *ffa = CustomData_bmesh_get(&em->bm->pdata, efa->head.data, CD_FREESTYLE_FACE);
+	if (!ffa)
+		return 0;
+	return (ffa->flag & FREESTYLE_FACE_MARK) != 0;
+}
+
+#endif
 
 /* Draw faces with color set based on selection
  * return 2 for the active face so it renders with stipple enabled */
@@ -2650,7 +2347,11 @@ static DMDrawOption draw_dm_faces_sel__setDrawOptions(void *userData, int index)
 			return DM_DRAW_OPTION_STIPPLE;
 		}
 		else {
+#ifdef WITH_FREESTYLE
+			col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->em, efa) ? 3 : 0];
+#else
 			col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : 0];
+#endif
 			if (col[3] == 0)
 				return DM_DRAW_OPTION_SKIP;
 			glColor4ubv(col);
@@ -2669,11 +2370,11 @@ static int draw_dm_faces_sel__compareDrawOptions(void *userData, int index, int 
 
 	unsigned char *col, *next_col;
 
-	if (!data->orig_index)
+	if (!data->orig_index_mf_to_mpoly)
 		return 0;
 
-	efa = EDBM_face_at_index(data->em, data->orig_index[index]);
-	next_efa = EDBM_face_at_index(data->em, data->orig_index[next_index]);
+	efa = EDBM_face_at_index(data->em, DM_origindex_mface_mpoly(data->orig_index_mf_to_mpoly, data->orig_index_mp_to_orig, index));
+	next_efa = EDBM_face_at_index(data->em, DM_origindex_mface_mpoly(data->orig_index_mf_to_mpoly, data->orig_index_mp_to_orig, next_index));
 
 	if (efa == next_efa)
 		return 1;
@@ -2681,8 +2382,13 @@ static int draw_dm_faces_sel__compareDrawOptions(void *userData, int index, int 
 	if (efa == data->efa_act || next_efa == data->efa_act)
 		return 0;
 
+#ifdef WITH_FREESTYLE
+	col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->em, efa) ? 3 : 0];
+	next_col = data->cols[BM_elem_flag_test(next_efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->em, efa) ? 3 : 0];
+#else
 	col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : 0];
 	next_col = data->cols[BM_elem_flag_test(next_efa, BM_ELEM_SELECT) ? 1 : 0];
+#endif
 
 	if (col[3] == 0 || next_col[3] == 0)
 		return 0;
@@ -2691,8 +2397,13 @@ static int draw_dm_faces_sel__compareDrawOptions(void *userData, int index, int 
 }
 
 /* also draws the active face */
-static void draw_dm_faces_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *baseCol, 
+#ifdef WITH_FREESTYLE
+static void draw_dm_faces_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *baseCol,
+                              unsigned char *selCol, unsigned char *actCol, unsigned char *markCol, BMFace *efa_act)
+#else
+static void draw_dm_faces_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *baseCol,
                               unsigned char *selCol, unsigned char *actCol, BMFace *efa_act)
+#endif
 {
 	drawDMFacesSel_userData data;
 	data.dm = dm;
@@ -2700,8 +2411,16 @@ static void draw_dm_faces_sel(BMEditMesh *em, DerivedMesh *dm, unsigned char *ba
 	data.em = em;
 	data.cols[1] = selCol;
 	data.cols[2] = actCol;
+#ifdef WITH_FREESTYLE
+	data.cols[3] = markCol;
+#endif
 	data.efa_act = efa_act;
-	data.orig_index = DM_get_tessface_data_layer(dm, CD_ORIGINDEX);
+	/* double lookup */
+	data.orig_index_mf_to_mpoly = DM_get_tessface_data_layer(dm, CD_ORIGINDEX);
+	data.orig_index_mp_to_orig  = DM_get_poly_data_layer(dm, CD_ORIGINDEX);
+	if ((data.orig_index_mf_to_mpoly && data.orig_index_mp_to_orig) == false) {
+		data.orig_index_mf_to_mpoly = data.orig_index_mp_to_orig = NULL;
+	}
 
 	dm->drawMappedFaces(dm, draw_dm_faces_sel__setDrawOptions, GPU_enable_material, draw_dm_faces_sel__compareDrawOptions, &data, 0);
 }
@@ -2716,7 +2435,7 @@ static DMDrawOption draw_dm_creases__setDrawOptions(void *userData, int index)
 		return DM_DRAW_OPTION_SKIP;
 	
 	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN) && *crease != 0.0f) {
-		UI_ThemeColorBlend(TH_WIRE, TH_EDGE_CREASE, *crease);
+		UI_ThemeColorBlend(TH_WIRE_EDIT, TH_EDGE_CREASE, *crease);
 		return DM_DRAW_OPTION_NORMAL;
 	}
 	else {
@@ -2740,7 +2459,7 @@ static DMDrawOption draw_dm_bweights__setDrawOptions(void *userData, int index)
 		return DM_DRAW_OPTION_SKIP;
 	
 	if (!BM_elem_flag_test(eed, BM_ELEM_HIDDEN) && *bweight != 0.0f) {
-		UI_ThemeColorBlend(TH_WIRE, TH_EDGE_SELECT, *bweight);
+		UI_ThemeColorBlend(TH_WIRE_EDIT, TH_EDGE_SELECT, *bweight);
 		return DM_DRAW_OPTION_NORMAL;
 	}
 	else {
@@ -2788,9 +2507,9 @@ static void draw_dm_bweights(BMEditMesh *em, Scene *scene, DerivedMesh *dm)
 
 /* EditMesh drawing routines*/
 
-static void draw_em_fancy_verts(Scene *scene, View3D *v3d, Object *obedit, 
+static void draw_em_fancy_verts(Scene *scene, View3D *v3d, Object *obedit,
                                 BMEditMesh *em, DerivedMesh *cageDM, BMVert *eve_act,
-								RegionView3D *rv3d)
+                                RegionView3D *rv3d)
 {
 	ToolSettings *ts = scene->toolsettings;
 	int sel;
@@ -2802,7 +2521,7 @@ static void draw_em_fancy_verts(Scene *scene, View3D *v3d, Object *obedit,
 		int pass;
 
 		UI_GetThemeColor3ubv(sel ? TH_VERTEX_SELECT : TH_VERTEX, col);
-		UI_GetThemeColor3ubv(sel ? TH_FACE_DOT : TH_WIRE, fcol);
+		UI_GetThemeColor3ubv(sel ? TH_FACE_DOT : TH_WIRE_EDIT, fcol);
 
 		for (pass = 0; pass < 2; pass++) {
 			float size = UI_GetThemeValuef(TH_VERTEX_SIZE);
@@ -2859,7 +2578,7 @@ static void draw_em_fancy_edges(BMEditMesh *em, Scene *scene, View3D *v3d,
 
 	/* since this function does transparent... */
 	UI_GetThemeColor4ubv(TH_EDGE_SELECT, selCol);
-	UI_GetThemeColor4ubv(TH_WIRE, wireCol);
+	UI_GetThemeColor4ubv(TH_WIRE_EDIT, wireCol);
 	UI_GetThemeColor4ubv(TH_EDITMESH_ACTIVE, actCol);
 	
 	/* when sel only is used, don't render wire, only selected, this is used for
@@ -2888,7 +2607,7 @@ static void draw_em_fancy_edges(BMEditMesh *em, Scene *scene, View3D *v3d,
 		if (ts->selectmode == SCE_SELECT_FACE) {
 			draw_dm_edges_sel(em, cageDM, wireCol, selCol, actCol, eed_act);
 		}
-		else if ( (me->drawflag & ME_DRAWEDGES) || (ts->selectmode & SCE_SELECT_EDGE) ) {
+		else if ((me->drawflag & ME_DRAWEDGES) || (ts->selectmode & SCE_SELECT_EDGE)) {
 			if (cageDM->drawMappedEdgesInterp && (ts->selectmode & SCE_SELECT_VERTEX)) {
 				glShadeModel(GL_SMOOTH);
 				draw_dm_edges_sel_interp(em, cageDM, wireCol, selCol);
@@ -2910,9 +2629,9 @@ static void draw_em_fancy_edges(BMEditMesh *em, Scene *scene, View3D *v3d,
 			glEnable(GL_DEPTH_TEST);
 		}
 	}
-}	
+}
 
-static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitSettings *unit)
+static void draw_em_measure_stats(ARegion *ar, View3D *v3d, Object *ob, BMEditMesh *em, UnitSettings *unit)
 {
 	const short txt_flag = V3D_CACHE_TEXT_ASCII | V3D_CACHE_TEXT_LOCALCLIP;
 	Mesh *me = ob->data;
@@ -2922,21 +2641,31 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 	unsigned char col[4] = {0, 0, 0, 255}; /* color of the text to draw */
 	float area; /* area of the face */
 	float grid = unit->system ? unit->scale_length : v3d->grid;
-	const int do_split = unit->flag & USER_UNIT_OPT_SPLIT;
-	const int do_global = v3d->flag & V3D_GLOBAL_STATS;
-	const int do_moving = G.moving;
+	const bool do_split = (unit->flag & USER_UNIT_OPT_SPLIT) != 0;
+	const bool do_global = (v3d->flag & V3D_GLOBAL_STATS) != 0;
+	const bool do_moving = G.moving;
+	float clip_planes[4][4];
 
 	BMIter iter;
 	int i;
 
-	/* make the precision of the pronted value proportionate to the gridsize */
+	/* make the precision of the display value proportionate to the gridsize */
 
-	if (grid < 0.01f) conv_float = "%.6g";
-	else if (grid < 0.1f) conv_float = "%.5g";
-	else if (grid < 1.0f) conv_float = "%.4g";
-	else if (grid < 10.0f) conv_float = "%.3g";
+	if (grid <= 0.01f) conv_float = "%.6g";
+	else if (grid <= 0.1f) conv_float = "%.5g";
+	else if (grid <= 1.0f) conv_float = "%.4g";
+	else if (grid <= 10.0f) conv_float = "%.3g";
 	else conv_float = "%.2g";
-	
+
+	if (me->drawflag & (ME_DRAWEXTRA_EDGELEN | ME_DRAWEXTRA_EDGEANG)) {
+		BoundBox bb;
+		bglMats mats = {{0}};
+		const rcti rect = {0, ar->winx, 0, ar->winy};
+
+		view3d_get_transformation(ar, ar->regiondata, em->ob, &mats);
+		ED_view3d_clipping_calc(&bb, clip_planes, &mats, &rect);
+	}
+
 	if (me->drawflag & ME_DRAWEXTRA_EDGELEN) {
 		BMEdge *eed;
 
@@ -2953,22 +2682,85 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 				copy_v3_v3(v1, eed->v1->co);
 				copy_v3_v3(v2, eed->v2->co);
 
-				mid_v3_v3v3(vmid, v1, v2);
+				if (clip_segment_v3_plane_n(v1, v2, clip_planes, 4)) {
 
-				if (do_global) {
-					mul_mat3_m4_v3(ob->obmat, v1);
-					mul_mat3_m4_v3(ob->obmat, v2);
-				}
+					mid_v3_v3v3(vmid, v1, v2);
 
-				if (unit->system) {
-					bUnit_AsString(numstr, sizeof(numstr), len_v3v3(v1, v2) * unit->scale_length, 3,
-					               unit->system, B_UNIT_LENGTH, do_split, FALSE);
-				}
-				else {
-					sprintf(numstr, conv_float, len_v3v3(v1, v2));
-				}
+					copy_v3_v3(v1, eed->v1->co);
+					copy_v3_v3(v2, eed->v2->co);
 
-				view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+					if (do_global) {
+						mul_mat3_m4_v3(ob->obmat, v1);
+						mul_mat3_m4_v3(ob->obmat, v2);
+					}
+
+					if (unit->system) {
+						bUnit_AsString(numstr, sizeof(numstr), len_v3v3(v1, v2) * unit->scale_length, 3,
+						               unit->system, B_UNIT_LENGTH, do_split, false);
+					}
+					else {
+						BLI_snprintf(numstr, sizeof(numstr), conv_float, len_v3v3(v1, v2));
+					}
+
+					view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+				}
+			}
+		}
+	}
+
+	if (me->drawflag & ME_DRAWEXTRA_EDGEANG) {
+		const bool is_rad = (unit->system_rotation == USER_UNIT_ROT_RADIANS);
+		BMEdge *eed;
+
+		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGEANG, col);
+
+		// invert_m4_m4(ob->imat, ob->obmat);  // this is already called
+
+		eed = BM_iter_new(&iter, em->bm, BM_EDGES_OF_MESH, NULL);
+		for (; eed; eed = BM_iter_step(&iter)) {
+			BMLoop *l_a, *l_b;
+			if (BM_edge_loop_pair(eed, &l_a, &l_b)) {
+				/* draw selected edges, or edges next to selected verts while draging */
+				if (BM_elem_flag_test(eed, BM_ELEM_SELECT) ||
+				    (do_moving && (BM_elem_flag_test(eed->v1, BM_ELEM_SELECT) ||
+				                   BM_elem_flag_test(eed->v2, BM_ELEM_SELECT) ||
+				                   /* special case, this is useful to show when vertes connected to this edge via a
+				                    * face are being transformed */
+				                   BM_elem_flag_test(l_a->next->next->v, BM_ELEM_SELECT) ||
+				                   BM_elem_flag_test(l_a->prev->v, BM_ELEM_SELECT)       ||
+				                   BM_elem_flag_test(l_b->next->next->v, BM_ELEM_SELECT) ||
+				                   BM_elem_flag_test(l_b->prev->v, BM_ELEM_SELECT)
+				                   )))
+				{
+					copy_v3_v3(v1, eed->v1->co);
+					copy_v3_v3(v2, eed->v2->co);
+
+					if (clip_segment_v3_plane_n(v1, v2, clip_planes, 4)) {
+						float angle;
+
+						mid_v3_v3v3(vmid, v1, v2);
+
+						copy_v3_v3(v1, eed->v1->co);
+						copy_v3_v3(v2, eed->v2->co);
+
+						if (do_global) {
+							float no_a[3];
+							float no_b[3];
+							copy_v3_v3(no_a, l_a->f->no);
+							copy_v3_v3(no_b, l_b->f->no);
+							mul_mat3_m4_v3(ob->imat, no_a);
+							mul_mat3_m4_v3(ob->imat, no_b);
+							angle = angle_v3v3(no_a, no_b);
+						}
+						else {
+							angle = angle_normalized_v3v3(l_a->f->no, l_b->f->no);
+						}
+
+						BLI_snprintf(numstr, sizeof(numstr), "%.3f", is_rad ? angle : RAD2DEGF(angle));
+
+						view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);
+					}
+				}
 			}
 		}
 	}
@@ -2979,16 +2771,21 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 		BMFace *f;
 		int n;
 
-#define DRAW_EM_MEASURE_STATS_FACEAREA()                                      \
-	if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {                               \
-		mul_v3_fl(vmid, 1.0f / (float)n);                                     \
-		if (unit->system)                                                     \
-			bUnit_AsString(numstr, sizeof(numstr),                            \
-			               (double)(area * unit->scale_length),               \
-			               3, unit->system, B_UNIT_LENGTH, do_split, FALSE);  \
-		else                                                                  \
-			BLI_snprintf(numstr, sizeof(numstr), conv_float, area);           \
-		view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);          \
+#define DRAW_EM_MEASURE_STATS_FACEAREA()                                                 \
+	if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {                                          \
+		mul_v3_fl(vmid, 1.0f / (float)n);                                                \
+		if (unit->system) {                                                              \
+			bUnit_AsString(numstr, sizeof(numstr),                                       \
+			               (double)(area * unit->scale_length * unit->scale_length),     \
+			               3, unit->system, B_UNIT_AREA, do_split, false);               \
+			view3d_cached_text_draw_add(vmid, numstr, 0,                                 \
+			                            /* Metric system uses unicode "squared" sign! */ \
+			                            txt_flag ^ V3D_CACHE_TEXT_ASCII, col);           \
+		}                                                                                \
+		else {                                                                           \
+			BLI_snprintf(numstr, sizeof(numstr), conv_float, area);                      \
+			view3d_cached_text_draw_add(vmid, numstr, 0, txt_flag, col);                 \
+		}                                                                                \
 	} (void)0
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEAREA, col);
@@ -3030,7 +2827,7 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 
 	if (me->drawflag & ME_DRAWEXTRA_FACEANG) {
 		BMFace *efa;
-		int is_rad = unit->system_rotation == USER_UNIT_ROT_RADIANS;
+		const bool is_rad = (unit->system_rotation == USER_UNIT_ROT_RADIANS);
 
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEANG, col);
 
@@ -3041,7 +2838,7 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 			if (is_face_sel || do_moving) {
 				BMIter liter;
 				BMLoop *loop;
-				int is_first = TRUE;
+				bool is_first = true;
 
 				BM_ITER_ELEM (loop, &liter, efa, BM_LOOPS_OF_FACE) {
 					if (is_face_sel || (do_moving && BM_elem_flag_test(loop->v, BM_ELEM_SELECT))) {
@@ -3057,7 +2854,7 @@ static void draw_em_measure_stats(View3D *v3d, Object *ob, BMEditMesh *em, UnitS
 								mul_mat3_m4_v3(ob->obmat, v1);
 								mul_mat3_m4_v3(ob->obmat, v2);
 							}
-							is_first = FALSE;
+							is_first = false;
 						}
 
 						if (do_global) {
@@ -3103,7 +2900,7 @@ static void draw_em_indices(BMEditMesh *em)
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_FACEANG, col);
 		BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
-				sprintf(numstr, "%d", i);
+				BLI_snprintf(numstr, sizeof(numstr), "%d", i);
 				view3d_cached_text_draw_add(v->co, numstr, 0, txt_flag, col);
 			}
 			i++;
@@ -3115,7 +2912,7 @@ static void draw_em_indices(BMEditMesh *em)
 		UI_GetThemeColor3ubv(TH_DRAWEXTRA_EDGELEN, col);
 		BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 			if (BM_elem_flag_test(e, BM_ELEM_SELECT)) {
-				sprintf(numstr, "%d", i);
+				BLI_snprintf(numstr, sizeof(numstr), "%d", i);
 				mid_v3_v3v3(pos, e->v1->co, e->v2->co);
 				view3d_cached_text_draw_add(pos, numstr, 0, txt_flag, col);
 			}
@@ -3129,7 +2926,7 @@ static void draw_em_indices(BMEditMesh *em)
 		BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
 			if (BM_elem_flag_test(f, BM_ELEM_SELECT)) {
 				BM_face_calc_center_mean(f, pos);
-				sprintf(numstr, "%d", i);
+				BLI_snprintf(numstr, sizeof(numstr), "%d", i);
 				view3d_cached_text_draw_add(pos, numstr, 0, txt_flag, col);
 			}
 			i++;
@@ -3159,15 +2956,19 @@ static DMDrawOption draw_em_fancy__setGLSLFaceOpts(void *userData, int index)
 		return DM_DRAW_OPTION_NORMAL;
 }
 
-static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
-                          Object *ob, BMEditMesh *em, DerivedMesh *cageDM, DerivedMesh *finalDM, const short dt)
+static void draw_em_fancy(Scene *scene, ARegion *ar, View3D *v3d,
+                          Object *ob, BMEditMesh *em, DerivedMesh *cageDM, DerivedMesh *finalDM, const char dt)
 
 {
+	RegionView3D *rv3d = ar->regiondata;
 	Mesh *me = ob->data;
-	BMFace *efa_act = BM_active_face_get(em->bm, FALSE); /* annoying but active faces is stored differently */
+	BMFace *efa_act = BM_active_face_get(em->bm, false, true); /* annoying but active faces is stored differently */
 	BMEdge *eed_act = NULL;
 	BMVert *eve_act = NULL;
 	
+	if (cageDM)  BLI_assert(!(cageDM->dirty & DM_DIRTY_NORMALS));
+	if (finalDM) BLI_assert(!(finalDM->dirty & DM_DIRTY_NORMALS));
+
 	if (em->bm->selected.last) {
 		BMEditSelection *ese = em->bm->selected.last;
 		/* face is handeled above */
@@ -3175,7 +2976,7 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		if (ese->type == BM_FACE) {
 			efa_act = (BMFace *)ese->data;
 		}
-		else 
+		else
 #endif
 		if (ese->htype == BM_EDGE) {
 			eed_act = (BMEdge *)ese->ele;
@@ -3185,7 +2986,7 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		}
 	}
 	
-	EDBM_index_arrays_init(em, 1, 1, 1);
+	EDBM_index_arrays_ensure(em, BM_VERT | BM_EDGE | BM_FACE);
 
 	if (dt > OB_WIRE) {
 		if (check_object_draw_texture(scene, v3d, dt)) {
@@ -3218,24 +3019,30 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 
 		/* Setup for drawing wire over, disable zbuffer
 		 * write to show selected edge wires better */
-		UI_ThemeColor(TH_WIRE);
+		UI_ThemeColor(TH_WIRE_EDIT);
 
 		bglPolygonOffset(rv3d->dist, 1.0);
 		glDepthMask(0);
 	}
 	else {
 		if (cageDM != finalDM) {
-			UI_ThemeColorBlend(TH_WIRE, TH_BACK, 0.7);
+			UI_ThemeColorBlend(TH_WIRE_EDIT, TH_BACK, 0.7);
 			finalDM->drawEdges(finalDM, 1, 0);
 		}
 	}
 	
 	if (me->drawflag & ME_DRAWFACES) {  /* transp faces */
 		unsigned char col1[4], col2[4], col3[4];
+#ifdef WITH_FREESTYLE
+		unsigned char col4[4];
+#endif
 
 		UI_GetThemeColor4ubv(TH_FACE, col1);
 		UI_GetThemeColor4ubv(TH_FACE_SELECT, col2);
 		UI_GetThemeColor4ubv(TH_EDITMESH_ACTIVE, col3);
+#ifdef WITH_FREESTYLE
+		UI_GetThemeColor4ubv(TH_FREESTYLE_FACE_MARK, col4);
+#endif
 
 		glEnable(GL_BLEND);
 		glDepthMask(0);  /* disable write in zbuffer, needed for nice transp */
@@ -3244,7 +3051,14 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		if (check_object_draw_texture(scene, v3d, dt))
 			col1[3] = 0;
 
+#ifdef WITH_FREESTYLE
+		if (!(me->drawflag & ME_DRAW_FREESTYLE_FACE) || !CustomData_has_layer(&em->bm->pdata, CD_FREESTYLE_FACE))
+			col4[3] = 0;
+
+		draw_dm_faces_sel(em, cageDM, col1, col2, col3, col4, efa_act);
+#else
 		draw_dm_faces_sel(em, cageDM, col1, col2, col3, efa_act);
+#endif
 
 		glDisable(GL_BLEND);
 		glDepthMask(1);  /* restore write in zbuffer */
@@ -3253,14 +3067,19 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		/* even if draw faces is off it would be nice to draw the stipple face
 		 * Make all other faces zero alpha except for the active
 		 * */
-		unsigned char col1[4], col2[4], col3[4];
-		col1[3] = col2[3] = 0; /* don't draw */
+		/* col4 is only used by WITH_FREESTYLE, but keeping it here spares some #ifdef's... */
+		unsigned char col1[4], col2[4], col3[4], col4[4];
+		col1[3] = col2[3] = col4[3] = 0; /* don't draw */
 		UI_GetThemeColor4ubv(TH_EDITMESH_ACTIVE, col3);
 
 		glEnable(GL_BLEND);
 		glDepthMask(0);  /* disable write in zbuffer, needed for nice transp */
 
+#ifdef WITH_FREESTYLE
+		draw_dm_faces_sel(em, cageDM, col1, col2, col3, col4, efa_act);
+#else
 		draw_dm_faces_sel(em, cageDM, col1, col2, col3, efa_act);
+#endif
 
 		glDisable(GL_BLEND);
 		glDepthMask(1);  /* restore write in zbuffer */
@@ -3296,6 +3115,18 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 			glLineWidth(1);
 		}
 
+#ifdef WITH_FREESTYLE
+		if (me->drawflag & ME_DRAW_FREESTYLE_EDGE && CustomData_has_layer(&em->bm->edata, CD_FREESTYLE_EDGE)) {
+			UI_ThemeColor(TH_FREESTYLE_EDGE_MARK);
+			glLineWidth(2);
+	
+			draw_dm_edges_freestyle(em, cageDM);
+	
+			glColor3ub(0, 0, 0);
+			glLineWidth(1);
+		}
+#endif
+	
 		if (me->drawflag & ME_DRAWCREASES && CustomData_has_layer(&em->bm->edata, CD_CREASE)) {
 			draw_dm_creases(em, cageDM);
 		}
@@ -3305,7 +3136,8 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 
 		draw_em_fancy_edges(em, scene, v3d, me, cageDM, 0, eed_act);
 	}
-	if (em) {
+
+	{
 		draw_em_fancy_verts(scene, v3d, ob, em, cageDM, eve_act, rv3d);
 
 		if (me->drawflag & ME_DRAWNORMALS) {
@@ -3317,10 +3149,13 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 			draw_dm_vert_normals(em, scene, ob, cageDM);
 		}
 
-		if ( (me->drawflag & (ME_DRAWEXTRA_EDGELEN | ME_DRAWEXTRA_FACEAREA | ME_DRAWEXTRA_FACEANG)) &&
-		     !(v3d->flag2 & V3D_RENDER_OVERRIDE))
+		if ((me->drawflag & (ME_DRAWEXTRA_EDGELEN |
+		                     ME_DRAWEXTRA_FACEAREA |
+		                     ME_DRAWEXTRA_FACEANG |
+		                     ME_DRAWEXTRA_EDGEANG)) &&
+		    !(v3d->flag2 & V3D_RENDER_OVERRIDE))
 		{
-			draw_em_measure_stats(v3d, ob, em, &scene->unit);
+			draw_em_measure_stats(ar, v3d, ob, em, &scene->unit);
 		}
 
 		if ((G.debug & G_DEBUG) && (me->drawflag & ME_DRAWEXTRA_INDICES) &&
@@ -3335,21 +3170,18 @@ static void draw_em_fancy(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 		bglPolygonOffset(rv3d->dist, 0.0);
 		GPU_disable_material();
 	}
-
-	EDBM_index_arrays_free(em);
 }
 
 /* Mesh drawing routines */
 
 static void draw_mesh_object_outline(View3D *v3d, Object *ob, DerivedMesh *dm)
 {
-	
-	if ((v3d->transp == FALSE) &&  /* not when we draw the transparent pass */
-	    (ob->mode & OB_MODE_ALL_PAINT) == FALSE) /* not when painting (its distracting) - campbell */
+	if ((v3d->transp == false) &&  /* not when we draw the transparent pass */
+	    (ob->mode & OB_MODE_ALL_PAINT) == false) /* not when painting (its distracting) - campbell */
 	{
 		glLineWidth(UI_GetThemeValuef(TH_OUTLINE_WIDTH) * 2.0f);
 		glDepthMask(0);
-		
+
 		/* if transparent, we cannot draw the edges for solid select... edges have no material info.
 		 * drawFacesSolid() doesn't draw the transparent faces */
 		if (ob->dtx & OB_DRAWTRANSP) {
@@ -3368,7 +3200,7 @@ static void draw_mesh_object_outline(View3D *v3d, Object *ob, DerivedMesh *dm)
 }
 
 static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D *rv3d, Base *base,
-                            const short dt, const unsigned char ob_wire_col[4], const short dflag)
+                            const char dt, const unsigned char ob_wire_col[4], const short dflag)
 {
 	Object *ob = base->object;
 	Mesh *me = ob->data;
@@ -3377,11 +3209,13 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	eWireDrawMode draw_wire = OBDRAW_WIRE_OFF;
 	int /* totvert,*/ totedge, totface;
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, scene->customdata_mask);
-	const short is_obact = (ob == OBACT);
+	const bool is_obact = (ob == OBACT);
 	int draw_flags = (is_obact && paint_facesel_test(ob)) ? DRAW_FACE_SELECT : 0;
 
 	if (!dm)
 		return;
+
+	if (dm)  BLI_assert(!(dm->dirty & DM_DIRTY_NORMALS));
 
 	/* Check to draw dynamic paint colors (or weights from WeightVG modifiers).
 	 * Note: Last "preview-active" modifier in stack will win! */
@@ -3415,14 +3249,14 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	else if (dt == OB_WIRE || totface == 0) {
 		draw_wire = OBDRAW_WIRE_ON; /* draw wire only, no depth buffer stuff  */
 	}
-	else if ( ((is_obact && ob->mode & OB_MODE_TEXTURE_PAINT)) ||
-	          check_object_draw_texture(scene, v3d, dt))
+	else if (((is_obact && ob->mode & OB_MODE_TEXTURE_PAINT)) ||
+	         check_object_draw_texture(scene, v3d, dt))
 	{
-		if ( (v3d->flag & V3D_SELECT_OUTLINE) &&
-		     ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) &&
-		     (base->flag & SELECT) &&
-		     !(G.f & G_PICKSEL || (draw_flags & DRAW_FACE_SELECT)) &&
-		     (draw_wire == OBDRAW_WIRE_OFF))
+		if ((v3d->flag & V3D_SELECT_OUTLINE) &&
+		    ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) &&
+		    (base->flag & SELECT) &&
+		    !(G.f & G_PICKSEL || (draw_flags & DRAW_FACE_SELECT)) &&
+		    (draw_wire == OBDRAW_WIRE_OFF))
 		{
 			draw_mesh_object_outline(v3d, ob, dm);
 		}
@@ -3431,11 +3265,14 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 			glFrontFace((ob->transflag & OB_NEG_SCALE) ? GL_CW : GL_CCW);
 
 			dm->drawFacesGLSL(dm, GPU_enable_material);
-//			if (get_ob_property(ob, "Text"))
+//			if (BKE_bproperty_object_get(ob, "Text"))
 // XXX				draw_mesh_text(ob, 1);
 			GPU_disable_material();
 
 			glFrontFace(GL_CCW);
+
+			if (draw_flags & DRAW_FACE_SELECT)
+				draw_mesh_face_select(rv3d, me, dm);
 		}
 		else {
 			draw_mesh_textured(scene, v3d, rv3d, ob, dm, draw_flags);
@@ -3460,11 +3297,11 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 				const float spec[4] = {0.47f, 0.47f, 0.47f, 0.47f};
 
 				/* draw outline */
-				if ( (v3d->flag & V3D_SELECT_OUTLINE) &&
-				     ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) &&
-				     (base->flag & SELECT) &&
-				     (draw_wire == OBDRAW_WIRE_OFF) &&
-				     (ob->sculpt == NULL))
+				if ((v3d->flag & V3D_SELECT_OUTLINE) &&
+				    ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) &&
+				    (base->flag & SELECT) &&
+				    (draw_wire == OBDRAW_WIRE_OFF) &&
+				    (ob->sculpt == NULL))
 				{
 					draw_mesh_object_outline(v3d, ob, dm);
 				}
@@ -3492,11 +3329,11 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 		else {
 			Paint *p;
 
-			if ( (v3d->flag & V3D_SELECT_OUTLINE) &&
-			     ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) &&
-			     (base->flag & SELECT) &&
-			     (draw_wire == OBDRAW_WIRE_OFF) &&
-			     (ob->sculpt == NULL))
+			if ((v3d->flag & V3D_SELECT_OUTLINE) &&
+			    ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) &&
+			    (base->flag & SELECT) &&
+			    (draw_wire == OBDRAW_WIRE_OFF) &&
+			    (ob->sculpt == NULL))
 			{
 				draw_mesh_object_outline(v3d, ob, dm);
 			}
@@ -3506,7 +3343,7 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 			glEnable(GL_LIGHTING);
 			glFrontFace((ob->transflag & OB_NEG_SCALE) ? GL_CW : GL_CCW);
 
-			if (ob->sculpt && (p = paint_get_active(scene))) {
+			if (ob->sculpt && (p = BKE_paint_get_active(scene))) {
 				float planes[4][4];
 				float (*fpl)[4] = NULL;
 				int fast = (p->flags & PAINT_FAST_NAVIGATE) && (rv3d->rflag & RV3D_NAVIGATING);
@@ -3577,7 +3414,7 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 			glDepthMask(0);  /* disable write in zbuffer, selected edge wires show better */
 		}
 		
-		dm->drawEdges(dm, (dt == OB_WIRE || totface == 0), me->drawflag & ME_ALLEDGES);
+		dm->drawEdges(dm, (dt == OB_WIRE || totface == 0), (ob->dtx & OB_DRAW_ALL_EDGES));
 
 		if (dt != OB_WIRE && (draw_wire == OBDRAW_WIRE_ON_DEPTH)) {
 			glDepthMask(1);
@@ -3586,11 +3423,15 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	}
 	
 	if (is_obact && paint_vertsel_test(ob)) {
-		
+		const int use_depth = (v3d->flag & V3D_ZBUF_SELECT);
 		glColor3f(0.0f, 0.0f, 0.0f);
 		glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE));
-		
+
+		if (!use_depth) glDisable(GL_DEPTH_TEST);
+		else            bglPolygonOffset(rv3d->dist, 1.0);
 		drawSelectedVertices(dm, ob->data);
+		if (!use_depth) glEnable(GL_DEPTH_TEST);
+		else            bglPolygonOffset(rv3d->dist, 0.0);
 		
 		glPointSize(1.0f);
 	}
@@ -3598,14 +3439,15 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 }
 
 /* returns 1 if nothing was drawn, for detecting to draw an object center */
-static int draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D *rv3d, Base *base,
-                            const short dt, const unsigned char ob_wire_col[4], const short dflag)
+static bool draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D *rv3d, Base *base,
+                             const char dt, const unsigned char ob_wire_col[4], const short dflag)
 {
 	Object *ob = base->object;
 	Object *obedit = scene->obedit;
 	Mesh *me = ob->data;
 	BMEditMesh *em = me->edit_btmesh;
-	int do_alpha_after = FALSE, drawlinked = 0, retval = 0, glsl, check_alpha, i;
+	int i;
+	bool do_alpha_after = false, drawlinked = false, retval = false;
 
 	/* If we are drawing shadows and any of the materials don't cast a shadow,
 	 * then don't draw the object */
@@ -3613,15 +3455,15 @@ static int draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 		for (i = 0; i < ob->totcol; ++i) {
 			Material *ma = give_current_material(ob, i);
 			if (ma && !(ma->mode & MA_SHADBUF)) {
-				return 1;
+				return true;
 			}
 		}
 	}
 	
 	if (obedit && ob != obedit && ob->data == obedit->data) {
-		if (ob_get_key(ob) || ob_get_key(obedit)) {}
+		if (BKE_key_from_object(ob) || BKE_key_from_object(obedit)) {}
 		else if (ob->modifiers.first || obedit->modifiers.first) {}
-		else drawlinked = 1;
+		else drawlinked = true;
 	}
 
 	/* backface culling */
@@ -3640,12 +3482,12 @@ static int draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 			                                              scene->customdata_mask);
 
 		if (dt > OB_WIRE) {
-			glsl = draw_glsl_material(scene, ob, v3d, dt);
+			const bool glsl = draw_glsl_material(scene, ob, v3d, dt);
 
 			GPU_begin_object_materials(v3d, rv3d, scene, ob, glsl, NULL);
 		}
 
-		draw_em_fancy(scene, v3d, rv3d, ob, em, cageDM, finalDM, dt);
+		draw_em_fancy(scene, ar, v3d, ob, em, cageDM, finalDM, dt);
 
 		GPU_end_object_materials();
 
@@ -3655,8 +3497,8 @@ static int draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	else {
 		/* ob->bb was set by derived mesh system, do NULL check just to be sure */
 		if (me->totpoly <= 4 || (!ob->bb || ED_view3d_boundbox_clip(rv3d, ob->obmat, ob->bb))) {
-			glsl = draw_glsl_material(scene, ob, v3d, dt);
-			check_alpha = check_alpha_pass(base);
+			const bool glsl = draw_glsl_material(scene, ob, v3d, dt);
+			const bool check_alpha = check_alpha_pass(base);
 
 			if (dt == OB_SOLID || glsl) {
 				GPU_begin_object_materials(v3d, rv3d, scene, ob, glsl,
@@ -3667,11 +3509,11 @@ static int draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 
 			GPU_end_object_materials();
 			
-			if (me->totvert == 0) retval = 1;
+			if (me->totvert == 0) retval = true;
 		}
 	}
 	
-	if ((dflag & DRAW_PICKING) == 0 && (base->flag & OB_FROMDUPLI) == 0) {
+	if ((dflag & DRAW_PICKING) == 0 && (base->flag & OB_FROMDUPLI) == 0 && (v3d->flag2 & V3D_RENDER_SHADOW) == 0) {
 		/* GPU_begin_object_materials checked if this is needed */
 		if (do_alpha_after) {
 			if (ob->dtx & OB_DRAWXRAY) {
@@ -3697,11 +3539,11 @@ static int draw_mesh_object(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 
 /* ************** DRAW DISPLIST ****************** */
 
-static int draw_index_wire = 1;
-static int index3_nors_incr = 1;
+static bool draw_index_wire = true;
+static bool index3_nors_incr = true;
 
 /* returns 1 when nothing was drawn */
-static int drawDispListwire(ListBase *dlbase)
+static bool drawDispListwire(ListBase *dlbase)
 {
 	DispList *dl;
 	int parts, nr;
@@ -3761,12 +3603,14 @@ static int drawDispListwire(ListBase *dlbase)
 					}
 					glEnd();
 
-/* (ton) this code crashes for me when resolv is 86 or higher... no clue */
-//				glVertexPointer(3, GL_FLOAT, sizeof(float)*3*dl->nr, data + 3*nr);
-//				if (dl->flag & DL_CYCL_V)
-//					glDrawArrays(GL_LINE_LOOP, 0, dl->parts);
-//				else
-//					glDrawArrays(GL_LINE_STRIP, 0, dl->parts);
+#if 0
+				/* (ton) this code crashes for me when resolv is 86 or higher... no clue */
+				glVertexPointer(3, GL_FLOAT, sizeof(float) * 3 * dl->nr, data + 3 * nr);
+				if (dl->flag & DL_CYCL_V)
+					glDrawArrays(GL_LINE_LOOP, 0, dl->parts);
+				else
+					glDrawArrays(GL_LINE_STRIP, 0, dl->parts);
+#endif
 				}
 				break;
 
@@ -3789,11 +3633,11 @@ static int drawDispListwire(ListBase *dlbase)
 	glDisableClientState(GL_VERTEX_ARRAY);
 	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
 	
-	return 0;
+	return false;
 }
 
-static void drawDispListsolid(ListBase *lb, Object *ob,
-                              const unsigned char ob_wire_col[4], int use_glsl)
+static void drawDispListsolid(ListBase *lb, Object *ob, const short dflag,
+                              const unsigned char ob_wire_col[4], const bool use_glsl)
 {
 	DispList *dl;
 	GPUVertexAttribs gattribs;
@@ -3823,7 +3667,9 @@ static void drawDispListsolid(ListBase *lb, Object *ob,
 					int nr;
 
 					glDisable(GL_LIGHTING);
-					glColor3ubv(ob_wire_col);
+
+					if ((dflag & DRAW_CONSTCOLOR) == 0)
+						glColor3ubv(ob_wire_col);
 
 					// glVertexPointer(3, GL_FLOAT, 0, dl->verts);
 					// glDrawArrays(GL_LINE_STRIP, 0, dl->nr);
@@ -3916,14 +3762,14 @@ static void drawCurveDMWired(Object *ob)
 	dm->drawEdges(dm, 1, 0);
 }
 
-/* return 1 when nothing was drawn */
-static int drawCurveDerivedMesh(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, const short dt)
+/* return true when nothing was drawn */
+static bool drawCurveDerivedMesh(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, const char dt)
 {
 	Object *ob = base->object;
 	DerivedMesh *dm = ob->derivedFinal;
 
 	if (!dm) {
-		return 1;
+		return true;
 	}
 
 	if (dt > OB_WIRE && dm->getNumTessFaces(dm)) {
@@ -3945,12 +3791,15 @@ static int drawCurveDerivedMesh(Scene *scene, View3D *v3d, RegionView3D *rv3d, B
 			drawCurveDMWired(ob);
 	}
 
-	return 0;
+	return false;
 }
 
-/* returns 1 when nothing was drawn */
-static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
-                        const short dt, const unsigned char ob_wire_col[4])
+/**
+ * Only called by #drawDispList
+ * \return 1 when nothing was drawn
+ */
+static bool drawDispList_nobackface(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
+                                    const char dt, const short dflag, const unsigned char ob_wire_col[4])
 {
 	Object *ob = base->object;
 	ListBase *lb = NULL;
@@ -3958,20 +3807,9 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 	Curve *cu;
 	const short render_only = (v3d->flag2 & V3D_RENDER_OVERRIDE);
 	const short solid = (dt > OB_WIRE);
-	int retval = 0;
 
-	/* backface culling */
-	if (v3d->flag2 & V3D_BACKFACE_CULLING) {
-		/* not all displists use same in/out normal direction convention */
-		glEnable(GL_CULL_FACE);
-		glCullFace((ob->type == OB_MBALL) ? GL_BACK : GL_FRONT);
-	}
-
-	if (drawCurveDerivedMesh(scene, v3d, rv3d, base, dt) == 0) {
-		if (v3d->flag2 & V3D_BACKFACE_CULLING)
-			glDisable(GL_CULL_FACE);
-
-		return 0;
+	if (drawCurveDerivedMesh(scene, v3d, rv3d, base, dt) == false) {
+		return false;
 	}
 
 	switch (ob->type) {
@@ -3983,43 +3821,47 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 
 			if (solid) {
 				dl = lb->first;
-				if (dl == NULL) return 1;
+				if (dl == NULL) {
+					return true;
+				}
 
 				if (dl->nors == NULL) BKE_displist_normals_add(lb);
-				index3_nors_incr = 0;
+				index3_nors_incr = false;
 
-				if (BKE_displist_has_faces(lb) == 0) {
+				if (BKE_displist_has_faces(lb) == false) {
 					if (!render_only) {
-						draw_index_wire = 0;
+						draw_index_wire = false;
 						drawDispListwire(lb);
-						draw_index_wire = 1;
+						draw_index_wire = true;
 					}
 				}
 				else {
 					if (draw_glsl_material(scene, ob, v3d, dt)) {
 						GPU_begin_object_materials(v3d, rv3d, scene, ob, 1, NULL);
-						drawDispListsolid(lb, ob, ob_wire_col, TRUE);
+						drawDispListsolid(lb, ob, dflag, ob_wire_col, true);
 						GPU_end_object_materials();
 					}
 					else {
 						GPU_begin_object_materials(v3d, rv3d, scene, ob, 0, NULL);
-						drawDispListsolid(lb, ob, ob_wire_col, FALSE);
+						drawDispListsolid(lb, ob, dflag, ob_wire_col, false);
 						GPU_end_object_materials();
 					}
 					if (cu->editnurb && cu->bevobj == NULL && cu->taperobj == NULL && cu->ext1 == 0.0f && cu->ext2 == 0.0f) {
 						cpack(0);
-						draw_index_wire = 0;
+						draw_index_wire = false;
 						drawDispListwire(lb);
-						draw_index_wire = 1;
+						draw_index_wire = true;
 					}
 				}
-				index3_nors_incr = 1;
+				index3_nors_incr = true;
 			}
 			else {
 				if (!render_only || (render_only && BKE_displist_has_faces(lb))) {
-					draw_index_wire = 0;
+					int retval;
+					draw_index_wire = false;
 					retval = drawDispListwire(lb);
-					draw_index_wire = 1;
+					draw_index_wire = true;
+					return retval;
 				}
 			}
 			break;
@@ -4029,23 +3871,25 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 
 			if (solid) {
 				dl = lb->first;
-				if (dl == NULL) return 1;
+				if (dl == NULL) {
+					return true;
+				}
 
 				if (dl->nors == NULL) BKE_displist_normals_add(lb);
 
 				if (draw_glsl_material(scene, ob, v3d, dt)) {
 					GPU_begin_object_materials(v3d, rv3d, scene, ob, 1, NULL);
-					drawDispListsolid(lb, ob, ob_wire_col, TRUE);
+					drawDispListsolid(lb, ob, dflag, ob_wire_col, true);
 					GPU_end_object_materials();
 				}
 				else {
 					GPU_begin_object_materials(v3d, rv3d, scene, ob, 0, NULL);
-					drawDispListsolid(lb, ob, ob_wire_col, FALSE);
+					drawDispListsolid(lb, ob, dflag, ob_wire_col, false);
 					GPU_end_object_materials();
 				}
 			}
 			else {
-				retval = drawDispListwire(lb);
+				return drawDispListwire(lb);
 			}
 			break;
 		case OB_MBALL:
@@ -4053,31 +3897,50 @@ static int drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *bas
 			if (BKE_mball_is_basis(ob)) {
 				lb = &ob->disp;
 				if (lb->first == NULL) BKE_displist_make_mball(scene, ob);
-				if (lb->first == NULL) return 1;
+				if (lb->first == NULL) {
+					return true;
+				}
 
 				if (solid) {
 
 					if (draw_glsl_material(scene, ob, v3d, dt)) {
 						GPU_begin_object_materials(v3d, rv3d, scene, ob, 1, NULL);
-						drawDispListsolid(lb, ob, ob_wire_col, TRUE);
+						drawDispListsolid(lb, ob, dflag, ob_wire_col, true);
 						GPU_end_object_materials();
 					}
 					else {
 						GPU_begin_object_materials(v3d, rv3d, scene, ob, 0, NULL);
-						drawDispListsolid(lb, ob, ob_wire_col, FALSE);
+						drawDispListsolid(lb, ob, dflag, ob_wire_col, false);
 						GPU_end_object_materials();
 					}
 				}
 				else {
 					/* MetaBalls use DL_INDEX4 type of DispList */
-					retval = drawDispListwire(lb);
+					return drawDispListwire(lb);
 				}
 			}
 			break;
 	}
-	
-	if (v3d->flag2 & V3D_BACKFACE_CULLING)
+
+	return FALSE;
+}
+static bool drawDispList(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
+                         const char dt, const short dflag, const unsigned char ob_wire_col[4])
+{
+	bool retval;
+
+	/* backface culling */
+	if (v3d->flag2 & V3D_BACKFACE_CULLING) {
+		/* not all displists use same in/out normal direction convention */
+		glEnable(GL_CULL_FACE);
+		glCullFace((base->object->type == OB_MBALL || base->object->derivedFinal) ? GL_BACK : GL_FRONT);
+	}
+
+	retval = drawDispList_nobackface(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
+
+	if (v3d->flag2 & V3D_BACKFACE_CULLING) {
 		glDisable(GL_CULL_FACE);
+	}
 
 	return retval;
 }
@@ -4108,7 +3971,7 @@ static void draw_particle_arrays(int draw_as, int totpoint, int ob_dt, int selec
 	}
 }
 static void draw_particle(ParticleKey *state, int draw_as, short draw, float pixsize,
-                          float imat[4][4], float *draw_line, ParticleBillboardData *bb, ParticleDrawData *pdd)
+                          float imat[4][4], const float draw_line[2], ParticleBillboardData *bb, ParticleDrawData *pdd)
 {
 	float vec[3], vec2[3];
 	float *vd = NULL;
@@ -4176,7 +4039,9 @@ static void draw_particle(ParticleKey *state, int draw_as, short draw, float pix
 			if (draw_as == PART_DRAW_AXIS) {
 				copy_v3_v3(vec2, state->co);
 			}
-			else sub_v3_v3v3(vec2, state->co, vec);
+			else {
+				sub_v3_v3v3(vec2, state->co, vec);
+			}
 
 			add_v3_v3(vec, state->co);
 			copy_v3_v3(pdd->vd, vec); pdd->vd += 3;
@@ -4188,7 +4053,9 @@ static void draw_particle(ParticleKey *state, int draw_as, short draw, float pix
 			if (draw_as == PART_DRAW_AXIS) {
 				copy_v3_v3(vec2, state->co);
 			}
-			else sub_v3_v3v3(vec2, state->co, vec);
+			else {
+				sub_v3_v3v3(vec2, state->co, vec);
+			}
 
 			add_v3_v3(vec, state->co);
 
@@ -4252,6 +4119,42 @@ static void draw_particle(ParticleKey *state, int draw_as, short draw, float pix
 			break;
 		}
 	}
+}
+static void draw_particle_data(ParticleSystem *psys, RegionView3D *rv3d,
+                               ParticleKey *state, int draw_as,
+                               float imat[4][4], ParticleBillboardData *bb, ParticleDrawData *pdd,
+                               const float ct, const float pa_size, const float r_tilt, const float pixsize_scale)
+{
+	ParticleSettings *part = psys->part;
+	float pixsize;
+
+	if (psys->parent)
+		mul_m4_v3(psys->parent->obmat, state->co);
+
+	/* create actiual particle data */
+	if (draw_as == PART_DRAW_BB) {
+		bb->offset[0] = part->bb_offset[0];
+		bb->offset[1] = part->bb_offset[1];
+		bb->size[0] = part->bb_size[0] * pa_size;
+		if (part->bb_align == PART_BB_VEL) {
+			float pa_vel = len_v3(state->vel);
+			float head = part->bb_vel_head * pa_vel;
+			float tail = part->bb_vel_tail * pa_vel;
+			bb->size[1] = part->bb_size[1] * pa_size + head + tail;
+			/* use offset to adjust the particle center. this is relative to size, so need to divide! */
+			if (bb->size[1] > 0.0f)
+				bb->offset[1] += (head - tail) / bb->size[1];
+		}
+		else {
+			bb->size[1] = part->bb_size[1] * pa_size;
+		}
+		bb->tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
+		bb->time = ct;
+	}
+
+	pixsize = ED_view3d_pixel_size(rv3d, state->co) * pixsize_scale;
+
+	draw_particle(state, draw_as, part->draw, pixsize, imat, part->draw_line, bb, pdd);
 }
 /* unified drawing of all new particle systems draw types except dupli ob & group	*/
 /* mostly tries to use vertex arrays for speed										*/
@@ -4345,9 +4248,9 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 	timestep = psys_get_timestep(&sim);
 
-	if ( (base->flag & OB_FROMDUPLI) && (ob->flag & OB_FROMGROUP) ) {
+	if ((base->flag & OB_FROMDUPLI) && (ob->flag & OB_FROMGROUP)) {
 		float mat[4][4];
-		mult_m4_m4m4(mat, ob->obmat, psys->imat);
+		mul_m4_m4m4(mat, ob->obmat, psys->imat);
 		glMultMatrixf(mat);
 	}
 
@@ -4575,7 +4478,6 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 					ct += dt;
 					for (i = 0; i < trail_count; i++, ct += dt) {
-						float pixsize;
 
 						if (part->draw & PART_ABS_PATH_TIME) {
 							if (ct < pa_birthtime || ct > pa_dietime)
@@ -4587,32 +4489,9 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 						state.time = (part->draw & PART_ABS_PATH_TIME) ? -ct : -(pa_birthtime + ct * (pa_dietime - pa_birthtime));
 						psys_get_particle_on_path(&sim, a, &state, need_v);
 
-						if (psys->parent)
-							mul_m4_v3(psys->parent->obmat, state.co);
-
-						/* create actiual particle data */
-						if (draw_as == PART_DRAW_BB) {
-							bb.offset[0] = part->bb_offset[0];
-							bb.offset[1] = part->bb_offset[1];
-							bb.size[0] = part->bb_size[0] * pa_size;
-							if (part->bb_align == PART_BB_VEL) {
-								float pa_vel = len_v3(state.vel);
-								float head = part->bb_vel_head * pa_vel;
-								float tail = part->bb_vel_tail * pa_vel;
-								bb.size[1] = part->bb_size[1] * pa_size + head + tail;
-								/* use offset to adjust the particle center. this is relative to size, so need to divide! */
-								if (bb.size[1] > 0.0f)
-									bb.offset[1] += (head - tail) / bb.size[1];
-							}
-							else
-								bb.size[1] = part->bb_size[1] * pa_size;
-							bb.tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
-							bb.time = ct;
-						}
-
-						pixsize = ED_view3d_pixel_size(rv3d, state.co) * pixsize_scale;
-
-						draw_particle(&state, draw_as, part->draw, pixsize, imat, part->draw_line, &bb, psys->pdd);
+						draw_particle_data(psys, rv3d,
+						                   &state, draw_as, imat, &bb, psys->pdd,
+						                   ct, pa_size, r_tilt, pixsize_scale);
 
 						totpoint++;
 						drawn = 1;
@@ -4621,34 +4500,10 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 				else {
 					state.time = cfra;
 					if (psys_get_particle_state(&sim, a, &state, 0)) {
-						float pixsize;
 
-						if (psys->parent)
-							mul_m4_v3(psys->parent->obmat, state.co);
-
-						/* create actiual particle data */
-						if (draw_as == PART_DRAW_BB) {
-							bb.offset[0] = part->bb_offset[0];
-							bb.offset[1] = part->bb_offset[1];
-							bb.size[0] = part->bb_size[0] * pa_size;
-							if (part->bb_align == PART_BB_VEL) {
-								float pa_vel = len_v3(state.vel);
-								float head = part->bb_vel_head * pa_vel;
-								float tail = part->bb_vel_tail * pa_vel;
-								bb.size[1] = part->bb_size[1] * pa_size + head + tail;
-								/* use offset to adjust the particle center. this is relative to size, so need to divide! */
-								if (bb.size[1] > 0.0f)
-									bb.offset[1] += (head - tail) / bb.size[1];
-							}
-							else
-								bb.size[1] = part->bb_size[1] * pa_size;
-							bb.tilt = part->bb_tilt * (1.0f - part->bb_rand_tilt * r_tilt);
-							bb.time = pa_time;
-						}
-
-						pixsize = ED_view3d_pixel_size(rv3d, state.co) * pixsize_scale;
-
-						draw_particle(&state, draw_as, part->draw, pixsize, imat, part->draw_line, &bb, pdd);
+						draw_particle_data(psys, rv3d,
+						                   &state, draw_as, imat, &bb, psys->pdd,
+						                   pa_time, pa_size, r_tilt, pixsize_scale);
 
 						totpoint++;
 						drawn = 1;
@@ -4684,15 +4539,15 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 						if (part->draw & PART_DRAW_NUM) {
 							if (a < totpart && (part->draw & PART_DRAW_HEALTH) && (part->phystype == PART_PHYS_BOIDS)) {
-								sprintf(val_pos, "%d:%.2f", a, pa_health);
+								BLI_snprintf(val_pos, sizeof(numstr), "%d:%.2f", a, pa_health);
 							}
 							else {
-								sprintf(val_pos, "%d", a);
+								BLI_snprintf(val_pos, sizeof(numstr), "%d", a);
 							}
 						}
 						else {
 							if (a < totpart && (part->draw & PART_DRAW_HEALTH) && (part->phystype == PART_PHYS_BOIDS)) {
-								sprintf(val_pos, "%.2f", pa_health);
+								BLI_snprintf(val_pos, sizeof(numstr), "%.2f", pa_health);
 							}
 						}
 
@@ -4782,7 +4637,7 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 
 		if (cdata2)
 			MEM_freeN(cdata2);
-		/* cd2= */ /* UNUSED */ cdata2 = NULL;
+		/* cd2 = */ /* UNUSED */ cdata2 = NULL;
 
 		glLineWidth(1.0f);
 
@@ -4891,7 +4746,7 @@ static void draw_new_particle_system(Scene *scene, View3D *v3d, RegionView3D *rv
 		pdd->ma_col = NULL;
 	}
 
-	if ( (base->flag & OB_FROMDUPLI) && (ob->flag & OB_FROMGROUP) ) {
+	if ((base->flag & OB_FROMDUPLI) && (ob->flag & OB_FROMGROUP)) {
 		glLoadMatrixf(rv3d->viewmat);
 	}
 }
@@ -4932,11 +4787,10 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 	UI_GetThemeColor3fv(TH_VERTEX, nosel_col);
 
 	/* draw paths */
-	if (timed) {
-		glEnable(GL_BLEND);
-		steps = (*edit->pathcache)->steps + 1;
-		pathcol = MEM_callocN(steps * 4 * sizeof(float), "particle path color data");
-	}
+	steps = (*edit->pathcache)->steps + 1;
+
+	glEnable(GL_BLEND);
+	pathcol = MEM_callocN(steps * 4 * sizeof(float), "particle path color data");
 
 	glEnableClientState(GL_VERTEX_ARRAY);
 	glEnableClientState(GL_COLOR_ARRAY);
@@ -4951,11 +4805,19 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 	}
 
 	cache = edit->pathcache;
-	for (i = 0; i < totpoint; i++) {
+	for (i = 0, point = edit->points; i < totpoint; i++, point++) {
 		path = cache[i];
 		glVertexPointer(3, GL_FLOAT, sizeof(ParticleCacheKey), path->co);
 
-		if (timed) {
+		if (point->flag & PEP_HIDE) {
+			for (k = 0, pcol = pathcol; k < steps; k++, pcol += 4) {
+				copy_v3_v3(pcol, path->col);
+				pcol[3] = 0.25f;
+			}
+
+			glColorPointer(4, GL_FLOAT, 4 * sizeof(float), pathcol);
+		}
+		else if (timed) {
 			for (k = 0, pcol = pathcol, pkey = path; k < steps; k++, pkey++, pcol += 4) {
 				copy_v3_v3(pcol, pkey->col);
 				pcol[3] = 1.0f - fabsf((float)(CFRA) -pkey->time) / (float)pset->fade_frames;
@@ -4985,9 +4847,11 @@ static void draw_ptcache_edit(Scene *scene, View3D *v3d, PTCacheEdit *edit)
 				if (!(point->flag & PEP_HIDE))
 					totkeys += point->totkey;
 
-			if (edit->points && !(edit->points->keys->flag & PEK_USE_WCO))
-				pd = pdata = MEM_callocN(totkeys * 3 * sizeof(float), "particle edit point data");
-			cd = cdata = MEM_callocN(totkeys * (timed ? 4 : 3) * sizeof(float), "particle edit color data");
+			if (totkeys) {
+				if (edit->points && !(edit->points->keys->flag & PEK_USE_WCO))
+					pd = pdata = MEM_callocN(totkeys * 3 * sizeof(float), "particle edit point data");
+				cd = cdata = MEM_callocN(totkeys * (timed ? 4 : 3) * sizeof(float), "particle edit color data");
+			}
 
 			for (i = 0, point = edit->points; i < totpoint; i++, point++) {
 				if (point->flag & PEP_HIDE)
@@ -5224,9 +5088,9 @@ static void ob_draw_RE_motion(float com[3], float rotscale[3][3], float itw, flo
 	glEnd();
 }
 
-/*place to add drawers */
+/* place to add drawers */
 
-static void tekenhandlesN(Nurb *nu, short sel, short hide_handles)
+static void drawhandlesN(Nurb *nu, const char sel, const bool hide_handles)
 {
 	BezTriple *bezt;
 	float *fp;
@@ -5251,7 +5115,7 @@ static void tekenhandlesN(Nurb *nu, short sel, short hide_handles)
 		a = nu->pntsu;
 		while (a--) {
 			if (bezt->hide == 0) {
-				if ( (bezt->f2 & SELECT) == sel) {
+				if ((bezt->f2 & SELECT) == sel) {
 					fp = bezt->vec[0];
 
 					glColor3ubv(handle_cols[MIN2(bezt->h1, TH_HANDLE_COL_TOT - 1)]);
@@ -5262,14 +5126,14 @@ static void tekenhandlesN(Nurb *nu, short sel, short hide_handles)
 					glVertex3fv(fp + 3);
 					glVertex3fv(fp + 6);
 				}
-				else if ( (bezt->f1 & SELECT) == sel) {
+				else if ((bezt->f1 & SELECT) == sel) {
 					fp = bezt->vec[0];
 
 					glColor3ubv(handle_cols[MIN2(bezt->h1, TH_HANDLE_COL_TOT - 1)]);
 					glVertex3fv(fp);
 					glVertex3fv(fp + 3);
 				}
-				else if ( (bezt->f3 & SELECT) == sel) {
+				else if ((bezt->f3 & SELECT) == sel) {
 					fp = bezt->vec[1];
 
 					glColor3ubv(handle_cols[MIN2(bezt->h2, TH_HANDLE_COL_TOT - 1)]);
@@ -5286,7 +5150,7 @@ static void tekenhandlesN(Nurb *nu, short sel, short hide_handles)
 	glEnd();
 }
 
-static void tekenhandlesN_active(Nurb *nu)
+static void drawhandlesN_active(Nurb *nu)
 {
 	BezTriple *bezt;
 	float *fp;
@@ -5321,7 +5185,7 @@ static void tekenhandlesN_active(Nurb *nu)
 	glLineWidth(1);
 }
 
-static void tekenvertsN(Nurb *nu, short sel, short hide_handles, void *lastsel)
+static void drawvertsN(Nurb *nu, const char sel, const bool hide_handles, void *lastsel)
 {
 	BezTriple *bezt;
 	BPoint *bp;
@@ -5504,7 +5368,7 @@ static void draw_editnurb(Object *ob, Nurb *nurb, int sel)
 						for (a = nu->pntsu - 1; a > 0; a--, bp++) {
 							if (bp->hide == 0 && bp1->hide == 0) {
 								if (sel) {
-									if ( (bp->f1 & SELECT) && (bp1->f1 & SELECT) ) {
+									if ((bp->f1 & SELECT) && (bp1->f1 & SELECT)) {
 										UI_ThemeColor(TH_NURB_SEL_ULINE);
 
 										glBegin(GL_LINE_STRIP);
@@ -5539,7 +5403,7 @@ static void draw_editnurb(Object *ob, Nurb *nurb, int sel)
 							for (a = nu->pntsv - 1; a > 0; a--, bp += ofs) {
 								if (bp->hide == 0 && bp1->hide == 0) {
 									if (sel) {
-										if ( (bp->f1 & SELECT) && (bp1->f1 & SELECT) ) {
+										if ((bp->f1 & SELECT) && (bp1->f1 & SELECT)) {
 											UI_ThemeColor(TH_NURB_SEL_VLINE);
 
 											glBegin(GL_LINE_STRIP);
@@ -5577,32 +5441,32 @@ static void draw_editnurb(Object *ob, Nurb *nurb, int sel)
 }
 
 static void drawnurb(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, Nurb *nurb,
-                     const short dt, const unsigned char ob_wire_col[4])
+                     const char dt, const short dflag, const unsigned char ob_wire_col[4])
 {
 	ToolSettings *ts = scene->toolsettings;
 	Object *ob = base->object;
 	Curve *cu = ob->data;
 	Nurb *nu;
 	BevList *bl;
-	short hide_handles = (cu->drawflag & CU_HIDE_HANDLES);
+	const bool hide_handles = (cu->drawflag & CU_HIDE_HANDLES) != 0;
 	int index;
 	unsigned char wire_col[3];
 
 	/* DispList */
-	UI_GetThemeColor3ubv(TH_WIRE, wire_col);
+	UI_GetThemeColor3ubv(TH_WIRE_EDIT, wire_col);
 	glColor3ubv(wire_col);
 
-	drawDispList(scene, v3d, rv3d, base, dt, ob_wire_col);
+	drawDispList(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
 
-	if (v3d->zbuf) glDisable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_ALWAYS);
 	
 	/* first non-selected and active handles */
 	index = 0;
 	for (nu = nurb; nu; nu = nu->next) {
 		if (nu->type == CU_BEZIER) {
 			if (index == cu->actnu && !hide_handles)
-				tekenhandlesN_active(nu);
-			tekenhandlesN(nu, 0, hide_handles);
+				drawhandlesN_active(nu);
+			drawhandlesN(nu, 0, hide_handles);
 		}
 		index++;
 	}
@@ -5611,17 +5475,17 @@ static void drawnurb(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, 
 	/* selected handles */
 	for (nu = nurb; nu; nu = nu->next) {
 		if (nu->type == CU_BEZIER && (cu->drawflag & CU_HIDE_HANDLES) == 0)
-			tekenhandlesN(nu, 1, hide_handles);
-		tekenvertsN(nu, 0, hide_handles, NULL);
+			drawhandlesN(nu, 1, hide_handles);
+		drawvertsN(nu, 0, hide_handles, NULL);
 	}
 	
-	if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_LEQUAL);
 
 	/* direction vectors for 3d curve paths
 	 * when at its lowest, don't render normals */
 	if ((cu->flag & CU_3D) && (ts->normalsize > 0.0015f) && (cu->drawflag & CU_HIDE_NORMALS) == 0) {
 
-		UI_ThemeColor(TH_WIRE);
+		UI_ThemeColor(TH_WIRE_EDIT);
 		for (bl = cu->bev.first, nu = nurb; nu && bl; bl = bl->next, nu = nu->next) {
 			BevPoint *bevp = (BevPoint *)(bl + 1);
 			int nr = bl->nr;
@@ -5660,13 +5524,13 @@ static void drawnurb(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base, 
 		}
 	}
 
-	if (v3d->zbuf) glDisable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_ALWAYS);
 	
 	for (nu = nurb; nu; nu = nu->next) {
-		tekenvertsN(nu, 1, hide_handles, cu->lastsel);
+		drawvertsN(nu, 1, hide_handles, cu->lastsel);
 	}
 	
-	if (v3d->zbuf) glEnable(GL_DEPTH_TEST);
+	if (v3d->zbuf) glDepthFunc(GL_LEQUAL);
 }
 
 /* draw a sphere for use as an empty drawtype */
@@ -5725,43 +5589,10 @@ static void draw_empty_cone(float size)
 	gluDeleteQuadric(qobj);
 }
 
-/* draw points on curve speed handles */
-#if 0  /* XXX old animation system stuff */
-static void curve_draw_speed(Scene *scene, Object *ob)
-{
-	Curve *cu = ob->data;
-	IpoCurve *icu;
-	BezTriple *bezt;
-	float loc[4], dir[3];
-	int a;
-	
-	if (cu->ipo == NULL)
-		return;
-	
-	icu = cu->ipo->curve.first;
-	if (icu == NULL || icu->totvert < 2)
-		return;
-	
-	glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE));
-	bglBegin(GL_POINTS);
-
-	for (a = 0, bezt = icu->bezt; a < icu->totvert; a++, bezt++) {
-		if (where_on_path(ob, bezt->vec[1][1], loc, dir)) {
-			UI_ThemeColor((bezt->f2 & SELECT) && ob == OBACT ? TH_VERTEX_SELECT : TH_VERTEX);
-			bglVertex3fv(loc);
-		}
-	}
-
-	glPointSize(1.0);
-	bglEnd();
-}
-#endif  /* XXX old animation system stuff */
-
-
-static void draw_textcurs(float textcurs[4][2])
+static void draw_textcurs(RegionView3D *rv3d, float textcurs[4][2])
 {
 	cpack(0);
-	
+	bglPolygonOffset(rv3d->dist, -1.0);
 	set_inverted_drawing(1);
 	glBegin(GL_QUADS);
 	glVertex2fv(textcurs[0]);
@@ -5770,18 +5601,19 @@ static void draw_textcurs(float textcurs[4][2])
 	glVertex2fv(textcurs[3]);
 	glEnd();
 	set_inverted_drawing(0);
+	bglPolygonOffset(rv3d->dist, 0.0);
 }
 
-static void drawspiral(const float cent[3], float rad, float tmat[][4], int start)
+static void drawspiral(const float cent[3], float rad, float tmat[4][4], int start)
 {
 	float vec[3], vx[3], vy[3];
 	const float tot_inv = (1.0f / (float)CIRCLE_RESOL);
 	int a;
-	char inverse = FALSE;
+	bool inverse = false;
 	float x, y, fac;
 
 	if (start < 0) {
-		inverse = TRUE;
+		inverse = true;
 		start = -start;
 	}
 
@@ -5838,7 +5670,7 @@ static void drawspiral(const float cent[3], float rad, float tmat[][4], int star
 	glEnd();
 }
 
-/* draws a circle on x-z plane given the scaling of the circle, assuming that 
+/* draws a circle on x-z plane given the scaling of the circle, assuming that
  * all required matrices have been set (used for drawing empties)
  */
 static void drawcircle_size(float size)
@@ -5848,7 +5680,7 @@ static void drawcircle_size(float size)
 
 	glBegin(GL_LINE_LOOP);
 
-	/* coordinates are: cos(degrees*11.25)=x, sin(degrees*11.25)=y, 0.0f=z */
+	/* coordinates are: cos(degrees * 11.25) = x, sin(degrees*11.25) = y, 0.0f = z */
 	for (degrees = 0; degrees < CIRCLE_RESOL; degrees++) {
 		x = cosval[degrees];
 		y = sinval[degrees];
@@ -5860,8 +5692,8 @@ static void drawcircle_size(float size)
 
 }
 
-/* needs fixing if non-identity matrice used */
-static void drawtube(const float vec[3], float radius, float height, float tmat[][4])
+/* needs fixing if non-identity matrix used */
+static void drawtube(const float vec[3], float radius, float height, float tmat[4][4])
 {
 	float cur[3];
 	drawcircball(GL_LINE_LOOP, vec, radius, tmat);
@@ -5882,8 +5714,9 @@ static void drawtube(const float vec[3], float radius, float height, float tmat[
 	glVertex3f(cur[0], cur[1] - radius, cur[2]);
 	glEnd();
 }
-/* needs fixing if non-identity matrice used */
-static void drawcone(const float vec[3], float radius, float height, float tmat[][4])
+
+/* needs fixing if non-identity matrix used */
+static void drawcone(const float vec[3], float radius, float height, float tmat[4][4])
 {
 	float cur[3];
 
@@ -5903,9 +5736,10 @@ static void drawcone(const float vec[3], float radius, float height, float tmat[
 	glVertex3f(cur[0], cur[1] - radius, cur[2]);
 	glEnd();
 }
-/* return TRUE if nothing was drawn */
-static int drawmball(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
-                     const short dt, const short dflag, const unsigned char ob_wire_col[4])
+
+/* return true if nothing was drawn */
+static bool drawmball(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
+                      const char dt, const short dflag, const unsigned char ob_wire_col[4])
 {
 	Object *ob = base->object;
 	MetaBall *mb;
@@ -5917,27 +5751,27 @@ static int drawmball(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 
 	if (mb->editelems) {
 		if ((G.f & G_PICKSEL) == 0) {
-			unsigned char wire_col[3];
-			UI_GetThemeColor3ubv(TH_WIRE, wire_col);
+			unsigned char wire_col[4];
+			UI_GetThemeColor4ubv(TH_WIRE_EDIT, wire_col);
 			glColor3ubv(wire_col);
 
-			drawDispList(scene, v3d, rv3d, base, dt, wire_col);
+			drawDispList(scene, v3d, rv3d, base, dt, dflag, wire_col);
 		}
 		ml = mb->editelems->first;
 	}
 	else {
 		if ((base->flag & OB_FROMDUPLI) == 0) {
-			drawDispList(scene, v3d, rv3d, base, dt, ob_wire_col);
+			drawDispList(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
 		}
 		ml = mb->elems.first;
 	}
 
 	if (ml == NULL) {
-		return TRUE;
+		return true;
 	}
 
 	if (v3d->flag2 & V3D_RENDER_OVERRIDE) {
-		return FALSE;
+		return false;
 	}
 
 	invert_m4_m4(imat, rv3d->viewmatob);
@@ -5951,7 +5785,6 @@ static int drawmball(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 	}
 	
 	while (ml) {
-
 		/* draw radius */
 		if (mb->editelems) {
 			if ((dflag & DRAW_CONSTCOLOR) == 0) {
@@ -5982,7 +5815,7 @@ static int drawmball(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 		
 		ml = ml->next;
 	}
-	return FALSE;
+	return false;
 }
 
 static void draw_forcefield(Object *ob, RegionView3D *rv3d,
@@ -6236,6 +6069,15 @@ static void draw_bb_quadric(BoundBox *bb, char type)
 		glScalef(radius, radius, 2.0f * size[2]);
 		gluCylinder(qobj, 1.0, 0.0, 1.0, 8, 1);
 	}
+	else if (type == OB_BOUND_CAPSULE) {
+		float radius = size[0] > size[1] ? size[0] : size[1];
+		float length = size[2] > radius ? 2.0f * (size[2] - radius) : 0.0f;
+		glTranslatef(cent[0], cent[1], cent[2] - length * 0.5f);
+		gluCylinder(qobj, radius, radius, length, 8, 1);
+		gluSphere(qobj, radius, 8, 4);
+		glTranslatef(0.0, 0.0, length);
+		gluSphere(qobj, radius, 8, 4);
+	}
 	glPopMatrix();
 	
 	gluDeleteQuadric(qobj);
@@ -6243,6 +6085,7 @@ static void draw_bb_quadric(BoundBox *bb, char type)
 
 static void draw_bounding_volume(Scene *scene, Object *ob, char type)
 {
+	BoundBox  bb_local;
 	BoundBox *bb = NULL;
 	
 	if (ob->type == OB_MESH) {
@@ -6264,8 +6107,9 @@ static void draw_bounding_volume(Scene *scene, Object *ob, char type)
 		bb = BKE_armature_boundbox_get(ob);
 	}
 	else {
-		drawcube();
-		return;
+		const float min[3] = {-1.0f, -1.0f, -1.0f}, max[3] = {1.0f, 1.0f, 1.0f};
+		bb = &bb_local;
+		BKE_boundbox_init_from_minmax(bb, min, max);
 	}
 	
 	if (bb == NULL) return;
@@ -6292,8 +6136,10 @@ static void drawtexspace(Object *ob)
 		copy_v3_v3(size, mb->size);
 		copy_v3_v3(loc, mb->loc);
 	}
-	else return;
-	
+	else {
+		return;
+	}
+
 	vec[0][0] = vec[1][0] = vec[2][0] = vec[3][0] = loc[0] - size[0];
 	vec[4][0] = vec[5][0] = vec[6][0] = vec[7][0] = loc[0] + size[0];
 	
@@ -6323,24 +6169,24 @@ static void drawObjectSelect(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 	if (ELEM3(ob->type, OB_FONT, OB_CURVE, OB_SURF)) {
 		Curve *cu = ob->data;
 		DerivedMesh *dm = ob->derivedFinal;
-		int hasfaces = 0;
+		bool has_faces = false;
 
 		if (dm) {
-			hasfaces = dm->getNumTessFaces(dm);
+			has_faces = dm->getNumTessFaces(dm);
 		}
 		else {
-			hasfaces = BKE_displist_has_faces(&ob->disp);
+			has_faces = BKE_displist_has_faces(&ob->disp);
 		}
 
-		if (hasfaces && ED_view3d_boundbox_clip(rv3d, ob->obmat, ob->bb ? ob->bb : cu->bb)) {
-			draw_index_wire = 0;
+		if (has_faces && ED_view3d_boundbox_clip(rv3d, ob->obmat, ob->bb ? ob->bb : cu->bb)) {
+			draw_index_wire = false;
 			if (dm) {
 				draw_mesh_object_outline(v3d, ob, dm);
 			}
 			else {
 				drawDispListwire(&ob->disp);
 			}
-			draw_index_wire = 1;
+			draw_index_wire = true;
 		}
 	}
 	else if (ob->type == OB_MBALL) {
@@ -6351,7 +6197,7 @@ static void drawObjectSelect(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 	}
 	else if (ob->type == OB_ARMATURE) {
 		if (!(ob->mode & OB_MODE_POSE && base == scene->basact))
-			draw_armature(scene, v3d, ar, base, OB_WIRE, FALSE, ob_wire_col, TRUE);
+			draw_armature(scene, v3d, ar, base, OB_WIRE, 0, ob_wire_col, true);
 	}
 
 	glLineWidth(1.0);
@@ -6363,7 +6209,7 @@ static void draw_wire_extra(Scene *scene, RegionView3D *rv3d, Object *ob, unsign
 	if (ELEM4(ob->type, OB_FONT, OB_CURVE, OB_SURF, OB_MBALL)) {
 
 		if (scene->obedit == ob) {
-			UI_ThemeColor(TH_WIRE);
+			UI_ThemeColor(TH_WIRE_EDIT);
 		}
 		else {
 			glColor3ubv(ob_wire_col);
@@ -6376,7 +6222,7 @@ static void draw_wire_extra(Scene *scene, RegionView3D *rv3d, Object *ob, unsign
 			Curve *cu = ob->data;
 			if (ED_view3d_boundbox_clip(rv3d, ob->obmat, ob->bb ? ob->bb : cu->bb)) {
 				if (ob->type == OB_CURVE)
-					draw_index_wire = 0;
+					draw_index_wire = false;
 
 				if (ob->derivedFinal) {
 					drawCurveDMWired(ob);
@@ -6386,7 +6232,7 @@ static void draw_wire_extra(Scene *scene, RegionView3D *rv3d, Object *ob, unsign
 				}
 
 				if (ob->type == OB_CURVE)
-					draw_index_wire = 1;
+					draw_index_wire = true;
 			}
 		}
 		else if (ob->type == OB_MBALL) {
@@ -6463,17 +6309,16 @@ static void draw_rigid_body_pivot(bRigidBodyJointConstraint *data, const short d
 	setlinestyle(0);
 }
 
-static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_wire_col[4],
-                                   const int warning_recursive)
+static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_wire_col[4])
 {
 	Object *ob = base->object;
 	int colindex = 0;
-
+	const bool is_edit = (ob->mode & OB_MODE_EDIT) != 0;
 	/* confusing logic here, there are 2 methods of setting the color
 	 * 'colortab[colindex]' and 'theme_id', colindex overrides theme_id.
 	 *
 	 * note: no theme yet for 'colindex' */
-	int theme_id = TH_WIRE;
+	int theme_id = is_edit ? TH_WIRE_EDIT : TH_WIRE;
 	int theme_shade = 0;
 
 	if ((scene->obedit == NULL) &&
@@ -6485,15 +6330,7 @@ static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_
 	else {
 		/* Sets the 'colindex' */
 		if (ob->id.lib) {
-			colindex = (base->flag & (SELECT + BA_WAS_SEL)) ? 4 : 3;
-		}
-		else if (warning_recursive == 1) {
-			if (base->flag & (SELECT + BA_WAS_SEL)) {
-				colindex = (scene->basact == base) ? 8 : 7;
-			}
-			else {
-				colindex = 6;
-			}
+			colindex = (base->flag & (SELECT + BA_WAS_SEL)) ? 2 : 1;
 		}
 		/* Sets the 'theme_id' or fallback to wire */
 		else {
@@ -6538,13 +6375,40 @@ static void draw_object_wire_color(Scene *scene, Base *base, unsigned char r_ob_
 	r_ob_wire_col[3] = 255;
 }
 
+static void draw_object_matcap_check(Scene *scene, View3D *v3d, Object *ob)
+{
+	/* fixed rule, active object draws as matcap */
+	if (ob == OBACT) {
+		if (ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT | OB_MODE_TEXTURE_PAINT))
+			return;
+			
+		if (v3d->defmaterial == NULL) {
+			extern Material defmaterial;
+			
+			v3d->defmaterial = MEM_mallocN(sizeof(Material), "matcap material");
+			*(v3d->defmaterial) = defmaterial;
+			v3d->defmaterial->gpumaterial.first = v3d->defmaterial->gpumaterial.last = NULL;
+			v3d->defmaterial->preview = NULL;
+		}
+		/* first time users */
+		if (v3d->matcap_icon == 0)
+			v3d->matcap_icon = ICON_MATCAP_01;
+		
+		if (v3d->defmaterial->preview == NULL)
+			v3d->defmaterial->preview = UI_icon_to_preview(v3d->matcap_icon);
+		
+		/* signal to all material checks, gets cleared below */
+		v3d->flag2 |= V3D_SHOW_SOLID_MATCAP;
+	}
+
+}
+
 /**
  * main object drawing function, draws in selection
  * \param dflag (draw flag) can be DRAW_PICKING and/or DRAW_CONSTCOLOR, DRAW_SCENESET
  */
 void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short dflag)
 {
-	static int warning_recursive = 0;
 	ModifierData *md = NULL;
 	Object *ob = base->object;
 	Curve *cu;
@@ -6554,8 +6418,10 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	unsigned char _ob_wire_col[4];      /* dont initialize this */
 	unsigned char *ob_wire_col = NULL;  /* dont initialize this, use NULL crashes as a way to find invalid use */
 	int i, selstart, selend, empty_object = 0;
-	short dt, dtx, zbufoff = 0;
-	const short is_obact = (ob == OBACT);
+	short dtx;
+	char  dt;
+	short zbufoff = 0;
+	const bool is_obact = (ob == OBACT);
 
 	/* only once set now, will be removed too, should become a global standard */
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
@@ -6576,13 +6442,21 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 		return;
 
 	/* xray delay? */
-	if ((dflag & DRAW_PICKING) == 0 && (base->flag & OB_FROMDUPLI) == 0) {
+	if ((dflag & DRAW_PICKING) == 0 && (base->flag & OB_FROMDUPLI) == 0 && (v3d->flag2 & V3D_RENDER_SHADOW) == 0) {
 		/* don't do xray in particle mode, need the z-buffer */
 		if (!(ob->mode & OB_MODE_PARTICLE_EDIT)) {
 			/* xray and transp are set when it is drawing the 2nd/3rd pass */
 			if (!v3d->xray && !v3d->transp && (ob->dtx & OB_DRAWXRAY) && !(ob->dtx & OB_DRAWTRANSP)) {
 				ED_view3d_after_add(&v3d->afterdraw_xray, base, dflag);
 				return;
+			}
+
+			/* allow transp option for empty images */
+			if (ob->type == OB_EMPTY && ob->empty_drawtype == OB_EMPTY_IMAGE) {
+				if (!v3d->xray && !v3d->transp && !(ob->dtx & OB_DRAWXRAY) && (ob->dtx & OB_DRAWTRANSP)) {
+					ED_view3d_after_add(&v3d->afterdraw_transp, base, dflag);
+					return;
+				}
 			}
 		}
 	}
@@ -6611,9 +6485,9 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	/* which wire color */
 	if ((dflag & DRAW_CONSTCOLOR) == 0) {
 
-		project_short(ar, ob->obmat[3], &base->sx);
+		ED_view3d_project_base(ar, base);
 
-		draw_object_wire_color(scene, base, _ob_wire_col, warning_recursive);
+		draw_object_wire_color(scene, base, _ob_wire_col);
 		ob_wire_col = _ob_wire_col;
 
 		glColor3ubv(ob_wire_col);
@@ -6625,6 +6499,10 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	dt = MIN2(dt, ob->dt);
 	if (v3d->zbuf == 0 && dt > OB_WIRE) dt = OB_WIRE;
 	dtx = 0;
+	
+	/* matcap check */
+	if (dt == OB_SOLID && (v3d->flag2 & V3D_SOLID_MATCAP))
+		draw_object_matcap_check(scene, v3d, ob);
 
 	/* faceselect exception: also draw solid when (dt == wire), except in editmode */
 	if (is_obact && (ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT | OB_MODE_TEXTURE_PAINT))) {
@@ -6690,20 +6568,20 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 		case OB_FONT:
 			cu = ob->data;
 			if (cu->editfont) {
-				draw_textcurs(cu->editfont->textcurs);
+				draw_textcurs(rv3d, cu->editfont->textcurs);
 
 				if (cu->flag & CU_FAST) {
 					cpack(0xFFFFFF);
 					set_inverted_drawing(1);
-					drawDispList(scene, v3d, rv3d, base, OB_WIRE, ob_wire_col);
+					drawDispList(scene, v3d, rv3d, base, OB_WIRE, dflag, ob_wire_col);
 					set_inverted_drawing(0);
 				}
 				else {
-					drawDispList(scene, v3d, rv3d, base, dt, ob_wire_col);
+					drawDispList(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
 				}
 
 				if (cu->linewidth != 0.0f) {
-					UI_ThemeColor(TH_WIRE);
+					UI_ThemeColor(TH_WIRE_EDIT);
 					copy_v3_v3(vec1, ob->orig);
 					copy_v3_v3(vec2, ob->orig);
 					vec1[0] += cu->linewidth;
@@ -6774,7 +6652,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 				}
 			}
 			else if (ED_view3d_boundbox_clip(rv3d, ob->obmat, ob->bb ? ob->bb : cu->bb)) {
-				empty_object = drawDispList(scene, v3d, rv3d, base, dt, ob_wire_col);
+				empty_object = drawDispList(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
 			}
 
 			break;
@@ -6784,7 +6662,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 
 			if (cu->editnurb) {
 				ListBase *nurbs = BKE_curve_editNurbs_get(cu);
-				drawnurb(scene, v3d, rv3d, base, nurbs->first, dt, ob_wire_col);
+				drawnurb(scene, v3d, rv3d, base, nurbs->first, dt, dflag, ob_wire_col);
 			}
 			else if (dt == OB_BOUNDBOX) {
 				if (((v3d->flag2 & V3D_RENDER_OVERRIDE) && (v3d->drawtype >= OB_WIRE)) == 0) {
@@ -6792,7 +6670,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 				}
 			}
 			else if (ED_view3d_boundbox_clip(rv3d, ob->obmat, ob->bb ? ob->bb : cu->bb)) {
-				empty_object = drawDispList(scene, v3d, rv3d, base, dt, ob_wire_col);
+				empty_object = drawDispList(scene, v3d, rv3d, base, dt, dflag, ob_wire_col);
 
 //XXX old animsys				if (cu->path)
 //                                  curve_draw_speed(scene, ob);
@@ -6856,7 +6734,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 				else {
 					if (dt > OB_WIRE)
 						GPU_enable_material(0, NULL);  /* we use default material */
-					empty_object = draw_armature(scene, v3d, ar, base, dt, dflag, ob_wire_col, FALSE);
+					empty_object = draw_armature(scene, v3d, ar, base, dt, dflag, ob_wire_col, false);
 					if (dt > OB_WIRE)
 						GPU_disable_material();
 				}
@@ -6893,11 +6771,8 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	}
 
 	/* code for new particle system */
-	if ((warning_recursive == 0) &&
-	    (ob->particlesystem.first) &&
-	    (dflag & DRAW_PICKING) == 0 &&
-	    (ob != scene->obedit)
-	    )
+	if ((ob->particlesystem.first) &&
+	    (ob != scene->obedit))
 	{
 		ParticleSystem *psys;
 
@@ -6928,9 +6803,8 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	}
 
 	/* draw edit particles last so that they can draw over child particles */
-	if ( (warning_recursive == 0) &&
-	     (dflag & DRAW_PICKING) == 0 &&
-	     (!scene->obedit))
+	if ((dflag & DRAW_PICKING) == 0 &&
+	    (!scene->obedit))
 	{
 
 		if (ob->mode & OB_MODE_PARTICLE_EDIT && is_obact) {
@@ -6983,72 +6857,76 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 		}
 
 		/* only draw domains */
-		if (smd->domain && smd->domain->fluid) {
-			if (CFRA < smd->domain->point_cache[0]->startframe) {
-				/* don't show smoke before simulation starts, this could be made an option in the future */
-			}
-			else if (!smd->domain->wt || !(smd->domain->viewsettings & MOD_SMOKE_VIEW_SHOWBIG)) {
-// #if 0
-				smd->domain->tex = NULL;
-				GPU_create_smoke(smd, 0);
-				draw_volume(ar, smd->domain->tex,
-				            smd->domain->p0, smd->domain->p1,
-				            smd->domain->res, smd->domain->dx,
-				            smd->domain->tex_shadow);
-				GPU_free_smoke(smd);
-// #endif
+		if (smd->domain) {
+			SmokeDomainSettings *sds = smd->domain;
+			float p0[3], p1[3], viewnormal[3];
+			BoundBox bb;
+
+			glLoadMatrixf(rv3d->viewmat);
+			glMultMatrixf(ob->obmat);
+
+			/* draw adaptive domain bounds */
+			if (sds->flags & MOD_SMOKE_ADAPTIVE_DOMAIN) {
+				/* draw domain max bounds */
+				VECSUBFAC(p0, sds->p0, sds->cell_size, sds->adapt_res);
+				VECADDFAC(p1, sds->p1, sds->cell_size, sds->adapt_res);
+				BKE_boundbox_init_from_minmax(&bb, p0, p1);
+				draw_box(bb.vec);
+
+				/* draw base resolution bounds */
 #if 0
-				int x, y, z;
-				float *density = smoke_get_density(smd->domain->fluid);
-
-				glLoadMatrixf(rv3d->viewmat);
-				// glMultMatrixf(ob->obmat);
-
-				if (col || (ob->flag & SELECT)) cpack(0xFFFFFF);
-				glDepthMask(GL_FALSE);
-				glEnable(GL_BLEND);
-				
-
-				// glPointSize(3.0);
-				bglBegin(GL_POINTS);
-
-				for (x = 0; x < smd->domain->res[0]; x++) {
-					for (y = 0; y < smd->domain->res[1]; y++) {
-						for (z = 0; z < smd->domain->res[2]; z++) {
-							float tmp[3];
-							int index = smoke_get_index(x, smd->domain->res[0], y, smd->domain->res[1], z);
-
-							if (density[index] > FLT_EPSILON) {
-								float color[3];
-								copy_v3_v3(tmp, smd->domain->p0);
-								tmp[0] += smd->domain->dx * x + smd->domain->dx * 0.5;
-								tmp[1] += smd->domain->dx * y + smd->domain->dx * 0.5;
-								tmp[2] += smd->domain->dx * z + smd->domain->dx * 0.5;
-								color[0] = color[1] = color[2] = density[index];
-								glColor3fv(color);
-								bglVertex3fv(tmp);
-							}
-						}
-					}
-				}
-
-				bglEnd();
-				glPointSize(1.0);
-
-				glMultMatrixf(ob->obmat);
-				glDisable(GL_BLEND);
-				glDepthMask(GL_TRUE);
-				if (col) cpack(col);
+				BKE_boundbox_init_from_minmax(&bb, sds->p0, sds->p1);
+				draw_box(bb.vec);
 #endif
 			}
-			else if (smd->domain->wt && (smd->domain->viewsettings & MOD_SMOKE_VIEW_SHOWBIG)) {
-				smd->domain->tex = NULL;
-				GPU_create_smoke(smd, 1);
-				draw_volume(ar, smd->domain->tex,
-				            smd->domain->p0, smd->domain->p1,
-				            smd->domain->res_wt, smd->domain->dx_wt,
-				            smd->domain->tex_shadow);
-				GPU_free_smoke(smd);
+
+			/* don't show smoke before simulation starts, this could be made an option in the future */
+			if (smd->domain->fluid && CFRA >= smd->domain->point_cache[0]->startframe) {
+
+				// get view vector
+				copy_v3_v3(viewnormal, rv3d->viewinv[2]);
+				mul_mat3_m4_v3(ob->imat, viewnormal);
+				normalize_v3(viewnormal);
+
+				/* set dynamic boundaries to draw the volume */
+				p0[0] = sds->p0[0] + sds->cell_size[0] * sds->res_min[0] + sds->obj_shift_f[0];
+				p0[1] = sds->p0[1] + sds->cell_size[1] * sds->res_min[1] + sds->obj_shift_f[1];
+				p0[2] = sds->p0[2] + sds->cell_size[2] * sds->res_min[2] + sds->obj_shift_f[2];
+				p1[0] = sds->p0[0] + sds->cell_size[0] * sds->res_max[0] + sds->obj_shift_f[0];
+				p1[1] = sds->p0[1] + sds->cell_size[1] * sds->res_max[1] + sds->obj_shift_f[1];
+				p1[2] = sds->p0[2] + sds->cell_size[2] * sds->res_max[2] + sds->obj_shift_f[2];
+
+				/* scale cube to global space to equalize volume slicing on all axises
+				 *  (its scaled back before drawing) */
+				mul_v3_v3(p0, ob->size);
+				mul_v3_v3(p1, ob->size);
+
+				if (!sds->wt || !(sds->viewsettings & MOD_SMOKE_VIEW_SHOWBIG)) {
+					smd->domain->tex = NULL;
+					GPU_create_smoke(smd, 0);
+					draw_smoke_volume(sds, ob, sds->tex,
+					                  p0, p1,
+					                  sds->res, sds->dx, sds->scale * sds->maxres,
+					                  viewnormal, sds->tex_shadow, sds->tex_flame);
+					GPU_free_smoke(smd);
+				}
+				else if (sds->wt && (sds->viewsettings & MOD_SMOKE_VIEW_SHOWBIG)) {
+					sds->tex = NULL;
+					GPU_create_smoke(smd, 1);
+					draw_smoke_volume(sds, ob, sds->tex,
+					                  p0, p1,
+					                  sds->res_wt, sds->dx, sds->scale * sds->maxres,
+					                  viewnormal, sds->tex_shadow, sds->tex_flame);
+					GPU_free_smoke(smd);
+				}
+
+				/* smoke debug render */
+#ifdef SMOKE_DEBUG_VELOCITY
+				draw_smoke_velocity(smd->domain, ob);
+#endif
+#ifdef SMOKE_DEBUG_HEAT
+				draw_smoke_heat(smd->domain, ob);
+#endif
 			}
 		}
 	}
@@ -7064,9 +6942,8 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 			}
 		}
 
-		if (ob->gameflag & OB_BOUNDS) {
-			if (ob->boundtype != ob->collision_boundtype || (dtx & OB_BOUNDBOX) == 0) {
-
+		if ((ob->gameflag & OB_BOUNDS) && (ob->mode == OB_MODE_OBJECT)) {
+			if (ob->boundtype != ob->collision_boundtype || (dtx & OB_DRAWBOUNDOX) == 0) {
 				setlinestyle(2);
 				draw_bounding_volume(scene, ob, ob->collision_boundtype);
 				setlinestyle(0);
@@ -7079,10 +6956,14 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 			if (dtx & OB_AXIS) {
 				drawaxes(1.0f, OB_ARROWS);
 			}
-			if (dtx & OB_BOUNDBOX) {
+			if (dtx & OB_DRAWBOUNDOX) {
 				draw_bounding_volume(scene, ob, ob->boundtype);
 			}
 			if (dtx & OB_TEXSPACE) {
+				if ((dflag & DRAW_CONSTCOLOR) == 0) {
+					/* prevent random colors being used */
+					glColor3ubv(ob_wire_col);
+				}
 				drawtexspace(ob);
 			}
 			if (dtx & OB_DRAWNAME) {
@@ -7102,7 +6983,9 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 		}
 	}
 
-	if (dt <= OB_SOLID && (v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
+	if ((dt <= OB_SOLID) &&
+	    ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0))
+	{
 		if (((ob->gameflag & OB_DYNAMIC) &&
 		     !ELEM(ob->collision_boundtype, OB_BOUND_TRIANGLE_MESH, OB_BOUND_CONVEX_HULL)) ||
 
@@ -7113,6 +6996,11 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 
 			invert_m4_m4(imat, rv3d->viewmatob);
 
+			if ((dflag & DRAW_CONSTCOLOR) == 0) {
+				/* prevent random colors being used */
+				glColor3ubv(ob_wire_col);
+			}
+
 			setlinestyle(2);
 			drawcircball(GL_LINE_LOOP, vec, ob->inertia, imat);
 			setlinestyle(0);
@@ -7122,22 +7010,24 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	/* return warning, this is cached text draw */
 	invert_m4_m4(ob->imat, ob->obmat);
 	view3d_cached_text_draw_end(v3d, ar, 1, NULL);
-
+	/* return warning, clear temp flag */
+	v3d->flag2 &= ~V3D_SHOW_SOLID_MATCAP;
+	
 	glLoadMatrixf(rv3d->viewmat);
 
 	if (zbufoff) {
 		glDisable(GL_DEPTH_TEST);
 	}
 
-	if ((warning_recursive) ||
-	    (base->flag & OB_FROMDUPLI) ||
+	if ((base->flag & OB_FROMDUPLI) ||
 	    (v3d->flag2 & V3D_RENDER_OVERRIDE))
 	{
+		ED_view3d_clear_mats_rv3d(rv3d);
 		return;
 	}
 
 	/* object centers, need to be drawn in viewmat space for speed, but OK for picking select */
-	if (!is_obact || !(ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT | OB_MODE_TEXTURE_PAINT))) {
+	if (!is_obact || !(ob->mode & OB_MODE_ALL_PAINT)) {
 		int do_draw_center = -1; /* defines below are zero or positive... */
 
 		if (v3d->flag2 & V3D_RENDER_OVERRIDE) {
@@ -7170,10 +7060,12 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 	/* not for sets, duplicators or picking */
 	if (dflag == 0 && (v3d->flag & V3D_HIDE_HELPLINES) == 0 && (v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
 		ListBase *list;
+		RigidBodyCon *rbc = ob->rigidbody_constraint;
 		
 		/* draw hook center and offset line */
-		if (ob != scene->obedit) draw_hooks(ob);
-		
+		if (ob != scene->obedit)
+			draw_hooks(ob);
+
 		/* help lines and so */
 		if (ob != scene->obedit && ob->parent && (ob->parent->lay & v3d->lay)) {
 			setlinestyle(3);
@@ -7196,10 +7088,10 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 			UI_make_axis_color(col1, col2, 'Z');
 			glColor3ubv(col2);
 			
-			cob = constraints_make_evalob(scene, ob, NULL, CONSTRAINT_OBTYPE_OBJECT);
+			cob = BKE_constraints_make_evalob(scene, ob, NULL, CONSTRAINT_OBTYPE_OBJECT);
 			
 			for (curcon = list->first; curcon; curcon = curcon->next) {
-				bConstraintTypeInfo *cti = constraint_get_typeinfo(curcon);
+				bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(curcon);
 				ListBase targets = {NULL, NULL};
 				bConstraintTarget *ct;
 				
@@ -7230,7 +7122,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 						setlinestyle(0);
 					}
 				}
-				else if ((curcon->flag & CONSTRAINT_EXPAND) && (cti) && (cti->get_constraint_targets)) {
+				else if ((curcon->flag & CONSTRAINT_EXPAND) && (cti->get_constraint_targets)) {
 					cti->get_constraint_targets(curcon, &targets);
 					
 					for (ct = targets.first; ct; ct = ct->next) {
@@ -7253,11 +7145,29 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 				}
 			}
 			
-			constraints_clear_evalob(cob);
+			BKE_constraints_clear_evalob(cob);
+		}
+		/* draw rigid body constraint lines */
+		if (rbc) {
+			UI_ThemeColor(TH_WIRE);
+			setlinestyle(3);
+			glBegin(GL_LINES);
+			if (rbc->ob1) {
+				glVertex3fv(ob->obmat[3]);
+				glVertex3fv(rbc->ob1->obmat[3]);
+			}
+			if (rbc->ob2) {
+				glVertex3fv(ob->obmat[3]);
+				glVertex3fv(rbc->ob2->obmat[3]);
+			}
+			glEnd();
+			setlinestyle(0);
 		}
 	}
 
 	free_old_images();
+
+	ED_view3d_clear_mats_rv3d(rv3d);
 }
 
 /* ***************** BACKBUF SEL (BBS) ********* */
@@ -7310,7 +7220,7 @@ static void bbs_mesh_verts(BMEditMesh *em, DerivedMesh *dm, int offset)
 	dm->foreachMappedVert(dm, bbs_mesh_verts__mapFunc, ptrs);
 	bglEnd();
 	glPointSize(1.0);
-}		
+}
 
 static DMDrawOption bbs_mesh_wire__setDrawOptions(void *userData, int index)
 {
@@ -7330,7 +7240,7 @@ static void bbs_mesh_wire(BMEditMesh *em, DerivedMesh *dm, int offset)
 {
 	void *ptrs[2] = {(void *)(intptr_t) offset, em};
 	dm->drawMappedEdges(dm, bbs_mesh_wire__setDrawOptions, ptrs);
-}		
+}
 
 static DMDrawOption bbs_mesh_solid__setSolidDrawOptions(void *userData, int index)
 {
@@ -7414,14 +7324,28 @@ static DMDrawOption bbs_mesh_solid_hide2__setDrawOpts(void *userData, int index)
 		return DM_DRAW_OPTION_SKIP;
 	}
 }
-static void bbs_mesh_solid(Scene *scene, Object *ob)
+
+static void bbs_mesh_solid_verts(Scene *scene, Object *ob)
+{
+	Mesh *me = ob->data;
+	DerivedMesh *dm = mesh_get_derived_final(scene, ob, scene->customdata_mask);
+	glColor3ub(0, 0, 0);
+
+	dm->drawMappedFaces(dm, bbs_mesh_solid_hide2__setDrawOpts, GPU_enable_material, NULL, me, 0);
+
+	bbs_obmode_mesh_verts(ob, dm, 1);
+	bm_vertoffs = me->totvert + 1;
+	dm->release(dm);
+}
+
+static void bbs_mesh_solid_faces(Scene *scene, Object *ob)
 {
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, scene->customdata_mask);
 	Mesh *me = (Mesh *)ob->data;
 	
 	glColor3ub(0, 0, 0);
 
-	if ((me->editflag & ME_EDIT_PAINT_MASK))
+	if ((me->editflag & ME_EDIT_PAINT_FACE_SEL))
 		dm->drawMappedFaces(dm, bbs_mesh_solid_hide__setDrawOpts, GPU_enable_material, NULL, me, 0);
 	else
 		dm->drawMappedFaces(dm, bbs_mesh_solid__setDrawOpts, GPU_enable_material, NULL, me, 0);
@@ -7446,7 +7370,7 @@ void draw_object_backbufsel(Scene *scene, View3D *v3d, RegionView3D *rv3d, Objec
 
 				DerivedMesh *dm = editbmesh_get_derived_cage(scene, ob, em, CD_MASK_BAREMESH);
 
-				EDBM_index_arrays_init(em, 1, 1, 1);
+				EDBM_index_arrays_ensure(em, BM_VERT | BM_EDGE | BM_FACE);
 
 				bbs_mesh_solid_EM(em, scene, v3d, ob, dm, ts->selectmode & SCE_SELECT_FACE);
 				if (ts->selectmode & SCE_SELECT_FACE)
@@ -7472,27 +7396,17 @@ void draw_object_backbufsel(Scene *scene, View3D *v3d, RegionView3D *rv3d, Objec
 				bglPolygonOffset(rv3d->dist, 0.0);
 
 				dm->release(dm);
-
-				EDBM_index_arrays_free(em);
 			}
 			else {
 				Mesh *me = ob->data;
-				if ((me->editflag & ME_EDIT_VERT_SEL) &&
+				if ((me->editflag & ME_EDIT_PAINT_VERT_SEL) &&
 				    /* currently vertex select only supports weight paint */
 				    (ob->mode & OB_MODE_WEIGHT_PAINT))
 				{
-					DerivedMesh *dm = mesh_get_derived_final(scene, ob, scene->customdata_mask);
-					glColor3ub(0, 0, 0);
-
-					dm->drawMappedFaces(dm, bbs_mesh_solid_hide2__setDrawOpts, GPU_enable_material, NULL, me, 0);
-
-
-					bbs_obmode_mesh_verts(ob, dm, 1);
-					bm_vertoffs = me->totvert + 1;
-					dm->release(dm);
+					bbs_mesh_solid_verts(scene, ob);
 				}
 				else {
-					bbs_mesh_solid(scene, ob);
+					bbs_mesh_solid_faces(scene, ob);
 				}
 			}
 			break;
@@ -7509,7 +7423,7 @@ void draw_object_backbufsel(Scene *scene, View3D *v3d, RegionView3D *rv3d, Objec
 /*               assumes all matrices/etc set OK */
 
 /* helper function for drawing object instances - meshes */
-static void draw_object_mesh_instance(Scene *scene, View3D *v3d, RegionView3D *rv3d, 
+static void draw_object_mesh_instance(Scene *scene, View3D *v3d, RegionView3D *rv3d,
                                       Object *ob, const short dt, int outline)
 {
 	Mesh *me = ob->data;
@@ -7558,7 +7472,7 @@ static void draw_object_mesh_instance(Scene *scene, View3D *v3d, RegionView3D *r
 	if (dm) dm->release(dm);
 }
 
-void draw_object_instance(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob, const short dt, int outline)
+void draw_object_instance(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob, const char dt, int outline)
 {
 	if (ob == NULL)
 		return;

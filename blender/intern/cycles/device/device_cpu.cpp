@@ -23,9 +23,14 @@
 #include "device_intern.h"
 
 #include "kernel.h"
+#include "kernel_compat_cpu.h"
 #include "kernel_types.h"
+#include "kernel_globals.h"
 
 #include "osl_shader.h"
+#include "osl_globals.h"
+
+#include "buffers.h"
 
 #include "util_debug.h"
 #include "util_foreach.h"
@@ -41,30 +46,32 @@ class CPUDevice : public Device
 {
 public:
 	TaskPool task_pool;
-	KernelGlobals *kg;
+	KernelGlobals kernel_globals;
+#ifdef WITH_OSL
+	OSLGlobals osl_globals;
+#endif
 	
-	CPUDevice(int threads_num)
+	CPUDevice(Stats &stats) : Device(stats)
 	{
-		kg = kernel_globals_create();
+#ifdef WITH_OSL
+		kernel_globals.osl = &osl_globals;
+#endif
 
 		/* do now to avoid thread issues */
-		system_cpu_support_optimized();
+		system_cpu_support_sse2();
+		system_cpu_support_sse3();
 	}
 
 	~CPUDevice()
 	{
 		task_pool.stop();
-		kernel_globals_free(kg);
-	}
-
-	bool support_advanced_shading()
-	{
-		return true;
 	}
 
 	void mem_alloc(device_memory& mem, MemoryType type)
 	{
 		mem.device_pointer = mem.data_pointer;
+
+		stats.mem_alloc(mem.memory_size());
 	}
 
 	void mem_copy_to(device_memory& mem)
@@ -85,28 +92,34 @@ public:
 	void mem_free(device_memory& mem)
 	{
 		mem.device_pointer = 0;
+
+		stats.mem_free(mem.memory_size());
 	}
 
 	void const_copy_to(const char *name, void *host, size_t size)
 	{
-		kernel_const_copy(kg, name, host, size);
+		kernel_const_copy(&kernel_globals, name, host, size);
 	}
 
 	void tex_alloc(const char *name, device_memory& mem, bool interpolation, bool periodic)
 	{
-		kernel_tex_copy(kg, name, mem.data_pointer, mem.data_width, mem.data_height);
+		kernel_tex_copy(&kernel_globals, name, mem.data_pointer, mem.data_width, mem.data_height);
 		mem.device_pointer = mem.data_pointer;
+
+		stats.mem_alloc(mem.memory_size());
 	}
 
 	void tex_free(device_memory& mem)
 	{
 		mem.device_pointer = 0;
+
+		stats.mem_free(mem.memory_size());
 	}
 
 	void *osl_memory()
 	{
 #ifdef WITH_OSL
-		return kernel_osl_memory(kg);
+		return &osl_globals;
 #else
 		return NULL;
 #endif
@@ -133,74 +146,144 @@ public:
 
 	void thread_path_trace(DeviceTask& task)
 	{
-		if(task_pool.cancelled())
-			return;
+		if(task_pool.cancelled()) {
+			if(task.need_finish_queue == false)
+				return;
+		}
+
+		KernelGlobals kg = kernel_globals;
 
 #ifdef WITH_OSL
-		if(kernel_osl_use(kg))
-			OSLShader::thread_init(kg);
+		OSLShader::thread_init(&kg, &kernel_globals, &osl_globals);
 #endif
+
+		RenderTile tile;
+		
+		while(task.acquire_tile(this, tile)) {
+			float *render_buffer = (float*)tile.buffer;
+			uint *rng_state = (uint*)tile.rng_state;
+			int start_sample = tile.start_sample;
+			int end_sample = tile.start_sample + tile.num_samples;
 
 #ifdef WITH_OPTIMIZED_KERNEL
-		if(system_cpu_support_optimized()) {
-			for(int y = task.y; y < task.y + task.h; y++) {
-				for(int x = task.x; x < task.x + task.w; x++)
-					kernel_cpu_optimized_path_trace(kg, (float*)task.buffer, (unsigned int*)task.rng_state,
-						task.sample, x, y, task.offset, task.stride);
+			if(system_cpu_support_sse3()) {
+				for(int sample = start_sample; sample < end_sample; sample++) {
+					if (task.get_cancel() || task_pool.cancelled()) {
+						if(task.need_finish_queue == false)
+							break;
+					}
 
-				if(task_pool.cancelled())
-					break;
+					for(int y = tile.y; y < tile.y + tile.h; y++) {
+						for(int x = tile.x; x < tile.x + tile.w; x++) {
+							kernel_cpu_sse3_path_trace(&kg, render_buffer, rng_state,
+								sample, x, y, tile.offset, tile.stride);
+						}
+					}
+
+					tile.sample = sample + 1;
+
+					task.update_progress(tile);
+				}
 			}
-		}
-		else
-#endif
-		{
-			for(int y = task.y; y < task.y + task.h; y++) {
-				for(int x = task.x; x < task.x + task.w; x++)
-					kernel_cpu_path_trace(kg, (float*)task.buffer, (unsigned int*)task.rng_state,
-						task.sample, x, y, task.offset, task.stride);
+			else if(system_cpu_support_sse2()) {
+				for(int sample = start_sample; sample < end_sample; sample++) {
+					if (task.get_cancel() || task_pool.cancelled()) {
+						if(task.need_finish_queue == false)
+							break;
+					}
 
-				if(task_pool.cancelled())
+					for(int y = tile.y; y < tile.y + tile.h; y++) {
+						for(int x = tile.x; x < tile.x + tile.w; x++) {
+							kernel_cpu_sse2_path_trace(&kg, render_buffer, rng_state,
+								sample, x, y, tile.offset, tile.stride);
+						}
+					}
+
+					tile.sample = sample + 1;
+
+					task.update_progress(tile);
+				}
+			}
+			else
+#endif
+			{
+				for(int sample = start_sample; sample < end_sample; sample++) {
+					if (task.get_cancel() || task_pool.cancelled()) {
+						if(task.need_finish_queue == false)
+							break;
+					}
+
+					for(int y = tile.y; y < tile.y + tile.h; y++) {
+						for(int x = tile.x; x < tile.x + tile.w; x++) {
+							kernel_cpu_path_trace(&kg, render_buffer, rng_state,
+								sample, x, y, tile.offset, tile.stride);
+						}
+					}
+
+					tile.sample = sample + 1;
+
+					task.update_progress(tile);
+				}
+			}
+
+			task.release_tile(tile);
+
+			if(task_pool.cancelled()) {
+				if(task.need_finish_queue == false)
 					break;
 			}
 		}
 
 #ifdef WITH_OSL
-		if(kernel_osl_use(kg))
-			OSLShader::thread_free(kg);
+		OSLShader::thread_free(&kg);
 #endif
 	}
 
 	void thread_tonemap(DeviceTask& task)
 	{
 #ifdef WITH_OPTIMIZED_KERNEL
-		if(system_cpu_support_optimized()) {
+		if(system_cpu_support_sse3()) {
 			for(int y = task.y; y < task.y + task.h; y++)
 				for(int x = task.x; x < task.x + task.w; x++)
-					kernel_cpu_optimized_tonemap(kg, (uchar4*)task.rgba, (float*)task.buffer,
-						task.sample, task.resolution, x, y, task.offset, task.stride);
+					kernel_cpu_sse3_tonemap(&kernel_globals, (uchar4*)task.rgba, (float*)task.buffer,
+						task.sample, x, y, task.offset, task.stride);
+		}
+		else if(system_cpu_support_sse2()) {
+			for(int y = task.y; y < task.y + task.h; y++)
+				for(int x = task.x; x < task.x + task.w; x++)
+					kernel_cpu_sse2_tonemap(&kernel_globals, (uchar4*)task.rgba, (float*)task.buffer,
+						task.sample, x, y, task.offset, task.stride);
 		}
 		else
 #endif
 		{
 			for(int y = task.y; y < task.y + task.h; y++)
 				for(int x = task.x; x < task.x + task.w; x++)
-					kernel_cpu_tonemap(kg, (uchar4*)task.rgba, (float*)task.buffer,
-						task.sample, task.resolution, x, y, task.offset, task.stride);
+					kernel_cpu_tonemap(&kernel_globals, (uchar4*)task.rgba, (float*)task.buffer,
+						task.sample, x, y, task.offset, task.stride);
 		}
 	}
 
 	void thread_shader(DeviceTask& task)
 	{
+		KernelGlobals kg = kernel_globals;
+
 #ifdef WITH_OSL
-		if(kernel_osl_use(kg))
-			OSLShader::thread_init(kg);
+		OSLShader::thread_init(&kg, &kernel_globals, &osl_globals);
 #endif
 
 #ifdef WITH_OPTIMIZED_KERNEL
-		if(system_cpu_support_optimized()) {
+		if(system_cpu_support_sse3()) {
 			for(int x = task.shader_x; x < task.shader_x + task.shader_w; x++) {
-				kernel_cpu_optimized_shader(kg, (uint4*)task.shader_input, (float4*)task.shader_output, task.shader_eval_type, x);
+				kernel_cpu_sse3_shader(&kg, (uint4*)task.shader_input, (float4*)task.shader_output, task.shader_eval_type, x);
+
+				if(task_pool.cancelled())
+					break;
+			}
+		}
+		else if(system_cpu_support_sse2()) {
+			for(int x = task.shader_x; x < task.shader_x + task.shader_w; x++) {
+				kernel_cpu_sse2_shader(&kg, (uint4*)task.shader_input, (float4*)task.shader_output, task.shader_eval_type, x);
 
 				if(task_pool.cancelled())
 					break;
@@ -210,7 +293,7 @@ public:
 #endif
 		{
 			for(int x = task.shader_x; x < task.shader_x + task.shader_w; x++) {
-				kernel_cpu_shader(kg, (uint4*)task.shader_input, (float4*)task.shader_output, task.shader_eval_type, x);
+				kernel_cpu_shader(&kg, (uint4*)task.shader_input, (float4*)task.shader_output, task.shader_eval_type, x);
 
 				if(task_pool.cancelled())
 					break;
@@ -218,8 +301,7 @@ public:
 		}
 
 #ifdef WITH_OSL
-		if(kernel_osl_use(kg))
-			OSLShader::thread_free(kg);
+		OSLShader::thread_free(&kg);
 #endif
 	}
 
@@ -228,8 +310,7 @@ public:
 		/* split task into smaller ones, more than number of threads for uneven
 		 * workloads where some parts of the image render slower than others */
 		list<DeviceTask> tasks;
-
-		task.split(tasks, TaskScheduler::num_threads()*10);
+		task.split(tasks, TaskScheduler::num_threads());
 
 		foreach(DeviceTask& task, tasks)
 			task_pool.push(new CPUDeviceTask(this, task));
@@ -246,9 +327,9 @@ public:
 	}
 };
 
-Device *device_cpu_create(DeviceInfo& info, int threads)
+Device *device_cpu_create(DeviceInfo& info, Stats &stats)
 {
-	return new CPUDevice(threads);
+	return new CPUDevice(stats);
 }
 
 void device_cpu_info(vector<DeviceInfo>& devices)

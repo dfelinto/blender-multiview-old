@@ -43,47 +43,93 @@
 #endif
 
 #include <stdlib.h>
+#include "BLI_utildefines.h"
 #include "BLI_string.h"
 #include "BLI_path_util.h"
 #include "BLI_fileops.h"
-
-#include "BLI_utildefines.h"
 
 #include "imbuf.h"
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
 #include "IMB_filetype.h"
 
-ImBuf *IMB_ibImageFromMemory(unsigned char *mem, size_t size, int flags, const char *descr)
+#include "IMB_colormanagement.h"
+#include "IMB_colormanagement_intern.h"
+
+ImBuf *IMB_ibImageFromMemory(unsigned char *mem, size_t size, int flags, char colorspace[IM_MAX_SPACE], const char *descr)
 {
 	ImBuf *ibuf;
 	ImFileType *type;
+	char effective_colorspace[IM_MAX_SPACE] = "";
 
 	if (mem == NULL) {
 		fprintf(stderr, "%s: NULL pointer\n", __func__);
 		return NULL;
 	}
 
+	if (colorspace)
+		BLI_strncpy(effective_colorspace, colorspace, sizeof(effective_colorspace));
+
 	for (type = IMB_FILE_TYPES; type->is_a; type++) {
 		if (type->load) {
-			ibuf = type->load(mem, size, flags);
+			ibuf = type->load(mem, size, flags, effective_colorspace);
 			if (ibuf) {
-				if (flags & IB_premul) {
-					IMB_premultiply_alpha(ibuf);
-					ibuf->flags |= IB_premul;
+				int alpha_flags;
+
+				if (colorspace) {
+					if (ibuf->rect) {
+						/* byte buffer is never internally converted to some standard space,
+						 * store pointer to it's color space descriptor instead
+						 */
+						ibuf->rect_colorspace = colormanage_colorspace_get_named(effective_colorspace);
+					}
+
+					BLI_strncpy(colorspace, effective_colorspace, IM_MAX_SPACE);
 				}
+
+				if (flags & IB_alphamode_detect)
+					alpha_flags = ibuf->flags & IB_alphamode_premul;
+				else
+					alpha_flags = flags & IB_alphamode_premul;
+
+				if (flags & IB_ignore_alpha) {
+					IMB_rectfill_alpha(ibuf, 1.0f);
+				}
+				else {
+					if (alpha_flags & IB_alphamode_premul) {
+						if (ibuf->rect) {
+							IMB_unpremultiply_alpha(ibuf);
+						}
+						else {
+							/* pass, floats are expected to be premul */
+						}
+					}
+					else {
+						if (ibuf->rect_float) {
+							IMB_premultiply_alpha(ibuf);
+						}
+						else {
+							/* pass, bytes are expected to be straight */
+						}
+					}
+				}
+
+				/* OCIO_TODO: in some cases it's faster to do threaded conversion,
+				 *            but how to distinguish such cases */
+				colormanage_imbuf_make_linear(ibuf, effective_colorspace);
 
 				return ibuf;
 			}
 		}
 	}
 
-	fprintf(stderr, "%s: unknown fileformat (%s)\n", __func__, descr);
+	if ((flags & IB_test) == 0)
+		fprintf(stderr, "%s: unknown fileformat (%s)\n", __func__, descr);
 
 	return NULL;
 }
 
-ImBuf *IMB_loadifffile(int file, int flags, const char *descr)
+ImBuf *IMB_loadifffile(int file, int flags, char colorspace[IM_MAX_SPACE], const char *descr)
 {
 	ImBuf *ibuf;
 	unsigned char *mem;
@@ -99,7 +145,7 @@ ImBuf *IMB_loadifffile(int file, int flags, const char *descr)
 		return NULL;
 	}
 
-	ibuf = IMB_ibImageFromMemory(mem, size, flags, descr);
+	ibuf = IMB_ibImageFromMemory(mem, size, flags, colorspace, descr);
 
 	if (munmap(mem, size))
 		fprintf(stderr, "%s: couldn't unmap file %s\n", __func__, descr);
@@ -122,7 +168,7 @@ static void imb_cache_filename(char *filename, const char *name, int flags)
 	BLI_strncpy(filename, name, IB_FILENAME_SIZE);
 }
 
-ImBuf *IMB_loadiffname(const char *filepath, int flags)
+ImBuf *IMB_loadiffname(const char *filepath, int flags, char colorspace[IM_MAX_SPACE])
 {
 	ImBuf *ibuf;
 	int file, a;
@@ -133,7 +179,7 @@ ImBuf *IMB_loadiffname(const char *filepath, int flags)
 	file = BLI_open(filepath_tx, O_BINARY | O_RDONLY, 0);
 	if (file < 0) return NULL;
 
-	ibuf = IMB_loadifffile(file, flags, filepath_tx);
+	ibuf = IMB_loadifffile(file, flags, colorspace, filepath_tx);
 
 	if (ibuf) {
 		BLI_strncpy(ibuf->name, filepath, sizeof(ibuf->name));
@@ -153,13 +199,14 @@ ImBuf *IMB_testiffname(const char *filepath, int flags)
 	ImBuf *ibuf;
 	int file;
 	char filepath_tx[IB_FILENAME_SIZE];
+	char colorspace[IM_MAX_SPACE] = "\0";
 
 	imb_cache_filename(filepath_tx, filepath, flags);
 
 	file = BLI_open(filepath_tx, O_BINARY | O_RDONLY, 0);
 	if (file < 0) return NULL;
 
-	ibuf = IMB_loadifffile(file, flags | IB_test | IB_multilayer, filepath_tx);
+	ibuf = IMB_loadifffile(file, flags | IB_test | IB_multilayer, colorspace, filepath_tx);
 
 	if (ibuf) {
 		BLI_strncpy(ibuf->name, filepath, sizeof(ibuf->name));
@@ -206,4 +253,3 @@ void imb_loadtile(ImBuf *ibuf, int tx, int ty, unsigned int *rect)
 
 	close(file);
 }
-

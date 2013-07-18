@@ -58,13 +58,13 @@ SCA_PythonKeyboard::~SCA_PythonKeyboard()
 /* ------------------------------------------------------------------------- */
 
 /* clipboard */
-static PyObject* gPyGetClipboard(PyObject* args, PyObject* kwds)
+static PyObject *gPyGetClipboard(PyObject *args, PyObject *kwds)
 {
 	char *buf = (char *)GHOST_getClipboard(0);
 	return PyUnicode_FromString(buf?buf:"");
 }
 
-static PyObject* gPySetClipboard(PyObject* args, PyObject* value)
+static PyObject *gPySetClipboard(PyObject *args, PyObject *value)
 {
 	char* buf;
 	if (!PyArg_ParseTuple(value,"s:setClipboard",&buf))
@@ -109,7 +109,7 @@ PyAttributeDef SCA_PythonKeyboard::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-PyObject* SCA_PythonKeyboard::pyattr_get_events(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *SCA_PythonKeyboard::pyattr_get_events(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	SCA_PythonKeyboard* self = static_cast<SCA_PythonKeyboard*>(self_v);
 	
@@ -117,13 +117,13 @@ PyObject* SCA_PythonKeyboard::pyattr_get_events(void *self_v, const KX_PYATTRIBU
 	{
 		const SCA_InputEvent & inevent = self->m_keyboard->GetEventValue((SCA_IInputDevice::KX_EnumInputs)i);
 		
-		PyDict_SetItem(self->m_event_dict, PyLong_FromSsize_t(i), PyLong_FromSsize_t(inevent.m_status));
+		PyDict_SetItem(self->m_event_dict, PyLong_FromLong(i), PyLong_FromLong(inevent.m_status));
 	}
 	Py_INCREF(self->m_event_dict);
 	return self->m_event_dict;
 }
 
-PyObject* SCA_PythonKeyboard::pyattr_get_active_events(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *SCA_PythonKeyboard::pyattr_get_active_events(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	SCA_PythonKeyboard* self = static_cast<SCA_PythonKeyboard*>(self_v);
 
@@ -134,7 +134,7 @@ PyObject* SCA_PythonKeyboard::pyattr_get_active_events(void *self_v, const KX_PY
 		const SCA_InputEvent & inevent = self->m_keyboard->GetEventValue((SCA_IInputDevice::KX_EnumInputs)i);
 		
 		if (inevent.m_status != SCA_InputEvent::KX_NO_INPUTSTATUS)
-			PyDict_SetItem(self->m_event_dict, PyLong_FromSsize_t(i), PyLong_FromSsize_t(inevent.m_status));
+			PyDict_SetItem(self->m_event_dict, PyLong_FromLong(i), PyLong_FromLong(inevent.m_status));
 	}
 	Py_INCREF(self->m_event_dict);
 	return self->m_event_dict;

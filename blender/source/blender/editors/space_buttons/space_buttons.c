@@ -36,7 +36,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -155,6 +154,8 @@ static void buttons_main_area_draw(const bContext *C, ARegion *ar)
 		ED_region_panels(C, ar, vertical, "scene", sbuts->mainb);
 	else if (sbuts->mainb == BCONTEXT_RENDER)
 		ED_region_panels(C, ar, vertical, "render", sbuts->mainb);
+	else if (sbuts->mainb == BCONTEXT_RENDER_LAYER)
+		ED_region_panels(C, ar, vertical, "render_layer", sbuts->mainb);
 	else if (sbuts->mainb == BCONTEXT_WORLD)
 		ED_region_panels(C, ar, vertical, "world", sbuts->mainb);
 	else if (sbuts->mainb == BCONTEXT_OBJECT)
@@ -239,6 +240,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			switch (wmn->data) {
 				case ND_RENDER_OPTIONS:
 					buttons_area_redraw(sa, BCONTEXT_RENDER);
+					buttons_area_redraw(sa, BCONTEXT_RENDER_LAYER);
 					break;
 				case ND_FRAME:
 					/* any buttons area can have animated properties so redraw all */
@@ -297,6 +299,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 					buttons_area_redraw(sa, BCONTEXT_PHYSICS);
 				case ND_SHADING:
 				case ND_SHADING_DRAW:
+				case ND_SHADING_LINKS:
 					/* currently works by redraws... if preview is set, it (re)starts job */
 					sbuts->preview = 1;
 					break;
@@ -319,11 +322,12 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			switch (wmn->data) {
 				case ND_SHADING:
 				case ND_SHADING_DRAW:
+				case ND_SHADING_LINKS:
 				case ND_NODES:
 					/* currently works by redraws... if preview is set, it (re)starts job */
 					sbuts->preview = 1;
 					break;
-			}					
+			}
 			break;
 		case NC_WORLD:
 			buttons_area_redraw(sa, BCONTEXT_WORLD);
@@ -338,11 +342,14 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			break;
 		case NC_BRUSH:
 			buttons_area_redraw(sa, BCONTEXT_TEXTURE);
+			sbuts->preview = 1;
 			break;
 		case NC_TEXTURE:
 		case NC_IMAGE:
-			ED_area_tag_redraw(sa);
-			sbuts->preview = 1;
+			if (wmn->action != NA_PAINTING) {
+				ED_area_tag_redraw(sa);
+				sbuts->preview = 1;
+			}
 			break;
 		case NC_SPACE:
 			if (wmn->data == ND_SPACE_PROPERTIES)
@@ -373,6 +380,12 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 			ED_area_tag_redraw(sa);
 			sbuts->preview = 1;
 			break;
+#ifdef WITH_FREESTYLE
+		case NC_LINESTYLE:
+			ED_area_tag_redraw(sa);
+			sbuts->preview = 1;
+			break;
+#endif
 	}
 
 	if (wmn->data == ND_KEYS)

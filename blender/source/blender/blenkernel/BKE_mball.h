@@ -32,6 +32,7 @@
  *  \since March 2001
  *  \author nzc
  */
+struct Main;
 struct MetaBall;
 struct Object;
 struct Scene;
@@ -39,7 +40,7 @@ struct MetaElem;
 
 void BKE_mball_unlink(struct MetaBall *mb);
 void BKE_mball_free(struct MetaBall *mb);
-struct MetaBall *BKE_mball_add(const char *name);
+struct MetaBall *BKE_mball_add(struct Main *bmain, const char *name);
 struct MetaBall *BKE_mball_copy(struct MetaBall *mb);
 
 void BKE_mball_make_local(struct MetaBall *mb);
@@ -47,8 +48,8 @@ void BKE_mball_make_local(struct MetaBall *mb);
 void BKE_mball_cubeTable_free(void);
 
 void BKE_mball_polygonize(struct Scene *scene, struct Object *ob, struct ListBase *dispbase);
-int BKE_mball_is_basis_for(struct Object *ob1, struct Object *ob2);
-int BKE_mball_is_basis(struct Object *ob);
+bool BKE_mball_is_basis_for(struct Object *ob1, struct Object *ob2);
+bool BKE_mball_is_basis(struct Object *ob);
 struct Object *BKE_mball_basis_find(struct Scene *scene, struct Object *ob);
 
 void BKE_mball_texspace_calc(struct Object *ob);
@@ -59,8 +60,12 @@ void BKE_mball_properties_copy(struct Scene *scene, struct Object *active_object
 int BKE_mball_minmax(struct MetaBall *mb, float min[3], float max[3]);
 int BKE_mball_center_median(struct MetaBall *mb, float r_cent[3]);
 int BKE_mball_center_bounds(struct MetaBall *mb, float r_cent[3]);
-void BKE_mball_translate(struct MetaBall *mb, float offset[3]);
+void BKE_mball_translate(struct MetaBall *mb, const float offset[3]);
 
 struct MetaElem *BKE_mball_element_add(struct MetaBall *mb, const int type);
+
+void BKE_mball_select_all(struct MetaBall *mb);
+void BKE_mball_deselect_all(struct MetaBall *mb);
+void BKE_mball_select_swap(struct MetaBall *mb);
 
 #endif

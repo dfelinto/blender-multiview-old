@@ -33,7 +33,14 @@
 
 UnitConverter::UnitConverter() : unit(), up_axis(COLLADAFW::FileInfo::Z_UP)
 {
-	/* pass */
+	unit_m4(x_up_mat4);
+	rotate_m4(x_up_mat4, 'Y', -0.5 * M_PI);
+
+	unit_m4(y_up_mat4);
+	rotate_m4(y_up_mat4, 'X', 0.5 * M_PI);
+
+	unit_m4(z_up_mat4);
+
 }
 
 void UnitConverter::read_asset(const COLLADAFW::FileInfo *asset)
@@ -74,7 +81,7 @@ void UnitConverter::convertVector3(COLLADABU::Math::Vector3 &vec, float *v)
 
 // TODO need also for angle conversion, time conversion...
 
-void UnitConverter::dae_matrix_to_mat4_(float out[][4], const COLLADABU::Math::Matrix4& in)
+void UnitConverter::dae_matrix_to_mat4_(float out[4][4], const COLLADABU::Math::Matrix4& in)
 {
 	// in DAE, matrices use columns vectors, (see comments in COLLADABUMathMatrix4.h)
 	// so here, to make a blender matrix, we swap columns and rows
@@ -85,13 +92,13 @@ void UnitConverter::dae_matrix_to_mat4_(float out[][4], const COLLADABU::Math::M
 	}
 }
 
-void UnitConverter::mat4_to_dae(float out[][4], float in[][4])
+void UnitConverter::mat4_to_dae(float out[4][4], float in[4][4])
 {
 	copy_m4_m4(out, in);
 	transpose_m4(out);
 }
 
-void UnitConverter::mat4_to_dae_double(double out[][4], float in[][4])
+void UnitConverter::mat4_to_dae_double(double out[4][4], float in[4][4])
 {
 	float mat[4][4];
 
@@ -102,7 +109,22 @@ void UnitConverter::mat4_to_dae_double(double out[][4], float in[][4])
 			out[i][j] = mat[i][j];
 }
 
-void TransformBase::decompose(float mat[][4], float *loc, float eul[3], float quat[4], float *size)
+float(&UnitConverter::get_rotation())[4][4]
+{
+	switch (up_axis) {
+		case COLLADAFW::FileInfo::X_UP:
+			return x_up_mat4;
+			break;
+		case COLLADAFW::FileInfo::Y_UP:
+			return y_up_mat4;
+			break;
+		default:
+			return z_up_mat4;
+			break;
+	}
+}
+
+void TransformBase::decompose(float mat[4][4], float *loc, float eul[3], float quat[4], float *size)
 {
 	mat4_to_size(size, mat);
 	if (eul) {
@@ -202,6 +224,12 @@ void clear_global_id_map()
 }
 
 /** Look at documentation of translate_map */
+std::string translate_id(const char *idString)
+{
+	std::string id = std::string(idString);
+	return translate_id(id);
+}
+
 std::string translate_id(const std::string &id)
 {
 	if (id.size() == 0) {
@@ -283,3 +311,9 @@ std::string get_material_id(Material *mat)
 {
 	return translate_id(id_name(mat)) + "-material";
 }
+
+std::string get_morph_id(Object *ob)
+{
+	return translate_id(id_name(ob)) + "-morph";
+}
+

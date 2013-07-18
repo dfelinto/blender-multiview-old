@@ -74,7 +74,7 @@ class SCA_PythonController : public SCA_IController
 
 	//for debugging
 	//virtual	CValue*		AddRef();
-	//virtual int			Release();												// Release a reference to this value (when reference count reaches 0, the value is removed from the heap)
+	//virtual int			Release();  // Release a reference to this value (when reference count reaches 0, the value is removed from the heap)
 
 	SCA_PythonController(SCA_IObject* gameobj, int mode);
 	virtual ~SCA_PythonController();
@@ -90,17 +90,17 @@ class SCA_PythonController : public SCA_IController
 	void	SetDebug(bool debug) { m_debug = debug; }
 	void	AddTriggeredSensor(class SCA_ISensor* sensor)
 		{ m_triggeredSensors.push_back(sensor); }
-	int		IsTriggered(class SCA_ISensor* sensor);
+	bool	IsTriggered(class SCA_ISensor* sensor);
 	bool	Compile();
 	bool	Import();
 	void	ErrorPrint(const char *error_msg);
 	
 #ifdef WITH_PYTHON
-	static const char* sPyGetCurrentController__doc__;
-	static PyObject* sPyGetCurrentController(PyObject* self);
-	static const char* sPyAddActiveActuator__doc__;
-	static PyObject* sPyAddActiveActuator(PyObject* self, 
-										  PyObject* args);
+	static const char *sPyGetCurrentController__doc__;
+	static PyObject   *sPyGetCurrentController(PyObject *self);
+	static const char *sPyAddActiveActuator__doc__;
+	static PyObject   *sPyAddActiveActuator(PyObject *self,
+	                                        PyObject *args);
 	static SCA_IActuator* LinkedActuatorFromPy(PyObject *value);
 
 		
@@ -115,5 +115,4 @@ class SCA_PythonController : public SCA_IController
 #endif
 };
 
-#endif //__SCA_PYTHONCONTROLLER_H__
-
+#endif  /* __SCA_PYTHONCONTROLLER_H__ */

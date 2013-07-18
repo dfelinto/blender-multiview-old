@@ -55,20 +55,20 @@ int CDDM_Check(struct DerivedMesh *dm);
  * data to not overwrite the original */
 struct DerivedMesh *CDDM_from_mesh(struct Mesh *mesh, struct Object *ob);
 
+struct DerivedMesh *CDDM_from_bmesh(struct BMesh *bm, int use_mdisps);
+
 /* creates a CDDerivedMesh from the given BMEditMesh */
-DerivedMesh *CDDM_from_BMEditMesh(struct BMEditMesh *em, struct Mesh *me, int use_mdisps, int use_tessface);
+DerivedMesh *CDDM_from_editbmesh(struct BMEditMesh *em, int use_mdisps, int use_tessface);
 
 /* merge verts  */
-DerivedMesh *CDDM_merge_verts(DerivedMesh *dm, const int *vtargetmap);
-
-DerivedMesh *CDDM_from_curve_orco(struct Scene *scene, struct Object *ob);
+DerivedMesh *CDDM_merge_verts(DerivedMesh *dm, const int *vtargetmap, const int tot_vtargetmap);
 
 /* creates a CDDerivedMesh from the given curve object */
 struct DerivedMesh *CDDM_from_curve(struct Object *ob);
 
 /* creates a CDDerivedMesh from the given curve object and specified dispbase */
 /* useful for OrcoDM creation for curves with constructive modifiers */
-DerivedMesh *CDDM_from_curve_displist(struct Object *ob, struct ListBase *dispbase, int **orco_index_ptr);
+DerivedMesh *CDDM_from_curve_displist(struct Object *ob, struct ListBase *dispbase);
 
 /* Copies the given DerivedMesh with verts, faces & edges stored as
  * custom element data.

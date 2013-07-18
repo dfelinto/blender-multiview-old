@@ -24,12 +24,7 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
-
-#include "RNA_define.h"
-
-#include "rna_internal.h"
 
 #include "DNA_cloth_types.h"
 #include "DNA_object_types.h"
@@ -37,6 +32,10 @@
 #include "DNA_particle_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_smoke_types.h"
+
+#include "RNA_define.h"
+
+#include "rna_internal.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -50,6 +49,9 @@ static EnumPropertyItem effector_shape_items[] = {
 };
 
 #ifdef RNA_RUNTIME
+
+#include "BLI_math_base.h"
+
 
 /* type specific return values only used from functions */
 static EnumPropertyItem curve_shape_items[] = {
@@ -239,8 +241,7 @@ static void rna_Cache_active_point_cache_index_range(PointerRNA *ptr, int *min, 
 
 	for (pid = pidlist.first; pid; pid = pid->next) {
 		if (pid->cache == cache) {
-			*max = BLI_countlist(pid->ptcaches) - 1;
-			*max = MAX2(0, *max);
+			*max = max_ii(0, BLI_countlist(pid->ptcaches) - 1);
 			break;
 		}
 	}
@@ -319,7 +320,10 @@ static char *rna_CollisionSettings_path(PointerRNA *UNUSED(ptr))
 	ModifierData *md = (ModifierData *)modifiers_findByType(ob, eModifierType_Collision);
 
 	if (md) {
-		return BLI_sprintfN("modifiers[\"%s\"].settings", md->name);
+		char name_esc[sizeof(md->name) * 2];
+
+		BLI_strescape(name_esc, md->name, sizeof(name_esc));
+		return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
 	}
 	else {
 		return BLI_strdup("");
@@ -461,8 +465,10 @@ static char *rna_SoftBodySettings_path(PointerRNA *ptr)
 {
 	Object *ob = (Object *)ptr->id.data;
 	ModifierData *md = (ModifierData *)modifiers_findByType(ob, eModifierType_Softbody);
-	
-	return BLI_sprintfN("modifiers[\"%s\"].settings", md->name);
+	char name_esc[sizeof(md->name) * 2];
+
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
 }
 
 static int particle_id_check(PointerRNA *ptr)
@@ -482,7 +488,7 @@ static void rna_FieldSettings_update(Main *UNUSED(bmain), Scene *UNUSED(scene), 
 			part->pd->tex = NULL;
 		}
 
-		if (part->pd2->forcefield != PFIELD_TEXTURE && part->pd2->tex) {
+		if (part->pd2 && part->pd2->forcefield != PFIELD_TEXTURE && part->pd2->tex) {
 			part->pd2->tex->id.us--;
 			part->pd2->tex = NULL;
 		}
@@ -519,7 +525,7 @@ static void rna_FieldSettings_shape_update(Main *bmain, Scene *scene, PointerRNA
 		}
 		else {
 			if (!pd || pd->shape != PFIELD_SHAPE_SURFACE)
-				ED_object_modifier_remove(NULL, bmain, scene, ob, md);
+				ED_object_modifier_remove(NULL, bmain, ob, md);
 		}
 
 		WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
@@ -545,7 +551,7 @@ static void rna_FieldSettings_dependency_update(Main *bmain, Scene *scene, Point
 
 		rna_FieldSettings_shape_update(bmain, scene, ptr);
 
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 
 		if (ob->type == OB_CURVE && ob->pd->forcefield == PFIELD_GUIDE)
 			DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
@@ -588,9 +594,9 @@ static void rna_EffectorWeight_update(Main *UNUSED(bmain), Scene *UNUSED(scene),
 	WM_main_add_notifier(NC_OBJECT | ND_DRAW, NULL);
 }
 
-static void rna_EffectorWeight_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_EffectorWeight_dependency_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 
 	DAG_id_tag_update((ID *)ptr->id.data, OB_RECALC_DATA | PSYS_RECALC_RESET);
 
@@ -612,31 +618,38 @@ static char *rna_EffectorWeight_path(PointerRNA *ptr)
 	else {
 		Object *ob = (Object *)ptr->id.data;
 		ModifierData *md;
-		
+
 		/* check softbody modifier */
 		md = (ModifierData *)modifiers_findByType(ob, eModifierType_Softbody);
 		if (md) {
 			/* no pointer from modifier data to actual softbody storage, would be good to add */
-			if (ob->soft->effector_weights == ew)
-				return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", md->name);
+			if (ob->soft->effector_weights == ew) {
+				char name_esc[sizeof(md->name) * 2];
+				BLI_strescape(name_esc, md->name, sizeof(name_esc));
+				return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", name_esc);
+			}
 		}
 		
 		/* check cloth modifier */
 		md = (ModifierData *)modifiers_findByType(ob, eModifierType_Cloth);
 		if (md) {
 			ClothModifierData *cmd = (ClothModifierData *)md;
-			
-			if (cmd->sim_parms->effector_weights == ew)
-				return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", md->name);
+			if (cmd->sim_parms->effector_weights == ew) {
+				char name_esc[sizeof(md->name) * 2];
+				BLI_strescape(name_esc, md->name, sizeof(name_esc));
+				return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", name_esc);
+			}
 		}
 		
 		/* check smoke modifier */
 		md = (ModifierData *)modifiers_findByType(ob, eModifierType_Smoke);
 		if (md) {
 			SmokeModifierData *smd = (SmokeModifierData *)md;
-			
-			if (smd->domain->effector_weights == ew)
-				return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", md->name);
+			if (smd->domain->effector_weights == ew) {
+				char name_esc[sizeof(md->name) * 2];
+				BLI_strescape(name_esc, md->name, sizeof(name_esc));
+				return BLI_sprintfN("modifiers[\"%s\"].settings.effector_weights", name_esc);
+			}
 		}
 
 		/* check dynamic paint modifier */
@@ -648,9 +661,15 @@ static char *rna_EffectorWeight_path(PointerRNA *ptr)
 				DynamicPaintSurface *surface = pmd->canvas->surfaces.first;
 
 				for (; surface; surface = surface->next) {
-					if (surface->effector_weights == ew)
+					if (surface->effector_weights == ew) {
+						char name_esc[sizeof(md->name) * 2];
+						char name_esc_surface[sizeof(surface->name) * 2];
+
+						BLI_strescape(name_esc, md->name, sizeof(name_esc));
+						BLI_strescape(name_esc_surface, surface->name, sizeof(name_esc_surface));
 						return BLI_sprintfN("modifiers[\"%s\"].canvas_settings.canvas_surfaces[\"%s\"]"
-						                    ".effector_weights", md->name, surface->name);
+						                    ".effector_weights", name_esc, name_esc_surface);
+					}
 				}
 			}
 		}
@@ -667,7 +686,7 @@ static void rna_CollisionSettings_dependency_update(Main *bmain, Scene *scene, P
 	if (ob->pd->deflect && !md)
 		ED_object_modifier_add(NULL, bmain, scene, ob, NULL, eModifierType_Collision);
 	else if (!ob->pd->deflect && md)
-		ED_object_modifier_remove(NULL, bmain, scene, ob, md);
+		ED_object_modifier_remove(NULL, bmain, ob, md);
 
 	WM_main_add_notifier(NC_OBJECT | ND_DRAW, ob);
 }
@@ -761,7 +780,8 @@ static void rna_def_pointcache(BlenderRNA *brna)
 	
 	prop = RNA_def_property(srna, "frame_start", PROP_INT, PROP_TIME);
 	RNA_def_property_int_sdna(prop, NULL, "startframe");
-	RNA_def_property_range(prop, 1, MAXFRAME);
+	RNA_def_property_range(prop, -MAXFRAME, MAXFRAME);
+	RNA_def_property_ui_range(prop, 1, MAXFRAME, 1, 1);
 	RNA_def_property_ui_text(prop, "Start", "Frame on which the simulation starts");
 	
 	prop = RNA_def_property(srna, "frame_end", PROP_INT, PROP_TIME);
@@ -820,10 +840,13 @@ static void rna_def_pointcache(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "File Path", "Cache file path");
 	RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_idname_change");
 
+	/* removed, see PTCACHE_QUICK_CACHE */
+#if 0
 	prop = RNA_def_property(srna, "use_quick_cache", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", PTCACHE_QUICK_CACHE);
 	RNA_def_property_ui_text(prop, "Quick Cache", "Update simulation with cache steps");
 	RNA_def_property_update(prop, NC_OBJECT, "rna_Cache_change");
+#endif
 
 	prop = RNA_def_property(srna, "info", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "info");
@@ -1056,6 +1079,13 @@ static void rna_def_effector_weight(BlenderRNA *brna)
 	RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
 	RNA_def_property_ui_text(prop, "Drag", "Drag effector weight");
 	RNA_def_property_update(prop, 0, "rna_EffectorWeight_update");
+
+	prop = RNA_def_property(srna, "smokeflow", PROP_FLOAT, PROP_NONE);
+	RNA_def_property_float_sdna(prop, NULL, "weight[13]");
+	RNA_def_property_range(prop, -200.0f, 200.0f);
+	RNA_def_property_ui_range(prop, 0.0f, 1.0f, 0.1, 3);
+	RNA_def_property_ui_text(prop, "Smoke Flow", "Smoke Flow effector weight");
+	RNA_def_property_update(prop, 0, "rna_EffectorWeight_update");
 }
 
 static void rna_def_field(BlenderRNA *brna)
@@ -1082,6 +1112,7 @@ static void rna_def_field(BlenderRNA *brna)
 		{PFIELD_BOID, "BOID", ICON_FORCE_BOID, "Boid", ""},
 		{PFIELD_TURBULENCE, "TURBULENCE", ICON_FORCE_TURBULENCE, "Turbulence", "Create turbulence with a noise field"},
 		{PFIELD_DRAG, "DRAG", ICON_FORCE_DRAG, "Drag", "Create a force that dampens motion"},
+		{PFIELD_SMOKEFLOW, "SMOKE_FLOW", ICON_FORCE_SMOKEFLOW, "Smoke Flow", "Create a force based on smoke simulation air flow"},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -1168,7 +1199,7 @@ static void rna_def_field(BlenderRNA *brna)
 	
 	prop = RNA_def_property(srna, "strength", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "f_strength");
-	RNA_def_property_range(prop, -1000.0f, 1000.0f);
+	RNA_def_property_range(prop, -FLT_MAX, FLT_MAX);
 	RNA_def_property_ui_text(prop, "Strength", "Strength of force field");
 	RNA_def_property_update(prop, 0, "rna_FieldSettings_update");
 
@@ -1307,7 +1338,7 @@ static void rna_def_field(BlenderRNA *brna)
 	
 	prop = RNA_def_property(srna, "use_2d_force", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", PFIELD_TEX_2D);
-	RNA_def_property_ui_text(prop, "2D", "Apply force only in 2d");
+	RNA_def_property_ui_text(prop, "2D", "Apply force only in 2D");
 	RNA_def_property_update(prop, 0, "rna_FieldSettings_update");
 	
 	prop = RNA_def_property(srna, "use_root_coords", PROP_BOOLEAN, PROP_NONE);
@@ -1334,6 +1365,11 @@ static void rna_def_field(BlenderRNA *brna)
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", PFIELD_MULTIPLE_SPRINGS);
 	RNA_def_property_ui_text(prop, "Multiple Springs", "Every point is effected by multiple springs");
 	RNA_def_property_update(prop, 0, "rna_FieldSettings_update");
+
+	prop = RNA_def_property(srna, "use_smoke_density", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag", PFIELD_SMOKE_DENSITY);
+	RNA_def_property_ui_text(prop, "Apply Density", "Adjust force strength based on smoke density");
+	RNA_def_property_update(prop, 0, "rna_FieldSettings_update");
 	
 	/* Pointer */
 	
@@ -1341,6 +1377,12 @@ static void rna_def_field(BlenderRNA *brna)
 	RNA_def_property_pointer_sdna(prop, NULL, "tex");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Texture", "Texture to use as force");
+	RNA_def_property_update(prop, 0, "rna_FieldSettings_update");
+
+	prop = RNA_def_property(srna, "source_object", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "f_source");
+	RNA_def_property_ui_text(prop, "Domain Object", "Select domain object of the smoke simulation");
+	RNA_def_property_flag(prop, PROP_EDITABLE);
 	RNA_def_property_update(prop, 0, "rna_FieldSettings_update");
 	
 	/********** Curve Guide Field Settings **********/

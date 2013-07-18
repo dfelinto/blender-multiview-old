@@ -2,12 +2,12 @@ LCGDIR = '#../lib/mingw64'
 LIBDIR = "${LCGDIR}"
 
 BF_PYTHON = LIBDIR + '/python'
-BF_PYTHON_VERSION = '3.2'
+BF_PYTHON_VERSION = '3.3'
 WITH_BF_STATICPYTHON = False
 BF_PYTHON_INC = '${BF_PYTHON}/include/python${BF_PYTHON_VERSION}'
 BF_PYTHON_BINARY = 'python'
 BF_PYTHON_LIB = 'python${BF_PYTHON_VERSION[0]}${BF_PYTHON_VERSION[2]}mw'
-BF_PYTHON_DLL = 'python32'
+BF_PYTHON_DLL = 'python33'
 BF_PYTHON_LIBPATH = '${BF_PYTHON}/lib'
 
 WITH_BF_OPENAL = True
@@ -80,11 +80,6 @@ BF_ZLIB_LIBPATH = '${BF_ZLIB}/lib'
 
 WITH_BF_INTERNATIONAL = True
 
-BF_GETTEXT = LIBDIR + '/gettext'
-BF_GETTEXT_INC = '${BF_GETTEXT}/include'
-BF_GETTEXT_LIB = 'intl'
-BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
-
 WITH_BF_OPENJPEG = True
 BF_OPENJPEG = '#extern/libopenjpeg'
 BF_OPENJPEG_LIB = ''
@@ -118,7 +113,7 @@ BF_FREETYPE_LIBPATH = '${BF_FREETYPE}/lib'
 
 WITH_BF_QUICKTIME = False
 
-WITH_BF_ICONV = True
+WITH_BF_ICONV = False
 BF_ICONV = LIBDIR + "/iconv"
 BF_ICONV_INC = '${BF_ICONV}/include'
 BF_ICONV_LIB = 'iconv'
@@ -143,15 +138,15 @@ BF_COLLADA_INC = '${BF_COLLADA}'
 BF_COLLADA_LIB = 'bf_collada'
 
 BF_OPENCOLLADA = LIBDIR + '/opencollada'
-BF_OPENCOLLADA_INC = '${BF_OPENCOLLADA}/include'
+BF_OPENCOLLADA_INC = '${BF_OPENCOLLADA}/include/opencollada'
 BF_OPENCOLLADA_LIB = 'OpenCOLLADAStreamWriter OpenCOLLADASaxFrameworkLoader OpenCOLLADAFramework OpenCOLLADABaseUtils GeneratedSaxParser UTF MathMLSolver pcre buffer ftoa xml'
-BF_OPENCOLLADA_LIBPATH = '${BF_OPENCOLLADA}/lib'
+BF_OPENCOLLADA_LIBPATH = '${BF_OPENCOLLADA}/lib/opencollada'
 
 #Cycles
 WITH_BF_CYCLES = True
 WITH_BF_CYCLES_CUDA_BINARIES = False
 BF_CYCLES_CUDA_NVCC = "" # Path to the NVIDIA CUDA compiler
-BF_CYCLES_CUDA_BINARIES_ARCH = ['sm_13', 'sm_20', 'sm_21']
+BF_CYCLES_CUDA_BINARIES_ARCH = ['sm_20', 'sm_21', 'sm_30']
 
 WITH_BF_OIIO = True
 BF_OIIO = LIBDIR + '/openimageio'
@@ -159,18 +154,28 @@ BF_OIIO_INC = '${BF_OIIO}/include'
 BF_OIIO_LIB = 'OpenImageIO'
 BF_OIIO_LIBPATH = '${BF_OIIO}/lib'
 
+WITH_BF_OCIO = True
+BF_OCIO = LIBDIR + '/opencolorio'
+BF_OCIO_INC = '${BF_OCIO}/include'
+BF_OCIO_LIB = 'OpenColorIO'
+BF_OCIO_LIBPATH = '${BF_OCIO}/lib'
+
 WITH_BF_BOOST = True
 BF_BOOST = LIBDIR + '/boost'
-BF_BOOST_INC = BF_BOOST + '/include'
+BF_BOOST_INC = '${BF_BOOST}/include'
 BF_BOOST_LIB = 'boost_date_time-mgw47-mt-s-1_49 boost_date_time-mgw47-mt-sd-1_49 boost_filesystem-mgw47-mt-s-1_49 boost_filesystem-mgw47-mt-sd-1_49 boost_regex-mgw47-mt-s-1_49 boost_regex-mgw47-mt-sd-1_49 boost_system-mgw47-mt-s-1_49 boost_system-mgw47-mt-sd-1_49 boost_thread-mgw47-mt-s-1_49 boost_thread-mgw47-mt-sd-1_49'
-BF_BOOST_LIBPATH = BF_BOOST + '/lib'
+BF_BOOST_LIB_INTERNATIONAL = ' boost_locale-mgw47-mt-s-1_49 boost_locale-mgw47-mt-sd-1_49'
+BF_BOOST_LIBPATH = '${BF_BOOST}/lib'
 
 #Ray trace optimization
 WITH_BF_RAYOPTIMIZATION = True
 BF_RAYOPTIMIZATION_SSE_FLAGS = ['-mmmx', '-msse', '-msse2']
 
 #May produce errors with unsupported MinGW-w64 builds
-WITH_BF_OPENMP = True
+WITH_BF_OPENMP = False
+
+#Freestyle
+WITH_BF_FREESTYLE = True
 
 ##
 CC = 'gcc'
@@ -193,7 +198,7 @@ LLIBS = ['-lshell32', '-lshfolder', '-lgdi32', '-lmsvcrt', '-lwinmm', '-lmingw32
 PLATFORM_LINKFLAGS = ['-Xlinker', '--stack=2097152']
 
 ## DISABLED, causes linking errors!
-## for re-distrobution, so users dont need mingw installed
+## for re-distribution, so users dont need mingw installed
 # PLATFORM_LINKFLAGS += ["-static-libgcc", "-static-libstdc++"]
 
 BF_DEBUG = False

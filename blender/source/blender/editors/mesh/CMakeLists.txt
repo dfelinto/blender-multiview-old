@@ -21,10 +21,11 @@
 set(INC
 	../include
 	../uvedit
+	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../../blenloader
 	../../bmesh
+	../../gpu
 	../../imbuf
 	../../makesdna
 	../../makesrna
@@ -40,19 +41,21 @@ set(INC_SYS
 set(SRC
 	editface.c
 	editmesh_add.c
-	editmesh_bvh.c
+	editmesh_bevel.c
+	editmesh_extrude.c
+	editmesh_inset.c
 	editmesh_knife.c
+	editmesh_knife_project.c
 	editmesh_loopcut.c
+	editmesh_path.c
 	editmesh_rip.c
 	editmesh_select.c
 	editmesh_tools.c
 	editmesh_utils.c
-	editmesh_slide.c
 	mesh_data.c
 	mesh_ops.c
 	meshtools.c
 
-	editmesh_bvh.h
 	mesh_intern.h
 )
 
@@ -66,6 +69,18 @@ if(WITH_GAMEENGINE)
 	list(APPEND SRC
 		mesh_navmesh.c
 	)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
+endif()
+
+if(WITH_FREESTYLE)
+	add_definitions(-DWITH_FREESTYLE)
+endif()
+
+if(WITH_BULLET)
+	add_definitions(-DWITH_BULLET)
 endif()
 
 blender_add_lib(bf_editor_mesh "${SRC}" "${INC}" "${INC_SYS}")

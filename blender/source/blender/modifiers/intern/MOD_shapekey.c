@@ -54,13 +54,16 @@ static void deformVerts(ModifierData *md, Object *ob,
                         int numVerts,
                         ModifierApplyFlag UNUSED(flag))
 {
-	KeyBlock *kb = ob_get_keyblock(ob);
+	Key *key = BKE_key_from_object(ob);
 	float (*deformedVerts)[3];
 
-	if (kb && kb->totelem == numVerts) {
-		deformedVerts = (float(*)[3])do_ob_key(md->scene, ob);
+	if (key && key->block.first) {
+		int deformedVerts_tot;
+		deformedVerts = (float(*)[3])BKE_key_evaluate_object(md->scene, ob, &deformedVerts_tot);
 		if (deformedVerts) {
-			memcpy(vertexCos, deformedVerts, sizeof(float) * 3 * numVerts);
+			if (numVerts == deformedVerts_tot) {
+				memcpy(vertexCos, deformedVerts, sizeof(float) * 3 * numVerts);
+			}
 			MEM_freeN(deformedVerts);
 		}
 	}
@@ -69,8 +72,8 @@ static void deformVerts(ModifierData *md, Object *ob,
 static void deformMatrices(ModifierData *md, Object *ob, DerivedMesh *derivedData,
                            float (*vertexCos)[3], float (*defMats)[3][3], int numVerts)
 {
-	Key *key = ob_get_key(ob);
-	KeyBlock *kb = ob_get_keyblock(ob);
+	Key *key = BKE_key_from_object(ob);
+	KeyBlock *kb = BKE_keyblock_from_object(ob);
 	float scale[3][3];
 
 	(void)vertexCos; /* unused */
@@ -94,7 +97,7 @@ static void deformVertsEM(ModifierData *md, Object *ob,
                           float (*vertexCos)[3],
                           int numVerts)
 {
-	Key *key = ob_get_key(ob);
+	Key *key = BKE_key_from_object(ob);
 
 	if (key && key->type == KEY_RELATIVE)
 		deformVerts(md, ob, derivedData, vertexCos, numVerts, 0);
@@ -107,8 +110,8 @@ static void deformMatricesEM(ModifierData *UNUSED(md), Object *ob,
                              float (*defMats)[3][3],
                              int numVerts)
 {
-	Key *key = ob_get_key(ob);
-	KeyBlock *kb = ob_get_keyblock(ob);
+	Key *key = BKE_key_from_object(ob);
+	KeyBlock *kb = BKE_keyblock_from_object(ob);
 	float scale[3][3];
 
 	(void)vertexCos; /* unused */
@@ -121,6 +124,7 @@ static void deformMatricesEM(ModifierData *UNUSED(md), Object *ob,
 			copy_m3_m3(defMats[a], scale);
 	}
 }
+
 
 ModifierTypeInfo modifierType_ShapeKey = {
 	/* name */              "ShapeKey",

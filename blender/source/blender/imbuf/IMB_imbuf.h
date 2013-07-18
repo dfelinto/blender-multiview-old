@@ -70,6 +70,8 @@
 #ifndef __IMB_IMBUF_H__
 #define __IMB_IMBUF_H__
 
+#define IM_MAX_SPACE 64
+
 /**
  *
  * \attention defined in ???
@@ -82,6 +84,8 @@ struct ImBuf;
  */
 struct anim;
 
+struct ColorManagedDisplay;
+
 /**
  *
  * \attention Defined in allocimbuf.c
@@ -93,8 +97,7 @@ void IMB_exit(void);
  *
  * \attention Defined in readimage.c
  */
-struct ImBuf *IMB_ibImageFromMemory(unsigned char *mem, size_t size,
-                                    int flags, const char *descr);
+struct ImBuf *IMB_ibImageFromMemory(unsigned char *mem, size_t size, int flags, char colorspace[IM_MAX_SPACE], const char *descr);
 
 /**
  *
@@ -106,7 +109,7 @@ struct ImBuf *IMB_testiffname(const char *filepath, int flags);
  *
  * \attention Defined in readimage.c
  */
-struct ImBuf *IMB_loadiffname(const char *filepath, int flags);
+struct ImBuf *IMB_loadiffname(const char *filepath, int flags, char colorspace[IM_MAX_SPACE]);
 
 /**
  *
@@ -131,7 +134,7 @@ struct ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y,
  */
 
 void IMB_refImBuf(struct ImBuf *ibuf);
-struct ImBuf * IMB_makeSingleUser(struct ImBuf *ibuf);
+struct ImBuf *IMB_makeSingleUser(struct ImBuf *ibuf);
 
 /**
  *
@@ -166,17 +169,19 @@ typedef enum IMB_BlendMode {
 	IMB_BLEND_COPY_ALPHA = 1002
 } IMB_BlendMode;
 
-unsigned int IMB_blend_color(unsigned int src1, unsigned int src2, int fac,
-	IMB_BlendMode mode);
-void IMB_blend_color_float(float *dst, float *src1, float *src2, float fac,
+void IMB_blend_color_byte(unsigned char dst[4], unsigned char src1[4],
+	unsigned char src2[4], IMB_BlendMode mode);
+void IMB_blend_color_float(float dst[4], float src1[4], float src2[4],
 	IMB_BlendMode mode);
 
 void IMB_rectclip(struct ImBuf *dbuf, struct ImBuf *sbuf, int *destx, 
 	int *desty, int *srcx, int *srcy, int *width, int *height);
 void IMB_rectcpy(struct ImBuf *drect, struct ImBuf *srect, int destx,
 	int desty, int srcx, int srcy, int width, int height);
-void IMB_rectblend(struct ImBuf *dbuf, struct ImBuf *sbuf, int destx, 
-	int desty, int srcx, int srcy, int width, int height, IMB_BlendMode mode);
+void IMB_rectblend(struct ImBuf *dbuf, struct ImBuf *obuf, struct ImBuf *sbuf,
+	unsigned short *dmask, unsigned short *smask, unsigned short mask_max,
+	int destx,  int desty, int origx, int origy, int srcx, int srcy,
+	int width, int height, IMB_BlendMode mode);
 
 /**
  *
@@ -210,9 +215,9 @@ typedef enum IMB_Proxy_Size {
 } IMB_Proxy_Size;
 
 /* defaults to BL_proxy within the directory of the animation */
-void IMB_anim_set_index_dir(struct anim * anim, const char * dir);
+void IMB_anim_set_index_dir(struct anim *anim, const char *dir);
 
-int IMB_anim_index_get_frame_index(struct anim * anim, IMB_Timecode_Type tc,
+int IMB_anim_index_get_frame_index(struct anim *anim, IMB_Timecode_Type tc,
                                    int position);
 
 struct IndexBuildContext;
@@ -238,14 +243,14 @@ int IMB_anim_get_duration(struct anim *anim, IMB_Timecode_Type tc);
  * Return the fps contained in movie files (function rval is FALSE,
  * and frs_sec and frs_sec_base untouched if none available!)
  */
-int IMB_anim_get_fps(struct anim * anim, 
-                     short * frs_sec, float * frs_sec_base);
+int IMB_anim_get_fps(struct anim *anim,
+                     short *frs_sec, float *frs_sec_base);
 
 /**
  *
  * \attention Defined in anim_movie.c
  */
-struct anim *IMB_open_anim(const char *name, int ib_flags, int streamindex);
+struct anim *IMB_open_anim(const char *name, int ib_flags, int streamindex, char colorspace[IM_MAX_SPACE]);
 void IMB_close_anim(struct anim *anim);
 void IMB_close_anim_proxies(struct anim *anim);
 
@@ -335,6 +340,12 @@ struct ImBuf *IMB_scalefastImBuf(struct ImBuf *ibuf, unsigned int newx, unsigned
 
 /**
  *
+ * \attention Defined in scaling.c
+ */
+void IMB_scaleImBuf_threaded(struct ImBuf *ibuf, unsigned int newx, unsigned int newy);
+
+/**
+ *
  * \attention Defined in writeimage.c
  */
 short IMB_saveiff(struct ImBuf *ibuf, const char *filepath, int flags);
@@ -368,12 +379,8 @@ void IMB_interlace(struct ImBuf *ibuf);
 void IMB_rect_from_float(struct ImBuf *ibuf);
 /* Create char buffer for part of the image, color corrected if necessary,
  * Changed part will be stored in buffer. This is expected to be used for texture painting updates */
-void IMB_partial_rect_from_float(struct ImBuf *ibuf, float *buffer, int x, int y, int w, int h);
+void IMB_partial_rect_from_float(struct ImBuf *ibuf, float *buffer, int x, int y, int w, int h, int is_data);
 void IMB_float_from_rect(struct ImBuf *ibuf);
-void IMB_float_from_rect_simple(struct ImBuf *ibuf); /* no profile conversion */
-/* note, check that the conversion exists, only some are supported */
-void IMB_convert_profile(struct ImBuf *ibuf, int profile);
-float *IMB_float_profile_ensure(struct ImBuf *ibuf, int profile, int *alloc);
 void IMB_color_to_bw(struct ImBuf *ibuf);
 void IMB_saturation(struct ImBuf *ibuf, float sat);
 
@@ -391,6 +398,8 @@ void IMB_buffer_byte_from_byte(unsigned char *rect_to, const unsigned char *rect
 	int profile_to, int profile_from, int predivide,
 	int width, int height, int stride_to, int stride_from);
 void IMB_buffer_float_clamp(float *buf, int width, int height);
+void IMB_buffer_float_unpremultiply(float *buf, int width, int height);
+void IMB_buffer_float_premultiply(float *buf, int width, int height);
 
 /**
  * Change the ordering of the color bytes pointed to by rect from
@@ -405,19 +414,22 @@ void IMB_convert_rgba_to_abgr(struct ImBuf *ibuf);
  * \attention defined in imageprocess.c
  */
 void bicubic_interpolation(struct ImBuf *in, struct ImBuf *out, float u, float v, int xout, int yout);
-void neareast_interpolation(struct ImBuf *in, struct ImBuf *out, float u, float v, int xout, int yout);
+void nearest_interpolation(struct ImBuf *in, struct ImBuf *out, float u, float v, int xout, int yout);
 void bilinear_interpolation(struct ImBuf *in, struct ImBuf *out, float u, float v, int xout, int yout);
 
-void bicubic_interpolation_color(struct ImBuf *in, unsigned char *col, float *col_float, float u, float v);
-void neareast_interpolation_color(struct ImBuf *in, unsigned char *col, float *col_float, float u, float v);
-void bilinear_interpolation_color(struct ImBuf *in, unsigned char *col, float *col_float, float u, float v);
-void bilinear_interpolation_color_wrap(struct ImBuf *in, unsigned char *col, float *col_float, float u, float v);
+void bicubic_interpolation_color(struct ImBuf *in, unsigned char col[4], float col_float[4], float u, float v);
+void nearest_interpolation_color(struct ImBuf *in, unsigned char col[4], float col_float[4], float u, float v);
+void bilinear_interpolation_color(struct ImBuf *in, unsigned char col[4], float col_float[4], float u, float v);
+void bilinear_interpolation_color_wrap(struct ImBuf *in, unsigned char col[4], float col_float[4], float u, float v);
+
+void IMB_alpha_under_color_float(float *rect_float, int x, int y, float backcol[3]);
+void IMB_alpha_under_color_byte(unsigned char *rect, int x, int y, float backcol[3]);
 
 /**
  *
  * \attention defined in readimage.c
  */  
-struct ImBuf *IMB_loadifffile(int file, int flags, const char *descr);
+struct ImBuf *IMB_loadifffile(int file, int flags, char colorspace[IM_MAX_SPACE], const char *descr);
 
 /**
  *
@@ -465,6 +477,7 @@ void IMB_flipy(struct ImBuf *ibuf);
 /* Premultiply alpha */
 
 void IMB_premultiply_alpha(struct ImBuf *ibuf);
+void IMB_unpremultiply_alpha(struct ImBuf *ibuf);
 
 /**
  *
@@ -478,13 +491,13 @@ void IMB_freezbuffloatImBuf(struct ImBuf *ibuf);
  * \attention Defined in rectop.c
  */
 void IMB_rectfill(struct ImBuf *drect, const float col[4]);
-void IMB_rectfill_area(struct ImBuf *ibuf, const float col[4], int x1, int y1, int x2, int y2);
+void IMB_rectfill_area(struct ImBuf *ibuf, const float col[4], int x1, int y1, int x2, int y2, struct ColorManagedDisplay *display);
 void IMB_rectfill_alpha(struct ImBuf *ibuf, const float value);
 
 /* this should not be here, really, we needed it for operating on render data, IMB_rectfill_area calls it */
 void buf_rectfill_area(unsigned char *rect, float *rectf, int width, int height,
-					   const float col[4], const int do_color_management,
-					   int x1, int y1, int x2, int y2);
+                       const float col[4], struct ColorManagedDisplay *display,
+                       int x1, int y1, int x2, int y2);
 
 /* defined in metadata.c */
 int IMB_metadata_change_field(struct ImBuf *img, const char *key, const char *field);
@@ -505,6 +518,10 @@ void IMB_processor_apply_threaded(int buffer_lines, int handle_size, void *init_
                                   void (init_handle) (void *handle, int start_line, int tot_line,
                                                       void *customdata),
                                   void *(do_thread) (void *));
+
+/* ffmpeg */
+void IMB_ffmpeg_init(void);
+const char *IMB_ffmpeg_last_error(void);
 
 #endif
 

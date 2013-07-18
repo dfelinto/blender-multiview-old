@@ -23,7 +23,6 @@ set(INC
 	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../../blenloader
 	../../makesdna
 	../../makesrna
 	../../windowmanager
@@ -36,11 +35,16 @@ set(INC_SYS
 
 set(SRC
 	space_text.c
+	text_autocomplete.c
 	text_draw.c
+	text_format.c
+	text_format_lua.c
+	text_format_osl.c
+	text_format_py.c
 	text_header.c
 	text_ops.c
-	text_python.c
 
+	text_format.h
 	text_intern.h
 )
 
@@ -48,10 +52,11 @@ if(WITH_PYTHON)
 	list(APPEND INC
 		../../python
 	)
-	list(APPEND INC_SYS
-		${PYTHON_INCLUDE_DIRS}
-	)
 	add_definitions(-DWITH_PYTHON)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 blender_add_lib(bf_editor_text "${SRC}" "${INC}" "${INC_SYS}")

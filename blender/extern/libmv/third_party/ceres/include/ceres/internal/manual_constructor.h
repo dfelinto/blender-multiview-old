@@ -45,60 +45,49 @@
 namespace ceres {
 namespace internal {
 
-// ------- Define ALIGNED_CHAR_ARRAY --------------------------------
+// ------- Define CERES_ALIGNED_CHAR_ARRAY --------------------------------
 
-#ifndef ALIGNED_CHAR_ARRAY
+#ifndef CERES_ALIGNED_CHAR_ARRAY
 
 // Because MSVC and older GCCs require that the argument to their alignment
 // construct to be a literal constant integer, we use a template instantiated
 // at all the possible powers of two.
 template<int alignment, int size> struct AlignType { };
 template<int size> struct AlignType<0, size> { typedef char result[size]; };
-#if defined(_MSC_VER)
-#define BASE_PORT_H_ALIGN_ATTRIBUTE(X) __declspec(align(X))
-#define BASE_PORT_H_ALIGN_OF(T) __alignof(T)
-#elif defined(__GNUC__)
-#define BASE_PORT_H_ALIGN_ATTRIBUTE(X) __attribute__((aligned(X)))
-#define BASE_PORT_H_ALIGN_OF(T) __alignof__(T)
-#endif
 
-#if defined(BASE_PORT_H_ALIGN_ATTRIBUTE)
+#if !defined(CERES_ALIGN_ATTRIBUTE)
+#define CERES_ALIGNED_CHAR_ARRAY you_must_define_CERES_ALIGNED_CHAR_ARRAY_for_your_compiler
+#else  // !defined(CERES_ALIGN_ATTRIBUTE)
 
-#define BASE_PORT_H_ALIGNTYPE_TEMPLATE(X) \
+#define CERES_ALIGN_TYPE_TEMPLATE(X) \
   template<int size> struct AlignType<X, size> { \
-    typedef BASE_PORT_H_ALIGN_ATTRIBUTE(X) char result[size]; \
+    typedef CERES_ALIGN_ATTRIBUTE(X) char result[size]; \
   }
 
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(1);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(2);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(4);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(8);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(16);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(32);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(64);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(128);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(256);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(512);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(1024);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(2048);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(4096);
-BASE_PORT_H_ALIGNTYPE_TEMPLATE(8192);
+CERES_ALIGN_TYPE_TEMPLATE(1);
+CERES_ALIGN_TYPE_TEMPLATE(2);
+CERES_ALIGN_TYPE_TEMPLATE(4);
+CERES_ALIGN_TYPE_TEMPLATE(8);
+CERES_ALIGN_TYPE_TEMPLATE(16);
+CERES_ALIGN_TYPE_TEMPLATE(32);
+CERES_ALIGN_TYPE_TEMPLATE(64);
+CERES_ALIGN_TYPE_TEMPLATE(128);
+CERES_ALIGN_TYPE_TEMPLATE(256);
+CERES_ALIGN_TYPE_TEMPLATE(512);
+CERES_ALIGN_TYPE_TEMPLATE(1024);
+CERES_ALIGN_TYPE_TEMPLATE(2048);
+CERES_ALIGN_TYPE_TEMPLATE(4096);
+CERES_ALIGN_TYPE_TEMPLATE(8192);
 // Any larger and MSVC++ will complain.
 
-#define ALIGNED_CHAR_ARRAY(T, Size) \
-  typename AlignType<BASE_PORT_H_ALIGN_OF(T), sizeof(T) * Size>::result
+#undef CERES_ALIGN_TYPE_TEMPLATE
 
-#undef BASE_PORT_H_ALIGNTYPE_TEMPLATE
-#undef BASE_PORT_H_ALIGN_ATTRIBUTE
+#define CERES_ALIGNED_CHAR_ARRAY(T, Size) \
+  typename AlignType<CERES_ALIGN_OF(T), sizeof(T) * Size>::result
 
-#else  // defined(BASE_PORT_H_ALIGN_ATTRIBUTE)
-#define ALIGNED_CHAR_ARRAY you_must_define_ALIGNED_CHAR_ARRAY_for_your_compiler
-#endif // defined(BASE_PORT_H_ALIGN_ATTRIBUTE)
+#endif  // !defined(CERES_ALIGN_ATTRIBUTE)
 
-#undef BASE_PORT_H_ALIGNTYPE_TEMPLATE
-#undef BASE_PORT_H_ALIGN_ATTRIBUTE
-
-#endif  // ALIGNED_CHAR_ARRAY
+#endif  // CERES_ALIGNED_CHAR_ARRAY
 
 template <typename Type>
 class ManualConstructor {
@@ -121,56 +110,61 @@ class ManualConstructor {
   inline Type& operator*() { return *get(); }
   inline const Type& operator*() const { return *get(); }
 
+  // This is needed to get around the strict aliasing warning GCC generates.
+  inline void* space() {
+    return reinterpret_cast<void*>(space_);
+  }
+
   // You can pass up to four constructor arguments as arguments of Init().
   inline void Init() {
-    new(space_) Type;
+    new(space()) Type;
   }
 
   template <typename T1>
   inline void Init(const T1& p1) {
-    new(space_) Type(p1);
+    new(space()) Type(p1);
   }
 
   template <typename T1, typename T2>
   inline void Init(const T1& p1, const T2& p2) {
-    new(space_) Type(p1, p2);
+    new(space()) Type(p1, p2);
   }
 
   template <typename T1, typename T2, typename T3>
   inline void Init(const T1& p1, const T2& p2, const T3& p3) {
-    new(space_) Type(p1, p2, p3);
+    new(space()) Type(p1, p2, p3);
   }
 
   template <typename T1, typename T2, typename T3, typename T4>
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4) {
-    new(space_) Type(p1, p2, p3, p4);
+    new(space()) Type(p1, p2, p3, p4);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5>
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5) {
-    new(space_) Type(p1, p2, p3, p4, p5);
+    new(space()) Type(p1, p2, p3, p4, p5);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5,
             typename T6>
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5, const T6& p6) {
-    new(space_) Type(p1, p2, p3, p4, p5, p6);
+    new(space()) Type(p1, p2, p3, p4, p5, p6);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5,
             typename T6, typename T7>
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5, const T6& p6, const T7& p7) {
-    new(space_) Type(p1, p2, p3, p4, p5, p6, p7);
+    new(space()) Type(p1, p2, p3, p4, p5, p6, p7);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5,
             typename T6, typename T7, typename T8>
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5, const T6& p6, const T7& p7, const T8& p8) {
-    new(space_) Type(p1, p2, p3, p4, p5, p6, p7, p8);
+    new(space()) Type(p1, p2, p3, p4, p5, p6, p7, p8);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5,
@@ -178,7 +172,7 @@ class ManualConstructor {
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5, const T6& p6, const T7& p7, const T8& p8,
                    const T9& p9) {
-    new(space_) Type(p1, p2, p3, p4, p5, p6, p7, p8, p9);
+    new(space()) Type(p1, p2, p3, p4, p5, p6, p7, p8, p9);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5,
@@ -186,7 +180,7 @@ class ManualConstructor {
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5, const T6& p6, const T7& p7, const T8& p8,
                    const T9& p9, const T10& p10) {
-    new(space_) Type(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
+    new(space()) Type(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10);
   }
 
   template <typename T1, typename T2, typename T3, typename T4, typename T5,
@@ -195,7 +189,7 @@ class ManualConstructor {
   inline void Init(const T1& p1, const T2& p2, const T3& p3, const T4& p4,
                    const T5& p5, const T6& p6, const T7& p7, const T8& p8,
                    const T9& p9, const T10& p10, const T11& p11) {
-    new(space_) Type(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
+    new(space()) Type(p1, p2, p3, p4, p5, p6, p7, p8, p9, p10, p11);
   }
 
   inline void Destroy() {
@@ -203,10 +197,10 @@ class ManualConstructor {
   }
 
  private:
-  ALIGNED_CHAR_ARRAY(Type, 1) space_;
+  CERES_ALIGNED_CHAR_ARRAY(Type, 1) space_;
 };
 
-#undef ALIGNED_CHAR_ARRAY
+#undef CERES_ALIGNED_CHAR_ARRAY
 
 }  // namespace internal
 }  // namespace ceres

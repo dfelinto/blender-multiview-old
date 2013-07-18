@@ -86,7 +86,7 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 	static char error[4] = {240, 0, 240, 255};
 	static char alert[4] = {240, 60, 60, 255};
 	static char headerdesel[4] = {0, 0, 0, 255};
-	
+	static char setting = 0;
 	const char *cp = error;
 	
 	if (btheme) {
@@ -170,6 +170,16 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					else
 						cp = ts->button;
 					break;
+				case TH_LOW_GRAD:
+					cp = ts->gradients.gradient;
+					break;
+				case TH_HIGH_GRAD:
+					cp = ts->gradients.high_gradient;
+					break;
+				case TH_SHOW_BACK_GRAD:
+					cp = &setting;
+					setting = ts->gradients.show_grad;
+					break;
 				case TH_TEXT:
 					if (theme_regionid == RGN_TYPE_WINDOW)
 						cp = ts->text;
@@ -216,13 +226,19 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 				case TH_HEADER_TEXT_HI:
 					cp = ts->header_text_hi; break;
 
-				case TH_PANEL:
-					cp = ts->panel; break;
-				case TH_PANEL_TEXT:
-					cp = ts->panel_text; break;
-				case TH_PANEL_TEXT_HI:
-					cp = ts->panel_text_hi; break;
-
+				case TH_PANEL_HEADER:
+					cp = ts->panelcolors.header; break;
+				case TH_PANEL_BACK:
+					cp = ts->panelcolors.back; break;
+				case TH_PANEL_SHOW_HEADER:
+					cp = &setting;
+					setting = ts->panelcolors.show_header;
+					break;
+				case TH_PANEL_SHOW_BACK:
+					cp = &setting;
+					setting = ts->panelcolors.show_back;
+					break;
+					
 				case TH_BUTBACK:
 					cp = ts->button; break;
 				case TH_BUTBACK_TEXT:
@@ -236,11 +252,13 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->shade2; break;
 				case TH_HILITE:
 					cp = ts->hilite; break;
-
+				
 				case TH_GRID:
 					cp = ts->grid; break;
 				case TH_WIRE:
 					cp = ts->wire; break;
+				case TH_WIRE_EDIT:
+					cp = ts->wire_edit; break;
 				case TH_LAMP:
 					cp = ts->lamp; break;
 				case TH_SPEAKER:
@@ -263,6 +281,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->vertex; break;
 				case TH_VERTEX_SELECT:
 					cp = ts->vertex_select; break;
+				case TH_VERTEX_UNREFERENCED:
+					cp = ts->vertex_unreferenced; break;
 				case TH_VERTEX_SIZE:
 					cp = &ts->vertex_size; break;
 				case TH_OUTLINE_WIDTH:
@@ -291,6 +311,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = &ts->facedot_size; break;
 				case TH_DRAWEXTRA_EDGELEN:
 					cp = ts->extra_edge_len; break;
+				case TH_DRAWEXTRA_EDGEANG:
+					cp = ts->extra_edge_angle; break;
 				case TH_DRAWEXTRA_FACEAREA:
 					cp = ts->extra_face_area; break;
 				case TH_DRAWEXTRA_FACEANG:
@@ -343,6 +365,10 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->handle_sel_vect; break;
 				case TH_HANDLE_SEL_ALIGN:
 					cp = ts->handle_sel_align; break;
+				case TH_FREESTYLE_EDGE_MARK:
+					cp = ts->freestyle_edge_mark; break;
+				case TH_FREESTYLE_FACE_MARK:
+					cp = ts->freestyle_face_mark; break;
 
 				case TH_SYNTAX_B:
 					cp = ts->syntaxb; break;
@@ -352,8 +378,14 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->syntaxc; break;
 				case TH_SYNTAX_L:
 					cp = ts->syntaxl; break;
+				case TH_SYNTAX_D:
+					cp = ts->syntaxd; break;
+				case TH_SYNTAX_R:
+					cp = ts->syntaxr; break;
 				case TH_SYNTAX_N:
 					cp = ts->syntaxn; break;
+				case TH_SYNTAX_S:
+					cp = ts->syntaxs; break;
 
 				case TH_NODE:
 					cp = ts->syntaxl; break;
@@ -365,8 +397,14 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->syntaxv; break;
 				case TH_NODE_GROUP:
 					cp = ts->syntaxc; break;
+				case TH_NODE_INTERFACE:
+					cp = ts->console_output; break;
 				case TH_NODE_FRAME:
 					cp = ts->movie; break;
+				case TH_NODE_MATTE:
+					cp = ts->syntaxs; break;
+				case TH_NODE_DISTORT:
+					cp = ts->syntaxd; break;
 				case TH_NODE_CURVING:
 					cp = &ts->noodle_curving; break;
 
@@ -401,6 +439,8 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 					cp = ts->console_error; break;
 				case TH_CONSOLE_CURSOR:
 					cp = ts->console_cursor; break;
+				case TH_CONSOLE_SELECT:
+					cp = ts->console_select; break;
 
 				case TH_HANDLE_VERTEX:
 					cp = ts->handle_vertex;
@@ -411,7 +451,6 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 				case TH_HANDLE_VERTEX_SIZE:
 					cp = &ts->handle_vertex_size;
 					break;
-
 				case TH_DOPESHEET_CHANNELOB:
 					cp = ts->ds_channel;
 					break;
@@ -510,6 +549,13 @@ const unsigned char *UI_ThemeGetColorPtr(bTheme *btheme, int spacetype, int colo
 				case TH_NLA_SOUND_SEL:
 					cp = ts->nla_sound_sel;
 					break;
+					
+				case TH_AXIS_X:
+					cp = btheme->tui.xaxis; break;
+				case TH_AXIS_Y:
+					cp = btheme->tui.yaxis; break;
+				case TH_AXIS_Z:
+					cp = btheme->tui.zaxis; break;
 			}
 		}
 	}
@@ -596,9 +642,9 @@ static void ui_theme_init_new_do(ThemeSpace *ts)
 	rgba_char_args_test_set(ts->header_title,   0, 0, 0, 255);
 	rgba_char_args_test_set(ts->header_text_hi, 255, 255, 255, 255);
 
-	rgba_char_args_test_set(ts->panel_text,     0, 0, 0, 255);
-	rgba_char_args_test_set(ts->panel_title,        0, 0, 0, 255);
-	rgba_char_args_test_set(ts->panel_text_hi,  255, 255, 255, 255);
+//	rgba_char_args_test_set(ts->panel_text,     0, 0, 0, 255);
+//	rgba_char_args_test_set(ts->panel_title,        0, 0, 0, 255);
+//	rgba_char_args_test_set(ts->panel_text_hi,  255, 255, 255, 255);
 
 	rgba_char_args_test_set(ts->button,         145, 145, 145, 245);
 	rgba_char_args_test_set(ts->button_title,   0, 0, 0, 255);
@@ -651,14 +697,23 @@ void ui_theme_init_default(void)
 		strcpy(btheme->name, "Default");
 	}
 	
-	UI_SetTheme(0, 0);  // make sure the global used in this file is set
+	UI_SetTheme(0, 0);  /* make sure the global used in this file is set */
 
 	/* UI buttons */
 	ui_widget_color_init(&btheme->tui);
+	
 	btheme->tui.iconfile[0] = 0;
+	btheme->tui.panel.show_back = FALSE;
 	btheme->tui.panel.show_header = FALSE;
 	rgba_char_args_set(btheme->tui.panel.header, 0, 0, 0, 25);
+	
+	rgba_char_args_set(btheme->tui.xaxis, 220,   0,   0, 255);
+	rgba_char_args_set(btheme->tui.yaxis,   0, 220,   0, 255);
+	rgba_char_args_set(btheme->tui.zaxis,   0,   0, 220, 255);
 
+	btheme->tui.menu_shadow_fac = 0.5f;
+	btheme->tui.menu_shadow_width = 12;
+	
 	/* Bone Color Sets */
 	ui_theme_init_boneColorSets(btheme);
 	
@@ -666,19 +721,24 @@ void ui_theme_init_default(void)
 	ui_theme_init_new(btheme);
 	
 	/* space view3d */
+	btheme->tv3d.panelcolors.show_back = FALSE;
+	btheme->tv3d.panelcolors.show_header = FALSE;
+	rgba_char_args_set_fl(btheme->tv3d.panelcolors.back, 0.45, 0.45, 0.45, 0.5);
+	rgba_char_args_set_fl(btheme->tv3d.panelcolors.header, 0, 0, 0, 0.01);
 	rgba_char_args_set_fl(btheme->tv3d.back,       0.225, 0.225, 0.225, 1.0);
 	rgba_char_args_set(btheme->tv3d.text,       0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.text_hi, 255, 255, 255, 255);
 	
 	rgba_char_args_set_fl(btheme->tv3d.header,  0.45, 0.45, 0.45, 1.0);
-	rgba_char_args_set_fl(btheme->tv3d.button,  0.45, 0.45, 0.45, 1.0);
-	rgba_char_args_set(btheme->tv3d.panel,      165, 165, 165, 127);
+	rgba_char_args_set_fl(btheme->tv3d.button,  0.45, 0.45, 0.45, 0.5);
+//	rgba_char_args_set(btheme->tv3d.panel,      165, 165, 165, 127);
 	
 	rgba_char_args_set(btheme->tv3d.shade1,  160, 160, 160, 100);
 	rgba_char_args_set(btheme->tv3d.shade2,  0x7f, 0x70, 0x70, 100);
 
 	rgba_char_args_set_fl(btheme->tv3d.grid,     0.251, 0.251, 0.251, 1.0);
 	rgba_char_args_set(btheme->tv3d.wire,       0x0, 0x0, 0x0, 255);
+	rgba_char_args_set(btheme->tv3d.wire_edit,  0x0, 0x0, 0x0, 255);
 	rgba_char_args_set(btheme->tv3d.lamp,       0, 0, 0, 40);
 	rgba_char_args_set(btheme->tv3d.speaker,    0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.camera,    0, 0, 0, 255);
@@ -690,6 +750,7 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tv3d.transform, 0xff, 0xff, 0xff, 255);
 	rgba_char_args_set(btheme->tv3d.vertex, 0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.vertex_select, 255, 133, 0, 255);
+	rgba_char_args_set(btheme->tv3d.vertex_unreferenced, 0, 0, 0, 255);
 	btheme->tv3d.vertex_size = 3;
 	btheme->tv3d.outline_width = 1;
 	rgba_char_args_set(btheme->tv3d.edge,       0x0, 0x0, 0x0, 255);
@@ -710,10 +771,13 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tv3d.button_text_hi, 255, 255, 255, 255);
 	rgba_char_args_set(btheme->tv3d.button_title, 0, 0, 0, 255);
 	rgba_char_args_set(btheme->tv3d.title, 0, 0, 0, 255);
+	rgba_char_args_set(btheme->tv3d.freestyle_edge_mark, 0x7f, 0xff, 0x7f, 255);
+	rgba_char_args_set(btheme->tv3d.freestyle_face_mark, 0x7f, 0xff, 0x7f, 51);
 
 	btheme->tv3d.facedot_size = 4;
 
 	rgba_char_args_set(btheme->tv3d.extra_edge_len, 32, 0, 0, 255);
+	rgba_char_args_set(btheme->tv3d.extra_edge_angle, 32, 32, 0, 255);
 	rgba_char_args_set(btheme->tv3d.extra_face_area, 0, 32, 0, 255);
 	rgba_char_args_set(btheme->tv3d.extra_face_angle, 0, 0, 128, 255);
 
@@ -745,20 +809,23 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tv3d.camera_path, 0x00, 0x00, 0x00, 255);
 
 	rgba_char_args_set(btheme->tv3d.skin_root, 180, 77, 77, 255);
-	
+	rgba_char_args_set(btheme->tv3d.gradients.gradient, 0, 0, 0, 0);
+	rgba_char_args_set(btheme->tv3d.gradients.high_gradient, 58, 58, 58, 255);
+	btheme->tv3d.gradients.show_grad = FALSE;
+
 	/* space buttons */
 	/* to have something initialized */
 	btheme->tbuts = btheme->tv3d;
 
 	rgba_char_args_set_fl(btheme->tbuts.back,   0.45, 0.45, 0.45, 1.0);
-	rgba_char_args_set(btheme->tbuts.panel, 0x82, 0x82, 0x82, 255);
+//	rgba_char_args_set(btheme->tbuts.panel, 0x82, 0x82, 0x82, 255);
 
 	/* graph editor */
 	btheme->tipo = btheme->tv3d;
 	rgba_char_args_set_fl(btheme->tipo.back,    0.42, 0.42, 0.42, 1.0);
 	rgba_char_args_set_fl(btheme->tipo.list,    0.4, 0.4, 0.4, 1.0);
 	rgba_char_args_set(btheme->tipo.grid,   94, 94, 94, 255);
-	rgba_char_args_set(btheme->tipo.panel,  255, 255, 255, 150);
+//	rgba_char_args_set(btheme->tipo.panel,  255, 255, 255, 150);
 	rgba_char_args_set(btheme->tipo.shade1,     150, 150, 150, 100);    /* scrollbars */
 	rgba_char_args_set(btheme->tipo.shade2,     0x70, 0x70, 0x70, 100);
 	rgba_char_args_set(btheme->tipo.vertex,     0, 0, 0, 255);
@@ -804,13 +871,13 @@ void ui_theme_init_default(void)
 	/* to have something initialized */
 	btheme->tfile = btheme->tv3d;
 	rgba_char_args_set_fl(btheme->tfile.back, 0.3, 0.3, 0.3, 1);
-	rgba_char_args_set_fl(btheme->tfile.panel, 0.3, 0.3, 0.3, 1);
+//	rgba_char_args_set_fl(btheme->tfile.panel, 0.3, 0.3, 0.3, 1);
 	rgba_char_args_set_fl(btheme->tfile.list, 0.4, 0.4, 0.4, 1);
 	rgba_char_args_set(btheme->tfile.text,  250, 250, 250, 255);
 	rgba_char_args_set(btheme->tfile.text_hi, 15, 15, 15, 255);
-	rgba_char_args_set(btheme->tfile.panel, 145, 145, 145, 255);    // bookmark/ui regions
-	rgba_char_args_set(btheme->tfile.active, 130, 130, 130, 255); // selected files
-	rgba_char_args_set(btheme->tfile.hilite, 255, 140, 25, 255); // selected files
+//	rgba_char_args_set(btheme->tfile.panel, 145, 145, 145, 255);  /* bookmark/ui regions */
+	rgba_char_args_set(btheme->tfile.active, 130, 130, 130, 255); /* selected files */
+	rgba_char_args_set(btheme->tfile.hilite, 255, 140, 25, 255);  /* selected files */
 	
 	rgba_char_args_set(btheme->tfile.grid,  250, 250, 250, 255);
 	rgba_char_args_set(btheme->tfile.image, 250, 250, 250, 255);
@@ -848,6 +915,7 @@ void ui_theme_init_default(void)
 	rgba_char_args_set_fl(btheme->tima.preview_stitch_vert, 0.0, 0.0, 1.0, 0.2);
 	rgba_char_args_set_fl(btheme->tima.preview_stitch_stitchable, 0.0, 1.0, 0.0, 1.0);
 	rgba_char_args_set_fl(btheme->tima.preview_stitch_unstitchable, 1.0, 0.0, 0.0, 1.0);
+	rgba_char_args_set_fl(btheme->tima.preview_stitch_active, 0.886, 0.824, 0.765, 0.140);
 
 	/* space text */
 	btheme->text = btheme->tv3d;
@@ -858,10 +926,13 @@ void ui_theme_init_default(void)
 	
 	/* syntax highlighting */
 	rgba_char_args_set(btheme->text.syntaxn,    0, 0, 200, 255);    /* Numbers  Blue*/
-	rgba_char_args_set(btheme->text.syntaxl,    100, 0, 0, 255);    /* Strings  red */
-	rgba_char_args_set(btheme->text.syntaxc,    0, 100, 50, 255);   /* Comments greenish */
-	rgba_char_args_set(btheme->text.syntaxv,    95, 95, 0, 255);    /* Special */
-	rgba_char_args_set(btheme->text.syntaxb,    128, 0, 80, 255);   /* Builtin, red-purple */
+	rgba_char_args_set(btheme->text.syntaxl,    100, 0, 0, 255);    /* Strings  Red */
+	rgba_char_args_set(btheme->text.syntaxc,    0, 100, 50, 255);   /* Comments  Greenish */
+	rgba_char_args_set(btheme->text.syntaxv,    95, 95, 0, 255);    /* Special  Yellow*/
+	rgba_char_args_set(btheme->text.syntaxd,    50, 0, 140, 255);   /* Decorator/Preprocessor Dir.  Blue-purple */
+	rgba_char_args_set(btheme->text.syntaxr,    140, 60, 0, 255);   /* Reserved  Orange*/
+	rgba_char_args_set(btheme->text.syntaxb,    128, 0, 80, 255);   /* Builtin  Red-purple */
+	rgba_char_args_set(btheme->text.syntaxs,    76, 76, 76, 255);   /* Grey (mix between fg/bg) */
 	
 	/* space oops */
 	btheme->toops = btheme->tv3d;
@@ -886,14 +957,15 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tconsole.console_info, 0, 170, 0, 255);
 	rgba_char_args_set(btheme->tconsole.console_error, 220, 96, 96, 255);
 	rgba_char_args_set(btheme->tconsole.console_cursor, 220, 96, 96, 255);
+	rgba_char_args_set(btheme->tconsole.console_select, 255, 255, 255, 48);
 	
 	/* space time */
 	btheme->ttime = btheme->tv3d;
 	rgba_char_args_set_fl(btheme->ttime.back,   0.45, 0.45, 0.45, 1.0);
 	rgba_char_args_set_fl(btheme->ttime.grid,   0.36, 0.36, 0.36, 1.0);
-	rgba_char_args_set(btheme->ttime.shade1,  173, 173, 173, 255);      // sliders
+	rgba_char_args_set(btheme->ttime.shade1,  173, 173, 173, 255);      /* sliders */
 	
-	/* space node, re-uses syntax color storage */
+	/* space node, re-uses syntax and console color storage */
 	btheme->tnode = btheme->tv3d;
 	rgba_char_args_set(btheme->tnode.edge_select, 255, 255, 255, 255);	/* wire selected */
 	rgba_char_args_set(btheme->tnode.syntaxl, 155, 155, 155, 160);  /* TH_NODE, backdrop */
@@ -901,6 +973,10 @@ void ui_theme_init_default(void)
 	rgba_char_args_set(btheme->tnode.syntaxb, 108, 105, 111, 255);  /* operator */
 	rgba_char_args_set(btheme->tnode.syntaxv, 104, 106, 117, 255);  /* generator */
 	rgba_char_args_set(btheme->tnode.syntaxc, 105, 117, 110, 255);  /* group */
+	rgba_char_args_set(btheme->tnode.movie, 155, 155, 155, 160);  /* frame */
+	rgba_char_args_set(btheme->tnode.syntaxs, 151, 116, 116, 255);  /* matte nodes */
+	rgba_char_args_set(btheme->tnode.syntaxd, 116, 151, 151, 255);  /* distort nodes */
+	rgba_char_args_set(btheme->tnode.console_output, 223, 202, 53, 255);  /* interface nodes */
 	btheme->tnode.noodle_curving = 5;
 
 	/* space logic */
@@ -928,10 +1004,17 @@ void ui_theme_init_default(void)
 	btheme->tclip.handle_vertex_size = 4;
 }
 
+void ui_style_init_default(void)
+{
+	BLI_freelistN(&U.uistyles);
+	/* gets automatically re-allocated */
+	uiStyleInit();
+}
+
 
 void UI_SetTheme(int spacetype, int regionid)
 {
-	if (spacetype == 0) { // called for safety, when delete themes
+	if (spacetype == 0) {  /* called for safety, when delete themes */
 		theme_active = U.themes.first;
 		theme_spacetype = SPACE_VIEW3D;
 		theme_regionid = RGN_TYPE_WINDOW;
@@ -944,12 +1027,12 @@ void UI_SetTheme(int spacetype, int regionid)
 	}
 }
 
-bTheme *UI_GetTheme()
+bTheme *UI_GetTheme(void)
 {
 	return U.themes.first;
 }
 
-// for space windows only
+/* for space windows only */
 void UI_ThemeColor(int colorid)
 {
 	const unsigned char *cp;
@@ -959,7 +1042,7 @@ void UI_ThemeColor(int colorid)
 
 }
 
-// plus alpha
+/* plus alpha */
 void UI_ThemeColor4(int colorid)
 {
 	const unsigned char *cp;
@@ -969,7 +1052,7 @@ void UI_ThemeColor4(int colorid)
 
 }
 
-// set the color with offset for shades
+/* set the color with offset for shades */
 void UI_ThemeColorShade(int colorid, int offset)
 {
 	int r, g, b;
@@ -982,7 +1065,6 @@ void UI_ThemeColorShade(int colorid, int offset)
 	CLAMP(g, 0, 255);
 	b = offset + (int) cp[2];
 	CLAMP(b, 0, 255);
-	//glColor3ub(r, g, b);
 	glColor4ub(r, g, b, cp[3]);
 }
 void UI_ThemeColorShadeAlpha(int colorid, int coloffset, int alphaoffset)
@@ -1002,7 +1084,7 @@ void UI_ThemeColorShadeAlpha(int colorid, int coloffset, int alphaoffset)
 	glColor4ub(r, g, b, a);
 }
 
-// blend between to theme colors, and set it
+/* blend between to theme colors, and set it */
 void UI_ThemeColorBlend(int colorid1, int colorid2, float fac)
 {
 	int r, g, b;
@@ -1019,7 +1101,7 @@ void UI_ThemeColorBlend(int colorid1, int colorid2, float fac)
 	glColor3ub(r, g, b);
 }
 
-// blend between to theme colors, shade it, and set it
+/* blend between to theme colors, shade it, and set it */
 void UI_ThemeColorBlendShade(int colorid1, int colorid2, float fac, int offset)
 {
 	int r, g, b;
@@ -1040,7 +1122,7 @@ void UI_ThemeColorBlendShade(int colorid1, int colorid2, float fac, int offset)
 	glColor3ub(r, g, b);
 }
 
-// blend between to theme colors, shade it, and set it
+/* blend between to theme colors, shade it, and set it */
 void UI_ThemeColorBlendShadeAlpha(int colorid1, int colorid2, float fac, int offset, int alphaoffset)
 {
 	int r, g, b, a;
@@ -1064,28 +1146,26 @@ void UI_ThemeColorBlendShadeAlpha(int colorid1, int colorid2, float fac, int off
 }
 
 
-// get individual values, not scaled
+/* get individual values, not scaled */
 float UI_GetThemeValuef(int colorid)
 {
 	const unsigned char *cp;
 	
 	cp = UI_ThemeGetColorPtr(theme_active, theme_spacetype, colorid);
 	return ((float)cp[0]);
-
 }
 
-// get individual values, not scaled
+/* get individual values, not scaled */
 int UI_GetThemeValue(int colorid)
 {
 	const unsigned char *cp;
 	
 	cp = UI_ThemeGetColorPtr(theme_active, theme_spacetype, colorid);
 	return ((int) cp[0]);
-
 }
 
 
-// get the color, range 0.0-1.0
+/* get the color, range 0.0-1.0 */
 void UI_GetThemeColor3fv(int colorid, float col[3])
 {
 	const unsigned char *cp;
@@ -1107,7 +1187,7 @@ void UI_GetThemeColor4fv(int colorid, float col[4])
 	col[3] = ((float)cp[3]) / 255.0f;
 }
 
-// get the color, range 0.0-1.0, complete with shading offset
+/* get the color, range 0.0-1.0, complete with shading offset */
 void UI_GetThemeColorShade3fv(int colorid, int offset, float col[3])
 {
 	int r, g, b;
@@ -1146,7 +1226,7 @@ void UI_GetThemeColorShade3ubv(int colorid, int offset, unsigned char col[3])
 	col[2] = b;
 }
 
-// get the color, in char pointer
+/* get the color, in char pointer */
 void UI_GetThemeColor3ubv(int colorid, unsigned char col[3])
 {
 	const unsigned char *cp;
@@ -1157,7 +1237,7 @@ void UI_GetThemeColor3ubv(int colorid, unsigned char col[3])
 	col[2] = cp[2];
 }
 
-// get the color, in char pointer
+/* get the color, in char pointer */
 void UI_GetThemeColor4ubv(int colorid, unsigned char col[4])
 {
 	const unsigned char *cp;
@@ -1180,7 +1260,7 @@ void UI_GetThemeColorType4ubv(int colorid, int spacetype, char col[4])
 	col[3] = cp[3];
 }
 
-// blends and shades between two char color pointers
+/* blends and shades between two char color pointers */
 void UI_ColorPtrBlendShade3ubv(const unsigned char cp1[3], const unsigned char cp2[3], float fac, int offset)
 {
 	int r, g, b;
@@ -1213,7 +1293,7 @@ void UI_GetColorPtrShade3ubv(const unsigned char cp[3], unsigned char col[3], in
 	col[2] = b;
 }
 
-// get a 3 byte color, blended and shaded between two other char color pointers
+/* get a 3 byte color, blended and shaded between two other char color pointers */
 void UI_GetColorPtrBlendShade3ubv(const unsigned char cp1[3], const unsigned char cp2[3], unsigned char col[3],
                                   float fac, int offset)
 {
@@ -1241,23 +1321,28 @@ void UI_ThemeClearColor(int colorid)
 	glClearColor(col[0], col[1], col[2], 0.0);
 }
 
+int UI_ThemeMenuShadowWidth(void)
+{
+	bTheme *btheme = UI_GetTheme();
+	return (int)(btheme->tui.menu_shadow_width * UI_DPI_FAC);
+}
+
 void UI_make_axis_color(const unsigned char src_col[3], unsigned char dst_col[3], const char axis)
 {
+	unsigned char col[3];
+	
 	switch (axis) {
 		case 'X':
-			dst_col[0] = src_col[0] > 219 ? 255 : src_col[0] + 36;
-			dst_col[1] = src_col[1] < 26 ? 0 : src_col[1] - 26;
-			dst_col[2] = src_col[2] < 26 ? 0 : src_col[2] - 26;
+			UI_GetThemeColor3ubv(TH_AXIS_X, col);
+			UI_GetColorPtrBlendShade3ubv(src_col, col, dst_col, 0.5f, -10);
 			break;
 		case 'Y':
-			dst_col[0] = src_col[0] < 46 ? 0 : src_col[0] - 36;
-			dst_col[1] = src_col[1] > 189 ? 255 : src_col[1] + 66;
-			dst_col[2] = src_col[2] < 46 ? 0 : src_col[2] - 36;
+			UI_GetThemeColor3ubv(TH_AXIS_Y, col);
+			UI_GetColorPtrBlendShade3ubv(src_col, col, dst_col, 0.5f, -10);
 			break;
 		case 'Z':
-			dst_col[0] = src_col[0] < 26 ? 0 : src_col[0] - 26;
-			dst_col[1] = src_col[1] < 26 ? 0 : src_col[1] - 26;
-			dst_col[2] = src_col[2] > 209 ? 255 : src_col[2] + 46;
+			UI_GetThemeColor3ubv(TH_AXIS_Z, col);
+			UI_GetColorPtrBlendShade3ubv(src_col, col, dst_col, 0.5f, -10);
 			break;
 		default:
 			BLI_assert(!"invalid axis arg");
@@ -1270,7 +1355,6 @@ void UI_make_axis_color(const unsigned char src_col[3], unsigned char dst_col[3]
 void init_userdef_do_versions(void)
 {
 	Main *bmain = G.main;
-//	countall();
 	
 	/* the UserDef struct is not corrected with do_versions() .... ugh! */
 	if (U.wheellinescroll == 0) U.wheellinescroll = 3;
@@ -1309,7 +1393,7 @@ void init_userdef_do_versions(void)
 	
 	/* signal for derivedmesh to use colorband */
 	/* run in case this was on and is now off in the user prefs [#28096] */
-	vDM_ColorBand_store((U.flag & USER_CUSTOM_RANGE) ? (&U.coba_weight) : NULL);
+	vDM_ColorBand_store((U.flag & USER_CUSTOM_RANGE) ? (&U.coba_weight) : NULL, UI_GetTheme()->tv3d.vertex_unreferenced);
 
 	if (bmain->versionfile <= 191) {
 		strcpy(U.sounddir, "/");
@@ -1359,7 +1443,7 @@ void init_userdef_do_versions(void)
 				btheme->ttime = btheme->tv3d;
 				rgba_char_args_set_fl(btheme->ttime.back,   0.45, 0.45, 0.45, 1.0);
 				rgba_char_args_set_fl(btheme->ttime.grid,   0.36, 0.36, 0.36, 1.0);
-				rgba_char_args_set(btheme->ttime.shade1,  173, 173, 173, 255);      // sliders
+				rgba_char_args_set(btheme->ttime.shade1,  173, 173, 173, 255);  /* sliders */
 			}
 			if (btheme->text.syntaxn[3] == 0) {
 				rgba_char_args_set(btheme->text.syntaxn,    0, 0, 200, 255);    /* Numbers  Blue*/
@@ -1474,7 +1558,7 @@ void init_userdef_do_versions(void)
 			rgba_char_args_set(btheme->tv3d.editmesh_active, 255, 255, 255, 128);
 		}
 		if (U.coba_weight.tot == 0)
-			init_colorband(&U.coba_weight, 1);
+			init_colorband(&U.coba_weight, true);
 	}
 	if ((bmain->versionfile < 245) || (bmain->versionfile == 245 && bmain->subversionfile < 11)) {
 		bTheme *btheme;
@@ -1934,6 +2018,45 @@ void init_userdef_do_versions(void)
 		}
 	}
 
+	if (bmain->versionfile < 263 || (bmain->versionfile == 263 && bmain->subversionfile < 22)) {
+		bTheme *btheme;
+
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			if (btheme->tipo.lastsel_point[3] == 0)
+				rgba_char_args_set(btheme->tipo.lastsel_point, 0xff, 0xff, 0xff, 255);
+
+			if (btheme->tv3d.skin_root[3] == 0)
+				rgba_char_args_set(btheme->tv3d.skin_root, 180, 77, 77, 255);
+		}
+	}
+	
+	if (bmain->versionfile < 264 || (bmain->versionfile == 264 && bmain->subversionfile < 9)) {
+		bTheme *btheme;
+		
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			rgba_char_args_set(btheme->tui.xaxis, 220,   0,   0, 255);
+			rgba_char_args_set(btheme->tui.yaxis,   0, 220,   0, 255);
+			rgba_char_args_set(btheme->tui.zaxis,   0,   0, 220, 255);
+		}
+	}
+
+	/* Freestyle color settings */
+	{
+		bTheme *btheme;
+
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			/* check for alpha == 0 is safe, then color was never set */
+			if (btheme->tv3d.freestyle_edge_mark[3] == 0) {
+				rgba_char_args_set(btheme->tv3d.freestyle_edge_mark, 0x7f, 0xff, 0x7f, 255);
+				rgba_char_args_set(btheme->tv3d.freestyle_face_mark, 0x7f, 0xff, 0x7f, 51);
+			}
+
+			if (btheme->tv3d.wire_edit[3] == 0) {
+				rgba_char_args_set(btheme->tv3d.wire_edit,  0x0, 0x0, 0x0, 255);
+			}
+		}
+	}
+
 	/* GL Texture Garbage Collection (variable abused above!) */
 	if (U.textimeout == 0) {
 		U.texcollectrate = 60;
@@ -1958,7 +2081,7 @@ void init_userdef_do_versions(void)
 	if (U.dragthreshold == 0)
 		U.dragthreshold = 5;
 	if (U.widget_unit == 0)
-		U.widget_unit = (U.dpi * 20 + 36) / 72;
+		U.widget_unit = 20;
 	if (U.anisotropic_filter <= 0)
 		U.anisotropic_filter = 1;
 
@@ -1967,9 +2090,121 @@ void init_userdef_do_versions(void)
 		U.ndof_flag = NDOF_LOCK_HORIZON |
 		              NDOF_SHOULD_PAN | NDOF_SHOULD_ZOOM | NDOF_SHOULD_ROTATE;
 	}
+	
+	if (U.ndof_orbit_sensitivity == 0.0f) {
+		U.ndof_orbit_sensitivity = U.ndof_sensitivity;
+
+		if (!(U.flag & USER_TRACKBALL))
+			U.ndof_flag |= NDOF_TURNTABLE;
+	}
 	if (U.tweak_threshold == 0)
 		U.tweak_threshold = 10;
 
+	if (bmain->versionfile < 265 || (bmain->versionfile == 265 && bmain->subversionfile < 1)) {
+		bTheme *btheme;
+		
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			/* note: the toggle operator for transparent backdrops limits to these spacetypes */
+			if (btheme->tnode.button[3] == 255) {
+				btheme->tv3d.button[3] = 128;
+				btheme->tnode.button[3] = 128;
+				btheme->tima.button[3] = 128;
+				btheme->tseq.button[3] = 128;
+				btheme->tclip.button[3] = 128;
+			}
+		}
+	}
+	
+	/* panel header/backdrop supported locally per editor now */
+	if (bmain->versionfile < 265 || (bmain->versionfile == 265 && bmain->subversionfile < 2)) {
+		bTheme *btheme;
+		
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			
+			/* new color, panel backdrop. Not used anywhere yet, until you enable it */
+			copy_v3_v3_char(btheme->tui.panel.back, btheme->tbuts.button);
+			btheme->tui.panel.back[3] = 128;
+			
+			btheme->tbuts.panelcolors = btheme->tui.panel;
+			btheme->tv3d.panelcolors = btheme->tui.panel;
+			btheme->tfile.panelcolors = btheme->tui.panel;
+			btheme->tipo.panelcolors = btheme->tui.panel;
+			btheme->tinfo.panelcolors = btheme->tui.panel;
+			btheme->tact.panelcolors = btheme->tui.panel;
+			btheme->tnla.panelcolors = btheme->tui.panel;
+			btheme->tseq.panelcolors = btheme->tui.panel;
+			btheme->tima.panelcolors = btheme->tui.panel;
+			btheme->text.panelcolors = btheme->tui.panel;
+			btheme->toops.panelcolors = btheme->tui.panel;
+			btheme->ttime.panelcolors = btheme->tui.panel;
+			btheme->tnode.panelcolors = btheme->tui.panel;
+			btheme->tlogic.panelcolors = btheme->tui.panel;
+			btheme->tuserpref.panelcolors = btheme->tui.panel;
+			btheme->tconsole.panelcolors = btheme->tui.panel;
+			btheme->tclip.panelcolors = btheme->tui.panel;
+		}
+	}
+
+	/* NOTE!! from now on use U.versionfile and U.subversionfile */
+	if (U.versionfile < 266) {
+		bTheme *btheme;
+		
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			/* rna definition limits fac to 0.01 */
+			if (btheme->tui.menu_shadow_fac == 0.0f) {
+				btheme->tui.menu_shadow_fac = 0.5f;
+				btheme->tui.menu_shadow_width = 12;
+			}
+		}
+	}
+
+	if (U.versionfile < 265 || (U.versionfile == 265 && U.subversionfile < 4)) {
+		bTheme *btheme;
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			rgba_char_args_set(btheme->text.syntaxd,    50, 0, 140, 255);   /* Decorator/Preprocessor Dir.  Blue-purple */
+			rgba_char_args_set(btheme->text.syntaxr,    140, 60, 0, 255);   /* Reserved  Orange */
+			rgba_char_args_set(btheme->text.syntaxs,    76, 76, 76, 255);   /* Grey (mix between fg/bg) */
+		}
+	}
+
+	if (U.versionfile < 265 || (U.versionfile == 265 && U.subversionfile < 6)) {
+		bTheme *btheme;
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			copy_v4_v4_char(btheme->tv3d.gradients.high_gradient, btheme->tv3d.back);
+		}
+	}
+
+	if (U.versionfile < 265 || (U.versionfile == 265 && U.subversionfile < 9)) {
+		bTheme *btheme;
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			rgba_char_args_test_set(btheme->tnode.syntaxs, 151, 116, 116, 255);  /* matte nodes */
+			rgba_char_args_test_set(btheme->tnode.syntaxd, 116, 151, 151, 255);  /* distort nodes */
+		}
+	}
+
+	if (U.versionfile < 265 || (U.versionfile == 265 && U.subversionfile < 11)) {
+		bTheme *btheme;
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			rgba_char_args_test_set(btheme->tconsole.console_select, 255, 255, 255, 48);
+		}
+	}
+
+	if (U.versionfile < 266 || (U.versionfile == 266 && U.subversionfile < 2)) {
+		bTheme *btheme;
+		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
+			rgba_char_args_test_set(btheme->tnode.console_output, 223, 202, 53, 255);  /* interface nodes */
+		}
+	}
+
+	/* NOTE!! from now on use U.versionfile and U.subversionfile */
+	
+	
+	if (U.pixelsize == 0.0f)
+		U.pixelsize = 1.0f;
+	
+	if (U.image_draw_method == 0)
+		U.image_draw_method = IMAGE_DRAW_METHOD_2DTEXTURE;
+	
 	/* funny name, but it is GE stuff, moves userdef stuff to engine */
 // XXX	space_set_commmandline_options();
 	/* this timer uses U */

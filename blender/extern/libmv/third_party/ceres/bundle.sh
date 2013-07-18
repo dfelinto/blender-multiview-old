@@ -1,6 +1,5 @@
 #!/bin/sh
 
-if false; then
 if [ "x$1" = "x--i-really-know-what-im-doing" ] ; then
   echo Proceeding as requested by command line ...
 else
@@ -8,16 +7,23 @@ else
   exit 1
 fi
 
-repo="https://code.google.com/p/ceres-solver/"
-branch="windows"
+repo="https://ceres-solver.googlesource.com/ceres-solver"
+branch="master"
+#tag="1.4.0"
+tag=""
 tmp=`mktemp -d`
+checkout="$tmp/ceres"
 
-GIT="git --git-dir $tmp/ceres/.git --work-tree $tmp/ceres"
+GIT="git --git-dir $tmp/ceres/.git --work-tree $checkout"
 
-git clone $repo $tmp/ceres
+git clone $repo $checkout
 
 if [ $branch != "master" ]; then
     $GIT checkout -t remotes/origin/$branch
+else
+  if [ "x$tag" != "x" ]; then
+      $GIT checkout $tag
+  fi
 fi
 
 $GIT log -n 50 > ChangeLog
@@ -36,8 +42,6 @@ cat "files.txt" | while read f; do
 done
 
 rm -rf $tmp
-
-fi
 
 sources=`find ./include ./internal -type f -iname '*.cc' -or -iname '*.cpp' -or -iname '*.c' | sed -r 's/^\.\//\t/' | grep -v -E 'schur_eliminator_[0-9]_[0-9]_[0-9d].cc' | sort -d`
 generated_sources=`find ./include ./internal -type f -iname '*.cc' -or -iname '*.cpp' -or -iname '*.c' | sed -r 's/^\.\//#\t\t/' | grep -E 'schur_eliminator_[0-9]_[0-9]_[0-9d].cc' | sort -d`
@@ -114,13 +118,14 @@ cat > CMakeLists.txt << EOF
 
 set(INC
 	.
-	../../../Eigen3
 	include
 	internal
 	../gflags
+	../../
 )
 
 set(INC_SYS
+	../../../Eigen3
 )
 
 set(SRC
@@ -142,7 +147,7 @@ if(WIN32)
 
 	if(NOT MINGW)
 		list(APPEND INC
-			third_party/msinttypes
+			../msinttypes
 		)
 	endif()
 else()
@@ -153,12 +158,38 @@ endif()
 
 add_definitions(
 	-DCERES_HAVE_PTHREAD
-	-D"CERES_HASH_NAMESPACE_START=namespace std { namespace tr1 {"
-	-D"CERES_HASH_NAMESPACE_END=}}"
 	-DCERES_NO_SUITESPARSE
-	-DCERES_DONT_HAVE_PROTOCOL_BUFFERS
+	-DCERES_NO_CXSPARSE
+	-DCERES_NO_PROTOCOL_BUFFERS
 	-DCERES_RESTRICT_SCHUR_SPECIALIZATION
+	-DCERES_HAVE_RWLOCK
 )
+
+if(WITH_OPENMP)
+	add_definitions(
+		-DCERES_USE_OPENMP
+	)
+endif()
+
+if(MSVC10)
+	add_definitions(
+		-D"CERES_HASH_NAMESPACE_START=namespace std {"
+		-D"CERES_HASH_NAMESPACE_END=}"
+	)
+else()
+	add_definitions(
+		-D"CERES_HASH_NAMESPACE_START=namespace std { namespace tr1 {"
+		-D"CERES_HASH_NAMESPACE_END=}}"
+	)
+endif()
+
+if(APPLE)
+	if(CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "10.5")
+		add_definitions(
+			-DCERES_NO_TR1
+		)
+	endif()
+endif()
 
 blender_add_lib(extern_ceres "\${SRC}" "\${INC}" "\${INC_SYS}")
 EOF
@@ -186,10 +217,23 @@ defs.append('CERES_HAVE_PTHREAD')
 defs.append('CERES_HASH_NAMESPACE_START=namespace std { namespace tr1 {')
 defs.append('CERES_HASH_NAMESPACE_END=}}')
 defs.append('CERES_NO_SUITESPARSE')
-defs.append('CERES_DONT_HAVE_PROTOCOL_BUFFERS')
+defs.append('CERES_NO_CXSPARSE')
+defs.append('CERES_NO_PROTOCOL_BUFFERS')
 defs.append('CERES_RESTRICT_SCHUR_SPECIALIZATION')
+defs.append('CERES_HAVE_RWLOCK')
+
+if env['WITH_BF_OPENMP']:
+    defs.append('CERES_USE_OPENMP')
+
+if 'Mac OS X 10.5' in env['MACOSX_SDK_CHECK']:
+    defs.append('CERES_NO_TR1')
 
 incs = '. ../../ ../../../Eigen3 ./include ./internal ../gflags'
+
+# work around broken hashtable in 10.5 SDK
+if env['OURPLATFORM'] == 'darwin' and env['WITH_BF_BOOST']:
+    incs += ' ' + env['BF_BOOST_INC']
+    defs.append('CERES_HASH_BOOST')
 
 if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
     if env['OURPLATFORM'] in ('win32-vc', 'win64-vc'):

@@ -57,19 +57,6 @@ template<typename T> struct texture  {
 	}
 #endif
 
-	float interp(float x, int size)
-	{
-		kernel_assert(size == width);
-
-		x = clamp(x, 0.0f, 1.0f)*width;
-
-		int index = min((int)x, width-1);
-		int nindex = min(index+1, width-1);
-		float t = x - index;
-
-		return (1.0f - t)*data[index] + t*data[nindex];
-	}
-
 	T *data;
 	int width;
 };
@@ -101,7 +88,7 @@ template<typename T> struct texture_image  {
 
 	float frac(float x, int *ix)
 	{
-		int i = (int)x - ((x < 0.0f)? 1: 0);
+		int i = float_to_int(x) - ((x < 0.0f)? 1: 0);
 		*ix = i;
 		return x - (float)i;
 	}
@@ -112,8 +99,8 @@ template<typename T> struct texture_image  {
 			return make_float4(0.0f, 0.0f, 0.0f, 0.0f);
 
 		int ix, iy, nix, niy;
-		float tx = frac(x*width, &ix);
-		float ty = frac(y*height, &iy);
+		float tx = frac(x*width - 0.5f, &ix);
+		float ty = frac(y*height - 0.5f, &iy);
 
 		if(periodic) {
 			ix = wrap_periodic(ix, width);
@@ -157,8 +144,8 @@ typedef texture_image<uchar4> texture_image_uchar4;
 #define kernel_tex_fetch(tex, index) (kg->tex.fetch(index))
 #define kernel_tex_fetch_m128(tex, index) (kg->tex.fetch_m128(index))
 #define kernel_tex_fetch_m128i(tex, index) (kg->tex.fetch_m128i(index))
-#define kernel_tex_interp(tex, t, size) (kg->tex.interp(t, size))
-#define kernel_tex_image_interp(tex, x, y) (kg->tex.interp(x, y))
+#define kernel_tex_lookup(tex, t, offset, size) (kg->tex.lookup(t, offset, size))
+#define kernel_tex_image_interp(tex, x, y) ((tex < MAX_FLOAT_IMAGES) ? kg->texture_float_images[tex].interp(x, y) : kg->texture_byte_images[tex - MAX_FLOAT_IMAGES].interp(x, y))
 
 #define kernel_data (kg->__data)
 

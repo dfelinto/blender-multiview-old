@@ -29,7 +29,7 @@
 /** \file SG_ParentRelation.h
  *  \ingroup bgesg
  * \page SG_ParentRelationPage SG_ParentRelation   
-
+ *
  * \section SG_ParentRelationSection SG_ParentRelation
  * 
  * This is an abstract interface class to the Scene Graph library. 
@@ -48,7 +48,7 @@
  * should not be value types and should be allocated on the heap.
  *
  */
- 
+
 #ifndef __SG_PARENTRELATION_H__
 #define __SG_PARENTRELATION_H__
 
@@ -82,7 +82,7 @@ public :
 	 * You must provide a way of duplicating an
 	 * instance of an SG_ParentRelation. This should
 	 * return a pointer to a new duplicate allocated
-	 * on the heap. Responsibilty for deleting the 
+	 * on the heap. Responsibility for deleting the
 	 * duplicate resides with the caller of this method.
 	 */
 
@@ -118,7 +118,7 @@ protected :
 	 */
 
 	SG_ParentRelation(
-	) {	
+	) {
 	};
 
 	/**

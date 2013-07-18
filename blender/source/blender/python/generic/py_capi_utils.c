@@ -33,6 +33,8 @@
 #include <Python.h>
 #include <frameobject.h>
 
+#include "BLI_utildefines.h"  /* for bool */
+
 #include "py_capi_utils.h"
 
 /* only for BLI_strncpy_wchar_from_utf8, should replace with py funcs but too late in release now */
@@ -44,7 +46,7 @@
 
 /* array utility function */
 int PyC_AsArray(void *array, PyObject *value, const Py_ssize_t length,
-                const PyTypeObject *type, const short is_double, const char *error_prefix)
+                const PyTypeObject *type, const bool is_double, const char *error_prefix)
 {
 	PyObject *value_fast;
 	Py_ssize_t value_len;
@@ -83,13 +85,13 @@ int PyC_AsArray(void *array, PyObject *value, const Py_ssize_t length,
 		/* could use is_double for 'long int' but no use now */
 		int *array_int = array;
 		for (i = 0; i < length; i++) {
-			array_int[i] = PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value_fast, i));
+			array_int[i] = PyLong_AsLong(PySequence_Fast_GET_ITEM(value_fast, i));
 		}
 	}
 	else if (type == &PyBool_Type) {
 		int *array_bool = array;
 		for (i = 0; i < length; i++) {
-			array_bool[i] = (PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value_fast, i)) != 0);
+			array_bool[i] = (PyLong_AsLong(PySequence_Fast_GET_ITEM(value_fast, i)) != 0);
 		}
 	}
 	else {
@@ -110,6 +112,54 @@ int PyC_AsArray(void *array, PyObject *value, const Py_ssize_t length,
 	}
 
 	return 0;
+}
+
+/* array utility function */
+PyObject *PyC_FromArray(const void *array, int length, const PyTypeObject *type,
+                        const bool is_double, const char *error_prefix)
+{
+	PyObject *tuple;
+	int i;
+
+	tuple = PyTuple_New(length);
+
+	/* for each type */
+	if (type == &PyFloat_Type) {
+		if (is_double) {
+			const double *array_double = array;
+			for (i = 0; i < length; ++i) {
+				PyTuple_SET_ITEM(tuple, i, PyFloat_FromDouble(array_double[i]));
+			}
+		}
+		else {
+			const float *array_float = array;
+			for (i = 0; i < length; ++i) {
+				PyTuple_SET_ITEM(tuple, i, PyFloat_FromDouble(array_float[i]));
+			}
+		}
+	}
+	else if (type == &PyLong_Type) {
+		/* could use is_double for 'long int' but no use now */
+		const int *array_int = array;
+		for (i = 0; i < length; ++i) {
+			PyTuple_SET_ITEM(tuple, i, PyLong_FromLong(array_int[i]));
+		}
+	}
+	else if (type == &PyBool_Type) {
+		const int *array_bool = array;
+		for (i = 0; i < length; ++i) {
+			PyTuple_SET_ITEM(tuple, i, PyBool_FromLong(array_bool[i]));
+		}
+	}
+	else {
+		Py_DECREF(tuple);
+		PyErr_Format(PyExc_TypeError,
+		             "%s: internal error %s is invalid",
+		             error_prefix, type->tp_name);
+		return NULL;
+	}
+
+	return tuple;
 }
 
 
@@ -240,6 +290,23 @@ PyObject *PyC_Object_GetAttrStringArgs(PyObject *o, Py_ssize_t n, ...)
 	Py_XINCREF(item); /* final value has is increfed, to match PyObject_GetAttrString */
 	return item;
 }
+
+PyObject *PyC_FrozenSetFromStrings(const char **strings)
+{
+	const char **str;
+	PyObject *ret;
+
+	ret = PyFrozenSet_New(NULL);
+
+	for (str = strings; *str; str++) {
+		PyObject *py_str = PyUnicode_FromString(*str);
+		PySet_Add(ret, py_str);
+		Py_DECREF(py_str);
+	}
+
+	return ret;
+}
+
 
 /* similar to PyErr_Format(),
  *
@@ -402,6 +469,15 @@ const char *PyC_UnicodeAsByte(PyObject *py_str, PyObject **coerce)
 		if (PyBytes_Check(py_str)) {
 			return PyBytes_AS_STRING(py_str);
 		}
+#ifdef WIN32
+		/* bug [#31856] oddly enough, Python3.2 --> 3.3 on Windows will throw an
+		 * exception here this needs to be fixed in python:
+		 * see: bugs.python.org/issue15859 */
+		else if (!PyUnicode_Check(py_str)) {
+			PyErr_BadArgument();
+			return NULL;
+		}
+#endif
 		else if ((*coerce = PyUnicode_EncodeFSDefault(py_str))) {
 			return PyBytes_AS_STRING(*coerce);
 		}
@@ -441,7 +517,7 @@ PyObject *PyC_UnicodeFromByte(const char *str)
  * >> foo = 10
  * >> print(__import__("__main__").foo)
  *
- * note: this overwrites __main__ which gives problems with nested calles.
+ * note: this overwrites __main__ which gives problems with nested calls.
  * be sure to run PyC_MainModule_Backup & PyC_MainModule_Restore if there is
  * any chance that python is in the call stack.
  ****************************************************************************/
@@ -495,7 +571,7 @@ void PyC_SetHomePath(const char *py_path_bundle)
 	 * but current Python lib (release 3.1.1) doesn't handle these correctly */
 	if (strchr(py_path_bundle, ':'))
 		printf("Warning : Blender application is located in a path containing : or / chars\
-			   \nThis may make python import function fail\n");
+		       \nThis may make python import function fail\n");
 #endif
 
 
@@ -523,7 +599,9 @@ void PyC_SetHomePath(const char *py_path_bundle)
 	}
 }
 
-/* Would be nice if python had this built in */
+/* Would be nice if python had this built in
+ * See: http://wiki.blender.org/index.php/Dev:Doc/Tools/Debugging/PyFromC
+ */
 void PyC_RunQuicky(const char *filepath, int n, ...)
 {
 	FILE *fp = fopen(filepath, "r");
@@ -531,7 +609,7 @@ void PyC_RunQuicky(const char *filepath, int n, ...)
 	if (fp) {
 		PyGILState_STATE gilstate = PyGILState_Ensure();
 
-		va_list vargs;	
+		va_list vargs;
 
 		int *sizes = PyMem_MALLOC(sizeof(int) * (n / 2));
 		int i;
@@ -556,7 +634,7 @@ void PyC_RunQuicky(const char *filepath, int n, ...)
 			ret = PyObject_CallFunction(calcsize, (char *)"s", format);
 
 			if (ret) {
-				sizes[i] = PyLong_AsSsize_t(ret);
+				sizes[i] = PyLong_AsLong(ret);
 				Py_DECREF(ret);
 				ret = PyObject_CallFunction(unpack, (char *)"sy#", format, (char *)ptr, sizes[i]);
 			}
@@ -673,7 +751,7 @@ void *PyC_RNA_AsPointer(PyObject *value, const char *type_name)
 	PyObject *as_pointer;
 	PyObject *pointer;
 
-	if (!strcmp(Py_TYPE(value)->tp_name, type_name) &&
+	if (STREQ(Py_TYPE(value)->tp_name, type_name) &&
 	    (as_pointer = PyObject_GetAttrString(value, "as_pointer")) != NULL &&
 	    PyCallable_Check(as_pointer))
 	{
@@ -726,7 +804,7 @@ char *PyC_FlagSet_AsString(PyC_FlagSet *item)
 int PyC_FlagSet_ValueFromID_int(PyC_FlagSet *item, const char *identifier, int *value)
 {
 	for ( ; item->identifier; item++) {
-		if (strcmp(item->identifier, identifier) == 0) {
+		if (STREQ(item->identifier, identifier)) {
 			*value = item->value;
 			return 1;
 		}
@@ -749,7 +827,6 @@ int PyC_FlagSet_ValueFromID(PyC_FlagSet *item, const char *identifier, int *valu
 	return 0;
 }
 
-/* 'value' _must_ be a set type, error check before calling */
 int PyC_FlagSet_ToBitfield(PyC_FlagSet *items, PyObject *value, int *r_value, const char *error_prefix)
 {
 	/* set of enum items, concatenate all values with OR */
@@ -760,6 +837,13 @@ int PyC_FlagSet_ToBitfield(PyC_FlagSet *items, PyObject *value, int *r_value, co
 	Py_ssize_t hash = 0;
 	PyObject *key;
 
+	if (!PySet_Check(value)) {
+		PyErr_Format(PyExc_TypeError,
+		             "%.200s expected a set, not %.200s",
+		             error_prefix, Py_TYPE(value)->tp_name);
+		return -1;
+	}
+
 	*r_value = 0;
 
 	while (_PySet_NextEntry(value, &pos, &key, &hash)) {
@@ -767,7 +851,7 @@ int PyC_FlagSet_ToBitfield(PyC_FlagSet *items, PyObject *value, int *r_value, co
 
 		if (param == NULL) {
 			PyErr_Format(PyExc_TypeError,
-			             "%.200s expected a string, not %.200s",
+			             "%.200s set must contain strings, not %.200s",
 			             error_prefix, Py_TYPE(key)->tp_name);
 			return -1;
 		}

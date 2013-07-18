@@ -27,9 +27,7 @@
 
 /** \file blender/blenlib/intern/BLI_mempool.c
  *  \ingroup bli
- */
-
-/*
+ *
  * Simple, fast memory allocator for allocating many elements of the same size.
  */
 
@@ -45,7 +43,11 @@
 #include <string.h>
 #include <stdlib.h>
 
-/* note: copied from BKE_utildefines.h, don't use here because we're in BLI */
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
+
+/* note: copied from BLO_blend_defs.h, don't use here because we're in BLI */
 #ifdef __BIG_ENDIAN__
 /* Big Endian */
 #  define MAKE_ID(a, b, c, d) ( (int)(a) << 24 | (int)(b) << 16 | (c) << 8 | (d) )
@@ -55,6 +57,9 @@
 #endif
 
 #define FREEWORD MAKE_ID('f', 'r', 'e', 'e')
+
+/* currently totalloc isnt used */
+// #define USE_TOTALLOC
 
 typedef struct BLI_freenode {
 	struct BLI_freenode *next;
@@ -102,7 +107,7 @@ BLI_mempool *BLI_mempool_create(int esize, int totelem, int pchunk, int flag)
 	}
 
 	if (flag & BLI_MEMPOOL_ALLOW_ITER) {
-		pool->esize = MAX2(esize, sizeof(BLI_freenode));
+		pool->esize = MAX2(esize, (int)sizeof(BLI_freenode));
 	}
 	else {
 		pool->esize = esize;
@@ -112,6 +117,7 @@ BLI_mempool *BLI_mempool_create(int esize, int totelem, int pchunk, int flag)
 	pool->pchunk = pchunk;
 	pool->csize = esize * pchunk;
 	pool->chunks.first = pool->chunks.last = NULL;
+	pool->totalloc = 0;
 	pool->totused = 0;
 
 	maxchunks = totelem / pchunk + 1;
@@ -125,11 +131,11 @@ BLI_mempool *BLI_mempool_create(int esize, int totelem, int pchunk, int flag)
 
 		if (flag & BLI_MEMPOOL_SYSMALLOC) {
 			mpchunk = malloc(sizeof(BLI_mempool_chunk));
-			mpchunk->data = malloc(pool->csize);
+			mpchunk->data = malloc((size_t)pool->csize);
 		}
 		else {
 			mpchunk = MEM_mallocN(sizeof(BLI_mempool_chunk), "BLI_Mempool Chunk");
-			mpchunk->data = MEM_mallocN(pool->csize, "BLI Mempool Chunk Data");
+			mpchunk->data = MEM_mallocN((size_t)pool->csize, "BLI Mempool Chunk Data");
 		}
 
 		mpchunk->next = mpchunk->prev = NULL;
@@ -161,10 +167,11 @@ BLI_mempool *BLI_mempool_create(int esize, int totelem, int pchunk, int flag)
 			}
 		}
 
-		/* set the end of this chunks memoryy to the new tail for next iteration */
+		/* set the end of this chunks memory to the new tail for next iteration */
 		lasttail = curnode;
-
+#ifdef USE_TOTALLOC
 		pool->totalloc += pool->pchunk;
+#endif
 	}
 	/* terminate the list */
 	curnode->next = NULL;
@@ -187,11 +194,11 @@ void *BLI_mempool_alloc(BLI_mempool *pool)
 
 		if (pool->flag & BLI_MEMPOOL_SYSMALLOC) {
 			mpchunk       = malloc(sizeof(BLI_mempool_chunk));
-			mpchunk->data = malloc(pool->csize);
+			mpchunk->data = malloc((size_t)pool->csize);
 		}
 		else {
 			mpchunk       = MEM_mallocN(sizeof(BLI_mempool_chunk), "BLI_Mempool Chunk");
-			mpchunk->data = MEM_mallocN(pool->csize, "BLI_Mempool Chunk Data");
+			mpchunk->data = MEM_mallocN((size_t)pool->csize, "BLI_Mempool Chunk Data");
 		}
 
 		mpchunk->next = mpchunk->prev = NULL;
@@ -215,8 +222,9 @@ void *BLI_mempool_alloc(BLI_mempool *pool)
 			}
 		}
 		curnode->next = NULL; /* terminate the list */
-
+#ifdef USE_TOTALLOC
 		pool->totalloc += pool->pchunk;
+#endif
 	}
 
 	retval = pool->free;
@@ -233,16 +241,24 @@ void *BLI_mempool_alloc(BLI_mempool *pool)
 void *BLI_mempool_calloc(BLI_mempool *pool)
 {
 	void *retval = BLI_mempool_alloc(pool);
-	memset(retval, 0, pool->esize);
+	memset(retval, 0, (size_t)pool->esize);
 	return retval;
 }
 
-/* doesnt protect against double frees, don't be stupid! */
+/**
+ * Free an element from the mempool.
+ *
+ * \note doesnt protect against double frees, don't be stupid!
+ */
 void BLI_mempool_free(BLI_mempool *pool, void *addr)
 {
 	BLI_freenode *newhead = addr;
 
 	if (pool->flag & BLI_MEMPOOL_ALLOW_ITER) {
+#ifndef NDEBUG
+		/* this will detect double free's */
+		BLI_assert(newhead->freeword != FREEWORD);
+#endif
 		newhead->freeword = FREEWORD;
 	}
 
@@ -276,7 +292,9 @@ void BLI_mempool_free(BLI_mempool *pool, void *addr)
 		}
 
 		BLI_addtail(&pool->chunks, first);
+#ifdef USE_TOTALLOC
 		pool->totalloc = pool->pchunk;
+#endif
 
 		pool->free = first->data; /* start of the list */
 		for (tmpaddr = first->data, i = 0; i < pool->pchunk; i++) {
@@ -295,33 +313,51 @@ int BLI_mempool_count(BLI_mempool *pool)
 
 void *BLI_mempool_findelem(BLI_mempool *pool, int index)
 {
-	if (!(pool->flag & BLI_MEMPOOL_ALLOW_ITER)) {
-		fprintf(stderr, "%s: Error! you can't iterate over this mempool!\n", __func__);
-		return NULL;
-	}
-	else if ((index >= 0) && (index < pool->totused)) {
+	BLI_assert(pool->flag & BLI_MEMPOOL_ALLOW_ITER);
+
+	if ((index >= 0) && (index < pool->totused)) {
 		/* we could have some faster mem chunk stepping code inline */
 		BLI_mempool_iter iter;
 		void *elem;
 		BLI_mempool_iternew(pool, &iter);
 		for (elem = BLI_mempool_iterstep(&iter); index-- != 0; elem = BLI_mempool_iterstep(&iter)) {
 			/* do nothing */
-		};
+		}
 		return elem;
 	}
 
 	return NULL;
 }
 
+/**
+ * \param data array of pointers at least the size of 'pool->totused'
+ */
+void BLI_mempool_as_array(BLI_mempool *pool, void **data)
+{
+	BLI_mempool_iter iter;
+	void *elem;
+	void **p = data;
+	BLI_assert(pool->flag & BLI_MEMPOOL_ALLOW_ITER);
+	BLI_mempool_iternew(pool, &iter);
+	for (elem = BLI_mempool_iterstep(&iter); elem; elem = BLI_mempool_iterstep(&iter)) {
+		*p++ = elem;
+	}
+	BLI_assert((p - data) == pool->totused);
+}
+
+/**
+ * Allocate an array from the mempool.
+ */
+void *BLI_mempool_as_arrayN(BLI_mempool *pool, const char *allocstr)
+{
+	void *data = MEM_mallocN((size_t)(BLI_mempool_count(pool) * pool->esize), allocstr);
+	BLI_mempool_as_array(pool, data);
+	return data;
+}
+
 void BLI_mempool_iternew(BLI_mempool *pool, BLI_mempool_iter *iter)
 {
-	if (!(pool->flag & BLI_MEMPOOL_ALLOW_ITER)) {
-		fprintf(stderr, "%s: Error! you can't iterate over this mempool!\n", __func__);
-		iter->curchunk = NULL;
-		iter->curindex = 0;
-
-		return;
-	}
+	BLI_assert(pool->flag & BLI_MEMPOOL_ALLOW_ITER);
 
 	iter->pool = pool;
 	iter->curchunk = pool->chunks.first;
@@ -391,6 +427,9 @@ void *BLI_mempool_iterstep(BLI_mempool_iter *iter)
 
 #endif
 
+/**
+ * Free the mempool its self (and all elements).
+ */
 void BLI_mempool_destroy(BLI_mempool *pool)
 {
 	BLI_mempool_chunk *mpchunk = NULL;

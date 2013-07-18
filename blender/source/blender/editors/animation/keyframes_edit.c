@@ -154,7 +154,7 @@ short ANIM_fcurve_keyframes_loop(KeyframeEditData *ked, FCurve *fcu, KeyframeEdi
 	if (fcu_cb)
 		fcu_cb(fcu);
 	
-	/* done */	
+	/* done */
 	return 0;
 }
 
@@ -300,7 +300,14 @@ static short summary_keyframes_loop(KeyframeEditData *ked, bAnimContext *ac, Key
 	
 	/* loop through each F-Curve, working on the keyframes until the first curve aborts */
 	for (ale = anim_data.first; ale; ale = ale->next) {
-		ret_code = ANIM_fcurve_keyframes_loop(ked, ale->data, key_ok, key_cb, fcu_cb);
+		switch (ale->datatype) {
+			case ALE_MASKLAY:
+			case ALE_GPFRAME:
+				break;
+			default:
+				ret_code = ANIM_fcurve_keyframes_loop(ked, ale->data, key_ok, key_cb, fcu_cb);
+				break;
+		}
 		
 		if (ret_code)
 			break;
@@ -505,7 +512,7 @@ static short ok_bezier_region(KeyframeEditData *ked, BezTriple *bezt)
 	if (ked->data) {
 		short ok = 0;
 		
-		#define KEY_CHECK_OK(_index) BLI_in_rctf_v(ked->data, bezt->vec[_index])
+		#define KEY_CHECK_OK(_index) BLI_rctf_isect_pt_v(ked->data, bezt->vec[_index])
 		KEYFRAME_OK_CHECKS(KEY_CHECK_OK);
 		#undef KEY_CHECK_OK
 		
@@ -639,7 +646,7 @@ static short snap_bezier_horizontal(KeyframeEditData *UNUSED(ked), BezTriple *be
 		if (ELEM3(bezt->h1, HD_AUTO, HD_AUTO_ANIM, HD_VECT)) bezt->h1 = HD_ALIGN;
 		if (ELEM3(bezt->h2, HD_AUTO, HD_AUTO_ANIM, HD_VECT)) bezt->h2 = HD_ALIGN;
 	}
-	return 0;	
+	return 0;
 }
 
 /* value to snap to is stored in the custom data -> first float value slot */
@@ -880,7 +887,7 @@ KeyframeEditFunc ANIM_editkeyframes_ipo(short code)
 	switch (code) {
 		case BEZT_IPO_CONST: /* constant */
 			return set_bezt_constant;
-		case BEZT_IPO_LIN: /* linear */	
+		case BEZT_IPO_LIN: /* linear */
 			return set_bezt_linear;
 		default: /* bezier */
 			return set_bezt_bezier;
@@ -930,7 +937,7 @@ KeyframeEditFunc ANIM_editkeyframes_keytype(short code)
 		case BEZT_KEYTYPE_JITTER: /* jitter keyframe */
 			return set_keytype_jitter;
 			
-		case BEZT_KEYTYPE_KEYFRAME: /* proper keyframe */	
+		case BEZT_KEYTYPE_KEYFRAME: /* proper keyframe */
 		default:
 			return set_keytype_keyframe;
 	}

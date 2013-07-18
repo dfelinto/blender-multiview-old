@@ -155,6 +155,7 @@ typedef enum eAnim_ChannelType {
 	ANIMTYPE_DSMESH,
 	ANIMTYPE_DSTEX,
 	ANIMTYPE_DSLAT,
+	ANIMTYPE_DSLINESTYLE,
 	ANIMTYPE_DSSPK,
 	
 	ANIMTYPE_SHAPEKEY,
@@ -232,28 +233,29 @@ typedef enum eAnimFilter_Flags {
 
 /* Dopesheet only */
 /* 'Scene' channels */
-#define SEL_SCEC(sce) ((sce->flag & SCE_DS_SELECTED))
-#define EXPANDED_SCEC(sce) ((sce->flag & SCE_DS_COLLAPSED) == 0)
+#define SEL_SCEC(sce) (CHECK_TYPE_INLINE(sce, Scene), ((sce->flag & SCE_DS_SELECTED)))
+#define EXPANDED_SCEC(sce) (CHECK_TYPE_INLINE(sce, Scene), ((sce->flag & SCE_DS_COLLAPSED) == 0))
 /* 'Sub-Scene' channels (flags stored in Data block) */
-#define FILTER_WOR_SCED(wo) ((wo->flag & WO_DS_EXPAND))
+#define FILTER_WOR_SCED(wo) (CHECK_TYPE_INLINE(wo, World), (wo->flag & WO_DS_EXPAND))
+#define FILTER_LS_SCED(linestyle) ((linestyle->flag & LS_DS_EXPAND))
 /* 'Object' channels */
-#define SEL_OBJC(base) ((base->flag & SELECT))
-#define EXPANDED_OBJC(ob) ((ob->nlaflag & OB_ADS_COLLAPSED) == 0)
+#define SEL_OBJC(base)          (CHECK_TYPE_INLINE(base, Base), ((base->flag & SELECT)))
+#define EXPANDED_OBJC(ob)       (CHECK_TYPE_INLINE(ob, Object), ((ob->nlaflag & OB_ADS_COLLAPSED) == 0))
 /* 'Sub-object' channels (flags stored in Data block) */
-#define FILTER_SKE_OBJD(key) ((key->flag & KEY_DS_EXPAND))
-#define FILTER_MAT_OBJD(ma) ((ma->flag & MA_DS_EXPAND))
-#define FILTER_LAM_OBJD(la) ((la->flag & LA_DS_EXPAND))
-#define FILTER_CAM_OBJD(ca) ((ca->flag & CAM_DS_EXPAND))
-#define FILTER_CUR_OBJD(cu) ((cu->flag & CU_DS_EXPAND))
-#define FILTER_PART_OBJD(part) ((part->flag & PART_DS_EXPAND))
-#define FILTER_MBALL_OBJD(mb) ((mb->flag2 & MB_DS_EXPAND))
-#define FILTER_ARM_OBJD(arm) ((arm->flag & ARM_DS_EXPAND))
-#define FILTER_MESH_OBJD(me) ((me->flag & ME_DS_EXPAND))
-#define FILTER_LATTICE_OBJD(lt) ((lt->flag & LT_DS_EXPAND))
-#define FILTER_SPK_OBJD(spk) ((spk->flag & SPK_DS_EXPAND))
+#define FILTER_SKE_OBJD(key)    (CHECK_TYPE_INLINE(key, Key), ((key->flag & KEY_DS_EXPAND)))
+#define FILTER_MAT_OBJD(ma)     (CHECK_TYPE_INLINE(ma, Material), ((ma->flag & MA_DS_EXPAND)))
+#define FILTER_LAM_OBJD(la)     (CHECK_TYPE_INLINE(la, Lamp), ((la->flag & LA_DS_EXPAND)))
+#define FILTER_CAM_OBJD(ca)     (CHECK_TYPE_INLINE(ca, Camera), ((ca->flag & CAM_DS_EXPAND)))
+#define FILTER_CUR_OBJD(cu)     (CHECK_TYPE_INLINE(cu, Curve), ((cu->flag & CU_DS_EXPAND)))
+#define FILTER_PART_OBJD(part)  (CHECK_TYPE_INLINE(part, ParticleSettings), ((part->flag & PART_DS_EXPAND)))
+#define FILTER_MBALL_OBJD(mb)   (CHECK_TYPE_INLINE(mb, MetaBall), ((mb->flag2 & MB_DS_EXPAND)))
+#define FILTER_ARM_OBJD(arm)    (CHECK_TYPE_INLINE(arm, bArmature), ((arm->flag & ARM_DS_EXPAND)))
+#define FILTER_MESH_OBJD(me)    (CHECK_TYPE_INLINE(me, Mesh), ((me->flag & ME_DS_EXPAND)))
+#define FILTER_LATTICE_OBJD(lt) (CHECK_TYPE_INLINE(lt, Lattice), ((lt->flag & LT_DS_EXPAND)))
+#define FILTER_SPK_OBJD(spk)    (CHECK_TYPE_INLINE(spk, Speaker), ((spk->flag & SPK_DS_EXPAND)))
 /* Variable use expanders */
-#define FILTER_NTREE_DATA(ntree) ((ntree->flag & NTREE_DS_EXPAND))
-#define FILTER_TEX_DATA(tex) ((tex->flag & TEX_DS_EXPAND))
+#define FILTER_NTREE_DATA(ntree) (CHECK_TYPE_INLINE(ntree, bNodeTree), ((ntree->flag & NTREE_DS_EXPAND)))
+#define FILTER_TEX_DATA(tex)     (CHECK_TYPE_INLINE(tex, Tex), ((tex->flag & TEX_DS_EXPAND)))
 
 /* 'Sub-object/Action' channels (flags stored in Action) */
 #define SEL_ACTC(actc) ((actc->flag & ACT_SELECTED))
@@ -292,42 +294,45 @@ typedef enum eAnimFilter_Flags {
 #define SEL_MASKLAY(masklay) (masklay->flag & SELECT)
 
 
-
 /* NLA only */
 #define SEL_NLT(nlt) (nlt->flag & NLATRACK_SELECTED)
 #define EDITABLE_NLT(nlt) ((nlt->flag & NLATRACK_PROTECTED) == 0)
 
+
+/* AnimData - NLA mostly... */
+#define SEL_ANIMDATA(adt) (adt->flag & ADT_UI_SELECTED)
+
 /* -------------- Channel Defines -------------- */
 
 /* channel heights */
-#define ACHANNEL_FIRST          -16
-#define ACHANNEL_HEIGHT         16
-#define ACHANNEL_HEIGHT_HALF    8
-#define ACHANNEL_SKIP           2
+#define ACHANNEL_FIRST          (-0.8f * U.widget_unit)
+#define ACHANNEL_HEIGHT         (0.8f * U.widget_unit)
+#define ACHANNEL_HEIGHT_HALF    (0.4f * U.widget_unit)
+#define ACHANNEL_SKIP           (0.1f * U.widget_unit)
 #define ACHANNEL_STEP           (ACHANNEL_HEIGHT + ACHANNEL_SKIP)
 
 /* channel widths */
-#define ACHANNEL_NAMEWIDTH      200
+#define ACHANNEL_NAMEWIDTH      (10 * U.widget_unit)
 
 /* channel toggle-buttons */
-#define ACHANNEL_BUTTON_WIDTH   16
+#define ACHANNEL_BUTTON_WIDTH   (0.8f * U.widget_unit)
 
 
 /* -------------- NLA Channel Defines -------------- */
 
 /* NLA channel heights */
 // XXX: NLACHANNEL_FIRST isn't used?
-#define NLACHANNEL_FIRST                -16
-#define NLACHANNEL_HEIGHT(snla)         ((snla && (snla->flag & SNLA_NOSTRIPCURVES)) ? 16 : 24)
-#define NLACHANNEL_HEIGHT_HALF(snla)    ((snla && (snla->flag & SNLA_NOSTRIPCURVES)) ?  8 : 12)
-#define NLACHANNEL_SKIP                 2
+#define NLACHANNEL_FIRST                (-0.8f * U.widget_unit)
+#define NLACHANNEL_HEIGHT(snla)         ((snla && (snla->flag & SNLA_NOSTRIPCURVES)) ? (0.8f * U.widget_unit) : (1.2f * U.widget_unit))
+#define NLACHANNEL_HEIGHT_HALF(snla)    ((snla && (snla->flag & SNLA_NOSTRIPCURVES)) ? (0.4f * U.widget_unit) : (0.6f * U.widget_unit))
+#define NLACHANNEL_SKIP                 (0.1f * U.widget_unit)
 #define NLACHANNEL_STEP(snla)           (NLACHANNEL_HEIGHT(snla) + NLACHANNEL_SKIP)
 
 /* channel widths */
-#define NLACHANNEL_NAMEWIDTH        200
+#define NLACHANNEL_NAMEWIDTH			(10 * U.widget_unit)
 
 /* channel toggle-buttons */
-#define NLACHANNEL_BUTTON_WIDTH 16
+#define NLACHANNEL_BUTTON_WIDTH			(0.8f * U.widget_unit)
 
 /* ---------------- API  -------------------- */
 
@@ -404,7 +409,7 @@ typedef struct bAnimChannelType {
 	 * with type being  sizeof(ptr_data) which should be fine for runtime use...
 	 *	- assume that setting has been checked to be valid for current context
 	 */
-	void *(*setting_ptr)(bAnimListElem * ale, int setting, short *type);
+	void *(*setting_ptr)(bAnimListElem *ale, int setting, short *type);
 } bAnimChannelType;
 
 /* ------------------------ Drawing API -------------------------- */
@@ -469,7 +474,7 @@ void ANIM_timecode_string_from_frame(char *str, struct Scene *scene, int power, 
 /* ---------- Current Frame Drawing ---------------- */
 
 /* flags for Current Frame Drawing */
-enum {
+enum eAnimEditDraw_CurrentFrame {
 	/* plain time indicator with no special indicators */
 	DRAWCFRA_PLAIN          = 0,
 	/* draw box indicating current frame number */
@@ -478,7 +483,7 @@ enum {
 	DRAWCFRA_UNIT_SECONDS   = (1 << 1),
 	/* draw indicator extra wide (for timeline) */
 	DRAWCFRA_WIDE           = (1 << 2)
-} eAnimEditDraw_CurrentFrame; 
+};
 
 /* main call to draw current-frame indicator in an Animation Editor */
 void ANIM_draw_cfra(const struct bContext *C, struct View2D *v2d, short flag);
@@ -486,7 +491,7 @@ void ANIM_draw_cfra(const struct bContext *C, struct View2D *v2d, short flag);
 /* ------------- Preview Range Drawing -------------- */
 
 /* main call to draw preview range curtains */
-void ANIM_draw_previewrange(const struct bContext *C, struct View2D *v2d);
+void ANIM_draw_previewrange(const struct bContext *C, struct View2D *v2d, int end_frame_width);
 
 /* ************************************************* */
 /* F-MODIFIER TOOLS */
@@ -552,7 +557,8 @@ typedef enum eAnimUnitConv_Flags {
 	/* only touch selected BezTriples */
 	ANIM_UNITCONV_ONLYSEL   = (1 << 2),
 	/* only touch selected vertices */
-	ANIM_UNITCONV_SELVERTS  = (1 << 3)
+	ANIM_UNITCONV_SELVERTS  = (1 << 3),
+	ANIM_UNITCONV_SKIPKNOTS  = (1 << 4),
 } eAnimUnitConv_Flags;
 
 /* Get unit conversion factor for given ID + F-Curve */

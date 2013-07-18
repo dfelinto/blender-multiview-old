@@ -22,6 +22,8 @@
 
 /** \file blender/bmesh/operators/bmo_wireframe.c
  *  \ingroup bmesh
+ *
+ * Creates a solid wireframe from conected faces.
  */
 
 #include "MEM_guardedalloc.h"
@@ -34,7 +36,7 @@
 
 #include "intern/bmesh_operators_private.h" /* own include */
 
-BMLoop *bm_edge_tag_faceloop(BMEdge *e)
+static BMLoop *bm_edge_tag_faceloop(BMEdge *e)
 {
 	BMLoop *l, *l_first;
 
@@ -77,70 +79,89 @@ static void bm_vert_boundary_tangent(BMVert *v, float r_no[3], float r_no_face[3
 		}
 	}
 
-	l_a = bm_edge_tag_faceloop(e_a);
-	l_b = bm_edge_tag_faceloop(e_b);
+	if (e_a && e_b) {
+		l_a = bm_edge_tag_faceloop(e_a);
+		l_b = bm_edge_tag_faceloop(e_b);
 
-	/* average edge face normal */
-	add_v3_v3v3(no_face, l_a->f->no, l_b->f->no);
+		/* average edge face normal */
+		add_v3_v3v3(no_face, l_a->f->no, l_b->f->no);
 
-	/* average edge direction */
-	v_a = BM_edge_other_vert(e_a, v);
-	v_b = BM_edge_other_vert(e_b, v);
+		/* average edge direction */
+		v_a = BM_edge_other_vert(e_a, v);
+		v_b = BM_edge_other_vert(e_b, v);
 
-	sub_v3_v3v3(tvec_a, v->co, v_a->co);
-	sub_v3_v3v3(tvec_b, v_b->co, v->co);
-	normalize_v3(tvec_a);
-	normalize_v3(tvec_b);
-	add_v3_v3v3(no_edge, tvec_a, tvec_b); /* not unit length but this is ok */
+		sub_v3_v3v3(tvec_a, v->co, v_a->co);
+		sub_v3_v3v3(tvec_b, v_b->co, v->co);
+		normalize_v3(tvec_a);
+		normalize_v3(tvec_b);
+		add_v3_v3v3(no_edge, tvec_a, tvec_b); /* not unit length but this is ok */
 
+		/* check are we flipped the right way */
+		BM_edge_calc_face_tangent(e_a, l_a, tvec_a);
+		BM_edge_calc_face_tangent(e_b, l_b, tvec_b);
+		add_v3_v3(tvec_a, tvec_b);
+
+		*r_va_other = v_a;
+		*r_vb_other = v_b;
+	}
+	else {
+		/* degenerate case - vertex connects a boundary edged face to other faces,
+		 * so we have only one boundary face - only use it for calculations */
+		l_a = bm_edge_tag_faceloop(e_a);
+
+		copy_v3_v3(no_face, l_a->f->no);
+
+		/* edge direction */
+		v_a = BM_edge_other_vert(e_a, v);
+		v_b = NULL;
+
+		sub_v3_v3v3(no_edge, v->co, v_a->co);
+
+		/* check are we flipped the right way */
+		BM_edge_calc_face_tangent(e_a, l_a, tvec_a);
+
+		*r_va_other = NULL;
+		*r_vb_other = NULL;
+	}
 
 	/* find the normal */
 	cross_v3_v3v3(r_no, no_edge, no_face);
 	normalize_v3(r_no);
-
-	/* check are we flipped the right way */
-	BM_edge_calc_face_tangent(e_a, l_a, tvec_a);
-	BM_edge_calc_face_tangent(e_b, l_b, tvec_b);
-	add_v3_v3(tvec_a, tvec_b);
 
 	if (dot_v3v3(r_no, tvec_a) > 0.0f) {
 		negate_v3(r_no);
 	}
 
 	copy_v3_v3(r_no_face, no_face);
-	*r_va_other = v_a;
-	*r_vb_other = v_b;
 }
 
 /* check if we are the only tagged loop-face around this edge */
-static int bm_loop_is_radial_boundary(BMLoop *l_first)
+static bool bm_loop_is_radial_boundary(BMLoop *l_first)
 {
 	BMLoop *l = l_first->radial_next;
 
 	if (l == l_first) {
-		return TRUE; /* a real boundary */
+		return true; /* a real boundary */
 	}
 	else {
 		do {
 			if (BM_elem_flag_test(l->f, BM_ELEM_TAG)) {
-				return FALSE;
+				return false;
 			}
 		} while ((l = l->radial_next) != l_first);
 	}
-	return TRUE;
+	return true;
 }
-
-extern float BM_vert_calc_mean_tagged_edge_length(BMVert *v);
 
 void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 {
-	const int use_boundary        = BMO_slot_bool_get(op,  "use_boundary");
-	const int use_even_offset     = BMO_slot_bool_get(op,  "use_even_offset");
-	const int use_relative_offset = BMO_slot_bool_get(op,  "use_relative_offset");
-	const int use_crease          = (BMO_slot_bool_get(op,  "use_crease") &&
-	                                 CustomData_has_layer(&bm->edata, CD_CREASE));
-	const float depth             = BMO_slot_float_get(op, "thickness");
-	const float inset             = depth;
+	const bool use_boundary        = BMO_slot_bool_get(op->slots_in,  "use_boundary");
+	const bool use_even_offset     = BMO_slot_bool_get(op->slots_in,  "use_even_offset");
+	const bool use_relative_offset = BMO_slot_bool_get(op->slots_in,  "use_relative_offset");
+	const bool use_crease          = (BMO_slot_bool_get(op->slots_in,  "use_crease") &&
+	                                  CustomData_has_layer(&bm->edata, CD_CREASE));
+	const float depth              = BMO_slot_float_get(op->slots_in, "thickness");
+	const float inset              = depth;
 
 	const int totvert_orig = bm->totvert;
 
@@ -182,9 +203,9 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 	}
 
 	/* setup tags, all faces and verts will be tagged which will be duplicated */
-	BM_mesh_elem_hflag_disable_all(bm, BM_FACE, BM_ELEM_TAG, FALSE);
+	BM_mesh_elem_hflag_disable_all(bm, BM_FACE, BM_ELEM_TAG, false);
 
-	BMO_ITER (f_src, &oiter, bm, op, "faces", BM_FACE) {
+	BMO_ITER (f_src, &oiter, op->slots_in, "faces", BM_FACE) {
 		verts_loop_tot += f_src->len;
 		BM_elem_flag_enable(f_src, BM_ELEM_TAG);
 		BM_ITER_ELEM (l, &itersub, f_src, BM_LOOPS_OF_FACE) {
@@ -196,7 +217,8 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 	}
 
 	/* duplicate tagged verts */
-	for (i = 0, v_src = verts_src[i]; i < totvert_orig; i++, v_src = verts_src[i]) {
+	for (i = 0; i < totvert_orig; i++) {
+		v_src = verts_src[i];
 		if (BM_elem_flag_test(v_src, BM_ELEM_TAG)) {
 			fac = depth;
 
@@ -206,9 +228,9 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 			}
 
 			madd_v3_v3v3fl(tvec, v_src->co, v_src->no, -fac);
-			verts_neg[i] = BM_vert_create(bm, tvec, v_src);
+			verts_neg[i] = BM_vert_create(bm, tvec, v_src, 0);
 			madd_v3_v3v3fl(tvec, v_src->co, v_src->no,  fac);
-			verts_pos[i] = BM_vert_create(bm, tvec, v_src);
+			verts_pos[i] = BM_vert_create(bm, tvec, v_src, 0);
 		}
 		else {
 			/* could skip this */
@@ -218,19 +240,19 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 		}
 
 		/* conflicts with BM_vert_calc_mean_tagged_edge_length */
-		if (use_relative_offset == FALSE) {
+		if (use_relative_offset == false) {
 			BM_elem_flag_disable(v_src, BM_ELEM_TAG);
 		}
 	}
 
 	if (use_relative_offset) {
-		BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, FALSE);
+		BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, false);
 	}
 
 	verts_loop = MEM_mallocN(sizeof(BMVert **) * verts_loop_tot, __func__);
 	verts_loop_tot = 0; /* count up again */
 
-	BMO_ITER (f_src, &oiter, bm, op, "faces", BM_FACE) {
+	BMO_ITER (f_src, &oiter, op->slots_in, "faces", BM_FACE) {
 		BM_ITER_ELEM (l, &itersub, f_src, BM_LOOPS_OF_FACE) {
 			BM_elem_index_set(l, verts_loop_tot); /* set_loop */
 
@@ -246,7 +268,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 			}
 
 			madd_v3_v3v3fl(tvec, l->v->co, tvec, fac);
-			verts_loop[verts_loop_tot] = BM_vert_create(bm, tvec, l->v);
+			verts_loop[verts_loop_tot] = BM_vert_create(bm, tvec, l->v, 0);
 
 
 			if (use_boundary) {
@@ -269,16 +291,18 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 							/* similar to code above but different angle calc */
 							fac = inset;
 							if (use_even_offset) {
-								fac *= shell_angle_to_dist(((float)M_PI - angle_on_axis_v3v3v3_v3(va_other->co,
-								                                                                  l_pair[i]->v->co,
-								                                                                  vb_other->co,
-								                                                                  no_face)) * 0.5f);
+								if (va_other) {  /* for verts with only one boundary edge - this will be NULL */
+									fac *= shell_angle_to_dist(((float)M_PI - angle_on_axis_v3v3v3_v3(va_other->co,
+									                                                                  l_pair[i]->v->co,
+									                                                                  vb_other->co,
+									                                                                  no_face)) * 0.5f);
+								}
 							}
 							if (use_relative_offset) {
 								fac *= verts_relfac[BM_elem_index_get(l_pair[i]->v)];
 							}
 							madd_v3_v3v3fl(tvec, l_pair[i]->v->co, tvec, fac);
-							verts_boundary[BM_elem_index_get(l_pair[i]->v)] = BM_vert_create(bm, tvec, l_pair[i]->v);
+							verts_boundary[BM_elem_index_get(l_pair[i]->v)] = BM_vert_create(bm, tvec, l_pair[i]->v, 0);
 						}
 					}
 				}
@@ -288,7 +312,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 		}
 	}
 
-	BMO_ITER (f_src, &oiter, bm, op, "faces", BM_FACE) {
+	BMO_ITER (f_src, &oiter, op->slots_in, "faces", BM_FACE) {
 		BM_elem_flag_disable(f_src, BM_ELEM_TAG);
 		BM_ITER_ELEM (l, &itersub, f_src, BM_LOOPS_OF_FACE) {
 			BMFace *f_new;
@@ -309,7 +333,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 			BMVert *v_pos1 = verts_pos[i_1];
 			BMVert *v_pos2 = verts_pos[i_2];
 
-			f_new = BM_face_create_quad_tri(bm, v_l1, v_l2, v_neg2, v_neg1, f_src, FALSE);
+			f_new = BM_face_create_quad_tri(bm, v_l1, v_l2, v_neg2, v_neg1, f_src, false);
 			BM_elem_flag_enable(f_new, BM_ELEM_TAG);
 			l_new = BM_FACE_FIRST_LOOP(f_new);
 
@@ -318,7 +342,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 			BM_elem_attrs_copy(bm, bm, l_next, l_new->next);
 			BM_elem_attrs_copy(bm, bm, l_next, l_new->next->next);
 
-			f_new = BM_face_create_quad_tri(bm, v_l2, v_l1, v_pos1, v_pos2, f_src, FALSE);
+			f_new = BM_face_create_quad_tri(bm, v_l2, v_l1, v_pos1, v_pos2, f_src, false);
 			BM_elem_flag_enable(f_new, BM_ELEM_TAG);
 			l_new = BM_FACE_FIRST_LOOP(f_new);
 
@@ -334,7 +358,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 					BMVert *v_b1 = verts_boundary[i_1];
 					BMVert *v_b2 = verts_boundary[i_2];
 
-					f_new = BM_face_create_quad_tri(bm, v_b2, v_b1, v_neg1, v_neg2, f_src, FALSE);
+					f_new = BM_face_create_quad_tri(bm, v_b2, v_b1, v_neg1, v_neg2, f_src, false);
 					BM_elem_flag_enable(f_new, BM_ELEM_TAG);
 					l_new = BM_FACE_FIRST_LOOP(f_new);
 
@@ -343,7 +367,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 					BM_elem_attrs_copy(bm, bm, l,      l_new->next);
 					BM_elem_attrs_copy(bm, bm, l,      l_new->next->next);
 
-					f_new = BM_face_create_quad_tri(bm, v_b1, v_b2, v_pos2, v_pos1, f_src, FALSE);
+					f_new = BM_face_create_quad_tri(bm, v_b1, v_b2, v_pos2, v_pos1, f_src, false);
 					BM_elem_flag_enable(f_new, BM_ELEM_TAG);
 					l_new = BM_FACE_FIRST_LOOP(f_new);
 
@@ -400,5 +424,5 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 	MEM_freeN(verts_pos);
 	MEM_freeN(verts_loop);
 
-	BMO_slot_buffer_from_enabled_hflag(bm, op, "faceout", BM_FACE, BM_ELEM_TAG);
+	BMO_slot_buffer_from_enabled_hflag(bm, op, op->slots_out, "faces.out", BM_FACE, BM_ELEM_TAG);
 }

@@ -43,9 +43,9 @@
 #include "BLI_bitmap.h"
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_pbvh.h"
 #include "BLI_utildefines.h"
 
+#include "BKE_pbvh.h"
 #include "BKE_ccg.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_mesh.h"
@@ -54,7 +54,7 @@
 #include "BKE_paint.h"
 #include "BKE_scene.h"
 #include "BKE_subsurf.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "BKE_object.h"
 
@@ -310,7 +310,7 @@ MultiresModifierData *find_multires_modifier_before(Scene *scene, ModifierData *
 /* used for applying scale on mdisps layer and syncing subdivide levels when joining objects
  * use_first - return first multires modifier if all multires'es are disabled
  */
-MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob, int use_first)
+MultiresModifierData *get_multires_modifier(Scene *scene, Object *ob, bool use_first)
 {
 	ModifierData *md;
 	MultiresModifierData *mmd = NULL, *firstmmd = NULL;
@@ -373,13 +373,10 @@ void multires_mark_as_modified(Object *ob, MultiresModifiedFlags flags)
 void multires_force_update(Object *ob)
 {
 	if (ob) {
-		if (ob->derivedFinal) {
-			ob->derivedFinal->needsFree = 1;
-			ob->derivedFinal->release(ob->derivedFinal);
-			ob->derivedFinal = NULL;
-		}
+		BKE_object_free_derived_caches(ob);
+
 		if (ob->sculpt && ob->sculpt->pbvh) {
-			BLI_pbvh_free(ob->sculpt->pbvh);
+			BKE_pbvh_free(ob->sculpt->pbvh);
 			ob->sculpt->pbvh = NULL;
 		}
 	}
@@ -666,7 +663,9 @@ static void multires_del_higher(MultiresModifierData *mmd, Object *ob, int lvl)
 					mdisp->totdisp = totdisp;
 					mdisp->level = lvl;
 
-					multires_grid_paint_mask_downsample(&gpm[g], lvl);
+					if (gpm) {
+						multires_grid_paint_mask_downsample(&gpm[g], lvl);
+					}
 				}
 			}
 		}
@@ -858,6 +857,12 @@ void multiresModifier_base_apply(MultiresModifierData *mmd, Object *ob)
 	MEM_freeN(origco);
 	cddm->release(cddm);
 
+	/* Vertices were moved around, need to update normals after all the vertices are updated
+	 * Probably this is possible to do in the loop above, but this is rather tricky because
+	 * we don't know all needed vertices' coordinates there yet.
+	 */
+	BKE_mesh_calc_normals(me);
+
 	/* subdivide the mesh to highest level without displacements */
 	cddm = CDDM_from_mesh(me, NULL);
 	DM_set_only_copy(cddm, CD_MASK_BAREMESH);
@@ -893,15 +898,16 @@ static void multires_subdivide(MultiresModifierData *mmd, Object *ob, int totlvl
 		CCGKey highGridKey, lowGridKey;
 		CCGSubSurf *ss;
 		int i, numGrids, highGridSize;
+		int has_mask = CustomData_has_layer(&me->ldata, CD_GRID_PAINT_MASK);
 
 		/* create subsurf DM from original mesh at high level */
 		cddm = CDDM_from_mesh(me, NULL);
 		DM_set_only_copy(cddm, CD_MASK_BAREMESH);
-		highdm = subsurf_dm_create_local(ob, cddm, totlvl, simple, 0, mmd->flags & eMultiresModifierFlag_PlainUv, TRUE);
+		highdm = subsurf_dm_create_local(ob, cddm, totlvl, simple, 0, mmd->flags & eMultiresModifierFlag_PlainUv, has_mask);
 		ss = ((CCGDerivedMesh *)highdm)->ss;
 
 		/* create multires DM from original mesh at low level */
-		lowdm = multires_dm_create_local(ob, cddm, lvl, lvl, simple, TRUE);
+		lowdm = multires_dm_create_local(ob, cddm, lvl, lvl, simple, has_mask);
 		cddm->release(cddm);
 
 		/* copy subsurf grids and replace them with low displaced grids */
@@ -981,7 +987,7 @@ static void grid_tangent(const CCGKey *key, int x, int y, int axis, CCGElem *gri
 
 /* Construct 3x3 tangent-space matrix in 'mat' */
 static void grid_tangent_matrix(float mat[3][3], const CCGKey *key,
-								int x, int y, CCGElem *grid)
+                                int x, int y, CCGElem *grid)
 {
 	grid_tangent(key, x, y, 0, grid, mat[0]);
 	normalize_v3(mat[0]);
@@ -1042,7 +1048,7 @@ static void multiresModifier_disp_run(DerivedMesh *dm, Mesh *me, DerivedMesh *dm
 
 	k = 0; /*current loop/mdisp index within the mloop array*/
 
-	#pragma omp parallel for private(i) if (totloop*gridSize*gridSize >= CCG_OMP_LIMIT)
+	#pragma omp parallel for private(i) if (totloop * gridSize * gridSize >= CCG_OMP_LIMIT)
 
 	for (i = 0; i < totpoly; ++i) {
 		const int numVerts = mpoly[i].totloop;
@@ -1158,23 +1164,23 @@ void multires_modifier_update_mdisps(struct DerivedMesh *dm)
 		int totlvl = ccgdm->multires.totlvl;
 		
 		if (lvl < totlvl) {
-			Mesh *me = ob->data;
 			DerivedMesh *lowdm, *cddm, *highdm;
 			CCGElem **highGridData, **lowGridData, **subGridData, **gridData, *diffGrid;
 			CCGKey highGridKey, lowGridKey;
 			CCGSubSurf *ss;
 			int i, j, numGrids, highGridSize, lowGridSize;
+			int has_mask = CustomData_has_layer(&me->ldata, CD_GRID_PAINT_MASK);
 
 			/* create subsurf DM from original mesh at high level */
 			if (ob->derivedDeform) cddm = CDDM_copy(ob->derivedDeform);
 			else cddm = CDDM_from_mesh(me, NULL);
 			DM_set_only_copy(cddm, CD_MASK_BAREMESH);
 
-			highdm = subsurf_dm_create_local(ob, cddm, totlvl, mmd->simple, 0, mmd->flags & eMultiresModifierFlag_PlainUv, TRUE);
+			highdm = subsurf_dm_create_local(ob, cddm, totlvl, mmd->simple, 0, mmd->flags & eMultiresModifierFlag_PlainUv, has_mask);
 			ss = ((CCGDerivedMesh *)highdm)->ss;
 
 			/* create multires DM from original mesh and displacements */
-			lowdm = multires_dm_create_local(ob, cddm, lvl, totlvl, mmd->simple, TRUE);
+			lowdm = multires_dm_create_local(ob, cddm, lvl, totlvl, mmd->simple, has_mask);
 			cddm->release(cddm);
 
 			/* gather grid data */
@@ -1226,12 +1232,13 @@ void multires_modifier_update_mdisps(struct DerivedMesh *dm)
 		}
 		else {
 			DerivedMesh *cddm, *subdm;
+			int has_mask = CustomData_has_layer(&me->ldata, CD_GRID_PAINT_MASK);
 
 			if (ob->derivedDeform) cddm = CDDM_copy(ob->derivedDeform);
 			else cddm = CDDM_from_mesh(me, NULL);
 			DM_set_only_copy(cddm, CD_MASK_BAREMESH);
 
-			subdm = subsurf_dm_create_local(ob, cddm, mmd->totlvl, mmd->simple, 0, mmd->flags & eMultiresModifierFlag_PlainUv, TRUE);
+			subdm = subsurf_dm_create_local(ob, cddm, mmd->totlvl, mmd->simple, 0, mmd->flags & eMultiresModifierFlag_PlainUv, has_mask);
 			cddm->release(cddm);
 
 			multiresModifier_disp_run(dm, me, NULL, CALC_DISPLACEMENTS, subdm->getGridData(subdm), mmd->totlvl);
@@ -1321,7 +1328,7 @@ void multires_set_space(DerivedMesh *dm, Object *ob, int from, int to)
 
 	k = 0; /*current loop/mdisp index within the mloop array*/
 
-	//#pragma omp parallel for private(i) if (dm->numLoopData*gridSize*gridSize >= CCG_OMP_LIMIT)
+	//#pragma omp parallel for private(i) if (dm->numLoopData * gridSize * gridSize >= CCG_OMP_LIMIT)
 
 	for (i = 0; i < dm->numPolyData; ++i) {
 		const int numVerts = mpoly[i].totloop;
@@ -1403,7 +1410,7 @@ void multires_stitch_grids(Object *ob)
 		int totface;
 
 		if (ccgdm->pbvh) {
-			BLI_pbvh_get_grid_updates(ccgdm->pbvh, 0, (void ***)&faces, &totface);
+			BKE_pbvh_get_grid_updates(ccgdm->pbvh, 0, (void ***)&faces, &totface);
 
 			if (totface) {
 				ccgSubSurf_stitchFaces(ccgdm->ss, 0, faces, totface);
@@ -1555,7 +1562,7 @@ static void old_mdisps_convert(MFace *mface, MDisps *mdisp)
 				if (S == 1) { (*out)[1] = -(*out)[1]; }
 				else if (S == 2) { SWAP(float, (*out)[0], (*out)[1]); }
 				else if (S == 3) { (*out)[0] = -(*out)[0]; }
-				else if (S == 0) { SWAP(float, (*out)[0], (*out)[1]); (*out)[0] = -(*out)[0]; (*out)[1] = -(*out)[1]; };
+				else if (S == 0) { SWAP(float, (*out)[0], (*out)[1]); (*out)[0] = -(*out)[0]; (*out)[1] = -(*out)[1]; }
 			}
 		}
 	}
@@ -1626,7 +1633,7 @@ void multires_free(Multires *mr)
 		}
 
 		while (lvl) {
-			multires_free_level(lvl);			
+			multires_free_level(lvl);
 			lvl = lvl->next;
 		}
 
@@ -2081,8 +2088,8 @@ void multires_load_old(Object *ob, Mesh *me)
 		CustomData_add_layer(&me->vdata, l->type, CD_REFERENCE, l->data, me->totvert);
 	for (i = 0, l = me->mr->fdata.layers; i < me->mr->fdata.totlayer; ++i, ++l)
 		CustomData_add_layer(&me->fdata, l->type, CD_REFERENCE, l->data, me->totface);
-	memset(&me->mr->vdata, 0, sizeof(CustomData));
-	memset(&me->mr->fdata, 0, sizeof(CustomData));
+	CustomData_reset(&me->mr->vdata);
+	CustomData_reset(&me->mr->fdata);
 
 	multires_load_old_vcols(me);
 	multires_load_old_face_flags(me);
@@ -2107,7 +2114,7 @@ void multires_load_old(Object *ob, Mesh *me)
 	 *     reference subsurfed dm with this option, before calling multiresModifier_disp_run(),
 	 *     which implicitly expects both subsurfs from its first dm and oldGridData parameters to
 	 *     be of the same "format"! */
-	dm = multires_make_derived_from_derived(orig, mmd, ob, MULTIRES_ALLOC_PAINT_MASK);
+	dm = multires_make_derived_from_derived(orig, mmd, ob, 0);
 
 	multires_load_old_dm(dm, me, mmd->totlvl + 1);
 
@@ -2196,7 +2203,7 @@ static void multires_apply_smat(Scene *scene, Object *ob, float smat[3][3])
 	dGridSize = multires_side_tot[high_mmd.totlvl];
 	dSkip = (dGridSize - 1) / (gridSize - 1);
 
-	#pragma omp parallel for private(i) if (me->totface*gridSize*gridSize*4 >= CCG_OMP_LIMIT)
+	#pragma omp parallel for private(i) if (me->totface * gridSize * gridSize * 4 >= CCG_OMP_LIMIT)
 	for (i = 0; i < me->totpoly; ++i) {
 		const int numVerts = mpoly[i].totloop;
 		MDisps *mdisp = &mdisps[mpoly[i].loopstart];

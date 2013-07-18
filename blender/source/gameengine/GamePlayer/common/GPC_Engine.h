@@ -103,7 +103,7 @@ public:
 	// different prototypes for Unix and Windows
 	void StartLoadingAnimation();
 	bool Start(const char *filename);  // file-on-disk starter
-	bool Start(unsigned char *blenderDataBuffer,
+	bool Start(const void *blenderDataBuffer,
 	           unsigned int blenderDataBufferSize);  // file-in-memory starter
 
 	void Stop();
@@ -121,5 +121,4 @@ private:
 
 };
 
-#endif  // __GPC_ENGINE_H__
-
+#endif  /* __GPC_ENGINE_H__ */

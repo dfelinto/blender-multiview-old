@@ -74,7 +74,7 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	return dataMask;
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(userRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(userRenderParams))
 {
 	LatticeModifierData *lmd = (LatticeModifierData *) md;
 
@@ -82,9 +82,9 @@ static int isDisabled(ModifierData *md, int UNUSED(userRenderParams))
 }
 
 static void foreachObjectLink(
-    ModifierData *md, Object *ob,
-    void (*walk)(void *userData, Object *ob, Object **obpoin),
-    void *userData)
+        ModifierData *md, Object *ob,
+        void (*walk)(void *userData, Object *ob, Object **obpoin),
+        void *userData)
 {
 	LatticeModifierData *lmd = (LatticeModifierData *) md;
 
@@ -122,12 +122,12 @@ static void deformVerts(ModifierData *md, Object *ob,
 }
 
 static void deformVertsEM(
-        ModifierData *md, Object *ob, struct BMEditMesh *editData,
+        ModifierData *md, Object *ob, struct BMEditMesh *em,
         DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = derivedData;
 
-	if (!derivedData) dm = CDDM_from_BMEditMesh(editData, ob->data, FALSE, FALSE);
+	if (!derivedData) dm = CDDM_from_editbmesh(em, FALSE, FALSE);
 
 	deformVerts(md, ob, dm, vertexCos, numVerts, 0);
 

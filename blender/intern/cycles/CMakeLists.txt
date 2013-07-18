@@ -13,16 +13,21 @@ if(WITH_RAYOPTIMIZATION AND SUPPORT_SSE_BUILD)
 endif()
 
 if(WIN32 AND MSVC)
-	set(CYCLES_OPTIMIZED_KERNEL_FLAGS "/arch:SSE2 -D_CRT_SECURE_NO_WARNINGS /fp:fast /EHsc")
+	set(CYCLES_SSE2_KERNEL_FLAGS "/arch:SSE2 -D_CRT_SECURE_NO_WARNINGS /fp:fast /EHsc")
+	set(CYCLES_SSE3_KERNEL_FLAGS "/arch:SSE2 -D_CRT_SECURE_NO_WARNINGS /fp:fast /EHsc")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /EHsc")
 elseif(CMAKE_COMPILER_IS_GNUCC)
-	set(CYCLES_OPTIMIZED_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mfpmath=sse")
+	set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2 -mfpmath=sse")
+	set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mfpmath=sse")
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 endif()
 
-# for OSL, not needed yet
-# set(RTTI_DISABLE_FLAGS "-fno-rtti -DBOOST_NO_RTTI -DBOOST_NO_TYPEID")
-# set(RTTI_DISABLE_FLAGS "/GR- -DBOOST_NO_RTTI -DBOOST_NO_TYPEID")
+# for OSL
+if(WIN32 AND MSVC)
+	set(RTTI_DISABLE_FLAGS "/GR- -DBOOST_NO_RTTI -DBOOST_NO_TYPEID")
+elseif(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang"))
+	set(RTTI_DISABLE_FLAGS "-fno-rtti -DBOOST_NO_RTTI -DBOOST_NO_TYPEID")
+endif()
 
 # Definitions and Includes
 
@@ -41,14 +46,8 @@ endif()
 
 if(WITH_CYCLES_OSL)
 	add_definitions(-DWITH_OSL)
-endif()
-
-if(WITH_CYCLES_PARTIO)
-	add_definitions(-DWITH_PARTIO)
-endif()
-
-if(WITH_CYCLES_CUDA_BINARIES)
-	add_definitions(-DWITH_CUDA_BINARIES)
+	add_definitions(-DOSL_STATIC_LIBRARY)
+	include_directories(${OSL_INCLUDES})
 endif()
 
 add_definitions(-DWITH_OPENCL)
@@ -56,18 +55,22 @@ add_definitions(-DWITH_CUDA)
 add_definitions(-DWITH_MULTI)
 
 include_directories(
+	SYSTEM
 	${BOOST_INCLUDE_DIR}
 	${OPENIMAGEIO_INCLUDE_DIRS}
-	${OPENIMAGEIO_INCLUDE_DIRS}/OpenImageIO)
+	${OPENIMAGEIO_INCLUDE_DIRS}/OpenImageIO
+	${OPENEXR_INCLUDE_DIR})
 
 # Subdirectories
 
 if(WITH_CYCLES_BLENDER)
-	add_definitions(-DBLENDER_PLUGIN)
 	add_subdirectory(blender)
 endif()
 
-add_subdirectory(app)
+if(WITH_CYCLES_TEST OR WITH_CYCLES_NETWORK)
+	add_subdirectory(app)
+endif()
+
 add_subdirectory(bvh)
 add_subdirectory(device)
 add_subdirectory(doc)

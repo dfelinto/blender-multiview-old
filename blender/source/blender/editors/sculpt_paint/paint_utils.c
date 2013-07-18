@@ -43,24 +43,27 @@
 #include "BLI_utildefines.h"
 #include "BLI_rect.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_brush.h"
 #include "BKE_context.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_paint.h"
+#include "BKE_report.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
 
 #include "BIF_gl.h"
-/* TODO: remove once projectf goes away */
 #include "BIF_glutil.h"
 
 #include "RE_shader_ext.h"
+#include "RE_render_ext.h"
 
 #include "ED_view3d.h"
 #include "ED_screen.h"
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 #include "ED_mesh.h" /* for face mask functions */
 
 #include "WM_api.h"
@@ -98,7 +101,7 @@ int paint_convert_bb_to_rect(rcti *rect,
 				vec[1] = j ? bb_min[1] : bb_max[1];
 				vec[2] = k ? bb_min[2] : bb_max[2];
 				/* convert corner to screen space */
-				ED_view3d_project_float_v2(ar, vec, proj, projection_mat);
+				ED_view3d_project_float_v2_m4(ar, vec, proj, projection_mat);
 				/* expand 2D rectangle */
 
 				/* we could project directly to int? */
@@ -137,21 +140,8 @@ void paint_calc_redraw_planes(float planes[4][4],
 	rect.ymin -= 2;
 	rect.ymax += 2;
 
-	ED_view3d_calc_clipping(&bb, planes, &mats, &rect);
+	ED_view3d_clipping_calc(&bb, planes, &mats, &rect);
 	mul_m4_fl(planes, -1.0f);
-}
-
-/* convert a point in model coordinates to 2D screen coordinates */
-/* TODO: can be deleted once all calls are replaced with
- * view3d_project_float() */
-void projectf(bglMats *mats, const float v[3], float p[2])
-{
-	double ux, uy, uz;
-
-	gluProject(v[0], v[1], v[2], mats->modelview, mats->projection,
-	           (GLint *)mats->viewport, &ux, &uy, &uz);
-	p[0] = ux;
-	p[1] = uy;
 }
 
 float paint_calc_object_space_radius(ViewContext *vc, const float center[3],
@@ -159,15 +149,13 @@ float paint_calc_object_space_radius(ViewContext *vc, const float center[3],
 {
 	Object *ob = vc->obact;
 	float delta[3], scale, loc[3];
-	float mval_f[2];
+	const float mval_f[2] = {pixel_radius, 0.0f};
+	float zfac;
 
 	mul_v3_m4v3(loc, ob->obmat, center);
 
-	initgrabz(vc->rv3d, loc[0], loc[1], loc[2]);
-
-	mval_f[0] = pixel_radius;
-	mval_f[1] = 0.0f;
-	ED_view3d_win_to_delta(vc->ar, mval_f, delta);
+	zfac = ED_view3d_calc_zfac(vc->rv3d, loc, NULL);
+	ED_view3d_win_to_delta(vc->ar, mval_f, delta, zfac);
 
 	scale = fabsf(mat4_to_scale(ob->obmat));
 	scale = (scale == 0.0f) ? 1.0f : scale;
@@ -175,23 +163,41 @@ float paint_calc_object_space_radius(ViewContext *vc, const float center[3],
 	return len_v3(delta) / scale;
 }
 
-float paint_get_tex_pixel(Brush *br, float u, float v)
+float paint_get_tex_pixel(MTex *mtex, float u, float v, struct ImagePool *pool)
 {
-	TexResult texres = {0};
+	float intensity, rgba[4];
+	float co[3] = {u, v, 0.0f};
+
+	externtex(mtex, co, &intensity,
+		                   rgba, rgba + 1, rgba + 2, rgba + 3, 0, pool);
+
+	return intensity;
+}
+
+void paint_get_tex_pixel_col(MTex *mtex, float u, float v, float rgba[4], struct ImagePool *pool)
+{
 	float co[3] = {u, v, 0.0f};
 	int hasrgb;
+	float intensity;
 
-	hasrgb = multitex_ext(br->mtex.tex, co, NULL, NULL, 0, &texres);
+	hasrgb = externtex(mtex, co, &intensity,
+		                   rgba, rgba + 1, rgba + 2, rgba + 3, 0, pool);
 
-	if (hasrgb & TEX_RGB)
-		texres.tin = rgb_to_grayscale(&texres.tr) * texres.ta;
-
-	return texres.tin;
+	if (!hasrgb) {
+		rgba[0] = intensity;
+		rgba[1] = intensity;
+		rgba[2] = intensity;
+		rgba[3] = 1.0f;
+	}
+	CLAMP(rgba[0], 0.0f, 1.0f);
+	CLAMP(rgba[1], 0.0f, 1.0f);
+	CLAMP(rgba[2], 0.0f, 1.0f);
+	CLAMP(rgba[3], 0.0f, 1.0f);
 }
 
 /* 3D Paint */
 
-static void imapaint_project(Object *ob, float model[][4], float proj[][4], const float co[3], float pco[4])
+static void imapaint_project(Object *ob, float model[4][4], float proj[4][4], const float co[3], float pco[4])
 {
 	copy_v3_v3(pco, co);
 	pco[3] = 1.0f;
@@ -203,7 +209,7 @@ static void imapaint_project(Object *ob, float model[][4], float proj[][4], cons
 
 static void imapaint_tri_weights(Object *ob,
                                  const float v1[3], const float v2[3], const float v3[3],
-                                 const float co[3], float w[3])
+                                 const float co[2], float w[3])
 {
 	float pv1[4], pv2[4], pv3[4], h[3], divw;
 	float model[4][4], proj[4][4], wmat[3][3], invwmat[3][3];
@@ -250,19 +256,25 @@ static void imapaint_tri_weights(Object *ob,
 void imapaint_pick_uv(Scene *scene, Object *ob, unsigned int faceindex, const int xy[2], float uv[2])
 {
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, CD_MASK_BAREMESH);
-	const int *index = dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
 	MTFace *tface = dm->getTessFaceDataArray(dm, CD_MTFACE), *tf;
 	int numfaces = dm->getNumTessFaces(dm), a, findex;
 	float p[2], w[3], absw, minabsw;
 	MFace mf;
 	MVert mv[4];
 
+	/* double lookup */
+	const int *index_mf_to_mpoly = dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
+	const int *index_mp_to_orig  = dm->getPolyDataArray(dm, CD_ORIGINDEX);
+	if (index_mf_to_mpoly == NULL) {
+		index_mp_to_orig = NULL;
+	}
+
 	minabsw = 1e10;
 	uv[0] = uv[1] = 0.0;
 
 	/* test all faces in the derivedmesh with the original index of the picked face */
 	for (a = 0; a < numfaces; a++) {
-		findex = index ? index[a] : a;
+		findex = index_mf_to_mpoly ? DM_origindex_mface_mpoly(index_mf_to_mpoly, index_mp_to_orig, a) : a;
 
 		if (findex == faceindex) {
 			dm->getTessFace(dm, a, &mf);
@@ -333,7 +345,7 @@ int imapaint_pick_face(ViewContext *vc, const int mval[2], unsigned int *index, 
 /* used for both 3d view and image window */
 void paint_sample_color(const bContext *C, ARegion *ar, int x, int y)    /* frontbuf */
 {
-	Brush *br = paint_brush(paint_get_active_from_context(C));
+	Brush *br = BKE_paint_brush(BKE_paint_get_active_from_context(C));
 	unsigned int col;
 	char *cp;
 
@@ -355,21 +367,27 @@ void paint_sample_color(const bContext *C, ARegion *ar, int x, int y)    /* fron
 
 static int brush_curve_preset_exec(bContext *C, wmOperator *op)
 {
-	Brush *br = paint_brush(paint_get_active_from_context(C));
-	BKE_brush_curve_preset(br, RNA_enum_get(op->ptr, "shape"));
+	Brush *br = BKE_paint_brush(BKE_paint_get_active_from_context(C));
+
+	if (br) {
+		Scene *scene = CTX_data_scene(C);
+		BKE_brush_curve_preset(br, RNA_enum_get(op->ptr, "shape"));
+		BKE_paint_invalidate_cursor_overlay(scene, br->curve);
+	}
 
 	return OPERATOR_FINISHED;
 }
 
 static int brush_curve_preset_poll(bContext *C)
 {
-	Brush *br = paint_brush(paint_get_active_from_context(C));
+	Brush *br = BKE_paint_brush(BKE_paint_get_active_from_context(C));
 
 	return br && br->curve;
 }
 
 void BRUSH_OT_curve_preset(wmOperatorType *ot)
 {
+	PropertyRNA *prop;
 	static EnumPropertyItem prop_shape_items[] = {
 		{CURVE_PRESET_SHARP, "SHARP", 0, "Sharp", ""},
 		{CURVE_PRESET_SMOOTH, "SMOOTH", 0, "Smooth", ""},
@@ -386,7 +404,8 @@ void BRUSH_OT_curve_preset(wmOperatorType *ot)
 	ot->exec = brush_curve_preset_exec;
 	ot->poll = brush_curve_preset_poll;
 
-	RNA_def_enum(ot->srna, "shape", prop_shape_items, CURVE_PRESET_SMOOTH, "Mode", "");
+	prop = RNA_def_enum(ot->srna, "shape", prop_shape_items, CURVE_PRESET_SMOOTH, "Mode", "");
+	RNA_def_property_translation_context(prop, BLF_I18NCONTEXT_ID_CURVE); /* Abusing id_curve :/ */
 }
 
 
@@ -410,7 +429,7 @@ void PAINT_OT_face_select_linked(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int paint_select_linked_pick_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int paint_select_linked_pick_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	int mode = RNA_boolean_get(op->ptr, "extend") ? 1 : 0;
 	paintface_select_linked(C, CTX_data_active_object(C), event->mval, mode);
@@ -444,7 +463,7 @@ static int face_select_all_exec(bContext *C, wmOperator *op)
 
 void PAINT_OT_face_select_all(wmOperatorType *ot)
 {
-	ot->name = "Face Selection";
+	ot->name = "(De)select All";
 	ot->description = "Change selection for all faces";
 	ot->idname = "PAINT_OT_face_select_all";
 
@@ -468,7 +487,7 @@ static int vert_select_all_exec(bContext *C, wmOperator *op)
 
 void PAINT_OT_vert_select_all(wmOperatorType *ot)
 {
-	ot->name = "Vertex Selection";
+	ot->name = "(De)select All";
 	ot->description = "Change selection for all vertices";
 	ot->idname = "PAINT_OT_vert_select_all";
 
@@ -480,44 +499,37 @@ void PAINT_OT_vert_select_all(wmOperatorType *ot)
 	WM_operator_properties_select_all(ot);
 }
 
-static int vert_select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
+
+static int vert_select_ungrouped_exec(bContext *C, wmOperator *op)
 {
 	Object *ob = CTX_data_active_object(C);
-	paintvert_deselect_all_visible(ob, SEL_INVERT, TRUE);
+	Mesh *me = ob->data;
+
+	if ((ob->defbase.first == NULL) || (me->dvert == NULL)) {
+		BKE_report(op->reports, RPT_ERROR, "No weights/vertex groups on object");
+		return OPERATOR_CANCELLED;
+	}
+
+	paintvert_select_ungrouped(ob, RNA_boolean_get(op->ptr, "extend"), TRUE);
 	ED_region_tag_redraw(CTX_wm_region(C));
 	return OPERATOR_FINISHED;
 }
 
-void PAINT_OT_vert_select_inverse(wmOperatorType *ot)
+void PAINT_OT_vert_select_ungrouped(wmOperatorType *ot)
 {
-	ot->name = "Vertex Select Invert";
-	ot->description = "Invert selection of vertices";
-	ot->idname = "PAINT_OT_vert_select_inverse";
+	/* identifiers */
+	ot->name = "Select Ungrouped";
+	ot->idname = "PAINT_OT_vert_select_ungrouped";
+	ot->description = "Select vertices without a group";
 
-	ot->exec = vert_select_inverse_exec;
+	/* api callbacks */
+	ot->exec = vert_select_ungrouped_exec;
 	ot->poll = vert_paint_poll;
 
+	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-}
-static int face_select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	Object *ob = CTX_data_active_object(C);
-	paintface_deselect_all_visible(ob, SEL_INVERT, TRUE);
-	ED_region_tag_redraw(CTX_wm_region(C));
-	return OPERATOR_FINISHED;
-}
 
-
-void PAINT_OT_face_select_inverse(wmOperatorType *ot)
-{
-	ot->name = "Face Select Invert";
-	ot->description = "Invert selection of faces";
-	ot->idname = "PAINT_OT_face_select_inverse";
-
-	ot->exec = face_select_inverse_exec;
-	ot->poll = facemask_paint_poll;
-
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend the selection");
 }
 
 static int face_select_hide_exec(bContext *C, wmOperator *op)

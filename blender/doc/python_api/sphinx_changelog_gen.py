@@ -28,15 +28,15 @@ blender --background --python doc/python_api/sphinx_changelog_gen.py -- --dump
 
 # create changelog
 blender --background --python doc/python_api/sphinx_changelog_gen.py -- \
-        --api_from blender_2_56_1.py \
-        --api_to blender_2_57_0.py \
+        --api_from blender_2_63_0.py \
+        --api_to   blender_2_64_0.py \
         --api_out changes.rst
 
 
 # Api comparison can also run without blender
-python doc/python_api/sphinx_changelog_gen.py \
-        --api_from blender_api_2_56_6.py \
-        --api_to blender_api_2_57.py \
+python doc/python_api/sphinx_changelog_gen.py -- \
+        --api_from blender_api_2_63_0.py \
+        --api_to   blender_api_2_64_0.py \
         --api_out changes.rst
 
 # Save the latest API dump in this folder, renaming it with its revision.
@@ -72,19 +72,19 @@ def api_dump():
     import inspect
 
     struct = rna_info.BuildRNAInfo()[0]
-    for struct_id, strict_info in sorted(struct.items()):
+    for struct_id, struct_info in sorted(struct.items()):
 
-        struct_id_str = strict_info.identifier
+        struct_id_str = struct_info.identifier
 
         if rna_info.rna_id_ignore(struct_id_str):
             continue
 
-        for base in strict_info.get_bases():
+        for base in struct_info.get_bases():
             struct_id_str = base.identifier + "." + struct_id_str
 
         dump_class = dump_module[struct_id_str] = {}
 
-        props = [(prop.identifier, prop) for prop in strict_info.properties]
+        props = [(prop.identifier, prop) for prop in struct_info.properties]
         for prop_id, prop in sorted(props):
             # if prop.type == 'boolean':
             #     continue
@@ -113,7 +113,7 @@ def api_dump():
         del props
 
         # python props, tricky since we dont know much about them.
-        for prop_id, attr in strict_info.get_py_properties():
+        for prop_id, attr in struct_info.get_py_properties():
 
             dump_class[prop_id] = (
                     "prop_py",                  # basic_type
@@ -129,7 +129,7 @@ def api_dump():
                     )
 
         # kludge func -> props
-        funcs = [(func.identifier, func) for func in strict_info.functions]
+        funcs = [(func.identifier, func) for func in struct_info.functions]
         for func_id, func in funcs:
 
             func_ret_types = tuple([prop.type for prop in func.return_values])
@@ -151,7 +151,7 @@ def api_dump():
         del funcs
 
         # kludge func -> props
-        funcs = strict_info.get_py_functions()
+        funcs = struct_info.get_py_functions()
         for func_id, attr in funcs:
             # arg_str = inspect.formatargspec(*inspect.getargspec(py_func))
 
@@ -307,6 +307,8 @@ def api_changelog(api_from, api_to, api_out):
 
     fout.close()
 
+    print("Written: %r" % api_out)
+
 
 def main():
     import sys
@@ -347,6 +349,7 @@ def main():
     args = parser.parse_args(argv)  # In this example we wont use the args
 
     if not argv:
+        print("No args given!")
         parser.print_help()
         return
 

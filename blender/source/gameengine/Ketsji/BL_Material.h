@@ -89,20 +89,6 @@ public:
 	EnvMap*				cubemap[MAXTEX];
 
 	unsigned int rgb[4];
-	MT_Point2 uv[4];
-	MT_Point2 uv2[4];
-
-	STR_String uvName;
-	STR_String uv2Name;
-
-	void SetConversionRGB(unsigned int *rgb);
-	void GetConversionRGB(unsigned int *rgb);
-
-	void SetConversionUV(const STR_String& name, MT_Point2 *uv);
-	void GetConversionUV(MT_Point2 *uv);
-
-	void SetConversionUV2(const STR_String& name, MT_Point2 *uv);
-	void GetConversionUV2(MT_Point2 *uv);
 
 	void SetSharedMaterial(bool v);
 	bool IsShared();
@@ -188,8 +174,7 @@ enum BL_MappingProj
 
 // ------------------------------------
 //extern void initBL_Material(BL_Material* mat);
-extern MTex* getImageFromMaterial(Material *mat, int index);
-extern int  getNumTexChannels( Material *mat );
+extern MTex* getMTexFromMaterial(Material *mat, int index);
 // ------------------------------------
 
 #endif

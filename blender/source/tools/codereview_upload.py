@@ -845,7 +845,7 @@ class VersionControlSystem(object):
     """
     files = {}
     for line in diff.splitlines(True):
-      if line.startswith('Index:') or line.startswith('Property changes on:'):
+      if line.startswith(('Index:', 'Property changes on:')):
         unused, filename = line.split(':', 1)
         # On Windows if a file has property changes its filename uses '\'
         # instead of '/'.
@@ -996,7 +996,7 @@ class SubversionVCS(VersionControlSystem):
     data = RunShell(cmd)
     count = 0
     for line in data.splitlines():
-      if line.startswith("Index:") or line.startswith("Property changes on:"):
+      if line.startswith(("Index:", "Property changes on:")):
         count += 1
         logging.info(line)
     if not count:

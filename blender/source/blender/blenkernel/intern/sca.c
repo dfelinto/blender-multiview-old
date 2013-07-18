@@ -44,7 +44,6 @@
 #include "DNA_object_types.h"
 
 #include "BLI_blenlib.h"
-#include "BKE_utildefines.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_library.h"
@@ -211,7 +210,7 @@ void unlink_controllers(ListBase *lb)
 	bController *cont;
 	
 	for (cont= lb->first; cont; cont= cont->next)
-		unlink_controller(cont);	
+		unlink_controller(cont);
 }
 
 void free_controller(bController *cont)
@@ -537,7 +536,7 @@ void clear_sca_new_poins(void)
 	ob= G.main->object.first;
 	while (ob) {
 		clear_sca_new_poins_ob(ob);
-		ob= ob->id.next;	
+		ob= ob->id.next;
 	}
 }
 
@@ -553,7 +552,7 @@ void set_sca_new_poins_ob(Object *ob)
 		if (sens->flag & SENS_NEW) {
 			for (a=0; a<sens->totlinks; a++) {
 				if (sens->links[a] && sens->links[a]->mynew)
-					sens->links[a]= sens->links[a]->mynew;
+					sens->links[a] = sens->links[a]->mynew;
 			}
 		}
 		sens= sens->next;
@@ -564,7 +563,7 @@ void set_sca_new_poins_ob(Object *ob)
 		if (cont->flag & CONT_NEW) {
 			for (a=0; a<cont->totlinks; a++) {
 				if ( cont->links[a] && cont->links[a]->mynew)
-					cont->links[a]= cont->links[a]->mynew;
+					cont->links[a] = cont->links[a]->mynew;
 			}
 		}
 		cont= cont->next;
@@ -625,7 +624,7 @@ void set_sca_new_poins(void)
 	ob= G.main->object.first;
 	while (ob) {
 		set_sca_new_poins_ob(ob);
-		ob= ob->id.next;	
+		ob= ob->id.next;
 	}
 }
 
@@ -697,7 +696,7 @@ void sca_remove_ob_poin(Object *obt, Object *ob)
 			if (sta->target == ob) sta->target = NULL;
 		}
 		act= act->next;
-	}	
+	}
 }
 
 /* ******************** INTERFACE ******************* */
@@ -706,7 +705,7 @@ void sca_move_sensor(bSensor *sens_to_move, Object *ob, int move_up)
 	bSensor *sens, *tmp;
 
 	int val;
-	val = move_up ? 1:2;
+	val = move_up ? 1 : 2;
 
 	/* make sure this sensor belongs to this object */
 	sens= ob->sensors.first;
@@ -735,7 +734,7 @@ void sca_move_sensor(bSensor *sens_to_move, Object *ob, int move_up)
 		}
 		if (tmp) {
 			BLI_remlink(&ob->sensors, sens);
-			BLI_insertlink(&ob->sensors, tmp, sens);
+			BLI_insertlinkafter(&ob->sensors, tmp, sens);
 		}
 	}
 }
@@ -745,7 +744,7 @@ void sca_move_controller(bController *cont_to_move, Object *ob, int move_up)
 	bController *cont, *tmp;
 
 	int val;
-	val = move_up ? 1:2;
+	val = move_up ? 1 : 2;
 
 	/* make sure this controller belongs to this object */
 	cont= ob->controllers.first;
@@ -779,7 +778,7 @@ void sca_move_controller(bController *cont_to_move, Object *ob, int move_up)
 			tmp = tmp->next;
 		}
 		BLI_remlink(&ob->controllers, cont);
-		BLI_insertlink(&ob->controllers, tmp, cont);
+		BLI_insertlinkafter(&ob->controllers, tmp, cont);
 	}
 }
 
@@ -788,7 +787,7 @@ void sca_move_actuator(bActuator *act_to_move, Object *ob, int move_up)
 	bActuator *act, *tmp;
 	int val;
 
-	val = move_up ? 1:2;
+	val = move_up ? 1 : 2;
 
 	/* make sure this actuator belongs to this object */
 	act= ob->actuators.first;
@@ -819,7 +818,7 @@ void sca_move_actuator(bActuator *act_to_move, Object *ob, int move_up)
 		}
 		if (tmp) {
 			BLI_remlink(&ob->actuators, act);
-			BLI_insertlink(&ob->actuators, tmp, act);
+			BLI_insertlinkafter(&ob->actuators, tmp, act);
 		}
 	}
 }
@@ -876,3 +875,20 @@ void unlink_logicbricks(void **poin, void ***ppoin, short *tot)
 		return;
 	}
 }
+
+const char *sca_state_name_get(Object *ob, short bit)
+{
+	bController *cont;
+	unsigned int mask;
+
+	mask = (1<<bit);
+	cont = ob->controllers.first;
+	while (cont) {
+		if (cont->state_mask & mask) {
+			return cont->name;
+		}
+		cont = cont->next;
+	}
+	return NULL;
+}
+

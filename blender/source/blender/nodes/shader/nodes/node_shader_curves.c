@@ -34,18 +34,18 @@
 
 
 /* **************** CURVE VEC  ******************** */
-static bNodeSocketTemplate sh_node_curve_vec_in[]= {
-	{	SOCK_FLOAT, 0, N_("Fac"),	1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
+static bNodeSocketTemplate sh_node_curve_vec_in[] = {
+	{	SOCK_FLOAT, 0, N_("Fac"),	1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
 	{	SOCK_VECTOR, 1, N_("Vector"),	0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
 
-static bNodeSocketTemplate sh_node_curve_vec_out[]= {
+static bNodeSocketTemplate sh_node_curve_vec_out[] = {
 	{	SOCK_VECTOR, 0, N_("Vector")},
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_curve_vec(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_curve_vec(void *UNUSED(data), int UNUSED(thread), bNode *node, bNodeExecData *UNUSED(execdata), bNodeStack **in, bNodeStack **out)
 {
 	float vec[3];
 	
@@ -55,12 +55,12 @@ static void node_shader_exec_curve_vec(void *UNUSED(data), bNode *node, bNodeSta
 	curvemapping_evaluate3F(node->storage, out[0]->vec, vec);
 }
 
-static void node_shader_init_curve_vec(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void node_shader_init_curve_vec(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	node->storage= curvemapping_add(3, -1.0f, -1.0f, 1.0f, 1.0f);
+	node->storage = curvemapping_add(3, -1.0f, -1.0f, 1.0f, 1.0f);
 }
 
-static int gpu_shader_curve_vec(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_curve_vec(GPUMaterial *mat, bNode *node, bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
 	float *array;
 	int size;
@@ -69,36 +69,36 @@ static int gpu_shader_curve_vec(GPUMaterial *mat, bNode *node, GPUNodeStack *in,
 	return GPU_stack_link(mat, "curves_vec", in, out, GPU_texture(size, array));
 }
 
-void register_node_type_sh_curve_vec(bNodeTreeType *ttype)
+void register_node_type_sh_curve_vec(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_CURVE_VEC, "Vector Curves", NODE_CLASS_OP_VECTOR, NODE_OPTIONS);
-	node_type_compatibility(&ntype, NODE_OLD_SHADING);
+	sh_node_type_base(&ntype, SH_NODE_CURVE_VEC, "Vector Curves", NODE_CLASS_OP_VECTOR, 0);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING | NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_curve_vec_in, sh_node_curve_vec_out);
-	node_type_size(&ntype, 200, 140, 320);
 	node_type_init(&ntype, node_shader_init_curve_vec);
+	node_type_size_preset(&ntype, NODE_SIZE_LARGE);
 	node_type_storage(&ntype, "CurveMapping", node_free_curves, node_copy_curves);
-	node_type_exec(&ntype, node_shader_exec_curve_vec);
+	node_type_exec(&ntype, node_initexec_curves, NULL, node_shader_exec_curve_vec);
 	node_type_gpu(&ntype, gpu_shader_curve_vec);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }
 
 
 /* **************** CURVE RGB  ******************** */
-static bNodeSocketTemplate sh_node_curve_rgb_in[]= {
-	{	SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_FACTOR},
+static bNodeSocketTemplate sh_node_curve_rgb_in[] = {
+	{	SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_NONE},
 	{	SOCK_RGBA, 1, N_("Color"),	0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
-static bNodeSocketTemplate sh_node_curve_rgb_out[]= {
+static bNodeSocketTemplate sh_node_curve_rgb_out[] = {
 	{	SOCK_RGBA, 0, N_("Color")},
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_curve_rgb(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_curve_rgb(void *UNUSED(data), int UNUSED(thread), bNode *node, bNodeExecData *UNUSED(execdata), bNodeStack **in, bNodeStack **out)
 {
 	float vec[3];
 	
@@ -111,31 +111,33 @@ static void node_shader_exec_curve_rgb(void *UNUSED(data), bNode *node, bNodeSta
 	}
 }
 
-static void node_shader_init_curve_rgb(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void node_shader_init_curve_rgb(bNodeTree *UNUSED(ntree), bNode *node)
 {
-	node->storage= curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
+	node->storage = curvemapping_add(4, 0.0f, 0.0f, 1.0f, 1.0f);
 }
 
-static int gpu_shader_curve_rgb(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_curve_rgb(GPUMaterial *mat, bNode *node, bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
 	float *array;
 	int size;
+
+	curvemapping_initialize(node->storage);
 	curvemapping_table_RGBA(node->storage, &array, &size);
 	return GPU_stack_link(mat, "curves_rgb", in, out, GPU_texture(size, array));
 }
 
-void register_node_type_sh_curve_rgb(bNodeTreeType *ttype)
+void register_node_type_sh_curve_rgb(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_CURVE_RGB, "RGB Curves", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
-	node_type_compatibility(&ntype, NODE_OLD_SHADING);
+	sh_node_type_base(&ntype, SH_NODE_CURVE_RGB, "RGB Curves", NODE_CLASS_OP_COLOR, 0);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING | NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_curve_rgb_in, sh_node_curve_rgb_out);
-	node_type_size(&ntype, 200, 140, 320);
 	node_type_init(&ntype, node_shader_init_curve_rgb);
+	node_type_size_preset(&ntype, NODE_SIZE_LARGE);
 	node_type_storage(&ntype, "CurveMapping", node_free_curves, node_copy_curves);
-	node_type_exec(&ntype, node_shader_exec_curve_rgb);
+	node_type_exec(&ntype, node_initexec_curves, NULL, node_shader_exec_curve_rgb);
 	node_type_gpu(&ntype, gpu_shader_curve_rgb);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

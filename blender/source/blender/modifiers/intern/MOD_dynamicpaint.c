@@ -105,11 +105,15 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob, 
                                   DerivedMesh *dm,
-                                  ModifierApplyFlag UNUSED(flag))
+                                  ModifierApplyFlag flag)
 {
 	DynamicPaintModifierData *pmd = (DynamicPaintModifierData *) md;
 
-	return dynamicPaint_Modifier_do(pmd, md->scene, ob, dm);
+	/* dont apply dynamic paint on orco dm stack */
+	if (!(flag & MOD_APPLY_ORCO)) {
+		return dynamicPaint_Modifier_do(pmd, md->scene, ob, dm);
+	}
+	return dm;
 }
 
 static void updateDepgraph(ModifierData *md, DagForest *forest,
@@ -135,9 +139,9 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 	}
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
+static bool dependsOnTime(ModifierData *UNUSED(md))
 {
-	return 1;
+	return true;
 }
 
 static void foreachIDLink(ModifierData *md, Object *ob,
@@ -170,10 +174,10 @@ ModifierTypeInfo modifierType_DynamicPaint = {
 	/* structSize */        sizeof(DynamicPaintModifierData),
 	/* type */              eModifierTypeType_Constructive,
 	/* flags */             eModifierTypeFlag_AcceptsMesh |
-/*	                       eModifierTypeFlag_SupportsMapping |*/
-	                       eModifierTypeFlag_UsesPointCache |
-	                       eModifierTypeFlag_Single |
-	                       eModifierTypeFlag_UsesPreview,
+/*	                        eModifierTypeFlag_SupportsMapping |*/
+	                        eModifierTypeFlag_UsesPointCache |
+	                        eModifierTypeFlag_Single |
+	                        eModifierTypeFlag_UsesPreview,
 
 	/* copyData */          copyData,
 	/* deformVerts */       NULL,

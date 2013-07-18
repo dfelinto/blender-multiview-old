@@ -25,7 +25,7 @@
 
 # there are too many inter-includes so best define here
 if(WITH_PYTHON)
-	blender_include_dirs("${PYTHON_INCLUDE_DIRS}")
+	blender_include_dirs_sys("${PYTHON_INCLUDE_DIRS}")
 	add_definitions(-DWITH_PYTHON)
 endif()
 
@@ -37,7 +37,6 @@ add_subdirectory(Ketsji)
 add_subdirectory(Ketsji/KXNetwork)
 add_subdirectory(Network)
 add_subdirectory(Network/LoopBackNetwork)
-add_subdirectory(Physics/common)
 add_subdirectory(Physics/Dummy)
 add_subdirectory(Rasterizer)
 add_subdirectory(Rasterizer/RAS_OpenGLRasterizer)

@@ -35,11 +35,11 @@ void BMO_error_raise(BMesh *bm, BMOperator *owner, int errcode, const char *msg)
 
 /* gets the topmost error from the stack.
  * returns error code or 0 if no error.*/
-int BMO_error_get(BMesh *bm, const char **msg, BMOperator **op);
-int BMO_error_occurred(BMesh *bm);
+int  BMO_error_get(BMesh *bm, const char **msg, BMOperator **op);
+bool BMO_error_occurred(BMesh *bm);
 
 /* same as geterror, only pops the error off the stack as well */
-int BMO_error_pop(BMesh *bm, const char **msg, BMOperator **op);
+int  BMO_error_pop(BMesh *bm, const char **msg, BMOperator **op);
 void BMO_error_clear(BMesh *bm);
 
 /* this is meant for handling errors, like self-intersection test failures.
@@ -84,8 +84,8 @@ void BMO_error_clear(BMesh *bm);
 	(void)((!(a)) ?  (                                                        \
 		(                                                                     \
 		fprintf(stderr,                                                       \
-			"BMESH_ASSERT failed: %s, %s(), %d at \'%s\'\n",                  \
-			__FILE__, __func__, __LINE__, STRINGIFY(a)),                      \
+		        "BMESH_ASSERT failed: %s, %s(), %d at \'%s\'\n",              \
+		        __FILE__, __func__, __LINE__, STRINGIFY(a)),                  \
 		_BMESH_DUMMY_ABORT(),                                                 \
 		NULL)) : NULL)
 

@@ -35,7 +35,9 @@
 
 #include "GHOST_C-api.h"
 
-#include "BLO_sys_types.h"
+#include "BLI_utildefines.h"
+
+#include "BLI_sys_types.h"
 
 #include "DNA_listBase.h"
 #include "DNA_userdef_types.h" 
@@ -44,8 +46,8 @@
 #include "BKE_global.h"
 #include "BKE_main.h"
 
-#include "WM_api.h"
 #include "WM_types.h"
+#include "WM_api.h"
 #include "wm_cursors.h"
 
 /* XXX this still is mess from old code */
@@ -61,7 +63,7 @@ static GHOST_TStandardCursor convert_cursor(int curs)
 		case CURSOR_FACESEL:    return GHOST_kStandardCursorRightArrow;
 		case CURSOR_WAIT:       return GHOST_kStandardCursorWait;
 		case CURSOR_EDIT:       return GHOST_kStandardCursorCrosshair;
-		case CURSOR_HELP:		
+		case CURSOR_HELP:
 #ifdef __APPLE__
 			return GHOST_kStandardCursorLeftRight;
 #else
@@ -162,7 +164,7 @@ void WM_cursor_restore(wmWindow *win)
 }
 
 /* to allow usage all over, we do entire WM */
-void WM_cursor_wait(int val)
+void WM_cursor_wait(bool val)
 {
 	if (!G.background) {
 		wmWindowManager *wm = G.main->wm.first;
@@ -179,34 +181,51 @@ void WM_cursor_wait(int val)
 	}
 }
 
-void WM_cursor_grab_enable(wmWindow *win, int wrap, int hide, int *bounds)
+/**
+ * \param bounds can be NULL
+ */
+void WM_cursor_grab_enable(wmWindow *win, bool wrap, bool hide, int bounds[4])
 {
 	/* Only grab cursor when not running debug.
 	 * It helps not to get a stuck WM when hitting a breakpoint  
 	 * */
 	GHOST_TGrabCursorMode mode = GHOST_kGrabNormal;
+	float fac = GHOST_GetNativePixelSize(win->ghostwin);
 
-	if (hide) mode = GHOST_kGrabHide;
-	else if (wrap) mode = GHOST_kGrabWrap;
+	/* in case pixel coords differ from window/mouse coords */
+	if (bounds) {
+		bounds[0] /= fac;
+		bounds[1] /= fac;
+		bounds[2] /= fac;
+		bounds[3] /= fac;
+	}
+	
+	if (hide) {
+		mode = GHOST_kGrabHide;
+	}
+	else if (wrap) {
+		mode = GHOST_kGrabWrap;
+	}
 	if ((G.debug & G_DEBUG) == 0) {
-		if (win && win->ghostwin) {
+		if (win->ghostwin) {
 			const GHOST_TabletData *tabletdata = GHOST_GetTabletData(win->ghostwin);
+			
 			/* Note: There is no tabletdata on Windows if no tablet device is connected. */
 			if (!tabletdata)
-				GHOST_SetCursorGrab(win->ghostwin, mode, bounds);
+				GHOST_SetCursorGrab(win->ghostwin, mode, bounds, NULL);
 			else if (tabletdata->Active == GHOST_kTabletModeNone)
-				GHOST_SetCursorGrab(win->ghostwin, mode, bounds);
+				GHOST_SetCursorGrab(win->ghostwin, mode, bounds, NULL);
 
 			win->grabcursor = mode;
 		}
 	}
 }
 
-void WM_cursor_grab_disable(wmWindow *win)
+void WM_cursor_grab_disable(wmWindow *win, int mouse_ungrab_xy[2])
 {
 	if ((G.debug & G_DEBUG) == 0) {
 		if (win && win->ghostwin) {
-			GHOST_SetCursorGrab(win->ghostwin, GHOST_kGrabDisable, NULL);
+			GHOST_SetCursorGrab(win->ghostwin, GHOST_kGrabDisable, NULL, mouse_ungrab_xy);
 			win->grabcursor = GHOST_kGrabDisable;
 		}
 	}
@@ -314,7 +333,7 @@ void WM_cursor_time(wmWindow *win, int nr)
 /* Because defining a cursor mixes declarations and executable code
  * each cursor needs it's own scoping block or it would be split up
  * over several hundred lines of code.  To enforce/document this better
- * I define 2 pretty braindead macros so it's obvious what the extra "[]"
+ * I define 2 pretty brain-dead macros so it's obvious what the extra "[]"
  * are for */
 
 #define BEGIN_CURSOR_BLOCK {
@@ -557,7 +576,7 @@ BEGIN_CURSOR_BLOCK
 	BlenderCursor[BC_CROSSCURSOR] = &CrossCursor;
 END_CURSOR_BLOCK
 
-	/********************** EditCross Cursor ***********************/	
+	/********************** EditCross Cursor ***********************/
 BEGIN_CURSOR_BLOCK
 	static char editcross_sbm[] = {
 		0x0e,  0x00,  0x11,  0x00,  0x1d,  0x00,  0x19,  0x03,
@@ -772,7 +791,7 @@ BEGIN_CURSOR_BLOCK
 END_CURSOR_BLOCK
 	
 
-	/********************** TextEdit Cursor ***********************/	
+	/********************** TextEdit Cursor ***********************/
 BEGIN_CURSOR_BLOCK
 	static char textedit_sbm[] = {
 		0xe0,  0x03,  0x10,  0x04,  0x60,  0x03,  0x40,  0x01,
@@ -805,7 +824,7 @@ BEGIN_CURSOR_BLOCK
 END_CURSOR_BLOCK
 
 
-	/********************** Paintbrush Cursor ***********************/	
+	/********************** Paintbrush Cursor ***********************/
 BEGIN_CURSOR_BLOCK
 	static char paintbrush_sbm[] = {
 

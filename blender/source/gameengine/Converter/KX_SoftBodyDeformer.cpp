@@ -30,8 +30,8 @@
  */
 
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable : 4786)
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
 #endif //WIN32
 
 #include "MT_assert.h"
@@ -42,7 +42,7 @@
 #include "CTR_Map.h"
 #include "CTR_HashedPtr.h"
 
-#ifdef USE_BULLET
+#ifdef WITH_BULLET
 
 #include "CcdPhysicsEnvironment.h"
 #include "CcdPhysicsController.h"

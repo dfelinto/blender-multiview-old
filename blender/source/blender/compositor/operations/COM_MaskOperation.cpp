@@ -73,7 +73,7 @@ void MaskOperation::initExecution()
 
 				for (masklay = (MaskLayer *)mask_temp->masklayers.first;
 				     masklay;
-				     masklay = (MaskLayer *)masklay->next)
+				     masklay = masklay->next)
 				{
 					masklay_shape = BKE_mask_layer_shape_varify_frame(masklay, this->m_frame_number);
 					BKE_mask_layer_shape_from_mask(masklay, masklay_shape);
@@ -93,7 +93,7 @@ void MaskOperation::initExecution()
 				frame_iter += frame_step;
 			}
 
-			BKE_mask_free(mask_temp);
+			BKE_mask_free_nolib(mask_temp);
 			MEM_freeN(mask_temp);
 		}
 	}

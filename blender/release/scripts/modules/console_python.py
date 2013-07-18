@@ -30,7 +30,7 @@ _BPY_MAIN_OWN = True
 def add_scrollback(text, text_type):
     for l in text.split("\n"):
         bpy.ops.console.scrollback_append(text=l.replace("\t", "    "),
-            type=text_type)
+                                          type=text_type)
 
 
 def replace_help(namespace):
@@ -126,7 +126,7 @@ PROMPT = '>>> '
 PROMPT_MULTI = '... '
 
 
-def execute(context):
+def execute(context, is_interactive):
     sc = context.space_data
 
     try:
@@ -190,12 +190,20 @@ def execute(context):
 
     if is_multiline:
         sc.prompt = PROMPT_MULTI
+        if is_interactive:
+            indent = line[:len(line) - len(line.lstrip())]
+            if line.rstrip().endswith(":"):
+                indent += "    "
+        else:
+            indent = ""
     else:
         sc.prompt = PROMPT
+        indent = ""
 
     # insert a new blank line
-    bpy.ops.console.history_append(text="", current_character=0,
-        remove_duplicates=True)
+    bpy.ops.console.history_append(text=indent, current_character=0,
+                                   remove_duplicates=True)
+    sc.history[-1].current_character = len(indent)
 
     # Insert the output into the editor
     # not quite correct because the order might have changed,
@@ -290,6 +298,40 @@ def autocomplete(context):
     return {'FINISHED'}
 
 
+def copy_as_script(context):
+    sc = context.space_data
+    lines = [
+        "import bpy",
+        "from bpy import data as D",
+        "from bpy import context as C",
+        "from mathutils import *",
+        "from math import *",
+        "",
+    ]
+
+    for line in sc.scrollback:
+        text = line.body
+        type = line.type
+
+        if type == 'INFO':  # ignore autocomp.
+            continue
+        if type == 'INPUT':
+            if text.startswith(PROMPT):
+                text = text[len(PROMPT):]
+            elif text.startswith(PROMPT_MULTI):
+                text = text[len(PROMPT_MULTI):]
+        elif type == 'OUTPUT':
+            text = "#~ " + text
+        elif type == 'ERROR':
+            text = "#! " + text
+
+        lines.append(text)
+
+    context.window_manager.clipboard = "\n".join(lines)
+
+    return {'FINISHED'}
+
+
 def banner(context):
     sc = context.space_data
     version_string = sys.version.strip().replace('\n', ' ')
@@ -300,8 +342,8 @@ def banner(context):
     add_scrollback("Cursor:              Left/Right Home/End", 'OUTPUT')
     add_scrollback("Remove:              Backspace/Delete", 'OUTPUT')
     add_scrollback("Execute:             Enter", 'OUTPUT')
-    add_scrollback("Autocomplete:        Ctrl+Space", 'OUTPUT')
-    add_scrollback("Ctrl +/-  Wheel:     Zoom", 'OUTPUT')
+    add_scrollback("Autocomplete:        Ctrl-Space", 'OUTPUT')
+    add_scrollback("Zoom:                Ctrl +/-, Ctrl-Wheel", 'OUTPUT')
     add_scrollback("Builtin Modules:     bpy, bpy.data, bpy.ops, "
                    "bpy.props, bpy.types, bpy.context, bpy.utils, "
                    "bgl, blf, mathutils",

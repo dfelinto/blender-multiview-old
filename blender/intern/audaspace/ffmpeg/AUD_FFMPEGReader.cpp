@@ -41,11 +41,71 @@ extern "C" {
 #include "ffmpeg_compat.h"
 }
 
-int AUD_FFMPEGReader::decode(AVPacket* packet, AUD_Buffer& buffer)
+int AUD_FFMPEGReader::decode(AVPacket& packet, AUD_Buffer& buffer)
 {
+#ifdef FFMPEG_HAVE_DECODE_AUDIO4
+	AVFrame* frame = NULL;
+	int got_frame;
+	int read_length;
+	uint8_t* orig_data = packet.data;
+	int orig_size = packet.size;
+
+	int buf_size = buffer.getSize();
+	int buf_pos = 0;
+
+	while(packet.size > 0)
+	{
+		got_frame = 0;
+
+		if(!frame)
+			frame = avcodec_alloc_frame();
+		else
+			avcodec_get_frame_defaults(frame);
+
+		read_length = avcodec_decode_audio4(m_codecCtx, frame, &got_frame, &packet);
+		if(read_length < 0)
+			break;
+
+		if(got_frame)
+		{
+			int data_size = av_samples_get_buffer_size(NULL, m_codecCtx->channels, frame->nb_samples, m_codecCtx->sample_fmt, 1);
+
+			if(buf_size - buf_pos < data_size)
+			{
+				buffer.resize(buf_size + data_size, true);
+				buf_size += data_size;
+			}
+
+			if(m_tointerleave)
+			{
+				int single_size = data_size / m_codecCtx->channels / frame->nb_samples;
+				for(int channel = 0; channel < m_codecCtx->channels; channel++)
+				{
+					for(int i = 0; i < frame->nb_samples; i++)
+					{
+						memcpy(((data_t*)buffer.getBuffer()) + buf_pos + ((m_codecCtx->channels * i) + channel) * single_size,
+							   frame->data[channel] + i * single_size, single_size);
+					}
+				}
+			}
+			else
+				memcpy(((data_t*)buffer.getBuffer()) + buf_pos, frame->data[0], data_size);
+
+			buf_pos += data_size;
+		}
+		packet.size -= read_length;
+		packet.data += read_length;
+	}
+
+	packet.data = orig_data;
+	packet.size = orig_size;
+	av_free(frame);
+
+	return buf_pos;
+#else
 	// save packet parameters
-	uint8_t *audio_pkg_data = packet->data;
-	int audio_pkg_size = packet->size;
+	uint8_t *audio_pkg_data = packet.data;
+	int audio_pkg_size = packet.size;
 
 	int buf_size = buffer.getSize();
 	int buf_pos = 0;
@@ -53,7 +113,7 @@ int AUD_FFMPEGReader::decode(AVPacket* packet, AUD_Buffer& buffer)
 	int read_length, data_size;
 
 	AVPacket tmp_pkt;
-	
+
 	av_init_packet(&tmp_pkt);
 
 	// as long as there is still data in the package
@@ -89,6 +149,7 @@ int AUD_FFMPEGReader::decode(AVPacket* packet, AUD_Buffer& buffer)
 	}
 
 	return buf_pos;
+#endif
 }
 
 static const char* streaminfo_error = "AUD_FFMPEGReader: Stream info couldn't "
@@ -107,7 +168,7 @@ void AUD_FFMPEGReader::init()
 	m_position = 0;
 	m_pkgbuf_left = 0;
 
-	if(av_find_stream_info(m_formatCtx)<0)
+	if(avformat_find_stream_info(m_formatCtx, NULL) < 0)
 		AUD_THROW(AUD_ERROR_FFMPEG, streaminfo_error);
 
 	// find audio stream and codec
@@ -133,15 +194,16 @@ void AUD_FFMPEGReader::init()
 	if(!aCodec)
 		AUD_THROW(AUD_ERROR_FFMPEG, nodecoder_error);
 
-	if(avcodec_open(m_codecCtx, aCodec)<0)
+	if(avcodec_open2(m_codecCtx, aCodec, NULL) < 0)
 		AUD_THROW(AUD_ERROR_FFMPEG, codecopen_error);
 
 	// XXX this prints file information to stdout:
 	//dump_format(m_formatCtx, 0, NULL, 0);
 
 	m_specs.channels = (AUD_Channels) m_codecCtx->channels;
+	m_tointerleave = av_sample_fmt_is_planar(m_codecCtx->sample_fmt);
 
-	switch(m_codecCtx->sample_fmt)
+	switch(av_get_packed_sample_fmt(m_codecCtx->sample_fmt))
 	{
 	case AV_SAMPLE_FMT_U8:
 		m_convert = AUD_convert_u8_float;
@@ -197,7 +259,7 @@ AUD_FFMPEGReader::AUD_FFMPEGReader(std::string filename) :
 static const char* streamopen_error = "AUD_FFMPEGReader: Stream couldn't be "
 									  "opened.";
 
-AUD_FFMPEGReader::AUD_FFMPEGReader(AUD_Reference<AUD_Buffer> buffer) :
+AUD_FFMPEGReader::AUD_FFMPEGReader(boost::shared_ptr<AUD_Buffer> buffer) :
 		m_pkgbuf(AVCODEC_MAX_AUDIO_FRAME_SIZE<<1),
 		m_membuffer(buffer),
 		m_membufferpos(0)
@@ -236,14 +298,7 @@ AUD_FFMPEGReader::AUD_FFMPEGReader(AUD_Reference<AUD_Buffer> buffer) :
 AUD_FFMPEGReader::~AUD_FFMPEGReader()
 {
 	avcodec_close(m_codecCtx);
-
-	if(m_aviocontext)
-	{
-		avformat_close_input(&m_formatCtx);
-		av_free(m_aviocontext);
-	}
-	else
-		av_close_input_file(m_formatCtx);
+	avformat_close_input(&m_formatCtx);
 }
 
 int AUD_FFMPEGReader::read_packet(void* opaque, uint8_t* buf, int buf_size)
@@ -322,7 +377,7 @@ void AUD_FFMPEGReader::seek(int position)
 				if(packet.stream_index == m_stream)
 				{
 					// decode the package
-					m_pkgbuf_left = decode(&packet, m_pkgbuf);
+					m_pkgbuf_left = decode(packet, m_pkgbuf);
 					search = false;
 
 					// check position
@@ -407,7 +462,7 @@ void AUD_FFMPEGReader::read(int& length, bool& eos, sample_t* buffer)
 		if(packet.stream_index == m_stream)
 		{
 			// decode the package
-			pkgbuf_pos = decode(&packet, m_pkgbuf);
+			pkgbuf_pos = decode(packet, m_pkgbuf);
 
 			// copy to output buffer
 			data_size = AUD_MIN(pkgbuf_pos, left * sample_size);

@@ -33,7 +33,7 @@ __kernel void bokehBlurKernel(__read_only image2d_t boundingBox, __read_only ima
                               __read_only image2d_t bokehImage, __write_only image2d_t output, 
                               int2 offsetInput, int2 offsetOutput, int radius, int step, int2 dimension, int2 offset) 
 {
-	int2 coords = {get_global_id(0), get_global_id(1)}; 
+	int2 coords = {get_global_id(0), get_global_id(1)};
 	coords += offset;
 	float tempBoundingBox;
 	float4 color = {0.0f,0.0f,0.0f,0.0f};
@@ -54,10 +54,10 @@ __kernel void bokehBlurKernel(__read_only image2d_t boundingBox, __read_only ima
 		float2 uv;
 		int2 inputXy;
 		
-		for (ny = minXY.y, inputXy.y = ny - offsetInput.y ; ny < maxXY.y ; ny +=step, inputXy.y+=step) {
+		for (ny = minXY.y, inputXy.y = ny - offsetInput.y ; ny < maxXY.y ; ny += step, inputXy.y += step) {
 			uv.y = ((realCoordinate.y-ny)/radius2)*bokehImageDim.y+bokehImageCenter.y;
 			
-			for (nx = minXY.x, inputXy.x = nx - offsetInput.x; nx < maxXY.x ; nx +=step, inputXy.x+=step) {
+			for (nx = minXY.x, inputXy.x = nx - offsetInput.x; nx < maxXY.x ; nx += step, inputXy.x += step) {
 				uv.x = ((realCoordinate.x-nx)/radius2)*bokehImageDim.x+bokehImageCenter.x;
 				bokeh = read_imagef(bokehImage, SAMPLER_NEAREST, uv);
 				color += bokeh * read_imagef(inputImage, SAMPLER_NEAREST, inputXy);
@@ -66,7 +66,8 @@ __kernel void bokehBlurKernel(__read_only image2d_t boundingBox, __read_only ima
 		}
 		color /= multiplyer;
 		
-	} else {
+	}
+	else {
 		int2 imageCoordinates = realCoordinate - offsetInput;
 		color = read_imagef(inputImage, SAMPLER_NEAREST, imageCoordinates);
 	}
@@ -111,7 +112,7 @@ __kernel void defocusKernel(__read_only image2d_t inputImage, __read_only image2
 					float dx = nx - realCoordinate.s0;
 					if (dx != 0 || dy != 0) {
 						inputCoordinate.s0 = nx - offsetInput.s0;
-						size = read_imagef(inputSize, SAMPLER_NEAREST, inputCoordinate).s0 * scalar;
+						size = min(read_imagef(inputSize, SAMPLER_NEAREST, inputCoordinate).s0 * scalar, size_center);
 						if (size > threshold) {
 							if (size >= fabs(dx) && size >= fabs(dy)) {
 								float2 uv = {256.0f + dx * 255.0f / size,
@@ -124,7 +125,7 @@ __kernel void defocusKernel(__read_only image2d_t inputImage, __read_only image2
 						}
 					}
 				}
-			} 
+			}
 		}
 
 		color = color_accum * (1.0f / multiplier_accum);
@@ -148,7 +149,7 @@ __kernel void dilateKernel(__read_only image2d_t inputImage,  __write_only image
                            int2 offsetInput, int2 offsetOutput, int scope, int distanceSquared, int2 dimension, 
                            int2 offset)
 {
-	int2 coords = {get_global_id(0), get_global_id(1)}; 
+	int2 coords = {get_global_id(0), get_global_id(1)};
 	coords += offset;
 	const int2 realCoordinate = coords + offsetOutput;
 
@@ -179,7 +180,7 @@ __kernel void erodeKernel(__read_only image2d_t inputImage,  __write_only image2
                            int2 offsetInput, int2 offsetOutput, int scope, int distanceSquared, int2 dimension, 
                            int2 offset)
 {
-	int2 coords = {get_global_id(0), get_global_id(1)}; 
+	int2 coords = {get_global_id(0), get_global_id(1)};
 	coords += offset;
 	const int2 realCoordinate = coords + offsetOutput;
 
@@ -210,7 +211,7 @@ __kernel void directionalBlurKernel(__read_only image2d_t inputImage,  __write_o
                            int2 offsetOutput, int iterations, float scale, float rotation, float2 translate,
                            float2 center, int2 offset)
 {
-	int2 coords = {get_global_id(0), get_global_id(1)}; 
+	int2 coords = {get_global_id(0), get_global_id(1)};
 	coords += offset;
 	const int2 realCoordinate = coords + offsetOutput;
 

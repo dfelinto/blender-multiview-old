@@ -28,16 +28,17 @@
 #endif
 
 #include "utf_winfunc.h"
+#include "utfconv.h"
 #include <io.h>
-#include <Windows.h>
+#include <windows.h>
 #include <wchar.h>
 
 
-FILE * ufopen(const char * filename, const char * mode)
+FILE *ufopen(const char *filename, const char *mode)
 {
 	FILE *f = NULL;
 	UTF16_ENCODE(filename);
-	UTF16_ENCODE (mode);
+	UTF16_ENCODE(mode);
 
 	if (filename_16 && mode_16) {
 		f = _wfopen(filename_16, mode_16);
@@ -75,13 +76,29 @@ int uopen(const char *filename, int oflag, int pmode)
 	return f;
 }
 
+int uaccess(const char *filename, int mode)
+{
+	int r = -1;
+	UTF16_ENCODE(filename);
+
+	if (filename_16) {
+		r = _waccess(filename_16, mode);
+	}
+
+	UTF16_UN_ENCODE(filename);
+
+	return r;
+}
+
 int urename(const char *oldname, const char *newname )
 {
 	int r = -1;
 	UTF16_ENCODE(oldname);
-	UTF16_ENCODE (newname);
+	UTF16_ENCODE(newname);
 
-	if (oldname_16 && newname_16) r = _wrename(oldname_16, newname_16);
+	if (oldname_16 && newname_16) {
+		r = _wrename(oldname_16, newname_16);
+	}
 	
 	UTF16_UN_ENCODE(newname);
 	UTF16_UN_ENCODE(oldname);
@@ -94,14 +111,16 @@ int umkdir(const char *pathname)
 	BOOL r = 0;
 	UTF16_ENCODE(pathname);
 	
-	if (pathname_16) r = CreateDirectoryW(pathname_16, NULL);
+	if (pathname_16) {
+		r = CreateDirectoryW(pathname_16, NULL);
+	}
 
 	UTF16_UN_ENCODE(pathname);
 
 	return r ? 0 : -1;
 }
 
-char * u_alloc_getenv(const char *varname)
+char *u_alloc_getenv(const char *varname)
 {
 	char * r = 0;
 	wchar_t * str;
@@ -119,11 +138,14 @@ void  u_free_getenv(char *val)
 	free(val);
 }
 
-int uput_getenv(const char *varname, char * value, size_t buffsize)
+int uput_getenv(const char *varname, char *value, size_t buffsize)
 {
 	int r = 0;
 	wchar_t * str;
-	if (!buffsize) return r;
+
+	if (!buffsize) {
+		return r;
+	}
 
 	UTF16_ENCODE(varname);
 	if (varname_16) {
@@ -133,7 +155,9 @@ int uput_getenv(const char *varname, char * value, size_t buffsize)
 	}
 	UTF16_UN_ENCODE(varname);
 
-	if (!r) value[0] = 0;
+	if (!r) {
+		value[0] = 0;
+	}
 
 	return r;
 }
@@ -143,6 +167,7 @@ int uputenv(const char *name, const char *value)
 	int r = -1;
 	UTF16_ENCODE(name);
 	UTF16_ENCODE(value);
+
 	if (name_16 && value_16) {
 		r = (SetEnvironmentVariableW(name_16,value_16)!= 0) ? 0 : -1;
 	}

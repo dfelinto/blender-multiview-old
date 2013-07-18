@@ -25,7 +25,7 @@ class CONSOLE_HT_header(Header):
     bl_space_type = 'CONSOLE'
 
     def draw(self, context):
-        layout = self.layout.row(align=True)
+        layout = self.layout.row()
 
         layout.template_header()
 
@@ -51,6 +51,7 @@ class CONSOLE_MT_console(Menu):
 
         layout.separator()
 
+        layout.operator("console.copy_as_script")
         layout.operator("console.copy")
         layout.operator("console.paste")
         layout.menu("CONSOLE_MT_language")
@@ -79,13 +80,15 @@ class CONSOLE_MT_language(Menu):
         languages.sort()
 
         for language in languages:
-            layout.operator("console.language", text=language[0].upper() + language[1:]).language = language
+            layout.operator("console.language",
+                            text=language.title(),
+                            translate=False).language = language
 
 
 def add_scrollback(text, text_type):
     for l in text.split("\n"):
-        bpy.ops.console.scrollback_append(text=l.replace('\t', '    '),
-            type=text_type)
+        bpy.ops.console.scrollback_append(text=l.expandtabs(4),
+                                          type=text_type)
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

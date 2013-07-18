@@ -198,15 +198,17 @@ static void make_dmats(bPoseChannel *pchan)
 	if (pchan->parent) {
 		float iR_parmat[4][4];
 		invert_m4_m4(iR_parmat, pchan->parent->pose_mat);
-		mult_m4_m4m4(pchan->chan_mat, iR_parmat,  pchan->pose_mat); // delta mat
+		mul_m4_m4m4(pchan->chan_mat, iR_parmat,  pchan->pose_mat); // delta mat
 	}
-	else copy_m4_m4(pchan->chan_mat, pchan->pose_mat);
+	else {
+		copy_m4_m4(pchan->chan_mat, pchan->pose_mat);
+	}
 }
 
 /* applies IK matrix to pchan, IK is done separated */
 /* formula: pose_mat(b) = pose_mat(b-1) * diffmat(b-1, b) * ik_mat(b) */
 /* to make this work, the diffmats have to be precalculated! Stored in chan_mat */
-static void where_is_ik_bone(bPoseChannel *pchan, float ik_mat[][3])   // nr = to detect if this is first bone
+static void where_is_ik_bone(bPoseChannel *pchan, float ik_mat[3][3])   // nr = to detect if this is first bone
 {
 	float vec[3], ikmat[4][4];
 
@@ -215,7 +217,7 @@ static void where_is_ik_bone(bPoseChannel *pchan, float ik_mat[][3])   // nr = t
 	if (pchan->parent)
 		mul_serie_m4(pchan->pose_mat, pchan->parent->pose_mat, pchan->chan_mat, ikmat, NULL, NULL, NULL, NULL, NULL);
 	else
-		mult_m4_m4m4(pchan->pose_mat, pchan->chan_mat, ikmat);
+		mul_m4_m4m4(pchan->pose_mat, pchan->chan_mat, ikmat);
 
 	/* calculate head */
 	copy_v3_v3(pchan->pose_head, pchan->pose_mat[3]);
@@ -360,7 +362,7 @@ static void execute_posetree(struct Scene *scene, Object *ob, PoseTree *tree)
 		unit_m4(rootmat);
 	copy_v3_v3(rootmat[3], pchan->pose_head);
 
-	mult_m4_m4m4(imat, ob->obmat, rootmat);
+	mul_m4_m4m4(imat, ob->obmat, rootmat);
 	invert_m4_m4(goalinv, imat);
 
 	for (target = tree->targets.first; target; target = target->next) {
@@ -372,24 +374,25 @@ static void execute_posetree(struct Scene *scene, Object *ob, PoseTree *tree)
 		/* 1.0=ctime, we pass on object for auto-ik (owner-type here is object, even though
 		 * strictly speaking, it is a posechannel)
 		 */
-		get_constraint_target_matrix(scene, target->con, 0, CONSTRAINT_OBTYPE_OBJECT, ob, rootmat, 1.0);
+		BKE_get_constraint_target_matrix(scene, target->con, 0, CONSTRAINT_OBTYPE_OBJECT, ob, rootmat, 1.0);
 
 		/* and set and transform goal */
-		mult_m4_m4m4(goal, goalinv, rootmat);
+		mul_m4_m4m4(goal, goalinv, rootmat);
 
 		copy_v3_v3(goalpos, goal[3]);
 		copy_m3_m4(goalrot, goal);
+		normalize_m3(goalrot);
 
 		/* same for pole vector target */
 		if (data->poletar) {
-			get_constraint_target_matrix(scene, target->con, 1, CONSTRAINT_OBTYPE_OBJECT, ob, rootmat, 1.0);
+			BKE_get_constraint_target_matrix(scene, target->con, 1, CONSTRAINT_OBTYPE_OBJECT, ob, rootmat, 1.0);
 
 			if (data->flag & CONSTRAINT_IK_SETANGLE) {
 				/* don't solve IK when we are setting the pole angle */
 				break;
 			}
 			else {
-				mult_m4_m4m4(goal, goalinv, rootmat);
+				mul_m4_m4m4(goal, goalinv, rootmat);
 				copy_v3_v3(polepos, goal[3]);
 				poleconstrain = 1;
 
@@ -433,7 +436,7 @@ static void execute_posetree(struct Scene *scene, Object *ob, PoseTree *tree)
 
 		iktarget = iktree[target->tip];
 
-		if (data->weight != 0.0f) {
+		if ((data->flag & CONSTRAINT_IK_POS) && data->weight != 0.0f) {
 			if (poleconstrain)
 				IK_SolverSetPoleVectorConstraint(solver, iktarget, goalpos,
 				                                 polepos, data->poleangle, (poleangledata == data));

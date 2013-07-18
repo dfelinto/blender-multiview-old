@@ -29,13 +29,16 @@ set(INC
 	.
 	../blenkernel
 	../blenlib
-	../blenloader
+	../blenfont
 	../editors/include
 	../makesdna
 	../makesrna
 	../windowmanager
 	../imbuf
 	../../../intern/guardedalloc
+	../ikplugin
+	../../../intern/iksolver/extern
+	../bmesh
 )
 
 set(INC_SYS
@@ -48,11 +51,13 @@ set(SRC
 	ArmatureExporter.cpp
 	ArmatureImporter.cpp
 	CameraExporter.cpp
+	ControllerExporter.cpp
 	DocumentExporter.cpp
 	DocumentImporter.cpp
 	EffectExporter.cpp
 	ErrorHandler.cpp
 	ExportSettings.cpp
+	ImportSettings.cpp
 	ExtraHandler.cpp
 	ExtraTags.cpp
 	GeometryExporter.cpp
@@ -70,15 +75,17 @@ set(SRC
 	collada_utils.cpp
 
 	AnimationImporter.h
-	AnimationExporter.h	
+	AnimationExporter.h
 	ArmatureExporter.h
 	ArmatureImporter.h
 	CameraExporter.h
+	ControllerExporter.h
 	DocumentExporter.h
 	DocumentImporter.h
 	EffectExporter.h
 	ErrorHandler.h
 	ExportSettings.h
+	ImportSettings.h
 	ExtraHandler.h
 	ExtraTags.h
 	GeometryExporter.h
@@ -98,6 +105,10 @@ set(SRC
 
 if(WITH_BUILDINFO)
 	add_definitions(-DWITH_BUILDINFO)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)

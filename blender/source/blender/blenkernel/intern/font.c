@@ -50,7 +50,6 @@
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
-#include "BKE_utildefines.h"
 #include "BKE_packedFile.h"
 #include "BKE_library.h"
 #include "BKE_font.h"
@@ -60,10 +59,8 @@
 #include "BKE_curve.h"
 #include "BKE_displist.h"
 
-static ListBase ttfdata = {NULL, NULL};
 
 /* The vfont code */
-
 void BKE_vfont_free_data(struct VFont *vfont)
 {
 	if (vfont->data) {
@@ -83,7 +80,10 @@ void BKE_vfont_free_data(struct VFont *vfont)
 		vfont->data = NULL;
 	}
 
-	BKE_vfont_tmpfont_remove(vfont);
+	if (vfont->temp_pf) {
+		freePackedFile(vfont->temp_pf);  /* NULL when the font file can't be found on disk */
+		vfont->temp_pf = NULL;
+	}
 }
 
 void BKE_vfont_free(struct VFont *vf)
@@ -91,7 +91,7 @@ void BKE_vfont_free(struct VFont *vf)
 	if (vf == NULL) return;
 
 	BKE_vfont_free_data(vf);
-	
+
 	if (vf->packedfile) {
 		freePackedFile(vf->packedfile);
 		vf->packedfile = NULL;
@@ -101,9 +101,9 @@ void BKE_vfont_free(struct VFont *vf)
 static void *builtin_font_data = NULL;
 static int builtin_font_size = 0;
 
-int  BKE_vfont_is_builtin(struct VFont *vfont)
+bool BKE_vfont_is_builtin(struct VFont *vfont)
 {
-	return (strcmp(vfont->name, FO_BUILTIN_NAME) == 0);
+	return STREQ(vfont->name, FO_BUILTIN_NAME);
 }
 
 void BKE_vfont_builtin_register(void *mem, int size)
@@ -128,63 +128,11 @@ static PackedFile *get_builtin_packedfile(void)
 	}
 }
 
-static void vfont_tmpfont_free(struct TmpFont *tf)
-{
-	if (tf->pf) {
-		freePackedFile(tf->pf);  /* NULL when the font file can't be found on disk */
-	}
-	MEM_freeN(tf);
-}
-
-void BKE_vfont_free_global_ttf(void)
-{
-	struct TmpFont *tf, *tf_next;
-
-	for (tf = ttfdata.first; tf; tf = tf_next) {
-		tf_next = tf->next;
-		vfont_tmpfont_free(tf);
-	}
-	ttfdata.first = ttfdata.last = NULL;
-}
-
-struct TmpFont *BKE_vfont_tmpfont_find(VFont *vfont)
-{
-	struct TmpFont *tmpfnt = NULL;
-	
-	if (vfont == NULL) return NULL;
-	
-	/* Try finding the font from font list */
-	for (tmpfnt = ttfdata.first; tmpfnt; tmpfnt = tmpfnt->next) {
-		if (tmpfnt->vfont == vfont) {
-			break;
-		}
-	}
-
-	return tmpfnt;
-}
-
-/* assumes a VFont's tmpfont can't be in the database more then once */
-void BKE_vfont_tmpfont_remove(VFont *vfont)
-{
-	struct TmpFont *tmpfnt;
-
-	tmpfnt = BKE_vfont_tmpfont_find(vfont);
-
-	if (tmpfnt) {
-		vfont_tmpfont_free(tmpfnt);
-		BLI_remlink(&ttfdata, tmpfnt);
-	}
-}
-
 static VFontData *vfont_get_data(Main *bmain, VFont *vfont)
 {
-	struct TmpFont *tmpfnt = NULL;
-	PackedFile *tpf;
-	
-	if (vfont == NULL) return NULL;
-	
-	/* Try finding the font from font list */
-	tmpfnt = BKE_vfont_tmpfont_find(vfont);
+	if (vfont == NULL) {
+		return NULL;
+	}
 
 	/* And then set the data */
 	if (!vfont->data) {
@@ -198,30 +146,15 @@ static VFontData *vfont_get_data(Main *bmain, VFont *vfont)
 				pf = vfont->packedfile;
 
 				/* We need to copy a tmp font to memory unless it is already there */
-				if (!tmpfnt) {
-					tpf = MEM_callocN(sizeof(*tpf), "PackedFile");
-					tpf->data = MEM_mallocN(pf->size, "packFile");
-					tpf->size = pf->size;
-					memcpy(tpf->data, pf->data, pf->size);
-
-					/* Add temporary packed file to globals */
-					tmpfnt = (struct TmpFont *) MEM_callocN(sizeof(struct TmpFont), "temp_font");
-					tmpfnt->pf = tpf;
-					tmpfnt->vfont = vfont;
-					BLI_addtail(&ttfdata, tmpfnt);
+				if (vfont->temp_pf == NULL) {
+					vfont->temp_pf = dupPackedFile(pf);
 				}
 			}
 			else {
 				pf = newPackedFile(NULL, vfont->name, ID_BLEND_PATH(bmain, &vfont->id));
 
-				if (!tmpfnt) {
-					tpf = newPackedFile(NULL, vfont->name, ID_BLEND_PATH(bmain, &vfont->id));
-
-					/* Add temporary packed file to globals */
-					tmpfnt = (struct TmpFont *) MEM_callocN(sizeof(struct TmpFont), "temp_font");
-					tmpfnt->pf = tpf;
-					tmpfnt->vfont = vfont;
-					BLI_addtail(&ttfdata, tmpfnt);
+				if (vfont->temp_pf == NULL) {
+					vfont->temp_pf = newPackedFile(NULL, vfont->name, ID_BLEND_PATH(bmain, &vfont->id));
 				}
 			}
 			if (!pf) {
@@ -244,7 +177,7 @@ static VFontData *vfont_get_data(Main *bmain, VFont *vfont)
 		}
 	}
 	
-	return vfont->data;	
+	return vfont->data;
 }
 
 VFont *BKE_vfont_load(Main *bmain, const char *name)
@@ -252,24 +185,19 @@ VFont *BKE_vfont_load(Main *bmain, const char *name)
 	char filename[FILE_MAXFILE];
 	VFont *vfont = NULL;
 	PackedFile *pf;
-	PackedFile *tpf = NULL;	
+	PackedFile *temp_pf = NULL;
 	int is_builtin;
-	struct TmpFont *tmpfnt;
 	
-	if (strcmp(name, FO_BUILTIN_NAME) == 0) {
+	if (STREQ(name, FO_BUILTIN_NAME)) {
 		BLI_strncpy(filename, name, sizeof(filename));
 		
 		pf = get_builtin_packedfile();
 		is_builtin = TRUE;
 	}
 	else {
-		char dir[FILE_MAXDIR];
-		
-		BLI_strncpy(dir, name, sizeof(dir));
-		BLI_splitdirstring(dir, filename);
-
+		BLI_split_file_part(name, filename, sizeof(filename));
 		pf = newPackedFile(NULL, name, bmain->name);
-		tpf = newPackedFile(NULL, name, bmain->name);
+		temp_pf = newPackedFile(NULL, name, bmain->name);
 		
 		is_builtin = FALSE;
 	}
@@ -295,10 +223,7 @@ VFont *BKE_vfont_load(Main *bmain, const char *name)
 
 			/* Do not add FO_BUILTIN_NAME to temporary listbase */
 			if (strcmp(filename, FO_BUILTIN_NAME)) {
-				tmpfnt = (struct TmpFont *) MEM_callocN(sizeof(struct TmpFont), "temp_font");
-				tmpfnt->pf = tpf;
-				tmpfnt->vfont = vfont;
-				BLI_addtail(&ttfdata, tmpfnt);
+				vfont->temp_pf = temp_pf;
 			}
 		}
 
@@ -306,8 +231,6 @@ VFont *BKE_vfont_load(Main *bmain, const char *name)
 		if (!vfont || vfont->packedfile != pf) {
 			freePackedFile(pf);
 		}
-	
-		//XXX waitcursor(0);
 	}
 	
 	return vfont;
@@ -317,14 +240,14 @@ static VFont *which_vfont(Curve *cu, CharInfo *info)
 {
 	switch (info->flag & (CU_CHINFO_BOLD | CU_CHINFO_ITALIC)) {
 		case CU_CHINFO_BOLD:
-			if (cu->vfontb) return(cu->vfontb); else return(cu->vfont);
+			return cu->vfontb ? cu->vfontb : cu->vfont;
 		case CU_CHINFO_ITALIC:
-			if (cu->vfonti) return(cu->vfonti); else return(cu->vfont);
+			return cu->vfonti ? cu->vfonti : cu->vfont;
 		case (CU_CHINFO_BOLD | CU_CHINFO_ITALIC):
-			if (cu->vfontbi) return(cu->vfontbi); else return(cu->vfont);
+			return cu->vfontbi ? cu->vfontbi : cu->vfont;
 		default:
-			return(cu->vfont);
-	}			
+			return cu->vfont;
+	}
 }
 
 VFont *BKE_vfont_builtin_get(void)
@@ -344,6 +267,7 @@ static VChar *find_vfont_char(VFontData *vfd, intptr_t character)
 {
 	VChar *che = NULL;
 
+	/* TODO: use ghash */
 	for (che = vfd->characters.first; che; che = che->next) {
 		if (che->index == character)
 			break;
@@ -378,23 +302,23 @@ static void build_underline(Curve *cu, float x1, float y1, float x2, float y2, i
 	nu2->bp = bp;
 
 	nu2->bp[0].vec[0] = x1;
-	nu2->bp[0].vec[1] = y1;	
+	nu2->bp[0].vec[1] = y1;
 	nu2->bp[0].vec[2] = 0;
 	nu2->bp[0].vec[3] = 1.0f;
 	nu2->bp[1].vec[0] = x2;
 	nu2->bp[1].vec[1] = y1;
-	nu2->bp[1].vec[2] = 0;	
+	nu2->bp[1].vec[2] = 0;
 	nu2->bp[1].vec[3] = 1.0f;
 	nu2->bp[2].vec[0] = x2;
-	nu2->bp[2].vec[1] = y2;	
+	nu2->bp[2].vec[1] = y2;
 	nu2->bp[2].vec[2] = 0;
 	nu2->bp[2].vec[3] = 1.0f;
 	nu2->bp[3].vec[0] = x1;
 	nu2->bp[3].vec[1] = y2;
-	nu2->bp[3].vec[2] = 0;	
+	nu2->bp[3].vec[2] = 0;
 	nu2->bp[3].vec[3] = 1.0f;
 	
-	BLI_addtail(&(cu->nurb), nu2);	
+	BLI_addtail(&(cu->nurb), nu2);
 
 }
 
@@ -617,7 +541,7 @@ struct CharTrans *BKE_vfont_to_curve(Main *bmain, Scene *scene, Object *ob, int 
 	/* The VFont Data can not be found */
 	if (!vfd) {
 		if (mem)
-			MEM_freeN(mem);	
+			MEM_freeN(mem);
 		return NULL;
 	}
 
@@ -743,7 +667,7 @@ makebreak:
 
 			yof -= linedist;
 
-			maxlen = maxf(maxlen, (xof - tb->x / cu->fsize));
+			maxlen = max_ff(maxlen, (xof - tb->x / cu->fsize));
 			linedata[lnr] = xof - tb->x / cu->fsize;
 			linedata2[lnr] = cnr;
 			linedata3[lnr] = tb->w / cu->fsize;
@@ -803,7 +727,7 @@ makebreak:
 			if (ascii == 32) {
 				wsfac = cu->wordspace; 
 				wsnr++;
-			} 
+			}
 			else {
 				wsfac = 1.0f;
 			}
@@ -826,7 +750,7 @@ makebreak:
 	for (i = 0; i <= slen; i++, tmp++, ct++) {
 		ascii = *tmp;
 		if (ascii == '\n' || ascii == '\r' || ct->dobreak) cu->lines++;
-	}	
+	}
 
 	/* linedata is now: width of line
 	 * linedata2 is now: number of characters
@@ -864,7 +788,7 @@ makebreak:
 //				}
 				ct++;
 			}
-		} 
+		}
 		else if ((cu->spacemode == CU_JUSTIFY) && (cu->tb[0].w != 0.0f)) {
 			float curofs = 0.0f;
 			for (i = 0; i <= slen; i++) {
@@ -1000,8 +924,12 @@ makebreak:
 		 * 3: curs down */
 		ct = chartransdata + cu->pos;
 		
-		if ((mode == FO_CURSUP || mode == FO_PAGEUP) && ct->linenr == 0) ;
-		else if ((mode == FO_CURSDOWN || mode == FO_PAGEDOWN) && ct->linenr == lnr) ;
+		if ((mode == FO_CURSUP || mode == FO_PAGEUP) && ct->linenr == 0) {
+			/* pass */
+		}
+		else if ((mode == FO_CURSDOWN || mode == FO_PAGEDOWN) && ct->linenr == lnr) {
+			/* pass */
+		}
 		else {
 			switch (mode) {
 				case FO_CURSUP:     lnr = ct->linenr - 1; break;
@@ -1015,10 +943,13 @@ makebreak:
 			ct = chartransdata;
 			for (i = 0; i < slen; i++) {
 				if (ct->linenr == lnr) {
-					if (ct->charnr == cnr) break;
-					if ( (ct + 1)->charnr == 0) break;
+					if ((ct->charnr == cnr) || ((ct + 1)->charnr == 0)) {
+						break;
+					}
 				}
-				else if (ct->linenr > lnr) break;
+				else if (ct->linenr > lnr) {
+					break;
+				}
 				cu->pos++;
 				ct++;
 			}
@@ -1030,9 +961,9 @@ makebreak:
 		float si, co;
 		
 		ct = chartransdata + cu->pos;
-		si = (float)sin(ct->rot);
-		co = (float)cos(ct->rot);
-				
+		si = sinf(ct->rot);
+		co = cosf(ct->rot);
+
 		f = cu->editfont->textcurs[0];
 		
 		f[0] = cu->fsize * (-0.1f * co + ct->xof);

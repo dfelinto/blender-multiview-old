@@ -44,6 +44,7 @@
 #include "BKE_material.h"
 #include "BKE_modifier.h"
 #include "BKE_particle.h"
+#include "BKE_scene.h"
 
 #include "MOD_util.h"
 
@@ -130,6 +131,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 	ParticleSystemModifierData *psmd = (ParticleSystemModifierData *) md;
 	ParticleSystem *psys = NULL;
 	int needsFree = 0;
+	/* float cfra = BKE_scene_frame_get(md->scene); */  /* UNUSED */
 
 	if (ob->particlesystem.first)
 		psys = psmd->psys;
@@ -188,7 +190,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 		psmd->totdmface = psmd->dm->getNumTessFaces(psmd->dm);
 	}
 
-	if (psys) {
+	if (!(ob->transflag & OB_NO_PSYS_UPDATE)) {
 		psmd->flag &= ~eParticleSystemFlag_psys_updated;
 		particle_system_update(md->scene, ob, psys);
 		psmd->flag |= eParticleSystemFlag_psys_updated;
@@ -199,8 +201,8 @@ static void deformVerts(ModifierData *md, Object *ob,
  * updates is coded */
 #if 0
 static void deformVertsEM(
-    ModifierData *md, Object *ob, EditMesh *editData,
-    DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
+        ModifierData *md, Object *ob, EditMesh *editData,
+        DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = derivedData;
 

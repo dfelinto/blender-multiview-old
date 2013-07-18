@@ -33,11 +33,12 @@
 #include <cstddef>
 #include <algorithm>
 #include <vector>
-#include <glog/logging.h>
+#include "ceres/blas.h"
 #include "ceres/block_structure.h"
+#include "ceres/internal/eigen.h"
 #include "ceres/matrix_proto.h"
 #include "ceres/triplet_sparse_matrix.h"
-#include "ceres/internal/eigen.h"
+#include "glog/logging.h"
 
 namespace ceres {
 namespace internal {
@@ -81,7 +82,7 @@ BlockSparseMatrix::BlockSparseMatrix(
   CHECK_NOTNULL(values_.get());
 }
 
-#ifndef CERES_DONT_HAVE_PROTOCOL_BUFFERS
+#ifndef CERES_NO_PROTOCOL_BUFFERS
 BlockSparseMatrix::BlockSparseMatrix(const SparseMatrixProto& outer_proto) {
   CHECK(outer_proto.has_block_matrix());
 
@@ -117,16 +118,15 @@ void BlockSparseMatrix::RightMultiply(const double* x,  double* y) const {
   for (int i = 0; i < block_structure_->rows.size(); ++i) {
     int row_block_pos = block_structure_->rows[i].block.position;
     int row_block_size = block_structure_->rows[i].block.size;
-    VectorRef yref(y + row_block_pos, row_block_size);
     const vector<Cell>& cells = block_structure_->rows[i].cells;
     for (int j = 0; j < cells.size(); ++j) {
       int col_block_id = cells[j].block_id;
       int col_block_size = block_structure_->cols[col_block_id].size;
       int col_block_pos = block_structure_->cols[col_block_id].position;
-      ConstVectorRef xref(x + col_block_pos, col_block_size);
-      MatrixRef m(values_.get() + cells[j].position,
-                  row_block_size, col_block_size);
-      yref += m.lazyProduct(xref);
+      MatrixVectorMultiply<Eigen::Dynamic, Eigen::Dynamic, 1>(
+          values_.get() + cells[j].position, row_block_size, col_block_size,
+          x + col_block_pos,
+          y + row_block_pos);
     }
   }
 }
@@ -138,16 +138,15 @@ void BlockSparseMatrix::LeftMultiply(const double* x, double* y) const {
   for (int i = 0; i < block_structure_->rows.size(); ++i) {
     int row_block_pos = block_structure_->rows[i].block.position;
     int row_block_size = block_structure_->rows[i].block.size;
-    const ConstVectorRef xref(x + row_block_pos, row_block_size);
     const vector<Cell>& cells = block_structure_->rows[i].cells;
     for (int j = 0; j < cells.size(); ++j) {
       int col_block_id = cells[j].block_id;
       int col_block_size = block_structure_->cols[col_block_id].size;
       int col_block_pos = block_structure_->cols[col_block_id].position;
-      VectorRef yref(y + col_block_pos, col_block_size);
-      MatrixRef m(values_.get() + cells[j].position,
-                  row_block_size, col_block_size);
-      yref += m.transpose().lazyProduct(xref);
+      MatrixTransposeVectorMultiply<Eigen::Dynamic, Eigen::Dynamic, 1>(
+          values_.get() + cells[j].position, row_block_size, col_block_size,
+          x + row_block_pos,
+          y + col_block_pos);
     }
   }
 }
@@ -244,7 +243,7 @@ const CompressedRowBlockStructure* BlockSparseMatrix::block_structure()
   return block_structure_.get();
 }
 
-#ifndef CERES_DONT_HAVE_PROTOCOL_BUFFERS
+#ifndef CERES_NO_PROTOCOL_BUFFERS
 void BlockSparseMatrix::ToProto(SparseMatrixProto* outer_proto) const {
   outer_proto->Clear();
 

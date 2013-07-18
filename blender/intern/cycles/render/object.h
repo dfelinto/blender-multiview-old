@@ -35,12 +35,6 @@ struct Transform;
 
 /* Object */
 
-struct Particle {
-	int index;
-	float age;
-	float lifetime;
-};
-
 class Object {
 public:
 	Mesh *mesh;
@@ -54,16 +48,19 @@ public:
 	MotionTransform motion;
 	bool use_motion;
 	bool use_holdout;
+	bool curverender;
+
+	float3 dupli_generated;
+	float2 dupli_uv;
 
 	int particle_id;
-	vector<Particle> particles;
 
 	Object();
 	~Object();
 
 	void tag_update(Scene *scene);
 
-	void compute_bounds(bool motion_blur);
+	void compute_bounds(bool motion_blur, float shuttertime);
 	void apply_transform();
 };
 
@@ -77,13 +74,12 @@ public:
 	~ObjectManager();
 
 	void device_update(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
-	void device_update_transforms(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
-	void device_update_particles(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
+	void device_update_transforms(Device *device, DeviceScene *dscene, Scene *scene, uint *object_flag, Progress& progress);
 	void device_free(Device *device, DeviceScene *dscene);
 
 	void tag_update(Scene *scene);
 
-	void apply_static_transforms(Scene *scene, Progress& progress);
+	void apply_static_transforms(DeviceScene *dscene, Scene *scene, uint *object_flag, Progress& progress);
 };
 
 CCL_NAMESPACE_END

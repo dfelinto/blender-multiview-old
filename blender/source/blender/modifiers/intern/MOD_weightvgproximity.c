@@ -30,9 +30,11 @@
 
 #define DO_PROFILE 0
 
+#include "BLI_utildefines.h"
+#include "BLI_ghash.h"
 #include "BLI_math.h"
 #include "BLI_string.h"
-#include "BLI_utildefines.h"
+#include "BLI_rand.h"
 
 #if DO_PROFILE
 	#include "PIL_time.h"
@@ -45,6 +47,7 @@
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_deform.h"
+#include "BKE_library.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_shrinkwrap.h"       /* For SpaceTransform stuff. */
@@ -107,9 +110,9 @@ static void get_vert2geom_distance(int numVerts, float (*v_cos)[3],
 	/*nearest_v.dist  = nearest_e.dist  = nearest_f.dist  = FLT_MAX;*/
 	/* Find the nearest vert/edge/face. */
 #ifndef __APPLE__
-#pragma omp parallel for default(none) private(i) firstprivate(nearest_v,nearest_e,nearest_f) \
-                         shared(treeData_v,treeData_e,treeData_f,numVerts,v_cos,dist_v,dist_e, \
-                                dist_f,loc2trgt) \
+#pragma omp parallel for default(none) private(i) firstprivate(nearest_v, nearest_e, nearest_f) \
+                         shared(treeData_v, treeData_e, treeData_f, numVerts, v_cos, dist_v, dist_e, \
+                                dist_f, loc2trgt) \
                          schedule(static)
 #endif
 	for (i = 0; i < numVerts; i++) {
@@ -185,7 +188,7 @@ static float get_ob2ob_distance(const Object *ob, const Object *obr)
 /**
  * Maps distances to weights, with an optional "smoothing" mapping.
  */
-void do_map(float *weights, const int nidx, const float min_d, const float max_d, short mode)
+static void do_map(Object *ob, float *weights, const int nidx, const float min_d, const float max_d, short mode)
 {
 	const float range_inv = 1.0f / (max_d - min_d); /* invert since multiplication is faster */
 	unsigned int i = nidx;
@@ -210,7 +213,15 @@ void do_map(float *weights, const int nidx, const float min_d, const float max_d
 	}
 
 	if (!ELEM(mode, MOD_WVG_MAPPING_NONE, MOD_WVG_MAPPING_CURVE)) {
-		weightvg_do_map(nidx, weights, mode, NULL);
+		RNG *rng = NULL;
+
+		if (mode == MOD_WVG_MAPPING_RANDOM)
+			rng = BLI_rng_new_srandom(BLI_ghashutil_strhash(ob->id.name));
+
+		weightvg_do_map(nidx, weights, mode, NULL, rng);
+
+		if (rng)
+			BLI_rng_free(rng);
 	}
 }
 
@@ -230,6 +241,14 @@ static void initData(ModifierData *md)
 	wmd->mask_tex_use_channel = MOD_WVG_MASK_TEX_USE_INT; /* Use intensity by default. */
 	wmd->mask_tex_mapping     = MOD_DISP_MAP_LOCAL;
 	wmd->max_dist             = 1.0f; /* vert arbitrary distance, but don't use 0 */
+}
+
+static void freeData(ModifierData *md)
+{
+	WeightVGProximityModifierData *wmd = (WeightVGProximityModifierData *) md;
+	if (wmd->mask_texture) {
+		id_us_min(&wmd->mask_texture->id);
+	}
 }
 
 static void copyData(ModifierData *md, ModifierData *target)
@@ -253,6 +272,10 @@ static void copyData(ModifierData *md, ModifierData *target)
 	BLI_strncpy(twmd->mask_tex_uvlayer_name, wmd->mask_tex_uvlayer_name, sizeof(twmd->mask_tex_uvlayer_name));
 	twmd->min_dist               = wmd->min_dist;
 	twmd->max_dist               = wmd->max_dist;
+
+	if (twmd->mask_texture) {
+		id_us_plus(&twmd->mask_texture->id);
+	}
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -272,7 +295,7 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	return dataMask;
 }
 
-static int dependsOnTime(ModifierData *md)
+static bool dependsOnTime(ModifierData *md)
 {
 	WeightVGProximityModifierData *wmd = (WeightVGProximityModifierData *) md;
 
@@ -328,7 +351,7 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *UN
 		                 "WeightVGProximity Modifier");
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	WeightVGProximityModifierData *wmd = (WeightVGProximityModifierData *) md;
 	/* If no vertex group, bypass. */
@@ -347,7 +370,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	int numVerts;
 	float (*v_cos)[3] = NULL; /* The vertices coordinates. */
 	Object *obr = NULL; /* Our target object. */
-	int defgrp_idx;
+	int defgrp_index;
 	float *tw = NULL;
 	float *org_w = NULL;
 	float *new_w = NULL;
@@ -378,8 +401,8 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		return dm;
 
 	/* Get vgroup idx from its name. */
-	defgrp_idx = defgroup_name_index(ob, wmd->defgrp_name);
-	if (defgrp_idx < 0)
+	defgrp_index = defgroup_name_index(ob, wmd->defgrp_name);
+	if (defgrp_index == -1)
 		return dm;
 
 	dvert = CustomData_duplicate_referenced_layer(&dm->vertData, CD_MDEFORMVERT, numVerts);
@@ -394,7 +417,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	tw = MEM_mallocN(sizeof(float) * numVerts, "WeightVGProximity Modifier, tw");
 	tdw = MEM_mallocN(sizeof(MDeformWeight *) * numVerts, "WeightVGProximity Modifier, tdw");
 	for (i = 0; i < numVerts; i++) {
-		MDeformWeight *_dw = defvert_find_index(&dvert[i], defgrp_idx);
+		MDeformWeight *_dw = defvert_find_index(&dvert[i], defgrp_index);
 		if (_dw) {
 			tidx[numIdx] = i;
 			tw[numIdx] = _dw->weight;
@@ -460,7 +483,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 				else if (obr->type == OB_MESH) {
 					Mesh *me = (Mesh *)obr->data;
 					if (me->edit_btmesh)
-						target_dm = CDDM_from_BMEditMesh(me->edit_btmesh, me, FALSE, FALSE);
+						target_dm = CDDM_from_editbmesh(me->edit_btmesh, FALSE, FALSE);
 					else
 						target_dm = CDDM_from_mesh(me, obr);
 				}
@@ -474,15 +497,15 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 				float *dists_e = use_trgt_edges ? MEM_mallocN(sizeof(float) * numIdx, "dists_e") : NULL;
 				float *dists_f = use_trgt_faces ? MEM_mallocN(sizeof(float) * numIdx, "dists_f") : NULL;
 
-				space_transform_setup(&loc2trgt, ob, obr);
+				SPACE_TRANSFORM_SETUP(&loc2trgt, ob, obr);
 				get_vert2geom_distance(numIdx, v_cos, dists_v, dists_e, dists_f,
 				                       target_dm, &loc2trgt);
 				for (i = 0; i < numIdx; i++) {
 					new_w[i] = dists_v ? dists_v[i] : FLT_MAX;
 					if (dists_e)
-						new_w[i] = minf(dists_e[i], new_w[i]);
+						new_w[i] = min_ff(dists_e[i], new_w[i]);
 					if (dists_f)
-						new_w[i] = minf(dists_f[i], new_w[i]);
+						new_w[i] = min_ff(dists_f[i], new_w[i]);
 				}
 				if (free_target_dm) target_dm->release(target_dm);
 				if (dists_v) MEM_freeN(dists_v);
@@ -500,7 +523,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	}
 
 	/* Map distances to weights. */
-	do_map(new_w, numIdx, wmd->min_dist, wmd->max_dist, wmd->falloff_type);
+	do_map(ob, new_w, numIdx, wmd->min_dist, wmd->max_dist, wmd->falloff_type);
 
 	/* Do masking. */
 	weightvg_do_mask(numIdx, indices, org_w, new_w, ob, dm, wmd->mask_constant,
@@ -509,7 +532,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	                 wmd->mask_tex_map_obj, wmd->mask_tex_uvlayer_name);
 
 	/* Update vgroup. Note we never add nor remove vertices from vgroup here. */
-	weightvg_update_vg(dvert, defgrp_idx, dw, numIdx, indices, org_w, FALSE, 0.0f, FALSE, 0.0f);
+	weightvg_update_vg(dvert, defgrp_index, dw, numIdx, indices, org_w, FALSE, 0.0f, FALSE, 0.0f);
 
 	/* If weight preview enabled... */
 #if 0 /* XXX Currently done in mod stack :/ */
@@ -533,13 +556,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	return dm;
 }
 
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
 
 ModifierTypeInfo modifierType_WeightVGProximity = {
 	/* name */              "VertexWeightProximity",
@@ -557,10 +573,10 @@ ModifierTypeInfo modifierType_WeightVGProximity = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          NULL,
+	/* freeData */          freeData,
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,

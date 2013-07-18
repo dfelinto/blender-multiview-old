@@ -92,10 +92,9 @@
 #include "BKE_modifier.h"
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
-#include "BKE_property.h" // for get_ob_property
+#include "BKE_property.h" // for BKE_bproperty_object_get
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
-#include "BKE_utildefines.h" // SWITCH_INT DATA ENDB DNA1 O_BINARY GLOB USER TEST REND
 
 #include "IMB_imbuf.h"  // for proxy / timecode versioning stuff
 
@@ -290,11 +289,10 @@ static void ntree_version_245(FileData *fd, Library *lib, bNodeTree *ntree)
 				iuser = node->storage;
 				if (iuser->flag & IMA_OLD_PREMUL) {
 					iuser->flag &= ~IMA_OLD_PREMUL;
-					iuser->flag |= IMA_DO_PREMUL;
 				}
 				if (iuser->flag & IMA_DO_PREMUL) {
 					image->flag &= ~IMA_OLD_PREMUL;
-					image->flag |= IMA_DO_PREMUL;
+					image->alpha_mode = IMA_ALPHA_STRAIGHT;
 				}
 			}
 		}
@@ -388,8 +386,6 @@ static void customdata_version_242(Mesh *me)
 	if (!me->vdata.totlayer) {
 		CustomData_add_layer(&me->vdata, CD_MVERT, CD_ASSIGN, me->mvert, me->totvert);
 
-		if (me->msticky)
-			CustomData_add_layer(&me->vdata, CD_MSTICKY, CD_ASSIGN, me->msticky, me->totvert);
 		if (me->dvert)
 			CustomData_add_layer(&me->vdata, CD_MDEFORMVERT, CD_ASSIGN, me->dvert, me->totvert);
 	}
@@ -457,7 +453,7 @@ static void customdata_version_242(Mesh *me)
 		}
 	}
 
-	mesh_update_customdata_pointers(me, TRUE);
+	BKE_mesh_update_customdata_pointers(me, true);
 }
 
 /*only copy render texface layer from active*/
@@ -548,7 +544,7 @@ void blo_do_version_old_trackto_to_constraints(Object *ob)
 {
 	/* create new trackto constraint from the relationship */
 	if (ob->track) {
-		bConstraint *con = add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_TRACKTO);
+		bConstraint *con = BKE_add_ob_constraint(ob, "AutoTrack", CONSTRAINT_TYPE_TRACKTO);
 		bTrackToConstraint *data = con->data;
 
 		/* copy tracking settings from the object */
@@ -946,7 +942,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 			while (act) {
 				if (act->type == ACT_IPO) {
 					ia = act->data;
-					prop = get_ob_property(ob, ia->name);
+					prop = BKE_bproperty_object_get(ob, ia->name);
 					if (prop) {
 						ia->type = ACT_IPO_FROM_PROP;
 					}
@@ -1141,7 +1137,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 	}
 
 	if (main->versionfile <= 212) {
-		bSound* sound;
+		bSound *sound;
 		bProperty *prop;
 		Object *ob;
 		Mesh *me;
@@ -1240,7 +1236,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 					TFace *tf = &((TFace*) me->tface)[i];
 
 					for (j = 0; j < 4; j++) {
-						char *col = (char*) &tf->col[j];
+						char *col = (char *) &tf->col[j];
 
 						col[0] = 255;
 					}
@@ -1307,7 +1303,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 	}
 
 	if (main->versionfile <= 224) {
-		bSound* sound;
+		bSound *sound;
 		Scene *sce;
 		Mesh *me;
 		bScreen *sc;
@@ -1551,7 +1547,9 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 						else if (sbuts->mainb == BUTS_EDIT) {
 							sbuts->mainb = CONTEXT_EDITING;
 						}
-						else sbuts->mainb = CONTEXT_SCENE;
+						else {
+							sbuts->mainb = CONTEXT_SCENE;
+						}
 					}
 				}
 			}
@@ -1843,7 +1841,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 				SEQ_BEGIN (sce->ed, seq)
 				{
 					if (seq->type == SEQ_TYPE_IMAGE || seq->type == SEQ_TYPE_MOVIE)
-						seq->flag |= SEQ_MAKE_PREMUL;
+						seq->alpha_mode = SEQ_ALPHA_STRAIGHT;
 				}
 				SEQ_END
 			}
@@ -2308,7 +2306,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 			Image *ima;
 			for (ima = main->image.first; ima; ima = ima->id.next)
 				if (strcmp(ima->name, "Compositor") == 0) {
-					strcpy(ima->id.name+2, "Viewer Node");
+					strcpy(ima->id.name + 2, "Viewer Node");
 					strcpy(ima->name, "Viewer Node");
 				}
 		}
@@ -2497,11 +2495,11 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 				ima->gen_x = 256; ima->gen_y = 256;
 				ima->gen_type = 1;
 
-				if (0 == strncmp(ima->id.name+2, "Viewer Node", sizeof(ima->id.name) - 2)) {
+				if (0 == strncmp(ima->id.name + 2, "Viewer Node", sizeof(ima->id.name) - 2)) {
 					ima->source = IMA_SRC_VIEWER;
 					ima->type = IMA_TYPE_COMPOSITE;
 				}
-				if (0 == strncmp(ima->id.name+2, "Render Result", sizeof(ima->id.name) - 2)) {
+				if (0 == strncmp(ima->id.name + 2, "Render Result", sizeof(ima->id.name) - 2)) {
 					ima->source = IMA_SRC_VIEWER;
 					ima->type = IMA_TYPE_R_RESULT;
 				}
@@ -2554,7 +2552,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 		if (main->subversionfile < 4) {
 			for (sce = main->scene.first; sce; sce = sce->id.next) {
 				sce->r.bake_mode = 1;	/* prevent to include render stuff here */
-				sce->r.bake_filter = 2;
+				sce->r.bake_filter = 16;
 				sce->r.bake_osa = 5;
 				sce->r.bake_flag = R_BAKE_CLEAR;
 			}
@@ -2904,20 +2902,19 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 		for (ima = main->image.first; ima; ima = ima->id.next) {
 			if (ima->flag & IMA_OLD_PREMUL) {
 				ima->flag &= ~IMA_OLD_PREMUL;
-				ima->flag |= IMA_DO_PREMUL;
+				ima->alpha_mode = IMA_ALPHA_STRAIGHT;
 			}
 		}
 
 		for (tex = main->tex.first; tex; tex = tex->id.next) {
 			if (tex->iuser.flag & IMA_OLD_PREMUL) {
 				tex->iuser.flag &= ~IMA_OLD_PREMUL;
-				tex->iuser.flag |= IMA_DO_PREMUL;
 			}
 
 			ima = blo_do_versions_newlibadr(fd, lib, tex->ima);
 			if (ima && (tex->iuser.flag & IMA_DO_PREMUL)) {
 				ima->flag &= ~IMA_OLD_PREMUL;
-				ima->flag |= IMA_DO_PREMUL;
+				ima->alpha_mode = IMA_ALPHA_STRAIGHT;
 			}
 		}
 	}

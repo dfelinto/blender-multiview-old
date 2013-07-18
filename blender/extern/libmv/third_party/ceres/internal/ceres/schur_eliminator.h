@@ -213,9 +213,9 @@ class SchurEliminatorBase {
 //
 // This implementation is mulithreaded using OpenMP. The level of
 // parallelism is controlled by LinearSolver::Options::num_threads.
-template <int kRowBlockSize = Dynamic,
-          int kEBlockSize = Dynamic,
-          int kFBlockSize = Dynamic >
+template <int kRowBlockSize = Eigen::Dynamic,
+          int kEBlockSize = Eigen::Dynamic,
+          int kFBlockSize = Eigen::Dynamic >
 class SchurEliminator : public SchurEliminatorBase {
  public:
   explicit SchurEliminator(const LinearSolver::Options& options)
@@ -277,7 +277,7 @@ class SchurEliminator : public SchurEliminatorBase {
       const double* b,
       int row_block_counter,
       typename EigenTypes<kEBlockSize, kEBlockSize>::Matrix* eet,
-      typename EigenTypes<kEBlockSize>::Vector* g,
+      double* g,
       double* buffer,
       BlockRandomAccessMatrix* lhs);
 
@@ -285,7 +285,7 @@ class SchurEliminator : public SchurEliminatorBase {
                  const BlockSparseMatrixBase* A,
                  const double* b,
                  int row_block_counter,
-                 const Vector& inverse_ete_g,
+                 const double* inverse_ete_g,
                  double* rhs);
 
   void ChunkOuterProduct(const CompressedRowBlockStructure* bs,
@@ -321,9 +321,25 @@ class SchurEliminator : public SchurEliminatorBase {
   // see the documentation of the Chunk object above.
   vector<Chunk> chunks_;
 
+  // TODO(sameeragarwal): The following two arrays contain per-thread
+  // storage. They should be refactored into a per thread struct.
+
   // Buffer to store the products of the y and z blocks generated
-  // during the elimination phase.
+  // during the elimination phase. buffer_ is of size num_threads *
+  // buffer_size_. Each thread accesses the chunk
+  //
+  //   [thread_id * buffer_size_ , (thread_id + 1) * buffer_size_]
+  //
   scoped_array<double> buffer_;
+
+  // Buffer to store per thread matrix matrix products used by
+  // ChunkOuterProduct. Like buffer_ it is of size num_threads *
+  // buffer_size_. Each thread accesses the chunk
+  //
+  //   [thread_id * buffer_size_ , (thread_id + 1) * buffer_size_ -1]
+  //
+  scoped_array<double> chunk_outer_product_buffer_;
+
   int buffer_size_;
   int num_threads_;
   int uneliminated_row_begins_;

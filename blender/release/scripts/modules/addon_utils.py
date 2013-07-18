@@ -29,7 +29,7 @@ __all__ = (
     )
 
 import bpy as _bpy
-
+_user_preferences = _bpy.context.user_preferences
 
 error_duplicates = False
 error_encoding = False
@@ -148,7 +148,7 @@ def modules(module_cache):
     for path in path_list:
 
         # force all contrib addons to be 'TESTING'
-        if path.endswith("addons_contrib") or path.endswith("addons_extern"):
+        if path.endswith(("addons_contrib", "addons_extern")):
             force_support = 'TESTING'
         else:
             force_support = None
@@ -201,16 +201,16 @@ def check(module_name):
     :rtype: tuple of booleans
     """
     import sys
-    loaded_default = module_name in _bpy.context.user_preferences.addons
+    loaded_default = module_name in _user_preferences.addons
 
     mod = sys.modules.get(module_name)
     loaded_state = mod and getattr(mod, "__addon_enabled__", Ellipsis)
 
     if loaded_state is Ellipsis:
         print("Warning: addon-module %r found module "
-               "but without __addon_enabled__ field, "
-               "possible name collision from file: %r" %
-               (module_name, getattr(mod, "__file__", "<unknown>")))
+              "but without __addon_enabled__ field, "
+              "possible name collision from file: %r" %
+              (module_name, getattr(mod, "__file__", "<unknown>")))
 
         loaded_state = False
 
@@ -218,6 +218,25 @@ def check(module_name):
         loaded_default = True
 
     return loaded_default, loaded_state
+
+# utility functions
+
+
+def _addon_ensure(module_name):
+    addons = _user_preferences.addons
+    addon = _user_preferences.addons.get(module_name)
+    if not addon:
+        addon = _user_preferences.addons.new()
+        addon.module = module_name
+
+
+def _addon_remove(module_name):
+    addons = _user_preferences.addons
+
+    while module_name in addons:
+        addon = addons.get(module_name)
+        if addon:
+            addons.remove(addon)
 
 
 def enable(module_name, default_set=True, persistent=False):
@@ -232,7 +251,7 @@ def enable(module_name, default_set=True, persistent=False):
 
     import os
     import sys
-    import imp
+    from bpy_restrict_state import RestrictBlend
 
     def handle_error():
         import traceback
@@ -246,6 +265,7 @@ def enable(module_name, default_set=True, persistent=False):
         mtime_orig = getattr(mod, "__time__", 0)
         mtime_new = os.path.getmtime(mod.__file__)
         if mtime_orig != mtime_new:
+            import imp
             print("module changed on disk:", mod.__file__, "reloading...")
 
             try:
@@ -256,37 +276,43 @@ def enable(module_name, default_set=True, persistent=False):
                 return None
             mod.__addon_enabled__ = False
 
+    # add the addon first it may want to initialize its own preferences.
+    # must remove on fail through.
+    if default_set:
+        _addon_ensure(module_name)
+
     # Split registering up into 3 steps so we can undo
     # if it fails par way through.
 
-    # 1) try import
-    try:
-        mod = __import__(module_name)
-        mod.__time__ = os.path.getmtime(mod.__file__)
-        mod.__addon_enabled__ = False
-    except:
-        handle_error()
-        return None
+    # disable the context, using the context at all is
+    # really bad while loading an addon, don't do it!
+    with RestrictBlend():
 
-    # 2) try register collected modules
-    # removed, addons need to handle own registration now.
+        # 1) try import
+        try:
+            mod = __import__(module_name)
+            mod.__time__ = os.path.getmtime(mod.__file__)
+            mod.__addon_enabled__ = False
+        except:
+            handle_error()
+            _addon_remove(module_name)
+            return None
 
-    # 3) try run the modules register function
-    try:
-        mod.register()
-    except:
-        handle_error()
-        del sys.modules[module_name]
-        return None
+        # 2) try register collected modules
+        # removed, addons need to handle own registration now.
+
+        # 3) try run the modules register function
+        try:
+            mod.register()
+        except:
+            print("Exception in module register(): %r" %
+                  getattr(mod, "__file__", module_name))
+            handle_error()
+            del sys.modules[module_name]
+            _addon_remove(module_name)
+            return None
 
     # * OK loaded successfully! *
-    if default_set:
-        # just in case its enabled already
-        ext = _bpy.context.user_preferences.addons.get(module_name)
-        if not ext:
-            ext = _bpy.context.user_preferences.addons.new()
-            ext.module = module_name
-
     mod.__addon_enabled__ = True
     mod.__addon_persistent__ = persistent
 
@@ -309,26 +335,24 @@ def disable(module_name, default_set=True):
     # possible this addon is from a previous session and didn't load a
     # module this time. So even if the module is not found, still disable
     # the addon in the user prefs.
-    if mod:
+    if mod and getattr(mod, "__addon_enabled__", False) is not False:
         mod.__addon_enabled__ = False
         mod.__addon_persistent = False
 
         try:
             mod.unregister()
         except:
+            print("Exception in module unregister(): %r" %
+                  getattr(mod, "__file__", module_name))
             import traceback
             traceback.print_exc()
     else:
-        print("addon_utils.disable", module_name, "not loaded")
+        print("addon_utils.disable: %s not %s." %
+              (module_name, "disabled" if mod is None else "loaded"))
 
-    # could be in more then once, unlikely but better do this just in case.
-    addons = _bpy.context.user_preferences.addons
-
+    # could be in more than once, unlikely but better do this just in case.
     if default_set:
-        while module_name in addons:
-            addon = addons.get(module_name)
-            if addon:
-                addons.remove(addon)
+        _addon_remove(module_name)
 
     if _bpy.app.debug_python:
         print("\taddon_utils.disable", module_name)

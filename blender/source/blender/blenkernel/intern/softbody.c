@@ -79,6 +79,7 @@ variables on the UI for now
 #include "BKE_pointcache.h"
 #include "BKE_deform.h"
 #include "BKE_mesh.h"
+#include "BKE_scene.h"
 
 #include  "PIL_time.h"
 // #include  "ONL_opennl.h" remove linking to ONL for now
@@ -143,13 +144,15 @@ typedef struct  SB_thread_context {
 } SB_thread_context;
 
 #define NLF_BUILD  1
-#define NLF_SOLVE  2
+#if 0
+#  define NLF_SOLVE  2
+#endif
 
 #define MID_PRESERVE 1
 
 #define SOFTGOALSNAP  0.999f
 /* if bp-> goal is above make it a *forced follow original* and skip all ODE stuff for this bp
- * removes *unnecessary* stiffnes from ODE system
+ * removes *unnecessary* stiffness from ODE system
  */
 #define HEUNWARNLIMIT 1 /* 500 would be fine i think for detecting severe *stiff* stuff */
 
@@ -198,18 +201,18 @@ static float sb_time_scale(Object *ob)
 	SoftBody *sb= ob->soft;	/* is supposed to be there */
 	if (sb) {
 		return(sb->physics_speed);
-		/*hrms .. this could be IPO as well :)
-		 estimated range [0.001 sluggish slug - 100.0 very fast (i hope ODE solver can handle that)]
-		 1 approx = a unit 1 pendulum at g = 9.8 [earth conditions]  has period 65 frames
-		 theory would give a 50 frames period .. so there must be something inaccurate .. looking for that (BM)
+		/* hrms .. this could be IPO as well :)
+		 * estimated range [0.001 sluggish slug - 100.0 very fast (i hope ODE solver can handle that)]
+		 * 1 approx = a unit 1 pendulum at g = 9.8 [earth conditions]  has period 65 frames
+		 * theory would give a 50 frames period .. so there must be something inaccurate .. looking for that (BM)
 		 */
 	}
 	return (1.0f);
 	/*
-	this would be frames/sec independent timing assuming 25 fps is default
-	but does not work very well with NLA
-		return (25.0f/scene->r.frs_sec)
-	*/
+	 * this would be frames/sec independent timing assuming 25 fps is default
+	 * but does not work very well with NLA
+	 * return (25.0f/scene->r.frs_sec)
+	 */
 }
 /*--- frame based timing ---*/
 
@@ -1032,7 +1035,7 @@ static int sb_detect_aabb_collisionCached(float UNUSED(force[3]), unsigned int U
 
 	hash  = vertexowner->soft->scratch->colliderhash;
 	ihash =	BLI_ghashIterator_new(hash);
-	while (!BLI_ghashIterator_isDone(ihash) ) {
+	while (!BLI_ghashIterator_done(ihash)) {
 
 		ccd_Mesh *ccdm = BLI_ghashIterator_getValue	(ihash);
 		ob             = BLI_ghashIterator_getKey	(ihash);
@@ -1095,12 +1098,12 @@ static int sb_detect_face_pointCached(float face_v1[3], float face_v2[3], float 
 	float facedist, outerfacethickness, tune = 10.f;
 	int a, deflected=0;
 
-	aabbmin[0] = MIN3(face_v1[0], face_v2[0], face_v3[0]);
-	aabbmin[1] = MIN3(face_v1[1], face_v2[1], face_v3[1]);
-	aabbmin[2] = MIN3(face_v1[2], face_v2[2], face_v3[2]);
-	aabbmax[0] = MAX3(face_v1[0], face_v2[0], face_v3[0]);
-	aabbmax[1] = MAX3(face_v1[1], face_v2[1], face_v3[1]);
-	aabbmax[2] = MAX3(face_v1[2], face_v2[2], face_v3[2]);
+	aabbmin[0] = min_fff(face_v1[0], face_v2[0], face_v3[0]);
+	aabbmin[1] = min_fff(face_v1[1], face_v2[1], face_v3[1]);
+	aabbmin[2] = min_fff(face_v1[2], face_v2[2], face_v3[2]);
+	aabbmax[0] = max_fff(face_v1[0], face_v2[0], face_v3[0]);
+	aabbmax[1] = max_fff(face_v1[1], face_v2[1], face_v3[1]);
+	aabbmax[2] = max_fff(face_v1[2], face_v2[2], face_v3[2]);
 
 	/* calculate face normal once again SIGH */
 	sub_v3_v3v3(edge1, face_v1, face_v2);
@@ -1111,7 +1114,7 @@ static int sb_detect_face_pointCached(float face_v1[3], float face_v2[3], float 
 
 	hash  = vertexowner->soft->scratch->colliderhash;
 	ihash =	BLI_ghashIterator_new(hash);
-	while (!BLI_ghashIterator_isDone(ihash) ) {
+	while (!BLI_ghashIterator_done(ihash)) {
 
 		ccd_Mesh *ccdm = BLI_ghashIterator_getValue	(ihash);
 		ob             = BLI_ghashIterator_getKey	(ihash);
@@ -1168,7 +1171,7 @@ static int sb_detect_face_pointCached(float face_v1[3], float face_v2[3], float 
 
 								*damp=df*tune*ob->pd->pdef_sbdamp;
 
-								df = 0.01f*exp(- 100.0f*df);
+								df = 0.01f * expf(-100.0f * df);
 								Vec3PlusStVec(force, -df, d_nvect);
 								deflected = 3;
 							}
@@ -1194,16 +1197,16 @@ static int sb_detect_face_collisionCached(float face_v1[3], float face_v2[3], fl
 	float t, tune = 10.0f;
 	int a, deflected=0;
 
-	aabbmin[0] = MIN3(face_v1[0], face_v2[0], face_v3[0]);
-	aabbmin[1] = MIN3(face_v1[1], face_v2[1], face_v3[1]);
-	aabbmin[2] = MIN3(face_v1[2], face_v2[2], face_v3[2]);
-	aabbmax[0] = MAX3(face_v1[0], face_v2[0], face_v3[0]);
-	aabbmax[1] = MAX3(face_v1[1], face_v2[1], face_v3[1]);
-	aabbmax[2] = MAX3(face_v1[2], face_v2[2], face_v3[2]);
+	aabbmin[0] = min_fff(face_v1[0], face_v2[0], face_v3[0]);
+	aabbmin[1] = min_fff(face_v1[1], face_v2[1], face_v3[1]);
+	aabbmin[2] = min_fff(face_v1[2], face_v2[2], face_v3[2]);
+	aabbmax[0] = max_fff(face_v1[0], face_v2[0], face_v3[0]);
+	aabbmax[1] = max_fff(face_v1[1], face_v2[1], face_v3[1]);
+	aabbmax[2] = max_fff(face_v1[2], face_v2[2], face_v3[2]);
 
 	hash  = vertexowner->soft->scratch->colliderhash;
 	ihash =	BLI_ghashIterator_new(hash);
-	while (!BLI_ghashIterator_isDone(ihash) ) {
+	while (!BLI_ghashIterator_done(ihash)) {
 
 		ccd_Mesh *ccdm = BLI_ghashIterator_getValue	(ihash);
 		ob             = BLI_ghashIterator_getKey	(ihash);
@@ -1303,7 +1306,7 @@ static int sb_detect_face_collisionCached(float face_v1[3], float face_v2[3], fl
 						normalize_v3(d_nvect);
 						if (
 							/* isect_line_tri_v3(nv1, nv3, face_v1, face_v2, face_v3, &t, NULL) ||
-							 we did that edge already */
+							 * we did that edge already */
 							isect_line_tri_v3(nv3, nv4, face_v1, face_v2, face_v3, &t, NULL) ||
 							isect_line_tri_v3(nv4, nv1, face_v1, face_v2, face_v3, &t, NULL) ) {
 							Vec3PlusStVec(force, -0.5f, d_nvect);
@@ -1431,7 +1434,7 @@ static int sb_detect_edge_collisionCached(float edge_v1[3], float edge_v2[3], fl
 
 	hash  = vertexowner->soft->scratch->colliderhash;
 	ihash =	BLI_ghashIterator_new(hash);
-	while (!BLI_ghashIterator_isDone(ihash) ) {
+	while (!BLI_ghashIterator_done(ihash)) {
 
 		ccd_Mesh *ccdm = BLI_ghashIterator_getValue	(ihash);
 		ob             = BLI_ghashIterator_getKey	(ihash);
@@ -1596,7 +1599,7 @@ static void _scan_for_ext_spring_forces(Scene *scene, Object *ob, float timenow,
 					/*see if we have wind*/
 					if (do_effector) {
 						EffectedPoint epoint;
-						float speed[3]={0.0f, 0.0f, 0.0f};
+						float speed[3] = {0.0f, 0.0f, 0.0f};
 						float pos[3];
 						mid_v3_v3v3(pos, sb->bpoint[bs->v1].pos, sb->bpoint[bs->v2].pos);
 						mid_v3_v3v3(vel, sb->bpoint[bs->v1].vec, sb->bpoint[bs->v2].vec);
@@ -1662,10 +1665,7 @@ static void sb_sfesf_threads_run(Scene *scene, struct Object *ob, float timenow,
 	do_effector= pdInitEffectors(scene, ob, NULL, ob->soft->effector_weights);
 
 	/* figure the number of threads while preventing pretty pointless threading overhead */
-	if (scene->r.mode & R_FIXED_THREADS)
-		totthread= scene->r.threads;
-	else
-		totthread= BLI_system_thread_count();
+	totthread= BKE_scene_num_threads(scene);
 	/* what if we got zillions of CPUs running but less to spread*/
 	while ((totsprings/totthread < lowsprings) && (totthread > 1)) {
 		totthread--;
@@ -1747,8 +1747,8 @@ static int sb_detect_vertex_collisionCached(float opco[3], float facenormal[3], 
 	Object *ob= NULL;
 	GHash *hash;
 	GHashIterator *ihash;
-	float nv1[3], nv2[3], nv3[3], nv4[3], edge1[3], edge2[3], d_nvect[3], dv1[3], ve[3], avel[3]={0.0, 0.0, 0.0},
-	      vv1[3], vv2[3], vv3[3], vv4[3], coledge[3]={0.0f, 0.0f, 0.0f}, mindistedge = 1000.0f,
+	float nv1[3], nv2[3], nv3[3], nv4[3], edge1[3], edge2[3], d_nvect[3], dv1[3], ve[3], avel[3] = {0.0, 0.0, 0.0},
+	      vv1[3], vv2[3], vv3[3], vv4[3], coledge[3] = {0.0f, 0.0f, 0.0f}, mindistedge = 1000.0f,
 	      outerforceaccu[3], innerforceaccu[3],
 	      facedist, /* n_mag, */ /* UNUSED */ force_mag_norm, minx, miny, minz, maxx, maxy, maxz,
 	      innerfacethickness = -0.5f, outerfacethickness = 0.2f,
@@ -1761,7 +1761,7 @@ static int sb_detect_vertex_collisionCached(float opco[3], float facenormal[3], 
 	outerforceaccu[0]=outerforceaccu[1]=outerforceaccu[2]=0.0f;
 	innerforceaccu[0]=innerforceaccu[1]=innerforceaccu[2]=0.0f;
 /* go */
-	while (!BLI_ghashIterator_isDone(ihash) ) {
+	while (!BLI_ghashIterator_done(ihash)) {
 
 		ccd_Mesh *ccdm = BLI_ghashIterator_getValue	(ihash);
 		ob             = BLI_ghashIterator_getKey	(ihash);
@@ -1955,7 +1955,7 @@ static int sb_detect_vertex_collisionCached(float opco[3], float facenormal[3], 
 							}
 
 							closest_to_line_segment_v3(ve, opco, nv2, nv3);
-							 sub_v3_v3v3(ve, opco, ve);
+							sub_v3_v3v3(ve, opco, ve);
 							dist = normalize_v3(ve);
 							if ((dist < outerfacethickness)&&(dist < mindistedge )) {
 								copy_v3_v3(coledge, ve);
@@ -1964,7 +1964,7 @@ static int sb_detect_vertex_collisionCached(float opco[3], float facenormal[3], 
 							}
 
 							closest_to_line_segment_v3(ve, opco, nv3, nv1);
-							 sub_v3_v3v3(ve, opco, ve);
+							sub_v3_v3v3(ve, opco, ve);
 							dist = normalize_v3(ve);
 							if ((dist < outerfacethickness)&&(dist < mindistedge )) {
 								copy_v3_v3(coledge, ve);
@@ -2207,7 +2207,7 @@ static int _softbody_calc_forces_slice_in_a_thread(Scene *scene, Object *ob, flo
 	bp = &sb->bpoint[ifirst];
 	for (bb=number_of_points_here; bb>0; bb--, bp++) {
 		/* clear forces  accumulator */
-		bp->force[0]= bp->force[1]= bp->force[2]= 0.0;
+		bp->force[0] = bp->force[1] = bp->force[2] = 0.0;
 		/* naive ball self collision */
 		/* needs to be done if goal snaps or not */
 		if (do_selfcollision) {
@@ -2291,7 +2291,7 @@ static int _softbody_calc_forces_slice_in_a_thread(Scene *scene, Object *ob, flo
 			/* done goal stuff */
 
 			/* gravitation */
-			if (sb && scene->physics_settings.flag & PHYS_GLOBAL_GRAVITY) {
+			if (scene->physics_settings.flag & PHYS_GLOBAL_GRAVITY) {
 				float gravity[3];
 				copy_v3_v3(gravity, scene->physics_settings.gravity);
 				mul_v3_fl(gravity, sb_grav_force_scale(ob)*_final_mass(ob, bp)*sb->effector_weights->global_gravity); /* individual mass of node here */
@@ -2302,8 +2302,8 @@ static int _softbody_calc_forces_slice_in_a_thread(Scene *scene, Object *ob, flo
 			if (do_effector) {
 				EffectedPoint epoint;
 				float kd;
-				float force[3]= {0.0f, 0.0f, 0.0f};
-				float speed[3]= {0.0f, 0.0f, 0.0f};
+				float force[3] = {0.0f, 0.0f, 0.0f};
+				float speed[3] = {0.0f, 0.0f, 0.0f};
 				float eval_sb_fric_force_scale = sb_fric_force_scale(ob); /* just for calling function once */
 				pd_point_from_soft(scene, bp->pos, bp->vec, sb->bpoint-bp, &epoint);
 				pdDoEffectors(do_effector, NULL, sb->effector_weights, &epoint, force, speed);
@@ -2393,10 +2393,7 @@ static void sb_cf_threads_run(Scene *scene, Object *ob, float forcetime, float t
 	int lowpoints =100; /* wild guess .. may increase with better thread management 'above' or even be UI option sb->spawn_cf_threads_nopts */
 
 	/* figure the number of threads while preventing pretty pointless threading overhead */
-	if (scene->r.mode & R_FIXED_THREADS)
-		totthread= scene->r.threads;
-	else
-		totthread= BLI_system_thread_count();
+	totthread= BKE_scene_num_threads(scene);
 	/* what if we got zillions of CPUs running but less to spread*/
 	while ((totpoint/totthread < lowpoints) && (totthread > 1)) {
 		totthread--;
@@ -2555,7 +2552,7 @@ static void softbody_calc_forces(Scene *scene, Object *ob, float forcetime, floa
 
 		for (a=sb->totpoint, bp= sb->bpoint; a>0; a--, bp++) {
 			/* clear forces  accumulator */
-			bp->force[0]= bp->force[1]= bp->force[2]= 0.0;
+			bp->force[0] = bp->force[1] = bp->force[2] = 0.0;
 			if (nl_flags & NLF_BUILD) {
 				//int ia =3*(sb->totpoint-a);
 				//int op =3*sb->totpoint;
@@ -2710,8 +2707,8 @@ static void softbody_calc_forces(Scene *scene, Object *ob, float forcetime, floa
 				/* particle field & vortex */
 				if (do_effector) {
 					EffectedPoint epoint;
-					float force[3]= {0.0f, 0.0f, 0.0f};
-					float speed[3]= {0.0f, 0.0f, 0.0f};
+					float force[3] = {0.0f, 0.0f, 0.0f};
+					float speed[3] = {0.0f, 0.0f, 0.0f};
 					float eval_sb_fric_force_scale = sb_fric_force_scale(ob); /* just for calling function once */
 					pd_point_from_soft(scene, bp->pos, bp->vec, sb->bpoint-bp, &epoint);
 					pdDoEffectors(do_effector, NULL, sb->effector_weights, &epoint, force, speed);
@@ -2903,7 +2900,7 @@ static void softbody_apply_forces(Object *ob, float forcetime, int mode, float *
 	/* or heun ~ 2nd order runge-kutta steps, mode 1, 2 */
 	SoftBody *sb= ob->soft;	/* is supposed to be there */
 	BodyPoint *bp;
-	float dx[3]={0}, dv[3], aabbmin[3], aabbmax[3], cm[3]={0.0f, 0.0f, 0.0f};
+	float dx[3] = {0}, dv[3], aabbmin[3], aabbmax[3], cm[3] = {0.0f, 0.0f, 0.0f};
 	float timeovermass/*, freezeloc=0.00001f, freezeforce=0.00000000001f*/;
 	float maxerrpos= 0.0f, maxerrvel = 0.0f;
 	int a, fuzzy=0;
@@ -3192,7 +3189,7 @@ static void interpolate_exciter(Object *ob, int timescale, int time)
 	- xxxx_to_softbody(Object *ob)      : a full (new) copy, creates SB geometry
 */
 
-static void get_scalar_from_vertexgroup(Object *ob, int vertID, short groupindex, float *target)
+static void get_scalar_from_vertexgroup(Object *ob, int vertID, int groupindex, float *target)
 /* result 0 on success, else indicates error number
 -- kind of *inverse* result defintion,
 -- but this way we can signal error condition to caller
@@ -3295,7 +3292,7 @@ static void mesh_to_softbody(Scene *scene, Object *ob)
 		if ((ob->softflag & OB_SB_GOAL) && sb->vertgroup) { /* even this is a deprecated evil hack */
 		   /* I'd like to have it  .. if (sb->namedVG_Goal[0]) */
 
-			get_scalar_from_vertexgroup(ob, a, (short) (sb->vertgroup-1), &bp->goal);
+			get_scalar_from_vertexgroup(ob, a, sb->vertgroup - 1, &bp->goal);
 			/* do this always, regardless successful read from vertex group */
 			/* this is where '2.5 every thing is animatable' goes wrong in the first place jow_go_for2_5 */
 			/* 1st coding action to take : move this to frame level */
@@ -3314,10 +3311,10 @@ static void mesh_to_softbody(Scene *scene, Object *ob)
 		 */
 
 		if (sb->namedVG_Mass[0]) {
-			int grp= defgroup_name_index (ob, sb->namedVG_Mass);
-			/* printf("VGN  %s %d\n", sb->namedVG_Mass, grp); */
-			if (grp > -1) {
-				get_scalar_from_vertexgroup(ob, a, (short) (grp), &bp->mass);
+			int defgrp_index = defgroup_name_index(ob, sb->namedVG_Mass);
+			/* printf("VGN  %s %d\n", sb->namedVG_Mass, defgrp_index); */
+			if (defgrp_index != -1) {
+				get_scalar_from_vertexgroup(ob, a, defgrp_index, &bp->mass);
 				/* 2.5  bp->mass = bp->mass * sb->nodemass; */
 				/* printf("bp->mass  %f\n", bp->mass); */
 
@@ -3327,10 +3324,10 @@ static void mesh_to_softbody(Scene *scene, Object *ob)
 		bp->springweight = 1.0f;
 
 		if (sb->namedVG_Spring_K[0]) {
-			int grp= defgroup_name_index (ob, sb->namedVG_Spring_K);
-			//printf("VGN  %s %d\n", sb->namedVG_Spring_K, grp);
-			if (grp > -1) {
-				get_scalar_from_vertexgroup(ob, a, (short) (grp), &bp->springweight);
+			int defgrp_index = defgroup_name_index(ob, sb->namedVG_Spring_K);
+			//printf("VGN  %s %d\n", sb->namedVG_Spring_K, defgrp_index);
+			if (defgrp_index  != -1) {
+				get_scalar_from_vertexgroup(ob, a, defgrp_index , &bp->springweight);
 				//printf("bp->springweight  %f\n", bp->springweight);
 
 			}
@@ -3863,7 +3860,7 @@ static void softbody_reset(Object *ob, SoftBody *sb, float (*vertexCos)[3], int 
 		copy_v3_v3(bp->origS, bp->pos);
 		copy_v3_v3(bp->origE, bp->pos);
 		copy_v3_v3(bp->origT, bp->pos);
-		bp->vec[0]= bp->vec[1]= bp->vec[2]= 0.0f;
+		bp->vec[0] = bp->vec[1] = bp->vec[2] = 0.0f;
 
 		/* the bp->prev*'s are for rolling back from a canceled try to propagate in time
 		 * adaptive step size algo in a nutshell:
@@ -3923,7 +3920,7 @@ static void softbody_step(Scene *scene, Object *ob, SoftBody *sb, float dtime)
 
 	sst=PIL_check_seconds_timer();
 	/* Integration back in time is possible in theory, but pretty useless here.
-	 * So we refuse to do so. Since we do not know anything about 'outside' canges
+	 * So we refuse to do so. Since we do not know anything about 'outside' changes
 	 * especially colliders we refuse to go more than 10 frames.
 	 */
 	if (dtime < 0 || dtime > 10.5f) return;
@@ -4006,8 +4003,8 @@ static void softbody_step(Scene *scene, Object *ob, SoftBody *sb, float dtime)
 			}
 			loops++;
 			if (sb->solverflags & SBSO_MONITOR ) {
-				sct=PIL_check_seconds_timer();
-				if (sct-sst > 0.5f) printf("%3.0f%% \r", 100.0f*timedone/dtime);
+				sct = PIL_check_seconds_timer();
+				if (sct - sst > 0.5) printf("%3.0f%% \r", 100.0f * timedone / dtime);
 			}
 			/* ask for user break */
 			if (SB_localInterruptCallBack && SB_localInterruptCallBack()) break;
@@ -4043,7 +4040,7 @@ static void softbody_step(Scene *scene, Object *ob, SoftBody *sb, float dtime)
 
 	if (sb->solverflags & SBSO_MONITOR ) {
 		sct=PIL_check_seconds_timer();
-		if ((sct-sst > 0.5f) || (G.debug & G_DEBUG)) printf(" solver time %f sec %s\n", sct-sst, ob->id.name);
+		if ((sct - sst > 0.5) || (G.debug & G_DEBUG)) printf(" solver time %f sec %s\n", sct-sst, ob->id.name);
 	}
 }
 
@@ -4104,18 +4101,6 @@ void sbObjectStep(Scene *scene, Object *ob, float cfra, float (*vertexCos)[3], i
 
 		softbody_update_positions(ob, sb, vertexCos, numVerts);
 		softbody_reset(ob, sb, vertexCos, numVerts);
-	}
-
-	/* continue physics special case */
-	if (BKE_ptcache_get_continue_physics()) {
-		BKE_ptcache_invalidate(cache);
-		/* do simulation */
-		dtime = timescale;
-		softbody_update_positions(ob, sb, vertexCos, numVerts);
-		softbody_step(scene, ob, sb, dtime);
-		softbody_to_object(ob, vertexCos, numVerts, 0);
-		sb->last_frame = framenr;
-		return;
 	}
 
 	/* still no points? go away */

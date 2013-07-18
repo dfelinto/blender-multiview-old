@@ -24,14 +24,7 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
-
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_object_types.h"
@@ -42,6 +35,12 @@
 #include "BLI_math.h"
 
 #include "BKE_action.h"
+
+#include "RNA_access.h"
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
 
 #include "WM_types.h"
 
@@ -116,7 +115,7 @@ static void rna_ChannelDriver_update_data(Main *bmain, Scene *scene, PointerRNA 
 	driver->flag &= ~DRIVER_FLAG_INVALID;
 	
 	/* TODO: this really needs an update guard... */
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	DAG_id_tag_update(id, OB_RECALC_OB | OB_RECALC_DATA);
 	
 	WM_main_add_notifier(NC_SCENE | ND_FRAME, scene);
@@ -403,20 +402,22 @@ static void rna_FCurve_group_set(PointerRNA *ptr, PointerRNA value)
 	}
 }
 
-DriverVar *rna_Driver_new_variable(ChannelDriver *driver)
+static DriverVar *rna_Driver_new_variable(ChannelDriver *driver)
 {
 	/* call the API function for this */
 	return driver_add_new_variable(driver);
 }
 
-void rna_Driver_remove_variable(ChannelDriver *driver, ReportList *reports, DriverVar *dvar)
+static void rna_Driver_remove_variable(ChannelDriver *driver, ReportList *reports, PointerRNA *dvar_ptr)
 {
+	DriverVar *dvar = dvar_ptr->data;
 	if (BLI_findindex(&driver->variables, dvar) == -1) {
 		BKE_report(reports, RPT_ERROR, "Variable does not exist in this driver");
 		return;
 	}
 
 	driver_free_variable(driver, dvar);
+	RNA_POINTER_INVALIDATE(dvar_ptr);
 }
 
 
@@ -438,13 +439,16 @@ static FModifier *rna_FCurve_modifiers_new(FCurve *fcu, int type)
 	return add_fmodifier(&fcu->modifiers, type);
 }
 
-static void rna_FCurve_modifiers_remove(FCurve *fcu, ReportList *reports, FModifier *fcm)
+static void rna_FCurve_modifiers_remove(FCurve *fcu, ReportList *reports, PointerRNA *fcm_ptr)
 {
+	FModifier *fcm = fcm_ptr->data;
 	if (BLI_findindex(&fcu->modifiers, fcm) == -1) {
 		BKE_reportf(reports, RPT_ERROR, "F-Curve modifier '%s' not found in F-Curve", fcm->name);
 		return;
 	}
+
 	remove_fmodifier(&fcu->modifiers, fcm);
+	RNA_POINTER_INVALIDATE(fcm_ptr);
 }
 
 static void rna_FModifier_active_set(PointerRNA *ptr, int UNUSED(value))
@@ -610,8 +614,9 @@ static void rna_FKeyframe_points_add(FCurve *fcu, int tot)
 	}
 }
 
-static void rna_FKeyframe_points_remove(FCurve *fcu, ReportList *reports, BezTriple *bezt, int do_fast)
+static void rna_FKeyframe_points_remove(FCurve *fcu, ReportList *reports, PointerRNA *bezt_ptr, int do_fast)
 {
+	BezTriple *bezt = bezt_ptr->data;
 	int index = (int)(bezt - fcu->bezt);
 	if (index < 0 || index >= fcu->totvert) {
 		BKE_report(reports, RPT_ERROR, "Keyframe not in F-Curve");
@@ -619,11 +624,87 @@ static void rna_FKeyframe_points_remove(FCurve *fcu, ReportList *reports, BezTri
 	}
 
 	delete_fcurve_key(fcu, index, !do_fast);
+	RNA_POINTER_INVALIDATE(bezt_ptr);
 }
 
 static void rna_fcurve_range(FCurve *fcu, float range[2])
 {
 	calc_fcurve_range(fcu, range, range + 1, FALSE, FALSE);
+}
+
+
+static FCM_EnvelopeData *rna_FModifierEnvelope_points_add(FModifier *fmod, ReportList *reports, float frame)
+{
+	FCM_EnvelopeData fed;
+	FMod_Envelope *env = (FMod_Envelope *)fmod->data;
+	int i;
+
+	/* init template data */
+	fed.min = -1.0f;
+	fed.max = 1.0f;
+	fed.time = frame;
+	fed.f1 = fed.f2 = 0;
+
+	if (env->data) {
+		bool exists;
+		i = BKE_fcm_envelope_find_index(env->data, frame, env->totvert, &exists);
+		if (exists) {
+			BKE_reportf(reports, RPT_ERROR, "Already a control point at frame %.6f", frame);
+			return NULL;
+		}
+
+		/* realloc memory for extra point */
+		env->data = (FCM_EnvelopeData *) MEM_reallocN((void *)env->data, (env->totvert + 1) * sizeof(FCM_EnvelopeData));
+
+		/* move the points after the added point */
+		if (i < env->totvert) {
+			memmove(env->data + i + 1, env->data + i, (env->totvert - i) * sizeof(FCM_EnvelopeData));
+		}
+
+		env->totvert++;
+	}
+	else {
+		env->data = MEM_mallocN(sizeof(FCM_EnvelopeData), "FCM_EnvelopeData");
+		env->totvert = 1;
+		i = 0;
+	}
+
+	/* add point to paste at index i */
+	*(env->data + i) = fed;
+	return (env->data + i);
+}
+
+void rna_FModifierEnvelope_points_remove(FModifier *fmod, ReportList *reports, PointerRNA *point)
+{
+	FCM_EnvelopeData *cp = point->data;
+	FMod_Envelope *env = (FMod_Envelope *)fmod->data;
+
+	int index = (int)(cp - env->data);
+
+	/* test point is in range */
+	if (index < 0 || index >= env->totvert) {
+		BKE_report(reports, RPT_ERROR, "Control point not in Envelope F-Modifier");
+		return;
+	}
+
+	if (env->totvert > 1) {
+		/* move data after the removed point */
+
+		memmove(env->data + index, env->data + (index + 1), sizeof(FCM_EnvelopeData) * ((env->totvert - index) - 1));
+
+		/* realloc smaller array */
+		env->totvert--;
+		env->data = (FCM_EnvelopeData *) MEM_reallocN((void *)env->data, (env->totvert) * sizeof(FCM_EnvelopeData));
+	}
+	else {
+		/* just free array, since the only vert was deleted */
+		if (env->data) {
+			MEM_freeN(env->data);
+			env->data = NULL;
+		}
+		env->totvert = 0;
+	}
+	RNA_POINTER_INVALIDATE(point);
 }
 
 #else
@@ -763,6 +844,36 @@ static void rna_def_fmodifier_envelope_ctrl(BlenderRNA *brna)
 	/*	- selection flags (not implemented in UI yet though) */
 }
 
+static void rna_def_fmodifier_envelope_control_points(BlenderRNA *brna, PropertyRNA *cprop)
+{
+	StructRNA *srna;
+
+	FunctionRNA *func;
+	PropertyRNA *parm;
+
+	RNA_def_property_srna(cprop, "FModifierEnvelopeControlPoints");
+	srna = RNA_def_struct(brna, "FModifierEnvelopeControlPoints", NULL);
+	RNA_def_struct_sdna(srna, "FModifier");
+
+	RNA_def_struct_ui_text(srna, "Control Points", "Control points defining the shape of the envelope");
+
+	func = RNA_def_function(srna, "add", "rna_FModifierEnvelope_points_add");
+	RNA_def_function_ui_description(func, "Add a control point to a FModifierEnvelope");
+	RNA_def_function_flag(func, FUNC_USE_REPORTS);
+	parm = RNA_def_float(func, "frame", 0.0f, -FLT_MAX, FLT_MAX, "",
+	                     "Frame to add this control-point", -FLT_MAX, FLT_MAX);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_pointer(func, "point", "FModifierEnvelopeControlPoint", "", "Newly created control-point");
+	RNA_def_function_return(func, parm);
+
+	func = RNA_def_function(srna, "remove", "rna_FModifierEnvelope_points_remove");
+	RNA_def_function_ui_description(func, "Remove a control-point from an FModifierEnvelope");
+	RNA_def_function_flag(func, FUNC_USE_REPORTS);
+	parm = RNA_def_pointer(func, "point", "FModifierEnvelopeControlPoint", "", "Control-point to remove");
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+}
+
+
 static void rna_def_fmodifier_envelope(BlenderRNA *brna)
 {
 	StructRNA *srna;
@@ -777,6 +888,7 @@ static void rna_def_fmodifier_envelope(BlenderRNA *brna)
 	RNA_def_property_collection_sdna(prop, NULL, "data", "totvert");
 	RNA_def_property_struct_type(prop, "FModifierEnvelopeControlPoint");
 	RNA_def_property_ui_text(prop, "Control Points", "Control points defining the shape of the envelope");
+	rna_def_fmodifier_envelope_control_points(brna, prop);
 	
 	/* Range Settings */
 	prop = RNA_def_property(srna, "reference_value", PROP_FLOAT, PROP_NONE);
@@ -1263,7 +1375,8 @@ static void rna_def_channeldriver_variables(BlenderRNA *brna, PropertyRNA *cprop
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
 	/* target to remove */
 	parm = RNA_def_pointer(func, "variable", "DriverVariable", "", "Variable to remove from the driver");
-	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 }
 
 static void rna_def_channeldriver(BlenderRNA *brna)
@@ -1458,7 +1571,8 @@ static void rna_def_fcurve_modifiers(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_function_ui_description(func, "Remove a modifier from this F-Curve");
 	/* modifier to remove */
 	parm = RNA_def_pointer(func, "modifier", "FModifier", "", "Removed modifier");
-	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 }
 
 /* fcurve.keyframe_points */
@@ -1497,13 +1611,14 @@ static void rna_def_fcurve_keyframe_points(BlenderRNA *brna, PropertyRNA *cprop)
 
 	func = RNA_def_function(srna, "add", "rna_FKeyframe_points_add");
 	RNA_def_function_ui_description(func, "Add a keyframe point to a F-Curve");
-	RNA_def_int(func, "count", 1, 1, INT_MAX, "Number", "Number of points to add to the spline", 1, INT_MAX);
+	RNA_def_int(func, "count", 1, 0, INT_MAX, "Number", "Number of points to add to the spline", 0, INT_MAX);
 
 	func = RNA_def_function(srna, "remove", "rna_FKeyframe_points_remove");
 	RNA_def_function_ui_description(func, "Remove keyframe from an F-Curve");
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
 	parm = RNA_def_pointer(func, "keyframe", "Keyframe", "", "Keyframe to remove");
-	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 	/* optional */
 	RNA_def_boolean(func, "fast", 0, "Fast", "Fast keyframe removal to avoid recalculating the curve each time");
 }

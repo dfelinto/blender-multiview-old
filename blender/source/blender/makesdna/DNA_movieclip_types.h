@@ -37,6 +37,7 @@
 
 #include "DNA_ID.h"
 #include "DNA_tracking_types.h"
+#include "DNA_color_types.h"  /* for color management */
 
 struct anim;
 struct AnimData;
@@ -94,6 +95,9 @@ typedef struct MovieClip {
 	                    /* from a file. affects only a way how scene frame is mapping */
 	                    /* to a file name and not touches other data associated with */
 	                    /* a clip */
+
+	/* color management */
+	ColorManagedColorspaceSettings colorspace_settings;
 } MovieClip;
 
 typedef struct MovieClipScopes {
@@ -114,38 +118,50 @@ typedef struct MovieClipScopes {
 } MovieClipScopes;
 
 /* MovieClipProxy->build_size_flag */
-#define MCLIP_PROXY_SIZE_25     (1 << 0)
-#define MCLIP_PROXY_SIZE_50     (1 << 1)
-#define MCLIP_PROXY_SIZE_75     (1 << 2)
-#define MCLIP_PROXY_SIZE_100    (1 << 3)
-#define MCLIP_PROXY_UNDISTORTED_SIZE_25     (1 << 4)
-#define MCLIP_PROXY_UNDISTORTED_SIZE_50     (1 << 5)
-#define MCLIP_PROXY_UNDISTORTED_SIZE_75     (1 << 6)
-#define MCLIP_PROXY_UNDISTORTED_SIZE_100    (1 << 7)
+enum {
+	MCLIP_PROXY_SIZE_25              = (1 << 0),
+	MCLIP_PROXY_SIZE_50              = (1 << 1),
+	MCLIP_PROXY_SIZE_75              = (1 << 2),
+	MCLIP_PROXY_SIZE_100             = (1 << 3),
+	MCLIP_PROXY_UNDISTORTED_SIZE_25  = (1 << 4),
+	MCLIP_PROXY_UNDISTORTED_SIZE_50  = (1 << 5),
+	MCLIP_PROXY_UNDISTORTED_SIZE_75  = (1 << 6),
+	MCLIP_PROXY_UNDISTORTED_SIZE_100 = (1 << 7)
+};
 
 /* MovieClip->source */
-#define MCLIP_SRC_SEQUENCE  1
-#define MCLIP_SRC_MOVIE     2
+enum {
+	MCLIP_SRC_SEQUENCE = 1,
+	MCLIP_SRC_MOVIE    = 2
+};
 
 /* MovieClip->selection types */
-#define MCLIP_SEL_NONE      0
-#define MCLIP_SEL_TRACK     1
+enum {
+	MCLIP_SEL_NONE  = 0,
+	MCLIP_SEL_TRACK = 1
+};
 
 /* MovieClip->flag */
-#define MCLIP_USE_PROXY                 (1 << 0)
-#define MCLIP_USE_PROXY_CUSTOM_DIR      (1 << 1)
-/*#define MCLIP_CUSTOM_START_FRAME		(1<<2)*/ /* UNUSED */
+enum {
+	MCLIP_USE_PROXY               = (1 << 0),
+	MCLIP_USE_PROXY_CUSTOM_DIR    = (1 << 1),
+	/* MCLIP_CUSTOM_START_FRAME    = (1<<2), */ /* UNUSED */
 
-#define MCLIP_TIMECODE_FLAGS            (MCLIP_USE_PROXY | MCLIP_USE_PROXY_CUSTOM_DIR)
+	MCLIP_TIMECODE_FLAGS          =  (MCLIP_USE_PROXY | MCLIP_USE_PROXY_CUSTOM_DIR)
+};
 
 /* MovieClip->render_size */
-#define MCLIP_PROXY_RENDER_SIZE_FULL    0
-#define MCLIP_PROXY_RENDER_SIZE_25      1
-#define MCLIP_PROXY_RENDER_SIZE_50      2
-#define MCLIP_PROXY_RENDER_SIZE_75      3
-#define MCLIP_PROXY_RENDER_SIZE_100     4
+enum {
+	MCLIP_PROXY_RENDER_SIZE_FULL = 0,
+	MCLIP_PROXY_RENDER_SIZE_25   = 1,
+	MCLIP_PROXY_RENDER_SIZE_50   = 2,
+	MCLIP_PROXY_RENDER_SIZE_75   = 3,
+	MCLIP_PROXY_RENDER_SIZE_100  = 4
+};
 
 /* MovieClip->render_flag */
-#define MCLIP_PROXY_RENDER_UNDISTORT    1
+enum {
+	MCLIP_PROXY_RENDER_UNDISTORT = 1
+};
 
 #endif

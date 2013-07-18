@@ -19,7 +19,24 @@
 # <pep8-80 compliant>
 
 import bpy
-from bpy.types import Panel, Header, Menu
+from bpy.types import Panel, Header, Menu, UIList
+from bpy.app.translations import pgettext_iface as iface_
+
+
+class CLIP_UL_tracking_objects(UIList):
+    def draw_item(self, context, layout, data, item, icon,
+                  active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.MovieTrackingObject)
+        tobj = item
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.label(text=tobj.name, translate=False,
+                         icon='CAMERA_DATA' if tobj.is_camera
+                         else 'OBJECT_DATA')
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="",
+                         icon='CAMERA_DATA' if tobj.is_camera
+                         else 'OBJECT_DATA')
 
 
 class CLIP_HT_header(Header):
@@ -194,7 +211,7 @@ class CLIP_PT_tools_marker(CLIP_PT_tracking_panel, Panel):
         settings = clip.tracking.settings
 
         col = layout.column(align=True)
-        col.operator("clip.add_marker_move")
+        props = col.operator("clip.add_marker_at_click", text="Add Marker")
         col.operator("clip.detect_features")
         col.operator("clip.delete_track")
 
@@ -275,6 +292,14 @@ class CLIP_PT_tools_tracking(CLIP_PT_tracking_panel, Panel):
         props.backwards = False
         props.sequence = False
 
+        col = layout.column()
+        col.label(text="Refine:")
+        row = col.row(align=True)
+        props = row.operator("clip.refine_markers", text="Backwards")
+        props.backwards = True
+        props = row.operator("clip.refine_markers", text="Forwards")
+        props.backwards = False
+
         col = layout.column(align=True)
         props = col.operator("clip.clear_track_path", text="Clear After")
         props.action = 'REMAINED'
@@ -308,17 +333,25 @@ class CLIP_PT_tools_solve(CLIP_PT_tracking_panel, Panel):
 
         col = layout.column()
         col.prop(settings, "use_tripod_solver")
+        col.prop(settings, "use_keyframe_selection")
+
+        col = layout.column(align=True)
+        col.active = not settings.use_tripod_solver and not settings.use_keyframe_selection
+        col.prop(tracking_object, "keyframe_a")
+        col.prop(tracking_object, "keyframe_b")
+
+        col = layout.column(align=True)
+        col.active = tracking_object.is_camera
+        col.label(text="Refine:")
+        col.prop(settings, "refine_intrinsics", text="")
 
         col = layout.column(align=True)
         col.active = not settings.use_tripod_solver
-        col.prop(settings, "keyframe_a")
-        col.prop(settings, "keyframe_b")
-
-        col = layout.column(align=True)
-        col.active = (tracking_object.is_camera and
-                      not settings.use_tripod_solver)
-        col.label(text="Refine:")
-        col.prop(settings, "refine_intrinsics", text="")
+        col.prop(settings, "use_fallback_reconstruction",
+                 text="Allow Fallback")
+        sub = col.column()
+        sub.active = settings.use_fallback_reconstruction
+        sub.prop(settings, "reconstruction_success_threshold")
 
 
 class CLIP_PT_tools_cleanup(CLIP_PT_tracking_panel, Panel):
@@ -375,7 +408,9 @@ class CLIP_PT_tools_orientation(CLIP_PT_reconstruction_panel, Panel):
         layout.separator()
 
         col = layout.column()
-        col.operator("clip.set_scale")
+        row = col.row(align=True);
+        row.operator("clip.set_scale")
+        row.operator("clip.apply_solution_scale", text="Apply Scale")
         col.prop(settings, "distance")
 
 
@@ -464,7 +499,7 @@ class CLIP_PT_objects(CLIP_PT_clip_view_panel, Panel):
         tracking = sc.clip.tracking
 
         row = layout.row()
-        row.template_list(tracking, "objects",
+        row.template_list("CLIP_UL_tracking_objects", "", tracking, "objects",
                           tracking, "active_object_index", rows=3)
 
         sub = row.column(align=True)
@@ -721,7 +756,8 @@ class CLIP_PT_stabilization(CLIP_PT_reconstruction_panel, Panel):
         layout.active = stab.use_2d_stabilization
 
         row = layout.row()
-        row.template_list(stab, "tracks", stab, "active_track_index", rows=3)
+        row.template_list("UI_UL_list", "stabilization_tracks", stab, "tracks",
+                          stab, "active_track_index", rows=3)
 
         sub = row.column(align=True)
 
@@ -790,42 +826,45 @@ class CLIP_PT_proxy(CLIP_PT_clip_view_panel, Panel):
         sc = context.space_data
         clip = sc.clip
 
-        layout.active = clip.use_proxy
+        col = layout.column()
+        col.active = clip.use_proxy
 
-        layout.label(text="Build Original:")
+        col.label(text="Build Original:")
 
-        row = layout.row(align=True)
+        row = col.row(align=True)
         row.prop(clip.proxy, "build_25", toggle=True)
         row.prop(clip.proxy, "build_50", toggle=True)
         row.prop(clip.proxy, "build_75", toggle=True)
         row.prop(clip.proxy, "build_100", toggle=True)
 
-        layout.label(text="Build Undistorted:")
+        col.label(text="Build Undistorted:")
 
-        row = layout.row(align=True)
+        row = col.row(align=True)
         row.prop(clip.proxy, "build_undistorted_25", toggle=True)
         row.prop(clip.proxy, "build_undistorted_50", toggle=True)
         row.prop(clip.proxy, "build_undistorted_75", toggle=True)
         row.prop(clip.proxy, "build_undistorted_100", toggle=True)
 
-        layout.prop(clip.proxy, "quality")
+        col.prop(clip.proxy, "quality")
 
-        layout.prop(clip, "use_proxy_custom_directory")
+        col.prop(clip, "use_proxy_custom_directory")
         if clip.use_proxy_custom_directory:
-            layout.prop(clip.proxy, "directory")
+            col.prop(clip.proxy, "directory")
 
-        layout.operator("clip.rebuild_proxy", text="Build Proxy")
+        col.operator("clip.rebuild_proxy", text="Build Proxy")
 
         if clip.source == 'MOVIE':
-            col = layout.column()
+            col2 = col.column()
 
-            col.label(text="Use timecode index:")
-            col.prop(clip.proxy, "timecode", text="")
+            col2.label(text="Use timecode index:")
+            col2.prop(clip.proxy, "timecode", text="")
 
-        col = layout.column()
-        col.label(text="Proxy render size:")
+        col2 = col.column()
+        col2.label(text="Proxy render size:")
 
         col.prop(sc.clip_user, "proxy_render_size", text="")
+
+        col = layout.column()
         col.prop(sc.clip_user, "use_render_undistorted")
 
 
@@ -847,16 +886,35 @@ class CLIP_PT_footage(CLIP_PT_clip_view_panel, Panel):
         col.prop(clip, "frame_offset")
 
 
+class CLIP_PT_footage_info(CLIP_PT_clip_view_panel, Panel):
+    bl_space_type = 'CLIP_EDITOR'
+    bl_region_type = 'UI'
+    bl_label = "Footage Information"
+    bl_options = {'DEFAULT_CLOSED'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        sc = context.space_data
+        clip = sc.clip
+
+        col = layout.column()
+        col.template_movieclip_information(sc, "clip", sc.clip_user)
+
+
 class CLIP_PT_tools_clip(CLIP_PT_clip_view_panel, Panel):
     bl_space_type = 'CLIP_EDITOR'
     bl_region_type = 'TOOLS'
     bl_label = "Clip"
+    bl_translation_context = bpy.app.translations.contexts.id_movieclip
 
     def draw(self, context):
         layout = self.layout
 
         layout.operator("clip.set_viewport_background")
         layout.operator("clip.setup_tracking_scene")
+        layout.operator("clip.prefetch")
+        layout.operator("clip.set_scene_frames")
 
 
 class CLIP_MT_view(Menu):
@@ -883,11 +941,18 @@ class CLIP_MT_view(Menu):
 
             ratios = ((1, 8), (1, 4), (1, 2), (1, 1), (2, 1), (4, 1), (8, 1))
 
+            text = iface_("Zoom %d:%d")
             for a, b in ratios:
-                text = "Zoom %d:%d" % (a, b)
                 layout.operator("clip.view_zoom_ratio",
-                                text=text).ratio = a / b
+                                text=text % (a, b),
+                                translate=False).ratio = a / b
         else:
+            if sc.view == 'GRAPH':
+                layout.operator_context = 'INVOKE_REGION_PREVIEW'
+                layout.operator("clip.graph_center_current_frame")
+                layout.operator("clip.graph_view_all")
+                layout.operator_context = 'INVOKE_DEFAULT'
+
             layout.prop(sc, "show_seconds")
             layout.separator()
 
@@ -898,6 +963,7 @@ class CLIP_MT_view(Menu):
 
 class CLIP_MT_clip(Menu):
     bl_label = "Clip"
+    bl_translation_context = bpy.app.translations.contexts.id_movieclip
 
     def draw(self, context):
         layout = self.layout
@@ -908,6 +974,7 @@ class CLIP_MT_clip(Menu):
         layout.operator("clip.open")
 
         if clip:
+            layout.operator("clip.prefetch")
             layout.operator("clip.reload")
             layout.menu("CLIP_MT_proxy")
 
@@ -939,7 +1006,7 @@ class CLIP_MT_track(Menu):
         props.action = 'UPTO'
 
         props = layout.operator("clip.clear_track_path",
-            text="Clear Track Path")
+                                text="Clear Track Path")
         props.action = 'ALL'
 
         layout.separator()
@@ -954,7 +1021,7 @@ class CLIP_MT_track(Menu):
 
         layout.separator()
         props = layout.operator("clip.track_markers",
-            text="Track Frame Backwards")
+                                text="Track Frame Backwards")
         props.backwards = True
 
         props = layout.operator("clip.track_markers", text="Track Backwards")

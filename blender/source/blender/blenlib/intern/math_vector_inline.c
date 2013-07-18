@@ -27,11 +27,10 @@
  *  \ingroup bli
  */
 
-
-#include "BLI_math.h"
-
 #ifndef __MATH_VECTOR_INLINE_C__
 #define __MATH_VECTOR_INLINE_C__
+
+#include "BLI_math.h"
 
 /********************************** Init *************************************/
 
@@ -121,6 +120,13 @@ MINLINE void copy_v4_v4_char(char r[4], const char a[4])
 }
 
 /* short */
+MINLINE void zero_v3_int(int r[3])
+{
+	r[0] = 0;
+	r[1] = 0;
+	r[2] = 0;
+}
+
 MINLINE void copy_v2_v2_short(short r[2], const short a[2])
 {
 	r[0] = a[0];
@@ -231,6 +237,13 @@ MINLINE void swap_v4_v4(float a[4], float b[4])
 
 /********************************* Arithmetic ********************************/
 
+MINLINE void add_v2_fl(float r[2], float f)
+{
+	r[0] += f;
+	r[1] += f;
+}
+
+
 MINLINE void add_v3_fl(float r[3], float f)
 {
 	r[0] += f;
@@ -253,6 +266,12 @@ MINLINE void add_v2_v2(float r[2], const float a[2])
 }
 
 MINLINE void add_v2_v2v2(float r[2], const float a[2], const float b[2])
+{
+	r[0] = a[0] + b[0];
+	r[1] = a[1] + b[1];
+}
+
+MINLINE void add_v2_v2v2_int(int r[2], const int a[2], const int b[2])
 {
 	r[0] = a[0] + b[0];
 	r[1] = a[1] + b[1];
@@ -295,6 +314,12 @@ MINLINE void sub_v2_v2(float r[2], const float a[2])
 }
 
 MINLINE void sub_v2_v2v2(float r[2], const float a[2], const float b[2])
+{
+	r[0] = a[0] - b[0];
+	r[1] = a[1] - b[1];
+}
+
+MINLINE void sub_v2_v2v2_int(int r[2], const int a[2], const int b[2])
 {
 	r[0] = a[0] - b[0];
 	r[1] = a[1] - b[1];
@@ -385,6 +410,15 @@ MINLINE void mul_v4_v4fl(float r[4], const float a[4], float f)
 	r[3] = a[3] * f;
 }
 
+/* note: could add a matrix inline */
+MINLINE float mul_project_m4_v3_zfac(float mat[4][4], const float co[3])
+{
+	return (mat[0][3] * co[0]) +
+	       (mat[1][3] * co[1]) +
+	       (mat[2][3] * co[2]) + mat[3][3];
+}
+
+
 MINLINE void madd_v2_v2fl(float r[2], const float a[2], float f)
 {
 	r[0] += a[0] * f;
@@ -448,7 +482,7 @@ MINLINE void mul_v3_v3v3(float r[3], const float v1[3], const float v2[3])
 	r[2] = v1[2] * v2[2];
 }
 
-MINLINE void negate_v2(float r[3])
+MINLINE void negate_v2(float r[2])
 {
 	r[0] = -r[0];
 	r[1] = -r[1];
@@ -515,6 +549,7 @@ MINLINE float cross_v2v2(const float a[2], const float b[2])
 
 MINLINE void cross_v3_v3v3(float r[3], const float a[3], const float b[3])
 {
+	BLI_assert(r != a && r != b);
 	r[0] = a[1] * b[2] - a[2] * b[1];
 	r[1] = a[2] * b[0] - a[0] * b[2];
 	r[2] = a[0] * b[1] - a[1] * b[0];
@@ -531,7 +566,7 @@ MINLINE void add_newell_cross_v3_v3v3(float n[3], const float v_prev[3], const f
 	n[2] += (v_prev[0] - v_curr[0]) * (v_prev[1] + v_curr[1]);
 }
 
-MINLINE void star_m3_v3(float rmat[][3], float a[3])
+MINLINE void star_m3_v3(float rmat[3][3], float a[3])
 {
 	rmat[0][0] = rmat[1][1] = rmat[2][2] = 0.0;
 	rmat[0][1] = -a[2];
@@ -552,6 +587,21 @@ MINLINE float len_squared_v2(const float v[2])
 MINLINE float len_squared_v3(const float v[3])
 {
 	return v[0] * v[0] + v[1] * v[1] + v[2] * v[2];
+}
+
+MINLINE float len_manhattan_v2(const float v[2])
+{
+	return fabsf(v[0]) + fabsf(v[1]);
+}
+
+MINLINE float len_manhattan_v2_int(const int v[2])
+{
+	return ABS(v[0]) + ABS(v[1]);
+}
+
+MINLINE float len_manhattan_v3(const float v[3])
+{
+	return fabsf(v[0]) + fabsf(v[1]) + fabsf(v[2]);
 }
 
 MINLINE float len_v2(const float v[2])
@@ -581,20 +631,44 @@ MINLINE float len_squared_v2v2(const float a[2], const float b[2])
 	return dot_v2v2(d, d);
 }
 
-MINLINE float len_v3v3(const float a[3], const float b[3])
-{
-	float d[3];
-
-	sub_v3_v3v3(d, b, a);
-	return len_v3(d);
-}
-
 MINLINE float len_squared_v3v3(const float a[3], const float b[3])
 {
 	float d[3];
 
 	sub_v3_v3v3(d, b, a);
 	return dot_v3v3(d, d);
+}
+
+MINLINE float len_manhattan_v2v2(const float a[2], const float b[2])
+{
+	float d[2];
+
+	sub_v2_v2v2(d, b, a);
+	return len_manhattan_v2(d);
+}
+
+MINLINE float len_manhattan_v2v2_int(const int a[2], const int b[2])
+{
+	int d[2];
+
+	sub_v2_v2v2_int(d, b, a);
+	return len_manhattan_v2_int(d);
+}
+
+MINLINE float len_manhattan_v3v3(const float a[3], const float b[3])
+{
+	float d[3];
+
+	sub_v3_v3v3(d, b, a);
+	return len_manhattan_v3(d);
+}
+
+MINLINE float len_v3v3(const float a[3], const float b[3])
+{
+	float d[3];
+
+	sub_v3_v3v3(d, b, a);
+	return len_v3(d);
 }
 
 MINLINE float normalize_v2_v2(float r[2], const float a[2])
@@ -623,7 +697,7 @@ MINLINE float normalize_v3_v3(float r[3], const float a[3])
 	float d = dot_v3v3(a, a);
 
 	/* a larger value causes normalize errors in a
-	 * scaled down models with camera xtreme close */
+	 * scaled down models with camera extreme close */
 	if (d > 1.0e-35f) {
 		d = sqrtf(d);
 		mul_v3_v3fl(r, a, 1.0f / d);
@@ -641,7 +715,7 @@ MINLINE double normalize_v3_d(double n[3])
 	double d = n[0] * n[0] + n[1] * n[1] + n[2] * n[2];
 
 	/* a larger value causes normalize errors in a
-	 * scaled down models with camera xtreme close */
+	 * scaled down models with camera extreme close */
 	if (d > 1.0e-35) {
 		double mul;
 
@@ -682,7 +756,7 @@ MINLINE void normal_float_to_short_v3(short out[3], const float in[3])
 /********************************* Comparison ********************************/
 
 
-MINLINE int is_zero_v2(const float v[3])
+MINLINE int is_zero_v2(const float v[2])
 {
 	return (v[0] == 0 && v[1] == 0);
 }
@@ -715,6 +789,15 @@ MINLINE int equals_v3v3(const float v1[3], const float v2[3])
 MINLINE int equals_v4v4(const float v1[4], const float v2[4])
 {
 	return ((v1[0] == v2[0]) && (v1[1] == v2[1]) && (v1[2] == v2[2]) && (v1[3] == v2[3]));
+}
+
+MINLINE int compare_v2v2(const float v1[2], const float v2[2], const float limit)
+{
+	if (fabsf(v1[0] - v2[0]) < limit)
+		if (fabsf(v1[1] - v2[1]) < limit)
+			return 1;
+
+	return 0;
 }
 
 MINLINE int compare_v3v3(const float v1[3], const float v2[3], const float limit)

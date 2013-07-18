@@ -25,7 +25,7 @@
 #include <algorithm>
 #include "BoolValue.h"
 
-#include "BLO_sys_types.h" /* for intptr_t support */
+#include "BLI_sys_types.h" /* for intptr_t support */
 
 
 //////////////////////////////////////////////////////////////////////
@@ -123,7 +123,7 @@ void CListValue::ReleaseAndRemoveAll()
 
 
 
-CValue* CListValue::FindValue(const STR_String & name)
+CValue* CListValue::FindValue(const STR_String &name)
 {
 	for (int i=0; i < GetCount(); i++)
 		if (GetValue(i)->GetName() == name)
@@ -132,7 +132,7 @@ CValue* CListValue::FindValue(const STR_String & name)
 	return NULL;
 }
 
-CValue* CListValue::FindValue(const char * name)
+CValue* CListValue::FindValue(const char *name)
 {
 	for (int i=0; i < GetCount(); i++)
 		if (GetValue(i)->GetName() == name)
@@ -278,7 +278,7 @@ bool CListValue::IsModified()
 /* Python interface ---------------------------------------------------- */
 /* --------------------------------------------------------------------- */
 
-Py_ssize_t listvalue_bufferlen(PyObject* self)
+static Py_ssize_t listvalue_bufferlen(PyObject *self)
 {
 	CListValue *list= static_cast<CListValue *>(BGE_PROXY_REF(self));
 	if (list==NULL)
@@ -287,13 +287,13 @@ Py_ssize_t listvalue_bufferlen(PyObject* self)
 	return (Py_ssize_t)list->GetCount();
 }
 
-PyObject* listvalue_buffer_item(PyObject* self, Py_ssize_t index)
+static PyObject *listvalue_buffer_item(PyObject *self, Py_ssize_t index)
 {
 	CListValue *list= static_cast<CListValue *>(BGE_PROXY_REF(self));
 	CValue *cval;
 	
 	if (list==NULL) {
-		PyErr_SetString(PyExc_SystemError, "val = CList[i], "BGE_PROXY_ERROR_MSG);
+		PyErr_SetString(PyExc_SystemError, "val = CList[i], " BGE_PROXY_ERROR_MSG);
 		return NULL;
 	}
 	
@@ -309,88 +309,96 @@ PyObject* listvalue_buffer_item(PyObject* self, Py_ssize_t index)
 	
 	cval= list->GetValue(index);
 	
-	PyObject* pyobj = cval->ConvertValueToPython();
+	PyObject *pyobj = cval->ConvertValueToPython();
 	if (pyobj)
 		return pyobj;
 	else
 		return cval->GetProxy();
 }
 
-PyObject* listvalue_mapping_subscript(PyObject* self, PyObject* pyindex)
+
+/* just slice it into a python list... */
+static PyObject *listvalue_buffer_slice(CListValue *list, Py_ssize_t start, Py_ssize_t stop)
+{
+	PyObject *newlist;
+	Py_ssize_t i, j;
+
+	/* caller needs to validate negative index */
+#if 0
+	Py_ssize_t len = list->GetCount();
+
+	if (start > len) start = len;
+	if (stop  > len) stop  = len;
+#endif
+
+	newlist = PyList_New(stop - start);
+	if (!newlist)
+		return NULL;
+
+	for (i = start, j = 0; i < stop; i++, j++) {
+		PyObject *pyobj = list->GetValue(i)->ConvertValueToPython();
+		if (!pyobj) {
+			pyobj = list->GetValue(i)->GetProxy();
+		}
+		PyList_SET_ITEM(newlist, j, pyobj);
+	}
+	return newlist;
+}
+
+
+static PyObject *listvalue_mapping_subscript(PyObject *self, PyObject *key)
 {
 	CListValue *list= static_cast<CListValue *>(BGE_PROXY_REF(self));
 	if (list==NULL) {
-		PyErr_SetString(PyExc_SystemError, "value = CList[i], "BGE_PROXY_ERROR_MSG);
+		PyErr_SetString(PyExc_SystemError, "value = CList[i], " BGE_PROXY_ERROR_MSG);
 		return NULL;
 	}
 	
-	if (PyUnicode_Check(pyindex))
-	{
-		CValue *item = ((CListValue*) list)->FindValue(_PyUnicode_AsString(pyindex));
+	if (PyUnicode_Check(key)) {
+		CValue *item = ((CListValue*) list)->FindValue(_PyUnicode_AsString(key));
 		if (item) {
-			PyObject* pyobj = item->ConvertValueToPython();
+			PyObject *pyobj = item->ConvertValueToPython();
 			if (pyobj)
 				return pyobj;
 			else
 				return item->GetProxy();
 		}
 	}
-	else if (PyLong_Check(pyindex))
-	{
-		int index = PyLong_AsSsize_t(pyindex);
+	else if (PyIndex_Check(key)) {
+		Py_ssize_t index = PyLong_AsSsize_t(key);
 		return listvalue_buffer_item(self, index); /* wont add a ref */
+	}
+	else if (PySlice_Check(key)) {
+		Py_ssize_t start, stop, step, slicelength;
+
+		if (PySlice_GetIndicesEx(key, list->GetCount(), &start, &stop, &step, &slicelength) < 0)
+			return NULL;
+
+		if (slicelength <= 0) {
+			return PyList_New(0);
+		}
+		else if (step == 1) {
+			return listvalue_buffer_slice(list, start, stop);
+		}
+		else {
+			PyErr_SetString(PyExc_TypeError, "CList[slice]: slice steps not supported");
+			return NULL;
+		}
 	}
 
 	PyErr_Format(PyExc_KeyError,
-	             "CList[key]: '%R' key not in list", pyindex);
+	             "CList[key]: '%R' key not in list", key);
 	return NULL;
 }
 
-
-/* just slice it into a python list... */
-PyObject* listvalue_buffer_slice(PyObject* self,Py_ssize_t ilow, Py_ssize_t ihigh)
-{
-	CListValue *list= static_cast<CListValue *>(BGE_PROXY_REF(self));
-	if (list==NULL) {
-		PyErr_SetString(PyExc_SystemError, "val = CList[i:j], "BGE_PROXY_ERROR_MSG);
-		return NULL;
-	}
-	
-	int i, j;
-	PyObject *newlist;
-
-	if (ilow < 0) ilow = 0;
-
-	int n = ((CListValue*) list)->GetCount();
-
-	if (ihigh >= n)
-		ihigh = n;
-	if (ihigh < ilow)
-		ihigh = ilow;
-
-	newlist = PyList_New(ihigh - ilow);
-	if (!newlist)
-		return NULL;
-
-	for (i = ilow, j = 0; i < ihigh; i++, j++)
-	{
-		PyObject* pyobj = list->GetValue(i)->ConvertValueToPython();
-		if (!pyobj)
-			pyobj = list->GetValue(i)->GetProxy();
-		PyList_SET_ITEM(newlist, i, pyobj);
-	}	
-	return newlist;
-}
-
-
 /* clist + list, return a list that python owns */
-static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
+static PyObject *listvalue_buffer_concat(PyObject *self, PyObject *other)
 {
 	CListValue *listval= static_cast<CListValue *>(BGE_PROXY_REF(self));
 	Py_ssize_t i, numitems, numitems_orig;
 	
 	if (listval==NULL) {
-		PyErr_SetString(PyExc_SystemError, "CList+other, "BGE_PROXY_ERROR_MSG);
+		PyErr_SetString(PyExc_SystemError, "CList+other, " BGE_PROXY_ERROR_MSG);
 		return NULL;
 	}
 	
@@ -417,7 +425,7 @@ static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
 		
 		for (i=0;i<numitems;i++)
 		{
-			listitemval = listval->ConvertPythonToValue(PyList_GetItem(other,i), "cList + pyList: CListValue, ");
+			listitemval = listval->ConvertPythonToValue(PyList_GetItem(other,i), true, "cList + pyList: CListValue, ");
 			
 			if (listitemval) {
 				listval_new->SetValue(i+numitems_orig, listitemval);
@@ -439,7 +447,7 @@ static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
 		CListValue* otherval = static_cast<CListValue *>(BGE_PROXY_REF(other));
 		if (otherval==NULL) {
 			listval_new->Release();
-			PyErr_SetString(PyExc_SystemError, "CList+other, "BGE_PROXY_ERROR_MSG);
+			PyErr_SetString(PyExc_SystemError, "CList+other, " BGE_PROXY_ERROR_MSG);
 			return NULL;
 		}
 		
@@ -460,10 +468,10 @@ static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
 
 static int listvalue_buffer_contains(PyObject *self_v, PyObject *value)
 {
-	CListValue *self= static_cast<CListValue *>(BGE_PROXY_REF(self_v));
+	CListValue *self = static_cast<CListValue *>(BGE_PROXY_REF(self_v));
 	
-	if (self==NULL) {
-		PyErr_SetString(PyExc_SystemError, "val in CList, "BGE_PROXY_ERROR_MSG);
+	if (self == NULL) {
+		PyErr_SetString(PyExc_SystemError, "val in CList, " BGE_PROXY_ERROR_MSG);
 		return -1;
 	}
 	
@@ -560,9 +568,9 @@ PyAttributeDef CListValue::Attributes[] = {
 	{ NULL }	//Sentinel
 };
 
-PyObject* CListValue::Pyappend(PyObject* value)
+PyObject *CListValue::Pyappend(PyObject *value)
 {
-	CValue* objval = ConvertPythonToValue(value, "CList.append(i): CValueList, ");
+	CValue *objval = ConvertPythonToValue(value, true, "CList.append(i): CValueList, ");
 
 	if (!objval) /* ConvertPythonToValue sets the error */
 		return NULL;
@@ -577,27 +585,27 @@ PyObject* CListValue::Pyappend(PyObject* value)
 	Py_RETURN_NONE;
 }
 
-PyObject* CListValue::Pyreverse()
+PyObject *CListValue::Pyreverse()
 {
 	std::reverse(m_pValueArray.begin(),m_pValueArray.end());
 	Py_RETURN_NONE;
 }
 
-PyObject* CListValue::Pyindex(PyObject *value)
+PyObject *CListValue::Pyindex(PyObject *value)
 {
-	PyObject* result = NULL;
+	PyObject *result = NULL;
 
-	CValue* checkobj = ConvertPythonToValue(value, "val = cList[i]: CValueList, ");
+	CValue *checkobj = ConvertPythonToValue(value, true, "val = cList[i]: CValueList, ");
 	if (checkobj==NULL)
 		return NULL; /* ConvertPythonToValue sets the error */
 
 	int numelem = GetCount();
 	for (int i=0;i<numelem;i++)
 	{
-		CValue* elem = 			GetValue(i);
+		CValue* elem = GetValue(i);
 		if (checkobj==elem || CheckEqual(checkobj,elem))
 		{
-			result = PyLong_FromSsize_t(i);
+			result = PyLong_FromLong(i);
 			break;
 		}
 	}
@@ -612,15 +620,15 @@ PyObject* CListValue::Pyindex(PyObject *value)
 
 
 
-PyObject* CListValue::Pycount(PyObject* value)
+PyObject *CListValue::Pycount(PyObject *value)
 {
 	int numfound = 0;
 
-	CValue* checkobj = ConvertPythonToValue(value, ""); /* error ignored */
+	CValue *checkobj = ConvertPythonToValue(value, false, ""); /* error ignored */
 
 	if (checkobj==NULL) { /* in this case just return that there are no items in the list */
 		PyErr_Clear();
-		return PyLong_FromSsize_t(0);
+		return PyLong_FromLong(0);
 	}
 
 	int numelem = GetCount();
@@ -634,21 +642,21 @@ PyObject* CListValue::Pycount(PyObject* value)
 	}
 	checkobj->Release();
 
-	return PyLong_FromSsize_t(numfound);
+	return PyLong_FromLong(numfound);
 }
 
 /* Matches python dict.get(key, [default]) */
-PyObject* CListValue::Pyget(PyObject *args)
+PyObject *CListValue::Pyget(PyObject *args)
 {
 	char *key;
-	PyObject* def = Py_None;
+	PyObject *def = Py_None;
 
 	if (!PyArg_ParseTuple(args, "s|O:get", &key, &def))
 		return NULL;
 
 	CValue *item = FindValue((const char *)key);
 	if (item) {
-		PyObject* pyobj = item->ConvertValueToPython();
+		PyObject *pyobj = item->ConvertValueToPython();
 		if (pyobj)
 			return pyobj;
 		else
@@ -659,7 +667,7 @@ PyObject* CListValue::Pyget(PyObject *args)
 }
 
 
-PyObject* CListValue::Pyfrom_id(PyObject* value)
+PyObject *CListValue::Pyfrom_id(PyObject *value)
 {
 	uintptr_t id= (uintptr_t)PyLong_AsVoidPtr(value);
 

@@ -30,6 +30,8 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_text.h"
 
 #include "RNA_define.h"
@@ -127,49 +129,7 @@ static void rna_def_text_line(BlenderRNA *brna)
 	RNA_def_property_string_funcs(prop, "rna_TextLine_body_get", "rna_TextLine_body_length", "rna_TextLine_body_set");
 	RNA_def_property_ui_text(prop, "Line", "Text in the line");
 	RNA_def_property_update(prop, NC_TEXT | NA_EDITED, NULL);
-}
-
-static void rna_def_text_marker(BlenderRNA *brna)
-{
-	StructRNA *srna;
-	PropertyRNA *prop;
-	
-	srna = RNA_def_struct(brna, "TextMarker", NULL);
-	RNA_def_struct_ui_text(srna, "Text Marker", "Marker highlighting a portion of text in a Text datablock");
-
-	prop = RNA_def_property(srna, "line", PROP_INT, PROP_UNSIGNED);
-	RNA_def_property_int_sdna(prop, NULL, "lineno");
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Line", "Line in which the marker is located");
-	
-	prop = RNA_def_property(srna, "character_index_start", PROP_INT, PROP_UNSIGNED);
-	RNA_def_property_int_sdna(prop, NULL, "start");
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Start", "Start position of the marker in the line");
-
-	prop = RNA_def_property(srna, "character_index_end", PROP_INT, PROP_UNSIGNED);
-	RNA_def_property_int_sdna(prop, NULL, "end");
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "End", "Start position of the marker in the line");
-	
-	prop = RNA_def_property(srna, "group", PROP_INT, PROP_UNSIGNED);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_range(prop, 0, (int)0xFFFF);
-	RNA_def_property_ui_text(prop, "Group", "");
-	
-	prop = RNA_def_property(srna, "is_temporary", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flags", TMARK_TEMP);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Temporary", "Marker is temporary");
-
-	prop = RNA_def_property(srna, "use_edit_all", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flags", TMARK_EDITALL);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Edit All", "Edit all markers of the same group as one");
-	
-	prop = RNA_def_property(srna, "color", PROP_FLOAT, PROP_COLOR_GAMMA);
-	RNA_def_property_range(prop, 0.0f, 1.0f);
-	RNA_def_property_ui_text(prop, "Color", "Color to display the marker with");
+	RNA_def_property_translation_context(prop, BLF_I18NCONTEXT_ID_TEXT);
 }
 
 static void rna_def_text(BlenderRNA *brna)
@@ -241,17 +201,12 @@ static void rna_def_text(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Selection End Character",
 	                         "Index of character after end of selection in the selection end line");
 	
-	prop = RNA_def_property(srna, "markers", PROP_COLLECTION, PROP_NONE);
-	RNA_def_property_struct_type(prop, "TextMarker");
-	RNA_def_property_ui_text(prop, "Markers", "Text markers highlighting part of the text");
-
 	RNA_api_text(srna);
 }
 
 void RNA_def_text(BlenderRNA *brna)
 {
 	rna_def_text_line(brna);
-	rna_def_text_marker(brna);
 	rna_def_text(brna);
 }
 

@@ -22,29 +22,29 @@
 
 /** \file blender/bmesh/operators/bmo_join_triangles.c
  *  \ingroup bmesh
+ *
+ * Convert triangle to quads.
+ *
+ * TODO
+ * - convert triangles to any sided faces, not just quads.
  */
 
 #include "MEM_guardedalloc.h"
 
 #include "DNA_meshdata_types.h"
 
-#include "BKE_customdata.h"
-
 #include "BLI_math.h"
 #include "BLI_array.h"
+
+#include "BKE_customdata.h"
 
 #include "bmesh.h"
 
 #include "intern/bmesh_operators_private.h" /* own include */
 
-/* Bitflags for edges */
-#define T2QDELETE	1
-#define T2QCOMPLEX	2
-#define T2QJOIN		4
-
 /* assumes edges are validated before reaching this poin */
-static float measure_facepair(BMVert *v1, BMVert *v2,
-                              BMVert *v3, BMVert *v4, float limit)
+static float measure_facepair(const float v1[3], const float v2[3],
+                              const float v3[3], const float v4[3], float limit)
 {
 	/* gives a 'weight' to a pair of triangles that join an edge to decide how good a join they would make */
 	/* Note: this is more complicated than it needs to be and should be cleaned up.. */
@@ -53,17 +53,13 @@ static float measure_facepair(BMVert *v1, BMVert *v2,
 	float minarea, maxarea, areaA, areaB;
 
 	/* First Test: Normal difference */
-	normal_tri_v3(n1, v1->co, v2->co, v3->co);
-	normal_tri_v3(n2, v1->co, v3->co, v4->co);
+	normal_tri_v3(n1, v1, v2, v3);
+	normal_tri_v3(n2, v1, v3, v4);
+	angle1 = (compare_v3v3(n1, n2, FLT_EPSILON)) ? 0.0f : angle_normalized_v3v3(n1, n2);
 
-	if (n1[0] == n2[0] && n1[1] == n2[1] && n1[2] == n2[2]) angle1 = 0.0f;
-	else angle1 = angle_v3v3(n1, n2);
-
-	normal_tri_v3(n1, v2->co, v3->co, v4->co);
-	normal_tri_v3(n2, v4->co, v1->co, v2->co);
-
-	if (n1[0] == n2[0] && n1[1] == n2[1] && n1[2] == n2[2]) angle2 = 0.0f;
-	else angle2 = angle_v3v3(n1, n2);
+	normal_tri_v3(n1, v2, v3, v4);
+	normal_tri_v3(n2, v4, v1, v2);
+	angle2 = (compare_v3v3(n1, n2, FLT_EPSILON)) ? 0.0f : angle_normalized_v3v3(n1, n2);
 
 	measure += (angle1 + angle2) * 0.5f;
 	if (measure > limit) {
@@ -71,16 +67,21 @@ static float measure_facepair(BMVert *v1, BMVert *v2,
 	}
 
 	/* Second test: Colinearity */
-	sub_v3_v3v3(edgeVec1, v1->co, v2->co);
-	sub_v3_v3v3(edgeVec2, v2->co, v3->co);
-	sub_v3_v3v3(edgeVec3, v3->co, v4->co);
-	sub_v3_v3v3(edgeVec4, v4->co, v1->co);
+	sub_v3_v3v3(edgeVec1, v1, v2);
+	sub_v3_v3v3(edgeVec2, v2, v3);
+	sub_v3_v3v3(edgeVec3, v3, v4);
+	sub_v3_v3v3(edgeVec4, v4, v1);
+
+	normalize_v3(edgeVec1);
+	normalize_v3(edgeVec2);
+	normalize_v3(edgeVec3);
+	normalize_v3(edgeVec4);
 
 	/* a completely skinny face is 'pi' after halving */
-	diff = 0.25f * (fabsf(angle_v3v3(edgeVec1, edgeVec2) - (float)M_PI_2) +
-	                fabsf(angle_v3v3(edgeVec2, edgeVec3) - (float)M_PI_2) +
-	                fabsf(angle_v3v3(edgeVec3, edgeVec4) - (float)M_PI_2) +
-	                fabsf(angle_v3v3(edgeVec4, edgeVec1) - (float)M_PI_2));
+	diff = 0.25f * (fabsf(angle_normalized_v3v3(edgeVec1, edgeVec2) - (float)M_PI_2) +
+	                fabsf(angle_normalized_v3v3(edgeVec2, edgeVec3) - (float)M_PI_2) +
+	                fabsf(angle_normalized_v3v3(edgeVec3, edgeVec4) - (float)M_PI_2) +
+	                fabsf(angle_normalized_v3v3(edgeVec4, edgeVec1) - (float)M_PI_2));
 
 	if (!diff) {
 		return 0.0;
@@ -92,8 +93,8 @@ static float measure_facepair(BMVert *v1, BMVert *v2,
 	}
 
 	/* Third test: Concavity */
-	areaA = area_tri_v3(v1->co, v2->co, v3->co) + area_tri_v3(v1->co, v3->co, v4->co);
-	areaB = area_tri_v3(v2->co, v3->co, v4->co) + area_tri_v3(v4->co, v1->co, v2->co);
+	areaA = area_tri_v3(v1, v2, v3) + area_tri_v3(v1, v3, v4);
+	areaB = area_tri_v3(v2, v3, v4) + area_tri_v3(v4, v1, v2);
 
 	if (areaA <= areaB) minarea = areaA;
 	else minarea = areaB;
@@ -110,93 +111,73 @@ static float measure_facepair(BMVert *v1, BMVert *v2,
 #define T2QUV_LIMIT 0.005f
 #define T2QCOL_LIMIT 3
 
-static int compareFaceAttribs(BMesh *bm, BMEdge *e, int douvs, int dovcols)
+static bool bm_edge_faces_cmp(BMesh *bm, BMEdge *e, const bool do_uv, const bool do_tf, const bool do_vcol)
 {
-	MTexPoly *tp1, *tp2;
-	MLoopCol *lcol1, *lcol2, *lcol3, *lcol4;
-	MLoopUV *luv1, *luv2, *luv3, *luv4;
-	BMLoop *l1, *l2, *l3, *l4;
-	int mergeok_uvs = !douvs, mergeok_vcols = !dovcols;
+	/* first get loops */
+	BMLoop *l[4];
+
+	l[0] = e->l;
+	l[2] = e->l->radial_next;
 	
-	l1 = e->l;
-	l3 = e->l->radial_next;
-	
-	/* match up loops on each side of an edge corresponding to each ver */
-	if (l1->v == l3->v) {
-		l2 = l1->next;
-		l4 = l2->next;
+	/* match up loops on each side of an edge corresponding to each vert */
+	if (l[0]->v == l[2]->v) {
+		l[1] = l[0]->next;
+		l[3] = l[1]->next;
 	}
 	else {
-		l2 = l1->next;
+		l[1] = l[0]->next;
 
-		l4 = l3;
-		l3 = l4->next;
+		l[3] = l[2];
+		l[2] = l[3]->next;
 	}
 
-	lcol1 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPCOL);
-	lcol2 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPCOL);
-	lcol3 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPCOL);
-	lcol4 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPCOL);
+	/* Test UV's */
+	if (do_uv) {
+		const MLoopUV *luv[4] = {
+		    CustomData_bmesh_get(&bm->ldata, l[0]->head.data, CD_MLOOPUV),
+		    CustomData_bmesh_get(&bm->ldata, l[1]->head.data, CD_MLOOPUV),
+		    CustomData_bmesh_get(&bm->ldata, l[2]->head.data, CD_MLOOPUV),
+		    CustomData_bmesh_get(&bm->ldata, l[3]->head.data, CD_MLOOPUV),
+		};
 
-	luv1 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPUV);
-	luv2 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPUV);
-	luv3 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPUV);
-	luv4 = CustomData_bmesh_get(&bm->ldata, l1->head.data, CD_MLOOPUV);
-
-	tp1 = CustomData_bmesh_get(&bm->pdata, l1->f->head.data, CD_MTEXPOLY);
-	tp2 = CustomData_bmesh_get(&bm->pdata, l2->f->head.data, CD_MTEXPOLY);
-
-	if (!lcol1)
-		mergeok_vcols = 1;
-
-	if (!luv1)
-		mergeok_uvs = 1;
-
-	/* compare faceedges for each face attribute. Additional per face attributes can be added late */
-
-	/* do VCOL */
-	if (lcol1 && dovcols) {
-		char *cols[4] = {(char *)lcol1, (char *)lcol2, (char *)lcol3, (char *)lcol4};
-		int i;
-
-		for (i = 0; i < 3; i++) {
-			if (cols[0][i] + T2QCOL_LIMIT < cols[2][i] - T2QCOL_LIMIT)
-				break;
-			if (cols[1][i] + T2QCOL_LIMIT < cols[3][i] - T2QCOL_LIMIT)
-				break;
+		/* do UV */
+		if (luv[0] && (!compare_v2v2(luv[0]->uv, luv[2]->uv, T2QUV_LIMIT) ||
+		               !compare_v2v2(luv[1]->uv, luv[3]->uv, T2QUV_LIMIT)))
+		{
+			return false;
 		}
-
-		if (i == 3)
-			mergeok_vcols = 1;
 	}
 
-	/* do UV */
-	if (luv1 && douvs) {
-		if (tp1->tpage != tp2->tpage) {
-			/* do nothing */
-		}
-		else {
-			int i;
+	if (do_tf) {
+		const MTexPoly *tp[2] = {
+		    CustomData_bmesh_get(&bm->pdata, l[0]->f->head.data, CD_MTEXPOLY),
+		    CustomData_bmesh_get(&bm->pdata, l[1]->f->head.data, CD_MTEXPOLY),
+		};
 
-			for (i = 0; i < 2; i++) {
-				if (luv1->uv[0] + T2QUV_LIMIT > luv3->uv[0] && luv1->uv[0] - T2QUV_LIMIT < luv3->uv[0] &&
-				    luv1->uv[1] + T2QUV_LIMIT > luv3->uv[1] && luv1->uv[1] - T2QUV_LIMIT < luv3->uv[1])
-				{
-					if (luv2->uv[0] + T2QUV_LIMIT > luv4->uv[0] && luv2->uv[0] - T2QUV_LIMIT < luv4->uv[0] &&
-					    luv2->uv[1] + T2QUV_LIMIT > luv4->uv[1] && luv2->uv[1] - T2QUV_LIMIT < luv4->uv[1])
-					{
-						mergeok_uvs = 1;
-					}
-				}
+		if (tp[0] && (tp[0]->tpage != tp[1]->tpage)) {
+			return false;
+		}
+	}
+
+	/* Test Vertex Colors */
+	if (do_vcol) {
+		const MLoopCol *lcol[4] = {
+		    CustomData_bmesh_get(&bm->ldata, l[0]->head.data, CD_MLOOPCOL),
+			CustomData_bmesh_get(&bm->ldata, l[1]->head.data, CD_MLOOPCOL),
+			CustomData_bmesh_get(&bm->ldata, l[2]->head.data, CD_MLOOPCOL),
+			CustomData_bmesh_get(&bm->ldata, l[3]->head.data, CD_MLOOPCOL),
+		};
+
+		if (lcol[0]) {
+			if (!compare_rgb_uchar((unsigned char *)&lcol[0]->r, (unsigned char *)&lcol[2]->r, T2QCOL_LIMIT) ||
+			    !compare_rgb_uchar((unsigned char *)&lcol[1]->r, (unsigned char *)&lcol[3]->r, T2QCOL_LIMIT))
+			{
+				return false;
 			}
 		}
 	}
 
-	if (douvs == mergeok_uvs && dovcols == mergeok_vcols) {
-		return TRUE;
-	}
-
-	return FALSE;
+	return true;
 }
 
 typedef struct JoinEdge {
@@ -222,30 +203,33 @@ static int fplcmp(const void *v1, const void *v2)
 
 void bmo_join_triangles_exec(BMesh *bm, BMOperator *op)
 {
+	const bool do_sharp = BMO_slot_bool_get(op->slots_in, "cmp_sharp");
+	const bool do_uv    = BMO_slot_bool_get(op->slots_in, "cmp_uvs");
+	const bool do_tf    = do_uv;  /* texture face, make make its own option eventually */
+	const bool do_vcol  = BMO_slot_bool_get(op->slots_in, "cmp_vcols");
+	const bool do_mat   = BMO_slot_bool_get(op->slots_in, "cmp_materials");
+	const float limit   = BMO_slot_float_get(op->slots_in, "limit");
+
 	BMIter iter, liter;
 	BMOIter siter;
-	BMFace *f1, *f2;
+	BMFace *f;
 	BMLoop *l;
 	BMEdge *e;
 	BLI_array_declare(jedges);
 	JoinEdge *jedges = NULL;
-	int dosharp = BMO_slot_bool_get(op, "cmp_sharp");
-	int douvs =   BMO_slot_bool_get(op, "cmp_uvs");
-	int dovcols = BMO_slot_bool_get(op, "cmp_vcols");
-	int domat =   BMO_slot_bool_get(op, "cmp_materials");
-	float limit = BMO_slot_float_get(op, "limit");
 	int i, totedge;
 
 	/* flag all edges of all input face */
-	BMO_ITER (f1, &siter, bm, op, "faces", BM_FACE) {
-		BMO_elem_flag_enable(bm, f1, FACE_INPUT);
-		BM_ITER_ELEM (l, &liter, f1, BM_LOOPS_OF_FACE) {
+	BMO_ITER (f, &siter, op->slots_in, "faces", BM_FACE) {
+		BMO_elem_flag_enable(bm, f, FACE_INPUT);
+		BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
 			BMO_elem_flag_enable(bm, l->e, EDGE_MARK);
 		}
 	}
 
 	/* unflag edges that are invalid; e.g. aren't surrounded by triangle */
 	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+		BMFace *f1, *f2;
 		if (!BMO_elem_flag_test(bm, e, EDGE_MARK))
 			continue;
 
@@ -282,16 +266,16 @@ void bmo_join_triangles_exec(BMesh *bm, BMOperator *op)
 		v3 = e->l->next->v;
 		v4 = e->l->radial_next->prev->v;
 
-		if (dosharp && !BM_elem_flag_test(e, BM_ELEM_SMOOTH))
-			continue;
-		
-		if ((douvs || dovcols) && compareFaceAttribs(bm, e, douvs, dovcols))
+		if (do_sharp && !BM_elem_flag_test(e, BM_ELEM_SMOOTH))
 			continue;
 
-		if (domat && f1->mat_nr != f2->mat_nr)
+		if (do_mat && f1->mat_nr != f2->mat_nr)
 			continue;
 
-		measure = measure_facepair(v1, v2, v3, v4, limit);
+		if ((do_uv || do_tf || do_vcol) && (bm_edge_faces_cmp(bm, e, do_uv, do_tf, do_vcol) == false))
+			continue;
+
+		measure = measure_facepair(v1->co, v2->co, v3->co, v4->co, limit);
 		if (measure < limit) {
 			BLI_array_grow_one(jedges);
 
@@ -324,16 +308,20 @@ void bmo_join_triangles_exec(BMesh *bm, BMOperator *op)
 	}
 
 	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+		BMFace *f1, *f2;
+
 		if (!BMO_elem_flag_test(bm, e, EDGE_CHOSEN))
 			continue;
 
 
 		BM_edge_face_pair(e, &f1, &f2); /* checked above */
-		BM_faces_join_pair(bm, f1, f2, e, TRUE);
+		BM_faces_join_pair(bm, f1, f2, e, true);
 	}
 
 	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 		if (BMO_elem_flag_test(bm, e, EDGE_MARK)) {
+			BMFace *f1, *f2;
+
 			/* ok, this edge wasn't merged, check if it's
 			 * in a 2-tri-pair island, and if so merg */
 
@@ -350,18 +338,18 @@ void bmo_join_triangles_exec(BMesh *bm, BMOperator *op)
 					}
 				}
 				
-				/* if l isn't NULL, we broke out of the loo */
+				/* if l isn't NULL, we broke out of the loop */
 				if (l) {
 					break;
 				}
 			}
 
-			/* if i isn't 2, we broke out of that loo */
+			/* if i isn't 2, we broke out of that loop */
 			if (i != 2) {
 				continue;
 			}
 
-			BM_faces_join_pair(bm, f1, f2, e, TRUE);
+			BM_faces_join_pair(bm, f1, f2, e, true);
 		}
 	}
 

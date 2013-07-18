@@ -33,17 +33,17 @@
 
 #include <stdio.h>
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable : 4786)
-#endif //WIN32
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
+#endif
 
 #include "wm_event_types.h"
 #include "KX_BlenderSceneConverter.h"
 #include "KX_ConvertSensors.h"
 
 /* This little block needed for linking to Blender... */
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#include "BLI_winstuff.h"
+#ifdef _MSC_VER
+#  include "BLI_winstuff.h"
 #endif
 
 #include "DNA_object_types.h"
@@ -118,8 +118,8 @@ void BL_ConvertSensors(struct Object* blenderobject,
 	}
 	gameobj->ReserveSensor(count);
 	sens = (bSensor*)blenderobject->sensors.first;
-	while(sens)
-	{
+
+	while (sens) {
 		SCA_ISensor* gamesensor=NULL;
 		/* All sensors have a pulse toggle, frequency, and invert field.     */
 		/* These are extracted here, and set when the sensor is added to the */
@@ -183,7 +183,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 					
 					
 					if (gameobj->GetPhysicsController())
-					{	
+					{
 						gamesensor = new KX_TouchSensor(eventmgr,
 							gameobj,
 							bFindMaterial,
@@ -209,7 +209,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 					}
 					bool bFindMaterial = true;
 					if (gameobj->GetPhysicsController())
-					{	
+					{
 						gamesensor = new KX_TouchSensor(eventmgr,
 							gameobj,
 							bFindMaterial,
@@ -224,7 +224,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 				KX_NetworkEventManager* eventmgr = (KX_NetworkEventManager*)
 					logicmgr->FindEventManager(SCA_EventManager::NETWORK_EVENTMGR);
 				if (eventmgr) {
-					bMessageSensor* msgSens = (bMessageSensor*) sens->data;	
+					bMessageSensor* msgSens = (bMessageSensor*) sens->data;
 					
 					/* Get our NetworkScene */
 					NG_NetworkScene *NetworkScene = kxscene->GetNetworkScene();
@@ -247,7 +247,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 				SCA_EventManager* eventmgr = logicmgr->FindEventManager(SCA_EventManager::TOUCH_EVENTMGR);
 				if (eventmgr)
 				{
-					STR_String nearpropertyname;	
+					STR_String nearpropertyname;
 					bNearSensor* blendernearsensor = (bNearSensor*)sens->data;
 					if (blendernearsensor->name)
 					{
@@ -260,14 +260,9 @@ void BL_ConvertSensors(struct Object* blenderobject,
 					// this sumoObject is not deleted by a gameobj, so delete it ourself
 					// later (memleaks)!
 					float radius = blendernearsensor->dist;
-					PHY__Vector3 pos;
 					const MT_Vector3& wpos = gameobj->NodeGetWorldPosition();
-					pos[0] = (float)wpos[0];
-					pos[1] = (float)wpos[1];
-					pos[2] = (float)wpos[2];
-					pos[3] = 0.f;
 					bool bFindMaterial = false;
-					PHY_IPhysicsController* physCtrl = kxscene->GetPhysicsEnvironment()->CreateSphereController(radius,pos);
+					PHY_IPhysicsController* physCtrl = kxscene->GetPhysicsEnvironment()->CreateSphereController(radius,wpos);
 
 					//will be done in KX_TouchEventManager::RegisterSensor()  
 					//if (isInActiveLayer)
@@ -311,7 +306,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 			}
 		case SENS_MOUSE:
 			{
-				int keytype = SCA_MouseSensor::KX_MOUSESENSORMODE_NODEF;			
+				int keytype = SCA_MouseSensor::KX_MOUSESENSORMODE_NODEF;
 				int trackfocus = 0;
 				bMouseSensor *bmouse = (bMouseSensor *)sens->data;
 				
@@ -398,7 +393,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 					
 					/* Better do an explicit conversion here! (was implicit      */
 					/* before...)                                                */
-					switch(blenderpropsensor->type) {
+					switch (blenderpropsensor->type) {
 					case SENS_PROP_EQUAL:
 						propchecktype = SCA_PropertySensor::KX_PROPSENSOR_EQUAL;
 						break;
@@ -573,8 +568,7 @@ void BL_ConvertSensors(struct Object* blenderobject,
 					int hatf	=0;
 					int prec	=0;
 					
-					switch(bjoy->type)
-					{
+					switch (bjoy->type) {
 					case SENS_JOY_AXIS:
 						axis	= bjoy->axis;
 						axisf	= bjoy->axisf;
@@ -633,13 +627,13 @@ void BL_ConvertSensors(struct Object* blenderobject,
 			uniqueval->Release();
 			
 			/* Conversion succeeded, so we can set the generic props here.   */
-			gamesensor->SetPulseMode(pos_pulsemode, 
-									 neg_pulsemode, 
-									 frequency);
+			gamesensor->SetPulseMode(pos_pulsemode,
+			                         neg_pulsemode,
+			                         frequency);
 			gamesensor->SetInvert(invert);
 			gamesensor->SetLevel(level);
 			gamesensor->SetTap(tap);
-			gamesensor->SetName(sens->name);			
+			gamesensor->SetName(sens->name);
 			
 			gameobj->AddSensor(gamesensor);
 			
@@ -657,19 +651,19 @@ void BL_ConvertSensors(struct Object* blenderobject,
 
 					if (gamecont) {
 						logicmgr->RegisterToSensor(gamecont,gamesensor);
-					} else {
-						printf(
-							"Warning, sensor \"%s\" could not find its controller "
-							"(link %d of %d) from object \"%s\"\n"
-							"\tthere has been an error converting the blender controller for the game engine,"
-							"logic may be incorrect\n", sens->name, i+1, sens->totlinks, blenderobject->id.name+2);
 					}
-				} else {
-					printf(
-						"Warning, sensor \"%s\" has lost a link to a controller "
-						"(link %d of %d) from object \"%s\"\n"
-						"\tpossible causes are partially appended objects or an error reading the file,"
-						"logic may be incorrect\n", sens->name, i+1, sens->totlinks, blenderobject->id.name+2);
+					else {
+						printf("Warning, sensor \"%s\" could not find its controller "
+						       "(link %d of %d) from object \"%s\"\n"
+						       "\tthere has been an error converting the blender controller for the game engine,"
+						       "logic may be incorrect\n", sens->name, i+1, sens->totlinks, blenderobject->id.name+2);
+					}
+				}
+				else {
+					printf("Warning, sensor \"%s\" has lost a link to a controller "
+					       "(link %d of %d) from object \"%s\"\n"
+					       "\tpossible causes are partially appended objects or an error reading the file,"
+					       "logic may be incorrect\n", sens->name, i+1, sens->totlinks, blenderobject->id.name+2);
 				}
 			}
 			// special case: Keyboard sensor with no link

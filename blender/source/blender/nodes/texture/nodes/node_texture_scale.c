@@ -33,15 +33,15 @@
 #include <math.h>
 #include "node_texture_util.h"
 
-static bNodeSocketTemplate inputs[]= { 
+static bNodeSocketTemplate inputs[] = {
 	{ SOCK_RGBA,   1, N_("Color"), 0.0f, 0.0f, 0.0f, 1.0f },
 	{ SOCK_VECTOR, 1, N_("Scale"), 1.0f, 1.0f, 1.0f, 0.0f,  -10.0f, 10.0f, PROP_XYZ },
-	{ -1, 0, "" } 
+	{ -1, 0, "" }
 };
 
-static bNodeSocketTemplate outputs[]= { 
-	{ SOCK_RGBA, 0, N_("Color")}, 
-	{ -1, 0, "" } 
+static bNodeSocketTemplate outputs[] = {
+	{ SOCK_RGBA, 0, N_("Color")},
+	{ -1, 0, "" }
 };
 
 static void colorfn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **in, short thread)
@@ -63,19 +63,18 @@ static void colorfn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **
 	
 	tex_input_rgba(out, in[0], &np, thread);
 }
-static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out) 
+static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **out) 
 {
-	tex_output(node, in, out[0], &colorfn, data);
+	tex_output(node, execdata, in, out[0], &colorfn, data);
 }
 
-void register_node_type_tex_scale(bNodeTreeType *ttype)
+void register_node_type_tex_scale(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, TEX_NODE_SCALE, "Scale", NODE_CLASS_DISTORT, NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_SCALE, "Scale", NODE_CLASS_DISTORT, 0);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 90, 80, 100);
-	node_type_exec(&ntype, exec);
+	node_type_exec(&ntype, NULL, NULL, exec);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

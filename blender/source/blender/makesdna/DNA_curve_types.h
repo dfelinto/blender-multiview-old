@@ -74,7 +74,7 @@ typedef struct Path {
 typedef struct BevList {
 	struct BevList *next, *prev;
 	int nr, dupe_nr;
-	short poly, hole;
+	int poly, hole;
 } BevList;
 
 /* These two Lines with # tell makesdna this struct can be excluded. */
@@ -87,20 +87,22 @@ typedef struct BevPoint {
 	short split_tag, dupe_tag;
 } BevPoint;
 
-/* Keyframes on F-Curves (allows code reuse of Bezier eval code) and 
+/**
+ * Keyframes on F-Curves (allows code reuse of Bezier eval code) and
  * Points on Bezier Curves/Paths are generally BezTriples 
- */
-/* note: alfa location in struct is abused by Key system */
-/* vec in BezTriple looks like this:
- * - vec[0][0]=x location of handle 1
- * - vec[0][1]=y location of handle 1
- * - vec[0][2]=z location of handle 1 (not used for FCurve Points(2d))
- * - vec[1][0]=x location of control point
- * - vec[1][1]=y location of control point
- * - vec[1][2]=z location of control point
- * - vec[2][0]=x location of handle 2
- * - vec[2][1]=y location of handle 2
- * - vec[2][2]=z location of handle 2 (not used for FCurve Points(2d))
+ *
+ * \note alfa location in struct is abused by Key system
+ *
+ * \note vec in BezTriple looks like this:
+ * - vec[0][0] = x location of handle 1
+ * - vec[0][1] = y location of handle 1
+ * - vec[0][2] = z location of handle 1 (not used for FCurve Points(2d))
+ * - vec[1][0] = x location of control point
+ * - vec[1][1] = y location of control point
+ * - vec[1][2] = z location of control point
+ * - vec[2][0] = x location of handle 2
+ * - vec[2][1] = y location of handle 2
+ * - vec[2][2] = z location of handle 2 (not used for FCurve Points(2d))
  */
 typedef struct BezTriple {
 	float vec[3][3];
@@ -119,6 +121,10 @@ typedef struct BPoint {
 	float radius, pad;		/* user-set radius per point for beveling etc */
 } BPoint;
 
+/**
+ * \note Nurb name is misleading, since it can be used for polygons too,
+ * also, it should be NURBS (Nurb isn't the singular of Nurbs).
+ */
 typedef struct Nurb {
 	struct Nurb *next, *prev;	/* multiple nurbs per curve object are allowed */
 	short type;
@@ -195,8 +201,8 @@ typedef struct Curve {
 	float twist_smooth, smallcaps_scale;
 
 	int pathlen;
-	short pad, totcol;
-	short flag, bevresol;
+	short bevresol, totcol;
+	int flag;
 	float width, ext1, ext2;
 	
 	/* default */
@@ -228,11 +234,11 @@ typedef struct Curve {
 	
 	float ctime;			/* current evaltime - for use by Objects parented to curves */
 	int totbox, actbox;
-	struct TextBox *tb;	
+	struct TextBox *tb;
 	
-	int selstart, selend;	
+	int selstart, selend;
 	
-	struct CharInfo *strinfo;	
+	struct CharInfo *strinfo;
 	struct CharInfo curinfo;
 
 	float bevfac1, bevfac2;
@@ -263,6 +269,7 @@ typedef struct Curve {
 #define CU_PATH_RADIUS	4096 /* make use of the path radius if this is enabled (default for new curves) */
 #define CU_DEFORM_FILL	8192 /* fill 2d curve after deformation */
 #define CU_FILL_CAPS	16384 /* fill bevel caps */
+#define CU_MAP_TAPER	32768 /* map taper object to bevelled area */
 
 /* twist mode */
 #define CU_TWIST_Z_UP			0

@@ -57,7 +57,18 @@
 #include "UI_resources.h"
 #include "UI_view2d.h"
 
+#include "IMB_imbuf.h"
+
 #include "sequencer_intern.h"   // own include
+
+/**************************** common state *****************************/
+
+static void sequencer_scopes_tag_refresh(ScrArea *sa)
+{
+	SpaceSeq *sseq = (SpaceSeq *)sa->spacedata.first;
+
+	sseq->scopes.reference_ibuf = NULL;
+}
 
 /* ******************** manage regions ********************* */
 
@@ -109,6 +120,8 @@ static SpaceLink *sequencer_new(const bContext *C)
 	sseq->chanshown = 0;
 	sseq->view = SEQ_VIEW_SEQUENCE;
 	sseq->mainb = SEQ_DRAW_IMG_IMBUF;
+	sseq->flag = SEQ_SHOW_GPENCIL | SEQ_USE_ALPHA;
+
 	/* header */
 	ar = MEM_callocN(sizeof(ARegion), "header for sequencer");
 	
@@ -183,12 +196,27 @@ static SpaceLink *sequencer_new(const bContext *C)
 }
 
 /* not spacelink itself */
-static void sequencer_free(SpaceLink *UNUSED(sl))
+static void sequencer_free(SpaceLink *sl)
 {	
-//	SpaceSeq *sseq= (SpaceSequencer*) sl;
-	
+	SpaceSeq *sseq = (SpaceSeq *) sl;
+	SequencerScopes *scopes = &sseq->scopes;
+
 // XXX	if (sseq->gpd) BKE_gpencil_free(sseq->gpd);
 
+	if (scopes->zebra_ibuf)
+		IMB_freeImBuf(scopes->zebra_ibuf);
+
+	if (scopes->waveform_ibuf)
+		IMB_freeImBuf(scopes->waveform_ibuf);
+
+	if (scopes->sep_waveform_ibuf)
+		IMB_freeImBuf(scopes->sep_waveform_ibuf);
+
+	if (scopes->vector_ibuf)
+		IMB_freeImBuf(scopes->vector_ibuf);
+
+	if (scopes->histogram_ibuf)
+		IMB_freeImBuf(scopes->histogram_ibuf);
 }
 
 
@@ -285,12 +313,30 @@ static SpaceLink *sequencer_duplicate(SpaceLink *sl)
 	SpaceSeq *sseqn = MEM_dupallocN(sl);
 	
 	/* clear or remove stuff from old */
-// XXX	sseq->gpd= gpencil_data_duplicate(sseq->gpd);
+// XXX	sseq->gpd = gpencil_data_duplicate(sseq->gpd);
 
 	return (SpaceLink *)sseqn;
 }
 
-
+static void sequencer_listener(ScrArea *sa, wmNotifier *wmn)
+{
+	/* context changes */
+	switch (wmn->category) {
+		case NC_SCENE:
+			switch (wmn->data) {
+				case ND_FRAME:
+				case ND_SEQUENCER:
+					sequencer_scopes_tag_refresh(sa);
+					break;
+			}
+			break;
+		case NC_WINDOW:
+		case NC_SPACE:
+			if (wmn->data == ND_SPACE_SEQUENCER)
+				sequencer_scopes_tag_refresh(sa);
+			break;
+	}
+}
 
 /* *********************** sequencer (main) region ************************ */
 /* add handlers, stuff you only do once or on area/region changes */
@@ -320,7 +366,7 @@ static void sequencer_main_area_init(wmWindowManager *wm, ARegion *ar)
 
 static void sequencer_main_area_draw(const bContext *C, ARegion *ar)
 {
-//	ScrArea *sa= CTX_wm_area(C);
+//	ScrArea *sa = CTX_wm_area(C);
 	
 	/* NLE - strip editing timeline interface */
 	draw_timeline_seq(C, ar);
@@ -328,7 +374,7 @@ static void sequencer_main_area_draw(const bContext *C, ARegion *ar)
 
 /* ************* dropboxes ************* */
 
-static int image_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int image_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	Scene *scene = CTX_data_scene(C);
@@ -342,7 +388,7 @@ static int image_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 	return 0;
 }
 
-static int movie_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int movie_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	Scene *scene = CTX_data_scene(C);
@@ -355,7 +401,7 @@ static int movie_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
 	return 0;
 }
 
-static int sound_drop_poll(bContext *C, wmDrag *drag, wmEvent *event)
+static int sound_drop_poll(bContext *C, wmDrag *drag, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	Scene *scene = CTX_data_scene(C);
@@ -513,8 +559,8 @@ static void sequencer_preview_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
-		case NC_SCREEN:
-			if (wmn->data == ND_GPENCIL) {
+		case NC_GPENCIL:
+			if (wmn->action == NA_EDITED) {
 				ED_region_tag_redraw(ar);
 			}
 			break;
@@ -553,9 +599,12 @@ static void sequencer_preview_area_listener(ARegion *ar, wmNotifier *wmn)
 /* add handlers, stuff you only do once or on area/region changes */
 static void sequencer_buttons_area_init(wmWindowManager *wm, ARegion *ar)
 {
-	
+	wmKeyMap *keymap;
+
+	keymap = WM_keymap_find(wm->defaultconf, "SequencerCommon", SPACE_SEQ, 0);
+	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
+
 	ED_region_panels_init(wm, ar);
-	
 }
 
 static void sequencer_buttons_area_draw(const bContext *C, ARegion *ar)
@@ -567,8 +616,8 @@ static void sequencer_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
-		case NC_SCREEN:
-			if (wmn->data == ND_GPENCIL) {
+		case NC_GPENCIL:
+			if (wmn->data == ND_DATA) {
 				ED_region_tag_redraw(ar);
 			}
 			break;
@@ -610,6 +659,7 @@ void ED_spacetype_sequencer(void)
 	st->context = sequencer_context;
 	st->dropboxes = sequencer_dropboxes;
 	st->refresh = sequencer_refresh;
+	st->listener = sequencer_listener;
 
 	/* regions: main window */
 	art = MEM_callocN(sizeof(ARegionType), "spacetype sequencer region");

@@ -45,7 +45,7 @@
 #include "BKE_modifier.h"
 #include "BKE_multires.h"
 #include "BKE_mesh.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "ED_util.h"
 
@@ -154,7 +154,7 @@ void crazyspace_set_quats_editmesh(BMEditMesh *em, float *origcos, float *mapped
 			continue;
 		
 		BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
-			BMLoop *l2 = BM_face_other_edge_loop(l->f, l->e, v);
+			BMLoop *l2 = BM_loop_other_edge_loop(l, v);
 			
 			/* retrieve mapped coordinates */
 			v1 = mappedcos + 3 * BM_elem_index_get(l->v);
@@ -332,7 +332,7 @@ int sculpt_get_first_deform_matrices(Scene *scene, Object *ob, float (**deformma
 			if (!defmats) {
 				Mesh *me = (Mesh *)ob->data;
 				dm = mesh_create_derived(me, ob, NULL);
-				deformedVerts = mesh_getVertexCos(me, &numVerts);
+				deformedVerts = BKE_mesh_vertexCos_get(me, &numVerts);
 				defmats = MEM_callocN(sizeof(*defmats) * numVerts, "defmats");
 
 				for (a = 0; a < numVerts; a++)
@@ -409,11 +409,11 @@ void crazyspace_build_sculpt(Scene *scene, Object *ob, float (**deformmats)[3][3
 		MEM_freeN(quats);
 	}
 
-	if (!*deformmats) {
+	if (*deformmats == NULL) {
 		int a, numVerts;
 		Mesh *me = (Mesh *)ob->data;
 
-		*deformcos = mesh_getVertexCos(me, &numVerts);
+		*deformcos = BKE_mesh_vertexCos_get(me, &numVerts);
 		*deformmats = MEM_callocN(sizeof(*(*deformmats)) * numVerts, "defmats");
 
 		for (a = 0; a < numVerts; a++)

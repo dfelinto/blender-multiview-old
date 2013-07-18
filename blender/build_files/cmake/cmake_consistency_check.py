@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -75,12 +75,12 @@ def is_cmake(filename):
 
 def is_c_header(filename):
     ext = splitext(filename)[1]
-    return (ext in (".h", ".hpp", ".hxx"))
+    return (ext in {".h", ".hpp", ".hxx", ".hh"})
 
 
 def is_c(filename):
     ext = splitext(filename)[1]
-    return (ext in (".c", ".cpp", ".cxx", ".m", ".mm", ".rc", ".cc", ".inl"))
+    return (ext in {".c", ".cpp", ".cxx", ".m", ".mm", ".rc", ".cc", ".inl"})
 
 
 def is_c_any(filename):
@@ -222,8 +222,8 @@ def cmake_get_src(f):
             '''
 
             # reset
-            sources_h[:] = []
-            sources_c[:] = []
+            del sources_h[:]
+            del sources_c[:]
 
     filen.close()
 

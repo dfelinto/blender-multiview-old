@@ -49,7 +49,6 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_action.h"
@@ -60,7 +59,7 @@
 #include "BKE_main.h"
 #include "BKE_mesh.h"
 #include "BKE_screen.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_deform.h"
 #include "BKE_object.h"
 
@@ -71,6 +70,7 @@
 
 #include "ED_armature.h"
 #include "ED_gpencil.h"
+#include "ED_object.h"
 #include "ED_mesh.h"
 #include "ED_screen.h"
 #include "ED_transform.h"
@@ -83,9 +83,10 @@
 
 
 /* ******************* view3d space & buttons ************** */
-#define B_NOP               1
 #define B_REDR              2
 #define B_OBJECTPANELMEDIAN 1008
+
+#define NBR_TRANSFORM_PROPERTIES 7
 
 /* temporary struct for storing transform properties */
 typedef struct {
@@ -93,7 +94,7 @@ typedef struct {
 	float ob_scale[3]; /* need temp space due to linked values */
 	float ob_dims[3];
 	short link_scale;
-	float ve_median[9];
+	float ve_median[NBR_TRANSFORM_PROPERTIES];
 	int curdef;
 	float *defweightp;
 } TransformProperties;
@@ -132,17 +133,38 @@ static float compute_scale_factor(const float ve_median, const float median)
 /* is used for both read and write... */
 static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float lim)
 {
+/* Get rid of those ugly magic numbers, even in a single func they become confusing! */
+/* Location, common to all. */
+/* XXX Those two *must* remain contiguous (used as array)! */
+#define LOC_X     0
+#define LOC_Y     1
+#define LOC_Z     2
+/* Meshes... */
+#define M_CREASE  3
+#define M_WEIGHT  4
+/* XXX Those two *must* remain contiguous (used as array)! */
+#define M_SKIN_X  5
+#define M_SKIN_Y  6
+/* Curves... */
+#define C_BWEIGHT 3
+#define C_WEIGHT  4
+#define C_RADIUS  5
+#define C_TILT    6
+/*Lattice... */
+#define L_WEIGHT  4
+
 	uiBlock *block = (layout) ? uiLayoutAbsoluteBlock(layout) : NULL;
 	MDeformVert *dvert = NULL;
 	TransformProperties *tfp;
-	float median[9], ve_median[9];
-	int tot, totw, totweight, totedge, totradius, totskinradius;
+	float median[NBR_TRANSFORM_PROPERTIES], ve_median[NBR_TRANSFORM_PROPERTIES];
+	int tot, totedgedata, totcurvedata, totlattdata, totskinradius, totcurvebweight;
+	bool has_meshdata = false;
 	char defstr[320];
-	PointerRNA radius_ptr;
+	PointerRNA data_ptr;
 
-	median[0] = median[1] = median[2] = median[3] = median[4] = median[5] = median[6] = median[7] = median[8] = 0.0;
-	tot = totw = totweight = totedge = totradius = totskinradius = 0;
-	defstr[0] = 0;
+	fill_vn_fl(median, NBR_TRANSFORM_PROPERTIES, 0.0f);
+	tot = totedgedata = totcurvedata = totlattdata = totskinradius = totcurvebweight = 0;
+	defstr[0] = '\0';
 
 	/* make sure we got storage */
 	if (v3d->properties_storage == NULL)
@@ -157,33 +179,51 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		BMEdge *eed;
 		BMIter iter;
 
-		BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
-			if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-				MVertSkin *vs;
+		const int cd_vert_skin_offset    = CustomData_get_offset(&bm->vdata, CD_MVERT_SKIN);
+		const int cd_vert_bweight_offset = CustomData_get_offset(&bm->vdata, CD_BWEIGHT);
+		const int cd_edge_bweight_offset = CustomData_get_offset(&bm->edata, CD_BWEIGHT);
+		const int cd_edge_crease_offset  = CustomData_get_offset(&bm->edata, CD_CREASE);
 
-				evedef = eve;
-				tot++;
-				add_v3_v3(median, eve->co);
+		if (bm->totvertsel) {
+			BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+				if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+					evedef = eve;
+					tot++;
+					add_v3_v3(&median[LOC_X], eve->co);
 
-				vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
-				if (vs) {
-					add_v2_v2(median + 7, vs->radius); /* Third val not used currently. */
-					totskinradius++;
+					/* TODO cd_vert_bweight_offset */
+					(void)cd_vert_bweight_offset;
+
+					if (cd_vert_skin_offset != -1) {
+						MVertSkin *vs = BM_ELEM_CD_GET_VOID_P(eve, cd_vert_skin_offset);
+						add_v2_v2(&median[M_SKIN_X], vs->radius); /* Third val not used currently. */
+						totskinradius++;
+					}
 				}
 			}
 		}
 
-		BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
-			if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
-				float *f;
+		if ((cd_edge_bweight_offset != -1) ||
+		    (cd_edge_crease_offset  != -1))
+		{
+			if (bm->totedgesel) {
+				BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
+					if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+						if (cd_edge_bweight_offset != -1) {
+							median[M_WEIGHT] += BM_ELEM_CD_GET_FLOAT(eed, cd_edge_bweight_offset);
+						}
 
-				totedge++;
-				f = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
-				median[3] += f ? *f : 0.0f;
+						if (cd_edge_crease_offset != -1) {
+							median[M_CREASE] += BM_ELEM_CD_GET_FLOAT(eed, cd_edge_crease_offset);
+						}
 
-				f = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
-				median[6] += f ? *f : 0.0f;
+						totedgedata++;
+					}
+				}
 			}
+		}
+		else {
+			totedgedata = bm->totedgesel;
 		}
 
 		/* check for defgroups */
@@ -212,6 +252,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				tfp->defweightp = &dvert->dw[0].weight;
 			}
 		}
+
+		has_meshdata = (totedgedata || totskinradius);
 	}
 	else if (ob->type == OB_CURVE || ob->type == OB_SURF) {
 		Curve *cu = ob->data;
@@ -230,22 +272,24 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				a = nu->pntsu;
 				while (a--) {
 					if (bezt->f2 & SELECT) {
-						add_v3_v3(median, bezt->vec[1]);
+						add_v3_v3(&median[LOC_X], bezt->vec[1]);
 						tot++;
-						median[4] += bezt->weight;
-						totweight++;
-						median[5] += bezt->radius;
-						totradius++;
-						selp = bezt;
-						seltype = &RNA_BezierSplinePoint;
+						median[C_WEIGHT] += bezt->weight;
+						median[C_RADIUS] += bezt->radius;
+						median[C_TILT] += bezt->alfa;
+						if (!totcurvedata) { /* I.e. first time... */
+							selp = bezt;
+							seltype = &RNA_BezierSplinePoint;
+						}
+						totcurvedata++;
 					}
 					else {
 						if (bezt->f1 & SELECT) {
-							add_v3_v3(median, bezt->vec[0]);
+							add_v3_v3(&median[LOC_X], bezt->vec[0]);
 							tot++;
 						}
 						if (bezt->f3 & SELECT) {
-							add_v3_v3(median, bezt->vec[2]);
+							add_v3_v3(&median[LOC_X], bezt->vec[2]);
 							tot++;
 						}
 					}
@@ -257,16 +301,18 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				a = nu->pntsu * nu->pntsv;
 				while (a--) {
 					if (bp->f1 & SELECT) {
-						add_v3_v3(median, bp->vec);
-						median[3] += bp->vec[3];
-						totw++;
+						add_v3_v3(&median[LOC_X], bp->vec);
+						median[C_BWEIGHT] += bp->vec[3];
+						totcurvebweight++;
 						tot++;
-						median[4] += bp->weight;
-						totweight++;
-						median[5] += bp->radius;
-						totradius++;
-						selp = bp;
-						seltype = &RNA_SplinePoint;
+						median[C_WEIGHT] += bp->weight;
+						median[C_RADIUS] += bp->radius;
+						median[C_TILT] += bp->alfa;
+						if (!totcurvedata) { /* I.e. first time... */
+							selp = bp;
+							seltype = &RNA_SplinePoint;
+						}
+						totcurvedata++;
 					}
 					bp++;
 				}
@@ -274,149 +320,170 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			nu = nu->next;
 		}
 
-		if (totradius == 1)
-			RNA_pointer_create(&cu->id, seltype, selp, &radius_ptr);
+		if (totcurvedata == 1)
+			RNA_pointer_create(&cu->id, seltype, selp, &data_ptr);
 	}
 	else if (ob->type == OB_LATTICE) {
 		Lattice *lt = ob->data;
 		BPoint *bp;
 		int a;
+		StructRNA *seltype = NULL;
+		void *selp = NULL;
 
 		a = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
 		bp = lt->editlatt->latt->def;
 		while (a--) {
 			if (bp->f1 & SELECT) {
-				add_v3_v3(median, bp->vec);
+				add_v3_v3(&median[LOC_X], bp->vec);
 				tot++;
-				median[4] += bp->weight;
-				totweight++;
+				median[L_WEIGHT] += bp->weight;
+				if (!totlattdata) { /* I.e. first time... */
+					selp = bp;
+					seltype = &RNA_LatticePoint;
+				}
+				totlattdata++;
 			}
 			bp++;
 		}
+
+		if (totlattdata == 1)
+			RNA_pointer_create(&lt->id, seltype, selp, &data_ptr);
 	}
 
 	if (tot == 0) {
 		uiDefBut(block, LABEL, 0, IFACE_("Nothing selected"), 0, 130, 200, 20, NULL, 0, 0, 0, 0, "");
 		return;
 	}
-	median[0] /= (float)tot;
-	median[1] /= (float)tot;
-	median[2] /= (float)tot;
-	if (totedge) {
-		median[3] /= (float)totedge;
-		median[6] /= (float)totedge;
-	}
-	else if (totw)
-		median[3] /= (float)totw;
-	if (totweight)
-		median[4] /= (float)totweight;
-	if (totradius)
-		median[5] /= (float)totradius;
-	if (totskinradius) {
-		median[7] /= (float)totskinradius;
-		median[8] /= (float)totskinradius;
-	}
 
+	/* Location, X/Y/Z */
+	mul_v3_fl(&median[LOC_X], 1.0f / (float)tot);
 	if (v3d->flag & V3D_GLOBAL_STATS)
-		mul_m4_v3(ob->obmat, median);
+		mul_m4_v3(ob->obmat, &median[LOC_X]);
+
+	if (has_meshdata) {
+		if (totedgedata) {
+			median[M_CREASE] /= (float)totedgedata;
+			median[M_WEIGHT] /= (float)totedgedata;
+		}
+		if (totskinradius) {
+			median[M_SKIN_X] /= (float)totskinradius;
+			median[M_SKIN_Y] /= (float)totskinradius;
+		}
+	}
+	else if (totcurvedata) {
+		median[C_WEIGHT] /= (float)totcurvedata;
+		median[C_RADIUS] /= (float)totcurvedata;
+		median[C_TILT] /= (float)totcurvedata;
+		if (totcurvebweight)
+			median[C_BWEIGHT] /= (float)totcurvebweight;
+	}
+	else if (totlattdata)
+		median[L_WEIGHT] /= (float)totlattdata;
 
 	if (block) { /* buttons */
 		uiBut *but;
 		int yi = 200;
-		const int buth = 20 * UI_DPI_ICON_FAC;
+		const float tilt_limit = DEG2RADF(21600.0f);
+		const int buth = 20 * UI_DPI_FAC;
 		const int but_margin = 2;
+		const char *c;
 
 		memcpy(tfp->ve_median, median, sizeof(tfp->ve_median));
 
 		uiBlockBeginAlign(block);
 		if (tot == 1) {
-			uiDefBut(block, LABEL, 0, IFACE_("Vertex:"), 0, yi -= buth, 200, buth, NULL, 0, 0, 0, 0, "");
+			if (totcurvedata) /* Curve */
+				c = IFACE_("Control Point:");
+			else /* Mesh or lattice */
+				c = IFACE_("Vertex:");
 		}
-		else {
-			uiDefBut(block, LABEL, 0, IFACE_("Median:"), 0, yi -= buth, 200, buth, NULL, 0, 0, 0, 0, "");
-		}
+		else
+			c = IFACE_("Median:");
+		uiDefBut(block, LABEL, 0, c, 0, yi -= buth, 200, buth, NULL, 0, 0, 0, 0, "");
 
 		uiBlockBeginAlign(block);
 
 		/* Should be no need to translate these. */
-		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "X:", 0, yi -= buth, 200, buth,
-		                &(tfp->ve_median[0]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
+		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("X:"), 0, yi -= buth, 200, buth,
+		                &(tfp->ve_median[LOC_X]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
 		uiButSetUnitType(but, PROP_UNIT_LENGTH);
-		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Y:", 0, yi -= buth, 200, buth,
-		                &(tfp->ve_median[1]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
+		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Y:"), 0, yi -= buth, 200, buth,
+		                &(tfp->ve_median[LOC_Y]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
 		uiButSetUnitType(but, PROP_UNIT_LENGTH);
-		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Z:", 0, yi -= buth, 200, buth,
-		                &(tfp->ve_median[2]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
+		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Z:"), 0, yi -= buth, 200, buth,
+		                &(tfp->ve_median[LOC_Z]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
 		uiButSetUnitType(but, PROP_UNIT_LENGTH);
 
-		if (totw == tot) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "W:", 0, yi -= buth, 200, buth,
-			          &(tfp->ve_median[3]), 0.01, 100.0, 1, 3, "");
+		if (totcurvebweight == tot) {
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("W:"), 0, yi -= buth, 200, buth,
+			          &(tfp->ve_median[C_BWEIGHT]), 0.01, 100.0, 1, 3, "");
 		}
 
 		uiBlockBeginAlign(block);
 		uiDefButBitS(block, TOG, V3D_GLOBAL_STATS, B_REDR, IFACE_("Global"),
 		             0, yi -= buth + but_margin, 100, buth,
-		             &v3d->flag, 0, 0, 0, 0, "Displays global values");
+		             &v3d->flag, 0, 0, 0, 0, TIP_("Displays global values"));
 		uiDefButBitS(block, TOGN, V3D_GLOBAL_STATS, B_REDR, IFACE_("Local"),
 		             100, yi, 100, buth,
-		             &v3d->flag, 0, 0, 0, 0, "Displays local values");
+		             &v3d->flag, 0, 0, 0, 0, TIP_("Displays local values"));
 		uiBlockEndAlign(block);
 
-		if (totweight == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Weight:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[4]), 0.0, 1.0, 1, 3, TIP_("Weight used for SoftBody Goal"));
+		/* Meshes... */
+		if (has_meshdata) {
+			if (totedgedata) {
+				/* customdata layer added on demand */
+				uiDefButF(block, NUM, B_OBJECTPANELMEDIAN,
+				          totedgedata == 1 ? IFACE_("Crease:") : IFACE_("Mean Crease:"),
+				          0, yi -= buth + but_margin, 200, buth,
+				          &(tfp->ve_median[M_CREASE]), 0.0, 1.0, 1, 3, TIP_("Weight used by SubSurf modifier"));
+				/* customdata layer added on demand */
+				uiDefButF(block, NUM, B_OBJECTPANELMEDIAN,
+				          totedgedata == 1 ? IFACE_("Bevel Weight:") : IFACE_("Mean Bevel Weight:"),
+				          0, yi -= buth + but_margin, 200, buth,
+				          &(tfp->ve_median[M_WEIGHT]), 0.0, 1.0, 1, 3, TIP_("Weight used by Bevel modifier"));
+			}
+			if (totskinradius) {
+				uiDefButF(block, NUM, B_OBJECTPANELMEDIAN,
+				          totskinradius == 1 ? IFACE_("Radius X:") : IFACE_("Mean Radius X:"),
+				          0, yi -= buth + but_margin, 200, buth,
+				          &(tfp->ve_median[M_SKIN_X]), 0.0, 100.0, 1, 3, TIP_("X radius used by Skin modifier"));
+				uiDefButF(block, NUM, B_OBJECTPANELMEDIAN,
+				          totskinradius == 1 ? IFACE_("Radius Y:") : IFACE_("Mean Radius Y:"),
+				          0, yi -= buth + but_margin, 200, buth,
+				          &(tfp->ve_median[M_SKIN_Y]), 0.0, 100.0, 1, 3, TIP_("Y radius used by Skin modifier"));
+			}
 		}
-		else if (totweight > 1) {
+		/* Curve... */
+		else if (totcurvedata == 1) {
+			uiDefButR(block, NUM, 0, IFACE_("Weight"), 0, yi -= buth + but_margin, 200, buth,
+			          &data_ptr, "weight_softbody", 0, 0.0, 1.0, 1, 3, NULL);
+			uiDefButR(block, NUM, 0, IFACE_("Radius"), 0, yi -= buth + but_margin, 200, buth,
+			          &data_ptr, "radius", 0, 0.0, 100.0, 1, 3, NULL);
+			uiDefButR(block, NUM, 0, IFACE_("Tilt"), 0, yi -= buth + but_margin, 200, buth,
+			          &data_ptr, "tilt", 0, -tilt_limit, tilt_limit, 1, 3, NULL);
+		}
+		else if (totcurvedata > 1) {
 			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Weight:"),
-			          0, yi -= buth, 200, buth,
-			          &(tfp->ve_median[4]), 0.0, 1.0, 1, 3, TIP_("Weight used for SoftBody Goal"));
-		}
-
-		if (totradius == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius:"),
 			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[5]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
-		}
-		else if (totradius > 1) {
+			          &(tfp->ve_median[C_WEIGHT]), 0.0, 1.0, 1, 3, TIP_("Weight used for SoftBody Goal"));
 			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius:"),
 			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[5]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
+			          &(tfp->ve_median[C_RADIUS]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
+			but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Tilt:"),
+			                0, yi -= buth + but_margin, 200, buth,
+			                &(tfp->ve_median[C_TILT]), -tilt_limit, tilt_limit, 1, 3,
+			                TIP_("Tilt of curve control points"));
+			uiButSetUnitType(but, PROP_UNIT_ROTATION);
 		}
-
-		if (totskinradius == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius X:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[7]), 0.0, 100.0, 1, 3, TIP_("X radius used by Skin modifier"));
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius Y:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[8]), 0.0, 100.0, 1, 3, TIP_("Y radius used by Skin modifier"));
+		/* Lattice... */
+		else if (totlattdata == 1) {
+			uiDefButR(block, NUM, 0, IFACE_("Weight"), 0, yi -= buth + but_margin, 200, buth,
+			          &data_ptr, "weight_softbody", 0, 0.0, 1.0, 1, 3, NULL);
 		}
-		else if (totskinradius > 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius X:"),
+		else if (totlattdata > 1) {
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Weight:"),
 			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[7]), 0.0, 100.0, 1, 3, TIP_("Median X radius used by Skin modifier"));
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius Y:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[8]), 0.0, 100.0, 1, 3, TIP_("Median Y radius used by Skin modifier"));
-		}
-
-		if (totedge == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Crease:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[3]), 0.0, 1.0, 1, 3, TIP_("Weight used by SubSurf modifier"));
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Bevel Weight:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[6]), 0.0, 1.0, 1, 3, TIP_("Weight used by Bevel modifier"));
-		}
-		else if (totedge > 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Crease:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[3]), 0.0, 1.0, 1, 3, TIP_("Weight used by SubSurf modifier"));
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Bevel Weight:"),
-			          0, yi -= buth + but_margin, 200, buth,
-			          &(tfp->ve_median[6]), 0.0, 1.0, 1, 3, TIP_("Weight used by Bevel modifier"));
+			          &(tfp->ve_median[L_WEIGHT]), 0.0, 1.0, 1, 3, TIP_("Weight used for SoftBody Goal"));
 		}
 
 		uiBlockEndAlign(block);
@@ -424,164 +491,158 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 
 	}
 	else { /* apply */
+		int i;
+
 		memcpy(ve_median, tfp->ve_median, sizeof(tfp->ve_median));
 
 		if (v3d->flag & V3D_GLOBAL_STATS) {
 			invert_m4_m4(ob->imat, ob->obmat);
-			mul_m4_v3(ob->imat, median);
-			mul_m4_v3(ob->imat, ve_median);
+			mul_m4_v3(ob->imat, &median[LOC_X]);
+			mul_m4_v3(ob->imat, &ve_median[LOC_X]);
 		}
-		sub_v3_v3v3(median, ve_median, median);
-		median[3] = ve_median[3] - median[3];
-		median[4] = ve_median[4] - median[4];
-		median[5] = ve_median[5] - median[5];
-		median[6] = ve_median[6] - median[6];
-		median[7] = ve_median[7] - median[7];
-		median[8] = ve_median[8] - median[8];
+		i = NBR_TRANSFORM_PROPERTIES;
+		while (i--)
+			median[i] = ve_median[i] - median[i];
 
 		if (ob->type == OB_MESH) {
 			Mesh *me = ob->data;
 			BMEditMesh *em = me->edit_btmesh;
 			BMesh *bm = em->bm;
-			BMVert *eve;
 			BMIter iter;
 
-			if (len_v3(median) > 0.000001f) {
+			if (len_v3(&median[LOC_X]) > 0.000001f) {
+				BMVert *eve;
 
 				BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 					if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-						add_v3_v3(eve->co, median);
+						add_v3_v3(eve->co, &median[LOC_X]);
 					}
 				}
 
 				EDBM_mesh_normals_update(em);
 			}
 
-			if (median[3] != 0.0f) {
+			if (median[M_CREASE] != 0.0f) {
+				const int cd_edge_crease_offset  = (BM_mesh_cd_flag_ensure(bm, me, ME_CDFLAG_EDGE_CREASE),
+				                                    CustomData_get_offset(&bm->edata, CD_CREASE));
+				const float sca = compute_scale_factor(ve_median[M_CREASE], median[M_CREASE]);
 				BMEdge *eed;
-				const float sca = compute_scale_factor(ve_median[3], median[3]);
 
 				if (ELEM(sca, 0.0f, 1.0f)) {
 					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
-							float *crease = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
-							if (crease) {
-								*crease = sca;
-							}
+							BM_ELEM_CD_SET_FLOAT(eed, cd_edge_crease_offset, sca);
 						}
 					}
 				}
 				else if (sca > 0.0f) {
 					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
-							float *crease = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
-							if (crease) {
-								*crease *= sca;
-								CLAMP(*crease, 0.0f, 1.0f);
-							}
+							float *crease = BM_ELEM_CD_GET_VOID_P(eed, cd_edge_crease_offset);
+							*crease *= sca;
+							CLAMP(*crease, 0.0f, 1.0f);
 						}
 					}
 				}
 				else {
 					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
-							float *crease = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
-							if (crease) {
-								*crease = 1.0f + ((1.0f - *crease) * sca);
-								CLAMP(*crease, 0.0f, 1.0f);
-							}
+							float *crease = BM_ELEM_CD_GET_VOID_P(eed, cd_edge_crease_offset);
+							*crease = 1.0f + ((1.0f - *crease) * sca);
+							CLAMP(*crease, 0.0f, 1.0f);
 						}
 					}
 				}
 			}
 
-			if (median[6] != 0.0f) {
+			if (median[M_WEIGHT] != 0.0f) {
+				const int cd_edge_bweight_offset = (BM_mesh_cd_flag_ensure(bm, me, ME_CDFLAG_EDGE_BWEIGHT),
+				                                    CustomData_get_offset(&bm->edata, CD_BWEIGHT));
+				const float sca = compute_scale_factor(ve_median[M_WEIGHT], median[M_WEIGHT]);
 				BMEdge *eed;
-				const float sca = compute_scale_factor(ve_median[6], median[6]);
+
+				BLI_assert(cd_edge_bweight_offset != -1);
 
 				if (ELEM(sca, 0.0f, 1.0f)) {
 					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
-							float *bweight = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
-							if (bweight) {
-								*bweight = sca;
-							}
+							float *bweight = BM_ELEM_CD_GET_VOID_P(eed, cd_edge_bweight_offset);
+							*bweight = sca;
 						}
 					}
 				}
 				else if (sca > 0.0f) {
 					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
-							float *bweight = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
-							if (bweight) {
-								*bweight *= sca;
-								CLAMP(*bweight, 0.0f, 1.0f);
-							}
+							float *bweight = BM_ELEM_CD_GET_VOID_P(eed, cd_edge_bweight_offset);
+							*bweight *= sca;
+							CLAMP(*bweight, 0.0f, 1.0f);
 						}
 					}
 				}
 				else {
 					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
-							float *bweight = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
-							if (bweight) {
-								*bweight = 1.0f + ((1.0f - *bweight) * sca);
-								CLAMP(*bweight, 0.0f, 1.0f);
-							}
+							float *bweight = BM_ELEM_CD_GET_VOID_P(eed, cd_edge_bweight_offset);
+							*bweight = 1.0f + ((1.0f - *bweight) * sca);
+							CLAMP(*bweight, 0.0f, 1.0f);
 						}
 					}
 				}
 			}
 
-			if (median[7] != 0.0f) {
-				BMVert *eve;
+			if (median[M_SKIN_X] != 0.0f) {
+				const int cd_vert_skin_offset = CustomData_get_offset(&bm->vdata, CD_MVERT_SKIN);
 				/* That one is not clamped to [0.0, 1.0]. */
-				float sca = ve_median[7];
-				if (ve_median[7] - median[7] == 0.0f) {
+				float sca = ve_median[M_SKIN_X];
+				BMVert *eve;
+
+				BLI_assert(cd_vert_skin_offset != -1);
+
+				if (ve_median[M_SKIN_X] - median[M_SKIN_X] == 0.0f) {
 					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
-							if (vs)
-								vs->radius[0] = sca;
+							MVertSkin *vs = BM_ELEM_CD_GET_VOID_P(eve, cd_vert_skin_offset);
+							vs->radius[0] = sca;
 						}
 					}
 				}
 				else {
-					sca /= (ve_median[7] - median[7]);
+					sca /= (ve_median[M_SKIN_X] - median[M_SKIN_X]);
 					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
-							if (vs)
-								vs->radius[0] *= sca;
+							MVertSkin *vs = BM_ELEM_CD_GET_VOID_P(eve, cd_vert_skin_offset);
+							vs->radius[0] *= sca;
 						}
 					}
 				}
 			}
-			if (median[8] != 0.0f) {
-				BMVert *eve;
+			if (median[M_SKIN_Y] != 0.0f) {
+				const int cd_vert_skin_offset = CustomData_get_offset(&bm->vdata, CD_MVERT_SKIN);
 				/* That one is not clamped to [0.0, 1.0]. */
-				float sca = ve_median[8];
-				if (ve_median[8] - median[8] == 0.0f) {
+				float sca = ve_median[M_SKIN_Y];
+				BMVert *eve;
+
+				BLI_assert(cd_vert_skin_offset != -1);
+
+				if (ve_median[M_SKIN_Y] - median[M_SKIN_Y] == 0.0f) {
 					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
-							if (vs)
-								vs->radius[1] = sca;
+							MVertSkin *vs = BM_ELEM_CD_GET_VOID_P(eve, cd_vert_skin_offset);
+							vs->radius[1] = sca;
 						}
 					}
 				}
 				else {
-					sca /= (ve_median[8] - median[8]);
+					sca /= (ve_median[M_SKIN_Y] - median[M_SKIN_Y]);
 					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
-							if (vs)
-								vs->radius[1] *= sca;
+							MVertSkin *vs = BM_ELEM_CD_GET_VOID_P(eve, cd_vert_skin_offset);
+							vs->radius[1] *= sca;
 						}
 					}
 				}
 			}
-			EDBM_mesh_normals_update(em);
 		}
 		else if (ELEM(ob->type, OB_CURVE, OB_SURF)) {
 			Curve *cu = ob->data;
@@ -590,7 +651,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			BezTriple *bezt;
 			int a;
 			ListBase *nurbs = BKE_curve_editNurbs_get(cu);
-			const float scale_w = compute_scale_factor(ve_median[4], median[4]);
+			const float scale_w = compute_scale_factor(ve_median[C_WEIGHT], median[C_WEIGHT]);
 
 			nu = nurbs->first;
 			while (nu) {
@@ -599,11 +660,11 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					a = nu->pntsu;
 					while (a--) {
 						if (bezt->f2 & SELECT) {
-							add_v3_v3(bezt->vec[0], median);
-							add_v3_v3(bezt->vec[1], median);
-							add_v3_v3(bezt->vec[2], median);
+							add_v3_v3(bezt->vec[0], &median[LOC_X]);
+							add_v3_v3(bezt->vec[1], &median[LOC_X]);
+							add_v3_v3(bezt->vec[2], &median[LOC_X]);
 
-							if (median[4] != 0.0f) {
+							if (median[C_WEIGHT] != 0.0f) {
 								if (ELEM(scale_w, 0.0f, 1.0f)) {
 									bezt->weight = scale_w;
 								}
@@ -614,14 +675,15 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 								}
 							}
 
-							bezt->radius += median[5];
+							bezt->radius += median[C_RADIUS];
+							bezt->alfa += median[C_TILT];
 						}
 						else {
 							if (bezt->f1 & SELECT) {
-								add_v3_v3(bezt->vec[0], median);
+								add_v3_v3(bezt->vec[0], &median[LOC_X]);
 							}
 							if (bezt->f3 & SELECT) {
-								add_v3_v3(bezt->vec[2], median);
+								add_v3_v3(bezt->vec[2], &median[LOC_X]);
 							}
 						}
 						bezt++;
@@ -632,10 +694,10 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					a = nu->pntsu * nu->pntsv;
 					while (a--) {
 						if (bp->f1 & SELECT) {
-							add_v3_v3(bp->vec, median);
-							bp->vec[3] += median[3];
+							add_v3_v3(bp->vec, &median[LOC_X]);
+							bp->vec[3] += median[C_BWEIGHT];
 
-							if (median[4] != 0.0f) {
+							if (median[C_WEIGHT] != 0.0f) {
 								if (ELEM(scale_w, 0.0f, 1.0f)) {
 									bp->weight = scale_w;
 								}
@@ -646,7 +708,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 								}
 							}
 
-							bp->radius += median[5];
+							bp->radius += median[C_RADIUS];
+							bp->alfa += median[C_TILT];
 						}
 						bp++;
 					}
@@ -661,15 +724,15 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			Lattice *lt = ob->data;
 			BPoint *bp;
 			int a;
-			const float scale_w = compute_scale_factor(ve_median[4], median[4]);
+			const float scale_w = compute_scale_factor(ve_median[L_WEIGHT], median[L_WEIGHT]);
 
 			a = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
 			bp = lt->editlatt->latt->def;
 			while (a--) {
 				if (bp->f1 & SELECT) {
-					add_v3_v3(bp->vec, median);
+					add_v3_v3(bp->vec, &median[LOC_X]);
 
-					if (median[4] != 0.0f) {
+					if (median[L_WEIGHT] != 0.0f) {
 						if (ELEM(scale_w, 0.0f, 1.0f)) {
 							bp->weight = scale_w;
 						}
@@ -686,31 +749,58 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 
 /*		ED_undo_push(C, "Transform properties"); */
 	}
+
+/* Clean up! */
+/* Location, common to all. */
+#undef LOC_X
+#undef LOC_Y
+#undef LOC_Z
+/* Meshes (and lattice)... */
+#undef M_CREASE
+#undef M_WEIGHT
+#undef M_SKIN_X
+#undef M_SKIN_Y
+/* Curves... */
+#undef C_BWEIGHT
+#undef C_WEIGHT
+#undef C_RADIUS
+#undef C_TILT
+/* Lattice... */
+#undef L_WEIGHT
 }
+#undef NBR_TRANSFORM_PROPERTIES
+
+
 #define B_VGRP_PNL_COPY 1
 #define B_VGRP_PNL_NORMALIZE 2
 #define B_VGRP_PNL_EDIT_SINGLE 8 /* or greater */
 #define B_VGRP_PNL_COPY_SINGLE 16384 /* or greater */
 
-static void act_vert_def(Object *ob, BMVert **eve, MDeformVert **dvert)
+static void act_vert_def(Object *ob, BMVert **r_eve, MDeformVert **r_dvert)
 {
 	if (ob && ob->mode & OB_MODE_EDIT && ob->type == OB_MESH && ob->defbase.first) {
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
-		BMEditSelection *ese = (BMEditSelection *)em->bm->selected.last;
+		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 
-		if (ese && ese->htype == BM_VERT) {
-			*eve = (BMVert *)ese->ele;
-			*dvert = CustomData_bmesh_get(&em->bm->vdata, (*eve)->head.data, CD_MDEFORMVERT);
-			return;
+		if (cd_dvert_offset != -1) {
+			BMEditSelection *ese = (BMEditSelection *)em->bm->selected.last;
+
+			if (ese && ese->htype == BM_VERT) {
+				BMVert *eve = (BMVert *)ese->ele;
+				if (r_eve) *r_eve = eve;
+				*r_dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+				return;
+			}
 		}
 	}
 
-	*eve = NULL;
-	*dvert = NULL;
+	if (r_eve) *r_eve = NULL;
+	*r_dvert = NULL;
 }
 
-static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int index)
+static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int index,
+                                   const int cd_dvert_offset)
 {
 	Mesh *me = ob->data;
 	BMEditMesh *em = me->edit_btmesh;
@@ -719,14 +809,14 @@ static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int inde
 	eve_mirr = editbmesh_get_x_mirror_vert(ob, em, eve, eve->co, index);
 
 	if (eve_mirr && eve_mirr != eve) {
-		MDeformVert *dvert_src = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
-		MDeformVert *dvert_dst = CustomData_bmesh_get(&em->bm->vdata, eve_mirr->head.data, CD_MDEFORMVERT);
+		MDeformVert *dvert_src = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
+		MDeformVert *dvert_dst = BM_ELEM_CD_GET_VOID_P(eve_mirr, cd_dvert_offset);
 		if (dvert_dst) {
 			if (def_nr == -1) {
 				/* all vgroups, add groups where neded  */
 				int flip_map_len;
-				int *flip_map = defgroup_flip_map(ob, &flip_map_len, TRUE);
-				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, flip_map_len, TRUE);
+				int *flip_map = defgroup_flip_map(ob, &flip_map_len, true);
+				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, flip_map_len, true);
 				MEM_freeN(flip_map);
 			}
 			else {
@@ -742,14 +832,17 @@ static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int inde
 
 static void vgroup_adjust_active(Object *ob, int def_nr)
 {
+	Mesh *me = ob->data;
+	BMEditMesh *em = me->edit_btmesh;
+	const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 	BMVert *eve_act;
 	MDeformVert *dvert_act;
 
 	act_vert_def(ob, &eve_act, &dvert_act);
 
 	if (dvert_act) {
-		if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_X)
-			editvert_mirror_update(ob, eve_act, def_nr, -1);
+		if (me->editflag & ME_EDIT_MIRROR_X)
+			editvert_mirror_update(ob, eve_act, def_nr, -1, cd_dvert_offset);
 	}
 }
 
@@ -766,6 +859,8 @@ static void vgroup_copy_active_to_sel(Object *ob)
 	else {
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
+		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
+
 		BMIter iter;
 		BMVert *eve;
 		MDeformVert *dvert;
@@ -773,12 +868,12 @@ static void vgroup_copy_active_to_sel(Object *ob)
 
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
-				dvert = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
+				dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
 				if (dvert) {
 					defvert_copy(dvert, dvert_act);
 
 					if (me->editflag & ME_EDIT_MIRROR_X)
-						editvert_mirror_update(ob, eve, -1, index);
+						editvert_mirror_update(ob, eve, -1, index, cd_dvert_offset);
 
 				}
 			}
@@ -801,6 +896,7 @@ static void vgroup_copy_active_to_sel_single(Object *ob, const int def_nr)
 	else {
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
+		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
 		BMIter iter;
 		BMVert *eve;
 		MDeformVert *dv;
@@ -818,26 +914,30 @@ static void vgroup_copy_active_to_sel_single(Object *ob, const int def_nr)
 		eve = BM_iter_new(&iter, em->bm, BM_VERTS_OF_MESH, NULL);
 		for (index = 0; eve; eve = BM_iter_step(&iter), index++) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
-				dv = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
+				dv = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
 				dw = defvert_find_index(dv, def_nr);
 				if (dw) {
 					dw->weight = weight_act;
 
 					if (me->editflag & ME_EDIT_MIRROR_X) {
-						editvert_mirror_update(ob, eve, -1, index);
+						editvert_mirror_update(ob, eve, -1, index, cd_dvert_offset);
 					}
 				}
 			}
 		}
 
 		if (me->editflag & ME_EDIT_MIRROR_X) {
-			editvert_mirror_update(ob, eve_act, -1, -1);
+			editvert_mirror_update(ob, eve_act, -1, -1, cd_dvert_offset);
 		}
 	}
 }
 
 static void vgroup_normalize_active(Object *ob)
 {
+	Mesh *me = ob->data;
+	BMEditMesh *em = me->edit_btmesh;
+	const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
+
 	BMVert *eve_act;
 	MDeformVert *dvert_act;
 
@@ -848,8 +948,8 @@ static void vgroup_normalize_active(Object *ob)
 
 	defvert_normalize(dvert_act);
 
-	if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_X)
-		editvert_mirror_update(ob, eve_act, -1, -1);
+	if (me->editflag & ME_EDIT_MIRROR_X)
+		editvert_mirror_update(ob, eve_act, -1, -1, cd_dvert_offset);
 }
 
 static void do_view3d_vgroup_buttons(bContext *C, void *UNUSED(arg), int event)
@@ -885,10 +985,9 @@ static int view3d_panel_vgroup_poll(const bContext *C, PanelType *UNUSED(pt))
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = OBACT;
-	BMVert *eve_act;
 	MDeformVert *dvert_act;
 
-	act_vert_def(ob, &eve_act, &dvert_act);
+	act_vert_def(ob, NULL, &dvert_act);
 
 	return dvert_act ? dvert_act->totweight : 0;
 }
@@ -900,16 +999,17 @@ static void view3d_panel_vgroup(const bContext *C, Panel *pa)
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = OBACT;
 
-	BMVert *eve;
 	MDeformVert *dv;
 
-	act_vert_def(ob, &eve, &dv);
+	act_vert_def(ob, NULL, &dv);
 
 	if (dv && dv->totweight) {
 		uiLayout *col;
 		bDeformGroup *dg;
-		MDeformWeight *dw = dv->dw;
 		unsigned int i;
+		int subset_count, vgroup_tot;
+		bool *vgroup_validmap;
+		eVGroupSelect subset_type = WT_VGROUP_ALL;
 		int yco = 0;
 
 		uiBlockSetHandleFunc(block, do_view3d_vgroup_buttons, NULL);
@@ -919,16 +1019,21 @@ static void view3d_panel_vgroup(const bContext *C, Panel *pa)
 
 		uiBlockBeginAlign(block);
 
-		for (i = dv->totweight; i != 0; i--, dw++) {
-			dg = BLI_findlink(&ob->defbase, dw->def_nr);
-			if (dg) {
-				uiDefButF(block, NUM, B_VGRP_PNL_EDIT_SINGLE + dw->def_nr, dg->name, 0, yco, 180, 20,
-				          &dw->weight, 0.0, 1.0, 1, 3, "");
-				uiDefBut(block, BUT, B_VGRP_PNL_COPY_SINGLE + dw->def_nr, "C", 180, yco, 20, 20,
-				         NULL, 0, 0, 0, 0, TIP_("Copy this group's weight to other selected verts"));
-				yco -= 20;
+		vgroup_validmap = ED_vgroup_subset_from_select_type(ob, subset_type, &vgroup_tot, &subset_count);
+		for (i = 0, dg = ob->defbase.first; dg; i++, dg = dg->next) {
+			if (vgroup_validmap[i]) {
+				MDeformWeight *dw = defvert_find_index(dv, i);
+				if (dw) {
+					uiDefButF(block, NUM, B_VGRP_PNL_EDIT_SINGLE + i, dg->name, 0, yco, 180, 20,
+								&dw->weight, 0.0, 1.0, 1, 3, "");
+					uiDefBut(block, BUT, B_VGRP_PNL_COPY_SINGLE + i, "C", 180, yco, 20, 20,
+								NULL, 0, 0, 0, 0, TIP_("Copy this group's weight to other selected verts"));
+					yco -= 20;
+				}
 			}
 		}
+		MEM_freeN(vgroup_validmap);
+
 		yco -= 2;
 
 		uiBlockEndAlign(block);
@@ -1156,13 +1261,12 @@ static void view3d_panel_object(const bContext *C, Panel *pa)
 	if (ob == NULL)
 		return;
 
-	lim = 10000.0f * MAX2(1.0f, v3d->grid);
+	lim = 10000.0f * max_ff(1.0f, v3d->grid);
 
 	block = uiLayoutGetBlock(pa->layout);
 	uiBlockSetHandleFunc(block, do_view3d_region_buttons, NULL);
 
 	col = uiLayoutColumn(pa->layout, FALSE);
-	/* row = uiLayoutRow(col, FALSE); */ /* UNUSED */
 	RNA_id_pointer_create(&ob->id, &obptr);
 
 	if (ob == obedit) {
@@ -1187,19 +1291,23 @@ void view3d_buttons_register(ARegionType *art)
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel object");
 	strcpy(pt->idname, "VIEW3D_PT_object");
-	strcpy(pt->label, "Transform");
+	strcpy(pt->label, N_("Transform"));  /* XXX C panels not  available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw = view3d_panel_object;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel gpencil");
 	strcpy(pt->idname, "VIEW3D_PT_gpencil");
-	strcpy(pt->label, "Grease Pencil");
+	strcpy(pt->label, N_("Grease Pencil"));  /* XXX C panels are not available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
+	pt->draw_header = gpencil_panel_standard_header;
 	pt->draw = gpencil_panel_standard;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel vgroup");
 	strcpy(pt->idname, "VIEW3D_PT_vgroup");
-	strcpy(pt->label, "Vertex Groups");
+	strcpy(pt->label, N_("Vertex Weights"));  /* XXX C panels are not available through RNA (bpy.types)! */
+	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw = view3d_panel_vgroup;
 	pt->poll = view3d_panel_vgroup_poll;
 	BLI_addtail(&art->paneltypes, pt);

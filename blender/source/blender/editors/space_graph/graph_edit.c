@@ -56,6 +56,7 @@
 #include "BLF_translation.h"
 
 #include "BKE_fcurve.h"
+#include "BKE_global.h"
 #include "BKE_nla.h"
 #include "BKE_context.h"
 #include "BKE_report.h"
@@ -216,7 +217,6 @@ void GRAPH_OT_previewrange_set(wmOperatorType *ot)
 static int graphkeys_viewall(bContext *C, const short do_sel_only, const short include_handles)
 {
 	bAnimContext ac;
-	float extra;
 	rctf cur_new;
 
 	/* get editor data */
@@ -224,18 +224,12 @@ static int graphkeys_viewall(bContext *C, const short do_sel_only, const short i
 		return OPERATOR_CANCELLED;
 
 	/* set the horizontal range, with an extra offset so that the extreme keys will be in view */
-	get_graph_keyframe_extents(&ac, 
-							   &cur_new.xmin, &cur_new.xmax,
-							   &cur_new.ymin, &cur_new.ymax,
-							   do_sel_only, include_handles);
+	get_graph_keyframe_extents(&ac,
+	                           &cur_new.xmin, &cur_new.xmax,
+	                           &cur_new.ymin, &cur_new.ymax,
+	                           do_sel_only, include_handles);
 
-	extra = 0.1f * (cur_new.xmax - cur_new.xmin);
-	cur_new.xmin -= extra;
-	cur_new.xmax += extra;
-
-	extra = 0.1f * (cur_new.ymax - cur_new.ymin);
-	cur_new.ymin -= extra;
-	cur_new.ymax += extra;
+	BLI_rctf_scale(&cur_new, 1.1f);
 
 	UI_view2d_smooth_view(C, ac.ar, &cur_new);
 
@@ -332,7 +326,7 @@ static void create_ghost_curves(bAnimContext *ac, int start, int end)
 		ChannelDriver *driver = fcu->driver;
 		FPoint *fpt;
 		float unitFac;
-		int cfra;		
+		int cfra;
 		
 		/* disable driver so that it don't muck up the sampling process */
 		fcu->driver = NULL;
@@ -615,7 +609,7 @@ static int graphkeys_click_insert_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int graphkeys_click_insert_invoke(bContext *C, wmOperator *op, wmEvent *evt)
+static int graphkeys_click_insert_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	ARegion *ar;
@@ -631,8 +625,8 @@ static int graphkeys_click_insert_invoke(bContext *C, wmOperator *op, wmEvent *e
 	ar = ac.ar;
 	v2d = &ar->v2d;
 	
-	mval[0] = (evt->x - ar->winrct.xmin);
-	mval[1] = (evt->y - ar->winrct.ymin);
+	mval[0] = (event->x - ar->winrct.xmin);
+	mval[1] = (event->y - ar->winrct.ymin);
 	
 	UI_view2d_region_to_view(v2d, mval[0], mval[1], &x, &y);
 	
@@ -724,7 +718,7 @@ static int graphkeys_copy_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	
 	/* copy keyframes */
-	if (copy_graph_keys(&ac)) {	
+	if (copy_graph_keys(&ac)) {
 		BKE_report(op->reports, RPT_ERROR, "No keyframes copied to keyframes copy/paste buffer");
 		return OPERATOR_CANCELLED;
 	}
@@ -841,7 +835,7 @@ static int graphkeys_duplicate_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
-static int graphkeys_duplicate_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int graphkeys_duplicate_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	graphkeys_duplicate_exec(C, op);
 
@@ -1143,9 +1137,9 @@ static int graphkeys_sound_bake_exec(bContext *C, wmOperator *op)
 	                                  RNA_float_get(op->ptr, "attack"),
 	                                  RNA_float_get(op->ptr, "release"),
 	                                  RNA_float_get(op->ptr, "threshold"),
-	                                  RNA_boolean_get(op->ptr, "accumulate"),
+	                                  RNA_boolean_get(op->ptr, "use_accumulate"),
 	                                  RNA_boolean_get(op->ptr, "use_additive"),
-	                                  RNA_boolean_get(op->ptr, "square"),
+	                                  RNA_boolean_get(op->ptr, "use_square"),
 	                                  RNA_float_get(op->ptr, "sthreshold"),
 	                                  FPS, &sbi.length);
 
@@ -1196,7 +1190,7 @@ static int graphkeys_sound_bake_exec(bContext *UNUSED(C), wmOperator *op)
 
 #endif //WITH_AUDASPACE
 
-static int graphkeys_sound_bake_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int graphkeys_sound_bake_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 
@@ -1225,15 +1219,27 @@ void GRAPH_OT_sound_bake(wmOperatorType *ot)
 	/* properties */
 	WM_operator_properties_filesel(ot, FOLDERFILE | SOUNDFILE | MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE,
 	                               WM_FILESEL_FILEPATH, FILE_DEFAULTDISPLAY);
-	RNA_def_float(ot->srna, "low", 0.0f, 0.0, 100000.0, "Lowest frequency", "", 0.1, 1000.00);
-	RNA_def_float(ot->srna, "high", 100000.0, 0.0, 100000.0, "Highest frequency", "", 0.1, 1000.00);
-	RNA_def_float(ot->srna, "attack", 0.005, 0.0, 2.0, "Attack time", "", 0.01, 0.1);
-	RNA_def_float(ot->srna, "release", 0.2, 0.0, 5.0, "Release time", "", 0.01, 0.2);
-	RNA_def_float(ot->srna, "threshold", 0.0, 0.0, 1.0, "Threshold", "", 0.01, 0.1);
-	RNA_def_boolean(ot->srna, "accumulate", 0, "Accumulate", "");
-	RNA_def_boolean(ot->srna, "use_additive", 0, "Additive", "");
-	RNA_def_boolean(ot->srna, "square", 0, "Square", "");
-	RNA_def_float(ot->srna, "sthreshold", 0.1, 0.0, 1.0, "Square Threshold", "", 0.01, 0.1);
+	RNA_def_float(ot->srna, "low", 0.0f, 0.0, 100000.0, "Lowest frequency",
+	              "Cutoff frequency of a high-pass filter that is applied to the audio data", 0.1, 1000.00);
+	RNA_def_float(ot->srna, "high", 100000.0, 0.0, 100000.0, "Highest frequency",
+	              "Cutoff frequency of a low-pass filter that is applied to the audio data", 0.1, 1000.00);
+	RNA_def_float(ot->srna, "attack", 0.005, 0.0, 2.0, "Attack time",
+	              "Value for the hull curve calculation that tells how fast the hull curve can rise "
+	              "(the lower the value the steeper it can rise)", 0.01, 0.1);
+	RNA_def_float(ot->srna, "release", 0.2, 0.0, 5.0, "Release time",
+	              "Value for the hull curve calculation that tells how fast the hull curve can fall "
+	              "(the lower the value the steeper it can fall)", 0.01, 0.2);
+	RNA_def_float(ot->srna, "threshold", 0.0, 0.0, 1.0, "Threshold",
+	              "Minimum amplitude value needed to influence the hull curve", 0.01, 0.1);
+	RNA_def_boolean(ot->srna, "use_accumulate", 0, "Accumulate",
+	                "Only the positive differences of the hull curve amplitudes are summarized to produce the output");
+	RNA_def_boolean(ot->srna, "use_additive", 0, "Additive",
+	                "The amplitudes of the hull curve are summarized (or, when Accumulate is enabled, "
+	                "both positive and negative differences are accumulated)");
+	RNA_def_boolean(ot->srna, "use_square", 0, "Square",
+	                "The output is a square curve (negative values always result in -1, and positive ones in 1)");
+	RNA_def_float(ot->srna, "sthreshold", 0.1, 0.0, 1.0, "Square Threshold",
+	              "Square only: all values with an absolute amplitude lower than that result in 0", 0.01, 0.1);
 }
 
 /* ******************** Sample Keyframes Operator *********************** */
@@ -1309,8 +1315,8 @@ void GRAPH_OT_sample(wmOperatorType *ot)
 
 /* defines for set extrapolation-type for selected keyframes tool */
 static EnumPropertyItem prop_graphkeys_expo_types[] = {
-	{FCURVE_EXTRAPOLATE_CONSTANT, "CONSTANT", 0, "Constant Extrapolation", ""},
-	{FCURVE_EXTRAPOLATE_LINEAR, "LINEAR", 0, "Linear Extrapolation", ""},
+	{FCURVE_EXTRAPOLATE_CONSTANT, "CONSTANT", 0, "Constant Extrapolation", "Values on endpoint keyframes are held"},
+	{FCURVE_EXTRAPOLATE_LINEAR, "LINEAR", 0, "Linear Extrapolation", "Straight-line slope of end segments are extended past the endpoint keyframes"},
 	
 	{MAKE_CYCLIC_EXPO, "MAKE_CYCLIC", 0, "Make Cyclic (F-Modifier)", "Add Cycles F-Modifier if one doesn't exist already"},
 	{CLEAR_CYCLIC_EXPO, "CLEAR_CYCLIC", 0, "Clear Cyclic (F-Modifier)", "Remove Cycles F-Modifier if not needed anymore"},
@@ -1614,7 +1620,7 @@ static int graphkeys_euler_filter_exec(bContext *C, wmOperator *op)
 		else if (ELEM3(fcu->array_index, 0, 1, 2) == 0) {
 			BKE_reportf(op->reports, RPT_WARNING,
 			            "Euler Rotation F-Curve has invalid index (ID='%s', Path='%s', Index=%d)",
-			            (ale->id) ? ale->id->name : "<No ID>", fcu->rna_path, fcu->array_index);
+			            (ale->id) ? ale->id->name : TIP_("<No ID>"), fcu->rna_path, fcu->array_index);
 			continue;
 		}
 		
@@ -1711,13 +1717,16 @@ static int graphkeys_euler_filter_exec(bContext *C, wmOperator *op)
 	/* updates + finishing warnings */
 	if (failed == groups) {
 		BKE_report(op->reports, RPT_ERROR, 
-		           "No Euler Rotations could be corrected, ensure each rotation has keys for all components, and that F-Curves for these are in consecutive XYZ order and selected");
+		           "No Euler Rotations could be corrected, ensure each rotation has keys for all components, "
+		           "and that F-Curves for these are in consecutive XYZ order and selected");
 		return OPERATOR_CANCELLED;
 	}
 	else {
 		if (failed) {
 			BKE_report(op->reports, RPT_ERROR,
-			           "Some Euler Rotations couldn't be corrected due to missing/unselected/out-of-order F-Curves, ensure each rotation has keys for all components, and that F-Curves for these are in consecutive XYZ order and selected");
+			           "Some Euler Rotations could not be corrected due to missing/unselected/out-of-order F-Curves, "
+			           "ensure each rotation has keys for all components, and that F-Curves for these are in "
+			           "consecutive XYZ order and selected");
 		}
 		
 		/* validate keyframes after editing */
@@ -1736,7 +1745,9 @@ void GRAPH_OT_euler_filter(wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "Euler Discontinuity Filter";
 	ot->idname = "GRAPH_OT_euler_filter";
-	ot->description = "Fixes the most common causes of gimbal lock in the selected Euler Rotation F-Curves";
+	ot->description = "Fix large jumps and flips in the selected "
+	                  "Euler Rotation F-Curves arising from rotation "
+	                  "values being clipped when baking physics";
 	
 	/* api callbacks */
 	ot->exec = graphkeys_euler_filter_exec;
@@ -1747,6 +1758,15 @@ void GRAPH_OT_euler_filter(wmOperatorType *ot)
 }
 
 /* ***************** Jump to Selected Frames Operator *********************** */
+
+static int graphkeys_framejump_poll(bContext *C)
+{
+	/* prevent changes during render */
+	if (G.is_rendering)
+		return 0;
+
+	return graphop_visible_keyframes_poll(C);
+}
 
 /* snap current-frame indicator to 'average time' of selected keyframe */
 static int graphkeys_framejump_exec(bContext *C, wmOperator *UNUSED(op))
@@ -1808,13 +1828,13 @@ static int graphkeys_framejump_exec(bContext *C, wmOperator *UNUSED(op))
 void GRAPH_OT_frame_jump(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name = "Jump to Frame";
+	ot->name = "Jump to Keyframes";
 	ot->idname = "GRAPH_OT_frame_jump";
-	ot->description = "Set the current frame to the average frame of the selected keyframes";
+	ot->description = "Place the cursor on the midpoint of selected keyframes";
 	
 	/* api callbacks */
 	ot->exec = graphkeys_framejump_exec;
-	ot->poll = graphop_visible_keyframes_poll;
+	ot->poll = graphkeys_framejump_poll;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1824,12 +1844,18 @@ void GRAPH_OT_frame_jump(wmOperatorType *ot)
 
 /* defines for snap keyframes tool */
 static EnumPropertyItem prop_graphkeys_snap_types[] = {
-	{GRAPHKEYS_SNAP_CFRA, "CFRA", 0, "Current Frame", ""},
-	{GRAPHKEYS_SNAP_VALUE, "VALUE", 0, "Cursor Value", ""},
-	{GRAPHKEYS_SNAP_NEAREST_FRAME, "NEAREST_FRAME", 0, "Nearest Frame", ""}, // XXX as single entry?
-	{GRAPHKEYS_SNAP_NEAREST_SECOND, "NEAREST_SECOND", 0, "Nearest Second", ""}, // XXX as single entry?
-	{GRAPHKEYS_SNAP_NEAREST_MARKER, "NEAREST_MARKER", 0, "Nearest Marker", ""},
-	{GRAPHKEYS_SNAP_HORIZONTAL, "HORIZONTAL", 0, "Flatten Handles", ""},
+	{GRAPHKEYS_SNAP_CFRA, "CFRA", 0, "Current Frame",
+	 "Snap selected keyframes to the current frame"},
+	{GRAPHKEYS_SNAP_VALUE, "VALUE", 0, "Cursor Value",
+	 "Set values of selected keyframes to the cursor value (Y/Horizontal component)"},
+	{GRAPHKEYS_SNAP_NEAREST_FRAME, "NEAREST_FRAME", 0, "Nearest Frame",
+	 "Snap selected keyframes to the nearest (whole) frame (use to fix accidental sub-frame offsets)"},
+	{GRAPHKEYS_SNAP_NEAREST_SECOND, "NEAREST_SECOND", 0, "Nearest Second",
+	 "Snap selected keyframes to the nearest second"},
+	{GRAPHKEYS_SNAP_NEAREST_MARKER, "NEAREST_MARKER", 0, "Nearest Marker",
+	 "Snap selected keyframes to the nearest marker"},
+	{GRAPHKEYS_SNAP_HORIZONTAL, "HORIZONTAL", 0, "Flatten Handles",
+	 "Flatten handles for a smoother transition"},
 	{0, NULL, 0, NULL, NULL}
 };
 
@@ -1932,11 +1958,16 @@ void GRAPH_OT_snap(wmOperatorType *ot)
 
 /* defines for mirror keyframes tool */
 static EnumPropertyItem prop_graphkeys_mirror_types[] = {
-	{GRAPHKEYS_MIRROR_CFRA, "CFRA", 0, "By Times over Current Frame", ""},
-	{GRAPHKEYS_MIRROR_VALUE, "VALUE", 0, "By Values over Cursor Value", ""},
-	{GRAPHKEYS_MIRROR_YAXIS, "YAXIS", 0, "By Times over Time=0", ""},
-	{GRAPHKEYS_MIRROR_XAXIS, "XAXIS", 0, "By Values over Value=0", ""},
-	{GRAPHKEYS_MIRROR_MARKER, "MARKER", 0, "By Times over First Selected Marker", ""},
+	{GRAPHKEYS_MIRROR_CFRA, "CFRA", 0, "By Times over Current Frame",
+	 "Flip times of selected keyframes using the current frame as the mirror line"},
+	{GRAPHKEYS_MIRROR_VALUE, "VALUE", 0, "By Values over Cursor Value",
+	 "Flip values of selected keyframes using the cursor value (Y/Horizontal component) as the mirror line"},
+	{GRAPHKEYS_MIRROR_YAXIS, "YAXIS", 0, "By Times over Time=0",
+	 "Flip times of selected keyframes, effectively reversing the order they appear in"},
+	{GRAPHKEYS_MIRROR_XAXIS, "XAXIS", 0, "By Values over Value=0",
+	 "Flip values of selected keyframes (i.e. negative values become positive, and vice versa)"},
+	{GRAPHKEYS_MIRROR_MARKER, "MARKER", 0, "By Times over First Selected Marker",
+	 "Flip times of selected keyframes using the first selected marker as the reference point"},
 	{0, NULL, 0, NULL, NULL}
 };
 
@@ -2103,7 +2134,7 @@ void GRAPH_OT_smooth(wmOperatorType *ot)
 /* ******************** Add F-Modifier Operator *********************** */
 
 /* present a special customised popup menu for this, with some filtering */
-static int graph_fmodifier_add_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int graph_fmodifier_add_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	wmOperatorType *ot = WM_operatortype_find("GRAPH_OT_fmodifier_add", 1);
 	uiPopupMenu *pup;
@@ -2167,10 +2198,11 @@ static int graph_fmodifier_add_exec(bContext *C, wmOperator *op)
 		
 		/* add F-Modifier of specified type to active F-Curve, and make it the active one */
 		fcm = add_fmodifier(&fcu->modifiers, type);
-		if (fcm)
+		if (fcm) {
 			set_active_fmodifier(&fcu->modifiers, fcm);
+		}
 		else {
-			BKE_report(op->reports, RPT_ERROR, "Modifier couldn't be added, see console for details");
+			BKE_report(op->reports, RPT_ERROR, "Modifier could not be added (see console for details)");
 			break;
 		}
 	}

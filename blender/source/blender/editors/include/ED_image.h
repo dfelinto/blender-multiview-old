@@ -39,6 +39,7 @@ struct ToolSettings;
 struct uiBlock;
 struct wmWindowManager;
 struct ARegion;
+struct Scene;
 
 /* image_edit.c, exported for transform */
 struct Image *ED_space_image(struct SpaceImage *sima);
@@ -48,7 +49,7 @@ void          ED_space_image_set_mask(struct bContext *C, struct SpaceImage *sim
 
 int ED_space_image_color_sample(struct SpaceImage *sima, struct ARegion *ar, int mval[2], float r_col[3]);
 struct ImBuf *ED_space_image_acquire_buffer(struct SpaceImage *sima, void **lock_r);
-void ED_space_image_release_buffer(struct SpaceImage *sima, void *lock);
+void ED_space_image_release_buffer(struct SpaceImage *sima, struct ImBuf *ibuf, void *lock);
 int ED_space_image_has_buffer(struct SpaceImage *sima);
 
 void ED_space_image_get_size(struct SpaceImage *sima, int *width, int *height);
@@ -60,9 +61,7 @@ void ED_space_image_get_uv_aspect(struct SpaceImage *sima, float *aspx, float *a
 void ED_space_image_paint_update(struct wmWindowManager *wm, struct ToolSettings *settings);
 void ED_space_image_uv_sculpt_update(struct wmWindowManager *wm, struct ToolSettings *settings);
 
-void ED_image_get_size(struct Image *ima, int *width, int *height);
-void ED_image_get_aspect(struct Image *ima, float *aspx, float *aspy);
-void ED_image_get_uv_aspect(struct Image *ima, float *aspx, float *aspy);
+void ED_image_get_uv_aspect(struct Image *ima, struct ImageUser *iuser, float *aspx, float *aspy);
 void ED_image_mouse_pos(struct SpaceImage *sima, struct ARegion *ar, const int mval[2], float co[2]);
 void ED_image_point_pos(struct SpaceImage *sima, struct ARegion *ar, float x, float y, float *xr, float *yr);
 void ED_image_point_pos__reverse(struct SpaceImage *sima, struct ARegion *ar, const float co[2], float r_co[2]);
@@ -76,11 +75,8 @@ int ED_space_image_check_show_maskedit(struct Scene *scene, struct SpaceImage *s
 int ED_space_image_maskedit_poll(struct bContext *C);
 int ED_space_image_maskedit_mask_poll(struct bContext *C);
 
-/* UI level image (texture) updating... render calls own stuff (too) */
-void ED_image_update_frame(const struct Main *mainp, int cfra);
-
-void ED_image_draw_info(struct ARegion *ar, int color_manage, int channels, int x, int y,
-                        const unsigned char cp[4], const float fp[4], int *zp, float *zpf);
+void ED_image_draw_info(struct Scene *scene, struct ARegion *ar, int color_manage, int use_default_view, int channels, int x, int y,
+                        const unsigned char cp[4], const float fp[4], const float linearcol[4], int *zp, float *zpf);
 
 #endif /* __ED_IMAGE_H__ */
 

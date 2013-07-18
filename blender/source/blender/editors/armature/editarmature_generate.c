@@ -30,32 +30,21 @@
  *  \ingroup edarmature
  */
 
-
-#include <string.h>
-#include <math.h>
-#include <float.h>
-
-
 #include "DNA_scene_types.h"
 #include "DNA_armature_types.h"
 
-#include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_graph.h"
-#include "BLI_utildefines.h"
- 
-
 
 #include "ED_armature.h"
-#include "armature_intern.h"
 #include "BIF_generate.h"
 
-void setBoneRollFromNormal(EditBone *bone, const float no[3], float UNUSED(invmat[][4]), float tmat[][3])
+void setBoneRollFromNormal(EditBone *bone, const float no[3], float UNUSED(invmat[4][4]), float tmat[3][3])
 {
 	if (no != NULL && !is_zero_v3(no)) {
 		float normal[3];
 
-		copy_v3_v3(normal, no);	
+		copy_v3_v3(normal, no);
 		mul_m3_v3(tmat, normal);
 		
 		bone->roll = ED_rollBoneToVector(bone, normal, FALSE);
@@ -257,7 +246,8 @@ int nextLengthSubdivision(ToolSettings *toolsettings, BArcIterator *iter, int st
 	return -1;
 }
 
-EditBone *subdivideArcBy(ToolSettings *toolsettings, bArmature *arm, ListBase *UNUSED(editbones), BArcIterator *iter, float invmat[][4], float tmat[][3], NextSubdivisionFunc next_subdividion)
+EditBone *subdivideArcBy(ToolSettings *toolsettings, bArmature *arm, ListBase *UNUSED(editbones), BArcIterator *iter,
+                         float invmat[4][4], float tmat[3][3], NextSubdivisionFunc next_subdividion)
 {
 	EditBone *lastBone = NULL;
 	EditBone *child = NULL;
@@ -273,7 +263,7 @@ EditBone *subdivideArcBy(ToolSettings *toolsettings, bArmature *arm, ListBase *U
 	parent = ED_armature_edit_bone_add(arm, "Bone");
 	copy_v3_v3(parent->head, iter->p);
 	
-	if (iter->size > 0) {
+	if (iter->size > FLT_EPSILON) {
 		parent->rad_head = iter->size * size_buffer;
 	}
 	
@@ -288,7 +278,7 @@ EditBone *subdivideArcBy(ToolSettings *toolsettings, bArmature *arm, ListBase *U
 		child->parent = parent;
 		child->flag |= BONE_CONNECTED;
 		
-		if (iter->size > 0) {
+		if (iter->size > FLT_EPSILON) {
 			child->rad_head = iter->size * size_buffer;
 			parent->rad_tail = iter->size * size_buffer;
 		}
@@ -309,7 +299,7 @@ EditBone *subdivideArcBy(ToolSettings *toolsettings, bArmature *arm, ListBase *U
 	iter->tail(iter);
 
 	copy_v3_v3(parent->tail, iter->p);
-	if (iter->size > 0) {
+	if (iter->size > FLT_EPSILON) {
 		parent->rad_tail = iter->size * size_buffer;
 	}
 		

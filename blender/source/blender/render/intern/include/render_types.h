@@ -44,11 +44,13 @@
 
 #include "BLI_threads.h"
 
+#include "BKE_main.h"
+
 #include "RE_pipeline.h"
 #include "RE_shader_ext.h"	/* TexResult, ShadeResult, ShadeInput */
 #include "sunsky.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 struct Object;
 struct MemArena;
@@ -59,11 +61,12 @@ struct RenderBuckets;
 struct ObjectInstanceRen;
 struct RayObject;
 struct RayFace;
+struct RenderEngine;
 struct ReportList;
 struct Main;
+struct ImagePool;
 
 #define TABLEINITSIZE 1024
-#define LAMPINITSIZE 256
 
 typedef struct SampleTables {
 	float centLut[16];
@@ -81,7 +84,7 @@ typedef struct QMCSampler {
 	double offs[BLENDER_MAX_THREADS][2];
 } QMCSampler;
 
-#define SAMP_TYPE_JITTERED		0
+// #define SAMP_TYPE_JITTERED		0  // UNUSED
 #define SAMP_TYPE_HALTON		1
 #define SAMP_TYPE_HAMMERSLEY	2
 
@@ -104,12 +107,18 @@ typedef struct RenderPart {
 
 	rcti disprect;					/* part coordinates within total picture */
 	int rectx, recty;				/* the size */
-	short crop, ready;				/* crop is amount of pixels we crop, for filter */
+	short crop, status;				/* crop is amount of pixels we crop, for filter */
 	short sample, nr;				/* sample can be used by zbuffers, nr is partnr */
 	short thread;					/* thread id */
 	
 	char *clipflag;					/* clipflags for part zbuffering */
 } RenderPart;
+
+enum {
+	PART_STATUS_NONE        = 0,
+	PART_STATUS_IN_PROGRESS = 1,
+	PART_STATUS_READY       = 2
+};
 
 /* controls state of render, everything that's read-only during render stage */
 struct Render
@@ -121,12 +130,15 @@ struct Render
 	/* state settings */
 	short flag, osa, ok, result_ok;
 	
+	/* due to performance issues, getting initialized from color management settings once on Render initialization */
+	short scene_color_manage;
+	
 	/* result of rendering */
 	RenderResult *result;
 	/* if render with single-layer option, other rendered layers are stored here */
 	RenderResult *pushedresult;
 	/* a list of RenderResults, for fullsample */
-	ListBase fullresult;	
+	ListBase fullresult;
 	/* read/write mutex, all internal code that writes to re->result must use a
 	 * write lock, all external code must use a read lock. internal code is assumed
 	 * to not conflict with writes, so no lock used for that */
@@ -143,8 +155,6 @@ struct Render
 	/* final picture width and height (within disprect) */
 	int rectx, recty;
 	
-	/* real maximum amount of xparts/yparts after correction for minimum */
-	int xparts, yparts;
 	/* real maximum size of parts after correction for minimum 
 	 * partx*xparts can be larger than rectx, in that case last part is smaller */
 	int partx, party;
@@ -158,6 +168,7 @@ struct Render
 	float grvec[3];			/* for world */
 	float imat[3][3];		/* copy of viewinv */
 	float viewmat[4][4], viewinv[4][4];
+	float viewmat_orig[4][4];	/* for incremental render */
 	float winmat[4][4];
 	
 	/* clippping */
@@ -183,6 +194,9 @@ struct Render
 	
 	ListBase parts;
 	
+	/* render engine */
+	struct RenderEngine *engine;
+	
 	/* octree tables and variables for raytrace */
 	struct RayObject *raytree;
 	struct RayFace *rayfaces;
@@ -194,7 +208,6 @@ struct Render
 	ListBase strandsurface;
 	
 	/* use this instead of R.r.cfra */
-	float cfra;
 	float mblur_offs, field_offs;
 	
 	/* render database */
@@ -225,6 +238,11 @@ struct Render
 	ListBase volumes;
 	ListBase volume_precache_parts;
 
+#ifdef WITH_FREESTYLE
+	struct Main freestyle_bmain;
+	ListBase freestyle_renders;
+#endif
+
 	/* arena for allocating data for use during render, for
 	 * example dynamic TFaces to go in the VlakRen structure.
 	 */
@@ -251,6 +269,8 @@ struct Render
 	RenderStats i;
 
 	struct ReportList *reports;
+
+	struct ImagePool *pool;
 };
 
 /* ------------------------------------------------------------------------- */
@@ -325,7 +345,8 @@ typedef struct ObjectInstanceRen {
 	Object *ob, *par;
 	int index, psysindex, lay;
 
-	float mat[4][4], nmat[3][3]; /* nmat is inverse mat tranposed */
+	float mat[4][4], imat[4][4];
+	float nmat[3][3]; /* nmat is inverse mat tranposed */
 	short flag;
 
 	float dupliorco[3], dupliuv[2];
@@ -364,6 +385,7 @@ struct halosort {
 /* ------------------------------------------------------------------------- */
 struct Material;
 struct MTFace;
+struct ImagePool;
 
 typedef struct RadFace {
 	float unshot[3], totrad[3];
@@ -377,6 +399,10 @@ typedef struct VlakRen {
 	struct Material *mat;
 	char puno;
 	char flag, ec;
+#ifdef WITH_FREESTYLE
+	char freestyle_edge_mark;
+	char freestyle_face_mark;
+#endif
 	int index;
 } VlakRen;
 
@@ -393,6 +419,7 @@ typedef struct HaloRen {
 	int pixels;
 	unsigned int lay;
 	struct Material *mat;
+	struct ImagePool *pool;
 } HaloRen;
 
 /* ------------------------------------------------------------------------- */
@@ -607,6 +634,15 @@ typedef struct LampRen {
 /* vertex normals are tangent or view-corrected vector, for hair strands */
 #define R_TANGENT		64		
 #define R_TRACEBLE		128
+
+/* vlakren->freestyle_edge_mark */
+#ifdef WITH_FREESTYLE
+#  define R_EDGE_V1V2		1
+#  define R_EDGE_V2V3		2
+#  define R_EDGE_V3V4		4
+#  define R_EDGE_V3V1		4
+#  define R_EDGE_V4V1		8
+#endif
 
 /* strandbuffer->flag */
 #define R_STRAND_BSPLINE	1

@@ -32,10 +32,13 @@
 
 #include "KX_BlenderCanvas.h"
 #include "DNA_screen_types.h"
+#include "DNA_windowmanager_types.h"
 #include <stdio.h>
+#include <assert.h>
 
 
-KX_BlenderCanvas::KX_BlenderCanvas(struct wmWindow *win, RAS_Rect &rect, struct ARegion *ar) :
+KX_BlenderCanvas::KX_BlenderCanvas(wmWindowManager *wm, wmWindow *win, RAS_Rect &rect, struct ARegion *ar) :
+m_wm(wm),
 m_win(win),
 m_frame_rect(rect)
 {
@@ -44,6 +47,8 @@ m_frame_rect(rect)
 	// area boundaries needed for mouse coordinates in Letterbox framing mode
 	m_area_left = ar->winrct.xmin;
 	m_area_top = ar->winrct.ymax;
+
+	glGetIntegerv(GL_VIEWPORT, (GLint *)m_viewport);
 }
 
 KX_BlenderCanvas::~KX_BlenderCanvas()
@@ -53,7 +58,7 @@ KX_BlenderCanvas::~KX_BlenderCanvas()
 void KX_BlenderCanvas::Init()
 {
 	glDepthFunc(GL_LEQUAL);
-}	
+}
 
 
 void KX_BlenderCanvas::SwapBuffers()
@@ -66,20 +71,40 @@ void KX_BlenderCanvas::ResizeWindow(int width, int height)
 	// Not implemented for the embedded player
 }
 
+void KX_BlenderCanvas::SetFullScreen(bool enable)
+{
+	// Not implemented for the embedded player
+}
+
+bool KX_BlenderCanvas::GetFullScreen()
+{
+	// Not implemented for the embedded player
+	return false;
+}
+
+bool KX_BlenderCanvas::BeginDraw()
+{
+	// in case of multi-window we need to ensure we are drawing to the correct
+	// window always, because it may change in window event handling
+	BL_MakeDrawable(m_wm, m_win);
+	return true;
+}
+
+
+void KX_BlenderCanvas::EndDraw()
+{
+	// nothing needs to be done here
+}
+
 void KX_BlenderCanvas::BeginFrame()
 {
 	glEnable(GL_DEPTH_TEST);
 	glDepthFunc(GL_LEQUAL);
-
 }
 
 
 void KX_BlenderCanvas::EndFrame()
 {
-		// this is needed, else blender distorts a lot
-	glPopAttrib();
-	glPushAttrib(GL_ALL_ATTRIB_BITS);
-		
 	glDisable(GL_FOG);
 }
 
@@ -116,14 +141,14 @@ int KX_BlenderCanvas::GetHeight(
 
 int KX_BlenderCanvas::GetMouseX(int x)
 {
-	float left = GetWindowArea().GetLeft();
-	return float(x - (left - m_area_left));
+	int left = GetWindowArea().GetLeft();
+	return x - (left - m_area_left);
 }
 
 int KX_BlenderCanvas::GetMouseY(int y)
 {
-	float top = GetWindowArea().GetTop();
-	return float(y - (m_area_top - top));
+	int top = GetWindowArea().GetTop();
+	return y - (m_area_top - top);
 }
 
 float KX_BlenderCanvas::GetMouseNormalizedX(int x)
@@ -143,7 +168,7 @@ KX_BlenderCanvas::
 GetWindowArea(
 ) {
 	return m_area_rect;
-}	
+}
 
 	void
 KX_BlenderCanvas::
@@ -151,11 +176,11 @@ SetViewPort(
 	int x1, int y1,
 	int x2, int y2
 ) {
-	/*	x1 and y1 are the min pixel coordinate (e.g. 0)
-		x2 and y2 are the max pixel coordinate
-		the width,height is calculated including both pixels
-		therefore: max - min + 1
-	*/
+	/* x1 and y1 are the min pixel coordinate (e.g. 0)
+	 * x2 and y2 are the max pixel coordinate
+	 * the width,height is calculated including both pixels
+	 * therefore: max - min + 1
+	 */
 	int vp_width = (x2 - x1) + 1;
 	int vp_height = (y2 - y1) + 1;
 	int minx = m_frame_rect.GetLeft();
@@ -166,10 +191,43 @@ SetViewPort(
 	m_area_rect.SetRight(minx + x2);
 	m_area_rect.SetTop(miny + y2);
 
+	m_viewport[0] = minx+x1;
+	m_viewport[1] = miny+y1;
+	m_viewport[2] = vp_width;
+	m_viewport[3] = vp_height;
+
 	glViewport(minx + x1, miny + y1, vp_width, vp_height);
 	glScissor(minx + x1, miny + y1, vp_width, vp_height);
 }
 
+	void
+KX_BlenderCanvas::
+UpdateViewPort(
+	int x1, int y1,
+	int x2, int y2
+) {
+	m_viewport[0] = x1;
+	m_viewport[1] = y1;
+	m_viewport[2] = x2;
+	m_viewport[3] = y2;
+}
+
+	const int*
+KX_BlenderCanvas::
+GetViewPort() {
+#ifdef DEBUG
+	// If we're in a debug build, we might as well make sure our values don't differ
+	// from what the gpu thinks we have. This could lead to nasty, hard to find bugs.
+	int viewport[4];
+	glGetIntegerv(GL_VIEWPORT, viewport);
+	assert(viewport[0] == m_viewport[0]);
+	assert(viewport[1] == m_viewport[1]);
+	assert(viewport[2] == m_viewport[2]);
+	assert(viewport[3] == m_viewport[3]);
+#endif
+
+	return m_viewport;
+}
 
 void KX_BlenderCanvas::SetMouseState(RAS_MouseState mousestate)
 {
@@ -212,7 +270,7 @@ void KX_BlenderCanvas::SetMousePosition(int x,int y)
 
 
 
-void KX_BlenderCanvas::MakeScreenShot(const char* filename)
+void KX_BlenderCanvas::MakeScreenShot(const char *filename)
 {
 	ScrArea area_dummy= {0};
 	area_dummy.totrct.xmin = m_frame_rect.GetLeft();
@@ -220,5 +278,5 @@ void KX_BlenderCanvas::MakeScreenShot(const char* filename)
 	area_dummy.totrct.ymin = m_frame_rect.GetBottom();
 	area_dummy.totrct.ymax = m_frame_rect.GetTop();
 
-	BL_MakeScreenShot(&area_dummy, filename);
+	BL_MakeScreenShot(m_win->screen, &area_dummy, filename);
 }

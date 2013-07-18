@@ -155,13 +155,13 @@ static void copyData(ModifierData *md, ModifierData *target)
 	if (clmd->sim_parms->effector_weights)
 		tclmd->sim_parms->effector_weights = MEM_dupallocN(clmd->sim_parms->effector_weights);
 	tclmd->coll_parms = MEM_dupallocN(clmd->coll_parms);
-	tclmd->point_cache = BKE_ptcache_copy_list(&tclmd->ptcaches, &clmd->ptcaches);
+	tclmd->point_cache = BKE_ptcache_add(&tclmd->ptcaches);
 	tclmd->clothObject = NULL;
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
+static bool dependsOnTime(ModifierData *UNUSED(md))
 {
-	return 1;
+	return true;
 }
 
 static void freeData(ModifierData *md)
@@ -180,7 +180,7 @@ static void freeData(ModifierData *md)
 			MEM_freeN(clmd->sim_parms);
 		}
 		if (clmd->coll_parms)
-			MEM_freeN(clmd->coll_parms);	
+			MEM_freeN(clmd->coll_parms);
 		
 		BKE_ptcache_free_list(&clmd->ptcaches);
 		clmd->point_cache = NULL;

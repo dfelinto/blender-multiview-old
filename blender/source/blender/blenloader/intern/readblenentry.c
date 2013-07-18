@@ -40,12 +40,13 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
+#include "BLI_path_util.h"
 #include "BLI_fileops.h"
 #include "BLI_ghash.h"
 #include "BLI_linklist.h"
 #include "BLI_listbase.h"
 #include "BLI_string.h"
-#include "BLI_utildefines.h"
 
 #include "DNA_genfile.h"
 #include "DNA_sdna_types.h"
@@ -55,14 +56,14 @@
 #include "BKE_library.h" // for free_main
 #include "BKE_idcode.h"
 #include "BKE_report.h"
-#include "BKE_utildefines.h"
 
 #include "BLO_readfile.h"
 #include "BLO_undofile.h"
+#include "BLO_blend_defs.h"
 
 #include "readfile.h"
 
-#include "BLO_sys_types.h" // needed for intptr_t
+#include "BLI_sys_types.h" // needed for intptr_t
 
 #ifdef WIN32
 #  include "BLI_winstuff.h"
@@ -73,16 +74,16 @@ void BLO_blendhandle_print_sizes(BlendHandle *, void *);
 
 /* Access routines used by filesel. */
 	 
-BlendHandle *BLO_blendhandle_from_file(char *file, ReportList *reports)
+BlendHandle *BLO_blendhandle_from_file(const char *filepath, ReportList *reports)
 {
 	BlendHandle *bh;
 
-	bh = (BlendHandle *)blo_openblenderfile(file, reports);
+	bh = (BlendHandle *)blo_openblenderfile(filepath, reports);
 
 	return bh;
 }
 
-BlendHandle *BLO_blendhandle_from_memory(void *mem, int memsize)
+BlendHandle *BLO_blendhandle_from_memory(const void *mem, int memsize)
 {
 	BlendHandle *bh;
 
@@ -174,7 +175,7 @@ LinkNode *BLO_blendhandle_get_previews(BlendHandle *bh, int ofblocktype, int *to
 		else if (bhead->code == DATA) {
 			if (looking) {
 				if (bhead->SDNAnr == DNA_struct_find_nr(fd->filesdna, "PreviewImage") ) {
-					prv = BLO_library_read_struct(fd, bhead, "PreviewImage");	
+					prv = BLO_library_read_struct(fd, bhead, "PreviewImage");
 					if (prv) {
 						memcpy(new_prv, prv, sizeof(PreviewImage));
 						if (prv->rect[0]) {
@@ -182,7 +183,7 @@ LinkNode *BLO_blendhandle_get_previews(BlendHandle *bh, int ofblocktype, int *to
 							new_prv->rect[0] = MEM_callocN(new_prv->w[0] * new_prv->h[0] * sizeof(unsigned int), "prvrect");
 							bhead = blo_nextbhead(fd, bhead);
 							rect = (unsigned int *)(bhead + 1);
-							memcpy(new_prv->rect[0], rect, bhead->len);					
+							memcpy(new_prv->rect[0], rect, bhead->len);
 						}
 						else {
 							new_prv->rect[0] = NULL;
@@ -193,7 +194,7 @@ LinkNode *BLO_blendhandle_get_previews(BlendHandle *bh, int ofblocktype, int *to
 							new_prv->rect[1] = MEM_callocN(new_prv->w[1] * new_prv->h[1] * sizeof(unsigned int), "prvrect");
 							bhead = blo_nextbhead(fd, bhead);
 							rect = (unsigned int *)(bhead + 1);
-							memcpy(new_prv->rect[1], rect, bhead->len);							
+							memcpy(new_prv->rect[1], rect, bhead->len);
 						}
 						else {
 							new_prv->rect[1] = NULL;
@@ -264,13 +265,13 @@ BlendFileData *BLO_read_from_file(const char *filepath, ReportList *reports)
 	if (fd) {
 		fd->reports = reports;
 		bfd = blo_read_file_internal(fd, filepath);
-		blo_freefiledata(fd);			
+		blo_freefiledata(fd);
 	}
 
-	return bfd;	
+	return bfd;
 }
 
-BlendFileData *BLO_read_from_memory(void *mem, int memsize, ReportList *reports)
+BlendFileData *BLO_read_from_memory(const void *mem, int memsize, ReportList *reports)
 {
 	BlendFileData *bfd = NULL;
 	FileData *fd;
@@ -279,10 +280,10 @@ BlendFileData *BLO_read_from_memory(void *mem, int memsize, ReportList *reports)
 	if (fd) {
 		fd->reports = reports;
 		bfd = blo_read_file_internal(fd, "");
-		blo_freefiledata(fd);			
+		blo_freefiledata(fd);
 	}
 
-	return bfd;	
+	return bfd;
 }
 
 BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFile *memfile, ReportList *reports)
@@ -310,6 +311,8 @@ BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFil
 		/* makes lookup of existing video clips in old main */
 		blo_make_movieclip_pointer_map(fd, oldmain);
 		
+		/* removed packed data from this trick - it's internal data that needs saves */
+		
 		bfd = blo_read_file_internal(fd, filename);
 		
 		/* ensures relinked images are not freed */
@@ -317,7 +320,7 @@ BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFil
 		
 		/* ensures relinked movie clips are not freed */
 		blo_end_movieclip_pointer_map(fd, oldmain);
-		
+				
 		/* move libraries from old main to new main */
 		if (bfd && mainlist.first != mainlist.last) {
 			
@@ -331,10 +334,10 @@ BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFil
 		}
 		blo_join_main(&mainlist);
 		
-		blo_freefiledata(fd);			
+		blo_freefiledata(fd);
 	}
 
-	return bfd;	
+	return bfd;
 }
 
 void BLO_blendfiledata_free(BlendFileData *bfd)

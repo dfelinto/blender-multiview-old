@@ -36,18 +36,18 @@
 #include <string>
 #include <vector>
 
-#include <glog/logging.h>
+#include "ceres/cost_function.h"
+#include "ceres/internal/eigen.h"
+#include "ceres/internal/scoped_ptr.h"
 #include "ceres/parameter_block.h"
+#include "ceres/problem.h"
 #include "ceres/problem_impl.h"
 #include "ceres/program.h"
 #include "ceres/residual_block.h"
 #include "ceres/runtime_numeric_diff_cost_function.h"
 #include "ceres/stringprintf.h"
-#include "ceres/cost_function.h"
-#include "ceres/internal/eigen.h"
-#include "ceres/internal/scoped_ptr.h"
-#include "ceres/problem.h"
 #include "ceres/types.h"
+#include "glog/logging.h"
 
 namespace ceres {
 namespace internal {
@@ -154,8 +154,8 @@ class GradientCheckingCostFunction : public CostFunction {
                     "Jacobian for " "block %d: (%ld by %ld)) "
                     "==========\n",
                     k,
-                    term_jacobians[k].rows(),
-                    term_jacobians[k].cols());
+                    static_cast<long>(term_jacobians[k].rows()),
+                    static_cast<long>(term_jacobians[k].cols()));
       // The funny spacing creates appropriately aligned column headers.
       m += " block  row  col        user dx/dy    num diff dx/dy         "
            "abs error    relative error         parameter          residual\n";

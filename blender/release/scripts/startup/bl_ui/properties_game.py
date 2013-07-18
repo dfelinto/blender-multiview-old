@@ -190,6 +190,15 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
             layout.operator("mesh.navmesh_reset")
             layout.operator("mesh.navmesh_clear")
 
+        if physics_type not in {'NO_COLLISION', 'OCCLUDE'}:
+            layout.separator()
+            split = layout.split()
+
+            col = split.column()
+            col.prop(game, "collision_group")
+            col = split.column()
+            col.prop(game, "collision_mask")
+
 
 class PHYSICS_PT_game_collision_bounds(PhysicsButtonsPanel, Panel):
     bl_label = "Collision Bounds"
@@ -396,13 +405,18 @@ class RENDER_PT_game_system(RenderButtonsPanel, Panel):
         layout = self.layout
 
         gs = context.scene.game_settings
+        col = layout.column()
+        row = col.row()
+        col = row.column()
+        col.prop(gs, "use_frame_rate")
+        col.prop(gs, "use_restrict_animation_updates")
+        col.prop(gs, "use_material_caching")
+        col = row.column()
+        col.prop(gs, "use_display_lists")
+        col.active = gs.raster_storage != 'VERTEX_BUFFER_OBJECT'
 
         row = layout.row()
-        row.prop(gs, "use_frame_rate")
-        row.prop(gs, "restrict_animation_updates")
-
-        row = layout.row()
-        row.prop(gs, "use_display_lists")
+        row.prop(gs, "raster_storage")
 
         row = layout.row()
         row.label("Exit Key")
@@ -607,7 +621,7 @@ class WORLD_PT_game_physics(WorldButtonsPanel, Panel):
 
         gs = context.scene.game_settings
 
-        layout.prop(gs, "physics_engine")
+        layout.prop(gs, "physics_engine", text="Engine")
         if gs.physics_engine != 'NONE':
             layout.prop(gs, "physics_gravity", text="Gravity")
 
@@ -631,7 +645,7 @@ class WORLD_PT_game_physics(WorldButtonsPanel, Panel):
             sub.prop(gs, "deactivation_angular_threshold", text="Angular Threshold")
             sub = col.row()
             sub.prop(gs, "deactivation_time", text="Time")
-
+            
             col = layout.column()
             col.prop(gs, "use_occlusion_culling", text="Occlusion Culling")
             sub = col.column()

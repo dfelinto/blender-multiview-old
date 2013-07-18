@@ -41,6 +41,21 @@
 #include "BLI_dynstr.h"
 #include "BLI_string.h"
 
+#include "BLI_utildefines.h"
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
+
+/**
+ * Duplicates the first \a len bytes of cstring \a str
+ * into a newly mallocN'd string and returns it. \a str
+ * is assumed to be at least len bytes long.
+ *
+ * \param str The string to be duplicated
+ * \param len The number of bytes to duplicate
+ * \retval Returns the duplicated string
+ */
 char *BLI_strdupn(const char *str, const size_t len)
 {
 	char *n = MEM_mallocN(len + 1, "strdup");
@@ -49,12 +64,26 @@ char *BLI_strdupn(const char *str, const size_t len)
 	
 	return n;
 }
+
+/**
+ * Duplicates the cstring \a str into a newly mallocN'd
+ * string and returns it.
+ *
+ * \param str The string to be duplicated
+ * \retval Returns the duplicated string
+ */
 char *BLI_strdup(const char *str)
 {
 	return BLI_strdupn(str, strlen(str));
 }
 
-char *BLI_strdupcat(const char *str1, const char *str2)
+/**
+ * Appends the two strings, and returns new mallocN'ed string
+ * \param str1 first string for copy
+ * \param str2 second string for append
+ * \retval Returns dst
+ */
+char *BLI_strdupcat(const char *__restrict str1, const char *__restrict str2)
 {
 	size_t len;
 	char *n;
@@ -67,41 +96,98 @@ char *BLI_strdupcat(const char *str1, const char *str2)
 	return n;
 }
 
-char *BLI_strncpy(char *dst, const char *src, const size_t maxncpy)
+/**
+ * Like strncpy but ensures dst is always
+ * '\0' terminated.
+ *
+ * \param dst Destination for copy
+ * \param src Source string to copy
+ * \param maxncpy Maximum number of characters to copy (generally
+ * the size of dst)
+ * \retval Returns dst
+ */
+char *BLI_strncpy(char *__restrict dst, const char *__restrict src, const size_t maxncpy)
 {
-	size_t srclen = strlen(src);
-	size_t cpylen = (srclen > (maxncpy - 1)) ? (maxncpy - 1) : srclen;
-	
-	memcpy(dst, src, cpylen);
-	dst[cpylen] = '\0';
-	
+	size_t srclen = BLI_strnlen(src, maxncpy - 1);
+	BLI_assert(maxncpy != 0);
+
+	memcpy(dst, src, srclen);
+	dst[srclen] = '\0';
 	return dst;
 }
 
-size_t BLI_snprintf(char *buffer, size_t count, const char *format, ...)
+/**
+ * Like strncpy but ensures dst is always
+ * '\0' terminated.
+ *
+ * \note This is a duplicate of #BLI_strncpy that returns bytes copied.
+ * And is a drop in replacement for 'snprintf(str, sizeof(str), "%s", arg);'
+ *
+ * \param dst Destination for copy
+ * \param src Source string to copy
+ * \param maxncpy Maximum number of characters to copy (generally
+ * the size of dst)
+ * \retval The number of bytes copied (The only difference from BLI_strncpy).
+ */
+size_t BLI_strncpy_rlen(char *__restrict dst, const char *__restrict src, const size_t maxncpy)
+{
+	size_t srclen = BLI_strnlen(src, maxncpy - 1);
+	BLI_assert(maxncpy != 0);
+
+	memcpy(dst, src, srclen);
+	dst[srclen] = '\0';
+	return srclen;
+}
+
+/**
+ * Portable replacement for #vsnprintf
+ */
+size_t BLI_vsnprintf(char *__restrict buffer, size_t count, const char *__restrict format, va_list arg)
 {
 	size_t n;
-	va_list arg;
 
-	va_start(arg, format);
-	n = vsnprintf(buffer, count, format, arg);
-	
+	BLI_assert(buffer != NULL);
+	BLI_assert(count > 0);
+	BLI_assert(format != NULL);
+
+	n = (size_t)vsnprintf(buffer, count, format, arg);
+
 	if (n != -1 && n < count) {
 		buffer[n] = '\0';
 	}
 	else {
 		buffer[count - 1] = '\0';
 	}
-	
-	va_end(arg);
+
 	return n;
 }
 
-char *BLI_sprintfN(const char *format, ...)
+/**
+ * Portable replacement for #snprintf
+ */
+size_t BLI_snprintf(char *__restrict buffer, size_t count, const char *__restrict format, ...)
+{
+	size_t n;
+	va_list arg;
+
+	va_start(arg, format);
+	n = BLI_vsnprintf(buffer, count, format, arg);
+	va_end(arg);
+
+	return n;
+}
+
+/**
+ * Print formatted string into a newly #MEM_mallocN'd string
+ * and return it.
+ */
+char *BLI_sprintfN(const char *__restrict format, ...)
 {
 	DynStr *ds;
 	va_list arg;
 	char *n;
+
+	BLI_assert(format != NULL);
 
 	va_start(arg, format);
 
@@ -121,10 +207,13 @@ char *BLI_sprintfN(const char *format, ...)
  * TODO: support more fancy string escaping. current code is primitive
  *    this basically is an ascii version of PyUnicode_EncodeUnicodeEscape()
  *    which is a useful reference. */
-size_t BLI_strescape(char *dst, const char *src, const size_t maxlen)
+size_t BLI_strescape(char *__restrict dst, const char *__restrict src, const size_t maxncpy)
 {
 	size_t len = 0;
-	while (len < maxlen) {
+
+	BLI_assert(maxncpy != 0);
+
+	while (len < maxncpy) {
 		switch (*src) {
 			case '\0':
 				goto escape_finish;
@@ -135,7 +224,7 @@ size_t BLI_strescape(char *dst, const char *src, const size_t maxlen)
 			case '\t':
 			case '\n':
 			case '\r':
-				if (len + 1 < maxlen) {
+				if (len + 1 < maxncpy) {
 					*dst++ = '\\';
 					len++;
 				}
@@ -159,40 +248,50 @@ escape_finish:
 	return len;
 }
 
-
-/* Makes a copy of the text within the "" that appear after some text 'blahblah'
+/**
+ * Makes a copy of the text within the "" that appear after some text 'blahblah'
  * i.e. for string 'pose["apples"]' with prefix 'pose[', it should grab "apples"
- * 
- *  - str: is the entire string to chop
- *	- prefix: is the part of the string to leave out 
  *
- * Assume that the strings returned must be freed afterwards, and that the inputs will contain 
+ * - str: is the entire string to chop
+ * - prefix: is the part of the string to leave out
+ *
+ * Assume that the strings returned must be freed afterwards, and that the inputs will contain
  * data we want...
  *
- * TODO, return the offset and a length so as to avoid doing an allocation.
+ * \return the offset and a length so as to avoid doing an allocation.
  */
-char *BLI_str_quoted_substrN(const char *str, const char *prefix)
+char *BLI_str_quoted_substrN(const char *__restrict str, const char *__restrict prefix)
 {
 	size_t prefixLen = strlen(prefix);
 	char *startMatch, *endMatch;
 	
 	/* get the starting point (i.e. where prefix starts, and add prefixLen+1 to it to get be after the first " */
 	startMatch = strstr(str, prefix) + prefixLen + 1;
-	
-	/* get the end point (i.e. where the next occurance of " is after the starting point) */
-	endMatch = strchr(startMatch, '"'); /* "  NOTE: this comment here is just so that my text editor still shows the functions ok... */
-
-	/* return the slice indicated */
-	return BLI_strdupn(startMatch, (size_t)(endMatch - startMatch));
+	if (startMatch) {
+		/* get the end point (i.e. where the next occurance of " is after the starting point) */
+		endMatch = strchr(startMatch, '"'); /* "  NOTE: this comment here is just so that my text editor still shows the functions ok... */
+		
+		if (endMatch)
+			/* return the slice indicated */
+			return BLI_strdupn(startMatch, (size_t)(endMatch - startMatch));
+	}
+	return BLI_strdupn("", 0);
 }
 
-/* Replaces all occurrences of oldText with newText in str, returning a new string that doesn't 
- * contain the 'replaced' occurrences.
+/**
+ * Returns a copy of the cstring \a str into a newly mallocN'd
+ * string with all instances of oldText replaced with newText,
+ * and returns it.
+ *
+ * \note A rather wasteful string-replacement utility, though this shall do for now...
+ * Feel free to replace this with an even safe + nicer alternative
+ *
+ * \param str The string to replace occurrences of oldText in
+ * \param oldText The text in the string to find and replace
+ * \param newText The text in the string to find and replace
+ * \retval Returns the duplicated string
  */
-
-/* A rather wasteful string-replacement utility, though this shall do for now...
- * Feel free to replace this with an even safe + nicer alternative */
-char *BLI_replacestr(char *str, const char *oldText, const char *newText)
+char *BLI_replacestr(char *__restrict str, const char *__restrict oldText, const char *__restrict newText)
 {
 	DynStr *ds = NULL;
 	size_t lenOld = strlen(oldText);
@@ -258,12 +357,19 @@ char *BLI_replacestr(char *str, const char *oldText, const char *newText)
 	}
 } 
 
+/**
+ * Compare two strings without regard to case.
+ *
+ * \retval True if the strings are equal, false otherwise.
+ */
 int BLI_strcaseeq(const char *a, const char *b) 
 {
 	return (BLI_strcasecmp(a, b) == 0);
 }
 
-/* strcasestr not available in MSVC */
+/**
+ * Portable replacement for #strcasestr (not available in MSVC)
+ */
 char *BLI_strcasestr(const char *s, const char *find)
 {
 	register char c, sc;
@@ -287,11 +393,12 @@ char *BLI_strcasestr(const char *s, const char *find)
 
 int BLI_strcasecmp(const char *s1, const char *s2)
 {
-	int i;
+	register int i;
+	register char c1, c2;
 
 	for (i = 0;; i++) {
-		char c1 = tolower(s1[i]);
-		char c2 = tolower(s2[i]);
+		c1 = tolower(s1[i]);
+		c2 = tolower(s2[i]);
 
 		if (c1 < c2) {
 			return -1;
@@ -309,11 +416,12 @@ int BLI_strcasecmp(const char *s1, const char *s2)
 
 int BLI_strncasecmp(const char *s1, const char *s2, size_t len)
 {
-	int i;
+	register size_t i;
+	register char c1, c2;
 
 	for (i = 0; i < len; i++) {
-		char c1 = tolower(s1[i]);
-		char c2 = tolower(s2[i]);
+		c1 = tolower(s1[i]);
+		c2 = tolower(s2[i]);
 
 		if (c1 < c2) {
 			return -1;
@@ -329,31 +437,70 @@ int BLI_strncasecmp(const char *s1, const char *s2, size_t len)
 	return 0;
 }
 
+/* compare number on the left size of the string */
+static int left_number_strcmp(const char *s1, const char *s2, int *tiebreaker)
+{
+	const char *p1 = s1, *p2 = s2;
+	int numdigit, numzero1, numzero2;
+
+	/* count and skip leading zeros */
+	for (numzero1 = 0; *p1 && (*p1 == '0'); numzero1++)
+		p1++;
+	for (numzero2 = 0; *p2 && (*p2 == '0'); numzero2++)
+		p2++;
+
+	/* find number of consecutive digits */
+	for (numdigit = 0; ; numdigit++) {
+		if (isdigit(*(p1 + numdigit)) && isdigit(*(p2 + numdigit)))
+			continue;
+		else if (isdigit(*(p1 + numdigit)))
+			return 1; /* s2 is bigger */
+		else if (isdigit(*(p2 + numdigit)))
+			return -1; /* s1 is bigger */
+		else
+			break;
+	}
+
+	/* same number of digits, compare size of number */
+	if (numdigit > 0) {
+		int compare = (int)strncmp(p1, p2, (size_t)numdigit);
+
+		if (compare != 0)
+			return compare;
+	}
+
+	/* use number of leading zeros as tie breaker if still equal */
+	if (*tiebreaker == 0) {
+		if (numzero1 > numzero2)
+			*tiebreaker = 1;
+		else if (numzero1 < numzero2)
+			*tiebreaker = -1;
+	}
+
+	return 0;
+}
+
 /* natural string compare, keeping numbers in order */
 int BLI_natstrcmp(const char *s1, const char *s2)
 {
-	int d1 = 0, d2 = 0;
+	register int d1 = 0, d2 = 0;
+	register char c1, c2;
+	int tiebreaker = 0;
 
-	/* if both chars are numeric, to a strtol().
+	/* if both chars are numeric, to a left_number_strcmp().
 	 * then increase string deltas as long they are 
 	 * numeric, else do a tolower and char compare */
 
 	while (1) {
-		char c1 = tolower(s1[d1]);
-		char c2 = tolower(s2[d2]);
+		c1 = tolower(s1[d1]);
+		c2 = tolower(s2[d2]);
 		
 		if (isdigit(c1) && isdigit(c2) ) {
-			int val1, val2;
+			int numcompare = left_number_strcmp(s1 + d1, s2 + d2, &tiebreaker);
 			
-			val1 = (int)strtol(s1 + d1, (char **)NULL, 10);
-			val2 = (int)strtol(s2 + d2, (char **)NULL, 10);
-			
-			if (val1 < val2) {
-				return -1;
-			}
-			else if (val1 > val2) {
-				return 1;
-			}
+			if (numcompare != 0)
+				return numcompare;
+
 			d1++;
 			while (isdigit(s1[d1]) )
 				d1++;
@@ -365,7 +512,7 @@ int BLI_natstrcmp(const char *s1, const char *s2)
 			c2 = tolower(s2[d2]);
 		}
 	
-		/* first check for '.' so "foo.bar" comes before "foo 1.bar" */	
+		/* first check for '.' so "foo.bar" comes before "foo 1.bar" */
 		if (c1 == '.' && c2 != '.')
 			return -1;
 		if (c1 != '.' && c2 == '.')
@@ -382,49 +529,79 @@ int BLI_natstrcmp(const char *s1, const char *s2)
 		d1++;
 		d2++;
 	}
-	return 0;
+	return tiebreaker;
 }
 
-void BLI_timestr(double _time, char *str)
+void BLI_timestr(double _time, char *str, size_t maxlen)
 {
 	/* format 00:00:00.00 (hr:min:sec) string has to be 12 long */
-	int  hr = ( (int)  _time) / (60*60);
+	int  hr = ( (int)  _time) / (60 * 60);
 	int min = (((int)  _time) / 60 ) % 60;
-	int sec = ( (int) (_time)) % 60;
+	int sec = ( (int)  _time) % 60;
 	int hun = ( (int) (_time   * 100.0)) % 100;
-	
+
 	if (hr) {
-		sprintf(str, "%.2d:%.2d:%.2d.%.2d", hr, min, sec, hun);
+		BLI_snprintf(str, maxlen, "%.2d:%.2d:%.2d.%.2d", hr, min, sec, hun);
 	}
 	else {
-		sprintf(str, "%.2d:%.2d.%.2d", min, sec, hun);
+		BLI_snprintf(str, maxlen, "%.2d:%.2d.%.2d", min, sec, hun);
 	}
-	
-	str[11] = 0;
 }
 
 /* determine the length of a fixed-size string */
-size_t BLI_strnlen(const char *str, size_t maxlen)
+size_t BLI_strnlen(const char *s, size_t maxlen)
 {
-	const char *end = memchr(str, '\0', maxlen);
-	return end ? (size_t) (end - str) : maxlen;
+	size_t len;
+
+	for (len = 0; len < maxlen; len++, s++) {
+		if (!*s)
+			break;
+	}
+	return len;
 }
 
-void BLI_ascii_strtolower(char *str, int len)
+void BLI_ascii_strtolower(char *str, const size_t len)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < len; i++)
 		if (str[i] >= 'A' && str[i] <= 'Z')
 			str[i] += 'a' - 'A';
 }
 
-void BLI_ascii_strtoupper(char *str, int len)
+void BLI_ascii_strtoupper(char *str, const size_t len)
 {
-	int i;
+	size_t i;
 
 	for (i = 0; i < len; i++)
 		if (str[i] >= 'a' && str[i] <= 'z')
 			str[i] -= 'a' - 'A';
 }
 
+/**
+ * Strip trailing zeros from a float, eg:
+ *   0.0000 -> 0.0
+ *   2.0010 -> 2.001
+ *
+ * \param str
+ * \param pad
+ * \return The number of zeto's stripped.
+ */
+int BLI_str_rstrip_float_zero(char *str, const char pad)
+{
+	char *p = strchr(str, '.');
+	int totstrip = 0;
+	if (p) {
+		char *end_p;
+		p++;  /* position at first decimal place */
+		end_p = p + (strlen(p) - 1);  /* position at last character */
+		if (end_p > p) {
+			while (end_p != p && *end_p == '0') {
+				*end_p = pad;
+				end_p--;
+			}
+		}
+	}
+
+	return totstrip;
+}

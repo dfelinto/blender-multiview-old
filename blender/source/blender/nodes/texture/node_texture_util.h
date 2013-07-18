@@ -48,6 +48,12 @@
 #include "DNA_scene_types.h"
 #include "DNA_texture_types.h"
 
+#include "BLI_math.h"
+#include "BLI_blenlib.h"
+#include "BLI_rand.h"
+#include "BLI_threads.h"
+#include "BLI_utildefines.h"
+
 #include "BKE_blender.h"
 #include "BKE_colortools.h"
 #include "BKE_global.h"
@@ -56,16 +62,12 @@
 #include "BKE_material.h"
 #include "BKE_node.h"
 #include "BKE_texture.h"
-
 #include "BKE_library.h"
 
 #include "node_util.h"
+#include "NOD_texture.h"
 
-#include "BLI_math.h"
-#include "BLI_blenlib.h"
-#include "BLI_rand.h"
-#include "BLI_threads.h"
-#include "BLI_utildefines.h"
+#include "NOD_texture.h"
 
 #include "BLF_translation.h"
 
@@ -77,8 +79,10 @@
 
 typedef struct TexCallData {
 	TexResult *target;
+	/* all float[3] */
 	float *co;
 	float *dxt, *dyt;
+
 	int osatex;
 	char do_preview;
 	short thread;
@@ -92,7 +96,7 @@ typedef struct TexCallData {
 typedef struct TexParams {
 	float *co;
 	float *dxt, *dyt;
-	float *previewco;
+	const float *previewco;
 	int cfra;
 	int osatex;
 
@@ -108,16 +112,21 @@ typedef struct TexDelegate {
 	TexCallData *cdata;
 	TexFn fn;
 	bNode *node;
+	bNodePreview *preview;
 	bNodeStack *in[MAX_SOCKET];
 	int type;
 } TexDelegate;
+
+
+int tex_node_poll_default(struct bNodeType *ntype, struct bNodeTree *ntree);
+void tex_node_type_base(struct bNodeType *ntype, int type, const char *name, short nclass, short flag);
 
 void tex_input_rgba(float *out, bNodeStack *in, TexParams *params, short thread);
 void tex_input_vec(float *out, bNodeStack *in, TexParams *params, short thread);
 float tex_input_value(bNodeStack *in, TexParams *params, short thread);
 
-void tex_output(bNode *node, bNodeStack **in, bNodeStack *out, TexFn texfn, TexCallData *data);
-void tex_do_preview(bNode *node, float *coord, float *col);
+void tex_output(bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack *out, TexFn texfn, TexCallData *data);
+void tex_do_preview(bNodePreview *preview, const float coord[2], const float col[4]);
 
 void params_from_cdata(TexParams *out, TexCallData *in);
 

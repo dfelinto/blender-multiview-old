@@ -50,11 +50,11 @@
 
 /****************************** Camera Datablock *****************************/
 
-void *BKE_camera_add(const char *name)
+void *BKE_camera_add(Main *bmain, const char *name)
 {
 	Camera *cam;
 	
-	cam =  BKE_libblock_alloc(&G.main->camera, ID_CA, name);
+	cam =  BKE_libblock_alloc(&bmain->camera, ID_CA, name);
 
 	cam->lens = 35.0f;
 	cam->sensor_x = DEFAULT_SENSOR_WIDTH;
@@ -151,7 +151,7 @@ float BKE_camera_object_dof_distance(Object *ob)
 	Camera *cam = (Camera *)ob->data; 
 	if (ob->type != OB_CAMERA)
 		return 0.0f;
-	if (cam->dof_ob) {	
+	if (cam->dof_ob) {
 		/* too simple, better to return the distance on the view axis only
 		 * return len_v3v3(ob->obmat[3], cam->dof_ob->obmat[3]); */
 		float mat[4][4], imat[4][4], obmat[4][4];
@@ -159,7 +159,7 @@ float BKE_camera_object_dof_distance(Object *ob)
 		copy_m4_m4(obmat, ob->obmat);
 		normalize_m4(obmat);
 		invert_m4_m4(imat, obmat);
-		mult_m4_m4m4(mat, imat, cam->dof_ob->obmat);
+		mul_m4_m4m4(mat, imat, cam->dof_ob->obmat);
 		return fabsf(mat[3][2]);
 	}
 	return cam->YF_dofdist;
@@ -237,6 +237,9 @@ void BKE_camera_params_from_object(CameraParams *params, Object *ob)
 		params->clipsta = la->clipsta;
 		params->clipend = la->clipend;
 	}
+	else {
+		params->lens = 35.0f;
+	}
 }
 
 void BKE_camera_params_from_view3d(CameraParams *params, View3D *v3d, RegionView3D *rv3d)
@@ -262,11 +265,13 @@ void BKE_camera_params_from_view3d(CameraParams *params, View3D *v3d, RegionView
 	}
 	else if (rv3d->persp == RV3D_ORTHO) {
 		/* orthographic view */
+		int sensor_size = BKE_camera_sensor_size(params->sensor_fit, params->sensor_x, params->sensor_y);
 		params->clipend *= 0.5f;    // otherwise too extreme low zbuffer quality
 		params->clipsta = -params->clipend;
 
 		params->is_ortho = TRUE;
-		params->ortho_scale = rv3d->dist;
+		/* make sure any changes to this match ED_view3d_radius_to_ortho_dist() */
+		params->ortho_scale = rv3d->dist * sensor_size / v3d->lens;
 		params->zoom = 2.0f;
 	}
 	else {
@@ -366,7 +371,7 @@ void BKE_camera_params_compute_matrix(CameraParams *params)
 
 /***************************** Camera View Frame *****************************/
 
-void BKE_camera_view_frame_ex(Scene *scene, Camera *camera, float drawsize, const short do_clip, const float scale[3],
+void BKE_camera_view_frame_ex(Scene *scene, Camera *camera, float drawsize, const bool do_clip, const float scale[3],
                               float r_asp[2], float r_shift[2], float *r_drawsize, float r_vec[4][3])
 {
 	float facx, facy;

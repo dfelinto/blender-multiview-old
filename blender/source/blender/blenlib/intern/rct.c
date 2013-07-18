@@ -48,23 +48,23 @@
  *
  * \return True if \a rect is empty.
  */
-int BLI_rcti_is_empty(const rcti *rect)
+bool BLI_rcti_is_empty(const rcti *rect)
 {
 	return ((rect->xmax <= rect->xmin) || (rect->ymax <= rect->ymin));
 }
 
-int BLI_rctf_is_empty(const rctf *rect)
+bool BLI_rctf_is_empty(const rctf *rect)
 {
 	return ((rect->xmax <= rect->xmin) || (rect->ymax <= rect->ymin));
 }
 
-int BLI_in_rcti(const rcti *rect, const int x, const int y)
+bool BLI_rcti_isect_pt(const rcti *rect, const int x, const int y)
 {
-	if (x < rect->xmin) return 0;
-	if (x > rect->xmax) return 0;
-	if (y < rect->ymin) return 0;
-	if (y > rect->ymax) return 0;
-	return 1;
+	if (x < rect->xmin) return false;
+	if (x > rect->xmax) return false;
+	if (y < rect->ymin) return false;
+	if (y > rect->ymax) return false;
+	return true;
 }
 
 /**
@@ -74,58 +74,89 @@ int BLI_in_rcti(const rcti *rect, const int x, const int y)
  *
  * \return True if \a rect is empty.
  */
-int BLI_in_rcti_v(const rcti *rect, const int xy[2])
+bool BLI_rcti_isect_pt_v(const rcti *rect, const int xy[2])
 {
-	if (xy[0] < rect->xmin) return 0;
-	if (xy[0] > rect->xmax) return 0;
-	if (xy[1] < rect->ymin) return 0;
-	if (xy[1] > rect->ymax) return 0;
-	return 1;
+	if (xy[0] < rect->xmin) return false;
+	if (xy[0] > rect->xmax) return false;
+	if (xy[1] < rect->ymin) return false;
+	if (xy[1] > rect->ymax) return false;
+	return true;
 }
 
-int BLI_in_rctf(const rctf *rect, const float x, const float y)
+bool BLI_rctf_isect_pt(const rctf *rect, const float x, const float y)
 {
-	if (x < rect->xmin) return 0;
-	if (x > rect->xmax) return 0;
-	if (y < rect->ymin) return 0;
-	if (y > rect->ymax) return 0;
-	return 1;
+	if (x < rect->xmin) return false;
+	if (x > rect->xmax) return false;
+	if (y < rect->ymin) return false;
+	if (y > rect->ymax) return false;
+	return true;
 }
 
-int BLI_in_rctf_v(const rctf *rect, const float xy[2])
+bool BLI_rctf_isect_pt_v(const rctf *rect, const float xy[2])
 {
-	if (xy[0] < rect->xmin) return 0;
-	if (xy[0] > rect->xmax) return 0;
-	if (xy[1] < rect->ymin) return 0;
-	if (xy[1] > rect->ymax) return 0;
-	return 1;
+	if (xy[0] < rect->xmin) return false;
+	if (xy[0] > rect->xmax) return false;
+	if (xy[1] < rect->ymin) return false;
+	if (xy[1] > rect->ymax) return false;
+	return true;
 }
+
+/**
+ * is \a rct_b inside \a rct_a
+ */
+bool BLI_rctf_inside_rctf(rctf *rct_a, const rctf *rct_b)
+{
+	return ((rct_a->xmin <= rct_b->xmin) &&
+	        (rct_a->xmax >= rct_b->xmax) &&
+	        (rct_a->ymin <= rct_b->ymin) &&
+	        (rct_a->ymax >= rct_b->ymax));
+}
+bool BLI_rcti_inside_rcti(rcti *rct_a, const rcti *rct_b)
+{
+	return ((rct_a->xmin <= rct_b->xmin) &&
+	        (rct_a->xmax >= rct_b->xmax) &&
+	        (rct_a->ymin <= rct_b->ymin) &&
+	        (rct_a->ymax >= rct_b->ymax));
+}
+
 
 /* based closely on 'isect_line_line_v2_int', but in modified so corner cases are treated as intersections */
-static int isect_segments(const int v1[2], const int v2[2], const int v3[2], const int v4[2])
+static int isect_segments_i(const int v1[2], const int v2[2], const int v3[2], const int v4[2])
 {
 	const double div = (double)((v2[0] - v1[0]) * (v4[1] - v3[1]) - (v2[1] - v1[1]) * (v4[0] - v3[0]));
-	if (div == 0.0f) {
+	if (div == 0.0) {
 		return 1; /* co-linear */
 	}
 	else {
-		const double labda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
+		const double lambda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
 		const double mu    = (double)((v1[1] - v3[1]) * (v2[0] - v1[0]) - (v1[0] - v3[0]) * (v2[1] - v1[1])) / div;
-		return (labda >= 0.0f && labda <= 1.0f && mu >= 0.0f && mu <= 1.0f);
+		return (lambda >= 0.0 && lambda <= 1.0 && mu >= 0.0 && mu <= 1.0);
+	}
+}
+static int isect_segments_fl(const float v1[2], const float v2[2], const float v3[2], const float v4[2])
+{
+	const double div = (double)((v2[0] - v1[0]) * (v4[1] - v3[1]) - (v2[1] - v1[1]) * (v4[0] - v3[0]));
+	if (div == 0.0) {
+		return 1; /* co-linear */
+	}
+	else {
+		const double lambda = (double)((v1[1] - v3[1]) * (v4[0] - v3[0]) - (v1[0] - v3[0]) * (v4[1] - v3[1])) / div;
+		const double mu    = (double)((v1[1] - v3[1]) * (v2[0] - v1[0]) - (v1[0] - v3[0]) * (v2[1] - v1[1])) / div;
+		return (lambda >= 0.0 && lambda <= 1.0 && mu >= 0.0 && mu <= 1.0);
 	}
 }
 
-int BLI_rcti_isect_segment(const rcti *rect, const int s1[2], const int s2[2])
+bool BLI_rcti_isect_segment(const rcti *rect, const int s1[2], const int s2[2])
 {
 	/* first do outside-bounds check for both points of the segment */
-	if (s1[0] < rect->xmin && s2[0] < rect->xmin) return 0;
-	if (s1[0] > rect->xmax && s2[0] > rect->xmax) return 0;
-	if (s1[1] < rect->ymin && s2[1] < rect->ymin) return 0;
-	if (s1[1] > rect->ymax && s2[1] > rect->ymax) return 0;
+	if (s1[0] < rect->xmin && s2[0] < rect->xmin) return false;
+	if (s1[0] > rect->xmax && s2[0] > rect->xmax) return false;
+	if (s1[1] < rect->ymin && s2[1] < rect->ymin) return false;
+	if (s1[1] > rect->ymax && s2[1] > rect->ymax) return false;
 
 	/* if either points intersect then we definetly intersect */
-	if (BLI_in_rcti_v(rect, s1) || BLI_in_rcti_v(rect, s2)) {
-		return 1;
+	if (BLI_rcti_isect_pt_v(rect, s1) || BLI_rcti_isect_pt_v(rect, s2)) {
+		return true;
 	}
 	else {
 		/* both points are outside but may insersect the rect */
@@ -134,19 +165,54 @@ int BLI_rcti_isect_segment(const rcti *rect, const int s1[2], const int s2[2])
 		/* diagonal: [/] */
 		tvec1[0] = rect->xmin; tvec1[1] = rect->ymin;
 		tvec2[0] = rect->xmin; tvec2[1] = rect->ymax;
-		if (isect_segments(s1, s2, tvec1, tvec2)) {
-			return 1;
+		if (isect_segments_i(s1, s2, tvec1, tvec2)) {
+			return true;
 		}
 
 		/* diagonal: [\] */
 		tvec1[0] = rect->xmin; tvec1[1] = rect->ymax;
 		tvec2[0] = rect->xmax; tvec2[1] = rect->ymin;
-		if (isect_segments(s1, s2, tvec1, tvec2)) {
-			return 1;
+		if (isect_segments_i(s1, s2, tvec1, tvec2)) {
+			return true;
 		}
 
 		/* no intersection */
-		return 0;
+		return false;
+	}
+}
+
+bool BLI_rctf_isect_segment(const rctf *rect, const float s1[2], const float s2[2])
+{
+	/* first do outside-bounds check for both points of the segment */
+	if (s1[0] < rect->xmin && s2[0] < rect->xmin) return false;
+	if (s1[0] > rect->xmax && s2[0] > rect->xmax) return false;
+	if (s1[1] < rect->ymin && s2[1] < rect->ymin) return false;
+	if (s1[1] > rect->ymax && s2[1] > rect->ymax) return false;
+
+	/* if either points intersect then we definetly intersect */
+	if (BLI_rctf_isect_pt_v(rect, s1) || BLI_rctf_isect_pt_v(rect, s2)) {
+		return true;
+	}
+	else {
+		/* both points are outside but may insersect the rect */
+		float tvec1[2];
+		float tvec2[2];
+		/* diagonal: [/] */
+		tvec1[0] = rect->xmin; tvec1[1] = rect->ymin;
+		tvec2[0] = rect->xmin; tvec2[1] = rect->ymax;
+		if (isect_segments_fl(s1, s2, tvec1, tvec2)) {
+			return true;
+		}
+
+		/* diagonal: [\] */
+		tvec1[0] = rect->xmin; tvec1[1] = rect->ymax;
+		tvec2[0] = rect->xmax; tvec2[1] = rect->ymin;
+		if (isect_segments_fl(s1, s2, tvec1, tvec2)) {
+			return true;
+		}
+
+		/* no intersection */
+		return false;
 	}
 }
 
@@ -249,11 +315,24 @@ void BLI_rctf_translate(rctf *rect, float x, float y)
 	rect->ymax += y;
 }
 
+void BLI_rcti_recenter(rcti *rect, int x, int y)
+{
+	const int dx = x - BLI_rcti_cent_x(rect);
+	const int dy = y - BLI_rcti_cent_y(rect);
+	BLI_rcti_translate(rect, dx, dy);
+}
+void BLI_rctf_recenter(rctf *rect, float x, float y)
+{
+	const float dx = x - BLI_rctf_cent_x(rect);
+	const float dy = y - BLI_rctf_cent_y(rect);
+	BLI_rctf_translate(rect, dx, dy);
+}
+
 /* change width & height around the central location */
 void BLI_rcti_resize(rcti *rect, int x, int y)
 {
-	rect->xmin = rect->xmax = (rect->xmax + rect->xmin) / 2;
-	rect->ymin = rect->ymax = (rect->ymax + rect->ymin) / 2;
+	rect->xmin = rect->xmax = BLI_rcti_cent_x(rect);
+	rect->ymin = rect->ymax = BLI_rcti_cent_y(rect);
 	rect->xmin -= x / 2;
 	rect->ymin -= y / 2;
 	rect->xmax = rect->xmin + x;
@@ -262,12 +341,36 @@ void BLI_rcti_resize(rcti *rect, int x, int y)
 
 void BLI_rctf_resize(rctf *rect, float x, float y)
 {
-	rect->xmin = rect->xmax = (rect->xmax + rect->xmin) * 0.5f;
-	rect->ymin = rect->ymax = (rect->ymax + rect->ymin) * 0.5f;
+	rect->xmin = rect->xmax = BLI_rctf_cent_x(rect);
+	rect->ymin = rect->ymax = BLI_rctf_cent_y(rect);
 	rect->xmin -= x * 0.5f;
 	rect->ymin -= y * 0.5f;
 	rect->xmax = rect->xmin + x;
 	rect->ymax = rect->ymin + y;
+}
+
+void BLI_rcti_scale(rcti *rect, const float scale)
+{
+	const int cent_x      = BLI_rcti_cent_x(rect);
+	const int cent_y      = BLI_rcti_cent_y(rect);
+	const int size_x_half = BLI_rcti_size_x(rect) * (scale * 0.5f);
+	const int size_y_half = BLI_rcti_size_y(rect) * (scale * 0.5f);
+	rect->xmin = cent_x - size_x_half;
+	rect->ymin = cent_y - size_y_half;
+	rect->xmax = cent_x + size_x_half;
+	rect->ymax = cent_y + size_y_half;
+}
+
+void BLI_rctf_scale(rctf *rect, const float scale)
+{
+	const float cent_x      = BLI_rctf_cent_x(rect);
+	const float cent_y      = BLI_rctf_cent_y(rect);
+	const float size_x_half = BLI_rctf_size_x(rect) * (scale * 0.5f);
+	const float size_y_half = BLI_rctf_size_y(rect) * (scale * 0.5f);
+	rect->xmin = cent_x - size_x_half;
+	rect->ymin = cent_y - size_y_half;
+	rect->xmax = cent_x + size_x_half;
+	rect->ymax = cent_y + size_y_half;
 }
 
 void BLI_rctf_interp(rctf *rect, const rctf *rect_a, const rctf *rect_b, const float fac)
@@ -281,29 +384,50 @@ void BLI_rctf_interp(rctf *rect, const rctf *rect_a, const rctf *rect_b, const f
 
 /* BLI_rcti_interp() not needed yet */
 
-int BLI_rctf_compare(const struct rctf *rect_a, const struct rctf *rect_b, const float limit)
+
+bool BLI_rctf_clamp_pt_v(const struct rctf *rect, float xy[2])
+{
+	bool change = false;
+	if (xy[0] < rect->xmin) { xy[0] = rect->xmin; change = true; }
+	if (xy[0] > rect->xmax) { xy[0] = rect->xmax; change = true; }
+	if (xy[1] < rect->ymin) { xy[1] = rect->ymin; change = true; }
+	if (xy[1] > rect->ymax) { xy[1] = rect->ymax; change = true; }
+	return change;
+}
+
+bool BLI_rcti_clamp_pt_v(const struct rcti *rect, int xy[2])
+{
+	bool change = false;
+	if (xy[0] < rect->xmin) { xy[0] = rect->xmin; change = true; }
+	if (xy[0] > rect->xmax) { xy[0] = rect->xmax; change = true; }
+	if (xy[1] < rect->ymin) { xy[1] = rect->ymin; change = true; }
+	if (xy[1] > rect->ymax) { xy[1] = rect->ymax; change = true; }
+	return change;
+}
+
+bool BLI_rctf_compare(const struct rctf *rect_a, const struct rctf *rect_b, const float limit)
 {
 	if (fabsf(rect_a->xmin - rect_b->xmin) < limit)
 		if (fabsf(rect_a->xmax - rect_b->xmax) < limit)
 			if (fabsf(rect_a->ymin - rect_b->ymin) < limit)
 				if (fabsf(rect_a->ymax - rect_b->ymax) < limit)
-					return 1;
+					return true;
 
-	return 0;
+	return false;
 }
 
-int BLI_rcti_compare(const struct rcti *rect_a, const struct rcti *rect_b)
+bool BLI_rcti_compare(const struct rcti *rect_a, const struct rcti *rect_b)
 {
 	if (rect_a->xmin == rect_b->xmin)
 		if (rect_a->xmax == rect_b->xmax)
 			if (rect_a->ymin == rect_b->ymin)
 				if (rect_a->ymax == rect_b->ymax)
-					return 1;
+					return true;
 
-	return 0;
+	return false;
 }
 
-int BLI_rctf_isect(const rctf *src1, const rctf *src2, rctf *dest)
+bool BLI_rctf_isect(const rctf *src1, const rctf *src2, rctf *dest)
 {
 	float xmin, xmax;
 	float ymin, ymax;
@@ -320,7 +444,7 @@ int BLI_rctf_isect(const rctf *src1, const rctf *src2, rctf *dest)
 			dest->ymin = ymin;
 			dest->ymax = ymax;
 		}
-		return 1;
+		return true;
 	}
 	else {
 		if (dest) {
@@ -329,11 +453,11 @@ int BLI_rctf_isect(const rctf *src1, const rctf *src2, rctf *dest)
 			dest->ymin = 0;
 			dest->ymax = 0;
 		}
-		return 0;
+		return false;
 	}
 }
 
-int BLI_rcti_isect(const rcti *src1, const rcti *src2, rcti *dest)
+bool BLI_rcti_isect(const rcti *src1, const rcti *src2, rcti *dest)
 {
 	int xmin, xmax;
 	int ymin, ymax;
@@ -350,7 +474,7 @@ int BLI_rcti_isect(const rcti *src1, const rcti *src2, rcti *dest)
 			dest->ymin = ymin;
 			dest->ymax = ymax;
 		}
-		return 1;
+		return true;
 	}
 	else {
 		if (dest) {
@@ -359,16 +483,16 @@ int BLI_rcti_isect(const rcti *src1, const rcti *src2, rcti *dest)
 			dest->ymin = 0;
 			dest->ymax = 0;
 		}
-		return 0;
+		return false;
 	}
 }
 
 void BLI_rcti_rctf_copy(rcti *dst, const rctf *src)
 {
 	dst->xmin = floorf(src->xmin + 0.5f);
-	dst->xmax = dst->xmin + floorf((src->xmax - src->xmin) + 0.5f);
+	dst->xmax = dst->xmin + floorf(BLI_rctf_size_x(src) + 0.5f);
 	dst->ymin = floorf(src->ymin + 0.5f);
-	dst->ymax = dst->ymin + floorf((src->ymax - src->ymin) + 0.5f);
+	dst->ymax = dst->ymin + floorf(BLI_rctf_size_y(src) + 0.5f);
 }
 
 void BLI_rctf_rcti_copy(rctf *dst, const rcti *src)
@@ -382,11 +506,11 @@ void BLI_rctf_rcti_copy(rctf *dst, const rcti *src)
 void print_rctf(const char *str, const rctf *rect)
 {
 	printf("%s: xmin %.3f, xmax %.3f, ymin %.3f, ymax %.3f (%.3fx%.3f)\n", str,
-	       rect->xmin, rect->xmax, rect->ymin, rect->ymax, rect->xmax - rect->xmin, rect->ymax - rect->ymin);
+	       rect->xmin, rect->xmax, rect->ymin, rect->ymax, BLI_rctf_size_x(rect), BLI_rctf_size_y(rect));
 }
 
 void print_rcti(const char *str, const rcti *rect)
 {
 	printf("%s: xmin %d, xmax %d, ymin %d, ymax %d (%dx%d)\n", str,
-	       rect->xmin, rect->xmax, rect->ymin, rect->ymax, rect->xmax - rect->xmin, rect->ymax - rect->ymin);
+	       rect->xmin, rect->xmax, rect->ymin, rect->ymax, BLI_rcti_size_x(rect), BLI_rcti_size_y(rect));
 }

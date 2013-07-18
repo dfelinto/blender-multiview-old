@@ -85,8 +85,9 @@ void DummyPhysicsEnvironment::setGravity(float x,float y,float z)
 {
 }
 
-
-
+void DummyPhysicsEnvironment::getGravity(class MT_Vector3& grav)
+{
+}
 
 
 

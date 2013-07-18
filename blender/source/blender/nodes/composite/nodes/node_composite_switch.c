@@ -34,25 +34,25 @@
 #include "../node_composite_util.h"
 
 /* **************** MIX RGB ******************** */
-static bNodeSocketTemplate cmp_node_switch_in[]= {
+static bNodeSocketTemplate cmp_node_switch_in[] = {
 	{	SOCK_RGBA, 1, N_("Off"),		0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
 	{	SOCK_RGBA, 1, N_("On"),			0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
-static bNodeSocketTemplate cmp_node_switch_out[]= {
+static bNodeSocketTemplate cmp_node_switch_out[] = {
 	{	SOCK_RGBA, 0, N_("Image"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
 /* custom1 = mix type */
-void register_node_type_cmp_switch(bNodeTreeType *ttype)
+void register_node_type_cmp_switch(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, CMP_NODE_SWITCH, "Switch", NODE_CLASS_LAYOUT, NODE_OPTIONS);
+	cmp_node_type_base(&ntype, CMP_NODE_SWITCH, "Switch", NODE_CLASS_LAYOUT, 0);
 	node_type_socket_templates(&ntype, cmp_node_switch_in, cmp_node_switch_out);
-	node_type_size(&ntype, 110, 60, 120);
-	nodeRegisterType(ttype, &ntype);
+	node_type_size_preset(&ntype, NODE_SIZE_SMALL);
+	nodeRegisterType(&ntype);
 }
 

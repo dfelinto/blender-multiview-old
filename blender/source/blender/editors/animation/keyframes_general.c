@@ -45,7 +45,6 @@
 
 
 #include "BKE_fcurve.h"
-#include "BKE_utildefines.h"
 #include "BKE_report.h"
 #include "BKE_library.h"
 #include "BKE_global.h"
@@ -189,7 +188,7 @@ void clean_fcurve(FCurve *fcu, float thresh)
 	
 	/* make a copy of the old BezTriples, and clear F-Curve */
 	old_bezts = fcu->bezt;
-	totCount = fcu->totvert;	
+	totCount = fcu->totvert;
 	fcu->bezt = NULL;
 	fcu->totvert = 0;
 	
@@ -257,7 +256,7 @@ void clean_fcurve(FCurve *fcu, float thresh)
 					insert_vert_fcurve(fcu, cur[0], cur[1], 0);
 				}
 			}
-			else {	
+			else {
 				/* add if value doesn't equal that of previous */
 				if (IS_EQT(cur[1], prev[1], thresh) == 0) {
 					/* add new keyframe */
@@ -542,7 +541,8 @@ short copy_animedit_keys(bAnimContext *ac, ListBase *anim_data)
 		BLI_addtail(&animcopybuf, aci);
 		
 		/* add selected keyframes to buffer */
-		// TODO: currently, we resize array everytime we add a new vert - this works ok as long as it is assumed only a few keys are copied
+		/* TODO: currently, we resize array every time we add a new vert -
+		 * this works ok as long as it is assumed only a few keys are copied */
 		for (i = 0, bezt = fcu->bezt; i < fcu->totvert; i++, bezt++) {
 			if (BEZSELECTED(bezt)) {
 				/* add to buffer */

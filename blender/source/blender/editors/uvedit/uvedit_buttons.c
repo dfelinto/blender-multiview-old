@@ -43,11 +43,13 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_customdata.h"
 #include "BKE_mesh.h"
 #include "BKE_screen.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "ED_image.h"
 #include "ED_uvedit.h"
@@ -69,17 +71,20 @@ static int uvedit_center(Scene *scene, BMEditMesh *em, Image *ima, float center[
 	BMIter iter, liter;
 	MTexPoly *tf;
 	MLoopUV *luv;
-	int tot = 0.0;
+	int tot = 0;
+
+	const int cd_loop_uv_offset = CustomData_get_offset(&em->bm->ldata, CD_MLOOPUV);
+	const int cd_poly_tex_offset = CustomData_get_offset(&em->bm->pdata, CD_MTEXPOLY);
 	
 	zero_v2(center);
 	BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
-		tf = CustomData_bmesh_get(&em->bm->pdata, f->head.data, CD_MTEXPOLY);
+		tf = BM_ELEM_CD_GET_VOID_P(f, cd_poly_tex_offset);
 		if (!uvedit_face_visible_test(scene, ima, f, tf))
 			continue;
 
 		BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-			luv = CustomData_bmesh_get(&em->bm->ldata, l->head.data, CD_MLOOPUV);
-			if (uvedit_uv_select_test(em, scene, l)) {
+			if (uvedit_uv_select_test(scene, l, cd_loop_uv_offset)) {
+				luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
 				add_v2_v2(center, luv->uv);
 				tot++;
 			}
@@ -94,17 +99,25 @@ static int uvedit_center(Scene *scene, BMEditMesh *em, Image *ima, float center[
 	return tot;
 }
 
-static void uvedit_translate(Scene *scene, BMEditMesh *em, Image *UNUSED(ima), float delta[2])
+static void uvedit_translate(Scene *scene, BMEditMesh *em, Image *ima, float delta[2])
 {
 	BMFace *f;
 	BMLoop *l;
 	BMIter iter, liter;
 	MLoopUV *luv;
+	MTexPoly *tf;
+
+	const int cd_loop_uv_offset = CustomData_get_offset(&em->bm->ldata, CD_MLOOPUV);
+	const int cd_poly_tex_offset = CustomData_get_offset(&em->bm->pdata, CD_MTEXPOLY);
 	
 	BM_ITER_MESH (f, &iter, em->bm, BM_FACES_OF_MESH) {
+		tf = BM_ELEM_CD_GET_VOID_P(f, cd_poly_tex_offset);
+		if (!uvedit_face_visible_test(scene, ima, f, tf))
+			continue;
+
 		BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
-			luv = CustomData_bmesh_get(&em->bm->ldata, l->head.data, CD_MLOOPUV);
-			if (uvedit_uv_select_test(em, scene, l)) {
+			if (uvedit_uv_select_test(scene, l, cd_loop_uv_offset)) {
+				luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
 				add_v2_v2(luv->uv, delta);
 			}
 		}
@@ -127,7 +140,7 @@ static void uvedit_vertex_buttons(const bContext *C, uiBlock *block)
 
 	ED_space_image_get_size(sima, &imx, &imy);
 	
-	em = BMEdit_FromObject(obedit);
+	em = BKE_editmesh_from_object(obedit);
 
 	if (uvedit_center(scene, em, ima, center)) {
 		copy_v2_v2(uvedit_old_center, center);
@@ -147,8 +160,10 @@ static void uvedit_vertex_buttons(const bContext *C, uiBlock *block)
 		}
 		
 		uiBlockBeginAlign(block);
-		uiDefButF(block, NUM, B_UVEDIT_VERTEX, "X:",    10, 10, 145, 19, &uvedit_old_center[0], -10 * imx, 10.0 * imx, step, digits, "");
-		uiDefButF(block, NUM, B_UVEDIT_VERTEX, "Y:",    165, 10, 145, 19, &uvedit_old_center[1], -10 * imy, 10.0 * imy, step, digits, "");
+		uiDefButF(block, NUM, B_UVEDIT_VERTEX, IFACE_("X:"), 10, 10, 145, 19, &uvedit_old_center[0],
+		          -10 * imx, 10.0 * imx, step, digits, "");
+		uiDefButF(block, NUM, B_UVEDIT_VERTEX, IFACE_("Y:"), 165, 10, 145, 19, &uvedit_old_center[1],
+		          -10 * imy, 10.0 * imy, step, digits, "");
 		uiBlockEndAlign(block);
 	}
 }
@@ -166,7 +181,7 @@ static void do_uvedit_vertex(bContext *C, void *UNUSED(arg), int event)
 	if (event != B_UVEDIT_VERTEX)
 		return;
 
-	em = BMEdit_FromObject(obedit);
+	em = BKE_editmesh_from_object(obedit);
 
 	ED_space_image_get_size(sima, &imx, &imy);
 	uvedit_center(scene, em, ima, center);
@@ -209,7 +224,7 @@ void ED_uvedit_buttons_register(ARegionType *art)
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype image panel uv");
 	strcpy(pt->idname, "IMAGE_PT_uv");
-	strcpy(pt->label, "UV Vertex");
+	strcpy(pt->label, N_("UV Vertex"));  /* XXX C panels are not available through RNA (bpy.types)! */
 	pt->draw = image_panel_uv;
 	pt->poll = image_panel_uv_poll;
 	BLI_addtail(&art->paneltypes, pt);

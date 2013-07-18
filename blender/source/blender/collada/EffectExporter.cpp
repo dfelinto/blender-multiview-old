@@ -255,7 +255,7 @@ void EffectsExporter::operator()(Material *ma, Object *ob)
 	if (ep.getShaderType() != COLLADASW::EffectProfile::LAMBERT) {
 		cot = getcol(ma->specr * ma->spec, ma->specg * ma->spec, ma->specb * ma->spec, 1.0f);
 		ep.setSpecular(cot, false, "specular");
-	}	
+	}
 
 	// XXX make this more readable if possible
 
@@ -323,10 +323,10 @@ void EffectsExporter::operator()(Material *ma, Object *ob)
 			{
 				if (me->pdata.layers[i].type == CD_MTEXPOLY) {
 					MTexPoly *txface = (MTexPoly *)me->pdata.layers[i].data;
-					MFace *mface = me->mface;
-					for (int j = 0; j < me->totpoly; j++, mface++, txface++) {
+					MPoly *mpoly = me->mpoly;
+					for (int j = 0; j < me->totpoly; j++, mpoly++, txface++) {
 
-						Material *mat = give_current_material(ob, mface->mat_nr + 1);
+						Material *mat = give_current_material(ob, mpoly->mat_nr + 1);
 						if (mat != ma) 
 							continue;
 
@@ -381,7 +381,7 @@ void EffectsExporter::operator()(Material *ma, Object *ob)
 	}
 
 	std::set<Image *>::iterator uv_t_iter;
-	for(uv_t_iter = uv_textures.begin(); uv_t_iter != uv_textures.end(); uv_t_iter++ ) {
+	for (uv_t_iter = uv_textures.begin(); uv_t_iter != uv_textures.end(); uv_t_iter++ ) {
 		Image *ima = *uv_t_iter;
 		std::string key(id_name(ima));
 		key = translate_id(key);
@@ -405,7 +405,7 @@ void EffectsExporter::operator()(Material *ma, Object *ob)
 	ep.closeProfile();
 	if (twoSided)
 		mSW->appendTextBlock("<extra><technique profile=\"MAX3D\"><double_sided>1</double_sided></technique></extra>");
-	closeEffect();	
+	closeEffect();
 }
 
 COLLADASW::ColorOrTexture EffectsExporter::createTexture(Image *ima,

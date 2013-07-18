@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/FilterBase.cpp
  *  \ingroup bgevideotex
@@ -54,7 +58,7 @@ void FilterBase::release (void)
 
 
 // set new previous filter
-void FilterBase::setPrevious (PyFilter * filt, bool useRefCnt)
+void FilterBase::setPrevious(PyFilter *filt, bool useRefCnt)
 {
 	// if reference counting has to be used
 	if (useRefCnt)
@@ -90,10 +94,10 @@ PyTypeList pyFilterTypes;
 
 
 // object allocation
-PyObject * Filter_allocNew (PyTypeObject * type, PyObject * args, PyObject * kwds)
+PyObject *Filter_allocNew (PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
 	// allocate object
-	PyFilter * self = reinterpret_cast<PyFilter*>(type->tp_alloc(type, 0));
+	PyFilter *self = reinterpret_cast<PyFilter*>(type->tp_alloc(type, 0));
 	// initialize object structure
 	self->m_filter = NULL;
 	// return allocated object
@@ -101,7 +105,7 @@ PyObject * Filter_allocNew (PyTypeObject * type, PyObject * args, PyObject * kwd
 }
 
 // object deallocation
-void Filter_dealloc (PyFilter * self)
+void Filter_dealloc(PyFilter *self)
 {
 	// release object attributes
 	if (self->m_filter != NULL)
@@ -114,13 +118,13 @@ void Filter_dealloc (PyFilter * self)
 
 
 // get previous pixel filter object
-PyObject * Filter_getPrevious (PyFilter * self, void * closure)
+PyObject *Filter_getPrevious (PyFilter *self, void *closure)
 {
 	// if filter object is available
 	if (self->m_filter != NULL)
 	{
 		// pixel filter object
-		PyObject * filt = reinterpret_cast<PyObject*>(self->m_filter->getPrevious());
+		PyObject *filt = reinterpret_cast<PyObject*>(self->m_filter->getPrevious());
 		// if filter is present
 		if (filt != NULL)
 		{
@@ -135,7 +139,7 @@ PyObject * Filter_getPrevious (PyFilter * self, void * closure)
 
 
 // set previous pixel filter object
-int Filter_setPrevious (PyFilter * self, PyObject * value, void * closure)
+int Filter_setPrevious(PyFilter *self, PyObject *value, void *closure)
 {
 	// if filter object is available
 	if (self->m_filter != NULL)

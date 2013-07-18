@@ -86,7 +86,7 @@ typedef struct Material {
 	ID id;
 	struct AnimData *adt;	/* animation data (must be immediately after id for utilities to use it) */ 
 	
-	short material_type, flag;	
+	short material_type, flag;
 	/* note, keep this below synced with render_types.h */
 	float r, g, b;
 	float specr, specg, specb;
@@ -130,8 +130,11 @@ typedef struct Material {
 	
 	/* for buttons and render*/
 	char rgbsel, texact, pr_type, use_nodes;
-	short pr_back, pr_lamp, pr_texture, ml_flag;	/* ml_flag is for disable base material */
+	short pr_lamp, pr_texture, ml_flag;	/* ml_flag is for disable base material */
 	
+	/* mapping */
+	char mapflag, pad;
+
 	/* shaders */
 	short diff_shader, spec_shader;
 	float roughness, refrac;
@@ -140,6 +143,8 @@ typedef struct Material {
 	float param[4];		/* size, smooth, size, smooth, for toonshader, 0 (fac) and 1 (fresnel) also for fresnel shader */
 	float rms;
 	float darkness;
+
+	/* runtime - OR'd from 'mtex' */
 	short texco, mapto;
 	
 	/* ramp colors */
@@ -151,7 +156,7 @@ typedef struct Material {
 	float rampfac_col, rampfac_spec;
 
 	struct MTex *mtex[18];		/* MAX_MTEX */
-	struct bNodeTree *nodetree;	
+	struct bNodeTree *nodetree;
 	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct Group *group;	/* light group */
 	struct PreviewImage *preview;
@@ -171,6 +176,9 @@ typedef struct Material {
 	int mapto_textured;	/* render-time cache to optimize texture lookups */
 	short shadowonly_flag;  /* "shadowsonly" type */
 	short index;            /* custom index for render passes */
+
+	short vcol_alpha;
+	short pad4[3];
 
 	ListBase gpumaterial;		/* runtime */
 } Material;
@@ -271,6 +279,9 @@ typedef struct Material {
 
 #define	MA_MODE_MASK	0x6fffffff	/* all valid mode bits */
 
+/* mapflag */
+#define MA_MAPFLAG_UVPROJECT (1 << 0)
+
 /* ray mirror fadeout */
 #define MA_RAYMIR_FADETOSKY	0
 #define MA_RAYMIR_FADETOMAT	1
@@ -284,6 +295,7 @@ typedef struct Material {
 #define MA_CUBIC			1
 #define MA_OBCOLOR			2
 #define MA_APPROX_OCCLUSION	4
+#define MA_GROUP_LOCAL      8
 
 /* diff_shader */
 #define MA_DIFF_LAMBERT		0
@@ -300,7 +312,7 @@ typedef struct Material {
 #define MA_SPEC_WARDISO		4
 
 /* dynamode */
-#define MA_DRAW_DYNABUTS    1		/* deprecated */
+// #define MA_DRAW_DYNABUTS    1		/* deprecated */
 #define MA_FH_NOR	        2
 
 /* ramps */
@@ -337,7 +349,7 @@ typedef struct Material {
 #define TEXCO_OBJECT	32
 #define TEXCO_LAVECTOR	64
 #define TEXCO_VIEW		128
-#define TEXCO_STICKY	256
+#define TEXCO_STICKY_	256  // DEPRECATED
 #define TEXCO_OSA		512
 #define TEXCO_WINDOW	1024
 #define NEED_UV			2048
@@ -364,7 +376,7 @@ typedef struct Material {
 #define MAP_AMB			2048
 #define MAP_DISPLACE	4096
 #define MAP_WARP		8192
-#define MAP_LAYER		16384		/* unused */
+// #define MAP_LAYER		16384		/* unused */
 
 /* volume mapto - reuse definitions for now - a bit naughty! */
 #define MAP_DENSITY				128
@@ -412,9 +424,6 @@ typedef struct Material {
 #define MA_SKY			7
 #define MA_HAIR			10
 #define MA_ATMOS		11
-
-/* pr_back */
-#define MA_DARK			1
 
 /* sss_flag */
 #define MA_DIFF_SSS		1

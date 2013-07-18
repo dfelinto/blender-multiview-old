@@ -63,7 +63,12 @@ private:
 	int m_renderpass;
 	
 	int m_elementsize;
-	
+
+	/**
+	 * @brief render data used for active rendering
+	 */
+	const RenderData *m_rd;
+
 protected:
 	/**
 	 * Constructor
@@ -80,6 +85,7 @@ protected:
 	 */
 	inline float *getInputBuffer() { return this->m_inputBuffer; }
 
+	void doInterpolation(float output[4], float x, float y, PixelSampler sampler);
 public:
 	/**
 	 * setter for the scene field. Will be called from
@@ -88,6 +94,7 @@ public:
 	 */
 	void setScene(Scene *scene) { this->m_scene = scene; }
 	Scene *getScene() { return this->m_scene; }
+	void setRenderData(const RenderData *rd) { this->m_rd = rd; }
 	void setLayerId(short layerId) { this->m_layerId = layerId; }
 	short getLayerId() { return this->m_layerId; }
 	void initExecution();

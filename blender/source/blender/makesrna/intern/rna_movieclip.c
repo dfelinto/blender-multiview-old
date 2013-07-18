@@ -25,21 +25,20 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 #include <limits.h>
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_movieclip.h"
-#include "BKE_tracking.h"
+#include "DNA_movieclip_types.h"
+#include "DNA_scene_types.h"
 
 #include "RNA_define.h"
 
 #include "rna_internal.h"
 
-#include "DNA_movieclip_types.h"
-#include "DNA_scene_types.h"
+#include "BKE_movieclip.h"
+#include "BKE_tracking.h"
 
 #include "WM_types.h"
 
@@ -49,6 +48,11 @@
 #ifdef RNA_RUNTIME
 
 #include "BKE_depsgraph.h"
+
+#include "ED_clip.h"
+
+#include "DNA_screen_types.h"
+#include "DNA_space_types.h"
 
 static void rna_MovieClip_reload_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
@@ -64,6 +68,39 @@ static void rna_MovieClip_size_get(PointerRNA *ptr, int *values)
 
 	values[0] = clip->lastsize[0];
 	values[1] = clip->lastsize[1];
+}
+
+static void rna_MovieClipUser_proxy_render_settings_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+{
+	ID *id = (ID *) ptr->id.data;
+	MovieClipUser *user = (MovieClipUser *) ptr->data;
+
+	/* when changing render settings of space clip user
+	 * clear cache for clip, so all the memory is available
+	 * for new render settings
+	 */
+	if (GS(id->name) == ID_SCR) {
+		bScreen *screen = (bScreen *) id;
+		ScrArea *area;
+		SpaceLink *sl;
+
+		for (area = screen->areabase.first; area; area = area->next) {
+			for (sl = area->spacedata.first; sl; sl = sl->next) {
+				if (sl->spacetype == SPACE_CLIP) {
+					SpaceClip *sc = (SpaceClip *) sl;
+
+					if (&sc->user == user) {
+						MovieClip *clip = ED_space_clip_get_clip(sc);
+
+						if (clip && (clip->flag & MCLIP_USE_PROXY))
+							BKE_movieclip_clear_cache(clip);
+
+						break;
+					}
+				}
+			}
+		}
+	}
 }
 
 #else
@@ -152,7 +189,7 @@ static void rna_def_movieclip_proxy(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "quality");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Quality", "JPEG quality of proxy images");
-	RNA_def_property_ui_range(prop, 1, 100, 1, 0);
+	RNA_def_property_ui_range(prop, 1, 100, 1, -1);
 
 	prop = RNA_def_property(srna, "timecode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "tc");
@@ -187,8 +224,7 @@ static void rna_def_moviecliUser(BlenderRNA *brna)
 	RNA_def_struct_ui_text(srna, "Movie Clip User",
 	                       "Parameters defining how a MovieClip datablock is used by another datablock");
 
-	prop = RNA_def_property(srna, "current_frame", PROP_INT, PROP_TIME);
-	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	prop = RNA_def_property(srna, "frame_current", PROP_INT, PROP_TIME);
 	RNA_def_property_int_sdna(prop, NULL, "framenr");
 	RNA_def_property_range(prop, MINAFRAME, MAXFRAME);
 	RNA_def_property_ui_text(prop, "Current Frame", "Current frame number in movie or image sequence");
@@ -199,13 +235,13 @@ static void rna_def_moviecliUser(BlenderRNA *brna)
 	RNA_def_property_enum_items(prop, clip_render_size_items);
 	RNA_def_property_ui_text(prop, "Proxy render size",
 	                         "Draw preview using full resolution or different proxy resolutions");
-	RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+	RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_MovieClipUser_proxy_render_settings_update");
 
 	/* render undistorted */
 	prop = RNA_def_property(srna, "use_render_undistorted", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "render_flag", MCLIP_PROXY_RENDER_UNDISTORT);
 	RNA_def_property_ui_text(prop, "Render Undistorted", "Render preview using undistorted proxy");
-	RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, NULL);
+	RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_MovieClipUser_proxy_render_settings_update");
 }
 
 static void rna_def_movieClipScopes(BlenderRNA *brna)
@@ -299,6 +335,18 @@ static void rna_def_movieclip(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Frame Offset", "Offset of footage first frame relative to it's file name "
 	                         "(affects only how footage is loading, does not change data associated with a clip)");
 	RNA_def_property_update(prop, NC_MOVIECLIP | ND_DISPLAY, "rna_MovieClip_reload_update");
+
+	/* length */
+	prop = RNA_def_property(srna, "frame_duration", PROP_INT, PROP_NONE);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_int_sdna(prop, NULL, "len");
+	RNA_def_property_ui_text(prop, "Duration", "Detected duration of movie clip in frames");
+
+	/* color management */
+	prop = RNA_def_property(srna, "colorspace_settings", PROP_POINTER, PROP_NONE);
+	RNA_def_property_pointer_sdna(prop, NULL, "colorspace_settings");
+	RNA_def_property_struct_type(prop, "ColorManagedInputColorspaceSettings");
+	RNA_def_property_ui_text(prop, "Color Space Settings", "Input color space settings");
 }
 
 void RNA_def_movieclip(BlenderRNA *brna)

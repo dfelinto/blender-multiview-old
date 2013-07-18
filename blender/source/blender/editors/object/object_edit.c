@@ -41,7 +41,6 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "BLI_ghash.h"
-#include "BLI_rand.h"
 
 #include "DNA_armature_types.h"
 #include "DNA_curve_types.h"
@@ -79,7 +78,7 @@
 #include "BKE_sca.h"
 #include "BKE_softbody.h"
 #include "BKE_modifier.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "ED_armature.h"
 #include "ED_curve.h"
@@ -150,7 +149,7 @@ static int object_hide_view_clear_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	if (changed) {
 		DAG_id_type_tag(bmain, ID_OB);
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 	}
 
@@ -201,13 +200,13 @@ static int object_hide_view_set_exec(bContext *C, wmOperator *op)
 					ED_base_object_activate(C, NULL);
 				}
 			}
-		}	
+		}
 	}
 	CTX_DATA_END;
 
 	if (changed) {
 		DAG_id_type_tag(bmain, ID_OB);
-		DAG_scene_sort(bmain, scene);
+		DAG_relations_tag_update(bmain);
 		
 		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, CTX_data_scene(C));
 		
@@ -312,29 +311,26 @@ void OBJECT_OT_hide_render_set(wmOperatorType *ot)
 
 /* ******************* toggle editmode operator  ***************** */
 
-void ED_object_exit_editmode(bContext *C, int flag)
+/**
+ * Load EditMode data back into the object,
+ * optionally freeing the editmode data.
+ */
+static bool ED_object_editmode_load_ex(Object *obedit, const bool freedata)
 {
-	/* Note! only in exceptional cases should 'EM_DO_UNDO' NOT be in the flag */
+	if (obedit == NULL) {
+		return false;
+	}
 
-	Scene *scene = CTX_data_scene(C);
-	Object *obedit = CTX_data_edit_object(C);
-	int freedata = flag & EM_FREEDATA;
-	
-	if (obedit == NULL) return;
-	
-	if (flag & EM_WAITCURSOR) waitcursor(1);
 	if (obedit->type == OB_MESH) {
 		Mesh *me = obedit->data;
-		
-//		if (EM_texFaceCheck())
-		
+
 		if (me->edit_btmesh->bm->totvert > MESH_MAX_VERTS) {
 			error("Too many vertices");
-			return;
+			return false;
 		}
-		
+
 		EDBM_mesh_load(obedit);
-		
+
 		if (freedata) {
 			EDBM_mesh_free(me->edit_btmesh);
 			MEM_freeN(me->edit_btmesh);
@@ -367,6 +363,34 @@ void ED_object_exit_editmode(bContext *C, int flag)
 		if (freedata) free_editMball(obedit);
 	}
 
+	return true;
+}
+
+bool ED_object_editmode_load(Object *obedit)
+{
+	return ED_object_editmode_load_ex(obedit, false);
+}
+
+void ED_object_editmode_exit(bContext *C, int flag)
+{
+	/* Note! only in exceptional cases should 'EM_DO_UNDO' NOT be in the flag */
+	/* Note! if 'EM_FREEDATA' isn't in the flag, use ED_object_editmode_load directly */
+	Scene *scene = CTX_data_scene(C);
+	Object *obedit = CTX_data_edit_object(C);
+	const bool freedata = (flag & EM_FREEDATA) != 0;
+
+	if (flag & EM_WAITCURSOR) waitcursor(1);
+
+	if (ED_object_editmode_load_ex(obedit, freedata) == false) {
+		/* in rare cases (background mode) its possible active object
+		 * is flagged for editmode, without 'obedit' being set [#35489] */
+		if (UNLIKELY(scene->basact && (scene->basact->object->mode & OB_MODE_EDIT))) {
+			scene->basact->object->mode &= ~OB_MODE_EDIT;
+		}
+		if (flag & EM_WAITCURSOR) waitcursor(0);
+		return;
+	}
+
 	/* freedata only 0 now on file saves and render */
 	if (freedata) {
 		ListBase pidlist;
@@ -376,7 +400,7 @@ void ED_object_exit_editmode(bContext *C, int flag)
 		scene->obedit = NULL; // XXX for context
 
 		/* flag object caches as outdated */
-		BKE_ptcache_ids_from_object(&pidlist, obedit, NULL, 0);
+		BKE_ptcache_ids_from_object(&pidlist, obedit, scene, 0);
 		for (pid = pidlist.first; pid; pid = pid->next) {
 			if (pid->type != PTCACHE_TYPE_PARTICLES) /* particles don't need reset on geometry change */
 				pid->cache->flag |= PTCACHE_OUTDATED;
@@ -390,17 +414,17 @@ void ED_object_exit_editmode(bContext *C, int flag)
 	
 		if (flag & EM_DO_UNDO)
 			ED_undo_push(C, "Editmode");
-	
-		if (flag & EM_WAITCURSOR) waitcursor(0);
-	
+
 		WM_event_add_notifier(C, NC_SCENE | ND_MODE | NS_MODE_OBJECT, scene);
 
 		obedit->mode &= ~OB_MODE_EDIT;
 	}
+
+	if (flag & EM_WAITCURSOR) waitcursor(0);
 }
 
 
-void ED_object_enter_editmode(bContext *C, int flag)
+void ED_object_editmode_enter(bContext *C, int flag)
 {
 	Scene *scene = CTX_data_scene(C);
 	Base *base = NULL;
@@ -429,6 +453,10 @@ void ED_object_enter_editmode(bContext *C, int flag)
 
 	ob = base->object;
 
+	/* this checks actual object->data, for cases when other scenes have it in editmode context */
+	if ( BKE_object_is_in_editmode(ob) )
+		return;
+	
 	if (BKE_object_obdata_is_libdata(ob)) {
 		error_libdata();
 		return;
@@ -452,11 +480,11 @@ void ED_object_enter_editmode(bContext *C, int flag)
 
 		EDBM_mesh_make(CTX_data_tool_settings(C), scene, ob);
 
-		em = BMEdit_FromObject(ob);
+		em = BKE_editmesh_from_object(ob);
 		if (LIKELY(em)) {
 			/* order doesn't matter */
 			EDBM_mesh_normals_update(em);
-			BMEdit_RecalcTessellation(em);
+			BKE_editmesh_tessface_calc(em);
 
 			BM_mesh_select_mode_flush(em->bm);
 		}
@@ -533,9 +561,9 @@ static int editmode_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 	ToolSettings *toolsettings =  CTX_data_tool_settings(C);
 
 	if (!CTX_data_edit_object(C))
-		ED_object_enter_editmode(C, EM_WAITCURSOR);
+		ED_object_editmode_enter(C, EM_WAITCURSOR);
 	else
-		ED_object_exit_editmode(C, EM_FREEDATA | EM_FREEUNDO | EM_WAITCURSOR);  /* had EM_DO_UNDO but op flag calls undo too [#24685] */
+		ED_object_editmode_exit(C, EM_FREEDATA | EM_FREEUNDO | EM_WAITCURSOR);  /* had EM_DO_UNDO but op flag calls undo too [#24685] */
 	
 	ED_space_image_uv_sculpt_update(CTX_wm_manager(C), toolsettings);
 
@@ -550,7 +578,8 @@ static int editmode_toggle_poll(bContext *C)
 	if (ELEM(NULL, ob, ob->data) || ((ID *)ob->data)->lib)
 		return 0;
 
-	if (ob->restrictflag & OB_RESTRICT_VIEW)
+	/* if hidden but in edit mode, we still display */
+	if ((ob->restrictflag & OB_RESTRICT_VIEW) && !(ob->mode & OB_MODE_EDIT))
 		return 0;
 
 	return (ob->type == OB_MESH || ob->type == OB_ARMATURE ||
@@ -584,7 +613,7 @@ static int posemode_exec(bContext *C, wmOperator *UNUSED(op))
 	
 	if (base->object->type == OB_ARMATURE) {
 		if (base->object == CTX_data_edit_object(C)) {
-			ED_object_exit_editmode(C, EM_FREEDATA | EM_DO_UNDO);
+			ED_object_editmode_exit(C, EM_FREEDATA | EM_DO_UNDO);
 			ED_armature_enter_posemode(C, base);
 		}
 		else if (base->object->mode & OB_MODE_POSE)
@@ -649,11 +678,11 @@ static void copymenu_properties(Scene *scene, View3D *v3d, Object *ob)
 		for (base = FIRSTBASE; base; base = base->next) {
 			if ((base != BASACT) && (TESTBASELIB(v3d, base))) {
 				if (nr == 1) { /* replace */
-					copy_properties(&base->object->prop, &ob->prop);
+					BKE_bproperty_copy_list(&base->object->prop, &ob->prop);
 				}
 				else {
 					for (prop = ob->prop.first; prop; prop = prop->next) {
-						set_ob_property(base->object, prop);
+						BKE_bproperty_object_set(base->object, prop);
 					}
 				}
 			}
@@ -665,7 +694,7 @@ static void copymenu_properties(Scene *scene, View3D *v3d, Object *ob)
 		if (prop) {
 			for (base = FIRSTBASE; base; base = base->next) {
 				if ((base != BASACT) && (TESTBASELIB(v3d, base))) {
-					set_ob_property(base->object, prop);
+					BKE_bproperty_object_set(base->object, prop);
 				}
 			}
 		}
@@ -684,7 +713,7 @@ static void copymenu_logicbricks(Scene *scene, View3D *v3d, Object *ob)
 			if (TESTBASELIB(v3d, base)) {
 				
 				/* first: free all logic */
-				free_sensors(&base->object->sensors);				
+				free_sensors(&base->object->sensors);
 				unlink_controllers(&base->object->controllers);
 				free_controllers(&base->object->controllers);
 				unlink_actuators(&base->object->actuators);
@@ -766,7 +795,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 	Base *base;
 	Curve *cu, *cu1;
 	Nurb *nu;
-	int do_scene_sort = FALSE;
+	bool do_depgraph_update = false;
 	
 	if (scene->id.lib) return;
 
@@ -793,7 +822,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 	for (base = FIRSTBASE; base; base = base->next) {
 		if (base != BASACT) {
 			if (TESTBASELIB(v3d, base)) {
-				base->object->recalc |= OB_RECALC_OB;
+				DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 				
 				if (event == 1) {  /* loc */
 					copy_v3_v3(base->object->loc, ob->loc);
@@ -885,14 +914,14 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 						id_us_plus((ID *)cu1->vfonti);
 						if (cu1->vfontbi) cu1->vfontbi->id.us--;
 						cu1->vfontbi = cu->vfontbi;
-						id_us_plus((ID *)cu1->vfontbi);						
+						id_us_plus((ID *)cu1->vfontbi);
 
 						BKE_vfont_to_curve(bmain, scene, base->object, 0); /* needed? */
 
 						
 						BLI_strncpy(cu1->family, cu->family, sizeof(cu1->family));
 						
-						base->object->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 					}
 				}
 				else if (event == 19) {   /* bevel settings */
@@ -908,7 +937,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 						cu1->ext1 = cu->ext1;
 						cu1->ext2 = cu->ext2;
 						
-						base->object->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 					}
 				}
 				else if (event == 25) {   /* curve resolution */
@@ -927,7 +956,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 							nu = nu->next;
 						}
 						
-						base->object->recalc |= OB_RECALC_DATA;
+						DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 					}
 				}
 				else if (event == 21) {
@@ -943,21 +972,21 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 							}
 
 							modifier_copyData(md, tmd);
-							base->object->recalc |= OB_RECALC_DATA;
+							DAG_id_tag_update(&base->object->id, OB_RECALC_DATA);
 						}
 					}
 				}
 				else if (event == 22) {
 					/* Copy the constraint channels over */
-					copy_constraints(&base->object->constraints, &ob->constraints, TRUE);
+					BKE_copy_constraints(&base->object->constraints, &ob->constraints, TRUE);
 					
-					do_scene_sort = TRUE;
+					do_depgraph_update = true;
 				}
 				else if (event == 23) {
 					base->object->softflag = ob->softflag;
 					if (base->object->soft) sbFree(base->object->soft);
 					
-					base->object->soft = copy_softbody(ob->soft);
+					base->object->soft = copy_softbody(ob->soft, FALSE);
 
 					if (!modifiers_findByType(base->object, eModifierType_Softbody)) {
 						BLI_addhead(&base->object->modifiers, modifier_new(eModifierType_Softbody));
@@ -988,7 +1017,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 							cu1->flag |= CU_UV_ORCO;
 						else
 							cu1->flag &= ~CU_UV_ORCO;
-					}		
+					}
 				}
 				else if (event == 29) { /* protected bits */
 					base->object->protectflag = ob->protectflag;
@@ -1003,13 +1032,11 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 		}
 	}
 	
-	if (do_scene_sort)
-		DAG_scene_sort(bmain, scene);
-
-	DAG_ids_flush_update(bmain, 0);
+	if (do_depgraph_update)
+		DAG_relations_tag_update(bmain);
 }
 
-static void UNUSED_FUNCTION(copy_attr_menu) (Main * bmain, Scene * scene, View3D * v3d)
+static void UNUSED_FUNCTION(copy_attr_menu) (Main *bmain, Scene *scene, View3D *v3d)
 {
 	Object *ob;
 	short event;
@@ -1017,9 +1044,9 @@ static void UNUSED_FUNCTION(copy_attr_menu) (Main * bmain, Scene * scene, View3D
 	
 	if (!(ob = OBACT)) return;
 	
-	if (scene->obedit) { // XXX get from context
-//		if (ob->type == OB_MESH)
-// XXX			mesh_copy_menu();
+	if (scene->obedit) { /* XXX get from context */
+/*		if (ob->type == OB_MESH) */
+/* XXX			mesh_copy_menu(); */
 		return;
 	}
 	
@@ -1030,34 +1057,34 @@ static void UNUSED_FUNCTION(copy_attr_menu) (Main * bmain, Scene * scene, View3D
 	 */
 	
 	strcpy(str,
-	       "Copy Attributes %t|Location%x1|Rotation%x2|Size%x3|Draw Options%x4|"
-	       "Time Offset%x5|Dupli%x6|Object Color%x31|%l|Mass%x7|Damping%x8|All Physical Attributes%x11|Properties%x9|"
-	       "Logic Bricks%x10|Protected Transform%x29|%l");
+	       "Copy Attributes %t|Location %x1|Rotation %x2|Size %x3|Draw Options %x4|"
+	       "Time Offset %x5|Dupli %x6|Object Color %x31|%l|Mass %x7|Damping %x8|All Physical Attributes %x11|Properties %x9|"
+	       "Logic Bricks %x10|Protected Transform %x29|%l");
 	
-	strcat(str, "|Object Constraints%x22");
-	strcat(str, "|NLA Strips%x26");
+	strcat(str, "|Object Constraints %x22");
+	strcat(str, "|NLA Strips %x26");
 	
-// XXX	if (OB_TYPE_SUPPORT_MATERIAL(ob->type)) {
-//		strcat(str, "|Texture Space%x17");
-//	}	
+/* XXX	if (OB_TYPE_SUPPORT_MATERIAL(ob->type)) { */
+/*		strcat(str, "|Texture Space %x17"); */
+/*	} */
 	
-	if (ob->type == OB_FONT) strcat(str, "|Font Settings%x18|Bevel Settings%x19");
-	if (ob->type == OB_CURVE) strcat(str, "|Bevel Settings%x19|UV Orco%x28");
+	if (ob->type == OB_FONT) strcat(str, "|Font Settings %x18|Bevel Settings %x19");
+	if (ob->type == OB_CURVE) strcat(str, "|Bevel Settings %x19|UV Orco %x28");
 	
 	if ((ob->type == OB_FONT) || (ob->type == OB_CURVE)) {
-		strcat(str, "|Curve Resolution%x25");
+		strcat(str, "|Curve Resolution %x25");
 	}
 
 	if (ob->type == OB_MESH) {
-		strcat(str, "|Subsurf Settings%x21|AutoSmooth%x27");
+		strcat(str, "|Subsurf Settings %x21|AutoSmooth %x27");
 	}
 
-	if (ob->soft) strcat(str, "|Soft Body Settings%x23");
+	if (ob->soft) strcat(str, "|Soft Body Settings %x23");
 	
-	strcat(str, "|Pass Index%x30");
+	strcat(str, "|Pass Index %x30");
 	
 	if (ob->type == OB_MESH || ob->type == OB_CURVE || ob->type == OB_LATTICE || ob->type == OB_SURF) {
-		strcat(str, "|Modifiers ...%x24");
+		strcat(str, "|Modifiers ... %x24");
 	}
 
 	event = pupmenu(str);
@@ -1129,7 +1156,7 @@ void ED_objects_recalculate_paths(bContext *C, Scene *scene)
 
 
 /* show popup to determine settings */
-static int object_calculate_paths_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int object_calculate_paths_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Object *ob = CTX_data_active_object(C);
 	
@@ -1146,7 +1173,7 @@ static int object_calculate_paths_invoke(bContext *C, wmOperator *op, wmEvent *U
 	
 	/* show popup dialog to allow editing of range... */
 	/* FIXME: hardcoded dimensions here are just arbitrary */
-	return WM_operator_props_dialog_popup(C, op, 200, 200);
+	return WM_operator_props_dialog_popup(C, op, 10 * UI_UNIT_X, 10 * UI_UNIT_Y);
 }
 
 /* Calculate/recalculate whole paths (avs.path_sf to avs.path_ef) */
@@ -1327,7 +1354,7 @@ void OBJECT_OT_shade_flat(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Shade Flat";
-	ot->description = "Display faces 'flat'";
+	ot->description = "Render and display faces uniform, using Face Normals";
 	ot->idname = "OBJECT_OT_shade_flat";
 	
 	/* api callbacks */
@@ -1342,7 +1369,7 @@ void OBJECT_OT_shade_smooth(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Shade Smooth";
-	ot->description = "Display faces 'smooth' (using vertex normals)";
+	ot->description = "Render and display faces smooth, using interpolated Vertex Normals";
 	ot->idname = "OBJECT_OT_shade_smooth";
 	
 	/* api callbacks */
@@ -1355,7 +1382,7 @@ void OBJECT_OT_shade_smooth(wmOperatorType *ot)
 
 /* ********************** */
 
-static void UNUSED_FUNCTION(image_aspect) (Scene * scene, View3D * v3d)
+static void UNUSED_FUNCTION(image_aspect) (Scene *scene, View3D *v3d)
 {
 	/* all selected objects with an image map: scale in image aspect */
 	Base *base;
@@ -1380,7 +1407,7 @@ static void UNUSED_FUNCTION(image_aspect) (Scene * scene, View3D * v3d)
 						if (ma->mtex[b] && ma->mtex[b]->tex) {
 							tex = ma->mtex[b]->tex;
 							if (tex->type == TEX_IMAGE && tex->ima) {
-								ImBuf *ibuf = BKE_image_get_ibuf(tex->ima, NULL);
+								ImBuf *ibuf = BKE_image_acquire_ibuf(tex->ima, NULL, NULL);
 								
 								/* texturespace */
 								space = 1.0;
@@ -1401,7 +1428,9 @@ static void UNUSED_FUNCTION(image_aspect) (Scene * scene, View3D * v3d)
 								else ob->size[1] = ob->size[0] * y / x;
 								
 								done = TRUE;
-								DAG_id_tag_update(&ob->id, OB_RECALC_OB);								
+								DAG_id_tag_update(&ob->id, OB_RECALC_OB);
+
+								BKE_image_release_ibuf(tex->ima, ibuf, NULL);
 							}
 						}
 						if (done) break;
@@ -1414,31 +1443,34 @@ static void UNUSED_FUNCTION(image_aspect) (Scene * scene, View3D * v3d)
 	
 }
 
-
 static EnumPropertyItem *object_mode_set_itemsf(bContext *C, PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), int *free)
-{	
+{
 	EnumPropertyItem *input = object_mode_items;
 	EnumPropertyItem *item = NULL;
 	Object *ob;
 	int totitem = 0;
-	
+
 	if (!C) /* needed for docs */
 		return object_mode_items;
 
-
-
 	ob = CTX_data_active_object(C);
-	while (ob && input->identifier) {
-		if ((input->value == OB_MODE_EDIT && OB_TYPE_SUPPORT_EDITMODE(ob->type)) ||
-		    (input->value == OB_MODE_POSE && (ob->type == OB_ARMATURE)) ||
-		    (input->value == OB_MODE_PARTICLE_EDIT && ob->particlesystem.first) ||
-		    ((input->value == OB_MODE_SCULPT || input->value == OB_MODE_VERTEX_PAINT ||
-		      input->value == OB_MODE_WEIGHT_PAINT || input->value == OB_MODE_TEXTURE_PAINT) && (ob->type == OB_MESH)) ||
-		    (input->value == OB_MODE_OBJECT))
-		{
-			RNA_enum_item_add(&item, &totitem, input);
+	if (ob) {
+		while (input->identifier) {
+			if ((input->value == OB_MODE_EDIT && OB_TYPE_SUPPORT_EDITMODE(ob->type)) ||
+			    (input->value == OB_MODE_POSE && (ob->type == OB_ARMATURE)) ||
+			    (input->value == OB_MODE_PARTICLE_EDIT && ob->particlesystem.first) ||
+			    ((input->value == OB_MODE_SCULPT || input->value == OB_MODE_VERTEX_PAINT ||
+			      input->value == OB_MODE_WEIGHT_PAINT || input->value == OB_MODE_TEXTURE_PAINT) && (ob->type == OB_MESH)) ||
+			    (input->value == OB_MODE_OBJECT))
+			{
+				RNA_enum_item_add(&item, &totitem, input);
+			}
+			input++;
 		}
-		input++;
+	}
+	else {
+		/* We need at least this one! */
+		RNA_enum_items_add_value(&item, &totitem, input, OB_MODE_OBJECT);
 	}
 
 	RNA_enum_item_end(&item, &totitem);
@@ -1535,8 +1567,6 @@ static int object_mode_set_exec(bContext *C, wmOperator *op)
 
 void OBJECT_OT_mode_set(wmOperatorType *ot)
 {
-	PropertyRNA *prop;
-
 	/* identifiers */
 	ot->name = "Set Object Mode";
 	ot->description = "Sets the object interaction mode";
@@ -1550,8 +1580,8 @@ void OBJECT_OT_mode_set(wmOperatorType *ot)
 	/* flags */
 	ot->flag = 0; /* no register/undo here, leave it to operators being called */
 	
-	prop = RNA_def_enum(ot->srna, "mode", object_mode_items, OB_MODE_OBJECT, "Mode", "");
-	RNA_def_enum_funcs(prop, object_mode_set_itemsf);
+	ot->prop = RNA_def_enum(ot->srna, "mode", object_mode_items, OB_MODE_OBJECT, "Mode", "");
+	RNA_def_enum_funcs(ot->prop, object_mode_set_itemsf);
 
 	RNA_def_boolean(ot->srna, "toggle", 0, "Toggle", "");
 }
@@ -1585,7 +1615,7 @@ static int game_property_new(bContext *C, wmOperator *op)
 	char name[MAX_NAME];
 	int type = RNA_enum_get(op->ptr, "type");
 
-	prop = new_property(type);
+	prop = BKE_bproperty_new(type);
 	BLI_addtail(&ob->prop, prop);
 
 	RNA_string_get(op->ptr, "name", name);
@@ -1593,7 +1623,7 @@ static int game_property_new(bContext *C, wmOperator *op)
 		BLI_strncpy(prop->name, name, sizeof(prop->name));
 	}
 
-	unique_property(NULL, prop, 0); // make_unique_prop_names(prop->name);
+	BKE_bproperty_unique(NULL, prop, 0); // make_unique_prop_names(prop->name);
 
 	WM_event_add_notifier(C, NC_LOGIC, NULL);
 	return OPERATOR_FINISHED;
@@ -1631,7 +1661,7 @@ static int game_property_remove(bContext *C, wmOperator *op)
 
 	if (prop) {
 		BLI_remlink(&ob->prop, prop);
-		free_property(prop);
+		BKE_bproperty_free(prop);
 
 		WM_event_add_notifier(C, NC_LOGIC, NULL);
 		return OPERATOR_FINISHED;
@@ -1669,10 +1699,6 @@ static EnumPropertyItem game_properties_copy_operations[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-static EnumPropertyItem gameprops_items[] = {
-	{0, NULL, 0, NULL, NULL}
-};
-
 static EnumPropertyItem *gameprops_itemf(bContext *C, PointerRNA *UNUSED(ptr), PropertyRNA *UNUSED(prop), int *free)
 {	
 	Object *ob = ED_object_active_context(C);
@@ -1682,7 +1708,7 @@ static EnumPropertyItem *gameprops_itemf(bContext *C, PointerRNA *UNUSED(ptr), P
 	int a, totitem = 0;
 	
 	if (!ob)
-		return gameprops_items;
+		return DummyRNA_NULL_items;
 
 	for (a = 1, prop = ob->prop.first; prop; prop = prop->next, a++) {
 		tmp.value = a;
@@ -1711,7 +1737,7 @@ static int game_property_copy_exec(bContext *C, wmOperator *op)
 			CTX_DATA_BEGIN(C, Object *, ob_iter, selected_editable_objects)
 			{
 				if (ob != ob_iter)
-					set_ob_property(ob_iter, prop);
+					BKE_bproperty_object_set(ob_iter, prop);
 			} CTX_DATA_END;
 		}
 	}
@@ -1721,12 +1747,12 @@ static int game_property_copy_exec(bContext *C, wmOperator *op)
 		{
 			if (ob != ob_iter) {
 				if (type == COPY_PROPERTIES_REPLACE) {
-					copy_properties(&ob_iter->prop, &ob->prop);
+					BKE_bproperty_copy_list(&ob_iter->prop, &ob->prop);
 				}
 				else {
 					/* merge - the default when calling with no argument */
 					for (prop = ob->prop.first; prop; prop = prop->next) {
-						set_ob_property(ob_iter, prop);
+						BKE_bproperty_object_set(ob_iter, prop);
 					}
 				}
 			}
@@ -1753,7 +1779,7 @@ void OBJECT_OT_game_property_copy(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	RNA_def_enum(ot->srna, "operation", game_properties_copy_operations, 3, "Operation", "");
-	prop = RNA_def_enum(ot->srna, "property", gameprops_items, 0, "Property", "Properties to copy");
+	prop = RNA_def_enum(ot->srna, "property", DummyRNA_NULL_items, 0, "Property", "Properties to copy");
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
 	RNA_def_enum_funcs(prop, gameprops_itemf);
 	ot->prop = prop;
@@ -1763,7 +1789,7 @@ static int game_property_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	CTX_DATA_BEGIN(C, Object *, ob_iter, selected_editable_objects)
 	{
-		free_properties(&ob_iter->prop);
+		BKE_bproperty_free_list(&ob_iter->prop);
 	}
 	CTX_DATA_END;
 
@@ -1795,7 +1821,7 @@ static int logicbricks_copy_exec(bContext *C, wmOperator *UNUSED(op))
 	{
 		if (ob != ob_iter) {
 			/* first: free all logic */
-			free_sensors(&ob_iter->sensors);				
+			free_sensors(&ob_iter->sensors);
 			unlink_controllers(&ob_iter->controllers);
 			free_controllers(&ob_iter->controllers);
 			unlink_actuators(&ob_iter->actuators);
@@ -1861,16 +1887,17 @@ static int game_physics_copy_exec(bContext *C, wmOperator *UNUSED(op))
 			ob_iter->max_vel = ob->max_vel;
 			ob_iter->obstacleRad = ob->obstacleRad;
 			ob_iter->mass = ob->mass;
-			ob_iter->anisotropicFriction[0] = ob->anisotropicFriction[0];
-			ob_iter->anisotropicFriction[1] = ob->anisotropicFriction[1];
-			ob_iter->anisotropicFriction[2] = ob->anisotropicFriction[2];
-			ob_iter->collision_boundtype = ob->collision_boundtype;			
+			copy_v3_v3(ob_iter->anisotropicFriction, ob->anisotropicFriction);
+			ob_iter->collision_boundtype = ob->collision_boundtype;
 			ob_iter->margin = ob->margin;
 			ob_iter->bsoft = copy_bulletsoftbody(ob->bsoft);
 			if (ob->restrictflag & OB_RESTRICT_RENDER) 
 				ob_iter->restrictflag |= OB_RESTRICT_RENDER;
 			else
 				ob_iter->restrictflag &= ~OB_RESTRICT_RENDER;
+
+			ob_iter->col_group = ob->col_group;
+			ob_iter->col_mask = ob->col_mask;
 		}
 	}
 	CTX_DATA_END;

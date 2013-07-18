@@ -45,7 +45,7 @@ protected:
 	 */
 	MathBaseOperation();
 
-	void clampIfNeeded(float *color);
+	void clampIfNeeded(float color[4]);
 public:
 	/**
 	 * the inner loop of this program
@@ -154,6 +154,12 @@ public:
 class MathGreaterThanOperation : public MathBaseOperation {
 public:
 	MathGreaterThanOperation() : MathBaseOperation() {}
+	void executePixel(float output[4], float x, float y, PixelSampler sampler);
+};
+
+class MathModuloOperation : public MathBaseOperation {
+public:
+	MathModuloOperation() : MathBaseOperation() {}
 	void executePixel(float output[4], float x, float y, PixelSampler sampler);
 };
 

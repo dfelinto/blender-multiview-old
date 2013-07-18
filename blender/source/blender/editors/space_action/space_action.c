@@ -39,7 +39,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -129,7 +128,7 @@ static SpaceLink *action_new(const bContext *C)
 /* not spacelink itself */
 static void action_free(SpaceLink *UNUSED(sl))
 {	
-//	SpaceAction *saction= (SpaceAction *) sl;
+//	SpaceAction *saction = (SpaceAction *) sl;
 }
 
 
@@ -185,6 +184,8 @@ static void action_main_area_draw(const bContext *C, ARegion *ar)
 	UI_view2d_grid_draw(v2d, grid, V2D_GRIDLINES_ALL);
 	UI_view2d_grid_free(grid);
 	
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
+
 	/* data */
 	if (ANIM_animdata_get_context(C, &ac)) {
 		draw_channel_strips(&ac, saction, ar);
@@ -203,7 +204,11 @@ static void action_main_area_draw(const bContext *C, ARegion *ar)
 	
 	/* preview range */
 	UI_view2d_view_ortho(v2d);
-	ANIM_draw_previewrange(C, v2d);
+	ANIM_draw_previewrange(C, v2d, 0);
+
+	/* callback */
+	UI_view2d_view_ortho(v2d);
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_VIEW);
 	
 	/* reset view matrix */
 	UI_view2d_view_restore(C);
@@ -219,6 +224,9 @@ static void action_channel_area_init(wmWindowManager *wm, ARegion *ar)
 {
 	wmKeyMap *keymap;
 	
+	/* ensure the 2d view sync works - main region has bottom scroller */
+	ar->v2d.scroll = V2D_SCROLL_BOTTOM;
+	
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_LIST, ar->winx, ar->winy);
 	
 	/* own keymap */
@@ -231,7 +239,6 @@ static void action_channel_area_draw(const bContext *C, ARegion *ar)
 	/* draw entirely, view changes should be handled here */
 	bAnimContext ac;
 	View2D *v2d = &ar->v2d;
-	View2DScrollers *scrollers;
 	
 	/* clear and setup matrix */
 	UI_ThemeClearColor(TH_BACK);
@@ -247,10 +254,7 @@ static void action_channel_area_draw(const bContext *C, ARegion *ar)
 	/* reset view matrix */
 	UI_view2d_view_restore(C);
 	
-	/* scrollers */
-	scrollers = UI_view2d_scrollers_calc(C, v2d, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
-	UI_view2d_scrollers_draw(C, v2d, scrollers);
-	UI_view2d_scrollers_free(scrollers);
+	/* no scrollers here */
 }
 
 
@@ -357,8 +361,8 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 	
 	/* context changes */
 	switch (wmn->category) {
-		case NC_SCREEN:
-			if (wmn->data == ND_GPENCIL) {
+		case NC_GPENCIL:
+			if (wmn->action == NA_EDITED) {
 				/* only handle this event in GPencil mode for performance considerations */
 				if (saction->mode == SACTCONT_GPENCIL)
 					ED_area_tag_redraw(sa);
@@ -377,7 +381,7 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 				ED_area_tag_refresh(sa);
 			break;
 		case NC_SCENE:
-			switch (wmn->data) {	
+			switch (wmn->data) {
 				case ND_OB_ACTIVE:  /* selection changed, so force refresh to flush (needs flag set to do syncing) */
 				case ND_OB_SELECT:
 					saction->flag |= SACTION_TEMP_NEEDCHANSYNC;
@@ -409,6 +413,7 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 				switch (wmn->data) {
 					case ND_DATA:
 						ED_area_tag_refresh(sa);
+						ED_area_tag_redraw(sa);
 						break;
 					default: /* just redrawing the view will do */
 						ED_area_tag_redraw(sa);
@@ -432,7 +437,7 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 					saction->flag |= SACTION_TEMP_NEEDCHANSYNC;
 					ED_area_tag_refresh(sa);
 					break;
-			}			
+			}
 			break;
 		case NC_WINDOW:
 			if (saction->flag & SACTION_TEMP_NEEDCHANSYNC) {

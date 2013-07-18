@@ -34,6 +34,8 @@
 
 #include <cstddef>
 #include <glog/logging.h>
+#include "Eigen/Core"
+#include "ceres/internal/macros.h"
 #include "ceres/internal/manual_constructor.h"
 
 namespace ceres {
@@ -136,7 +138,6 @@ class FixedArray {
   // and T must be the same, otherwise callers' assumptions about use
   // of this code will be broken.
   struct InnerContainer {
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     T element;
   };
 
@@ -167,11 +168,11 @@ inline FixedArray<T, S>::FixedArray(typename FixedArray<T, S>::size_type n)
       array_((n <= kInlineElements
               ? reinterpret_cast<InnerContainer*>(inline_space_)
               : new InnerContainer[n])) {
-  DCHECK_GE(n, 0);
+  DCHECK_GE(n, size_t(0));
 
   // Construct only the elements actually used.
   if (array_ == reinterpret_cast<InnerContainer*>(inline_space_)) {
-    for (int i = 0; i != size_; ++i) {
+    for (size_t i = 0; i != size_; ++i) {
       inline_space_[i].Init();
     }
   }
@@ -182,7 +183,7 @@ inline FixedArray<T, S>::~FixedArray() {
   if (array_ != reinterpret_cast<InnerContainer*>(inline_space_)) {
     delete[] array_;
   } else {
-    for (int i = 0; i != size_; ++i) {
+    for (size_t i = 0; i != size_; ++i) {
       inline_space_[i].Destroy();
     }
   }

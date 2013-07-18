@@ -53,8 +53,8 @@ class GHOST_DropTargetX11;
 /**
  * X11 implementation of GHOST_IWindow.
  * Dimensions are given in screen coordinates that are relative to the upper-left corner of the screen. 
- * @author	Laurence Bourn
- * @date	October 26, 2001
+ * \author	Laurence Bourn
+ * \date	October 26, 2001
  */
 
 class GHOST_WindowX11 : public GHOST_Window
@@ -64,16 +64,16 @@ public:
 	 * Constructor.
 	 * Creates a new window and opens it.
 	 * To check if the window was created properly, use the getValid() method.
-	 * @param title		The text shown in the title bar of the window.
-	 * @param left		The coordinate of the left edge of the window.
-	 * @param top		The coordinate of the top edge of the window.
-	 * @param width		The width the window.
-	 * @param height	The height the window.
-	 * @param state		The state the window is initially opened with.
-	 * @param parentWindow  Parent (embedder) window
-	 * @param type		The type of drawing context installed in this window.
-	 * @param stereoVisual	Stereo visual for quad buffered stereo.
-	 * @param numOfAASamples	Number of samples used for AA (zero if no AA)
+	 * \param title		The text shown in the title bar of the window.
+	 * \param left		The coordinate of the left edge of the window.
+	 * \param top		The coordinate of the top edge of the window.
+	 * \param width		The width the window.
+	 * \param height	The height the window.
+	 * \param state		The state the window is initially opened with.
+	 * \param parentWindow  Parent (embedder) window
+	 * \param type		The type of drawing context installed in this window.
+	 * \param stereoVisual	Stereo visual for quad buffered stereo.
+	 * \param numOfAASamples	Number of samples used for AA (zero if no AA)
 	 */
 	GHOST_WindowX11(
 	    GHOST_SystemX11 *system,
@@ -87,6 +87,7 @@ public:
 	    const GHOST_TEmbedderWindowID parentWindow,
 	    GHOST_TDrawingContextType type = GHOST_kDrawingContextTypeNone,
 	    const bool stereoVisual = false,
+	    const bool exclusive = false,
 	    const GHOST_TUns16 numOfAASamples = 0
 	    );
 
@@ -176,7 +177,7 @@ public:
 	~GHOST_WindowX11();
 
 	/**
-	 * @section x11specific X11 system specific calls
+	 * \section x11specific X11 system specific calls
 	 */
 
 	/**
@@ -196,32 +197,9 @@ public:
 	getXWindow(
 	    );
 #ifdef WITH_X11_XINPUT
-	class XTablet
+	GHOST_TabletData *GetTabletData()
 	{
-public:
-		GHOST_TabletData CommonData;
-
-		XDevice *StylusDevice;
-		XDevice *EraserDevice;
-
-		XID StylusID, EraserID;
-
-		int MotionEvent;
-		int ProxInEvent;
-		int ProxOutEvent;
-
-		int PressureLevels;
-		int XtiltLevels, YtiltLevels;
-	};
-
-	XTablet& GetXTablet()
-	{
-		return m_xtablet;
-	}
-
-	const GHOST_TabletData *GetTabletData()
-	{
-		return &m_xtablet.CommonData;
+		return &m_tabletData;
 	}
 #else // WITH_X11_XINPUT
 	const GHOST_TabletData *GetTabletData()
@@ -253,11 +231,15 @@ public:
 	bool m_post_init;
 	GHOST_TWindowState m_post_state;
 
+	GHOST_TSuccess beginFullScreen() const;
+
+	GHOST_TSuccess endFullScreen() const;
+
 protected:
 	/**
 	 * Tries to install a rendering context in this window.
-	 * @param type	The type of rendering context installed.
-	 * @return Indication as to whether installation has succeeded.
+	 * \param type	The type of rendering context installed.
+	 * \return Indication as to whether installation has succeeded.
 	 */
 	GHOST_TSuccess
 	installDrawingContext(
@@ -266,7 +248,7 @@ protected:
 
 	/**
 	 * Removes the current drawing context.
-	 * @return Indication as to whether removal has succeeded.
+	 * \return Indication as to whether removal has succeeded.
 	 */
 	GHOST_TSuccess
 	removeDrawingContext(
@@ -284,7 +266,7 @@ protected:
 	/**
 	 * Sets the cursor grab on the window using
 	 * native window system calls.
-	 * @param warp	Only used when grab is enabled, hides the mouse and allows gragging outside the screen.
+	 * \param warp	Only used when grab is enabled, hides the mouse and allows gragging outside the screen.
 	 */
 	GHOST_TSuccess
 	setWindowCursorGrab(
@@ -387,8 +369,7 @@ private:
 #endif
 
 #ifdef WITH_X11_XINPUT
-	/* Tablet devices */
-	XTablet m_xtablet;
+	GHOST_TabletData m_tabletData;
 #endif
 
 #if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)

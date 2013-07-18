@@ -25,14 +25,15 @@
 
 set(INC 
 	.
+	../blenfont
 	../blenkernel
 	../blenlib
+	../imbuf
 	../makesdna
 	../makesrna
 	../nodes
 	../render/extern/include
 	../../../intern/guardedalloc
-	../imbuf
 )
 
 set(INC_SYS
@@ -48,10 +49,9 @@ set(SRC
 	intern/versioning_legacy.c
 	intern/writefile.c
 
+	BLO_blend_defs.h
 	BLO_readfile.h
 	BLO_runtime.h
-	BLO_soundfile.h
-	BLO_sys_types.h
 	BLO_undofile.h
 	BLO_writefile.h
 	intern/readfile.h
@@ -59,6 +59,10 @@ set(SRC
 
 if(WITH_BUILDINFO)
 	add_definitions(-DWITH_BUILDINFO)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 blender_add_lib(bf_blenloader "${SRC}" "${INC}" "${INC_SYS}")

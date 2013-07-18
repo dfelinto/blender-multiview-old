@@ -49,18 +49,17 @@ set(INC
 	../../blender/makesdna
 	../../blender/makesrna
 	../../blender/windowmanager
-	../../../extern/bullet2/src
-	../../../extern/Eigen3
 	../../../intern/container
 	../../../intern/guardedalloc
 	../../../intern/moto/include
 	../../../intern/string
-	../../../extern/recastnavigation/Detour/Include
 )
 
 set(INC_SYS
+	../../../extern/recastnavigation/Detour/Include
+	../../../extern/Eigen3
 	${PTHREADS_INCLUDE_DIRS}
-
+	${BOOST_INCLUDE_DIR}
 )
 
 set(SRC
@@ -83,7 +82,7 @@ set(SRC
 	KX_ConvertControllers.cpp
 	KX_ConvertProperties.cpp
 	KX_ConvertSensors.cpp
-	KX_IpoConvert.cpp
+	KX_LibLoadStatus.cpp
 	KX_SoftBodyDeformer.cpp
 
 	BL_ActionActuator.h
@@ -105,12 +104,15 @@ set(SRC
 	KX_ConvertControllers.h
 	KX_ConvertProperties.h
 	KX_ConvertSensors.h
-	KX_IpoConvert.h
+	KX_LibLoadStatus.h
 	KX_SoftBodyDeformer.h
 )
 
 if(WITH_BULLET)
-	add_definitions(-DUSE_BULLET)
+	list(APPEND INC_SYS
+		${BULLET_INCLUDE_DIRS}
+	)
+	add_definitions(-DWITH_BULLET)
 endif()
 
 if(WITH_AUDASPACE)

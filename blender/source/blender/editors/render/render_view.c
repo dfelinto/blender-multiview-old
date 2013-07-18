@@ -35,6 +35,7 @@
 #include "BLI_utildefines.h"
 
 #include "DNA_scene_types.h"
+#include "DNA_userdef_types.h"
 
 #include "BKE_blender.h"
 #include "BKE_context.h"
@@ -86,7 +87,7 @@ static ScrArea *biggest_non_image_area(bContext *C)
 	return big;
 }
 
-static ScrArea *find_area_showing_r_result(bContext *C, wmWindow **win)
+static ScrArea *find_area_showing_r_result(bContext *C, Scene *scene, wmWindow **win)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	ScrArea *sa = NULL;
@@ -94,15 +95,17 @@ static ScrArea *find_area_showing_r_result(bContext *C, wmWindow **win)
 
 	/* find an imagewindow showing render result */
 	for (*win = wm->windows.first; *win; *win = (*win)->next) {
-		for (sa = (*win)->screen->areabase.first; sa; sa = sa->next) {
-			if (sa->spacetype == SPACE_IMAGE) {
-				sima = sa->spacedata.first;
-				if (sima->image && sima->image->type == IMA_TYPE_R_RESULT)
-					break;
+		if ((*win)->screen->scene == scene) {
+			for (sa = (*win)->screen->areabase.first; sa; sa = sa->next) {
+				if (sa->spacetype == SPACE_IMAGE) {
+					sima = sa->spacedata.first;
+					if (sima->image && sima->image->type == IMA_TYPE_R_RESULT)
+						break;
+				}
 			}
+			if (sa)
+				break;
 		}
-		if (sa)
-			break;
 	}
 	
 	return sa;
@@ -151,9 +154,10 @@ void render_view_open(bContext *C, int mx, int my)
 		if (sizex < 320) sizex = 320;
 		if (sizey < 256) sizey = 256;
 
-		/* XXX some magic to calculate postition */
-		rect.xmin = mx + win->posx - sizex / 2;
-		rect.ymin = my + win->posy - sizey / 2;
+		/* some magic to calculate postition */
+		/* pixelsize: mouse coords are in U.pixelsize units :/ */
+		rect.xmin = (mx / U.pixelsize) + win->posx - sizex / 2;
+		rect.ymin = (my / U.pixelsize) + win->posy - sizey / 2;
 		rect.xmax = rect.xmin + sizex;
 		rect.ymax = rect.ymin + sizey;
 
@@ -171,7 +175,7 @@ void render_view_open(bContext *C, int mx, int my)
 	}
 
 	if (!sa) {
-		sa = find_area_showing_r_result(C, &win);
+		sa = find_area_showing_r_result(C, scene, &win);
 		if (sa == NULL)
 			sa = find_area_image_empty(C);
 		
@@ -220,7 +224,6 @@ void render_view_open(bContext *C, int mx, int my)
 		else {
 			/* Leave it alone so the image editor will just go back from
 			 * full screen to the original tiled setup */
-			;
 		}
 	}
 }
@@ -274,7 +277,7 @@ void RENDER_OT_view_cancel(struct wmOperatorType *ot)
 
 /************************* show render viewer *****************/
 
-static int render_view_show_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int render_view_show_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	wmWindow *wincur = CTX_wm_window(C);
 	
@@ -282,13 +285,16 @@ static int render_view_show_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent 
 	if (wincur->screen->temp) {
 		wm_window_lower(wincur);
 	}
-	else { 
+	else {
 		wmWindow *win, *winshow;
-		ScrArea *sa = find_area_showing_r_result(C, &winshow);
+		ScrArea *sa = find_area_showing_r_result(C, CTX_data_scene(C), &winshow);
 		
-		/* is there another window showing result? */
+		/* is there another window on current scene showing result? */
 		for (win = CTX_wm_manager(C)->windows.first; win; win = win->next) {
-			if (win->screen->temp || (win == winshow && winshow != wincur)) {
+			bScreen *sc = win->screen;
+			if ((sc->temp && ((ScrArea *)sc->areabase.first)->spacetype == SPACE_IMAGE) ||
+			    (win == winshow && winshow != wincur))
+			{
 				wm_window_raise(win);
 				return OPERATOR_FINISHED;
 			}

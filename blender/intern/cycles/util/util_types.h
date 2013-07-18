@@ -39,10 +39,14 @@
 #if defined(_WIN32) && !defined(FREE_WINDOWS)
 #define __device_inline static __forceinline
 #define __align(...) __declspec(align(__VA_ARGS__))
+#define __may_alias
 #else
 #define __device_inline static inline __attribute__((always_inline))
+#ifndef FREE_WINDOWS64
 #define __forceinline inline __attribute__((always_inline))
+#endif
 #define __align(...) __attribute__((aligned(__VA_ARGS__)))
+#define __may_alias __attribute__((__may_alias__))
 #endif
 
 #endif
@@ -55,6 +59,8 @@
 
 /* SIMD Types */
 
+#ifndef __KERNEL_GPU__
+
 /* not enabled, globally applying it just gives slowdown,
  * but useful for testing. */
 //#define __KERNEL_SSE__
@@ -66,14 +72,35 @@
 #include <tmmintrin.h> /* SSE 3 */
 #include <smmintrin.h> /* SSE 4 */
 
+#define __KERNEL_SSE2__
+#define __KERNEL_SSE3__
+#define __KERNEL_SSE4__
+
+#else
+
+#ifdef __x86_64__
+
+/* MinGW64 has conflicting declarations for these SSE headers in <windows.h>.
+ * Since we can't avoid including <windows.h>, better only include that */
+#ifdef FREE_WINDOWS64
+#include <windows.h>
+#else
+#include <xmmintrin.h> /* SSE 1 */
+#include <emmintrin.h> /* SSE 2 */
+#endif
+
+#define __KERNEL_SSE2__
+
+#endif
+
 #endif
 
 #ifndef _WIN32
-#ifndef __KERNEL_GPU__
 
 #include <stdint.h>
 
 #endif
+
 #endif
 
 CCL_NAMESPACE_BEGIN

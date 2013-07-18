@@ -59,7 +59,7 @@
 #include "BKE_object.h"
 #include "BKE_curve.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 #include "ED_object.h"
 #include "ED_mesh.h"
@@ -78,7 +78,7 @@ static void ED_object_shape_key_add(bContext *C, Scene *scene, Object *ob, int f
 {
 	KeyBlock *kb;
 	if ((kb = BKE_object_insert_shape_key(scene, ob, NULL, from_mix))) {
-		Key *key = ob_get_key(ob);
+		Key *key = BKE_key_from_object(ob);
 		/* for absolute shape keys, new keys may not be added last */
 		ob->shapenr = BLI_findindex(&key->block, kb) + 1;
 
@@ -88,17 +88,34 @@ static void ED_object_shape_key_add(bContext *C, Scene *scene, Object *ob, int f
 
 /*********************** remove shape key ***********************/
 
-static int ED_object_shape_key_remove(bContext *C, Object *ob)
+static bool ED_object_shape_key_remove_all(Main *bmain, Object *ob)
 {
-	Main *bmain = CTX_data_main(C);
+	Key *key;
+
+	key = BKE_key_from_object(ob);
+	if (key == NULL)
+		return false;
+
+	switch (GS(key->from->name)) {
+		case ID_ME: ((Mesh *)key->from)->key    = NULL; break;
+		case ID_CU: ((Curve *)key->from)->key   = NULL; break;
+		case ID_LT: ((Lattice *)key->from)->key = NULL; break;
+	}
+
+	BKE_libblock_free_us(&(bmain->key), key);
+
+	return true;
+}
+
+static bool ED_object_shape_key_remove(Main *bmain, Object *ob)
+{
 	KeyBlock *kb, *rkb;
 	Key *key;
-	//IpoCurve *icu;
 
-	key = ob_get_key(ob);
+	key = BKE_key_from_object(ob);
 	if (key == NULL)
-		return 0;
-	
+		return false;
+
 	kb = BLI_findlink(&key->block, ob->shapenr - 1);
 
 	if (kb) {
@@ -115,14 +132,14 @@ static int ED_object_shape_key_remove(bContext *C, Object *ob)
 				/* apply new basis key on original data */
 				switch (ob->type) {
 					case OB_MESH:
-						key_to_mesh(key->refkey, ob->data);
+						BKE_key_convert_to_mesh(key->refkey, ob->data);
 						break;
 					case OB_CURVE:
 					case OB_SURF:
-						key_to_curve(key->refkey, ob->data, BKE_curve_nurbs_get(ob->data));
+						BKE_key_convert_to_curve(key->refkey, ob->data, BKE_curve_nurbs_get(ob->data));
 						break;
 					case OB_LATTICE:
-						key_to_latt(key->refkey, ob->data);
+						BKE_key_convert_to_lattice(key->refkey, ob->data);
 						break;
 				}
 			}
@@ -137,40 +154,43 @@ static int ED_object_shape_key_remove(bContext *C, Object *ob)
 	}
 	
 	if (key->totkey == 0) {
-		if (GS(key->from->name) == ID_ME) ((Mesh *)key->from)->key = NULL;
-		else if (GS(key->from->name) == ID_CU) ((Curve *)key->from)->key = NULL;
-		else if (GS(key->from->name) == ID_LT) ((Lattice *)key->from)->key = NULL;
+		switch (GS(key->from->name)) {
+			case ID_ME: ((Mesh *)key->from)->key    = NULL; break;
+			case ID_CU: ((Curve *)key->from)->key   = NULL; break;
+			case ID_LT: ((Lattice *)key->from)->key = NULL; break;
+		}
 
 		BKE_libblock_free_us(&(bmain->key), key);
 	}
-	
-	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
 
-	return 1;
+	return true;
 }
 
-static int object_shape_key_mirror(bContext *C, Object *ob)
+static bool object_shape_key_mirror(bContext *C, Object *ob,
+                                    int *r_totmirr, int *r_totfail)
 {
 	KeyBlock *kb;
 	Key *key;
+	int totmirr = 0, totfail = 0;
 
-	key = ob_get_key(ob);
+	*r_totmirr = *r_totfail = 0;
+
+	key = BKE_key_from_object(ob);
 	if (key == NULL)
 		return 0;
 	
 	kb = BLI_findlink(&key->block, ob->shapenr - 1);
 
 	if (kb) {
-		int i1, i2;
-		float *fp1, *fp2;
-		float tvec[3];
 		char *tag_elem = MEM_callocN(sizeof(char) * kb->totelem, "shape_key_mirror");
 
 
 		if (ob->type == OB_MESH) {
 			Mesh *me = ob->data;
 			MVert *mv;
+			int i1, i2;
+			float *fp1, *fp2;
+			float tvec[3];
 
 			mesh_octree_table(ob, NULL, NULL, 's');
 
@@ -180,6 +200,7 @@ static int object_shape_key_mirror(bContext *C, Object *ob)
 					fp1 = ((float *)kb->data) + i1 * 3;
 					fp1[0] = -fp1[0];
 					tag_elem[i1] = 1;
+					totmirr++;
 				}
 				else if (i2 != -1) {
 					if (tag_elem[i1] == 0 && tag_elem[i2] == 0) {
@@ -193,8 +214,12 @@ static int object_shape_key_mirror(bContext *C, Object *ob)
 						/* flip x axis */
 						fp1[0] = -fp1[0];
 						fp2[0] = -fp2[0];
+						totmirr++;
 					}
 					tag_elem[i1] = tag_elem[i2] = 1;
+				}
+				else {
+					totfail++;
 				}
 			}
 
@@ -211,7 +236,7 @@ static int object_shape_key_mirror(bContext *C, Object *ob)
 			/* currently editmode isn't supported by mesh so
 			 * ignore here for now too */
 
-			/* if (lt->editlatt) lt= lt->editlatt->latt; */
+			/* if (lt->editlatt) lt = lt->editlatt->latt; */
 
 			for (w = 0; w < lt->pntsw; w++) {
 				for (v = 0; v < lt->pntsv; v++) {
@@ -222,6 +247,7 @@ static int object_shape_key_mirror(bContext *C, Object *ob)
 							i1 = LT_INDEX(lt, u, v, w);
 							fp1 = ((float *)kb->data) + i1 * 3;
 							fp1[0] = -fp1[0];
+							totmirr++;
 						}
 						else {
 							i1 = LT_INDEX(lt, u, v, w);
@@ -235,6 +261,7 @@ static int object_shape_key_mirror(bContext *C, Object *ob)
 							copy_v3_v3(fp2, tvec);
 							fp1[0] = -fp1[0];
 							fp2[0] = -fp2[0];
+							totmirr++;
 						}
 					}
 				}
@@ -244,6 +271,9 @@ static int object_shape_key_mirror(bContext *C, Object *ob)
 		MEM_freeN(tag_elem);
 	}
 	
+	*r_totmirr = totmirr;
+	*r_totfail = totfail;
+
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
 
@@ -295,14 +325,28 @@ void OBJECT_OT_shape_key_add(wmOperatorType *ot)
 	RNA_def_boolean(ot->srna, "from_mix", 1, "From Mix", "Create the new shape key from the existing mix of keys");
 }
 
-static int shape_key_remove_exec(bContext *C, wmOperator *UNUSED(op))
+static int shape_key_remove_exec(bContext *C, wmOperator *op)
 {
+	Main *bmain = CTX_data_main(C);
 	Object *ob = ED_object_context(C);
+	bool change = false;
 
-	if (!ED_object_shape_key_remove(C, ob))
+	if (RNA_boolean_get(op->ptr, "all")) {
+		change = ED_object_shape_key_remove_all(bmain, ob);
+	}
+	else {
+		change = ED_object_shape_key_remove(bmain, ob);
+	}
+
+	if (change) {
+		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+		WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
+
+		return OPERATOR_FINISHED;
+	}
+	else {
 		return OPERATOR_CANCELLED;
-	
-	return OPERATOR_FINISHED;
+	}
 }
 
 void OBJECT_OT_shape_key_remove(wmOperatorType *ot)
@@ -318,13 +362,16 @@ void OBJECT_OT_shape_key_remove(wmOperatorType *ot)
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+	/* properties */
+	RNA_def_boolean(ot->srna, "all", 0, "All", "Remove all shape keys");
 }
 
 static int shape_key_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob = ED_object_context(C);
-	Key *key = ob_get_key(ob);
-	KeyBlock *kb = ob_get_keyblock(ob);
+	Key *key = BKE_key_from_object(ob);
+	KeyBlock *kb = BKE_keyblock_from_object(ob);
 
 	if (!key || !kb)
 		return OPERATOR_CANCELLED;
@@ -357,8 +404,8 @@ void OBJECT_OT_shape_key_clear(wmOperatorType *ot)
 static int shape_key_retime_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob = ED_object_context(C);
-	Key *key = ob_get_key(ob);
-	KeyBlock *kb = ob_get_keyblock(ob);
+	Key *key = BKE_key_from_object(ob);
+	KeyBlock *kb = BKE_keyblock_from_object(ob);
 	float cfra = 0.0f;
 
 	if (!key || !kb)
@@ -388,12 +435,15 @@ void OBJECT_OT_shape_key_retime(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static int shape_key_mirror_exec(bContext *C, wmOperator *UNUSED(op))
+static int shape_key_mirror_exec(bContext *C, wmOperator *op)
 {
 	Object *ob = ED_object_context(C);
+	int totmirr = 0, totfail = 0;
 
-	if (!object_shape_key_mirror(C, ob))
+	if (!object_shape_key_mirror(C, ob, &totmirr, &totfail))
 		return OPERATOR_CANCELLED;
+
+	ED_mesh_report_mirror(op, totmirr, totfail);
 
 	return OPERATOR_FINISHED;
 }
@@ -419,7 +469,7 @@ static int shape_key_move_exec(bContext *C, wmOperator *op)
 	Object *ob = ED_object_context(C);
 
 	int type = RNA_enum_get(op->ptr, "type");
-	Key *key = ob_get_key(ob);
+	Key *key = BKE_key_from_object(ob);
 
 	if (key) {
 		KeyBlock *kb, *kb_other;
@@ -456,6 +506,9 @@ static int shape_key_move_exec(bContext *C, wmOperator *op)
 		}
 
 		SWAP(float, kb_other->pos, kb->pos); /* for absolute shape keys */
+
+		/* First key is refkey, matches interface and BKE_key_sort */
+		key->refkey = key->block.first;
 	}
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);

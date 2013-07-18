@@ -25,7 +25,10 @@
 #include <sstream>
 
 #include "PIL_time.h"
+#include "BLI_utildefines.h"
+extern "C" {
 #include "BKE_node.h"
+}
 
 #include "COM_Converter.h"
 #include "COM_NodeOperation.h"
@@ -44,18 +47,12 @@
 #include "MEM_guardedalloc.h"
 #endif
 
-ExecutionSystem::ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool rendering, bool fastcalculation)
+ExecutionSystem::ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool rendering, bool fastcalculation,
+                                 const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings)
 {
 	this->m_context.setbNodeTree(editingtree);
+	this->m_context.setPreviewHash(editingtree->previews);
 	this->m_context.setFastCalculation(fastcalculation);
-	bNode *gnode;
-	for (gnode = (bNode *)editingtree->nodes.first; gnode; gnode = (bNode *)gnode->next) {
-		if (gnode->type == NODE_GROUP && gnode->typeinfo->group_edit_get(gnode)) {
-			this->m_context.setActivegNode(gnode);
-			break;
-		}
-	}
-
 	/* initialize the CompositorContext */
 	if (rendering) {
 		this->m_context.setQuality((CompositorQuality)editingtree->render_quality);
@@ -66,18 +63,42 @@ ExecutionSystem::ExecutionSystem(RenderData *rd, bNodeTree *editingtree, bool re
 	this->m_context.setRendering(rendering);
 	this->m_context.setHasActiveOpenCLDevices(WorkScheduler::hasGPUDevices() && (editingtree->flag & NTREE_COM_OPENCL));
 
-	ExecutionSystemHelper::addbNodeTree(*this, 0, editingtree, NULL);
+	ExecutionSystemHelper::addbNodeTree(*this, 0, editingtree, NODE_INSTANCE_KEY_BASE);
 
 	this->m_context.setRenderData(rd);
+	this->m_context.setViewSettings(viewSettings);
+	this->m_context.setDisplaySettings(displaySettings);
+
 	this->convertToOperations();
 	this->groupOperations(); /* group operations in ExecutionGroups */
 	unsigned int index;
 	unsigned int resolution[2];
+
+	rctf *viewer_border = &editingtree->viewer_border;
+	bool use_viewer_border = (editingtree->flag & NTREE_VIEWER_BORDER) &&
+	                         viewer_border->xmin < viewer_border->xmax &&
+	                         viewer_border->ymin < viewer_border->ymax;
+
 	for (index = 0; index < this->m_groups.size(); index++) {
 		resolution[0] = 0;
 		resolution[1] = 0;
 		ExecutionGroup *executionGroup = this->m_groups[index];
 		executionGroup->determineResolution(resolution);
+
+		if (rendering) {
+			/* case when cropping to render border happens is handled in
+			 * compositor output and render layer nodes
+			 */
+			if ((rd->mode & R_BORDER) && !(rd->mode & R_CROP)) {
+				executionGroup->setRenderBorder(rd->border.xmin, rd->border.xmax,
+				                                rd->border.ymin, rd->border.ymax);
+			}
+		}
+
+		if (use_viewer_border) {
+			executionGroup->setViewerBorder(viewer_border->xmin, viewer_border->xmax,
+			                                viewer_border->ymin, viewer_border->ymax);
+		}
 	}
 
 #ifdef COM_DEBUG
@@ -236,12 +257,37 @@ void ExecutionSystem::addReadWriteBufferOperations(NodeOperation *operation)
 	}
 }
 
+#ifndef NDEBUG
+/* if this fails, there are still connection to/from this node,
+ * which have not been properly relinked to operations!
+ */
+static void debug_check_node_connections(Node *node)
+{
+	/* note: connected inputs are not checked here,
+	 * it would break quite a lot and such inputs are ignored later anyway
+	 */
+#if 0
+	for (int i = 0; i < node->getNumberOfInputSockets(); ++i) {
+		BLI_assert(!node->getInputSocket(i)->isConnected());
+	}
+#endif
+	for (int i = 0; i < node->getNumberOfOutputSockets(); ++i) {
+		BLI_assert(!node->getOutputSocket(i)->isConnected());
+	}
+}
+#else
+/* stub */
+#define debug_check_node_connections(node)
+#endif
+
 void ExecutionSystem::convertToOperations()
 {
 	unsigned int index;
 	for (index = 0; index < this->m_nodes.size(); index++) {
 		Node *node = (Node *)this->m_nodes[index];
 		node->convertToOperations(this, &this->m_context);
+
+		debug_check_node_connections(node);
 	}
 
 	for (index = 0; index < this->m_connections.size(); index++) {
@@ -309,6 +355,16 @@ void ExecutionSystem::groupOperations()
 void ExecutionSystem::addSocketConnection(SocketConnection *connection)
 {
 	this->m_connections.push_back(connection);
+}
+
+void ExecutionSystem::removeSocketConnection(SocketConnection *connection)
+{
+	for (vector<SocketConnection *>::iterator it = m_connections.begin(); it != m_connections.end(); ++it) {
+		if (*it == connection) {
+			this->m_connections.erase(it);
+			return;
+		}
+	}
 }
 
 

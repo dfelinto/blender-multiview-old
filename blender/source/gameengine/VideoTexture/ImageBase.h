@@ -1,29 +1,33 @@
 /*
------------------------------------------------------------------------------
-This source file is part of blendTex library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of blendTex library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file ImageBase.h
  *  \ingroup bgevideotex
  */
- 
+
 #ifndef __IMAGEBASE_H__
 #define __IMAGEBASE_H__
 
@@ -53,44 +57,52 @@ public:
 	/// constructor
 	ImageBase (bool staticSrc = false);
 	/// destructor
-	virtual ~ImageBase (void);
+	virtual ~ImageBase(void);
 	/// release contained objects, if returns true, object should be deleted
-	virtual bool release (void);
+	virtual bool release(void);
 
 	/// is an image available
 	bool isImageAvailable(void)
 	{ return m_avail; }
 	/// get image
-	unsigned int * getImage (unsigned int texId = 0, double timestamp=-1.0);
+	unsigned int *getImage(unsigned int texId = 0, double timestamp=-1.0);
 	/// get image size
-	short * getSize (void) { return m_size; }
+	short * getSize(void) { return m_size; }
 	/// get image buffer size
-	unsigned long getBuffSize (void)
+	unsigned long getBuffSize(void)
 	{ return m_size[0] * m_size[1] * sizeof(unsigned int); }
 	/// refresh image - invalidate its current content
-	virtual void refresh (void);
+	virtual void refresh(void);
 
 	/// get scale
-	bool getScale (void) { return m_scale; }
+	bool getScale(void) { return m_scale; }
 	/// set scale
-	void setScale (bool scale) { m_scale = scale; m_scaleChange = true; }
+	void setScale(bool scale) { m_scale = scale; m_scaleChange = true; }
 	/// get vertical flip
-	bool getFlip (void) { return m_flip; }
+	bool getFlip(void) { return m_flip; }
 	/// set vertical flip
-	void setFlip (bool flip) { m_flip = flip; }
+	void setFlip(bool flip) { m_flip = flip; }
+	/// get Z buffer
+	bool getZbuff(void) { return m_zbuff; }
+	/// set Z buffer
+	void setZbuff(bool zbuff) { m_zbuff = zbuff; }
+	/// get depth
+	bool getDepth(void) { return m_depth; }
+	/// set depth
+	void setDepth(bool depth) { m_depth = depth; }
 
 	/// get source object
-	PyImage * getSource (const char * id);
+	PyImage * getSource(const char *id);
 	/// set source object, return true, if source was set
-	bool setSource (const char * id, PyImage * source);
+	bool setSource(const char *id, PyImage *source);
 
 	/// get pixel filter
-	PyFilter * getFilter (void) { return m_pyfilter; }
+	PyFilter * getFilter(void) { return m_pyfilter; }
 	/// set pixel filter
-	void setFilter (PyFilter * filt);
+	void setFilter(PyFilter * filt);
 
-	/// calculate size (nearest power of 2)
-	static short calcSize (short size);
+	/// calculate size(nearest power of 2)
+	static short calcSize(short size);
 
 	/// number of buffer pointing to m_image, public because not handled by this class
 	int m_exports;
@@ -111,6 +123,10 @@ protected:
 	bool m_scaleChange;
 	/// flip image vertically
 	bool m_flip;
+	/// use the Z buffer as a texture
+	bool m_zbuff;
+	/// extract the Z buffer with unisgned int precision
+	bool m_depth;
 
 	/// source image list
 	ImageSourceList m_sources;
@@ -121,25 +137,25 @@ protected:
 	PyFilter * m_pyfilter;
 
 	/// initialize image data
-	void init (short width, short height);
+	void init(short width, short height);
 
 	/// find source
-	ImageSourceList::iterator findSource (const char * id);
+	ImageSourceList::iterator findSource(const char *id);
 
 	/// create new source
-	virtual ImageSource * newSource (const char * id) { return NULL; }
+	virtual ImageSource *newSource(const char *id) { return NULL; }
 
 	/// check source sizes
-	bool checkSourceSizes (void);
+	bool checkSourceSizes(void);
 
 	/// calculate image from sources and set its availability
-	virtual void calcImage (unsigned int texId, double ts) {}
+	virtual void calcImage(unsigned int texId, double ts) {}
 
 	/// perform loop detection
-	bool loopDetect (ImageBase * img);
+	bool loopDetect(ImageBase * img);
 
 	/// template for image conversion
-	template<class FLT, class SRC> void convImage (FLT & filter, SRC srcBuff,
+	template<class FLT, class SRC> void convImage(FLT & filter, SRC srcBuff,
 		short * srcSize)
 	{
 		// destination buffer
@@ -220,7 +236,7 @@ protected:
 	}
 
 	// template for specific filter preprocessing
-	template <class F, class SRC> void filterImage (F & filt, SRC srcBuff, short * srcSize)
+	template <class F, class SRC> void filterImage (F & filt, SRC srcBuff, short *srcSize)
 	{
 		// find first filter in chain
 		FilterBase * firstFilter = NULL;
@@ -264,19 +280,19 @@ class ImageSource
 {
 public:
 	/// constructor
-	ImageSource (const char * id);
+	ImageSource (const char *id);
 	/// destructor
 	virtual ~ImageSource (void);
 
 	/// get id
 	const char * getId (void) { return m_id; }
 	/// compare id to argument
-	bool is (const char * id);
+	bool is (const char *id);
 
 	/// get source object
 	PyImage * getSource (void) { return m_source; }
 	/// set source object
-	void setSource (PyImage * source);
+	void setSource (PyImage *source);
 
 	/// get image from source
 	unsigned int * getImage (double ts=-1.0);
@@ -312,9 +328,9 @@ extern PyTypeList pyImageTypes;
 // functions for python interface
 
 // object initialization
-template <class T> static int Image_init (PyObject * pySelf, PyObject * args, PyObject * kwds)
+template <class T> static int Image_init(PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
-	PyImage * self = reinterpret_cast<PyImage*>(pySelf);
+	PyImage *self = reinterpret_cast<PyImage *>(pySelf);
 	// create source object
 	if (self->m_image != NULL) delete self->m_image;
 	self->m_image = new T();
@@ -323,37 +339,45 @@ template <class T> static int Image_init (PyObject * pySelf, PyObject * args, Py
 }
 
 // object allocation
-PyObject * Image_allocNew (PyTypeObject * type, PyObject * args, PyObject * kwds);
+PyObject *Image_allocNew(PyTypeObject *type, PyObject *args, PyObject *kwds);
 // object deallocation
-void Image_dealloc (PyImage * self);
+void Image_dealloc(PyImage *self);
 
 // get image data
-PyObject * Image_getImage (PyImage * self, char * mode);
+PyObject *Image_getImage(PyImage *self, char *mode);
 // get image size
-PyObject * Image_getSize (PyImage * self, void * closure);
+PyObject *Image_getSize(PyImage *self, void *closure);
 // refresh image - invalidate current content
-PyObject * Image_refresh (PyImage * self);
+PyObject *Image_refresh(PyImage *self);
 
 // get scale
-PyObject * Image_getScale (PyImage * self, void * closure);
+PyObject *Image_getScale(PyImage *self, void *closure);
 // set scale
-int Image_setScale (PyImage * self, PyObject * value, void * closure);
+int Image_setScale(PyImage *self, PyObject *value, void *closure);
 // get flip
-PyObject * Image_getFlip (PyImage * self, void * closure);
+PyObject *Image_getFlip(PyImage *self, void *closure);
 // set flip
-int Image_setFlip (PyImage * self, PyObject * value, void * closure);
+int Image_setFlip(PyImage *self, PyObject *value, void *closure);
 
 // get filter source object
-PyObject * Image_getSource (PyImage * self, PyObject * args);
+PyObject *Image_getSource(PyImage *self, PyObject *args);
 // set filter source object
-PyObject * Image_setSource (PyImage * self, PyObject * args);
-
+PyObject *Image_setSource(PyImage *self, PyObject *args);
+// get Z buffer
+PyObject *Image_getZbuff(PyImage *self, void *closure);
+// set Z buffer
+int Image_setZbuff(PyImage *self, PyObject *value, void *closure);
+// get depth
+PyObject *Image_getDepth(PyImage *self, void *closure);
+// set depth
+int Image_setDepth(PyImage *self, PyObject *value, void *closure);
+ 
 // get pixel filter object
-PyObject * Image_getFilter (PyImage * self, void * closure);
+PyObject *Image_getFilter(PyImage *self, void *closure);
 // set pixel filter object
-int Image_setFilter (PyImage * self, PyObject * value, void * closure);
+int Image_setFilter(PyImage *self, PyObject *value, void *closure);
 // check if a buffer can be extracted
-PyObject * Image_valid(PyImage * self, void * closure);
+PyObject *Image_valid(PyImage *self, void *closure);
 // for buffer access to PyImage objects
 extern PyBufferProcs imageBufferProcs;
 

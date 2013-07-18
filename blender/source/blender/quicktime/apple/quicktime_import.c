@@ -36,7 +36,7 @@
 
 #include "MEM_guardedalloc.h"
 #include "IMB_anim.h"
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 #include "BKE_global.h"
 #include "BLI_dynstr.h"
 #include "BLI_path_util.h"
@@ -200,6 +200,8 @@ int anim_is_quicktime(const char *name)
 	    BLI_testextensie(name, ".png") ||
 	    BLI_testextensie(name, ".bmp") ||
 	    BLI_testextensie(name, ".jpg") ||
+	    BLI_testextensie(name, ".tif") ||
+	    BLI_testextensie(name, ".exr") ||
 	    BLI_testextensie(name, ".wav") ||
 	    BLI_testextensie(name, ".zip") ||
 	    BLI_testextensie(name, ".mp3"))
@@ -210,13 +212,13 @@ int anim_is_quicktime(const char *name)
 	if (QTIME_DEBUG) printf("qt: checking as movie: %s\n", name);
 
 #ifdef __APPLE__
-	sprintf(theFullPath, "%s", name);
+	strcpy(theFullPath, name);
 
 	err = FSPathMakeRef(theFullPath, &myRef, 0);
 	err = FSGetCatalogInfo(&myRef, kFSCatInfoNone, NULL, NULL, &theFSSpec, NULL);
 #else
 	qtname = get_valid_qtname(name);
-	sprintf(theFullPath, "%s", qtname);
+	strcpy(theFullPath, qtname);
 	MEM_freeN(qtname);
 
 	CopyCStringToPascal(theFullPath, dst);
@@ -392,8 +394,6 @@ ImBuf *qtime_fetchibuf(struct anim *anim, int position)
 	}
 #endif
 
-	ibuf->profile = IB_PROFILE_SRGB;
-	
 	IMB_flipy(ibuf);
 	return ibuf;
 }
@@ -463,13 +463,13 @@ int startquicktime(struct anim *anim)
 	if (QTIME_DEBUG) printf("qt: attempting to load as movie %s\n", anim->name);
 	
 #ifdef __APPLE__
-	sprintf(theFullPath, "%s", anim->name);
+	strcpy(theFullPath, anim->name);
 
 	err = FSPathMakeRef(theFullPath, &myRef, 0);
 	err = FSGetCatalogInfo(&myRef, kFSCatInfoNone, NULL, NULL, &theFSSpec, NULL);
 #else
 	qtname = get_valid_qtname(anim->name);
-	sprintf(theFullPath, "%s", qtname);
+	strcpy(theFullPath, qtname);
 	MEM_freeN(qtname);
 
 	CopyCStringToPascal(theFullPath, dst);
@@ -594,7 +594,7 @@ int imb_is_a_quicktime(char *name)
 		return 0;
 	}
 
-	sprintf(theFullPath, "%s", name);
+	strcpy(theFullPath, name);
 #ifdef __APPLE__
 	err = FSPathMakeRef(theFullPath, &myRef, 0);
 	err = FSGetCatalogInfo(&myRef, kFSCatInfoNone, NULL, NULL, &theFSSpec, NULL);

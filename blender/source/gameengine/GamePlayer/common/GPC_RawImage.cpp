@@ -29,7 +29,6 @@
  *  \ingroup player
  */
 
-   
 #include <iostream>
 #include <string.h>
 
@@ -89,7 +88,7 @@ bool GPC_RawImage::Load(
 					// Put original in upper left corner
 
 					// Add vertical offset
-					dst += offsetY * dstBytesWidth;	
+					dst += offsetY * dstBytesWidth;
 					// Add horizontal offset
 					dst += offsetX * 4;
 					for (int row = 0; row < numRows; row++)

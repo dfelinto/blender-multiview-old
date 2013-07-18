@@ -37,6 +37,7 @@
 
 #include "BLI_listbase.h"
 #include "BLI_math_base.h"
+#include "BLI_string.h"
 
 #include "BKE_fcurve.h"
 #include "BKE_global.h"
@@ -75,14 +76,14 @@ int bpy_pydriver_create_dict(void)
 	}
 
 	/* add bpy to global namespace */
-	mod = PyImport_ImportModuleLevel((char *)"bpy", NULL, NULL, NULL, 0);
+	mod = PyImport_ImportModuleLevel("bpy", NULL, NULL, NULL, 0);
 	if (mod) {
 		PyDict_SetItemString(bpy_pydriver_Dict, "bpy", mod);
 		Py_DECREF(mod);
 	}
 
 	/* add noise to global namespace */
-	mod = PyImport_ImportModuleLevel((char *)"mathutils", NULL, NULL, NULL, 0);
+	mod = PyImport_ImportModuleLevel("mathutils", NULL, NULL, NULL, 0);
 	if (mod) {
 		PyObject *modsub = PyDict_GetItemString(PyModule_GetDict(mod), "noise");
 		PyDict_SetItemString(bpy_pydriver_Dict, "noise", modsub);
@@ -122,7 +123,7 @@ static void bpy_pydriver_update_dict(const float evaltime)
 void BPY_driver_reset(void)
 {
 	PyGILState_STATE gilstate;
-	int use_gil = TRUE; /* !PYC_INTERPRETER_ACTIVE; */
+	bool use_gil = true; /* !PYC_INTERPRETER_ACTIVE; */
 
 	if (use_gil)
 		gilstate = PyGILState_Ensure();
@@ -175,11 +176,11 @@ float BPY_driver_exec(ChannelDriver *driver, const float evaltime)
 	PyObject *expr_vars; /* speed up by pre-hashing string & avoids re-converting unicode strings for every execution */
 	PyObject *expr_code;
 	PyGILState_STATE gilstate;
-	int use_gil;
+	bool use_gil;
 
 	DriverVar *dvar;
 	double result = 0.0; /* default return */
-	char *expr = NULL;
+	const char *expr;
 	short targets_ok = 1;
 	int i;
 
@@ -189,11 +190,16 @@ float BPY_driver_exec(ChannelDriver *driver, const float evaltime)
 		return 0.0f;
 
 	if (!(G.f & G_SCRIPT_AUTOEXEC)) {
-		printf("skipping driver '%s', automatic scripts are disabled\n", driver->expression);
+		if (!(G.f & G_SCRIPT_AUTOEXEC_FAIL_QUIET)) {
+			G.f |= G_SCRIPT_AUTOEXEC_FAIL;
+			BLI_snprintf(G.autoexec_fail, sizeof(G.autoexec_fail), "Driver '%s'", expr);
+
+			printf("skipping driver '%s', automatic scripts are disabled\n", expr);
+		}
 		return 0.0f;
 	}
 
-	use_gil = TRUE; /* !PYC_INTERPRETER_ACTIVE; */
+	use_gil = true;  /* !PYC_INTERPRETER_ACTIVE; */
 
 	if (use_gil)
 		gilstate = PyGILState_Ensure();
@@ -280,7 +286,7 @@ float BPY_driver_exec(ChannelDriver *driver, const float evaltime)
 	}
 
 
-#if 0 // slow, with this can avoid all Py_CompileString above.
+#if 0  /* slow, with this can avoid all Py_CompileString above. */
 	/* execute expression to get a value */
 	retval = PyRun_String(expr, Py_eval_input, bpy_pydriver_Dict, driver_vars);
 #else

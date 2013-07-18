@@ -123,8 +123,8 @@ public:
 	}
 
 	/**
-	  * get the unique Network Message ID
-	  */
+	 * get the unique Network Message ID
+	 */
 	int GetMessageID() {
 		return m_uniqueMessageID;
 	}
@@ -135,5 +135,4 @@ public:
 #endif
 };
 
-#endif //__NG_NETWORKMESSAGE_H__
-
+#endif  /* __NG_NETWORKMESSAGE_H__ */

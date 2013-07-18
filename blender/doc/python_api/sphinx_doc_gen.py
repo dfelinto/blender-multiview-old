@@ -35,7 +35,7 @@ API dump in RST files
     ./blender.bin --background --python doc/python_api/sphinx_doc_gen.py -- --output ../python_api
 
   For quick builds:
-    ./blender.bin --background --python doc/python_api/sphinx_doc_gen.py -- --partial
+    ./blender.bin --background --python doc/python_api/sphinx_doc_gen.py -- --partial bmesh.*
 
 
 Sphinx: HTML generation
@@ -69,6 +69,14 @@ except:
     sys.exit()
 
 import rna_info     # blender module
+
+
+def rna_info_BuildRNAInfo_cache():
+    if rna_info_BuildRNAInfo_cache.ret is None:
+        rna_info_BuildRNAInfo_cache.ret = rna_info.BuildRNAInfo()
+    return rna_info_BuildRNAInfo_cache.ret
+rna_info_BuildRNAInfo_cache.ret = None
+# --- end rna_info cache
 
 # import rpdb2; rpdb2.start_embedded_debugger('test')
 import os
@@ -245,10 +253,12 @@ else:
         "bgl",
         "blf",
         "bmesh",
+        "bmesh.ops",
         "bmesh.types",
         "bmesh.utils",
         "bpy.app",
         "bpy.app.handlers",
+        "bpy.app.translations",
         "bpy.context",
         "bpy.data",
         "bpy.ops",  # supports filtering
@@ -261,6 +271,7 @@ else:
         "mathutils",
         "mathutils.geometry",
         "mathutils.noise",
+        "freestyle",
         ]
 
     # ------
@@ -297,7 +308,13 @@ try:
     __import__("aud")
 except ImportError:
     BPY_LOGGER.debug("Warning: Built without 'aud' module, docs incomplete...")
-    EXCLUDE_MODULES = EXCLUDE_MODULES + ("aud", )
+    EXCLUDE_MODULES = list(EXCLUDE_MODULES) + ["aud"]
+
+try:
+    __import__("freestyle")
+except ImportError:
+    BPY_LOGGER.debug("Warning: Built without 'freestyle' module, docs incomplete...")
+    EXCLUDE_MODULES = list(EXCLUDE_MODULES) + ["freestyle"]
 
 # examples
 EXAMPLES_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "examples"))
@@ -315,6 +332,8 @@ RST_DIR = os.path.abspath(os.path.join(SCRIPT_DIR, "rst"))
 INFO_DOCS = (
     ("info_quickstart.rst", "Blender/Python Quickstart: new to blender/scripting and want to get your feet wet?"),
     ("info_overview.rst", "Blender/Python API Overview: a more complete explanation of python integration"),
+    ("info_tutorial_addon.rst", "Blender/Python Addon Tutorial: a step by step guide on how to write an addon from scratch"),
+    ("info_api_reference.rst", "Blender/Python API Reference Usage: examples of how to use the API reference docs"),
     ("info_best_practice.rst", "Best Practice: Conventions to follow for writing good scripts"),
     ("info_tips_and_tricks.rst", "Tips and Tricks: Hints to help you while writing scripts for blender"),
     ("info_gotcha.rst", "Gotcha's: some of the problems you may come up against when writing scripts"),
@@ -399,7 +418,7 @@ SPHINX_THEMES = {'bf': ['blender-org'],  # , 'naiad',
 
 available_themes = SPHINX_THEMES['bf'] + SPHINX_THEMES['sphinx']
 if ARGS.sphinx_theme not in available_themes:
-    print ("Please choose a theme among: %s" % ', '.join(available_themes))
+    print("Please choose a theme among: %s" % ', '.join(available_themes))
     sys.exit()
 
 if ARGS.sphinx_theme in SPHINX_THEMES['bf']:
@@ -446,6 +465,7 @@ if ARGS.sphinx_build_pdf:
 ClassMethodDescriptorType = type(dict.__dict__['fromkeys'])
 MethodDescriptorType = type(dict.get)
 GetSetDescriptorType = type(int.real)
+StaticMethodType = type(staticmethod(lambda: None))
 from types import MemberDescriptorType
 
 _BPY_STRUCT_FAKE = "bpy_struct"
@@ -609,6 +629,10 @@ def pyfunc2sphinx(ident, fw, identifier, py_func, is_class=True):
     '''
     function or class method to sphinx
     '''
+
+    if type(py_func) == type(bpy.types.Space.draw_handler_add):
+        return
+
     arg_str = inspect.formatargspec(*inspect.getargspec(py_func))
 
     if not is_class:
@@ -689,6 +713,8 @@ def pyprop2sphinx(ident, fw, identifier, py_prop):
     write_indented_lines(ident + "   ", fw, py_prop.__doc__)
     if py_prop.fset is None:
         fw(ident + "   (readonly)\n\n")
+    else:
+        fw("\n")
 
 
 def pymodule2sphinx(basepath, module_name, module, title):
@@ -846,10 +872,10 @@ def pymodule2sphinx(basepath, module_name, module, title):
             classes.append((attribute, value))
         elif issubclass(value_type, types.ModuleType):
             submodules.append((attribute, value))
-        elif value_type in (bool, int, float, str, tuple):
+        elif issubclass(value_type, (bool, int, float, str, tuple)):
             # constant, not much fun we can do here except to list it.
             # TODO, figure out some way to document these!
-            #fw(".. data:: %s\n\n" % attribute)
+            fw(".. data:: %s\n\n" % attribute)
             write_indented_lines("   ", fw, "constant value %s" % repr(value), False)
             fw("\n")
         else:
@@ -906,9 +932,83 @@ def pymodule2sphinx(basepath, module_name, module, title):
             if type(descr) == GetSetDescriptorType:
                 py_descr2sphinx("   ", fw, descr, module_name, type_name, key)
 
+        for key, descr in descr_items:
+            if type(descr) == StaticMethodType:
+                descr = getattr(value, key)
+                write_indented_lines("   ", fw, descr.__doc__ or "Undocumented", False)
+                fw("\n")
+
         fw("\n\n")
 
     file.close()
+
+# Changes in blender will force errors here
+context_type_map = {
+    "active_base": ("ObjectBase", False),
+    "active_bone": ("EditBone", False),
+    "active_object": ("Object", False),
+    "active_operator": ("Operator", False),
+    "active_pose_bone": ("PoseBone", False),
+    "active_node": ("Node", False),
+    "armature": ("Armature", False),
+    "bone": ("Bone", False),
+    "brush": ("Brush", False),
+    "camera": ("Camera", False),
+    "cloth": ("ClothModifier", False),
+    "collision": ("CollisionModifier", False),
+    "curve": ("Curve", False),
+    "dynamic_paint": ("DynamicPaintModifier", False),
+    "edit_bone": ("EditBone", False),
+    "edit_image": ("Image", False),
+    "edit_mask": ("Mask", False),
+    "edit_movieclip": ("MovieClip", False),
+    "edit_object": ("Object", False),
+    "edit_text": ("Text", False),
+    "editable_bones": ("EditBone", True),
+    "fluid": ("FluidSimulationModifier", False),
+    "image_paint_object": ("Object", False),
+    "lamp": ("Lamp", False),
+    "lattice": ("Lattice", False),
+    "material": ("Material", False),
+    "material_slot": ("MaterialSlot", False),
+    "mesh": ("Mesh", False),
+    "meta_ball": ("MetaBall", False),
+    "object": ("Object", False),
+    "particle_edit_object": ("Object", False),
+    "particle_settings": ("ParticleSettings", False),
+    "particle_system": ("ParticleSystem", False),
+    "particle_system_editable": ("ParticleSystem", False),
+    "pose_bone": ("PoseBone", False),
+    "scene": ("Scene", False),
+    "sculpt_object": ("Object", False),
+    "selectable_bases": ("ObjectBase", True),
+    "selectable_objects": ("Object", True),
+    "selected_bases": ("ObjectBase", True),
+    "selected_bones": ("EditBone", True),
+    "selected_editable_bases": ("ObjectBase", True),
+    "selected_editable_bones": ("EditBone", True),
+    "selected_editable_objects": ("Object", True),
+    "selected_editable_sequences": ("Sequence", True),
+    "selected_nodes": ("Node", True),
+    "selected_objects": ("Object", True),
+    "selected_pose_bones": ("PoseBone", True),
+    "selected_sequences": ("Sequence", True),
+    "sequences": ("Sequence", True),
+    "smoke": ("SmokeModifier", False),
+    "soft_body": ("SoftBodyModifier", False),
+    "speaker": ("Speaker", False),
+    "texture": ("Texture", False),
+    "texture_slot": ("MaterialTextureSlot", False),
+    "texture_user": ("ID", False),
+    "texture_user_property": ("Property", False),
+    "vertex_paint_object": ("Object", False),
+    "visible_bases": ("ObjectBase", True),
+    "visible_bones": ("EditBone", True),
+    "visible_objects": ("Object", True),
+    "visible_pose_bones": ("PoseBone", True),
+    "weight_paint_object": ("Object", False),
+    "world": ("World", False),
+}
 
 
 def pycontext2sphinx(basepath):
@@ -924,6 +1024,47 @@ def pycontext2sphinx(basepath):
     fw("\n")
     fw("Note that all context values are readonly, but may be modified through the data api or by running operators\n\n")
 
+    def write_contex_cls():
+
+        fw(title_string("Global Context", "-"))
+        fw("These properties are avilable in any contexts.\n\n")
+
+        # very silly. could make these global and only access once.
+        # structs, funcs, ops, props = rna_info.BuildRNAInfo()
+        structs, funcs, ops, props = rna_info_BuildRNAInfo_cache()
+        struct = structs[("", "Context")]
+        struct_blacklist = RNA_BLACKLIST.get(struct.identifier, ())
+        del structs, funcs, ops, props
+
+        sorted_struct_properties = struct.properties[:]
+        sorted_struct_properties.sort(key=lambda prop: prop.identifier)
+
+        # First write RNA
+        for prop in sorted_struct_properties:
+            # support blacklisting props
+            if prop.identifier in struct_blacklist:
+                continue
+
+            type_descr = prop.get_type_description(class_fmt=":class:`bpy.types.%s`", collection_id=_BPY_PROP_COLLECTION_ID)
+            fw(".. data:: %s\n\n" % prop.identifier)
+            if prop.description:
+                fw("   %s\n\n" % prop.description)
+
+            # special exception, cant use genric code here for enums
+            if prop.type == "enum":
+                enum_text = pyrna_enum2sphinx(prop)
+                if enum_text:
+                    write_indented_lines("   ", fw, enum_text)
+                    fw("\n")
+                del enum_text
+            # end enum exception
+
+            fw("   :type: %s\n\n" % type_descr)
+
+    write_contex_cls()
+    del write_contex_cls
+    # end
+
     # nasty, get strings directly from blender because there is no other way to get it
     import ctypes
 
@@ -938,73 +1079,6 @@ def pycontext2sphinx(basepath):
         "sequencer_context_dir",
     )
 
-    # Changes in blender will force errors here
-    type_map = {
-        "active_base": ("ObjectBase", False),
-        "active_bone": ("Bone", False),
-        "active_object": ("Object", False),
-        "active_operator": ("Operator", False),
-        "active_pose_bone": ("PoseBone", False),
-        "active_node": ("Node", False),
-        "armature": ("Armature", False),
-        "bone": ("Bone", False),
-        "brush": ("Brush", False),
-        "camera": ("Camera", False),
-        "cloth": ("ClothModifier", False),
-        "collision": ("CollisionModifier", False),
-        "curve": ("Curve", False),
-        "dynamic_paint": ("DynamicPaintModifier", False),
-        "edit_bone": ("EditBone", False),
-        "edit_image": ("Image", False),
-        "edit_mask": ("Mask", False),
-        "edit_movieclip": ("MovieClip", False),
-        "edit_object": ("Object", False),
-        "edit_text": ("Text", False),
-        "editable_bones": ("EditBone", True),
-        "fluid": ("FluidSimulationModifier", False),
-        "image_paint_object": ("Object", False),
-        "lamp": ("Lamp", False),
-        "lattice": ("Lattice", False),
-        "material": ("Material", False),
-        "material_slot": ("MaterialSlot", False),
-        "mesh": ("Mesh", False),
-        "meta_ball": ("MetaBall", False),
-        "object": ("Object", False),
-        "particle_edit_object": ("Object", False),
-        "particle_settings": ("ParticleSettings", False),
-        "particle_system": ("ParticleSystem", False),
-        "particle_system_editable": ("ParticleSystem", False),
-        "pose_bone": ("PoseBone", False),
-        "scene": ("Scene", False),
-        "sculpt_object": ("Object", False),
-        "selectable_bases": ("ObjectBase", True),
-        "selectable_objects": ("Object", True),
-        "selected_bases": ("ObjectBase", True),
-        "selected_bones": ("Bone", True),
-        "selected_editable_bases": ("ObjectBase", True),
-        "selected_editable_bones": ("Bone", True),
-        "selected_editable_objects": ("Object", True),
-        "selected_editable_sequences": ("Sequence", True),
-        "selected_nodes": ("Node", True),
-        "selected_objects": ("Object", True),
-        "selected_pose_bones": ("PoseBone", True),
-        "selected_sequences": ("Sequence", True),
-        "sequences": ("Sequence", True),
-        "smoke": ("SmokeModifier", False),
-        "soft_body": ("SoftBodyModifier", False),
-        "speaker": ("Speaker", False),
-        "texture": ("Texture", False),
-        "texture_slot": ("MaterialTextureSlot", False),
-        "texture_user": ("ID", False),
-        "vertex_paint_object": ("Object", False),
-        "visible_bases": ("ObjectBase", True),
-        "visible_bones": ("Object", True),
-        "visible_objects": ("Object", True),
-        "visible_pose_bones": ("PoseBone", True),
-        "weight_paint_object": ("Object", False),
-        "world": ("World", False),
-    }
-
     unique = set()
     blend_cdll = ctypes.CDLL("")
     for ctx_str in context_strings:
@@ -1018,7 +1092,7 @@ def pycontext2sphinx(basepath):
         while char_array[i] is not None:
             member = ctypes.string_at(char_array[i]).decode(encoding="ascii")
             fw(".. data:: %s\n\n" % member)
-            member_type, is_seq = type_map[member]
+            member_type, is_seq = context_type_map[member]
             fw("   :type: %s :class:`bpy.types.%s`\n\n" % ("sequence of " if is_seq else "", member_type))
             unique.add(member)
             i += 1
@@ -1026,8 +1100,8 @@ def pycontext2sphinx(basepath):
     # generate typemap...
     # for member in sorted(unique):
     #     print('        "%s": ("", False),' % member)
-    if len(type_map) > len(unique):
-        raise Exception("Some types are not used: %s" % str([member for member in type_map if member not in unique]))
+    if len(context_type_map) > len(unique):
+        raise Exception("Some types are not used: %s" % str([member for member in context_type_map if member not in unique]))
     else:
         pass  # will have raised an error above
 
@@ -1061,7 +1135,9 @@ def pyrna_enum2sphinx(prop, use_empty_descriptions=False):
 def pyrna2sphinx(basepath):
     """ bpy.types and bpy.ops
     """
-    structs, funcs, ops, props = rna_info.BuildRNAInfo()
+    # structs, funcs, ops, props = rna_info.BuildRNAInfo()
+    structs, funcs, ops, props = rna_info_BuildRNAInfo_cache()
+
     if FILTER_BPY_TYPES is not None:
         structs = {k: v for k, v in structs.items() if k[1] in FILTER_BPY_TYPES}
 
@@ -1251,7 +1327,7 @@ def pyrna2sphinx(basepath):
             bases = list(reversed(struct.get_bases()))
 
             # props
-            lines[:] = []
+            del lines[:]
 
             if _BPY_STRUCT_FAKE:
                 descr_items = [(key, descr) for key, descr in sorted(bpy.types.Struct.__bases__[0].__dict__.items()) if not key.startswith("__")]
@@ -1282,7 +1358,7 @@ def pyrna2sphinx(basepath):
                 fw("\n")
 
             # funcs
-            lines[:] = []
+            del lines[:]
 
             if _BPY_STRUCT_FAKE:
                 for key, descr in descr_items:
@@ -1305,7 +1381,7 @@ def pyrna2sphinx(basepath):
                     fw(line)
                 fw("\n")
 
-            lines[:] = []
+            del lines[:]
 
         if struct.references:
             # use this otherwise it gets in the index for a normal heading.
@@ -1313,6 +1389,13 @@ def pyrna2sphinx(basepath):
 
             fw(".. hlist::\n")
             fw("   :columns: 2\n\n")
+
+            # context does its own thing
+            # "active_base": ("ObjectBase", False),
+            for ref_attr, (ref_type, ref_is_seq) in sorted(context_type_map.items()):
+                if ref_type == struct_id:
+                    fw("   * :mod:`bpy.context.%s`\n" % ref_attr)
+            del ref_attr, ref_type, ref_is_seq
 
             for ref in struct.references:
                 ref_split = ref.split(".")
@@ -1465,6 +1548,13 @@ def write_sphinx_conf_py(basepath):
     file.close()
 
 
+def execfile(filepath):
+    global_namespace = {"__file__": filepath, "__name__": "__main__"}
+    file_handle = open(filepath)
+    exec(compile(file_handle.read(), filepath, 'exec'), global_namespace)
+    file_handle.close()
+
+
 def write_rst_contents(basepath):
     '''
     Write the rst file of the main page, needed for sphinx (index.html)
@@ -1507,6 +1597,7 @@ def write_rst_contents(basepath):
         "bpy.path",
         "bpy.app",
         "bpy.app.handlers",
+        "bpy.app.translations",
 
         # C modules
         "bpy.props",
@@ -1524,14 +1615,18 @@ def write_rst_contents(basepath):
         # mathutils
         "mathutils", "mathutils.geometry", "mathutils.noise",
         # misc
-        "bgl", "blf", "gpu", "aud", "bpy_extras",
-        # bmesh
-        "bmesh", "bmesh.types", "bmesh.utils",
+        "freestyle", "bgl", "blf", "gpu", "aud", "bpy_extras",
+        # bmesh, submodules are in own page
+        "bmesh",
         )
 
     for mod in standalone_modules:
         if mod not in EXCLUDE_MODULES:
             fw("   %s\n\n" % mod)
+
+    # special case, this 'bmesh.ops.rst' is extracted from C source
+    if "bmesh.ops" not in EXCLUDE_MODULES:
+        execfile(os.path.join(SCRIPT_DIR, "rst_from_bmesh_opdefines.py"))
 
     # game engine
     if "bge" not in EXCLUDE_MODULES:
@@ -1652,22 +1747,24 @@ def write_rst_importable_modules(basepath):
     '''
     importable_modules = {
         # python_modules
-        "bpy.path"          : "Path Utilities",
-        "bpy.utils"         : "Utilities",
-        "bpy_extras"        : "Extra Utilities",
+        "bpy.path"             : "Path Utilities",
+        "bpy.utils"            : "Utilities",
+        "bpy_extras"           : "Extra Utilities",
 
         # C_modules
-        "aud"               : "Audio System",
-        "blf"               : "Font Drawing",
-        "bmesh"             : "BMesh Module",
-        "bmesh.types"       : "BMesh Types",
-        "bmesh.utils"       : "BMesh Utilities",
-        "bpy.app"           : "Application Data",
-        "bpy.app.handlers"  : "Application Handlers",
-        "bpy.props"         : "Property Definitions",
-        "mathutils"         : "Math Types & Utilities",
-        "mathutils.geometry": "Geometry Utilities",
-        "mathutils.noise"   : "Noise Utilities",
+        "aud"                  : "Audio System",
+        "blf"                  : "Font Drawing",
+        "bmesh"                : "BMesh Module",
+        "bmesh.types"          : "BMesh Types",
+        "bmesh.utils"          : "BMesh Utilities",
+        "bpy.app"              : "Application Data",
+        "bpy.app.handlers"     : "Application Handlers",
+        "bpy.app.translations" : "Application Translations",
+        "bpy.props"            : "Property Definitions",
+        "mathutils"            : "Math Types & Utilities",
+        "mathutils.geometry"   : "Geometry Utilities",
+        "mathutils.noise"      : "Noise Utilities",
+        "freestyle"            : "Freestyle Data Types & Operators",
     }
     for mod_name, mod_descr in importable_modules.items():
         if mod_name not in EXCLUDE_MODULES:
@@ -1685,7 +1782,6 @@ def copy_handwritten_rsts(basepath):
 
     # TODO put this docs in blender's code and use import as per modules above
     handwritten_modules = [
-        "bge.types",
         "bge.logic",
         "bge.render",
         "bge.texture",
@@ -1693,6 +1789,8 @@ def copy_handwritten_rsts(basepath):
         "bge.constraints",
         "bgl",  # "Blender OpenGl wrapper"
         "gpu",  # "GPU Shader Module"
+
+        "bmesh.ops",  # generated by rst_from_bmesh_opdefines.py
 
         # includes...
         "include__bmesh",
@@ -1702,8 +1800,24 @@ def copy_handwritten_rsts(basepath):
             # copy2 keeps time/date stamps
             shutil.copy2(os.path.join(RST_DIR, "%s.rst" % mod_name), basepath)
 
+    if "bge.types" not in EXCLUDE_MODULES:
+        shutil.copy2(os.path.join(RST_DIR, "bge.types.rst"), basepath)
+
+        bge_types_dir = os.path.join(RST_DIR, "bge_types")
+
+        for i in os.listdir(bge_types_dir):
+            if i.startswith("."):
+                # Avoid things like .svn dir...
+                continue
+            shutil.copy2(os.path.join(bge_types_dir, i), basepath)
+
     # changelog
     shutil.copy2(os.path.join(RST_DIR, "change_log.rst"), basepath)
+
+    # copy images, could be smarter but just glob for now.
+    for f in os.listdir(RST_DIR):
+        if f.endswith(".png"):
+            shutil.copy2(os.path.join(RST_DIR, f), basepath)
 
 
 def rna2sphinx(basepath):
@@ -1784,7 +1898,18 @@ def refactor_sphinx_log(sphinx_logfile):
             refactored_logfile.write("%-12s %s\n             %s\n" % log)
 
 
+def monkey_patch():
+    filepath = os.path.join(SCRIPT_DIR, "sphinx_doc_gen_monkeypatch.py")
+    global_namespace = {"__file__": filepath, "__name__": "__main__"}
+    file = open(filepath, 'rb')
+    exec(compile(file.read(), filepath, 'exec'), global_namespace)
+    file.close()
+
+
 def main():
+
+    # first monkey patch to load in fake members
+    monkey_patch()
 
     # eventually, create the dirs
     for dir_path in [ARGS.output_dir, SPHINX_IN]:

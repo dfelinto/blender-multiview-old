@@ -18,17 +18,18 @@
 // FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
 // IN THE SOFTWARE.
 
+#include "libmv/multiview/fundamental.h"
+
 #include "libmv/logging/logging.h"
 #include "libmv/numeric/numeric.h"
 #include "libmv/numeric/poly.h"
 #include "libmv/multiview/conditioning.h"
 #include "libmv/multiview/projection.h"
 #include "libmv/multiview/triangulation.h"
-#include "libmv/multiview/fundamental.h"
 
 namespace libmv {
 
-void EliminateRow(const Mat34 &P, int row, Mat *X) {
+static void EliminateRow(const Mat34 &P, int row, Mat *X) {
   X->resize(2, 4);
 
   int first_row = (row + 1) % 3;
@@ -69,7 +70,7 @@ void FundamentalFromProjections(const Mat34 &P1, const Mat34 &P2, Mat3 *F) {
 
 // HZ 11.1 pag.279 (x1 = x, x2 = x')
 // http://www.cs.unc.edu/~marc/tutorial/node54.html
-double EightPointSolver(const Mat &x1, const Mat &x2, Mat3 *F) {
+static double EightPointSolver(const Mat &x1, const Mat &x2, Mat3 *F) {
   DCHECK_EQ(x1.rows(), 2);
   DCHECK_GE(x1.cols(), 8);
   DCHECK_EQ(x1.rows(), x2.rows());
@@ -304,7 +305,6 @@ void MotionFromEssential(const Mat3 &E,
                          std::vector<Vec3> *ts) {
   Eigen::JacobiSVD<Mat3> USV(E, Eigen::ComputeFullU | Eigen::ComputeFullV);
   Mat3 U =  USV.matrixU();
-  Vec3 d =  USV.singularValues();
   Mat3 Vt = USV.matrixV().transpose();
 
   // Last column of U is undetermined since d = (a a 0).
@@ -386,6 +386,25 @@ bool MotionFromEssentialAndCorrespondence(const Mat3 &E,
   } else {
     return false;
   }
+}
+
+void FundamentalToEssential(const Mat3 &F, Mat3 *E) {
+  Eigen::JacobiSVD<Mat3> svd(F, Eigen::ComputeFullU | Eigen::ComputeFullV);
+
+  // See Hartley & Zisserman page 294, result 11.1, which shows how to get the
+  // closest essential matrix to a matrix that is "almost" an essential matrix.
+  double a = svd.singularValues()(0);
+  double b = svd.singularValues()(1);
+  double s = (a + b) / 2.0;
+
+  LG << "Initial reconstruction's rotation is non-euclidean by "
+     << (((a - b) / std::max(a, b)) * 100) << "%; singular values:"
+     << svd.singularValues().transpose();
+
+  Vec3 diag;
+  diag << s, s, 0;
+
+  *E = svd.matrixU() * diag.asDiagonal() * svd.matrixV().transpose();
 }
 
 }  // namespace libmv

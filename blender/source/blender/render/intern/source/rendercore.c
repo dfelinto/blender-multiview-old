@@ -51,17 +51,22 @@
 #include "DNA_image_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_group_types.h"
 
+#include "BKE_customdata.h"
+#include "BKE_depsgraph.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
 #include "BKE_texture.h"
+#include "BKE_scene.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
+#include "IMB_colormanagement.h"
 
 /* local include */
 #include "rayintersection.h"
@@ -92,7 +97,7 @@ extern struct Render R;
 
 /* x and y are current pixels in rect to be rendered */
 /* do not normalize! */
-void calc_view_vector(float *view, float x, float y)
+void calc_view_vector(float view[3], float x, float y)
 {
 
 	view[2]= -ABS(R.clipsta);
@@ -107,11 +112,11 @@ void calc_view_vector(float *view, float x, float y)
 		}
 		
 		/* move x and y to real viewplane coords */
-		x= (x/(float)R.winx);
-		view[0]= R.viewplane.xmin + x*(R.viewplane.xmax - R.viewplane.xmin);
+		x = (x / (float)R.winx);
+		view[0] = R.viewplane.xmin + x * BLI_rctf_size_x(&R.viewplane);
 		
-		y= (y/(float)R.winy);
-		view[1]= R.viewplane.ymin + y*(R.viewplane.ymax - R.viewplane.ymin);
+		y = (y / (float)R.winy);
+		view[1] = R.viewplane.ymin + y * BLI_rctf_size_y(&R.viewplane);
 		
 //		if (R.flag & R_SEC_FIELD) {
 //			if (R.r.mode & R_ODDFIELD) view[1]= (y+R.ystart)*R.ycor;
@@ -183,7 +188,8 @@ static void halo_pixelstruct(HaloRen *har, RenderLayer **rlpp, int totsample, in
 	
 	fullsample= (totsample > 1);
 	amount= 0;
-	accol[0]=accol[1]=accol[2]=accol[3]= 0.0f;
+	accol[0] = accol[1] = accol[2] = accol[3]= 0.0f;
+	col[0] = col[1] = col[2] = col[3]= 0.0f;
 	flarec= har->flarec;
 	
 	while (ps) {
@@ -270,23 +276,33 @@ static void halo_tile(RenderPart *pa, RenderLayer *rl)
 		har= R.sortedhalos[a];
 
 		/* layer test, clip halo with y */
-		if ((har->lay & lay)==0);
-		else if (testrect.ymin > har->maxy);
-		else if (testrect.ymax < har->miny);
+		if ((har->lay & lay) == 0) {
+			/* pass */
+		}
+		else if (testrect.ymin > har->maxy) {
+			/* pass */
+		}
+		else if (testrect.ymax < har->miny) {
+			/* pass */
+		}
 		else {
 			
 			minx= floor(har->xs-har->rad);
 			maxx= ceil(har->xs+har->rad);
 			
-			if (testrect.xmin > maxx);
-			else if (testrect.xmax < minx);
+			if (testrect.xmin > maxx) {
+				/* pass */
+			}
+			else if (testrect.xmax < minx) {
+				/* pass */
+			}
 			else {
 				
-				minx= MAX2(minx, testrect.xmin);
-				maxx= MIN2(maxx, testrect.xmax);
+				minx = max_ii(minx, testrect.xmin);
+				maxx = min_ii(maxx, testrect.xmax);
 			
-				miny= MAX2(har->miny, testrect.ymin);
-				maxy= MIN2(har->maxy, testrect.ymax);
+				miny = max_ii(har->miny, testrect.ymin);
+				maxy = min_ii(har->maxy, testrect.ymax);
 			
 				for (y=miny; y<maxy; y++) {
 					int rectofs= (y-disprect.ymin)*pa->rectx + (minx - disprect.xmin);
@@ -659,7 +675,7 @@ int get_sample_layers(RenderPart *pa, RenderLayer *rl, RenderLayer **rlpp)
 			RenderResult *rr= BLI_findlink(&pa->fullresult, sample);
 		
 			rlpp[sample]= BLI_findlink(&rr->layers, nr);
-		}		
+		}
 		return R.osa;
 	}
 	else {
@@ -697,12 +713,14 @@ static void sky_tile(RenderPart *pa, RenderLayer *rl)
 					
 					if (pass[3]==0.0f) {
 						copy_v4_v4(pass, col);
+						pass[3] = 1.0f;
 					}
 					else {
 						addAlphaUnderFloat(pass, col);
+						pass[3] = 1.0f;
 					}
 				}
-			}			
+			}
 		}
 		
 		if (y&1)
@@ -760,8 +778,8 @@ static void atm_tile(RenderPart *pa, RenderLayer *rl)
 						if (*zrect >= 9.9e10f || rgbrect[3]==0.0f) {
 							continue;
 						}
-												
-						if ((lar->sunsky->effect_type & LA_SUN_EFFECT_AP)) {	
+
+						if ((lar->sunsky->effect_type & LA_SUN_EFFECT_AP)) {
 							float tmp_rgb[3];
 							
 							/* skip if worldspace lamp vector is below horizon */
@@ -916,7 +934,7 @@ static void addps(ListBase *lb, intptr_t *rd, int obi, int facenr, int z, int ma
 	PixStrMain *psm;
 	PixStr *ps, *last= NULL;
 	
-	if (*rd) {	
+	if (*rd) {
 		ps= (PixStr *)(*rd);
 		
 		while (ps) {
@@ -968,23 +986,26 @@ static void edge_enhance_add(RenderPart *pa, float *rectf, float *arect)
 	}
 }
 
-static void convert_to_key_alpha(RenderPart *pa, RenderLayer *rl)
+/* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
+static void clamp_alpha_rgb_range(RenderPart *pa, RenderLayer *rl)
 {
 	RenderLayer *rlpp[RE_MAX_OSA];
 	int y, sample, totsample;
 	
 	totsample= get_sample_layers(pa, rl, rlpp);
+
+	/* not for full sample, there we clamp after compositing */
+	if (totsample > 1)
+		return;
 	
 	for (sample= 0; sample<totsample; sample++) {
 		float *rectf= rlpp[sample]->rectf;
 		
 		for (y= pa->rectx*pa->recty; y>0; y--, rectf+=4) {
-			if (rectf[3] >= 1.0f);
-			else if (rectf[3] > 0.0f) {
-				rectf[0] /= rectf[3];
-				rectf[1] /= rectf[3];
-				rectf[2] /= rectf[3];
-			}
+			rectf[0] = MAX2(rectf[0], 0.0f);
+			rectf[1] = MAX2(rectf[1], 0.0f);
+			rectf[2] = MAX2(rectf[2], 0.0f);
+			CLAMP(rectf[3], 0.0f, 1.0f);
 		}
 	}
 }
@@ -1117,7 +1138,7 @@ static void addAlphaOverFloatMask(float *dest, float *source, unsigned short dma
 		dest[3]+= source[3];
 		
 		return;
-	 }
+	}
 
 	dest[0]= (mul*dest[0]) + source[0];
 	dest[1]= (mul*dest[1]) + source[1];
@@ -1133,7 +1154,7 @@ typedef struct ZbufSolidData {
 
 static void make_pixelstructs(RenderPart *pa, ZSpan *zspan, int sample, void *data)
 {
-	ZbufSolidData *sdata= (ZbufSolidData*)data;
+	ZbufSolidData *sdata = (ZbufSolidData *)data;
 	ListBase *lb= sdata->psmlist;
 	intptr_t *rd= pa->rectdaps;
 	int *ro= zspan->recto;
@@ -1269,10 +1290,9 @@ void zbufshadeDA_tile(RenderPart *pa)
 		
 		if (rl->passflag & SCE_PASS_VECTOR)
 			reset_sky_speed(pa, rl);
-		
-		/* de-premul alpha */
-		if (R.r.alphamode & R_ALPHAKEY)
-			convert_to_key_alpha(pa, rl);
+
+		/* clamp alpha to 0..1 range, can go outside due to filter */
+		clamp_alpha_rgb_range(pa, rl);
 		
 		/* free stuff within loop! */
 		MEM_freeN(pa->rectdaps); pa->rectdaps= NULL;
@@ -1434,10 +1454,6 @@ void zbufshade_tile(RenderPart *pa)
 		if (rl->passflag & SCE_PASS_VECTOR)
 			reset_sky_speed(pa, rl);
 		
-		/* de-premul alpha */
-		if (R.r.alphamode & R_ALPHAKEY)
-			convert_to_key_alpha(pa, rl);
-		
 		if (edgerect) MEM_freeN(edgerect);
 		edgerect= NULL;
 
@@ -1541,7 +1557,7 @@ static void shade_sample_sss(ShadeSample *ssamp, Material *mat, ObjectInstanceRe
 
 	copy_v3_v3(shi->facenor, nor);
 	shade_input_set_viewco(shi, x, y, sx, sy, z);
-	*area = minf(len_v3(shi->dxco) * len_v3(shi->dyco), 2.0f * orthoarea);
+	*area = min_ff(len_v3(shi->dxco) * len_v3(shi->dyco), 2.0f * orthoarea);
 
 	shade_input_set_uv(shi);
 	shade_input_set_normals(shi);
@@ -1606,7 +1622,7 @@ void zbufshade_sss_tile(RenderPart *pa)
 	VlakRen *vlr;
 	Material *mat= re->sss_mat;
 	float (*co)[3], (*color)[3], *area, *fcol;
-	int x, y, seed, quad, totpoint, display = !(re->r.scemode & R_PREVIEWBUTS);
+	int x, y, seed, quad, totpoint, display = !(re->r.scemode & (R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW));
 	int *ro, *rz, *rp, *rbo, *rbz, *rbp, lay;
 #if 0
 	PixStr *ps;
@@ -1698,7 +1714,7 @@ void zbufshade_sss_tile(RenderPart *pa)
 #if 0
 			if (rs) {
 				/* for each sample in this pixel, shade it */
-				for (ps=(PixStr*)*rs; ps; ps=ps->next) {
+				for (ps = (PixStr *)(*rs); ps; ps=ps->next) {
 					ObjectInstanceRen *obi= &re->objectinstance[ps->obi];
 					ObjectRen *obr= obi->obr;
 					vlr= RE_findOrAddVlak(obr, (ps->facenr-1) & RE_QUAD_MASK);
@@ -1805,16 +1821,23 @@ static void renderhalo_post(RenderResult *rr, float *rectf, HaloRen *har)	/* pos
 	har->miny= miny= haloys - har->rad/R.ycor;
 	har->maxy= maxy= haloys + har->rad/R.ycor;
 	
-	if (maxy<0);
-	else if (rr->recty<miny);
+	if (maxy < 0) {
+		/* pass */
+	}
+	else if (rr->recty < miny) {
+		/* pass */
+	}
 	else {
-		minx= floor(haloxs-har->rad);
-		maxx= ceil(haloxs+har->rad);
+		minx = floor(haloxs - har->rad);
+		maxx = ceil(haloxs + har->rad);
 			
-		if (maxx<0);
-		else if (rr->rectx<minx);
+		if (maxx < 0) {
+			/* pass */
+		}
+		else if (rr->rectx < minx) {
+			/* pass */
+		}
 		else {
-		
 			if (minx<0) minx= 0;
 			if (maxx>=rr->rectx) maxx= rr->rectx-1;
 			if (miny<0) miny= 0;
@@ -1964,743 +1987,6 @@ void add_halo_flare(Render *re)
 		re->display_draw(re->ddh, rr, NULL);
 	}
 	
-	R.r.mode= mode;	
-}
-
-/* ************************* bake ************************ */
-
-
-typedef struct BakeShade {
-	ShadeSample ssamp;
-	ObjectInstanceRen *obi;
-	VlakRen *vlr;
-	
-	ZSpan *zspan;
-	Image *ima;
-	ImBuf *ibuf;
-	
-	int rectx, recty, quad, type, vdone, ready;
-
-	float dir[3];
-	Object *actob;
-	
-	unsigned int *rect;
-	float *rect_float;
-	
-	int use_mask;
-	char *rect_mask; /* bake pixel mask */
-
-	float dxco[3], dyco[3];
-
-	short *do_update;
-} BakeShade;
-
-static void bake_set_shade_input(ObjectInstanceRen *obi, VlakRen *vlr, ShadeInput *shi, int quad, int UNUSED(isect), int x, int y, float u, float v)
-{
-	if (quad) 
-		shade_input_set_triangle_i(shi, obi, vlr, 0, 2, 3);
-	else
-		shade_input_set_triangle_i(shi, obi, vlr, 0, 1, 2);
-		
-	/* cache for shadow */
-	shi->samplenr= R.shadowsamplenr[shi->thread]++;
-
-	shi->mask= 0xFFFF; /* all samples */
-	
-	shi->u= -u;
-	shi->v= -v;
-	shi->xs= x;
-	shi->ys= y;
-	
-	shade_input_set_uv(shi);
-	shade_input_set_normals(shi);
-
-	/* no normal flip */
-	if (shi->flippednor)
-		shade_input_flip_normals(shi);
-
-	/* set up view vector to look right at the surface (note that the normal
-	 * is negated in the renderer so it does not need to be done here) */
-	shi->view[0]= shi->vn[0];
-	shi->view[1]= shi->vn[1];
-	shi->view[2]= shi->vn[2];
-}
-
-static void bake_shade(void *handle, Object *ob, ShadeInput *shi, int UNUSED(quad), int x, int y, float UNUSED(u), float UNUSED(v), float *tvn, float *ttang)
-{
-	BakeShade *bs= handle;
-	ShadeSample *ssamp= &bs->ssamp;
-	ShadeResult shr;
-	VlakRen *vlr= shi->vlr;
-	
-	shade_input_init_material(shi);
-	
-	if (bs->type==RE_BAKE_AO) {
-		ambient_occlusion(shi);
-
-		if (R.r.bake_flag & R_BAKE_NORMALIZE) {
-			copy_v3_v3(shr.combined, shi->ao);
-		}
-		else {
-			zero_v3(shr.combined);
-			environment_lighting_apply(shi, &shr);
-		}
-	}
-	else {
-		if (bs->type==RE_BAKE_SHADOW) /* Why do shadows set the color anyhow?, ignore material color for baking */
-			shi->r = shi->g = shi->b = 1.0f;
-	
-		shade_input_set_shade_texco(shi);
-		
-		/* only do AO for a full bake (and obviously AO bakes)
-		 * AO for light bakes is a leftover and might not be needed */
-		if ( ELEM3(bs->type, RE_BAKE_ALL, RE_BAKE_AO, RE_BAKE_LIGHT))
-			shade_samples_do_AO(ssamp);
-		
-		if (shi->mat->nodetree && shi->mat->use_nodes) {
-			ntreeShaderExecTree(shi->mat->nodetree, shi, &shr);
-			shi->mat= vlr->mat;		/* shi->mat is being set in nodetree */
-		}
-		else
-			shade_material_loop(shi, &shr);
-		
-		if (bs->type==RE_BAKE_NORMALS) {
-			float nor[3];
-
-			copy_v3_v3(nor, shi->vn);
-
-			if (R.r.bake_normal_space == R_BAKE_SPACE_CAMERA);
-			else if (R.r.bake_normal_space == R_BAKE_SPACE_TANGENT) {
-				float mat[3][3], imat[3][3];
-
-				/* bitangent */
-				if (tvn && ttang) {
-					copy_v3_v3(mat[0], ttang);
-					cross_v3_v3v3(mat[1], tvn, ttang);
-					mul_v3_fl(mat[1], ttang[3]);
-					copy_v3_v3(mat[2], tvn);
-				}
-				else {
-					copy_v3_v3(mat[0], shi->nmaptang);
-					cross_v3_v3v3(mat[1], shi->nmapnorm, shi->nmaptang);
-					mul_v3_fl(mat[1], shi->nmaptang[3]);
-					copy_v3_v3(mat[2], shi->nmapnorm);
-				}
-
-				invert_m3_m3(imat, mat);
-				mul_m3_v3(imat, nor);
-			}
-			else if (R.r.bake_normal_space == R_BAKE_SPACE_OBJECT)
-				mul_mat3_m4_v3(ob->imat_ren, nor); /* ob->imat_ren includes viewinv! */
-			else if (R.r.bake_normal_space == R_BAKE_SPACE_WORLD)
-				mul_mat3_m4_v3(R.viewinv, nor);
-
-			normalize_v3(nor); /* in case object has scaling */
-
-			/* The invert of the red channel is to make
-			 * the normal map compliant with the outside world.
-			 * It needs to be done because in Blender
-			 * the normal used in the renderer points inward. It is generated
-			 * this way in calc_vertexnormals(). Should this ever change
-			 * this negate must be removed. */
-			shr.combined[0]= (-nor[0])/2.0f + 0.5f;
-			shr.combined[1]= nor[1]/2.0f + 0.5f;
-			shr.combined[2]= nor[2]/2.0f + 0.5f;
-		}
-		else if (bs->type==RE_BAKE_TEXTURE) {
-			shr.combined[0]= shi->r;
-			shr.combined[1]= shi->g;
-			shr.combined[2]= shi->b;
-			shr.alpha = shi->alpha;
-		}
-		else if (bs->type==RE_BAKE_SHADOW) {
-			copy_v3_v3(shr.combined, shr.shad);
-			shr.alpha = shi->alpha;
-		}
-		else if (bs->type==RE_BAKE_SPEC_COLOR) {
-			shr.combined[0]= shi->specr;
-			shr.combined[1]= shi->specg;
-			shr.combined[2]= shi->specb;
-			shr.alpha = 1.0f;
-		}
-		else if (bs->type==RE_BAKE_SPEC_INTENSITY) {
-			shr.combined[0]=
-			shr.combined[1]=
-			shr.combined[2]= shi->spec;
-			shr.alpha = 1.0f;
-		}
-		else if (bs->type==RE_BAKE_MIRROR_COLOR) {
-			shr.combined[0]= shi->mirr;
-			shr.combined[1]= shi->mirg;
-			shr.combined[2]= shi->mirb;
-			shr.alpha = 1.0f;
-		}
-		else if (bs->type==RE_BAKE_MIRROR_INTENSITY) {
-			shr.combined[0]=
-			shr.combined[1]=
-			shr.combined[2]= shi->ray_mirror;
-			shr.alpha = 1.0f;
-		}
-		else if (bs->type==RE_BAKE_ALPHA) {
-			shr.combined[0]=
-			shr.combined[1]=
-			shr.combined[2]= shi->alpha;
-			shr.alpha = 1.0f;
-		}
-		else if (bs->type==RE_BAKE_EMIT) {
-			shr.combined[0]=
-			shr.combined[1]=
-			shr.combined[2]= shi->emit;
-			shr.alpha = 1.0f;
-		}
-	}
-	
-	if (bs->rect_float) {
-		float *col= bs->rect_float + 4*(bs->rectx*y + x);
-		copy_v3_v3(col, shr.combined);
-		if (bs->type==RE_BAKE_ALL || bs->type==RE_BAKE_TEXTURE) {
-			col[3]= shr.alpha;
-		}
-		else {
-			col[3]= 1.0;
-		}
-	}
-	else {
-		unsigned char *col= (unsigned char *)(bs->rect + bs->rectx*y + x);
-
-		if (ELEM(bs->type, RE_BAKE_ALL, RE_BAKE_TEXTURE) && (R.r.color_mgt_flag & R_COLOR_MANAGEMENT)) {
-			linearrgb_to_srgb_uchar3(col, shr.combined);
-		}
-		else {
-			rgb_float_to_uchar(col, shr.combined);
-		}
-		
-		if (ELEM(bs->type, RE_BAKE_ALL, RE_BAKE_TEXTURE)) {
-			col[3]= FTOCHAR(shr.alpha);
-		}
-		else {
-			col[3]= 255;
-		}
-	}
-	
-	if (bs->rect_mask) {
-		bs->rect_mask[bs->rectx*y + x] = FILTER_MASK_USED;
-	}
-}
-
-static void bake_displacement(void *handle, ShadeInput *UNUSED(shi), float dist, int x, int y)
-{
-	BakeShade *bs= handle;
-	float disp;
-	
-	if (R.r.bake_flag & R_BAKE_NORMALIZE && R.r.bake_maxdist) {
-		disp = (dist+R.r.bake_maxdist) / (R.r.bake_maxdist*2); /* alter the range from [-bake_maxdist, bake_maxdist] to [0, 1]*/
-	}
-	else {
-		disp = 0.5f + dist; /* alter the range from [-0.5,0.5] to [0,1]*/
-	}
-	
-	if (bs->rect_float) {
-		float *col= bs->rect_float + 4*(bs->rectx*y + x);
-		col[0] = col[1] = col[2] = disp;
-		col[3]= 1.0f;
-	}
-	else {
-		char *col= (char *)(bs->rect + bs->rectx*y + x);
-		col[0] = col[1] = col[2] = FTOCHAR(disp);
-		col[3]= 255;
-	}
-	if (bs->rect_mask) {
-		bs->rect_mask[bs->rectx*y + x] = FILTER_MASK_USED;
-	}
-}
-
-static int bake_intersect_tree(RayObject* raytree, Isect* isect, float *start, float *dir, float sign, float *hitco, float *dist)
-{
-	float maxdist;
-	int hit;
-
-	/* might be useful to make a user setting for maxsize*/
-	if (R.r.bake_maxdist > 0.0f)
-		maxdist= R.r.bake_maxdist;
-	else
-		maxdist= RE_RAYTRACE_MAXDIST + R.r.bake_biasdist;
-
-	/* 'dir' is always normalized */
-	madd_v3_v3v3fl(isect->start, start, dir, -R.r.bake_biasdist);
-
-	mul_v3_v3fl(isect->dir, dir, sign);
-
-	isect->dist = maxdist;
-
-	hit = RE_rayobject_raycast(raytree, isect);
-	if (hit) {
-		madd_v3_v3v3fl(hitco, isect->start, isect->dir, isect->dist);
-
-		*dist= isect->dist;
-	}
-
-	return hit;
-}
-
-static void bake_set_vlr_dxyco(BakeShade *bs, float *uv1, float *uv2, float *uv3)
-{
-	VlakRen *vlr= bs->vlr;
-	float A, d1, d2, d3, *v1, *v2, *v3;
-
-	if (bs->quad) {
-		v1= vlr->v1->co;
-		v2= vlr->v3->co;
-		v3= vlr->v4->co;
-	}
-	else {
-		v1= vlr->v1->co;
-		v2= vlr->v2->co;
-		v3= vlr->v3->co;
-	}
-
-	/* formula derived from barycentric coordinates:
-	 * (uvArea1*v1 + uvArea2*v2 + uvArea3*v3)/uvArea
-	 * then taking u and v partial derivatives to get dxco and dyco */
-	A= (uv2[0] - uv1[0])*(uv3[1] - uv1[1]) - (uv3[0] - uv1[0])*(uv2[1] - uv1[1]);
-
-	if (fabsf(A) > FLT_EPSILON) {
-		A= 0.5f/A;
-
-		d1= uv2[1] - uv3[1];
-		d2= uv3[1] - uv1[1];
-		d3= uv1[1] - uv2[1];
-		bs->dxco[0]= (v1[0]*d1 + v2[0]*d2 + v3[0]*d3)*A;
-		bs->dxco[1]= (v1[1]*d1 + v2[1]*d2 + v3[1]*d3)*A;
-		bs->dxco[2]= (v1[2]*d1 + v2[2]*d2 + v3[2]*d3)*A;
-
-		d1= uv3[0] - uv2[0];
-		d2= uv1[0] - uv3[0];
-		d3= uv2[0] - uv1[0];
-		bs->dyco[0]= (v1[0]*d1 + v2[0]*d2 + v3[0]*d3)*A;
-		bs->dyco[1]= (v1[1]*d1 + v2[1]*d2 + v3[1]*d3)*A;
-		bs->dyco[2]= (v1[2]*d1 + v2[2]*d2 + v3[2]*d3)*A;
-	}
-	else {
-		bs->dxco[0]= bs->dxco[1]= bs->dxco[2]= 0.0f;
-		bs->dyco[0]= bs->dyco[1]= bs->dyco[2]= 0.0f;
-	}
-
-	if (bs->obi->flag & R_TRANSFORMED) {
-		mul_m3_v3(bs->obi->nmat, bs->dxco);
-		mul_m3_v3(bs->obi->nmat, bs->dyco);
-	}
-}
-
-static void do_bake_shade(void *handle, int x, int y, float u, float v)
-{
-	BakeShade *bs= handle;
-	VlakRen *vlr= bs->vlr;
-	ObjectInstanceRen *obi= bs->obi;
-	Object *ob= obi->obr->ob;
-	float l, *v1, *v2, *v3, tvn[3], ttang[4];
-	int quad;
-	ShadeSample *ssamp= &bs->ssamp;
-	ShadeInput *shi= ssamp->shi;
-	
-	/* fast threadsafe break test */
-	if (R.test_break(R.tbh))
-		return;
-	
-	/* setup render coordinates */
-	if (bs->quad) {
-		v1= vlr->v1->co;
-		v2= vlr->v3->co;
-		v3= vlr->v4->co;
-	}
-	else {
-		v1= vlr->v1->co;
-		v2= vlr->v2->co;
-		v3= vlr->v3->co;
-	}
-	
-	/* renderco */
-	l= 1.0f-u-v;
-	
-	shi->co[0]= l*v3[0]+u*v1[0]+v*v2[0];
-	shi->co[1]= l*v3[1]+u*v1[1]+v*v2[1];
-	shi->co[2]= l*v3[2]+u*v1[2]+v*v2[2];
-	
-	if (obi->flag & R_TRANSFORMED)
-		mul_m4_v3(obi->mat, shi->co);
-	
-	copy_v3_v3(shi->dxco, bs->dxco);
-	copy_v3_v3(shi->dyco, bs->dyco);
-
-	quad= bs->quad;
-	bake_set_shade_input(obi, vlr, shi, quad, 0, x, y, u, v);
-
-	if (bs->type==RE_BAKE_NORMALS && R.r.bake_normal_space==R_BAKE_SPACE_TANGENT) {
-		shade_input_set_shade_texco(shi);
-		copy_v3_v3(tvn, shi->nmapnorm);
-		copy_v4_v4(ttang, shi->nmaptang);
-	}
-
-	/* if we are doing selected to active baking, find point on other face */
-	if (bs->actob) {
-		Isect isec, minisec;
-		float co[3], minco[3], dist, mindist=0.0f;
-		int hit, sign, dir=1;
-		
-		/* intersect with ray going forward and backward*/
-		hit= 0;
-		memset(&minisec, 0, sizeof(minisec));
-		minco[0]= minco[1]= minco[2]= 0.0f;
-		
-		copy_v3_v3(bs->dir, shi->vn);
-		
-		for (sign=-1; sign<=1; sign+=2) {
-			memset(&isec, 0, sizeof(isec));
-			isec.mode= RE_RAY_MIRROR;
-
-			isec.orig.ob   = obi;
-			isec.orig.face = vlr;
-			isec.userdata= bs->actob;
-			isec.check = RE_CHECK_VLR_BAKE;
-			isec.skip = RE_SKIP_VLR_NEIGHBOUR;
-			
-			if (bake_intersect_tree(R.raytree, &isec, shi->co, shi->vn, sign, co, &dist)) {
-				if (!hit || len_squared_v3v3(shi->co, co) < len_squared_v3v3(shi->co, minco)) {
-					minisec= isec;
-					mindist= dist;
-					copy_v3_v3(minco, co);
-					hit= 1;
-					dir = sign;
-				}
-			}
-		}
-
-		if (bs->type==RE_BAKE_DISPLACEMENT) {
-			if (hit)
-				bake_displacement(handle, shi, (dir==-1)? mindist:-mindist, x, y);
-			else
-				bake_displacement(handle, shi, 0.0f, x, y);
-			return;
-		}
-
-		/* if hit, we shade from the new point, otherwise from point one starting face */
-		if (hit) {
-			obi= (ObjectInstanceRen*)minisec.hit.ob;
-			vlr= (VlakRen*)minisec.hit.face;
-			quad= (minisec.isect == 2);
-			copy_v3_v3(shi->co, minco);
-			
-			u= -minisec.u;
-			v= -minisec.v;
-			bake_set_shade_input(obi, vlr, shi, quad, 1, x, y, u, v);
-		}
-	}
-
-	if (bs->type==RE_BAKE_NORMALS && R.r.bake_normal_space==R_BAKE_SPACE_TANGENT)
-		bake_shade(handle, ob, shi, quad, x, y, u, v, tvn, ttang);
-	else
-		bake_shade(handle, ob, shi, quad, x, y, u, v, 0, 0);
-}
-
-static int get_next_bake_face(BakeShade *bs)
-{
-	ObjectRen *obr;
-	VlakRen *vlr;
-	MTFace *tface;
-	static int v= 0, vdone = FALSE;
-	static ObjectInstanceRen *obi= NULL;
-	
-	if (bs==NULL) {
-		vlr= NULL;
-		v= vdone = FALSE;
-		obi= R.instancetable.first;
-		return 0;
-	}
-	
-	BLI_lock_thread(LOCK_CUSTOM1);	
-
-	for (; obi; obi=obi->next, v=0) {
-		obr= obi->obr;
-
-		for (; v<obr->totvlak; v++) {
-			vlr= RE_findOrAddVlak(obr, v);
-
-			if ((bs->actob && bs->actob == obr->ob) || (!bs->actob && (obr->ob->flag & SELECT))) {
-				tface= RE_vlakren_get_tface(obr, vlr, obr->bakemtface, NULL, 0);
-
-				if (tface && tface->tpage) {
-					Image *ima= tface->tpage;
-					ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
-					const float vec_alpha[4]= {0.0f, 0.0f, 0.0f, 0.0f};
-					const float vec_solid[4]= {0.0f, 0.0f, 0.0f, 1.0f};
-					
-					if (ibuf==NULL)
-						continue;
-					
-					if (ibuf->rect==NULL && ibuf->rect_float==NULL)
-						continue;
-					
-					if (ibuf->rect_float && !(ibuf->channels==0 || ibuf->channels==4))
-						continue;
-					
-					if (ima->flag & IMA_USED_FOR_RENDER) {
-						ima->id.flag &= ~LIB_DOIT;
-						continue;
-					}
-					
-					/* find the image for the first time? */
-					if (ima->id.flag & LIB_DOIT) {
-						ima->id.flag &= ~LIB_DOIT;
-						
-						/* we either fill in float or char, this ensures things go fine */
-						if (ibuf->rect_float)
-							imb_freerectImBuf(ibuf);
-						/* clear image */
-						if (R.r.bake_flag & R_BAKE_CLEAR)
-							IMB_rectfill(ibuf, (ibuf->planes == R_IMF_PLANES_RGBA) ? vec_alpha : vec_solid);
-					
-						/* might be read by UI to set active image for display */
-						R.bakebuf= ima;
-					}				
-					
-					bs->obi= obi;
-					bs->vlr= vlr;
-					
-					bs->vdone++;	/* only for error message if nothing was rendered */
-					v++;
-					
-					BLI_unlock_thread(LOCK_CUSTOM1);
-					return 1;
-				}
-			}
-		}
-	}
-	
-	BLI_unlock_thread(LOCK_CUSTOM1);
-	return 0;
-}
-
-/* already have tested for tface and ima and zspan */
-static void shade_tface(BakeShade *bs)
-{
-	VlakRen *vlr= bs->vlr;
-	ObjectInstanceRen *obi= bs->obi;
-	ObjectRen *obr= obi->obr;
-	MTFace *tface= RE_vlakren_get_tface(obr, vlr, obr->bakemtface, NULL, 0);
-	Image *ima= tface->tpage;
-	float vec[4][2];
-	int a, i1, i2, i3;
-	
-	/* check valid zspan */
-	if (ima!=bs->ima) {
-		bs->ima= ima;
-		bs->ibuf= BKE_image_get_ibuf(ima, NULL);
-		/* note, these calls only free/fill contents of zspan struct, not zspan itself */
-		zbuf_free_span(bs->zspan);
-		zbuf_alloc_span(bs->zspan, bs->ibuf->x, bs->ibuf->y, R.clipcrop);
-	}				
-	
-	bs->rectx= bs->ibuf->x;
-	bs->recty= bs->ibuf->y;
-	bs->rect= bs->ibuf->rect;
-	bs->rect_float= bs->ibuf->rect_float;
-	bs->quad= 0;
-	
-	if (bs->use_mask) {
-		if (bs->ibuf->userdata==NULL) {
-			BLI_lock_thread(LOCK_CUSTOM1);
-			if (bs->ibuf->userdata==NULL) /* since the thread was locked, its possible another thread alloced the value */
-				bs->ibuf->userdata = (void *)MEM_callocN(sizeof(char)*bs->rectx*bs->recty, "BakeMask");
-			bs->rect_mask= (char *)bs->ibuf->userdata;
-			BLI_unlock_thread(LOCK_CUSTOM1);
-		}
-		else {
-			bs->rect_mask= (char *)bs->ibuf->userdata;
-		}
-	}
-	
-	/* get pixel level vertex coordinates */
-	for (a=0; a<4; a++) {
-		/* Note, workaround for pixel aligned UVs which are common and can screw up our intersection tests
-		 * where a pixel gets in between 2 faces or the middle of a quad,
-		 * camera aligned quads also have this problem but they are less common.
-		 * Add a small offset to the UVs, fixes bug #18685 - Campbell */
-		vec[a][0]= tface->uv[a][0]*(float)bs->rectx - (0.5f + 0.001f);
-		vec[a][1]= tface->uv[a][1]*(float)bs->recty - (0.5f + 0.002f);
-	}
-	
-	/* UV indices have to be corrected for possible quad->tria splits */
-	i1= 0; i2= 1; i3= 2;
-	vlr_set_uv_indices(vlr, &i1, &i2, &i3);
-	bake_set_vlr_dxyco(bs, vec[i1], vec[i2], vec[i3]);
-	zspan_scanconvert(bs->zspan, bs, vec[i1], vec[i2], vec[i3], do_bake_shade);
-	
-	if (vlr->v4) {
-		bs->quad= 1;
-		bake_set_vlr_dxyco(bs, vec[0], vec[2], vec[3]);
-		zspan_scanconvert(bs->zspan, bs, vec[0], vec[2], vec[3], do_bake_shade);
-	}
-}
-
-static void *do_bake_thread(void *bs_v)
-{
-	BakeShade *bs= bs_v;
-	
-	while (get_next_bake_face(bs)) {
-		shade_tface(bs);
-		
-		/* fast threadsafe break test */
-		if (R.test_break(R.tbh))
-			break;
-
-		/* access is not threadsafe but since its just true/false probably ok
-		 * only used for interactive baking */
-		if (bs->do_update)
-			*bs->do_update= TRUE;
-	}
-	bs->ready= 1;
-	
-	return NULL;
-}
-
-void RE_bake_ibuf_filter(ImBuf *ibuf, char *mask, const int filter)
-{
-	/* must check before filtering */
-	const short is_new_alpha= (ibuf->planes != R_IMF_PLANES_RGBA) && BKE_imbuf_alpha_test(ibuf);
-
-	/* Margin */
-	if (filter) {
-		IMB_filter_extend(ibuf, mask, filter);
-	}
-
-	/* if the bake results in new alpha then change the image setting */
-	if (is_new_alpha) {
-		ibuf->planes= R_IMF_PLANES_RGBA;
-	}
-	else {
-		if (filter && ibuf->planes != R_IMF_PLANES_RGBA) {
-			/* clear alpha added by filtering */
-			IMB_rectfill_alpha(ibuf, 1.0f);
-		}
-	}
-}
-
-/* using object selection tags, the faces with UV maps get baked */
-/* render should have been setup */
-/* returns 0 if nothing was handled */
-int RE_bake_shade_all_selected(Render *re, int type, Object *actob, short *do_update, float *progress)
-{
-	BakeShade *handles;
-	ListBase threads;
-	Image *ima;
-	int a, vdone = FALSE, use_mask = FALSE, result = BAKE_RESULT_OK;
-	
-	/* initialize render global */
-	R= *re;
-	R.bakebuf= NULL;
-	
-	/* initialize static vars */
-	get_next_bake_face(NULL);
-	
-	/* do we need a mask? */
-	if (re->r.bake_filter)
-		use_mask = TRUE;
-	
-	/* baker uses this flag to detect if image was initialized */
-	for (ima= G.main->image.first; ima; ima= ima->id.next) {
-		ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
-		ima->id.flag |= LIB_DOIT;
-		ima->flag&= ~IMA_USED_FOR_RENDER;
-		if (ibuf) {
-			ibuf->userdata = NULL; /* use for masking if needed */
-			if (ibuf->rect_float)
-				ibuf->profile = IB_PROFILE_LINEAR_RGB;
-		}
-	}
-	
-	BLI_init_threads(&threads, do_bake_thread, re->r.threads);
-
-	handles= MEM_callocN(sizeof(BakeShade)*re->r.threads, "BakeShade");
-
-	/* get the threads running */
-	for (a=0; a<re->r.threads; a++) {
-		/* set defaults in handles */
-		handles[a].ssamp.shi[0].lay= re->lay;
-		
-		if (type==RE_BAKE_SHADOW) {
-			handles[a].ssamp.shi[0].passflag= SCE_PASS_SHADOW;
-		}
-		else {
-			handles[a].ssamp.shi[0].passflag= SCE_PASS_COMBINED;
-		}
-		handles[a].ssamp.shi[0].combinedflag= ~(SCE_PASS_SPEC);
-		handles[a].ssamp.shi[0].thread= a;
-		handles[a].ssamp.tot= 1;
-		
-		handles[a].type= type;
-		handles[a].actob= actob;
-		handles[a].zspan= MEM_callocN(sizeof(ZSpan), "zspan for bake");
-		
-		handles[a].use_mask = use_mask;
-
-		handles[a].do_update = do_update; /* use to tell the view to update */
-		
-		BLI_insert_thread(&threads, &handles[a]);
-	}
-	
-	/* wait for everything to be done */
-	a= 0;
-	while (a!=re->r.threads) {
-		PIL_sleep_ms(50);
-
-		/* calculate progress */
-		for (vdone = FALSE, a=0; a<re->r.threads; a++)
-			vdone+= handles[a].vdone;
-		if (progress)
-			*progress = (float)(vdone / (float)re->totvlak);
-		
-		for (a=0; a<re->r.threads; a++) {
-			if (handles[a].ready==0)
-				break;
-		}
-	}
-	
-	/* filter and refresh images */
-	for (ima= G.main->image.first; ima; ima= ima->id.next) {
-		if ((ima->id.flag & LIB_DOIT)==0) {
-			ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
-
-			if (ima->flag & IMA_USED_FOR_RENDER)
-				result= BAKE_RESULT_FEEDBACK_LOOP;
-
-			if (!ibuf)
-				continue;
-
-			RE_bake_ibuf_filter(ibuf, (char *)ibuf->userdata, re->r.bake_filter);
-
-			ibuf->userflags |= IB_BITMAPDIRTY;
-			if (ibuf->rect_float) IMB_rect_from_float(ibuf);
-		}
-	}
-	
-	/* calculate return value */
-	for (a=0; a<re->r.threads; a++) {
-		zbuf_free_span(handles[a].zspan);
-		MEM_freeN(handles[a].zspan);
-	}
-
-	MEM_freeN(handles);
-	
-	BLI_end_threads(&threads);
-
-	if (vdone==0)
-		result= BAKE_RESULT_NO_OBJECTS;
-
-	return result;
-}
-
-struct Image *RE_bake_shade_get_image(void)
-{
-	return R.bakebuf;
+	R.r.mode= mode;
 }
 

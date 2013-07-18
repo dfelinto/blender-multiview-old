@@ -29,7 +29,8 @@
 #include "MEM_guardedalloc.h"
 
 #include "IMB_anim.h"
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
+#include "BLI_utildefines.h"
 #include "BKE_global.h"
 
 #include "BLI_dynstr.h"
@@ -71,38 +72,43 @@ void quicktime_init(void)
 
 void quicktime_exit(void)
 {
-	if(G.have_quicktime) {
+	if (G.have_quicktime) {
 		free_qtcomponentdata();
 	}
 }
 
 
-int anim_is_quicktime (const char *name)
+int anim_is_quicktime(const char *name)
 {
 	NSAutoreleasePool *pool;
 	
 	// don't let quicktime movie import handle these
-	if( BLI_testextensie(name, ".swf") ||
-		BLI_testextensie(name, ".txt") ||
-		BLI_testextensie(name, ".mpg") ||
-		BLI_testextensie(name, ".avi") ||	// wouldn't be appropriate ;)
-		BLI_testextensie(name, ".mov") ||	// disabled, suboptimal decoding speed   
-		BLI_testextensie(name, ".mp4") ||	// disabled, suboptimal decoding speed
-		BLI_testextensie(name, ".m4v") ||	// disabled, suboptimal decoding speed
-		BLI_testextensie(name, ".tga") ||
-		BLI_testextensie(name, ".png") ||
-		BLI_testextensie(name, ".bmp") ||
-		BLI_testextensie(name, ".jpg") ||
-		BLI_testextensie(name, ".wav") ||
-		BLI_testextensie(name, ".zip") ||
-		BLI_testextensie(name, ".mp3")) return 0;
+	if (BLI_testextensie(name, ".swf") ||
+	    BLI_testextensie(name, ".txt") ||
+	    BLI_testextensie(name, ".mpg") ||
+	    BLI_testextensie(name, ".avi") ||	// wouldn't be appropriate ;)
+	    BLI_testextensie(name, ".mov") ||	// disabled, suboptimal decoding speed
+	    BLI_testextensie(name, ".mp4") ||	// disabled, suboptimal decoding speed
+	    BLI_testextensie(name, ".m4v") ||	// disabled, suboptimal decoding speed
+	    BLI_testextensie(name, ".tga") ||
+	    BLI_testextensie(name, ".png") ||
+	    BLI_testextensie(name, ".bmp") ||
+	    BLI_testextensie(name, ".jpg") ||
+	    BLI_testextensie(name, ".tif") ||
+	    BLI_testextensie(name, ".exr") ||
+	    BLI_testextensie(name, ".wav") ||
+	    BLI_testextensie(name, ".zip") ||
+	    BLI_testextensie(name, ".mp3"))
+	{
+		return 0;
+	}
 
-	if(QTIME_DEBUG) printf("qt: checking as movie: %s\n", name);
+	if (QTIME_DEBUG) printf("qt: checking as movie: %s\n", name);
 
 	pool = [[NSAutoreleasePool alloc] init];
 	
-	if([QTMovie canInitWithFile:[NSString stringWithCString:name 
-								 encoding:[NSString defaultCStringEncoding]]])
+	if ([QTMovie canInitWithFile:[NSString stringWithCString:name
+	                              encoding:[NSString defaultCStringEncoding]]])
 	{
 		[pool drain];
 		return true;
@@ -115,7 +121,7 @@ int anim_is_quicktime (const char *name)
 }
 
 
-void free_anim_quicktime (struct anim *anim)
+void free_anim_quicktime(struct anim *anim)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
@@ -139,7 +145,7 @@ void free_anim_quicktime (struct anim *anim)
 	[pool drain];
 }
 
-static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
+static ImBuf *nsImageToiBuf(NSImage *sourceImage, int width, int height)
 {
 	ImBuf *ibuf = NULL;
 	uchar *rasterRGB = NULL;
@@ -147,32 +153,33 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 	uchar *toIBuf = NULL;
 	int x, y, to_i, from_i;
 	NSSize bitmapSize;
-	NSBitmapImageRep *blBitmapFormatImageRGB,*blBitmapFormatImageRGBA,*bitmapImage=nil;
+	NSBitmapImageRep *blBitmapFormatImageRGB,*blBitmapFormatImageRGBA, *bitmapImage = nil;
 	NSEnumerator *enumerator;
 	NSImageRep *representation;
 	
-	ibuf = IMB_allocImBuf (width, height, 32, IB_rect);
+	ibuf = IMB_allocImBuf(width, height, 32, IB_rect);
 	if (!ibuf) {
-		if(QTIME_DEBUG) printf("quicktime_import: could not allocate memory for the " \
-				"image.\n");
+		if (QTIME_DEBUG) {
+			printf("quicktime_import: could not allocate memory for the image.\n");
+		}
 		return NULL;
 	}
 	
 	/*Get the bitmap of the image*/
 	enumerator = [[sourceImage representations] objectEnumerator];
 	while ((representation = [enumerator nextObject])) {
-        if ([representation isKindOfClass:[NSBitmapImageRep class]]) {
-            bitmapImage = (NSBitmapImageRep *)representation;
+		if ([representation isKindOfClass:[NSBitmapImageRep class]]) {
+			bitmapImage = (NSBitmapImageRep *)representation;
 			break;
-        }
-    }
+		}
+	}
 	if (bitmapImage == nil) return NULL;
 
 	if (([bitmapImage bitsPerPixel] == 32) && (([bitmapImage bitmapFormat] & 0x5) == 0)
 		&& ![bitmapImage isPlanar]) {
 		/* Try a fast copy if the image is a meshed RGBA 32bit bitmap*/
-		toIBuf = (uchar*)ibuf->rect;
-		rasterRGB = (uchar*)[bitmapImage bitmapData];
+		toIBuf = (uchar *)ibuf->rect;
+		rasterRGB = (uchar *)[bitmapImage bitmapData];
 		for (y = 0; y < height; y++) {
 			to_i = (height-y-1)*width;
 			from_i = y*width;
@@ -206,7 +213,7 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 		[bitmapImage draw];
 		[NSGraphicsContext restoreGraphicsState];
 		
-		rasterRGB = (uchar*)[blBitmapFormatImageRGB bitmapData];
+		rasterRGB = (uchar *)[blBitmapFormatImageRGB bitmapData];
 		if (rasterRGB == NULL) {
 			[blBitmapFormatImageRGB release];
 			return NULL;
@@ -227,7 +234,7 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 		[bitmapImage draw];
 		[NSGraphicsContext restoreGraphicsState];
 		
-		rasterRGBA = (uchar*)[blBitmapFormatImageRGBA bitmapData];
+		rasterRGBA = (uchar *)[blBitmapFormatImageRGBA bitmapData];
 		if (rasterRGBA == NULL) {
 			[blBitmapFormatImageRGB release];
 			[blBitmapFormatImageRGBA release];
@@ -235,7 +242,7 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 		}
 
 		/*Copy the image to ibuf, flipping it vertically*/
-		toIBuf = (uchar*)ibuf->rect;
+		toIBuf = (uchar *)ibuf->rect;
 		for (y = 0; y < height; y++) {
 			for (x = 0; x < width; x++) {
 				to_i = (height-y-1)*width + x;
@@ -255,7 +262,7 @@ static ImBuf * nsImageToiBuf(NSImage *sourceImage, int width, int height)
 	return ibuf;
 }
 
-ImBuf * qtime_fetchibuf (struct anim *anim, int position)
+ImBuf *qtime_fetchibuf (struct anim *anim, int position)
 {
 	NSImage *frameImage;
 	QTTime time;
@@ -290,12 +297,11 @@ ImBuf * qtime_fetchibuf (struct anim *anim, int position)
 	ibuf = nsImageToiBuf(frameImage,anim->x, anim->y);
 	[pool drain];
 	
-	ibuf->profile = IB_PROFILE_SRGB;
 	return ibuf;
 }
 
 
-int startquicktime (struct anim *anim)
+int startquicktime(struct anim *anim)
 {
 	NSAutoreleasePool *pool;
 	NSArray* videoTracks;
@@ -303,7 +309,7 @@ int startquicktime (struct anim *anim)
 	QTTime qtTimeDuration;
 	NSDictionary *attributes;
 	
-	anim->qtime = MEM_callocN (sizeof(QuicktimeMovie),"animqt");
+	anim->qtime = MEM_callocN(sizeof(QuicktimeMovie),"animqt");
 
 	if (anim->qtime == NULL) {
 		if(QTIME_DEBUG) printf("Can't alloc qtime: %s\n", anim->name);
@@ -312,7 +318,7 @@ int startquicktime (struct anim *anim)
 
 	pool = [[NSAutoreleasePool alloc] init];
 	
-	[QTMovie enterQTKitOnThread];		
+	[QTMovie enterQTKitOnThread];
 
 	attributes = [NSDictionary dictionaryWithObjectsAndKeys:
 	        [NSString stringWithCString:anim->name
@@ -361,7 +367,7 @@ int startquicktime (struct anim *anim)
 		return -1;
 	}
 
-	anim->qtime->ibuf = IMB_allocImBuf (anim->x, anim->y, 32, IB_rect);
+	anim->qtime->ibuf = IMB_allocImBuf(anim->x, anim->y, 32, IB_rect);
 	
 	qtTimeDuration = [[anim->qtime->media attributeForKey:QTMediaDurationAttribute] QTTimeValue];
 	anim->qtime->durationTime = qtTimeDuration.timeValue;
@@ -382,11 +388,11 @@ int startquicktime (struct anim *anim)
 	anim->curposition = 0;
 
 	[pool drain];
-												 
+
 	return 0;
 }
 
-int imb_is_a_quicktime (char *name)
+int imb_is_a_quicktime(char *name)
 {
 	NSImage *image;
 	int result;
@@ -455,8 +461,7 @@ ImBuf  *imb_quicktime_decode(unsigned char *mem, int size, int flags)
 	ibuf = IMB_allocImBuf(bitmapSize.width, bitmapSize.height, 32/*RGBA*/, 0);
 	if (!ibuf) {
 		fprintf(stderr, 
-				"imb_cocoaLoadImage: could not allocate memory for the " \
-				"image.\n");
+		        "imb_cocoaLoadImage: could not allocate memory for the image.\n");
 		[bitmapImage release];
 		[pool drain];
 		return NULL;
@@ -487,7 +492,7 @@ ImBuf  *imb_quicktime_decode(unsigned char *mem, int size, int flags)
 		[bitmapImage draw];
 		[NSGraphicsContext restoreGraphicsState];
 		
-		rasterRGB = (uchar*)[blBitmapFormatImageRGB bitmapData];
+		rasterRGB = (uchar *)[blBitmapFormatImageRGB bitmapData];
 		if (rasterRGB == NULL) {
 			[bitmapImage release];
 			[blBitmapFormatImageRGB release];
@@ -510,7 +515,7 @@ ImBuf  *imb_quicktime_decode(unsigned char *mem, int size, int flags)
 		[bitmapImage draw];
 		[NSGraphicsContext restoreGraphicsState];
 		
-		rasterRGBA = (uchar*)[blBitmapFormatImageRGBA bitmapData];
+		rasterRGBA = (uchar *)[blBitmapFormatImageRGBA bitmapData];
 		if (rasterRGBA == NULL) {
 			[bitmapImage release];
 			[blBitmapFormatImageRGB release];
@@ -520,7 +525,7 @@ ImBuf  *imb_quicktime_decode(unsigned char *mem, int size, int flags)
 		}
 		
 		/*Copy the image to ibuf, flipping it vertically*/
-		toIBuf = (uchar*)ibuf->rect;
+		toIBuf = (uchar *)ibuf->rect;
 		for (x = 0; x < bitmapSize.width; x++) {
 			for (y = 0; y < bitmapSize.height; y++) {
 				to_i = (bitmapSize.height-y-1)*bitmapSize.width + x;
@@ -544,7 +549,7 @@ ImBuf  *imb_quicktime_decode(unsigned char *mem, int size, int flags)
 	if (ENDIAN_ORDER == B_ENDIAN) IMB_convert_rgba_to_abgr(ibuf);
 	
 	/* return successfully */
-	return (ibuf);	
+	return (ibuf);
 }
 
 

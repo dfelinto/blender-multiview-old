@@ -22,6 +22,8 @@
 
 /** \file DNA_defs.h
  *  \ingroup DNA
+ *
+ * Group generic defines for all DNA headers may use in this file.
  */
 
 #ifndef __DNA_DEFS_H__
@@ -43,10 +45,7 @@
 #endif
 
 /* hrmf, we need a better include then this */
-#include "../blenloader/BLO_sys_types.h" /* needed for int64_t only! */
-
-/* Must not be defined for BMesh, as this guards code for pre-BMesh code to load BMesh .blend files */
-/* #define USE_BMESH_FORWARD_COMPAT */
+#include "../blenlib/BLI_sys_types.h" /* needed for int64_t only! */
 
 /* non-id name variables should use this length */
 #define MAX_NAME 64

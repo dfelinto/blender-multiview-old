@@ -35,40 +35,48 @@ extern "C" {
 	#include "MEM_guardedalloc.h"
 	#include "IMB_imbuf.h"
 	#include "IMB_imbuf_types.h"
+	#include "IMB_colormanagement.h"
+	#include "BKE_node.h"
 }
 
 
-PreviewOperation::PreviewOperation() : NodeOperation()
+PreviewOperation::PreviewOperation(const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings) : NodeOperation()
 {
 	this->addInputSocket(COM_DT_COLOR, COM_SC_NO_RESIZE);
+	this->m_preview = NULL;
 	this->m_outputBuffer = NULL;
 	this->m_input = NULL;
 	this->m_divider = 1.0f;
-	this->m_node = NULL;
+	this->m_viewSettings = viewSettings;
+	this->m_displaySettings = displaySettings;
+}
+
+void PreviewOperation::verifyPreview(bNodeInstanceHash *previews, bNodeInstanceKey key)
+{
+	/* Size (0, 0) ensures the preview rect is not allocated in advance,
+	 * this is set later in initExecution once the resolution is determined.
+	 */
+	this->m_preview = BKE_node_preview_verify(previews, key, 0, 0, TRUE);
 }
 
 void PreviewOperation::initExecution()
 {
 	this->m_input = getInputSocketReader(0);
-	if (!this->m_node->preview) {
-		this->m_node->preview = (bNodePreview *)MEM_callocN(sizeof(bNodePreview), "node preview");
-	}
-	else {
-		if (this->getWidth() == (unsigned int)this->m_node->preview->xsize &&
-		    this->getHeight() == (unsigned int)this->m_node->preview->ysize)
-		{
-			this->m_outputBuffer = this->m_node->preview->rect;
-		}
+	
+	if (this->getWidth() == (unsigned int)this->m_preview->xsize &&
+	    this->getHeight() == (unsigned int)this->m_preview->ysize)
+	{
+		this->m_outputBuffer = this->m_preview->rect;
 	}
 
 	if (this->m_outputBuffer == NULL) {
 		this->m_outputBuffer = (unsigned char *)MEM_callocN(sizeof(unsigned char) * 4 * getWidth() * getHeight(), "PreviewOperation");
-		if (this->m_node->preview->rect) {
-			MEM_freeN(this->m_node->preview->rect);
+		if (this->m_preview->rect) {
+			MEM_freeN(this->m_preview->rect);
 		}
-		this->m_node->preview->xsize = getWidth();
-		this->m_node->preview->ysize = getHeight();
-		this->m_node->preview->rect = this->m_outputBuffer;
+		this->m_preview->xsize = getWidth();
+		this->m_preview->ysize = getHeight();
+		this->m_preview->rect = this->m_outputBuffer;
 	}
 }
 
@@ -82,6 +90,10 @@ void PreviewOperation::executeRegion(rcti *rect, unsigned int tileNumber)
 {
 	int offset;
 	float color[4];
+	struct ColormanageProcessor *cm_processor;
+
+	cm_processor = IMB_colormanagement_display_processor_new(this->m_viewSettings, this->m_displaySettings);
+
 	for (int y = rect->ymin; y < rect->ymax; y++) {
 		offset = (y * getWidth() + rect->xmin) * 4;
 		for (int x = rect->xmin; x < rect->xmax; x++) {
@@ -93,11 +105,13 @@ void PreviewOperation::executeRegion(rcti *rect, unsigned int tileNumber)
 			color[2] = 0.0f;
 			color[3] = 1.0f;
 			this->m_input->read(color, rx, ry, COM_PS_NEAREST);
-			linearrgb_to_srgb_v4(color, color);
+			IMB_colormanagement_processor_apply_v4(cm_processor, color);
 			F4TOCHAR4(color, this->m_outputBuffer + offset);
 			offset += 4;
 		}
 	}
+
+	IMB_colormanagement_processor_free(cm_processor);
 }
 bool PreviewOperation::determineDependingAreaOfInterest(rcti *input, ReadBufferOperation *readOperation, rcti *output)
 {

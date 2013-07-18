@@ -59,7 +59,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tbmd->operation = bmd->operation;
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	BooleanModifierData *bmd = (BooleanModifierData *) md;
 
@@ -67,9 +67,9 @@ static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 }
 
 static void foreachObjectLink(
-    ModifierData *md, Object *ob,
-    void (*walk)(void *userData, Object *ob, Object **obpoin),
-    void *userData)
+        ModifierData *md, Object *ob,
+        void (*walk)(void *userData, Object *ob, Object **obpoin),
+        void *userData)
 {
 	BooleanModifierData *bmd = (BooleanModifierData *) md;
 
@@ -135,7 +135,13 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	 * in some cases the depsgraph fails us - especially for objects
 	 * in other scenes when compositing */
 	if (bmd->object != ob) {
-		dm = mesh_get_derived_final(md->scene, bmd->object, CD_MASK_MESH);
+		/* weak! - but we can too easy end up with circular dep crash otherwise */
+		if (bmd->object->type == OB_MESH && modifiers_findByType(bmd->object, eModifierType_Boolean) == NULL) {
+			dm = mesh_get_derived_final(md->scene, bmd->object, CD_MASK_MESH);
+		}
+		else {
+			dm = bmd->object->derivedFinal;
+		}
 	}
 	else {
 		dm = NULL;
@@ -167,7 +173,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		if (result)
 			return result;
 		else
-			modifier_setError(md, "%s", TIP_("Can't execute boolean operation."));
+			modifier_setError(md, "Cannot execute boolean operation");
 	}
 	
 	return derivedData;
@@ -192,28 +198,28 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *UNUSED(
 
 
 ModifierTypeInfo modifierType_Boolean = {
-	/* name */ "Boolean",
-	/* structName */ "BooleanModifierData",
-	/* structSize */ sizeof(BooleanModifierData),
-	/* type */ eModifierTypeType_Nonconstructive,
-	/* flags */ eModifierTypeFlag_AcceptsMesh |
-	eModifierTypeFlag_UsesPointCache,
+	/* name */              "Boolean",
+	/* structName */        "BooleanModifierData",
+	/* structSize */        sizeof(BooleanModifierData),
+	/* type */              eModifierTypeType_Nonconstructive,
+	/* flags */             eModifierTypeFlag_AcceptsMesh |
+	                        eModifierTypeFlag_UsesPointCache,
 
-	/* copyData */ copyData,
-	/* deformVerts */ NULL,
-	/* deformMatrices */ NULL,
-	/* deformVertsEM */ NULL,
-	/* deformMatricesEM */ NULL,
-	/* applyModifier */ applyModifier,
-	/* applyModifierEM */ NULL,
-	/* initData */ NULL,
-	/* requiredDataMask */ requiredDataMask,
-	/* freeData */ NULL,
-	/* isDisabled */ isDisabled,
-	/* updateDepgraph */ updateDepgraph,
-	/* dependsOnTime */ NULL,
-	/* dependsOnNormals */ NULL,
+	/* copyData */          copyData,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     applyModifier,
+	/* applyModifierEM */   NULL,
+	/* initData */          NULL,
+	/* requiredDataMask */  requiredDataMask,
+	/* freeData */          NULL,
+	/* isDisabled */        isDisabled,
+	/* updateDepgraph */    updateDepgraph,
+	/* dependsOnTime */     NULL,
+	/* dependsOnNormals */  NULL,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */ NULL,
-	/* foreachTexLink */ NULL,
+	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

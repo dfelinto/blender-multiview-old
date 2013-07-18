@@ -31,7 +31,7 @@
 extern "C" {
 #endif
 	
-#include "BLO_sys_types.h" // for intptr_t support
+#include "BLI_sys_types.h" // for intptr_t support
 
 typedef void ParamHandle;	/* handle to a set of charts */
 typedef intptr_t ParamKey;		/* (hash) key for identifying verts and faces */
@@ -62,7 +62,8 @@ void param_face_add(ParamHandle *handle,
                     float **co,
                     float **uv,
                     ParamBool *pin,
-                    ParamBool *select);
+                    ParamBool *select,
+                    float face_normal[3]);
 
 void param_edge_set_seam(ParamHandle *handle,
                          ParamKey *vkeys);

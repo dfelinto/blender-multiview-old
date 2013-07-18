@@ -29,10 +29,9 @@
  *  \ingroup bgeconv
  */
 
-
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable : 4786)
-#endif //WIN32
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
+#endif
 
 #include "MEM_guardedalloc.h"
 #include "BL_ShapeDeformer.h"
@@ -41,7 +40,6 @@
 #include "RAS_IPolygonMaterial.h"
 #include "RAS_MeshObject.h"
 
-//#include "BL_ArmatureController.h"
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_action_types.h"
@@ -54,13 +52,13 @@
 #include "BKE_main.h"
 #include "BKE_key.h"
 #include "BKE_ipo.h"
+#include "BKE_library.h"
 #include "MT_Point3.h"
 
 extern "C"{
 	#include "BKE_lattice.h"
 	#include "BKE_animsys.h"
 }
- 
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
@@ -76,8 +74,7 @@ BL_ShapeDeformer::BL_ShapeDeformer(BL_DeformableGameObject *gameobj,
       m_useShapeDrivers(false),
       m_lastShapeUpdate(-1)
 {
-	m_key = m_bmesh->key;
-	m_bmesh->key = BKE_key_copy(m_key);
+	m_key = BKE_key_copy(m_bmesh->key);
 };
 
 /* this second constructor is needed for making a mesh deformable on the fly. */
@@ -93,18 +90,14 @@ BL_ShapeDeformer::BL_ShapeDeformer(BL_DeformableGameObject *gameobj,
 					m_useShapeDrivers(false),
 					m_lastShapeUpdate(-1)
 {
-	m_key = m_bmesh->key;
-	m_bmesh->key = BKE_key_copy(m_key);
+	m_key = BKE_key_copy(m_bmesh->key);
 };
 
 BL_ShapeDeformer::~BL_ShapeDeformer()
 {
-	if (m_key && m_bmesh->key && m_key != m_bmesh->key)
+	if (m_key)
 	{
-		BKE_key_free(m_bmesh->key);
-		BLI_remlink_safe(&G.main->key, m_bmesh->key);
-		MEM_freeN(m_bmesh->key);
-		m_bmesh->key = m_key;
+		BKE_libblock_free(&G.main->key, m_key);
 		m_key = NULL;
 	}
 };
@@ -122,6 +115,8 @@ void BL_ShapeDeformer::ProcessReplica()
 {
 	BL_SkinDeformer::ProcessReplica();
 	m_lastShapeUpdate = -1;
+
+	m_key = BKE_key_copy(m_key);
 }
 
 bool BL_ShapeDeformer::LoadShapeDrivers(Object* arma)
@@ -168,12 +163,12 @@ bool BL_ShapeDeformer::Update(void)
 		m_pMeshObject->CheckWeightCache(blendobj);
 
 		/* we will blend the key directly in m_transverts array: it is used by armature as the start position */
-		/* m_bmesh->key can be NULL in case of Modifier deformer */
-		if (m_bmesh->key) {
+		/* m_key can be NULL in case of Modifier deformer */
+		if (m_key) {
 			/* store verts locally */
 			VerifyStorage();
 
-			do_rel_key(0, m_bmesh->totvert, m_bmesh->totvert, (char *)(float *)m_transverts, m_bmesh->key, NULL, 0); /* last arg is ignored */
+			BKE_key_evaluate_relative(0, m_bmesh->totvert, m_bmesh->totvert, (char *)(float *)m_transverts, m_key, NULL, 0); /* last arg is ignored */
 			m_bDynamic = true;
 		}
 
@@ -202,15 +197,11 @@ bool BL_ShapeDeformer::Update(void)
 #endif
 		bSkinUpdate = true;
 	}
+
 	return bSkinUpdate;
 }
 
 Key *BL_ShapeDeformer::GetKey()
 {
-	return m_bmesh->key;
-}
-
-void BL_ShapeDeformer::SetKey(Key *key)
-{
-	m_bmesh->key = key;
+	return m_key;
 }

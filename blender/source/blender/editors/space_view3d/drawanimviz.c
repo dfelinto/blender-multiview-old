@@ -34,7 +34,7 @@
 #include <string.h>
 #include <math.h>
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
@@ -84,7 +84,7 @@ void draw_motion_paths_init(View3D *v3d, ARegion *ar)
 void draw_motion_path_instance(Scene *scene, 
                                Object *ob, bPoseChannel *pchan, bAnimVizSettings *avs, bMotionPath *mpath)
 {
-	//RegionView3D *rv3d= ar->regiondata;
+	//RegionView3D *rv3d = ar->regiondata;
 	bMotionPathVert *mpv, *mpv_start;
 	int i, stepsize = avs->path_step;
 	int sfra, efra, sind, len;
@@ -107,11 +107,6 @@ void draw_motion_path_instance(Scene *scene,
 	 * - abort if whole range is past ends of path
 	 * - otherwise clamp endpoints to extents of path
 	 */
-	if ((sfra > mpath->end_frame) || (efra < mpath->start_frame)) {
-		/* whole path is out of bounds */
-		return;
-	}
-	
 	if (sfra < mpath->start_frame) {
 		/* start clamp */
 		sfra = mpath->start_frame;
@@ -121,9 +116,14 @@ void draw_motion_path_instance(Scene *scene,
 		efra = mpath->end_frame;
 	}
 	
+	if ((sfra > mpath->end_frame) || (efra < mpath->start_frame)) {
+		/* whole path is out of bounds */
+		return;
+	}
+	
 	len = efra - sfra;
 	
-	if (len <= 0) {
+	if ((len <= 0) || (mpath->points == NULL)) {
 		return;
 	}
 	
@@ -139,35 +139,38 @@ void draw_motion_path_instance(Scene *scene,
 		short sel = (pchan) ? (pchan->bone->flag & BONE_SELECTED) : (ob->flag & SELECT);
 		float intensity;  /* how faint */
 		
+		int frame = sfra + i;
+		int blend_base = (abs(frame - CFRA) == 1) ? TH_CFRAME : TH_BACK; /* "bleed" cframe color to ease color blending */
+		
 		/* set color
 		 * - more intense for active/selected bones, less intense for unselected bones
 		 * - black for before current frame, green for current frame, blue for after current frame
 		 * - intensity decreases as distance from current frame increases
 		 */
 		#define SET_INTENSITY(A, B, C, min, max) (((1.0f - ((C - B) / (C - A))) * (max - min)) + min)
-		if ((sfra + i) < CFRA) {
+		if (frame < CFRA) {
 			/* black - before cfra */
 			if (sel) {
-				// intensity= 0.5f;
+				/* intensity = 0.5f; */
 				intensity = SET_INTENSITY(sfra, i, CFRA, 0.25f, 0.75f);
 			}
 			else {
-				//intensity= 0.8f;
+				/* intensity = 0.8f; */
 				intensity = SET_INTENSITY(sfra, i, CFRA, 0.68f, 0.92f);
 			}
-			UI_ThemeColorBlend(TH_WIRE, TH_BACK, intensity);
+			UI_ThemeColorBlend(TH_WIRE, blend_base, intensity);
 		}
-		else if ((sfra + i) > CFRA) {
+		else if (frame > CFRA) {
 			/* blue - after cfra */
 			if (sel) {
-				//intensity = 0.5f;
+				/* intensity = 0.5f; */
 				intensity = SET_INTENSITY(CFRA, i, efra, 0.25f, 0.75f);
 			}
 			else {
-				//intensity = 0.8f;
+				/* intensity = 0.8f; */
 				intensity = SET_INTENSITY(CFRA, i, efra, 0.68f, 0.92f);
 			}
-			UI_ThemeColorBlend(TH_BONE_POSE, TH_BACK, intensity);
+			UI_ThemeColorBlend(TH_BONE_POSE, blend_base, intensity);
 		}
 		else {
 			/* green - on cfra */
@@ -178,9 +181,9 @@ void draw_motion_path_instance(Scene *scene,
 				intensity = 0.99f;
 			}
 			UI_ThemeColorBlendShade(TH_CFRAME, TH_BACK, intensity, 10);
-		}	
+		}
 		
-		/* draw a vertex with this color */ 
+		/* draw a vertex with this color */
 		glVertex3fv(mpv->co);
 	}
 	
@@ -230,23 +233,24 @@ void draw_motion_path_instance(Scene *scene,
 		unsigned char col[4];
 		UI_GetThemeColor3ubv(TH_TEXT_HI, col);
 		col[3] = 255;
-
+		
 		for (i = 0, mpv = mpv_start; i < len; i += stepsize, mpv += stepsize) {
+			int frame = sfra + i;
 			char numstr[32];
 			float co[3];
 			
 			/* only draw framenum if several consecutive highlighted points don't occur on same point */
 			if (i == 0) {
-				sprintf(numstr, "%d", (i + sfra));
+				sprintf(numstr, " %d", frame);
 				mul_v3_m4v3(co, ob->imat, mpv->co);
 				view3d_cached_text_draw_add(co, numstr, 0, V3D_CACHE_TEXT_WORLDSPACE | V3D_CACHE_TEXT_ASCII, col);
 			}
-			else if ((i > stepsize) && (i < len - stepsize)) {
+			else if ((i >= stepsize) && (i < len - stepsize)) {
 				bMotionPathVert *mpvP = (mpv - stepsize);
 				bMotionPathVert *mpvN = (mpv + stepsize);
 				
 				if ((equals_v3v3(mpv->co, mpvP->co) == 0) || (equals_v3v3(mpv->co, mpvN->co) == 0)) {
-					sprintf(numstr, "%d", (sfra + i));
+					sprintf(numstr, " %d", frame);
 					mul_v3_m4v3(co, ob->imat, mpv->co);
 					view3d_cached_text_draw_add(co, numstr, 0, V3D_CACHE_TEXT_WORLDSPACE | V3D_CACHE_TEXT_ASCII, col);
 				}
@@ -286,12 +290,13 @@ void draw_motion_path_instance(Scene *scene,
 		UI_GetThemeColor3ubv(TH_VERTEX_SELECT, col);
 		col[3] = 255;
 		
-		glPointSize(4.0f); // XXX perhaps a bit too big
+		glPointSize(4.0f);
 		glColor3ubv(col);
 		
 		glBegin(GL_POINTS);
 		for (i = 0, mpv = mpv_start; i < len; i++, mpv++) {
-			float mframe = (float)(sfra + i);
+			int    frame = sfra + i; 
+			float mframe = (float)(frame);
 			
 			if (BLI_dlrbTree_search_exact(&keys, compare_ak_cfraPtr, &mframe))
 				glVertex3fv(mpv->co);
@@ -309,7 +314,7 @@ void draw_motion_path_instance(Scene *scene,
 				if (BLI_dlrbTree_search_exact(&keys, compare_ak_cfraPtr, &mframe)) {
 					char numstr[32];
 					
-					sprintf(numstr, "%d", (sfra + i));
+					sprintf(numstr, " %d", (sfra + i));
 					mul_v3_m4v3(co, ob->imat, mpv->co);
 					view3d_cached_text_draw_add(co, numstr, 0, V3D_CACHE_TEXT_WORLDSPACE | V3D_CACHE_TEXT_ASCII, col);
 				}

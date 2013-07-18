@@ -162,7 +162,10 @@ class OBJECT_PT_groups(ObjectButtonsPanel, Panel):
         obj = context.object
 
         row = layout.row(align=True)
-        row.operator("object.group_link", text="Add to Group")
+        if bpy.data.groups:
+            row.operator("object.group_link", text="Add to Group")
+        else:
+            row.operator("object.group_add", text="Add to Group")
         row.operator("object.group_add", text="", icon='ZOOMIN')
 
         # XXX, this is bad practice, yes, I wrote it :( - campbell
@@ -185,7 +188,7 @@ class OBJECT_PT_groups(ObjectButtonsPanel, Panel):
                 split = col.box().split()
 
                 col = split.column()
-                col.prop(group, "layers", text="Dupli")
+                col.prop(group, "layers", text="Dupli Visibility")
 
                 col = split.column()
                 col.prop(group, "dupli_offset", text="")
@@ -201,35 +204,40 @@ class OBJECT_PT_display(ObjectButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        ob = context.object
+        obj = context.object
 
         split = layout.split()
         col = split.column()
-        col.prop(ob, "draw_type", text="Type")
+        col.prop(obj, "draw_type", text="Type")
 
         col = split.column()
         row = col.row()
-        row.prop(ob, "show_bounds", text="Bounds")
+        row.prop(obj, "show_bounds", text="Bounds")
         sub = row.row()
-        sub.active = ob.show_bounds
-        sub.prop(ob, "draw_bounds_type", text="")
+        sub.active = obj.show_bounds
+        sub.prop(obj, "draw_bounds_type", text="")
 
         split = layout.split()
 
         col = split.column()
-        col.prop(ob, "show_name", text="Name")
-        col.prop(ob, "show_axis", text="Axis")
-        if ob.type in {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}:
+        col.prop(obj, "show_name", text="Name")
+        col.prop(obj, "show_axis", text="Axis")
+
+        obj_type = obj.type
+
+        if obj_type in {'MESH', 'CURVE', 'SURFACE', 'META', 'FONT'}:
             # Makes no sense for cameras, armtures, etc.!
-            col.prop(ob, "show_wire", text="Wire")
+            col.prop(obj, "show_wire", text="Wire")
             # Only useful with object having faces/materials...
-            col.prop(ob, "color", text="Object Color")
+            col.prop(obj, "color", text="Object Color")
 
         col = split.column()
-        col.prop(ob, "show_texture_space", text="Texture Space")
-        col.prop(ob, "show_x_ray", text="X-Ray")
-        if ob.type == 'MESH':
-            col.prop(ob, "show_transparent", text="Transparency")
+        col.prop(obj, "show_texture_space", text="Texture Space")
+        col.prop(obj, "show_x_ray", text="X-Ray")
+        if obj_type == 'MESH' or (obj_type == 'EMPTY' and obj.empty_draw_type == 'IMAGE'):
+            col.prop(obj, "show_transparent", text="Transparency")
+        if obj_type == 'MESH':
+            col.prop(obj, "show_all_edges")
 
 
 class OBJECT_PT_duplication(ObjectButtonsPanel, Panel):
@@ -289,11 +297,12 @@ class OBJECT_PT_relations_extras(ObjectButtonsPanel, Panel):
         row.active = ((ob.parent is not None) and (ob.use_slow_parent))
         row.prop(ob, "slow_parent_offset", text="Offset")
 
+        layout.prop(ob, "use_extra_recalc_object")
+        layout.prop(ob, "use_extra_recalc_data")
 
-from bl_ui.properties_animviz import (
-    MotionPathButtonsPanel,
-    OnionSkinButtonsPanel,
-    )
+
+from bl_ui.properties_animviz import (MotionPathButtonsPanel,
+                                      OnionSkinButtonsPanel)
 
 
 class OBJECT_PT_motion_paths(MotionPathButtonsPanel, Panel):

@@ -38,7 +38,7 @@
 /*NOTE: this is the bmesh 1.0 code.  it's completely outdated.*/
 
 /* uncomment to use the new bevel operator as a modifier */
-// #define USE_BM_BEVEL_OP_AS_MOD
+#define USE_BM_BEVEL_OP_AS_MOD
 
 /* bevel tool defines */
 /* element flags */
@@ -53,6 +53,7 @@
 #define BME_BEVEL_RADIUS        (1 << 2)
 #define BME_BEVEL_ANGLE         (1 << 3)
 #define BME_BEVEL_WEIGHT        (1 << 4)
+#define BME_BEVEL_VGROUP        (1 << 5)
 //~ #define BME_BEVEL_EWEIGHT		(1<<4)
 //~ #define BME_BEVEL_VWEIGHT		(1<<5)
 #define BME_BEVEL_PERCENT       (1 << 6)
@@ -64,6 +65,8 @@
 #define BME_BEVEL_EVEN          (1 << 11) /* this is a new setting not related to old (trunk bmesh bevel code) but adding
 	                                       * here because they are mixed - campbell */
 #define BME_BEVEL_DIST          (1 << 12) /* same as above */
+
+#define BME_BEVEL_OVERLAP_OK    (1 << 13)
 
 typedef struct BME_TransData {
 	struct BMesh *bm; /* the bmesh the vert belongs to */
@@ -87,19 +90,9 @@ typedef struct BME_TransData_Head {
 	int len;
 } BME_TransData_Head;
 
-/* this is no longer used */
-typedef struct BME_Glob { /* stored in Global G for Transform() purposes */
-	struct BMesh *bm;
-	BME_TransData_Head *td;
-	struct TransInfo *Trans; /* a pointer to the global Trans struct */
-	int imval[2]; /* for restoring original mouse co when initTransform() is called multiple times */
-	int options;
-	int res;
-} BME_Glob;
-
 struct BME_TransData *BME_get_transdata(struct BME_TransData_Head *td, struct BMVert *v);
 void BME_free_transdata(struct BME_TransData_Head *td);
-struct BMesh *BME_bevel(struct BMEditMesh *em, float value, int res, int options, int defgrp_index, float angle,
-                        BME_TransData_Head **rtd, int do_tessface);
+struct BMesh *BME_bevel(struct BMesh *bm, float value, int res, int options, int defgrp_index, float angle,
+                        BME_TransData_Head **rtd);
 
 #endif

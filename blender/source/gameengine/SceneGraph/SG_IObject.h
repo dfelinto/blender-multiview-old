@@ -83,19 +83,19 @@ typedef void* (*SG_DestructionNewCallback)(
 	void*	clientinfo
 );
 
-typedef void  (*SG_UpdateTransformCallback)(
+typedef void (*SG_UpdateTransformCallback)(
 	SG_IObject* sgobject,
 	void*	clientobj,
 	void*	clientinfo
 );
 
-typedef bool  (*SG_ScheduleUpdateCallback)(
+typedef bool (*SG_ScheduleUpdateCallback)(
 	SG_IObject* sgobject,
 	void*	clientobj,
 	void*	clientinfo
 );
 
-typedef bool  (*SG_RescheduleUpdateCallback)(
+typedef bool (*SG_RescheduleUpdateCallback)(
 	SG_IObject* sgobject,
 	void*	clientobj,
 	void*	clientinfo
@@ -127,8 +127,8 @@ struct	SG_Callbacks
 		m_schedulefunc(NULL),
 		m_reschedulefunc(NULL)
 	{
-	};
-		
+	}
+
 	SG_Callbacks(
 		SG_ReplicationNewCallback repfunc,
 		SG_DestructionNewCallback destructfunc,
@@ -142,7 +142,7 @@ struct	SG_Callbacks
 		m_schedulefunc(schedulefunc),
 		m_reschedulefunc(reschedulefunc)
 	{
-	};
+	}
 
 	SG_ReplicationNewCallback	m_replicafunc;
 	SG_DestructionNewCallback	m_destructionfunc;
@@ -152,8 +152,8 @@ struct	SG_Callbacks
 };
 
 /**
-base object that can be part of the scenegraph.
-*/
+ * base object that can be part of the scenegraph.
+ */
 class SG_IObject : public SG_QList
 {
 private :
@@ -174,7 +174,7 @@ public:
 	 * this object is deleted.
 	 */
 	
-		void				
+		void
 	AddSGController(
 		SG_Controller* cont
 	);
@@ -196,7 +196,7 @@ public:
 	 * leaks.
 	 */
 	
-		void				
+		void
 	RemoveAllControllers(
 	); 
 
@@ -233,7 +233,7 @@ public:
 	 * This may be NULL.
 	 */
 
-	inline const void* GetSGClientObject() const	
+	inline const void* GetSGClientObject() const
 	{
 		return m_SGclientObject;
 	}
@@ -280,7 +280,7 @@ public:
 	void SetControllerTime(double time);
 	
 	virtual 
-		void		
+		void
 	Destruct(
 	) = 0;
 
@@ -371,5 +371,4 @@ protected :
 #endif
 };
 
-#endif //__SG_IOBJECT_H__
-
+#endif  /* __SG_IOBJECT_H__ */

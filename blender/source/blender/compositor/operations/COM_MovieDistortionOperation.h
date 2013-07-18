@@ -99,8 +99,8 @@ public:
 		       this->m_inverted == inverted &&
 		       this->m_width == width &&
 		       this->m_height == height &&
-		       this->m_calibration_width == this->m_calibration_width &&
-		       this->m_calibration_height == this->m_calibration_height;
+		       this->m_calibration_width == calibration_width &&
+		       this->m_calibration_height == claibration_height;
 	}
 	
 	void getUV(MovieTracking *trackingData, int x, int y, float *u, float *v)
@@ -115,10 +115,10 @@ public:
 
 			if (!this->m_bufferCalculated[offset]) {
 				//float overscan = 0.0f;
-				float w = (float)this->m_width /* / (1 + overscan) */;
-				float h = (float)this->m_height /* / (1 + overscan) */;
-				float aspx = (float)w / this->m_calibration_width;
-				float aspy = (float)h / this->m_calibration_height;
+				const float w = (float)this->m_width /* / (1 + overscan) */;
+				const float h = (float)this->m_height /* / (1 + overscan) */;
+				const float aspx = w / (float)this->m_calibration_width;
+				const float aspy = h / (float)this->m_calibration_height;
 				float in[2];
 				float out[2];
 
@@ -148,6 +148,7 @@ private:
 	DistortionCache *m_cache;
 	SocketReader *m_inputOperation;
 	MovieClip *m_movieClip;
+	int m_margin[2];
 
 protected:
 	bool m_distortion;
@@ -155,7 +156,6 @@ protected:
 
 public:
 	MovieDistortionOperation(bool distortion);
-	bool determineDependingAreaOfInterest(rcti *input, ReadBufferOperation *readOperation, rcti *output);
 	void executePixel(float output[4], float x, float y, PixelSampler sampler);
 
 	void initExecution();
@@ -163,6 +163,8 @@ public:
 	
 	void setMovieClip(MovieClip *clip) { this->m_movieClip = clip; }
 	void setFramenumber(int framenumber) { this->m_framenumber = framenumber; }
+	bool determineDependingAreaOfInterest(rcti *input, ReadBufferOperation *readOperation, rcti *output);
+
 };
 
 void deintializeDistortionCache(void);

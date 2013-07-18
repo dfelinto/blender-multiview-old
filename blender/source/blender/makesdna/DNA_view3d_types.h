@@ -46,6 +46,7 @@ struct RenderEngine;
 struct bGPdata;
 struct SmoothView3DStore;
 struct wmTimer;
+struct Material;
 
 /* This is needed to not let VC choke on near and far... old
  * proprietary MS extensions... */
@@ -106,6 +107,7 @@ typedef struct RegionView3D {
 	struct RenderInfo *ri;
 	struct RenderEngine *render_engine;
 	struct ViewDepths *depths;
+	void *gpuoffscreen;
 
 	/* animated smooth view */
 	struct SmoothView3DStore *sms;
@@ -117,7 +119,6 @@ typedef struct RegionView3D {
 
 	float viewquat[4];			/* view rotation, must be kept normalized */
 	float dist;					/* distance from 'ofs' along -viewinv[2] vector, where result is negative as is 'ofs' */
-	float zfac;					/* initgrabz() result */
 	float camdx, camdy;			/* camera view offsets, 1.0 = viewplane moves entire width/height */
 	float pixsize;				/* runtime only */
 	float ofs[3];				/* view center & orbit pivot, negative of worldspace location,
@@ -128,16 +129,18 @@ typedef struct RegionView3D {
 	char persp;
 	char view;
 	char viewlock;
+	char viewlock_quad;			/* options for quadview (store while out of quad view) */
+	char pad[3];
 
 	short twdrawflag;
 	short rflag;
-	
 
-	/* last view */
+
+	/* last view (use when switching out of camera view) */
 	float lviewquat[4];
 	short lpersp, lview; /* lpersp can never be set to 'RV3D_CAMOB' */
+
 	float gridview;
-	
 	float twangle[3];
 
 
@@ -159,16 +162,17 @@ typedef struct View3D {
 	float dist         DNA_DEPRECATED;
 
 	float bundle_size;			/* size of bundles in reconstructed data */
-	short bundle_drawtype;		/* display style for bundle */
+	char bundle_drawtype;		/* display style for bundle */
+	char pad[3];
 
-	char pad[6];
-	
+	unsigned int lay_prev; /* for active layer toggle */
 	unsigned int lay_used; /* used while drawing */
 	
 	short persp  DNA_DEPRECATED;
 	short view   DNA_DEPRECATED;
 	
 	struct Object *camera, *ob_centre;
+	rctf render_border;
 
 	struct ListBase bgpicbase;
 	struct BGpic *bgpic  DNA_DEPRECATED; /* deprecated, use bgpicbase, only kept for do_versions(...) */
@@ -193,7 +197,8 @@ typedef struct View3D {
 	float ofs[3]  DNA_DEPRECATED;			/* XXX deprecated */
 	float cursor[3];
 
-	short modeselect;
+	short matcap_icon;			/* icon id */
+
 	short gridlines;
 	short gridsubdiv;	/* Number of subdivisions in the grid between each highlighted grid line */
 	char gridflag;
@@ -207,12 +212,12 @@ typedef struct View3D {
 	struct ListBase afterdraw_xraytransp;
 	
 	/* drawflags, denoting state */
-	short zbuf, transp, xray;
+	char zbuf, transp, xray;
+	char pad3[5];
 
-	char pad3[2];
-
-	void *properties_storage;	/* Nkey panel stores stuff here (runtime only!) */
-
+	void *properties_storage;		/* Nkey panel stores stuff here (runtime only!) */
+	struct Material *defmaterial;	/* used by matcap now */
+	
 	/* XXX deprecated? */
 	struct bGPdata *gpd  DNA_DEPRECATED;		/* Grease-Pencil Data (annotation layers) */
 
@@ -223,6 +228,7 @@ typedef struct View3D {
 /*#define V3D_DISPIMAGE		1*/ /*UNUSED*/
 #define V3D_DISPBGPICS		2
 #define V3D_HIDE_HELPLINES	4
+#define V3D_INVALID_BACKBUF	8
 #define V3D_INVALID_BACKBUF	8
 
 #define V3D_ALIGN			1024
@@ -242,9 +248,11 @@ typedef struct View3D {
 #define RV3D_GPULIGHT_UPDATE		16
 
 /* RegionView3d->viewlock */
-#define RV3D_LOCKED			1
-#define RV3D_BOXVIEW		2
-#define RV3D_BOXCLIP		4
+#define RV3D_LOCKED			(1 << 0)
+#define RV3D_BOXVIEW		(1 << 1)
+#define RV3D_BOXCLIP		(1 << 2)
+/* RegionView3d->viewlock_quad */
+#define RV3D_VIEWLOCK_INIT	(1 << 7)
 
 /* RegionView3d->view */
 #define RV3D_VIEW_USER			 0
@@ -260,13 +268,16 @@ typedef struct View3D {
 /* View3d->flag2 (short) */
 #define V3D_RENDER_OVERRIDE		4
 #define V3D_SOLID_TEX			8
-#define V3D_DISPGP				16
+#define V3D_SHOW_GPENCIL		16
 #define V3D_LOCK_CAMERA			32
-#define V3D_RENDER_SHADOW		64 /* This is a runtime only flag that's used to tell draw_mesh_object() that we're doing a shadow pass instead of a regular draw */
-#define V3D_SHOW_RECONSTRUCTION		128
+#define V3D_RENDER_SHADOW		64		/* This is a runtime only flag that's used to tell draw_mesh_object() that we're doing a shadow pass instead of a regular draw */
+#define V3D_SHOW_RECONSTRUCTION	128
 #define V3D_SHOW_CAMERAPATH		256
 #define V3D_SHOW_BUNDLENAME		512
 #define V3D_BACKFACE_CULLING	1024
+#define V3D_RENDER_BORDER		2048
+#define V3D_SOLID_MATCAP		4096	/* user flag */
+#define V3D_SHOW_SOLID_MATCAP	8192	/* runtime flag */
 
 /* View3D->around */
 #define V3D_CENTER		 0

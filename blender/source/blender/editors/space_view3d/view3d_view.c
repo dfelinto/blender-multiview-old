@@ -64,6 +64,8 @@
 #include "ED_screen.h"
 #include "ED_armature.h"
 
+#include "RE_engine.h"
+
 #ifdef WITH_GAMEENGINE
 #include "BL_System.h"
 #endif
@@ -87,8 +89,9 @@ void view3d_operator_needs_opengl(const bContext *C)
 void view3d_region_operator_needs_opengl(wmWindow *win, ARegion *ar)
 {
 	/* for debugging purpose, context should always be OK */
-	if ((ar == NULL) || (ar->regiontype != RGN_TYPE_WINDOW))
+	if ((ar == NULL) || (ar->regiontype != RGN_TYPE_WINDOW)) {
 		printf("view3d_region_operator_needs_opengl error, wrong region\n");
+	}
 	else {
 		RegionView3D *rv3d = ar->regiondata;
 		
@@ -110,36 +113,69 @@ float *give_cursor(Scene *scene, View3D *v3d)
 /* ****************** smooth view operator ****************** */
 /* This operator is one of the 'timer refresh' ones like animation playback */
 
+struct SmoothView3DState {
+	float dist;
+	float lens;
+	float quat[4];
+	float ofs[3];
+};
+
 struct SmoothView3DStore {
-	float orig_dist, new_dist;
-	float orig_lens, new_lens;
-	float orig_quat[4], new_quat[4];
-	float orig_ofs[3], new_ofs[3];
-	
-	int to_camera, orig_view;
-	
+	/* source*/
+	struct SmoothView3DState src;  /* source */
+	struct SmoothView3DState dst;  /* destination */
+	struct SmoothView3DState org;  /* original */
+
+	bool to_camera;
+	char org_view;
+
 	double time_allowed;
 };
+
+static void view3d_smooth_view_state_backup(struct SmoothView3DState *sms_state,
+                                            const View3D *v3d, const RegionView3D *rv3d)
+{
+	copy_v3_v3(sms_state->ofs,   rv3d->ofs);
+	copy_qt_qt(sms_state->quat,  rv3d->viewquat);
+	sms_state->dist            = rv3d->dist;
+	sms_state->lens            = v3d->lens;
+}
+
+static void view3d_smooth_view_state_restore(const struct SmoothView3DState *sms_state,
+                                             View3D *v3d, RegionView3D *rv3d)
+{
+	copy_v3_v3(rv3d->ofs,      sms_state->ofs);
+	copy_qt_qt(rv3d->viewquat, sms_state->quat);
+	rv3d->dist               = sms_state->dist;
+	v3d->lens                = sms_state->lens;
+}
 
 /* will start timer if appropriate */
 /* the arguments are the desired situation */
 void view3d_smooth_view(bContext *C, View3D *v3d, ARegion *ar, Object *oldcamera, Object *camera,
-						float *ofs, float *quat, float *dist, float *lens)
+                        float *ofs, float *quat, float *dist, float *lens)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmWindow *win = CTX_wm_window(C);
 	ScrArea *sa = CTX_wm_area(C);
 
 	RegionView3D *rv3d = ar->regiondata;
-	struct SmoothView3DStore sms = {0};
-	short ok = FALSE;
+	struct SmoothView3DStore sms = {{0}};
+	bool ok = false;
 	
 	/* initialize sms */
-	copy_v3_v3(sms.new_ofs, rv3d->ofs);
-	copy_qt_qt(sms.new_quat, rv3d->viewquat);
-	sms.new_dist = rv3d->dist;
-	sms.new_lens = v3d->lens;
-	sms.to_camera = 0;
+	view3d_smooth_view_state_backup(&sms.dst, v3d, rv3d);
+	view3d_smooth_view_state_backup(&sms.src, v3d, rv3d);
+	/* if smoothview runs multiple times... */
+	if (rv3d->sms == NULL) {
+		view3d_smooth_view_state_backup(&sms.org, v3d, rv3d);
+		sms.org_view = rv3d->view;
+	}
+	else {
+		sms.org = rv3d->sms->org;
+		sms.org_view = rv3d->sms->org_view;
+	}
+	/* sms.to_camera = false; */  /* initizlized to zero anyway */
 
 	/* note on camera locking, this is a little confusing but works ok.
 	 * we may be changing the view 'as if' there is no active camera, but in fact
@@ -154,49 +190,44 @@ void view3d_smooth_view(bContext *C, View3D *v3d, ARegion *ar, Object *oldcamera
 	}
 
 	/* store the options we want to end with */
-	if (ofs) copy_v3_v3(sms.new_ofs, ofs);
-	if (quat) copy_qt_qt(sms.new_quat, quat);
-	if (dist) sms.new_dist = *dist;
-	if (lens) sms.new_lens = *lens;
+	if (ofs)  copy_v3_v3(sms.dst.ofs, ofs);
+	if (quat) copy_qt_qt(sms.dst.quat, quat);
+	if (dist) sms.dst.dist = *dist;
+	if (lens) sms.dst.lens = *lens;
 
 	if (camera) {
-		ED_view3d_from_object(camera, sms.new_ofs, sms.new_quat, &sms.new_dist, &sms.new_lens);
-		sms.to_camera = 1; /* restore view3d values in end */
+		sms.dst.dist = ED_view3d_offset_distance(camera->obmat, ofs, VIEW3D_DIST_FALLBACK);
+		ED_view3d_from_object(camera, sms.dst.ofs, sms.dst.quat, &sms.dst.dist, &sms.dst.lens);
+		sms.to_camera = true; /* restore view3d values in end */
 	}
 	
-	if (C && U.smooth_viewtx) {
-		int changed = 0; /* zero means no difference */
+	/* skip smooth viewing for render engine draw */
+	if (C && U.smooth_viewtx && v3d->drawtype != OB_RENDER) {
+		bool changed = false; /* zero means no difference */
 		
 		if (oldcamera != camera)
-			changed = 1;
-		else if (sms.new_dist != rv3d->dist)
-			changed = 1;
-		else if (sms.new_lens != v3d->lens)
-			changed = 1;
-		else if (!equals_v3v3(sms.new_ofs, rv3d->ofs))
-			changed = 1;
-		else if (!equals_v4v4(sms.new_quat, rv3d->viewquat))
-			changed = 1;
+			changed = true;
+		else if (sms.dst.dist != rv3d->dist)
+			changed = true;
+		else if (sms.dst.lens != v3d->lens)
+			changed = true;
+		else if (!equals_v3v3(sms.dst.ofs, rv3d->ofs))
+			changed = true;
+		else if (!equals_v4v4(sms.dst.quat, rv3d->viewquat))
+			changed = true;
 		
 		/* The new view is different from the old one
 		 * so animate the view */
 		if (changed) {
-
 			/* original values */
 			if (oldcamera) {
-				sms.orig_dist = rv3d->dist;  /* below function does weird stuff with it... */
-				ED_view3d_from_object(oldcamera, sms.orig_ofs, sms.orig_quat, &sms.orig_dist, &sms.orig_lens);
-			}
-			else {
-				copy_v3_v3(sms.orig_ofs, rv3d->ofs);
-				copy_qt_qt(sms.orig_quat, rv3d->viewquat);
-				sms.orig_dist = rv3d->dist;
-				sms.orig_lens = v3d->lens;
+				sms.src.dist = ED_view3d_offset_distance(oldcamera->obmat, rv3d->ofs, 0.0f);
+				/* this */
+				ED_view3d_from_object(oldcamera, sms.src.ofs, sms.src.quat, &sms.src.dist, &sms.src.lens);
 			}
 			/* grid draw as floor */
 			if ((rv3d->viewlock & RV3D_LOCKED) == 0) {
 				/* use existing if exists, means multiple calls to smooth view wont loose the original 'view' setting */
-				sms.orig_view = rv3d->sms ? rv3d->sms->orig_view : rv3d->view;
 				rv3d->view = RV3D_VIEW_USER;
 			}
 
@@ -210,8 +241,8 @@ void view3d_smooth_view(bContext *C, View3D *v3d, ARegion *ar, Object *oldcamera
 				float vec1[3] = {0, 0, 1}, vec2[3] = {0, 0, 1};
 				float q1[4], q2[4];
 
-				invert_qt_qt(q1, sms.new_quat);
-				invert_qt_qt(q2, sms.orig_quat);
+				invert_qt_qt(q1, sms.dst.quat);
+				invert_qt_qt(q2, sms.src.quat);
 
 				mul_qt_v3(q1, vec1);
 				mul_qt_v3(q2, vec2);
@@ -221,41 +252,52 @@ void view3d_smooth_view(bContext *C, View3D *v3d, ARegion *ar, Object *oldcamera
 			}
 
 			/* ensure it shows correct */
-			if (sms.to_camera) rv3d->persp = RV3D_PERSP;
+			if (sms.to_camera) {
+				rv3d->persp = RV3D_PERSP;
+			}
 
 			rv3d->rflag |= RV3D_NAVIGATING;
 			
+			/* not essential but in some cases the caller will tag the area for redraw,
+			 * and in that case we can get a ficker of the 'org' user view but we want to see 'src' */
+			view3d_smooth_view_state_restore(&sms.src, v3d, rv3d);
+
 			/* keep track of running timer! */
-			if (rv3d->sms == NULL)
+			if (rv3d->sms == NULL) {
 				rv3d->sms = MEM_mallocN(sizeof(struct SmoothView3DStore), "smoothview v3d");
+			}
 			*rv3d->sms = sms;
-			if (rv3d->smooth_timer)
+			if (rv3d->smooth_timer) {
 				WM_event_remove_timer(wm, win, rv3d->smooth_timer);
+			}
 			/* TIMER1 is hardcoded in keymap */
 			rv3d->smooth_timer = WM_event_add_timer(wm, win, TIMER1, 1.0 / 100.0); /* max 30 frs/sec */
-			
-			ok = TRUE;
+
+			ok = true;
 		}
 	}
 	
 	/* if we get here nothing happens */
-	if (ok == FALSE) {
-		if (sms.to_camera == 0) {
-			copy_v3_v3(rv3d->ofs, sms.new_ofs);
-			copy_qt_qt(rv3d->viewquat, sms.new_quat);
-			rv3d->dist = sms.new_dist;
-			v3d->lens = sms.new_lens;
+	if (ok == false) {
+		if (sms.to_camera == false) {
+			copy_v3_v3(rv3d->ofs, sms.dst.ofs);
+			copy_qt_qt(rv3d->viewquat, sms.dst.quat);
+			rv3d->dist = sms.dst.dist;
+			v3d->lens = sms.dst.lens;
+
+			ED_view3d_camera_lock_sync(v3d, rv3d);
 		}
 
-		if (rv3d->viewlock & RV3D_BOXVIEW)
+		if (rv3d->viewlock & RV3D_BOXVIEW) {
 			view3d_boxview_copy(sa, ar);
+		}
 
 		ED_region_tag_redraw(ar);
 	}
 }
 
 /* only meant for timer usage */
-static int view3d_smoothview_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *event)
+static int view3d_smoothview_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *event)
 {
 	View3D *v3d = CTX_wm_view3d(C);
 	RegionView3D *rv3d = CTX_wm_region_view3d(C);
@@ -277,22 +319,16 @@ static int view3d_smoothview_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent
 		/* if we went to camera, store the original */
 		if (sms->to_camera) {
 			rv3d->persp = RV3D_CAMOB;
-			copy_v3_v3(rv3d->ofs, sms->orig_ofs);
-			copy_qt_qt(rv3d->viewquat, sms->orig_quat);
-			rv3d->dist = sms->orig_dist;
-			v3d->lens = sms->orig_lens;
+			view3d_smooth_view_state_restore(&sms->org, v3d, rv3d);
 		}
 		else {
-			copy_v3_v3(rv3d->ofs, sms->new_ofs);
-			copy_qt_qt(rv3d->viewquat, sms->new_quat);
-			rv3d->dist = sms->new_dist;
-			v3d->lens = sms->new_lens;
+			view3d_smooth_view_state_restore(&sms->dst, v3d, rv3d);
 
 			ED_view3d_camera_lock_sync(v3d, rv3d);
 		}
 		
 		if ((rv3d->viewlock & RV3D_LOCKED) == 0) {
-			rv3d->view = sms->orig_view;
+			rv3d->view = sms->org_view;
 		}
 
 		MEM_freeN(rv3d->sms);
@@ -308,19 +344,29 @@ static int view3d_smoothview_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent
 
 		step_inv = 1.0f - step;
 
-		interp_v3_v3v3(rv3d->ofs,      sms->orig_ofs,  sms->new_ofs,  step);
-		interp_qt_qtqt(rv3d->viewquat, sms->orig_quat, sms->new_quat, step);
+		interp_v3_v3v3(rv3d->ofs,      sms->src.ofs,  sms->dst.ofs,  step);
+		interp_qt_qtqt(rv3d->viewquat, sms->src.quat, sms->dst.quat, step);
 		
-		rv3d->dist = sms->new_dist * step + sms->orig_dist * step_inv;
-		v3d->lens  = sms->new_lens * step + sms->orig_lens * step_inv;
+		rv3d->dist = sms->dst.dist * step + sms->src.dist * step_inv;
+		v3d->lens  = sms->dst.lens * step + sms->src.lens * step_inv;
 
 		ED_view3d_camera_lock_sync(v3d, rv3d);
 	}
 	
 	if (rv3d->viewlock & RV3D_BOXVIEW)
 		view3d_boxview_copy(CTX_wm_area(C), CTX_wm_region(C));
-	
-	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
+
+	/* note: this doesn't work right because the v3d->lens is now used in ortho mode r51636,
+	 * when switching camera in quad-view the other ortho views would zoom & reset.
+	 *
+	 * For now only redraw all regions when smoothview finishes.
+	 */
+	if (step >= 1.0f) {
+		WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
+	}
+	else {
+		ED_region_tag_redraw(CTX_wm_region(C));
+	}
 	
 	return OPERATOR_FINISHED;
 }
@@ -417,7 +463,7 @@ static int view3d_camera_to_view_selected_exec(bContext *C, wmOperator *UNUSED(o
 
 		/* only touch location */
 		BKE_object_tfm_protected_backup(camera_ob, &obtfm);
-		BKE_object_apply_mat4(camera_ob, obmat_new, TRUE, TRUE);
+		BKE_object_apply_mat4(camera_ob, obmat_new, true, true);
 		BKE_object_tfm_protected_restore(camera_ob, &obtfm, OB_LOCK_SCALE | OB_LOCK_ROT4D);
 
 		/* notifiers */
@@ -436,7 +482,7 @@ static int view3d_camera_to_view_selected_poll(bContext *C)
 	if (v3d && v3d->camera && v3d->camera->id.lib == NULL) {
 		RegionView3D *rv3d = CTX_wm_region_view3d(C);
 		if (rv3d) {
-			if (rv3d->is_persp == FALSE) {
+			if (rv3d->is_persp == false) {
 				CTX_wm_operator_poll_msg_set(C, "Only valid for a perspective camera view");
 			}
 			else if (!rv3d->viewlock) {
@@ -519,7 +565,7 @@ void VIEW3D_OT_object_as_camera(wmOperatorType *ot)
 
 /* ********************************** */
 
-void ED_view3d_calc_clipping(BoundBox *bb, float planes[4][4], bglMats *mats, const rcti *rect)
+void ED_view3d_clipping_calc(BoundBox *bb, float planes[4][4], bglMats *mats, const rcti *rect)
 {
 	float modelview[4][4];
 	double xs, ys, p[3];
@@ -562,166 +608,44 @@ void ED_view3d_calc_clipping(BoundBox *bb, float planes[4][4], bglMats *mats, co
 		if (flip_sign)
 			negate_v3(planes[val]);
 
-		planes[val][3] = -planes[val][0] * bb->vec[val][0] -
-		                  planes[val][1] * bb->vec[val][1] -
-		                  planes[val][2] * bb->vec[val][2];
+		planes[val][3] = -dot_v3v3(planes[val], bb->vec[val]);
 	}
 }
 
-/* create intersection coordinates in view Z direction at mouse coordinates */
-void ED_view3d_win_to_segment_clip(ARegion *ar, View3D *v3d, const float mval[2], float ray_start[3], float ray_end[3])
+
+bool ED_view3d_boundbox_clip(RegionView3D *rv3d, float obmat[4][4], const BoundBox *bb)
 {
-	RegionView3D *rv3d = ar->regiondata;
-	
-	if (rv3d->is_persp) {
-		float vec[3];
-		ED_view3d_win_to_vector(ar, mval, vec);
+	/* return 1: draw */
 
-		copy_v3_v3(ray_start, rv3d->viewinv[3]);
-		madd_v3_v3v3fl(ray_start, rv3d->viewinv[3], vec, v3d->near);
-		madd_v3_v3v3fl(ray_end, rv3d->viewinv[3], vec, v3d->far);
+	float mat[4][4];
+	float vec[4], min, max;
+	int a, flag = -1, fl;
+
+	if (bb == NULL) return true;
+	if (bb->flag & OB_BB_DISABLED) return true;
+
+	mul_m4_m4m4(mat, rv3d->persmat, obmat);
+
+	for (a = 0; a < 8; a++) {
+		copy_v3_v3(vec, bb->vec[a]);
+		vec[3] = 1.0;
+		mul_m4_v4(mat, vec);
+		max = vec[3];
+		min = -vec[3];
+
+		fl = 0;
+		if (vec[0] < min) fl += 1;
+		if (vec[0] > max) fl += 2;
+		if (vec[1] < min) fl += 4;
+		if (vec[1] > max) fl += 8;
+		if (vec[2] < min) fl += 16;
+		if (vec[2] > max) fl += 32;
+
+		flag &= fl;
+		if (flag == 0) return true;
 	}
-	else {
-		float vec[4];
-		vec[0] = 2.0f * mval[0] / ar->winx - 1;
-		vec[1] = 2.0f * mval[1] / ar->winy - 1;
-		vec[2] = 0.0f;
-		vec[3] = 1.0f;
-		
-		mul_m4_v4(rv3d->persinv, vec);
-		
-		madd_v3_v3v3fl(ray_start, vec, rv3d->viewinv[2],  1000.0f);
-		madd_v3_v3v3fl(ray_end, vec, rv3d->viewinv[2], -1000.0f);
-	}
 
-	/* clipping */
-	if (rv3d->rflag & RV3D_CLIPPING) {
-		int a;
-		for (a = 0; a < 4; a++) {
-			clip_line_plane(ray_start, ray_end, rv3d->clip[a]);
-		}
-	}
-}
-
-/* create intersection ray in view Z direction at mouse coordinates */
-void ED_view3d_win_to_ray(ARegion *ar, View3D *v3d, const float mval[2], float ray_start[3], float ray_normal[3])
-{
-	float ray_end[3];
-	
-	ED_view3d_win_to_segment_clip(ar, v3d, mval, ray_start, ray_end);
-	sub_v3_v3v3(ray_normal, ray_end, ray_start);
-	normalize_v3(ray_normal);
-}
-
-void ED_view3d_global_to_vector(RegionView3D *rv3d, const float coord[3], float vec[3])
-{
-	if (rv3d->is_persp) {
-		float p1[4], p2[4];
-
-		copy_v3_v3(p1, coord);
-		p1[3] = 1.0f;
-		copy_v3_v3(p2, p1);
-		p2[3] = 1.0f;
-		mul_m4_v4(rv3d->viewmat, p2);
-
-		mul_v3_fl(p2, 2.0f);
-
-		mul_m4_v4(rv3d->viewinv, p2);
-
-		sub_v3_v3v3(vec, p1, p2);
-	}
-	else {
-		copy_v3_v3(vec, rv3d->viewinv[2]);
-	}
-	normalize_v3(vec);
-}
-
-int initgrabz(RegionView3D *rv3d, float x, float y, float z)
-{
-	int flip = FALSE;
-	if (rv3d == NULL) return flip;
-	rv3d->zfac = rv3d->persmat[0][3] * x + rv3d->persmat[1][3] * y + rv3d->persmat[2][3] * z + rv3d->persmat[3][3];
-	if (rv3d->zfac < 0.0f)
-		flip = TRUE;
-	/* if x,y,z is exactly the viewport offset, zfac is 0 and we don't want that 
-	 * (accounting for near zero values)
-	 */
-	if (rv3d->zfac < 1.e-6f && rv3d->zfac > -1.e-6f) rv3d->zfac = 1.0f;
-	
-	/* Negative zfac means x, y, z was behind the camera (in perspective).
-	 * This gives flipped directions, so revert back to ok default case.
-	 */
-	/* NOTE: I've changed this to flip zfac to be positive again for now so that GPencil draws ok
-	 * Aligorith, 2009Aug31 */
-	//if (rv3d->zfac < 0.0f) rv3d->zfac = 1.0f;
-	if (rv3d->zfac < 0.0f) rv3d->zfac = -rv3d->zfac;
-	
-	return flip;
-}
-
-void ED_view3d_win_to_3d(ARegion *ar, const float depth_pt[3], const float mval[2], float out[3])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	
-	float line_sta[3];
-	float line_end[3];
-
-	if (rv3d->is_persp) {
-		float mousevec[3];
-		copy_v3_v3(line_sta, rv3d->viewinv[3]);
-		ED_view3d_win_to_vector(ar, mval, mousevec);
-		add_v3_v3v3(line_end, line_sta, mousevec);
-
-		if (isect_line_plane_v3(out, line_sta, line_end, depth_pt, rv3d->viewinv[2], TRUE) == 0) {
-			/* highly unlikely to ever happen, mouse vec paralelle with view plane */
-			zero_v3(out);
-		}
-	}
-	else {
-		const float dx = (2.0f * mval[0] / (float)ar->winx) - 1.0f;
-		const float dy = (2.0f * mval[1] / (float)ar->winy) - 1.0f;
-		line_sta[0] = (rv3d->persinv[0][0] * dx) + (rv3d->persinv[1][0] * dy) + rv3d->viewinv[3][0];
-		line_sta[1] = (rv3d->persinv[0][1] * dx) + (rv3d->persinv[1][1] * dy) + rv3d->viewinv[3][1];
-		line_sta[2] = (rv3d->persinv[0][2] * dx) + (rv3d->persinv[1][2] * dy) + rv3d->viewinv[3][2];
-
-		add_v3_v3v3(line_end, line_sta, rv3d->viewinv[2]);
-		closest_to_line_v3(out, depth_pt, line_sta, line_end);
-	}
-}
-
-/* always call initgrabz */
-/* only to detect delta motion */
-void ED_view3d_win_to_delta(ARegion *ar, const float mval[2], float out[3])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float dx, dy;
-	
-	dx = 2.0f * mval[0] * rv3d->zfac / ar->winx;
-	dy = 2.0f * mval[1] * rv3d->zfac / ar->winy;
-	
-	out[0] = (rv3d->persinv[0][0] * dx + rv3d->persinv[1][0] * dy);
-	out[1] = (rv3d->persinv[0][1] * dx + rv3d->persinv[1][1] * dy);
-	out[2] = (rv3d->persinv[0][2] * dx + rv3d->persinv[1][2] * dy);
-}
-
-/* doesn't rely on initgrabz */
-/* for perspective view, get the vector direction to
- * the mouse cursor as a normalized vector */
-void ED_view3d_win_to_vector(ARegion *ar, const float mval[2], float out[3])
-{
-	RegionView3D *rv3d = ar->regiondata;
-
-	if (rv3d->is_persp) {
-		out[0] = 2.0f * (mval[0] / ar->winx) - 1.0f;
-		out[1] = 2.0f * (mval[1] / ar->winy) - 1.0f;
-		out[2] = -0.5f;
-		mul_project_m4_v3(rv3d->persinv, out);
-		sub_v3_v3(out, rv3d->viewinv[3]);
-	}
-	else {
-		copy_v3_v3(out, rv3d->viewinv[2]);
-	}
-	normalize_v3(out);
+	return false;
 }
 
 float ED_view3d_depth_read_cached(ViewContext *vc, int x, int y)
@@ -740,273 +664,33 @@ float ED_view3d_depth_read_cached(ViewContext *vc, int x, int y)
 void ED_view3d_depth_tag_update(RegionView3D *rv3d)
 {
 	if (rv3d->depths)
-		rv3d->depths->damaged = 1;
-}
-
-void ED_view3d_ob_project_mat_get(RegionView3D *rv3d, Object *ob, float pmat[4][4])
-{
-	float vmat[4][4];
-	
-	mult_m4_m4m4(vmat, rv3d->viewmat, ob->obmat);
-	mult_m4_m4m4(pmat, rv3d->winmat, vmat);
-}
-
-/* Uses window coordinates (x,y) and depth component z to find a point in
- * modelspace */
-void view3d_unproject(bglMats *mats, float out[3], const short x, const short y, const float z)
-{
-	double ux, uy, uz;
-
-	gluUnProject(x, y, z, mats->modelview, mats->projection,
-	             (GLint *)mats->viewport, &ux, &uy, &uz);
-
-	out[0] = ux;
-	out[1] = uy;
-	out[2] = uz;
-}
-
-/* use view3d_get_object_project_mat to get projecting mat */
-void ED_view3d_project_float_v2(const ARegion *ar, const float vec[3], float adr[2], float mat[4][4])
-{
-	float vec4[4];
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	/* adr[0]= IS_CLIPPED; */ /* always overwritten */
-	
-	mul_m4_v4(mat, vec4);
-	
-	if (vec4[3] > FLT_EPSILON) {
-		adr[0] = (float)(ar->winx / 2.0f) + (ar->winx / 2.0f) * vec4[0] / vec4[3];
-		adr[1] = (float)(ar->winy / 2.0f) + (ar->winy / 2.0f) * vec4[1] / vec4[3];
-	}
-	else {
-		adr[0] = adr[1] = 0.0f;
-	}
-}
-
-/* use view3d_get_object_project_mat to get projecting mat */
-void ED_view3d_project_float_v3(ARegion *ar, const float vec[3], float adr[3], float mat[4][4])
-{
-	float vec4[4];
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	/* adr[0]= IS_CLIPPED; */ /* always overwritten */
-	
-	mul_m4_v4(mat, vec4);
-	
-	if (vec4[3] > FLT_EPSILON) {
-		adr[0] = (float)(ar->winx / 2.0f) + (ar->winx / 2.0f) * vec4[0] / vec4[3];
-		adr[1] = (float)(ar->winy / 2.0f) + (ar->winy / 2.0f) * vec4[1] / vec4[3];
-		adr[2] = vec4[2] / vec4[3];
-	}
-	else {
-		zero_v3(adr);
-	}
-}
-
-int ED_view3d_boundbox_clip(RegionView3D *rv3d, float obmat[][4], BoundBox *bb)
-{
-	/* return 1: draw */
-	
-	float mat[4][4];
-	float vec[4], min, max;
-	int a, flag = -1, fl;
-	
-	if (bb == NULL) return 1;
-	if (bb->flag & OB_BB_DISABLED) return 1;
-	
-	mult_m4_m4m4(mat, rv3d->persmat, obmat);
-	
-	for (a = 0; a < 8; a++) {
-		copy_v3_v3(vec, bb->vec[a]);
-		vec[3] = 1.0;
-		mul_m4_v4(mat, vec);
-		max = vec[3];
-		min = -vec[3];
-		
-		fl = 0;
-		if (vec[0] < min) fl += 1;
-		if (vec[0] > max) fl += 2;
-		if (vec[1] < min) fl += 4;
-		if (vec[1] > max) fl += 8;
-		if (vec[2] < min) fl += 16;
-		if (vec[2] > max) fl += 32;
-		
-		flag &= fl;
-		if (flag == 0) return 1;
-	}
-	
-	return 0;
-}
-
-void project_short(ARegion *ar, const float vec[3], short adr[2])   /* clips */
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-	
-	adr[0] = IS_CLIPPED;
-	
-	if (rv3d->rflag & RV3D_CLIPPING) {
-		if (ED_view3d_clipping_test(rv3d, vec, FALSE)) {
-			return;
-		}
-	}
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	mul_m4_v4(rv3d->persmat, vec4);
-	
-	if (vec4[3] > (float)BL_NEAR_CLIP) {    /* 0.001 is the NEAR clipping cutoff for picking */
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-		
-		if (fx > 0 && fx < ar->winx) {
-			
-			fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-			
-			if (fy > 0.0f && fy < (float)ar->winy) {
-				adr[0] = (short)floor(fx);
-				adr[1] = (short)floor(fy);
-			}
-		}
-	}
-}
-
-void project_int(ARegion *ar, const float vec[3], int adr[2])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	adr[0] = (int)2140000000.0f;
-	
-	mul_m4_v4(rv3d->persmat, vec4);
-	
-	if (vec4[3] > (float)BL_NEAR_CLIP) {    /* 0.001 is the NEAR clipping cutoff for picking */
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-		
-		if (fx > -2140000000.0f && fx < 2140000000.0f) {
-			fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-			
-			if (fy > -2140000000.0f && fy < 2140000000.0f) {
-				adr[0] = (int)floor(fx);
-				adr[1] = (int)floor(fy);
-			}
-		}
-	}
-}
-
-void project_int_noclip(ARegion *ar, const float vec[3], int adr[2])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	
-	mul_m4_v4(rv3d->persmat, vec4);
-	
-	if (fabs(vec4[3]) > BL_NEAR_CLIP) {
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-		fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-		
-		adr[0] = (int)floor(fx); 
-		adr[1] = (int)floor(fy);
-	}
-	else {
-		adr[0] = ar->winx / 2;
-		adr[1] = ar->winy / 2;
-	}
-}
-
-void project_short_noclip(ARegion *ar, const float vec[3], short adr[2])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float fx, fy, vec4[4];
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	adr[0] = IS_CLIPPED;
-	
-	mul_m4_v4(rv3d->persmat, vec4);
-	
-	if (vec4[3] > (float)BL_NEAR_CLIP) {    /* 0.001 is the NEAR clipping cutoff for picking */
-		fx = (ar->winx / 2) * (1 + vec4[0] / vec4[3]);
-		
-		if (fx > -32700 && fx < 32700) {
-			
-			fy = (ar->winy / 2) * (1 + vec4[1] / vec4[3]);
-			
-			if (fy > -32700.0f && fy < 32700.0f) {
-				adr[0] = (short)floor(fx);
-				adr[1] = (short)floor(fy);
-			}
-		}
-	}
-}
-
-void apply_project_float(float persmat[4][4], int winx, int winy, const float vec[3], float adr[2])
-{
-	float vec4[4];
-
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	adr[0] = IS_CLIPPED;
-
-	mul_m4_v4(persmat, vec4);
-
-	if (vec4[3] > (float)BL_NEAR_CLIP) {
-		adr[0] = (float)(winx / 2.0f) + (winx / 2.0f) * vec4[0] / vec4[3];
-		adr[1] = (float)(winy / 2.0f) + (winy / 2.0f) * vec4[1] / vec4[3];
-	}
-}
-
-void project_float(ARegion *ar, const float vec[3], float adr[2])
-{
-	RegionView3D *rv3d = ar->regiondata;
-
-	apply_project_float(rv3d->persmat, ar->winx, ar->winy, vec, adr);
-}
-
-void project_float_noclip(ARegion *ar, const float vec[3], float adr[2])
-{
-	RegionView3D *rv3d = ar->regiondata;
-	float vec4[4];
-	
-	copy_v3_v3(vec4, vec);
-	vec4[3] = 1.0;
-	
-	mul_m4_v4(rv3d->persmat, vec4);
-	
-	if (fabs(vec4[3]) > BL_NEAR_CLIP) {
-		adr[0] = (float)(ar->winx / 2.0f) + (ar->winx / 2.0f) * vec4[0] / vec4[3];
-		adr[1] = (float)(ar->winy / 2.0f) + (ar->winy / 2.0f) * vec4[1] / vec4[3];
-	}
-	else {
-		adr[0] = ar->winx / 2.0f;
-		adr[1] = ar->winy / 2.0f;
-	}
+		rv3d->depths->damaged = true;
 }
 
 /* copies logic of get_view3d_viewplane(), keep in sync */
-int ED_view3d_clip_range_get(View3D *v3d, RegionView3D *rv3d, float *clipsta, float *clipend)
+bool ED_view3d_clip_range_get(View3D *v3d, RegionView3D *rv3d, float *r_clipsta, float *r_clipend,
+                              const bool use_ortho_factor)
 {
 	CameraParams params;
 
 	BKE_camera_params_init(&params);
 	BKE_camera_params_from_view3d(&params, v3d, rv3d);
 
-	if (clipsta) *clipsta = params.clipsta;
-	if (clipend) *clipend = params.clipend;
+	if (use_ortho_factor && params.is_ortho) {
+		const float fac = 2.0f / (params.clipend - params.clipsta);
+		params.clipsta *= fac;
+		params.clipend *= fac;
+	}
+
+	if (r_clipsta) *r_clipsta = params.clipsta;
+	if (r_clipend) *r_clipend = params.clipend;
 
 	return params.is_ortho;
 }
 
 /* also exposed in previewrender.c */
-int ED_view3d_viewplane_get(View3D *v3d, RegionView3D *rv3d, int winx, int winy,
-                            rctf *viewplane, float *clipsta, float *clipend)
+bool ED_view3d_viewplane_get(View3D *v3d, RegionView3D *rv3d, int winx, int winy,
+                             rctf *r_viewplane, float *r_clipsta, float *r_clipend, float *r_pixsize)
 {
 	CameraParams params;
 
@@ -1014,21 +698,25 @@ int ED_view3d_viewplane_get(View3D *v3d, RegionView3D *rv3d, int winx, int winy,
 	BKE_camera_params_from_view3d(&params, v3d, rv3d);
 	BKE_camera_params_compute_viewplane(&params, winx, winy, 1.0f, 1.0f);
 
-	if (viewplane) *viewplane = params.viewplane;
-	if (clipsta) *clipsta = params.clipsta;
-	if (clipend) *clipend = params.clipend;
+	if (r_viewplane) *r_viewplane = params.viewplane;
+	if (r_clipsta) *r_clipsta = params.clipsta;
+	if (r_clipend) *r_clipend = params.clipend;
+	if (r_pixsize) *r_pixsize = params.viewdx;
 	
 	return params.is_ortho;
 }
 
-void setwinmatrixview3d(ARegion *ar, View3D *v3d, rctf *rect)       /* rect: for picking */
+/*!
+ * \param rect for picking, NULL not to use.
+ */
+void setwinmatrixview3d(ARegion *ar, View3D *v3d, rctf *rect)
 {
 	RegionView3D *rv3d = ar->regiondata;
 	rctf viewplane;
 	float clipsta, clipend, x1, y1, x2, y2;
 	int orth;
 	
-	orth = ED_view3d_viewplane_get(v3d, rv3d, ar->winx, ar->winy, &viewplane, &clipsta, &clipend);
+	orth = ED_view3d_viewplane_get(v3d, rv3d, ar->winx, ar->winy, &viewplane, &clipsta, &clipend, NULL);
 	rv3d->is_persp = !orth;
 
 #if 0
@@ -1054,7 +742,7 @@ void setwinmatrixview3d(ARegion *ar, View3D *v3d, rctf *rect)       /* rect: for
 		
 		if (orth) wmOrtho(rect->xmin, rect->xmax, rect->ymin, rect->ymax, -clipend, clipend);
 		else wmFrustum(rect->xmin, rect->xmax, rect->ymin, rect->ymax, clipsta, clipend);
-		
+
 	}
 	else {
 		if (orth) wmOrtho(x1, x2, y1, y2, clipsta, clipend);
@@ -1112,7 +800,7 @@ static void obmat_to_viewmat(View3D *v3d, RegionView3D *rv3d, Object *ob, short 
 
 #define QUATSET(a, b, c, d, e) { a[0] = b; a[1] = c; a[2] = d; a[3] = e; } (void)0
 
-int ED_view3d_lock(RegionView3D *rv3d)
+bool ED_view3d_lock(RegionView3D *rv3d)
 {
 	switch (rv3d->view) {
 		case RV3D_VIEW_BOTTOM:
@@ -1139,10 +827,10 @@ int ED_view3d_lock(RegionView3D *rv3d)
 			QUATSET(rv3d->viewquat, 0.5, -0.5, -0.5, -0.5);
 			break;
 		default:
-			return FALSE;
+			return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 /* don't set windows active in here, is used by renderwin too */
@@ -1150,7 +838,7 @@ void setviewmatrixview3d(Scene *scene, View3D *v3d, RegionView3D *rv3d)
 {
 	if (rv3d->persp == RV3D_CAMOB) {      /* obs/camera */
 		if (v3d->camera) {
-			BKE_object_where_is_calc(scene, v3d->camera);	
+			BKE_object_where_is_calc(scene, v3d->camera);
 			obmat_to_viewmat(v3d, rv3d, v3d->camera, 0);
 		}
 		else {
@@ -1184,7 +872,9 @@ void setviewmatrixview3d(Scene *scene, View3D *v3d, RegionView3D *rv3d)
 			copy_v3_v3(vec, give_cursor(scene, v3d));
 			translate_m4(rv3d->viewmat, -vec[0], -vec[1], -vec[2]);
 		}
-		else translate_m4(rv3d->viewmat, rv3d->ofs[0], rv3d->ofs[1], rv3d->ofs[2]);
+		else {
+			translate_m4(rv3d->viewmat, rv3d->ofs[0], rv3d->ofs[1], rv3d->ofs[2]);
+		}
 	}
 }
 
@@ -1200,7 +890,8 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 	ARegion *ar = vc->ar;
 	rctf rect;
 	short code, hits;
-	char dt, dtx;
+	char dt;
+	short dtx;
 	
 	G.f |= G_PICKSEL;
 	
@@ -1216,7 +907,7 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 	}
 	
 	setwinmatrixview3d(ar, v3d, &rect);
-	mult_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
+	mul_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
 	
 	if (v3d->drawtype > OB_WIRE) {
 		v3d->zbuf = TRUE;
@@ -1255,14 +946,14 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 					glLoadName(code);
 					draw_object(scene, ar, v3d, base, DRAW_PICKING | DRAW_CONSTCOLOR);
 					
-					/* we draw group-duplicators for selection too */
-					if ((base->object->transflag & OB_DUPLI) && base->object->dup_group) {
+					/* we draw duplicators for selection too */
+					if ((base->object->transflag & OB_DUPLI)) {
 						ListBase *lb;
 						DupliObject *dob;
 						Base tbase;
 						
 						tbase.flag = OB_FROMDUPLI;
-						lb = object_duplilist(scene, base->object);
+						lb = object_duplilist(scene, base->object, false);
 						
 						for (dob = lb->first; dob; dob = dob->next) {
 							tbase.object = dob->ob;
@@ -1283,10 +974,10 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 						free_object_duplilist(lb);
 					}
 					code++;
-				}				
+				}
 			}
 		}
-		v3d->xray = FALSE;  /* restore */
+		v3d->xray = false;  /* restore */
 	}
 	
 	glPopName();    /* see above (pushname) */
@@ -1294,7 +985,7 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 	
 	G.f &= ~G_PICKSEL;
 	setwinmatrixview3d(ar, v3d, NULL);
-	mult_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
+	mul_m4_m4m4(vc->rv3d->persmat, vc->rv3d->winmat, vc->rv3d->viewmat);
 	
 	if (v3d->drawtype > OB_WIRE) {
 		v3d->zbuf = 0;
@@ -1384,13 +1075,14 @@ int ED_view3d_scene_layer_set(int lay, const int *values, int *active)
 	return lay;
 }
 
-static int view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, ReportList *reports)
+static bool view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, ReportList *reports)
 {
 	View3D *v3d = sa->spacedata.first;
 	Base *base;
-	float size = 0.0, min[3], max[3], box[3];
+	float min[3], max[3], box[3];
+	float size = 0.0f, size_persp = 0.0f, size_ortho = 0.0f;
 	unsigned int locallay;
-	int ok = FALSE;
+	bool ok = false;
 
 	if (v3d->localvd) {
 		return ok;
@@ -1401,14 +1093,14 @@ static int view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, ReportL
 	locallay = free_localbit(bmain);
 
 	if (locallay == 0) {
-		BKE_reportf(reports, RPT_ERROR, "No more than 8 localviews");
-		ok = FALSE;
+		BKE_report(reports, RPT_ERROR, "No more than 8 local views");
+		ok = false;
 	}
 	else {
 		if (scene->obedit) {
-			BKE_object_minmax(scene->obedit, min, max, FALSE);
+			BKE_object_minmax(scene->obedit, min, max, false);
 			
-			ok = TRUE;
+			ok = true;
 		
 			BASACT->lay |= locallay;
 			scene->obedit->lay = BASACT->lay;
@@ -1416,22 +1108,26 @@ static int view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, ReportL
 		else {
 			for (base = FIRSTBASE; base; base = base->next) {
 				if (TESTBASE(v3d, base)) {
-					BKE_object_minmax(base->object, min, max, FALSE);
+					BKE_object_minmax(base->object, min, max, false);
 					base->lay |= locallay;
 					base->object->lay = base->lay;
-					ok = TRUE;
+					ok = true;
 				}
 			}
 		}
-		
-		box[0] = (max[0] - min[0]);
-		box[1] = (max[1] - min[1]);
-		box[2] = (max[2] - min[2]);
-		size = MAX3(box[0], box[1], box[2]);
-		if (size <= 0.01f) size = 0.01f;
+
+		sub_v3_v3v3(box, max, min);
+		size = max_fff(box[0], box[1], box[2]);
+
+		/* do not zoom closer than the near clipping plane */
+		size = max_ff(size, v3d->near * 1.5f);
+
+		/* perspective size (we always switch out of camera view so no need to use its lens size) */
+		size_persp = ED_view3d_radius_to_persp_dist(focallength_to_fov(v3d->lens, DEFAULT_SENSOR_WIDTH), size / 2.0f) * VIEW3D_MARGIN;
+		size_ortho = ED_view3d_radius_to_ortho_dist(v3d->lens, size / 2.0f) * VIEW3D_MARGIN;
 	}
 	
-	if (ok == TRUE) {
+	if (ok == true) {
 		ARegion *ar;
 		
 		v3d->localvd = MEM_mallocN(sizeof(View3D), "localview");
@@ -1445,14 +1141,20 @@ static int view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, ReportL
 				rv3d->localvd = MEM_mallocN(sizeof(RegionView3D), "localview region");
 				memcpy(rv3d->localvd, rv3d, sizeof(RegionView3D));
 				
-				rv3d->ofs[0] = -(min[0] + max[0]) / 2.0f;
-				rv3d->ofs[1] = -(min[1] + max[1]) / 2.0f;
-				rv3d->ofs[2] = -(min[2] + max[2]) / 2.0f;
+				mid_v3_v3v3(v3d->cursor, min, max);
+				negate_v3_v3(rv3d->ofs, v3d->cursor);
 
-				rv3d->dist = size;
+				if (rv3d->persp == RV3D_CAMOB) {
+					rv3d->persp = RV3D_PERSP;
+				}
+
 				/* perspective should be a bit farther away to look nice */
-				if (rv3d->persp == RV3D_ORTHO)
-					rv3d->dist *= 0.7f;
+				if (rv3d->persp != RV3D_ORTHO) {
+					rv3d->dist = size_persp;
+				}
+				else {
+					rv3d->dist = size_ortho;
+				}
 
 				/* correction for window aspect ratio */
 				if (ar->winy > 2 && ar->winx > 2) {
@@ -1460,12 +1162,6 @@ static int view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, ReportL
 					if (asp < 1.0f) asp = 1.0f / asp;
 					rv3d->dist *= asp;
 				}
-				
-				if (rv3d->persp == RV3D_CAMOB) rv3d->persp = RV3D_PERSP;
-				
-				v3d->cursor[0] = -rv3d->ofs[0];
-				v3d->cursor[1] = -rv3d->ofs[1];
-				v3d->cursor[2] = -rv3d->ofs[2];
 			}
 		}
 		
@@ -1522,11 +1218,18 @@ static void restore_localviewdata(ScrArea *sa, int free)
 					rv3d->localvd = NULL;
 				}
 			}
+
+			if (v3d->drawtype != OB_RENDER) {
+				if (rv3d->render_engine) {
+					RE_engine_free(rv3d->render_engine);
+					rv3d->render_engine = NULL;
+				}
+			}
 		}
 	}
 }
 
-static int view3d_localview_exit(Main *bmain, Scene *scene, ScrArea *sa)
+static bool view3d_localview_exit(Main *bmain, Scene *scene, ScrArea *sa)
 {
 	View3D *v3d = sa->spacedata.first;
 	struct Base *base;
@@ -1553,12 +1256,12 @@ static int view3d_localview_exit(Main *bmain, Scene *scene, ScrArea *sa)
 			}
 		}
 		
-		DAG_on_visible_update(bmain, FALSE);
+		DAG_on_visible_update(bmain, false);
 
-		return TRUE;
-	} 
+		return true;
+	}
 	else {
-		return FALSE;
+		return false;
 	}
 }
 
@@ -1568,7 +1271,7 @@ static int localview_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	ScrArea *sa = CTX_wm_area(C);
 	View3D *v3d = CTX_wm_view3d(C);
-	int change;
+	bool change;
 	
 	if (v3d->localvd) {
 		change = view3d_localview_exit(bmain, scene, sa);
@@ -1590,7 +1293,6 @@ static int localview_exec(bContext *C, wmOperator *op)
 
 void VIEW3D_OT_localview(wmOperatorType *ot)
 {
-	
 	/* identifiers */
 	ot->name = "Local View";
 	ot->description = "Toggle display of selected object(s) separately and centered in view";
@@ -1630,12 +1332,12 @@ static void RestoreState(bContext *C, wmWindow *win)
 		GPU_paint_set_mipmap(0);
 
 	//XXX curarea->win_swap = 0;
-	//XXX curarea->head_swap=0;
+	//XXX curarea->head_swap = 0;
 	//XXX allqueue(REDRAWVIEW3D, 1);
 	//XXX allqueue(REDRAWBUTSALL, 0);
 	//XXX reset_slowparents();
 	//XXX waitcursor(0);
-	//XXX G.qual= 0;
+	//XXX G.qual = 0;
 	
 	if (win) /* check because closing win can set to NULL */
 		win->queue = queue_back;
@@ -1652,7 +1354,7 @@ static void game_set_commmandline_options(GameData *gm)
 	SYS_SystemHandle syshandle;
 	int test;
 
-	if ( (syshandle = SYS_GetSystem()) ) {
+	if ((syshandle = SYS_GetSystem())) {
 		/* User defined settings */
 		test = (U.gameflags & USER_DISABLE_MIPMAP);
 		GPU_set_mipmap(!test);
@@ -1710,7 +1412,7 @@ static int game_engine_poll(bContext *C)
 	return 1;
 }
 
-int ED_view3d_context_activate(bContext *C)
+bool ED_view3d_context_activate(bContext *C)
 {
 	bScreen *sc = CTX_wm_screen(C);
 	ScrArea *sa = CTX_wm_area(C);
@@ -1723,20 +1425,20 @@ int ED_view3d_context_activate(bContext *C)
 				break;
 
 	if (!sa)
-		return 0;
+		return false;
 	
 	for (ar = sa->regionbase.first; ar; ar = ar->next)
 		if (ar->regiontype == RGN_TYPE_WINDOW)
 			break;
 	
 	if (!ar)
-		return 0;
+		return false;
 	
 	/* bad context switch .. */
 	CTX_wm_area_set(C, sa);
 	CTX_wm_region_set(C, ar);
 
-	return 1;
+	return true;
 }
 
 static int game_engine_exec(bContext *C, wmOperator *op)
@@ -1760,7 +1462,7 @@ static int game_engine_exec(bContext *C, wmOperator *op)
 	WM_redraw_windows(C);
 
 	rv3d = CTX_wm_region_view3d(C);
-	/* sa= CTX_wm_area(C); */ /* UNUSED */
+	/* sa = CTX_wm_area(C); */ /* UNUSED */
 	ar = CTX_wm_region(C);
 
 	view3d_operator_needs_opengl(C);
@@ -1773,7 +1475,7 @@ static int game_engine_exec(bContext *C, wmOperator *op)
 	{
 		/* Letterbox */
 		rctf cam_framef;
-		ED_view3d_calc_camera_border(startscene, ar, CTX_wm_view3d(C), rv3d, &cam_framef, FALSE);
+		ED_view3d_calc_camera_border(startscene, ar, CTX_wm_view3d(C), rv3d, &cam_framef, false);
 		cam_frame.xmin = cam_framef.xmin + ar->winrct.xmin;
 		cam_frame.xmax = cam_framef.xmax + ar->winrct.xmin;
 		cam_frame.ymin = cam_framef.ymin + ar->winrct.ymin;
@@ -1872,13 +1574,19 @@ static void UNUSED_FUNCTION(view3d_align_axis_to_vector)(View3D *v3d, RegionView
 	}
 }
 
-float ED_view3d_pixel_size(struct RegionView3D *rv3d, const float co[3])
+float ED_view3d_pixel_size(RegionView3D *rv3d, const float co[3])
 {
-	return (rv3d->persmat[3][3] + (
-	            rv3d->persmat[0][3] * co[0] +
-	            rv3d->persmat[1][3] * co[1] +
-	            rv3d->persmat[2][3] * co[2])
-	        ) * rv3d->pixsize;
+	return mul_project_m4_v3_zfac(rv3d->persmat, co) * rv3d->pixsize * U.pixelsize;
+}
+
+float ED_view3d_radius_to_persp_dist(const float angle, const float radius)
+{
+	return (radius / 2.0f) * fabsf(1.0f / cosf((((float)M_PI) - angle) / 2.0f));
+}
+
+float ED_view3d_radius_to_ortho_dist(const float lens, const float radius)
+{
+	return radius / (DEFAULT_SENSOR_WIDTH / lens);
 }
 
 /* view matrix properties utilities */

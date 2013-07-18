@@ -93,7 +93,7 @@ typedef struct MetaBall {
 
 	/* used in editmode */
 	/*ListBase edit_elems;*/
-	MetaElem *lastelem;	
+	MetaElem *lastelem;
 } MetaBall;
 
 /* **************** METABALL ********************* */
@@ -120,6 +120,8 @@ typedef struct MetaBall {
 #define MB_PLANE	5
 #define MB_ELIPSOID	6
 #define MB_CUBE 	7
+
+#define MB_TYPE_SIZE_SQUARED(type)  (type == MB_ELIPSOID)
 
 /* ml->flag */
 #define MB_NEGATIVE	2

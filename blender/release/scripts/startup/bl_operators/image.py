@@ -133,7 +133,7 @@ class SaveDirty(Operator):
                         self.report({'WARNING'}, "Invalid path: " + filepath)
                     elif filepath in unique_paths:
                         self.report({'WARNING'},
-                                    "Path used by more then one image: %r" %
+                                    "Path used by more than one image: %r" %
                                     filepath)
                     else:
                         unique_paths.add(filepath)
@@ -224,7 +224,7 @@ class ProjectApply(Operator):
         image_name = ProjectEdit._proj_hack[0]  # TODO, deal with this nicer
 
         try:
-            image = bpy.data.images[image_name]
+            image = bpy.data.images[image_name, None]
         except KeyError:
             import traceback
             traceback.print_exc()

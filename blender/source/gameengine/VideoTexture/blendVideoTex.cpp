@@ -1,30 +1,36 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2006 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2006 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/blendVideoTex.cpp
  *  \ingroup bgevideotex
  */
 
 #include "PyObjectPlus.h"
+
+#include "KX_PythonInit.h"
 
 #include <RAS_GLExtensionManager.h>
 
@@ -46,10 +52,10 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 
 // get material id
-static PyObject * getMaterialID (PyObject *self, PyObject *args)
+static PyObject *getMaterialID (PyObject *self, PyObject *args)
 {
 	// parameters - game object with video texture
-	PyObject * obj = NULL;
+	PyObject *obj = NULL;
 	// material name
 	char * matName;
 
@@ -70,13 +76,13 @@ static PyObject * getMaterialID (PyObject *self, PyObject *args)
 
 
 // get last error description
-static PyObject * getLastError (PyObject *self, PyObject *args)
+static PyObject *getLastError (PyObject *self, PyObject *args)
 {
 	return PyUnicode_FromString(Exception::m_lastError.c_str());
 }
 
 // set log file
-static PyObject * setLogFile (PyObject *self, PyObject *args)
+static PyObject *setLogFile (PyObject *self, PyObject *args)
 {
 	// get parameters
 	if (!PyArg_ParseTuple(args, "s:setLogFile", &Exception::m_logFile))
@@ -87,10 +93,10 @@ static PyObject * setLogFile (PyObject *self, PyObject *args)
 
 
 // image to numpy array
-static PyObject * imageToArray (PyObject * self, PyObject *args)
+static PyObject *imageToArray(PyObject *self, PyObject *args)
 {
 	// parameter is Image object
-	PyObject * pyImg;
+	PyObject *pyImg;
 	char *mode = NULL;
 	if (!PyArg_ParseTuple(args, "O|s:imageToArray", &pyImg, &mode) || !pyImageTypes.in(Py_TYPE(pyImg)))
 	{
@@ -128,11 +134,6 @@ extern PyTypeObject FilterRGBA32Type;
 extern PyTypeObject FilterBGR24Type;
 extern PyTypeObject ImageBuffType;
 extern PyTypeObject ImageMixType;
-extern PyTypeObject ImageRenderType;
-extern PyTypeObject ImageMirrorType;
-extern PyTypeObject ImageViewportType;
-extern PyTypeObject ImageViewportType;
-
 
 static void registerAllTypes(void)
 {
@@ -168,9 +169,9 @@ static struct PyModuleDef VideoTexture_module_def = {
 	0,  /* m_free */
 };
 
-PyObject* initVideoTexture(void) 
+PyObject *initVideoTexture(void)
 {
-	PyObject * m;
+	PyObject *m;
 	
 	// initialize GL extensions
 	//bgl::InitExtensions(0);
@@ -208,12 +209,12 @@ PyObject* initVideoTexture(void)
 	pyFilterTypes.reg(m);
 
 	Py_INCREF(&TextureType);
-	PyModule_AddObject(m, (char*)"Texture", (PyObject*)&TextureType);
-	PyModule_AddIntConstant(m, (char*)"SOURCE_ERROR", SourceError);
-	PyModule_AddIntConstant(m, (char*)"SOURCE_EMPTY", SourceEmpty);
-	PyModule_AddIntConstant(m, (char*)"SOURCE_READY", SourceReady);
-	PyModule_AddIntConstant(m, (char*)"SOURCE_PLAYING", SourcePlaying);
-	PyModule_AddIntConstant(m, (char*)"SOURCE_STOPPED", SourceStopped);
+	PyModule_AddObject(m, "Texture", (PyObject *)&TextureType);
+	PyModule_AddIntConstant(m, "SOURCE_ERROR", SourceError);
+	PyModule_AddIntConstant(m, "SOURCE_EMPTY", SourceEmpty);
+	PyModule_AddIntConstant(m, "SOURCE_READY", SourceReady);
+	PyModule_AddIntConstant(m, "SOURCE_PLAYING", SourcePlaying);
+	PyModule_AddIntConstant(m, "SOURCE_STOPPED", SourceStopped);
 	
 	// init last error description
 	Exception::m_lastError = "";

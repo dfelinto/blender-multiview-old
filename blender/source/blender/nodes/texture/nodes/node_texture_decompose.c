@@ -34,11 +34,11 @@
 #include "NOD_texture.h"
 #include <math.h>
 
-static bNodeSocketTemplate inputs[]= {
+static bNodeSocketTemplate inputs[] = {
 	{ SOCK_RGBA, 1, N_("Color"), 0.0f, 0.0f, 0.0f, 1.0f },
 	{ -1, 0, "" }
 };
-static bNodeSocketTemplate outputs[]= {
+static bNodeSocketTemplate outputs[] = {
 	{ SOCK_FLOAT, 0, N_("Red") },
 	{ SOCK_FLOAT, 0, N_("Green") },
 	{ SOCK_FLOAT, 0, N_("Blue") },
@@ -70,22 +70,21 @@ static void valuefn_a(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack 
 	*out = out[3];
 }
 
-static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **out)
 {
-	tex_output(node, in, out[0], &valuefn_r, data);
-	tex_output(node, in, out[1], &valuefn_g, data);
-	tex_output(node, in, out[2], &valuefn_b, data);
-	tex_output(node, in, out[3], &valuefn_a, data);
+	tex_output(node, execdata, in, out[0], &valuefn_r, data);
+	tex_output(node, execdata, in, out[1], &valuefn_g, data);
+	tex_output(node, execdata, in, out[2], &valuefn_b, data);
+	tex_output(node, execdata, in, out[3], &valuefn_a, data);
 }
 
-void register_node_type_tex_decompose(bNodeTreeType *ttype)
+void register_node_type_tex_decompose(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, TEX_NODE_DECOMPOSE, "Decompose RGBA", NODE_CLASS_OP_COLOR, 0);
+	tex_node_type_base(&ntype, TEX_NODE_DECOMPOSE, "Separate RGBA", NODE_CLASS_OP_COLOR, 0);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 100, 60, 150);
-	node_type_exec(&ntype, exec);
+	node_type_exec(&ntype, NULL, NULL, exec);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

@@ -42,6 +42,8 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_anim_types.h"
 
 #include "RNA_access.h"
@@ -63,9 +65,9 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 		return icon;
 	else if (ELEM3(NULL, id, fcu, fcu->rna_path)) {
 		if (fcu == NULL)
-			strcpy(name, "<invalid>");
+			strcpy(name, IFACE_("<invalid>"));
 		else if (fcu->rna_path == NULL)
-			strcpy(name, "<no path>");
+			strcpy(name, IFACE_("<no path>"));
 		else /* id == NULL */
 			BLI_snprintf(name, 256, "%s[%d]", fcu->rna_path, fcu->array_index);
 	}
@@ -77,7 +79,7 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 		RNA_id_pointer_create(id, &id_ptr);
 		
 		/* try to resolve the path */
-		if (RNA_path_resolve(&id_ptr, fcu->rna_path, &ptr, &prop)) {
+		if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop)) {
 			const char *structname = NULL, *propname = NULL;
 			char arrayindbuf[16];
 			const char *arrayname = NULL;
@@ -89,7 +91,7 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 			 *		i.e. Bone1.Location.X, or Object.Location.X
 			 *	2) <array-index> <property-name> (<struct name>)
 			 *		i.e. X Location (Bone1), or X Location (Object)
-			 *	
+			 *
 			 * Currently, option 2 is in use, to try and make it easier to quickly identify F-Curves (it does have
 			 * problems with looking rather odd though). Option 1 is better in terms of revealing a consistent sense of 
 			 * hierarchy though, which isn't so clear with option 2.
@@ -143,7 +145,7 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 				/* no array index */
 				arrayname = "";
 			}
-
+			
 			/* putting this all together into the buffer */
 			/* XXX we need to check for invalid names...
 			 * XXX the name length limit needs to be passed in or as some define */
@@ -151,7 +153,7 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 				BLI_snprintf(name, 256, "%s%s (%s)", arrayname, propname, structname);
 			else
 				BLI_snprintf(name, 256, "%s%s", arrayname, propname);
-
+			
 			/* free temp name if nameprop is set */
 			if (free_structname)
 				MEM_freeN((void *)structname);
@@ -170,11 +172,11 @@ int getname_anim_fcurve(char *name, ID *id, FCurve *fcu)
 		else {
 			/* invalid path */
 			BLI_snprintf(name, 256, "\"%s[%d]\"", fcu->rna_path, fcu->array_index);
-
+			
 			/* icon for this should be the icon for the base ID */
 			/* TODO: or should we just use the error icon? */
 			icon = RNA_struct_ui_icon(id_ptr.type);
-
+			
 			/* tag F-Curve as disabled - as not usable path */
 			fcu->flag |= FCURVE_DISABLED;
 		}

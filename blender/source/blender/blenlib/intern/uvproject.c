@@ -95,9 +95,7 @@ void BLI_uvproject_from_camera(float target[2], float source[3], ProjCameraInfo 
 /* could rv3d->persmat */
 void BLI_uvproject_from_view(float target[2], float source[3], float persmat[4][4], float rotmat[4][4], float winx, float winy)
 {
-	float pv[3], pv4[4], x = 0.0, y = 0.0;
-
-	mul_v3_m4v3(pv, rotmat, source);
+	float pv4[4], x = 0.0, y = 0.0;
 
 	copy_v3_v3(pv4, source);
 	pv4[3] = 1.0;
@@ -105,7 +103,7 @@ void BLI_uvproject_from_view(float target[2], float source[3], float persmat[4][
 	/* rotmat is the object matrix in this case */
 	mul_m4_v4(rotmat, pv4);
 
-	/* almost project_short */
+	/* almost ED_view3d_project_short */
 	mul_m4_v4(persmat, pv4);
 	if (fabsf(pv4[3]) > 0.00001f) { /* avoid division by zero */
 		target[0] = winx / 2.0f + (winx / 2.0f) * pv4[0] / pv4[3];

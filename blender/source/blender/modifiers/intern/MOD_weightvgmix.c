@@ -39,6 +39,7 @@
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_deform.h"
+#include "BKE_library.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_texture.h"          /* Texture masking. */
@@ -123,6 +124,14 @@ static void initData(ModifierData *md)
 	wmd->mask_tex_mapping       = MOD_DISP_MAP_LOCAL;
 }
 
+static void freeData(ModifierData *md)
+{
+	WeightVGMixModifierData *wmd = (WeightVGMixModifierData *) md;
+	if (wmd->mask_texture) {
+		id_us_min(&wmd->mask_texture->id);
+	}
+}
+
 static void copyData(ModifierData *md, ModifierData *target)
 {
 	WeightVGMixModifierData *wmd  = (WeightVGMixModifierData *) md;
@@ -142,6 +151,10 @@ static void copyData(ModifierData *md, ModifierData *target)
 	twmd->mask_tex_mapping       = wmd->mask_tex_mapping;
 	twmd->mask_tex_map_obj       = wmd->mask_tex_map_obj;
 	BLI_strncpy(twmd->mask_tex_uvlayer_name, wmd->mask_tex_uvlayer_name, sizeof(twmd->mask_tex_uvlayer_name));
+
+	if (twmd->mask_texture) {
+		id_us_plus(&twmd->mask_texture->id);
+	}
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -161,13 +174,13 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	return dataMask;
 }
 
-static int dependsOnTime(ModifierData *md)
+static bool dependsOnTime(ModifierData *md)
 {
 	WeightVGMixModifierData *wmd = (WeightVGMixModifierData *) md;
 
 	if (wmd->mask_texture)
 		return BKE_texture_dependsOnTime(wmd->mask_texture);
-	return 0;
+	return false;
 }
 
 static void foreachObjectLink(ModifierData *md, Object *ob,
@@ -210,7 +223,7 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *UN
 		                 "WeightVGMix Modifier");
 }
 
-static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
+static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
 	WeightVGMixModifierData *wmd = (WeightVGMixModifierData *) md;
 	/* If no vertex group, bypass. */
@@ -225,7 +238,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	MDeformVert *dvert = NULL;
 	MDeformWeight **dw1, **tdw1, **dw2, **tdw2;
 	int numVerts;
-	int defgrp_idx, defgrp_idx2 = -1;
+	int defgrp_index, defgrp_index_other = -1;
 	float *org_w;
 	float *new_w;
 	int *tidx, *indices = NULL;
@@ -246,13 +259,13 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		return dm;
 
 	/* Get vgroup idx from its name. */
-	defgrp_idx = defgroup_name_index(ob, wmd->defgrp_name_a);
-	if (defgrp_idx < 0)
+	defgrp_index = defgroup_name_index(ob, wmd->defgrp_name_a);
+	if (defgrp_index == -1)
 		return dm;
 	/* Get seconf vgroup idx from its name, if given. */
 	if (wmd->defgrp_name_b[0] != (char)0) {
-		defgrp_idx2 = defgroup_name_index(ob, wmd->defgrp_name_b);
-		if (defgrp_idx2 < 0)
+		defgrp_index_other = defgroup_name_index(ob, wmd->defgrp_name_b);
+		if (defgrp_index_other == -1)
 			return dm;
 	}
 
@@ -277,10 +290,10 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		case MOD_WVG_SET_A:
 			/* All vertices in first vgroup. */
 			for (i = 0; i < numVerts; i++) {
-				MDeformWeight *dw = defvert_find_index(&dvert[i], defgrp_idx);
+				MDeformWeight *dw = defvert_find_index(&dvert[i], defgrp_index);
 				if (dw) {
 					tdw1[numIdx] = dw;
-					tdw2[numIdx] = defvert_find_index(&dvert[i], defgrp_idx2);
+					tdw2[numIdx] = defvert_find_index(&dvert[i], defgrp_index_other);
 					tidx[numIdx++] = i;
 				}
 			}
@@ -288,9 +301,9 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		case MOD_WVG_SET_B:
 			/* All vertices in second vgroup. */
 			for (i = 0; i < numVerts; i++) {
-				MDeformWeight *dw = defvert_find_index(&dvert[i], defgrp_idx2);
+				MDeformWeight *dw = defvert_find_index(&dvert[i], defgrp_index_other);
 				if (dw) {
-					tdw1[numIdx] = defvert_find_index(&dvert[i], defgrp_idx);
+					tdw1[numIdx] = defvert_find_index(&dvert[i], defgrp_index);
 					tdw2[numIdx] = dw;
 					tidx[numIdx++] = i;
 				}
@@ -299,8 +312,8 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		case MOD_WVG_SET_OR:
 			/* All vertices in one vgroup or the other. */
 			for (i = 0; i < numVerts; i++) {
-				MDeformWeight *adw = defvert_find_index(&dvert[i], defgrp_idx);
-				MDeformWeight *bdw = defvert_find_index(&dvert[i], defgrp_idx2);
+				MDeformWeight *adw = defvert_find_index(&dvert[i], defgrp_index);
+				MDeformWeight *bdw = defvert_find_index(&dvert[i], defgrp_index_other);
 				if (adw || bdw) {
 					tdw1[numIdx] = adw;
 					tdw2[numIdx] = bdw;
@@ -311,8 +324,8 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		case MOD_WVG_SET_AND:
 			/* All vertices in both vgroups. */
 			for (i = 0; i < numVerts; i++) {
-				MDeformWeight *adw = defvert_find_index(&dvert[i], defgrp_idx);
-				MDeformWeight *bdw = defvert_find_index(&dvert[i], defgrp_idx2);
+				MDeformWeight *adw = defvert_find_index(&dvert[i], defgrp_index);
+				MDeformWeight *bdw = defvert_find_index(&dvert[i], defgrp_index_other);
 				if (adw && bdw) {
 					tdw1[numIdx] = adw;
 					tdw2[numIdx] = bdw;
@@ -324,8 +337,8 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 		default:
 			/* Use all vertices. */
 			for (i = 0; i < numVerts; i++) {
-				tdw1[i] = defvert_find_index(&dvert[i], defgrp_idx);
-				tdw2[i] = defvert_find_index(&dvert[i], defgrp_idx2);
+				tdw1[i] = defvert_find_index(&dvert[i], defgrp_index);
+				tdw2[i] = defvert_find_index(&dvert[i], defgrp_index_other);
 			}
 			numIdx = -1;
 			break;
@@ -361,7 +374,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 
 	/* Mix weights. */
 	for (i = 0; i < numIdx; i++) {
-		float weight2 = 0.0;
+		float weight2;
 		org_w[i] = dw1[i] ? dw1[i]->weight : wmd->default_weight_a;
 		weight2  = dw2[i] ? dw2[i]->weight : wmd->default_weight_b;
 
@@ -377,7 +390,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	/* Update (add to) vgroup.
 	 * XXX Depending on the MOD_WVG_SET_xxx option chosen, we might have to add vertices to vgroup.
 	 */
-	weightvg_update_vg(dvert, defgrp_idx, dw1, numIdx, indices, org_w, TRUE, -FLT_MAX, FALSE, 0.0f);
+	weightvg_update_vg(dvert, defgrp_index, dw1, numIdx, indices, org_w, TRUE, -FLT_MAX, FALSE, 0.0f);
 
 	/* If weight preview enabled... */
 #if 0 /* XXX Currently done in mod stack :/ */
@@ -398,13 +411,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *der
 	return dm;
 }
 
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
-}
-
 
 ModifierTypeInfo modifierType_WeightVGMix = {
 	/* name */              "VertexWeightMix",
@@ -422,10 +428,10 @@ ModifierTypeInfo modifierType_WeightVGMix = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          NULL,
+	/* freeData */          freeData,
 	/* isDisabled */        isDisabled,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,

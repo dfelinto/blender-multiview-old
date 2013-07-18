@@ -50,13 +50,12 @@ typedef struct bActionModifier {
 	
 	/* path deform modifier */
 	short no_rot_axis;
-	struct Object *ob;	
+	struct Object *ob;
 } bActionModifier;
 
-/* NLA-Modifier Types */
-#define ACTSTRIP_MOD_DEFORM		0
-#define ACTSTRIP_MOD_NOISE		1
-#define ACTSTRIP_MOD_OOMPH		2
+/* NLA-Modifier Types (UNUSED) */
+// #define ACTSTRIP_MOD_DEFORM		0
+// #define ACTSTRIP_MOD_NOISE		1
 
 typedef struct bActionStrip {
 	struct bActionStrip *next, *prev;

@@ -30,9 +30,9 @@
  */
 
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-// annoying warnings about truncated STL debug info
-#pragma warning (disable :4786)
+#ifdef _MSC_VER
+   /* annoying warnings about truncated STL debug info */
+#  pragma warning (disable:4786)
 #endif 
 
 #include "KX_BlenderKeyboardDevice.h"
@@ -49,8 +49,8 @@ KX_BlenderKeyboardDevice::~KX_BlenderKeyboardDevice()
 }
 
 /**
-	IsPressed gives boolean information about keyboard status, true if pressed, false if not
-*/
+ * IsPressed gives boolean information about keyboard status, true if pressed, false if not
+ */
 
 bool KX_BlenderKeyboardDevice::IsPressed(SCA_IInputDevice::KX_EnumInputs inputcode)
 {
@@ -64,11 +64,11 @@ bool KX_BlenderKeyboardDevice::IsPressed(SCA_IInputDevice::KX_EnumInputs inputco
 	return m_eventStatusTables[m_currentTable][inputcode];
 }
 */
-/** 
-	NextFrame toggles currentTable with previousTable,
-	and copy relevant event information from previous to current
-	(pressed keys need to be remembered)
-*/
+/**
+ * NextFrame toggles currentTable with previousTable,
+ * and copy relevant event information from previous to current
+ * (pressed keys need to be remembered)
+ */
 void	KX_BlenderKeyboardDevice::NextFrame()
 {
 	SCA_IInputDevice::NextFrame();
@@ -87,13 +87,11 @@ void	KX_BlenderKeyboardDevice::NextFrame()
 	}
 }
 
-/** 
-	ConvertBlenderEvent translates blender keyboard events into ketsji kbd events
-	extra event information is stored, like ramp-mode (just released/pressed)
+/**
+ * ConvertBlenderEvent translates blender keyboard events into ketsji kbd events
+ * extra event information is stored, like ramp-mode (just released/pressed)
 */
-
-
-bool	KX_BlenderKeyboardDevice::ConvertBlenderEvent(unsigned short incode,short val)
+bool KX_BlenderKeyboardDevice::ConvertBlenderEvent(unsigned short incode, short val)
 {
 	bool result = false;
 	
@@ -105,7 +103,7 @@ bool	KX_BlenderKeyboardDevice::ConvertBlenderEvent(unsigned short incode,short v
 	{
 		int previousTable = 1-m_currentTable;
 
-		if (val == KM_PRESS)
+		if (val == KM_PRESS || val == KM_DBL_CLICK)
 		{
 			if (kxevent == KX_KetsjiEngine::GetExitKey() && val != 0 && !m_hookesc)
 				result = true;

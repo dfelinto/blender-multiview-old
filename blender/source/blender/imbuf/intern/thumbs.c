@@ -34,12 +34,11 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_string.h"
 #include "BLI_path_util.h"
 #include "BLI_fileops.h"
 #include "BLI_md5.h"
-
-#include "BKE_utildefines.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -156,7 +155,7 @@ static void escape_uri_string(const char *string, char *escaped_string, int len,
 			*q++ = *p;
 		}
 	}
-  
+
 	*q = '\0';
 }
 
@@ -177,7 +176,7 @@ static void to_hex_char(char *hexbytes, const unsigned char *bytes, int len)
 
 static int uri_from_filename(const char *path, char *uri)
 {
-	char orig_uri[URI_MAX];	
+	char orig_uri[URI_MAX];
 	const char *dirstart = path;
 	
 #ifdef WIN32
@@ -267,7 +266,7 @@ ImBuf *IMB_thumb_create(const char *path, ThumbSize size, ThumbSource source, Im
 	char thumb[40];
 	short tsize = 128;
 	short ex, ey;
-	float scaledx, scaledy;	
+	float scaledx, scaledy;
 	struct stat info;
 
 	switch (size) {
@@ -286,8 +285,8 @@ ImBuf *IMB_thumb_create(const char *path, ThumbSize size, ThumbSource source, Im
 
 	/* exception, skip images over 100mb */
 	if (source == THB_SOURCE_IMAGE) {
-		const size_t size = BLI_file_size(path);
-		if (size != -1 && size > THUMB_SIZE_MAX) {
+		const size_t file_size = BLI_file_size(path);
+		if (file_size != -1 && file_size > THUMB_SIZE_MAX) {
 			// printf("file too big: %d, skipping %s\n", (int)size, path);
 			return NULL;
 		}
@@ -315,7 +314,7 @@ ImBuf *IMB_thumb_create(const char *path, ThumbSize size, ThumbSource source, Im
 						img = IMB_loadblend_thumb(path);
 					}
 					else {
-						img = IMB_loadiffname(path, IB_rect | IB_metadata);
+						img = IMB_loadiffname(path, IB_rect | IB_metadata, NULL);
 					}
 				}
 
@@ -328,7 +327,7 @@ ImBuf *IMB_thumb_create(const char *path, ThumbSize size, ThumbSource source, Im
 			}
 			else if (THB_SOURCE_MOVIE == source) {
 				struct anim *anim = NULL;
-				anim = IMB_open_anim(path, IB_rect | IB_metadata, 0);
+				anim = IMB_open_anim(path, IB_rect | IB_metadata, 0, NULL);
 				if (anim != NULL) {
 					img = IMB_anim_absolute(anim, 0, IMB_TC_NONE, IMB_PROXY_NONE);
 					if (img == NULL) {
@@ -336,7 +335,7 @@ ImBuf *IMB_thumb_create(const char *path, ThumbSize size, ThumbSource source, Im
 					}
 					else {
 						IMB_freeImBuf(img);
-						img = IMB_anim_previewframe(anim);						
+						img = IMB_anim_previewframe(anim);
 					}
 					IMB_free_anim(anim);
 				}
@@ -378,6 +377,7 @@ ImBuf *IMB_thumb_create(const char *path, ThumbSize size, ThumbSource source, Im
 		}
 		img->ftype = PNG;
 		img->planes = 32;
+
 		if (IMB_saveiff(img, temp, IB_rect | IB_metadata)) {
 #ifndef WIN32
 			chmod(temp, S_IRUSR | S_IWUSR);
@@ -402,8 +402,8 @@ ImBuf *IMB_thumb_read(const char *path, ThumbSize size)
 	if (!uri_from_filename(path, uri)) {
 		return NULL;
 	}
-	if (thumbpath_from_uri(uri, thumb, sizeof(thumb), size)) {		
-		img = IMB_loadiffname(thumb, IB_rect | IB_metadata);
+	if (thumbpath_from_uri(uri, thumb, sizeof(thumb), size)) {
+		img = IMB_loadiffname(thumb, IB_rect | IB_metadata, NULL);
 	}
 
 	return img;
@@ -423,7 +423,7 @@ void IMB_thumb_delete(const char *path, ThumbSize size)
 			return;
 		}
 		if (BLI_exists(thumb)) {
-			BLI_delete(thumb, 0, 0);
+			BLI_delete(thumb, false, false);
 		}
 	}
 }
@@ -437,9 +437,9 @@ ImBuf *IMB_thumb_manage(const char *path, ThumbSize size, ThumbSource source)
 	struct stat st;
 	ImBuf *img = NULL;
 	
-	if (stat(path, &st)) {
+	if (BLI_stat(path, &st)) {
 		return NULL;
-	}	
+	}
 	if (!uri_from_filename(path, uri)) {
 		return NULL;
 	}
@@ -448,7 +448,7 @@ ImBuf *IMB_thumb_manage(const char *path, ThumbSize size, ThumbSource source)
 		if (BLI_exists(thumb)) {
 			/* clear out of date fail case */
 			if (BLI_file_older(thumb, path)) {
-				BLI_delete(thumb, 0, 0);
+				BLI_delete(thumb, false, false);
 			}
 			else {
 				return NULL;
@@ -458,10 +458,10 @@ ImBuf *IMB_thumb_manage(const char *path, ThumbSize size, ThumbSource source)
 
 	if (thumbpath_from_uri(uri, thumb, sizeof(thumb), size)) {
 		if (BLI_path_ncmp(path, thumb, sizeof(thumb)) == 0) {
-			img = IMB_loadiffname(path, IB_rect);
+			img = IMB_loadiffname(path, IB_rect, NULL);
 		}
 		else {
-			img = IMB_loadiffname(thumb, IB_rect | IB_metadata);
+			img = IMB_loadiffname(thumb, IB_rect | IB_metadata, NULL);
 			if (img) {
 				char mtime[40];
 				if (!IMB_metadata_get_field(img, "Thumb::MTime", mtime, 40)) {

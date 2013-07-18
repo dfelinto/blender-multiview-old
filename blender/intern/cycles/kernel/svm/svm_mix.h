@@ -16,28 +16,21 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "svm_hsv.h"
-
 CCL_NAMESPACE_BEGIN
-
-__device float3 svm_lerp(const float3 a, const float3 b, float t)
-{
-	return (a * (1.0f - t) + b * t);
-}
 
 __device float3 svm_mix_blend(float t, float3 col1, float3 col2)
 {
-	return svm_lerp(col1, col2, t);
+	return interp(col1, col2, t);
 }
 
 __device float3 svm_mix_add(float t, float3 col1, float3 col2)
 {
-	return svm_lerp(col1, col1 + col2, t);
+	return interp(col1, col1 + col2, t);
 }
 
 __device float3 svm_mix_mul(float t, float3 col1, float3 col2)
 {
-	return svm_lerp(col1, col1 * col2, t);
+	return interp(col1, col1 * col2, t);
 }
 
 __device float3 svm_mix_screen(float t, float3 col1, float3 col2)
@@ -75,7 +68,7 @@ __device float3 svm_mix_overlay(float t, float3 col1, float3 col2)
 
 __device float3 svm_mix_sub(float t, float3 col1, float3 col2)
 {
-	return svm_lerp(col1, col1 - col2, t);
+	return interp(col1, col1 - col2, t);
 }
 
 __device float3 svm_mix_div(float t, float3 col1, float3 col2)
@@ -93,7 +86,7 @@ __device float3 svm_mix_div(float t, float3 col1, float3 col2)
 
 __device float3 svm_mix_diff(float t, float3 col1, float3 col2)
 {
-	return svm_lerp(col1, fabs(col1 - col2), t);
+	return interp(col1, fabs(col1 - col2), t);
 }
 
 __device float3 svm_mix_dark(float t, float3 col1, float3 col2)
@@ -191,7 +184,7 @@ __device float3 svm_mix_hue(float t, float3 col1, float3 col2)
 		hsv.x = hsv2.x;
 		float3 tmp = hsv_to_rgb(hsv); 
 
-		outcol = svm_lerp(outcol, tmp, t);
+		outcol = interp(outcol, tmp, t);
 	}
 
 	return outcol;
@@ -238,7 +231,7 @@ __device float3 svm_mix_color(float t, float3 col1, float3 col2)
 		hsv.y = hsv2.y;
 		float3 tmp = hsv_to_rgb(hsv); 
 
-		outcol = svm_lerp(outcol, tmp, t);
+		outcol = interp(outcol, tmp, t);
 	}
 
 	return outcol;
@@ -276,6 +269,17 @@ __device float3 svm_mix_linear(float t, float3 col1, float3 col2)
 	return outcol;
 }
 
+__device float3 svm_mix_clamp(float3 col)
+{
+	float3 outcol = col;
+
+	outcol.x = clamp(col.x, 0.0f, 1.0f);
+	outcol.y = clamp(col.y, 0.0f, 1.0f);
+	outcol.z = clamp(col.z, 0.0f, 1.0f);
+
+	return outcol;
+}
+
 __device float3 svm_mix(NodeMix type, float fac, float3 c1, float3 c2)
 {
 	float t = clamp(fac, 0.0f, 1.0f);
@@ -299,6 +303,7 @@ __device float3 svm_mix(NodeMix type, float fac, float3 c1, float3 c2)
 		case NODE_MIX_COLOR: return svm_mix_color(t, c1, c2);
 		case NODE_MIX_SOFT: return svm_mix_soft(t, c1, c2);
 		case NODE_MIX_LINEAR: return svm_mix_linear(t, c1, c2);
+		case NODE_MIX_CLAMP: return svm_mix_clamp(c1);
 	}
 
 	return make_float3(0.0f, 0.0f, 0.0f);

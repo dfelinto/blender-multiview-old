@@ -34,12 +34,19 @@
 #include <stdlib.h>
 #include <stdio.h>
 
+#ifdef WIN32
+#include "BLI_winstuff.h"
+#endif
+
 #include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
+#include "BLI_threads.h"
 #include "BLI_voxel.h"
 #include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -157,10 +164,10 @@ static void load_frame_image_sequence(VoxelData *vd, Tex *tex)
 
 	/* find the first valid ibuf and use it to initialize the resolution of the data set */
 	/* need to do this in advance so we know how much memory to allocate */
-	ibuf = BKE_image_get_ibuf(ima, &iuser);
+	ibuf = BKE_image_acquire_ibuf(ima, &iuser, NULL);
 	while (!ibuf && (iuser.framenr < iuser.frames)) {
 		iuser.framenr++;
-		ibuf = BKE_image_get_ibuf(ima, &iuser);
+		ibuf = BKE_image_acquire_ibuf(ima, &iuser, NULL);
 	}
 	if (!ibuf) return;
 	if (!ibuf->rect_float) IMB_float_from_rect(ibuf);
@@ -175,7 +182,8 @@ static void load_frame_image_sequence(VoxelData *vd, Tex *tex)
 		/* get a new ibuf for each frame */
 		if (z > 0) {
 			iuser.framenr++;
-			ibuf = BKE_image_get_ibuf(ima, &iuser);
+			BKE_image_release_ibuf(ima, ibuf, NULL);
+			ibuf = BKE_image_acquire_ibuf(ima, &iuser, NULL);
 			if (!ibuf) break;
 			if (!ibuf->rect_float) IMB_float_from_rect(ibuf);
 		}
@@ -184,14 +192,16 @@ static void load_frame_image_sequence(VoxelData *vd, Tex *tex)
 		for (y = 0; y < ibuf->y; y++) {
 			for (x = 0; x < ibuf->x; x++) {
 				/* currently averaged to monchrome */
-				vd->dataset[BLI_VOXEL_INDEX(x, y, z, vd->resol)] = (rf[0] + rf[1] + rf[2]) * 0.333f;
+				vd->dataset[BLI_VOXEL_INDEX(x, y, z, vd->resol)] = (rf[0] + rf[1] + rf[2]) / 3.0f;
 				rf += 4;
 			}
 		}
 		
 		BKE_image_free_anim_ibufs(ima, iuser.framenr);
 	}
-	
+
+	BKE_image_release_ibuf(ima, ibuf, NULL);
+
 	vd->ok = 1;
 	return;
 }
@@ -227,70 +237,121 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 	/* draw code for smoke */
 	if ((md = (ModifierData *)modifiers_findByType(ob, eModifierType_Smoke))) {
 		SmokeModifierData *smd = (SmokeModifierData *)md;
-
+		SmokeDomainSettings *sds = smd->domain;
 		
-		if (smd->domain && smd->domain->fluid) {
-			if (cfra < smd->domain->point_cache[0]->startframe)
+		if (sds && sds->fluid) {
+			BLI_rw_mutex_lock(sds->fluid_mutex, THREAD_LOCK_READ);
+
+			if (!sds->fluid) {
+				BLI_rw_mutex_unlock(sds->fluid_mutex);
+				return;
+			}
+
+			if (cfra < sds->point_cache[0]->startframe)
 				;  /* don't show smoke before simulation starts, this could be made an option in the future */
 			else if (vd->smoked_type == TEX_VD_SMOKEHEAT) {
 				size_t totRes;
 				size_t i;
 				float *heat;
 
-				copy_v3_v3_int(vd->resol, smd->domain->res);
+				if (!smoke_has_heat(sds->fluid)) {
+					BLI_rw_mutex_unlock(sds->fluid_mutex);
+					return;
+				}
+
+				copy_v3_v3_int(vd->resol, sds->res);
 				totRes = vd_resol_size(vd);
-
-				/* scaling heat values from -2.0-2.0 to 0.0-1.0 */
 				vd->dataset = MEM_mapallocN(sizeof(float) * (totRes), "smoke data");
+				/* get heat data */
+				heat = smoke_get_heat(sds->fluid);
 
-
-				heat = smoke_get_heat(smd->domain->fluid);
-
+				/* scale heat values from -2.0-2.0 to 0.0-1.0 */
 				for (i = 0; i < totRes; i++) {
 					vd->dataset[i] = (heat[i] + 2.0f) / 4.0f;
 				}
-
-				/* vd->dataset = smoke_get_heat(smd->domain->fluid); */
 			}
 			else if (vd->smoked_type == TEX_VD_SMOKEVEL) {
 				size_t totRes;
 				size_t i;
 				float *xvel, *yvel, *zvel;
 
-				copy_v3_v3_int(vd->resol, smd->domain->res);
+				copy_v3_v3_int(vd->resol, sds->res);
 				totRes = vd_resol_size(vd);
-
-				/* scaling heat values from -2.0-2.0 to 0.0-1.0 */
 				vd->dataset = MEM_mapallocN(sizeof(float) * (totRes), "smoke data");
+				/* get velocity data */
+				xvel = smoke_get_velocity_x(sds->fluid);
+				yvel = smoke_get_velocity_y(sds->fluid);
+				zvel = smoke_get_velocity_z(sds->fluid);
 
-				xvel = smoke_get_velocity_x(smd->domain->fluid);
-				yvel = smoke_get_velocity_y(smd->domain->fluid);
-				zvel = smoke_get_velocity_z(smd->domain->fluid);
-
+				/* map velocities between 0 and 0.3f */
 				for (i = 0; i < totRes; i++) {
-					vd->dataset[i] = sqrt(xvel[i] * xvel[i] + yvel[i] * yvel[i] + zvel[i] * zvel[i]) * 3.0f;
+					vd->dataset[i] = sqrtf(xvel[i] * xvel[i] + yvel[i] * yvel[i] + zvel[i] * zvel[i]) * 3.0f;
 				}
 
 			}
-			else {
+			else if (vd->smoked_type == TEX_VD_SMOKEFLAME) {
 				size_t totRes;
-				float *density;
+				float *flame;
 
-				if (smd->domain->flags & MOD_SMOKE_HIGHRES) {
-					smoke_turbulence_get_res(smd->domain->wt, vd->resol);
-					density = smoke_turbulence_get_density(smd->domain->wt);
+				if (sds->flags & MOD_SMOKE_HIGHRES) {
+					if (!smoke_turbulence_has_fuel(sds->wt)) {
+						BLI_rw_mutex_unlock(sds->fluid_mutex);
+						return;
+					}
+					smoke_turbulence_get_res(sds->wt, vd->resol);
+					flame = smoke_turbulence_get_flame(sds->wt);
 				}
 				else {
-					copy_v3_v3_int(vd->resol, smd->domain->res);
-					density = smoke_get_density(smd->domain->fluid);
+					if (!smoke_has_fuel(sds->fluid)) {
+						BLI_rw_mutex_unlock(sds->fluid_mutex);
+						return;
+					}
+					copy_v3_v3_int(vd->resol, sds->res);
+					flame = smoke_get_flame(sds->fluid);
+				}
+
+				/* always store copy, as smoke internal data can change */
+				totRes = vd_resol_size(vd);
+				vd->dataset = MEM_mapallocN(sizeof(float)*(totRes), "smoke data");
+				memcpy(vd->dataset, flame, sizeof(float)*totRes);
+			}
+			else {
+				size_t totCells;
+				int depth = 4;
+				vd->data_type = TEX_VD_RGBA_PREMUL;
+
+				/* data resolution */
+				if (sds->flags & MOD_SMOKE_HIGHRES) {
+					smoke_turbulence_get_res(sds->wt, vd->resol);
+				}
+				else {
+					copy_v3_v3_int(vd->resol, sds->res);
 				}
 
 				/* TODO: is_vd_res_ok(rvd) doesnt check this resolution */
-				totRes = vd_resol_size(vd);
+				totCells = vd_resol_size(vd) * depth;
 				/* always store copy, as smoke internal data can change */
-				vd->dataset = MEM_mapallocN(sizeof(float) * (totRes), "smoke data");
-				memcpy(vd->dataset, density, sizeof(float) * totRes);
+				vd->dataset = MEM_mapallocN(sizeof(float) * totCells, "smoke data");
+
+				if (sds->flags & MOD_SMOKE_HIGHRES) {
+					if (smoke_turbulence_has_colors(sds->wt)) {
+						smoke_turbulence_get_rgba(sds->wt, vd->dataset, 1);
+					}
+					else {
+						smoke_turbulence_get_rgba_from_density(sds->wt, sds->active_color, vd->dataset, 1);
+					}
+				}
+				else {
+					if (smoke_has_colors(sds->fluid)) {
+						smoke_get_rgba(sds->fluid, vd->dataset, 1);
+					}
+					else {
+						smoke_get_rgba_from_density(sds->fluid, sds->active_color, vd->dataset, 1);
+					}
+				}
 			}  /* end of fluid condition */
+
+			BLI_rw_mutex_unlock(sds->fluid_mutex);
 		}
 	}
 	
@@ -320,6 +381,8 @@ void cache_voxeldata(Tex *tex, int scene_frame)
 		MEM_freeN(vd->dataset);
 		vd->dataset = NULL;
 	}
+	/* reset data_type */
+	vd->data_type = TEX_VD_INTENSITY;
 
 	if (vd->flag & TEX_VD_STILL)
 		curframe = vd->still_frame;
@@ -362,7 +425,7 @@ void make_voxeldata(struct Render *re)
 {
 	Tex *tex;
 	
-	re->i.infostr = "Loading voxel datasets";
+	re->i.infostr = IFACE_("Loading voxel datasets");
 	re->stats_draw(re->sdh, &re->i);
 	
 	/* XXX: should be doing only textures used in this render */
@@ -379,9 +442,11 @@ void make_voxeldata(struct Render *re)
 
 int voxeldatatex(struct Tex *tex, const float texvec[3], struct TexResult *texres)
 {	 
-	int retval = TEX_INT;
-	VoxelData *vd = tex->vd;	
-	float co[3], offset[3] = {0.5, 0.5, 0.5};
+	VoxelData *vd = tex->vd;
+	float co[3], offset[3] = {0.5, 0.5, 0.5}, a;
+	int retval = (vd->data_type == TEX_VD_RGBA_PREMUL) ? TEX_RGB : TEX_INT;
+	int depth = (vd->data_type == TEX_VD_RGBA_PREMUL) ? 4 : 1;
+	int ch;
 
 	if (vd->dataset == NULL) {
 		texres->tin = 0.0f;
@@ -420,31 +485,63 @@ int voxeldatatex(struct Tex *tex, const float texvec[3], struct TexResult *texre
 			break;
 		}
 	}
-	
-	switch (vd->interp_type) {
-		case TEX_VD_NEARESTNEIGHBOR:
-			texres->tin = BLI_voxel_sample_nearest(vd->dataset, vd->resol, co);
-			break;  
-		case TEX_VD_LINEAR:
-			texres->tin = BLI_voxel_sample_trilinear(vd->dataset, vd->resol, co);
-			break;					
-		case TEX_VD_QUADRATIC:
-			texres->tin = BLI_voxel_sample_triquadratic(vd->dataset, vd->resol, co);
-			break;
-		case TEX_VD_TRICUBIC_CATROM:
-		case TEX_VD_TRICUBIC_BSPLINE:
-			texres->tin = BLI_voxel_sample_tricubic(vd->dataset, vd->resol, co, (vd->interp_type == TEX_VD_TRICUBIC_BSPLINE));
-			break;
+
+	for (ch = 0; ch < depth; ch++) {
+		float *dataset = vd->dataset + ch*vd->resol[0]*vd->resol[1]*vd->resol[2];
+		float *result = &texres->tin;
+
+		if (vd->data_type == TEX_VD_RGBA_PREMUL) {
+			switch (ch) {
+				case 0:
+					result = &texres->tr;
+					break;
+				case 1:
+					result = &texres->tg;
+					break;
+				case 2:
+					result = &texres->tb;
+					break;
+			}
+		}
+
+		switch (vd->interp_type) {
+			case TEX_VD_NEARESTNEIGHBOR:
+				*result = BLI_voxel_sample_nearest(dataset, vd->resol, co);
+				break;  
+			case TEX_VD_LINEAR:
+				*result = BLI_voxel_sample_trilinear(dataset, vd->resol, co);
+				break;
+			case TEX_VD_QUADRATIC:
+				*result = BLI_voxel_sample_triquadratic(dataset, vd->resol, co);
+				break;
+			case TEX_VD_TRICUBIC_CATROM:
+			case TEX_VD_TRICUBIC_BSPLINE:
+				*result = BLI_voxel_sample_tricubic(dataset, vd->resol, co, (vd->interp_type == TEX_VD_TRICUBIC_BSPLINE));
+				break;
+		}
 	}
-	
+
+	a = texres->tin;
 	texres->tin *= vd->int_multiplier;
 	BRICONT;
 	
-	texres->tr = texres->tin;
-	texres->tg = texres->tin;
-	texres->tb = texres->tin;
+	if (vd->data_type == TEX_VD_RGBA_PREMUL) {
+		/* unmultiply */
+		if (a>0.001f) {
+			texres->tr /= a;
+			texres->tg /= a;
+			texres->tb /= a;
+		}
+		texres->talpha = 1;
+	}
+	else {
+		texres->tr = texres->tin;
+		texres->tg = texres->tin;
+		texres->tb = texres->tin;
+	}
+
 	texres->ta = texres->tin;
 	BRICONTRGB;
 	
-	return retval;	
+	return retval;
 }

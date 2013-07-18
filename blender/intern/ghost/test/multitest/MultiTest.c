@@ -26,9 +26,8 @@
  */
 #define FALSE 0
 
-#ifdef WIN32
-
-#pragma warning(disable: 4244 4305)
+#ifdef _MSC_VER
+#  pragma warning(disable: 4244 4305)
 #endif
 
 #include <stdlib.h>
@@ -267,7 +266,8 @@ static void mainwindow_handle(void *priv, GHOST_EventHandle evt)
 	mainwindow_log(mw, buf);
 	
 	switch (type) {
-		case GHOST_kEventCursorMove: {
+		case GHOST_kEventCursorMove:
+		{
 			GHOST_TEventCursorData *cd = GHOST_GetEventData(evt);
 			int x, y;
 			GHOST_ScreenToClient(mw->win, cd->x, cd->y, &x, &y);
@@ -275,13 +275,15 @@ static void mainwindow_handle(void *priv, GHOST_EventHandle evt)
 			break;
 		}
 		case GHOST_kEventButtonDown:
-		case GHOST_kEventButtonUp: {
+		case GHOST_kEventButtonUp:
+		{
 			GHOST_TEventButtonData *bd = GHOST_GetEventData(evt);
 			mainwindow_do_button(mw, bd->button, (type == GHOST_kEventButtonDown));
 			break;
 		}
 		case GHOST_kEventKeyDown:
-		case GHOST_kEventKeyUp: {
+		case GHOST_kEventKeyUp:
+		{
 			GHOST_TEventKeyData *kd = GHOST_GetEventData(evt);
 			mainwindow_do_key(mw, kd->key, (type == GHOST_kEventKeyDown));
 			break;
@@ -541,7 +543,8 @@ static void loggerwindow_handle(void *priv, GHOST_EventHandle evt)
 	GHOST_TEventType type = GHOST_GetEventType(evt);
 	
 	switch (type) {
-		case GHOST_kEventCursorMove: {
+		case GHOST_kEventCursorMove:
+		{
 			GHOST_TEventCursorData *cd = GHOST_GetEventData(evt);
 			int x, y;
 			GHOST_ScreenToClient(lw->win, cd->x, cd->y, &x, &y);
@@ -549,13 +552,15 @@ static void loggerwindow_handle(void *priv, GHOST_EventHandle evt)
 			break;
 		}
 		case GHOST_kEventButtonDown:
-		case GHOST_kEventButtonUp: {
+		case GHOST_kEventButtonUp:
+		{
 			GHOST_TEventButtonData *bd = GHOST_GetEventData(evt);
 			loggerwindow_do_button(lw, bd->button, (type == GHOST_kEventButtonDown));
 			break;
 		}
 		case GHOST_kEventKeyDown:
-		case GHOST_kEventKeyUp: {
+		case GHOST_kEventKeyUp:
+		{
 			GHOST_TEventKeyData *kd = GHOST_GetEventData(evt);
 			loggerwindow_do_key(lw, kd->key, (type == GHOST_kEventKeyDown));
 			break;
@@ -743,13 +748,15 @@ static void extrawindow_handle(void *priv, GHOST_EventHandle evt)
 	
 	switch (type) {
 		case GHOST_kEventKeyDown:
-		case GHOST_kEventKeyUp: {
+		case GHOST_kEventKeyUp:
+		{
 			GHOST_TEventKeyData *kd = GHOST_GetEventData(evt);
 			extrawindow_do_key(ew, kd->key, (type == GHOST_kEventKeyDown));
 			break;
 		}
 
-		case GHOST_kEventCursorMove: {
+		case GHOST_kEventCursorMove:
+		{
 			extrawindow_spin_cursor(ew, GHOST_GetEventTime(evt));
 			break;
 		}

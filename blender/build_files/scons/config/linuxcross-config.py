@@ -2,7 +2,7 @@ LCGDIR = '#../lib/windows'
 LIBDIR = '${LCGDIR}'
 
 BF_PYTHON = LIBDIR + '/python'
-BF_PYTHON_VERSION = '3.2'
+BF_PYTHON_VERSION = '3.3'
 BF_PYTHON_INC = '${BF_PYTHON}/include/python${BF_PYTHON_VERSION}'
 BF_PYTHON_BINARY = 'python'
 BF_PYTHON_LIB = 'python${BF_PYTHON_VERSION[0]}${BF_PYTHON_VERSION[2]}mw'
@@ -78,15 +78,10 @@ BF_TIFF_LIBPATH = '${BF_TIFF}/lib'
 WITH_BF_ZLIB = True
 BF_ZLIB = LIBDIR + '/zlib'
 BF_ZLIB_INC = '${BF_ZLIB}/include'
-BF_ZLIB_LIB = 'libz'
+BF_ZLIB_LIB = 'libz_st'
 BF_ZLIB_LIBPATH = '${BF_ZLIB}/lib'
 
 WITH_BF_INTERNATIONAL = True
-
-BF_GETTEXT = LIBDIR + '/gcc/gettext'
-BF_GETTEXT_INC = '${BF_GETTEXT}/include'
-BF_GETTEXT_LIB = 'intl'
-BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
 
 WITH_BF_GAMEENGINE = True
 WITH_BF_PLAYER = False
@@ -164,6 +159,9 @@ BF_OPENCOLLADA = LIBDIR + '/gcc/opencollada'
 BF_OPENCOLLADA_INC = '${BF_OPENCOLLADA}/include'
 BF_OPENCOLLADA_LIB = 'OpenCOLLADAStreamWriter OpenCOLLADASaxFrameworkLoader OpenCOLLADAFramework OpenCOLLADABaseUtils GeneratedSaxParser UTF MathMLSolver expat pcre buffer ftoa'
 BF_OPENCOLLADA_LIBPATH = '${BF_OPENCOLLADA}/lib ${BF_ICONV_LIBPATH}'
+
+#Freestyle
+WITH_BF_FREESTYLE = True
 
 #Ray trace optimization
 WITH_BF_RAYOPTIMIZATION = True

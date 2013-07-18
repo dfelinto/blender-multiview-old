@@ -100,19 +100,20 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 	/* remap pointers */
 	ghash= BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "game_copy_pose gh");
 
-	pchan= (bPoseChannel*)src->chanbase.first;
-	outpchan= (bPoseChannel*)out->chanbase.first;
+	pchan= (bPoseChannel *)src->chanbase.first;
+	outpchan= (bPoseChannel *)out->chanbase.first;
 	for (; pchan; pchan=pchan->next, outpchan=outpchan->next)
 		BLI_ghash_insert(ghash, pchan, outpchan);
 
-	for (pchan=(bPoseChannel*)out->chanbase.first; pchan; pchan=(bPoseChannel*)pchan->next) {
-		pchan->parent= (bPoseChannel*)BLI_ghash_lookup(ghash, pchan->parent);
-		pchan->child= (bPoseChannel*)BLI_ghash_lookup(ghash, pchan->child);
+	for (pchan = (bPoseChannel *)out->chanbase.first; pchan; pchan = pchan->next) {
+		pchan->parent= (bPoseChannel *)BLI_ghash_lookup(ghash, pchan->parent);
+		pchan->child= (bPoseChannel *)BLI_ghash_lookup(ghash, pchan->child);
 
 		if (copy_constraint) {
 			ListBase listb;
 			// copy all constraint for backward compatibility
-			copy_constraints(&listb, &pchan->constraints, FALSE);  // copy_constraints NULLs listb, no need to make extern for this operation.
+			// BKE_copy_constraints NULLs listb, no need to make extern for this operation.
+			BKE_copy_constraints(&listb, &pchan->constraints, FALSE);
 			pchan->constraints= listb;
 		} else {
 			pchan->constraints.first = NULL;
@@ -157,8 +158,8 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 		dstweight = 1.0F;
 	}
 	
-	schan= (bPoseChannel*)src->chanbase.first;
-	for (dchan = (bPoseChannel*)dst->chanbase.first; dchan; dchan=(bPoseChannel*)dchan->next, schan= (bPoseChannel*)schan->next) {
+	schan= (bPoseChannel *)src->chanbase.first;
+	for (dchan = (bPoseChannel *)dst->chanbase.first; dchan; dchan=(bPoseChannel *)dchan->next, schan= (bPoseChannel *)schan->next) {
 		// always blend on all channels since we don't know which one has been set
 		/* quat interpolation done separate */
 		if (schan->rotmode == ROT_MODE_QUAT) {
@@ -186,7 +187,10 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 			if (schan->rotmode)
 				dchan->eul[i] = (dchan->eul[i]*dstweight) + (schan->eul[i]*srcweight);
 		}
-		for (dcon= (bConstraint*)dchan->constraints.first, scon= (bConstraint*)schan->constraints.first; dcon && scon; dcon= (bConstraint*)dcon->next, scon= (bConstraint*)scon->next) {
+		for (dcon= (bConstraint *)dchan->constraints.first, scon= (bConstraint *)schan->constraints.first;
+		     dcon && scon;
+		     dcon = dcon->next, scon = scon->next)
+		{
 			/* no 'add' option for constraint blending */
 			dcon->enforce= dcon->enforce*(1.0f-srcweight) + scon->enforce*srcweight;
 		}
@@ -282,8 +286,8 @@ void BL_ArmatureObject::LoadConstraints(KX_BlenderSceneConverter* converter)
 	KX_GameObject* gamesubtarget;
 
 	// and locate the constraint
-	for (pchan = (bPoseChannel*)m_pose->chanbase.first; pchan; pchan=(bPoseChannel*)pchan->next) {
-		for (pcon = (bConstraint*)pchan->constraints.first; pcon; pcon=(bConstraint*)pcon->next) {
+	for (pchan = (bPoseChannel *)m_pose->chanbase.first; pchan; pchan = pchan->next) {
+		for (pcon = (bConstraint *)pchan->constraints.first; pcon; pcon = pcon->next) {
 			if (pcon->flag & CONSTRAINT_DISABLE)
 				continue;
 			// which constraint should we support?
@@ -301,7 +305,7 @@ void BL_ArmatureObject::LoadConstraints(KX_BlenderSceneConverter* converter)
 			case CONSTRAINT_TYPE_TRANSFORM:
 			case CONSTRAINT_TYPE_DISTLIMIT:
 			case CONSTRAINT_TYPE_TRANSLIKE:
-				cti = constraint_get_typeinfo(pcon);
+				cti = BKE_constraint_get_typeinfo(pcon);
 				gametarget = gamesubtarget = NULL;
 				if (cti && cti->get_constraint_targets) {
 					ListBase listb = { NULL, NULL };
@@ -315,7 +319,7 @@ void BL_ArmatureObject::LoadConstraints(KX_BlenderSceneConverter* converter)
 						}
 						if (target->next != NULL) {
 							// secondary target
-							target = (bConstraintTarget*)target->next;
+							target = target->next;
 							if (target->tar && target->tar != m_objArma) {
 								// only track external object
 								blendtarget = target->tar;
@@ -372,7 +376,7 @@ void BL_ArmatureObject::LoadChannels()
 		BL_ArmatureChannel* proxy;
 	
 		m_channelNumber = 0;
-		for (pchan = (bPoseChannel*)m_pose->chanbase.first; pchan; pchan=(bPoseChannel*)pchan->next) {
+		for (pchan = (bPoseChannel *)m_pose->chanbase.first; pchan; pchan=(bPoseChannel *)pchan->next) {
 			proxy = new BL_ArmatureChannel(this, pchan);
 			m_poseChannels.AddBack(proxy);
 			m_channelNumber++;
@@ -430,7 +434,7 @@ void BL_ArmatureObject::ProcessReplica()
 
 	m_pose = NULL;
 	m_framePose = NULL;
-	game_copy_pose(&m_pose, pose, 1);	
+	game_copy_pose(&m_pose, pose, 1);
 }
 
 void BL_ArmatureObject::ReParentLogic()
@@ -521,7 +525,7 @@ bool BL_ArmatureObject::SetActiveAction(BL_ActionActuator *act, short priority, 
 				SetPose(m_framePose);
 				if (m_activeAct && (m_activeAct!=act))
 					/* Reset the blend timer since this new action cancels the old one */
-					m_activeAct->SetBlendTime(0.0);	
+					m_activeAct->SetBlendTime(0.0);
 			}
 			m_activeAct = act;
 			m_activePriority = priority;
@@ -636,7 +640,6 @@ PyTypeObject BL_ArmatureObject::Type = {
 };
 
 PyMethodDef BL_ArmatureObject::Methods[] = {
-
 	KX_PYMETHODTABLE_NOARGS(BL_ArmatureObject, update),
 	{NULL,NULL} //Sentinel
 };
@@ -648,12 +651,12 @@ PyAttributeDef BL_ArmatureObject::Attributes[] = {
 	{NULL} //Sentinel
 };
 
-PyObject* BL_ArmatureObject::pyattr_get_constraints(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *BL_ArmatureObject::pyattr_get_constraints(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	return KX_PythonSeq_CreatePyObject((static_cast<BL_ArmatureObject*>(self_v))->m_proxy, KX_PYGENSEQ_OB_TYPE_CONSTRAINTS);
 }
 
-PyObject* BL_ArmatureObject::pyattr_get_channels(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *BL_ArmatureObject::pyattr_get_channels(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	BL_ArmatureObject* self = static_cast<BL_ArmatureObject*>(self_v);
 	self->LoadChannels(); // make sure we have the channels

@@ -56,6 +56,7 @@ typedef struct Brush {
 	struct BrushClone clone;
 	struct CurveMapping *curve; /* falloff curve */
 	struct MTex mtex;
+	struct MTex mask_mtex;
 
 	struct Brush *toggle_brush;
 
@@ -71,6 +72,8 @@ typedef struct Brush {
 	int size;           /* brush diameter */
 	int flag;           /* general purpose flag */
 	float jitter;       /* jitter the position of the brush */
+	int jitter_absolute;	/* absolute jitter in pixels */
+	int overlay_flags;
 	int spacing;        /* spacing of paint operations */
 	int smooth_stroke_radius;   /* turning radius (in pixels) for smooth stroke */
 	float smooth_stroke_factor; /* higher values limit fast changes in the stroke direction */
@@ -96,12 +99,21 @@ typedef struct Brush {
 	float height;           /* affectable height of brush (layer height for layer tool, i.e.) */
 
 	float texture_sample_bias;
+
 	int texture_overlay_alpha;
+	int mask_overlay_alpha;
+	int cursor_overlay_alpha;
 
 	float unprojected_radius;
 
 	float add_col[3];
 	float sub_col[3];
+
+	float stencil_pos[2];
+	float stencil_dimension[2];
+
+	float mask_stencil_pos[2];
+	float mask_stencil_dimension[2];
 } Brush;
 
 /* Brush.flag */
@@ -112,7 +124,7 @@ typedef enum BrushFlags {
 	BRUSH_SIZE_PRESSURE = (1 << 3),
 	BRUSH_JITTER_PRESSURE = (1 << 4),
 	BRUSH_SPACING_PRESSURE = (1 << 5),
-	BRUSH_FIXED_TEX = (1 << 6),
+	// BRUSH_FIXED_TEX = (1 << 6), /* obsolete, use mtex->brush_map_mode = MTEX_MAP_MODE_TILED instead */
 	BRUSH_RAKE = (1 << 7),
 	BRUSH_ANCHORED = (1 << 8),
 	BRUSH_DIR_IN = (1 << 9),
@@ -126,7 +138,7 @@ typedef enum BrushFlags {
 	BRUSH_SPACE_ATTEN = (1 << 18),
 	BRUSH_ADAPTIVE_SPACE = (1 << 19),
 	BRUSH_LOCK_SIZE = (1 << 20),
-	BRUSH_TEXTURE_OVERLAY = (1 << 21),
+//	BRUSH_TEXTURE_OVERLAY = (1 << 21), /* obsolete, use overlay_flags |= BRUSH_OVERLAY_PRIMARY instead */
 	BRUSH_EDGE_TO_EDGE = (1 << 22),
 	BRUSH_RESTORE_MESH = (1 << 23),
 	BRUSH_INVERSE_SMOOTH_PRESSURE = (1 << 24),
@@ -137,8 +149,23 @@ typedef enum BrushFlags {
 
 	/* temporary flag which sets up automatically for correct brush
 	 * drawing when inverted modal operator is running */
-	BRUSH_INVERTED = (1 << 29)
+	BRUSH_INVERTED = (1 << 29),
+	BRUSH_ABSOLUTE_JITTER = (1 << 30)
 } BrushFlags;
+
+/* Brush.overlay_flags */
+typedef enum OverlayFlags {
+	BRUSH_OVERLAY_CURSOR = (1),
+	BRUSH_OVERLAY_PRIMARY = (1 << 1),
+	BRUSH_OVERLAY_SECONDARY = (1 << 2),
+	BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE = (1 << 3),
+	BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE = (1 << 4),
+	BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE = (1 << 5)
+} OverlayFlags;
+
+#define BRUSH_OVERLAY_OVERRIDE_MASK (BRUSH_OVERLAY_CURSOR_OVERRIDE_ON_STROKE | \
+									 BRUSH_OVERLAY_PRIMARY_OVERRIDE_ON_STROKE | \
+									 BRUSH_OVERLAY_SECONDARY_OVERRIDE_ON_STROKE)
 
 /* Brush.sculpt_tool */
 typedef enum BrushSculptTool {
@@ -156,10 +183,7 @@ typedef enum BrushSculptTool {
 	SCULPT_TOOL_THUMB = 12,
 	SCULPT_TOOL_SNAKE_HOOK = 13,
 	SCULPT_TOOL_ROTATE = 14,
-	
-	/* slot 15 is free for use */
-	/* SCULPT_TOOL_ = 15, */
-	
+	SCULPT_TOOL_SIMPLIFY = 15,
 	SCULPT_TOOL_CREASE = 16,
 	SCULPT_TOOL_BLOB = 17,
 	SCULPT_TOOL_CLAY_STRIPS = 18,
@@ -167,10 +191,12 @@ typedef enum BrushSculptTool {
 } BrushSculptTool;
 
 /* ImagePaintSettings.tool */
-#define PAINT_TOOL_DRAW     0
-#define PAINT_TOOL_SOFTEN   1
-#define PAINT_TOOL_SMEAR    2
-#define PAINT_TOOL_CLONE    3
+typedef enum BrushImagePaintTool {
+	PAINT_TOOL_DRAW = 0,
+	PAINT_TOOL_SOFTEN = 1,
+	PAINT_TOOL_SMEAR = 2,
+	PAINT_TOOL_CLONE = 3
+} BrushImagePaintTool;
 
 /* direction that the brush displaces along */
 enum {

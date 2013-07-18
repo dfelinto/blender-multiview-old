@@ -20,8 +20,8 @@
  *		Monique Dewanchand
  */
 
-#ifndef _COM_Node_h
-#define _COM_Node_h
+#ifndef __COM_NODE_H__
+#define __COM_NODE_H__
 
 #include "COM_NodeBase.h"
 #include "COM_InputSocket.h"
@@ -53,6 +53,11 @@ private:
 	 * @brief Is this node part of the active group
 	 */
 	bool m_inActiveGroup;
+
+	/**
+	 * @brief Instance key to identify the node in an instance hash table
+	 */
+	bNodeInstanceKey m_instanceKey;
 
 public:
 	Node(bNode *editorNode, bool create_sockets = true);
@@ -100,6 +105,17 @@ public:
 	void addSetVectorOperation(ExecutionSystem *graph, InputSocket *inputsocket, int editorNodeInputSocketIndex);
 	
 	/**
+	 * Create dummy warning operation, use when we can't get the source data.
+	 */
+	NodeOperation *convertToOperations_invalid_index(ExecutionSystem *graph, int index);
+	/**
+	 * when a node has no valid data (missing image or a group nodes ID pointer is NULL)
+	 * call this function from #convertToOperations, this way the node sockets are converted
+	 * into valid outputs, without this the compositor system gets confused and crashes, see [#32490]
+	 */
+	void convertToOperations_invalid(ExecutionSystem *graph, CompositorContext *context);
+
+	/**
 	 * Creates a new link between an outputSocket and inputSocket and registrates the link to the graph
 	 * @return the new created link
 	 */
@@ -127,13 +143,17 @@ public:
 	 * @param socket
 	 */
 	OutputSocket *findOutputSocketBybNodeSocket(bNodeSocket *socket);
+	
+	void setInstanceKey(bNodeInstanceKey instance_key) { m_instanceKey = instance_key; }
+	bNodeInstanceKey getInstanceKey() const { return m_instanceKey; }
+	
 protected:
-	void addPreviewOperation(ExecutionSystem *system, InputSocket *inputSocket);
-	void addPreviewOperation(ExecutionSystem *system, OutputSocket *outputSocket);
+	void addPreviewOperation(ExecutionSystem *system, CompositorContext *context, InputSocket *inputSocket);
+	void addPreviewOperation(ExecutionSystem *system, CompositorContext *context, OutputSocket *outputSocket);
 	
 	bNodeSocket *getEditorInputSocket(int editorNodeInputSocketIndex);
 	bNodeSocket *getEditorOutputSocket(int editorNodeOutputSocketIndex);
 private:
 };
 
-#endif
+#endif  /* __COM_NODE_H__ */

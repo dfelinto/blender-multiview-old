@@ -33,8 +33,8 @@
  */
 
 
-#ifdef WIN32
-#pragma warning (disable:4244)
+#ifdef _MSC_VER
+#  pragma warning (disable:4244)
 #endif
 
 #include <ft2build.h>
@@ -47,19 +47,15 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_vfontdata.h"
-#include "BLI_blenlib.h"
-#include "BLI_math.h"
 #include "BLI_utildefines.h"
-
-#include "BKE_font.h"
+#include "BLI_vfontdata.h"
+#include "BLI_listbase.h"
+#include "BLI_string.h"
+#include "BLI_math.h"
 
 #include "DNA_vfont_types.h"
 #include "DNA_packedFile_types.h"
 #include "DNA_curve_types.h"
-
-#define myMIN_ASCII     32
-#define myMAX_ASCII     255
 
 /* local variables */
 static FT_Library library;
@@ -274,7 +270,7 @@ static void freetypechar_to_vchar(FT_Face face, FT_ULong charcode, VFontData *vf
 					    (len_squared_v2v2(bezt->vec[1], bezt->vec[2]) > 0.0001f * 0.0001f) &&
 					    (len_squared_v2v2(bezt->vec[0], bezt->vec[2]) > 0.0002f * 0.0001f) &&
 					    (len_squared_v2v2(bezt->vec[0], bezt->vec[2]) >
-					     maxf(len_squared_v2v2(bezt->vec[0], bezt->vec[1]),
+					     max_ff(len_squared_v2v2(bezt->vec[0], bezt->vec[1]),
 					          len_squared_v2v2(bezt->vec[1], bezt->vec[2]))))
 					{
 						bezt->h1 = bezt->h2 = HD_ALIGN;
@@ -285,7 +281,7 @@ static void freetypechar_to_vchar(FT_Face face, FT_ULong charcode, VFontData *vf
 			}
 		}
 		if (npoints) MEM_freeN(npoints);
-		if (onpoints) MEM_freeN(onpoints);	
+		if (onpoints) MEM_freeN(onpoints);
 	}
 }
 
@@ -293,19 +289,12 @@ static int objchr_to_ftvfontdata(VFont *vfont, FT_ULong charcode)
 {
 	/* Freetype2 */
 	FT_Face face;
-	struct TmpFont *tf;
-
-	/* Find the correct FreeType font */
-	tf = BKE_vfont_tmpfont_find(vfont);
-
-	/* What, no font found. Something strange here */
-	if (!tf) return FALSE;
 
 	/* Load the font to memory */
-	if (tf->pf) {
+	if (vfont->temp_pf) {
 		err = FT_New_Memory_Face(library,
-		                         tf->pf->data,
-		                         tf->pf->size,
+		                         vfont->temp_pf->data,
+		                         vfont->temp_pf->size,
 		                         0,
 		                         &face);
 		if (err) return FALSE;
@@ -414,7 +403,7 @@ static VFontData *objfnt_to_ftvfontdata(PackedFile *pf)
 		lcode = charcode;
 	}
 
-	return vfd;	
+	return vfd;
 }
 
 
@@ -461,7 +450,9 @@ static int check_freetypefont(PackedFile *pf)
 
 		glyph_index = FT_Get_Char_Index(face, 'A');
 		err = FT_Load_Glyph(face, glyph_index, FT_LOAD_NO_SCALE | FT_LOAD_NO_BITMAP);
-		if (err) success = 0;
+		if (err) {
+			success = 0;
+		}
 		else {
 			glyph = face->glyph;
 			if (glyph->format == ft_glyph_format_outline) {
@@ -477,16 +468,23 @@ static int check_freetypefont(PackedFile *pf)
 	return success;
 }
 
-
+/**
+ * Construct a new VFontData structure from
+ * Freetype font data in a PackedFile.
+ *
+ * \param pf The font data.
+ * \retval A new VFontData structure, or NULL
+ * if unable to load.
+ */
 VFontData *BLI_vfontdata_from_freetypefont(PackedFile *pf)
 {
 	VFontData *vfd = NULL;
 	int success = 0;
 
-	//init Freetype	
+	/* init Freetype */
 	err = FT_Init_FreeType(&library);
 	if (err) {
-		//XXX error("Failed to load the Freetype font library");
+		/* XXX error("Failed to load the Freetype font library"); */
 		return NULL;
 	}
 
@@ -496,7 +494,7 @@ VFontData *BLI_vfontdata_from_freetypefont(PackedFile *pf)
 		vfd = objfnt_to_ftvfontdata(pf);
 	}
 
-	//free Freetype
+	/* free Freetype */
 	FT_Done_FreeType(library);
 	
 	return vfd;
@@ -528,16 +526,16 @@ int BLI_vfontchar_from_freetypefont(VFont *vfont, unsigned long character)
 
 #if 0
 
-// Freetype2 Outline struct
+/* Freetype2 Outline struct */
 
 typedef struct  FT_Outline_
-  {
+{
 	short       n_contours;      /* number of contours in glyph        */
 	short       n_points;        /* number of points in the glyph      */
 
-	FT_Vector*  points;          /* the outline's points               */
-	char*       tags;            /* the points flags                   */
-	short*      contours;        /* the contour end points             */
+	FT_Vector  *points;          /* the outline's points               */
+	char       *tags;            /* the points flags                   */
+	short      *contours;        /* the contour end points             */
 
 	int         flags;           /* outline masks                      */
 } FT_Outline;

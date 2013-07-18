@@ -26,11 +26,8 @@
 
 #include <Python.h>
 #include "BLI_utildefines.h"
-#include "BLI_callbacks.h"
 
-#include "RNA_types.h"
-#include "RNA_access.h"
-#include "bpy_rna.h"
+#include "bpy_app_ffmpeg.h"
 
 #ifdef WITH_FFMPEG
 #include <libavcodec/avcodec.h>
@@ -44,16 +41,16 @@ static PyTypeObject BlenderAppFFmpegType;
 
 #define DEF_FFMPEG_LIB_VERSION(lib) \
 	{(char *)(#lib "_version"), (char *)("The " #lib " version  as a tuple of 3 numbers")}, \
-	{(char *)(#lib "_version_string"), (char *)("The " #lib " version formatted as a string")},
+	{(char *)(#lib "_version_string"), (char *)("The " #lib " version formatted as a string")}
 
 static PyStructSequence_Field app_ffmpeg_info_fields[] = {
 	{(char *)"supported", (char *)("Boolean, True when Blender is built with FFmpeg support")},
 
-	DEF_FFMPEG_LIB_VERSION(avcodec)
-	DEF_FFMPEG_LIB_VERSION(avdevice)
-	DEF_FFMPEG_LIB_VERSION(avformat)
-	DEF_FFMPEG_LIB_VERSION(avutil)
-	DEF_FFMPEG_LIB_VERSION(swscale)
+	DEF_FFMPEG_LIB_VERSION(avcodec),
+	DEF_FFMPEG_LIB_VERSION(avdevice),
+	DEF_FFMPEG_LIB_VERSION(avformat),
+	DEF_FFMPEG_LIB_VERSION(avutil),
+	DEF_FFMPEG_LIB_VERSION(swscale),
 	{NULL}
 };
 
@@ -80,10 +77,14 @@ static PyObject *make_ffmpeg_info(void)
 		return NULL;
 	}
 
+#if 0 // UNUSED
 #define SetIntItem(flag) \
 	PyStructSequence_SET_ITEM(ffmpeg_info, pos++, PyLong_FromLong(flag))
+#endif
+#ifndef WITH_FFMPEG
 #define SetStrItem(str) \
 	PyStructSequence_SET_ITEM(ffmpeg_info, pos++, PyUnicode_FromString(str))
+#endif
 #define SetObjItem(obj) \
 	PyStructSequence_SET_ITEM(ffmpeg_info, pos++, obj)
 
@@ -121,7 +122,7 @@ static PyObject *make_ffmpeg_info(void)
 		return NULL;
 	}
 
-#undef SetIntItem
+// #undef SetIntItem
 #undef SetStrItem
 #undef SetObjItem
 

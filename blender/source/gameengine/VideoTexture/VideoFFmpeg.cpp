@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/VideoFFmpeg.cpp
  *  \ingroup bgevideotex
@@ -51,8 +55,6 @@ const long timeScale = 1000;
 // macro for exception handling and logging
 #define CATCH_EXCP catch (Exception & exp) \
 { exp.report(); m_status = SourceError; }
-
-extern "C" void do_init_ffmpeg();
 
 // class RenderVideo
 
@@ -172,7 +174,7 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
 	if (avformat_open_input(&formatCtx, filename, inputFormat, formatParams)!=0)
 		return -1;
 
-	if (av_find_stream_info(formatCtx)<0) 
+	if (avformat_find_stream_info(formatCtx, NULL) < 0)
 	{
 		av_close_input_file(formatCtx);
 		return -1;
@@ -207,7 +209,7 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
 		return -1;
 	}
 	codecCtx->workaround_bugs = 1;
-	if (avcodec_open(codecCtx, codec)<0) 
+	if (avcodec_open2(codecCtx, codec, NULL) < 0)
 	{
 		av_close_input_file(formatCtx);
 		return -1;
@@ -487,13 +489,13 @@ void VideoFFmpeg::stopCache()
 			av_free(frame->frame);
 			delete frame;
 		}
-		while((packet = (CachePacket *)m_packetCacheBase.first) != NULL)
+		while ((packet = (CachePacket *)m_packetCacheBase.first) != NULL)
 		{
 			BLI_remlink(&m_packetCacheBase, packet);
 			av_free_packet(&packet->packet);
 			delete packet;
 		}
-		while((packet = (CachePacket *)m_packetCacheFree.first) != NULL)
+		while ((packet = (CachePacket *)m_packetCacheFree.first) != NULL)
 		{
 			BLI_remlink(&m_packetCacheFree, packet);
 			delete packet;
@@ -502,7 +504,7 @@ void VideoFFmpeg::stopCache()
 	}
 }
 
-void VideoFFmpeg::releaseFrame(AVFrame* frame)
+void VideoFFmpeg::releaseFrame(AVFrame *frame)
 {
 	if (frame == m_frameRGB)
 	{
@@ -519,16 +521,14 @@ void VideoFFmpeg::releaseFrame(AVFrame* frame)
 }
 
 // open video file
-void VideoFFmpeg::openFile (char * filename)
+void VideoFFmpeg::openFile (char *filename)
 {
-	do_init_ffmpeg();
-
 	if (openStream(filename, NULL, NULL) != 0)
 		return;
 
 	if (m_codecCtx->gop_size)
 		m_preseek = (m_codecCtx->gop_size < 25) ? m_codecCtx->gop_size+1 : 25;
-	else if (m_codecCtx->has_b_frames)		
+	else if (m_codecCtx->has_b_frames)
 		m_preseek = 25;	// should determine gopsize
 	else
 		m_preseek = 0;
@@ -578,15 +578,13 @@ void VideoFFmpeg::openFile (char * filename)
 
 
 // open video capture device
-void VideoFFmpeg::openCam (char * file, short camIdx)
+void VideoFFmpeg::openCam (char *file, short camIdx)
 {
 	// open camera source
 	AVInputFormat		*inputFormat;
 	AVDictionary		*formatParams = NULL;
 	char				filename[28], rateStr[20];
 	char                *p;
-
-	do_init_ffmpeg();
 
 #ifdef WIN32
 	// video capture on windows only through Video For Windows driver
@@ -927,7 +925,7 @@ AVFrame *VideoFFmpeg::grabFrame(long position)
 			&& m_preseek 
 			&& position - (m_curPosition + 1) < m_preseek) 
 		{
-			while(av_read_frame(m_formatCtx, &packet)>=0) 
+			while (av_read_frame(m_formatCtx, &packet)>=0)
 			{
 				if (packet.stream_index == m_videoStream) 
 				{
@@ -1002,7 +1000,7 @@ AVFrame *VideoFFmpeg::grabFrame(long position)
 
 	// find the correct frame, in case of streaming and no cache, it means just
 	// return the next frame. This is not quite correct, may need more work
-	while(av_read_frame(m_formatCtx, &packet)>=0) 
+	while (av_read_frame(m_formatCtx, &packet) >= 0)
 	{
 		if (packet.stream_index == m_videoStream) 
 		{
@@ -1024,7 +1022,7 @@ AVFrame *VideoFFmpeg::grabFrame(long position)
 				AVFrame * input = m_frame;
 
 				/* This means the data wasnt read properly, 
-				this check stops crashing */
+				 * this check stops crashing */
 				if (   input->data[0]==0 && input->data[1]==0 
 					&& input->data[2]==0 && input->data[3]==0)
 				{
@@ -1082,14 +1080,14 @@ AVFrame *VideoFFmpeg::grabFrame(long position)
 
 
 // cast Image pointer to VideoFFmpeg
-inline VideoFFmpeg * getVideoFFmpeg (PyImage * self)
+inline VideoFFmpeg * getVideoFFmpeg (PyImage *self)
 { return static_cast<VideoFFmpeg*>(self->m_image); }
 
 
 // object initialization
-static int VideoFFmpeg_init (PyObject * pySelf, PyObject * args, PyObject * kwds)
+static int VideoFFmpeg_init(PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
-	PyImage * self = reinterpret_cast<PyImage*>(pySelf);
+	PyImage *self = reinterpret_cast<PyImage*>(pySelf);
 	// parameters - video source
 	// file name or format type for capture (only for Linux: video4linux or dv1394)
 	char * file = NULL;
@@ -1129,13 +1127,13 @@ static int VideoFFmpeg_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 	return 0;
 }
 
-PyObject * VideoFFmpeg_getPreseek (PyImage *self, void * closure)
+static PyObject *VideoFFmpeg_getPreseek(PyImage *self, void *closure)
 {
 	return Py_BuildValue("h", getFFmpeg(self)->getPreseek());
 }
 
 // set range
-int VideoFFmpeg_setPreseek (PyImage * self, PyObject * value, void * closure)
+static int VideoFFmpeg_setPreseek(PyImage *self, PyObject *value, void *closure)
 {
 	// check validity of parameter
 	if (value == NULL || !PyLong_Check(value))
@@ -1144,13 +1142,13 @@ int VideoFFmpeg_setPreseek (PyImage * self, PyObject * value, void * closure)
 		return -1;
 	}
 	// set preseek
-	getFFmpeg(self)->setPreseek(PyLong_AsSsize_t(value));
+	getFFmpeg(self)->setPreseek(PyLong_AsLong(value));
 	// success
 	return 0;
 }
 
 // get deinterlace
-PyObject * VideoFFmpeg_getDeinterlace (PyImage * self, void * closure)
+static PyObject *VideoFFmpeg_getDeinterlace(PyImage *self, void *closure)
 {
 	if (getFFmpeg(self)->getDeinterlace())
 		Py_RETURN_TRUE;
@@ -1159,7 +1157,7 @@ PyObject * VideoFFmpeg_getDeinterlace (PyImage * self, void * closure)
 }
 
 // set flip
-int VideoFFmpeg_setDeinterlace (PyImage * self, PyObject * value, void * closure)
+static int VideoFFmpeg_setDeinterlace(PyImage *self, PyObject *value, void *closure)
 {
 	// check parameter, report failure
 	if (value == NULL || !PyBool_Check(value))
@@ -1245,9 +1243,9 @@ PyTypeObject VideoFFmpegType =
 };
 
 // object initialization
-static int ImageFFmpeg_init (PyObject * pySelf, PyObject * args, PyObject * kwds)
+static int ImageFFmpeg_init(PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
-	PyImage * self = reinterpret_cast<PyImage*>(pySelf);
+	PyImage *self = reinterpret_cast<PyImage*>(pySelf);
 	// parameters - video source
 	// file name or format type for capture (only for Linux: video4linux or dv1394)
 	char * file = NULL;
@@ -1275,7 +1273,7 @@ static int ImageFFmpeg_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 	return 0;
 }
 
-PyObject * Image_reload (PyImage * self, PyObject *args)
+static PyObject *Image_reload(PyImage *self, PyObject *args)
 {
 	char * newname = NULL;
 	if (!PyArg_ParseTuple(args, "|s:reload", &newname))

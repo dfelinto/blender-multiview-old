@@ -28,31 +28,32 @@ __device void kernel_shader_evaluate(KernelGlobals *kg, uint4 *input, float4 *ou
 		/* setup shader data */
 		int object = in.x;
 		int prim = in.y;
-		float u = __int_as_float(in.z);
-		float v = __int_as_float(in.w);
+		float u = __uint_as_float(in.z);
+		float v = __uint_as_float(in.w);
 
 		shader_setup_from_displace(kg, &sd, object, prim, u, v);
 
 		/* evaluate */
 		float3 P = sd.P;
-		shader_eval_displacement(kg, &sd);
+		shader_eval_displacement(kg, &sd, SHADER_CONTEXT_MAIN);
 		out = sd.P - P;
 	}
 	else { // SHADER_EVAL_BACKGROUND
 		/* setup ray */
 		Ray ray;
-		float u = __int_as_float(in.x);
-		float v = __int_as_float(in.y);
+		float u = __uint_as_float(in.x);
+		float v = __uint_as_float(in.y);
 
 		ray.P = make_float3(0.0f, 0.0f, 0.0f);
 		ray.D = equirectangular_to_direction(u, v);
 		ray.t = 0.0f;
+#ifdef __CAMERA_MOTION__
+		ray.time = 0.5f;
+#endif
 
 #ifdef __RAY_DIFFERENTIALS__
-		ray.dD.dx = make_float3(0.0f, 0.0f, 0.0f);
-		ray.dD.dy = make_float3(0.0f, 0.0f, 0.0f);
-		ray.dP.dx = make_float3(0.0f, 0.0f, 0.0f);
-		ray.dP.dy = make_float3(0.0f, 0.0f, 0.0f);
+		ray.dD = differential3_zero();
+		ray.dP = differential3_zero();
 #endif
 
 		/* setup shader data */
@@ -60,7 +61,7 @@ __device void kernel_shader_evaluate(KernelGlobals *kg, uint4 *input, float4 *ou
 
 		/* evaluate */
 		int flag = 0; /* we can't know which type of BSDF this is for */
-		out = shader_eval_background(kg, &sd, flag);
+		out = shader_eval_background(kg, &sd, flag, SHADER_CONTEXT_MAIN);
 	}
 	
 	/* write output */

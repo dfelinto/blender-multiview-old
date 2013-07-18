@@ -32,8 +32,8 @@
 #ifndef __RAS_IRASTERIZER_H__
 #define __RAS_IRASTERIZER_H__
 
-#if defined(WIN32) && !defined(FREE_WINDOWS)
-#pragma warning (disable:4786)
+#ifdef _MSC_VER
+#  pragma warning (disable:4786)
 #endif
 
 #include "STR_HashedString.h"
@@ -52,6 +52,7 @@ using namespace std;
 
 class RAS_ICanvas;
 class RAS_IPolyMaterial;
+class RAS_MeshSlot;
 
 typedef vector<unsigned short> KX_IndexArray;
 typedef vector<RAS_TexVert> KX_VertexArray;
@@ -129,7 +130,7 @@ public:
 		RAS_TEXCO_GEN,		//< GPU will generate texture coordinates
 		RAS_TEXCO_ORCO,		//< Vertex coordinates (object space)
 		RAS_TEXCO_GLOB,		//< Vertex coordinates (world space)
-		RAS_TEXCO_UV1,		//< UV coordinates
+		RAS_TEXCO_UV,		//< UV coordinates
 		RAS_TEXCO_OBJECT,	//< Use another object's position as coordinates
 		RAS_TEXCO_LAVECTOR,	//< Light vector as coordinates
 		RAS_TEXCO_VIEW,		//< View vector as coordinates
@@ -137,7 +138,6 @@ public:
 		RAS_TEXCO_WINDOW,	//< Window coordinates
 		RAS_TEXCO_NORM,		//< Normal coordinates 
 		RAS_TEXTANGENT,		//<
-		RAS_TEXCO_UV2,		//<
 		RAS_TEXCO_VCOL,		//< Vertex Color
 		RAS_TEXCO_DISABLE	//< Disable this texture unit (cached)
 	};
@@ -148,6 +148,17 @@ public:
 	enum StereoEye {
 			RAS_STEREO_LEFTEYE = 1,
 			RAS_STEREO_RIGHTEYE
+	};
+
+	/**
+	 * Mipmap options
+	 */
+	enum MipmapOption {
+		RAS_MIPMAP_NONE,
+		RAS_MIPMAP_NEAREST,
+		RAS_MIPMAP_LINEAR,
+
+		RAS_MIPMAP_MAX, // Should always be last
 	};
 
 	/**
@@ -305,7 +316,7 @@ public:
 	virtual int	GetDrawingMode()=0;
 	/**
 	 * Sets face culling
-	 */	
+	 */
 	virtual void	SetCullFace(bool enable)=0;
 	/**
 	 * Sets wireframe mode.
@@ -400,7 +411,7 @@ public:
 	virtual void	SetTexCoordNum(int num) = 0;
 	virtual void	SetAttribNum(int num) = 0;
 	virtual void	SetTexCoord(TexCoGen coords, int unit) = 0;
-	virtual void	SetAttrib(TexCoGen coords, int unit) = 0;
+	virtual void	SetAttrib(TexCoGen coords, int unit, int layer = 0) = 0;
 
 	virtual const MT_Matrix4x4&	GetViewMatrix() const = 0;
 	virtual const MT_Matrix4x4&	GetViewInvMatrix() const = 0;
@@ -421,12 +432,15 @@ public:
 	virtual void	SetAnisotropicFiltering(short level)=0;
 	virtual short	GetAnisotropicFiltering()=0;
 
+	virtual void	SetMipmapping(MipmapOption val)=0;
+	virtual MipmapOption GetMipmapping()=0;
+
+	virtual void	SetUsingOverrideShader(bool val)=0;
+	virtual bool	GetUsingOverrideShader()=0;
 
 #ifdef WITH_CXX_GUARDEDALLOC
 	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_IRasterizer")
 #endif
 };
 
-#endif //__RAS_IRASTERIZER_H__
-
-
+#endif  /* __RAS_IRASTERIZER_H__ */

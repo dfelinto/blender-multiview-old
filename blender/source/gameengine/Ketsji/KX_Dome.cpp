@@ -1,25 +1,27 @@
 /*
- * -----------------------------------------------------------------------------
+ * ***** BEGIN GPL LICENSE BLOCK *****
  *
- * This program is free software; you can redistribute it and/or modify it under
- * the terms of the GNU Lesser General Public License as published by the Free Software
- * Foundation; either version 2 of the License, or (at your option) any later
- * version.
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
- * FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU Lesser General Public License along with
- * this program; if not, write to the Free Software Foundation, Inc., 59 Temple
- * Place - Suite 330, Boston, MA 02111-1307, USA, or go to
- * http://www.gnu.org/copyleft/lesser.txt.
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * Contributor(s): Dalai Felinto
  *
  * This code is originally inspired on some of the ideas and codes from Paul Bourke.
- * Developed as part of a Research and Development project for SAT - La Société des arts technologiques.
- * -----------------------------------------------------------------------------
+ * Developed as part of a Research and Development project for
+ * SAT - La Société des arts technologiques.
+ *
+ * ***** END GPL LICENSE BLOCK *****
  */
 
 /** \file gameengine/Ketsji/KX_Dome.cpp
@@ -90,12 +92,11 @@ KX_Dome::KX_Dome (
 	}
 
 	//setting the viewport size
-	GLuint	viewport[4]={0};
-	glGetIntegerv(GL_VIEWPORT,(GLint *)viewport);
+	const int *viewport = m_canvas->GetViewPort();
 
 	SetViewPort(viewport);
 
-	switch(m_mode) {
+	switch (m_mode) {
 		case DOME_FISHEYE:
 			if (m_angle <= 180) {
 				cubetop.resize(1);
@@ -178,7 +179,7 @@ KX_Dome::~KX_Dome (void)
 		glDeleteLists(dlistId, (GLsizei) m_numimages);
 }
 
-void KX_Dome::SetViewPort(GLuint viewport[4])
+void KX_Dome::SetViewPort(const int viewport[4])
 {
 	if (canvaswidth != m_viewport.GetWidth() || canvasheight != m_viewport.GetHeight())
 	{
@@ -198,7 +199,7 @@ void KX_Dome::CreateGLImages(void)
 	for (int j=0;j<m_numfaces;j++) {
 		glBindTexture(GL_TEXTURE_2D, domefacesId[j]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, m_imagesize, m_imagesize, 0, GL_RGB8,
-				GL_UNSIGNED_BYTE, 0);
+		             GL_UNSIGNED_BYTE, NULL);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, m_imagesize, m_imagesize, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -208,7 +209,7 @@ void KX_Dome::CreateGLImages(void)
 	if (warp.usemesh) {
 		glBindTexture(GL_TEXTURE_2D, domefacesId[m_numfaces]);
 		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGB8, warp.imagesize, warp.imagesize, 0, GL_RGB8,
-				GL_UNSIGNED_BYTE, 0);
+		             GL_UNSIGNED_BYTE, NULL);
 		glCopyTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA8, 0, 0, warp.imagesize, warp.imagesize, 0);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
 		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
@@ -593,7 +594,7 @@ void KX_Dome::CreateMeshDome180(void)
 	cubebottom[0].u[2] = 0.0;
 	cubebottom[0].v[2] = 0.0;
 
-	nfacesbottom = 1;	
+	nfacesbottom = 1;
 	
 	/* Left face - two triangles */
 	
@@ -683,12 +684,12 @@ void KX_Dome::CreateMeshDome180(void)
 		cubetop.resize(4*nfacestop);
 		SplitFace(cubetop,&nfacestop);
 		cubebottom.resize(4*nfacesbottom);
-		SplitFace(cubebottom,&nfacesbottom);	
+		SplitFace(cubebottom,&nfacesbottom);
 		cubeleft.resize(4*nfacesleft);
 		SplitFace(cubeleft,&nfacesleft);
 		cuberight.resize(4*nfacesright);
 		SplitFace(cuberight,&nfacesright);
-	}		
+	}
 
 	// Turn into a hemisphere
 	for (j=0;j<3;j++) {
@@ -764,13 +765,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubefront[0].verts[1][0] = 1.0;
 	cubefront[0].verts[1][1] = 1.0;
-	cubefront[0].verts[1][2] = 1.0;	
+	cubefront[0].verts[1][2] = 1.0;
 	cubefront[0].u[1] = uv_ratio;
 	cubefront[0].v[1] = uv_ratio;
 
 	cubefront[0].verts[2][0] =-1.0;
 	cubefront[0].verts[2][1] = 1.0;
-	cubefront[0].verts[2][2] = 1.0;	
+	cubefront[0].verts[2][2] = 1.0;
 	cubefront[0].u[2] = 0.0;
 	cubefront[0].v[2] = uv_ratio;
 
@@ -783,13 +784,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubefront[1].verts[1][0] =-1.0;
 	cubefront[1].verts[1][1] = 1.0;
-	cubefront[1].verts[1][2] =-1.0;	
+	cubefront[1].verts[1][2] =-1.0;
 	cubefront[1].u[1] = 0.0;
 	cubefront[1].v[1] = 0.0;
 
 	cubefront[1].verts[2][0] = 1.0;
 	cubefront[1].verts[2][1] = 1.0;
-	cubefront[1].verts[2][2] =-1.0;	
+	cubefront[1].verts[2][2] =-1.0;
 	cubefront[1].u[2] = uv_ratio;
 	cubefront[1].v[2] = 0.0;
 
@@ -804,13 +805,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubeleft[0].verts[1][0] =-1.0;
 	cubeleft[0].verts[1][1] =-verts_height;
-	cubeleft[0].verts[1][2] = 1.0;	
+	cubeleft[0].verts[1][2] = 1.0;
 	cubeleft[0].u[1] = uv_base;
 	cubeleft[0].v[1] = uv_ratio;
 
 	cubeleft[0].verts[2][0] =-1.0;
 	cubeleft[0].verts[2][1] =-verts_height;
-	cubeleft[0].verts[2][2] =-1.0;	
+	cubeleft[0].verts[2][2] =-1.0;
 	cubeleft[0].u[2] = uv_base;
 	cubeleft[0].v[2] = 0.0;
 
@@ -823,13 +824,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubeleft[1].verts[1][0] =-1.0;
 	cubeleft[1].verts[1][1] = 1.0;
-	cubeleft[1].verts[1][2] =-1.0;	
+	cubeleft[1].verts[1][2] =-1.0;
 	cubeleft[1].u[1] = uv_ratio;
 	cubeleft[1].v[1] = 0.0;
 
 	cubeleft[1].verts[2][0] =-1.0;
 	cubeleft[1].verts[2][1] = 1.0;
-	cubeleft[1].verts[2][2] = 1.0;	
+	cubeleft[1].verts[2][2] = 1.0;
 	cubeleft[1].u[2] = uv_ratio;
 	cubeleft[1].v[2] = uv_ratio;
 
@@ -844,13 +845,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cuberight[0].verts[1][0] = 1.0;
 	cuberight[0].verts[1][1] =-verts_height;
-	cuberight[0].verts[1][2] =-1.0;	
+	cuberight[0].verts[1][2] =-1.0;
 	cuberight[0].u[1] = uv_height;
 	cuberight[0].v[1] = 0.0;
 
 	cuberight[0].verts[2][0] = 1.0;
 	cuberight[0].verts[2][1] =-verts_height;
-	cuberight[0].verts[2][2] = 1.0;	
+	cuberight[0].verts[2][2] = 1.0;
 	cuberight[0].u[2] = uv_height;
 	cuberight[0].v[2] = uv_ratio;
 
@@ -863,13 +864,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cuberight[1].verts[1][0] = 1.0;
 	cuberight[1].verts[1][1] = 1.0;
-	cuberight[1].verts[1][2] = 1.0;	
+	cuberight[1].verts[1][2] = 1.0;
 	cuberight[1].u[1] = 0.0;
 	cuberight[1].v[1] = uv_ratio;
 
 	cuberight[1].verts[2][0] = 1.0;
 	cuberight[1].verts[2][1] = 1.0;
-	cuberight[1].verts[2][2] =-1.0;	
+	cuberight[1].verts[2][2] =-1.0;
 	cuberight[1].u[2] = 0.0;
 	cuberight[1].v[2] = 0.0;
 
@@ -884,13 +885,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubetop[0].verts[1][0] = 1.0;
 	cubetop[0].verts[1][1] =-verts_height;
-	cubetop[0].verts[1][2] = 1.0;	
+	cubetop[0].verts[1][2] = 1.0;
 	cubetop[0].u[1] = uv_ratio;
 	cubetop[0].v[1] = uv_height;
 
 	cubetop[0].verts[2][0] =-1.0;
 	cubetop[0].verts[2][1] =-verts_height;
-	cubetop[0].verts[2][2] = 1.0;	
+	cubetop[0].verts[2][2] = 1.0;
 	cubetop[0].u[2] = 0.0;
 	cubetop[0].v[2] = uv_height;
 
@@ -903,13 +904,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubetop[1].verts[1][0] =-1.0;
 	cubetop[1].verts[1][1] = 1.0;
-	cubetop[1].verts[1][2] = 1.0;	
+	cubetop[1].verts[1][2] = 1.0;
 	cubetop[1].u[1] = 0.0;
 	cubetop[1].v[1] = 0.0;
 
 	cubetop[1].verts[2][0] = 1.0;
 	cubetop[1].verts[2][1] = 1.0;
-	cubetop[1].verts[2][2] = 1.0;	
+	cubetop[1].verts[2][2] = 1.0;
 	cubetop[1].u[2] = uv_ratio;
 	cubetop[1].v[2] = 0.0;
 
@@ -924,13 +925,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubebottom[0].verts[1][0] = 1.0;
 	cubebottom[0].verts[1][1] = 1.0;
-	cubebottom[0].verts[1][2] =-1.0;	
+	cubebottom[0].verts[1][2] =-1.0;
 	cubebottom[0].u[1] = uv_ratio;
 	cubebottom[0].v[1] = uv_ratio;
 
 	cubebottom[0].verts[2][0] =-1.0;
 	cubebottom[0].verts[2][1] = 1.0;
-	cubebottom[0].verts[2][2] =-1.0;	
+	cubebottom[0].verts[2][2] =-1.0;
 	cubebottom[0].u[2] = 0.0;
 	cubebottom[0].v[2] = uv_ratio;
 
@@ -943,13 +944,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	cubebottom[1].verts[1][0] =-1.0;
 	cubebottom[1].verts[1][1] =-verts_height;
-	cubebottom[1].verts[1][2] =-1.0;	
+	cubebottom[1].verts[1][2] =-1.0;
 	cubebottom[1].u[1] = 0.0;
 	cubebottom[1].v[1] = uv_base;
 
 	cubebottom[1].verts[2][0] = 1.0;
 	cubebottom[1].verts[2][1] =-verts_height;
-	cubebottom[1].verts[2][2] =-1.0;	
+	cubebottom[1].verts[2][2] =-1.0;
 	cubebottom[1].u[2] = uv_ratio;
 	cubebottom[1].v[2] = uv_base;
 
@@ -964,7 +965,7 @@ void KX_Dome::CreateMeshDome250(void)
 		cubetop.resize(4*nfacestop);
 		SplitFace(cubetop,&nfacestop);
 		cubebottom.resize(4*nfacesbottom);
-		SplitFace(cubebottom,&nfacesbottom);	
+		SplitFace(cubebottom,&nfacesbottom);
 		cubeleft.resize(4*nfacesleft);
 		SplitFace(cubeleft,&nfacesleft);
 		cuberight.resize(4*nfacesright);
@@ -987,13 +988,13 @@ void KX_Dome::CreateMeshDome250(void)
 
 	//flatten onto xz plane
 	for (i=0;i<nfacesfront;i++)
-		FlattenDome(cubefront[i].verts);	
+		FlattenDome(cubefront[i].verts);
 	for (i=0;i<nfacestop;i++)
 		FlattenDome(cubetop[i].verts);
 	for (i=0;i<nfacesbottom;i++)
 		FlattenDome(cubebottom[i].verts);
 	for (i=0;i<nfacesleft;i++)
-		FlattenDome(cubeleft[i].verts);		
+		FlattenDome(cubeleft[i].verts);
 	for (i=0;i<nfacesright;i++)
 		FlattenDome(cuberight[i].verts);
 }
@@ -1418,7 +1419,7 @@ void KX_Dome::SplitFace(vector <DomeFace>& face, int *nfaces)
 		face[n2+2].u[2]	  = (face[i].u[2] + face[i].u[0]) /2;
 		face[n2+2].v[0]	  = (face[i].v[0] + face[i].v[1]) /2;
 		face[n2+2].v[1]	  = (face[i].v[1] + face[i].v[2]) /2;
-		face[n2+2].v[2]	  = (face[i].v[2] + face[i].v[0]) /2;		
+		face[n2+2].v[2]	  = (face[i].v[2] + face[i].v[0]) /2;
 
 		//face[i].verts[0] = face[i].verts[0];
 		face[i].verts[1] = (face[i].verts[0] + face[i].verts[1]) /2;
@@ -1428,14 +1429,14 @@ void KX_Dome::SplitFace(vector <DomeFace>& face, int *nfaces)
 		face[i].u[2]	 = (face[i].u[0] + face[i].u[2]) /2;
 		//face[i].v[0]	 = face[i].v[0];
 		face[i].v[1]	 = (face[i].v[0] + face[i].v[1]) /2;
-		face[i].v[2]	 = (face[i].v[0] + face[i].v[2]) /2;		
+		face[i].v[2]	 = (face[i].v[0] + face[i].v[2]) /2;
 
 		n2 += 3; // number of faces
 	}
 	*nfaces = n2;
 }
 
-void KX_Dome::CalculateFrustum(KX_Camera * cam)
+void KX_Dome::CalculateFrustum(KX_Camera *cam)
 {
 #if 0
 	// manually creating a 90deg Field of View Frustum 
@@ -1622,7 +1623,7 @@ void KX_Dome::Draw(void)
 		glScissor(0,0,warp.imagesize, warp.imagesize);
 	}
 
-	switch(m_mode) {
+	switch (m_mode) {
 		case DOME_FISHEYE:
 			DrawDomeFisheye();
 			break;
@@ -1859,7 +1860,7 @@ void KX_Dome::DrawDomeFisheye(void)
 		glBindTexture(GL_TEXTURE_2D, domefacesId[0]);
 		GLDrawTriangles(cubetop, nfacestop);
 
-		// bottom triangle	
+		// bottom triangle
 		glBindTexture(GL_TEXTURE_2D, domefacesId[1]);
 		GLDrawTriangles(cubebottom, nfacesbottom);
 

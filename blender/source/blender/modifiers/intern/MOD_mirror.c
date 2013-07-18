@@ -43,8 +43,8 @@
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_deform.h"
-#include "BKE_utildefines.h"
-#include "BKE_tessmesh.h"
+
+#include "bmesh.h"
 
 #include "MEM_guardedalloc.h"
 #include "depsgraph_private.h"
@@ -99,7 +99,7 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 {
 	const float tolerance_sq = mmd->tolerance * mmd->tolerance;
 	const int do_vtargetmap = !(mmd->flag & MOD_MIR_NO_MERGE);
-	int is_vtargetmap = FALSE; /* true when it should be used */
+	int tot_vtargetmap = 0;  /* total merge vertices */
 
 	DerivedMesh *result;
 	const int maxVerts = dm->getNumVerts(dm);
@@ -111,7 +111,7 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 	MLoop *ml;
 	MPoly *mp;
 	float mtx[4][4];
-	int i, j;
+	int i;
 	int a, totshape;
 	int *vtargetmap = NULL, *vtmap_a = NULL, *vtmap_b = NULL;
 
@@ -126,7 +126,7 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 		/* tmp is a transform from coords relative to the object's own origin,
 		 * to coords relative to the mirror object origin */
 		invert_m4_m4(tmp, mmd->mirror_ob->obmat);
-		mult_m4_m4m4(tmp, tmp, ob->obmat);
+		mul_m4_m4m4(tmp, tmp, ob->obmat);
 
 		/* itmp is the reverse transform back to origin-relative coordinates */
 		invert_m4_m4(itmp, tmp);
@@ -134,8 +134,8 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 		/* combine matrices to get a single matrix that translates coordinates into
 		 * mirror-object-relative space, does the mirror, and translates back to
 		 * origin-relative space */
-		mult_m4_m4m4(mtx, mtx, tmp);
-		mult_m4_m4m4(mtx, itmp, mtx);
+		mul_m4_m4m4(mtx, mtx, tmp);
+		mul_m4_m4m4(mtx, itmp, mtx);
 	}
 
 	result = CDDM_from_template(dm, maxVerts * 2, maxEdges * 2, 0, maxLoops * 2, maxPolys * 2);
@@ -187,7 +187,7 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 			 * should be mapped for merging */
 			if (UNLIKELY(len_squared_v3v3(mv_prev->co, mv->co) < tolerance_sq)) {
 				*vtmap_a = maxVerts + i;
-				is_vtargetmap = TRUE;
+				tot_vtargetmap++;
 			}
 			else {
 				*vtmap_a = -1;
@@ -221,7 +221,7 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 	ml = CDDM_get_loops(result);
 	for (i = 0; i < maxPolys; i++, mp++) {
 		MLoop *ml2;
-		int e;
+		int j, e;
 
 		/* reverse the loop, but we keep the first vertex in the face the same,
 		 * to ensure that quads are split the same way as on the other side */
@@ -249,8 +249,8 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 	/* handle uvs,
 	 * let tessface recalc handle updating the MTFace data */
 	if (mmd->flag & (MOD_MIR_MIRROR_U | MOD_MIR_MIRROR_V)) {
-		const int do_mirr_u = (mmd->flag & MOD_MIR_MIRROR_U) != 0;
-		const int do_mirr_v = (mmd->flag & MOD_MIR_MIRROR_V) != 0;
+		const bool do_mirr_u = (mmd->flag & MOD_MIR_MIRROR_U) != 0;
+		const bool do_mirr_v = (mmd->flag & MOD_MIR_MIRROR_V) != 0;
 
 		const int totuv = CustomData_number_of_layers(&result->loopData, CD_MLOOPUV);
 
@@ -288,8 +288,8 @@ static DerivedMesh *doMirrorOnAxis(MirrorModifierData *mmd,
 	if (do_vtargetmap) {
 		/* slow - so only call if one or more merge verts are found,
 		 * users may leave this on and not realize there is nothing to merge - campbell */
-		if (is_vtargetmap) {
-			result = CDDM_merge_verts(result, vtargetmap);
+		if (tot_vtargetmap) {
+			result = CDDM_merge_verts(result, vtargetmap, tot_vtargetmap);
 		}
 		MEM_freeN(vtargetmap);
 	}
@@ -330,16 +330,9 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	result = mirrorModifier__doMirror(mmd, ob, derivedData);
 
 	if (result != derivedData)
-		CDDM_calc_normals(result);
+		result->dirty |= DM_DIRTY_NORMALS;
 	
 	return result;
-}
-
-static DerivedMesh *applyModifierEM(ModifierData *md, Object *ob,
-                                    struct BMEditMesh *UNUSED(editData),
-                                    DerivedMesh *derivedData)
-{
-	return applyModifier(md, ob, derivedData, MOD_APPLY_USECACHE);
 }
 
 
@@ -352,7 +345,9 @@ ModifierTypeInfo modifierType_Mirror = {
 	                        eModifierTypeFlag_SupportsMapping |
 	                        eModifierTypeFlag_SupportsEditmode |
 	                        eModifierTypeFlag_EnableInEditmode |
-	                        eModifierTypeFlag_AcceptsCVs,
+	                        eModifierTypeFlag_AcceptsCVs |
+	                        /* this is only the case when 'MOD_MIR_VGROUP' is used */
+	                        eModifierTypeFlag_UsesPreview,
 
 	/* copyData */          copyData,
 	/* deformVerts */       NULL,
@@ -360,7 +355,7 @@ ModifierTypeInfo modifierType_Mirror = {
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     applyModifier,
-	/* applyModifierEM */   applyModifierEM,
+	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  NULL,
 	/* freeData */          NULL,

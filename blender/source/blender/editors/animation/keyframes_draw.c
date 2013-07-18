@@ -322,7 +322,7 @@ static void nupdate_abk_bezt(void *node, void *data)
 	/* just add the BezTriple to the buffer if there's space, or allocate a new one */
 	if (abk->numBezts >= MAX_ABK_BUFSIZE) {
 		// TODO: need to allocate new array to cater...
-		//bezts_extra= MEM_callocN(...);
+		//bezts_extra = MEM_callocN(...);
 		if (G.debug & G_DEBUG)
 			printf("FIXME: nupdate_abk_bezt() missing case for too many overlapping BezTriples\n");
 	}
@@ -345,7 +345,7 @@ static BezTriple *abk_get_bezt_with_value(ActBeztColumn *abk, float value)
 		return NULL;
 	
 	/* look over each BezTriple in this container */
-	for (i = 0; i < abk->numBezts; i++) {		
+	for (i = 0; i < abk->numBezts; i++) {
 		/* only do exact match for now... */
 		if (/*i >= MAX_ABK_BUFSIZE*/ 0) {
 			// TODO: this case needs special handling
@@ -412,7 +412,7 @@ static void add_bezt_to_keyblocks_list(DLRBT_Tree *blocks, DLRBT_Tree *beztTree,
 	 *	-> firstly, handles must have same central value as each other
 	 *	-> secondly, handles which control that section of the curve must be constant
 	 */
-	if ((!prev) || (!beztn)) return;
+	if (prev == NULL) return;
 	if (IS_EQF(beztn->vec[1][1], prev->vec[1][1]) == 0) return;
 	if (IS_EQF(beztn->vec[1][1], beztn->vec[0][1]) == 0) return;
 	if (IS_EQF(prev->vec[1][1], prev->vec[2][1]) == 0) return;
@@ -582,7 +582,7 @@ void draw_keyframe_shape(float x, float y, float xscale, float hsize, short sel,
 	}
 	
 	/* tweak size of keyframe shape according to type of keyframe 
-	 * - 'proper' keyframes have key_type=0, so get drawn at full size
+	 * - 'proper' keyframes have key_type = 0, so get drawn at full size
 	 */
 	hsize -= 0.5f * key_type;
 	
@@ -649,7 +649,7 @@ static void draw_keylist(View2D *v2d, DLRBT_Tree *keys, DLRBT_Tree *blocks, floa
 	ActKeyColumn *ak;
 	ActKeyBlock *ab;
 	float xscale;
-	
+	float iconsize = U.widget_unit / 4.0f;
 	glEnable(GL_BLEND);
 	
 	/* get View2D scaling factor */
@@ -665,7 +665,7 @@ static void draw_keylist(View2D *v2d, DLRBT_Tree *keys, DLRBT_Tree *blocks, floa
 				else
 					UI_ThemeColor4(TH_STRIP);
 				
-				glRectf(ab->start, ypos - 5, ab->end, ypos + 5);
+				glRectf(ab->start, ypos - iconsize, ab->end, ypos + iconsize);
 			}
 		}
 	}
@@ -686,7 +686,7 @@ static void draw_keylist(View2D *v2d, DLRBT_Tree *keys, DLRBT_Tree *blocks, floa
 			/* draw using OpenGL - uglier but faster */
 			/* NOTE1: a previous version of this didn't work nice for some intel cards
 			 * NOTE2: if we wanted to go back to icons, these are  icon = (ak->sel & SELECT) ? ICON_SPACE2 : ICON_SPACE3; */
-			draw_keyframe_shape(ak->cfra, ypos, xscale, 5.0f, (ak->sel & SELECT), ak->key_type, KEYFRAME_SHAPE_BOTH, kalpha);
+			draw_keyframe_shape(ak->cfra, ypos, xscale, iconsize, (ak->sel & SELECT), ak->key_type, KEYFRAME_SHAPE_BOTH, kalpha);
 		}
 	}
 
@@ -852,18 +852,30 @@ void summary_to_keylist(bAnimContext *ac, DLRBT_Tree *keys, DLRBT_Tree *blocks)
 		int filter;
 		
 		/* get F-Curves to take keyframes from */
-		filter = ANIMFILTER_DATA_VISIBLE; // curves only
+		filter = ANIMFILTER_DATA_VISIBLE;
 		ANIM_animdata_filter(ac, &anim_data, filter, ac->data, ac->datatype);
 		
 		/* loop through each F-Curve, grabbing the keyframes */
 		for (ale = anim_data.first; ale; ale = ale->next) {
-			fcurve_to_keylist(ale->adt, ale->data, keys, blocks);
 
-			if (ale->datatype == ALE_MASKLAY) {
-				mask_to_keylist(ac->ads, ale->data, keys);
-			}
-			else if (ale->datatype == ALE_GPFRAME) {
-				gpl_to_keylist(ac->ads, ale->data, keys);
+			/* Why not use all #eAnim_KeyType here?
+			 * All of the other key types are actually "summaries" themselves, and will just end up duplicating stuff
+			 * that comes up through standard filtering of just F-Curves.
+			 * Given the way that these work, there isn't really any benefit at all from including them. - Aligorith */
+
+			switch (ale->datatype) {
+				case ALE_FCURVE:
+					fcurve_to_keylist(ale->adt, ale->data, keys, blocks);
+					break;
+				case ALE_MASKLAY:
+					mask_to_keylist(ac->ads, ale->data, keys);
+					break;
+				case ALE_GPFRAME:
+					gpl_to_keylist(ac->ads, ale->data, keys);
+					break;
+				default:
+					// printf("%s: datatype %d unhandled\n", __func__, ale->datatype);
+					break;
 			}
 		}
 
@@ -948,7 +960,7 @@ void fcurve_to_keylist(AnimData *adt, FCurve *fcu, DLRBT_Tree *keys, DLRBT_Tree 
 
 	if (fcu && fcu->totvert && fcu->bezt) {
 		/* apply NLA-mapping (if applicable) */
-		if (adt)	
+		if (adt)
 			ANIM_nla_mapping_apply_fcurve(adt, fcu, 0, 0);
 		
 		/* if getting long keyframes too, grab the BezTriples in a BST for 

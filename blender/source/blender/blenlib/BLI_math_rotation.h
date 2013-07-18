@@ -60,6 +60,7 @@ void sub_qt_qtqt(float q[4], const float a[4], const float b[4]);
 void invert_qt(float q[4]);
 void invert_qt_qt(float q1[4], const float q2[4]);
 void conjugate_qt(float q[4]);
+void conjugate_qt_qt(float q1[4], const float q2[4]);
 float dot_qtqt(const float a[4], const float b[4]);
 float normalize_qt(float q[4]);
 float normalize_qt_qt(float q1[4], const float q2[4]);
@@ -77,6 +78,8 @@ void quat_to_mat4(float mat[4][4], const float q[4]);
 
 void mat3_to_quat(float q[4], float mat[3][3]);
 void mat4_to_quat(float q[4], float mat[4][4]);
+void tri_to_quat_ex(float quat[4], const float v1[3], const float v2[3], const float v3[3],
+                    const float no_orig[3]);
 void tri_to_quat(float q[4], const float a[3], const float b[3], const float c[3]);
 void vec_to_quat(float q[4], const float vec[3], short axis, const short upflag);
 /* note: v1 and v2 must be normalized */
@@ -94,6 +97,7 @@ void print_qt(const char *str, const float q[4]);
 /* conversion */
 void axis_angle_to_quat(float r[4], const float axis[3], const float angle);
 void axis_angle_to_mat3(float R[3][3], const float axis[3], const float angle);
+void axis_angle_normalized_to_mat3(float R[3][3], const float axis[3], const float angle);
 void axis_angle_to_mat4(float R[4][4], const float axis[3], const float angle);
 
 void quat_to_axis_angle(float axis[3], float *angle, const float q[4]);
@@ -104,7 +108,7 @@ void single_axis_angle_to_mat3(float R[3][3], const char axis, const float angle
 
 /****************************** Vector/Rotation ******************************/
 /* old axis angle code                                                       */
-/* TODO: the following calls should probably be depreceated sometime         */
+/* TODO: the following calls should probably be deprecated sometime         */
 
 /* conversion */
 void vec_rot_to_mat3(float mat[3][3], const float vec[3], const float phi);
@@ -151,10 +155,10 @@ void mat3_to_eulO(float eul[3], const short order, float mat[3][3]);
 void mat4_to_eulO(float eul[3], const short order, float mat[4][4]);
 void axis_angle_to_eulO(float eul[3], const short order, const float axis[3], const float angle);
 
-void mat3_to_compatible_eulO(float eul[3], float old[3], short order, float mat[3][3]);
-void mat4_to_compatible_eulO(float eul[3], float old[3], short order, float mat[4][4]);
+void mat3_to_compatible_eulO(float eul[3], float old[3], const short order, float mat[3][3]);
+void mat4_to_compatible_eulO(float eul[3], float old[3], const short order, float mat[4][4]);
 
-void rotate_eulO(float eul[3], short order, char axis, float angle);
+void rotate_eulO(float eul[3], const short order, char axis, float angle);
 
 /******************************* Dual Quaternions ****************************/
 
@@ -169,10 +173,10 @@ typedef struct DualQuat {
 void copy_dq_dq(DualQuat *r, DualQuat *dq);
 void normalize_dq(DualQuat *dq, float totw);
 void add_weighted_dq_dq(DualQuat *r, DualQuat *dq, float weight);
-void mul_v3m3_dq(float r[3], float R[3][3], DualQuat * dq);
+void mul_v3m3_dq(float r[3], float R[3][3], DualQuat *dq);
 
-void mat4_to_dquat(DualQuat * r, float base[4][4], float M[4][4]);
-void dquat_to_mat4(float R[4][4], DualQuat * dq);
+void mat4_to_dquat(DualQuat *r, float base[4][4], float M[4][4]);
+void dquat_to_mat4(float R[4][4], DualQuat *dq);
 
 void quat_apply_track(float quat[4], short axis, short upflag);
 void vec_apply_track(float vec[3], short axis);
@@ -182,6 +186,11 @@ float fov_to_focallength(float fov, float sensor);
 
 float angle_wrap_rad(float angle);
 float angle_wrap_deg(float angle);
+
+float angle_compat_rad(float angle, float angle_compat);
+
+int mat3_from_axis_conversion(int from_forward, int from_up, int to_forward, int to_up,
+                              float r_mat[3][3]);
 
 #ifdef __cplusplus
 }

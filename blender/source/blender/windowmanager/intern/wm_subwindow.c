@@ -116,8 +116,8 @@ void wm_subwindow_getsize(wmWindow *win, int swinid, int *x, int *y)
 	wmSubWindow *swin = swin_from_swinid(win, swinid);
 
 	if (swin) {
-		*x = swin->winrct.xmax - swin->winrct.xmin + 1;
-		*y = swin->winrct.ymax - swin->winrct.ymin + 1;
+		*x = BLI_rcti_size_x(&swin->winrct) + 1;
+		*y = BLI_rcti_size_y(&swin->winrct) + 1;
 	}
 }
 
@@ -131,7 +131,7 @@ void wm_subwindow_getorigin(wmWindow *win, int swinid, int *x, int *y)
 	}
 }
 
-void wm_subwindow_getmatrix(wmWindow *win, int swinid, float mat[][4])
+void wm_subwindow_getmatrix(wmWindow *win, int swinid, float mat[4][4])
 {
 	wmSubWindow *swin = swin_from_swinid(win, swinid);
 
@@ -163,10 +163,6 @@ int wm_subwindow_open(wmWindow *win, rcti *winrct)
 	win->curswin = swin = MEM_callocN(sizeof(wmSubWindow), "swinopen");
 	BLI_addtail(&win->subwindows, swin);
 	
-	if (G.debug & G_DEBUG_EVENTS) {
-		printf("%s: swin %d added\n", __func__, freewinid);
-	}
-
 	swin->swinid = freewinid;
 	swin->winrct = *winrct;
 
@@ -192,7 +188,7 @@ void wm_subwindow_close(wmWindow *win, int swinid)
 		wm_subwindow_free(swin);
 		BLI_remlink(&win->subwindows, swin);
 		MEM_freeN(swin);
-	} 
+	}
 	else {
 		printf("%s: Internal error, bad winid: %d\n", __func__, swinid);
 	}
@@ -221,10 +217,10 @@ void wm_subwindow_position(wmWindow *win, int swinid, rcti *winrct)
 		 * fixed it). - zr  (2001!)
 		 */
 		
-		if (swin->winrct.xmax > win->sizex)
-			swin->winrct.xmax = win->sizex;
-		if (swin->winrct.ymax > win->sizey)
-			swin->winrct.ymax = win->sizey;
+		if (swin->winrct.xmax > WM_window_pixels_x(win))
+			swin->winrct.xmax = WM_window_pixels_x(win);
+		if (swin->winrct.ymax > WM_window_pixels_y(win))
+			swin->winrct.ymax = WM_window_pixels_y(win);
 		
 		/* extra service */
 		wmSubWindowSet(win, swinid);
@@ -256,24 +252,23 @@ void wmSubWindowScissorSet(wmWindow *win, int swinid, rcti *srct)
 	win->curswin = _curswin;
 	_curwindow = win;
 	
-	width = _curswin->winrct.xmax - _curswin->winrct.xmin + 1;
-	height = _curswin->winrct.ymax - _curswin->winrct.ymin + 1;
+	width  = BLI_rcti_size_x(&_curswin->winrct) + 1;
+	height = BLI_rcti_size_y(&_curswin->winrct) + 1;
 	glViewport(_curswin->winrct.xmin, _curswin->winrct.ymin, width, height);
-
+	
 	if (srct) {
-		width = srct->xmax - srct->xmin + 1;
-		height = srct->ymax - srct->ymin + 1;
-		glScissor(srct->xmin, srct->ymin, width, height);
+		int scissor_width  = BLI_rcti_size_x(srct) + 1; /* only here */
+		int scissor_height = BLI_rcti_size_y(srct) + 1;
+		glScissor(srct->xmin, srct->ymin, scissor_width, scissor_height);
 	}
 	else
 		glScissor(_curswin->winrct.xmin, _curswin->winrct.ymin, width, height);
 	
 	wmOrtho2(-GLA_PIXEL_OFS, (float)width - GLA_PIXEL_OFS, -GLA_PIXEL_OFS, (float)height - GLA_PIXEL_OFS);
 	glLoadIdentity();
-
+	
 	glFlush();
 }
-
 
 /* enable the WM versions of opengl calls */
 void wmSubWindowSet(wmWindow *win, int swinid)
@@ -398,7 +393,7 @@ int WM_framebuffer_to_index(unsigned int col)
 			return col & 0xFFFFFF;
 		default: // 18 bits...
 			return ((col & 0xFC0000) >> 6) + ((col & 0xFC00) >> 4) + ((col & 0xFC) >> 2);
-	}		
+	}
 }
 
 

@@ -98,9 +98,8 @@ void load_editMball(Object *UNUSED(obedit))
 }
 
 /* Add metaelem primitive to metaball object (which is in edit mode) */
-MetaElem *add_metaball_primitive(bContext *C, float mat[4][4], int type, int UNUSED(newname))
+MetaElem *add_metaball_primitive(bContext *UNUSED(C), Object *obedit, float mat[4][4], float dia, int type, int UNUSED(newname))
 {
-	Object *obedit = CTX_data_edit_object(C);
 	MetaBall *mball = (MetaBall *)obedit->data;
 	MetaElem *ml;
 
@@ -112,6 +111,7 @@ MetaElem *add_metaball_primitive(bContext *C, float mat[4][4], int type, int UNU
 	}
 	
 	ml = BKE_mball_element_add(mball, type);
+	ml->rad *= dia;
 	copy_v3_v3(&ml->x, mat[3]);
 
 	ml->flag |= SELECT;
@@ -124,42 +124,37 @@ MetaElem *add_metaball_primitive(bContext *C, float mat[4][4], int type, int UNU
 /* Select or deselect all MetaElements */
 static int mball_select_all_exec(bContext *C, wmOperator *op)
 {
-	//Scene *scene= CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
 	MetaBall *mb = (MetaBall *)obedit->data;
 	MetaElem *ml;
 	int action = RNA_enum_get(op->ptr, "action");
 
-	ml = mb->editelems->first;
-	if (ml) {
-		if (action == SEL_TOGGLE) {
-			action = SEL_SELECT;
-			while (ml) {
-				if (ml->flag & SELECT) {
-					action = SEL_DESELECT;
-					break;
-				}
-				ml = ml->next;
-			}
-		}
+	if (mb->editelems->first == NULL)
+		return OPERATOR_CANCELLED;
 
-		ml = mb->editelems->first;
-		while (ml) {
-			switch (action) {
-				case SEL_SELECT:
-					ml->flag |= SELECT;
-					break;
-				case SEL_DESELECT:
-					ml->flag &= ~SELECT;
-					break;
-				case SEL_INVERT:
-					ml->flag ^= SELECT;
-					break;
+	if (action == SEL_TOGGLE) {
+		action = SEL_SELECT;
+		for (ml = mb->editelems->first; ml; ml = ml->next) {
+			if (ml->flag & SELECT) {
+				action = SEL_DESELECT;
+				break;
 			}
-			ml = ml->next;
 		}
-		WM_event_add_notifier(C, NC_GEOM | ND_SELECT, mb);
 	}
+
+	switch (action) {
+		case SEL_SELECT:
+			BKE_mball_select_all(mb);
+			break;
+		case SEL_DESELECT:
+			BKE_mball_deselect_all(mb);
+			break;
+		case SEL_INVERT:
+			BKE_mball_select_swap(mb);
+			break;
+	}
+
+	WM_event_add_notifier(C, NC_GEOM | ND_SELECT, mb);
 
 	return OPERATOR_FINISHED;
 }
@@ -195,7 +190,6 @@ static int select_random_metaelems_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	
 	ml = mb->editelems->first;
-	BLI_srand(BLI_rand());  /* Random seed */
 	
 	/* Stupid version of random selection. Should be improved. */
 	while (ml) {
@@ -259,7 +253,7 @@ static int duplicate_metaelems_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
-static int duplicate_metaelems_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int duplicate_metaelems_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	int retv = duplicate_metaelems_exec(C, op);
 	
@@ -416,13 +410,13 @@ void MBALL_OT_reveal_metaelems(wmOperatorType *ot)
 
 /* Select MetaElement with mouse click (user can select radius circle or
  * stiffness circle) */
-int mouse_mball(bContext *C, const int mval[2], int extend, int deselect, int toggle)
+bool mouse_mball(bContext *C, const int mval[2], bool extend, bool deselect, bool toggle)
 {
 	static MetaElem *startelem = NULL;
 	Object *obedit = CTX_data_edit_object(C);
 	ViewContext vc;
 	MetaBall *mb = (MetaBall *)obedit->data;
-	MetaElem *ml, *act = NULL;
+	MetaElem *ml, *ml_act = NULL;
 	int a, hits;
 	unsigned int buffer[4 * MAXPICKBUF];
 	rcti rect;
@@ -452,14 +446,14 @@ int mouse_mball(bContext *C, const int mval[2], int extend, int deselect, int to
 				/* index converted for gl stuff */
 				if (ml->selcol1 == buffer[4 * a + 3]) {
 					ml->flag |= MB_SCALE_RAD;
-					act = ml;
+					ml_act = ml;
 				}
 				if (ml->selcol2 == buffer[4 * a + 3]) {
 					ml->flag &= ~MB_SCALE_RAD;
-					act = ml;
+					ml_act = ml;
 				}
 			}
-			if (act) break;
+			if (ml_act) break;
 			ml = ml->next;
 			if (ml == NULL) ml = mb->editelems->first;
 			if (ml == startelem) break;
@@ -467,39 +461,36 @@ int mouse_mball(bContext *C, const int mval[2], int extend, int deselect, int to
 		
 		/* When some metaelem was found, then it is necessary to select or
 		 * deselect it. */
-		if (act) {
+		if (ml_act) {
 			if (extend) {
-				act->flag |= SELECT;
+				ml_act->flag |= SELECT;
 			}
 			else if (deselect) {
-				act->flag &= ~SELECT;
+				ml_act->flag &= ~SELECT;
 			}
 			else if (toggle) {
-				if (act->flag & SELECT)
-					act->flag &= ~SELECT;
+				if (ml_act->flag & SELECT)
+					ml_act->flag &= ~SELECT;
 				else
-					act->flag |= SELECT;
+					ml_act->flag |= SELECT;
 			}
 			else {
 				/* Deselect all existing metaelems */
-				ml = mb->editelems->first;
-				while (ml) {
-					ml->flag &= ~SELECT;
-					ml = ml->next;
-				}
+				BKE_mball_deselect_all(mb);
+
 				/* Select only metaelem clicked on */
-				act->flag |= SELECT;
+				ml_act->flag |= SELECT;
 			}
 			
-			mb->lastelem = act;
+			mb->lastelem = ml_act;
 			
 			WM_event_add_notifier(C, NC_GEOM | ND_SELECT, mb);
 
-			return 1;
+			return true;
 		}
 	}
 
-	return 0;
+	return false;
 }
 
 
@@ -594,3 +585,27 @@ void undo_push_mball(bContext *C, const char *name)
 	undo_editmode_push(C, name, get_data, free_undoMball, undoMball_to_editMball, editMball_to_undoMball, NULL);
 }
 
+/* matrix is 4x4 */
+void ED_mball_transform(MetaBall *mb, float *mat)
+{
+	MetaElem *me;
+	float quat[4];
+	const float scale = mat4_to_scale((float (*)[4])mat);
+	const float scale_sqrt = sqrtf(scale);
+
+	mat4_to_quat(quat, (float (*)[4])mat);
+
+	for (me = mb->elems.first; me; me = me->next) {
+		mul_m4_v3((float (*)[4])mat, &me->x);
+		mul_qt_qtqt(me->quat, quat, me->quat);
+		me->rad *= scale;
+		/* hrmf, probably elems shouldn't be
+		 * treating scale differently - campbell */
+		if (!MB_TYPE_SIZE_SQUARED(me->type)) {
+			mul_v3_fl(&me->expx, scale);
+		}
+		else {
+			mul_v3_fl(&me->expx, scale_sqrt);
+		}
+	}
+}

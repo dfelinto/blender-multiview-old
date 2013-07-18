@@ -1,4 +1,5 @@
 # ##### BEGIN GPL LICENSE BLOCK #####
+
 #
 #  This program is free software; you can redistribute it and/or
 #  modify it under the terms of the GNU General Public License
@@ -50,8 +51,8 @@ class RenderButtonsPanel():
 
     @classmethod
     def poll(cls, context):
-        rd = context.scene.render
-        return context.scene and (rd.engine in cls.COMPAT_ENGINES)
+        scene = context.scene
+        return scene and (scene.render.engine in cls.COMPAT_ENGINES)
 
 
 class RENDER_PT_render(RenderButtonsPanel, Panel):
@@ -63,121 +64,60 @@ class RENDER_PT_render(RenderButtonsPanel, Panel):
 
         rd = context.scene.render
 
-        row = layout.row()
-        row.operator("render.render", text="Image", icon='RENDER_STILL')
+        row = layout.row(align=True)
+        row.operator("render.render", text="Render", icon='RENDER_STILL')
         row.operator("render.render", text="Animation", icon='RENDER_ANIMATION').animation = True
-        row.operator("render.play_rendered_anim", text="Play", icon='RENDER_ANIMATION')
+        row.operator("render.play_rendered_anim", text="Play", icon='PLAY')
 
         layout.prop(rd, "display_mode", text="Display")
-
-
-class RENDER_PT_layers(RenderButtonsPanel, Panel):
-    bl_label = "Layers"
-    bl_options = {'DEFAULT_CLOSED'}
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
-
-    def draw(self, context):
-        layout = self.layout
-
-        scene = context.scene
-        rd = scene.render
-
-        row = layout.row()
-        row.template_list(rd, "layers", rd.layers, "active_index", rows=2)
-
-        col = row.column(align=True)
-        col.operator("scene.render_layer_add", icon='ZOOMIN', text="")
-        col.operator("scene.render_layer_remove", icon='ZOOMOUT', text="")
-
-        row = layout.row()
-        rl = rd.layers.active
-        if rl:
-            row.prop(rl, "name")
-        row.prop(rd, "use_single_layer", text="", icon_only=True)
-
-        split = layout.split()
-
-        col = split.column()
-        col.prop(scene, "layers", text="Scene")
-        col.label(text="")
-        col.prop(rl, "light_override", text="Light")
-        col.prop(rl, "material_override", text="Material")
-
-        col = split.column()
-        col.prop(rl, "layers", text="Layer")
-        col.label(text="Mask Layers:")
-        col.prop(rl, "layers_zmask", text="")
-
-        layout.separator()
-        layout.label(text="Include:")
-
-        split = layout.split()
-
-        col = split.column()
-        col.prop(rl, "use_zmask")
-        row = col.row()
-        row.prop(rl, "invert_zmask", text="Negate")
-        row.active = rl.use_zmask
-        col.prop(rl, "use_all_z")
-
-        col = split.column()
-        col.prop(rl, "use_solid")
-        col.prop(rl, "use_halo")
-        col.prop(rl, "use_ztransp")
-
-        col = split.column()
-        col.prop(rl, "use_sky")
-        col.prop(rl, "use_edge_enhance")
-        col.prop(rl, "use_strand")
-
-        layout.separator()
-
-        split = layout.split()
-
-        col = split.column()
-        col.label(text="Passes:")
-        col.prop(rl, "use_pass_combined")
-        col.prop(rl, "use_pass_z")
-        col.prop(rl, "use_pass_vector")
-        col.prop(rl, "use_pass_normal")
-        col.prop(rl, "use_pass_uv")
-        col.prop(rl, "use_pass_mist")
-        col.prop(rl, "use_pass_object_index")
-        col.prop(rl, "use_pass_material_index")
-        col.prop(rl, "use_pass_color")
-
-        col = split.column()
-        col.label()
-        col.prop(rl, "use_pass_diffuse")
-        row = col.row()
-        row.prop(rl, "use_pass_specular")
-        row.prop(rl, "exclude_specular", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_shadow")
-        row.prop(rl, "exclude_shadow", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_emit")
-        row.prop(rl, "exclude_emit", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_ambient_occlusion")
-        row.prop(rl, "exclude_ambient_occlusion", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_environment")
-        row.prop(rl, "exclude_environment", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_indirect")
-        row.prop(rl, "exclude_indirect", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_reflection")
-        row.prop(rl, "exclude_reflection", text="")
-        row = col.row()
-        row.prop(rl, "use_pass_refraction")
-        row.prop(rl, "exclude_refraction", text="")
 
 
 class RENDER_PT_dimensions(RenderButtonsPanel, Panel):
     bl_label = "Dimensions"
     COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    _frame_rate_args_prev = None
+    _preset_class = None
+    @staticmethod
+    def _draw_framerate_label(*args):
+        # avoids re-creating text string each draw
+        if RENDER_PT_dimensions._frame_rate_args_prev == args:
+            return RENDER_PT_dimensions._frame_rate_ret
+
+        fps, fps_base, preset_label = args
+        
+        if fps_base == 1.0:
+            fps_rate = round(fps)
+        else:
+            fps_rate = round(fps / fps_base, 2)
+
+        # TODO: Change the following to iterate over existing presets
+        custom_framerate = (fps_rate not in {23.98, 24, 25, 29.97, 30, 50, 59.94, 60})
+
+        if custom_framerate is True:
+            fps_label_text = "Custom (%r fps)" % fps_rate
+            show_framerate = True
+        else:
+            fps_label_text = "%r fps" % fps_rate
+            show_framerate = (preset_label == "Custom")
+
+        RENDER_PT_dimensions._frame_rate_args_prev = args
+        RENDER_PT_dimensions._frame_rate_ret = args = (fps_label_text, show_framerate)
+        return args
+
+    @staticmethod
+    def draw_framerate(sub, rd):
+        if RENDER_PT_dimensions._preset_class is None:
+            RENDER_PT_dimensions._preset_class = bpy.types.RENDER_MT_framerate_presets
+
+        args = rd.fps, rd.fps_base, RENDER_PT_dimensions._preset_class.bl_label
+        fps_label_text, show_framerate = RENDER_PT_dimensions._draw_framerate_label(*args)
+
+        sub.menu("RENDER_MT_framerate_presets", text=fps_label_text)
+
+        if show_framerate:
+            sub.prop(rd, "fps")
+            sub.prop(rd, "fps_base", text="/")
 
     def draw(self, context):
         layout = self.layout
@@ -217,24 +157,9 @@ class RENDER_PT_dimensions(RenderButtonsPanel, Panel):
         sub.prop(scene, "frame_step")
 
         sub.label(text="Frame Rate:")
-        if rd.fps_base == 1:
-            fps_rate = round(rd.fps / rd.fps_base)
-        else:
-            fps_rate = round(rd.fps / rd.fps_base, 2)
 
-        # TODO: Change the following to iterate over existing presets
-        custom_framerate = (fps_rate not in {23.98, 24, 25, 29.97, 30, 50, 59.94, 60})
+        self.draw_framerate(sub, rd)
 
-        if custom_framerate == True:
-            fps_label_text = "Custom (" + str(fps_rate) + " fps)"
-        else:
-            fps_label_text = str(fps_rate) + " fps"
-
-        sub.menu("RENDER_MT_framerate_presets", text=fps_label_text)
-
-        if custom_framerate or (bpy.types.RENDER_MT_framerate_presets.bl_label == "Custom"):
-            sub.prop(rd, "fps")
-            sub.prop(rd, "fps_base", text="/")
         subrow = sub.row(align=True)
         subrow.label(text="Time Remapping:")
         subrow = sub.row(align=True)
@@ -316,10 +241,6 @@ class RENDER_PT_shading(RenderButtonsPanel, Panel):
 
         col = split.column()
         col.prop(rd, "use_raytrace", text="Ray Tracing")
-        col.prop(rd, "use_color_management")
-        sub = col.row()
-        sub.active = rd.use_color_management == True
-        sub.prop(rd, "use_color_unpremultiply")
         col.prop(rd, "alpha_mode", text="Alpha")
 
 
@@ -336,15 +257,17 @@ class RENDER_PT_performance(RenderButtonsPanel, Panel):
         split = layout.split()
 
         col = split.column()
-        col.label(text="Threads:")
-        col.row().prop(rd, "threads_mode", expand=True)
-        sub = col.column()
-        sub.enabled = rd.threads_mode == 'FIXED'
-        sub.prop(rd, "threads")
         sub = col.column(align=True)
-        sub.label(text="Tiles:")
-        sub.prop(rd, "parts_x", text="X")
-        sub.prop(rd, "parts_y", text="Y")
+        sub.label(text="Threads:")
+        sub.row().prop(rd, "threads_mode", expand=True)
+        subsub = sub.column()
+        subsub.enabled = rd.threads_mode == 'FIXED'
+        subsub.prop(rd, "threads")
+
+        sub = col.column(align=True)
+        sub.label(text="Tile Size:")
+        sub.prop(rd, "tile_x", text="X")
+        sub.prop(rd, "tile_y", text="Y")
 
         col = split.column()
         col.label(text="Memory:")
@@ -462,12 +385,16 @@ class RENDER_PT_output(RenderButtonsPanel, Panel):
 
         layout.prop(rd, "filepath", text="")
 
-        flow = layout.column_flow()
-        flow.prop(rd, "use_overwrite")
-        flow.prop(rd, "use_placeholder")
-        flow.prop(rd, "use_file_extension")
+        split = layout.split()
 
-        layout.template_image_settings(image_settings)
+        col = split.column()
+        col.active = not rd.is_movie_format
+        col.prop(rd, "use_overwrite")
+        col.prop(rd, "use_placeholder")
+
+        split.prop(rd, "use_file_extension")
+
+        layout.template_image_settings(image_settings, color_management=False)
 
         if file_format == 'QUICKTIME_CARBON':
             layout.operator("scene.render_data_set_quicktime_codec")
@@ -575,7 +502,7 @@ class RENDER_PT_bake(RenderButtonsPanel, Panel):
         layout.prop(rd, "bake_type")
 
         multires_bake = False
-        if rd.bake_type in ['NORMALS', 'DISPLACEMENT']:
+        if rd.bake_type in ['NORMALS', 'DISPLACEMENT', 'AO']:
             layout.prop(rd, "use_bake_multires")
             multires_bake = rd.use_bake_multires
 
@@ -593,9 +520,12 @@ class RENDER_PT_bake(RenderButtonsPanel, Panel):
             split = layout.split()
 
             col = split.column()
-            col.prop(rd, "use_bake_clear")
-            col.prop(rd, "bake_margin")
-            col.prop(rd, "bake_quad_split", text="Split")
+            col.prop(rd, "use_bake_to_vertex_color")
+            sub = col.column()
+            sub.active = not rd.use_bake_to_vertex_color
+            sub.prop(rd, "use_bake_clear")
+            sub.prop(rd, "bake_margin")
+            sub.prop(rd, "bake_quad_split", text="Split")
 
             col = split.column()
             col.prop(rd, "use_bake_selected_to_active")
@@ -604,11 +534,19 @@ class RENDER_PT_bake(RenderButtonsPanel, Panel):
             sub.prop(rd, "bake_distance")
             sub.prop(rd, "bake_bias")
         else:
-            if rd.bake_type == 'DISPLACEMENT':
-                layout.prop(rd, "use_bake_lores_mesh")
+            split = layout.split()
 
-            layout.prop(rd, "use_bake_clear")
-            layout.prop(rd, "bake_margin")
+            col = split.column()
+            col.prop(rd, "use_bake_clear")
+            col.prop(rd, "bake_margin")
+
+            if rd.bake_type == 'DISPLACEMENT':
+                col = split.column()
+                col.prop(rd, "use_bake_lores_mesh")
+            if rd.bake_type == 'AO':
+                col = split.column()
+                col.prop(rd, "bake_bias")
+                col.prop(rd, "bake_samples")
 
 
 if __name__ == "__main__":  # only for live edit.

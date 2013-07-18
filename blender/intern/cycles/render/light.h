@@ -52,6 +52,10 @@ public:
 	float spot_smooth;
 
 	bool cast_shadow;
+	bool use_mis;
+	bool use_diffuse;
+	bool use_glossy;
+	bool use_transmission;
 
 	int shader;
 	int samples;
@@ -61,6 +65,7 @@ public:
 
 class LightManager {
 public:
+	bool use_light_visibility;
 	bool need_update;
 
 	LightManager();

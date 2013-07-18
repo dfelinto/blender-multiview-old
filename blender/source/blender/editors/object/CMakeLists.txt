@@ -20,9 +20,9 @@
 
 set(INC
 	../include
+	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../../blenloader
 	../../bmesh
 	../../gpu
 	../../ikplugin
@@ -64,6 +64,10 @@ endif()
 
 if(WITH_GAMEENGINE)
 	add_definitions(-DWITH_GAMEENGINE)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 blender_add_lib(bf_editor_object "${SRC}" "${INC}" "${INC_SYS}")

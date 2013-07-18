@@ -36,8 +36,11 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
+#include "BLI_noise.h"
 #include "BLI_kdopbvh.h"
 #include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
 
 #include "BKE_DerivedMesh.h"
 #include "BKE_global.h"
@@ -116,7 +119,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	/* init everything */
 	if (!psys || !ob || !pd) return;
 
-	mult_m4_m4m4(obview, ob->obmat, re->viewinv);
+	mul_m4_m4m4(obview, ob->obmat, re->viewinv);
 	
 	/* Just to create a valid rendering context for particles */
 	psys_render_set(ob, psys, re->viewmat, re->winmat, re->winx, re->winy, 0);
@@ -170,7 +173,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 				pd->point_data[i*3 + 0] = state.vel[0];
 				pd->point_data[i*3 + 1] = state.vel[1];
 				pd->point_data[i*3 + 2] = state.vel[2];
-			} 
+			}
 			if (data_used & POINT_DATA_LIFE) {
 				float pa_time;
 				
@@ -295,10 +298,10 @@ void make_pointdensities(Render *re)
 {
 	Tex *tex;
 	
-	if (re->scene->r.scemode & R_PREVIEWBUTS)
+	if (re->scene->r.scemode & R_BUTS_PREVIEW)
 		return;
 	
-	re->i.infostr= "Caching Point Densities";
+	re->i.infostr = IFACE_("Caching Point Densities");
 	re->stats_draw(re->sdh, &re->i);
 
 	for (tex= re->main->tex.first; tex; tex= tex->id.next) {
@@ -307,7 +310,7 @@ void make_pointdensities(Render *re)
 		}
 	}
 	
-	re->i.infostr= NULL;
+	re->i.infostr = NULL;
 	re->stats_draw(re->sdh, &re->i);
 }
 
@@ -315,7 +318,7 @@ void free_pointdensities(Render *re)
 {
 	Tex *tex;
 	
-	if (re->scene->r.scemode & R_PREVIEWBUTS)
+	if (re->scene->r.scemode & R_BUTS_PREVIEW)
 		return;
 	
 	for (tex= re->main->tex.first; tex; tex= tex->id.next) {
@@ -379,6 +382,7 @@ static void accum_density(void *userdata, int index, float squared_dist)
 	}
 	
 	if (pdr->density_curve && dist != 0.0f) {
+		curvemapping_initialize(pdr->density_curve);
 		density = curvemapping_evaluateF(pdr->density_curve, 0, density/dist)*dist;
 	}
 	
@@ -404,7 +408,7 @@ static void init_pointdensityrangedata(PointDensity *pd, PointDensityRangeData *
 }
 
 
-int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
+int pointdensitytex(Tex *tex, const float texvec[3], TexResult *texres)
 {
 	int retval = TEX_INT;
 	PointDensity *pd = tex->pd;
@@ -417,7 +421,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 	
 	texres->tin = 0.0f;
 	
-	if ((!pd) || (!pd->point_tree))		
+	if ((!pd) || (!pd->point_tree))
 		return 0;
 		
 	init_pointdensityrangedata(pd, &pdr, &density, vec, &age, 
@@ -445,7 +449,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			turb = BLI_gTurbulence(pd->noise_size, texvec[0]+age, texvec[1]+age, texvec[2]+age, pd->noise_depth, 0, pd->noise_basis);
 		}
 		else if (pd->noise_influence == TEX_PD_NOISE_TIME) {
-			time = R.cfra / (float)R.r.efra;
+			time = R.r.cfra / (float)R.r.efra;
 			turb = BLI_gTurbulence(pd->noise_size, texvec[0]+time, texvec[1]+time, texvec[2]+time, pd->noise_depth, 0, pd->noise_basis);
 			//turb = BLI_turbulence(pd->noise_size, texvec[0]+time, texvec[1]+time, texvec[2]+time, pd->noise_depth);
 		}
@@ -480,7 +484,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 		case TEX_PD_COLOR_PARTAGE:
 			if (pd->coba) {
 				if (do_colorband(pd->coba, age, col)) {
-					texres->talpha= 1;
+					texres->talpha = TRUE;
 					copy_v3_v3(&texres->tr, col);
 					texres->tin *= col[3];
 					texres->ta = texres->tin;
@@ -493,7 +497,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			
 			if (pd->coba) {
 				if (do_colorband(pd->coba, speed, col)) {
-					texres->talpha= 1;	
+					texres->talpha = TRUE;
 					copy_v3_v3(&texres->tr, col);
 					texres->tin *= col[3];
 					texres->ta = texres->tin;
@@ -502,7 +506,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			break;
 		}
 		case TEX_PD_COLOR_PARTVEL:
-			texres->talpha= 1;
+			texres->talpha = TRUE;
 			mul_v3_fl(vec, pd->speed_scale);
 			copy_v3_v3(&texres->tr, vec);
 			texres->ta = texres->tin;

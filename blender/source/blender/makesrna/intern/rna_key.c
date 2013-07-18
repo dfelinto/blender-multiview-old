@@ -24,13 +24,7 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
-
-#include "RNA_access.h"
-#include "RNA_define.h"
-
-#include "rna_internal.h"
 
 #include "DNA_ID.h"
 #include "DNA_scene_types.h"
@@ -38,6 +32,15 @@
 #include "DNA_key_types.h"
 #include "DNA_lattice_types.h"
 #include "DNA_mesh_types.h"
+
+#include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
+
+#include "RNA_access.h"
+#include "RNA_define.h"
+
+#include "rna_internal.h"
 
 #ifdef RNA_RUNTIME
 
@@ -61,12 +64,12 @@ static Key *rna_ShapeKey_find_key(ID *id)
 		case ID_KE: return (Key *)id;
 		case ID_LT: return ((Lattice *)id)->key;
 		case ID_ME: return ((Mesh *)id)->key;
-		case ID_OB: return ob_get_key((Object *)id);
+		case ID_OB: return BKE_key_from_object((Object *)id);
 		default: return NULL;
 	}
 }
 
-void rna_ShapeKey_name_set(PointerRNA *ptr, const char *value)
+static void rna_ShapeKey_name_set(PointerRNA *ptr, const char *value)
 {
 	KeyBlock *kb = ptr->data;
 	char oldname[sizeof(kb->name)];
@@ -80,7 +83,8 @@ void rna_ShapeKey_name_set(PointerRNA *ptr, const char *value)
 	/* make sure the name is truly unique */
 	if (ptr->id.data) {
 		Key *key = rna_ShapeKey_find_key(ptr->id.data);
-		BLI_uniquename(&key->block, kb, "Key", '.', offsetof(KeyBlock, name), sizeof(kb->name));
+		BLI_uniquename(&key->block, kb, CTX_DATA_(BLF_I18NCONTEXT_ID_SHAPEKEY, "Key"), '.',
+		               offsetof(KeyBlock, name), sizeof(kb->name));
 	}
 	
 	/* fix all the animation data which may link to this */
@@ -347,11 +351,14 @@ static char *rna_ShapeKey_path(PointerRNA *ptr)
 {
 	KeyBlock *kb = (KeyBlock *)ptr->data;
 	ID *id = ptr->id.data;
-	
+	char name_esc[sizeof(kb->name) * 2];
+
+	BLI_strescape(name_esc, kb->name, sizeof(name_esc));
+
 	if ((id) && (GS(id->name) != ID_KE))
-		return BLI_sprintfN("shape_keys.key_blocks[\"%s\"]", kb->name);
+		return BLI_sprintfN("shape_keys.key_blocks[\"%s\"]", name_esc);
 	else
-		return BLI_sprintfN("key_blocks[\"%s\"]", kb->name);
+		return BLI_sprintfN("key_blocks[\"%s\"]", name_esc);
 }
 
 static void rna_Key_update_data(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
@@ -360,7 +367,7 @@ static void rna_Key_update_data(Main *bmain, Scene *UNUSED(scene), PointerRNA *p
 	Object *ob;
 
 	for (ob = bmain->object.first; ob; ob = ob->id.next) {
-		if (ob_get_key(ob) == key) {
+		if (BKE_key_from_object(ob) == key) {
 			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 		}
@@ -432,12 +439,15 @@ static char *rna_ShapeKeyPoint_path(PointerRNA *ptr)
 	kb = rna_ShapeKeyData_find_keyblock(key, point);
 	
 	if (kb) {
+		char name_esc_kb[sizeof(kb->name) * 2];
 		int index = rna_ShapeKeyPoint_get_index(key, kb, point);
+
+		BLI_strescape(name_esc_kb, kb->name, sizeof(name_esc_kb));
 		
 		if (GS(id->name) == ID_KE)
-			return BLI_sprintfN("key_blocks[\"%s\"].data[%d]", kb->name, index);
+			return BLI_sprintfN("key_blocks[\"%s\"].data[%d]", name_esc_kb, index);
 		else
-			return BLI_sprintfN("shape_keys.key_blocks[\"%s\"].data[%d]", kb->name, index);
+			return BLI_sprintfN("shape_keys.key_blocks[\"%s\"].data[%d]", name_esc_kb, index);
 	}
 	else
 		return NULL;  /* XXX: there's really no way to resolve this... */
@@ -562,7 +572,7 @@ static void rna_def_keyblock(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "relative_key", PROP_POINTER, PROP_NONE);
 	RNA_def_property_struct_type(prop, "ShapeKey");
-	RNA_def_property_flag(prop, PROP_EDITABLE);
+	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_NEVER_NULL);
 	RNA_def_property_pointer_funcs(prop, "rna_ShapeKey_relative_key_get",
 	                               "rna_ShapeKey_relative_key_set", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Relative Key", "Shape used as a relative key");

@@ -20,20 +20,13 @@
  *
  * The Original Code is: all of this file.
  *
- * Contributor(s): none yet.
+ * Contributor(s): Maarten Gribnau.
  *
  * ***** END GPL LICENSE BLOCK *****
  */
 
 /** \file ghost/intern/GHOST_WindowWin32.cpp
  *  \ingroup GHOST
- */
-
-
-/**
- * Copyright (C) 2001 NaN Technologies B.V.
- * @author	Maarten Gribnau
- * @date	May 10, 2001
  */
 
 #include <string.h>
@@ -50,22 +43,14 @@
 
 // MSVC6 still doesn't define M_PI
 #ifndef M_PI
-#define M_PI 3.1415926536
+#  define M_PI 3.1415926536
 #endif
 
 // Some more multisample defines
 #define WGL_SAMPLE_BUFFERS_ARB  0x2041
 #define WGL_SAMPLES_ARB         0x2042
 
-// win64 doesn't define GWL_USERDATA
-#ifdef WIN32
-#ifndef GWL_USERDATA
-#define GWL_USERDATA GWLP_USERDATA
-#define GWL_WNDPROC GWLP_WNDPROC
-#endif
-#endif
-
-wchar_t *GHOST_WindowWin32::s_windowClassName = L"GHOST_WindowClass";
+const wchar_t *GHOST_WindowWin32::s_windowClassName = L"GHOST_WindowClass";
 const int GHOST_WindowWin32::s_maxTitleLength = 128;
 HGLRC GHOST_WindowWin32::s_firsthGLRc = NULL;
 HDC GHOST_WindowWin32::s_firstHDC = NULL;
@@ -111,13 +96,14 @@ static PIXELFORMATDESCRIPTOR sPreferredFormat = {
  * can't be in multiple-devices configuration. */
 static int is_crappy_intel_card(void)
 {
-	int crappy = 0;
-	const char *vendor = (const char *)glGetString(GL_VENDOR);
+	static short is_crappy = -1;
 
-	if (strstr(vendor, "Intel"))
-		crappy = 1;
+	if (is_crappy == -1) {
+		const char *vendor = (const char *)glGetString(GL_VENDOR);
+		is_crappy = (strstr(vendor, "Intel") != NULL);
+	}
 
-	return crappy;
+	return is_crappy;
 }
 
 GHOST_WindowWin32::GHOST_WindowWin32(
@@ -136,7 +122,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(
     int msPixelFormat)
 	:
 	GHOST_Window(width, height, state, GHOST_kDrawingContextTypeNone,
-	             stereoVisual, numOfAASamples),
+	             stereoVisual, false, numOfAASamples),
 	m_system(system),
 	m_hDC(0),
 	m_hGlRc(0),
@@ -149,7 +135,6 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	m_tablet(0),
 	m_maxPressure(0),
 	m_multisample(numOfAASamples),
-	m_parentWindowHwnd(parentwindowhwnd),
 	m_multisampleEnabled(msEnabled),
 	m_msPixelFormat(msPixelFormat),
 	//For recreation
@@ -160,7 +145,9 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 	m_height(height),
 	m_normal_state(GHOST_kWindowStateNormal),
 	m_stereo(stereoVisual),
-	m_nextWindow(NULL)
+	m_nextWindow(NULL),
+	m_parentWindowHwnd(parentwindowhwnd),
+	m_inLiveResize(false)
 {
 	OSVERSIONINFOEX versionInfo;
 	bool hasMinVersionForTaskbar = false;
@@ -271,8 +258,12 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 		// Register this window as a droptarget. Requires m_hWnd to be valid.
 		// Note that OleInitialize(0) has to be called prior to this. Done in GHOST_SystemWin32.
 		m_dropTarget = new GHOST_DropTargetWin32(this, m_system);
+		if (m_dropTarget) {
+			::RegisterDragDrop(m_hWnd, m_dropTarget);
+		}
+
 		// Store a pointer to this class in the window structure
-		::SetWindowLongPtr(m_hWnd, GWL_USERDATA, (LONG_PTR) this);
+		::SetWindowLongPtr(m_hWnd, GWLP_USERDATA, (LONG_PTR) this);
 
 		// Store the device context
 		m_hDC = ::GetDC(m_hWnd);
@@ -415,7 +406,13 @@ GHOST_WindowWin32::~GHOST_WindowWin32()
 		m_hDC = 0;
 	}
 	if (m_hWnd) {
-		m_dropTarget->Release(); // frees itself.
+		if (m_dropTarget) {
+			// Disable DragDrop
+			RevokeDragDrop(m_hWnd);
+			// Release our reference of the DropTarget and it will delete itself eventually.
+			m_dropTarget->Release();
+		}
+
 		::DestroyWindow(m_hWnd);
 		m_hWnd = 0;
 	}
@@ -467,38 +464,22 @@ void GHOST_WindowWin32::getWindowBounds(GHOST_Rect& bounds) const
 void GHOST_WindowWin32::getClientBounds(GHOST_Rect& bounds) const
 {
 	RECT rect;
-	GHOST_TWindowState state = this->getState();
-	LONG_PTR result = ::GetWindowLongPtr(m_hWnd, GWL_STYLE);
-	int sm_cysizeframe = GetSystemMetrics(SM_CYSIZEFRAME);
-	::GetWindowRect(m_hWnd, &rect);
+	POINT coord;
+	::GetClientRect(m_hWnd, &rect);
 
-	if ((result & (WS_POPUP | WS_MAXIMIZE)) != (WS_POPUP | WS_MAXIMIZE)) {
-		if (state == GHOST_kWindowStateMaximized) {
-			// in maximized state we don't have borders on the window
-			bounds.m_b = rect.bottom - GetSystemMetrics(SM_CYCAPTION) - sm_cysizeframe * 2;
-			bounds.m_l = rect.left + sm_cysizeframe;
-			bounds.m_r = rect.right - sm_cysizeframe;
-			bounds.m_t = rect.top;
-		}
-		else if (state == GHOST_kWindowStateEmbedded) {
-			bounds.m_b = rect.bottom;
-			bounds.m_l = rect.left;
-			bounds.m_r = rect.right;
-			bounds.m_t = rect.top;
-		}
-		else {
-			bounds.m_b = rect.bottom - GetSystemMetrics(SM_CYCAPTION) - sm_cysizeframe * 2;
-			bounds.m_l = rect.left;
-			bounds.m_r = rect.right - sm_cysizeframe * 2;
-			bounds.m_t = rect.top;
-		}
-	}
-	else {
-		bounds.m_b = rect.bottom;
-		bounds.m_l = rect.left;
-		bounds.m_r = rect.right;
-		bounds.m_t = rect.top;
-	}
+	coord.x = rect.left;
+	coord.y = rect.top;
+	::ClientToScreen(m_hWnd, &coord);
+
+	bounds.m_l = coord.x;
+	bounds.m_t = coord.y;
+
+	coord.x = rect.right;
+	coord.y = rect.bottom;
+	::ClientToScreen(m_hWnd, &coord);
+
+	bounds.m_r = coord.x;
+	bounds.m_b = coord.y;
 }
 
 
@@ -709,6 +690,9 @@ GHOST_TSuccess GHOST_WindowWin32::initMultisample(PIXELFORMATDESCRIPTOR pfd)
 		WGL_ACCELERATION_ARB, WGL_FULL_ACCELERATION_ARB,
 		WGL_COLOR_BITS_ARB, pfd.cColorBits,
 		WGL_DEPTH_BITS_ARB, pfd.cDepthBits,
+#ifdef GHOST_OPENGL_ALPHA
+		WGL_ALPHA_BITS_ARB, pfd.cAlphaBits,
+#endif
 		WGL_STENCIL_BITS_ARB, pfd.cStencilBits,
 		WGL_DOUBLE_BUFFER_ARB, GL_TRUE,
 		WGL_SAMPLE_BUFFERS_ARB, GL_TRUE,
@@ -717,7 +701,7 @@ GHOST_TSuccess GHOST_WindowWin32::initMultisample(PIXELFORMATDESCRIPTOR pfd)
 	};
 
 	// Get the function
-	PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");	
+	PFNWGLCHOOSEPIXELFORMATARBPROC wglChoosePixelFormatARB = (PFNWGLCHOOSEPIXELFORMATARBPROC)wglGetProcAddress("wglChoosePixelFormatARB");
 
 	if (!wglChoosePixelFormatARB)
 	{
@@ -865,7 +849,7 @@ GHOST_TSuccess GHOST_WindowWin32::installDrawingContext(GHOST_TDrawingContextTyp
 				}
 
 				// Attempt to enable multisample
-				if (m_multisample && WGL_ARB_multisample && !m_multisampleEnabled)
+				if (m_multisample && WGL_ARB_multisample && !m_multisampleEnabled && !is_crappy_intel_card())
 				{
 					success = initMultisample(preferredFormat);
 
@@ -901,7 +885,7 @@ GHOST_TSuccess GHOST_WindowWin32::installDrawingContext(GHOST_TDrawingContextTyp
 					}
 					else {
 						m_multisampleEnabled = GHOST_kSuccess;
-						printf("Multisample failed to initialized\n");
+						printf("Multisample failed to initialize\n");
 						success = GHOST_kSuccess;
 					}
 				}
@@ -1189,6 +1173,16 @@ void GHOST_WindowWin32::processWin32TabletEvent(WPARAM wParam, LPARAM lParam)
 	}
 }
 
+void GHOST_WindowWin32::bringTabletContextToFront()
+{
+	if (m_wintab) {
+		GHOST_WIN32_WTOverlap fpWTOverlap = (GHOST_WIN32_WTOverlap) ::GetProcAddress(m_wintab, "WTOverlap");
+		if (fpWTOverlap) {
+			fpWTOverlap(m_tablet, TRUE);
+		}
+	}
+}
+
 /** Reverse the bits in a GHOST_TUns8 */
 static GHOST_TUns8 uns8ReverseBits(GHOST_TUns8 ch)
 {
@@ -1198,6 +1192,7 @@ static GHOST_TUns8 uns8ReverseBits(GHOST_TUns8 ch)
 	return ch;
 }
 
+#if 0  /* UNUSED */
 /** Reverse the bits in a GHOST_TUns16 */
 static GHOST_TUns16 uns16ReverseBits(GHOST_TUns16 shrt)
 {
@@ -1207,6 +1202,7 @@ static GHOST_TUns16 uns16ReverseBits(GHOST_TUns16 shrt)
 	shrt = ((shrt >> 8) & 0x00FF) | ((shrt << 8) & 0xFF00);
 	return shrt;
 }
+#endif
 GHOST_TSuccess GHOST_WindowWin32::setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2],
                                                              GHOST_TUns8 mask[16][2],
                                                              int hotX, int hotY)
@@ -1305,6 +1301,11 @@ static int WeightPixelFormat(PIXELFORMATDESCRIPTOR& pfd)
 	weight += pfd.cDepthBits - 16;
 
 	weight += pfd.cColorBits - 8;
+
+#ifdef GHOST_OPENGL_ALPHA
+	if (pfd.cAlphaBits > 0)
+		weight ++;
+#endif
 
 	/* want swap copy capability -- it matters a lot */
 	if (pfd.dwFlags & PFD_SWAP_COPY) weight += 16;

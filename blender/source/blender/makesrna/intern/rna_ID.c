@@ -24,17 +24,18 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 #include <stdio.h>
-
-#include "RNA_access.h"
-#include "RNA_define.h"
 
 #include "DNA_ID.h"
 #include "DNA_vfont_types.h"
 #include "DNA_material_types.h"
 #include "DNA_object_types.h"
+
+#include "BLI_utildefines.h"
+
+#include "RNA_access.h"
+#include "RNA_define.h"
 
 #include "WM_types.h"
 
@@ -56,6 +57,7 @@ EnumPropertyItem id_type_items[] = {
 	{ID_KE, "KEY", ICON_SHAPEKEY_DATA, "Key", ""},
 	{ID_LA, "LAMP", ICON_LAMP_DATA, "Lamp", ""},
 	{ID_LI, "LIBRARY", ICON_LIBRARY_DATA_DIRECT, "Library", ""},
+	{ID_LS, "LINESTYLE", ICON_PARTICLE_DATA, "FreestyleLineStyle", ""}, /* FIXME proper icon */
 	{ID_LT, "LATTICE", ICON_LATTICE_DATA, "Lattice", ""},
 	{ID_MA, "MATERIAL", ICON_MATERIAL_DATA, "Material", ""},
 	{ID_MB, "META", ICON_META_DATA, "MetaBall", ""},
@@ -102,7 +104,7 @@ void rna_ID_name_set(PointerRNA *ptr, const char *value)
 {
 	ID *id = (ID *)ptr->data;
 	BLI_strncpy_utf8(id->name + 2, value, sizeof(id->name) - 2);
-	test_idbutton(id->name + 2);
+	test_idbutton(id->name);
 }
 
 static int rna_ID_name_editable(PointerRNA *ptr)
@@ -131,6 +133,7 @@ short RNA_type_to_ID_code(StructRNA *type)
 	if (RNA_struct_is_a(type, &RNA_Key)) return ID_KE;
 	if (RNA_struct_is_a(type, &RNA_Lamp)) return ID_LA;
 	if (RNA_struct_is_a(type, &RNA_Library)) return ID_LI;
+	if (RNA_struct_is_a(type, &RNA_FreestyleLineStyle)) return ID_LS;
 	if (RNA_struct_is_a(type, &RNA_Lattice)) return ID_LT;
 	if (RNA_struct_is_a(type, &RNA_Material)) return ID_MA;
 	if (RNA_struct_is_a(type, &RNA_MetaBall)) return ID_MB;
@@ -167,6 +170,7 @@ StructRNA *ID_code_to_RNA_type(short idcode)
 		case ID_KE: return &RNA_Key;
 		case ID_LA: return &RNA_Lamp;
 		case ID_LI: return &RNA_Library;
+		case ID_LS: return &RNA_FreestyleLineStyle;
 		case ID_LT: return &RNA_Lattice;
 		case ID_MA: return &RNA_Material;
 		case ID_MB: return &RNA_MetaBall;
@@ -196,7 +200,7 @@ StructRNA *rna_ID_refine(PointerRNA *ptr)
 	return ID_code_to_RNA_type(GS(id->name));
 }
 
-IDProperty *rna_ID_idprops(PointerRNA *ptr, int create)
+IDProperty *rna_ID_idprops(PointerRNA *ptr, bool create)
 {
 	return IDP_GetProperties(ptr->data, create);
 }
@@ -215,7 +219,7 @@ void rna_ID_fake_user_set(PointerRNA *ptr, int value)
 	}
 }
 
-IDProperty *rna_PropertyGroup_idprops(PointerRNA *ptr, int UNUSED(create))
+IDProperty *rna_PropertyGroup_idprops(PointerRNA *ptr, bool UNUSED(create))
 {
 	return ptr->data;
 }
@@ -243,12 +247,12 @@ StructRNA *rna_PropertyGroup_register(Main *UNUSED(bmain), ReportList *reports, 
 	 * owns the string pointer which it could potentially free while blender
 	 * is running. */
 	if (BLI_strnlen(identifier, MAX_IDPROP_NAME) == MAX_IDPROP_NAME) {
-		BKE_reportf(reports, RPT_ERROR, "registering id property class: '%s' is too long, maximum length is "
-		            STRINGIFY(MAX_IDPROP_NAME), identifier);
+		BKE_reportf(reports, RPT_ERROR, "Registering id property class: '%s' is too long, maximum length is %d",
+		            identifier, MAX_IDPROP_NAME);
 		return NULL;
 	}
 
-	return RNA_def_struct(&BLENDER_RNA, identifier, "PropertyGroup");  /* XXX */
+	return RNA_def_struct_ptr(&BLENDER_RNA, identifier, &RNA_PropertyGroup);  /* XXX */
 }
 
 StructRNA *rna_PropertyGroup_refine(PointerRNA *ptr)
@@ -256,11 +260,11 @@ StructRNA *rna_PropertyGroup_refine(PointerRNA *ptr)
 	return ptr->type;
 }
 
-ID *rna_ID_copy(ID *id)
+static ID *rna_ID_copy(ID *id)
 {
 	ID *newid;
 
-	if (id_copy(id, &newid, 0)) {
+	if (id_copy(id, &newid, false)) {
 		if (newid) id_us_min(newid);
 		return newid;
 	}
@@ -287,7 +291,7 @@ static void rna_ID_update_tag(ID *id, ReportList *reports, int flag)
 		switch (GS(id->name)) {
 			case ID_OB:
 				if (flag & ~(OB_RECALC_ALL)) {
-					BKE_report(reports, RPT_ERROR, "'refresh' incompatible with Object ID type");
+					BKE_report(reports, RPT_ERROR, "'Refresh' incompatible with Object ID type");
 					return;
 				}
 				break;
@@ -295,7 +299,7 @@ static void rna_ID_update_tag(ID *id, ReportList *reports, int flag)
 #if 0
 			case ID_PA:
 				if (flag & ~(OB_RECALC_ALL | PSYS_RECALC)) {
-					BKE_report(reports, RPT_ERROR, "'refresh' incompatible with ParticleSettings ID type");
+					BKE_report(reports, RPT_ERROR, "'Refresh' incompatible with ParticleSettings ID type");
 					return;
 				}
 				break;
@@ -309,7 +313,7 @@ static void rna_ID_update_tag(ID *id, ReportList *reports, int flag)
 	DAG_id_tag_update(id, flag);
 }
 
-void rna_ID_user_clear(ID *id)
+static void rna_ID_user_clear(ID *id)
 {
 	id->us = 0; /* don't save */
 	id->flag &= ~LIB_FAKEUSER;
@@ -341,7 +345,7 @@ int rna_IDMaterials_assign_int(PointerRNA *ptr, int key, const PointerRNA *assig
 	}
 }
 
-void rna_IDMaterials_append_id(ID *id, Material *ma)
+static void rna_IDMaterials_append_id(ID *id, Material *ma)
 {
 	material_append_id(id, ma);
 
@@ -349,7 +353,7 @@ void rna_IDMaterials_append_id(ID *id, Material *ma)
 	WM_main_add_notifier(NC_OBJECT | ND_OB_SHADING, id);
 }
 
-Material *rna_IDMaterials_pop_id(ID *id, int index_i, int remove_material_slot)
+static Material *rna_IDMaterials_pop_id(ID *id, int index_i, int remove_material_slot)
 {
 	Material *ma = material_pop_id(id, index_i, remove_material_slot);
 
@@ -360,7 +364,7 @@ Material *rna_IDMaterials_pop_id(ID *id, int index_i, int remove_material_slot)
 	return ma;
 }
 
-void rna_Library_filepath_set(PointerRNA *ptr, const char *value)
+static void rna_Library_filepath_set(PointerRNA *ptr, const char *value)
 {
 	Library *lib = (Library *)ptr->data;
 	BKE_library_filepath_set(lib, value);

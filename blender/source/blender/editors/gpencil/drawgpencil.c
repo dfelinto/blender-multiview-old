@@ -27,7 +27,6 @@
  *  \ingroup edgpencil
  */
 
- 
 #include <stdio.h>
 #include <string.h>
 #include <stdlib.h>
@@ -35,7 +34,7 @@
 #include <math.h>
 #include <float.h>
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
@@ -45,8 +44,10 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
+#include "DNA_userdef_types.h"
 #include "DNA_view3d_types.h"
 
+#include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_gpencil.h"
@@ -98,8 +99,8 @@ static void gp_draw_stroke_buffer(tGPspoint *points, int totpoints, short thickn
 	if (dflag & (GP_DRAWDATA_ONLY3D | GP_DRAWDATA_ONLYV2D))
 		return;
 	
-	/* if drawing a single point, draw it larger */	
-	if (totpoints == 1) {		
+	/* if drawing a single point, draw it larger */
+	if (totpoints == 1) {
 		/* draw point */
 		glBegin(GL_POINTS);
 		glVertex2iv(&points->x);
@@ -149,7 +150,8 @@ static void gp_draw_stroke_buffer(tGPspoint *points, int totpoints, short thickn
 /* ----- Existing Strokes Drawing (3D and Point) ------ */
 
 /* draw a given stroke - just a single dot (only one point) */
-static void gp_draw_stroke_point(bGPDspoint *points, short thickness, short dflag, short sflag, int offsx, int offsy, int winx, int winy)
+static void gp_draw_stroke_point(bGPDspoint *points, short thickness, short dflag, short sflag,
+                                 int offsx, int offsy, int winx, int winy)
 {
 	/* draw point */
 	if (sflag & GP_STROKE_3DSPACE) {
@@ -177,8 +179,8 @@ static void gp_draw_stroke_point(bGPDspoint *points, short thickness, short dfla
 		/* if thickness is less than GP_DRAWTHICKNESS_SPECIAL, simple dot looks ok
 		 *  - also mandatory in if Image Editor 'image-based' dot
 		 */
-		if ( (thickness < GP_DRAWTHICKNESS_SPECIAL) ||
-		     ((dflag & GP_DRAWDATA_IEDITHACK) && (sflag & GP_STROKE_2DSPACE)) )
+		if ((thickness < GP_DRAWTHICKNESS_SPECIAL) ||
+		    ((dflag & GP_DRAWDATA_IEDITHACK) && (sflag & GP_STROKE_2DSPACE)))
 		{
 			glBegin(GL_POINTS);
 			glVertex2fv(co);
@@ -253,8 +255,8 @@ static void gp_draw_stroke(bGPDspoint *points, int totpoints, short thickness_s,
 	/* if thickness is less than GP_DRAWTHICKNESS_SPECIAL, 'smooth' opengl lines look better
 	 *  - 'smooth' opengl lines are also required if Image Editor 'image-based' stroke
 	 */
-	if ( (thickness < GP_DRAWTHICKNESS_SPECIAL) || 
-	     ((dflag & GP_DRAWDATA_IEDITHACK) && (dflag & GP_DRAWDATA_ONLYV2D)) )
+	if ((thickness < GP_DRAWTHICKNESS_SPECIAL) ||
+	    ((dflag & GP_DRAWDATA_IEDITHACK) && (dflag & GP_DRAWDATA_ONLYV2D)))
 	{
 		bGPDspoint *pt;
 		int i;
@@ -314,7 +316,7 @@ static void gp_draw_stroke(bGPDspoint *points, int totpoints, short thickness_s,
 				s0[1] = (pt1->y / 100 * winy) + offsy;
 				s1[0] = (pt2->x / 100 * winx) + offsx;
 				s1[1] = (pt2->y / 100 * winy) + offsy;
-			}		
+			}
 			
 			/* calculate gradient and normal - 'angle'=(ny/nx) */
 			m1[1] = s1[1] - s0[1];
@@ -330,7 +332,7 @@ static void gp_draw_stroke(bGPDspoint *points, int totpoints, short thickness_s,
 			if (i == 0) {
 				/* draw start cap first 
 				 *	- make points slightly closer to center (about halfway across) 
-				 */				
+				 */
 				mt[0] = m2[0] * pthick * 0.5f;
 				mt[1] = m2[1] * pthick * 0.5f;
 				sc[0] = s0[0] - (m1[0] * pthick * 0.75f);
@@ -381,7 +383,7 @@ static void gp_draw_stroke(bGPDspoint *points, int totpoints, short thickness_s,
 				if (((athick * 2.0f) < pthick) && (IS_EQF(athick, pthick) == 0)) {
 					mt[0] += (mb[0] * dfac);
 					mt[1] += (mb[1] * dfac);
-				}	
+				}
 				
 				/* calculate points for start of segment */
 				t0[0] = s0[0] - mt[0];
@@ -419,7 +421,7 @@ static void gp_draw_stroke(bGPDspoint *points, int totpoints, short thickness_s,
 				
 				/* draw end cap as last step 
 				 *	- make points slightly closer to center (about halfway across) 
-				 */				
+				 */
 				mt[0] = m2[0] * pthick * 0.5f;
 				mt[1] = m2[1] * pthick * 0.5f;
 				sc[0] = s1[0] + (m1[0] * pthick * 0.75f);
@@ -497,9 +499,7 @@ static void gp_draw_strokes(bGPDframe *gpf, int offsx, int offsy, int winx, int 
 			continue;
 		
 		/* check which stroke-drawer to use */
-		if (gps->totpoints == 1)
-			gp_draw_stroke_point(gps->points, lthick, dflag, gps->flag, offsx, offsy, winx, winy);
-		else if (dflag & GP_DRAWDATA_ONLY3D) {
+		if (dflag & GP_DRAWDATA_ONLY3D) {
 			const int no_xray = (dflag & GP_DRAWDATA_NO_XRAY);
 			int mask_orig = 0;
 			
@@ -508,7 +508,8 @@ static void gp_draw_strokes(bGPDframe *gpf, int offsx, int offsy, int winx, int 
 				glDepthMask(0);
 				glEnable(GL_DEPTH_TEST);
 				
-				/* first arg is normally rv3d->dist, but this isn't available here and seems to work quite well without */
+				/* first arg is normally rv3d->dist, but this isn't
+				 * available here and seems to work quite well without */
 				bglPolygonOffset(1.0f, 1.0f);
 #if 0
 				glEnable(GL_POLYGON_OFFSET_LINE);
@@ -516,7 +517,12 @@ static void gp_draw_strokes(bGPDframe *gpf, int offsx, int offsy, int winx, int 
 #endif
 			}
 			
-			gp_draw_stroke_3d(gps->points, gps->totpoints, lthick, debug);
+			if (gps->totpoints == 1) {
+				gp_draw_stroke_point(gps->points, lthick, dflag, gps->flag, offsx, offsy, winx, winy);
+			}
+			else {
+				gp_draw_stroke_3d(gps->points, gps->totpoints, lthick, debug);
+			}
 			
 			if (no_xray) {
 				glDepthMask(mask_orig);
@@ -529,8 +535,14 @@ static void gp_draw_strokes(bGPDframe *gpf, int offsx, int offsy, int winx, int 
 #endif
 			}
 		}
-		else if (gps->totpoints > 1)	
-			gp_draw_stroke(gps->points, gps->totpoints, lthick, dflag, gps->flag, debug, offsx, offsy, winx, winy);
+		else {
+			if (gps->totpoints == 1) {
+				gp_draw_stroke_point(gps->points, lthick, dflag, gps->flag, offsx, offsy, winx, winy);
+			}
+			else {
+				gp_draw_stroke(gps->points, gps->totpoints, lthick, dflag, gps->flag, debug, offsx, offsy, winx, winy);
+			}
+		}
 	}
 }
 
@@ -579,7 +591,8 @@ static void gp_draw_data(bGPdata *gpd, int offsx, int offsy, int winx, int winy,
 		
 		/* draw 'onionskins' (frame left + right) */
 		if (gpl->flag & GP_LAYER_ONIONSKIN) {
-			/* drawing method - only immediately surrounding (gstep = 0), or within a frame range on either side (gstep > 0)*/			
+			/* drawing method - only immediately surrounding (gstep = 0),
+			 * or within a frame range on either side (gstep > 0)*/
 			if (gpl->gstep) {
 				bGPDframe *gf;
 				float fac;
@@ -608,7 +621,7 @@ static void gp_draw_data(bGPdata *gpd, int offsx, int offsy, int winx, int winy,
 					}
 					else 
 						break;
-				}	
+				}
 				
 				/* restore alpha */
 				glColor4fv(color);
@@ -640,7 +653,8 @@ static void gp_draw_data(bGPdata *gpd, int offsx, int offsy, int winx, int winy,
 		if (ED_gpencil_session_active() && (gpl->flag & GP_LAYER_ACTIVE) &&
 		    (gpf->flag & GP_FRAME_PAINT))
 		{
-			/* Buffer stroke needs to be drawn with a different linestyle to help differentiate them from normal strokes. */
+			/* Buffer stroke needs to be drawn with a different linestyle
+			 * to help differentiate them from normal strokes. */
 			gp_draw_stroke_buffer(gpd->sbuffer, gpd->sbuffer_size, lthick, dflag, gpd->sbuffer_sflag);
 		}
 	}
@@ -657,11 +671,11 @@ static void gp_draw_data(bGPdata *gpd, int offsx, int offsy, int winx, int winy,
 
 /* ----- Grease Pencil Sketches Drawing API ------ */
 
-// ............................
-// XXX 
-//	We need to review the calls below, since they may be/are not that suitable for
-//	the new ways that we intend to be drawing data...
-// ............................
+/* ............................
+ * XXX
+ *	We need to review the calls below, since they may be/are not that suitable for
+ *	the new ways that we intend to be drawing data...
+ * ............................ */
 
 /* draw grease-pencil sketches to specified 2d-view that uses ibuf corrections */
 void draw_gpencil_2dimage(const bContext *C)
@@ -724,8 +738,8 @@ void draw_gpencil_2dimage(const bContext *C)
 }
 
 /* draw grease-pencil sketches to specified 2d-view assuming that matrices are already set correctly 
- * Note: this gets called twice - first time with onlyv2d=1 to draw 'canvas' strokes, second time with onlyv2d=0 for screen-aligned strokes
- */
+ * Note: this gets called twice - first time with onlyv2d=1 to draw 'canvas' strokes,
+ * second time with onlyv2d=0 for screen-aligned strokes */
 void draw_gpencil_view2d(const bContext *C, short onlyv2d)
 {
 	ScrArea *sa = CTX_wm_area(C);
@@ -750,15 +764,14 @@ void draw_gpencil_view2d(const bContext *C, short onlyv2d)
 }
 
 /* draw grease-pencil sketches to specified 3d-view assuming that matrices are already set correctly 
- * Note: this gets called twice - first time with only3d=1 to draw 3d-strokes, second time with only3d=0 for screen-aligned strokes
- */
-
-void draw_gpencil_view3d(Scene *scene, View3D *v3d, ARegion *ar, short only3d)
+ * Note: this gets called twice - first time with only3d=1 to draw 3d-strokes,
+ * second time with only3d=0 for screen-aligned strokes */
+void draw_gpencil_view3d(Scene *scene, View3D *v3d, ARegion *ar, bool only3d)
 {
 	bGPdata *gpd;
 	int dflag = 0;
-	rcti rect;
 	RegionView3D *rv3d = ar->regiondata;
+	int offsx,  offsy,  winx,  winy;
 
 	/* check that we have grease-pencil stuff to draw */
 	gpd = gpencil_data_get_active_v3d(scene); // XXX
@@ -769,19 +782,23 @@ void draw_gpencil_view3d(Scene *scene, View3D *v3d, ARegion *ar, short only3d)
 	if ((rv3d->persp == RV3D_CAMOB) && !(G.f & G_RENDER_OGL)) {
 		rctf rectf;
 		ED_view3d_calc_camera_border(scene, ar, v3d, rv3d, &rectf, TRUE); /* no shift */
-		BLI_rcti_rctf_copy(&rect, &rectf);
+
+		offsx = floorf(rectf.xmin + 0.5f);
+		offsy = floorf(rectf.ymin + 0.5f);
+		winx  = floorf((rectf.xmax - rectf.xmin) + 0.5f);
+		winy  = floorf((rectf.ymax - rectf.ymin) + 0.5f);
 	}
 	else {
-		rect.xmin = 0;
-		rect.ymin = 0;
-		rect.xmax = ar->winx;
-		rect.ymax = ar->winy;
+		offsx = 0;
+		offsy = 0;
+		winx  = ar->winx;
+		winy  = ar->winy;
 	}
 	
 	/* draw it! */
 	if (only3d) dflag |= (GP_DRAWDATA_ONLY3D | GP_DRAWDATA_NOSTATUS);
 
-	gp_draw_data(gpd, rect.xmin, rect.ymin, rect.xmax, rect.ymax, CFRA, dflag);
+	gp_draw_data(gpd, offsx, offsy, winx, winy, CFRA, dflag);
 }
 
 /* ************************************************** */

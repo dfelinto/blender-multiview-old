@@ -59,7 +59,7 @@ public:
 	virtual 
 	~RAS_ICanvas(
 	) {
-	};
+	}
 
 	virtual 
 		void 
@@ -178,7 +178,26 @@ public:
 	SetViewPort(
 		int x1, int y1,
 		int x2, int y2
-	) = 0; 
+	) = 0;
+
+	/**
+	 * Update the Canvas' viewport (used when the viewport changes without using SetViewPort()
+	 * eg: Shadow buffers and FBOs
+	 */
+
+	virtual
+		void
+	UpdateViewPort(
+		int x1, int y1,
+		int x2, int y2
+	) = 0;
+
+	/**
+	 * Get the visible viewport
+	 */
+	virtual
+		const int*
+	GetViewPort() = 0;
 
 	virtual 
 		void 
@@ -213,6 +232,16 @@ public:
 		int height
 	)=0;
 
+	virtual
+		void
+	SetFullScreen(
+		bool enable
+	)=0;
+
+	virtual
+		bool
+	GetFullScreen()=0;
+
 		
 	
 protected:
@@ -224,5 +253,4 @@ protected:
 #endif
 };
 
-#endif //__RAS_ICANVAS_H__
-
+#endif  /* __RAS_ICANVAS_H__ */

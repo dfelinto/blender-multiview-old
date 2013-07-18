@@ -99,11 +99,11 @@ def rna2xml(fw=print_ln,
             subvalue = getattr(value, prop)
             subvalue_type = type(subvalue)
 
-            if subvalue_type in (int, bool, float):
+            if subvalue_type in {int, bool, float}:
                 node_attrs.append("%s=\"%s\"" % (prop, number_to_str(subvalue, subvalue_type)))
             elif subvalue_type is str:
                 node_attrs.append("%s=%s" % (prop, quoteattr(subvalue)))
-            elif subvalue_type == set:
+            elif subvalue_type is set:
                 node_attrs.append("%s=%s" % (prop, quoteattr("{" + ",".join(list(subvalue)) + "}")))
             elif subvalue is None:
                 node_attrs.append("%s=\"NONE\"" % prop)
@@ -137,7 +137,7 @@ def rna2xml(fw=print_ln,
                             # default
                             def str_recursive(s):
                                 subsubvalue_type = type(s)
-                                if subsubvalue_type in (int, float, bool):
+                                if subsubvalue_type in {int, float, bool}:
                                     return number_to_str(s, subsubvalue_type)
                                 else:
                                     return " ".join([str_recursive(si) for si in s])
@@ -178,7 +178,7 @@ def rna2xml(fw=print_ln,
         fw("%s</%s>\n" % (ident, value_type_name))
 
     # -------------------------------------------------------------------------
-    # needs re-workign to be generic
+    # needs re-working to be generic
 
     if root_node:
         fw("%s<%s>\n" % (root_ident, root_node))
@@ -250,19 +250,30 @@ def xml2rna(root_xml,
                     if value_xml.startswith("#"):
                         # read hexidecimal value as float array
                         value_xml_split = value_xml[1:]
-                        value_xml_coerce = [int(value_xml_split[i:i + 2], 16) / 255  for i in range(0, len(value_xml_split), 2)]
+                        value_xml_coerce = [int(value_xml_split[i:i + 2], 16) / 255 for i in range(0, len(value_xml_split), 2)]
                         del value_xml_split
                     else:
                         value_xml_split = value_xml.split()
                         try:
                             value_xml_coerce = [int(v) for v in value_xml_split]
                         except ValueError:
-                            value_xml_coerce = [float(v) for v in value_xml_split]
+                            try:
+                                value_xml_coerce = [float(v) for v in value_xml_split]
+                            except ValueError:  # bool vector property
+                                value_xml_coerce = [{'TRUE': True, 'FALSE': False}[v] for v in value_xml_split]
                         del value_xml_split
                     tp_name = 'ARRAY'
 
 #                print("  %s.%s (%s) --- %s" % (type(value).__name__, attr, tp_name, subvalue_type))
-                setattr(value, attr, value_xml_coerce)
+                try:
+                    setattr(value, attr, value_xml_coerce)
+                except ValueError:
+                    # size mismatch
+                    val = getattr(value, attr)
+                    if len(val) < len(value_xml_coerce):
+                        setattr(value, attr, value_xml_coerce[:len(val)])
+                    else:
+                        setattr(value, attr, list(value_xml_coerce) + list(val)[len(value_xml_coerce):])
 
         # ---------------------------------------------------------------------
         # Complex attributes

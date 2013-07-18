@@ -35,14 +35,18 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_sys_types.h"  /* for intptr_t support */
 #include "BLI_utildefines.h"
 #include "BLI_mempool.h"
 #include "BLI_ghash.h"
 
-#include "BLO_sys_types.h" // for intptr_t support
 /***/
 
-unsigned int hashsizes[] = {
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
+
+const unsigned int hashsizes[] = {
 	5, 11, 17, 37, 67, 131, 257, 521, 1031, 2053, 4099, 8209, 
 	16411, 32771, 65537, 131101, 262147, 524309, 1048583, 2097169, 
 	4194319, 8388617, 16777259, 33554467, 67108879, 134217757, 
@@ -62,15 +66,14 @@ GHash *BLI_ghash_new(GHashHashFP hashfp, GHashCmpFP cmpfp, const char *info)
 	gh->nentries = 0;
 	gh->nbuckets = hashsizes[gh->cursize];
 
-	gh->buckets = MEM_mallocN(gh->nbuckets * sizeof(*gh->buckets), "buckets");
-	memset(gh->buckets, 0, gh->nbuckets * sizeof(*gh->buckets));
+	gh->buckets = MEM_callocN(gh->nbuckets * sizeof(*gh->buckets), "buckets");
 
 	return gh;
 }
 
 int BLI_ghash_size(GHash *gh)
 {
-	return gh->nentries;
+	return (int)gh->nentries;
 }
 
 void BLI_ghash_insert(GHash *gh, void *key, void *val)
@@ -78,18 +81,17 @@ void BLI_ghash_insert(GHash *gh, void *key, void *val)
 	unsigned int hash = gh->hashfp(key) % gh->nbuckets;
 	Entry *e = (Entry *)BLI_mempool_alloc(gh->entrypool);
 
+	e->next = gh->buckets[hash];
 	e->key = key;
 	e->val = val;
-	e->next = gh->buckets[hash];
 	gh->buckets[hash] = e;
 
 	if (++gh->nentries > (float)gh->nbuckets / 2) {
 		Entry **old = gh->buckets;
-		int i, nold = gh->nbuckets;
+		unsigned int i, nold = gh->nbuckets;
 
 		gh->nbuckets = hashsizes[++gh->cursize];
-		gh->buckets = (Entry **)MEM_mallocN(gh->nbuckets * sizeof(*gh->buckets), "buckets");
-		memset(gh->buckets, 0, gh->nbuckets * sizeof(*gh->buckets));
+		gh->buckets = (Entry **)MEM_callocN(gh->nbuckets * sizeof(*gh->buckets), "buckets");
 
 		for (i = 0; i < nold; i++) {
 			for (e = old[i]; e; ) {
@@ -109,18 +111,18 @@ void BLI_ghash_insert(GHash *gh, void *key, void *val)
 
 void *BLI_ghash_lookup(GHash *gh, const void *key)
 {
-	if (gh) {
-		unsigned int hash = gh->hashfp(key) % gh->nbuckets;
-		Entry *e;
+	const unsigned int hash = gh->hashfp(key) % gh->nbuckets;
+	Entry *e;
 
-		for (e = gh->buckets[hash]; e; e = e->next)
-			if (gh->cmpfp(key, e->key) == 0)
-				return e->val;
+	for (e = gh->buckets[hash]; e; e = e->next) {
+		if (gh->cmpfp(key, e->key) == 0) {
+			return e->val;
+		}
 	}
 	return NULL;
 }
 
-int BLI_ghash_remove(GHash *gh, void *key, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
+bool BLI_ghash_remove(GHash *gh, void *key, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
 {
 	unsigned int hash = gh->hashfp(key) % gh->nbuckets;
 	Entry *e;
@@ -135,17 +137,43 @@ int BLI_ghash_remove(GHash *gh, void *key, GHashKeyFreeFP keyfreefp, GHashValFre
 			BLI_mempool_free(gh->entrypool, e);
 
 			/* correct but 'e' isn't used before return */
-			/* e= n; *//*UNUSED*/
+			/* e = n; *//*UNUSED*/
 			if (p) p->next = n;
 			else   gh->buckets[hash] = n;
 
 			gh->nentries--;
-			return 1;
+			return true;
 		}
 		p = e;
 	}
 
-	return 0;
+	return false;
+}
+
+void BLI_ghash_clear(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
+{
+	int i;
+
+	if (keyfreefp || valfreefp) {
+		for (i = 0; i < gh->nbuckets; i++) {
+			Entry *e;
+
+			for (e = gh->buckets[i]; e; ) {
+				Entry *n = e->next;
+
+				if (keyfreefp) keyfreefp(e->key);
+				if (valfreefp) valfreefp(e->val);
+
+				e = n;
+			}
+		}
+	}
+
+	gh->cursize = 0;
+	gh->nentries = 0;
+	gh->nbuckets = hashsizes[gh->cursize];
+
+	gh->buckets = MEM_recallocN(gh->buckets, gh->nbuckets * sizeof(*gh->buckets));
 }
 
 /* same as above but return the value,
@@ -165,7 +193,7 @@ void *BLI_ghash_pop(GHash *gh, void *key, GHashKeyFreeFP keyfreefp)
 			BLI_mempool_free(gh->entrypool, e);
 
 			/* correct but 'e' isn't used before return */
-			/* e= n; *//*UNUSED*/
+			/* e = n; *//*UNUSED*/
 			if (p) p->next = n;
 			else   gh->buckets[hash] = n;
 
@@ -178,16 +206,16 @@ void *BLI_ghash_pop(GHash *gh, void *key, GHashKeyFreeFP keyfreefp)
 	return NULL;
 }
 
-int BLI_ghash_haskey(GHash *gh, void *key)
+bool BLI_ghash_haskey(GHash *gh, const void *key)
 {
 	unsigned int hash = gh->hashfp(key) % gh->nbuckets;
 	Entry *e;
 
 	for (e = gh->buckets[hash]; e; e = e->next)
 		if (gh->cmpfp(key, e->key) == 0)
-			return 1;
+			return true;
 
-	return 0;
+	return false;
 }
 
 void BLI_ghash_free(GHash *gh, GHashKeyFreeFP keyfreefp, GHashValFreeFP valfreefp)
@@ -271,9 +299,9 @@ void BLI_ghashIterator_step(GHashIterator *ghi)
 		}
 	}
 }
-int BLI_ghashIterator_isDone(GHashIterator *ghi)
+bool BLI_ghashIterator_done(GHashIterator *ghi)
 {
-	return !ghi->curEntry;
+	return ghi->curEntry == NULL;
 }
 
 /***/
@@ -312,17 +340,25 @@ int BLI_ghashutil_intcmp(const void *a, const void *b)
 		return (a < b) ? -1 : 1;
 }
 
+/**
+ * This function implements the widely used "djb" hash apparently posted
+ * by Daniel Bernstein to comp.lang.c some time ago.  The 32 bit
+ * unsigned hash value starts at 5381 and for each byte 'c' in the
+ * string, is updated: <literal>hash = hash * 33 + c</literal>.  This
+ * function uses the signed value of each byte.
+ *
+ * note: this is the same hash method that glib 2.34.0 uses.
+ */
 unsigned int BLI_ghashutil_strhash(const void *ptr)
 {
-	const char *s = ptr;
-	unsigned int i = 0;
-	unsigned char c;
+	const signed char *p;
+	unsigned int h = 5381;
 
-	while ((c = *s++)) {
-		i = i * 37 + c;
+	for (p = ptr; *p != '\0'; p++) {
+		h = (h << 5) + h + (unsigned int)*p;
 	}
 
-	return i;
+	return h;
 }
 int BLI_ghashutil_strcmp(const void *a, const void *b)
 {
@@ -374,6 +410,5 @@ int BLI_ghashutil_paircmp(const void *a, const void *b)
 
 void BLI_ghashutil_pairfree(void *ptr)
 {
-	MEM_freeN((void *)ptr);
+	MEM_freeN(ptr);
 }
-

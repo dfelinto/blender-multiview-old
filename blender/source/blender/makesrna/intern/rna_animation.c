@@ -26,12 +26,6 @@
 
 #include <stdlib.h>
 
-#include "RNA_access.h"
-#include "RNA_define.h"
-#include "RNA_enum_types.h"
-
-#include "rna_internal.h"
-
 #include "DNA_anim_types.h"
 #include "DNA_action_types.h"
 #include "DNA_scene_types.h"
@@ -40,9 +34,15 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "ED_keyframing.h"
+#include "RNA_access.h"
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
+
+#include "rna_internal.h"
 
 #include "WM_types.h"
+
+#include "ED_keyframing.h"
 
 /* exported for use in API */
 EnumPropertyItem keyingset_path_grouping_items[] = {
@@ -52,13 +52,42 @@ EnumPropertyItem keyingset_path_grouping_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
+/* It would be cool to get rid of this 'INSERTKEY_' prefix in 'py strings' values, but it would break existing
+ * exported keyingset... :/
+ */
+EnumPropertyItem keying_flag_items[] = {
+	{INSERTKEY_NEEDED, "INSERTKEY_NEEDED", 0, "Only Needed",
+	                   "Only insert keyframes where they're needed in the relevant F-Curves"},
+	{INSERTKEY_MATRIX, "INSERTKEY_VISUAL", 0, "Visual Keying",
+	                   "Insert keyframes based on 'visual transforms'"},
+	{INSERTKEY_XYZ2RGB, "INSERTKEY_XYZ_TO_RGB", 0, "XYZ=RGB Colors",
+	                    "Color for newly added transformation F-Curves (Location, Rotation, Scale) "
+	                    "and also Color is based on the transform axis"},
+	{0, NULL, 0, NULL, NULL}
+};
+
 #ifdef RNA_RUNTIME
 
+#include "BLI_math_base.h"
+
 #include "BKE_animsys.h"
+#include "BKE_depsgraph.h"
 #include "BKE_fcurve.h"
 #include "BKE_nla.h"
 
+#include "DNA_object_types.h"
+
 #include "WM_api.h"
+
+static void rna_AnimData_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+{
+	ID *id = ptr->id.data;
+	
+	/* tag for refresh so that scheduled updates (e.g. action changed) will 
+	 * get computed and reflected in the scene [#34869] 
+	 */
+	DAG_id_tag_update(id, OB_RECALC_OB | OB_RECALC_DATA);
+}
 
 static int rna_AnimData_action_editable(PointerRNA *ptr)
 {
@@ -74,7 +103,16 @@ static int rna_AnimData_action_editable(PointerRNA *ptr)
 static void rna_AnimData_action_set(PointerRNA *ptr, PointerRNA value)
 {
 	ID *ownerId = (ID *)ptr->id.data;
+	AnimData *adt;
+	
+	/* set action */
 	BKE_animdata_set_action(NULL, ownerId, value.data);
+	
+	/* force action to get evaluated [#34869] */
+	adt = BKE_animdata_from_id(ownerId);
+	if (adt) {
+		adt->recalc |= ADT_RECALC_ANIM;
+	}
 }
 
 /* ****************************** */
@@ -182,6 +220,8 @@ static void rna_KeyingSetInfo_unregister(Main *bmain, StructRNA *type)
 	RNA_struct_free_extension(type, &ksi->ext);
 	RNA_struct_free(&BLENDER_RNA, type);
 	
+	WM_main_add_notifier(NC_WINDOW, NULL);
+
 	/* unlink Blender-side data */
 	ANIM_keyingset_info_unregister(bmain, ksi);
 }
@@ -218,7 +258,7 @@ static StructRNA *rna_KeyingSetInfo_register(Main *bmain, ReportList *reports, v
 	memcpy(ksi, &dummyksi, sizeof(KeyingSetInfo));
 	
 	/* set RNA-extensions info */
-	ksi->ext.srna = RNA_def_struct(&BLENDER_RNA, ksi->idname, "KeyingSetInfo");
+	ksi->ext.srna = RNA_def_struct_ptr(&BLENDER_RNA, ksi->idname, &RNA_KeyingSetInfo);
 	ksi->ext.data = data;
 	ksi->ext.call = call;
 	ksi->ext.free = free;
@@ -233,6 +273,8 @@ static StructRNA *rna_KeyingSetInfo_register(Main *bmain, ReportList *reports, v
 	/* add and register with other info as needed */
 	ANIM_keyingset_info_register(ksi);
 	
+	WM_main_add_notifier(NC_WINDOW, NULL);
+
 	/* return the struct-rna added */
 	return ksi->ext.srna;
 }
@@ -296,6 +338,43 @@ static void rna_ksPath_RnaPath_set(PointerRNA *ptr, const char *value)
 
 /* ****************************** */
 
+static void rna_KeyingSet_name_set(PointerRNA *ptr, const char *value)
+{
+	KeyingSet *ks = (KeyingSet *)ptr->data;
+	
+	/* update names of corresponding groups if name changes */
+	if (strcmp(ks->name, value)) {
+		KS_Path *ksp;
+		
+		for (ksp = ks->paths.first; ksp; ksp = ksp->next) {
+			if ((ksp->groupmode == KSP_GROUP_KSNAME) && (ksp->id)) {
+				AnimData *adt = BKE_animdata_from_id(ksp->id);
+				
+				/* TODO: NLA strips? */
+				if (adt && adt->action) {
+					bActionGroup *agrp;
+					
+					/* lazy check - should really find the F-Curve for the affected path and check its group 
+					 * but this way should be faster and work well for most cases, as long as there are no
+					 * conflicts
+					 */
+					for (agrp = adt->action->groups.first; agrp; agrp = agrp->next) {
+						if (strcmp(ks->name, agrp->name) == 0) {
+							/* there should only be one of these in the action, so can stop... */
+							BLI_strncpy(agrp->name, value, sizeof(agrp->name));
+							break;
+						}
+					}
+				}
+			}
+		}
+	}
+	
+	/* finally, update name to new value */
+	BLI_strncpy(ks->name, value, sizeof(ks->name));
+}
+
+
 static int rna_KeyingSet_active_ksPath_editable(PointerRNA *ptr)
 {
 	KeyingSet *ks = (KeyingSet *)ptr->data;
@@ -334,8 +413,7 @@ static void rna_KeyingSet_active_ksPath_index_range(PointerRNA *ptr, int *min, i
 	KeyingSet *ks = (KeyingSet *)ptr->data;
 
 	*min = 0;
-	*max = BLI_countlist(&ks->paths) - 1;
-	*max = MAX2(0, *max);
+	*max = max_ii(0, BLI_countlist(&ks->paths) - 1);
 }
 
 static PointerRNA rna_KeyingSet_typeinfo_get(PointerRNA *ptr)
@@ -369,27 +447,30 @@ static KS_Path *rna_KeyingSet_paths_add(KeyingSet *keyingset, ReportList *report
 		keyingset->active_path = BLI_countlist(&keyingset->paths);
 	}
 	else {
-		BKE_report(reports, RPT_ERROR, "Keying Set Path could not be added");
+		BKE_report(reports, RPT_ERROR, "Keying set path could not be added");
 	}
 	
 	/* return added path */
 	return ksp;
 }
 
-static void rna_KeyingSet_paths_remove(KeyingSet *keyingset, ReportList *reports, KS_Path *ksp)
+static void rna_KeyingSet_paths_remove(KeyingSet *keyingset, ReportList *reports, PointerRNA *ksp_ptr)
 {
+	KS_Path *ksp = ksp_ptr->data;
+
 	/* if data is valid, call the API function for this */
-	if (keyingset && ksp) {
-		/* remove the active path from the KeyingSet */
-		BKE_keyingset_free_path(keyingset, ksp);
-			
-		/* the active path number will most likely have changed */
-		/* TODO: we should get more fancy and actually check if it was removed, but this will do for now */
-		keyingset->active_path = 0;
+	if ((keyingset && ksp) == FALSE) {
+		BKE_report(reports, RPT_ERROR, "Keying set path could not be removed");
+		return;
 	}
-	else {
-		BKE_report(reports, RPT_ERROR, "Keying Set Path could not be removed");
-	}
+
+	/* remove the active path from the KeyingSet */
+	BKE_keyingset_free_path(keyingset, ksp);
+	RNA_POINTER_INVALIDATE(ksp_ptr);
+
+	/* the active path number will most likely have changed */
+	/* TODO: we should get more fancy and actually check if it was removed, but this will do for now */
+	keyingset->active_path = 0;
 }
 
 static void rna_KeyingSet_paths_clear(KeyingSet *keyingset, ReportList *reports)
@@ -408,7 +489,7 @@ static void rna_KeyingSet_paths_clear(KeyingSet *keyingset, ReportList *reports)
 		keyingset->active_path = 0;
 	}
 	else {
-		BKE_report(reports, RPT_ERROR, "Keying Set Paths could not be removed");
+		BKE_report(reports, RPT_ERROR, "Keying set paths could not be removed");
 	}
 }
 
@@ -422,9 +503,17 @@ static NlaTrack *rna_NlaTrack_new(AnimData *adt, bContext *C, NlaTrack *track)
 	return new_track;
 }
 
-static void rna_NlaTrack_remove(AnimData *adt, bContext *C, NlaTrack *track)
+static void rna_NlaTrack_remove(AnimData *adt, bContext *C, ReportList *reports, PointerRNA *track_ptr)
 {
+	NlaTrack *track = track_ptr->data;
+
+	if (BLI_findindex(&adt->nla_tracks, track) == -1) {
+		BKE_reportf(reports, RPT_ERROR, "NlaTrack '%s' cannot be removed", track->name);
+		return;
+	}
+
 	free_nlatrack(&adt->nla_tracks, track);
+	RNA_POINTER_INVALIDATE(track_ptr);
 
 	WM_event_add_notifier(C, NC_ANIMATION | ND_NLA | NA_REMOVED, NULL);
 }
@@ -448,7 +537,7 @@ static FCurve *rna_Driver_from_existing(AnimData *adt, bContext *C, FCurve *src_
 {
 	/* verify that we've got a driver to duplicate */
 	if (ELEM(NULL, src_driver, src_driver->driver)) {
-		BKE_reportf(CTX_wm_reports(C), RPT_ERROR, "No valid driver data to create copy of");
+		BKE_report(CTX_wm_reports(C), RPT_ERROR, "No valid driver data to create copy of");
 		return NULL;
 	}
 	else {
@@ -468,17 +557,6 @@ static FCurve *rna_Driver_from_existing(AnimData *adt, bContext *C, FCurve *src_
 static void rna_def_common_keying_flags(StructRNA *srna, short UNUSED(reg))
 {
 	PropertyRNA *prop;
-
-	static EnumPropertyItem keying_flag_items[] = {
-		{INSERTKEY_NEEDED, "INSERTKEY_NEEDED", 0, "Only Needed",
-		                   "Only insert keyframes where they're needed in the relevant F-Curves"},
-		{INSERTKEY_MATRIX, "INSERTKEY_VISUAL", 0, "Visual Keying",
-		                   "Insert keyframes based on 'visual transforms'"},
-		{INSERTKEY_XYZ2RGB, "INSERTKEY_XYZ_TO_RGB", 0, "XYZ=RGB Colors",
-		                    "Color for newly added transformation F-Curves (Location, Rotation, Scale) "
-		                    "and also Color is based on the transform axis"},
-		{0, NULL, 0, NULL, NULL}
-	};
 
 	prop = RNA_def_property(srna, "bl_options", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "keyingflag");
@@ -525,7 +603,7 @@ static void rna_def_keyingset_info(BlenderRNA *brna)
 	RNA_def_struct_name_property(srna, prop);
 	RNA_def_property_flag(prop, PROP_REGISTER);
 	
-	prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_TRANSLATE);
+	prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "description");
 	RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
 	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
@@ -678,7 +756,8 @@ static void rna_def_keyingset_paths(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_function_flag(func, FUNC_USE_REPORTS);
 	/* path to remove */
 	parm = RNA_def_pointer(func, "path", "KeyingSetPath", "Path", "");
-	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 
 
 	/* Remove All Paths */
@@ -709,21 +788,22 @@ static void rna_def_keyingset(BlenderRNA *brna)
 	srna = RNA_def_struct(brna, "KeyingSet", NULL);
 	RNA_def_struct_ui_text(srna, "Keying Set", "Settings that should be keyframed together");
 	
-	/* Id/Label. */
+	/* Id/Label */
 	prop = RNA_def_property(srna, "bl_idname", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "idname");
 	RNA_def_property_flag(prop, PROP_REGISTER | PROP_NEVER_CLAMP);
 	RNA_def_property_ui_text(prop, "ID Name", KEYINGSET_IDNAME_DOC);
-	RNA_def_property_update(prop, NC_SCENE | ND_KEYINGSET | NA_RENAME, NULL);
+/*	RNA_def_property_update(prop, NC_SCENE | ND_KEYINGSET | NA_RENAME, NULL); */ /* NOTE: disabled, as ID name shouldn't be editable */
 	
 	prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "name");
+	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_KeyingSet_name_set");
 	RNA_def_property_ui_text(prop, "UI Name", "");
 	RNA_def_struct_ui_icon(srna, ICON_KEYINGSET);
 	RNA_def_struct_name_property(srna, prop);
-/*	RNA_def_property_update(prop, NC_SCENE|ND_KEYINGSET|NA_RENAME, NULL);*/
+	RNA_def_property_update(prop, NC_SCENE | ND_KEYINGSET | NA_RENAME, NULL);
 	
-	prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_TRANSLATE);
+	prop = RNA_def_property(srna, "bl_description", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "description");
 	RNA_def_property_string_maxlength(prop, RNA_DYN_DESCR_MAX); /* else it uses the pointer size! */
 	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
@@ -783,10 +863,11 @@ static void rna_api_animdata_nla_tracks(BlenderRNA *brna, PropertyRNA *cprop)
 	RNA_def_function_return(func, parm);
 	
 	func = RNA_def_function(srna, "remove", "rna_NlaTrack_remove");
-	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+	RNA_def_function_flag(func, FUNC_USE_REPORTS | FUNC_USE_CONTEXT);
 	RNA_def_function_ui_description(func, "Remove a NLA Track");
 	parm = RNA_def_pointer(func, "track", "NlaTrack", "", "NLA Track to remove");
-	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL);
+	RNA_def_property_flag(parm, PROP_REQUIRED | PROP_NEVER_NULL | PROP_RNAPTR);
+	RNA_def_property_clear_flag(parm, PROP_THICK_WRAP);
 
 	prop = RNA_def_property(srna, "active", PROP_POINTER, PROP_NONE);
 	RNA_def_property_struct_type(prop, "NlaTrack");
@@ -829,13 +910,14 @@ void rna_def_animdata_common(StructRNA *srna)
 	RNA_def_property_ui_text(prop, "Animation Data", "Animation data for this datablock");
 }
 
-void rna_def_animdata(BlenderRNA *brna)
+static void rna_def_animdata(BlenderRNA *brna)
 {
 	StructRNA *srna;
 	PropertyRNA *prop;
 	
 	srna = RNA_def_struct(brna, "AnimData", NULL);
 	RNA_def_struct_ui_text(srna, "Animation Data", "Animation data for datablock");
+	RNA_def_struct_ui_icon(srna, ICON_ANIM_DATA);
 	
 	/* NLA */
 	prop = RNA_def_property(srna, "nla_tracks", PROP_COLLECTION, PROP_NONE);
@@ -852,7 +934,7 @@ void rna_def_animdata(BlenderRNA *brna)
 	RNA_def_property_pointer_funcs(prop, NULL, "rna_AnimData_action_set", NULL, "rna_Action_id_poll");
 	RNA_def_property_editable_func(prop, "rna_AnimData_action_editable");
 	RNA_def_property_ui_text(prop, "Action", "Active Action for this datablock");
-	RNA_def_property_update(prop, NC_ANIMATION, NULL); /* this will do? */
+	RNA_def_property_update(prop, NC_ANIMATION | ND_NLA_ACTCHANGE, "rna_AnimData_update");
 
 	/* Active Action Settings */
 	prop = RNA_def_property(srna, "action_extrapolation", PROP_ENUM, PROP_NONE);
@@ -860,7 +942,7 @@ void rna_def_animdata(BlenderRNA *brna)
 	RNA_def_property_enum_items(prop, nla_mode_extend_items);
 	RNA_def_property_ui_text(prop, "Action Extrapolation",
 	                         "Action to take for gaps past the Active Action's range (when evaluating with NLA)");
-	RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, NULL); /* this will do? */
+	RNA_def_property_update(prop, NC_ANIMATION | ND_NLA, NULL);
 	
 	prop = RNA_def_property(srna, "action_blend_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "act_blendmode");

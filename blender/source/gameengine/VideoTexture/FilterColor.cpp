@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/FilterColor.cpp
  *  \ingroup bgevideotex
@@ -108,14 +112,14 @@ void FilterColor::setMatrix (ColorMatrix & mat)
 
 
 // cast Filter pointer to FilterColor
-inline FilterColor * getFilterColor (PyFilter * self)
+inline FilterColor * getFilterColor (PyFilter *self)
 { return static_cast<FilterColor*>(self->m_filter); }
 
 
 // python methods and get/sets
 
 // get color matrix
-static PyObject * getMatrix (PyFilter * self, void * closure)
+static PyObject *getMatrix (PyFilter *self, void *closure)
 {
 	ColorMatrix & mat = getFilterColor(self)->getMatrix();
 	return Py_BuildValue("((hhhhh)(hhhhh)(hhhhh)(hhhhh))",
@@ -126,7 +130,7 @@ static PyObject * getMatrix (PyFilter * self, void * closure)
 }
 
 // set color matrix
-static int setMatrix (PyFilter * self, PyObject * value, void * closure)
+static int setMatrix(PyFilter *self, PyObject *value, void *closure)
 {
 	// matrix to store items
 	ColorMatrix mat;
@@ -137,7 +141,7 @@ static int setMatrix (PyFilter * self, PyObject * value, void * closure)
 	for (int r = 0; valid && r < 4; ++r)
 	{
 		// get row object
-		PyObject * row = PySequence_Fast_GET_ITEM(value, r);
+		PyObject *row = PySequence_Fast_GET_ITEM(value, r);
 		// check sequence
 		valid = PySequence_Check(row) && PySequence_Size(row) == 5;
 		// check items
@@ -147,7 +151,7 @@ static int setMatrix (PyFilter * self, PyObject * value, void * closure)
 			valid = PyLong_Check(PySequence_Fast_GET_ITEM(row, c));
 			// if it is valid, save it in matrix
 			if (valid)
-				mat[r][c] = short(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(row, c)));
+				mat[r][c] = short(PyLong_AsLong(PySequence_Fast_GET_ITEM(row, c)));
 		}
 	}
 	// if parameter is not valid, report error
@@ -243,14 +247,14 @@ void FilterLevel::setLevels (ColorLevel & lev)
 
 
 // cast Filter pointer to FilterLevel
-inline FilterLevel * getFilterLevel (PyFilter * self)
+inline FilterLevel * getFilterLevel (PyFilter *self)
 { return static_cast<FilterLevel*>(self->m_filter); }
 
 
 // python methods and get/sets
 
 // get color levels
-static PyObject * getLevels (PyFilter * self, void * closure)
+static PyObject *getLevels (PyFilter *self, void *closure)
 {
 	ColorLevel & lev = getFilterLevel(self)->getLevels();
 	return Py_BuildValue("((HH)(HH)(HH)(HH))",
@@ -259,7 +263,7 @@ static PyObject * getLevels (PyFilter * self, void * closure)
 }
 
 // set color levels
-static int setLevels (PyFilter * self, PyObject * value, void * closure)
+static int setLevels(PyFilter *self, PyObject *value, void *closure)
 {
 	// matrix to store items
 	ColorLevel lev;
@@ -270,7 +274,7 @@ static int setLevels (PyFilter * self, PyObject * value, void * closure)
 	for (int r = 0; valid && r < 4; ++r)
 	{
 		// get row object
-		PyObject * row = PySequence_Fast_GET_ITEM(value, r);
+		PyObject *row = PySequence_Fast_GET_ITEM(value, r);
 		// check sequence
 		valid = PySequence_Check(row) && PySequence_Size(row) == 2;
 		// check items
@@ -280,7 +284,7 @@ static int setLevels (PyFilter * self, PyObject * value, void * closure)
 			valid = PyLong_Check(PySequence_Fast_GET_ITEM(row, c));
 			// if it is valid, save it in matrix
 			if (valid)
-				lev[r][c] = (unsigned short)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(row, c)));
+				lev[r][c] = (unsigned short)(PyLong_AsLong(PySequence_Fast_GET_ITEM(row, c)));
 		}
 	}
 	// if parameter is not valid, report error

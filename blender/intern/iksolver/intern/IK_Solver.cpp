@@ -43,7 +43,7 @@ using namespace std;
 class IK_QSolver {
 public:
 	IK_QSolver() : root(NULL) {
-	};
+	}
 
 	IK_QJacobianSolver solver;
 	IK_QSegment *root;
@@ -51,7 +51,7 @@ public:
 };
 
 // FIXME: locks still result in small "residual" changes to the locked axes...
-IK_QSegment *CreateSegment(int flag, bool translate)
+static IK_QSegment *CreateSegment(int flag, bool translate)
 {
 	int ndof = 0;
 	ndof += (flag & IK_XDOF) ? 1 : 0;
@@ -348,7 +348,8 @@ float IK_SolverGetPoleAngle(IK_Solver *solver)
 	return qsolver->solver.GetPoleAngle();
 }
 
-void IK_SolverAddCenterOfMass(IK_Solver *solver, IK_Segment *root, float goal[3], float weight)
+#if 0
+static void IK_SolverAddCenterOfMass(IK_Solver *solver, IK_Segment *root, float goal[3], float weight)
 {
 	if (solver == NULL || root == NULL)
 		return;
@@ -363,6 +364,7 @@ void IK_SolverAddCenterOfMass(IK_Solver *solver, IK_Segment *root, float goal[3]
 	com->SetWeight(weight);
 	qsolver->tasks.push_back(com);
 }
+#endif
 
 int IK_Solve(IK_Solver *solver, float tolerance, int max_iterations)
 {

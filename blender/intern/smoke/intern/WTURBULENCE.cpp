@@ -51,7 +51,7 @@ static const float persistence = 0.56123f;
 //////////////////////////////////////////////////////////////////////
 // constructor
 //////////////////////////////////////////////////////////////////////
-WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int noisetype)
+WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int noisetype, const char *noisefile_path, int init_fire, int init_colors)
 {
 	// if noise magnitude is below this threshold, its contribution
 	// is negilgible, so stop evaluating new octaves
@@ -64,14 +64,14 @@ WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int no
 	// DG - RNA-fied _strength = 2.;
 	
 	// add the corresponding octaves of noise
-	_octaves = (int)(log((float)_amplify) / log(2.0f) + 0.5); // XXX DEBUG/ TODO: int casting correct? - dg
+	_octaves = (int)(log((float)_amplify) / log(2.0f) + 0.5f); // XXX DEBUG/ TODO: int casting correct? - dg
 	
 	// noise resolution
 	_xResBig = _amplify * xResSm;
 	_yResBig = _amplify * yResSm;
 	_zResBig = _amplify * zResSm;
 	_resBig = Vec3Int(_xResBig, _yResBig, _zResBig);
-	_invResBig = Vec3(1./(float)_resBig[0], 1./(float)_resBig[1], 1./(float)_resBig[2]);
+	_invResBig = Vec3(1.0f/(float)_resBig[0], 1.0f/(float)_resBig[1], 1.0f/(float)_resBig[2]);
 	_slabSizeBig = _xResBig*_yResBig;
 	_totalCellsBig = _slabSizeBig * _zResBig;
 	
@@ -80,18 +80,32 @@ WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int no
 	_yResSm = yResSm;
 	_zResSm = zResSm;
 	_resSm = Vec3Int(xResSm, yResSm, zResSm);
-	_invResSm = Vec3(1./(float)_resSm[0], 1./(float)_resSm[1], 1./(float)_resSm[2] );
+	_invResSm = Vec3(1.0f/(float)_resSm[0], 1.0f/(float)_resSm[1], 1.0f/(float)_resSm[2] );
 	_slabSizeSm = _xResSm*_yResSm;
 	_totalCellsSm = _slabSizeSm * _zResSm;
 	
 	// allocate high resolution density field
 	_totalStepsBig = 0;
 	_densityBig = new float[_totalCellsBig];
-	_densityBigOld = new float[_totalCellsBig]; 
+	_densityBigOld = new float[_totalCellsBig];
 	
 	for(int i = 0; i < _totalCellsBig; i++) {
 		_densityBig[i] = 
 		_densityBigOld[i] = 0.;
+	}
+
+	/* fire */
+	_flameBig = _fuelBig = _fuelBigOld = NULL;
+	_reactBig = _reactBigOld = NULL;
+	if (init_fire) {
+		initFire();
+	}
+	/* colors */
+	_color_rBig = _color_rBigOld = NULL;
+	_color_gBig = _color_gBigOld = NULL;
+	_color_bBig = _color_bBigOld = NULL;
+	if (init_colors) {
+		initColors(0.0f, 0.0f, 0.0f);
 	}
 	
 	// allocate & init texture coordinates
@@ -101,9 +115,9 @@ WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int no
 	_tcTemp = new float[_totalCellsSm];
 	
 	// map all 
-	const float dx = 1./(float)(_resSm[0]);
-	const float dy = 1./(float)(_resSm[1]);
-	const float dz = 1./(float)(_resSm[2]);
+	const float dx = 1.0f/(float)(_resSm[0]);
+	const float dy = 1.0f/(float)(_resSm[1]);
+	const float dz = 1.0f/(float)(_resSm[2]);
 	int index = 0;
 	for (int z = 0; z < _zResSm; z++) 
 	for (int y = 0; y < _yResSm; y++) 
@@ -117,15 +131,47 @@ WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int no
 	
 	// noise tiles
 	_noiseTile = new float[noiseTileSize * noiseTileSize * noiseTileSize];
-	/*
-	std::string noiseTileFilename = std::string("noise.wavelets");
-	generateTile_WAVELET(_noiseTile, noiseTileFilename);
-	*/
-	setNoise(noisetype);
-	/*
-	std::string noiseTileFilename = std::string("noise.fft");
-	generatTile_FFT(_noiseTile, noiseTileFilename);
-	*/
+	setNoise(noisetype, noisefile_path);
+}
+
+void WTURBULENCE::initFire()
+{
+	if (!_fuelBig) {
+		_flameBig = new float[_totalCellsBig];
+		_fuelBig = new float[_totalCellsBig];
+		_fuelBigOld = new float[_totalCellsBig];
+		_reactBig = new float[_totalCellsBig];
+		_reactBigOld = new float[_totalCellsBig];
+
+		for(int i = 0; i < _totalCellsBig; i++) {
+			_flameBig[i] = 
+			_fuelBig[i] = 
+			_fuelBigOld[i] = 0.;
+			_reactBig[i] = 
+			_reactBigOld[i] = 0.;
+		}
+	}
+}
+
+void WTURBULENCE::initColors(float init_r, float init_g, float init_b)
+{
+	if (!_color_rBig) {
+		_color_rBig = new float[_totalCellsBig];
+		_color_rBigOld = new float[_totalCellsBig];
+		_color_gBig = new float[_totalCellsBig];
+		_color_gBigOld = new float[_totalCellsBig];
+		_color_bBig = new float[_totalCellsBig];
+		_color_bBigOld = new float[_totalCellsBig];
+
+		for(int i = 0; i < _totalCellsBig; i++) {
+			_color_rBig[i] = _densityBig[i] * init_r;
+			_color_rBigOld[i] = 0.0f;
+			_color_gBig[i] = _densityBig[i] * init_g;
+			_color_gBigOld[i] = 0.0f;
+			_color_bBig[i] = _densityBig[i] * init_b;
+			_color_bBigOld[i] = 0.0f;
+		}
+	}
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -134,6 +180,18 @@ WTURBULENCE::WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int no
 WTURBULENCE::~WTURBULENCE() {
   delete[] _densityBig;
   delete[] _densityBigOld;
+  if (_flameBig) delete[] _flameBig;
+  if (_fuelBig) delete[] _fuelBig;
+  if (_fuelBigOld) delete[] _fuelBigOld;
+  if (_reactBig) delete[] _reactBig;
+  if (_reactBigOld) delete[] _reactBigOld;
+
+  if (_color_rBig) delete[] _color_rBig;
+  if (_color_rBigOld) delete[] _color_rBigOld;
+  if (_color_gBig) delete[] _color_gBig;
+  if (_color_gBigOld) delete[] _color_gBigOld;
+  if (_color_bBig) delete[] _color_bBig;
+  if (_color_bBigOld) delete[] _color_bBigOld;
 
   delete[] _tcU;
   delete[] _tcV;
@@ -150,25 +208,29 @@ WTURBULENCE::~WTURBULENCE() {
 // type (1<<1) = FFT / 4
 // type (1<<2) = curl / 8
 //////////////////////////////////////////////////////////////////////
-void WTURBULENCE::setNoise(int type)
+void WTURBULENCE::setNoise(int type, const char *noisefile_path)
 {
 	if(type == (1<<1)) // FFT
 	{
+#ifdef WITH_FFTW3
 		// needs fft
-		#ifdef WITH_FFTW3
-		std::string noiseTileFilename = std::string("noise.fft");
+		std::string noiseTileFilename = std::string(noisefile_path) + std::string("noise.fft");
 		generatTile_FFT(_noiseTile, noiseTileFilename);
-		#endif
+		return;
+#else
+		fprintf(stderr, "FFTW not enabled, falling back to wavelet noise.\n");
+#endif
 	}
-	else if(type == (1<<2)) // curl
+#if 0
+	if(type == (1<<2)) // curl
 	{
 		// TODO: not supported yet
+		return;
 	}
-	else // standard - wavelet
-	{
-		std::string noiseTileFilename = std::string("noise.wavelets");
-		generateTile_WAVELET(_noiseTile, noiseTileFilename);
-	}
+#endif
+
+	std::string noiseTileFilename = std::string(noisefile_path) + std::string("noise.wavelets");
+	generateTile_WAVELET(_noiseTile, noiseTileFilename);
 }
 
 // init direct access functions from blender
@@ -368,13 +430,13 @@ void WTURBULENCE::resetTextureCoordinates(float *_eigMin, float *_eigMax)
 {
   // allowed deformation of the textures
   const float limit = 2.f;
-  const float limitInv = 1./limit;
+  const float limitInv = 1.0f/limit;
 
   // standard reset
   int resets = 0;
-  const float dx = 1./(float)(_resSm[0]);
-  const float dy = 1./(float)(_resSm[1]);
-  const float dz = 1./(float)(_resSm[2]);
+  const float dx = 1.0f/(float)(_resSm[0]);
+  const float dy = 1.0f/(float)(_resSm[1]);
+  const float dz = 1.0f/(float)(_resSm[2]);
 
   for (int z = 1; z < _zResSm-1; z++)
     for (int y = 1; y < _yResSm-1; y++)
@@ -757,8 +819,10 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
 	// enlarge timestep to match grid
 	const float dt = dtOrg * _amplify;
 	const float invAmp = 1.0f / _amplify;
-	float *tempBig1 = (float *)calloc(_totalCellsBig, sizeof(float));
-	float *tempBig2 = (float *)calloc(_totalCellsBig, sizeof(float));
+	float *tempFuelBig = NULL, *tempReactBig = NULL;
+	float *tempColor_rBig = NULL, *tempColor_gBig = NULL, *tempColor_bBig = NULL;
+	float *tempDensityBig = (float *)calloc(_totalCellsBig, sizeof(float));
+	float *tempBig = (float *)calloc(_totalCellsBig, sizeof(float));
 	float *bigUx = (float *)calloc(_totalCellsBig, sizeof(float));
 	float *bigUy = (float *)calloc(_totalCellsBig, sizeof(float));
 	float *bigUz = (float *)calloc(_totalCellsBig, sizeof(float)); 
@@ -767,11 +831,21 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
 	float *eigMin  = (float *)calloc(_totalCellsSm, sizeof(float));
 	float *eigMax  = (float *)calloc(_totalCellsSm, sizeof(float));
 
+	if (_fuelBig) {
+		tempFuelBig = (float *)calloc(_totalCellsBig, sizeof(float));
+		tempReactBig = (float *)calloc(_totalCellsBig, sizeof(float));
+	}
+	if (_color_rBig) {
+		tempColor_rBig = (float *)calloc(_totalCellsBig, sizeof(float));
+		tempColor_gBig = (float *)calloc(_totalCellsBig, sizeof(float));
+		tempColor_bBig = (float *)calloc(_totalCellsBig, sizeof(float));
+	}
+
 	memset(_tcTemp, 0, sizeof(float)*_totalCellsSm);
 
 
 	// prepare textures
-	advectTextureCoordinates(dtOrg, xvel,yvel,zvel, tempBig1, tempBig2);
+	advectTextureCoordinates(dtOrg, xvel,yvel,zvel, tempDensityBig, tempBig);
 
 	// do wavelet decomposition of energy
 	computeEnergy(_energy, xvel, yvel, zvel, obstacles);
@@ -906,13 +980,13 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
 
       // base amplitude for octave 0
       float coefficient = sqrtf(2.0f * fabs(energy));
-      const float amplitude = *_strength * fabs(0.5 * coefficient) * persistence;
+      const float amplitude = *_strength * fabs(0.5f * coefficient) * persistence;
 
       // add noise to velocity, but only if the turbulence is
       // sufficiently undeformed, and the energy is large enough
       // to make a difference
-      const bool addNoise = eigMax[indexSmall] < 2. && 
-                            eigMin[indexSmall] > 0.5;
+      const bool addNoise = eigMax[indexSmall] < 2.0f &&
+                            eigMin[indexSmall] > 0.5f;
       if (addNoise && amplitude > _cullingThreshold) {
         // base amplitude for octave 0
         float amplitudeScaled = amplitude;
@@ -947,7 +1021,7 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
       // zero out velocity inside obstacles
       float obsCheck = INTERPOLATE::lerp3dToFloat(
           obstacles, posSm[0], posSm[1], posSm[2], _xResSm, _yResSm, _zResSm); 
-      if (obsCheck > 0.95) 
+      if (obsCheck > 0.95f)
         bigUx[index] = bigUy[index] = bigUz[index] = 0.;
     } // xyz*/
 
@@ -972,6 +1046,11 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
 
   // prepare density for an advection
   SWAP_POINTERS(_densityBig, _densityBigOld);
+  SWAP_POINTERS(_fuelBig, _fuelBigOld);
+  SWAP_POINTERS(_reactBig, _reactBigOld);
+  SWAP_POINTERS(_color_rBig, _color_rBigOld);
+  SWAP_POINTERS(_color_gBig, _color_gBigOld);
+  SWAP_POINTERS(_color_bBig, _color_bBigOld);
 
   // based on the maximum velocity present, see if we need to substep,
   // but cap the maximum number of substeps to 5
@@ -1017,7 +1096,21 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
 		int zEnd = (int)((float)(i+1)*partSize + 0.5f);
 #endif
 		FLUID_3D::advectFieldMacCormack1(dtSubdiv, bigUx, bigUy, bigUz, 
-		    _densityBigOld, tempBig1, _resBig, zBegin, zEnd);
+		    _densityBigOld, tempDensityBig, _resBig, zBegin, zEnd);
+		if (_fuelBig) {
+			FLUID_3D::advectFieldMacCormack1(dtSubdiv, bigUx, bigUy, bigUz, 
+				_fuelBigOld, tempFuelBig, _resBig, zBegin, zEnd);
+			FLUID_3D::advectFieldMacCormack1(dtSubdiv, bigUx, bigUy, bigUz, 
+				_reactBigOld, tempReactBig, _resBig, zBegin, zEnd);
+		}
+		if (_color_rBig) {
+			FLUID_3D::advectFieldMacCormack1(dtSubdiv, bigUx, bigUy, bigUz, 
+				_color_rBigOld, tempColor_rBig, _resBig, zBegin, zEnd);
+			FLUID_3D::advectFieldMacCormack1(dtSubdiv, bigUx, bigUy, bigUz, 
+				_color_gBigOld, tempColor_gBig, _resBig, zBegin, zEnd);
+			FLUID_3D::advectFieldMacCormack1(dtSubdiv, bigUx, bigUy, bigUz, 
+				_color_bBigOld, tempColor_bBig, _resBig, zBegin, zEnd);
+		}
 #if PARALLEL==1
 	}
 
@@ -1030,18 +1123,43 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
 		int zEnd = (int)((float)(i+1)*partSize + 0.5f);
 #endif
 		FLUID_3D::advectFieldMacCormack2(dtSubdiv, bigUx, bigUy, bigUz, 
-		    _densityBigOld, _densityBig, tempBig1, tempBig2, _resBig, NULL, zBegin, zEnd);
+		    _densityBigOld, _densityBig, tempDensityBig, tempBig, _resBig, NULL, zBegin, zEnd);
+		if (_fuelBig) {
+			FLUID_3D::advectFieldMacCormack2(dtSubdiv, bigUx, bigUy, bigUz, 
+				_fuelBigOld, _fuelBig, tempFuelBig, tempBig, _resBig, NULL, zBegin, zEnd);
+			FLUID_3D::advectFieldMacCormack2(dtSubdiv, bigUx, bigUy, bigUz, 
+				_reactBigOld, _reactBig, tempReactBig, tempBig, _resBig, NULL, zBegin, zEnd);
+		}
+		if (_color_rBig) {
+			FLUID_3D::advectFieldMacCormack2(dtSubdiv, bigUx, bigUy, bigUz, 
+				_color_rBigOld, _color_rBig, tempColor_rBig, tempBig, _resBig, NULL, zBegin, zEnd);
+			FLUID_3D::advectFieldMacCormack2(dtSubdiv, bigUx, bigUy, bigUz, 
+				_color_gBigOld, _color_gBig, tempColor_gBig, tempBig, _resBig, NULL, zBegin, zEnd);
+			FLUID_3D::advectFieldMacCormack2(dtSubdiv, bigUx, bigUy, bigUz, 
+				_color_bBigOld, _color_bBig, tempColor_bBig, tempBig, _resBig, NULL, zBegin, zEnd);
+		}
 #if PARALLEL==1
 	}
 	}
 #endif
 
-    if (substep < totalSubsteps - 1) 
+	if (substep < totalSubsteps - 1) {
       SWAP_POINTERS(_densityBig, _densityBigOld);
+	  SWAP_POINTERS(_fuelBig, _fuelBigOld);
+	  SWAP_POINTERS(_reactBig, _reactBigOld);
+	  SWAP_POINTERS(_color_rBig, _color_rBigOld);
+	  SWAP_POINTERS(_color_gBig, _color_gBigOld);
+	  SWAP_POINTERS(_color_bBig, _color_bBigOld);
+	}
   } // substep
 
-  free(tempBig1);
-  free(tempBig2);
+  free(tempDensityBig);
+  if (tempFuelBig) free(tempFuelBig);
+  if (tempReactBig) free(tempReactBig);
+  if (tempColor_rBig) free(tempColor_rBig);
+  if (tempColor_gBig) free(tempColor_gBig);
+  if (tempColor_bBig) free(tempColor_bBig);
+  free(tempBig);
   free(bigUx);
   free(bigUy);
   free(bigUz);
@@ -1050,6 +1168,15 @@ void WTURBULENCE::stepTurbulenceFull(float dtOrg, float* xvel, float* yvel, floa
   
   // wipe the density borders
   FLUID_3D::setZeroBorder(_densityBig, _resBig, 0 , _resBig[2]);
+  if (_fuelBig) {
+	FLUID_3D::setZeroBorder(_fuelBig, _resBig, 0 , _resBig[2]);
+	FLUID_3D::setZeroBorder(_reactBig, _resBig, 0 , _resBig[2]);
+  }
+  if (_color_rBig) {
+	  FLUID_3D::setZeroBorder(_color_rBig, _resBig, 0 , _resBig[2]);
+	  FLUID_3D::setZeroBorder(_color_gBig, _resBig, 0 , _resBig[2]);
+	  FLUID_3D::setZeroBorder(_color_bBig, _resBig, 0 , _resBig[2]);
+  }
     
   // reset texture coordinates now in preparation for next timestep
   // Shouldn't do this before generating the noise because then the 

@@ -43,9 +43,10 @@
 #include "BLI_string.h"
 
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_object.h"
 #include "BKE_deform.h"
+#include "BKE_DerivedMesh.h"
+#include "BKE_library.h"
+#include "BKE_object.h"
 #include "BKE_scene.h"
 
 #include "depsgraph_private.h"
@@ -77,6 +78,14 @@ static void initData(ModifierData *md)
 	wmd->defgrp_name[0] = 0;
 }
 
+static void freeData(ModifierData *md)
+{
+	WaveModifierData *wmd = (WaveModifierData *) md;
+	if (wmd->texture) {
+		id_us_min(&wmd->texture->id);
+	}
+}
+
 static void copyData(ModifierData *md, ModifierData *target)
 {
 	WaveModifierData *wmd = (WaveModifierData *) md;
@@ -98,11 +107,15 @@ static void copyData(ModifierData *md, ModifierData *target)
 	twmd->map_object = wmd->map_object;
 	twmd->texmapping = wmd->texmapping;
 	BLI_strncpy(twmd->defgrp_name, wmd->defgrp_name, sizeof(twmd->defgrp_name));
+
+	if (twmd->texture) {
+		id_us_plus(&twmd->texture->id);
+	}
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
+static bool dependsOnTime(ModifierData *UNUSED(md))
 {
-	return 1;
+	return true;
 }
 
 static void foreachObjectLink(
@@ -186,14 +199,14 @@ static void waveModifier_do(WaveModifierData *md,
 	const float falloff = wmd->falloff;
 	float falloff_fac = 1.0f; /* when falloff == 0.0f this stays at 1.0f */
 
-	if (wmd->flag & MOD_WAVE_NORM && ob->type == OB_MESH)
+	if ((wmd->flag & MOD_WAVE_NORM) && (ob->type == OB_MESH))
 		mvert = dm->getVertArray(dm);
 
 	if (wmd->objectcenter) {
 		float mat[4][4];
 		/* get the control object's location in local coordinates */
 		invert_m4_m4(ob->imat, ob->obmat);
-		mult_m4_m4m4(mat, ob->imat, wmd->objectcenter->obmat);
+		mul_m4_m4m4(mat, ob->imat, wmd->objectcenter->obmat);
 
 		wmd->startx = mat[3][0];
 		wmd->starty = mat[3][1];
@@ -378,7 +391,7 @@ ModifierTypeInfo modifierType_Wave = {
 	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          NULL,
+	/* freeData */          freeData,
 	/* isDisabled */        NULL,
 	/* updateDepgraph */    updateDepgraph,
 	/* dependsOnTime */     dependsOnTime,

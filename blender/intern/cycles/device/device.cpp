@@ -28,69 +28,11 @@
 #include "util_math.h"
 #include "util_opencl.h"
 #include "util_opengl.h"
+#include "util_time.h"
 #include "util_types.h"
 #include "util_vector.h"
 
 CCL_NAMESPACE_BEGIN
-
-/* Device Task */
-
-DeviceTask::DeviceTask(Type type_)
-: type(type_), x(0), y(0), w(0), h(0), rng_state(0), rgba(0), buffer(0),
-  sample(0), resolution(0),
-  shader_input(0), shader_output(0),
-  shader_eval_type(0), shader_x(0), shader_w(0)
-{
-}
-
-void DeviceTask::split_max_size(list<DeviceTask>& tasks, int max_size)
-{
-	int num;
-
-	if(type == SHADER) {
-		num = (shader_w + max_size - 1)/max_size;
-	}
-	else {
-		max_size = max(1, max_size/w);
-		num = (h + max_size - 1)/max_size;
-	}
-
-	split(tasks, num);
-}
-
-void DeviceTask::split(list<DeviceTask>& tasks, int num)
-{
-	if(type == SHADER) {
-		num = min(shader_w, num);
-
-		for(int i = 0; i < num; i++) {
-			int tx = shader_x + (shader_w/num)*i;
-			int tw = (i == num-1)? shader_w - i*(shader_w/num): shader_w/num;
-
-			DeviceTask task = *this;
-
-			task.shader_x = tx;
-			task.shader_w = tw;
-
-			tasks.push_back(task);
-		}
-	}
-	else {
-		num = min(h, num);
-
-		for(int i = 0; i < num; i++) {
-			int ty = y + (h/num)*i;
-			int th = (i == num-1)? h - i*(h/num): h/num;
-
-			DeviceTask task = *this;
-
-			task.y = ty;
-			task.h = th;
-
-			tasks.push_back(task);
-		}
-	}
-}
 
 /* Device */
 
@@ -136,36 +78,36 @@ void Device::draw_pixels(device_memory& rgba, int y, int w, int h, int dy, int w
 		glDisable(GL_BLEND);
 }
 
-Device *Device::create(DeviceInfo& info, bool background, int threads)
+Device *Device::create(DeviceInfo& info, Stats &stats, bool background)
 {
 	Device *device;
 
 	switch(info.type) {
 		case DEVICE_CPU:
-			device = device_cpu_create(info, threads);
+			device = device_cpu_create(info, stats);
 			break;
 #ifdef WITH_CUDA
 		case DEVICE_CUDA:
 			if(cuLibraryInit())
-				device = device_cuda_create(info, background);
+				device = device_cuda_create(info, stats, background);
 			else
 				device = NULL;
 			break;
 #endif
 #ifdef WITH_MULTI
 		case DEVICE_MULTI:
-			device = device_multi_create(info, background);
+			device = device_multi_create(info, stats, background);
 			break;
 #endif
 #ifdef WITH_NETWORK
 		case DEVICE_NETWORK:
-			device = device_network_create(info, "127.0.0.1");
+			device = device_network_create(info, stats, "127.0.0.1");
 			break;
 #endif
 #ifdef WITH_OPENCL
 		case DEVICE_OPENCL:
 			if(clLibraryInit())
-				device = device_opencl_create(info, background);
+				device = device_opencl_create(info, stats, background);
 			else
 				device = NULL;
 			break;

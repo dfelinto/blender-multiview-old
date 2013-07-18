@@ -38,7 +38,7 @@
  *   detects if an image buffer contains a bitmap font. It makes the
  *   specific bitmap data which is stored in the bitmap invisible to blender.
  *
- * void matrixGlyph(ImBuf * ibuf, unsigned short unicode, *float x 7)
+ * void matrixGlyph(ImBuf *ibuf, unsigned short unicode, *float x 7)
  *   returns all the information about the character (unicode) in the floats
  *
  * Room for improvement:
@@ -50,13 +50,16 @@
 #include <stdio.h>
 
 #include "MEM_guardedalloc.h"
-#include "BKE_global.h"
 #include "IMB_imbuf_types.h"
 
 #include "BKE_bmfont.h"
 #include "BKE_bmfont_types.h"
 
-void printfGlyph(bmGlyph * glyph)
+#include "BLI_utildefines.h"
+
+#include "BKE_global.h"
+
+void printfGlyph(bmGlyph *glyph)
 {
 	printf("unicode: %d '%c'\n", glyph->unicode, glyph->unicode);
 	printf(" locx: %4d locy: %4d\n", glyph->locx, glyph->locy);
@@ -65,10 +68,10 @@ void printfGlyph(bmGlyph * glyph)
 	printf(" advan: %3d reser: %3d\n", glyph->advance, glyph->reserved);
 }
 
-#define MAX2(x,y)          ((x) > (y) ? (x) : (y))
-#define MAX3(x,y,z)         MAX2(MAX2((x), (y)), (z))
+#define MAX2(x, y)          ((x) > (y) ? (x) : (y))
+#define MAX3(x, y, z)       (MAX2(MAX2((x), (y)), (z)))
 
-void calcAlpha(ImBuf * ibuf)
+void calcAlpha(ImBuf *ibuf)
 {
 	int i;
 	char * rect;
@@ -82,7 +85,7 @@ void calcAlpha(ImBuf * ibuf)
 	}
 }
 
-void readBitmapFontVersion0(ImBuf * ibuf, unsigned char * rect, int step)
+void readBitmapFontVersion0(ImBuf *ibuf, unsigned char *rect, int step)
 {
 	int glyphcount, bytes, i, index, linelength, ysize;
 	unsigned char * buffer;
@@ -96,13 +99,13 @@ void readBitmapFontVersion0(ImBuf * ibuf, unsigned char * rect, int step)
 	ysize = (bytes + (ibuf->x - 1)) / ibuf->x;
 	
 	if (ysize < ibuf->y) {
-		/* we're first going to copy all data into a liniar buffer.
+		/* we're first going to copy all data into a linear buffer.
 		 * step can be 4 or 1 bytes, and the data is not sequential because
 		 * the bitmap was flipped vertically. */
 		
 		buffer = MEM_mallocN(bytes, "readBitmapFontVersion0:buffer");
 		
-		index = 0;	
+		index = 0;
 		for (i = 0; i < bytes; i++) {
 			buffer[i] = rect[index];
 			index += step;
@@ -198,7 +201,7 @@ void detectBitmapFont(ImBuf *ibuf)
 							readBitmapFontVersion0(ibuf, rect, 4);
 						}
 						else {
-							printf("detectBitmapFont :Unsupported version %d\n", version);
+							printf("detectBitmapFont :Unsupported version %d\n", (int)version);
 						}
 
 						/* on succes ibuf->userdata points to the bitmapfont */
@@ -247,12 +250,13 @@ int locateGlyph(bmFont *bmfont, unsigned short unicode)
 	return(current);
 }
 
-void matrixGlyph(ImBuf * ibuf, unsigned short unicode,
-		float *centerx, float *centery,
-		float *sizex,   float *sizey,
-		float *transx,  float *transy,
-		float *movex,   float *movey,
-		float *advance)
+void matrixGlyph(
+        ImBuf *ibuf, unsigned short unicode,
+        float *centerx, float *centery,
+        float *sizex,   float *sizey,
+        float *transx,  float *transy,
+        float *movex,   float *movey,
+        float *advance)
 {
 	int index;
 	bmFont *bmfont;

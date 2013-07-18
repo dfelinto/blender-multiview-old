@@ -60,7 +60,7 @@ elseif(APPLE)
 	add_executable(blenderplayer ${EXETYPE} bad_level_call_stubs/stubs.c)
 	# setup Info.plist
 	execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BLENDER_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
-	set(PLAYER_SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blenderplayer.app)
+	set(PLAYER_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/blenderplayer.app)
 	set(PLAYER_SOURCEINFO ${PLAYER_SOURCEDIR}/Contents/Info.plist)
 	set_target_properties(blenderplayer PROPERTIES
 		MACOSX_BUNDLE_INFO_PLIST ${PLAYER_SOURCEINFO}
@@ -93,8 +93,8 @@ endif()
 		bf_intern_string 
 		bf_intern_ghost
 		bf_rna
-		bf_bmesh
 		bf_blenkernel
+		bf_intern_rigidbody
 		bf_blenloader
 		ge_blen_routines
 		bf_editor_datafiles
@@ -102,7 +102,6 @@ endif()
 		ge_logic_ketsji 
 		ge_phys_bullet 
 		ge_phys_dummy
-		ge_phys_common 
 		ge_logic 
 		ge_rasterizer 
 		ge_oglrasterizer 
@@ -127,7 +126,6 @@ endif()
 		bf_python_ext
 		bf_python_mathutils
 		bf_python_bmesh
-		bf_blenlib 
 		bf_intern_utfconv
 		bf_imbuf_cineon
 		bf_imbuf_openexr 
@@ -140,6 +138,8 @@ endif()
 		bf_intern_audaspace
 		blenkernel_blc
 		bf_bmesh
+		bf_blenlib
+		bf_intern_utfconv
 		extern_binreloc
 		extern_minilzo
 		bf_intern_ghost # duplicate for linking
@@ -147,6 +147,11 @@ endif()
 		bf_intern_mikktspace
 		extern_recastnavigation
 		bf_intern_raskter
+		bf_intern_opencolorio
+		bf_intern_opennl
+		extern_rangetree
+		extern_wcwidth
+		extern_libmv
 	)
 
 	if(WITH_MOD_CLOTH_ELTOPO)
@@ -162,15 +167,10 @@ endif()
 	endif()
 
 	if(WITH_LIBMV)
-		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
 		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 
 	list(APPEND BLENDER_SORTED_LIBS extern_colamd)
-
-	if(WITH_MOD_DECIMATE)
-		list(APPEND BLENDER_SORTED_LIBS bf_intern_decimate)
-	endif()
 
 	if(WITH_MOD_BOOLEAN)
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_bsp)
@@ -191,6 +191,10 @@ endif()
 
 	if(WITH_CXX_GUARDEDALLOC)
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_guardedalloc_cpp)
+	endif()
+
+	if(WITH_INTERNATIONAL)
+		list(APPEND BLENDER_SORTED_LIBS bf_intern_locale)
 	endif()
 
 	foreach(SORTLIB ${BLENDER_SORTED_LIBS})

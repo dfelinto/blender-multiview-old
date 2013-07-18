@@ -29,21 +29,18 @@ set(INC
 	../blenkernel
 	../blenlib
 	../blenloader
+	../compositor
 	../editors/include
-	../editors/io
 	../gpu
 	../imbuf
 	../makesdna
 	../makesrna
 	../nodes
-	../compositor
 	../render/extern/include
 	../../gameengine/BlenderRoutines
-	../../../intern/elbeem/extern
 	../../../intern/ghost
 	../../../intern/guardedalloc
 	../../../intern/memutil
-	../../../intern/opennl/extern
 )
 
 set(INC_SYS

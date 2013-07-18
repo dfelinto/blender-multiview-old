@@ -28,6 +28,8 @@
  *  \ingroup DNA
  *  \since mar-2001
  *  \author nzc
+ *
+ * Structs for each of space type in the user interface.
  */
 
 #ifndef __DNA_SPACE_TYPES_H__
@@ -40,6 +42,8 @@
 #include "DNA_outliner_types.h"     /* for TreeStoreElem */
 #include "DNA_image_types.h"        /* ImageUser */
 #include "DNA_movieclip_types.h"    /* MovieClipUser */
+#include "DNA_sequence_types.h"     /* SequencerScopes */
+#include "DNA_node_types.h"         /* for bNodeInstanceKey */
 /* Hum ... Not really nice... but needed for spacebuts. */
 #include "DNA_view2d_types.h"
 
@@ -179,24 +183,29 @@ typedef enum eSpaceButtons_Context {
 	BCONTEXT_MODIFIER = 10,
 	BCONTEXT_CONSTRAINT = 11,
 	BCONTEXT_BONE_CONSTRAINT = 12,
+	BCONTEXT_RENDER_LAYER = 13,
 	
 	/* always as last... */
 	BCONTEXT_TOT
 } eSpaceButtons_Context;
 
 /* sbuts->flag */
-#define SB_PRV_OSA          1
-#define SB_PIN_CONTEXT      2
-//#define SB_WORLD_TEX		4	//not used anymore
-//#define SB_BRUSH_TEX		8	//not used anymore	
-#define SB_SHADING_CONTEXT  16
+typedef enum eSpaceButtons_Flag {
+	SB_PRV_OSA = (1 << 0),
+	SB_PIN_CONTEXT = (1 << 1),
+	/* SB_WORLD_TEX = (1 << 2), */ /* not used anymore */
+	/* SB_BRUSH_TEX = (1 << 3), */ /* not used anymore */
+	SB_TEX_USER_LIMITED = (1 << 3), /* Do not add materials, particles, etc. in TemplateTextureUser list. */
+	SB_SHADING_CONTEXT = (1 << 4),
+} eSpaceButtons_Flag;
 
 /* sbuts->texture_context */
 typedef enum eSpaceButtons_Texture_Context {
-	SB_TEXC_MAT_OR_LAMP = 0,
+	SB_TEXC_MATERIAL = 0,
 	SB_TEXC_WORLD = 1,
-	SB_TEXC_BRUSH = 2,
+	SB_TEXC_LAMP = 2,
 	SB_TEXC_PARTICLES = 3,
+	SB_TEXC_OTHER = 4,
 } eSpaceButtons_Texture_Context;
 
 /* sbuts->align */
@@ -207,7 +216,7 @@ typedef enum eSpaceButtons_Align {
 	BUT_AUTO = 3,
 } eSpaceButtons_Align;
 
-/* sbuts->scaflag */		
+/* sbuts->scaflag */
 #define BUTS_SENS_SEL           1
 #define BUTS_SENS_ACT           2
 #define BUTS_SENS_LINK          4
@@ -263,8 +272,8 @@ typedef enum eSpaceOutliner_Mode {
 	SO_SAME_TYPE = 5,
 	SO_GROUPS = 6,
 	SO_LIBRARIES = 7,
-	SO_VERSE_SESSION = 8,
-	SO_VERSE_MS = 9,
+	/* SO_VERSE_SESSION = 8, */  /* deprecated! */
+	/* SO_VERSE_MS = 9, */       /* deprecated!*/
 	SO_SEQUENCE = 10,
 	SO_DATABLOCKS = 11,
 	SO_USERDEF = 12,
@@ -375,7 +384,7 @@ typedef struct SpaceNla {
 
 /* nla->flag */
 typedef enum eSpaceNla_Flag {
-	/* flags (1<<0), (1<<1), and (1<<3) are depreceated flags from old verisons */
+	/* flags (1<<0), (1<<1), and (1<<3) are deprecated flags from old verisons */
 
 	/* draw timing in seconds instead of frames */
 	SNLA_DRAWTIME          = (1 << 2),
@@ -433,7 +442,7 @@ typedef enum eScreen_Redraws_Flag {
 	TIME_WITH_SEQ_AUDIO    = (1 << 4), /* DEPRECATED */
 	TIME_SEQ               = (1 << 5),
 	TIME_ALL_IMAGE_WIN     = (1 << 6),
-	TIME_CONTINUE_PHYSICS  = (1 << 7),
+	TIME_CONTINUE_PHYSICS  = (1 << 7), /* UNUSED */
 	TIME_NODES             = (1 << 8),
 	TIME_CLIPS             = (1 << 9),
 } eScreen_Redraws_Flag;
@@ -446,6 +455,7 @@ typedef enum eTimeline_Cache_Flag {
 	TIME_CACHE_CLOTH         = (1 << 3),
 	TIME_CACHE_SMOKE         = (1 << 4),
 	TIME_CACHE_DYNAMICPAINT  = (1 << 5),
+	TIME_CACHE_RIGIDBODY     = (1 << 6),
 } eTimeline_Cache_Flag;
 
 
@@ -473,6 +483,8 @@ typedef struct SpaceSeq {
 	int overlay_type;
 
 	struct bGPdata *gpd;        /* grease-pencil data */
+
+	struct SequencerScopes scopes;  /* different scoped displayed in space */
 } SpaceSeq;
 
 
@@ -491,8 +503,9 @@ typedef enum eSpaceSeq_Flag {
 	SEQ_MARKER_TRANS            = (1 << 1),
 	SEQ_DRAW_COLOR_SEPARATED    = (1 << 2),
 	SEQ_DRAW_SAFE_MARGINS       = (1 << 3),
-/*  SEQ_DRAW_GPENCIL            = (1 << 4), */ /* DEPRECATED */
+	SEQ_SHOW_GPENCIL            = (1 << 4),
 	SEQ_NO_DRAW_CFRANUM         = (1 << 5),
+	SEQ_USE_ALPHA               = (1 << 6), /* use RGBA display mode for preview */
 } eSpaceSeq_Flag;
 
 /* sseq->view */
@@ -615,7 +628,7 @@ enum FileSortTypeE {
 #define FILE_MAXFILE        256
 #define FILE_MAX            1024
 
-#define FILE_MAX_LIBEXTRA   (FILE_MAX + 32)
+#define FILE_MAX_LIBEXTRA   (FILE_MAX + MAX_ID_NAME)
 
 /* filesel types */
 #define FILE_UNIX           8
@@ -685,8 +698,9 @@ typedef struct SpaceImage {
 
 	struct Image *image;
 	struct ImageUser iuser;
-	struct CurveMapping *cumap;
-	
+
+	struct CurveMapping *cumap DNA_DEPRECATED;  /* was switched to scene's color management settings */
+
 	struct Scopes scopes;           /* histogram waveform and vectorscope */
 	struct Histogram sample_line_hist;  /* sample line histogram */
 
@@ -772,7 +786,7 @@ typedef enum eSpaceImage_Flag {
 	SI_DRAW_TILE          = (1 << 19),
 	SI_SMOOTH_UV          = (1 << 20),
 	SI_DRAW_STRETCH       = (1 << 21),
-/*  SI_DISPGP             = (1 << 22), */  /* deprecated */
+	SI_SHOW_GPENCIL       = (1 << 22),
 	SI_DRAW_OTHER         = (1 << 23),
 
 	SI_COLOR_CORRECTION   = (1 << 24),
@@ -788,12 +802,12 @@ typedef struct SpaceText {
 	float blockscale DNA_DEPRECATED;
 	short blockhandler[8]  DNA_DEPRECATED;
 
-	struct Text *text;	
+	struct Text *text;
 
 	int top, viewlines;
-	short flags, menunr;	
+	short flags, menunr;
 
-	short lheight;      /* user preference */
+	short lheight;      /* user preference, is font_size! */
 	char cwidth, linenrs_tot;       /* runtime computed, character width and the number of chars to use when showing line numbers */
 	int left;
 	int showlinenrs;
@@ -812,8 +826,9 @@ typedef struct SpaceText {
 	char findstr[256];      /* ST_MAX_FIND_STR */
 	char replacestr[256];   /* ST_MAX_FIND_STR */
 
-	short margin_column; /* column number to show right margin at */
-	char pad[6];
+	short margin_column;	/* column number to show right margin at */
+	short lheight_dpi;		/* actual lineheight, dpi controlled */
+	char pad[4];
 
 	void *drawcache; /* cache for faster drawing */
 } SpaceText;
@@ -830,6 +845,8 @@ typedef enum eSpaceText_Flags {
 	ST_FIND_ALL             = (1 << 6),
 	ST_SHOW_MARGIN          = (1 << 7),
 	ST_MATCH_CASE           = (1 << 8),
+	
+	ST_FIND_ACTIVATE		= (1 << 9),
 } eSpaceText_Flags;
 
 /* stext->findstr/replacestr */
@@ -871,6 +888,18 @@ typedef struct SpaceScript {
 /* Nodes Editor =========================================== */
 
 /* Node Editor */
+
+typedef struct bNodeTreePath {
+	struct bNodeTreePath *next, *prev;
+	
+	struct bNodeTree *nodetree;
+	bNodeInstanceKey parent_key;	/* base key for nodes in this tree instance */
+	int pad;
+	float view_center[2];			/* v2d center point, so node trees can have different offsets in editors */
+	/* XXX this is not automatically updated when node names are changed! */
+	char node_name[64];		/* MAX_NAME */
+} bNodeTreePath;
+
 typedef struct SpaceNode {
 	SpaceLink *next, *prev;
 	ListBase regionbase;        /* storage of regions for inactive spaces */
@@ -882,18 +911,30 @@ typedef struct SpaceNode {
 	
 	struct ID *id, *from;       /* context, no need to save in file? well... pinning... */
 	short flag, pad1;           /* menunr: browse id block in header */
-	float aspect, aspect_sqrt;
+	float aspect, pad2;	/* internal state variables */
 	
 	float xof, yof;     /* offset for drawing the backdrop */
 	float zoom;   /* zoom for backdrop */
 	float cursor[2];    /* mouse pos for drawing socketless link and adding nodes */
 	
+	/* XXX nodetree pointer info is all in the path stack now,
+	 * remove later on and use bNodeTreePath instead. For now these variables are set when pushing/popping
+	 * from path stack, to avoid having to update all the functions and operators. Can be done when
+	 * design is accepted and everything is properly tested.
+	 */
+	ListBase treepath;
+	
 	struct bNodeTree *nodetree, *edittree;
-	int treetype;       /* treetype: as same nodetree->type */
+	
+	/* tree type for the current node tree */
+	char tree_idname[64];
+	int treetype DNA_DEPRECATED; /* treetype: as same nodetree->type */
+	int pad3;
+	
 	short texfrom;      /* texfrom object, world or brush */
 	short shaderfrom;   /* shader from object or world */
 	short recalc;       /* currently on 0/1, for auto compo */
-	short pad[3];
+	short pad4;
 	ListBase linkdrag;  /* temporary data for modal linking operator */
 	
 	struct bGPdata *gpd;        /* grease-pencil data */
@@ -902,7 +943,7 @@ typedef struct SpaceNode {
 /* snode->flag */
 typedef enum eSpaceNode_Flag {
 	SNODE_BACKDRAW       = (1 << 1),
-/*  SNODE_DISPGP         = (1 << 2), */ /* XXX: Grease Pencil - deprecated? */
+	SNODE_SHOW_GPENCIL   = (1 << 2),
 	SNODE_USE_ALPHA      = (1 << 3),
 	SNODE_SHOW_ALPHA     = (1 << 4),
 	SNODE_SHOW_R         = (1 << 7),
@@ -911,6 +952,8 @@ typedef enum eSpaceNode_Flag {
 	SNODE_AUTO_RENDER    = (1 << 5),
 	SNODE_SHOW_HIGHLIGHT = (1 << 6),
 	SNODE_USE_HIDDEN_PREVIEW = (1 << 10),
+	SNODE_NEW_SHADERS = (1 << 11),
+	SNODE_PIN            = (1 << 12),
 } eSpaceNode_Flag;
 
 /* snode->texfrom */
@@ -996,8 +1039,8 @@ typedef struct SpaceUserPref {
 	ListBase regionbase;        /* storage of regions for inactive spaces */
 	int spacetype;
 	
-	int pad;
-	
+	char pad[3];
+	char filter_type;
 	char filter[64];        /* search term for filtering in the UI */
 } SpaceUserPref;
 
@@ -1035,8 +1078,6 @@ typedef struct SpaceClip {
 	/* grease pencil */
 	short gpencil_src, pad2;
 
-	void *draw_context;
-
 	int around, pad4;             /* pivot point for transforms */
 
 	MaskSpaceInfo mask_info;
@@ -1056,7 +1097,7 @@ typedef enum eSpaceClip_Flag {
 	SC_SHOW_GRID           = (1 << 9),
 	SC_SHOW_STABLE         = (1 << 10),
 	SC_MANUAL_CALIBRATION  = (1 << 11),
-/*	SC_SHOW_GPENCIL        = (1 << 12),*/	/* UNUSED */
+	SC_SHOW_GPENCIL        = (1 << 12),
 	SC_SHOW_FILTERS        = (1 << 13),
 	SC_SHOW_GRAPH_FRAMES   = (1 << 14),
 	SC_SHOW_GRAPH_TRACKS   = (1 << 15),
@@ -1090,11 +1131,6 @@ typedef enum eSpaceClip_GPencil_Source {
 
 /* **************** SPACE DEFINES ********************* */
 
-/* headerbuttons: 450-499 */
-#define B_IMASELHOME        451
-#define B_IMASELREMOVEBIP   452
-
-
 /* space types, moved from DNA_screen_types.h */
 /* Do NOT change order, append on end. types are hardcoded needed */
 typedef enum eSpace_Type {
@@ -1125,4 +1161,4 @@ typedef enum eSpace_Type {
 
 #define IMG_SIZE_FALLBACK 256
 
-#endif
+#endif  /* __DNA_SPACE_TYPES_H__ */

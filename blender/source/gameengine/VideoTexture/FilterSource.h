@@ -1,36 +1,39 @@
 /*
------------------------------------------------------------------------------
-This source file is part of blendTex library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of blendTex library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file FilterSource.h
  *  \ingroup bgevideotex
  */
- 
+
 #ifndef __FILTERSOURCE_H__
 #define __FILTERSOURCE_H__
 
 #include "Common.h"
 
 #include "FilterBase.h"
-
 
 /// class for RGB24 conversion
 class FilterRGB24 : public FilterBase
@@ -46,7 +49,7 @@ public:
 
 protected:
 	/// filter pixel, source byte buffer
-	virtual unsigned int filter (unsigned char * src, short x, short y,
+	virtual unsigned int filter (unsigned char *src, short x, short y,
 		short * size, unsigned int pixSize, unsigned int val)
 	{ VT_RGBA(val,src[0],src[1],src[2],0xFF); return val; }
 };
@@ -65,7 +68,7 @@ public:
 
 protected:
 	/// filter pixel, source byte buffer
-	virtual unsigned int filter (unsigned char * src, short x, short y,
+	virtual unsigned int filter (unsigned char *src, short x, short y,
 		short * size, unsigned int pixSize, unsigned int val)
 	{ 
 		if ((intptr_t(src)&0x3) == 0) 
@@ -92,10 +95,69 @@ public:
 
 protected:
 	/// filter pixel, source byte buffer
-	virtual unsigned int filter (unsigned char * src, short x, short y,
-		short * size, unsigned int pixSize, unsigned int val)
+	virtual unsigned int filter (unsigned char *src, short x, short y,
+	                             short * size, unsigned int pixSize, unsigned int val)
 	{ VT_RGBA(val,src[2],src[1],src[0],0xFF); return val; }
 };
+
+/// class for Z_buffer conversion
+class FilterZZZA : public FilterBase
+{
+public:
+	/// constructor
+	FilterZZZA (void) {}
+	/// destructor
+	virtual ~FilterZZZA (void) {}
+
+	/// get source pixel size
+	virtual unsigned int getPixelSize (void) { return 1; }
+
+protected:
+	/// filter pixel, source float buffer
+	virtual unsigned int filter (float *src, short x, short y,
+		short * size, unsigned int pixSize, unsigned int val)
+	{
+		// calculate gray value
+		// convert float to unsigned char
+		unsigned int depth = int(src[0] * 255);
+		// return depth scale value
+		VT_R(val) = depth;
+		VT_G(val) = depth;
+		VT_B(val) = depth;
+		VT_A(val) = 0xFF;
+
+		return val;
+	}
+};
+
+
+/// class for Z_buffer conversion
+class FilterDEPTH : public FilterBase
+{
+public:
+	/// constructor
+	FilterDEPTH (void) {}
+	/// destructor
+	virtual ~FilterDEPTH (void) {}
+
+	/// get source pixel size
+	virtual unsigned int getPixelSize (void) { return 1; }
+
+protected:
+	/// filter pixel, source float buffer
+	virtual unsigned int filter (float *src, short x, short y,
+	                             short *size, unsigned int pixSize, unsigned int val)
+	{
+		/* Copy the float value straight away
+		 * The user can retrieve the original float value by using
+		 * 'F' mode in BGL buffer */
+		memcpy(&val, src, sizeof (unsigned int));
+		return val;
+	}
+};
+
+
+
 
 /// class for YV12 conversion
 class FilterYV12 : public FilterBase
@@ -131,59 +193,59 @@ protected:
 	{ return (9 * (b + c) - a - d + 8) >> 4; }
 
 	/// common horizontal interpolation
-	int interpolH (unsigned char * src)
+	int interpolH (unsigned char *src)
 	{ return interpol(*(src-1), *src, *(src+1), *(src+2)); }
 
 	/// common vertical interpolation
-	int interpolV (unsigned char * src)
+	int interpolV (unsigned char *src)
 	{ return interpol(*(src-m_pitchUV), *src, *(src+m_pitchUV), *(src+2*m_pitchUV)); }
 
 	/// common joined vertical and horizontal interpolation
-	int interpolVH (unsigned char * src)
+	int interpolVH (unsigned char *src)
 	{
 		return interpol(interpolV(src-1), interpolV(src), interpolV(src+1),
-			interpolV(src+2));
+		                interpolV(src+2));
 	}
 
 	/// is pixel on edge
-	bool isEdge (short x, short y, short * size)
+	bool isEdge (short x, short y, const short size[2])
 	{ return x <= 1 || x >= size[0] - 4 || y <= 1 || y >= size[1] - 4; }
 
 	/// get the first parameter on the low edge
-	unsigned char * interParA (unsigned char * src, short x, short size, short shift)
+	unsigned char * interParA (unsigned char *src, short x, short size, short shift)
 	{ return x > 1 ? src - shift : src; }
 	/// get the third parameter on the high edge
-	unsigned char * interParC (unsigned char * src, short x, short size, short shift)
+	unsigned char * interParC (unsigned char *src, short x, short size, short shift)
 	{ return x < size - 2 ? src + shift : src; }
 	/// get the fourth parameter on the high edge
-	unsigned char * interParD (unsigned char * src, short x, short size, short shift)
+	unsigned char * interParD (unsigned char *src, short x, short size, short shift)
 	{ return x < size - 4 ? src + 2 * shift : x < size - 2 ? src + shift : src; }
 
 	/// horizontal interpolation on edges
-	int interpolEH (unsigned char * src, short x, short size)
-	{ 
+	int interpolEH (unsigned char *src, short x, short size)
+	{
 		return interpol(*interParA(src, x, size, 1), *src,
-			*interParC(src, x, size, 1), *interParD(src, x, size, 1));
+		                *interParC(src, x, size, 1), *interParD(src, x, size, 1));
 	}
 
 	/// vertical interpolation on edges
-	int interpolEV (unsigned char * src, short y, short size)
-	{ 
+	int interpolEV (unsigned char *src, short y, short size)
+	{
 		return interpol(*interParA(src, y, size, m_pitchUV), *src,
-			*interParC(src, y, size, m_pitchUV), *interParD(src, y, size, m_pitchUV));
+		                *interParC(src, y, size, m_pitchUV), *interParD(src, y, size, m_pitchUV));
 	}
 
 	/// joined vertical and horizontal interpolation on edges
-	int interpolEVH (unsigned char * src, short x, short y, short * size)
+	int interpolEVH (unsigned char *src, short x, short y, short * size)
 	{
 		return interpol(interpolEV(interParA(src, x, size[0], 1), y, size[1]),
-			interpolEV(src, y, size[1]), interpolEV(interParC(src, x, size[0], 1), y, size[1]),
-			interpolEV(interParD(src, x, size[0], 1), y, size[1]));
+		        interpolEV(src, y, size[1]), interpolEV(interParC(src, x, size[0], 1), y, size[1]),
+		        interpolEV(interParD(src, x, size[0], 1), y, size[1]));
 	}
 
 
 	/// filter pixel, source byte buffer
-	virtual unsigned int filter (unsigned char * src, short x, short y,
+	virtual unsigned int filter (unsigned char *src, short x, short y,
 		short * size, unsigned int pixSize, unsigned int val)
 	{
 		// V & U offset
@@ -263,5 +325,4 @@ protected:
 	}
 };
 
-
-#endif
+#endif  /* __FILTERSOURCE_H__ */

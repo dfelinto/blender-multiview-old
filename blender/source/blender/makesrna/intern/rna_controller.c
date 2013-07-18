@@ -24,15 +24,20 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 
-#include "WM_types.h"
+#include "DNA_object_types.h"
+#include "DNA_controller_types.h"
+
+#include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
+
 #include "RNA_define.h"
 
 #include "rna_internal.h"
-#include "DNA_object_types.h"
-#include "DNA_controller_types.h"
+
+#include "WM_types.h"
 
 EnumPropertyItem controller_type_items[] = {
 	{CONT_LOGIC_AND, "LOGIC_AND", 0, "And", "Logic And"},
@@ -77,7 +82,7 @@ static StructRNA *rna_Controller_refine(struct PointerRNA *ptr)
 	}
 }
 
-void rna_Constroller_name_set(PointerRNA *ptr, const char *value)
+static void rna_Constroller_name_set(PointerRNA *ptr, const char *value)
 {
 	bController *cont = (bController *)ptr->data;
 
@@ -85,7 +90,8 @@ void rna_Constroller_name_set(PointerRNA *ptr, const char *value)
 
 	if (ptr->id.data) {
 		Object *ob = (Object *)ptr->id.data;
-		BLI_uniquename(&ob->controllers, cont, "Controller", '.', offsetof(bController, name), sizeof(cont->name));
+		BLI_uniquename(&ob->controllers, cont, DATA_("Controller"), '.', offsetof(bController, name),
+		               sizeof(cont->name));
 	}
 }
 
@@ -240,7 +246,7 @@ void RNA_def_controller(BlenderRNA *brna)
 	/* State */
 	
 	/* array of OB_MAX_STATES */
-	/*prop= RNA_def_property(srna, "states", PROP_BOOLEAN, PROP_LAYER_MEMBER); */
+	/*prop = RNA_def_property(srna, "states", PROP_BOOLEAN, PROP_LAYER_MEMBER); */
 	/*RNA_def_property_array(prop, OB_MAX_STATES); */
 	/*RNA_def_property_clear_flag(prop, PROP_EDITABLE); */
 	/*RNA_def_property_ui_text(prop, "", "Set Controller state index (1 to 30)"); */

@@ -1,29 +1,33 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2006 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2006 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file BlendType.h
  *  \ingroup bgevideotex
  */
- 
+
 #ifndef __BLENDTYPE_H__
 #define __BLENDTYPE_H__
 
@@ -37,7 +41,7 @@ public:
 	BlendType (const char * name) : m_name(name) {}
 
 	/// check blender type and return pointer to contained object or NULL (if type is not valid)
-	PyObj * checkType (PyObject * obj)
+	PyObj *checkType(PyObject *obj)
 	{
 		// if pointer to type isn't set 
 		if (m_objType == NULL)
@@ -55,17 +59,18 @@ public:
 			return NULL;
 		// return pointer to object, this class can only be used for KX object =>
 		// the Py object is actually a proxy
-		return (PyObj*)BGE_PROXY_REF(obj);
+		return (PyObj *)BGE_PROXY_REF(obj);
 	}
 
 	/// parse arguments to get object
-	PyObj * parseArg (PyObject * args)
+	PyObj *parseArg(PyObject *args)
 	{
 		// parse arguments
-		PyObject * obj;
-		if (PyArg_ParseTuple(args, "O", &obj))
+		PyObject *obj;
+		if (PyArg_ParseTuple(args, "O", &obj)) {
 			// if successfully parsed, return pointer to object
 			return checkType(obj);
+		}
 		// otherwise return NULL
 		return NULL;
 	}
@@ -74,7 +79,7 @@ protected:
 	/// name of Python type
 	const char * m_name;
 	/// pointer to Python type
-	PyTypeObject * m_objType;
+	PyTypeObject *m_objType;
 };
 
 

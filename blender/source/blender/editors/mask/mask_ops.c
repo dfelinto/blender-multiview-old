@@ -36,6 +36,7 @@
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
+#include "BKE_main.h"
 #include "BKE_mask.h"
 
 #include "DNA_scene_types.h"
@@ -258,15 +259,13 @@ int ED_mask_feather_find_nearest(const bContext *C, Mask *mask, float normal_co[
 
 /******************** create new mask *********************/
 
-static int mask_new_exec(bContext *C, wmOperator *op)
+Mask *ED_mask_new(bContext *C, const char *name)
 {
 	ScrArea *sa = CTX_wm_area(C);
+	Main *bmain = CTX_data_main(C);
 	Mask *mask;
-	char name[MAX_ID_NAME - 2];
 
-	RNA_string_get(op->ptr, "name", name);
-
-	mask = BKE_mask_new(name);
+	mask = BKE_mask_new(bmain, name);
 
 	if (sa && sa->spacedata.first) {
 		switch (sa->spacetype) {
@@ -289,6 +288,17 @@ static int mask_new_exec(bContext *C, wmOperator *op)
 			}
 		}
 	}
+
+	return mask;
+}
+
+static int mask_new_exec(bContext *C, wmOperator *op)
+{
+	char name[MAX_ID_NAME - 2];
+
+	RNA_string_get(op->ptr, "name", name);
+
+	ED_mask_new(C, name);
 
 	return OPERATOR_FINISHED;
 }
@@ -428,7 +438,7 @@ static int slide_point_check_initial_feather(MaskSpline *spline)
 	return TRUE;
 }
 
-static void *slide_point_customdata(bContext *C, wmOperator *op, wmEvent *event)
+static void *slide_point_customdata(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ScrArea *sa = CTX_wm_area(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -483,15 +493,15 @@ static void *slide_point_customdata(bContext *C, wmOperator *op, wmEvent *event)
 		customdata->uw = uw;
 
 		if (uw) {
-			float co[2];
+			float co_uw[2];
 			float weight_scalar = BKE_mask_point_weight_scalar(spline, point, uw->u);
 
 			customdata->weight = uw->w;
 			customdata->weight_scalar = weight_scalar;
-			BKE_mask_point_segment_co(spline, point, uw->u, co);
+			BKE_mask_point_segment_co(spline, point, uw->u, co_uw);
 			BKE_mask_point_normal(spline, point, uw->u, customdata->no);
 
-			madd_v2_v2v2fl(customdata->feather, co, customdata->no, uw->w * weight_scalar);
+			madd_v2_v2v2fl(customdata->feather, co_uw, customdata->no, uw->w * weight_scalar);
 		}
 		else {
 			BezTriple *bezt = &point->bezt;
@@ -515,7 +525,7 @@ static void *slide_point_customdata(bContext *C, wmOperator *op, wmEvent *event)
 	return customdata;
 }
 
-static int slide_point_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int slide_point_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SlidePointData *slidedata = slide_point_customdata(C, op, event);
 
@@ -624,7 +634,7 @@ static void free_slide_point_data(SlidePointData *data)
 	MEM_freeN(data);
 }
 
-static int slide_point_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int slide_point_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	SlidePointData *data = (SlidePointData *)op->customdata;
 	BezTriple *bezt = &data->point->bezt;
@@ -915,6 +925,7 @@ static void delete_feather_points(MaskSplinePoint *point)
 
 static int delete_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	Scene *scene = CTX_data_scene(C);
 	Mask *mask = CTX_data_edit_mask(C);
 	MaskLayer *masklay;
 
@@ -1002,7 +1013,7 @@ static int delete_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 
 	/* TODO: only update edited splines */
-	BKE_mask_update_display(mask, CTX_data_scene(C)->r.cfra);
+	BKE_mask_update_display(mask, CFRA);
 
 	WM_event_add_notifier(C, NC_MASK | NA_EDITED, mask);
 
@@ -1060,7 +1071,7 @@ static int mask_switch_direction_exec(bContext *C, wmOperator *UNUSED(op))
 
 	if (change) {
 		/* TODO: only update this spline */
-		BKE_mask_update_display(mask, CTX_data_scene(C)->r.cfra);
+		BKE_mask_update_display(mask, CFRA);
 
 		WM_event_add_notifier(C, NC_MASK | ND_SELECT, mask);
 
@@ -1126,7 +1137,7 @@ static int mask_normals_make_consistent_exec(bContext *C, wmOperator *UNUSED(op)
 
 	if (change) {
 		/* TODO: only update this spline */
-		BKE_mask_update_display(mask, CTX_data_scene(C)->r.cfra);
+		BKE_mask_update_display(mask, CFRA);
 
 		WM_event_add_notifier(C, NC_MASK | ND_SELECT, mask);
 
@@ -1324,6 +1335,7 @@ void MASK_OT_hide_view_set(wmOperatorType *ot)
 
 static int mask_feather_weight_clear_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	Scene *scene = CTX_data_scene(C);
 	Mask *mask = CTX_data_edit_mask(C);
 	MaskLayer *masklay;
 	int changed = FALSE;
@@ -1351,7 +1363,7 @@ static int mask_feather_weight_clear_exec(bContext *C, wmOperator *UNUSED(op))
 
 	if (changed) {
 		/* TODO: only update edited splines */
-		BKE_mask_update_display(mask, CTX_data_scene(C)->r.cfra);
+		BKE_mask_update_display(mask, CFRA);
 
 		WM_event_add_notifier(C, NC_MASK | ND_DRAW, mask);
 		DAG_id_tag_update(&mask->id, 0);

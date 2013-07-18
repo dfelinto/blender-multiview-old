@@ -34,7 +34,6 @@
 
 #include "MT_Transform.h"
 #include "RAS_MaterialBucket.h"
-#include "CTR_Map.h"
 
 #include <vector>
 
@@ -55,13 +54,13 @@ public:
 	void Renderbuckets(const MT_Transform & cameratrans,
 		RAS_IRasterizer* rasty, RAS_IRenderTools* rendertools);
 
-	RAS_MaterialBucket* FindBucket(RAS_IPolyMaterial * material, bool &bucketCreated);
+	RAS_MaterialBucket* FindBucket(RAS_IPolyMaterial *material, bool &bucketCreated);
 	void OptimizeBuckets(MT_Scalar distance);
 	
-	void ReleaseDisplayLists(RAS_IPolyMaterial * material = NULL);
-	void ReleaseMaterials(RAS_IPolyMaterial * material = NULL);
+	void ReleaseDisplayLists(RAS_IPolyMaterial *material = NULL);
+	void ReleaseMaterials(RAS_IPolyMaterial *material = NULL);
 
-	void RemoveMaterial(RAS_IPolyMaterial * mat); // freeing scenes only
+	void RemoveMaterial(RAS_IPolyMaterial *mat); // freeing scenes only
 
 	/* for merging */
 	void MergeBucketManager(RAS_BucketManager *other, SCA_IScene *scene);
@@ -90,5 +89,4 @@ private:
 #endif
 };
 
-#endif //__RAS_BUCKETMANAGER_H__
-
+#endif  /* __RAS_BUCKETMANAGER_H__ */

@@ -47,7 +47,7 @@ struct RenderData;
 struct SceneRenderLayer;
 struct Scene;
 struct Text;
-struct Text;
+struct Main;
 
 #define SCE_COPY_NEW        0
 #define SCE_COPY_EMPTY      1
@@ -55,18 +55,24 @@ struct Text;
 #define SCE_COPY_LINK_DATA  3
 #define SCE_COPY_FULL       4
 
-#define SETLOOPER(_sce_basis, _sce_iter, _base) _sce_iter = _sce_basis, _base = _setlooper_base_step(&_sce_iter, NULL); _base; _base = _setlooper_base_step(&_sce_iter, _base)
+/* Use as the contents of a 'for' loop: for (SETLOOPER(...)) { ... */
+#define SETLOOPER(_sce_basis, _sce_iter, _base)                               \
+	_sce_iter = _sce_basis, _base = _setlooper_base_step(&_sce_iter, NULL);   \
+	_base;                                                                    \
+	_base = _setlooper_base_step(&_sce_iter, _base)
+
 struct Base *_setlooper_base_step(struct Scene **sce_iter, struct Base *base);
 
 void free_avicodecdata(struct AviCodecData *acd);
 void free_qtcodecdata(struct QuicktimeCodecData *acd);
 
 void BKE_scene_free(struct Scene *sce);
-struct Scene *BKE_scene_add(const char *name);
+struct Scene *BKE_scene_add(struct Main *bmain, const char *name);
 
 /* base functions */
 struct Base *BKE_scene_base_find(struct Scene *scene, struct Object *ob);
 struct Base *BKE_scene_base_add(struct Scene *sce, struct Object *ob);
+void         BKE_scene_base_unlink(struct Scene *sce, struct Base *base);
 void         BKE_scene_base_deselect_all(struct Scene *sce);
 void         BKE_scene_base_select(struct Scene *sce, struct Base *selbase);
 int          BKE_scene_base_iter_next(struct Scene **scene, int val, struct Base **base, struct Object **ob);
@@ -78,6 +84,7 @@ void BKE_scene_set_background(struct Main *bmain, struct Scene *sce);
 struct Scene *BKE_scene_set_name(struct Main *bmain, const char *name);
 
 struct Scene *BKE_scene_copy(struct Scene *sce, int type);
+void BKE_scene_groups_relink(struct Scene *sce);
 void BKE_scene_unlink(struct Main *bmain, struct Scene *sce, struct Scene *newsce);
 
 struct Object *BKE_scene_camera_find(struct Scene *sc);
@@ -107,6 +114,13 @@ int get_render_shadow_samples(struct RenderData *r, int samples);
 float get_render_aosss_error(struct RenderData *r, float error);
 
 int BKE_scene_use_new_shading_nodes(struct Scene *scene);
+
+void BKE_scene_disable_color_management(struct Scene *scene);
+int BKE_scene_check_color_management_enabled(const struct Scene *scene);
+int BKE_scene_check_rigidbody_active(const struct Scene *scene);
+
+int BKE_scene_num_threads(const struct Scene *scene);
+int BKE_render_num_threads(const struct RenderData *r);
 
 #ifdef __cplusplus
 }

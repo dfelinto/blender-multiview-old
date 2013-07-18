@@ -36,10 +36,10 @@ typedef struct GlyphCacheBLF {
 	struct GlyphCacheBLF *prev;
 
 	/* font size. */
-	int size;
+	unsigned int size;
 
 	/* and dpi. */
-	int dpi;
+	unsigned int dpi;
 
 	/* and the glyphs. */
 	ListBase bucket[257];
@@ -51,7 +51,7 @@ typedef struct GlyphCacheBLF {
 	GLuint *textures;
 
 	/* size of the array. */
-	int ntex;
+	unsigned int ntex;
 
 	/* and the last texture, aka. the current texture. */
 	int cur_tex;
@@ -63,7 +63,7 @@ typedef struct GlyphCacheBLF {
 	int y_offs;
 
 	/* and the space from one to other. */
-	unsigned int pad;
+	int pad;
 
 	/* and the bigger glyph in the font. */
 	int max_glyph_width;
@@ -145,8 +145,8 @@ typedef struct FontBufInfoBLF {
 	/* number of channels. */
 	int ch;
 
-	/* is the float buffer linear */
-	int do_color_management;
+	/* display device used for color management */
+	struct ColorManagedDisplay *display;
 
 	/* and the color, the alphas is get from the glyph!
 	 * color is srgb space */
@@ -166,7 +166,7 @@ typedef struct FontBLF {
 	/* initial position for draw the text. */
 	float pos[3];
 
-	/* angle in degrees. */
+	/* angle in radians. */
 	float angle;
 	
 	/* blur: 3 or 5 large kernel */
@@ -194,16 +194,16 @@ typedef struct FontBLF {
 	rctf clip_rec;
 
 	/* font dpi (default 72). */
-	int dpi;
+	unsigned int dpi;
 
 	/* font size. */
-	int size;
+	unsigned int size;
 
 	/* max texture size. */
 	int max_tex_size;
 
 	/* cache current OpenGL texture to save calls into the API */
-	int tex_bind_state;
+	unsigned int tex_bind_state;
 
 	/* font options. */
 	int flags;

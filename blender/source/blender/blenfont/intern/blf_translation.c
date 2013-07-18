@@ -31,40 +31,35 @@
 #include <stdlib.h>
 #include <string.h>
 
-#ifdef WITH_INTERNATIONAL
-#include <libintl.h>
-#include <locale.h>
-
-#define GETTEXT_CONTEXT_GLUE "\004"
-
-/* needed for windows version of gettext */
-#ifndef LC_MESSAGES
-#  define LC_MESSAGES 1729
-#endif
-
-#endif
+#include "BLF_translation.h"
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_utildefines.h"
+#include "BLI_fileops.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
-#include "BLI_path_util.h"
-#include "BLI_fileops.h"
-
-#include "BLF_translation.h"
 
 #include "DNA_userdef_types.h" /* For user settings. */
 
+#include "BPY_extern.h"
+
 #ifdef WITH_INTERNATIONAL
+
+#include "boost_locale_wrapper.h"
+
 static const char unifont_filename[] = "droidsans.ttf.gz";
 static unsigned char *unifont_ttf = NULL;
 static int unifont_size = 0;
+static const char unifont_mono_filename[] = "bmonofont-i18n.ttf.gz";
+static unsigned char *unifont_mono_ttf = NULL;
+static int unifont_mono_size = 0;
+#endif  /* WITH_INTERNATIONAL */
 
 unsigned char *BLF_get_unifont(int *unifont_size_r)
 {
+#ifdef WITH_INTERNATIONAL
 	if (unifont_ttf == NULL) {
-		char *fontpath = BLI_get_folder(BLENDER_DATAFILES, "fonts");
+		const char * const fontpath = BLI_get_folder(BLENDER_DATAFILES, "fonts");
 		if (fontpath) {
 			char unifont_path[1024];
 
@@ -80,113 +75,158 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
 	*unifont_size_r = unifont_size;
 
 	return unifont_ttf;
+#else
+	(void)unifont_size_r;
+	return NULL;
+#endif
 }
 
 void BLF_free_unifont(void)
 {
+#ifdef WITH_INTERNATIONAL
 	if (unifont_ttf)
 		MEM_freeN(unifont_ttf);
+#else
+#endif
 }
 
-#endif
-
-const char *BLF_gettext(const char *msgid)
+unsigned char *BLF_get_unifont_mono(int *unifont_size_r)
 {
 #ifdef WITH_INTERNATIONAL
-	if (msgid && msgid[0])
-		return gettext(msgid);
-	return "";
+	if (unifont_mono_ttf == NULL) {
+		const char *fontpath = BLI_get_folder(BLENDER_DATAFILES, "fonts");
+		if (fontpath) {
+			char unifont_path[1024];
+
+			BLI_snprintf(unifont_path, sizeof(unifont_path), "%s/%s", fontpath, unifont_mono_filename);
+
+			unifont_mono_ttf = (unsigned char *)BLI_file_ungzip_to_mem(unifont_path, &unifont_mono_size);
+		}
+		else {
+			printf("%s: 'fonts' data path not found for international monospace font, continuing\n", __func__);
+		}
+	}
+
+	*unifont_size_r = unifont_mono_size;
+
+	return unifont_mono_ttf;
 #else
+	(void)unifont_size_r;
+	return NULL;
+#endif
+}
+
+void BLF_free_unifont_mono(void)
+{
+#ifdef WITH_INTERNATIONAL
+	if (unifont_mono_ttf)
+		MEM_freeN(unifont_mono_ttf);
+#else
+#endif
+}
+
+bool BLF_is_default_context(const char *msgctxt)
+{
+	/* We use the "short" test, a more complete one could be:
+	 * return (!msgctxt || !msgctxt[0] || !strcmp(msgctxt == BLF_I18NCONTEXT_DEFAULT_BPYRNA))
+	 */
+	/* Note: trying without the void string check for now, it *should* not be necessary... */
+	return (!msgctxt || msgctxt[0] == BLF_I18NCONTEXT_DEFAULT_BPYRNA[0]);
+}
+
+const char *BLF_pgettext(const char *msgctxt, const char *msgid)
+{
+#ifdef WITH_INTERNATIONAL
+	const char *ret = msgid;
+
+	if (msgid && msgid[0]) {
+		if (BLF_is_default_context(msgctxt)) {
+			msgctxt = BLF_I18NCONTEXT_DEFAULT;
+		}
+		ret = bl_locale_pgettext(msgctxt, msgid);
+		/* We assume if the returned string is the same (memory level) as the msgid, no translation was found,
+		 * and we can try py scripts' ones!
+		 */
+		if (ret == msgid) {
+			ret = BPY_app_translations_py_pgettext(msgctxt, msgid);
+		}
+	}
+
+	return ret;
+#else
+	(void)msgctxt;
 	return msgid;
 #endif
 }
 
-const char *BLF_pgettext(const char *context, const char *message)
-{
-#ifdef WITH_INTERNATIONAL
-	char static_msg_ctxt_id[1024];
-	char *dynamic_msg_ctxt_id = NULL;
-	char *msg_ctxt_id;
-	const char *translation;
-
-	size_t overall_length = strlen(context) + strlen(message) + sizeof(GETTEXT_CONTEXT_GLUE) + 1;
-
-	if (!message || !context || !message[0])
-		return "";
-
-	if (overall_length > sizeof(static_msg_ctxt_id)) {
-		dynamic_msg_ctxt_id = malloc(overall_length);
-		msg_ctxt_id = dynamic_msg_ctxt_id;
-	}
-	else {
-		msg_ctxt_id = static_msg_ctxt_id;
-	}
-
-	sprintf(msg_ctxt_id, "%s%s%s", context, GETTEXT_CONTEXT_GLUE, message);
-
-	translation = (char *)dcgettext(TEXT_DOMAIN_NAME, msg_ctxt_id, LC_MESSAGES);
-
-	if (dynamic_msg_ctxt_id)
-		free(dynamic_msg_ctxt_id);
-
-	if (translation == msg_ctxt_id)
-		translation = message;
-
-	return translation;
-#else
-	(void)context;
-	return message;
-#endif
-}
-
-int BLF_translate_iface(void)
+bool BLF_translate_iface(void)
 {
 #ifdef WITH_INTERNATIONAL
 	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_IFACE);
 #else
-	return 0;
+	return false;
 #endif
 }
 
-int BLF_translate_tooltips(void)
+bool BLF_translate_tooltips(void)
 {
 #ifdef WITH_INTERNATIONAL
 	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_TOOLTIPS);
 #else
-	return 0;
+	return false;
 #endif
 }
 
-const char *BLF_translate_do_iface(const char *context, const char *msgid)
+bool BLF_translate_new_dataname(void)
+{
+#ifdef WITH_INTERNATIONAL
+	return (U.transopts & USER_DOTRANSLATE) && (U.transopts & USER_TR_NEWDATANAME);
+#else
+	return false;
+#endif
+}
+
+const char *BLF_translate_do_iface(const char *msgctxt, const char *msgid)
 {
 #ifdef WITH_INTERNATIONAL
 	if (BLF_translate_iface()) {
-		if (context)
-			return BLF_pgettext(context, msgid);
-		else
-			return BLF_gettext(msgid);
+		return BLF_pgettext(msgctxt, msgid);
 	}
-	else
+	else {
 		return msgid;
+	}
 #else
-	(void)context;
+	(void)msgctxt;
 	return msgid;
 #endif
 }
 
-const char *BLF_translate_do_tooltip(const char *context, const char *msgid)
+const char *BLF_translate_do_tooltip(const char *msgctxt, const char *msgid)
 {
 #ifdef WITH_INTERNATIONAL
 	if (BLF_translate_tooltips()) {
-		if (context)
-			return BLF_pgettext(context, msgid);
-		else
-			return BLF_gettext(msgid);
+		return BLF_pgettext(msgctxt, msgid);
 	}
-	else
+	else {
 		return msgid;
+	}
 #else
-	(void)context;
+	(void)msgctxt;
+	return msgid;
+#endif
+}
+
+const char *BLF_translate_do_new_dataname(const char *msgctxt, const char *msgid)
+{
+#ifdef WITH_INTERNATIONAL
+	if (BLF_translate_new_dataname()) {
+		return BLF_pgettext(msgctxt, msgid);
+	}
+	else {
+		return msgid;
+	}
+#else
+	(void)msgctxt;
 	return msgid;
 #endif
 }

@@ -24,9 +24,12 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
 #include <limits.h>
+
+#include "DNA_cloth_types.h"
+#include "DNA_object_types.h"
+#include "DNA_scene_types.h"
 
 #include "RNA_define.h"
 
@@ -34,10 +37,6 @@
 
 #include "BKE_cloth.h"
 #include "BKE_modifier.h"
-
-#include "DNA_cloth_types.h"
-#include "DNA_object_types.h"
-#include "DNA_scene_types.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -213,7 +212,14 @@ static char *rna_ClothSettings_path(PointerRNA *ptr)
 	Object *ob = (Object *)ptr->id.data;
 	ModifierData *md = modifiers_findByType(ob, eModifierType_Cloth);
 
-	return md ? BLI_sprintfN("modifiers[\"%s\"].settings", md->name) : NULL;
+	if (md) {
+		char name_esc[sizeof(md->name) * 2];
+		BLI_strescape(name_esc, md->name, sizeof(name_esc));
+		return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
+	}
+	else {
+		return NULL;
+	}
 }
 
 static char *rna_ClothCollisionSettings_path(PointerRNA *ptr)
@@ -221,7 +227,14 @@ static char *rna_ClothCollisionSettings_path(PointerRNA *ptr)
 	Object *ob = (Object *)ptr->id.data;
 	ModifierData *md = modifiers_findByType(ob, eModifierType_Cloth);
 
-	return md ? BLI_sprintfN("modifiers[\"%s\"].collision_settings", md->name) : NULL;
+	if (md) {
+		char name_esc[sizeof(md->name) * 2];
+		BLI_strescape(name_esc, md->name, sizeof(name_esc));
+		return BLI_sprintfN("modifiers[\"%s\"].collision_settings", name_esc);
+	}
+	else {
+		return NULL;
+	}
 }
 
 #else
@@ -403,8 +416,8 @@ static void rna_def_cloth_sim_settings(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "pre_roll", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "preroll");
-	RNA_def_property_range(prop, 0, 200);
-	RNA_def_property_ui_text(prop, "Pre Roll", "Simulation starts on this frame");
+	RNA_def_property_range(prop, 0, MAXFRAME);
+	RNA_def_property_ui_text(prop, "Pre Roll", "Start simulation a number of frames earlier to let the cloth settle in");
 	RNA_def_property_update(prop, 0, "rna_cloth_reset");
 
 	prop = RNA_def_property(srna, "rest_shape_key", PROP_POINTER, PROP_NONE);
@@ -419,41 +432,41 @@ static void rna_def_cloth_sim_settings(BlenderRNA *brna)
 
 	/* unused still */
 #if 0
-	prop= RNA_def_property(srna, "shear_stiffness", PROP_FLOAT, PROP_NONE);
+	prop = RNA_def_property(srna, "shear_stiffness", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "shear");
 	RNA_def_property_range(prop, 0.0f, 1000.0f);
 	RNA_def_property_ui_text(prop, "Shear Stiffness", "Shear spring stiffness");
 #endif
 	/* unused still */
 #if 0
-	prop= RNA_def_property(srna, "shear_stiffness_max", PROP_FLOAT, PROP_NONE);
+	prop = RNA_def_property(srna, "shear_stiffness_max", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "max_shear");
 	RNA_def_property_range(prop, 0.0f, upperLimitf);
 	RNA_def_property_ui_text(prop, "Shear Stiffness Maximum", "Maximum shear scaling value");
 #endif
 	/* unused still */
 #if 0
-	prop= RNA_def_property(srna, "effector_force_scale", PROP_FLOAT, PROP_NONE);
+	prop = RNA_def_property(srna, "effector_force_scale", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "eff_force_scale");
 	RNA_def_property_range(prop, 0.0f, 100.0f);
 	RNA_def_property_ui_text(prop, "Effector Force Scale", "");
 #endif
 	/* unused still */
 #if 0
-	prop= RNA_def_property(srna, "effector_wind_scale", PROP_FLOAT, PROP_NONE);
+	prop = RNA_def_property(srna, "effector_wind_scale", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "eff_wind_scale");
 	RNA_def_property_range(prop, 0.0f, 100.0f);
 	RNA_def_property_ui_text(prop, "Effector Wind Scale", "");
 #endif
 	/* unused still */
 #if 0
-	prop= RNA_def_property(srna, "tearing", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "tearing", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flags", CLOTH_SIMSETTINGS_FLAG_TEARING);
 	RNA_def_property_ui_text(prop, "Tearing", "");
 #endif
 	/* unused still */
 #if 0
-	prop= RNA_def_property(srna, "max_spring_extensions", PROP_INT, PROP_NONE);
+	prop = RNA_def_property(srna, "max_spring_extensions", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "maxspringlen");
 	RNA_def_property_range(prop, 1.0, 1000.0);
 	RNA_def_property_ui_text(prop, "Maximum Spring Extension", "Maximum extension before spring gets cut");

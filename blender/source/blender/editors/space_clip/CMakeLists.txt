@@ -24,7 +24,6 @@
 set(INC
 	../include
 	../../blenkernel
-	../../blenloader
 	../../blenfont
 	../../blenlib
 	../../imbuf
@@ -33,10 +32,10 @@ set(INC
 	../../windowmanager
 	../../gpu
 	../../../../intern/guardedalloc
-	${GLEW_INCLUDE_PATH}
 )
 
 set(INC_SYS
+	${GLEW_INCLUDE_PATH}
 )
 
 set(SRC
@@ -56,5 +55,9 @@ set(SRC
 
 	clip_intern.h
 )
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
+endif()
 
 blender_add_lib(bf_editor_space_clip "${SRC}" "${INC}" "${INC_SYS}")

@@ -156,7 +156,7 @@ bool SCA_MouseSensor::Evaluate()
 	case KX_MOUSESENSORMODE_WHEELDOWN:
 		{
 			const SCA_InputEvent& mevent = mousedev->GetEventValue(m_hotkey);
-			switch (mevent.m_status) {	
+			switch (mevent.m_status) {
 			case SCA_InputEvent::KX_JUSTACTIVATED:
 				m_val = 1;
 				result = true;
@@ -189,15 +189,15 @@ bool SCA_MouseSensor::Evaluate()
 			const SCA_InputEvent& eventY = mousedev->GetEventValue(SCA_IInputDevice::KX_MOUSEY);
 
 			if (eventX.m_status == SCA_InputEvent::KX_JUSTACTIVATED ||
-				eventY.m_status == SCA_InputEvent::KX_JUSTACTIVATED ||
-				eventX.m_status == SCA_InputEvent::KX_ACTIVE ||
-				eventY.m_status == SCA_InputEvent::KX_ACTIVE)	
+			    eventY.m_status == SCA_InputEvent::KX_JUSTACTIVATED ||
+			    eventX.m_status == SCA_InputEvent::KX_ACTIVE ||
+			    eventY.m_status == SCA_InputEvent::KX_ACTIVE)
 			{
 				m_val = 1;
 				result = true;
 			} 
 			else if (eventX.m_status == SCA_InputEvent::KX_JUSTRELEASED ||
-					eventY.m_status == SCA_InputEvent::KX_JUSTRELEASED )
+			         eventY.m_status == SCA_InputEvent::KX_JUSTRELEASED )
 			{
 				m_val = 0;
 				result = true;
@@ -250,17 +250,18 @@ KX_PYMETHODDEF_DOC_O(SCA_MouseSensor, getButtonStatus,
 {
 	if (PyLong_Check(value))
 	{
-		int button = PyLong_AsSsize_t(value);
+		SCA_IInputDevice::KX_EnumInputs button = (SCA_IInputDevice::KX_EnumInputs)PyLong_AsLong(value);
 		
-		if ((button < SCA_IInputDevice::KX_LEFTMOUSE)
-			|| (button > SCA_IInputDevice::KX_RIGHTMOUSE)) {
+		if ((button < SCA_IInputDevice::KX_LEFTMOUSE) ||
+		    (button > SCA_IInputDevice::KX_RIGHTMOUSE))
+		{
 			PyErr_SetString(PyExc_ValueError, "sensor.getButtonStatus(int): Mouse Sensor, invalid button specified!");
 			return NULL;
 		}
 		
 		SCA_IInputDevice* mousedev = ((SCA_MouseManager *)m_eventmgr)->GetInputDevice();
-		const SCA_InputEvent& event = mousedev->GetEventValue((SCA_IInputDevice::KX_EnumInputs) button);
-		return PyLong_FromSsize_t(event.m_status);
+		const SCA_InputEvent& event = mousedev->GetEventValue(button);
+		return PyLong_FromLong(event.m_status);
 	}
 	
 	Py_RETURN_NONE;

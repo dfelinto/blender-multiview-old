@@ -42,6 +42,7 @@
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_group.h"
+#include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_report.h"
 #include "BKE_object.h"
@@ -78,7 +79,7 @@ static EnumPropertyItem *group_object_active_itemf(bContext *C, PointerRNA *UNUS
 		Group *group = NULL;
 		int i = 0;
 
-		while ((group = find_group(ob, group))) {
+		while ((group = BKE_group_object_find(group, ob))) {
 			item_tmp.identifier = item_tmp.name = group->id.name + 2;
 			/* item_tmp.icon = ICON_ARMATURE_DATA; */
 			item_tmp.value = i;
@@ -98,7 +99,7 @@ static Group *group_object_active_find_index(Object *ob, const int group_object_
 {
 	Group *group = NULL;
 	int i = 0;
-	while ((group = find_group(ob, group))) {
+	while ((group = BKE_group_object_find(group, ob))) {
 		if (i == group_object_index) {
 			break;
 		}
@@ -125,7 +126,7 @@ static int objects_add_active_exec(bContext *C, wmOperator *op)
 			CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
 			{
 				if (base->object->dup_group != group) {
-					add_to_group(group, base->object, scene, base);
+					BKE_group_object_add(group, base->object, scene, base);
 				}
 				else {
 					is_cycle = TRUE;
@@ -137,7 +138,7 @@ static int objects_add_active_exec(bContext *C, wmOperator *op)
 				BKE_report(op->reports, RPT_WARNING, "Skipped some groups because of cycle detected");
 			}
 
-			DAG_scene_sort(bmain, scene);
+			DAG_relations_tag_update(bmain);
 			WM_event_add_notifier(C, NC_GROUP | NA_EDITED, NULL);
 
 			return OPERATOR_FINISHED;
@@ -184,20 +185,20 @@ static int objects_remove_active_exec(bContext *C, wmOperator *op)
 	 * looking up the active objects groups each time */
 
 	for (group = bmain->group.first; group; group = group->id.next) {
-		if (object_in_group(ob, group)) {
+		if (BKE_group_object_exists(group, ob)) {
 			/* Assign groups to selected objects */
 			CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
 			{
-				rem_from_group(group, base->object, scene, base);
+				BKE_group_object_unlink(group, base->object, scene, base);
 				ok = 1;
 			}
 			CTX_DATA_END;
 		}
 	}
 	
-	if (!ok) BKE_report(op->reports, RPT_ERROR, "Active Object contains no groups");
+	if (!ok) BKE_report(op->reports, RPT_ERROR, "Active object contains no groups");
 	
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_GROUP | NA_EDITED, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -211,7 +212,7 @@ void GROUP_OT_objects_remove_active(wmOperatorType *ot)
 	ot->idname = "GROUP_OT_objects_remove_active";
 	
 	/* api callbacks */
-	ot->exec = objects_remove_active_exec;	
+	ot->exec = objects_remove_active_exec;
 	ot->poll = ED_operator_objectmode;
 	
 	/* flags */
@@ -229,7 +230,7 @@ static int group_objects_remove_all_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 	CTX_DATA_END;
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_GROUP | NA_EDITED, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -265,11 +266,11 @@ static int group_objects_remove_exec(bContext *C, wmOperator *op)
 
 			CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
 			{
-				rem_from_group(group, base->object, scene, base);
+				BKE_group_object_unlink(group, base->object, scene, base);
 			}
 			CTX_DATA_END;
 
-			DAG_scene_sort(bmain, scene);
+			DAG_relations_tag_update(bmain);
 			WM_event_add_notifier(C, NC_GROUP | NA_EDITED, NULL);
 
 			return OPERATOR_FINISHED;
@@ -311,15 +312,15 @@ static int group_create_exec(bContext *C, wmOperator *op)
 	
 	RNA_string_get(op->ptr, "name", name);
 	
-	group = add_group(name);
+	group = BKE_group_add(bmain, name);
 		
-	CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
+	CTX_DATA_BEGIN (C, Base *, base, selected_bases)
 	{
-		add_to_group(group, base->object, scene, base);
+		BKE_group_object_add(group, base->object, scene, base);
 	}
 	CTX_DATA_END;
 
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_GROUP | NA_EDITED, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -333,7 +334,7 @@ void GROUP_OT_create(wmOperatorType *ot)
 	ot->idname = "GROUP_OT_create";
 	
 	/* api callbacks */
-	ot->exec = group_create_exec;	
+	ot->exec = group_create_exec;
 	ot->poll = ED_operator_objectmode;
 	
 	/* flags */
@@ -348,13 +349,14 @@ static int group_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = ED_object_context(C);
+	Main *bmain = CTX_data_main(C);
 	Group *group;
 
 	if (ob == NULL)
 		return OPERATOR_CANCELLED;
 
-	group = add_group("Group");
-	add_to_group(group, ob, scene, NULL);
+	group = BKE_group_add(bmain, "Group");
+	BKE_group_object_add(group, ob, scene, NULL);
 
 	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
 
@@ -370,13 +372,56 @@ void OBJECT_OT_group_add(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = group_add_exec;
+	ot->poll = ED_operator_objectmode;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
+static bool group_link_early_exit_check(Group *group, Object *object)
+{
+	GroupObject *group_object;
+
+	for (group_object = group->gobject.first; group_object; group_object = group_object->next) {
+		if (group_object->ob == object) {
+			return true;
+		}
+	}
+
+	return false;
+}
+
+static bool check_group_contains_object_recursive(Group *group, Object *object)
+{
+	GroupObject *group_object;
+
+	if ((group->id.flag & LIB_DOIT) == 0) {
+		/* Cycle already exists in groups, let's prevent further crappyness */
+		return true;
+	}
+
+	group->id.flag &= ~LIB_DOIT;
+
+	for (group_object = group->gobject.first; group_object; group_object = group_object->next) {
+		Object *current_object = group_object->ob;
+
+		if (current_object == object) {
+			return true;
+		}
+
+		if (current_object->dup_group) {
+			if (check_group_contains_object_recursive(current_object->dup_group, object)) {
+				return true;
+			}
+		}
+	}
+
+	return false;
+}
+
 static int group_link_exec(bContext *C, wmOperator *op)
 {
+	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = ED_object_context(C);
 	Group *group = BLI_findlink(&CTX_data_main(C)->group, RNA_enum_get(op->ptr, "group"));
@@ -384,7 +429,26 @@ static int group_link_exec(bContext *C, wmOperator *op)
 	if (ELEM(NULL, ob, group))
 		return OPERATOR_CANCELLED;
 
-	add_to_group(group, ob, scene, NULL);
+	/* Early return check, if the object is already in group
+	 * we could sckip all the dependency check and just consider
+	 * operator is finished.
+	 */
+	if (group_link_early_exit_check(group, ob)) {
+		return OPERATOR_FINISHED;
+	}
+
+	/* Adding object to group which is used as dupligroup for self is bad idea.
+	 *
+	 * It is also  bad idea to add object to group which is in group which
+	 * contains our current object.
+	 */
+	tag_main_lb(&bmain->group, TRUE);
+	if (ob->dup_group == group || check_group_contains_object_recursive(group, ob)) {
+		BKE_report(op->reports, RPT_ERROR, "Could not add the group because of dependency cycle detected");
+		return OPERATOR_CANCELLED;
+	}
+
+	BKE_group_object_add(group, ob, scene, NULL);
 
 	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
 
@@ -403,6 +467,7 @@ void OBJECT_OT_group_link(wmOperatorType *ot)
 	/* api callbacks */
 	ot->exec = group_link_exec;
 	ot->invoke = WM_enum_search_invoke;
+	ot->poll = ED_operator_objectmode;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -422,7 +487,7 @@ static int group_remove_exec(bContext *C, wmOperator *UNUSED(op))
 	if (!ob || !group)
 		return OPERATOR_CANCELLED;
 
-	rem_from_group(group, ob, scene, NULL); /* base will be used if found */
+	BKE_group_object_unlink(group, ob, scene, NULL); /* base will be used if found */
 
 	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, ob);
 	
@@ -438,6 +503,7 @@ void OBJECT_OT_group_remove(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = group_remove_exec;
+	ot->poll = ED_operator_objectmode;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

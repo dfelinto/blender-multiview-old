@@ -35,14 +35,16 @@
 #define CERES_INTERNAL_LINEAR_SOLVER_H_
 
 #include <cstddef>
-
-#include <glog/logging.h>
+#include <map>
+#include <vector>
 #include "ceres/block_sparse_matrix.h"
 #include "ceres/casts.h"
 #include "ceres/compressed_row_sparse_matrix.h"
 #include "ceres/dense_sparse_matrix.h"
+#include "ceres/execution_summary.h"
 #include "ceres/triplet_sparse_matrix.h"
 #include "ceres/types.h"
+#include "glog/logging.h"
 
 namespace ceres {
 namespace internal {
@@ -55,10 +57,11 @@ class LinearOperator;
 //   Ax = b
 //
 // It is expected that a single instance of a LinearSolver object
-// maybe used multiple times for solving different linear
-// systems. This allows them to cache and reuse information across
-// solves if for example the sparsity of the linear system remains
-// constant.
+// maybe used multiple times for solving multiple linear systems with
+// the same sparsity structure. This allows them to cache and reuse
+// information across solves. This means that calling Solve on the
+// same LinearSolver instance with two different linear systems will
+// result in undefined behaviour.
 //
 // Subclasses of LinearSolver use two structs to configure themselves.
 // The Options struct configures the LinearSolver object for its
@@ -70,20 +73,25 @@ class LinearSolver {
     Options()
         : type(SPARSE_NORMAL_CHOLESKY),
           preconditioner_type(JACOBI),
+          sparse_linear_algebra_library(SUITE_SPARSE),
+          use_postordering(false),
           min_num_iterations(1),
           max_num_iterations(1),
           num_threads(1),
-          constant_sparsity(false),
-          num_eliminate_blocks(0),
           residual_reset_period(10),
-          row_block_size(Dynamic),
-          e_block_size(Dynamic),
-          f_block_size(Dynamic) {
+          row_block_size(Eigen::Dynamic),
+          e_block_size(Eigen::Dynamic),
+          f_block_size(Eigen::Dynamic) {
     }
 
     LinearSolverType type;
 
     PreconditionerType preconditioner_type;
+
+    SparseLinearAlgebraLibraryType sparse_linear_algebra_library;
+
+    // See solver.h for information about this flag.
+    bool use_postordering;
 
     // Number of internal iterations that the solver uses. This
     // parameter only makes sense for iterative solvers like CG.
@@ -93,19 +101,23 @@ class LinearSolver {
     // If possible, how many threads can the solver use.
     int num_threads;
 
-    // If possible cache and reuse the symbolic factorization across
-    // multiple calls.
-    bool constant_sparsity;
-
-    // Eliminate 0 to num_eliminate_blocks - 1 from the Normal
-    // equations to form a schur complement. Only used by the Schur
-    // complement based solver. The most common use for this parameter
-    // is in the case of structure from motion problems where we have
-    // camera blocks and point blocks. Then setting the
-    // num_eliminate_blocks to the number of points allows the solver
-    // to use the Schur complement trick. For more details see the
-    // description of this parameter in solver.h.
-    int num_eliminate_blocks;
+    // Hints about the order in which the parameter blocks should be
+    // eliminated by the linear solver.
+    //
+    // For example if elimination_groups is a vector of size k, then
+    // the linear solver is informed that it should eliminate the
+    // parameter blocks 0 ... elimination_groups[0] - 1 first, and
+    // then elimination_groups[0] ... elimination_groups[1] - 1 and so
+    // on. Within each elimination group, the linear solver is free to
+    // choose how the parameter blocks are ordered. Different linear
+    // solvers have differing requirements on elimination_groups.
+    //
+    // The most common use is for Schur type solvers, where there
+    // should be at least two elimination groups and the first
+    // elimination group must form an independent set in the normal
+    // equations. The first elimination group corresponds to the
+    // num_eliminate_blocks in the Schur type solvers.
+    vector<int> elimination_groups;
 
     // Iterative solvers, e.g. Preconditioned Conjugate Gradients
     // maintain a cheap estimate of the residual which may become
@@ -121,8 +133,8 @@ class LinearSolver {
     // It is expected that these parameters are set programmatically
     // rather than manually.
     //
-    // Please see explicit_schur_complement_solver_impl.h for more
-    // details.
+    // Please see schur_complement_solver.h and schur_eliminator.h for
+    // more details.
     int row_block_size;
     int e_block_size;
     int f_block_size;
@@ -244,6 +256,19 @@ class LinearSolver {
                         const PerSolveOptions& per_solve_options,
                         double* x) = 0;
 
+  // The following two methods return copies instead of references so
+  // that the base class implementation does not have to worry about
+  // life time issues. Further, these calls are not expected to be
+  // frequent or performance sensitive.
+  virtual map<string, int> CallStatistics() const {
+    return map<string, int>();
+  }
+
+  virtual map<string, double> TimeStatistics() const {
+    return map<string, double>();
+  }
+
+  // Factory
   static LinearSolver* Create(const Options& options);
 };
 
@@ -263,10 +288,19 @@ class TypedLinearSolver : public LinearSolver {
       const double* b,
       const LinearSolver::PerSolveOptions& per_solve_options,
       double* x) {
+    ScopedExecutionTimer total_time("LinearSolver::Solve", &execution_summary_);
     CHECK_NOTNULL(A);
     CHECK_NOTNULL(b);
     CHECK_NOTNULL(x);
     return SolveImpl(down_cast<MatrixType*>(A), b, per_solve_options, x);
+  }
+
+  virtual map<string, int> CallStatistics() const {
+    return execution_summary_.calls();
+  }
+
+  virtual map<string, double> TimeStatistics() const {
+    return execution_summary_.times();
   }
 
  private:
@@ -275,6 +309,8 @@ class TypedLinearSolver : public LinearSolver {
       const double* b,
       const LinearSolver::PerSolveOptions& per_solve_options,
       double* x) = 0;
+
+  ExecutionSummary execution_summary_;
 };
 
 // Linear solvers that depend on acccess to the low level structure of

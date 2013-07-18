@@ -197,17 +197,26 @@ void hex_to_rgb(char *hexcol, float *r, float *g, float *b)
 	if (hexcol[0] == '#') hexcol++;
 
 	if (sscanf(hexcol, "%02x%02x%02x", &ri, &gi, &bi) == 3) {
-		*r = ri / 255.0f;
-		*g = gi / 255.0f;
-		*b = bi / 255.0f;
-		CLAMP(*r, 0.0f, 1.0f);
-		CLAMP(*g, 0.0f, 1.0f);
-		CLAMP(*b, 0.0f, 1.0f);
+		/* six digit hex colors */
+	}
+	else if (sscanf(hexcol, "%01x%01x%01x", &ri, &gi, &bi) == 3) {
+		/* three digit hex colors (#123 becomes #112233) */
+		ri += ri << 4;
+		gi += gi << 4;
+		bi += bi << 4;
 	}
 	else {
 		/* avoid using un-initialized vars */
 		*r = *g = *b = 0.0f;
+		return;
 	}
+
+	*r = ri * (1.0f / 255.0f);
+	*g = gi * (1.0f / 255.0f);
+	*b = bi * (1.0f / 255.0f);
+	CLAMP(*r, 0.0f, 1.0f);
+	CLAMP(*g, 0.0f, 1.0f);
+	CLAMP(*b, 0.0f, 1.0f);
 }
 
 void rgb_to_hsv(float r, float g, float b, float *lh, float *ls, float *lv)
@@ -266,8 +275,8 @@ void rgb_to_hsv_v(const float rgb[3], float r_hsv[3])
 
 void rgb_to_hsl(float r, float g, float b, float *lh, float *ls, float *ll)
 {
-	float cmax = MAX3(r, g, b);
-	float cmin = MIN3(r, g, b);
+	const float cmax = max_fff(r, g, b);
+	const float cmin = min_fff(r, g, b);
 	float h, s, l = (cmax + cmin) / 2.0f;
 
 	if (cmax == cmin) {
@@ -291,6 +300,12 @@ void rgb_to_hsl(float r, float g, float b, float *lh, float *ls, float *ll)
 	*lh = h;
 	*ls = s;
 	*ll = l;
+}
+
+/* convenience function for now */
+void rgb_to_hsl_v(const float rgb[3], float r_hsl[3])
+{
+	rgb_to_hsl(rgb[0], rgb[1], rgb[2], &r_hsl[0], &r_hsl[1], &r_hsl[2]);
 }
 
 void rgb_to_hsv_compat(float r, float g, float b, float *lh, float *ls, float *lv)
@@ -388,17 +403,17 @@ void cpack_to_rgb(unsigned int col, float *r, float *g, float *b)
 
 void rgb_uchar_to_float(float col_r[3], const unsigned char col_ub[3])
 {
-	col_r[0] = ((float)col_ub[0]) / 255.0f;
-	col_r[1] = ((float)col_ub[1]) / 255.0f;
-	col_r[2] = ((float)col_ub[2]) / 255.0f;
+	col_r[0] = ((float)col_ub[0]) * (1.0f / 255.0f);
+	col_r[1] = ((float)col_ub[1]) * (1.0f / 255.0f);
+	col_r[2] = ((float)col_ub[2]) * (1.0f / 255.0f);
 }
 
 void rgba_uchar_to_float(float col_r[4], const unsigned char col_ub[4])
 {
-	col_r[0] = ((float)col_ub[0]) / 255.0f;
-	col_r[1] = ((float)col_ub[1]) / 255.0f;
-	col_r[2] = ((float)col_ub[2]) / 255.0f;
-	col_r[3] = ((float)col_ub[3]) / 255.0f;
+	col_r[0] = ((float)col_ub[0]) * (1.0f / 255.0f);
+	col_r[1] = ((float)col_ub[1]) * (1.0f / 255.0f);
+	col_r[2] = ((float)col_ub[2]) * (1.0f / 255.0f);
+	col_r[3] = ((float)col_ub[3]) * (1.0f / 255.0f);
 }
 
 void rgb_float_to_uchar(unsigned char col_r[3], const float col_f[3])
@@ -451,7 +466,7 @@ float linearrgb_to_srgb(float c)
 		return 1.055f * powf(c, 1.0f / 2.4f) - 0.055f;
 }
 
-void minmax_rgb(short c[])
+void minmax_rgb(short c[3])
 {
 	if (c[0] > 255) c[0] = 255;
 	else if (c[0] < 0) c[0] = 0;

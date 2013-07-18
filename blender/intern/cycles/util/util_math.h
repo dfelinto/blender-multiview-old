@@ -26,7 +26,9 @@
 
 #ifndef __KERNEL_OPENCL__
 
-#define _USE_MATH_DEFINES
+#ifdef _MSC_VER
+#  define _USE_MATH_DEFINES
+#endif
 
 #include <float.h>
 #include <math.h>
@@ -40,23 +42,35 @@ CCL_NAMESPACE_BEGIN
 
 /* Float Pi variations */
 
+/* Division */
 #ifndef M_PI_F
-#define M_PI_F		((float)3.14159265358979323846264338327950288)
+#define M_PI_F		((float)3.14159265358979323846264338327950288) 		/* pi */
 #endif
 #ifndef M_PI_2_F
-#define M_PI_2_F	((float)1.57079632679489661923132169163975144)
+#define M_PI_2_F	((float)1.57079632679489661923132169163975144) 		/* pi/2 */
 #endif
 #ifndef M_PI_4_F
-#define M_PI_4_F	((float)0.785398163397448309615660845819875721)
+#define M_PI_4_F	((float)0.785398163397448309615660845819875721) 	/* pi/4 */
 #endif
 #ifndef M_1_PI_F
-#define M_1_PI_F	((float)0.318309886183790671537767526745028724)
+#define M_1_PI_F	((float)0.318309886183790671537767526745028724) 	/* 1/pi */
 #endif
 #ifndef M_2_PI_F
-#define M_2_PI_F	((float)0.636619772367581343075535053490057448)
+#define M_2_PI_F	((float)0.636619772367581343075535053490057448) 	/* 2/pi */
 #endif
+
+/* Multiplication */
+#ifndef M_2PI_F
+#define M_2PI_F		((float)6.283185307179586476925286766559005768)		/* 2*pi */
+#endif
+#ifndef M_4PI_F
+#define M_4PI_F		((float)12.56637061435917295385057353311801153)		/* 4*pi */
+#endif
+
+/* Float sqrt variations */
+
 #ifndef M_SQRT2_F
-#define M_SQRT2_F	((float)1.41421356237309504880)
+#define M_SQRT2_F	((float)1.41421356237309504880) 					/* sqrt(2) */
 #endif
 
 
@@ -148,6 +162,25 @@ __device_inline float clamp(float a, float mn, float mx)
 }
 
 #endif
+
+__device_inline int float_to_int(float f)
+{
+#ifdef __KERNEL_SSE2__
+	return _mm_cvtt_ss2si(_mm_load_ss(&f));
+#else
+	return (int)f;
+#endif
+}
+
+__device_inline int floor_to_int(float f)
+{
+	return float_to_int(floorf(f));
+}
+
+__device_inline int ceil_to_int(float f)
+{
+	return float_to_int(ceilf(f));
+}
 
 __device_inline float signf(float f)
 {
@@ -276,6 +309,11 @@ __device_inline float cross(const float2 a, const float2 b)
 #endif
 
 #ifndef __KERNEL_OPENCL__
+
+__device_inline bool operator==(const int2 a, const int2 b)
+{
+	return (a.x == b.x && a.y == b.y);
+}
 
 __device_inline float len(const float2 a)
 {
@@ -971,23 +1009,23 @@ __device_inline void print_int4(const char *label, const int4& a)
 
 #ifndef __KERNEL_OPENCL__
 
-__device_inline unsigned int as_int(uint i)
+__device_inline int as_int(uint i)
 {
-	union { unsigned int ui; int i; } u;
+	union { uint ui; int i; } u;
 	u.ui = i;
 	return u.i;
 }
 
-__device_inline unsigned int as_uint(int i)
+__device_inline uint as_uint(int i)
 {
-	union { unsigned int ui; int i; } u;
+	union { uint ui; int i; } u;
 	u.i = i;
 	return u.ui;
 }
 
-__device_inline unsigned int as_uint(float f)
+__device_inline uint as_uint(float f)
 {
-	union { unsigned int i; float f; } u;
+	union { uint i; float f; } u;
 	u.f = f;
 	return u.i;
 }
@@ -1060,6 +1098,220 @@ __device_inline float3 safe_divide_color(float3 a, float3 b)
 	z = (b.z != 0.0f)? a.z/b.z: 0.0f;
 
 	return make_float3(x, y, z);
+}
+
+/* Rotation of point around axis and angle */
+
+__device_inline float3 rotate_around_axis(float3 p, float3 axis, float angle)
+{
+	float costheta = cosf(angle);
+	float sintheta = sinf(angle);
+	float3 r;
+
+	r.x = ((costheta + (1 - costheta) * axis.x * axis.x) * p.x) +
+		(((1 - costheta) * axis.x * axis.y - axis.z * sintheta) * p.y) +
+		(((1 - costheta) * axis.x * axis.z + axis.y * sintheta) * p.z);
+
+	r.y = (((1 - costheta) * axis.x * axis.y + axis.z * sintheta) * p.x) +
+		((costheta + (1 - costheta) * axis.y * axis.y) * p.y) +
+		(((1 - costheta) * axis.y * axis.z - axis.x * sintheta) * p.z);
+
+	r.z = (((1 - costheta) * axis.x * axis.z - axis.y * sintheta) * p.x) +
+		(((1 - costheta) * axis.y * axis.z + axis.x * sintheta) * p.y) +
+		((costheta + (1 - costheta) * axis.z * axis.z) * p.z);
+
+	return r;
+}
+
+/* NaN-safe math ops */
+
+__device float safe_asinf(float a)
+{
+	if(a <= -1.0f)
+		return -M_PI_2_F;
+	else if(a >= 1.0f)
+		return M_PI_2_F;
+
+	return asinf(a);
+}
+
+__device float safe_acosf(float a)
+{
+	if(a <= -1.0f)
+		return M_PI_F;
+	else if(a >= 1.0f)
+		return 0.0f;
+
+	return acosf(a);
+}
+
+__device float compatible_powf(float x, float y)
+{
+	/* GPU pow doesn't accept negative x, do manual checks here */
+	if(x < 0.0f) {
+		if(fmodf(-y, 2.0f) == 0.0f)
+			return powf(-x, y);
+		else
+			return -powf(-x, y);
+	}
+	else if(x == 0.0f)
+		return 0.0f;
+
+	return powf(x, y);
+}
+
+__device float safe_powf(float a, float b)
+{
+	if(b == 0.0f)
+		return 1.0f;
+	if(a == 0.0f)
+		return 0.0f;
+	if(a < 0.0f && b != (int)b)
+		return 0.0f;
+	
+	return compatible_powf(a, b);
+}
+
+__device float safe_logf(float a, float b)
+{
+	if(a < 0.0f || b < 0.0f)
+		return 0.0f;
+
+	return logf(a)/logf(b);
+}
+
+__device float safe_divide(float a, float b)
+{
+	return (b != 0.0f)? a/b: 0.0f;
+}
+
+__device float safe_modulo(float a, float b)
+{
+	return (b != 0.0f)? fmodf(a, b): 0.0f;
+}
+
+/* Ray Intersection */
+
+__device bool ray_sphere_intersect(
+	float3 ray_P, float3 ray_D, float ray_t,
+	float3 sphere_P, float sphere_radius,
+	float3 *isect_P, float *isect_t)
+{
+	float3 d = sphere_P - ray_P;
+	float radiussq = sphere_radius*sphere_radius;
+	float tsq = dot(d, d);
+
+	if(tsq > radiussq) { /* ray origin outside sphere */
+		float tp = dot(d, ray_D);
+
+		if(tp < 0.0f) /* dir points away from sphere */
+			return false;
+
+		float dsq = tsq - tp*tp; /* pythagoras */
+
+		if(dsq > radiussq) /* closest point on ray outside sphere */
+			return false;
+
+		float t = tp - sqrtf(radiussq - dsq); /* pythagoras */
+
+		if(t < ray_t) {
+			*isect_t = t;
+			*isect_P = ray_P + ray_D*t;
+			return true;
+		}
+	}
+
+	return false;
+}
+
+__device bool ray_aligned_disk_intersect(
+	float3 ray_P, float3 ray_D, float ray_t,
+	float3 disk_P, float disk_radius,
+	float3 *isect_P, float *isect_t)
+{
+	/* aligned disk normal */
+	float disk_t;
+	float3 disk_N = normalize_len(ray_P - disk_P, &disk_t);
+	float div = dot(ray_D, disk_N);
+
+	if(div == 0.0f)
+		return false;
+
+	/* compute t to intersection point */
+	float t = -disk_t/div;
+	if(t < 0.0f || t > ray_t)
+		return false;
+	
+	/* test if within radius */
+	float3 P = ray_P + ray_D*t;
+	if(len_squared(P - disk_P) > disk_radius*disk_radius)
+		return false;
+
+	*isect_P = P;
+	*isect_t = t;
+
+	return true;
+}
+
+__device bool ray_triangle_intersect(
+	float3 ray_P, float3 ray_D, float ray_t,
+	float3 v0, float3 v1, float3 v2,
+	float3 *isect_P, float *isect_t)
+{
+	/* Calculate intersection */
+	float3 e1 = v1 - v0;
+	float3 e2 = v2 - v0;
+	float3 s1 = cross(ray_D, e2);
+
+	const float divisor = dot(s1, e1);
+	if(divisor == 0.0f)
+		return false;
+
+	const float invdivisor = 1.0f/divisor;
+
+	/* compute first barycentric coordinate */
+	const float3 d = ray_P - v0;
+	const float u = dot(d, s1)*invdivisor;
+	if(u < 0.0f)
+		return false;
+
+	/* Compute second barycentric coordinate */
+	const float3 s2 = cross(d, e1);
+	const float v = dot(ray_D, s2)*invdivisor;
+	if(v < 0.0f)
+		return false;
+
+	const float b0 = 1.0f - u - v;
+	if(b0 < 0.0f)
+		return false;
+
+	/* compute t to intersection point */
+	const float t = dot(e2, s2)*invdivisor;
+	if(t < 0.0f || t > ray_t)
+		return false;
+
+	*isect_t = t;
+	*isect_P = ray_P + ray_D*t;
+
+	return true;
+}
+
+__device bool ray_quad_intersect(
+	float3 ray_P, float3 ray_D, float ray_t,
+	float3 quad_P, float3 quad_u, float3 quad_v,
+	float3 *isect_P, float *isect_t)
+{
+	float3 v0 = quad_P - quad_u*0.5f - quad_v*0.5f;
+	float3 v1 = quad_P + quad_u*0.5f - quad_v*0.5f;
+	float3 v2 = quad_P + quad_u*0.5f + quad_v*0.5f;
+	float3 v3 = quad_P - quad_u*0.5f + quad_v*0.5f;
+
+	if(ray_triangle_intersect(ray_P, ray_D, ray_t, v0, v1, v2, isect_P, isect_t))
+		return true;
+	else if(ray_triangle_intersect(ray_P, ray_D, ray_t, v0, v2, v3, isect_P, isect_t))
+		return true;
+	
+	return false;
 }
 
 CCL_NAMESPACE_END

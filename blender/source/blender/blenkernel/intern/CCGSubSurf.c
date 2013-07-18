@@ -7,24 +7,21 @@
 #include <string.h>
 #include <math.h>
 
+#include "MEM_guardedalloc.h"
+#include "BLI_sys_types.h" // for intptr_t support
+
+#include "BLI_utildefines.h" /* for BLI_assert */
+
 #include "BKE_ccg.h"
 #include "CCGSubSurf.h"
 #include "BKE_subsurf.h"
 
-#include "MEM_guardedalloc.h"
-#include "BLO_sys_types.h" // for intptr_t support
-
-#include "BLI_utildefines.h" /* for BLI_assert */
-
-#ifdef _MSC_VER
-#  define CCG_INLINE __inline
-#else
-#  define CCG_INLINE inline
-#endif
-
 /* used for normalize_v3 in BLI_math_vector
  * float.h's FLT_EPSILON causes trouble with subsurf normals - campbell */
 #define EPSILON (1.0e-35f)
+
+/* With this limit a single triangle becomes over 3 million faces */
+#define CCGSUBSURF_LEVEL_MAX 11
 
 /***/
 
@@ -235,8 +232,8 @@ static CCGAllocatorIFC *_getStandardAllocatorIFC(void)
 int ccg_gridsize(int level)
 {
 	BLI_assert(level > 0);
-	BLI_assert(level <= 31);
-         
+	BLI_assert(level <= CCGSUBSURF_LEVEL_MAX + 1);
+
 	return (1 << (level - 1)) + 1;
 }
 
@@ -251,7 +248,7 @@ int ccg_factor(int low_level, int high_level)
 static int ccg_edgesize(int level)
 {
 	BLI_assert(level > 0);
-	BLI_assert(level <= 30);
+	BLI_assert(level <= CCGSUBSURF_LEVEL_MAX + 1);
 	
 	return 1 + (1 << level);
 }
@@ -260,7 +257,7 @@ static int ccg_spacing(int high_level, int low_level)
 {
 	BLI_assert(high_level > 0 && low_level > 0);
 	BLI_assert(high_level >= low_level);
-	BLI_assert((high_level - low_level) <= 30);
+	BLI_assert((high_level - low_level) <= CCGSUBSURF_LEVEL_MAX);
 
 	return 1 << (high_level - low_level);
 }
@@ -268,7 +265,7 @@ static int ccg_spacing(int high_level, int low_level)
 static int ccg_edgebase(int level)
 {
 	BLI_assert(level > 0);
-	BLI_assert(level <= 30);
+	BLI_assert(level <= CCGSUBSURF_LEVEL_MAX + 1);
 
 	return level + (1 << level) - 1;
 }
@@ -305,7 +302,7 @@ struct CCGVert {
 //	byte *userData;
 };
 
-static CCG_INLINE byte *VERT_getLevelData(CCGVert *v)
+BLI_INLINE byte *VERT_getLevelData(CCGVert *v)
 {
 	return (byte *)(&(v)[1]);
 }
@@ -324,7 +321,7 @@ struct CCGEdge {
 //	byte *userData;
 };
 
-static CCG_INLINE byte *EDGE_getLevelData(CCGEdge *e)
+BLI_INLINE byte *EDGE_getLevelData(CCGEdge *e)
 {
 	return (byte *)(&(e)[1]);
 }
@@ -342,17 +339,17 @@ struct CCGFace {
 //	byte *userData;
 };
 
-static CCG_INLINE CCGVert **FACE_getVerts(CCGFace *f)
+BLI_INLINE CCGVert **FACE_getVerts(CCGFace *f)
 {
 	return (CCGVert **)(&f[1]);
 }
 
-static CCG_INLINE CCGEdge **FACE_getEdges(CCGFace *f)
+BLI_INLINE CCGEdge **FACE_getEdges(CCGFace *f)
 {
 	return (CCGEdge **)(&(FACE_getVerts(f)[f->numVerts]));
 }
 
-static CCG_INLINE byte *FACE_getCenterData(CCGFace *f)
+BLI_INLINE byte *FACE_getCenterData(CCGFace *f)
 {
 	return (byte *)(&(FACE_getEdges(f)[(f)->numVerts]));
 }
@@ -698,28 +695,28 @@ static CCGFace *_face_new(CCGFaceHDL fHDL, CCGVert **verts, CCGEdge **edges, int
 	return f;
 }
 
-static CCG_INLINE void *_face_getIECo(CCGFace *f, int lvl, int S, int x, int levels, int dataSize)
+BLI_INLINE void *_face_getIECo(CCGFace *f, int lvl, int S, int x, int levels, int dataSize)
 {
 	int maxGridSize = ccg_gridsize(levels);
 	int spacing = ccg_spacing(levels, lvl);
 	byte *gridBase = FACE_getCenterData(f) + dataSize * (1 + S * (maxGridSize + maxGridSize * maxGridSize));
 	return &gridBase[dataSize * x * spacing];
 }
-static CCG_INLINE void *_face_getIENo(CCGFace *f, int lvl, int S, int x, int levels, int dataSize, int normalDataOffset)
+BLI_INLINE void *_face_getIENo(CCGFace *f, int lvl, int S, int x, int levels, int dataSize, int normalDataOffset)
 {
 	int maxGridSize = ccg_gridsize(levels);
 	int spacing = ccg_spacing(levels, lvl);
 	byte *gridBase = FACE_getCenterData(f) + dataSize * (1 + S * (maxGridSize + maxGridSize * maxGridSize));
 	return &gridBase[dataSize * x * spacing + normalDataOffset];
 }
-static CCG_INLINE void *_face_getIFCo(CCGFace *f, int lvl, int S, int x, int y, int levels, int dataSize)
+BLI_INLINE void *_face_getIFCo(CCGFace *f, int lvl, int S, int x, int y, int levels, int dataSize)
 {
 	int maxGridSize = ccg_gridsize(levels);
 	int spacing = ccg_spacing(levels, lvl);
 	byte *gridBase = FACE_getCenterData(f) + dataSize * (1 + S * (maxGridSize + maxGridSize * maxGridSize));
 	return &gridBase[dataSize * (maxGridSize + (y * maxGridSize + x) * spacing)];
 }
-static CCG_INLINE float *_face_getIFNo(CCGFace *f, int lvl, int S, int x, int y, int levels, int dataSize, int normalDataOffset)
+BLI_INLINE float *_face_getIFNo(CCGFace *f, int lvl, int S, int x, int y, int levels, int dataSize, int normalDataOffset)
 {
 	int maxGridSize = ccg_gridsize(levels);
 	int spacing = ccg_spacing(levels, lvl);
@@ -742,7 +739,7 @@ static int _face_getEdgeIndex(CCGFace *f, CCGEdge *e)
 			return i;
 	return -1;
 }
-static CCG_INLINE void *_face_getIFCoEdge(CCGFace *f, CCGEdge *e, int f_ed_idx, int lvl, int eX, int eY, int levels, int dataSize)
+BLI_INLINE void *_face_getIFCoEdge(CCGFace *f, CCGEdge *e, int f_ed_idx, int lvl, int eX, int eY, int levels, int dataSize)
 {
 	int maxGridSize = ccg_gridsize(levels);
 	int spacing = ccg_spacing(levels, lvl);
@@ -868,7 +865,7 @@ CCGSubSurf *ccgSubSurf_new(CCGMeshIFC *ifc, int subdivLevels, CCGAllocatorIFC *a
 		ss->oldVMap = ss->oldEMap = ss->oldFMap = NULL;
 		ss->lenTempArrays = 0;
 		ss->tempVerts = NULL;
-		ss->tempEdges = NULL;	
+		ss->tempEdges = NULL;
 
 		return ss;
 	}
@@ -1397,7 +1394,7 @@ CCGError ccgSubSurf_processSync(CCGSubSurf *ss)
 	return eCCGError_None;
 }
 
-#define VERT_getNo(e, lvl)                  _vert_getNo(e, lvl, vertDataSize, normalDataOffset)
+#define VERT_getNo(e, lvl)                  _vert_getNo(v, lvl, vertDataSize, normalDataOffset)
 #define EDGE_getNo(e, lvl, x)               _edge_getNo(e, lvl, x, vertDataSize, normalDataOffset)
 #define FACE_getIFNo(f, lvl, S, x, y)       _face_getIFNo(f, lvl, S, x, y, subdivLevels, vertDataSize, normalDataOffset)
 #define FACE_calcIFNo(f, lvl, S, x, y, no)  _face_calcIFNo(f, lvl, S, x, y, no, subdivLevels, vertDataSize)
@@ -1422,18 +1419,25 @@ static void ccgSubSurf__calcVertNormals(CCGSubSurf *ss,
 		float no[3];
 
 		for (S = 0; S < f->numVerts; S++) {
-			for (y = 0; y < gridSize - 1; y++)
-				for (x = 0; x < gridSize - 1; x++)
+			for (y = 0; y < gridSize - 1; y++) {
+				for (x = 0; x < gridSize - 1; x++) {
 					NormZero(FACE_getIFNo(f, lvl, S, x, y));
+				}
+			}
 
-			if (FACE_getEdges(f)[(S - 1 + f->numVerts) % f->numVerts]->flags & Edge_eEffected)
-				for (x = 0; x < gridSize - 1; x++)
+			if (FACE_getEdges(f)[(S - 1 + f->numVerts) % f->numVerts]->flags & Edge_eEffected) {
+				for (x = 0; x < gridSize - 1; x++) {
 					NormZero(FACE_getIFNo(f, lvl, S, x, gridSize - 1));
-			if (FACE_getEdges(f)[S]->flags & Edge_eEffected)
-				for (y = 0; y < gridSize - 1; y++)
+				}
+			}
+			if (FACE_getEdges(f)[S]->flags & Edge_eEffected) {
+				for (y = 0; y < gridSize - 1; y++) {
 					NormZero(FACE_getIFNo(f, lvl, S, gridSize - 1, y));
-			if (FACE_getVerts(f)[S]->flags & Vert_eEffected)
+				}
+			}
+			if (FACE_getVerts(f)[S]->flags & Vert_eEffected) {
 				NormZero(FACE_getIFNo(f, lvl, S, gridSize - 1, gridSize - 1));
+			}
 		}
 
 		for (S = 0; S < f->numVerts; S++) {
@@ -1491,7 +1495,7 @@ static void ccgSubSurf__calcVertNormals(CCGSubSurf *ss,
 	/* XXX can I reduce the number of normalisations here? */
 	for (ptrIdx = 0; ptrIdx < numEffectedV; ptrIdx++) {
 		CCGVert *v = (CCGVert *) effectedV[ptrIdx];
-		float length, *no = _vert_getNo(v, lvl, vertDataSize, normalDataOffset);
+		float length, *no = VERT_getNo(v, lvl);
 
 		NormZero(no);
 

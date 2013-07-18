@@ -32,24 +32,26 @@
  * This is external code.
  */
 
-
 #include <stdlib.h>
 #include <string.h>
 #include <stdarg.h>
 #include <stdio.h>
 #include <ctype.h>
 
-#include "MEM_guardedalloc.h"
-#include "MEM_sys_types.h"
-
 #ifdef WIN32
-#  include "BLI_winstuff.h"
+#include "BLI_winstuff.h"
 #endif
+
+#include "MEM_guardedalloc.h"
+
+#include "BLI_sys_types.h"
+#include "BLI_utildefines.h"
+#include "BLI_fileops.h"
 
 #include "AVI_avi.h"
 #include "avi_intern.h"
 
-#include "endian.h"
+#include "avi_endian.h"
 
 static int AVI_DEBUG = 0;
 static char DEBUG_FCC[4];
@@ -95,7 +97,7 @@ char *fcc_to_char(unsigned int fcc)
 	DEBUG_FCC[2] = (fcc >> 16) & 127;
 	DEBUG_FCC[3] = (fcc >> 24) & 127;
 
-	return DEBUG_FCC;	
+	return DEBUG_FCC;
 }
 
 char *tcc_to_char(unsigned int tcc)
@@ -105,7 +107,7 @@ char *tcc_to_char(unsigned int tcc)
 	DEBUG_FCC[2] = 0;
 	DEBUG_FCC[3] = 0;
 
-	return DEBUG_FCC;	
+	return DEBUG_FCC;
 }
 
 int AVI_get_stream(AviMovie *movie, int avist_type, int stream_num)
@@ -209,7 +211,7 @@ int AVI_is_avi(char *name)
 	FILE *fp;
 	int ret;
 	
-	fp = fopen(name, "rb");
+	fp = BLI_fopen(name, "rb");
 	if (fp == NULL)
 		return 0;
 
@@ -239,7 +241,7 @@ int AVI_is_avi(const char *name)
 	DEBUG_PRINT("opening movie\n");
 
 	movie.type = AVI_MOVIE_READ;
-	movie.fp = fopen(name, "rb");
+	movie.fp = BLI_fopen(name, "rb");
 	movie.offset_table = NULL;
 
 	if (movie.fp == NULL)
@@ -303,7 +305,7 @@ int AVI_is_avi(const char *name)
 			
 			MEM_freeN(movie.streams);
 			fclose(movie.fp);
-			return 0;				
+			return 0;
 		}
 
 		movie.streams[temp].sh.Type = GET_FCC(movie.fp);
@@ -402,12 +404,14 @@ int AVI_is_avi(const char *name)
 					}
 				}
 
-			} 
+			}
 			if (j > 0) fseek(movie.fp, j, SEEK_CUR);
 		}
-		else fseek(movie.fp, movie.streams[temp].sf_size, SEEK_CUR);
+		else {
+			fseek(movie.fp, movie.streams[temp].sf_size, SEEK_CUR);
+		}
 
-		/* Walk to the next LIST */		
+		/* Walk to the next LIST */
 		while (GET_FCC(movie.fp) != FCC("LIST")) {
 			temp = GET_FCC(movie.fp);
 			if (temp < 0 || ftell(movie.fp) > movie.size) {
@@ -415,9 +419,9 @@ int AVI_is_avi(const char *name)
 				
 				MEM_freeN(movie.streams);
 				fclose(movie.fp);
-				return 0;				
+				return 0;
 			}
-			fseek(movie.fp, temp, SEEK_CUR);			
+			fseek(movie.fp, temp, SEEK_CUR);
 		}
 
 		fseek(movie.fp, -4L, SEEK_CUR);
@@ -440,7 +444,7 @@ AviError AVI_open_movie(const char *name, AviMovie *movie)
 	memset(movie, 0, sizeof(AviMovie));
 
 	movie->type = AVI_MOVIE_READ;
-	movie->fp = fopen(name, "rb");
+	movie->fp = BLI_fopen(name, "rb");
 	movie->offset_table = NULL;
 
 	if (movie->fp == NULL)
@@ -593,12 +597,14 @@ AviError AVI_open_movie(const char *name, AviMovie *movie)
 					}
 				}
 
-			} 
+			}
 			if (j > 0) fseek(movie->fp, j, SEEK_CUR);
 		}
-		else fseek(movie->fp, movie->streams[temp].sf_size, SEEK_CUR);
-		
-		/* Walk to the next LIST */		
+		else {
+			fseek(movie->fp, movie->streams[temp].sf_size, SEEK_CUR);
+		}
+
+		/* Walk to the next LIST */
 		while (GET_FCC(movie->fp) != FCC("LIST")) {
 			temp = GET_FCC(movie->fp);
 			if (temp < 0 || ftell(movie->fp) > movie->size) {
@@ -666,13 +672,13 @@ AviError AVI_open_movie(const char *name, AviMovie *movie)
 			}
 		}
 
-/* Some AVI's have offset entries in absolute coordinates
- * instead of an offset from the movie beginning... this is...
- * wacky, but we need to handle it. The wacky offset always
- * starts at movi_offset it seems... so we'll check that.
- * Note the the offset needs an extra 4 bytes for some 
- * undetermined reason */
- 
+		/* Some AVI's have offset entries in absolute coordinates
+		 * instead of an offset from the movie beginning... this is...
+		 * wacky, but we need to handle it. The wacky offset always
+		 * starts at movi_offset it seems... so we'll check that.
+		 * Note the the offset needs an extra 4 bytes for some
+		 * undetermined reason */
+
 		if (movie->entries[0].Offset == movie->movi_offset)
 			movie->read_offset = 4;
 	}
@@ -735,14 +741,14 @@ AviError AVI_close(AviMovie *movie)
 	fclose(movie->fp);
 
 	for (i = 0; i < movie->header->Streams; i++) {
-		if (movie->streams[i].sf != NULL)
+		if (movie->streams[i].sf != NULL) {
 			MEM_freeN(movie->streams[i].sf);
+		}
 	}
 
-	if (movie->header != NULL)
-		MEM_freeN(movie->header);
-	if (movie->streams != NULL)
-		MEM_freeN(movie->streams);
+	MEM_freeN(movie->header);
+	MEM_freeN(movie->streams);
+
 	if (movie->entries != NULL)
 		MEM_freeN(movie->entries);
 	if (movie->offset_table != NULL)
@@ -762,7 +768,7 @@ AviError AVI_open_compress(char *name, AviMovie *movie, int streams, ...)
 	int64_t junk_pos;
 
 	movie->type = AVI_MOVIE_WRITE;
-	movie->fp = fopen(name, "wb");
+	movie->fp = BLI_fopen(name, "wb");
 
 	movie->index_entries = 0;
 
@@ -828,7 +834,7 @@ AviError AVI_open_compress(char *name, AviMovie *movie, int streams, ...)
 		movie->streams[i].sh.right = 0;
 		movie->streams[i].sh.bottom = 0;
 
-		if (movie->streams[i].sh.Type == FCC("vids")) {	
+		if (movie->streams[i].sh.Type == FCC("vids")) {
 #if 0
 			if (movie->streams[i].format == AVI_FORMAT_MJPEG) {
 				movie->streams[i].sf = MEM_mallocN(sizeof(AviBitmapInfoHeader) +
@@ -951,7 +957,6 @@ AviError AVI_write_frame(AviMovie *movie, int frame_num, ...)
 {
 	AviList list;
 	AviChunk chunk;
-	AviIndexEntry *temp;
 	va_list ap;
 	int stream;
 	int64_t rec_off;
@@ -966,15 +971,7 @@ AviError AVI_write_frame(AviMovie *movie, int frame_num, ...)
 
 	if (frame_num + 1 > movie->index_entries) {
 		const size_t entry_size = (movie->header->Streams + 1) * sizeof(AviIndexEntry);
-
-		if (movie->entries != NULL) {
-			temp = (AviIndexEntry *)MEM_recallocN(movie->entries, (frame_num + 1) * entry_size);
-		}
-		else {
-			temp = (AviIndexEntry *) MEM_callocN((frame_num + 1) * entry_size, "newidxentry");
-		}
-
-		movie->entries = temp;
+		movie->entries = (AviIndexEntry *)MEM_recallocN(movie->entries, (frame_num + 1) * entry_size);
 		movie->index_entries = frame_num + 1;
 	}
 
@@ -1082,13 +1079,14 @@ AviError AVI_close_compress(AviMovie *movie)
 	fclose(movie->fp);
 
 	for (i = 0; i < movie->header->Streams; i++) {
-		if (movie->streams[i].sf != NULL)
+		if (movie->streams && (movie->streams[i].sf != NULL)) {
 			MEM_freeN(movie->streams[i].sf);
+		}
 	}
-	if (movie->header != NULL)
-		MEM_freeN(movie->header);
-	if (movie->entries != NULL)
-		MEM_freeN(movie->entries);
+
+	MEM_freeN(movie->header);
+	MEM_freeN(movie->entries);
+
 	if (movie->streams != NULL)
 		MEM_freeN(movie->streams);
 	if (movie->offset_table != NULL)

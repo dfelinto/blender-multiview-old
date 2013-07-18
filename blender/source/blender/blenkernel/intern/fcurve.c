@@ -47,6 +47,8 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_fcurve.h"
 #include "BKE_animsys.h"
 #include "BKE_action.h"
@@ -55,7 +57,6 @@
 #include "BKE_curve.h" 
 #include "BKE_global.h"
 #include "BKE_object.h"
-#include "BKE_utildefines.h"
 
 #include "RNA_access.h"
 
@@ -75,12 +76,10 @@ void free_fcurve(FCurve *fcu)
 {
 	if (fcu == NULL) 
 		return;
-	
+
 	/* free curve data */
-	if (fcu) {
-		if (fcu->bezt) MEM_freeN(fcu->bezt);
-		if (fcu->fpt) MEM_freeN(fcu->fpt);
-	}
+	if (fcu->bezt) MEM_freeN(fcu->bezt);
+	if (fcu->fpt)  MEM_freeN(fcu->fpt);
 	
 	/* free RNA-path, as this were allocated when getting the path string */
 	if (fcu->rna_path)
@@ -172,7 +171,7 @@ void copy_fcurves(ListBase *dst, ListBase *src)
 /* ----------------- Finding F-Curves -------------------------- */
 
 /* high level function to get an fcurve from C without having the rna */
-FCurve *id_data_find_fcurve(ID *id, void *data, StructRNA *type, const char *prop_name, int index, char *driven)
+FCurve *id_data_find_fcurve(ID *id, void *data, StructRNA *type, const char *prop_name, int index, bool *r_driven)
 {
 	/* anim vars */
 	AnimData *adt = BKE_animdata_from_id(id);
@@ -183,8 +182,8 @@ FCurve *id_data_find_fcurve(ID *id, void *data, StructRNA *type, const char *pro
 	PropertyRNA *prop;
 	char *path;
 
-	if (driven)
-		*driven = FALSE;
+	if (r_driven)
+		*r_driven = false;
 	
 	/* only use the current action ??? */
 	if (ELEM(NULL, adt, adt->action))
@@ -204,8 +203,8 @@ FCurve *id_data_find_fcurve(ID *id, void *data, StructRNA *type, const char *pro
 			/* if not animated, check if driven */
 			if ((fcu == NULL) && (adt->drivers.first)) {
 				fcu = list_find_fcurve(&adt->drivers, path, index);
-				if (fcu && driven)
-					*driven = TRUE;
+				if (fcu && r_driven)
+					*r_driven = true;
 				fcu = NULL;
 			}
 			
@@ -308,11 +307,11 @@ int list_find_data_fcurves(ListBase *dst, ListBase *src, const char *dataPrefix,
 	return matches;
 }
 
-FCurve *rna_get_fcurve(PointerRNA *ptr, PropertyRNA *prop, int rnaindex, bAction **action, int *driven)
+FCurve *rna_get_fcurve(PointerRNA *ptr, PropertyRNA *prop, int rnaindex, bAction **action, bool *r_driven)
 {
 	FCurve *fcu = NULL;
 	
-	*driven = 0;
+	*r_driven = false;
 	
 	/* there must be some RNA-pointer + property combon */
 	if (prop && ptr->id.data && RNA_property_animateable(ptr, prop)) {
@@ -334,7 +333,7 @@ FCurve *rna_get_fcurve(PointerRNA *ptr, PropertyRNA *prop, int rnaindex, bAction
 						fcu = list_find_fcurve(&adt->drivers, path, rnaindex);
 						
 						if (fcu)
-							*driven = 1;
+							*r_driven = true;
 					}
 					
 					if (fcu && action)
@@ -357,15 +356,15 @@ FCurve *rna_get_fcurve(PointerRNA *ptr, PropertyRNA *prop, int rnaindex, bAction
 /* Binary search algorithm for finding where to insert BezTriple. (for use by insert_bezt_fcurve)
  * Returns the index to insert at (data already at that index will be offset if replace is 0)
  */
-int binarysearch_bezt_index(BezTriple array[], float frame, int arraylen, short *replace)
+int binarysearch_bezt_index(BezTriple array[], float frame, int arraylen, bool *r_replace)
 {
 	int start = 0, end = arraylen;
 	int loopbreaker = 0, maxloop = arraylen * 2;
 	
 	/* initialize replace-flag first */
-	*replace = 0;
+	*r_replace = false;
 	
-	/* sneaky optimisations (don't go through searching process if...):
+	/* sneaky optimizations (don't go through searching process if...):
 	 *	- keyframe to be added is to be added out of current bounds
 	 *	- keyframe to be added would replace one of the existing ones on bounds
 	 */
@@ -380,7 +379,7 @@ int binarysearch_bezt_index(BezTriple array[], float frame, int arraylen, short 
 		/* 'First' Keyframe (when only one keyframe, this case is used) */
 		framenum = array[0].vec[1][0];
 		if (IS_EQT(frame, framenum, BEZT_BINARYSEARCH_THRESH)) {
-			*replace = 1;
+			*r_replace = true;
 			return 0;
 		}
 		else if (frame < framenum)
@@ -389,7 +388,7 @@ int binarysearch_bezt_index(BezTriple array[], float frame, int arraylen, short 
 		/* 'Last' Keyframe */
 		framenum = array[(arraylen - 1)].vec[1][0];
 		if (IS_EQT(frame, framenum, BEZT_BINARYSEARCH_THRESH)) {
-			*replace = 1;
+			*r_replace = true;
 			return (arraylen - 1);
 		}
 		else if (frame > framenum)
@@ -407,7 +406,7 @@ int binarysearch_bezt_index(BezTriple array[], float frame, int arraylen, short 
 		
 		/* check if exactly equal to midpoint */
 		if (IS_EQT(frame, midfra, BEZT_BINARYSEARCH_THRESH)) {
-			*replace = 1;
+			*r_replace = true;
 			return mid;
 		}
 		
@@ -503,29 +502,29 @@ short calc_fcurve_bounds(FCurve *fcu, float *xmin, float *xmax, float *ymin, flo
 					BLI_assert(bezt_last != NULL);
 					
 					if (include_handles) {
-						xminv = MIN3(xminv, bezt_first->vec[0][0], bezt_first->vec[1][0]);
-						xmaxv = MAX3(xmaxv, bezt_last->vec[1][0],  bezt_last->vec[2][0]);
+						xminv = min_fff(xminv, bezt_first->vec[0][0], bezt_first->vec[1][0]);
+						xmaxv = max_fff(xmaxv, bezt_last->vec[1][0],  bezt_last->vec[2][0]);
 					}
 					else {
-						xminv = MIN2(xminv, bezt_first->vec[1][0]);
-						xmaxv = MAX2(xmaxv, bezt_last->vec[1][0]);
+						xminv = min_ff(xminv, bezt_first->vec[1][0]);
+						xmaxv = max_ff(xmaxv, bezt_last->vec[1][0]);
 					}
 				}
 			}
 			
 			/* only loop over keyframes to find extents for values if needed */
-			if (ymin || ymax) {	
+			if (ymin || ymax) {
 				BezTriple *bezt;
 				
 				for (bezt = fcu->bezt, i = 0; i < fcu->totvert; bezt++, i++) {
 					if ((do_sel_only == FALSE) || BEZSELECTED(bezt)) {
 						if (include_handles) {
-							yminv = MIN4(yminv, bezt->vec[1][1], bezt->vec[0][1], bezt->vec[2][1]);
-							ymaxv = MAX4(ymaxv, bezt->vec[1][1], bezt->vec[0][1], bezt->vec[2][1]);
+							yminv = min_ffff(yminv, bezt->vec[1][1], bezt->vec[0][1], bezt->vec[2][1]);
+							ymaxv = max_ffff(ymaxv, bezt->vec[1][1], bezt->vec[0][1], bezt->vec[2][1]);
 						}
 						else {
-							yminv = MIN2(yminv, bezt->vec[1][1]);
-							ymaxv = MAX2(ymaxv, bezt->vec[1][1]);
+							yminv = min_ff(yminv, bezt->vec[1][1]);
+							ymaxv = max_ff(ymaxv, bezt->vec[1][1]);
 						}
 						
 						foundvert = TRUE;
@@ -536,8 +535,8 @@ short calc_fcurve_bounds(FCurve *fcu, float *xmin, float *xmax, float *ymin, flo
 		else if (fcu->fpt) {
 			/* frame range can be directly calculated from end verts */
 			if (xmin || xmax) {
-				xminv = MIN2(xminv, fcu->fpt[0].vec[0]);
-				xmaxv = MAX2(xmaxv, fcu->fpt[fcu->totvert - 1].vec[0]);
+				xminv = min_ff(xminv, fcu->fpt[0].vec[0]);
+				xmaxv = max_ff(xmaxv, fcu->fpt[fcu->totvert - 1].vec[0]);
 			}
 			
 			/* only loop over keyframes to find extents for values if needed */
@@ -594,15 +593,15 @@ void calc_fcurve_range(FCurve *fcu, float *start, float *end,
 			if (bezt_first) {
 				BLI_assert(bezt_last != NULL);
 				
-				min = MIN2(min, bezt_first->vec[1][0]);
-				max = MAX2(max, bezt_last->vec[1][0]);
+				min = min_ff(min, bezt_first->vec[1][0]);
+				max = max_ff(max, bezt_last->vec[1][0]);
 				
 				foundvert = TRUE;
 			}
 		}
 		else if (fcu->fpt) {
-			min = MIN2(min, fcu->fpt[0].vec[0]);
-			max = MAX2(max, fcu->fpt[fcu->totvert - 1].vec[0]);
+			min = min_ff(min, fcu->fpt[0].vec[0]);
+			max = max_ff(max, fcu->fpt[fcu->totvert - 1].vec[0]);
 			
 			foundvert = TRUE;
 		}
@@ -862,7 +861,7 @@ void testhandles_fcurve(FCurve *fcu, const short use_handle)
 		short flag = 0;
 		
 		/* flag is initialized as selection status
-		 * of beztriple control-points (labelled 0,1,2)
+		 * of beztriple control-points (labelled 0, 1, 2)
 		 */
 		if (bezt->f2 & SELECT) flag |= (1 << 1);  // == 2
 		if (use_handle == FALSE) {
@@ -989,9 +988,9 @@ typedef struct DriverVarTypeInfo {
 	float (*get_value)(ChannelDriver *driver, DriverVar *dvar);
 	
 	/* allocation of target slots */
-	int num_targets;                        /* number of target slots required */
+	int num_targets;                        		/* number of target slots required */
 	const char *target_names[MAX_DRIVER_TARGETS];   /* UI names that should be given to the slots */
-	int target_flags[MAX_DRIVER_TARGETS];   /* flags defining the requirements for each slot */
+	short target_flags[MAX_DRIVER_TARGETS];   		/* flags defining the requirements for each slot */
 } DriverVarTypeInfo;
 
 /* Macro to begin definitions */
@@ -1017,7 +1016,7 @@ static float dtar_get_prop_val(ChannelDriver *driver, DriverTarget *dtar)
 	PointerRNA id_ptr, ptr;
 	PropertyRNA *prop;
 	ID *id;
-	int index;
+	int index = -1;
 	float value = 0.0f;
 	
 	/* sanity check */
@@ -1027,11 +1026,13 @@ static float dtar_get_prop_val(ChannelDriver *driver, DriverTarget *dtar)
 	id = dtar_id_ensure_proxy_from(dtar->id);
 	
 	/* error check for missing pointer... */
-	/* TODO: tag the specific target too as having issues */
 	if (id == NULL) {
-		printf("Error: driver has an invalid target to use\n");
-		if (G.debug & G_DEBUG) printf("\tpath = %s\n", dtar->rna_path);
+		if (G.debug & G_DEBUG) {
+			printf("Error: driver has an invalid target to use (path = %s)\n", dtar->rna_path);
+		}
+		
 		driver->flag |= DRIVER_FLAG_INVALID;
+		dtar->flag   |= DTAR_FLAG_INVALID;
 		return 0.0f;
 	}
 	
@@ -1039,10 +1040,10 @@ static float dtar_get_prop_val(ChannelDriver *driver, DriverTarget *dtar)
 	RNA_id_pointer_create(id, &id_ptr);
 	
 	/* get property to read from, and get value as appropriate */
-	if (RNA_path_resolve_full(&id_ptr, dtar->rna_path, &ptr, &prop, &index)) {
+	if (RNA_path_resolve_property_full(&id_ptr, dtar->rna_path, &ptr, &prop, &index)) {
 		if (RNA_property_array_check(prop)) {
 			/* array */
-			if (index < RNA_property_array_length(&ptr, prop)) {	
+			if ((index >= 0) && (index < RNA_property_array_length(&ptr, prop))) {
 				switch (RNA_property_type(prop)) {
 					case PROP_BOOLEAN:
 						value = (float)RNA_property_boolean_get_index(&ptr, prop, index);
@@ -1056,6 +1057,17 @@ static float dtar_get_prop_val(ChannelDriver *driver, DriverTarget *dtar)
 					default:
 						break;
 				}
+			}
+			else {
+				/* out of bounds */
+				if (G.debug & G_DEBUG) {
+					printf("Driver Evaluation Error: array index is out of bounds for %s -> %s (%d)", 
+					       id->name, dtar->rna_path, index);
+				}
+				
+				driver->flag |= DRIVER_FLAG_INVALID;
+				dtar->flag   |= DTAR_FLAG_INVALID;
+				return 0.0f;
 			}
 		}
 		else {
@@ -1077,16 +1089,20 @@ static float dtar_get_prop_val(ChannelDriver *driver, DriverTarget *dtar)
 					break;
 			}
 		}
-
 	}
 	else {
-		if (G.debug & G_DEBUG)
+		/* path couldn't be resolved */
+		if (G.debug & G_DEBUG) {
 			printf("Driver Evaluation Error: cannot resolve target for %s -> %s\n", id->name, dtar->rna_path);
+		}
 		
 		driver->flag |= DRIVER_FLAG_INVALID;
+		dtar->flag   |= DTAR_FLAG_INVALID;
 		return 0.0f;
 	}
 	
+	/* if we're still here, we should be ok... */
+	dtar->flag &= ~DTAR_FLAG_INVALID;
 	return value;
 }
 
@@ -1125,28 +1141,48 @@ static float dvar_eval_singleProp(ChannelDriver *driver, DriverVar *dvar)
 /* evaluate 'rotation difference' driver variable */
 static float dvar_eval_rotDiff(ChannelDriver *driver, DriverVar *dvar)
 {
+	DriverTarget *dtar1 = &dvar->targets[0];
+	DriverTarget *dtar2 = &dvar->targets[1];
 	bPoseChannel *pchan, *pchan2;
 	float q1[4], q2[4], quat[4], angle;
 	
 	/* get pose channels, and check if we've got two */
-	pchan = dtar_get_pchan_ptr(driver, &dvar->targets[0]);
-	pchan2 = dtar_get_pchan_ptr(driver, &dvar->targets[1]);
+	pchan  = dtar_get_pchan_ptr(driver, dtar1);
+	pchan2 = dtar_get_pchan_ptr(driver, dtar2);
 	
 	if (ELEM(NULL, pchan, pchan2)) {
 		/* disable this driver, since it doesn't work correctly... */
 		driver->flag |= DRIVER_FLAG_INVALID;
 		
 		/* check what the error was */
-		if ((pchan == NULL) && (pchan2 == NULL))
-			printf("Driver Evaluation Error: Rotational difference failed - first 2 targets invalid\n");
-		else if (pchan == NULL)
-			printf("Driver Evaluation Error: Rotational difference failed - first target not valid PoseChannel\n");
-		else if (pchan2 == NULL)
-			printf("Driver Evaluation Error: Rotational difference failed - second target not valid PoseChannel\n");
+		if ((pchan == NULL) && (pchan2 == NULL)) {
+			if (G.debug & G_DEBUG) {
+				printf("Driver Evaluation Error: Rotational difference failed - first 2 targets invalid\n");
+			}
 			
+			dtar1->flag |= DTAR_FLAG_INVALID;
+			dtar2->flag |= DTAR_FLAG_INVALID;
+		}
+		else if (pchan == NULL) {
+			if (G.debug & G_DEBUG) {
+				printf("Driver Evaluation Error: Rotational difference failed - first target not valid PoseChannel\n");
+			}
+			
+			dtar1->flag |=  DTAR_FLAG_INVALID;
+			dtar2->flag &= ~DTAR_FLAG_INVALID;
+		}
+		else if (pchan2 == NULL) {
+			if (G.debug & G_DEBUG) {
+				printf("Driver Evaluation Error: Rotational difference failed - second target not valid PoseChannel\n");
+			}
+			
+			dtar1->flag &= ~DTAR_FLAG_INVALID;
+			dtar2->flag |=  DTAR_FLAG_INVALID;
+		}
+		
 		/* stop here... */
 		return 0.0f;
-	}			
+	}
 	
 	/* use the final posed locations */
 	mat4_to_quat(q1, pchan->pose_mat);
@@ -1166,8 +1202,43 @@ static float dvar_eval_locDiff(ChannelDriver *driver, DriverVar *dvar)
 {
 	float loc1[3] = {0.0f, 0.0f, 0.0f};
 	float loc2[3] = {0.0f, 0.0f, 0.0f};
+	short valid_targets = 0;
 	
-	/* get two location values */
+	/* Perform two passes
+	 *
+	 * FIRST PASS - to just check that everything works... 
+	 * NOTE: we use loops here to reduce code duplication, though in practice, 
+	 *       there can only be 2 items or else we run into some problems later
+	 */
+	DRIVER_TARGETS_USED_LOOPER(dvar)
+	{
+		Object *ob = (Object *)dtar_id_ensure_proxy_from(dtar->id);
+		
+		/* check if this target has valid data */
+		if ((ob == NULL) || (GS(ob->id.name) != ID_OB)) {
+			/* invalid target, so will not have enough targets */
+			driver->flag |= DRIVER_FLAG_INVALID;
+			dtar->flag   |= DTAR_FLAG_INVALID;
+		}
+		else {
+			/* target seems to be OK now... */
+			dtar->flag &= ~DTAR_FLAG_INVALID;
+			valid_targets++;
+		}
+	}
+	DRIVER_TARGETS_LOOPER_END
+	
+	/* make sure we have enough valid targets to use - all or nothing for now... */
+	if (valid_targets < dvar->num_targets) {
+		if (G.debug & G_DEBUG) {
+			printf("LocDiff DVar: not enough valid targets (n = %d) (a = %p, b = %p)\n",
+			        valid_targets, dvar->targets[0].id, dvar->targets[1].id);
+		}
+		return 0.0f;
+	}
+	
+	
+	/* SECOND PASS: get two location values */
 	/* NOTE: for now, these are all just worldspace */
 	DRIVER_TARGETS_USED_LOOPER(dvar)
 	{
@@ -1176,12 +1247,8 @@ static float dvar_eval_locDiff(ChannelDriver *driver, DriverVar *dvar)
 		bPoseChannel *pchan;
 		float tmp_loc[3];
 		
-		/* check if this target has valid data */
-		if ((ob == NULL) || (GS(ob->id.name) != ID_OB)) {
-			/* invalid target, so will not have enough targets */
-			driver->flag |= DRIVER_FLAG_INVALID;
-			return 0.0f;
-		}
+		/* after the checks above, the targets should be valid here... */
+		BLI_assert((ob != NULL) && (GS(ob->id.name) == ID_OB));
 		
 		/* try to get posechannel */
 		pchan = BKE_pose_channel_find_name(ob->pose, dtar->pchan_name);
@@ -1195,7 +1262,7 @@ static float dvar_eval_locDiff(ChannelDriver *driver, DriverVar *dvar)
 					
 					/* extract transform just like how the constraints do it! */
 					copy_m4_m4(mat, pchan->pose_mat);
-					constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_LOCAL);
+					BKE_constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_LOCAL);
 					
 					/* ... and from that, we get our transform */
 					copy_v3_v3(tmp_loc, mat[3]);
@@ -1220,7 +1287,7 @@ static float dvar_eval_locDiff(ChannelDriver *driver, DriverVar *dvar)
 					
 					/* extract transform just like how the constraints do it! */
 					copy_m4_m4(mat, ob->obmat);
-					constraint_mat_convertspace(ob, NULL, mat, CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL);
+					BKE_constraint_mat_convertspace(ob, NULL, mat, CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL);
 					
 					/* ... and from that, we get our transform */
 					copy_v3_v3(tmp_loc, mat[3]);
@@ -1267,7 +1334,12 @@ static float dvar_eval_transChan(ChannelDriver *driver, DriverVar *dvar)
 	if ((ob == NULL) || (GS(ob->id.name) != ID_OB)) {
 		/* invalid target, so will not have enough targets */
 		driver->flag |= DRIVER_FLAG_INVALID;
+		dtar->flag   |= DTAR_FLAG_INVALID;
 		return 0.0f;
+	}
+	else {
+		/* target should be valid now */
+		dtar->flag &= ~DTAR_FLAG_INVALID;
 	}
 	
 	/* try to get posechannel */
@@ -1291,7 +1363,7 @@ static float dvar_eval_transChan(ChannelDriver *driver, DriverVar *dvar)
 			if (dtar->flag & DTAR_FLAG_LOCAL_CONSTS) {
 				/* just like how the constraints do it! */
 				copy_m4_m4(mat, pchan->pose_mat);
-				constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_LOCAL);
+				BKE_constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, CONSTRAINT_SPACE_LOCAL);
 			}
 			else {
 				/* specially calculate local matrix, since chan_mat is not valid 
@@ -1303,7 +1375,7 @@ static float dvar_eval_transChan(ChannelDriver *driver, DriverVar *dvar)
 		}
 		else {
 			/* worldspace matrix */
-			mult_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
+			mul_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
 		}
 	}
 	else {
@@ -1318,7 +1390,7 @@ static float dvar_eval_transChan(ChannelDriver *driver, DriverVar *dvar)
 			if (dtar->flag & DTAR_FLAG_LOCAL_CONSTS) {
 				/* just like how the constraints do it! */
 				copy_m4_m4(mat, ob->obmat);
-				constraint_mat_convertspace(ob, NULL, mat, CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL);
+				BKE_constraint_mat_convertspace(ob, NULL, mat, CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL);
 			}
 			else {
 				/* transforms to matrix */
@@ -1461,12 +1533,12 @@ void driver_change_variable_type(DriverVar *dvar, int type)
 	 */
 	DRIVER_TARGETS_USED_LOOPER(dvar)
 	{
-		int flags = dvti->target_flags[tarIndex];
+		short flags = dvti->target_flags[tarIndex];
 		
 		/* store the flags */
 		dtar->flag = flags;
 		
-		/* object ID types only, or idtype not yet initialized*/
+		/* object ID types only, or idtype not yet initialized */
 		if ((flags & DTAR_FLAG_ID_OB_ONLY) || (dtar->idtype == 0))
 			dtar->idtype = ID_OB;
 	}
@@ -1487,8 +1559,9 @@ DriverVar *driver_add_new_variable(ChannelDriver *driver)
 	BLI_addtail(&driver->variables, dvar);
 	
 	/* give the variable a 'unique' name */
-	strcpy(dvar->name, "var");
-	BLI_uniquename(&driver->variables, dvar, "var", '_', offsetof(DriverVar, name), sizeof(dvar->name));
+	strcpy(dvar->name, CTX_DATA_(BLF_I18NCONTEXT_ID_ACTION, "var"));
+	BLI_uniquename(&driver->variables, dvar, CTX_DATA_(BLF_I18NCONTEXT_ID_ACTION, "var"), '_',
+	               offsetof(DriverVar, name), sizeof(dvar->name));
 	
 	/* set the default type to 'single prop' */
 	driver_change_variable_type(dvar, DVAR_TYPE_SINGLE_PROP);
@@ -1552,7 +1625,7 @@ ChannelDriver *fcurve_copy_driver(ChannelDriver *driver)
 	for (dvar = ndriver->variables.first; dvar; dvar = dvar->next) {
 		/* need to go over all targets so that we don't leave any dangling paths */
 		DRIVER_TARGETS_LOOPER(dvar) 
-		{	
+		{
 			/* make a copy of target's rna path if available */
 			if (dtar->rna_path)
 				dtar->rna_path = MEM_dupallocN(dtar->rna_path);
@@ -1835,7 +1908,7 @@ static int findzero(float x, float q0, float q1, float q2, float q3, float *o)
 			return 1;
 		}
 		
-		return 0;	
+		return 0;
 	}
 }
 
@@ -1919,7 +1992,7 @@ static float fcurve_eval_keyframes(FCurve *fcu, BezTriple *bezts, float evaltime
 						cvalue = prevbezt->vec[1][1];
 					}
 				}
-			} 
+			}
 			else {
 				/* Use the first handle (earlier) of first BezTriple to calculate the
 				 * gradient and thus the value of the curve at evaltime
@@ -1971,7 +2044,7 @@ static float fcurve_eval_keyframes(FCurve *fcu, BezTriple *bezts, float evaltime
 						cvalue = lastbezt->vec[1][1];
 					}
 				}
-			} 
+			}
 			else {
 				/* Use the gradient of the second handle (later) of last BezTriple to calculate the
 				 * gradient and thus the value of the curve at evaltime
@@ -2025,12 +2098,12 @@ static float fcurve_eval_keyframes(FCurve *fcu, BezTriple *bezts, float evaltime
 				}
 				else {
 					/* bezier interpolation */
-					/* v1,v2 are the first keyframe and its 2nd handle */
+					/* (v1, v2) are the first keyframe and its 2nd handle */
 					v1[0] = prevbezt->vec[1][0];
 					v1[1] = prevbezt->vec[1][1];
 					v2[0] = prevbezt->vec[2][0];
 					v2[1] = prevbezt->vec[2][1];
-					/* v3,v4 are the last keyframe's 1st handle + the last keyframe */
+					/* (v3, v4) are the last keyframe's 1st handle + the last keyframe */
 					v3[0] = bezt->vec[0][0];
 					v3[1] = bezt->vec[0][1];
 					v4[0] = bezt->vec[1][0];

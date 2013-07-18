@@ -41,8 +41,9 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 #include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
 
 #include "BKE_action.h"
 #include "BKE_fcurve.h"
@@ -121,9 +122,9 @@ static int nlaedit_enable_tweakmode_exec(bContext *C, wmOperator *op)
 	
 	/* if no blocks, popup error? */
 	if (anim_data.first == NULL) {
-		BKE_report(op->reports, RPT_ERROR, "No AnimData blocks to enter tweakmode for");
+		BKE_report(op->reports, RPT_ERROR, "No AnimData blocks to enter tweak mode for");
 		return OPERATOR_CANCELLED;
-	}	
+	}
 	
 	/* for each AnimData block with NLA-data, try setting it in tweak-mode */
 	for (ale = anim_data.first; ale; ale = ale->next) {
@@ -147,7 +148,7 @@ static int nlaedit_enable_tweakmode_exec(bContext *C, wmOperator *op)
 		WM_event_add_notifier(C, NC_ANIMATION | ND_NLA_ACTCHANGE, NULL);
 	}
 	else {
-		BKE_report(op->reports, RPT_ERROR, "No active strip(s) to enter tweakmode on");
+		BKE_report(op->reports, RPT_ERROR, "No active strip(s) to enter tweak mode on");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -190,15 +191,15 @@ static int nlaedit_disable_tweakmode_exec(bContext *C, wmOperator *op)
 	
 	/* if no blocks, popup error? */
 	if (anim_data.first == NULL) {
-		BKE_report(op->reports, RPT_ERROR, "No AnimData blocks to enter tweakmode for");
+		BKE_report(op->reports, RPT_ERROR, "No AnimData blocks to enter tweak mode for");
 		return OPERATOR_CANCELLED;
-	}	
+	}
 	
 	/* for each AnimData block with NLA-data, try exitting tweak-mode */
 	for (ale = anim_data.first; ale; ale = ale->next) {
 		AnimData *adt = ale->data;
 		
-		/* try entering tweakmode if valid */
+		/* to be sure, just exit tweakmode... */
 		BKE_nla_tweakmode_exit(adt);
 	}
 	
@@ -266,8 +267,8 @@ static void get_nlastrip_extents(bAnimContext *ac, float *min, float *max, const
 				/* only consider selected strips? */
 				if ((onlySel == 0) || (strip->flag & NLASTRIP_FLAG_SELECT)) {
 					/* extend range if appropriate */
-					*min = minf(*min, strip->start);
-					*max = maxf(*max, strip->end);
+					*min = min_ff(*min, strip->start);
+					*max = max_ff(*max, strip->end);
 				}
 			}
 		}
@@ -304,13 +305,13 @@ static int nlaedit_viewall(bContext *C, const short onlySel)
 	/* set the horizontal range, with an extra offset so that the extreme keys will be in view */
 	get_nlastrip_extents(&ac, &v2d->cur.xmin, &v2d->cur.xmax, onlySel);
 	
-	extra = 0.1f * (v2d->cur.xmax - v2d->cur.xmin);
+	extra = 0.1f * BLI_rctf_size_x(&v2d->cur);
 	v2d->cur.xmin -= extra;
 	v2d->cur.xmax += extra;
 	
 	/* set vertical range */
 	v2d->cur.ymax = 0.0f;
-	v2d->cur.ymin = (float)-(v2d->mask.ymax - v2d->mask.ymin);
+	v2d->cur.ymin = (float)-BLI_rcti_size_y(&v2d->mask);
 	
 	/* do View2D syncing */
 	UI_view2d_sync(CTX_wm_screen(C), CTX_wm_area(C), v2d, V2D_LOCK_COPY);
@@ -398,16 +399,23 @@ static int nlaedit_add_actionclip_exec(bContext *C, wmOperator *op)
 	act = BLI_findlink(&CTX_data_main(C)->action, RNA_enum_get(op->ptr, "action"));
 	
 	if (act == NULL) {
-		BKE_report(op->reports, RPT_ERROR, "No valid Action to add");
+		BKE_report(op->reports, RPT_ERROR, "No valid action to add");
 		//printf("Add strip - actname = '%s'\n", actname);
 		return OPERATOR_CANCELLED;
 	}
 	else if (act->idroot == 0) {
 		/* hopefully in this case (i.e. library of userless actions), the user knows what they're doing... */
 		BKE_reportf(op->reports, RPT_WARNING,
-		            "Action '%s' does not specify what datablocks it can be used on. Try setting the 'ID Root Type' setting from the Datablocks Editor for this Action to avoid future problems",
+		            "Action '%s' does not specify what datablocks it can be used on "
+		            "(try setting the 'ID Root Type' setting from the Datablocks Editor "
+		            "for this action to avoid future problems)",
 		            act->id.name + 2);
 	}
+	
+	/* add tracks to empty but selected animdata blocks so that strips can be added to those directly
+	 * without having to manually add tracks first
+	 */
+	nlaedit_add_tracks_empty(&ac);
 	
 	/* get a list of the editable tracks being shown in the NLA
 	 *	- this is limited to active ones for now, but could be expanded to 
@@ -416,7 +424,9 @@ static int nlaedit_add_actionclip_exec(bContext *C, wmOperator *op)
 	items = ANIM_animdata_filter(&ac, &anim_data, filter, ac.data, ac.datatype);
 	
 	if (items == 0) {
-		BKE_report(op->reports, RPT_ERROR, "No active track(s) to add strip to");
+		BKE_report(op->reports, RPT_ERROR, 
+		           "No active track(s) to add strip to. "
+		           "Select an existing track or add one before trying again");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -431,7 +441,7 @@ static int nlaedit_add_actionclip_exec(bContext *C, wmOperator *op)
 		 */
 		if ((act->idroot) && (act->idroot != GS(ale->id->name))) {
 			BKE_reportf(op->reports, RPT_ERROR, 
-			            "Couldn't add action '%s' as it cannot be used relative to ID-blocks of type '%s'",
+			            "Could not add action '%s' as it cannot be used relative to ID-blocks of type '%s'",
 			            act->id.name + 2, ale->id->name);
 			continue;
 		}
@@ -887,7 +897,7 @@ static int nlaedit_duplicate_exec(bContext *C, wmOperator *UNUSED(op))
 		return OPERATOR_CANCELLED;
 }
 
-static int nlaedit_duplicate_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int nlaedit_duplicate_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	nlaedit_duplicate_exec(C, op);
 	
@@ -1170,7 +1180,8 @@ static int nlaedit_bake_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
-void NLA_OT_bake(wmOperatorType *ot)
+/* why isn't this used? */
+static void UNUSED_FUNCTION(NLA_OT_bake)(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Bake Strips";
@@ -1361,7 +1372,7 @@ static int nlaedit_swap_exec(bContext *C, wmOperator *op)
 					           "Cannot swap selected strips as they will not be able to fit in their new places");
 				}
 				else {
-					BKE_reportf(op->reports, RPT_WARNING, 	
+					BKE_reportf(op->reports, RPT_WARNING,
 					            "Cannot swap '%s' and '%s' as one or both will not be able to fit in their new places",
 					            sa->name, sb->name);
 				}
@@ -1622,7 +1633,7 @@ void NLA_OT_action_sync_length(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec = nlaedit_sync_actlen_exec;
-	ot->poll = ED_operator_nla_active; // XXX: is this satisfactory... probably requires a check for active strip...
+	ot->poll = nlaop_poll_tweakmode_off;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -1666,8 +1677,6 @@ static int nlaedit_apply_scale_exec(bContext *C, wmOperator *UNUSED(op))
 	/* get a list of the editable tracks being shown in the NLA */
 	filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_LIST_VISIBLE | ANIMFILTER_FOREDIT);
 	ANIM_animdata_filter(&ac, &anim_data, filter, ac.data, ac.datatype);
-	
-	/* init the editing data */
 	
 	/* for each NLA-Track, apply scale of all selected strips */
 	for (ale = anim_data.first; ale; ale = ale->next) {
@@ -1796,7 +1805,7 @@ void NLA_OT_clear_scale(wmOperatorType *ot)
 
 /* defines for snap keyframes tool */
 static EnumPropertyItem prop_nlaedit_snap_types[] = {
-	{NLAEDIT_SNAP_CFRA, "CFRA", 0, "Current frame", ""},
+	{NLAEDIT_SNAP_CFRA, "CFRA", 0, "Current Frame", ""},
 	{NLAEDIT_SNAP_NEAREST_FRAME, "NEAREST_FRAME", 0, "Nearest Frame", ""}, // XXX as single entry?
 	{NLAEDIT_SNAP_NEAREST_SECOND, "NEAREST_SECOND", 0, "Nearest Second", ""}, // XXX as single entry?
 	{NLAEDIT_SNAP_NEAREST_MARKER, "NEAREST_MARKER", 0, "Nearest Marker", ""},
@@ -1942,13 +1951,13 @@ void NLA_OT_snap(wmOperatorType *ot)
 /* ******************** Add F-Modifier Operator *********************** */
 
 /* present a special customised popup menu for this, with some filtering */
-static int nla_fmodifier_add_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
+static int nla_fmodifier_add_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent *UNUSED(event))
 {
 	uiPopupMenu *pup;
 	uiLayout *layout;
 	int i;
 	
-	pup = uiPupMenuBegin(C, "Add F-Modifier", ICON_NONE);
+	pup = uiPupMenuBegin(C, IFACE_("Add F-Modifier"), ICON_NONE);
 	layout = uiPupMenuLayout(pup);
 	
 	/* start from 1 to skip the 'Invalid' modifier type */
@@ -2016,11 +2025,12 @@ static int nla_fmodifier_add_exec(bContext *C, wmOperator *op)
 			/* add F-Modifier of specified type to selected, and make it the active one */
 			fcm = add_fmodifier(&strip->modifiers, type);
 			
-			if (fcm)
+			if (fcm) {
 				set_active_fmodifier(&strip->modifiers, fcm);
+			}
 			else {
 				BKE_reportf(op->reports, RPT_ERROR,
-				            "Modifier couldn't be added to (%s : %s) (see console for details)",
+				            "Modifier could not be added to (%s : %s) (see console for details)",
 				            nlt->name, strip->name);
 			}
 		}
@@ -2096,8 +2106,10 @@ static int nla_fmodifier_copy_exec(bContext *C, wmOperator *op)
 		BKE_report(op->reports, RPT_ERROR, "No F-Modifiers available to be copied");
 		return OPERATOR_CANCELLED;
 	}
-	else
+	else {
+		/* no updates needed - copy is non-destructive operation */
 		return OPERATOR_FINISHED;
+	}
 }
  
 void NLA_OT_fmodifier_copy(wmOperatorType *ot)
@@ -2151,8 +2163,6 @@ static int nla_fmodifier_paste_exec(bContext *C, wmOperator *op)
 	
 	/* successful or not? */
 	if (ok) {
-		/* set notifier that things have changed */
-		/* set notifier that things have changed */
 		WM_event_add_notifier(C, NC_ANIMATION | ND_NLA | NA_EDITED, NULL);
 		return OPERATOR_FINISHED;
 	}

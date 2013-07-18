@@ -74,8 +74,7 @@ static struct PyModuleDef gpumodule = {
 	NULL, NULL, NULL, NULL, NULL
 };
 
-PyMODINIT_FUNC
-PyInit_gpu(void)
+static PyObject *PyInit_gpu(void)
 {
 	PyObject *m;
 
@@ -132,6 +131,7 @@ PyInit_gpu(void)
 	PyDict_SetItemString(d, # f, val);               \
 	Py_DECREF(val)
 
+#if 0  /* UNUSED */
 #define PY_OBJ_ADD_ID(d, s, f)                      \
 	val = PyUnicode_FromString(&s->f->id.name[2]);  \
 	PyObject_SetAttrString(d, # f, val);            \
@@ -146,6 +146,7 @@ PyInit_gpu(void)
 	val = PyUnicode_FromString(s->f);    \
 	PyObject_SetAttrString(d, # f, val); \
 	Py_DECREF(val)
+#endif
 
 PyDoc_STRVAR(GPU_export_shader_doc,
 "export_shader(scene, material)\n"

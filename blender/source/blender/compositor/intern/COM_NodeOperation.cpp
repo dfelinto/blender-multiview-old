@@ -34,6 +34,7 @@ NodeOperation::NodeOperation() : NodeBase()
 	this->m_complex = false;
 	this->m_width = 0;
 	this->m_height = 0;
+	this->m_isResolutionSet = false;
 	this->m_openCL = false;
 	this->m_btree = NULL;
 }
@@ -124,19 +125,26 @@ bool NodeOperation::determineDependingAreaOfInterest(rcti *input, ReadBufferOper
 		return false;
 	}
 	else {
-		unsigned int index;
-		vector<InputSocket *> &inputsockets = this->getInputSockets();
-	
-		for (index = 0; index < inputsockets.size(); index++) {
-			InputSocket *inputsocket = inputsockets[index];
-			if (inputsocket->isConnected()) {
-				NodeOperation *inputoperation = (NodeOperation *)inputsocket->getConnection()->getFromNode();
-				bool result = inputoperation->determineDependingAreaOfInterest(input, readOperation, output);
-				if (result) {
-					return true;
+		rcti tempOutput;
+		bool first = true;
+		for (int i = 0; i < getNumberOfInputSockets(); i ++) {
+			NodeOperation * inputOperation = this->getInputOperation(i);
+			if (inputOperation && inputOperation->determineDependingAreaOfInterest(input, readOperation, &tempOutput)) {
+				if (first) {
+					output->xmin = tempOutput.xmin;
+					output->ymin = tempOutput.ymin;
+					output->xmax = tempOutput.xmax;
+					output->ymax = tempOutput.ymax;
+					first = false;
+				}
+				else {
+					output->xmin = min(output->xmin, tempOutput.xmin);
+					output->ymin = min(output->ymin, tempOutput.ymin);
+					output->xmax = max(output->xmax, tempOutput.xmax);
+					output->ymax = max(output->ymax, tempOutput.ymax);
 				}
 			}
 		}
-		return false;
+		return !first;
 	}
 }

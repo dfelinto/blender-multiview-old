@@ -109,11 +109,9 @@ void ED_mask_mouse_pos(ScrArea *sa, ARegion *ar, const int mval[2], float co[2])
 			}
 			case SPACE_IMAGE:
 			{
-				float frame_size[2];
 				SpaceImage *sima = sa->spacedata.first;
-				ED_space_image_get_size_fl(sima, frame_size);
 				ED_image_mouse_pos(sima, ar, mval, co);
-				BKE_mask_coord_from_frame(co, co, frame_size);
+				BKE_mask_coord_from_image(sima->image, &sima->iuser, co, co);
 				break;
 			}
 			default:
@@ -149,11 +147,9 @@ void ED_mask_point_pos(ScrArea *sa, ARegion *ar, float x, float y, float *xr, fl
 				break;
 			case SPACE_IMAGE:
 			{
-				float frame_size[2];
 				SpaceImage *sima = sa->spacedata.first;
-				ED_space_image_get_size_fl(sima, frame_size);
 				ED_image_point_pos(sima, ar, x, y, &co[0], &co[1]);
-				BKE_mask_coord_from_frame(co, co, frame_size);
+				BKE_mask_coord_from_image(sima->image, &sima->iuser, co, co);
 				break;
 			}
 			default:
@@ -192,13 +188,10 @@ void ED_mask_point_pos__reverse(ScrArea *sa, ARegion *ar, float x, float y, floa
 				break;
 			case SPACE_IMAGE:
 			{
-				float frame_size[2];
 				SpaceImage *sima = sa->spacedata.first;
-				ED_space_image_get_size_fl(sima, frame_size);
-
 				co[0] = x;
 				co[1] = y;
-				BKE_mask_coord_to_frame(co, co, frame_size);
+				BKE_mask_coord_to_image(sima->image, &sima->iuser, co, co);
 				ED_image_point_pos__reverse(sima, ar, co, co);
 				break;
 			}
@@ -331,15 +324,13 @@ void ED_mask_pixelspace_factor(ScrArea *sa, ARegion *ar, float *scalex, float *s
 			case SPACE_CLIP:
 			{
 				SpaceClip *sc = sa->spacedata.first;
-				int width, height;
-				float zoomx, zoomy, aspx, aspy;
+				float aspx, aspy;
 
-				ED_space_clip_get_size(sc, &width, &height);
-				ED_space_clip_get_zoom(sc, ar, &zoomx, &zoomy);
+				UI_view2d_getscale(&ar->v2d, scalex, scaley);
 				ED_space_clip_get_aspect(sc, &aspx, &aspy);
 
-				*scalex = ((float)width * aspx) * zoomx;
-				*scaley = ((float)height * aspy) * zoomy;
+				*scalex *= aspx;
+				*scaley *= aspy;
 				break;
 			}
 			case SPACE_SEQ:
@@ -350,15 +341,13 @@ void ED_mask_pixelspace_factor(ScrArea *sa, ARegion *ar, float *scalex, float *s
 			case SPACE_IMAGE:
 			{
 				SpaceImage *sima = sa->spacedata.first;
-				int width, height;
-				float zoomx, zoomy, aspx, aspy;
+				float aspx, aspy;
 
-				ED_space_image_get_size(sima, &width, &height);
-				ED_space_image_get_zoom(sima, ar, &zoomx, &zoomy);
+				UI_view2d_getscale(&ar->v2d, scalex, scaley);
 				ED_space_image_get_aspect(sima, &aspx, &aspy);
 
-				*scalex = ((float)width * aspx) * zoomx;
-				*scaley = ((float)height * aspy) * zoomy;
+				*scalex *= aspx;
+				*scaley *= aspy;
 				break;
 			}
 			default:
@@ -443,8 +432,8 @@ void ED_keymap_mask(wmKeyConfig *keyconf)
 	ED_keymap_proportional_maskmode(keyconf, keymap);
 
 	/* geometry */
-	WM_keymap_add_item(keymap, "MASK_OT_add_vertex_slide", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);
-	WM_keymap_add_item(keymap, "MASK_OT_add_feather_vertex_slide", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0);
+	WM_keymap_add_item(keymap, "MASK_OT_add_vertex_slide", ACTIONMOUSE, KM_PRESS, KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "MASK_OT_add_feather_vertex_slide", ACTIONMOUSE, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "MASK_OT_delete", XKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "MASK_OT_delete", DELKEY, KM_PRESS, 0, 0);
 
@@ -493,7 +482,7 @@ void ED_keymap_mask(wmKeyConfig *keyconf)
 
 	/* shape */
 	WM_keymap_add_item(keymap, "MASK_OT_cyclic_toggle", CKEY, KM_PRESS, KM_ALT, 0);
-	WM_keymap_add_item(keymap, "MASK_OT_slide_point", LEFTMOUSE, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "MASK_OT_slide_point", ACTIONMOUSE, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "MASK_OT_handle_type_set", VKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "MASK_OT_normals_make_consistent", NKEY, KM_PRESS, KM_CTRL, 0);
 	// WM_keymap_add_item(keymap, "MASK_OT_feather_weight_clear", SKEY, KM_PRESS, KM_ALT, 0);

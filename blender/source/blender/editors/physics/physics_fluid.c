@@ -127,7 +127,7 @@ static float get_fluid_size_m(Scene *scene, Object *domainob, FluidsimSettings *
 		float longest_axis;
 		
 		BKE_object_dimensions_get(domainob, dim);
-		longest_axis = MAX3(dim[0], dim[1], dim[2]);
+		longest_axis = max_fff(dim[0], dim[1], dim[2]);
 		
 		return longest_axis * scene->unit.scale_length;
 	}
@@ -142,7 +142,7 @@ static int fluid_is_animated_mesh(FluidsimSettings *fss)
 
 #if 0
 /* helper function */
-void fluidsimGetGeometryObjFilename(Object *ob, char *dst) { //, char *srcname)
+void fluidsimGetGeometryObjFilename(Object *ob, char *dst)  //, char *srcname)
 {
 	//BLI_snprintf(dst, FILE_MAXFILE, "%s_cfgdata_%s.bobj.gz", srcname, ob->id.name);
 	BLI_snprintf(dst, FILE_MAXFILE, "fluidcfgdata_%s.bobj.gz", ob->id.name);
@@ -196,10 +196,10 @@ static void fluidsimPrintChannel(FILE *file, float *channel, int paramsize, char
 	int i, j;
 	int channelSize = paramsize; 
 
-	if (entries==3) {
+	if (entries == 3) {
 		elbeemSimplifyChannelVec3(channel, &channelSize);
 	}
-	else if (entries==1) {
+	else if (entries == 1) {
 		elbeemSimplifyChannelFloat(channel, &channelSize);
 	}
 	else {
@@ -211,10 +211,10 @@ static void fluidsimPrintChannel(FILE *file, float *channel, int paramsize, char
 		fprintf(file, "        ");
 		for (j=0;j <= entries;j++) {  // also print time value
 			fprintf(file, " %f ", channel[i*(entries + 1) + j]);
-			if (j==entries-1) { fprintf(file, "  "); }
-		} 
+			if (j == entries-1) { fprintf(file, "  "); }
+		}
 		fprintf(file, "\n");
-	} 
+	}
 
 	fprintf(file,  "      ;\n");
 }
@@ -237,12 +237,12 @@ static void init_time(FluidsimSettings *domainSettings, FluidAnimChannels *chann
 {
 	int i;
 	
-	channels->timeAtFrame = MEM_callocN((channels->length+1)*sizeof(float), "timeAtFrame channel");
+	channels->timeAtFrame = MEM_callocN((channels->length + 1) * sizeof(float), "timeAtFrame channel");
 	
 	channels->timeAtFrame[0] = channels->timeAtFrame[1] = domainSettings->animStart; // start at index 1
 	
 	for (i=2; i <= channels->length; i++) {
-		channels->timeAtFrame[i] = channels->timeAtFrame[i-1] + channels->aniFrameTime;
+		channels->timeAtFrame[i] = channels->timeAtFrame[i - 1] + (float)channels->aniFrameTime;
 	}
 }
 
@@ -267,7 +267,7 @@ static void set_vertex_channel(float *channel, float time, struct Scene *scene, 
 	FluidsimModifierData *fluidmd = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);
 	float *verts;
 	int *tris=NULL, numVerts=0, numTris=0;
-	int modifierIndex = modifiers_indexInObject(ob, (ModifierData *)fluidmd);
+	int modifierIndex = BLI_findindex(&ob->modifiers, fluidmd);
 	int framesize = (3*fobj->numVerts) + 1;
 	int j;
 	
@@ -388,7 +388,7 @@ static void fluid_init_all_channels(bContext *C, Object *UNUSED(fsDomain), Fluid
 			
 			if (fluid_is_animated_mesh(fluidmd->fss)) {
 				float *verts=NULL;
-				int *tris=NULL, modifierIndex = modifiers_indexInObject(ob, (ModifierData *)fluidmd);
+				int *tris=NULL, modifierIndex = BLI_findindex(&ob->modifiers, (ModifierData *)fluidmd);
 
 				initElbeemMesh(scene, ob, &fobj->numVerts, &verts, &fobj->numTris, &tris, 0, modifierIndex);
 				fobj->VertexCache = MEM_callocN(length *((fobj->numVerts*CHANNEL_VEC)+1) * sizeof(float), "fluidobject VertexCache");
@@ -402,7 +402,7 @@ static void fluid_init_all_channels(bContext *C, Object *UNUSED(fsDomain), Fluid
 	}
 	
 	/* now we loop over the frames and fill the allocated channels with data */
-	for (i=0; i<channels->length; i++) {
+	for (i=0; i < channels->length; i++) {
 		FluidObject *fobj;
 		float viscosity, gravity[3];
 		float timeAtFrame, time;
@@ -426,7 +426,7 @@ static void fluid_init_all_channels(bContext *C, Object *UNUSED(fsDomain), Fluid
 		/* Domain time */
 		// TODO: have option for not running sim, time mangling, in which case second case comes in handy
 		if (channels->DomainTime) {
-			time = get_fluid_rate(domainSettings) * channels->aniFrameTime;
+			time = get_fluid_rate(domainSettings) * (float)channels->aniFrameTime;
 			timeAtFrame = channels->timeAtFrame[i] + time;
 			
 			channels->timeAtFrame[i+1] = timeAtFrame;
@@ -446,7 +446,7 @@ static void fluid_init_all_channels(bContext *C, Object *UNUSED(fsDomain), Fluid
 		for (fobj=fobjects->first; fobj; fobj=fobj->next) {
 			Object *ob = fobj->object;
 			FluidsimModifierData *fluidmd = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);
-			float active= (float)(fluidmd->fss->flag & OB_FLUIDSIM_ACTIVE);
+			float active= (float) ((fluidmd->fss->flag & OB_FLUIDSIM_ACTIVE) > 0 ? 1 : 0);
 			float rot_d[3] = {0.f, 0.f, 0.f}, old_rot[3] = {0.f, 0.f, 0.f};
 			
 			if (ELEM(fluidmd->fss->type, OB_FLUIDSIM_DOMAIN, OB_FLUIDSIM_PARTICLE))
@@ -456,17 +456,19 @@ static void fluid_init_all_channels(bContext *C, Object *UNUSED(fsDomain), Fluid
 			/* get the rotation from ob->obmat rather than ob->rot to account for parent animations */
 			if (i) {
 				copy_v3_v3(old_rot, fobj->Rotation + 4*(i-1));
-				mul_v3_fl(old_rot, -M_PI/180.f);
+				mul_v3_fl(old_rot, (float)-M_PI / 180.f);
 			}
 
 			mat4_to_compatible_eulO(rot_d, old_rot, 0, ob->obmat);
-			mul_v3_fl(rot_d, -180.f/M_PI);
+			mul_v3_fl(rot_d, -180.0f / (float)M_PI);
 			
 			set_channel(fobj->Translation, timeAtFrame, ob->loc, i, CHANNEL_VEC);
 			set_channel(fobj->Rotation, timeAtFrame, rot_d, i, CHANNEL_VEC);
 			set_channel(fobj->Scale, timeAtFrame, ob->size, i, CHANNEL_VEC);
 			set_channel(fobj->Active, timeAtFrame, &active, i, CHANNEL_FLOAT);
 			set_channel(fobj->InitialVelocity, timeAtFrame, &fluidmd->fss->iniVelx, i, CHANNEL_VEC);
+
+			// printf("Active: %f, Frame: %f\n", active, timeAtFrame);
 			
 			if (fluidmd->fss->type == OB_FLUIDSIM_CONTROL) {
 				set_channel(fobj->AttractforceStrength, timeAtFrame, &fluidmd->fss->attractforceStrength, i, CHANNEL_FLOAT);
@@ -489,7 +491,7 @@ static void export_fluid_objects(ListBase *fobjects, Scene *scene, int length)
 	for (fobj=fobjects->first; fobj; fobj=fobj->next) {
 		Object *ob = fobj->object;
 		FluidsimModifierData *fluidmd = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);
-		int modifierIndex = modifiers_indexInObject(ob, (ModifierData *)fluidmd);
+		int modifierIndex = BLI_findindex(&ob->modifiers, fluidmd);
 		
 		float *verts=NULL;
 		int *tris=NULL;
@@ -526,8 +528,8 @@ static void export_fluid_objects(ListBase *fobjects, Scene *scene, int length)
 		
 		if ( ELEM(fsmesh.type, OB_FLUIDSIM_FLUID, OB_FLUIDSIM_INFLOW)) {
 			fsmesh.channelInitialVel = fobj->InitialVelocity;
-			fsmesh.localInivelCoords = ((fluidmd->fss->typeFlags & OB_FSINFLOW_LOCALCOORD)?1:0);
-		} 
+			fsmesh.localInivelCoords = ((fluidmd->fss->typeFlags & OB_FSINFLOW_LOCALCOORD) ? 1 : 0);
+		}
 		
 		if (fluidmd->fss->typeFlags & OB_FSBND_NOSLIP)
 			fsmesh.obstacleType = FLUIDSIM_OBSTACLE_NOSLIP;
@@ -574,7 +576,8 @@ static void export_fluid_objects(ListBase *fobjects, Scene *scene, int length)
 			fsmesh.channelScale            = NULL;
 			
 			/* Override user settings, only noslip is supported here! */
-			fsmesh.obstacleType = FLUIDSIM_OBSTACLE_NOSLIP;
+			if (fsmesh.type != OB_FLUIDSIM_CONTROL)
+				fsmesh.obstacleType = FLUIDSIM_OBSTACLE_NOSLIP;
 		}
 		
 		elbeemAddMesh(&fsmesh);
@@ -593,7 +596,7 @@ static int fluid_validate_scene(ReportList *reports, Scene *scene, Object *fsDom
 
 	for (base=scene->base.first; base; base= base->next) {
 		Object *ob = base->object;
-		FluidsimModifierData *fluidmdtmp = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);			
+		FluidsimModifierData *fluidmdtmp = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);
 
 		/* only find objects with fluid modifiers */
 		if (!fluidmdtmp || ob->type != OB_MESH) continue;
@@ -627,8 +630,8 @@ static int fluid_validate_scene(ReportList *reports, Scene *scene, Object *fsDom
 		return 0;
 	}
 	
-	if (channelObjCount>=255) {
-		BKE_report(reports, RPT_ERROR, "Cannot bake with more then 256 objects");
+	if (channelObjCount >= 255) {
+		BKE_report(reports, RPT_ERROR, "Cannot bake with more than 256 objects");
 		return 0;
 	}
 	
@@ -648,7 +651,7 @@ static int fluid_validate_scene(ReportList *reports, Scene *scene, Object *fsDom
 static int fluid_init_filepaths(Object *fsDomain, char *targetDir, char *targetFile, char *debugStrBuffer)
 {
 	FluidsimModifierData *fluidmd = (FluidsimModifierData *)modifiers_findByType(fsDomain, eModifierType_Fluidsim);
-	FluidsimSettings *domainSettings= fluidmd->fss;	
+	FluidsimSettings *domainSettings= fluidmd->fss;
 	FILE *fileCfg;
 	int dirExist = 0;
 	char newSurfdataPath[FILE_MAX]; /* modified output settings */
@@ -673,21 +676,18 @@ static int fluid_init_filepaths(Object *fsDomain, char *targetDir, char *targetF
 	// check selected directory
 	// simply try to open cfg file for writing to test validity of settings
 	fileCfg = BLI_fopen(targetFile, "w");
-	if (fileCfg) { 
+	if (fileCfg) {
 		dirExist = 1; fclose(fileCfg); 
 		// remove cfg dummy from  directory test
-		BLI_delete(targetFile, 0, 0);
+		BLI_delete(targetFile, false, false);
 	}
 	
 	if (targetDir[0] == '\0' || (!dirExist)) {
-		char blendDir[FILE_MAX];
 		char blendFile[FILE_MAX];
 		
 		// invalid dir, reset to current/previous
-		BLI_strncpy(blendDir, G.main->name, FILE_MAX);
-		BLI_splitdirstring(blendDir, blendFile);
+		BLI_split_file_part(G.main->name, blendFile, sizeof(blendFile));
 		BLI_replace_extension(blendFile, FILE_MAX, ""); /* strip .blend */
-
 		BLI_snprintf(newSurfdataPath, FILE_MAX, "//fluidsimdata/%s_%s_", blendFile, fsDomain->id.name);
 		
 		BLI_snprintf(debugStrBuffer, 256, "fluidsimBake::error - warning resetting output dir to '%s'\n", newSurfdataPath);
@@ -695,21 +695,21 @@ static int fluid_init_filepaths(Object *fsDomain, char *targetDir, char *targetF
 		outStringsChanged=1;
 	}
 	
-	// check if modified output dir is ok
+	/* check if modified output dir is ok */
 #if 0
 	if (outStringsChanged) {
 		char dispmsg[FILE_MAX+256];
 		int  selection=0;
 		BLI_strncpy(dispmsg, "Output settings set to: '", sizeof(dispmsg));
 		strcat(dispmsg, newSurfdataPath);
-		strcat(dispmsg, "'%t|Continue with changed settings%x1|Discard and abort%x0");
+		strcat(dispmsg, "'%t|Continue with changed settings %x1|Discard and abort %x0");
 		
-		// ask user if thats what he/she wants...
+		/* ask user if thats what he/she wants... */
 		selection = pupmenu(dispmsg);
-		if (selection < 1) return 0; // 0 from menu, or -1 aborted
+		if (selection < 1) return 0; /* 0 from menu, or -1 aborted */
 		BLI_strncpy(targetDir, newSurfdataPath, sizeof(targetDir));
 		strncpy(domainSettings->surfdataPath, newSurfdataPath, FILE_MAXDIR);
-		BLI_path_abs(targetDir, G.main->name); // fixed #frame-no 
+		BLI_path_abs(targetDir, G.main->name); /* fixed #frame-no */
 	}
 #endif
 	return outStringsChanged;
@@ -782,7 +782,7 @@ static void fluidbake_endjob(void *customdata)
 	}
 }
 
-int runSimulationCallback(void *data, int status, int frame)
+static int runSimulationCallback(void *data, int status, int frame)
 {
 	FluidBakeJob *fb = (FluidBakeJob *)data;
 	elbeemSimulationSettings *settings = fb->settings;
@@ -849,9 +849,9 @@ static void fluidsim_delete_until_lastframe(FluidsimSettings *fss, const char *r
 		curFrame++;
 
 		if ((exists = BLI_exists(targetFile))) {
-			BLI_delete(targetFile, 0, 0);
-			BLI_delete(targetFileVel, 0, 0);
-			BLI_delete(previewFile, 0, 0);
+			BLI_delete(targetFile, false, false);
+			BLI_delete(targetFileVel, false, false);
+			BLI_delete(previewFile, false, false);
 		}
 	} while (exists);
 
@@ -902,7 +902,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, shor
 	/* make sure it corresponds to startFrame setting (old: noFrames = scene->r.efra - scene->r.sfra +1) */;
 	noFrames = scene->r.efra - 0;
 	if (noFrames<=0) {
-		BKE_report(reports, RPT_ERROR, "No frames to export - check your animation range settings");
+		BKE_report(reports, RPT_ERROR, "No frames to export (check your animation range settings)");
 		fluidbake_free_data(channels, fobjects, fsset, fb);
 		return 0;
 	}
@@ -944,8 +944,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, shor
 		if (domainSettings->resolutionxyz>128) {
 			gridlevels = 2;
 		}
-		else
-		if (domainSettings->resolutionxyz>64) {
+		else if (domainSettings->resolutionxyz > 64) {
 			gridlevels = 1;
 		}
 		else {
@@ -962,8 +961,8 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, shor
 	
 	/* ******** prepare output file paths ******** */
 	outStringsChanged = fluid_init_filepaths(fsDomain, targetDir, targetFile, debugStrBuffer);
-	channels->length = scene->r.efra;
-	channels->aniFrameTime = (domainSettings->animEnd - domainSettings->animStart)/(double)noFrames;
+	channels->length = scene->r.efra; // DG TODO: why using endframe and not "noFrames" here? .. because "noFrames" is buggy too? (not using sfra)
+	channels->aniFrameTime = (double)((double)domainSettings->animEnd - (double)domainSettings->animStart) / (double)noFrames;
 	
 	/* ******** initialize and allocate animation channels ******** */
 	fluid_init_all_channels(C, fsDomain, domainSettings, channels, fobjects);
@@ -995,7 +994,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, shor
 	/* ******** export domain to elbeem ******** */
 	elbeemResetSettings(fsset);
 	fsset->version = 1;
-
+	fsset->threads = (domainSettings->threads == 0) ? BKE_scene_num_threads(scene) : domainSettings->threads;
 	// setup global settings
 	copy_v3_v3(fsset->geoStart, domainSettings->bbStart);
 	copy_v3_v3(fsset->geoSize, domainSettings->bbSize);
@@ -1050,7 +1049,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, shor
 	fsset->generateVertexVectors = (domainSettings->domainNovecgen==0);
 
 	// init blender domain transform matrix
-	{ int j; 
+	{ int j;
 	for (i=0; i<4; i++) {
 		for (j=0; j<4; j++) {
 			fsset->surfaceTrafo[i*4+j] = invDomMat[j][i];
@@ -1095,7 +1094,7 @@ static int fluidsimBake(bContext *C, ReportList *reports, Object *fsDomain, shor
 	return 1;
 }
 
-void fluidsimFreeBake(Object *UNUSED(ob))
+static void UNUSED_FUNCTION(fluidsimFreeBake)(Object *UNUSED(ob))
 {
 	/* not implemented yet */
 }
@@ -1113,7 +1112,7 @@ void fluidsimSettingsFree(FluidsimSettings *UNUSED(fss))
 {
 }
 
-FluidsimSettings* fluidsimSettingsCopy(FluidsimSettings *UNUSED(fss))
+FluidsimSettings *fluidsimSettingsCopy(FluidsimSettings *UNUSED(fss))
 {
 	return NULL;
 }
@@ -1128,7 +1127,7 @@ static int fluidsimBake(bContext *UNUSED(C), ReportList *UNUSED(reports), Object
 
 /***************************** Operators ******************************/
 
-static int fluid_bake_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int fluid_bake_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	/* only one bake job at a time */
 	if (WM_jobs_test(CTX_wm_manager(C), CTX_data_scene(C), WM_JOB_TYPE_OBJECT_SIM_FLUID))

@@ -34,22 +34,27 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif //__cplusplus
+#endif  /* __cplusplus */
 
-struct wmWindow;
 struct ARegion;
+struct bScreen;
+struct wmWindow;
+struct wmWindowManager;
 
 // special swapbuffers, that takes care of which area (viewport) needs to be swapped
 void	BL_SwapBuffers(struct wmWindow *win);
 
+void	BL_MakeDrawable(struct wmWindowManager *wm, struct wmWindow *win);
+
 void	BL_warp_pointer(struct wmWindow *win,int x,int y);
 
-void	BL_MakeScreenShot(struct ScrArea *curarea, const char* filename);
+void	BL_MakeScreenShot(struct bScreen *screen, struct ScrArea *curarea, const char *filename);
 
 void	BL_HideMouse(struct wmWindow *win);
 void	BL_NormalMouse(struct wmWindow *win);
 void	BL_WaitMouse(struct wmWindow *win);
 
+void BL_draw_gamedebug_box(int xco, int yco, int width, int height, float percentage);
 void BL_print_game_line(int fontid, const char* text, int size, int dpi, float* color, double* mat, float aspect);
 void BL_print_gamedebug_line(const char* text, int xco, int yco, int width, int height);
 void BL_print_gamedebug_line_padded(const char* text, int xco, int yco, int width, int height);
@@ -58,7 +63,6 @@ void BL_print_gamedebug_line_padded(const char* text, int xco, int yco, int widt
 
 #ifdef __cplusplus
 }
-#endif //__cplusplus
+#endif  /* __cplusplus */
 
-#endif //__KX_BLENDERGL_H__
-
+#endif  /* __KX_BLENDERGL_H__ */

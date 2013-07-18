@@ -33,54 +33,22 @@
 #include "node_composite_util.h"
 
 /* **************** SET ALPHA ******************** */
-static bNodeSocketTemplate cmp_node_setalpha_in[]= {
+static bNodeSocketTemplate cmp_node_setalpha_in[] = {
 	{	SOCK_RGBA, 1, N_("Image"),			0.0f, 0.0f, 0.0f, 1.0f},
 	{	SOCK_FLOAT, 1, N_("Alpha"),			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
-static bNodeSocketTemplate cmp_node_setalpha_out[]= {
+static bNodeSocketTemplate cmp_node_setalpha_out[] = {
 	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
-static void node_composit_exec_setalpha(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
-{
-	/* stack order out: RGBA image */
-	/* stack order in: col, alpha */
-	
-	/* input no image? then only color operation */
-	if (in[0]->data==NULL && in[1]->data==NULL) {
-		out[0]->vec[0] = in[0]->vec[0];
-		out[0]->vec[1] = in[0]->vec[1];
-		out[0]->vec[2] = in[0]->vec[2];
-		out[0]->vec[3] = in[1]->vec[0];
-	}
-	else {
-		/* make output size of input image */
-		CompBuf *cbuf= in[0]->data?in[0]->data:in[1]->data;
-		CompBuf *stackbuf= alloc_compbuf(cbuf->x, cbuf->y, CB_RGBA, 1); /* allocs */
-		
-		if (in[1]->data==NULL && in[1]->vec[0]==1.0f) {
-			/* pass on image */
-			composit1_pixel_processor(node, stackbuf, in[0]->data, in[0]->vec, do_copy_rgb, CB_RGBA);
-		}
-		else {
-			/* send an compbuf or a value to set as alpha - composit2_pixel_processor handles choosing the right one */
-			composit2_pixel_processor(node, stackbuf, in[0]->data, in[0]->vec, in[1]->data, in[1]->vec, do_copy_a_rgba, CB_RGBA, CB_VAL);
-		}
-	
-		out[0]->data= stackbuf;
-	}
-}
-
-void register_node_type_cmp_setalpha(bNodeTreeType *ttype)
+void register_node_type_cmp_setalpha(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, CMP_NODE_SETALPHA, "Set Alpha", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	cmp_node_type_base(&ntype, CMP_NODE_SETALPHA, "Set Alpha", NODE_CLASS_CONVERTOR, 0);
 	node_type_socket_templates(&ntype, cmp_node_setalpha_in, cmp_node_setalpha_out);
-	node_type_size(&ntype, 120, 40, 140);
-	node_type_exec(&ntype, node_composit_exec_setalpha);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

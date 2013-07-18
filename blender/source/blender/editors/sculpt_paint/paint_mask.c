@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,8 +36,8 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
-#include "BLI_pbvh.h"
-
+#include "BLI_utildefines.h"
+#include "BKE_pbvh.h"
 #include "BKE_ccg.h"
 #include "BKE_context.h"
 #include "BKE_DerivedMesh.h"
@@ -54,6 +52,9 @@
 #include "WM_types.h"
 
 #include "ED_screen.h"
+#include "ED_sculpt.h"
+
+#include "bmesh.h"
 
 #include "paint_intern.h"
 #include "sculpt_intern.h" /* for undo push */
@@ -77,7 +78,9 @@ static void mask_flood_fill_set_elem(float *elem,
 static int mask_flood_fill_exec(bContext *C, wmOperator *op)
 {
 	ARegion *ar = CTX_wm_region(C);
+	struct Scene *scene = CTX_data_scene(C);
 	Object *ob = CTX_data_active_object(C);
+	struct MultiresModifierData *mmd = sculpt_multires_active(scene, ob);
 	PaintMaskFloodMode mode;
 	float value;
 	DerivedMesh *dm;
@@ -88,11 +91,13 @@ static int mask_flood_fill_exec(bContext *C, wmOperator *op)
 	mode = RNA_enum_get(op->ptr, "mode");
 	value = RNA_float_get(op->ptr, "value");
 
-	dm = mesh_get_derived_final(CTX_data_scene(C), ob, CD_MASK_BAREMESH);
+	ED_sculpt_mask_layers_ensure(ob, mmd);
+
+	dm = mesh_get_derived_final(scene, ob, CD_MASK_BAREMESH);
 	pbvh = dm->getPBVH(ob, dm);
 	ob->sculpt->pbvh = pbvh;
 
-	BLI_pbvh_search_gather(pbvh, NULL, NULL, &nodes, &totnode);
+	BKE_pbvh_search_gather(pbvh, NULL, NULL, &nodes, &totnode);
 
 	sculpt_undo_push_begin("Mask flood fill");
 
@@ -101,12 +106,12 @@ static int mask_flood_fill_exec(bContext *C, wmOperator *op)
 
 		sculpt_undo_push_node(ob, nodes[i], SCULPT_UNDO_MASK);
 
-		BLI_pbvh_vertex_iter_begin(pbvh, nodes[i], vi, PBVH_ITER_UNIQUE) {
+		BKE_pbvh_vertex_iter_begin(pbvh, nodes[i], vi, PBVH_ITER_UNIQUE) {
 			mask_flood_fill_set_elem(vi.mask, mode, value);
-		} BLI_pbvh_vertex_iter_end;
+		} BKE_pbvh_vertex_iter_end;
 		
-		BLI_pbvh_node_mark_update(nodes[i]);
-		if (BLI_pbvh_type(pbvh) == PBVH_GRIDS)
+		BKE_pbvh_node_mark_update(nodes[i]);
+		if (BKE_pbvh_type(pbvh) == PBVH_GRIDS)
 			multires_mark_as_modified(ob, MULTIRES_COORDS_MODIFIED);
 	}
 	
@@ -123,13 +128,14 @@ static int mask_flood_fill_exec(bContext *C, wmOperator *op)
 void PAINT_OT_mask_flood_fill(struct wmOperatorType *ot)
 {
 	static EnumPropertyItem mode_items[] = {
-		{PAINT_MASK_FLOOD_VALUE, "VALUE", 0, "Value", "Set mask to the level specified by the \"value\" property"},
+		{PAINT_MASK_FLOOD_VALUE, "VALUE", 0, "Value", "Set mask to the level specified by the 'value' property"},
 		{PAINT_MASK_INVERT, "INVERT", 0, "Invert", "Invert the mask"},
 		{0}};
 
 	/* identifiers */
 	ot->name = "Mask Flood Fill";
 	ot->idname = "PAINT_OT_mask_flood_fill";
+	ot->description = "Fill the whole mask with a given value, or invert its values";
 
 	/* api callbacks */
 	ot->exec = mask_flood_fill_exec;
@@ -139,5 +145,6 @@ void PAINT_OT_mask_flood_fill(struct wmOperatorType *ot)
 
 	/* rna */
 	RNA_def_enum(ot->srna, "mode", mode_items, PAINT_MASK_FLOOD_VALUE, "Mode", NULL);
-	RNA_def_float(ot->srna, "value", 0, 0, 1, "Value", "Mask level to use when mode is \"Value\"; zero means no masking and one is fully masked", 0, 1);
+	RNA_def_float(ot->srna, "value", 0, 0, 1, "Value",
+	              "Mask level to use when mode is 'Value'; zero means no masking and one is fully masked", 0, 1);
 }

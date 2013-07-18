@@ -39,19 +39,27 @@
 #include "GHOST_System.h"
 #include "../GHOST_Types.h"
 
+// For tablets
+#ifdef WITH_X11_XINPUT
+#  include <X11/extensions/XInput.h>
+#endif
+
 #if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
 #  define GHOST_X11_RES_NAME  "Blender" /* res_name */
 #  define GHOST_X11_RES_CLASS "Blender" /* res_class */
 #endif
 
+/* generic error handlers */
+int GHOST_X11_ApplicationErrorHandler(Display *display, XErrorEvent *theEvent);
+int GHOST_X11_ApplicationIOErrorHandler(Display *display);
 
 class GHOST_WindowX11;
 
 /**
  * X11 Implementation of GHOST_System class.
- * @see GHOST_System.
- * @author	Laurence Bourn
- * @date	October 26, 2001
+ * \see GHOST_System.
+ * \author	Laurence Bourn
+ * \date	October 26, 2001
  */
 
 class GHOST_SystemX11 : public GHOST_System {
@@ -77,13 +85,13 @@ public:
 
 
 	/**
-	 * @section Interface Inherited from GHOST_ISystem 
+	 * \section Interface Inherited from GHOST_ISystem
 	 */
 
 	/**
 	 * Returns the system time.
 	 * Returns the number of milliseconds since the start of the system process.
-	 * @return The number of milliseconds.
+	 * \return The number of milliseconds.
 	 */
 	GHOST_TUns64
 	getMilliSeconds(
@@ -92,7 +100,7 @@ public:
 
 	/**
 	 * Returns the number of displays on this system.
-	 * @return The number of displays.
+	 * \return The number of displays.
 	 */
 	GHOST_TUns8
 	getNumDisplays(
@@ -100,7 +108,7 @@ public:
 
 	/**
 	 * Returns the dimensions of the main display on this system.
-	 * @return The dimension of the main display.
+	 * \return The dimension of the main display.
 	 */
 	void
 	getMainDisplayDimensions(
@@ -109,19 +117,31 @@ public:
 	    ) const;
 
 	/**
+	 * Returns the dimensions of all displays on this system.
+	 * \return The dimension of the main display.
+	 */
+	void
+	getAllDisplayDimensions(
+	    GHOST_TUns32& width,
+	    GHOST_TUns32& height
+	    ) const;
+
+	/**
 	 * Create a new window.
 	 * The new window is added to the list of windows managed. 
 	 * Never explicitly delete the window, use disposeWindow() instead.
-	 * @param	title	The name of the window (displayed in the title bar of the window if the OS supports it).
-	 * @param	left		The coordinate of the left edge of the window.
-	 * @param	top		The coordinate of the top edge of the window.
-	 * @param	width		The width the window.
-	 * @param	height		The height the window.
-	 * @param	state		The state of the window when opened.
-	 * @param	type		The type of drawing context installed in this window.
-	 * @param       stereoVisual    Create a stereo visual for quad buffered stereo.
-	 * @param	parentWindow    Parent (embedder) window
-	 * @return	The new window (or 0 if creation failed).
+	 * \param	title	The name of the window (displayed in the title bar of the window if the OS supports it).
+	 * \param	left		The coordinate of the left edge of the window.
+	 * \param	top		The coordinate of the top edge of the window.
+	 * \param	width		The width the window.
+	 * \param	height		The height the window.
+	 * \param	state		The state of the window when opened.
+	 * \param	type		The type of drawing context installed in this window.
+	 * \param	stereoVisual    Create a stereo visual for quad buffered stereo.
+	 * \param	exclusive	Use to show the window ontop and ignore others
+	 *						(used fullscreen).
+	 * \param	parentWindow    Parent (embedder) window
+	 * \return	The new window (or 0 if creation failed).
 	 */
 	GHOST_IWindow *
 	createWindow(
@@ -133,18 +153,19 @@ public:
 	    GHOST_TWindowState state,
 	    GHOST_TDrawingContextType type,
 	    const bool stereoVisual,
+	    const bool exclusive = false,
 	    const GHOST_TUns16 numOfAASamples = 0,
 	    const GHOST_TEmbedderWindowID parentWindow = 0
 	    );
 
 	/**
-	 * @section Interface Inherited from GHOST_ISystem 
+	 * \section Interface Inherited from GHOST_ISystem
 	 */
 
 	/**
 	 * Retrieves events from the system and stores them in the queue.
-	 * @param waitForEvent Flag to wait for an event (or return immediately).
-	 * @return Indication of the presence of events.
+	 * \param waitForEvent Flag to wait for an event (or return immediately).
+	 * \return Indication of the presence of events.
 	 */
 	bool
 	processEvents(
@@ -152,7 +173,7 @@ public:
 	    );
 
 	/**
-	 * @section Interface Inherited from GHOST_System 
+	 * \section Interface Inherited from GHOST_System
 	 */
 	GHOST_TSuccess
 	getCursorPosition(
@@ -168,8 +189,8 @@ public:
 
 	/**
 	 * Returns the state of all modifier keys.
-	 * @param keys	The state of all modifier keys (true == pressed).
-	 * @return		Indication of success.
+	 * \param keys	The state of all modifier keys (true == pressed).
+	 * \return		Indication of success.
 	 */
 	GHOST_TSuccess
 	getModifierKeys(
@@ -178,8 +199,8 @@ public:
 
 	/**
 	 * Returns the state of the mouse buttons (ouside the message queue).
-	 * @param buttons	The state of the buttons.
-	 * @return			Indication of success.
+	 * \param buttons	The state of the buttons.
+	 * \return			Indication of success.
 	 */
 	GHOST_TSuccess
 	getButtons(
@@ -187,7 +208,7 @@ public:
 	    ) const;
 
 	/**
-	 * @section Interface Dirty
+	 * \section Interface Dirty
 	 * Flag a window as dirty. This will
 	 * generate a GHOST window update event on a call to processEvents() 
 	 */
@@ -210,8 +231,8 @@ public:
 
 #if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
 	XIM
-	getX11_XIM(
-	        ) {
+	getX11_XIM()
+	{
 		return m_xim;
 	}
 #endif
@@ -223,72 +244,103 @@ public:
 
 	/**
 	 * Returns unsinged char from CUT_BUFFER0
-	 * @param selection		Get selection, X11 only feature
-	 * @return				Returns the Clipboard indicated by Flag
+	 * \param selection		Get selection, X11 only feature
+	 * \return				Returns the Clipboard indicated by Flag
 	 */
 	GHOST_TUns8 *getClipboard(bool selection) const;
 	
 	/**
 	 * Puts buffer to system clipboard
-	 * @param buffer	The buffer to copy to the clipboard	
-	 * @param selection	Set the selection into the clipboard, X11 only feature
+	 * \param buffer	The buffer to copy to the clipboard
+	 * \param selection	Set the selection into the clipboard, X11 only feature
 	 */
 	void putClipboard(GHOST_TInt8 *buffer, bool selection) const;
 
-#if WITH_XDND
+#ifdef WITH_XDND
 	/**
 	 * Creates a drag'n'drop event and pushes it immediately onto the event queue. 
 	 * Called by GHOST_DropTargetX11 class.
-	 * @param eventType The type of drag'n'drop event
-	 * @param draggedObjectType The type object concerned (currently array of file names, string, ?bitmap)
-	 * @param mouseX x mouse coordinate (in window coordinates)
-	 * @param mouseY y mouse coordinate
-	 * @param window The window on which the event occurred
-	 * @return Indication whether the event was handled. 
+	 * \param eventType The type of drag'n'drop event
+	 * \param draggedObjectType The type object concerned (currently array of file names, string, ?bitmap)
+	 * \param mouseX x mouse coordinate (in window coordinates)
+	 * \param mouseY y mouse coordinate
+	 * \param window The window on which the event occurred
+	 * \return Indication whether the event was handled. 
 	 */
 	static GHOST_TSuccess pushDragDropEvent(GHOST_TEventType eventType, GHOST_TDragnDropTypes draggedObjectType, GHOST_IWindow *window, int mouseX, int mouseY, void *data);
 #endif
 
 	/**
-	 * @see GHOST_ISystem
+	 * \see GHOST_ISystem
 	 */
 	int toggleConsole(int action) {
 		return 0;
 	}
 
-	/**
-	 * Atom used for ICCCM, WM-spec and Motif.
-	 * We only need get this atom at the start, it's relative
-	 * to the display not the window and are public for every
-	 * window that need it.
-	 */
-	Atom m_wm_state;
-	Atom m_wm_change_state;
-	Atom m_net_state;
-	Atom m_net_max_horz;
-	Atom m_net_max_vert;
-	Atom m_net_fullscreen;
-	Atom m_motif;
-	Atom m_wm_take_focus;
-	Atom m_wm_protocols;
-	Atom m_delete_window_atom;
+#ifdef WITH_X11_XINPUT
+	typedef struct GHOST_TabletX11 {
+		XDevice *StylusDevice;
+		XDevice *EraserDevice;
 
-	/* Atoms for Selection, copy & paste. */
-	Atom m_targets;
-	Atom m_string;
-	Atom m_compound_text;
-	Atom m_text;
-	Atom m_clipboard;
-	Atom m_primary;
-	Atom m_xclip_out;
-	Atom m_incr;
-	Atom m_utf8_string;
+		XID StylusID, EraserID;
+
+		int MotionEvent;
+		int ProxInEvent;
+		int ProxOutEvent;
+
+		int PressureLevels;
+		int XtiltLevels, YtiltLevels;
+	} GHOST_TabletX11;
+
+	GHOST_TabletX11 &GetXTablet()
+	{
+		return m_xtablet;
+	}
+#endif // WITH_X11_XINPUT
+
+	struct {
+		/**
+		 * Atom used for ICCCM, WM-spec and Motif.
+		 * We only need get this atom at the start, it's relative
+		 * to the display not the window and are public for every
+		 * window that need it.
+		 */
+		Atom WM_STATE;
+		Atom WM_CHANGE_STATE;
+		Atom _NET_WM_STATE;
+		Atom _NET_WM_STATE_MAXIMIZED_HORZ;
+		Atom _NET_WM_STATE_MAXIMIZED_VERT;
+		Atom _NET_WM_STATE_FULLSCREEN;
+		Atom _MOTIF_WM_HINTS;
+		Atom WM_TAKE_FOCUS;
+		Atom WM_PROTOCOLS;
+		Atom WM_DELETE_WINDOW;
+
+		/* Atoms for Selection, copy & paste. */
+		Atom TARGETS;
+		Atom STRING;
+		Atom COMPOUND_TEXT;
+		Atom TEXT;
+		Atom CLIPBOARD;
+		Atom PRIMARY;
+		Atom XCLIP_OUT;
+		Atom INCR;
+		Atom UTF8_STRING;
+#ifdef WITH_X11_XINPUT
+		Atom TABLET;
+#endif
+	} m_atom;
 
 private:
 
 	Display *m_display;
 #if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
 	XIM m_xim;
+#endif
+
+#ifdef WITH_X11_XINPUT
+	/* Tablet devices */
+	GHOST_TabletX11 m_xtablet;
 #endif
 
 	/// The vector of windows that need to be updated.
@@ -311,6 +363,10 @@ private:
 
 #if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
 	bool openX11_IM();
+#endif
+
+#ifdef WITH_X11_XINPUT
+	void initXInputDevices();
 #endif
 
 	GHOST_WindowX11 *

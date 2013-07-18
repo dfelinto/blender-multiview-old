@@ -37,6 +37,7 @@ RenderLayersBaseProg::RenderLayersBaseProg(int renderpass, int elementsize) : No
 	this->setScene(NULL);
 	this->m_inputBuffer = NULL;
 	this->m_elementsize = elementsize;
+	this->m_rd = NULL;
 }
 
 
@@ -69,29 +70,76 @@ void RenderLayersBaseProg::initExecution()
 	}
 }
 
+void RenderLayersBaseProg::doInterpolation(float output[4], float x, float y, PixelSampler sampler)
+{
+	unsigned int offset;
+	int ix, iy;
+	int width = this->getWidth(), height = this->getHeight();
+
+	switch (sampler) {
+		case COM_PS_NEAREST:
+			ix = x;
+			iy = y;
+			offset = (iy * width + ix) * this->m_elementsize;
+
+			if (this->m_elementsize == 1)
+				output[0] = this->m_inputBuffer[offset];
+			else if (this->m_elementsize == 3)
+				copy_v3_v3(output, &this->m_inputBuffer[offset]);
+			else
+				copy_v4_v4(output, &this->m_inputBuffer[offset]);
+
+			break;
+
+		case COM_PS_BILINEAR:
+			BLI_bilinear_interpolation_fl(this->m_inputBuffer, output, width, height, this->m_elementsize, x, y);
+			break;
+
+		case COM_PS_BICUBIC:
+			BLI_bicubic_interpolation_fl(this->m_inputBuffer, output, width, height, this->m_elementsize, x, y);
+			break;
+	}
+
+	if (this->m_elementsize == 1) {
+		output[1] = 0.0f;
+		output[2] = 0.0f;
+		output[3] = 0.0f;
+	}
+	else if (this->m_elementsize == 3) {
+		output[3] = 1.0f;
+	}
+}
+
 void RenderLayersBaseProg::executePixel(float output[4], float x, float y, PixelSampler sampler)
 {
+#if 0
+	const RenderData *rd = this->m_rd;
+
+	int dx = 0, dy = 0;
+
+	if (rd->mode & R_BORDER && rd->mode & R_CROP) {
+		/* see comment in executeRegion describing coordinate mapping,
+		 * here it simply goes other way around
+		 */
+		int full_width  = rd->xsch * rd->size / 100;
+		int full_height = rd->ysch * rd->size / 100;
+
+		dx = rd->border.xmin * full_width - (full_width - this->getWidth()) / 2.0f;
+		dy = rd->border.ymin * full_height - (full_height - this->getHeight()) / 2.0f;
+	}
+
+	int ix = x - dx;
+	int iy = y - dy;
+#else
 	int ix = x;
 	int iy = y;
-	
+#endif
+
 	if (this->m_inputBuffer == NULL || ix < 0 || iy < 0 || ix >= (int)this->getWidth() || iy >= (int)this->getHeight() ) {
 		zero_v4(output);
 	}
 	else {
-		unsigned int offset = (iy * this->getWidth() + ix) * this->m_elementsize;
-		if (this->m_elementsize == 1) {
-			output[0] = this->m_inputBuffer[offset];
-			output[1] = 0.0f;
-			output[2] = 0.0f;
-			output[3] = 0.0f;
-		}
-		else if (this->m_elementsize == 3) {
-			copy_v3_v3(output, &this->m_inputBuffer[offset]);
-			output[3] = 1.0f;
-		}
-		else {
-			copy_v4_v4(output, &this->m_inputBuffer[offset]);
-		}
+		doInterpolation(output, ix, iy, sampler);
 	}
 }
 

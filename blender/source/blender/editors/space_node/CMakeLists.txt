@@ -23,7 +23,6 @@ set(INC
 	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../../blenloader
 	../../imbuf
 	../../gpu
 	../../makesdna
@@ -47,11 +46,11 @@ set(SRC
 	node_draw.c
 	node_edit.c
 	node_group.c
-	node_header.c
 	node_ops.c
 	node_relationships.c
 	node_select.c
 	node_templates.c
+	node_toolbar.c
 	node_view.c
 	space_node.c
 

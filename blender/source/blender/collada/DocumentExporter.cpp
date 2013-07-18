@@ -79,11 +79,26 @@ extern "C"
 #include "DNA_modifier_types.h"
 #include "DNA_userdef_types.h"
 
-#include "BKE_DerivedMesh.h"
-#include "BKE_fcurve.h"
-#include "BKE_animsys.h"
 #include "BLI_path_util.h"
 #include "BLI_fileops.h"
+#include "BLI_math.h"
+#include "BLI_string.h"
+#include "BLI_listbase.h"
+#include "BLI_utildefines.h"
+
+#include "BKE_DerivedMesh.h"
+#include "BKE_action.h" // pose functions
+#include "BKE_animsys.h"
+#include "BKE_armature.h"
+#include "BKE_blender.h" // version info
+#include "BKE_fcurve.h"
+#include "BKE_global.h"
+#include "BKE_image.h"
+#include "BKE_main.h"
+#include "BKE_material.h"
+#include "BKE_object.h"
+#include "BKE_scene.h"
+
 #include "ED_keyframing.h"
 #ifdef WITH_BUILDINFO
 extern char build_rev[];
@@ -91,25 +106,11 @@ extern char build_rev[];
 
 #include "MEM_guardedalloc.h"
 
-#include "BKE_blender.h" // version info
-#include "BKE_scene.h"
-#include "BKE_global.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_action.h" // pose functions
-#include "BKE_armature.h"
-#include "BKE_image.h"
-#include "BKE_utildefines.h"
-#include "BKE_object.h"
-
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_listbase.h"
-
 #include "RNA_access.h"
 }
 
 #include "collada_internal.h"
+#include "collada_utils.h"
 #include "DocumentExporter.h"
 
 extern bool bc_has_object_type(LinkNode *export_set, short obtype);
@@ -122,6 +123,7 @@ extern bool bc_has_object_type(LinkNode *export_set, short obtype);
 #include "ArmatureExporter.h"
 #include "AnimationExporter.h"
 #include "CameraExporter.h"
+#include "ControllerExporter.h"
 #include "EffectExporter.h"
 #include "GeometryExporter.h"
 #include "ImageExporter.h"
@@ -161,8 +163,10 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 	clear_global_id_map();
 	
 	COLLADABU::NativeString native_filename =
-	    COLLADABU::NativeString(std::string(this->export_settings->filepath));
+	    COLLADABU::NativeString(std::string(this->export_settings->filepath), COLLADABU::NativeString::ENCODING_UTF8);
 	COLLADASW::StreamWriter sw(native_filename);
+
+	fprintf(stdout, "Collada export: %s\n", this->export_settings->filepath);
 
 	// open <collada>
 	sw.startDocument();
@@ -262,16 +266,32 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 
 	// <library_animations>
 	AnimationExporter ae(&sw, this->export_settings);
-	ae.exportAnimations(sce);
+	bool has_animations = ae.exportAnimations(sce);
 
 	// <library_controllers>
 	ArmatureExporter arm_exporter(&sw, this->export_settings);
-	if (bc_has_object_type(export_set, OB_ARMATURE)) {
-		arm_exporter.export_controllers(sce);
+	ControllerExporter controller_exporter(&sw , this->export_settings);
+	if (bc_has_object_type(export_set, OB_ARMATURE) || this->export_settings->include_shapekeys) 
+	{
+		controller_exporter.export_controllers(sce);
 	}
 
 	// <library_visual_scenes>
+
 	SceneExporter se(&sw, &arm_exporter, this->export_settings);
+
+	if (has_animations && this->export_settings->export_transformation_type == BC_TRANSFORMATION_TYPE_MATRIX) {
+		// channels adressing <matrix> objects is not (yet) supported
+		// So we force usage of <location>, <translation> and <scale>
+		fprintf(stdout, 
+			"For animated Ojects we must use decomposed <matrix> elements,\n" \
+			"Forcing usage of TransLocRot transformation type.");
+		se.setExportTransformationType(BC_TRANSFORMATION_TYPE_TRANSROTLOC);
+	}
+	else {
+		se.setExportTransformationType(this->export_settings->export_transformation_type);
+	}
+
 	se.exportScene(sce);
 	
 	// <scene>

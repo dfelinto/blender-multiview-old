@@ -120,7 +120,7 @@ extern GHOST_TimerTaskHandle GHOST_InstallTimer(GHOST_SystemHandle systemhandle,
 /**
  * Removes a timer.
  * \param systemhandle The handle to the system
- * \param timerTask Timer task to be removed.
+ * \param timertaskhandle Timer task to be removed.
  * \return Indication of success.
  */
 extern GHOST_TSuccess GHOST_RemoveTimer(GHOST_SystemHandle systemhandle,
@@ -147,6 +147,20 @@ extern GHOST_TUns8 GHOST_GetNumDisplays(GHOST_SystemHandle systemhandle);
 extern void GHOST_GetMainDisplayDimensions(GHOST_SystemHandle systemhandle,
                                            GHOST_TUns32 *width,
                                            GHOST_TUns32 *height);
+
+/**
+ * Returns the dimensions of all displays combine
+ * (the current workspace).
+ * No need to worrky about overlapping monitors.
+ * \param systemhandle The handle to the system
+ * \param width A pointer the width gets put in
+ * \param height A pointer the height gets put in
+ * \return void.
+ */
+extern void GHOST_GetAllDisplayDimensions(GHOST_SystemHandle systemhandle,
+                                           GHOST_TUns32 *width,
+                                           GHOST_TUns32 *height);
+
 
 /**
  * Create a new window.
@@ -185,7 +199,7 @@ extern GHOST_TUserDataPtr GHOST_GetWindowUserData(GHOST_WindowHandle windowhandl
 /**
  * Changes the window user data.
  * \param windowhandle The handle to the window
- * \param data The window user data.
+ * \param userdata The window user data.
  */
 extern void GHOST_SetWindowUserData(GHOST_WindowHandle windowhandle, 
                                     GHOST_TUserDataPtr userdata);
@@ -212,6 +226,7 @@ extern int GHOST_ValidWindow(GHOST_SystemHandle systemhandle,
  * Begins full screen mode.
  * \param systemhandle The handle to the system
  * \param setting The new setting of the display.
+ * \param stereoVisual Option for stereo display.
  * \return A handle to the window displayed in full screen.
  *         This window is invalid after full screen has been ended.
  */
@@ -302,7 +317,7 @@ extern GHOST_TStandardCursor GHOST_GetCursorShape(GHOST_WindowHandle windowhandl
 /**
  * Set the shape of the cursor.
  * \param windowhandle The handle to the window
- * \param cursor The new cursor shape type id.
+ * \param cursorshape The new cursor shape type id.
  * \return Indication of success.
  */
 extern GHOST_TSuccess GHOST_SetCursorShape(GHOST_WindowHandle windowhandle,
@@ -387,11 +402,12 @@ extern GHOST_TSuccess GHOST_SetCursorPosition(GHOST_SystemHandle systemhandle,
  * \param windowhandle The handle to the window
  * \param mode The new grab state of the cursor.
  * \param bounds The grab ragion (optional) - left,top,right,bottom
+ * \param mouse_ungrab_xy XY for new mouse location (optional) - x,y
  * \return Indication of success.
  */
 extern GHOST_TSuccess GHOST_SetCursorGrab(GHOST_WindowHandle windowhandle,
                                           GHOST_TGrabCursorMode mode,
-                                          int *bounds);
+                                          int bounds[4], int mouse_ungrab_xy[2]);
 
 /***************************************************************************************
  * Access to mouse button and keyboard states.
@@ -483,10 +499,10 @@ extern GHOST_TUserDataPtr GHOST_GetTimerTaskUserData(GHOST_TimerTaskHandle timer
 /**
  * Changes the time user data.
  * \param timertaskhandle The handle to the timertask
- * \param data The timer user data.
+ * \param userdata The timer user data.
  */
 extern void GHOST_SetTimerTaskUserData(GHOST_TimerTaskHandle timertaskhandle,
-                                       GHOST_TUserDataPtr userData);
+                                       GHOST_TUserDataPtr userdata);
 
 /**
  * Returns indication as to whether the window is valid.
@@ -824,7 +840,8 @@ extern GHOST_TUns8 *GHOST_getClipboard(int selection);
 
 /**
  * Put data to the Clipboard
- * \param set the selection instead, X11 only feature
+ * \param buffer the string buffer to set.
+ * \param selection Set the selection instead, X11 only feature.
  */
 extern void GHOST_putClipboard(GHOST_TInt8 *buffer, int selection);
 
@@ -848,6 +865,16 @@ extern int GHOST_toggleConsole(int action);
  * in the application
  */
 extern int GHOST_confirmQuit(GHOST_WindowHandle windowhandle);
+
+/**
+ * Use native pixel size (MacBook pro 'retina'), if supported.
+ */
+extern int GHOST_UseNativePixels(void);
+
+/**
+ * If window was opened using native pixel size, it returns scaling factor.
+ */
+extern float GHOST_GetNativePixelSize(GHOST_WindowHandle windowhandle);
 
 
 #ifdef __cplusplus

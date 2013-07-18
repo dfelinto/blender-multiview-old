@@ -28,6 +28,7 @@ add_subdirectory(ghost)
 add_subdirectory(guardedalloc)
 add_subdirectory(moto)
 add_subdirectory(memutil)
+add_subdirectory(opencolorio)
 add_subdirectory(opennl)
 add_subdirectory(mikktspace)
 add_subdirectory(raskter)
@@ -48,11 +49,6 @@ if(WITH_MOD_SMOKE)
 	add_subdirectory(smoke)
 endif()
 
-if(WITH_MOD_DECIMATE)
-	add_subdirectory(container)
-	add_subdirectory(decimation)
-endif()
-
 if(WITH_MOD_BOOLEAN)
 	add_subdirectory(bsp)
 endif()
@@ -69,7 +65,20 @@ if(WITH_CYCLES)
 	add_subdirectory(cycles)
 endif()
 
+if(WITH_INTERNATIONAL)
+	add_subdirectory(locale)
+endif()
+
+if(WITH_BULLET)
+	add_subdirectory(rigidbody)
+endif()
+
+if(WITH_COMPOSITOR)
+	add_subdirectory(opencl)
+endif()
+
 # only windows needs utf16 converter
 if(WIN32)
 	add_subdirectory(utfconv)
 endif()
+

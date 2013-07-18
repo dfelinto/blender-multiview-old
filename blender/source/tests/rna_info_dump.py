@@ -18,8 +18,8 @@
 
 # <pep8 compliant>
 
-# Used for generating API diff's between releases
-#  ./blender.bin --background -noaudio --python release/test/rna_info_dump.py
+# Used for generating API diffs between releases
+#  ./blender.bin --background -noaudio --python source/tests/rna_info_dump.py
 
 import bpy
 

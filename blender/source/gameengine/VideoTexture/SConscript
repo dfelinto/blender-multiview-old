@@ -1,19 +1,61 @@
-#!/usr/bin/python
+#!/usr/bin/env python
+#
+# ***** BEGIN GPL LICENSE BLOCK *****
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# The Original Code is Copyright (C) 2006, Blender Foundation
+# All rights reserved.
+#
+# The Original Code is: all of this file.
+#
+# Contributor(s): Nathan Letwory.
+#
+# ***** END GPL LICENSE BLOCK *****
+
 import sys
 
 Import ('env')
 
 sources = env.Glob('*.cpp')
 
-incs = '. #source/gameengine/Ketsji #source/gameengine/Expressions'
-incs += ' #source/gameengine/GameLogic #source/gameengine/SceneGraph #source/gameengine/Rasterizer'
-incs += ' #source/gameengine/Rasterizer/RAS_OpenGLRasterizer'
-incs += ' #source/gameengine/BlenderRoutines'
-incs += ' #source/blender/editors/include #source/blender/blenlib #source/blender/blenkernel'
-incs += ' #source/blender/makesdna #source/blender/imbuf #source/blender/python #source/blender/python/generic'
-incs += ' #source/blender/gpu #intern/string #intern/moto/include'
-incs += ' #intern/guardedalloc #intern/container #extern/glew/include'
-incs += ' #intern/ffmpeg'
+incs = [
+    '.',
+    '#intern/container',
+    '#intern/ffmpeg',
+    '#intern/guardedalloc',
+    '#intern/string',
+    '#extern/glew/include',
+    '#intern/moto/include',
+    '#source/blender/blenkernel',
+    '#source/blender/blenlib',
+    '#source/blender/gpu',
+    '#source/blender/imbuf',
+    '#source/blender/makesdna',
+    '#source/blender/python',
+    '#source/gameengine/BlenderRoutines',
+    '#source/gameengine/Expressions',
+    '#source/gameengine/GameLogic',
+    '#source/gameengine/Ketsji',
+    '#source/gameengine/Rasterizer',
+    '#source/gameengine/SceneGraph',
+    '#source/blender/editors/include',
+    '#source/blender/python/generic',
+    '#source/gameengine/Rasterizer/RAS_OpenGLRasterizer',
+    ]
+incs = ' '.join(incs)
 
 defs = ['GLEW_STATIC'] 
 if env['OURPLATFORM'] in ('win32-vc', 'win64-vc','win32-mingw', 'win64-mingw'):

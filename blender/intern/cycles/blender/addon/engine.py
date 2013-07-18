@@ -18,10 +18,9 @@
 
 # <pep8 compliant>
 
-import bpy
-
 
 def init():
+    import bpy
     import _cycles
     import os.path
 
@@ -31,7 +30,8 @@ def init():
     _cycles.init(path, user_path)
 
 
-def create(engine, data, scene, region=0, v3d=0, rv3d=0):
+def create(engine, data, scene, region=0, v3d=0, rv3d=0, preview_osl=False):
+    import bpy
     import _cycles
 
     data = data.as_pointer()
@@ -44,7 +44,7 @@ def create(engine, data, scene, region=0, v3d=0, rv3d=0):
     if rv3d:
         rv3d = rv3d.as_pointer()
 
-    engine.session = _cycles.create(engine.as_pointer(), userpref, data, scene, region, v3d, rv3d)
+    engine.session = _cycles.create(engine.as_pointer(), userpref, data, scene, region, v3d, rv3d, preview_osl)
 
 
 def free(engine):
@@ -59,6 +59,13 @@ def render(engine):
     import _cycles
     if hasattr(engine, "session"):
         _cycles.render(engine.session)
+
+
+def reset(engine, data, scene):
+    import _cycles
+    data = data.as_pointer()
+    scene = scene.as_pointer()
+    _cycles.reset(engine.session, data, scene)
 
 
 def update(engine, data, scene):

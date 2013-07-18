@@ -31,9 +31,9 @@
 
 #include "DNA_node_types.h"
 
-#include "BKE_context.h"
-
 #include "BLI_utildefines.h"
+
+#include "BKE_context.h"
 
 #include "ED_node.h"  /* own include */
 #include "ED_screen.h"
@@ -49,16 +49,19 @@
 void node_operatortypes(void)
 {
 	WM_operatortype_append(NODE_OT_properties);
+	WM_operatortype_append(NODE_OT_toolbar);
 	
 	WM_operatortype_append(NODE_OT_select);
 	WM_operatortype_append(NODE_OT_select_all);
 	WM_operatortype_append(NODE_OT_select_linked_to);
 	WM_operatortype_append(NODE_OT_select_linked_from);
 	WM_operatortype_append(NODE_OT_select_border);
+	WM_operatortype_append(NODE_OT_select_lasso);
 	WM_operatortype_append(NODE_OT_select_same_type);
-	WM_operatortype_append(NODE_OT_select_same_type_next);
-	WM_operatortype_append(NODE_OT_select_same_type_prev);
-
+	WM_operatortype_append(NODE_OT_select_same_type_step);
+	
+	WM_operatortype_append(NODE_OT_find_node);
+	
 	WM_operatortype_append(NODE_OT_view_all);
 	WM_operatortype_append(NODE_OT_view_selected);
 
@@ -82,13 +85,10 @@ void node_operatortypes(void)
 	WM_operatortype_append(NODE_OT_add_reroute);
 
 	WM_operatortype_append(NODE_OT_group_make);
+	WM_operatortype_append(NODE_OT_group_insert);
 	WM_operatortype_append(NODE_OT_group_ungroup);
 	WM_operatortype_append(NODE_OT_group_separate);
 	WM_operatortype_append(NODE_OT_group_edit);
-	WM_operatortype_append(NODE_OT_group_socket_add);
-	WM_operatortype_append(NODE_OT_group_socket_remove);
-	WM_operatortype_append(NODE_OT_group_socket_move_up);
-	WM_operatortype_append(NODE_OT_group_socket_move_down);
 	
 	WM_operatortype_append(NODE_OT_link_viewer);
 	
@@ -116,6 +116,14 @@ void node_operatortypes(void)
 	
 	WM_operatortype_append(NODE_OT_clipboard_copy);
 	WM_operatortype_append(NODE_OT_clipboard_paste);
+	
+	WM_operatortype_append(NODE_OT_shader_script_update);
+
+	WM_operatortype_append(NODE_OT_viewer_border);
+
+	WM_operatortype_append(NODE_OT_tree_socket_add);
+	WM_operatortype_append(NODE_OT_tree_socket_remove);
+	WM_operatortype_append(NODE_OT_tree_socket_move);
 }
 
 void ED_operatormacros_node(void)
@@ -166,7 +174,7 @@ void ED_operatormacros_node(void)
 	ot = WM_operatortype_append_macro("NODE_OT_move_detach_links_release", "Detach", "Move a node to detach links",
 	                                  OPTYPE_UNDO | OPTYPE_REGISTER);
 	WM_operatortype_macro_define(ot, "NODE_OT_links_detach");
-	mot = WM_operatortype_macro_define(ot, "NODE_OT_translate_attach");
+	WM_operatortype_macro_define(ot, "NODE_OT_translate_attach");
 }
 
 /* helper function for repetitive select operator keymap */
@@ -201,6 +209,7 @@ void node_keymap(struct wmKeyConfig *keyconf)
 	keymap = WM_keymap_find(keyconf, "Node Generic", SPACE_NODE, 0);
 	
 	WM_keymap_add_item(keymap, "NODE_OT_properties", NKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "NODE_OT_toolbar", TKEY, KM_PRESS, 0, 0);
 	
 	/* Main Area only ----------------- */
 	keymap = WM_keymap_find(keyconf, "Node Editor", SPACE_NODE, 0);
@@ -217,10 +226,17 @@ void node_keymap(struct wmKeyConfig *keyconf)
 	kmi = WM_keymap_add_item(keymap, "NODE_OT_select_border", EVT_TWEAK_S, KM_ANY, 0, 0);
 	RNA_boolean_set(kmi->ptr, "tweak", TRUE);
 	
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_select_lasso", EVT_TWEAK_A, KM_ANY, KM_CTRL | KM_ALT, 0);
+	RNA_boolean_set(kmi->ptr, "deselect", FALSE);
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_select_lasso", EVT_TWEAK_A, KM_ANY, KM_CTRL | KM_SHIFT | KM_ALT, 0);
+	RNA_boolean_set(kmi->ptr, "deselect", TRUE);
+
 	/* each of these falls through if not handled... */
-	WM_keymap_add_item(keymap, "NODE_OT_link", LEFTMOUSE, KM_PRESS, 0, 0);
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_link", LEFTMOUSE, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "detach", FALSE);
 	kmi = WM_keymap_add_item(keymap, "NODE_OT_link", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);
 	RNA_boolean_set(kmi->ptr, "detach", TRUE);
+	
 	WM_keymap_add_item(keymap, "NODE_OT_resize", LEFTMOUSE, KM_PRESS, 0, 0);
 	
 	WM_keymap_add_item(keymap, "NODE_OT_add_reroute", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0);
@@ -236,7 +252,7 @@ void node_keymap(struct wmKeyConfig *keyconf)
 
 	kmi = WM_keymap_add_item(keymap, "NODE_OT_link_make", FKEY, KM_PRESS, 0, 0);
 	RNA_boolean_set(kmi->ptr, "replace", FALSE);
-	kmi = WM_keymap_add_item(keymap, "NODE_OT_link_make", FKEY, KM_PRESS, KM_CTRL, 0);
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_link_make", FKEY, KM_PRESS, KM_SHIFT, 0);
 	RNA_boolean_set(kmi->ptr, "replace", TRUE);
 
 	WM_keymap_add_menu(keymap, "NODE_MT_add", AKEY, KM_PRESS, KM_SHIFT, 0);
@@ -273,20 +289,34 @@ void node_keymap(struct wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "NODE_OT_select_linked_to", LKEY, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_select_linked_from", LKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_select_same_type", GKEY, KM_PRESS, KM_SHIFT, 0);
-	WM_keymap_add_item(keymap, "NODE_OT_select_same_type_next", RIGHTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
-	WM_keymap_add_item(keymap, "NODE_OT_select_same_type_prev", LEFTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
 
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_select_same_type_step", RIGHTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "prev", FALSE);
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_select_same_type_step", LEFTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "prev", TRUE);
+	
+	WM_keymap_add_item(keymap, "NODE_OT_find_node", FKEY, KM_PRESS, KM_CTRL, 0);
+	
+	/* node group operators */
 	WM_keymap_add_item(keymap, "NODE_OT_group_make", GKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_group_ungroup", GKEY, KM_PRESS, KM_ALT, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_group_separate", PKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "NODE_OT_group_edit", TABKEY, KM_PRESS, 0, 0);
-	
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_group_edit", TABKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "exit", FALSE);
+	kmi = WM_keymap_add_item(keymap, "NODE_OT_group_edit", TABKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "exit", TRUE);
+
 	WM_keymap_add_item(keymap, "NODE_OT_read_renderlayers", RKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_read_fullsamplelayers", RKEY, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_render_changed", ZKEY, KM_PRESS, 0, 0);
 	
 	WM_keymap_add_item(keymap, "NODE_OT_clipboard_copy", CKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "NODE_OT_clipboard_paste", VKEY, KM_PRESS, KM_CTRL, 0);
-	
+#ifdef __APPLE__
+	WM_keymap_add_item(keymap, "NODE_OT_clipboard_copy", CKEY, KM_PRESS, KM_OSKEY, 0);
+	WM_keymap_add_item(keymap, "NODE_OT_clipboard_paste", VKEY, KM_PRESS, KM_OSKEY, 0);
+#endif
+	WM_keymap_add_item(keymap, "NODE_OT_viewer_border", BKEY, KM_PRESS, KM_CTRL, 0);
+
 	transform_keymap_for_space(keyconf, keymap, SPACE_NODE);
 }

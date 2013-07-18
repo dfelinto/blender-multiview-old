@@ -43,10 +43,10 @@ struct SpaceClip;
 struct wmOperatorType;
 
 /* channel heights */
-#define CHANNEL_FIRST           -UI_UNIT_Y
-#define CHANNEL_HEIGHT          UI_UNIT_Y
-#define CHANNEL_HEIGHT_HALF     (UI_UNIT_Y / 2.0f)
-#define CHANNEL_SKIP            2
+#define CHANNEL_FIRST           (-0.8f * U.widget_unit)
+#define CHANNEL_HEIGHT          (0.8f * U.widget_unit)
+#define CHANNEL_HEIGHT_HALF     (0.4f * U.widget_unit)
+#define CHANNEL_SKIP            (0.1f * U.widget_unit)
 #define CHANNEL_STEP            (CHANNEL_HEIGHT + CHANNEL_SKIP)
 
 #define CHANNEL_PAD             4
@@ -54,7 +54,7 @@ struct wmOperatorType;
 /* extra padding for lengths (to go under scrollers) */
 #define EXTRA_SCROLL_PAD        100.0f
 
-#define STRIP_HEIGHT_HALF       5
+#define STRIP_HEIGHT_HALF       (0.25f * UI_UNIT_Y)
 
 /* internal exports only */
 
@@ -67,11 +67,15 @@ void clip_draw_dopesheet_channels(const struct bContext *C, struct ARegion *ar);
 
 /* clip_dopesheet_ops.c */
 void CLIP_OT_dopesheet_select_channel(struct wmOperatorType *ot);
+void CLIP_OT_dopesheet_view_all(struct wmOperatorType *ot);
 
 /* clip_draw.c */
 void clip_draw_main(const struct bContext *C, struct SpaceClip *sc, struct ARegion *ar);
 void clip_draw_grease_pencil(struct bContext *C, int onlyv2d);
 void clip_draw_curfra_label(const int framenr, const float x, const float y);
+
+/* clip_editor.c */
+void clip_start_prefetch_job(const struct bContext *C);
 
 /* clip_graph_draw.c */
 void clip_draw_graph(struct SpaceClip *sc, struct ARegion *ar, struct Scene *scene);
@@ -104,6 +108,10 @@ void CLIP_OT_mode_set(struct wmOperatorType *ot);
 
 void CLIP_OT_view_ndof(struct wmOperatorType *ot);
 
+void CLIP_OT_prefetch(struct wmOperatorType *ot);
+
+void CLIP_OT_set_scene_frames(wmOperatorType *ot);
+
 /* clip_toolbar.c */
 struct ARegion *ED_clip_has_properties_region(struct ScrArea *sa);
 void CLIP_OT_tools(struct wmOperatorType *ot);
@@ -133,14 +141,16 @@ void clip_draw_cfra(struct SpaceClip *sc, struct ARegion *ar, struct Scene *scen
 void clip_draw_sfra_efra(struct View2D *v2d, struct Scene *scene);
 
 /* tracking_ops.c */
-struct MovieTrackingTrack *tracking_marker_check_slide(struct bContext *C, struct wmEvent *event,
+struct MovieTrackingTrack *tracking_marker_check_slide(struct bContext *C, const struct wmEvent *event,
                                                        int *area_r, int *action_r, int *corner_r);
 
 void CLIP_OT_add_marker(struct wmOperatorType *ot);
+void CLIP_OT_add_marker_at_click(struct wmOperatorType *ot);
 void CLIP_OT_delete_track(struct wmOperatorType *ot);
 void CLIP_OT_delete_marker(struct wmOperatorType *ot);
 
 void CLIP_OT_track_markers(struct wmOperatorType *ot);
+void CLIP_OT_refine_markers(struct wmOperatorType *ot);
 void CLIP_OT_solve_camera(struct wmOperatorType *ot);
 void CLIP_OT_clear_solution(struct wmOperatorType *ot);
 
@@ -159,6 +169,7 @@ void CLIP_OT_set_plane(struct wmOperatorType *ot);
 void CLIP_OT_set_axis(struct wmOperatorType *ot);
 void CLIP_OT_set_scale(struct wmOperatorType *ot);
 void CLIP_OT_set_solution_scale(struct wmOperatorType *ot);
+void CLIP_OT_apply_solution_scale(struct wmOperatorType *ot);
 
 void CLIP_OT_set_center_principal(struct wmOperatorType *ot);
 

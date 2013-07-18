@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/ImageRender.cpp
  *  \ingroup bgevideotex
@@ -48,17 +52,17 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 ExceptionID SceneInvalid, CameraInvalid, ObserverInvalid;
 ExceptionID MirrorInvalid, MirrorSizeInvalid, MirrorNormalInvalid, MirrorHorizontal, MirrorTooSmall;
-ExpDesc SceneInvalidDesc (SceneInvalid, "Scene object is invalid");
-ExpDesc CameraInvalidDesc (CameraInvalid, "Camera object is invalid");
-ExpDesc ObserverInvalidDesc (ObserverInvalid, "Observer object is invalid");
-ExpDesc MirrorInvalidDesc (MirrorInvalid, "Mirror object is invalid");
-ExpDesc MirrorSizeInvalidDesc (MirrorSizeInvalid, "Mirror has no vertex or no size");
-ExpDesc MirrorNormalInvalidDesc (MirrorNormalInvalid, "Cannot determine mirror plane");
-ExpDesc MirrorHorizontalDesc (MirrorHorizontal, "Mirror is horizontal in local space");
-ExpDesc MirrorTooSmallDesc (MirrorTooSmall, "Mirror is too small");
+ExpDesc SceneInvalidDesc(SceneInvalid, "Scene object is invalid");
+ExpDesc CameraInvalidDesc(CameraInvalid, "Camera object is invalid");
+ExpDesc ObserverInvalidDesc(ObserverInvalid, "Observer object is invalid");
+ExpDesc MirrorInvalidDesc(MirrorInvalid, "Mirror object is invalid");
+ExpDesc MirrorSizeInvalidDesc(MirrorSizeInvalid, "Mirror has no vertex or no size");
+ExpDesc MirrorNormalInvalidDesc(MirrorNormalInvalid, "Cannot determine mirror plane");
+ExpDesc MirrorHorizontalDesc(MirrorHorizontal, "Mirror is horizontal in local space");
+ExpDesc MirrorTooSmallDesc(MirrorTooSmall, "Mirror is too small");
 
 // constructor
-ImageRender::ImageRender (KX_Scene * scene, KX_Camera * camera) : 
+ImageRender::ImageRender (KX_Scene *scene, KX_Camera * camera) :
     ImageViewport(),
     m_render(true),
     m_scene(scene),
@@ -277,25 +281,25 @@ void ImageRender::Render()
 
 
 // cast Image pointer to ImageRender
-inline ImageRender * getImageRender (PyImage * self)
+inline ImageRender * getImageRender (PyImage *self)
 { return static_cast<ImageRender*>(self->m_image); }
 
 
 // python methods
 
 // Blender Scene type
-BlendType<KX_Scene> sceneType ("KX_Scene");
+static BlendType<KX_Scene> sceneType ("KX_Scene");
 // Blender Camera type
-BlendType<KX_Camera> cameraType ("KX_Camera");
+static BlendType<KX_Camera> cameraType ("KX_Camera");
 
 
 // object initialization
-static int ImageRender_init (PyObject * pySelf, PyObject * args, PyObject * kwds)
+static int ImageRender_init(PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
 	// parameters - scene object
-	PyObject * scene;
+	PyObject *scene;
 	// camera object
-	PyObject * camera;
+	PyObject *camera;
 	// parameter keywords
 	static const char *kwlist[] = {"sceneObj", "cameraObj", NULL};
 	// get parameters
@@ -317,7 +321,7 @@ static int ImageRender_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 		if (cameraPtr == NULL) THRWEXCP(CameraInvalid, S_OK);
 
 		// get pointer to image structure
-		PyImage * self = reinterpret_cast<PyImage*>(pySelf);
+		PyImage *self = reinterpret_cast<PyImage*>(pySelf);
 		// create source object
 		if (self->m_image != NULL) delete self->m_image;
 		self->m_image = new ImageRender(scenePtr, cameraPtr);
@@ -333,7 +337,7 @@ static int ImageRender_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 
 
 // get background color
-PyObject * getBackground (PyImage * self, void * closure)
+static PyObject *getBackground (PyImage *self, void *closure)
 {
 	return Py_BuildValue("[BBBB]",
 	                     getImageRender(self)->getBackground(0),
@@ -343,7 +347,7 @@ PyObject * getBackground (PyImage * self, void * closure)
 }
 
 // set color
-static int setBackground (PyImage * self, PyObject * value, void * closure)
+static int setBackground(PyImage *self, PyObject *value, void *closure)
 {
 	// check validity of parameter
 	if (value == NULL || !PySequence_Check(value) || PySequence_Size(value) != 4
@@ -356,10 +360,11 @@ static int setBackground (PyImage * self, PyObject * value, void * closure)
 		return -1;
 	}
 	// set background color
-	getImageRender(self)->setBackground((unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 0))),
-		(unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 1))),
-		(unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 2))),
-		(unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 3))));
+	getImageRender(self)->setBackground(
+	        (unsigned char)(PyLong_AsLong(PySequence_Fast_GET_ITEM(value, 0))),
+	        (unsigned char)(PyLong_AsLong(PySequence_Fast_GET_ITEM(value, 1))),
+	        (unsigned char)(PyLong_AsLong(PySequence_Fast_GET_ITEM(value, 2))),
+	        (unsigned char)(PyLong_AsLong(PySequence_Fast_GET_ITEM(value, 3))));
 	// success
 	return 0;
 }
@@ -375,7 +380,7 @@ static PyMethodDef imageRenderMethods[] =
 static PyGetSetDef imageRenderGetSets[] =
 { 
 	{(char*)"background", (getter)getBackground, (setter)setBackground, (char*)"background color", NULL},
-    // attribute from ImageViewport
+	// attribute from ImageViewport
 	{(char*)"capsize", (getter)ImageViewport_getCaptureSize, (setter)ImageViewport_setCaptureSize, (char*)"size of render area", NULL},
 	{(char*)"alpha", (getter)ImageViewport_getAlpha, (setter)ImageViewport_setAlpha, (char*)"use alpha in texture", NULL},
 	{(char*)"whole", (getter)ImageViewport_getWhole, (setter)ImageViewport_setWhole, (char*)"use whole viewport to render", NULL},
@@ -385,14 +390,15 @@ static PyGetSetDef imageRenderGetSets[] =
 	{(char*)"size", (getter)Image_getSize, NULL, (char*)"image size", NULL},
 	{(char*)"scale", (getter)Image_getScale, (setter)Image_setScale, (char*)"fast scale of image (near neighbor)",	NULL},
 	{(char*)"flip", (getter)Image_getFlip, (setter)Image_setFlip, (char*)"flip image vertically", NULL},
+	{(char*)"zbuff", (getter)Image_getZbuff, (setter)Image_setZbuff, (char*)"use depth buffer as texture", NULL},
+	{(char*)"depth", (getter)Image_getDepth, (setter)Image_setDepth, (char*)"get depth information from z-buffer using unsigned int precision", NULL},
 	{(char*)"filter", (getter)Image_getFilter, (setter)Image_setFilter, (char*)"pixel filter", NULL},
 	{NULL}
 };
 
 
 // define python type
-PyTypeObject ImageRenderType =
-{ 
+PyTypeObject ImageRenderType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"VideoTexture.ImageRender",   /*tp_name*/
 	sizeof(PyImage),          /*tp_basicsize*/
@@ -434,14 +440,14 @@ PyTypeObject ImageRenderType =
 };
 
 // object initialization
-static int ImageMirror_init (PyObject * pySelf, PyObject * args, PyObject * kwds)
+static int ImageMirror_init(PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
 	// parameters - scene object
-	PyObject * scene;
+	PyObject *scene;
 	// reference object for mirror
-	PyObject * observer;
+	PyObject *observer;
 	// object holding the mirror
-	PyObject * mirror;
+	PyObject *mirror;
 	// material of the mirror
 	short materialID = 0;
 	// parameter keywords
@@ -490,7 +496,7 @@ static int ImageMirror_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 			THRWEXCP(MaterialNotAvail, S_OK);
 
 		// get pointer to image structure
-		PyImage * self = reinterpret_cast<PyImage*>(pySelf);
+		PyImage *self = reinterpret_cast<PyImage*>(pySelf);
 
 		// create source object
 		if (self->m_image != NULL)
@@ -510,13 +516,13 @@ static int ImageMirror_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 }
 
 // get background color
-PyObject * getClip (PyImage * self, void * closure)
+static PyObject *getClip (PyImage *self, void *closure)
 {
 	return PyFloat_FromDouble(getImageRender(self)->getClip());
 }
 
 // set clip
-static int setClip (PyImage * self, PyObject * value, void * closure)
+static int setClip(PyImage *self, PyObject *value, void *closure)
 {
 	// check validity of parameter
 	double clip;
@@ -547,13 +553,15 @@ static PyGetSetDef imageMirrorGetSets[] =
 	{(char*)"size", (getter)Image_getSize, NULL, (char*)"image size", NULL},
 	{(char*)"scale", (getter)Image_getScale, (setter)Image_setScale, (char*)"fast scale of image (near neighbor)",	NULL},
 	{(char*)"flip", (getter)Image_getFlip, (setter)Image_setFlip, (char*)"flip image vertically", NULL},
+	{(char*)"zbuff", (getter)Image_getZbuff, (setter)Image_setZbuff, (char*)"use depth buffer as texture", NULL},
+	{(char*)"depth", (getter)Image_getDepth, (setter)Image_setDepth, (char*)"get depth information from z-buffer using unsigned int precision", NULL},
 	{(char*)"filter", (getter)Image_getFilter, (setter)Image_setFilter, (char*)"pixel filter", NULL},
 	{NULL}
 };
 
 
 // constructor
-ImageRender::ImageRender (KX_Scene * scene, KX_GameObject * observer, KX_GameObject * mirror, RAS_IPolyMaterial * mat) :
+ImageRender::ImageRender (KX_Scene *scene, KX_GameObject *observer, KX_GameObject *mirror, RAS_IPolyMaterial *mat) :
     ImageViewport(),
     m_render(false),
     m_scene(scene),
@@ -724,8 +732,7 @@ ImageRender::ImageRender (KX_Scene * scene, KX_GameObject * observer, KX_GameObj
 
 
 // define python type
-PyTypeObject ImageMirrorType =
-{ 
+PyTypeObject ImageMirrorType = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"VideoTexture.ImageMirror",   /*tp_name*/
 	sizeof(PyImage),          /*tp_basicsize*/

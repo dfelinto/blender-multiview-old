@@ -4,7 +4,7 @@
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. 
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -29,7 +29,7 @@
  *  \ingroup nodes
  */
 
- 
+
 /*
  * HOW TEXTURE NODES WORK
  *
@@ -49,7 +49,20 @@
 #include <assert.h>
 #include "node_texture_util.h"
 
-#define PREV_RES 128 /* default preview resolution */
+
+int tex_node_poll_default(bNodeType *UNUSED(ntype), bNodeTree *ntree)
+{
+	return STREQ(ntree->idname, "TextureNodeTree");
+}
+
+void tex_node_type_base(struct bNodeType *ntype, int type, const char *name, short nclass, short flag)
+{
+	node_type_base(ntype, type, name, nclass, flag);
+	
+	ntype->poll = tex_node_poll_default;
+	ntype->update_internal_links = node_update_internal_links_default;
+}
+
 
 static void tex_call_delegate(TexDelegate *dg, float *out, TexParams *params, short thread)
 {
@@ -57,7 +70,7 @@ static void tex_call_delegate(TexDelegate *dg, float *out, TexParams *params, sh
 		dg->fn(out, params, dg->node, dg->in, thread);
 
 		if (dg->cdata->do_preview)
-			tex_do_preview(dg->node, params->previewco, out);
+			tex_do_preview(dg->preview, params->previewco, out);
 	}
 }
 
@@ -114,19 +127,17 @@ void params_from_cdata(TexParams *out, TexCallData *in)
 	out->mtex = in->mtex;
 }
 
-void tex_do_preview(bNode *node, float *co, float *col)
+void tex_do_preview(bNodePreview *preview, const float coord[2], const float col[4])
 {
-	bNodePreview *preview= node->preview;
-
 	if (preview) {
-		int xs= ((co[0] + 1.0f)*0.5f)*preview->xsize;
-		int ys= ((co[1] + 1.0f)*0.5f)*preview->ysize;
-
-		nodeAddToPreview(node, col, xs, ys, 0); /* 0 = no color management */
+		int xs = ((coord[0] + 1.0f) * 0.5f) * preview->xsize;
+		int ys = ((coord[1] + 1.0f) * 0.5f) * preview->ysize;
+		
+		BKE_node_preview_set_pixel(preview, col, xs, ys, 0); /* 0 = no color management */
 	}
 }
 
-void tex_output(bNode *node, bNodeStack **in, bNodeStack *out, TexFn texfn, TexCallData *cdata)
+void tex_output(bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack *out, TexFn texfn, TexCallData *cdata)
 {
 	TexDelegate *dg;
 	if (!out->data)
@@ -134,19 +145,20 @@ void tex_output(bNode *node, bNodeStack **in, bNodeStack *out, TexFn texfn, TexC
 		dg = out->data = MEM_mallocN(sizeof(TexDelegate), "tex delegate");
 	else
 		dg = out->data;
-	
-	dg->cdata= cdata;
+
+	dg->cdata = cdata;
 	dg->fn = texfn;
 	dg->node = node;
-	memcpy(dg->in, in, MAX_SOCKET * sizeof(bNodeStack*));
+	dg->preview = execdata->preview;
+	memcpy(dg->in, in, MAX_SOCKET * sizeof(bNodeStack *));
 	dg->type = out->sockettype;
 }
 
 void ntreeTexCheckCyclics(struct bNodeTree *ntree)
 {
 	bNode *node;
-	for (node= ntree->nodes.first; node; node= node->next) {
-		
+	for (node = ntree->nodes.first; node; node = node->next) {
+
 		if (node->type == TEX_NODE_TEXTURE && node->id) {
 			/* custom2 stops the node from rendering */
 			if (node->custom1) {

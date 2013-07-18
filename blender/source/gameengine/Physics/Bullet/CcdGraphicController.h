@@ -33,7 +33,7 @@ class CcdPhysicsEnvironment;
 class btCollisionObject;
 
 ///CcdGraphicController is a graphic object that supports view frustrum culling and occlusion
-class CcdGraphicController : public PHY_IGraphicController	
+class CcdGraphicController : public PHY_IGraphicController
 {
 public:
 	CcdGraphicController(CcdPhysicsEnvironment* phyEnv, PHY_IMotionState* motionState);
@@ -42,7 +42,7 @@ public:
 
 	void setLocalAabb(const btVector3& aabbMin,const btVector3& aabbMax);
 	void setLocalAabb(const MT_Point3& aabbMin,const MT_Point3& aabbMax);
-	virtual void setLocalAabb(const PHY__Vector3& aabbMin,const PHY__Vector3& aabbMax);
+	virtual void setLocalAabb(const MT_Vector3& aabbMin,const MT_Vector3& aabbMax);
 	virtual void setLocalAabb(const float aabbMin[3],const float aabbMax[3]);
 
 	PHY_IMotionState* GetMotionState() { return m_motionState; }
@@ -87,4 +87,4 @@ private:
 #endif
 };
 
-#endif //BULLET2_PHYSICSCONTROLLER_H
+#endif  /* BULLET2_PHYSICSCONTROLLER_H */

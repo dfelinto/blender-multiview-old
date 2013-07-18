@@ -53,8 +53,7 @@ void GaussianYBlurOperation::initExecution()
 
 	if (this->m_sizeavailable) {
 		float rad = this->m_size * this->m_data->sizey;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -66,8 +65,7 @@ void GaussianYBlurOperation::updateGauss()
 	if (this->m_gausstab == NULL) {
 		updateSize();
 		float rad = this->m_size * this->m_data->sizey;
-		if (rad < 1)
-			rad = 1;
+		CLAMP(rad, 1.0f, MAX_GAUSSTAB_RADIUS);
 
 		this->m_rad = rad;
 		this->m_gausstab = BlurBaseOperation::make_gausstab(rad);
@@ -87,16 +85,14 @@ void GaussianYBlurOperation::executePixel(float output[4], int x, int y, void *d
 	int miny = y - this->m_rad;
 	int maxy = y + this->m_rad;
 	int minx = x;
-	int maxx = x;
 	miny = max(miny, inputBuffer->getRect()->ymin);
 	minx = max(minx, inputBuffer->getRect()->xmin);
-	maxy = min(maxy, inputBuffer->getRect()->ymax);
-	maxx = min(maxx, inputBuffer->getRect()->xmax);
+	maxy = min(maxy, inputBuffer->getRect()->ymax - 1);
 
 	int index;
 	int step = getStep();
-	const int bufferIndexx = ((minx - bufferstartx) * 4) ;
-	for (int ny = miny; ny < maxy; ny += step) {
+	const int bufferIndexx = ((minx - bufferstartx) * 4);
+	for (int ny = miny; ny <= maxy; ny += step) {
 		index = (ny - y) + this->m_rad;
 		int bufferindex = bufferIndexx + ((ny - bufferstarty) * 4 * bufferwidth);
 		const float multiplier = this->m_gausstab[index];
@@ -109,8 +105,10 @@ void GaussianYBlurOperation::executePixel(float output[4], int x, int y, void *d
 void GaussianYBlurOperation::deinitExecution()
 {
 	BlurBaseOperation::deinitExecution();
-	MEM_freeN(this->m_gausstab);
-	this->m_gausstab = NULL;
+	if (this->m_gausstab) {
+		MEM_freeN(this->m_gausstab);
+		this->m_gausstab = NULL;
+	}
 
 	deinitMutex();
 }
@@ -134,8 +132,8 @@ bool GaussianYBlurOperation::determineDependingAreaOfInterest(rcti *input, ReadB
 		if (this->m_sizeavailable && this->m_gausstab != NULL) {
 			newInput.xmax = input->xmax;
 			newInput.xmin = input->xmin;
-			newInput.ymax = input->ymax + this->m_rad;
-			newInput.ymin = input->ymin - this->m_rad;
+			newInput.ymax = input->ymax + this->m_rad + 1;
+			newInput.ymin = input->ymin - this->m_rad - 1;
 		}
 		else {
 			newInput.xmax = this->getWidth();

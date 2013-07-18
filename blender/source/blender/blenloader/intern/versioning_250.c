@@ -32,7 +32,7 @@
 #include "zlib.h"
 
 #ifndef WIN32
-#  include <unistd.h> // for read close
+#  include <unistd.h>  /* for read close */
 #else
 #  include <io.h> // for open close read
 #  include "winsock2.h"
@@ -89,8 +89,8 @@
 #include "BKE_screen.h"
 #include "BKE_sequencer.h"
 #include "BKE_texture.h"
-#include "BKE_utildefines.h" // SWITCH_INT DATA ENDB DNA1 O_BINARY GLOB USER TEST REND
 #include "BKE_sound.h"
+#include "BKE_sca.h"
 
 #include "NOD_socket.h"
 
@@ -129,7 +129,7 @@ static void area_add_header_region(ScrArea *sa, ListBase *lb)
 	ar->v2d.flag = (V2D_PIXELOFS_X|V2D_PIXELOFS_Y);
 }
 
-static void sequencer_init_preview_region(ARegion* ar)
+static void sequencer_init_preview_region(ARegion *ar)
 {
 	// XXX a bit ugly still, copied from space_sequencer
 	/* NOTE: if you change values here, also change them in space_sequencer.c, sequencer_new */
@@ -293,7 +293,7 @@ static void area_add_window_regions(ScrArea *sa, SpaceLink *sl, ListBase *lb)
 					memcpy(&ar->v2d, &soops->v2d, sizeof(View2D));
 
 					ar->v2d.scroll &= ~V2D_SCROLL_LEFT;
-					ar->v2d.scroll |= (V2D_SCROLL_RIGHT|V2D_SCROLL_BOTTOM_O);
+					ar->v2d.scroll |= (V2D_SCROLL_RIGHT|V2D_SCROLL_BOTTOM);
 					ar->v2d.align = (V2D_ALIGN_NO_NEG_X|V2D_ALIGN_NO_POS_Y);
 					ar->v2d.keepzoom |= (V2D_LOCKZOOM_X|V2D_LOCKZOOM_Y|V2D_KEEPASPECT);
 					ar->v2d.keeptot = V2D_KEEPTOT_STRICT;
@@ -416,7 +416,7 @@ static void area_add_window_regions(ScrArea *sa, SpaceLink *sl, ListBase *lb)
 					ar->v2d.tot.ymax = ar->winy;
 					ar->v2d.cur = ar->v2d.tot;
 					ar->regiontype = RGN_TYPE_WINDOW;
-					ar->v2d.scroll = (V2D_SCROLL_RIGHT|V2D_SCROLL_BOTTOM_O);
+					ar->v2d.scroll = (V2D_SCROLL_RIGHT|V2D_SCROLL_BOTTOM);
 					ar->v2d.align = (V2D_ALIGN_NO_NEG_X|V2D_ALIGN_NO_POS_Y);
 					ar->v2d.keepzoom = (V2D_LOCKZOOM_X|V2D_LOCKZOOM_Y|V2D_LIMITZOOM|V2D_KEEPASPECT);
 					break;
@@ -481,7 +481,7 @@ static void versions_gpencil_add_main(ListBase *lb, ID *id, const char *name)
 	*( (short *)id->name )= ID_GD;
 
 	new_id(lb, id, name);
-	/* alphabetic insterion: is in new_id */
+	/* alphabetic insertion: is in new_id */
 
 	if (G.debug & G_DEBUG)
 		printf("Converted GPencil to ID: %s\n", id->name + 2);
@@ -648,12 +648,12 @@ static void do_version_constraints_radians_degrees_250(ListBase *lb)
 }
 
 /* NOTE: this version patch is intended for versions < 2.52.2, but was initially introduced in 2.27 already */
-static void do_versions_seq_unique_name_all_strips(Scene * sce, ListBase *seqbasep)
+static void do_versions_seq_unique_name_all_strips(Scene *sce, ListBase *seqbasep)
 {
 	Sequence * seq = seqbasep->first;
 
 	while (seq) {
-		BKE_seqence_base_unique_name_recursive(&sce->ed->seqbase, seq);
+		BKE_sequence_base_unique_name_recursive(&sce->ed->seqbase, seq);
 		if (seq->seqbase.first) {
 			do_versions_seq_unique_name_all_strips(sce, &seq->seqbase);
 		}
@@ -673,13 +673,74 @@ static void do_version_bone_roll_256(Bone *bone)
 		do_version_bone_roll_256(child);
 }
 
-static void do_versions_nodetree_dynamic_sockets(bNodeTree *ntree)
+/* deprecated, only keep this for readfile.c */
+/* XXX Deprecated function to add a socket in ntree->inputs/ntree->outputs list
+ * (previously called node_group_add_socket). This function has been superseded
+ * by the implementation of proxy nodes. It is still necessary though
+ * for do_versions of pre-2.56.2 code (r35033), so later proxy nodes
+ * can be generated consistently from ntree socket lists.
+ */
+static bNodeSocket *do_versions_node_group_add_socket_2_56_2(bNodeTree *ngroup, const char *name, int type, int in_out)
 {
-	bNodeSocket *sock;
-	for (sock = ntree->inputs.first; sock; sock = sock->next)
-		sock->flag |= SOCK_DYNAMIC;
-	for (sock = ntree->outputs.first; sock; sock = sock->next)
-		sock->flag |= SOCK_DYNAMIC;
+//	bNodeSocketType *stype = ntreeGetSocketType(type);
+	bNodeSocket *gsock = MEM_callocN(sizeof(bNodeSocket), "bNodeSocket");
+	
+	BLI_strncpy(gsock->name, name, sizeof(gsock->name));
+	gsock->type = type;
+
+	gsock->next = gsock->prev = NULL;
+	gsock->new_sock = NULL;
+	gsock->link = NULL;
+	/* assign new unique index */
+	gsock->own_index = ngroup->cur_index++;
+	gsock->limit = (in_out==SOCK_IN ? 0xFFF : 1);
+	
+//	if (stype->value_structsize > 0)
+//		gsock->default_value = MEM_callocN(stype->value_structsize, "default socket value");
+	
+	BLI_addtail(in_out==SOCK_IN ? &ngroup->inputs : &ngroup->outputs, gsock);
+	
+	ngroup->update |= (in_out==SOCK_IN ? NTREE_UPDATE_GROUP_IN : NTREE_UPDATE_GROUP_OUT);
+	
+	return gsock;
+}
+
+/* Create default_value structs for node sockets from the internal bNodeStack value.
+ * These structs were used from 2.59.2 on, but are replaced in the subsequent do_versions for custom nodes
+ * by generic ID property values. This conversion happened _after_ do_versions originally due to messy type initialization
+ * for node sockets. Now created here intermediately for convenience and to keep do_versions consistent.
+ *
+ * Node compatibility code is gross ...
+ */
+static void do_versions_socket_default_value_259(bNodeSocket *sock)
+{
+	bNodeSocketValueFloat *valfloat;
+	bNodeSocketValueVector *valvector;
+	bNodeSocketValueRGBA *valrgba;
+	
+	if (sock->default_value)
+		return;
+	
+	switch (sock->type) {
+		case SOCK_FLOAT:
+			valfloat = sock->default_value = MEM_callocN(sizeof(bNodeSocketValueFloat), "default socket value");
+			valfloat->value = sock->ns.vec[0];
+			valfloat->min = sock->ns.min;
+			valfloat->max = sock->ns.max;
+			valfloat->subtype = PROP_NONE;
+			break;
+		case SOCK_VECTOR:
+			valvector = sock->default_value = MEM_callocN(sizeof(bNodeSocketValueVector), "default socket value");
+			copy_v3_v3(valvector->value, sock->ns.vec);
+			valvector->min = sock->ns.min;
+			valvector->max = sock->ns.max;
+			valvector->subtype = PROP_NONE;
+			break;
+		case SOCK_RGBA:
+			valrgba = sock->default_value = MEM_callocN(sizeof(bNodeSocketValueRGBA), "default socket value");
+			copy_v4_v4(valrgba->value, sock->ns.vec);
+			break;
+	}
 }
 
 void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
@@ -902,7 +963,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 
 				ob->matbits = MEM_callocN(sizeof(char)*ob->totcol, "ob->matbits");
 				for (a = 0; a < ob->totcol; a++)
-					ob->matbits[a] = ob->colbits & (1<<a);
+					ob->matbits[a] = (ob->colbits & (1<<a)) != 0;
 			}
 		}
 
@@ -994,7 +1055,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 			sce->gm.dome.warptext = sce->r.dometext;
 
 			/* Stand Alone */
-			sce->gm.playerflag |= (sce->r.fullscreen?GAME_PLAYER_FULLSCREEN:0);
+			sce->gm.playerflag |= (sce->r.fullscreen ? GAME_PLAYER_FULLSCREEN : 0);
 			sce->gm.xplay = sce->r.xplay;
 			sce->gm.yplay = sce->r.yplay;
 			sce->gm.freqplay = sce->r.freqplay;
@@ -1135,7 +1196,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 		/* Add default gravity to scenes */
 		for (sce = main->scene.first; sce; sce = sce->id.next) {
 			if ((sce->physics_settings.flag & PHYS_GLOBAL_GRAVITY) == 0 &&
-			    len_v3(sce->physics_settings.gravity) == 0.0f)
+			    is_zero_v3(sce->physics_settings.gravity))
 			{
 				sce->physics_settings.gravity[0] = sce->physics_settings.gravity[1] = 0.0f;
 				sce->physics_settings.gravity[2] = -9.81f;
@@ -1602,6 +1663,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 		/* brush texture changes */
 		for (brush = main->brush.first; brush; brush = brush->id.next) {
 			default_mtex(&brush->mtex);
+			default_mtex(&brush->mask_mtex);
 		}
 
 		for (ma = main->mat.first; ma; ma = ma->id.next) {
@@ -1787,7 +1849,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 				SpaceLink *sl;
 				for (sl = sa->spacedata.first; sl; sl = sl->next) {
 					if (sl->spacetype == SPACE_VIEW3D) {
-						View3D* v3d = (View3D *)sl;
+						View3D *v3d = (View3D *)sl;
 						v3d->flag2 &= ~V3D_RENDER_OVERRIDE;
 					}
 				}
@@ -2063,7 +2125,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 				{
 					brush->add_col[0] = 1.00f;
 					brush->add_col[1] = 0.39f;
- 					brush->add_col[2] = 0.39f;
+					brush->add_col[2] = 0.39f;
 				}
 
 				if (brush->sub_col[0] == 0 &&
@@ -2206,9 +2268,14 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 			bActuator *act;
 			for (act = ob->actuators.first; act; act = act->next) {
 				if (act->type == ACT_STEERING) {
-					bSteeringActuator* stact = act->data;
-					if (stact->facingaxis == 0) {
-						stact->facingaxis = 1;
+					bSteeringActuator *stact = act->data;
+					if (stact == NULL) {//HG1
+						init_actuator(act);
+					}
+					else {
+						if (stact->facingaxis == 0) {
+							stact->facingaxis = 1;
+						}
 					}
 				}
 			}
@@ -2290,16 +2357,79 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 
 	if (main->versionfile < 256 || (main->versionfile == 256 && main->subversionfile < 2)) {
 		bNodeTree *ntree;
-
+		bNode *node;
+		bNodeSocket *sock, *gsock;
+		bNodeLink *link;
+		
 		/* node sockets are not exposed automatically any more,
 		 * this mimics the old behavior by adding all unlinked sockets to groups.
 		 */
-		for (ntree = main->nodetree.first; ntree; ntree = ntree->id.next) {
-			/* XXX Only setting a flag here. Actual adding of group sockets
-			 * is done in lib_verify_nodetree, because at this point the internal
-			 * nodes may not be up-to-date! (missing lib-link)
+		for (ntree=main->nodetree.first; ntree; ntree=ntree->id.next) {
+			/* this adds copies and links from all unlinked internal sockets to group inputs/outputs. */
+			
+			/* first make sure the own_index for new sockets is valid */
+			for (node=ntree->nodes.first; node; node=node->next) {
+				for (sock = node->inputs.first; sock; sock = sock->next)
+					if (sock->own_index >= ntree->cur_index)
+						ntree->cur_index = sock->own_index+1;
+				for (sock = node->outputs.first; sock; sock = sock->next)
+					if (sock->own_index >= ntree->cur_index)
+						ntree->cur_index = sock->own_index+1;
+			}
+			
+			/* add ntree->inputs/ntree->outputs sockets for all unlinked sockets in the group tree. */
+			for (node=ntree->nodes.first; node; node=node->next) {
+				for (sock = node->inputs.first; sock; sock = sock->next) {
+					if (!sock->link && !nodeSocketIsHidden(sock)) {
+						
+						gsock = do_versions_node_group_add_socket_2_56_2(ntree, sock->name, sock->type, SOCK_IN);
+						
+						/* initialize the default socket value */
+						copy_v4_v4(gsock->ns.vec, sock->ns.vec);
+						
+						/* XXX nodeAddLink does not work with incomplete (node==NULL) links any longer,
+						 * have to create these directly here. These links are updated again in subsequent do_version!
+						 */
+						link = MEM_callocN(sizeof(bNodeLink), "link");
+						BLI_addtail(&ntree->links, link);
+						link->fromnode = NULL;
+						link->fromsock = gsock;
+						link->tonode = node;
+						link->tosock = sock;
+						ntree->update |= NTREE_UPDATE_LINKS;
+						
+						sock->link = link;
+					}
+				}
+				for (sock = node->outputs.first; sock; sock = sock->next) {
+					if (nodeCountSocketLinks(ntree, sock)==0 && !nodeSocketIsHidden(sock)) {
+						gsock = do_versions_node_group_add_socket_2_56_2(ntree, sock->name, sock->type, SOCK_OUT);
+						
+						/* initialize the default socket value */
+						copy_v4_v4(gsock->ns.vec, sock->ns.vec);
+						
+						/* XXX nodeAddLink does not work with incomplete (node==NULL) links any longer,
+						 * have to create these directly here. These links are updated again in subsequent do_version!
+						 */
+						link = MEM_callocN(sizeof(bNodeLink), "link");
+						BLI_addtail(&ntree->links, link);
+						link->fromnode = node;
+						link->fromsock = sock;
+						link->tonode = NULL;
+						link->tosock = gsock;
+						ntree->update |= NTREE_UPDATE_LINKS;
+						
+						gsock->link = link;
+					}
+				}
+			}
+			
+			/* XXX The external group node sockets needs to adjust their own_index to point at
+			 * associated ntree inputs/outputs internal sockets. However, this can only happen
+			 * after lib-linking (needs access to internal node group tree)!
+			 * Setting a temporary flag here, actual do_versions happens in lib_verify_nodetree.
 			 */
-			ntree->flag |= NTREE_DO_VERSIONS_GROUP_EXPOSE;
+			ntree->flag |= NTREE_DO_VERSIONS_GROUP_EXPOSE_2_56_2;
 		}
 	}
 
@@ -2334,7 +2464,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 		for (sc = main->screen.first; sc; sc = sc->id.next) {
 			if (sc->redraws_flag == 0) {
 				/* just initialize to default? */
-				// XXX: we could also have iterated through areas, and taken them from the first timeline available...
+				/* XXX: we could also have iterated through areas, and taken them from the first timeline available... */
 				sc->redraws_flag = TIME_ALL_3D_WIN|TIME_ALL_ANIM_WIN;
 			}
 		}
@@ -2435,7 +2565,7 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 						tex->pd->falloff_curve->preset = CURVE_PRESET_LINE;
 						tex->pd->falloff_curve->cm->flag &= ~CUMA_EXTEND_EXTRAPOLATE;
 						curvemap_reset(tex->pd->falloff_curve->cm, &tex->pd->falloff_curve->clipr, tex->pd->falloff_curve->preset, CURVEMAP_SLOPE_POSITIVE);
-						curvemapping_changed(tex->pd->falloff_curve, 0);
+						curvemapping_changed(tex->pd->falloff_curve, FALSE);
 					}
 				}
 			}
@@ -2596,43 +2726,25 @@ void blo_do_versions_250(FileData *fd, Library *lib, Main *main)
 	if (main->versionfile < 259 || (main->versionfile == 259 && main->subversionfile < 2)) {
 		{
 			/* Convert default socket values from bNodeStack */
-			Scene *sce;
-			Material *mat;
-			Tex *tex;
-			bNodeTree *ntree;
-
-			for (ntree = main->nodetree.first; ntree; ntree = ntree->id.next) {
-				blo_do_versions_nodetree_default_value(ntree);
+			FOREACH_NODETREE(main, ntree, id) {
+				bNode *node;
+				bNodeSocket *sock;
+				
+				for (node=ntree->nodes.first; node; node=node->next) {
+					for (sock = node->inputs.first; sock; sock = sock->next)
+						do_versions_socket_default_value_259(sock);
+					for (sock = node->outputs.first; sock; sock = sock->next)
+						do_versions_socket_default_value_259(sock);
+				}
+				
+				for (sock = ntree->inputs.first; sock; sock = sock->next)
+					do_versions_socket_default_value_259(sock);
+				for (sock = ntree->outputs.first; sock; sock = sock->next)
+					do_versions_socket_default_value_259(sock);
+				
 				ntree->update |= NTREE_UPDATE;
 			}
-
-			for (sce = main->scene.first; sce; sce = sce->id.next)
-				if (sce->nodetree) {
-					blo_do_versions_nodetree_default_value(sce->nodetree);
-					sce->nodetree->update |= NTREE_UPDATE;
-				}
-
-			for (mat = main->mat.first; mat; mat = mat->id.next)
-				if (mat->nodetree) {
-					blo_do_versions_nodetree_default_value(mat->nodetree);
-					mat->nodetree->update |= NTREE_UPDATE;
-				}
-
-			for (tex = main->tex.first; tex; tex = tex->id.next)
-				if (tex->nodetree) {
-					blo_do_versions_nodetree_default_value(tex->nodetree);
-					tex->nodetree->update |= NTREE_UPDATE;
-				}
-		}
-
-		/* add SOCK_DYNAMIC flag to existing group sockets */
-		{
-			bNodeTree *ntree;
-			/* only need to do this for trees in main, local trees are not used as groups */
-			for (ntree = main->nodetree.first; ntree; ntree = ntree->id.next) {
-				do_versions_nodetree_dynamic_sockets(ntree);
-				ntree->update |= NTREE_UPDATE;
-			}
+			FOREACH_NODETREE_END
 		}
 
 		{

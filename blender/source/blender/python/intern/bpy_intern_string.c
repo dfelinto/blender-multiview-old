@@ -35,18 +35,24 @@
 PyObject *bpy_intern_str_register;
 PyObject *bpy_intern_str_unregister;
 PyObject *bpy_intern_str_bl_rna;
+PyObject *bpy_intern_str_bl_property;
 PyObject *bpy_intern_str_order;
 PyObject *bpy_intern_str_attr;
 PyObject *bpy_intern_str___slots__;
+PyObject *bpy_intern_str___name__;
+PyObject *bpy_intern_str___doc__;
 
 void bpy_intern_string_init(void)
 {
 	bpy_intern_str_register = PyUnicode_FromString("register");
 	bpy_intern_str_unregister = PyUnicode_FromString("unregister");
 	bpy_intern_str_bl_rna = PyUnicode_FromString("bl_rna");
+	bpy_intern_str_bl_property = PyUnicode_FromString("bl_property");
 	bpy_intern_str_order = PyUnicode_FromString("order");
 	bpy_intern_str_attr = PyUnicode_FromString("attr");
 	bpy_intern_str___slots__ = PyUnicode_FromString("__slots__");
+	bpy_intern_str___name__ = PyUnicode_FromString("__name__");
+	bpy_intern_str___doc__ = PyUnicode_FromString("__doc__");
 }
 
 void bpy_intern_string_exit(void)
@@ -54,7 +60,10 @@ void bpy_intern_string_exit(void)
 	Py_DECREF(bpy_intern_str_register);
 	Py_DECREF(bpy_intern_str_unregister);
 	Py_DECREF(bpy_intern_str_bl_rna);
+	Py_DECREF(bpy_intern_str_bl_property);
 	Py_DECREF(bpy_intern_str_order);
 	Py_DECREF(bpy_intern_str_attr);
 	Py_DECREF(bpy_intern_str___slots__);
+	Py_DECREF(bpy_intern_str___name__);
+	Py_DECREF(bpy_intern_str___doc__);
 }

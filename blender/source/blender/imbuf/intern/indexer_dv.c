@@ -22,9 +22,12 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#include "IMB_indexer.h"
 #include "MEM_guardedalloc.h"
+
 #include "BLI_utildefines.h"
+#include "BLI_path_util.h"
+
+#include "IMB_indexer.h"
 #include <time.h>
 
 typedef struct indexer_dv_bitstream {
@@ -382,7 +385,7 @@ static void indexer_dv_delete(anim_index_builder *idx)
 	MEM_freeN(This);
 }
 
-void IMB_indexer_dv_new(anim_index_builder *idx)
+static void UNUSED_FUNCTION(IMB_indexer_dv_new)(anim_index_builder *idx)
 {
 	indexer_dv_context *rv = MEM_callocN(
 	        sizeof(indexer_dv_context), "index_dv builder context");

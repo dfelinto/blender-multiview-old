@@ -33,10 +33,12 @@
  *  \author nzc
  */
 
+struct Main;
 struct World;
 
-void BKE_world_free(struct World *sc); 
-struct World *add_world(const char *name);
+void BKE_world_free(struct World *sc);
+void BKE_world_free_ex(struct World *sc, int do_id_user);
+struct World *add_world(struct Main *bmian, const char *name);
 struct World *BKE_world_copy(struct World *wrld);
 struct World *localize_world(struct World *wrld);
 void BKE_world_make_local(struct World *wrld);

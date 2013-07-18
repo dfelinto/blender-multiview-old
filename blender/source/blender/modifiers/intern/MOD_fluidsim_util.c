@@ -46,12 +46,12 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_threads.h"
 
 #include "BKE_main.h"
 #include "BKE_fluidsim.h" /* ensure definitions here match */
 #include "BKE_cdderivedmesh.h"
 #include "BKE_mesh.h"
-#include "BKE_utildefines.h"
 #include "BKE_global.h" /* G.main->name only */
 
 #include "MOD_fluidsim_util.h"
@@ -76,6 +76,7 @@ void fluidsim_init(FluidsimModifierData *fluidmd)
 		
 		fss->fmd = fluidmd;
 		fss->type = OB_FLUIDSIM_ENABLE;
+		fss->threads = 0;
 		fss->show_advancedoptions = 0;
 
 		fss->resolutionxyz = 65;
@@ -302,7 +303,7 @@ static DerivedMesh *fluidsim_read_obj(const char *filename, const MPoly *mp_exam
 }
 
 
-void fluid_get_bb(MVert *mvert, int totvert, float obmat[][4],
+void fluid_get_bb(MVert *mvert, int totvert, float obmat[4][4],
                   /*RET*/ float start[3], /*RET*/ float size[3])
 {
 	float bbsx = 0.0, bbsy = 0.0, bbsz = 0.0;
@@ -427,7 +428,11 @@ static DerivedMesh *fluidsim_read_cache(Object *ob, DerivedMesh *orgdm,
                                         FluidsimModifierData *fluidmd, int framenr, int useRenderParams)
 {
 	int displaymode = 0;
-	int curFrame = framenr - 1 /*scene->r.sfra*/; /* start with 0 at start frame */
+	
+	int curFrame = framenr /* - 1 */ /*scene->r.sfra*/; /* start with 0 at start frame */ 
+	/*  why start with 0 as start frame?? Animations + time are frozen for frame 0 anyway. (See physics_fluid.c for that. - DG */
+	/* If we start with frame 0, we need to remap all animation channels, too, because they will all be 1 frame late if using frame-1! - DG */
+
 	char targetFile[FILE_MAX];
 	FluidsimSettings *fss = fluidmd->fss;
 	DerivedMesh *dm = NULL;
@@ -530,7 +535,7 @@ DerivedMesh *fluidsimModifier_do(FluidsimModifierData *fluidmd, Scene *scene,
 	fss = fluidmd->fss;
 
 	/* timescale not supported yet
-	 * clmd->sim_parms->timescale= timescale; */
+	 * clmd->sim_parms->timescale = timescale; */
 
 	/* support reversing of baked fluid frames here */
 	if ((fss->flag & OB_FLUIDSIM_REVERSE) && (fss->lastgoodframe >= 0)) {

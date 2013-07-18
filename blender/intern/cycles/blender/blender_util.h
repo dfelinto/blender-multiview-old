@@ -30,42 +30,18 @@
  * todo: clean this up ... */
 
 extern "C" {
-
-struct RenderEngine;
-struct RenderResult;
-
-ID *rna_Object_to_mesh(void *_self, void *reports, void *scene, int apply_modifiers, int settings);
-void rna_Main_meshes_remove(void *bmain, void *reports, void *mesh);
-void rna_Object_create_duplilist(void *ob, void *reports, void *sce);
-void rna_Object_free_duplilist(void *ob, void *reports);
-void rna_RenderLayer_rect_set(PointerRNA *ptr, const float *values);
-void rna_RenderPass_rect_set(PointerRNA *ptr, const float *values);
-struct RenderResult *RE_engine_begin_result(struct RenderEngine *engine, int x, int y, int w, int h);
-void RE_engine_update_result(struct RenderEngine *engine, struct RenderResult *result);
-void RE_engine_end_result(struct RenderEngine *engine, struct RenderResult *result);
-int RE_engine_test_break(struct RenderEngine *engine);
-void RE_engine_update_stats(struct RenderEngine *engine, const char *stats, const char *info);
-void RE_engine_update_progress(struct RenderEngine *engine, float progress);
-void engine_tag_redraw(void *engine);
-void engine_tag_update(void *engine);
-int rna_Object_is_modified(void *ob, void *scene, int settings);
-int rna_Object_is_deform_modified(void *ob, void *scene, int settings);
-void BLI_timestr(double _time, char *str);
-void rna_ColorRamp_eval(void *coba, float position, float color[4]);
-void rna_Scene_frame_set(void *scene, int frame, float subframe);
+void BLI_timestr(double _time, char *str, size_t maxlen);
 void BKE_image_user_frame_calc(void *iuser, int cfra, int fieldnr);
 void BKE_image_user_file_path(void *iuser, void *ima, char *path);
-
+unsigned char *BKE_image_get_pixels_for_frame(void *image, int frame);
+float *BKE_image_get_float_pixels_for_frame(void *image, int frame);
 }
 
 CCL_NAMESPACE_BEGIN
 
-static inline BL::Mesh object_to_mesh(BL::Object self, BL::Scene scene, bool apply_modifiers, bool render)
+static inline BL::Mesh object_to_mesh(BL::BlendData data, BL::Object object, BL::Scene scene, bool apply_modifiers, bool render, bool calc_undeformed)
 {
-	ID *data = rna_Object_to_mesh(self.ptr.data, NULL, scene.ptr.data, apply_modifiers, (render)? 2: 1);
-	PointerRNA ptr;
-	RNA_id_pointer_create(data, &ptr);
-	return BL::Mesh(ptr);
+	return data.meshes.new_from_object(scene, object, apply_modifiers, (render)? 2: 1, true, calc_undeformed);
 }
 
 static inline void colorramp_to_array(BL::ColorRamp ramp, float4 *data, int size)
@@ -73,34 +49,59 @@ static inline void colorramp_to_array(BL::ColorRamp ramp, float4 *data, int size
 	for(int i = 0; i < size; i++) {
 		float color[4];
 
-		rna_ColorRamp_eval(ramp.ptr.data, i/(float)(size-1), color);
+		ramp.evaluate(i/(float)(size-1), color);
 		data[i] = make_float4(color[0], color[1], color[2], color[3]);
 	}
 }
 
-static inline void object_remove_mesh(BL::BlendData data, BL::Mesh mesh)
+static inline void curvemapping_color_to_array(BL::CurveMapping cumap, float4 *data, int size, bool rgb_curve)
 {
-	rna_Main_meshes_remove(data.ptr.data, NULL, mesh.ptr.data);
-}
+	cumap.update();
 
-static inline void object_create_duplilist(BL::Object self, BL::Scene scene)
-{
-	rna_Object_create_duplilist(self.ptr.data, NULL, scene.ptr.data);
-}
+	BL::CurveMap mapR = cumap.curves[0];
+	BL::CurveMap mapG = cumap.curves[1];
+	BL::CurveMap mapB = cumap.curves[2];
 
-static inline void object_free_duplilist(BL::Object self)
-{
-	rna_Object_free_duplilist(self.ptr.data, NULL);
+	if(rgb_curve) {
+		BL::CurveMap mapI = cumap.curves[3];
+
+		for(int i = 0; i < size; i++) {
+			float t = i/(float)(size-1);
+
+			data[i][0] = mapR.evaluate(mapI.evaluate(t));
+			data[i][1] = mapG.evaluate(mapI.evaluate(t));
+			data[i][2] = mapB.evaluate(mapI.evaluate(t));
+		}
+	}
+	else {
+		for(int i = 0; i < size; i++) {
+			float t = i/(float)(size-1);
+
+			data[i][0] = mapR.evaluate(t);
+			data[i][1] = mapG.evaluate(t);
+			data[i][2] = mapB.evaluate(t);
+		}
+	}
 }
 
 static inline bool BKE_object_is_modified(BL::Object self, BL::Scene scene, bool preview)
 {
-	return rna_Object_is_modified(self.ptr.data, scene.ptr.data, (preview)? (1<<0): (1<<1))? true: false;
+	return self.is_modified(scene, (preview)? (1<<0): (1<<1))? true: false;
 }
 
 static inline bool BKE_object_is_deform_modified(BL::Object self, BL::Scene scene, bool preview)
 {
-	return rna_Object_is_deform_modified(self.ptr.data, scene.ptr.data, (preview)? (1<<0): (1<<1))? true: false;
+	return self.is_deform_modified(scene, (preview)? (1<<0): (1<<1))? true: false;
+}
+
+static inline int render_resolution_x(BL::RenderSettings b_render)
+{
+	return b_render.resolution_x()*b_render.resolution_percentage()/100;
+}
+
+static inline int render_resolution_y(BL::RenderSettings b_render)
+{
+	return b_render.resolution_y()*b_render.resolution_percentage()/100;
 }
 
 static inline string image_user_file_path(BL::ImageUser iuser, BL::Image ima, int cfra)
@@ -111,9 +112,20 @@ static inline string image_user_file_path(BL::ImageUser iuser, BL::Image ima, in
 	return string(filepath);
 }
 
-static inline void scene_frame_set(BL::Scene scene, int frame)
+static inline int image_user_frame_number(BL::ImageUser iuser, int cfra)
 {
-	rna_Scene_frame_set(scene.ptr.data, frame, 0.0f);
+	BKE_image_user_frame_calc(iuser.ptr.data, cfra, 0);
+	return iuser.frame_current();
+}
+
+static inline unsigned char *image_get_pixels_for_frame(BL::Image image, int frame)
+{
+	return BKE_image_get_pixels_for_frame(image.ptr.data, frame);
+}
+
+static inline float *image_get_float_pixels_for_frame(BL::Image image, int frame)
+{
+	return BKE_image_get_float_pixels_for_frame(image.ptr.data, frame);
 }
 
 /* Utilities */
@@ -150,6 +162,11 @@ static inline float3 get_float3(BL::Array<float, 4> array)
 	return make_float3(array[0], array[1], array[2]);
 }
 
+static inline float4 get_float4(BL::Array<float, 4> array)
+{
+	return make_float4(array[0], array[1], array[2], array[3]);
+}
+
 static inline int4 get_int4(BL::Array<int, 4> array)
 {
 	return make_int4(array[0], array[1], array[2], array[3]);
@@ -166,7 +183,7 @@ static inline uint get_layer(BL::Array<int, 20> array)
 	return layer;
 }
 
-static inline uint get_layer(BL::Array<int, 20> array, BL::Array<int, 8> local_array, bool is_light = false)
+static inline uint get_layer(BL::Array<int, 20> array, BL::Array<int, 8> local_array, bool use_local, bool is_light = false)
 {
 	uint layer = 0;
 
@@ -184,22 +201,49 @@ static inline uint get_layer(BL::Array<int, 20> array, BL::Array<int, 8> local_a
 			if(local_array[i])
 				layer |= (1 << (20+i));
 	}
-	
+
+	/* we don't have spare bits for localview (normally 20-28) because
+	 * PATH_RAY_LAYER_SHIFT uses 20-32. So - check if we have localview and if
+	 * so, shift local view bits down to 1-8, since this is done for the view
+	 * port only - it should be OK and not conflict with render layers. */
+	if(use_local)
+		layer >>= 20;
+
 	return layer;
 }
 
-#if 0
 static inline float3 get_float3(PointerRNA& ptr, const char *name)
 {
 	float3 f;
 	RNA_float_get_array(&ptr, name, &f.x);
 	return f;
 }
-#endif
+
+static inline void set_float3(PointerRNA& ptr, const char *name, float3 value)
+{
+	RNA_float_set_array(&ptr, name, &value.x);
+}
+
+static inline float4 get_float4(PointerRNA& ptr, const char *name)
+{
+	float4 f;
+	RNA_float_get_array(&ptr, name, &f.x);
+	return f;
+}
+
+static inline void set_float4(PointerRNA& ptr, const char *name, float4 value)
+{
+	RNA_float_set_array(&ptr, name, &value.x);
+}
 
 static inline bool get_boolean(PointerRNA& ptr, const char *name)
 {
 	return RNA_boolean_get(&ptr, name)? true: false;
+}
+
+static inline void set_boolean(PointerRNA& ptr, const char *name, bool value)
+{
+	RNA_boolean_set(&ptr, name, (int)value);
 }
 
 static inline float get_float(PointerRNA& ptr, const char *name)
@@ -207,9 +251,19 @@ static inline float get_float(PointerRNA& ptr, const char *name)
 	return RNA_float_get(&ptr, name);
 }
 
+static inline void set_float(PointerRNA& ptr, const char *name, float value)
+{
+	RNA_float_set(&ptr, name, value);
+}
+
 static inline int get_int(PointerRNA& ptr, const char *name)
 {
 	return RNA_int_get(&ptr, name);
+}
+
+static inline void set_int(PointerRNA& ptr, const char *name, int value)
+{
+	RNA_int_set(&ptr, name, value);
 }
 
 static inline int get_enum(PointerRNA& ptr, const char *name)
@@ -228,6 +282,32 @@ static inline string get_enum_identifier(PointerRNA& ptr, const char *name)
 	return string(identifier);
 }
 
+static inline void set_enum(PointerRNA& ptr, const char *name, int value)
+{
+	RNA_enum_set(&ptr, name, value);
+}
+
+static inline void set_enum(PointerRNA& ptr, const char *name, const string &identifier)
+{
+	RNA_enum_set_identifier(&ptr, name, identifier.c_str());
+}
+
+static inline string get_string(PointerRNA& ptr, const char *name)
+{
+	char cstrbuf[1024];
+	char *cstr = RNA_string_get_alloc(&ptr, name, cstrbuf, sizeof(cstrbuf));
+	string str(cstr);
+	if (cstr != cstrbuf)
+		MEM_freeN(cstr);
+	
+	return str;
+}
+
+static inline void set_string(PointerRNA& ptr, const char *name, const string &value)
+{
+	RNA_string_set(&ptr, name, value.c_str());
+}
+
 /* Relative Paths */
 
 static inline string blender_absolute_path(BL::BlendData b_data, BL::ID b_id, const string& path)
@@ -244,6 +324,20 @@ static inline string blender_absolute_path(BL::BlendData b_data, BL::ID b_id, co
 	}
 
 	return path;
+}
+
+/* Texture Space */
+
+static inline void mesh_texture_space(BL::Mesh b_mesh, float3& loc, float3& size)
+{
+	loc = get_float3(b_mesh.texspace_location());
+	size = get_float3(b_mesh.texspace_size());
+
+	if(size.x != 0.0f) size.x = 0.5f/size.x;
+	if(size.y != 0.0f) size.y = 0.5f/size.y;
+	if(size.z != 0.0f) size.z = 0.5f/size.z;
+
+	loc = loc*size - make_float3(0.5f, 0.5f, 0.5f);
 }
 
 /* ID Map
@@ -318,6 +412,12 @@ public:
 		return recalc;
 	}
 
+	bool is_used(const K& key)
+	{
+		T *data = find(key);
+		return (data) ? used_set.find(data) != used_set.end() : false;
+	}
+
 	void used(T *data)
 	{
 		/* tag data as still in use */
@@ -377,16 +477,63 @@ protected:
 
 /* Object Key */
 
+enum { OBJECT_PERSISTENT_ID_SIZE = 8 };
+
 struct ObjectKey {
 	void *parent;
-	int index;
+	int id[OBJECT_PERSISTENT_ID_SIZE];
 	void *ob;
 
-	ObjectKey(void *parent_, int index_, void *ob_)
-	: parent(parent_), index(index_), ob(ob_) {}
+	ObjectKey(void *parent_, int id_[OBJECT_PERSISTENT_ID_SIZE], void *ob_)
+	: parent(parent_), ob(ob_)
+	{
+		if(id_)
+			memcpy(id, id_, sizeof(id));
+		else
+			memset(id, 0, sizeof(id));
+	}
 
 	bool operator<(const ObjectKey& k) const
-	{ return (parent < k.parent || (parent == k.parent && (index < k.index || (index == k.index && ob < k.ob)))); }
+	{
+		if(ob < k.ob) {
+			return true;
+		}
+		else if(ob == k.ob) {
+			if(parent < k.parent)
+				return true;
+			else if(parent == k.parent)
+				return memcmp(id, k.id, sizeof(id)) < 0;
+		}
+
+		return false;
+	}
+};
+
+/* Particle System Key */
+
+struct ParticleSystemKey {
+	void *ob;
+	int id[OBJECT_PERSISTENT_ID_SIZE];
+
+	ParticleSystemKey(void *ob_, int id_[OBJECT_PERSISTENT_ID_SIZE])
+	: ob(ob_)
+	{
+		if(id_)
+			memcpy(id, id_, sizeof(id));
+		else
+			memset(id, 0, sizeof(id));
+	}
+
+	bool operator<(const ParticleSystemKey& k) const
+	{
+		/* first id is particle index, we don't compare that */
+		if(ob < k.ob)
+			return true;
+		else if(ob == k.ob)
+			return memcmp(id+1, k.id+1, sizeof(int)*(OBJECT_PERSISTENT_ID_SIZE-1)) < 0;
+
+		return false;
+	}
 };
 
 CCL_NAMESPACE_END

@@ -16,9 +16,10 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-#include "object.h"
-
 #include "mesh.h"
+#include "object.h"
+#include "particles.h"
+
 #include "blender_sync.h"
 #include "blender_util.h"
 
@@ -28,139 +29,57 @@ CCL_NAMESPACE_BEGIN
 
 /* Utilities */
 
-
-/* Particles Sync */
-
-bool BlenderSync::object_need_particle_update(BL::Object b_ob)
+bool BlenderSync::sync_dupli_particle(BL::Object b_ob, BL::DupliObject b_dup, Object *object)
 {
-	/* Particle data is only needed for
-	 * a) Billboard render mode if object's own material uses particle info
-	 * b) object/group render mode if any dupli object's material uses particle info
-	 *
-	 * Note: Meshes have to be synced at this point!
-	 */
-	bool need_update = false;
-	
-	BL::Object::particle_systems_iterator b_psys;
-	for (b_ob.particle_systems.begin(b_psys); b_psys != b_ob.particle_systems.end(); ++b_psys) {
-		switch (b_psys->settings().render_type()) {
-		/* XXX not implemented yet! 
-		 * billboards/strands would become part of the mesh data (?),
-		 * so the mesh attributes would store whether particle info is required.
-		 */
-		#if 0
-		case BL::ParticleSettings::render_type_BILLBOARD:
-		case BL::ParticleSettings::render_type_PATH: {	/* for strand rendering */
-			BL::ID key = (BKE_object_is_modified(b_ob))? b_ob: b_ob.data();
-			Mesh *mesh = mesh_map.find(key);
-			if (mesh) {
-				need_update |= mesh->need_attribute(scene, ATTR_STD_PARTICLE) && mesh->need_update;
-			}
-			break;
-		}
-		#endif
-		
-		case BL::ParticleSettings::render_type_OBJECT: {
-			BL::Object b_dupli_ob = b_psys->settings().dupli_object();
-			if (b_dupli_ob) {
-				BL::ID key = (BKE_object_is_modified(b_dupli_ob))? b_dupli_ob: b_dupli_ob.data();
-				Mesh *mesh = mesh_map.find(key);
-				if (mesh) {
-					need_update |= mesh->need_attribute(scene, ATTR_STD_PARTICLE) && mesh->need_update;
-				}
-			}
-			break;
-		}
-		
-		case BL::ParticleSettings::render_type_GROUP: {
-			BL::Group b_dupli_group = b_psys->settings().dupli_group();
-			if (b_dupli_group) {
-				BL::Group::objects_iterator b_gob;
-				for (b_dupli_group.objects.begin(b_gob); b_gob != b_dupli_group.objects.end(); ++b_gob) {
-					BL::ID key = (BKE_object_is_modified(*b_gob))? *b_gob: b_gob->data();
-					Mesh *mesh = mesh_map.find(key);
-					if (mesh) {
-						need_update |= mesh->need_attribute(scene, ATTR_STD_PARTICLE) && mesh->need_update;
-					}
-				}
-			}
-			break;
-		}
-		
-		default:
-			/* avoid compiler warning */
-			break;
-		}
+	/* test if this dupli was generated from a particle sytem */
+	BL::ParticleSystem b_psys = b_dup.particle_system();
+	if(!b_psys)
+		return false;
+
+	/* test if we need particle data */
+	if(!object->mesh->need_attribute(scene, ATTR_STD_PARTICLE))
+		return false;
+
+	/* don't handle child particles yet */
+	BL::Array<int, OBJECT_PERSISTENT_ID_SIZE> persistent_id = b_dup.persistent_id();
+
+	if(persistent_id[0] >= b_psys.particles.length())
+		return false;
+
+	/* find particle system */
+	ParticleSystemKey key(b_ob, persistent_id);
+	ParticleSystem *psys;
+
+	bool first_use = !particle_system_map.is_used(key);
+	bool need_update = particle_system_map.sync(&psys, b_ob, b_dup.object(), key);
+
+	/* no update needed? */
+	if(!need_update && !object->mesh->need_update && !scene->object_manager->need_update)
+		return true;
+
+	/* first time used in this sync loop? clear and tag update */
+	if(first_use) {
+		psys->particles.clear();
+		psys->tag_update(scene);
 	}
-	
-	return need_update;
-}
 
-static bool use_particle_system(BL::ParticleSystem b_psys)
-{
-	/* only use duplicator particles? disabled particle info for
-	 * halo and billboard to reduce particle count.
-	 * Probably not necessary since particles don't contain a huge amount
-	 * of data compared to other textures.
-	 */
-	#if 0
-	int render_type = b_psys->settings().render_type();
-	return (render_type == BL::ParticleSettings::render_type_OBJECT
-	        || render_type == BL::ParticleSettings::render_type_GROUP);
-	#endif
+	/* add particle */
+	BL::Particle b_pa = b_psys.particles[persistent_id[0]];
+	Particle pa;
 	
+	pa.index = persistent_id[0];
+	pa.age = b_scene.frame_current() - b_pa.birth_time();
+	pa.lifetime = b_pa.lifetime();
+	pa.location = get_float3(b_pa.location());
+	pa.rotation = get_float4(b_pa.rotation());
+	pa.size = b_pa.size();
+	pa.velocity = get_float3(b_pa.velocity());
+	pa.angular_velocity = get_float3(b_pa.angular_velocity());
+
+	psys->particles.push_back(pa);
+
+	/* return that this object has particle data */
 	return true;
-}
-
-static bool use_particle(BL::Particle b_pa)
-{
-	return b_pa.is_exist() && b_pa.is_visible() && b_pa.alive_state()==BL::Particle::alive_state_ALIVE;
-}
-
-int BlenderSync::object_count_particles(BL::Object b_ob)
-{
-	int tot = 0;
-	BL::Object::particle_systems_iterator b_psys;
-	for(b_ob.particle_systems.begin(b_psys); b_psys != b_ob.particle_systems.end(); ++b_psys) {
-		if (use_particle_system(*b_psys)) {
-			BL::ParticleSystem::particles_iterator b_pa;
-			for(b_psys->particles.begin(b_pa); b_pa != b_psys->particles.end(); ++b_pa) {
-				if(use_particle(*b_pa))
-					++tot;
-			}
-		}
-	}
-	return tot;
-}
-
-void BlenderSync::sync_particles(Object *ob, BL::Object b_ob)
-{
-	int tot = object_count_particles(b_ob);
-	
-	ob->particles.clear();
-	ob->particles.reserve(tot);
-	
-	int index;
-	BL::Object::particle_systems_iterator b_psys;
-	for(b_ob.particle_systems.begin(b_psys); b_psys != b_ob.particle_systems.end(); ++b_psys) {
-		if (use_particle_system(*b_psys)) {
-			int pa_index = 0;
-			BL::ParticleSystem::particles_iterator b_pa;
-			for(b_psys->particles.begin(b_pa), index = 0; b_pa != b_psys->particles.end(); ++b_pa, ++index) {
-				if(use_particle(*b_pa)) {
-					Particle pa;
-					
-					pa.index = pa_index;
-					pa.age = b_scene.frame_current() - b_pa->birth_time();
-					pa.lifetime = b_pa->lifetime();
-					
-					ob->particles.push_back(pa);
-				}
-				
-				++pa_index;
-			}
-		}
-	}
 }
 
 CCL_NAMESPACE_END

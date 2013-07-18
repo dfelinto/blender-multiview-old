@@ -187,17 +187,25 @@ class BakeAction(Operator):
             )
     only_selected = BoolProperty(
             name="Only Selected",
+            description="Only key selected object/bones",
             default=True,
             )
-    clear_consraints = BoolProperty(
+    clear_constraints = BoolProperty(
             name="Clear Constraints",
+            description="Remove all constraints from keyed object/bones, and do 'visual' keying",
+            default=False,
+            )
+    clear_parents = BoolProperty(
+            name="Clear Parents",
+            description="Bake animation onto the object then clear parents (objects only)",
             default=False,
             )
     bake_types = EnumProperty(
             name="Bake Data",
+            description="Which data's transformations to bake",
             options={'ENUM_FLAG'},
-            items=(('POSE', "Pose", ""),
-                   ('OBJECT', "Object", ""),
+            items=(('POSE', "Pose", "Bake bones transformations"),
+                   ('OBJECT', "Object", "Bake object transformations"),
                    ),
             default={'POSE'},
             )
@@ -208,13 +216,14 @@ class BakeAction(Operator):
 
         action = anim_utils.bake_action(self.frame_start,
                                         self.frame_end,
-                                        self.step,
-                                        self.only_selected,
-                                        'POSE' in self.bake_types,
-                                        'OBJECT' in self.bake_types,
-                                        self.clear_consraints,
-                                        True,
-                                 )
+                                        frame_step=self.step,
+                                        only_selected=self.only_selected,
+                                        do_pose='POSE' in self.bake_types,
+                                        do_object='OBJECT' in self.bake_types,
+                                        do_constraint_clear=self.clear_constraints,
+                                        do_parents_clear=self.clear_parents,
+                                        do_clean=True,
+                                        )
 
         if action is None:
             self.report({'INFO'}, "Nothing to bake")
@@ -252,8 +261,8 @@ class ClearUselessActions(Operator):
 
         for action in bpy.data.actions:
             # if only user is "fake" user...
-            if ((self.only_unused is False) or
-                (action.use_fake_user and action.users == 1)):
+            if     ((self.only_unused is False) or
+                    (action.use_fake_user and action.users == 1)):
 
                 # if it has F-Curves, then it's a "action library"
                 # (i.e. walk, wave, jump, etc.)

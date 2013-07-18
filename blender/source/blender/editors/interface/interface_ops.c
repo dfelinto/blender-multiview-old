@@ -27,7 +27,6 @@
  *  \ingroup edinterface
  */
 
-
 #include <stdio.h>
 #include <math.h>
 #include <string.h>
@@ -59,6 +58,8 @@
 
 #include "UI_interface.h"
 
+#include "IMB_colormanagement.h"
+
 #include "interface_intern.h"
 
 #include "WM_api.h"
@@ -71,11 +72,12 @@
 
 #include "ED_image.h"  /* for HDR color sampling */
 #include "ED_node.h"   /* for HDR color sampling */
+#include "ED_clip.h"   /* for HDR color sampling */
 
 /* ********************************************************** */
 
 typedef struct Eyedropper {
-	short do_color_management;
+	struct ColorManagedDisplay *display;
 
 	PointerRNA ptr;
 	PropertyRNA *prop;
@@ -89,8 +91,6 @@ typedef struct Eyedropper {
 static int eyedropper_init(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
-	const int color_manage = scene->r.color_mgt_flag & R_COLOR_MANAGEMENT;
-
 	Eyedropper *eye;
 	
 	op->customdata = eye = MEM_callocN(sizeof(Eyedropper), "Eyedropper");
@@ -106,7 +106,12 @@ static int eyedropper_init(bContext *C, wmOperator *op)
 		return FALSE;
 	}
 
-	eye->do_color_management = (color_manage && RNA_property_subtype(eye->prop) == PROP_COLOR);
+	if (RNA_property_subtype(eye->prop) == PROP_COLOR) {
+		const char *display_device;
+
+		display_device = scene->display_settings.display_device;
+		eye->display = IMB_colormanagement_display_get_named(display_device);
+	}
 
 	return TRUE;
 }
@@ -140,10 +145,10 @@ static void eyedropper_color_sample_fl(bContext *C, Eyedropper *UNUSED(eye), int
 	wmWindow *win = CTX_wm_window(C);
 	ScrArea *sa;
 	for (sa = win->screen->areabase.first; sa; sa = sa->next) {
-		if (BLI_in_rcti(&sa->totrct, mx, my)) {
+		if (BLI_rcti_isect_pt(&sa->totrct, mx, my)) {
 			if (sa->spacetype == SPACE_IMAGE) {
 				ARegion *ar = BKE_area_find_region_type(sa, RGN_TYPE_WINDOW);
-				if (BLI_in_rcti(&ar->winrct, mx, my)) {
+				if (BLI_rcti_isect_pt(&ar->winrct, mx, my)) {
 					SpaceImage *sima = sa->spacedata.first;
 					int mval[2] = {mx - ar->winrct.xmin,
 					               my - ar->winrct.ymin};
@@ -155,12 +160,24 @@ static void eyedropper_color_sample_fl(bContext *C, Eyedropper *UNUSED(eye), int
 			}
 			else if (sa->spacetype == SPACE_NODE) {
 				ARegion *ar = BKE_area_find_region_type(sa, RGN_TYPE_WINDOW);
-				if (BLI_in_rcti(&ar->winrct, mx, my)) {
+				if (BLI_rcti_isect_pt(&ar->winrct, mx, my)) {
 					SpaceNode *snode = sa->spacedata.first;
 					int mval[2] = {mx - ar->winrct.xmin,
 					               my - ar->winrct.ymin};
 
 					if (ED_space_node_color_sample(snode, ar, mval, r_col)) {
+						return;
+					}
+				}
+			}
+			else if (sa->spacetype == SPACE_CLIP) {
+				ARegion *ar = BKE_area_find_region_type(sa, RGN_TYPE_WINDOW);
+				if (BLI_rcti_isect_pt(&ar->winrct, mx, my)) {
+					SpaceClip *sc = sa->spacedata.first;
+					int mval[2] = {mx - ar->winrct.xmin,
+					               my - ar->winrct.ymin};
+
+					if (ED_space_clip_color_sample(sc, ar, mval, r_col)) {
 						return;
 					}
 				}
@@ -182,9 +199,10 @@ static void eyedropper_color_set(bContext *C, Eyedropper *eye, const float col[3
 	/* to maintain alpha */
 	RNA_property_float_get_array(&eye->ptr, eye->prop, col_conv);
 
-	/* convert from screen (srgb) space to linear rgb space */
-	if (eye->do_color_management) {
-		srgb_to_linearrgb_v3_v3(col_conv, col);
+	/* convert from display space to linear rgb space */
+	if (eye->display) {
+		copy_v3_v3(col_conv, col);
+		IMB_colormanagement_display_to_scene_linear_v3(col_conv, eye->display);
 	}
 	else {
 		copy_v3_v3(col_conv, col);
@@ -198,7 +216,7 @@ static void eyedropper_color_set(bContext *C, Eyedropper *eye, const float col[3
 /* set sample from accumulated values */
 static void eyedropper_color_set_accum(bContext *C, Eyedropper *eye)
 {
-	float col[4];
+	float col[3];
 	mul_v3_v3fl(col, eye->accum_col, 1.0f / (float)eye->accum_tot);
 	eyedropper_color_set(C, eye, col);
 }
@@ -221,7 +239,7 @@ static void eyedropper_color_sample_accum(bContext *C, Eyedropper *eye, int mx, 
 }
 
 /* main modal status check */
-static int eyedropper_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int eyedropper_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	Eyedropper *eye = (Eyedropper *)op->customdata;
 	
@@ -267,7 +285,7 @@ static int eyedropper_modal(bContext *C, wmOperator *op, wmEvent *event)
 }
 
 /* Modal Operator init */
-static int eyedropper_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+static int eyedropper_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	/* init */
 	if (eyedropper_init(C, op)) {
@@ -333,6 +351,7 @@ static void UI_OT_eyedropper(wmOperatorType *ot)
 static int reset_default_theme_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ui_theme_init_default();
+	ui_style_init_default();
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
 	
 	return OPERATOR_FINISHED;
@@ -533,7 +552,7 @@ static int copy_to_selected_button_poll(bContext *C)
 					if (use_path) {
 						lprop = NULL;
 						RNA_id_pointer_create(link->ptr.id.data, &idptr);
-						RNA_path_resolve(&idptr, path, &lptr, &lprop);
+						RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
 					}
 					else {
 						lptr = link->ptr;
@@ -583,7 +602,7 @@ static int copy_to_selected_button_exec(bContext *C, wmOperator *op)
 					if (use_path) {
 						lprop = NULL;
 						RNA_id_pointer_create(link->ptr.id.data, &idptr);
-						RNA_path_resolve(&idptr, path, &lptr, &lprop);
+						RNA_path_resolve_property(&idptr, path, &lptr, &lprop);
 					}
 					else {
 						lptr = link->ptr;
@@ -643,11 +662,12 @@ static int reports_to_text_poll(bContext *C)
 static int reports_to_text_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ReportList *reports = CTX_wm_reports(C);
+	Main *bmain = CTX_data_main(C);
 	Text *txt;
 	char *str;
 	
 	/* create new text-block to write to */
-	txt = BKE_text_add("Recent Reports");
+	txt = BKE_text_add(bmain, "Recent Reports");
 	
 	/* convert entire list to a display string, and add this to the text-block
 	 *	- if commandline debug option enabled, show debug reports too
@@ -697,7 +717,7 @@ struct uiEditSourceButStore {
 /* should only ever be set while the edit source operator is running */
 static struct uiEditSourceStore *ui_editsource_info = NULL;
 
-int  UI_editsource_enable_check(void)
+bool UI_editsource_enable_check(void)
 {
 	return (ui_editsource_info != NULL);
 }
@@ -714,7 +734,7 @@ static void ui_editsource_active_but_set(uiBut *but)
 
 static void ui_editsource_active_but_clear(void)
 {
-	BLI_ghash_free(ui_editsource_info->hash, NULL, (GHashValFreeFP)MEM_freeN);
+	BLI_ghash_free(ui_editsource_info->hash, NULL, MEM_freeN);
 	MEM_freeN(ui_editsource_info);
 	ui_editsource_info = NULL;
 }
@@ -785,12 +805,11 @@ static int editsource_text_edit(bContext *C, wmOperator *op,
 	}
 
 	if (text == NULL) {
-		text = BKE_text_load(filepath, bmain->name);
+		text = BKE_text_load(bmain, filepath, bmain->name);
 	}
 
 	if (text == NULL) {
-		BKE_reportf(op->reports, RPT_WARNING,
-		            "file: '%s' can't be opened", filepath);
+		BKE_reportf(op->reports, RPT_WARNING, "File '%s' cannot be opened", filepath);
 		return OPERATOR_CANCELLED;
 	}
 	else {
@@ -802,8 +821,7 @@ static int editsource_text_edit(bContext *C, wmOperator *op,
 			st->text = text;
 		}
 		else {
-			BKE_reportf(op->reports, RPT_INFO,
-			            "See '%s' in the text editor", text->id.name + 2);
+			BKE_reportf(op->reports, RPT_INFO, "See '%s' in the text editor", text->id.name + 2);
 		}
 
 		txt_move_toline(text, line - 1, FALSE);
@@ -836,11 +854,11 @@ static int editsource_exec(bContext *C, wmOperator *op)
 		ED_region_do_draw(C, ar);
 
 		for (BLI_ghashIterator_init(&ghi, ui_editsource_info->hash);
-		     !BLI_ghashIterator_isDone(&ghi);
+		     BLI_ghashIterator_done(&ghi) == false;
 		     BLI_ghashIterator_step(&ghi))
 		{
-			uiBut *but = BLI_ghashIterator_getKey(&ghi);
-			if (but && ui_editsource_uibut_match(&ui_editsource_info->but_orig, but)) {
+			uiBut *but_key = BLI_ghashIterator_getKey(&ghi);
+			if (but_key && ui_editsource_uibut_match(&ui_editsource_info->but_orig, but_key)) {
 				but_store = BLI_ghashIterator_getValue(&ghi);
 				break;
 			}
@@ -854,14 +872,12 @@ static int editsource_exec(bContext *C, wmOperator *op)
 				                           but_store->py_dbg_ln);
 			}
 			else {
-				BKE_report(op->reports, RPT_ERROR,
-				           "Active button isn't from a script, cant edit source.");
+				BKE_report(op->reports, RPT_ERROR, "Active button is not from a script, cannot edit source");
 				ret = OPERATOR_CANCELLED;
 			}
 		}
 		else {
-			BKE_report(op->reports, RPT_ERROR,
-			           "Active button match can't be found.");
+			BKE_report(op->reports, RPT_ERROR, "Active button match cannot be found");
 			ret = OPERATOR_CANCELLED;
 		}
 
@@ -894,23 +910,44 @@ static void UI_OT_editsource(wmOperatorType *ot)
  * Note: this includes utility functions and button matching checks.
  *       this only works in conjunction with a py operator! */
 
-void edittranslation_find_po_file(const char *root, const char *uilng, char *path, const size_t maxlen)
+static void edittranslation_find_po_file(const char *root, const char *uilng, char *path, const size_t maxlen)
 {
-	char t[32]; /* Should be more than enough! */
+	char tstr[32]; /* Should be more than enough! */
+
 	/* First, full lang code. */
-	sprintf(t, "%s.po", uilng);
+	BLI_snprintf(tstr, sizeof(tstr), "%s.po", uilng);
 	BLI_join_dirfile(path, maxlen, root, uilng);
-	BLI_join_dirfile(path, maxlen, path, t);
+	BLI_join_dirfile(path, maxlen, path, tstr);
 	if (BLI_is_file(path))
 		return;
+
 	/* Now try without the second iso code part (_ES in es_ES). */
-	strncpy(t, uilng, 2);
-	strcpy(t + 2, uilng + 5); /* Because of some codes like sr_SR@latin... */
-	BLI_join_dirfile(path, maxlen, root, t);
-	sprintf(t, "%s.po", t);
-	BLI_join_dirfile(path, maxlen, path, t);
-	if (BLI_is_file(path))
-		return;
+	{
+		char *tc = NULL;
+		size_t szt = 0;
+		tstr[0] = '\0';
+
+		tc = strchr(uilng, '_');
+		if (tc) {
+			szt = tc - uilng;
+			if (szt < sizeof(tstr)) /* Paranoid, should always be true! */
+				BLI_strncpy(tstr, uilng, szt + 1); /* +1 for '\0' char! */
+		}
+		if (tstr[0]) {
+			/* Because of some codes like sr_SR@latin... */
+			tc = strchr(uilng, '@');
+			if (tc)
+				BLI_strncpy(tstr + szt, tc, sizeof(tstr) - szt);
+
+			BLI_join_dirfile(path, maxlen, root, tstr);
+			strcat(tstr, ".po");
+			BLI_join_dirfile(path, maxlen, path, tstr);
+			if (BLI_is_file(path))
+				return;
+		}
+	}
+
+	/* Else no po file! */
 	path[0] = '\0';
 }
 
@@ -925,7 +962,6 @@ static int edittranslation_exec(bContext *C, wmOperator *op)
 		const char *root = U.i18ndir;
 		const char *uilng = BLF_lang_get();
 
-		const int bufs_nbr = 10;
 		uiStringInfo but_label = {BUT_GET_LABEL, NULL};
 		uiStringInfo rna_label = {BUT_GET_RNA_LABEL, NULL};
 		uiStringInfo enum_label = {BUT_GET_RNAENUM_LABEL, NULL};
@@ -938,25 +974,25 @@ static int edittranslation_exec(bContext *C, wmOperator *op)
 		uiStringInfo rna_ctxt = {BUT_GET_RNA_LABEL_CONTEXT, NULL};
 
 		if (!BLI_is_dir(root)) {
-			BKE_report(op->reports, RPT_ERROR, "Please set your User Preferences' \"Translation Branches "
-			                                   "Directory\" path to a valid directory.");
+			BKE_report(op->reports, RPT_ERROR, "Please set your User Preferences' 'Translation Branches "
+			                                   "Directory' path to a valid directory");
 			return OPERATOR_CANCELLED;
 		}
 		if (!WM_operatortype_find(EDTSRC_I18N_OP_NAME, 0)) {
-			BKE_reportf(op->reports, RPT_ERROR, "Could not find operator \"%s\"! Please enable ui_translate addon "
-			                                    "in the User Preferences.", EDTSRC_I18N_OP_NAME);
+			BKE_reportf(op->reports, RPT_ERROR, "Could not find operator '%s'! Please enable ui_translate addon "
+			                                    "in the User Preferences", EDTSRC_I18N_OP_NAME);
 			return OPERATOR_CANCELLED;
 		}
 		/* Try to find a valid po file for current language... */
 		edittranslation_find_po_file(root, uilng, popath, FILE_MAX);
-		printf("po path: %s\n", popath);
+/*		printf("po path: %s\n", popath);*/
 		if (popath[0] == '\0') {
-			BKE_reportf(op->reports, RPT_ERROR, "No valid po found for language '%s' under %s.", uilng, root);
+			BKE_reportf(op->reports, RPT_ERROR, "No valid po found for language '%s' under %s", uilng, root);
 			return OPERATOR_CANCELLED;
 		}
 
-		uiButGetStrInfo(C, but, bufs_nbr, &but_label, &rna_label, &enum_label, &but_tip, &rna_tip, &enum_tip,
-		                &rna_struct, &rna_prop, &rna_enum, &rna_ctxt);
+		uiButGetStrInfo(C, but, &but_label, &rna_label, &enum_label, &but_tip, &rna_tip, &enum_tip,
+		                &rna_struct, &rna_prop, &rna_enum, &rna_ctxt, NULL);
 
 		WM_operator_properties_create(&ptr, EDTSRC_I18N_OP_NAME);
 		RNA_string_set(&ptr, "lang", uilng);
@@ -1003,14 +1039,6 @@ static int edittranslation_exec(bContext *C, wmOperator *op)
 	}
 }
 
-#if 0
-static int edittranslation_poll(bContext *UNUSED(C))
-{
-	/* We need the i18n py addon to be enabled! */
-	return WM_operatortype_find(EDTSRC_I18N_OP_NAME, 0) ? TRUE : FALSE;
-}
-#endif
-
 static void UI_OT_edittranslation_init(wmOperatorType *ot)
 {
 	/* identifiers */
@@ -1020,7 +1048,6 @@ static void UI_OT_edittranslation_init(wmOperatorType *ot)
 
 	/* callbacks */
 	ot->exec = edittranslation_exec;
-/*	ot->poll = edittranslation_poll;*/
 }
 
 #endif /* WITH_PYTHON */
@@ -1055,7 +1082,7 @@ void UI_buttons_operatortypes(void)
 	WM_operatortype_append(UI_OT_copy_data_path_button);
 	WM_operatortype_append(UI_OT_reset_default_button);
 	WM_operatortype_append(UI_OT_copy_to_selected_button);
-	WM_operatortype_append(UI_OT_reports_to_textblock); // XXX: temp?
+	WM_operatortype_append(UI_OT_reports_to_textblock);  /* XXX: temp? */
 
 #ifdef WITH_PYTHON
 	WM_operatortype_append(UI_OT_editsource);
@@ -1063,4 +1090,3 @@ void UI_buttons_operatortypes(void)
 #endif
 	WM_operatortype_append(UI_OT_reloadtranslation);
 }
-

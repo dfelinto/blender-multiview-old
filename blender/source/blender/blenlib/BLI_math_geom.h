@@ -36,8 +36,13 @@ extern "C" {
 
 #include "BLI_math_inline.h"
 
-#ifdef __BLI_MATH_INLINE_H__
+#if BLI_MATH_DO_INLINE
 #include "intern/math_geom_inline.c"
+#endif
+
+#ifdef BLI_MATH_GCC_WARN_PRAGMA
+#  pragma GCC diagnostic push
+#  pragma GCC diagnostic ignored "-Wredundant-decls"
 #endif
 
 /********************************** Polygons *********************************/
@@ -51,8 +56,12 @@ float normal_quad_v3(float r[3], const float a[3], const float b[3], const float
 float area_tri_v2(const float a[2], const float b[2], const float c[2]);
 float area_tri_signed_v2(const float v1[2], const float v2[2], const float v3[2]);
 float area_tri_v3(const float a[3], const float b[3], const float c[3]);
+float area_tri_signed_v3(const float v1[3], const float v2[3], const float v3[3], const float normal[3]);
 float area_quad_v3(const float a[3], const float b[3], const float c[3], const float d[3]);
 float area_poly_v3(int nr, float verts[][3], const float normal[3]);
+float area_poly_v2(int nr, float verts[][2]);
+
+float volume_tetrahedron_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3]);
 
 int is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3]);
 int is_quad_convex_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2]);
@@ -67,10 +76,14 @@ void closest_to_line_segment_v2(float closest[2], const float p[2], const float 
 float dist_to_plane_normalized_v3(const float p[3], const float plane_co[3], const float plane_no_unit[3]);
 float dist_to_plane_v3(const float p[3], const float plane_co[3], const float plane_no[3]);
 float dist_to_line_segment_v3(const float p[3], const float l1[3], const float l2[3]);
+float dist_to_line_v3(const float p[3], const float l1[3], const float l2[3]);
 float closest_to_line_v3(float r[3], const float p[3], const float l1[3], const float l2[3]);
 float closest_to_line_v2(float r[2], const float p[2], const float l1[2], const float l2[2]);
 void closest_to_line_segment_v3(float r[3], const float p[3], const float l1[3], const float l2[3]);
 void closest_to_plane_v3(float r[3], const float plane_co[3], const float plane_no_unit[3], const float pt[3]);
+
+/* Set 'r' to the point in triangle (t1, t2, t3) closest to point 'p' */
+void closest_on_tri_to_point_v3(float r[3], const float p[3], const float t1[3], const float t2[3], const float t3[3]);
 
 
 float line_point_factor_v3(const float p[3], const float l1[3], const float l2[3]);
@@ -95,77 +108,51 @@ int isect_line_sphere_v2(const float l1[2], const float l2[2], const float sp[2]
 int isect_seg_seg_v2_point(const float v1[2], const float v2[2], const float v3[2], const float v4[2], float vi[2]);
 int isect_seg_seg_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2]);
 
-/* Returns the number of point of interests
- * 0 - lines are colinear
- * 1 - lines are coplanar, i1 is set to intersection
- * 2 - i1 and i2 are the nearest points on line 1 (v1, v2) and line 2 (v3, v4) respectively 
- * */
-
 int isect_line_line_v3(const float v1[3], const float v2[3],
                        const float v3[3], const float v4[3],
                        float i1[3], float i2[3]);
-int isect_line_line_strict_v3(const float v1[3], const float v2[3],
-                              const float v3[3], const float v4[3],
-                              float vi[3], float *r_lambda);
+bool isect_line_line_strict_v3(const float v1[3], const float v2[3],
+                               const float v3[3], const float v4[3],
+                               float vi[3], float *r_lambda);
 
-/* if clip is nonzero, will only return true if lambda is >= 0.0
- * (i.e. intersection point is along positive d)*/
-int isect_ray_plane_v3(const float p1[3], const float d[3],
-                       const float v0[3], const float v1[3], const float v2[3],
-                       float *r_lambda, const int clip);
+bool isect_ray_plane_v3(const float p1[3], const float d[3],
+                        const float v0[3], const float v1[3], const float v2[3],
+                        float *r_lambda, const int clip);
 
-/**
- * Intersect line/plane, optionally treat line as directional (like a ray) with the no_flip argument.
- * \param out The intersection point.
- * \param l1 The first point of the line.
- * \param l2 The second point of the line.
- * \param plane_co A point on the plane to intersect with.
- * \param plane_no The direction of the plane (does not need to be normalized).
- * \param no_flip When true, the intersection point will always be from l1 to l2, even if this is not on the plane.
- */
-int isect_line_plane_v3(float out[3], const float l1[3], const float l2[3],
-                        const float plane_co[3], const float plane_no[3], const short no_flip);
+bool isect_line_plane_v3(float out[3], const float l1[3], const float l2[3],
+                         const float plane_co[3], const float plane_no[3], const bool no_flip);
 
-/**
- * Intersect two planes, return a point on the intersection and a vector
- * that runs on the direction of the intersection.
- * Return error code is the same as 'isect_line_line_v3'.
- * \param r_isect_co The resulting intersection point.
- * \param r_isect_no The resulting vector of the intersection.
- * \param plane_a_co The point on the first plane.
- * \param plane_a_no The normal of the first plane.
- * \param plane_b_co The point on the second plane.
- * \param plane_b_no The normal of the second plane.
- */
 void isect_plane_plane_v3(float r_isect_co[3], float r_isect_no[3],
                           const float plane_a_co[3], const float plane_a_no[3],
                           const float plane_b_co[3], const float plane_b_no[3]);
 
 /* line/ray triangle */
-int isect_line_tri_v3(const float p1[3], const float p2[3],
+bool isect_line_tri_v3(const float p1[3], const float p2[3],
+                       const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2]);
+bool isect_ray_tri_v3(const float p1[3], const float d[3],
                       const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2]);
-int isect_ray_tri_v3(const float p1[3], const float d[3],
-                     const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2]);
-int isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
-                               const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2], const float threshold);
-int isect_ray_tri_epsilon_v3(const float p1[3], const float d[3],
-                             const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2], const float epsilon);
+bool isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
+                                const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2], const float threshold);
+bool isect_ray_tri_epsilon_v3(const float p1[3], const float d[3],
+                              const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float r_uv[2], const float epsilon);
 
 /* point in polygon */
+bool isect_point_poly_v2(const float pt[2], const float verts[][2], const int nr);
+bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const int nr);
+
 int isect_point_quad_v2(const float p[2], const float a[2], const float b[2], const float c[2], const float d[2]);
 
-int isect_point_tri_v2(const float v1[2], const float v2[2], const float v3[2], const float pt[2]);
+int isect_point_tri_v2(const float pt[2], const float v1[2], const float v2[2], const float v3[2]);
 int isect_point_tri_v2_cw(const float pt[2], const float v1[2], const float v2[2], const float v3[2]);
 int isect_point_tri_v2_int(const int x1, const int y1, const int x2, const int y2, const int a, const int b);
-int isect_point_tri_prism_v3(const float p[3], const float v1[3], const float v2[3], const float v3[3]);
-
+bool isect_point_tri_prism_v3(const float p[3], const float v1[3], const float v2[3], const float v3[3]);
 void isect_point_quad_uv_v2(const float v0[2], const float v1[2], const float v2[2], const float v3[2],
                             const float pt[2], float r_uv[2]);
 void isect_point_face_uv_v2(const int isquad, const float v0[2], const float v1[2], const float v2[2],
                             const float v3[2], const float pt[2], float r_uv[2]);
 
 /* axis-aligned bounding box */
-int isect_aabb_aabb_v3(const float min1[3], const float max1[3], const float min2[3], const float max2[3]);
+bool isect_aabb_aabb_v3(const float min1[3], const float max1[3], const float min2[3], const float max2[3]);
 
 typedef struct {
 	float ray_start[3];
@@ -174,18 +161,19 @@ typedef struct {
 } IsectRayAABBData;
 
 void isect_ray_aabb_initialize(IsectRayAABBData *data, const float ray_start[3], const float ray_direction[3]);
-int isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3], const float bb_max[3], float *tmin);
+bool isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3], const float bb_max[3], float *tmin);
 
 /* other */
-int isect_sweeping_sphere_tri_v3(const float p1[3], const float p2[3], const float radius,
-                                 const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float ipoint[3]);
+bool isect_sweeping_sphere_tri_v3(const float p1[3], const float p2[3], const float radius,
+                                  const float v0[3], const float v1[3], const float v2[3], float *r_lambda, float ipoint[3]);
 
-int isect_axial_line_tri_v3(const int axis, const float co1[3], const float co2[3],
-                            const float v0[3], const float v1[3], const float v2[3], float *r_lambda);
+bool isect_axial_line_tri_v3(const int axis, const float co1[3], const float co2[3],
+                             const float v0[3], const float v1[3], const float v2[3], float *r_lambda);
 
-int clip_line_plane(float p1[3], float p2[3], const float plane[4]);
+bool clip_segment_v3_plane(float p1[3], float p2[3], const float plane[4]);
+bool clip_segment_v3_plane_n(float p1[3], float p2[3], float plane_array[][4], const int plane_tot);
 
-void plot_line_v2v2i(const int p1[2], const int p2[2], int (*callback)(int, int, void *), void *userData);
+void plot_line_v2v2i(const int p1[2], const int p2[2], bool (*callback)(int, int, void *), void *userData);
 
 /****************************** Interpolation ********************************/
 
@@ -215,6 +203,10 @@ int barycentric_inside_triangle_v2(const float w[3]);
 void resolve_tri_uv(float r_uv[2], const float st[2], const float st0[2], const float st1[2], const float st2[2]);
 void resolve_quad_uv(float uv[2], const float st[2], const float st0[2], const float st1[2], const float st2[2], const float st3[2]);
 
+/* use to find the point of a UV on a face */
+void interp_bilinear_quad_v3(float data[4][3], float u, float v, float res[3]);
+void interp_barycentric_tri_v3(float data[3][3], float u, float v, float res[3]);
+
 /***************************** View & Projection *****************************/
 
 void lookat_m4(float mat[4][4], float vx, float vy, 
@@ -226,7 +218,7 @@ void perspective_m4(float mat[4][4], const float left, const float right,
                     const float bottom, const float top, const float nearClip, const float farClip);
 void orthographic_m4(float mat[4][4], const float left, const float right,
                      const float bottom, const float top, const float nearClip, const float farClip);
-void window_translate_m4(float winmat[][4], float perspmat[][4],
+void window_translate_m4(float winmat[4][4], float perspmat[4][4],
                          const float x, const float y);
 
 int box_clip_bounds_m4(float boundbox[2][3],
@@ -245,19 +237,11 @@ void accumulate_vertex_normals(float n1[3], float n2[3], float n3[3],
                                float n4[3], const float f_no[3], const float co1[3], const float co2[3],
                                const float co3[3], const float co4[3]);
 
-void accumulate_vertex_normals_poly(float **vertnos, float polyno[3],
-                                    float **vertcos, float vdiffs[][3], int nverts);
+void accumulate_vertex_normals_poly(float **vertnos, const float polyno[3],
+                                    const float **vertcos, float vdiffs[][3], const int nverts);
 
 /********************************* Tangents **********************************/
 
-typedef struct VertexTangent {
-	struct VertexTangent *next;
-	float tang[3], uv[2];
-} VertexTangent;
-
-float *find_vertex_tangent(VertexTangent *vtang, const float uv[2]);
-void sum_or_add_vertex_tangent(void *arena, VertexTangent **vtang,
-                               const float tang[3], const float uv[2]);
 void tangent_from_uv(float uv1[2], float uv2[2], float uv3[2],
                      float co1[3], float co2[3], float co3[3], float n[3], float tang[3]);
 
@@ -286,10 +270,30 @@ MINLINE void madd_sh_shfl(float r[9], const float sh[3], const float f);
 
 /********************************* Form Factor *******************************/
 
+float form_factor_quad(const float p[3], const float n[3],
+                       const float q0[3], const float q1[3], const float q2[3], const float q3[3]);
+int form_factor_visible_quad(const float p[3], const float n[3],
+                             const float v0[3], const float v1[3], const float v2[3],
+                             float q0[3], float q1[3], float q2[3], float q3[3]);
 float form_factor_hemi_poly(float p[3], float n[3],
                             float v1[3], float v2[3], float v3[3], float v4[3]);
 
-void axis_dominant_v3(int *axis_a, int *axis_b, const float axis[3]);
+bool  axis_dominant_v3_to_m3(float r_mat[3][3], const float normal[3]);
+void  axis_dominant_v3(int *r_axis_a, int *r_axis_b, const float axis[3]);
+float axis_dominant_v3_max(int *r_axis_a, int *r_axis_b, const float axis[3])
+#ifdef __GNUC__
+__attribute__((warn_unused_result))
+#endif
+;
+
+MINLINE int max_axis_v3(const float vec[3]);
+MINLINE int min_axis_v3(const float vec[3]);
+
+MINLINE int poly_to_tri_count(const int poly_count, const int corner_count);
+
+#ifdef BLI_MATH_GCC_WARN_PRAGMA
+#  pragma GCC diagnostic pop
+#endif
 
 #ifdef __cplusplus
 }

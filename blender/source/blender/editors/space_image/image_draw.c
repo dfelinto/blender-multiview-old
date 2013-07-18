@@ -44,12 +44,14 @@
 #include "PIL_time.h"
 
 #include "BLI_math.h"
+#include "BLI_rect.h"
 #include "BLI_threads.h"
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
+#include "IMB_colormanagement.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
@@ -69,50 +71,99 @@
 #include "UI_resources.h"
 #include "UI_view2d.h"
 
+#include "WM_api.h"
+#include "WM_types.h"
 
 #include "RE_pipeline.h"
+#include "RE_engine.h"
 
 #include "image_intern.h"
 
-#define HEADER_HEIGHT 18
-
-static void image_verify_buffer_float(Image *ima, ImBuf *ibuf, int color_manage)
-{
-	/* detect if we need to redo the curve map.
-	 * ibuf->rect is zero for compositor and render results after change 
-	 * convert to 32 bits always... drawing float rects isn't supported well (atis)
-	 *
-	 * NOTE: if float buffer changes, we have to manually remove the rect
-	 */
-
-	if (ibuf->rect_float && (ibuf->rect == NULL || (ibuf->userflags & IB_RECT_INVALID)) ) {
-		if (color_manage) {
-			if (ima && ima->source == IMA_SRC_VIEWER)
-				ibuf->profile = IB_PROFILE_LINEAR_RGB;
-		}
-		else
-			ibuf->profile = IB_PROFILE_NONE;
-
-		IMB_rect_from_float(ibuf);
-	}
-}
-
-static void draw_render_info(Scene *scene, Image *ima, ARegion *ar)
+static void draw_render_info(Scene *scene, Image *ima, ARegion *ar, float zoomx, float zoomy)
 {
 	RenderResult *rr;
-	
+	Render *re = RE_GetRender(scene->id.name);
+
 	rr = BKE_image_acquire_renderresult(scene, ima);
 
 	if (rr && rr->text) {
-		ED_region_info_draw(ar, rr->text, 1, 0.25);
+		float fill_color[4] = {0.0f, 0.0f, 0.0f, 0.25f};
+		ED_region_info_draw(ar, rr->text, 1, fill_color);
 	}
 
 	BKE_image_release_renderresult(scene, ima);
+
+	if (re) {
+		int total_tiles;
+		rcti *tiles;
+
+		RE_engine_get_current_tiles(re, &total_tiles, &tiles);
+
+		if (total_tiles) {
+			int i, x, y;
+			rcti *tile;
+
+			/* find window pixel coordinates of origin */
+			UI_view2d_to_region_no_clip(&ar->v2d, 0.0f, 0.0f, &x, &y);
+
+			glPushMatrix();
+			glTranslatef(x, y, 0.0f);
+			glScalef(zoomx, zoomy, 1.0f);
+
+			if (scene->r.mode & R_BORDER) {
+				glTranslatef((int)(-scene->r.border.xmin * scene->r.xsch * scene->r.size / 100.0f),
+				             (int)(-scene->r.border.ymin * scene->r.ysch * scene->r.size / 100.0f),
+				             0.0f);
+			}
+
+			UI_ThemeColor(TH_FACE_SELECT);
+
+			for (i = 0, tile = tiles; i < total_tiles; i++, tile++) {
+				float delta_x = 4.0f * UI_DPI_FAC / zoomx;
+				float delta_y = 4.0f * UI_DPI_FAC / zoomy;
+
+				delta_x = min_ff(delta_x, tile->xmax - tile->xmin);
+				delta_y = min_ff(delta_y, tile->ymax - tile->ymin);
+
+				/* left bottom corner */
+				glBegin(GL_LINE_STRIP);
+				glVertex2f(tile->xmin, tile->ymin + delta_y);
+				glVertex2f(tile->xmin, tile->ymin);
+				glVertex2f(tile->xmin + delta_x, tile->ymin);
+				glEnd();
+
+				/* left top corner */
+				glBegin(GL_LINE_STRIP);
+				glVertex2f(tile->xmin, tile->ymax - delta_y);
+				glVertex2f(tile->xmin, tile->ymax);
+				glVertex2f(tile->xmin + delta_x, tile->ymax);
+				glEnd();
+
+				/* right bottom corner */
+				glBegin(GL_LINE_STRIP);
+				glVertex2f(tile->xmax - delta_x, tile->ymin);
+				glVertex2f(tile->xmax, tile->ymin);
+				glVertex2f(tile->xmax, tile->ymin + delta_y);
+				glEnd();
+
+				/* right top corner */
+				glBegin(GL_LINE_STRIP);
+				glVertex2f(tile->xmax - delta_x, tile->ymax);
+				glVertex2f(tile->xmax, tile->ymax);
+				glVertex2f(tile->xmax, tile->ymax - delta_y);
+				glEnd();
+			}
+
+			MEM_freeN(tiles);
+
+			glPopMatrix();
+		}
+	}
 }
 
 /* used by node view too */
-void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int y,
-                        const unsigned char cp[4], const float fp[4], int *zp, float *zpf)
+void ED_image_draw_info(Scene *scene, ARegion *ar, int color_manage, int use_default_view, int channels, int x, int y,
+                        const unsigned char cp[4], const float fp[4], const float linearcol[4], int *zp, float *zpf)
 {
 	char str[256];
 	float dx = 6;
@@ -135,29 +186,28 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 
 	/* noisy, high contrast make impossible to read if lower alpha is used. */
 	glColor4ub(0, 0, 0, 190);
-	glRecti(0.0, 0.0, ar->winrct.xmax - ar->winrct.xmin + 1, 20);
+	glRecti(0.0, 0.0, BLI_rcti_size_x(&ar->winrct) + 1, UI_UNIT_Y);
 	glDisable(GL_BLEND);
 
-	BLF_size(blf_mono_font, 11, 72);
+	BLF_size(blf_mono_font, 11 * U.pixelsize, U.dpi);
 
 	glColor3ub(255, 255, 255);
 	BLI_snprintf(str, sizeof(str), "X:%-4d  Y:%-4d |", x, y);
-	// UI_DrawString(6, 6, str); // works ok but fixed width is nicer.
-	BLF_position(blf_mono_font, dx, 6, 0);
+	BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_Y, 0);
 	BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 	dx += BLF_width(blf_mono_font, str);
 
 	if (zp) {
 		glColor3ub(255, 255, 255);
 		BLI_snprintf(str, sizeof(str), " Z:%-.4f |", 0.5f + 0.5f * (((float)*zp) / (float)0x7fffffff));
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 	}
 	if (zpf) {
 		glColor3ub(255, 255, 255);
 		BLI_snprintf(str, sizeof(str), " Z:%-.3f |", *zpf);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 	}
@@ -165,34 +215,34 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 	if (channels >= 3) {
 		glColor3ubv(red);
 		if (fp)
-			BLI_snprintf(str, sizeof(str), "  R:%-.4f", fp[0]);
+			BLI_snprintf(str, sizeof(str), "  R:%-.5f", fp[0]);
 		else if (cp)
 			BLI_snprintf(str, sizeof(str), "  R:%-3d", cp[0]);
 		else
 			BLI_snprintf(str, sizeof(str), "  R:-");
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 		
 		glColor3ubv(green);
 		if (fp)
-			BLI_snprintf(str, sizeof(str), "  G:%-.4f", fp[1]);
+			BLI_snprintf(str, sizeof(str), "  G:%-.5f", fp[1]);
 		else if (cp)
 			BLI_snprintf(str, sizeof(str), "  G:%-3d", cp[1]);
 		else
 			BLI_snprintf(str, sizeof(str), "  G:-");
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 		
 		glColor3ubv(blue);
 		if (fp)
-			BLI_snprintf(str, sizeof(str), "  B:%-.4f", fp[2]);
+			BLI_snprintf(str, sizeof(str), "  B:%-.5f", fp[2]);
 		else if (cp)
 			BLI_snprintf(str, sizeof(str), "  B:%-3d", cp[2]);
 		else
 			BLI_snprintf(str, sizeof(str), "  B:-");
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 		
@@ -204,7 +254,29 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 				BLI_snprintf(str, sizeof(str), "  A:%-3d", cp[3]);
 			else
 				BLI_snprintf(str, sizeof(str), "- ");
-			BLF_position(blf_mono_font, dx, 6, 0);
+			BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
+			BLF_draw_ascii(blf_mono_font, str, sizeof(str));
+			dx += BLF_width(blf_mono_font, str);
+		}
+
+		if (color_manage) {
+			float rgba[4];
+
+			copy_v3_v3(rgba, linearcol);
+			if (channels == 3)
+				rgba[3] = 1.0f;
+			else
+				rgba[3] = linearcol[3];
+
+			(void)color_manage;
+
+			if (use_default_view)
+				IMB_colormanagement_pixel_to_display_space_v4(rgba, rgba,  NULL, &scene->display_settings);
+			else
+				IMB_colormanagement_pixel_to_display_space_v4(rgba, rgba,  &scene->view_settings, &scene->display_settings);
+
+			BLI_snprintf(str, sizeof(str), "  |  CM  R:%-.4f  G:%-.4f  B:%-.4f", rgba[0], rgba[1], rgba[2]);
+			BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 			BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 			dx += BLF_width(blf_mono_font, str);
 		}
@@ -224,26 +296,11 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 		col[3] = 1.0f;
 	}
 	else if (channels == 3) {
-		if (fp) {
-			copy_v3_v3(col, fp);
-		}
-		else if (cp) {
-			rgb_uchar_to_float(col, cp);
-		}
-		else {
-			zero_v3(col);
-		}
+		copy_v3_v3(col, linearcol);
 		col[3] = 1.0f;
 	}
 	else if (channels == 4) {
-		if (fp)
-			copy_v4_v4(col, fp);
-		else if (cp) {
-			rgba_uchar_to_float(col, cp);
-		}
-		else {
-			zero_v4(col);
-		}
+		copy_v4_v4(col, linearcol);
 	}
 	else {
 		BLI_assert(0);
@@ -251,31 +308,35 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 	}
 
 	if (color_manage) {
-		linearrgb_to_srgb_v4(finalcol, col);
+		if (use_default_view)
+			IMB_colormanagement_pixel_to_display_space_v4(finalcol, col,  NULL, &scene->display_settings);
+		else
+			IMB_colormanagement_pixel_to_display_space_v4(finalcol, col,  &scene->view_settings, &scene->display_settings);
 	}
 	else {
 		copy_v4_v4(finalcol, col);
 	}
+
 	glDisable(GL_BLEND);
 	glColor3fv(finalcol);
-	dx += 5;
+	dx += 0.25f * UI_UNIT_X;
 	glBegin(GL_QUADS);
-	glVertex2f(dx, 3);
-	glVertex2f(dx, 17);
-	glVertex2f(dx + 30, 17);
-	glVertex2f(dx + 30, 3);
+	glVertex2f(dx, 0.15f * UI_UNIT_Y);
+	glVertex2f(dx, 0.85f * UI_UNIT_Y);
+	glVertex2f(dx + 1.5f * UI_UNIT_X, 0.85 * UI_UNIT_Y);
+	glVertex2f(dx + 1.5f * UI_UNIT_X, 0.15f * UI_UNIT_Y);
 	glEnd();
 
 	/* draw outline */
 	glColor3ub(128, 128, 128);
 	glBegin(GL_LINE_LOOP);
-	glVertex2f(dx, 3);
-	glVertex2f(dx, 17);
-	glVertex2f(dx + 30, 17);
-	glVertex2f(dx + 30, 3);
+	glVertex2f(dx, 0.15f * UI_UNIT_Y);
+	glVertex2f(dx, 0.85f * UI_UNIT_Y);
+	glVertex2f(dx + 1.5f * UI_UNIT_X, 0.85f * UI_UNIT_Y);
+	glVertex2f(dx + 1.5f * UI_UNIT_X, 0.15f * UI_UNIT_Y);
 	glEnd();
 
-	dx += 35;
+	dx += 1.75f * UI_UNIT_X;
 
 	glColor3ub(255, 255, 255);
 	if (channels == 1) {
@@ -289,12 +350,12 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 		}
 		
 		BLI_snprintf(str, sizeof(str), "V:%-.4f", val);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 
 		BLI_snprintf(str, sizeof(str), "   L:%-.4f", lum);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 	}
@@ -309,22 +370,22 @@ void ED_image_draw_info(ARegion *ar, int color_manage, int channels, int x, int 
 		}
 
 		BLI_snprintf(str, sizeof(str), "H:%-.4f", hue);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 
 		BLI_snprintf(str, sizeof(str), "  S:%-.4f", sat);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 
 		BLI_snprintf(str, sizeof(str), "  V:%-.4f", val);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 
 		BLI_snprintf(str, sizeof(str), "   L:%-.4f", lum);
-		BLF_position(blf_mono_font, dx, 6, 0);
+		BLF_position(blf_mono_font, dx, 0.3f * UI_UNIT_X, 0);
 		BLF_draw_ascii(blf_mono_font, str, sizeof(str));
 		dx += BLF_width(blf_mono_font, str);
 	}
@@ -357,11 +418,11 @@ static void sima_draw_alpha_pixelsf(float x1, float y1, int rectx, int recty, fl
 	MEM_freeN(trectf);
 	/* ogl trick below is slower... (on ATI 9600) */
 //	glColorMask(1, 0, 0, 0);
-//	glaDrawPixelsSafe(x1, y1, rectx, recty, rectx, GL_RGBA, GL_FLOAT, rectf+3);
+//	glaDrawPixelsSafe(x1, y1, rectx, recty, rectx, GL_RGBA, GL_FLOAT, rectf + 3);
 //	glColorMask(0, 1, 0, 0);
-//	glaDrawPixelsSafe(x1, y1, rectx, recty, rectx, GL_RGBA, GL_FLOAT, rectf+2);
+//	glaDrawPixelsSafe(x1, y1, rectx, recty, rectx, GL_RGBA, GL_FLOAT, rectf + 2);
 //	glColorMask(0, 0, 1, 0);
-//	glaDrawPixelsSafe(x1, y1, rectx, recty, rectx, GL_RGBA, GL_FLOAT, rectf+1);
+//	glaDrawPixelsSafe(x1, y1, rectx, recty, rectx, GL_RGBA, GL_FLOAT, rectf + 1);
 //	glColorMask(1, 1, 1, 1);
 }
 
@@ -417,14 +478,15 @@ static void sima_draw_zbuffloat_pixels(Scene *scene, float x1, float y1, int rec
 	MEM_freeN(rectf);
 }
 
-static void draw_image_buffer(SpaceImage *sima, ARegion *ar, Scene *scene, Image *ima, ImBuf *ibuf, float fx, float fy, float zoomx, float zoomy)
+static void draw_image_buffer(const bContext *C, SpaceImage *sima, ARegion *ar, Scene *scene, ImBuf *ibuf, float fx, float fy, float zoomx, float zoomy)
 {
 	int x, y;
-	int color_manage = scene->r.color_mgt_flag & R_COLOR_MANAGEMENT;
 
 	/* set zoom */
 	glPixelZoom(zoomx, zoomy);
 
+	glaDefine2DArea(&ar->winrct);
+	
 	/* find window pixel coordinates of origin */
 	UI_view2d_to_region_no_clip(&ar->v2d, fx, fy, &x, &y);
 
@@ -445,23 +507,14 @@ static void draw_image_buffer(SpaceImage *sima, ARegion *ar, Scene *scene, Image
 	}
 	else {
 		if (sima->flag & SI_USE_ALPHA) {
-			fdrawcheckerboard(x, y, x + ibuf->x * zoomx, y + ibuf->y * zoomy);
-
 			glEnable(GL_BLEND);
 			glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
+
+			fdrawcheckerboard(x, y, x + ibuf->x * zoomx, y + ibuf->y * zoomy);
 		}
 
-		/* we don't draw floats buffers directly but
-		 * convert them, and optionally apply curves */
-		image_verify_buffer_float(ima, ibuf, color_manage);
+		glaDrawImBuf_glsl_ctx(C, ibuf, x, y, GL_NEAREST);
 
-		if (ibuf->rect)
-			glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_RGBA, GL_UNSIGNED_BYTE, ibuf->rect);
-#if 0
-		else
-			glaDrawPixelsSafe(x, y, ibuf->x, ibuf->y, ibuf->x, GL_RGBA, GL_FLOAT, ibuf->rect_float);
-#endif
-		
 		if (sima->flag & SI_USE_ALPHA)
 			glDisable(GL_BLEND);
 	}
@@ -470,14 +523,14 @@ static void draw_image_buffer(SpaceImage *sima, ARegion *ar, Scene *scene, Image
 	glPixelZoom(1.0f, 1.0f);
 }
 
-static unsigned int *get_part_from_ibuf(ImBuf *ibuf, short startx, short starty, short endx, short endy)
+static unsigned int *get_part_from_buffer(unsigned int *buffer, int width, short startx, short starty, short endx, short endy)
 {
 	unsigned int *rt, *rp, *rectmain;
 	short y, heigth, len;
 
 	/* the right offset in rectot */
 
-	rt = ibuf->rect + (starty * ibuf->x + startx);
+	rt = buffer + (starty * width + startx);
 
 	len = (endx - startx);
 	heigth = (endy - starty);
@@ -486,7 +539,7 @@ static unsigned int *get_part_from_ibuf(ImBuf *ibuf, short startx, short starty,
 	
 	for (y = 0; y < heigth; y++) {
 		memcpy(rp, rt, len * 4);
-		rt += ibuf->x;
+		rt += width;
 		rp += len;
 	}
 	return rectmain;
@@ -494,28 +547,34 @@ static unsigned int *get_part_from_ibuf(ImBuf *ibuf, short startx, short starty,
 
 static void draw_image_buffer_tiled(SpaceImage *sima, ARegion *ar, Scene *scene, Image *ima, ImBuf *ibuf, float fx, float fy, float zoomx, float zoomy)
 {
+	unsigned char *display_buffer;
 	unsigned int *rect;
 	int dx, dy, sx, sy, x, y;
-	int color_manage = scene->r.color_mgt_flag & R_COLOR_MANAGEMENT;
+	void *cache_handle;
 
 	/* verify valid values, just leave this a while */
 	if (ima->xrep < 1) return;
 	if (ima->yrep < 1) return;
-	
+
+	if (ima->flag & IMA_VIEW_AS_RENDER)
+		display_buffer = IMB_display_buffer_acquire(ibuf, &scene->view_settings, &scene->display_settings, &cache_handle);
+	else
+		display_buffer = IMB_display_buffer_acquire(ibuf, NULL, &scene->display_settings, &cache_handle);
+
+	if (!display_buffer)
+		return;
+
 	glPixelZoom(zoomx, zoomy);
 
 	if (sima->curtile >= ima->xrep * ima->yrep)
 		sima->curtile = ima->xrep * ima->yrep - 1;
 	
-	/* create char buffer from float if needed */
-	image_verify_buffer_float(ima, ibuf, color_manage);
-
 	/* retrieve part of image buffer */
-	dx = ibuf->x / ima->xrep;
-	dy = ibuf->y / ima->yrep;
+	dx = max_ii(ibuf->x / ima->xrep, 1);
+	dy = max_ii(ibuf->y / ima->yrep, 1);
 	sx = (sima->curtile % ima->xrep) * dx;
 	sy = (sima->curtile / ima->xrep) * dy;
-	rect = get_part_from_ibuf(ibuf, sx, sy, sx + dx, sy + dy);
+	rect = get_part_from_buffer((unsigned int *)display_buffer, ibuf->x, sx, sy, sx + dx, sy + dy);
 	
 	/* draw repeated */
 	for (sy = 0; sy + dy <= ibuf->y; sy += dy) {
@@ -528,10 +587,12 @@ static void draw_image_buffer_tiled(SpaceImage *sima, ARegion *ar, Scene *scene,
 
 	glPixelZoom(1.0f, 1.0f);
 
+	IMB_display_buffer_release(cache_handle);
+
 	MEM_freeN(rect);
 }
 
-static void draw_image_buffer_repeated(SpaceImage *sima, ARegion *ar, Scene *scene, Image *ima, ImBuf *ibuf, float zoomx, float zoomy)
+static void draw_image_buffer_repeated(const bContext *C, SpaceImage *sima, ARegion *ar, Scene *scene, Image *ima, ImBuf *ibuf, float zoomx, float zoomy)
 {
 	const double time_current = PIL_check_seconds_timer();
 
@@ -548,7 +609,7 @@ static void draw_image_buffer_repeated(SpaceImage *sima, ARegion *ar, Scene *sce
 			if (ima && (ima->tpageflag & IMA_TILES))
 				draw_image_buffer_tiled(sima, ar, scene, ima, ibuf, x, y, zoomx, zoomy);
 			else
-				draw_image_buffer(sima, ar, scene, ima, ibuf, x, y, zoomx, zoomy);
+				draw_image_buffer(C, sima, ar, scene, ibuf, x, y, zoomx, zoomy);
 
 			/* only draw until running out of time */
 			if ((PIL_check_seconds_timer() - time_current) > 0.25)
@@ -569,7 +630,7 @@ void draw_image_grease_pencil(bContext *C, short onlyv2d)
 	}
 	else {
 		/* assume that UI_view2d_restore(C) has been called... */
-		//SpaceImage *sima= (SpaceImage *)CTX_wm_space_data(C);
+		//SpaceImage *sima = (SpaceImage *)CTX_wm_space_data(C);
 		
 		/* draw grease-pencil ('screen' strokes) */
 		draw_gpencil_view2d(C, 0);
@@ -631,24 +692,40 @@ static void draw_image_view_tool(Scene *scene)
 }
 #endif
 
-static unsigned char *get_alpha_clone_image(Scene *scene, int *width, int *height)
+static unsigned char *get_alpha_clone_image(const bContext *C, Scene *scene, int *width, int *height)
 {
-	Brush *brush = paint_brush(&scene->toolsettings->imapaint.paint);
+	Brush *brush = BKE_paint_brush(&scene->toolsettings->imapaint.paint);
 	ImBuf *ibuf;
 	unsigned int size, alpha;
+	unsigned char *display_buffer;
 	unsigned char *rect, *cp;
+	void *cache_handle;
 
 	if (!brush || !brush->clone.image)
 		return NULL;
 	
-	ibuf = BKE_image_get_ibuf(brush->clone.image, NULL);
+	ibuf = BKE_image_acquire_ibuf(brush->clone.image, NULL, NULL);
 
-	if (!ibuf || !ibuf->rect)
+	if (!ibuf)
 		return NULL;
 
-	rect = MEM_dupallocN(ibuf->rect);
-	if (!rect)
+	display_buffer = IMB_display_buffer_acquire_ctx(C, ibuf, &cache_handle);
+
+	if (!display_buffer) {
+		BKE_image_release_ibuf(brush->clone.image, ibuf, NULL);
+		IMB_display_buffer_release(cache_handle);
+
 		return NULL;
+	}
+
+	rect = MEM_dupallocN(display_buffer);
+
+	IMB_display_buffer_release(cache_handle);
+
+	if (!rect) {
+		BKE_image_release_ibuf(brush->clone.image, ibuf, NULL);
+		return NULL;
+	}
 
 	*width = ibuf->x;
 	*height = ibuf->y;
@@ -662,21 +739,23 @@ static unsigned char *get_alpha_clone_image(Scene *scene, int *width, int *heigh
 		cp += 4;
 	}
 
+	BKE_image_release_ibuf(brush->clone.image, ibuf, NULL);
+
 	return rect;
 }
 
-static void draw_image_paint_helpers(ARegion *ar, Scene *scene, float zoomx, float zoomy)
+static void draw_image_paint_helpers(const bContext *C, ARegion *ar, Scene *scene, float zoomx, float zoomy)
 {
 	Brush *brush;
 	int x, y, w, h;
 	unsigned char *clonerect;
 
-	brush = paint_brush(&scene->toolsettings->imapaint.paint);
+	brush = BKE_paint_brush(&scene->toolsettings->imapaint.paint);
 
 	if (brush && (brush->imagepaint_tool == PAINT_TOOL_CLONE)) {
 		/* this is not very efficient, but glDrawPixels doesn't allow
 		 * drawing with alpha */
-		clonerect = get_alpha_clone_image(scene, &w, &h);
+		clonerect = get_alpha_clone_image(C, scene, &w, &h);
 
 		if (clonerect) {
 			UI_view2d_to_region_no_clip(&ar->v2d, brush->clone.offset[0], brush->clone.offset[1], &x, &y);
@@ -697,12 +776,14 @@ static void draw_image_paint_helpers(ARegion *ar, Scene *scene, float zoomx, flo
 
 /* draw main image area */
 
-void draw_image_main(SpaceImage *sima, ARegion *ar, Scene *scene)
+void draw_image_main(const bContext *C, ARegion *ar)
 {
+	SpaceImage *sima = CTX_wm_space_image(C);
+	Scene *scene = CTX_data_scene(C);
 	Image *ima;
 	ImBuf *ibuf;
 	float zoomx, zoomy;
-	int show_viewer, show_render;
+	bool show_viewer, show_render, show_paint;
 	void *lock;
 
 	/* XXX can we do this in refresh? */
@@ -729,11 +810,12 @@ void draw_image_main(SpaceImage *sima, ARegion *ar, Scene *scene)
 	ima = ED_space_image(sima);
 	ED_space_image_get_zoom(sima, ar, &zoomx, &zoomy);
 
-	show_viewer = (ima && ima->source == IMA_SRC_VIEWER);
-	show_render = (show_viewer && ima->type == IMA_TYPE_R_RESULT);
+	show_viewer = (ima && ima->source == IMA_SRC_VIEWER) != 0;
+	show_render = (show_viewer && ima->type == IMA_TYPE_R_RESULT) != 0;
+	show_paint = (ima && (sima->mode == SI_MODE_PAINT) && (show_viewer == false) && (show_render == false));
 
 	if (show_viewer) {
-		/* use locked draw for drawing viewer image buffer since the conpositor
+		/* use locked draw for drawing viewer image buffer since the compositor
 		 * is running in separated thread and compositor could free this buffers.
 		 * other images are not modifying in such a way so they does not require
 		 * lock (sergey)
@@ -747,16 +829,15 @@ void draw_image_main(SpaceImage *sima, ARegion *ar, Scene *scene)
 	if (ibuf == NULL)
 		ED_region_grid_draw(ar, zoomx, zoomy);
 	else if (sima->flag & SI_DRAW_TILE)
-		draw_image_buffer_repeated(sima, ar, scene, ima, ibuf, zoomx, zoomy);
+		draw_image_buffer_repeated(C, sima, ar, scene, ima, ibuf, zoomx, zoomy);
 	else if (ima && (ima->tpageflag & IMA_TILES))
 		draw_image_buffer_tiled(sima, ar, scene, ima, ibuf, 0.0f, 0.0, zoomx, zoomy);
 	else
-		draw_image_buffer(sima, ar, scene, ima, ibuf, 0.0f, 0.0f, zoomx, zoomy);
+		draw_image_buffer(C, sima, ar, scene, ibuf, 0.0f, 0.0f, zoomx, zoomy);
 
 	/* paint helpers */
-	if (sima->mode == SI_MODE_PAINT)
-		draw_image_paint_helpers(ar, scene, zoomx, zoomy);
-
+	if (show_paint)
+		draw_image_paint_helpers(C, ar, scene, zoomx, zoomy);
 
 	/* XXX integrate this code */
 #if 0
@@ -767,7 +848,7 @@ void draw_image_main(SpaceImage *sima, ARegion *ar, Scene *scene)
 			xoffs = scene->r.disprect.xmin;
 			yoffs = scene->r.disprect.ymin;
 			glColor3ub(0, 0, 0);
-			calc_image_view(sima, 'f');	
+			calc_image_view(sima, 'f');
 			myortho2(G.v2d->cur.xmin, G.v2d->cur.xmax, G.v2d->cur.ymin, G.v2d->cur.ymax);
 			glRectf(0.0f, 0.0f, 1.0f, 1.0f);
 			glLoadIdentity();
@@ -775,7 +856,7 @@ void draw_image_main(SpaceImage *sima, ARegion *ar, Scene *scene)
 	}
 #endif
 
-	ED_space_image_release_buffer(sima, lock);
+	ED_space_image_release_buffer(sima, ibuf, lock);
 
 	if (show_viewer) {
 		BLI_unlock_thread(LOCK_DRAW_IMAGE);
@@ -783,5 +864,5 @@ void draw_image_main(SpaceImage *sima, ARegion *ar, Scene *scene)
 
 	/* render info */
 	if (ima && show_render)
-		draw_render_info(scene, ima, ar);
+		draw_render_info(scene, ima, ar, zoomx, zoomy);
 }

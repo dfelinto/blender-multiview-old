@@ -21,6 +21,7 @@
 
 # <pep8 compliant>
 
+# Contributor(s): Keith "Wahooney" Boshoff, Campbell Barton
 
 def applyVertexDirt(me, blur_iterations, blur_strength, clamp_dirt, clamp_clean, dirt_only):
     from mathutils import Vector
@@ -122,18 +123,19 @@ def applyVertexDirt(me, blur_iterations, blur_strength, clamp_dirt, clamp_clean,
 
                 if dirt_only:
                     tone = min(tone, 0.5)
-                    tone *= 2
+                    tone *= 2.0
 
                 col[0] = tone * col[0]
                 col[1] = tone * col[1]
                 col[2] = tone * col[2]
-
+    me.update()
     return {'FINISHED'}
 
 
 import bpy
 from bpy.types import Operator
 from bpy.props import FloatProperty, IntProperty, BoolProperty
+from math import pi
 
 
 class VertexPaintDirt(Operator):
@@ -156,14 +158,16 @@ class VertexPaintDirt(Operator):
     clean_angle = FloatProperty(
             name="Highlight Angle",
             description="Less than 90 limits the angle used in the tonal range",
-            min=0.0, max=180.0,
-            default=180.0,
+            min=0.0, max=pi,
+            default=pi,
+            unit="ROTATION",
             )
     dirt_angle = FloatProperty(
             name="Dirt Angle",
             description="Less than 90 limits the angle used in the tonal range",
-            min=0.0, max=180.0,
+            min=0.0, max=pi,
             default=0.0,
+            unit="ROTATION",
             )
     dirt_only = BoolProperty(
             name="Dirt Only",
@@ -171,20 +175,21 @@ class VertexPaintDirt(Operator):
             default=False,
             )
 
+    @classmethod
+    def poll(cls, context):
+        obj = context.object
+        return (obj and obj.type == 'MESH')
+
     def execute(self, context):
         import time
         from math import radians
+
         obj = context.object
-
-        if not obj or obj.type != 'MESH':
-            self.report({'ERROR'}, "Error, no active mesh object, aborting")
-            return {'CANCELLED'}
-
         mesh = obj.data
 
         t = time.time()
 
-        ret = applyVertexDirt(mesh, self.blur_iterations, self.blur_strength, radians(self.dirt_angle), radians(self.clean_angle), self.dirt_only)
+        ret = applyVertexDirt(mesh, self.blur_iterations, self.blur_strength, self.dirt_angle, self.clean_angle, self.dirt_only)
 
         print('Dirt calculated in %.6f' % (time.time() - t))
 

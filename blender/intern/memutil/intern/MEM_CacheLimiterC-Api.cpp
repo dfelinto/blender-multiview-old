@@ -59,9 +59,9 @@ public:
 	}
 	~MEM_CacheLimiterCClass();
 
-	handle_t * insert(void * data);
+	handle_t * insert(void *data);
 
-	void destruct(void * data, list_t::iterator it);
+	void destruct(void *data, list_t::iterator it);
 
 	cache_t * get_cache() {
 		return &cache;
@@ -76,7 +76,7 @@ private:
 
 class MEM_CacheLimiterHandleCClass {
 public:
-	MEM_CacheLimiterHandleCClass(void * data_, MEM_CacheLimiterCClass * parent_) :
+	MEM_CacheLimiterHandleCClass(void *data_, MEM_CacheLimiterCClass *parent_) :
 		data(data_),
 		parent(parent_)
 	{ }
@@ -87,7 +87,7 @@ public:
 		it = it_;
 	}
 
-	void set_data(void * data_) {
+	void set_data(void *data_) {
 		data = data_;
 	}
 
@@ -101,7 +101,7 @@ private:
 	list_t::iterator it;
 };
 
-handle_t *MEM_CacheLimiterCClass::insert(void * data)
+handle_t *MEM_CacheLimiterCClass::insert(void *data)
 {
 	cclass_list.push_back(new MEM_CacheLimiterHandleCClass(data, this));
 	list_t::iterator it = cclass_list.end();
@@ -111,7 +111,7 @@ handle_t *MEM_CacheLimiterCClass::insert(void * data)
 	return cache.insert(cclass_list.back());
 }
 
-void MEM_CacheLimiterCClass::destruct(void * data, list_t::iterator it)
+void MEM_CacheLimiterCClass::destruct(void *data, list_t::iterator it)
 {
 	data_destructor(data);
 	cclass_list.erase(it);
@@ -128,7 +128,7 @@ MEM_CacheLimiterCClass::~MEM_CacheLimiterCClass()
 {
 	// should not happen, but don't leak memory in this case...
 	for (list_t::iterator it = cclass_list.begin(); it != cclass_list.end(); it++) {
-		(*it)->set_data(0);
+		(*it)->set_data(NULL);
 
 		delete *it;
 	}
@@ -201,4 +201,9 @@ void MEM_CacheLimiter_ItemPriority_Func_set(MEM_CacheLimiterC *This,
                                             MEM_CacheLimiter_ItemPriority_Func item_priority_func)
 {
 	cast(This)->get_cache()->set_item_priority_func(item_priority_func);
+}
+
+size_t MEM_CacheLimiter_get_memory_in_use(MEM_CacheLimiterC *This)
+{
+	return cast(This)->get_cache()->get_memory_in_use();
 }

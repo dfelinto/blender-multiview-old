@@ -26,6 +26,7 @@
 #include "COM_RotateOperation.h"
 #include "COM_ScaleOperation.h"
 #include "COM_MovieClipAttributeOperation.h"
+#include "COM_SetSamplerOperation.h"
 
 extern "C" {
 	#include "DNA_movieclip_types.h"
@@ -49,6 +50,7 @@ void Stabilize2dNode::convertToOperations(ExecutionSystem *graph, CompositorCont
 	MovieClipAttributeOperation *angleAttribute = new MovieClipAttributeOperation();
 	MovieClipAttributeOperation *xAttribute = new MovieClipAttributeOperation();
 	MovieClipAttributeOperation *yAttribute = new MovieClipAttributeOperation();
+	SetSamplerOperation *psoperation = new SetSamplerOperation();
 
 	scaleAttribute->setAttribute(MCA_SCALE);
 	scaleAttribute->setFramenumber(context->getFramenumber());
@@ -70,6 +72,8 @@ void Stabilize2dNode::convertToOperations(ExecutionSystem *graph, CompositorCont
 	addLink(graph, scaleAttribute->getOutputSocket(), scaleOperation->getInputSocket(1));
 	addLink(graph, scaleAttribute->getOutputSocket(), scaleOperation->getInputSocket(2));
 	
+	scaleOperation->setSampler((PixelSampler)this->getbNode()->custom1);
+	
 	addLink(graph, scaleOperation->getOutputSocket(), rotateOperation->getInputSocket(0));
 	addLink(graph, angleAttribute->getOutputSocket(), rotateOperation->getInputSocket(1));
 	rotateOperation->setDoDegree2RadConversion(false);
@@ -77,8 +81,10 @@ void Stabilize2dNode::convertToOperations(ExecutionSystem *graph, CompositorCont
 	addLink(graph, rotateOperation->getOutputSocket(), translateOperation->getInputSocket(0));
 	addLink(graph, xAttribute->getOutputSocket(), translateOperation->getInputSocket(1));
 	addLink(graph, yAttribute->getOutputSocket(), translateOperation->getInputSocket(2));
-
-	this->getOutputSocket()->relinkConnections(translateOperation->getOutputSocket());
+	
+	psoperation->setSampler((PixelSampler)this->getbNode()->custom1);
+	addLink(graph, translateOperation->getOutputSocket(), psoperation->getInputSocket(0));
+	this->getOutputSocket()->relinkConnections(psoperation->getOutputSocket());
 	
 	graph->addOperation(scaleAttribute);
 	graph->addOperation(angleAttribute);
@@ -87,4 +93,5 @@ void Stabilize2dNode::convertToOperations(ExecutionSystem *graph, CompositorCont
 	graph->addOperation(scaleOperation);
 	graph->addOperation(translateOperation);
 	graph->addOperation(rotateOperation);
+	graph->addOperation(psoperation);
 }

@@ -34,8 +34,8 @@
 
 #include "BLI_utildefines.h"
 #include "BLI_blenlib.h"
+#include "BLI_bitmap.h"
 #include "BLI_math.h"
-#include "BLI_edgehash.h"
 #include "BLI_utildefines.h"
 
 #include "DNA_material_types.h"
@@ -51,11 +51,12 @@
 
 #include "BKE_DerivedMesh.h"
 #include "BKE_effect.h"
+#include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_material.h"
 #include "BKE_paint.h"
 #include "BKE_property.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_scene.h"
 
 #include "BIF_gl.h"
@@ -76,7 +77,7 @@
 /* user data structures for derived mesh callbacks */
 typedef struct drawMeshFaceSelect_userData {
 	Mesh *me;
-	EdgeHash *eh;
+	BLI_bitmap edge_flags; /* pairs of edge options (visible, select) */
 } drawMeshFaceSelect_userData;
 
 typedef struct drawEMTFMapped_userData {
@@ -94,48 +95,33 @@ typedef struct drawTFace_userData {
 
 /**************************** Face Select Mode *******************************/
 
-/* Flags for marked edges */
-enum {
-	eEdge_Visible = (1 << 0),
-	eEdge_Select = (1 << 1),
-};
+/* mainly to be less confusing */
+BLI_INLINE int edge_vis_index(const int index) { return index * 2; }
+BLI_INLINE int edge_sel_index(const int index) { return index * 2 + 1; }
 
-/* Creates a hash of edges to flags indicating selected/visible */
-static void get_marked_edge_info__orFlags(EdgeHash *eh, int v0, int v1, int flags)
+static BLI_bitmap get_tface_mesh_marked_edge_info(Mesh *me)
 {
-	int *flags_p;
-
-	if (!BLI_edgehash_haskey(eh, v0, v1))
-		BLI_edgehash_insert(eh, v0, v1, NULL);
-
-	flags_p = (int *) BLI_edgehash_lookup_p(eh, v0, v1);
-	*flags_p |= flags;
-}
-
-static EdgeHash *get_tface_mesh_marked_edge_info(Mesh *me)
-{
-	EdgeHash *eh = BLI_edgehash_new();
+	BLI_bitmap bitmap_edge_flags = BLI_BITMAP_NEW(me->totedge * 2, __func__);
 	MPoly *mp;
 	MLoop *ml;
-	MLoop *ml_next;
 	int i, j;
+	bool select_set;
 	
 	for (i = 0; i < me->totpoly; i++) {
 		mp = &me->mpoly[i];
 
 		if (!(mp->flag & ME_HIDE)) {
-			unsigned int flags = eEdge_Visible;
-			if (mp->flag & ME_FACE_SEL) flags |= eEdge_Select;
+			select_set = (mp->flag & ME_FACE_SEL) != 0;
 
 			ml = me->mloop + mp->loopstart;
 			for (j = 0; j < mp->totloop; j++, ml++) {
-				ml_next = ME_POLY_LOOP_NEXT(me->mloop, mp, j);
-				get_marked_edge_info__orFlags(eh, ml->v, ml_next->v, flags);
+				BLI_BITMAP_SET(bitmap_edge_flags, edge_vis_index(ml->e));
+				if (select_set) BLI_BITMAP_SET(bitmap_edge_flags, edge_sel_index(ml->e));
 			}
 		}
 	}
 
-	return eh;
+	return bitmap_edge_flags;
 }
 
 
@@ -143,16 +129,14 @@ static DMDrawOption draw_mesh_face_select__setHiddenOpts(void *userData, int ind
 {
 	drawMeshFaceSelect_userData *data = userData;
 	Mesh *me = data->me;
-	MEdge *med = &me->medge[index];
-	uintptr_t flags = (intptr_t) BLI_edgehash_lookup(data->eh, med->v1, med->v2);
 
 	if (me->drawflag & ME_DRAWEDGES) {
-		if ((me->drawflag & ME_HIDDENEDGES) || (flags & eEdge_Visible))
+		if ((me->drawflag & ME_HIDDENEDGES) || (BLI_BITMAP_GET(data->edge_flags, edge_vis_index(index))))
 			return DM_DRAW_OPTION_NORMAL;
 		else
 			return DM_DRAW_OPTION_SKIP;
 	}
-	else if (flags & eEdge_Select)
+	else if (BLI_BITMAP_GET(data->edge_flags, edge_sel_index(index)))
 		return DM_DRAW_OPTION_NORMAL;
 	else
 		return DM_DRAW_OPTION_SKIP;
@@ -161,10 +145,7 @@ static DMDrawOption draw_mesh_face_select__setHiddenOpts(void *userData, int ind
 static DMDrawOption draw_mesh_face_select__setSelectOpts(void *userData, int index)
 {
 	drawMeshFaceSelect_userData *data = userData;
-	MEdge *med = &data->me->medge[index];
-	uintptr_t flags = (intptr_t) BLI_edgehash_lookup(data->eh, med->v1, med->v2);
-
-	return (flags & eEdge_Select) ? DM_DRAW_OPTION_NORMAL : DM_DRAW_OPTION_SKIP;
+	return (BLI_BITMAP_GET(data->edge_flags, edge_sel_index(index))) ? DM_DRAW_OPTION_NORMAL : DM_DRAW_OPTION_SKIP;
 }
 
 /* draws unselected */
@@ -184,7 +165,7 @@ void draw_mesh_face_select(RegionView3D *rv3d, Mesh *me, DerivedMesh *dm)
 	drawMeshFaceSelect_userData data;
 
 	data.me = me;
-	data.eh = get_tface_mesh_marked_edge_info(me);
+	data.edge_flags = get_tface_mesh_marked_edge_info(me);
 
 	glEnable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -216,7 +197,7 @@ void draw_mesh_face_select(RegionView3D *rv3d, Mesh *me, DerivedMesh *dm)
 
 	bglPolygonOffset(rv3d->dist, 0.0);  /* resets correctly now, even after calling accumulated offsets */
 
-	BLI_edgehash_free(data.eh, NULL);
+	MEM_freeN(data.edge_flags);
 }
 
 /***************************** Texture Drawing ******************************/
@@ -235,31 +216,32 @@ static struct TextureDrawState {
 	Object *ob;
 	int is_lit, is_tex;
 	int color_profile;
+	bool use_backface_culling;
 	unsigned char obcol[4];
-} Gtexdraw = {NULL, 0, 0, 0, {0, 0, 0, 0}};
+} Gtexdraw = {NULL, 0, 0, 0, false, {0, 0, 0, 0}};
 
-static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *ma, struct TextureDrawState gtexdraw)
+static bool set_draw_settings_cached(int clearcache, MTFace *texface, Material *ma, struct TextureDrawState gtexdraw)
 {
 	static Material *c_ma;
 	static int c_textured;
 	static MTFace c_texface;
 	static int c_backculled;
-	static int c_badtex;
+	static bool c_badtex;
 	static int c_lit;
 	static int c_has_texface;
 
 	Object *litob = NULL;  /* to get mode to turn off mipmap in painting mode */
-	int backculled = GEMAT_BACKCULL;
+	int backculled = 1;
 	int alphablend = 0;
 	int textured = 0;
 	int lit = 0;
 	int has_texface = texface != NULL;
-	int need_set_tpage = FALSE;
+	bool need_set_tpage = false;
 
 	if (clearcache) {
 		c_textured = c_lit = c_backculled = -1;
 		memset(&c_texface, 0, sizeof(MTFace));
-		c_badtex = 0;
+		c_badtex = false;
 		c_has_texface = -1;
 	}
 	else {
@@ -273,7 +255,7 @@ static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *m
 	if (ma) {
 		alphablend = ma->game.alpha_blend;
 		if (ma->mode & MA_SHLESS) lit = 0;
-		backculled = ma->game.flag & GEMAT_BACKCULL;
+		backculled = (ma->game.flag & GEMAT_BACKCULL) || gtexdraw.use_backface_culling;
 	}
 
 	if (texface) {
@@ -305,7 +287,7 @@ static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *m
 		}
 		else {
 			GPU_set_tpage(NULL, 0, 0);
-			c_badtex = 0;
+			c_badtex = false;
 		}
 		c_textured = textured;
 		c_has_texface = has_texface;
@@ -343,7 +325,7 @@ static int set_draw_settings_cached(int clearcache, MTFace *texface, Material *m
 static void draw_textured_begin(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob)
 {
 	unsigned char obcol[4];
-	int is_tex, solidtex;
+	bool is_tex, solidtex;
 	Mesh *me = ob->data;
 
 	/* XXX scene->obedit warning */
@@ -351,38 +333,35 @@ static void draw_textured_begin(Scene *scene, View3D *v3d, RegionView3D *rv3d, O
 	/* texture draw is abused for mask selection mode, do this so wire draw
 	 * with face selection in weight paint is not lit. */
 	if ((v3d->drawtype <= OB_WIRE) && (ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT))) {
-		solidtex = FALSE;
+		solidtex = false;
 		Gtexdraw.is_lit = 0;
 	}
 	else if (v3d->drawtype == OB_SOLID || ((ob->mode & OB_MODE_EDIT) && v3d->drawtype != OB_TEXTURE)) {
 		/* draw with default lights in solid draw mode and edit mode */
-		solidtex = TRUE;
+		solidtex = true;
 		Gtexdraw.is_lit = -1;
 	}
 	else {
 		/* draw with lights in the scene otherwise */
-		solidtex = FALSE;
+		solidtex = false;
 		Gtexdraw.is_lit = GPU_scene_object_lights(scene, ob, v3d->lay, rv3d->viewmat, !rv3d->is_persp);
 	}
 	
 	rgba_float_to_uchar(obcol, ob->col);
 
-	if (solidtex || v3d->drawtype == OB_TEXTURE) is_tex = 1;
-	else is_tex = 0;
+	if (solidtex || v3d->drawtype == OB_TEXTURE) is_tex = true;
+	else is_tex = false;
 
 	Gtexdraw.ob = ob;
 	Gtexdraw.is_tex = is_tex;
-	Gtexdraw.color_profile = scene->r.color_mgt_flag & R_COLOR_MANAGEMENT;
+
+	Gtexdraw.color_profile = BKE_scene_check_color_management_enabled(scene);
+	Gtexdraw.use_backface_culling = (v3d->flag2 & V3D_BACKFACE_CULLING) != 0;
+
 	memcpy(Gtexdraw.obcol, obcol, sizeof(obcol));
 	set_draw_settings_cached(1, NULL, NULL, Gtexdraw);
 	glShadeModel(GL_SMOOTH);
-	if (v3d->flag2 & V3D_BACKFACE_CULLING) {
-		glEnable(GL_CULL_FACE);
-		glCullFace(GL_BACK);
-	}
-	else {		
-		glDisable(GL_CULL_FACE);
-	}
+	glCullFace(GL_BACK);
 	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, (me->flag & ME_TWOSIDED) ? GL_TRUE : GL_FALSE);
 }
 
@@ -393,6 +372,7 @@ static void draw_textured_end(void)
 
 	glShadeModel(GL_FLAT);
 	glDisable(GL_CULL_FACE);
+	glLightModeli(GL_LIGHT_MODEL_TWO_SIDE, GL_FALSE);
 
 	/* XXX, bad patch - GPU_default_lights() calls
 	 * glLightfv(GL_POSITION, ...) which
@@ -404,7 +384,7 @@ static void draw_textured_end(void)
 	 *  - zr
 	 */
 	glPushMatrix();
-	glLoadIdentity();	
+	glLoadIdentity();
 	GPU_default_lights();
 	glPopMatrix();
 }
@@ -412,14 +392,14 @@ static void draw_textured_end(void)
 static DMDrawOption draw_tface__set_draw_legacy(MTFace *tface, int has_mcol, int matnr)
 {
 	Material *ma = give_current_material(Gtexdraw.ob, matnr + 1);
-	int validtexture = 0;
+	bool invalidtexture = false;
 
 	if (ma && (ma->game.flag & GEMAT_INVISIBLE))
 		return DM_DRAW_OPTION_SKIP;
 
-	validtexture = set_draw_settings_cached(0, tface, ma, Gtexdraw);
+	invalidtexture = set_draw_settings_cached(0, tface, ma, Gtexdraw);
 
-	if (tface && validtexture) {
+	if (tface && invalidtexture) {
 		glColor3ub(0xFF, 0x00, 0xFF);
 		return DM_DRAW_OPTION_NO_MCOL; /* Don't set color */
 	}
@@ -428,7 +408,9 @@ static DMDrawOption draw_tface__set_draw_legacy(MTFace *tface, int has_mcol, int
 		return DM_DRAW_OPTION_NO_MCOL; /* Don't set color */
 	}
 	else if (!has_mcol) {
-		if (tface) glColor3f(1.0, 1.0, 1.0);
+		if (tface) {
+			glColor3f(1.0, 1.0, 1.0);
+		}
 		else {
 			if (ma) {
 				float col[3];
@@ -437,7 +419,9 @@ static DMDrawOption draw_tface__set_draw_legacy(MTFace *tface, int has_mcol, int
 				
 				glColor3fv(col);
 			}
-			else glColor3f(1.0, 1.0, 1.0);
+			else {
+				glColor3f(1.0, 1.0, 1.0);
+			}
 		}
 		return DM_DRAW_OPTION_NO_MCOL; /* Don't set color */
 	}
@@ -454,25 +438,17 @@ static DMDrawOption draw_mcol__set_draw_legacy(MTFace *UNUSED(tface), int has_mc
 		return DM_DRAW_OPTION_NO_MCOL;
 }
 
-static DMDrawOption draw_tface__set_draw(MTFace *tface, int has_mcol, int matnr)
+static DMDrawOption draw_tface__set_draw(MTFace *tface, int UNUSED(has_mcol), int matnr)
 {
 	Material *ma = give_current_material(Gtexdraw.ob, matnr + 1);
 
 	if (ma && (ma->game.flag & GEMAT_INVISIBLE)) return 0;
 
-	if (tface && set_draw_settings_cached(0, tface, ma, Gtexdraw)) {
-		return DM_DRAW_OPTION_NO_MCOL; /* Don't set color */
-	}
-	else if (tface && (tface->mode & TF_OBCOL)) {
-		return DM_DRAW_OPTION_NO_MCOL; /* Don't set color */
-	}
-	else if (!has_mcol) {
-		/* XXX: this return value looks wrong (and doesn't match comment) */
-		return DM_DRAW_OPTION_NORMAL; /* Don't set color */
-	}
-	else {
-		return DM_DRAW_OPTION_NORMAL; /* Set color from mcol */
-	}
+	if (tface)
+		set_draw_settings_cached(0, tface, ma, Gtexdraw);
+
+	/* always use color from mcol, as set in update_tface_color_layer */
+	return DM_DRAW_OPTION_NORMAL;
 }
 
 static void update_tface_color_layer(DerivedMesh *dm)
@@ -507,18 +483,18 @@ static void update_tface_color_layer(DerivedMesh *dm)
 					finalCol[i * 4 + j].r = 255;
 				}
 		}
-		else if (tface && mface && set_draw_settings_cached(0, tface, ma, Gtexdraw)) {
+		else if (tface && set_draw_settings_cached(0, tface, ma, Gtexdraw)) {
 			for (j = 0; j < 4; j++) {
 				finalCol[i * 4 + j].b = 255;
 				finalCol[i * 4 + j].g = 0;
 				finalCol[i * 4 + j].r = 255;
 			}
 		}
-		else if (tface && (tface->mode & TF_OBCOL)) {
+		else if (ma && (ma->shade_flag & MA_OBCOLOR)) {
 			for (j = 0; j < 4; j++) {
-				finalCol[i * 4 + j].b = FTOCHAR(Gtexdraw.obcol[0]);
-				finalCol[i * 4 + j].g = FTOCHAR(Gtexdraw.obcol[1]);
-				finalCol[i * 4 + j].r = FTOCHAR(Gtexdraw.obcol[2]);
+				finalCol[i * 4 + j].b = Gtexdraw.obcol[0];
+				finalCol[i * 4 + j].g = Gtexdraw.obcol[1];
+				finalCol[i * 4 + j].r = Gtexdraw.obcol[2];
 			}
 		}
 		else if (!mcol) {
@@ -531,8 +507,7 @@ static void update_tface_color_layer(DerivedMesh *dm)
 			}
 			else {
 				float col[3];
-				Material *ma = give_current_material(Gtexdraw.ob, mface[i].mat_nr + 1);
-				
+
 				if (ma) {
 					if (Gtexdraw.color_profile) linearrgb_to_srgb_v3_v3(col, &ma->r);
 					else copy_v3_v3(col, &ma->r);
@@ -630,12 +605,12 @@ static void draw_mesh_text(Scene *scene, Object *ob, int glsl)
 	MLoopCol *mloopcol = me->mloopcol;  /* why does mcol exist? */
 	MLoopCol *lcol;
 
-	bProperty *prop = get_ob_property(ob, "Text");
+	bProperty *prop = BKE_bproperty_object_get(ob, "Text");
 	GPUVertexAttribs gattribs;
 	int a, totpoly = me->totpoly;
 
 	/* fake values to pass to GPU_render_text() */
-	MCol tmp_mcol[4]  = {{0}};
+	MCol  tmp_mcol[4]  = {{0}};
 	MCol *tmp_mcol_pt  = mloopcol ? tmp_mcol : NULL;
 	MTFace tmp_tf      = {{{0}}};
 
@@ -655,8 +630,9 @@ static void draw_mesh_text(Scene *scene, Object *ob, int glsl)
 	for (a = 0, mp = mface; a < totpoly; a++, mtpoly++, mp++) {
 		short matnr = mp->mat_nr;
 		int mf_smooth = mp->flag & ME_SMOOTH;
-		Material *mat = me->mat[matnr];
+		Material *mat = (me->mat) ? me->mat[matnr] : NULL;
 		int mode = mat ? mat->game.flag : GEMAT_INVISIBLE;
+
 
 		if (!(mode & GEMAT_INVISIBLE) && (mode & GEMAT_TEXT) && mp->totloop >= 3) {
 			/* get the polygon as a tri/quad */
@@ -702,11 +678,11 @@ static void draw_mesh_text(Scene *scene, Object *ob, int glsl)
 
 			/* COLOR */
 			if (mloopcol) {
-				unsigned int totloop_clamp = MIN2(4, mp->totloop);
+				unsigned int totloop_clamp = min_ii(4, mp->totloop);
 				unsigned int j;
 				lcol = &mloopcol[mp->loopstart];
 
-				for (j = 0; j <= totloop_clamp; j++, lcol++) {
+				for (j = 0; j < totloop_clamp; j++, lcol++) {
 					MESH_MLOOPCOL_TO_MCOL(lcol, &tmp_mcol[j]);
 				}
 			}
@@ -724,10 +700,10 @@ static void draw_mesh_text(Scene *scene, Object *ob, int glsl)
 			/* The BM_FONT handling is in the gpu module, shared with the
 			 * game engine, was duplicated previously */
 
-			set_property_valstr(prop, string);
+			BKE_bproperty_set_valstr(prop, string);
 			characters = strlen(string);
 			
-			if (!BKE_image_get_ibuf(mtpoly->tpage, NULL))
+			if (!BKE_image_has_ibuf(mtpoly->tpage, NULL))
 				characters = 0;
 
 			if (!mf_smooth) {
@@ -772,7 +748,8 @@ static int compareDrawOptionsEm(void *userData, int cur_index, int next_index)
 	return 1;
 }
 
-void draw_mesh_textured_old(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob, DerivedMesh *dm, int draw_flags)
+static void draw_mesh_textured_old(Scene *scene, View3D *v3d, RegionView3D *rv3d,
+                                   Object *ob, DerivedMesh *dm, const int draw_flags)
 {
 	Mesh *me = ob->data;
 	
@@ -823,7 +800,7 @@ void draw_mesh_textured_old(Scene *scene, View3D *v3d, RegionView3D *rv3d, Objec
 	}
 
 	/* draw game engine text hack */
-	if (get_ob_property(ob, "Text"))
+	if (BKE_bproperty_object_get(ob, "Text"))
 		draw_mesh_text(scene, ob, 0);
 
 	draw_textured_end();
@@ -871,7 +848,7 @@ static void tex_mat_set_texture_cb(void *userData, int mat_nr, void *attribs)
 	if (ED_object_get_active_image(data->ob, mat_nr, &ima, &iuser, &node)) {
 		/* get openl texture */
 		int mipmap = 1;
-		int bindcode = (ima) ? GPU_verify_image(ima, iuser, 0, 0, mipmap) : 0;
+		int bindcode = (ima) ? GPU_verify_image(ima, iuser, 0, 0, mipmap, false) : 0;
 		float zero[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
 		if (bindcode) {
@@ -941,9 +918,11 @@ static int tex_mat_set_face_editmesh_cb(void *userData, int index)
 	return !BM_elem_flag_test(efa, BM_ELEM_HIDDEN);
 }
 
-void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *ob, DerivedMesh *dm, const int draw_flags)
+void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d,
+                        Object *ob, DerivedMesh *dm, const int draw_flags)
 {
-	if ((!BKE_scene_use_new_shading_nodes(scene)) || (draw_flags & DRAW_MODIFIERS_PREVIEW)) {
+	/* if not cycles, or preview-modifiers, or drawing matcaps */
+	if ((!BKE_scene_use_new_shading_nodes(scene)) || (draw_flags & DRAW_MODIFIERS_PREVIEW) || (v3d->flag2 & V3D_SHOW_SOLID_MATCAP)) {
 		draw_mesh_textured_old(scene, v3d, rv3d, ob, dm, draw_flags);
 		return;
 	}
@@ -962,7 +941,7 @@ void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *o
 		Mesh *me = ob->data;
 		TexMatCallback data = {scene, ob, me, dm};
 		int (*set_face_cb)(void *, int);
-		int glsl;
+		int glsl, picking = (G.f & G_PICKSEL);
 		
 		/* face hiding callback depending on mode */
 		if (ob == scene->obedit)
@@ -973,11 +952,11 @@ void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *o
 			set_face_cb = NULL;
 
 		/* test if we can use glsl */
-		glsl = (v3d->drawtype == OB_MATERIAL) && GPU_glsl_support();
+		glsl = (v3d->drawtype == OB_MATERIAL) && GPU_glsl_support() && !picking;
 
 		GPU_begin_object_materials(v3d, rv3d, scene, ob, glsl, NULL);
 
-		if (glsl) {
+		if (glsl || picking) {
 			/* draw glsl */
 			dm->drawMappedFacesMat(dm,
 			                       tex_mat_set_material_cb,
@@ -1017,17 +996,18 @@ void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d, Object *o
 
 /* Vertex Paint and Weight Paint */
 
-void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d, Object *ob, DerivedMesh *dm, int draw_flags)
+void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d,
+                     Object *ob, DerivedMesh *dm, const int draw_flags)
 {
 	DMSetDrawOptions facemask = NULL;
 	Mesh *me = ob->data;
-	const short do_light = (v3d->drawtype >= OB_SOLID);
+	const bool do_light = (v3d->drawtype >= OB_SOLID);
 
 	/* hide faces in face select mode */
-	if (draw_flags & DRAW_FACE_SELECT)
+	if (me->editflag & (ME_EDIT_PAINT_VERT_SEL | ME_EDIT_PAINT_FACE_SEL))
 		facemask = wpaint__setSolidDrawOptions_facemask;
 
-	if (ob && ob->mode & OB_MODE_WEIGHT_PAINT) {
+	if (ob->mode & OB_MODE_WEIGHT_PAINT) {
 
 		if (do_light) {
 			const float spec[4] = {0.47f, 0.47f, 0.47f, 0.47f};
@@ -1071,13 +1051,19 @@ void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d, Object *ob, DerivedMesh *d
 	if (draw_flags & DRAW_FACE_SELECT) {
 		draw_mesh_face_select(rv3d, me, dm);
 	}
-	else if ((do_light == FALSE) || (ob->dtx & OB_DRAWWIRE)) {
+	else if ((do_light == false) || (ob->dtx & OB_DRAWWIRE)) {
+		const int use_depth = (v3d->flag & V3D_ZBUF_SELECT) || !(ob->mode & OB_MODE_WEIGHT_PAINT);
 
 		/* weight paint in solid mode, special case. focus on making the weights clear
 		 * rather than the shading, this is also forced in wire view */
 
-		bglPolygonOffset(rv3d->dist, 1.0);
-		glDepthMask(0);  /* disable write in zbuffer, selected edge wires show better */
+		if (use_depth) {
+			bglPolygonOffset(rv3d->dist, 1.0);
+			glDepthMask(0);  /* disable write in zbuffer, selected edge wires show better */
+		}
+		else {
+			glDisable(GL_DEPTH_TEST);
+		}
 
 		glEnable(GL_BLEND);
 		glColor4ub(255, 255, 255, 96);
@@ -1086,8 +1072,14 @@ void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d, Object *ob, DerivedMesh *d
 
 		dm->drawEdges(dm, 1, 1);
 
-		bglPolygonOffset(rv3d->dist, 0.0);
-		glDepthMask(1);
+		if (use_depth) {
+			bglPolygonOffset(rv3d->dist, 0.0);
+			glDepthMask(1);
+		}
+		else {
+			glEnable(GL_DEPTH_TEST);
+		}
+
 		glDisable(GL_LINE_STIPPLE);
 		glDisable(GL_BLEND);
 	}

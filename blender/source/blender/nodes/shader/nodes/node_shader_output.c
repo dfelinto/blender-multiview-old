@@ -33,39 +33,39 @@
 #include "node_shader_util.h"
 
 /* **************** OUTPUT ******************** */
-static bNodeSocketTemplate sh_node_output_in[]= {
+static bNodeSocketTemplate sh_node_output_in[] = {
 	{	SOCK_RGBA, 1, N_("Color"),		0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 1, N_("Alpha"),		1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_FACTOR},
+	{	SOCK_FLOAT, 1, N_("Alpha"),		1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_output(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(out))
+static void node_shader_exec_output(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **UNUSED(out))
 {
 	if (data) {
-		ShadeInput *shi= ((ShaderCallData *)data)->shi;
+		ShadeInput *shi = ((ShaderCallData *)data)->shi;
 		float col[4];
 		
 		/* stack order input sockets: col, alpha, normal */
 		nodestack_get_vec(col, SOCK_VECTOR, in[0]);
-		nodestack_get_vec(col+3, SOCK_FLOAT, in[1]);
+		nodestack_get_vec(col + 3, SOCK_FLOAT, in[1]);
 		
 		if (shi->do_preview) {
-			nodeAddToPreview(node, col, shi->xs, shi->ys, shi->do_manage);
-			node->lasty= shi->ys;
+			BKE_node_preview_set_pixel(execdata->preview, col, shi->xs, shi->ys, shi->do_manage);
+			node->lasty = shi->ys;
 		}
 		
 		if (node->flag & NODE_DO_OUTPUT) {
-			ShadeResult *shr= ((ShaderCallData *)data)->shr;
+			ShadeResult *shr = ((ShaderCallData *)data)->shr;
 			
 			copy_v4_v4(shr->combined, col);
-			shr->alpha= col[3];
+			shr->alpha = col[3];
 			
 			//	copy_v3_v3(shr->nor, in[3]->vec);
 		}
-	}	
+	}
 }
 
-static int gpu_shader_output(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_output(GPUMaterial *mat, bNode *UNUSED(node), bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
 	GPUNodeLink *outlink;
 
@@ -80,19 +80,18 @@ static int gpu_shader_output(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack
 	return 1;
 }
 
-void register_node_type_sh_output(bNodeTreeType *ttype)
+void register_node_type_sh_output(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_OUTPUT, "Output", NODE_CLASS_OUTPUT, NODE_PREVIEW);
+	sh_node_type_base(&ntype, SH_NODE_OUTPUT, "Output", NODE_CLASS_OUTPUT, NODE_PREVIEW);
 	node_type_compatibility(&ntype, NODE_OLD_SHADING);
 	node_type_socket_templates(&ntype, sh_node_output_in, NULL);
-	node_type_size(&ntype, 80, 60, 200);
-	node_type_exec(&ntype, node_shader_exec_output);
+	node_type_exec(&ntype, NULL, NULL, node_shader_exec_output);
 	node_type_gpu(&ntype, gpu_shader_output);
 
 	/* Do not allow muting output node. */
-	node_type_internal_connect(&ntype, NULL);
+	node_type_internal_links(&ntype, NULL);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

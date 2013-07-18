@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 import bpy
-from bpy.types import Menu, Panel
+from bpy.types import Menu, Panel, UIList
 
 from bpy.types import (Brush,
                        Lamp,
@@ -30,7 +30,7 @@ from bpy.types import (Brush,
 
 from rna_prop_ui import PropertyPanel
 
-from bl_ui.properties_paint_common import sculpt_brush_texture_settings
+from bl_ui.properties_paint_common import brush_texture_settings
 
 
 class TEXTURE_MT_specials(Menu):
@@ -54,6 +54,22 @@ class TEXTURE_MT_envmap_specials(Menu):
         layout.operator("texture.envmap_save", icon='IMAGEFILE')
         layout.operator("texture.envmap_clear", icon='FILE_REFRESH')
         layout.operator("texture.envmap_clear_all", icon='FILE_REFRESH')
+
+
+class TEXTURE_UL_texslots(UIList):
+    def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
+        # assert(isinstance(item, bpy.types.MaterialTextureSlot)
+        ma = data
+        slot = item
+        tex = slot.texture if slot else None
+        if self.layout_type in {'DEFAULT', 'COMPACT'}:
+            layout.label(text=tex.name if tex else "", translate=False, icon_value=icon)
+            if tex and isinstance(item, bpy.types.MaterialTextureSlot):
+                layout.prop(ma, "use_textures", text="", index=index)
+        elif self.layout_type in {'GRID'}:
+            layout.alignment = 'CENTER'
+            layout.label(text="", icon_value=icon)
+
 
 from bl_ui.properties_material import active_node_mat
 
@@ -109,10 +125,16 @@ class TEXTURE_PT_context_texture(TextureButtonsPanel, Panel):
     @classmethod
     def poll(cls, context):
         engine = context.scene.render.engine
-        if not (hasattr(context, "texture_slot") or hasattr(context, "texture_node")):
-            return False
-        return ((context.material or context.world or context.lamp or context.brush or context.texture or context.particle_system or isinstance(context.space_data.pin_id, ParticleSettings))
-            and (engine in cls.COMPAT_ENGINES))
+        #if not (hasattr(context, "texture_slot") or hasattr(context, "texture_node")):
+            #return False
+        return ((context.material or
+                 context.world or
+                 context.lamp or
+                 context.texture or
+                 context.particle_system or
+                 isinstance(context.space_data.pin_id, ParticleSettings) or
+                 context.texture_user) and
+                (engine in cls.COMPAT_ENGINES))
 
     def draw(self, context):
         layout = self.layout
@@ -124,49 +146,71 @@ class TEXTURE_PT_context_texture(TextureButtonsPanel, Panel):
         idblock = context_tex_datablock(context)
         pin_id = space.pin_id
 
+        space.use_limited_texture_context = True
+
         if space.use_pin_id and not isinstance(pin_id, Texture):
             idblock = id_tex_datablock(pin_id)
             pin_id = None
 
         if not space.use_pin_id:
             layout.prop(space, "texture_context", expand=True)
+            pin_id = None
+
+        if space.texture_context == 'OTHER':
+            if not pin_id:
+                layout.template_texture_user()
+            user = context.texture_user
+            if user or pin_id:
+                layout.separator()
+
+                split = layout.split(percentage=0.65)
+                col = split.column()
+
+                if pin_id:
+                    col.template_ID(space, "pin_id")
+                else:
+                    propname = context.texture_user_property.identifier
+                    col.template_ID(user, propname, new="texture.new")
+
+                if tex:
+                    split = layout.split(percentage=0.2)
+                    if tex.use_nodes:
+                        if slot:
+                            split.label(text="Output:")
+                            split.prop(slot, "output_node", text="")
+                    else:
+                        split.label(text="Type:")
+                        split.prop(tex, "type", text="")
+            return
 
         tex_collection = (pin_id is None) and (node is None) and (not isinstance(idblock, Brush))
 
         if tex_collection:
             row = layout.row()
 
-            row.template_list(idblock, "texture_slots", idblock, "active_texture_index", rows=2)
+            row.template_list("TEXTURE_UL_texslots", "", idblock, "texture_slots", idblock, "active_texture_index", rows=2)
 
             col = row.column(align=True)
             col.operator("texture.slot_move", text="", icon='TRIA_UP').type = 'UP'
             col.operator("texture.slot_move", text="", icon='TRIA_DOWN').type = 'DOWN'
             col.menu("TEXTURE_MT_specials", icon='DOWNARROW_HLT', text="")
 
-        split = layout.split(percentage=0.65)
-        col = split.column()
-
         if tex_collection:
-            col.template_ID(idblock, "active_texture", new="texture.new")
+            layout.template_ID(idblock, "active_texture", new="texture.new")
         elif node:
-            col.template_ID(node, "texture", new="texture.new")
+            layout.template_ID(node, "texture", new="texture.new")
         elif idblock:
-            col.template_ID(idblock, "texture", new="texture.new")
+            layout.template_ID(idblock, "texture", new="texture.new")
 
         if pin_id:
-            col.template_ID(space, "pin_id")
-
-        col = split.column()
+            layout.template_ID(space, "pin_id")
 
         if tex:
             split = layout.split(percentage=0.2)
-
             if tex.use_nodes:
-
                 if slot:
                     split.label(text="Output:")
                     split.prop(slot, "output_node", text="")
-
             else:
                 split.label(text="Type:")
                 split.prop(tex, "type", text="")
@@ -415,6 +459,12 @@ class TEXTURE_PT_image_sampling(TextureTypePanel, Panel):
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     def draw(self, context):
+        if context.scene.render.engine == 'BLENDER_GAME':
+            self.draw_bge(context)
+        else:
+            self.draw_bi(context)
+
+    def draw_bi(self, context):
         layout = self.layout
 
         idblock = context_tex_datablock(context)
@@ -425,7 +475,9 @@ class TEXTURE_PT_image_sampling(TextureTypePanel, Panel):
 
         col = split.column()
         col.label(text="Alpha:")
-        col.prop(tex, "use_alpha", text="Use")
+        row = col.row()
+        row.active = tex.image and tex.image.use_alpha
+        row.prop(tex, "use_alpha", text="Use")
         col.prop(tex, "use_calculate_alpha", text="Calculate")
         col.prop(tex, "invert_alpha", text="Invert")
         col.separator()
@@ -451,6 +503,33 @@ class TEXTURE_PT_image_sampling(TextureTypePanel, Panel):
         col.prop(tex, "use_interpolation")
 
         texture_filter_common(tex, col)
+
+    def draw_bge(self, context):
+        layout = self.layout
+
+        idblock = context_tex_datablock(context)
+        tex = context.texture
+        slot = getattr(context, "texture_slot", None)
+
+        split = layout.split()
+
+        col = split.column()
+        col.label(text="Alpha:")
+        col.prop(tex, "use_calculate_alpha", text="Calculate")
+        col.prop(tex, "invert_alpha", text="Invert")
+
+        col = split.column()
+
+        #Only for Material based textures, not for Lamp/World...
+        if slot and isinstance(idblock, Material):
+            col.prop(tex, "use_normal_map")
+            row = col.row()
+            row.active = tex.use_normal_map
+            row.prop(slot, "normal_map_space", text="")
+
+            row = col.row()
+            row.active = not tex.use_normal_map
+            row.prop(tex, "use_derivative_map")
 
 
 class TEXTURE_PT_image_mapping(TextureTypePanel, Panel):
@@ -868,8 +947,8 @@ class TEXTURE_PT_mapping(TextureSlotPanel, Panel):
                 split.prop(tex, "object", text="")
 
         if isinstance(idblock, Brush):
-            if context.sculpt_object:
-                sculpt_brush_texture_settings(layout, idblock)
+            if context.sculpt_object or context.image_paint_object:
+                brush_texture_settings(layout, idblock, context.sculpt_object)
         else:
             if isinstance(idblock, Material):
                 split = layout.split(percentage=0.3)
@@ -881,8 +960,12 @@ class TEXTURE_PT_mapping(TextureSlotPanel, Panel):
                 col = split.column()
                 if tex.texture_coords in {'ORCO', 'UV'}:
                     col.prop(tex, "use_from_dupli")
+                    if (idblock.type == 'VOLUME' and tex.texture_coords == 'ORCO'):
+                        col.prop(tex, "use_map_to_bounds")
                 elif tex.texture_coords == 'OBJECT':
                     col.prop(tex, "use_from_original")
+                    if (idblock.type == 'VOLUME'):
+                        col.prop(tex, "use_map_to_bounds")
                 else:
                     col.label()
 

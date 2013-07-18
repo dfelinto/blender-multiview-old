@@ -56,6 +56,7 @@ struct wmKeyConfig;
 typedef struct tGPspoint {
 	int x, y;               /* x and y coordinates of cursor (in relative to area) */
 	float pressure;         /* pressure of tablet at this point */
+	float time;             /* Time relative to stroke start (used when converting to path) */
 } tGPspoint;
 
 
@@ -78,8 +79,9 @@ void ED_operatortypes_gpencil(void);
 
 void draw_gpencil_2dimage(const struct bContext *C);
 void draw_gpencil_view2d(const struct bContext *C, short onlyv2d);
-void draw_gpencil_view3d(struct Scene *scene, struct View3D *v3d, struct ARegion *ar, short only3d);
+void draw_gpencil_view3d(struct Scene *scene, struct View3D *v3d, struct ARegion *ar, bool only3d);
 
+void gpencil_panel_standard_header(const struct bContext *C, struct Panel *pa);
 void gpencil_panel_standard(const struct bContext *C, struct Panel *pa);
 
 /* ----------- Grease-Pencil AnimEdit API ------------------ */
@@ -96,12 +98,13 @@ void  ED_gpencil_select_frame(struct bGPDlayer *gpl, int selx, short select_mode
 void  ED_gplayer_frames_delete(struct bGPDlayer *gpl);
 void  ED_gplayer_frames_duplicate(struct bGPDlayer *gpl);
 
+void  ED_gplayer_snap_frames(struct bGPDlayer *gpl, struct Scene *scene, short mode);
+
 #if 0
 void free_gpcopybuf(void);
 void copy_gpdata(void);
 void paste_gpdata(void);
 
-void snap_gplayer_frames(struct bGPDlayer *gpl, short mode);
 void mirror_gplayer_frames(struct bGPDlayer *gpl, short mode);
 #endif
 

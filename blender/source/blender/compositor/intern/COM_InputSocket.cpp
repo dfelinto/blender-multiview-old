@@ -122,6 +122,17 @@ void InputSocket::relinkConnections(InputSocket *relinkToSocket,  int editorNode
 	}
 }
 
+void InputSocket::unlinkConnections(ExecutionSystem *system)
+{
+	SocketConnection *connection = getConnection();
+	if (connection) {
+		system->removeSocketConnection(connection);
+		connection->getFromSocket()->removeConnection(connection);
+		setConnection(NULL);
+		delete connection;
+	}
+}
+
 bool InputSocket::isStatic()
 {
 	if (isConnected()) {
@@ -144,26 +155,5 @@ NodeOperation *InputSocket::getOperation() const
 	}
 	else {
 		return NULL;
-	}
-}
-
-float *InputSocket::getStaticValues()
-{
-	/* XXX only works for socket types with actual float input values.
-	 * currently all compositor socket types (value, rgba, vector) support this.
-	 */
-	bNodeSocket *b_socket = this->getbNodeSocket();
-	static float default_null = 0.0f;
-	
-	switch (this->getDataType()) {
-		case COM_DT_VALUE:
-			return &((bNodeSocketValueFloat *)b_socket->default_value)->value;
-		case COM_DT_COLOR:
-			return ((bNodeSocketValueRGBA *)b_socket->default_value)->value;
-		case COM_DT_VECTOR:
-			return ((bNodeSocketValueVector *)b_socket->default_value)->value;
-		default:
-			/* XXX this should never happen, just added to please the compiler */
-			return &default_null;
 	}
 }

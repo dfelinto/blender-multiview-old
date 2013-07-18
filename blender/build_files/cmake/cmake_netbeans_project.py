@@ -1,4 +1,4 @@
-#!/usr/bin/env python3.2
+#!/usr/bin/env python3
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -56,6 +56,10 @@ def create_nb_project_main():
         pass
     else:
         includes, defines = cmake_advanced_info()
+
+        if (includes, defines) == (None, None):
+            return
+
         # for some reason it doesnt give all internal includes
         includes = list(set(includes) | set(dirname(f) for f in files if is_c_header(f)))
         includes.sort()

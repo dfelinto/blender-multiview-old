@@ -62,7 +62,6 @@ void GaussianBokehBlurOperation::updateGauss()
 		int n;
 		float *dgauss;
 		float *ddgauss;
-		float val;
 		int j, i;
 		const float width = this->getWidth();
 		const float height = this->getHeight();
@@ -84,13 +83,15 @@ void GaussianBokehBlurOperation::updateGauss()
 	
 		this->m_radx = ceil(radxf);
 		this->m_rady = ceil(radyf);
-	
-		n = (2 * this->m_radx + 1) * (2 * this->m_rady + 1);
+		
+		int ddwidth = 2 * this->m_radx + 1;
+		int ddheight = 2 * this->m_rady + 1;
+		n = ddwidth * ddheight;
 	
 		/* create a full filter image */
 		ddgauss = (float *)MEM_mallocN(sizeof(float) * n, __func__);
 		dgauss = ddgauss;
-		val = 0.0f;
+		float sum = 0.0f;
 		for (j = -this->m_rady; j <= this->m_rady; j++) {
 			for (i = -this->m_radx; i <= this->m_radx; i++, dgauss++) {
 				float fj = (float)j / radyf;
@@ -98,16 +99,19 @@ void GaussianBokehBlurOperation::updateGauss()
 				float dist = sqrt(fj * fj + fi * fi);
 				*dgauss = RE_filter_value(this->m_data->filtertype, dist);
 				
-				val += *dgauss;
+				sum += *dgauss;
 			}
 		}
-		if (val != 0.0f) {
-			val = 1.0f / val;
-			for (j = n - 1; j >= 0; j--) {
-				ddgauss[j] *= val;
-			}
+		if (sum > 0.0f) {
+			/* normalize */
+			float norm = 1.0f / sum;
+			for (j = n - 1; j >= 0; j--)
+				ddgauss[j] *= norm;
 		}
-		else ddgauss[4] = 1.0f;
+		else {
+			int center = m_rady * ddwidth + m_radx;
+			ddgauss[center] = 1.0f;
+		}
 		
 		this->m_gausstab = ddgauss;
 	}
@@ -236,7 +240,7 @@ void GaussianBlurReferenceOperation::initExecution()
 	
 	/* horizontal */
 	m_radx = (float)this->m_data->sizex;
-	int imgx = getWidth()/2;
+	int imgx = getWidth() / 2;
 	if (m_radx > imgx)
 		m_radx = imgx;
 	else if (m_radx < 1)
@@ -245,7 +249,7 @@ void GaussianBlurReferenceOperation::initExecution()
 
 	/* vertical */
 	m_rady = (float)this->m_data->sizey;
-	int imgy = getHeight()/2;
+	int imgy = getHeight() / 2;
 	if (m_rady > imgy)
 		m_rady = imgy;
 	else if (m_rady < 1)
@@ -257,7 +261,7 @@ void GaussianBlurReferenceOperation::initExecution()
 void GaussianBlurReferenceOperation::updateGauss()
 {
 	int i;
-	int x = MAX2(m_radx, m_rady);
+	int x = max(m_radx, m_rady);
 	this->m_maintabs = (float **)MEM_mallocN(x * sizeof(float *), "gauss array");
 	for (i = 0; i < x; i++) {
 		m_maintabs[i] = make_gausstab(i + 1);
@@ -327,11 +331,11 @@ void GaussianBlurReferenceOperation::executePixel(float output[4], int x, int y,
 void GaussianBlurReferenceOperation::deinitExecution()
 {
 	int x, i;
-	x = MAX2(m_radx, m_rady);
+	x = max(this->m_radx, this->m_rady);
 	for (i = 0; i < x; i++) {
-		MEM_freeN(m_maintabs[i]);
+		MEM_freeN(this->m_maintabs[i]);
 	}
-	MEM_freeN(m_maintabs);
+	MEM_freeN(this->m_maintabs);
 	BlurBaseOperation::deinitExecution();
 }
 
@@ -344,8 +348,8 @@ bool GaussianBlurReferenceOperation::determineDependingAreaOfInterest(rcti *inpu
 		return true;
 	}
 	else {
-		int addx = this->m_data->sizex+2;
-		int addy = this->m_data->sizey+2;
+		int addx = this->m_data->sizex + 2;
+		int addy = this->m_data->sizey + 2;
 		newInput.xmax = input->xmax + addx;
 		newInput.xmin = input->xmin - addx;
 		newInput.ymax = input->ymax + addy;

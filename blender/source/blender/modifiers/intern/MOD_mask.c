@@ -179,7 +179,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		}
 		
 		/* verthash gives mapping from original vertex indices to the new indices (including selected matches only)
-		 * 	key=oldindex, value=newindex 
+		 * key = oldindex, value = newindex
 		 */
 		vertHash = BLI_ghash_int_new("mask vert gh");
 		
@@ -226,11 +226,11 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		int defgrp_index = defgroup_name_index(ob, mmd->vgroup);
 		
 		/* get dverts */
-		if (defgrp_index >= 0)
+		if (defgrp_index != -1)
 			dvert = dm->getVertDataArray(dm, CD_MDEFORMVERT);
 			
 		/* if no vgroup (i.e. dverts) found, return the initial mesh */
-		if ((defgrp_index < 0) || (dvert == NULL))
+		if ((defgrp_index == -1) || (dvert == NULL))
 			return dm;
 			
 		/* hashes for quickly providing a mapping from old to new - use key=oldindex, value=newindex */
@@ -316,7 +316,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	/* using ghash-iterators, map data into new mesh */
 	/* vertices */
 	for (hashIter = BLI_ghashIterator_new(vertHash);
-	     !BLI_ghashIterator_isDone(hashIter);
+	     BLI_ghashIterator_done(hashIter) == false;
 	     BLI_ghashIterator_step(hashIter) )
 	{
 		MVert source;
@@ -334,7 +334,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 		
 	/* edges */
 	for (hashIter = BLI_ghashIterator_new(edgeHash);
-	     !BLI_ghashIterator_isDone(hashIter);
+	     BLI_ghashIterator_done(hashIter) == false;
 	     BLI_ghashIterator_step(hashIter))
 	{
 		MEdge source;
@@ -355,7 +355,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	
 	/* faces */
 	for (hashIter = BLI_ghashIterator_new(polyHash);
-	     !BLI_ghashIterator_isDone(hashIter);
+	     BLI_ghashIterator_done(hashIter) == false;
 	     BLI_ghashIterator_step(hashIter) )
 	{
 		int oldIndex = GET_INT_FROM_POINTER(BLI_ghashIterator_getKey(hashIter));
@@ -384,7 +384,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 
 	/* why is this needed? - campbell */
 	/* recalculate normals */
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 	
 	/* free hashes */
 	BLI_ghash_free(vertHash, NULL, NULL);

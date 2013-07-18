@@ -29,6 +29,7 @@ from SCons.Script.SConscript import SConsEnvironment
 import SCons.Action
 import SCons.Util
 import SCons.Builder
+import SCons.Subst
 import SCons.Tool
 import bcolors
 bc = bcolors.bcolors()
@@ -136,12 +137,17 @@ def setup_staticlibs(lenv):
         lenv['BF_ICONV_LIBPATH']
         ])
 
+    if lenv['WITH_BF_STATICJPEG']:
+        statlibs += Split(lenv['BF_JPEG_LIB_STATIC'])
+    if lenv['WITH_BF_STATICPNG']:
+        statlibs += Split(lenv['BF_PNG_LIB_STATIC'])
+
     libincs += Split(lenv['BF_FREETYPE_LIBPATH'])
     if lenv['WITH_BF_PYTHON']:
         libincs += Split(lenv['BF_PYTHON_LIBPATH'])
     if lenv['WITH_BF_SDL']:
         libincs += Split(lenv['BF_SDL_LIBPATH'])
-    if lenv['WITH_BF_JACK']:
+    if lenv['WITH_BF_JACK'] and not lenv['WITH_BF_JACK_DYNLOAD']:
         libincs += Split(lenv['BF_JACK_LIBPATH'])
     if lenv['WITH_BF_SNDFILE']:
         libincs += Split(lenv['BF_SNDFILE_LIBPATH'])
@@ -149,26 +155,25 @@ def setup_staticlibs(lenv):
         libincs += Split(lenv['BF_OPENEXR_LIBPATH'])
         if lenv['WITH_BF_STATICOPENEXR']:
             statlibs += Split(lenv['BF_OPENEXR_LIB_STATIC'])
+    if lenv['WITH_BF_ZLIB'] and lenv['WITH_BF_STATICZLIB']:
+        statlibs += Split(lenv['BF_ZLIB_LIB_STATIC'])
     if lenv['WITH_BF_TIFF']:
         libincs += Split(lenv['BF_TIFF_LIBPATH'])
         if lenv['WITH_BF_STATICTIFF']:
             statlibs += Split(lenv['BF_TIFF_LIB_STATIC'])
-    if lenv['WITH_BF_ZLIB'] and lenv['WITH_BF_STATICZLIB']:
-        statlibs += Split(lenv['BF_ZLIB_LIB_STATIC'])
     if lenv['WITH_BF_FFTW3']:
         libincs += Split(lenv['BF_FFTW3_LIBPATH'])
         if lenv['WITH_BF_STATICFFTW3']:
             statlibs += Split(lenv['BF_FFTW3_LIB_STATIC'])
+    '''
     if lenv['WITH_BF_ELTOPO']:
         libincs += Split(lenv['BF_LAPACK_LIBPATH'])
         if lenv['WITH_BF_STATICLAPACK']:
-		    statlibs += Split(lenv['BF_LAPACK_LIB_STATIC'])        
+            statlibs += Split(lenv['BF_LAPACK_LIB_STATIC'])
+    '''
     if lenv['WITH_BF_FFMPEG'] and lenv['WITH_BF_STATICFFMPEG']:
         statlibs += Split(lenv['BF_FFMPEG_LIB_STATIC'])
     if lenv['WITH_BF_INTERNATIONAL']:
-        libincs += Split(lenv['BF_GETTEXT_LIBPATH'])
-        if lenv['WITH_BF_GETTEXT_STATIC']:
-            statlibs += Split(lenv['BF_GETTEXT_LIB_STATIC'])
         if lenv['WITH_BF_FREETYPE_STATIC']:
             statlibs += Split(lenv['BF_FREETYPE_LIB_STATIC'])
     if lenv['WITH_BF_OPENAL']:
@@ -194,24 +199,39 @@ def setup_staticlibs(lenv):
         if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
             libincs += Split(lenv['BF_PCRE_LIBPATH'])
             libincs += Split(lenv['BF_EXPAT_LIBPATH'])
+        if lenv['WITH_BF_STATICOPENCOLLADA']:
+            statlibs += Split(lenv['BF_OPENCOLLADA_LIB_STATIC'])
 
     if lenv['WITH_BF_OPENMP']:
         if lenv['OURPLATFORM'] == 'linuxcross':
             libincs += Split(lenv['BF_OPENMP_LIBPATH'])
+        if lenv['WITH_BF_STATICOPENMP']:
+            statlibs += Split(lenv['BF_OPENMP_LIB_STATIC'])
             
     if lenv['WITH_BF_OIIO']:
         libincs += Split(lenv['BF_OIIO_LIBPATH'])
         if lenv['WITH_BF_STATICOIIO']:
             statlibs += Split(lenv['BF_OIIO_LIB_STATIC'])
 
+    if lenv['WITH_BF_OCIO']:
+        libincs += Split(lenv['BF_OCIO_LIBPATH'])
+        if lenv['WITH_BF_STATICOCIO']:
+            statlibs += Split(lenv['BF_OCIO_LIB_STATIC'])
+
     if lenv['WITH_BF_BOOST']:
         libincs += Split(lenv['BF_BOOST_LIBPATH'])
         if lenv['WITH_BF_STATICBOOST']:
             statlibs += Split(lenv['BF_BOOST_LIB_STATIC'])
 
-    # setting this last so any overriding of manually libs could be handled
-    if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross', 'win64-mingw'):
-        libincs.append('/usr/lib')
+    if lenv['WITH_BF_CYCLES_OSL']:
+        libincs += Split(lenv['BF_OSL_LIBPATH'])
+        if lenv['WITH_BF_STATICOSL']:
+            statlibs += Split(lenv['BF_OSL_LIB_STATIC'])
+
+    if lenv['WITH_BF_LLVM']:
+        libincs += Split(lenv['BF_LLVM_LIBPATH'])
+        if lenv['WITH_BF_STATICLLVM']:
+            statlibs += Split(lenv['BF_LLVM_LIB_STATIC'])
 
     if lenv['WITH_BF_JEMALLOC']:
         libincs += Split(lenv['BF_JEMALLOC_LIBPATH'])
@@ -223,6 +243,12 @@ def setup_staticlibs(lenv):
             libincs += Split(lenv['BF_3DMOUSE_LIBPATH'])
             if lenv['WITH_BF_STATIC3DMOUSE']:
                 statlibs += Split(lenv['BF_3DMOUSE_LIB_STATIC'])
+
+    # setting this last so any overriding of manually libs could be handled
+    if lenv['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross', 'win64-mingw'):
+        # We must remove any previous items defining this path, for same reason stated above!
+        libincs = [e for e in libincs if SCons.Subst.scons_subst(e, lenv, gvars=lenv.Dictionary()) != "/usr/lib"]
+        libincs.append('/usr/lib')
 
     return statlibs, libincs
 
@@ -236,12 +262,10 @@ def setup_syslibs(lenv):
             syslibs.append(lenv['BF_PYTHON_LIB']+'_d')
         else:
             syslibs.append(lenv['BF_PYTHON_LIB'])
-    if lenv['WITH_BF_INTERNATIONAL'] and not lenv['WITH_BF_GETTEXT_STATIC']:
-        syslibs += Split(lenv['BF_GETTEXT_LIB'])
     if lenv['WITH_BF_OPENAL']:
         if not lenv['WITH_BF_STATICOPENAL']:
             syslibs += Split(lenv['BF_OPENAL_LIB'])
-    if lenv['WITH_BF_OPENMP'] and lenv['CC'] != 'icc':
+    if lenv['WITH_BF_OPENMP'] and lenv['CC'] != 'icc' and not lenv['WITH_BF_STATICOPENMP']:
         if lenv['CC'] == 'cl.exe':
             syslibs += ['vcomp']
         else:
@@ -252,31 +276,37 @@ def setup_syslibs(lenv):
         if not lenv['WITH_BF_STATICOIIO']:
             syslibs += Split(lenv['BF_OIIO_LIB'])
 
+    if lenv['WITH_BF_OCIO']:
+        if not lenv['WITH_BF_STATICOCIO']:
+            syslibs += Split(lenv['BF_OCIO_LIB'])
+
     if lenv['WITH_BF_OPENEXR'] and not lenv['WITH_BF_STATICOPENEXR']:
         syslibs += Split(lenv['BF_OPENEXR_LIB'])
-    if lenv['WITH_BF_TIFF'] and not lenv['WITH_BF_STATICTIFF']:
-        syslibs += Split(lenv['BF_TIFF_LIB'])
     if lenv['WITH_BF_ZLIB'] and not lenv['WITH_BF_STATICZLIB']:
         syslibs += Split(lenv['BF_ZLIB_LIB'])
+    if lenv['WITH_BF_TIFF'] and not lenv['WITH_BF_STATICTIFF']:
+        syslibs += Split(lenv['BF_TIFF_LIB'])
     if lenv['WITH_BF_FFMPEG'] and not lenv['WITH_BF_STATICFFMPEG']:
         syslibs += Split(lenv['BF_FFMPEG_LIB'])
         if lenv['WITH_BF_OGG']:
             syslibs += Split(lenv['BF_OGG_LIB'])
-    if lenv['WITH_BF_JACK']:
+    if lenv['WITH_BF_JACK'] and not lenv['WITH_BF_JACK_DYNLOAD']:
         syslibs += Split(lenv['BF_JACK_LIB'])
     if lenv['WITH_BF_SNDFILE'] and not lenv['WITH_BF_STATICSNDFILE']:
         syslibs += Split(lenv['BF_SNDFILE_LIB'])
     if lenv['WITH_BF_FFTW3'] and not lenv['WITH_BF_STATICFFTW3']:
         syslibs += Split(lenv['BF_FFTW3_LIB'])
+    '''
     if lenv['WITH_BF_ELTOPO']:
         syslibs += Split(lenv['BF_LAPACK_LIB'])
+    '''
     if lenv['WITH_BF_SDL']:
         syslibs += Split(lenv['BF_SDL_LIB'])
     if not lenv['WITH_BF_STATICOPENGL']:
         syslibs += Split(lenv['BF_OPENGL_LIB'])
     if lenv['OURPLATFORM'] in ('win32-vc', 'win32-mingw','linuxcross', 'win64-vc', 'win64-mingw'):
         syslibs += Split(lenv['BF_PTHREADS_LIB'])
-    if lenv['WITH_BF_COLLADA']:
+    if lenv['WITH_BF_COLLADA'] and not lenv['WITH_BF_STATICOPENCOLLADA']:
         syslibs.append(lenv['BF_PCRE_LIB'])
         if lenv['BF_DEBUG'] and (lenv['OURPLATFORM'] != 'linux'):
             syslibs += [colladalib+'_d' for colladalib in Split(lenv['BF_OPENCOLLADA_LIB'])]
@@ -295,9 +325,21 @@ def setup_syslibs(lenv):
                 
     if lenv['WITH_BF_BOOST'] and not lenv['WITH_BF_STATICBOOST']:
         syslibs += Split(lenv['BF_BOOST_LIB'])
+        
+        if lenv['WITH_BF_INTERNATIONAL']:
+            syslibs += Split(lenv['BF_BOOST_LIB_INTERNATIONAL'])
 
-    syslibs += Split(lenv['BF_JPEG_LIB'])
-    syslibs += Split(lenv['BF_PNG_LIB'])
+    if lenv['WITH_BF_CYCLES_OSL'] and not lenv['WITH_BF_STATICOSL']:
+        syslibs += Split(lenv['BF_OSL_LIB'])
+
+    if lenv['WITH_BF_LLVM'] and not lenv['WITH_BF_STATICLLVM']:
+        syslibs += Split(lenv['BF_LLVM_LIB'])
+
+    if not lenv['WITH_BF_STATICJPEG']:
+        syslibs += Split(lenv['BF_JPEG_LIB'])
+
+    if not lenv['WITH_BF_STATICPNG']:
+        syslibs += Split(lenv['BF_PNG_LIB'])
 
     syslibs += lenv['LLIBS']
 
@@ -346,6 +388,10 @@ def creator(env):
         defs.append('WITH_PYTHON')
         if env['BF_DEBUG']:
             defs.append('_DEBUG')
+
+    if env['WITH_BF_FREESTYLE']:
+        incs.append('#/source/blender/freestyle')
+        defs.append('WITH_FREESTYLE')
 
     if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
         incs.append(env['BF_PTHREADS_INC'])
@@ -411,22 +457,22 @@ def my_print_cmd_line(self, s, target, source, env):
 def my_compile_print(target, source, env):
     a = '%s' % (source[0])
     d, f = os.path.split(a)
-    return bc.OKBLUE+"Compiling"+bc.ENDC +" ==> '"+bc.OKGREEN+"%s" % (f) + "'"+bc.ENDC
+    return bc.OKBLUE + "Compiling" + bc.ENDC + " ==> '" + bc.OKGREEN + ("%s" % f) + bc.ENDC + "'"
 
 def my_moc_print(target, source, env):
     a = '%s' % (source[0])
     d, f = os.path.split(a)
-    return bc.OKBLUE+"Creating MOC"+bc.ENDC+ " ==> '"+bc.OKGREEN+"%s" %(f) + "'"+bc.ENDC
+    return bc.OKBLUE + "Creating MOC" + bc.ENDC + " ==> '" + bc.OKGREEN + ("%s" % f) + bc.ENDC + "'"
 
 def my_linking_print(target, source, env):
     t = '%s' % (target[0])
     d, f = os.path.split(t)
-    return bc.OKBLUE+"Linking library"+bc.ENDC +" ==> '"+bc.OKGREEN+"%s" % (f) + "'"+bc.ENDC
+    return bc.OKBLUE + "Linking library" + bc.ENDC + " ==> '" + bc.OKGREEN + ("%s" % f) + bc.ENDC + "'"
 
 def my_program_print(target, source, env):
     t = '%s' % (target[0])
     d, f = os.path.split(t)
-    return bc.OKBLUE+"Linking program"+bc.ENDC +" ==> '"+bc.OKGREEN+"%s" % (f) + "'"+bc.ENDC
+    return bc.OKBLUE + "Linking program" + bc.ENDC + " ==> '" + bc.OKGREEN + ("%s" % f) + bc.ENDC + "'"
 
 def msvc_hack(env):
     static_lib = SCons.Tool.createStaticLibBuilder(env)
@@ -559,8 +605,8 @@ def AppIt(target=None, source=None, env=None):
     bldroot = env.Dir('.').abspath
     binary = env['BINARYKIND']
      
-    sourcedir = bldroot + '/source/darwin/%s.app'%binary
-    sourceinfo = bldroot + "/source/darwin/%s.app/Contents/Info.plist"%binary
+    sourcedir = bldroot + '/release/darwin/%s.app' % binary
+    sourceinfo = bldroot + "/release/darwin/%s.app/Contents/Info.plist"%binary
     targetinfo = installdir +'/' + "%s.app/Contents/Info.plist"%binary
     cmd = installdir + '/' +'%s.app'%binary
     
@@ -584,6 +630,9 @@ def AppIt(target=None, source=None, env=None):
         commands.getoutput(cmd)
         cmd = 'cp -R %s/release/datafiles/fonts %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
+        if env['WITH_BF_OCIO']:
+            cmd = 'cp -R %s/release/datafiles/colormanagement %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
+            commands.getoutput(cmd)
         cmd = 'cp -R %s/release/scripts %s/%s.app/Contents/MacOS/%s/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
 
@@ -607,10 +656,18 @@ def AppIt(target=None, source=None, env=None):
             commands.getoutput(cmd)
             cmd = 'cp -R %s/kernel/*.h %s/kernel/*.cl %s/kernel/*.cu %s/kernel/' % (croot, croot, croot, cinstalldir)
             commands.getoutput(cmd)
-            cmd = 'cp -R %s/kernel/svm %s/util/util_color.h %s/util/util_math.h %s/util/util_transform.h %s/util/util_types.h %s/kernel/' % (croot, croot, croot, croot, croot, cinstalldir)
+            cmd = 'cp -R %s/kernel/svm %s/kernel/closure %s/util/util_color.h %s/util/util_math.h %s/util/util_transform.h %s/util/util_types.h %s/kernel/' % (croot, croot, croot, croot, croot, croot, cinstalldir)
             commands.getoutput(cmd)
             cmd = 'cp -R %s/../intern/cycles/kernel/*.cubin %s/lib/' % (builddir, cinstalldir)
             commands.getoutput(cmd)
+
+            if env['WITH_BF_CYCLES_OSL']:
+                cmd = 'mkdir %s/shader' % (cinstalldir)
+                commands.getoutput(cmd)
+                cmd = 'cp -R %s/kernel/shaders/*.h %s/shader' % (croot, cinstalldir)
+                commands.getoutput(cmd)
+                cmd = 'cp -R %s/../intern/cycles/kernel/shaders/*.oso %s/shader' % (builddir, cinstalldir)
+                commands.getoutput(cmd)
 
     if env['WITH_OSX_STATICPYTHON']:
         cmd = 'mkdir %s/%s.app/Contents/MacOS/%s/python/'%(installdir,binary, VERSION)
@@ -630,15 +687,11 @@ def AppIt(target=None, source=None, env=None):
         cmd = 'mkdir %s/%s.app/Contents/MacOS/lib'%(installdir, binary)
         commands.getoutput(cmd)
         instname = env['BF_CXX']
-        cmd = 'cp %s/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/'%(instname, installdir, binary)
+        cmd = 'ditto --arch %s %s/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/'%(osxarch, instname, installdir, binary)
         commands.getoutput(cmd)
         cmd = 'install_name_tool -id @executable_path/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/libgcc_s.1.dylib'%(installdir, binary)
         commands.getoutput(cmd)
         cmd = 'install_name_tool -change %s/lib/libgcc_s.1.dylib  @executable_path/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/%s'%(instname, installdir, binary, binary)
-        commands.getoutput(cmd)
-        cmd = 'rm -rf  %s/set_simulation_threads.app'%(installdir) # first clear omp_num_threads applescript
-        commands.getoutput(cmd)
-        cmd = 'cp -R %s/source/darwin/set_simulation_threads.app %s/'%(bldroot, installdir) # copy the omp_num_threads applescript
         commands.getoutput(cmd)
 
 # extract copy system python, be sure to update other build systems
@@ -709,6 +762,14 @@ def UnixPyBundle(target=None, source=None, env=None):
             print '\t"%s"\n' % numpy_target
 
             run("cp -R '%s' '%s'" % (numpy_src, os.path.dirname(numpy_target)))
+            run("rm -rf '%s/distutils'" % numpy_target)
+            run("rm -rf '%s/oldnumeric'" % numpy_target)
+            run("rm -rf '%s/doc'" % numpy_target)
+            run("rm -rf '%s/tests'" % numpy_target)
+            run("rm -rf '%s/f2py'" % numpy_target)
+            run("find '%s' -type d -name 'include' -prune -exec rm -rf {} ';'" % numpy_target)
+            run("find '%s' -type d -name '*.h' -prune -exec rm -rf {} ';'" % numpy_target)
+            run("find '%s' -type d -name '*.a' -prune -exec rm -rf {} ';'" % numpy_target)
         else:
             print 'Failed to find numpy at %s, skipping copying' % numpy_src
 
@@ -766,6 +827,20 @@ class BlenderEnvironment(SConsEnvironment):
 
     def BlenderLib(self=None, libname=None, sources=None, includes=[], defines=[], libtype='common', priority = 100, compileflags=None, cc_compileflags=None, cxx_compileflags=None, cc_compilerchange=None, cxx_compilerchange=None):
         global vcp
+        
+        # sanity check
+        # run once in a while to check we dont have duplicates
+        if 0:
+            for name, dirs in (("source", sources), ("include", includes)):
+                files_clean = [os.path.normpath(f) for f in dirs]
+                files_clean_set = set(files_clean)
+                if len(files_clean) != len(files_clean_set):
+                    for f in sorted(files_clean_set):
+                        if f != '.' and files_clean.count(f) > 1:
+                            raise Exception("Found duplicate %s %r" % (name, f))
+            del name, dirs, files_clean, files_clean_set, f
+        # end sanity check
+
         if not self or not libname or not sources:
             print bc.FAIL+'Cannot continue. Missing argument for BuildBlenderLib '+libname+bc.ENDC
             self.Exit()
@@ -845,6 +920,9 @@ class BlenderEnvironment(SConsEnvironment):
         print bc.HEADER+'Configuring program '+bc.ENDC+bc.OKGREEN+progname+bc.ENDC
         lenv = self.Clone()
         lenv.Append(LINKFLAGS = lenv['PLATFORM_LINKFLAGS'])
+        lenv.Append(LINKFLAGS = lenv['BF_PROGRAM_LINKFLAGS'])
+        if lenv['OURPLATFORM'] in ('win32-mingw', 'win64-mingw', 'linuxcross', 'cygwin', 'linux'):
+            lenv.Replace(LINK = '$CXX')
         if lenv['OURPLATFORM'] in ('win32-vc', 'cygwin', 'win64-vc'):
             if lenv['BF_DEBUG']:
                 lenv.Prepend(LINKFLAGS = ['/DEBUG','/PDB:'+progname+'.pdb','/NODEFAULTLIB:libcmt'])

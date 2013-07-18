@@ -83,7 +83,7 @@ typedef struct RenderLayer {
 	/* copy of RenderData */
 	char name[RE_MAXNAME];
 	unsigned int lay, lay_zmask, lay_exclude;
-	int layflag, passflag, pass_xor;		
+	int layflag, passflag, pass_xor;
 	
 	struct Material *mat_override;
 	struct Group *light_override;
@@ -92,6 +92,9 @@ typedef struct RenderLayer {
 	float *acolrect;	/* 4 float, optional transparent buffer, needs storage for display updates */
 	float *scolrect;	/* 4 float, optional strand buffer, needs storage for display updates */
 	int rectx, recty;
+
+	/* optional saved endresult on disk */
+	void *exrhandle;
 	
 	ListBase passes;
 	
@@ -124,7 +127,7 @@ typedef struct RenderResult {
 	volatile RenderLayer *renlay;
 	
 	/* optional saved endresult on disk */
-	void *exrhandle;
+	int do_exr_tile;
 	
 	/* for render results in Image, verify validity for sequences */
 	int framenr;
@@ -145,27 +148,27 @@ typedef struct RenderStats {
 	double starttime, lastframetime;
 	const char *infostr, *statstr;
 	char scene_name[MAX_ID_NAME - 2];
+	float mem_used, mem_peak;
 } RenderStats;
 
 /* *********************** API ******************** */
 
 /* the name is used as identifier, so elsewhere in blender the result can retrieved */
 /* calling a new render with same name, frees automatic existing render */
-struct Render *RE_NewRender (const char *name);
+struct Render *RE_NewRender(const char *name);
 struct Render *RE_GetRender(const char *name);
-
-/* returns 1 while render is working (or renders called from within render) */
-int RE_RenderInProgress(struct Render *re);
 
 /* assign default dummy callbacks */
 void RE_InitRenderCB(struct Render *re);
 
 /* use free render as signal to do everything over (previews) */
-void RE_FreeRender (struct Render *re);
+void RE_FreeRender(struct Render *re);
 /* only called on exit */
-void RE_FreeAllRender (void);
+void RE_FreeAllRender(void);
 /* only call on file load */
 void RE_FreeAllRenderResults(void);
+/* for external render engines that can keep persistent data */
+void RE_FreePersistentData(void);
 
 /* get results and statistics */
 void RE_FreeRenderResult(struct RenderResult *rr);
@@ -176,30 +179,39 @@ void RE_AcquireResultImage(struct Render *re, struct RenderResult *rr);
 void RE_ReleaseResultImage(struct Render *re);
 void RE_SwapResult(struct Render *re, struct RenderResult **rr);
 struct RenderStats *RE_GetStats(struct Render *re);
+
 void RE_ResultGet32(struct Render *re, unsigned int *rect);
+void RE_AcquiredResultGet32(struct Render *re, struct RenderResult *result, unsigned int *rect);
+
 struct RenderLayer *RE_GetRenderLayer(struct RenderResult *rr, const char *name);
 float *RE_RenderLayerGetPass(struct RenderLayer *rl, int passtype);
 
 /* obligatory initialize call, disprect is optional */
-void RE_InitState (struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);
+void RE_InitState(struct Render *re, struct Render *source, struct RenderData *rd, struct SceneRenderLayer *srl, int winx, int winy, rcti *disprect);
 
 /* set up the viewplane/perspective matrix, three choices */
 struct Object *RE_GetCamera(struct Render *re); /* return camera override if set */
 void RE_SetCamera(struct Render *re, struct Object *camera);
 void RE_SetEnvmapCamera(struct Render *re, struct Object *cam_ob, float viewscale, float clipsta, float clipend);
-void RE_SetWindow (struct Render *re, rctf *viewplane, float clipsta, float clipend);
-void RE_SetOrtho (struct Render *re, rctf *viewplane, float clipsta, float clipend);
+void RE_SetWindow(struct Render *re, rctf *viewplane, float clipsta, float clipend);
+void RE_SetOrtho(struct Render *re, rctf *viewplane, float clipsta, float clipend);
 void RE_SetPixelSize(struct Render *re, float pixsize);
 
 /* option to set viewmatrix before making dbase */
-void RE_SetView (struct Render *re, float mat[][4]);
+void RE_SetView(struct Render *re, float mat[4][4]);
+
+/* get current view and window transform */
+void RE_GetView(struct Render *re, float mat[4][4]);
+void RE_GetViewPlane(struct Render *re, rctf *viewplane, rcti *disprect);
 
 /* make or free the dbase */
 void RE_Database_FromScene(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int use_camera_view);
-void RE_Database_Free (struct Render *re);
+void RE_Database_Free(struct Render *re);
 
 /* project dbase again, when viewplane/perspective changed */
 void RE_DataBase_ApplyWindow(struct Render *re);
+/* rotate scene again, for incremental render */
+void RE_DataBase_IncrementalView(struct Render *re, float viewmat[4][4], int restore);
 
 /* override the scene setting for amount threads, commandline */
 void RE_set_max_threads(int threads);
@@ -213,6 +225,9 @@ void RE_TileProcessor(struct Render *re);
 /* only RE_NewRender() needed, main Blender render calls */
 void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, struct Object *camera_override, unsigned int lay, int frame, const short write_still);
 void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay, int sfra, int efra, int tfra);
+#ifdef WITH_FREESTYLE
+void RE_RenderFreestyleStrokes(struct Render *re, struct Main *bmain, struct Scene *scene, int render);
+#endif
 
 /* error reporting */
 void RE_SetReports(struct Render *re, struct ReportList *reports);
@@ -222,7 +237,7 @@ void RE_PreviewRender(struct Render *re, struct Main *bmain, struct Scene *scene
 
 int RE_ReadRenderResult(struct Scene *scene, struct Scene *scenode);
 int RE_WriteRenderResult(struct ReportList *reports, RenderResult *rr, const char *filename, int compress);
-struct RenderResult *RE_MultilayerConvert(void *exrhandle, int rectx, int recty);
+struct RenderResult *RE_MultilayerConvert(void *exrhandle, const char *colorspace, int predivide, int rectx, int recty);
 
 extern const float default_envmap_layout[];
 int RE_WriteEnvmapResult(struct ReportList *reports, struct Scene *scene, struct EnvMap *env, const char *relpath, const char imtype, float layout[12]);
@@ -232,7 +247,7 @@ void RE_MergeFullSample(struct Render *re, struct Main *bmain, struct Scene *sce
 
 /* ancient stars function... go away! */
 void RE_make_stars(struct Render *re, struct Scene *scenev3d, void (*initfunc)(void),
-                   void (*vertexfunc)(float*),  void (*termfunc)(void));
+                   void (*vertexfunc)(float *),  void (*termfunc)(void));
 
 /* display and event callbacks */
 void RE_display_init_cb	(struct Render *re, void *handle, void (*f)(void *handle, RenderResult *rr));
@@ -267,8 +282,8 @@ int RE_seq_render_active(struct Scene *scene, struct RenderData *rd);
 
 void RE_Database_Baking(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, const int type, struct Object *actob);
 
-void RE_DataBase_GetView(struct Render *re, float mat[][4]);
-void RE_GetCameraWindow(struct Render *re, struct Object *camera, int frame, float mat[][4]);
+void RE_DataBase_GetView(struct Render *re, float mat[4][4]);
+void RE_GetCameraWindow(struct Render *re, struct Object *camera, int frame, float mat[4][4]);
 struct Scene *RE_GetScene(struct Render *re);
 
 int RE_is_rendering_allowed(struct Scene *scene, struct Object *camera_override, struct ReportList *reports);

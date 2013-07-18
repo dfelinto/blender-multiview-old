@@ -91,7 +91,7 @@ static SpaceLink *console_new(const bContext *UNUSED(C))
 	ar->v2d.minzoom = ar->v2d.maxzoom = 1.0f;
 
 	/* for now, aspect ratio should be maintained, and zoom is clamped within sane default limits */
-	//ar->v2d.keepzoom= (V2D_KEEPASPECT|V2D_LIMITZOOM);
+	//ar->v2d.keepzoom = (V2D_KEEPASPECT|V2D_LIMITZOOM);
 
 	return (SpaceLink *)sconsole;
 }
@@ -138,11 +138,14 @@ static void console_main_area_init(wmWindowManager *wm, ARegion *ar)
 
 	const float prev_y_min = ar->v2d.cur.ymin; /* so re-sizing keeps the cursor visible */
 
+	/* force it on init, for old files, until it becomes config */
+	ar->v2d.scroll = (V2D_SCROLL_RIGHT);
+
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_CUSTOM, ar->winx, ar->winy);
 
 	/* always keep the bottom part of the view aligned, less annoying */
 	if (prev_y_min != ar->v2d.cur.ymin) {
-		const float cur_y_range = ar->v2d.cur.ymax - ar->v2d.cur.ymin;
+		const float cur_y_range = BLI_rctf_size_y(&ar->v2d.cur);
 		ar->v2d.cur.ymin = prev_y_min;
 		ar->v2d.cur.ymax = prev_y_min + cur_y_range;
 	}
@@ -160,9 +163,9 @@ static void console_main_area_init(wmWindowManager *wm, ARegion *ar)
 
 /* ************* dropboxes ************* */
 
-static int id_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int id_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
-//	SpaceConsole *sc= CTX_wm_space_console(C);
+//	SpaceConsole *sc = CTX_wm_space_console(C);
 	if (drag->type == WM_DRAG_ID)
 		return 1;
 	return 0;
@@ -170,21 +173,18 @@ static int id_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event
 
 static void id_drop_copy(wmDrag *drag, wmDropBox *drop)
 {
-	char text[64];
+	char *text;
 	ID *id = drag->poin;
-	char id_esc[(sizeof(id->name) - 2) * 2];
-
-	BLI_strescape(id_esc, id->name + 2, sizeof(id_esc));
-
-	BLI_snprintf(text, sizeof(text), "bpy.data.%s[\"%s\"]", BKE_idcode_to_name_plural(GS(id->name)), id_esc);
 
 	/* copy drag path to properties */
+	text = RNA_path_full_ID_py(id);
 	RNA_string_set(drop->ptr, "text", text);
+	MEM_freeN(text);
 }
 
-static int path_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int path_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
-//    SpaceConsole *sc= CTX_wm_space_console(C);
+	// SpaceConsole *sc = CTX_wm_space_console(C);
 	if (drag->type == WM_DRAG_PATH)
 		return 1;
 	return 0;
@@ -319,13 +319,16 @@ static void console_keymap(struct wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "CONSOLE_OT_clear_line", RETKEY, KM_PRESS, KM_SHIFT, 0);
 
 #ifdef WITH_PYTHON
-	WM_keymap_add_item(keymap, "CONSOLE_OT_execute", RETKEY, KM_PRESS, 0, 0); /* python operator - space_text.py */
-	WM_keymap_add_item(keymap, "CONSOLE_OT_execute", PADENTER, KM_PRESS, 0, 0);
+	kmi = WM_keymap_add_item(keymap, "CONSOLE_OT_execute", RETKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "interactive", true);
+	kmi = WM_keymap_add_item(keymap, "CONSOLE_OT_execute", PADENTER, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "interactive", true);
 	
 	//WM_keymap_add_item(keymap, "CONSOLE_OT_autocomplete", TABKEY, KM_PRESS, 0, 0); /* python operator - space_text.py */
 	WM_keymap_add_item(keymap, "CONSOLE_OT_autocomplete", SPACEKEY, KM_PRESS, KM_CTRL, 0); /* python operator - space_text.py */
 #endif
 
+	WM_keymap_add_item(keymap, "CONSOLE_OT_copy_as_script", CKEY, KM_PRESS, KM_CTRL | KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "CONSOLE_OT_copy", CKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "CONSOLE_OT_paste", VKEY, KM_PRESS, KM_CTRL, 0);
 #ifdef __APPLE__
@@ -358,7 +361,7 @@ static void console_header_area_draw(const bContext *C, ARegion *ar)
 
 static void console_main_area_listener(ARegion *ar, wmNotifier *wmn)
 {
-	// SpaceInfo *sinfo= sa->spacedata.first;
+	// SpaceInfo *sinfo = sa->spacedata.first;
 
 	/* context changes */
 	switch (wmn->category) {

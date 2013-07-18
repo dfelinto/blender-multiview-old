@@ -23,14 +23,15 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
+# XXX allowing blenkernel and RNA includes in blenlib is a hack,
+# but needed in a few places atm (bpath.c for instance)
 set(INC 
 	.
-	../blenkernel
-	../blenloader
-	../gpu
+	# ../blenkernel  # dont add this back!
 	../makesdna
 	../../../intern/ghost
 	../../../intern/guardedalloc
+	../../../extern/wcwidth
 )
 
 set(INC_SYS
@@ -40,6 +41,7 @@ set(INC_SYS
 
 set(SRC
 	intern/BLI_args.c
+	intern/BLI_array.c
 	intern/BLI_dynstr.c
 	intern/BLI_ghash.c
 	intern/BLI_heap.c
@@ -50,11 +52,12 @@ set(SRC
 	intern/BLI_mempool.c
 	intern/DLRB_tree.c
 	intern/boxpack2d.c
-	intern/bpath.c
+	intern/buffer.c
 	intern/callbacks.c
 	intern/cpu.c
 	intern/dynlib.c
 	intern/edgehash.c
+	intern/endian_switch.c
 	intern/fileops.c
 	intern/fnmatch.c
 	intern/freetypefont.c
@@ -66,9 +69,11 @@ set(SRC
 	intern/math_base.c
 	intern/math_base_inline.c
 	intern/math_color.c
+	intern/math_color_blend_inline.c
 	intern/math_color_inline.c
 	intern/math_geom.c
 	intern/math_geom_inline.c
+	intern/math_interp.c
 	intern/math_matrix.c
 	intern/math_rotation.c
 	intern/math_vector.c
@@ -76,7 +81,7 @@ set(SRC
 	intern/md5.c
 	intern/noise.c
 	intern/path_util.c
-	intern/pbvh.c
+	intern/quadric.c
 	intern/rand.c
 	intern/rct.c
 	intern/scanfill.c
@@ -89,22 +94,24 @@ set(SRC
 	intern/threads.c
 	intern/time.c
 	intern/uvproject.c
-	intern/voxel.c
 	intern/voronoi.c
+	intern/voxel.c
 	intern/winstuff.c
 
 	BLI_args.h
 	BLI_array.h
 	BLI_bitmap.h
 	BLI_blenlib.h
+	BLI_buffer.h
 	BLI_boxpack2d.h
-	BLI_bpath.h
 	BLI_callbacks.h
 	BLI_cpu.h
 	BLI_dlrbTree.h
 	BLI_dynlib.h
 	BLI_dynstr.h
 	BLI_edgehash.h
+	BLI_endian_switch.h
+	BLI_endian_switch_inline.h
 	BLI_fileops.h
 	BLI_fileops_types.h
 	BLI_fnmatch.h
@@ -121,8 +128,10 @@ set(SRC
 	BLI_math.h
 	BLI_math_base.h
 	BLI_math_color.h
+	BLI_math_color_blend.h
 	BLI_math_geom.h
 	BLI_math_inline.h
+	BLI_math_interp.h
 	BLI_math_matrix.h
 	BLI_math_rotation.h
 	BLI_math_vector.h
@@ -131,7 +140,7 @@ set(SRC
 	BLI_mempool.h
 	BLI_noise.h
 	BLI_path_util.h
-	BLI_pbvh.h
+	BLI_quadric.h
 	BLI_rand.h
 	BLI_rect.h
 	BLI_scanfill.h
@@ -140,10 +149,12 @@ set(SRC
 	BLI_string.h
 	BLI_string_cursor_utf8.h
 	BLI_string_utf8.h
+	BLI_sys_types.h
 	BLI_threads.h
 	BLI_utildefines.h
 	BLI_uvproject.h
 	BLI_vfontdata.h
+	BLI_voronoi.h
 	BLI_voxel.h
 	BLI_winstuff.h
 	PIL_time.h
@@ -156,10 +167,6 @@ if(WITH_BINRELOC)
 	add_definitions(-DWITH_BINRELOC)
 endif()
 
-if(WITH_OPENMP)
-	add_definitions(-DPARALLEL=1)
-endif()
-
 if(WIN32)
 	list(APPEND INC
 		../../../intern/utfconv
@@ -167,3 +174,9 @@ if(WIN32)
 endif()
 
 blender_add_lib(bf_blenlib "${SRC}" "${INC}" "${INC_SYS}")
+
+if(MSVC)
+	# Quiet warning about inline math library files that do not export symbols.
+	# (normally you'd exclude from project, but we still want to see the files in MSVC)
+	set_target_properties(bf_blenlib PROPERTIES STATIC_LIBRARY_FLAGS /ignore:4221)
+endif()

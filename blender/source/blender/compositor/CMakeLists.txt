@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 14444 2008-04-16 22:40:48Z hos $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -32,17 +31,16 @@ set(INC
 	../blenkernel
 	../blenlib
 	../blenlib
-	../blenloader
 	../imbuf
 	../makesdna
 	../makesrna
-	../opencl
 	../windowmanager
 	../nodes
 	../nodes/composite
 	../nodes/intern
 	../render/extern/include
 	../render/intern/include
+	../../../intern/opencl
 	../../../intern/guardedalloc
 )
 
@@ -268,9 +266,16 @@ set(SRC
 	nodes/COM_MathNode.h
 	nodes/COM_MapValueNode.cpp
 	nodes/COM_MapValueNode.h
+	nodes/COM_MapRangeNode.cpp
+	nodes/COM_MapRangeNode.h
 
 	operations/COM_NormalizeOperation.cpp
 	operations/COM_NormalizeOperation.h
+
+	nodes/COM_PixelateNode.cpp
+	nodes/COM_PixelateNode.h
+	operations/COM_PixelateOperation.cpp
+	operations/COM_PixelateOperation.h
 
 	# Filter nodes
 	nodes/COM_BilateralBlurNode.cpp
@@ -284,6 +289,8 @@ set(SRC
 
 	nodes/COM_FilterNode.cpp
 	nodes/COM_FilterNode.h
+	nodes/COM_DespeckleNode.cpp
+	nodes/COM_DespeckleNode.h
 	nodes/COM_DilateErodeNode.cpp
 	nodes/COM_DilateErodeNode.h
 	nodes/COM_InpaintNode.cpp
@@ -483,10 +490,10 @@ set(SRC
 	operations/COM_ColorMatteOperation.h
 	operations/COM_ChannelMatteOperation.cpp
 	operations/COM_ChannelMatteOperation.h
-	operations/COM_ConvertPremulToKeyOperation.cpp
-	operations/COM_ConvertPremulToKeyOperation.h
-	operations/COM_ConvertKeyToPremulOperation.cpp
-	operations/COM_ConvertKeyToPremulOperation.h
+	operations/COM_ConvertPremulToStraightOperation.cpp
+	operations/COM_ConvertPremulToStraightOperation.h
+	operations/COM_ConvertStraightToPremulOperation.cpp
+	operations/COM_ConvertStraightToPremulOperation.h
 
 	operations/COM_ReadBufferOperation.cpp
 	operations/COM_ReadBufferOperation.h
@@ -566,10 +573,14 @@ set(SRC
 	operations/COM_SetAlphaOperation.h
 	operations/COM_MapValueOperation.cpp
 	operations/COM_MapValueOperation.h
+	operations/COM_MapRangeOperation.cpp
+	operations/COM_MapRangeOperation.h
 
 	# Distort operation
 	operations/COM_TranslateOperation.h
 	operations/COM_TranslateOperation.cpp
+	operations/COM_WrapOperation.h
+	operations/COM_WrapOperation.cpp
 	operations/COM_RotateOperation.h
 	operations/COM_RotateOperation.cpp
 	operations/COM_ScaleOperation.h
@@ -592,6 +603,8 @@ set(SRC
 	operations/COM_ConvolutionFilterOperation.cpp
 	operations/COM_ConvolutionEdgeFilterOperation.h
 	operations/COM_ConvolutionEdgeFilterOperation.cpp
+	operations/COM_DespeckleOperation.cpp
+	operations/COM_DespeckleOperation.h
 	operations/COM_DilateErodeOperation.cpp
 	operations/COM_DilateErodeOperation.h
 	operations/COM_InpaintOperation.cpp

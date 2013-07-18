@@ -61,7 +61,9 @@
 #define __MEM_GUARDEDALLOC_H__
 
 #include <stdio.h>          /* needed for FILE* */
-#include "MEM_sys_types.h"  /* needed for uintptr_t */
+
+/* needed for uintptr_t, exception, dont use BLI anywhere else in MEM_* */
+#include "../../source/blender/blenlib/BLI_sys_types.h"
 
 /* some GNU attributes are only available from GCC 4.3 */
 #define MEM_GNU_ATTRIBUTES (defined(__GNUC__) && ((__GNUC__ * 100 + __GNUC_MINOR__) >= 403))
@@ -82,17 +84,19 @@ extern "C" {
 	/**
 	 * Release memory previously allocatred by this module. 
 	 */
-	short MEM_freeN(void *vmemh);
+	void MEM_freeN(void *vmemh);
 
+#if 0  /* UNUSED */
 	/**
 	 * Return zero if memory is not in allocated list
 	 */
 	short MEM_testN(void *vmemh);
+#endif
 
 	/**
 	 * Duplicates a block of memory, and returns a pointer to the
 	 * newly allocated block.  */
-	void *MEM_dupallocN(void *vmemh)
+	void *MEM_dupallocN(const void *vmemh)
 #if MEM_GNU_ATTRIBUTES
 	__attribute__((warn_unused_result))
 #endif
@@ -165,7 +169,7 @@ extern "C" {
 	void MEM_printmemlist(void);
 
 	/** calls the function on all allocated memory blocks. */
-	void MEM_callbackmemlist(void (*func)(void*));
+	void MEM_callbackmemlist(void (*func)(void *));
 
 	/** Print statistics about memory usage */
 	void MEM_printmemlist_stats(void);

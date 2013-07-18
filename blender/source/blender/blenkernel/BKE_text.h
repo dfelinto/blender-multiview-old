@@ -45,16 +45,18 @@ struct SpaceText;
 void			BKE_text_free		(struct Text *text);
 void 			txt_set_undostate	(int u);
 int 			txt_get_undostate	(void);
-struct Text*	BKE_text_add	(const char *name);
+struct Text    *BKE_text_add	(struct Main *bmain, const char *name);
 int				txt_extended_ascii_as_utf8(char **str);
 int				BKE_text_reload		(struct Text *text);
-struct Text*	BKE_text_load		(const char *file, const char *relpath);
-struct Text*	BKE_text_copy		(struct Text *ta);
+struct Text    *BKE_text_load_ex(struct Main *bmain, const char *file, const char *relpath,
+                                 const bool is_internal);
+struct Text    *BKE_text_load	(struct Main *bmain, const char *file, const char *relpath);
+struct Text    *BKE_text_copy		(struct Text *ta);
 void			BKE_text_unlink		(struct Main *bmain, struct Text *text);
 void			BKE_text_clear      (struct Text *text);
 void			BKE_text_write      (struct Text *text, const char *str);
 
-char*	txt_to_buf			(struct Text *text);
+char   *txt_to_buf			(struct Text *text);
 void	txt_clean_text		(struct Text *text);
 void	txt_order_cursors	(struct Text *text);
 int		txt_find_string		(struct Text *text, const char *findstr, int wrap, int match_case);
@@ -62,12 +64,14 @@ int		txt_has_sel			(struct Text *text);
 int		txt_get_span		(struct TextLine *from, struct TextLine *to);
 int		txt_utf8_offset_to_index(const char *str, int offset);
 int		txt_utf8_index_to_offset(const char *str, int index);
+int		txt_utf8_offset_to_column(const char *str, int offset);
+int		txt_utf8_column_to_offset(const char *str, int column);
 void	txt_move_up			(struct Text *text, short sel);
 void	txt_move_down		(struct Text *text, short sel);
 void	txt_move_left		(struct Text *text, short sel);
 void	txt_move_right		(struct Text *text, short sel);
-void	txt_jump_left		(struct Text *text, short sel);
-void	txt_jump_right		(struct Text *text, short sel);
+void	txt_jump_left		(struct Text *text, bool sel, bool use_init_step);
+void	txt_jump_right		(struct Text *text, bool sel, bool use_init_step);
 void	txt_move_bof		(struct Text *text, short sel);
 void	txt_move_eof		(struct Text *text, short sel);
 void	txt_move_bol		(struct Text *text, short sel);
@@ -80,10 +84,10 @@ void	txt_delete_word		(struct Text *text);
 void	txt_delete_selected	(struct Text *text);
 void	txt_sel_all			(struct Text *text);
 void	txt_sel_line		(struct Text *text);
-char*	txt_sel_to_buf		(struct Text *text);
+char   *txt_sel_to_buf		(struct Text *text);
 void	txt_insert_buf		(struct Text *text, const char *in_buffer);
 void	txt_print_undo		(struct Text *text);
-void	txt_undo_add_toop	(struct Text *text, int op, unsigned int froml, unsigned short fromc, unsigned int tol, unsigned short toc);
+void	txt_undo_add_op		(struct Text *text, int op);
 void	txt_do_undo			(struct Text *text);
 void	txt_do_redo			(struct Text *text);
 void	txt_split_curline	(struct Text *text);
@@ -98,22 +102,22 @@ void 	txt_indent			(struct Text *text);
 void	txt_uncomment		(struct Text *text);
 void	txt_move_lines		(struct Text *text, const int direction);
 void	txt_duplicate_line	(struct Text *text);
-int	setcurr_tab_spaces	(struct Text *text, int space);
-
-void	txt_add_marker						(struct Text *text, struct TextLine *line, int start, int end, const unsigned char color[4], int group, int flags);
-short	txt_clear_marker_region				(struct Text *text, struct TextLine *line, int start, int end, int group, int flags);
-short	txt_clear_markers					(struct Text *text, int group, int flags);
-struct TextMarker	*txt_find_marker		(struct Text *text, struct TextLine *line, int curs, int group, int flags);
-struct TextMarker	*txt_find_marker_region	(struct Text *text, struct TextLine *line, int start, int end, int group, int flags);
-struct TextMarker	*txt_prev_marker		(struct Text *text, struct TextMarker *marker);
-struct TextMarker	*txt_next_marker		(struct Text *text, struct TextMarker *marker);
+int		txt_setcurr_tab_spaces(struct Text *text, int space);
+bool	txt_cursor_is_line_start(struct Text *text);
+bool	txt_cursor_is_line_end(struct Text *text);
 
 /* utility functions, could be moved somewhere more generic but are python/text related  */
 int text_check_bracket(const char ch);
 int text_check_delim(const char ch);
 int text_check_digit(const char ch);
 int text_check_identifier(const char ch);
+int text_check_identifier_nodigit(const char ch);
 int text_check_whitespace(const char ch);
+int text_find_identifier_start(const char *str, int i);
+
+/* defined in bpy_interface.c */
+extern int text_check_identifier_unicode(const unsigned int ch);
+extern int text_check_identifier_nodigit_unicode(const unsigned int ch);
 
 enum {
 	TXT_MOVE_LINE_UP   = -1,
@@ -122,24 +126,6 @@ enum {
 
 
 /* Undo opcodes */
-
-/* Simple main cursor movement */
-#define UNDO_CLEFT		001
-#define UNDO_CRIGHT		002
-#define UNDO_CUP		003
-#define UNDO_CDOWN		004
-
-/* Simple selection cursor movement */
-#define UNDO_SLEFT		005
-#define UNDO_SRIGHT		006
-#define UNDO_SUP		007
-#define UNDO_SDOWN		010
-
-/* Complex movement (opcode is followed
- * by 4 character line ID + a 2 character
- * position ID and opcode (repeat)) */
-#define UNDO_CTO		011
-#define UNDO_STO		012
 
 /* Complex editing */
 /* 1 - opcode is followed by 1 byte for ascii character and opcode (repeat)) */
@@ -169,8 +155,6 @@ enum {
 #define UNDO_IBLOCK     030 /* Insert block */
 
 /* Misc */
-#define UNDO_SWAP       031	/* Swap cursors */
-
 #define UNDO_INDENT     032
 #define UNDO_UNINDENT   033
 #define UNDO_COMMENT    034
@@ -180,10 +164,6 @@ enum {
 #define UNDO_MOVE_LINES_DOWN    037
 
 #define UNDO_DUPLICATE  040
-
-/* Marker flags */
-#define TMARK_TEMP		0x01	/* Remove on non-editing events, don't save */
-#define TMARK_EDITALL	0x02	/* Edit all markers of the same group as one */
 
 #ifdef __cplusplus
 }

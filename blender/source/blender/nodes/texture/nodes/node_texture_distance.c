@@ -35,13 +35,13 @@
 #include "node_texture_util.h"
 #include "NOD_texture.h"
 
-static bNodeSocketTemplate inputs[]= {
+static bNodeSocketTemplate inputs[] = {
 	{ SOCK_VECTOR, 1, N_("Coordinate 1"), 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, PROP_NONE },
 	{ SOCK_VECTOR, 1, N_("Coordinate 2"), 0.0f, 0.0f, 0.0f, 0.0f, -1.0f, 1.0f, PROP_NONE },
-	{ -1, 0, "" } 
+	{ -1, 0, "" }
 };
 
-static bNodeSocketTemplate outputs[]= {
+static bNodeSocketTemplate outputs[] = {
 	{ SOCK_FLOAT, 0, N_("Value") },
 	{ -1, 0, "" }
 };
@@ -56,20 +56,19 @@ static void valuefn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **
 	*out = len_v3v3(co2, co1);
 }
 
-static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **out)
 {
-	tex_output(node, in, out[0], &valuefn, data);
+	tex_output(node, execdata, in, out[0], &valuefn, data);
 }
 
-void register_node_type_tex_distance(bNodeTreeType *ttype)
+void register_node_type_tex_distance(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, TEX_NODE_DISTANCE, "Distance", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_DISTANCE, "Distance", NODE_CLASS_CONVERTOR, 0);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 120, 110, 160);
 	node_type_storage(&ntype, "node_distance", NULL, NULL);
-	node_type_exec(&ntype, exec);
+	node_type_exec(&ntype, NULL, NULL, exec);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

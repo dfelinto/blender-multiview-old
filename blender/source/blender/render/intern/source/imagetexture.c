@@ -102,10 +102,15 @@ static void ibuf_get_color(float col[4], struct ImBuf *ibuf, int x, int y)
 		col[1] = ((float)rect[1])*(1.0f/255.0f);
 		col[2] = ((float)rect[2])*(1.0f/255.0f);
 		col[3] = ((float)rect[3])*(1.0f/255.0f);
-	}	
+
+		/* bytes are internally straight, however render pipeline seems to expect premul */
+		col[0] *= col[3];
+		col[1] *= col[3];
+		col[2] *= col[3];
+	}
 }
 
-int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResult *texres)
+int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResult *texres, struct ImagePool *pool)
 {
 	float fx, fy, val1, val2, val3;
 	int x, y, retval;
@@ -114,7 +119,7 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 	texres->tin= texres->ta= texres->tr= texres->tg= texres->tb= 0.0f;
 	
 	/* we need to set retval OK, otherwise texture code generates normals itself... */
-	retval= texres->nor?3:1;
+	retval= texres->nor ? 3 : 1;
 	
 	/* quick tests */
 	if (ibuf==NULL && ima==NULL)
@@ -124,13 +129,16 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 		/* hack for icon render */
 		if (ima->ibufs.first==NULL && (R.r.scemode & R_NO_IMAGE_LOAD))
 			return retval;
-		
-		ibuf= BKE_image_get_ibuf(ima, &tex->iuser);
+
+		ibuf = BKE_image_pool_acquire_ibuf(ima, &tex->iuser, pool);
 
 		ima->flag|= IMA_USED_FOR_RENDER;
 	}
-	if (ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL))
+	if (ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL)) {
+		if (ima)
+			BKE_image_pool_release_ibuf(ima, ibuf, pool);
 		return retval;
+	}
 	
 	/* setup mapping */
 	if (tex->imaflag & TEX_IMAROT) {
@@ -150,11 +158,22 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 		fx-= xs;
 		fy-= ys;
 
-		if ( (tex->flag & TEX_CHECKER_ODD)==0) {
-			if ((xs+ys) & 1);else return retval;
+		if ( (tex->flag & TEX_CHECKER_ODD) == 0) {
+			if ((xs + ys) & 1) {
+				/* pass */
+			}
+			else {
+				if (ima)
+					BKE_image_pool_release_ibuf(ima, ibuf, pool);
+				return retval;
+			}
 		}
 		if ( (tex->flag & TEX_CHECKER_EVEN)==0) {
-			if ((xs+ys) & 1) return retval;
+			if ((xs+ys) & 1) {
+				if (ima)
+					BKE_image_pool_release_ibuf(ima, ibuf, pool);
+				return retval;
+			}
 		}
 		/* scale around center, (0.5, 0.5) */
 		if (tex->checkerdist<1.0f) {
@@ -168,11 +187,15 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 
 	if (tex->extend == TEX_CLIPCUBE) {
 		if (x<0 || y<0 || x>=ibuf->x || y>=ibuf->y || texvec[2]<-1.0f || texvec[2]>1.0f) {
+			if (ima)
+				BKE_image_pool_release_ibuf(ima, ibuf, pool);
 			return retval;
 		}
 	}
 	else if ( tex->extend==TEX_CLIP || tex->extend==TEX_CHECKER) {
 		if (x<0 || y<0 || x>=ibuf->x || y>=ibuf->y) {
+			if (ima)
+				BKE_image_pool_release_ibuf(ima, ibuf, pool);
 			return retval;
 		}
 	}
@@ -201,10 +224,12 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 	}
 
 	/* keep this before interpolation [#29761] */
-	if (tex->imaflag & TEX_USEALPHA) {
-		if ((tex->imaflag & TEX_CALCALPHA) == 0) {
-			texres->talpha = TRUE;
-		} 
+	if (ima) {
+		if ((tex->imaflag & TEX_USEALPHA) && (ima->flag & IMA_IGNORE_ALPHA) == 0) {
+			if ((tex->imaflag & TEX_CALCALPHA) == 0) {
+				texres->talpha = TRUE;
+			}
+		}
 	}
 
 	/* interpolate */
@@ -251,14 +276,18 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 				ibuf_get_color(col, ibuf, x+1, y);
 				val2= (col[0]+col[1]+col[2]);
 			}
-			else val2= val1;
+			else {
+				val2= val1;
+			}
 
 			if (y<ibuf->y-1) {
 				float col[4];
 				ibuf_get_color(col, ibuf, x, y+1);
-				val3= (col[0]+col[1]+col[2]);
+				val3 = (col[0]+col[1]+col[2]);
 			}
-			else val3= val1;
+			else {
+				val3 = val1;
+			}
 
 			/* do not mix up x and y here! */
 			texres->nor[0]= (val1-val2);
@@ -266,22 +295,32 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 		}
 	}
 
-	if (texres->talpha) texres->tin= texres->ta;
-	else if (tex->imaflag & TEX_CALCALPHA) {
-		texres->ta= texres->tin= MAX3(texres->tr, texres->tg, texres->tb);
+	if (texres->talpha) {
+		texres->tin = texres->ta;
 	}
-	else texres->ta= texres->tin= 1.0;
+	else if (tex->imaflag & TEX_CALCALPHA) {
+		texres->ta = texres->tin = max_fff(texres->tr, texres->tg, texres->tb);
+	}
+	else {
+		texres->ta = texres->tin = 1.0;
+	}
 	
-	if (tex->flag & TEX_NEGALPHA) texres->ta= 1.0f-texres->ta;
+	if (tex->flag & TEX_NEGALPHA) {
+		texres->ta = 1.0f - texres->ta;
+	}
 
-	/* de-premul, this is being premulled in shade_input_do_shade() */
-	if (texres->ta!=1.0f && texres->ta>1e-4f) {
+	/* de-premul, this is being premulled in shade_input_do_shade()
+	 * do not de-premul for generated alpha, it is already in straight */
+	if (texres->ta!=1.0f && texres->ta>1e-4f && !(tex->imaflag & TEX_CALCALPHA)) {
 		fx= 1.0f/texres->ta;
 		texres->tr*= fx;
 		texres->tg*= fx;
 		texres->tb*= fx;
 	}
-	
+
+	if (ima)
+		BKE_image_pool_release_ibuf(ima, ibuf, pool);
+
 	BRICONTRGB;
 	
 	return retval;
@@ -396,16 +435,16 @@ static float square_rctf(rctf *rf)
 {
 	float x, y;
 
-	x= rf->xmax- rf->xmin;
-	y= rf->ymax- rf->ymin;
-	return (x*y);
+	x = BLI_rctf_size_x(rf);
+	y = BLI_rctf_size_y(rf);
+	return x * y;
 }
 
 static float clipx_rctf(rctf *rf, float x1, float x2)
 {
 	float size;
 
-	size= rf->xmax - rf->xmin;
+	size = BLI_rctf_size_x(rf);
 
 	if (rf->xmin<x1) {
 		rf->xmin = x1;
@@ -417,8 +456,8 @@ static float clipx_rctf(rctf *rf, float x1, float x2)
 		rf->xmin = rf->xmax;
 		return 0.0;
 	}
-	else if (size!=0.0f) {
-		return (rf->xmax - rf->xmin)/size;
+	else if (size != 0.0f) {
+		return BLI_rctf_size_x(rf) / size;
 	}
 	return 1.0;
 }
@@ -427,7 +466,7 @@ static float clipy_rctf(rctf *rf, float y1, float y2)
 {
 	float size;
 
-	size= rf->ymax - rf->ymin;
+	size = BLI_rctf_size_y(rf);
 
 	if (rf->ymin<y1) {
 		rf->ymin = y1;
@@ -440,8 +479,8 @@ static float clipy_rctf(rctf *rf, float y1, float y2)
 		rf->ymin = rf->ymax;
 		return 0.0;
 	}
-	else if (size!=0.0f) {
-		return (rf->ymax - rf->ymin)/size;
+	else if (size != 0.0f) {
+		return BLI_rctf_size_y(rf) / size;
 	}
 	return 1.0;
 
@@ -474,7 +513,9 @@ static void boxsampleclip(struct ImBuf *ibuf, rctf *rf, TexResult *texres)
 			
 			muly= 1.0;
 
-			if (starty==endy);
+			if (starty==endy) {
+				/* pass */
+			}
 			else {
 				if (y==starty) muly= 1.0f-(rf->ymin - y);
 				if (y==endy) muly= (rf->ymax - y);
@@ -686,10 +727,11 @@ static int ibuf_get_color_clip(float col[4], ImBuf *ibuf, int x, int y, int extf
 		}
 	}
 	else {
-		char* rect = (char*)(ibuf->rect + x + y*ibuf->x);
-		col[0] = rect[0]*(1.f/255.f);
-		col[1] = rect[1]*(1.f/255.f);
-		col[2] = rect[2]*(1.f/255.f);
+		char *rect = (char *)(ibuf->rect + x + y*ibuf->x);
+		float inv_alpha_fac = (1.0f / 255.0f) * rect[3] * (1.0f / 255.0f);
+		col[0] = rect[0] * inv_alpha_fac;
+		col[1] = rect[1] * inv_alpha_fac;
+		col[2] = rect[2] * inv_alpha_fac;
 		col[3] = clip ? 0.f : rect[3]*(1.f/255.f);
 	}
 	return clip;
@@ -717,7 +759,7 @@ static int ibuf_get_color_clip_bilerp(float col[4], ImBuf *ibuf, float u, float 
 	return ibuf_get_color_clip(col, ibuf, (int)u, (int)v, extflag);
 }
 
-static void area_sample(TexResult* texr, ImBuf* ibuf, float fx, float fy, afdata_t* AFD)
+static void area_sample(TexResult *texr, ImBuf *ibuf, float fx, float fy, afdata_t *AFD)
 {
 	int xs, ys, clip = 0;
 	float tc[4], xsd, ysd, cw = 0.f;
@@ -757,39 +799,39 @@ static void area_sample(TexResult* texr, ImBuf* ibuf, float fx, float fy, afdata
 /* table of (exp(ar) - exp(a)) / (1 - exp(a)) for r in range [0, 1] and a = -2
  * used instead of actual gaussian, otherwise at high texture magnifications circular artifacts are visible */
 #define EWA_MAXIDX 255
-static float EWA_WTS[EWA_MAXIDX + 1] =
-{ 1.f, 0.990965f, 0.982f, 0.973105f, 0.96428f, 0.955524f, 0.946836f, 0.938216f, 0.929664f,
- 0.921178f, 0.912759f, 0.904405f, 0.896117f, 0.887893f, 0.879734f, 0.871638f, 0.863605f,
- 0.855636f, 0.847728f, 0.839883f, 0.832098f, 0.824375f, 0.816712f, 0.809108f, 0.801564f,
- 0.794079f, 0.786653f, 0.779284f, 0.771974f, 0.76472f, 0.757523f, 0.750382f, 0.743297f,
- 0.736267f, 0.729292f, 0.722372f, 0.715505f, 0.708693f, 0.701933f, 0.695227f, 0.688572f,
- 0.68197f, 0.67542f, 0.66892f, 0.662471f, 0.656073f, 0.649725f, 0.643426f, 0.637176f,
- 0.630976f, 0.624824f, 0.618719f, 0.612663f, 0.606654f, 0.600691f, 0.594776f, 0.588906f,
- 0.583083f, 0.577305f, 0.571572f, 0.565883f, 0.56024f, 0.55464f, 0.549084f, 0.543572f,
- 0.538102f, 0.532676f, 0.527291f, 0.521949f, 0.516649f, 0.511389f, 0.506171f, 0.500994f,
- 0.495857f, 0.490761f, 0.485704f, 0.480687f, 0.475709f, 0.470769f, 0.465869f, 0.461006f,
- 0.456182f, 0.451395f, 0.446646f, 0.441934f, 0.437258f, 0.432619f, 0.428017f, 0.42345f,
- 0.418919f, 0.414424f, 0.409963f, 0.405538f, 0.401147f, 0.39679f, 0.392467f, 0.388178f,
- 0.383923f, 0.379701f, 0.375511f, 0.371355f, 0.367231f, 0.363139f, 0.359079f, 0.355051f,
- 0.351055f, 0.347089f, 0.343155f, 0.339251f, 0.335378f, 0.331535f, 0.327722f, 0.323939f,
- 0.320186f, 0.316461f, 0.312766f, 0.3091f, 0.305462f, 0.301853f, 0.298272f, 0.294719f,
- 0.291194f, 0.287696f, 0.284226f, 0.280782f, 0.277366f, 0.273976f, 0.270613f, 0.267276f,
- 0.263965f, 0.26068f, 0.257421f, 0.254187f, 0.250979f, 0.247795f, 0.244636f, 0.241502f,
- 0.238393f, 0.235308f, 0.232246f, 0.229209f, 0.226196f, 0.223206f, 0.220239f, 0.217296f,
- 0.214375f, 0.211478f, 0.208603f, 0.20575f, 0.20292f, 0.200112f, 0.197326f, 0.194562f,
- 0.191819f, 0.189097f, 0.186397f, 0.183718f, 0.18106f, 0.178423f, 0.175806f, 0.17321f,
- 0.170634f, 0.168078f, 0.165542f, 0.163026f, 0.16053f, 0.158053f, 0.155595f, 0.153157f,
- 0.150738f, 0.148337f, 0.145955f, 0.143592f, 0.141248f, 0.138921f, 0.136613f, 0.134323f,
- 0.132051f, 0.129797f, 0.12756f, 0.125341f, 0.123139f, 0.120954f, 0.118786f, 0.116635f,
- 0.114501f, 0.112384f, 0.110283f, 0.108199f, 0.106131f, 0.104079f, 0.102043f, 0.100023f,
- 0.0980186f, 0.09603f, 0.094057f, 0.0920994f, 0.0901571f, 0.08823f, 0.0863179f, 0.0844208f,
- 0.0825384f, 0.0806708f, 0.0788178f, 0.0769792f, 0.0751551f, 0.0733451f, 0.0715493f, 0.0697676f,
- 0.0679997f, 0.0662457f, 0.0645054f, 0.0627786f, 0.0610654f, 0.0593655f, 0.0576789f, 0.0560055f,
- 0.0543452f, 0.0526979f, 0.0510634f, 0.0494416f, 0.0478326f, 0.0462361f, 0.0446521f, 0.0430805f,
- 0.0415211f, 0.039974f, 0.0384389f, 0.0369158f, 0.0354046f, 0.0339052f, 0.0324175f, 0.0309415f,
- 0.029477f, 0.0280239f, 0.0265822f, 0.0251517f, 0.0237324f, 0.0223242f, 0.020927f, 0.0195408f,
- 0.0181653f, 0.0168006f, 0.0154466f, 0.0141031f, 0.0127701f, 0.0114476f, 0.0101354f, 0.00883339f,
- 0.00754159f, 0.00625989f, 0.00498819f, 0.00372644f, 0.00247454f, 0.00123242f, 0.f
+static float EWA_WTS[EWA_MAXIDX + 1] = {
+	1.f, 0.990965f, 0.982f, 0.973105f, 0.96428f, 0.955524f, 0.946836f, 0.938216f, 0.929664f,
+	0.921178f, 0.912759f, 0.904405f, 0.896117f, 0.887893f, 0.879734f, 0.871638f, 0.863605f,
+	0.855636f, 0.847728f, 0.839883f, 0.832098f, 0.824375f, 0.816712f, 0.809108f, 0.801564f,
+	0.794079f, 0.786653f, 0.779284f, 0.771974f, 0.76472f, 0.757523f, 0.750382f, 0.743297f,
+	0.736267f, 0.729292f, 0.722372f, 0.715505f, 0.708693f, 0.701933f, 0.695227f, 0.688572f,
+	0.68197f, 0.67542f, 0.66892f, 0.662471f, 0.656073f, 0.649725f, 0.643426f, 0.637176f,
+	0.630976f, 0.624824f, 0.618719f, 0.612663f, 0.606654f, 0.600691f, 0.594776f, 0.588906f,
+	0.583083f, 0.577305f, 0.571572f, 0.565883f, 0.56024f, 0.55464f, 0.549084f, 0.543572f,
+	0.538102f, 0.532676f, 0.527291f, 0.521949f, 0.516649f, 0.511389f, 0.506171f, 0.500994f,
+	0.495857f, 0.490761f, 0.485704f, 0.480687f, 0.475709f, 0.470769f, 0.465869f, 0.461006f,
+	0.456182f, 0.451395f, 0.446646f, 0.441934f, 0.437258f, 0.432619f, 0.428017f, 0.42345f,
+	0.418919f, 0.414424f, 0.409963f, 0.405538f, 0.401147f, 0.39679f, 0.392467f, 0.388178f,
+	0.383923f, 0.379701f, 0.375511f, 0.371355f, 0.367231f, 0.363139f, 0.359079f, 0.355051f,
+	0.351055f, 0.347089f, 0.343155f, 0.339251f, 0.335378f, 0.331535f, 0.327722f, 0.323939f,
+	0.320186f, 0.316461f, 0.312766f, 0.3091f, 0.305462f, 0.301853f, 0.298272f, 0.294719f,
+	0.291194f, 0.287696f, 0.284226f, 0.280782f, 0.277366f, 0.273976f, 0.270613f, 0.267276f,
+	0.263965f, 0.26068f, 0.257421f, 0.254187f, 0.250979f, 0.247795f, 0.244636f, 0.241502f,
+	0.238393f, 0.235308f, 0.232246f, 0.229209f, 0.226196f, 0.223206f, 0.220239f, 0.217296f,
+	0.214375f, 0.211478f, 0.208603f, 0.20575f, 0.20292f, 0.200112f, 0.197326f, 0.194562f,
+	0.191819f, 0.189097f, 0.186397f, 0.183718f, 0.18106f, 0.178423f, 0.175806f, 0.17321f,
+	0.170634f, 0.168078f, 0.165542f, 0.163026f, 0.16053f, 0.158053f, 0.155595f, 0.153157f,
+	0.150738f, 0.148337f, 0.145955f, 0.143592f, 0.141248f, 0.138921f, 0.136613f, 0.134323f,
+	0.132051f, 0.129797f, 0.12756f, 0.125341f, 0.123139f, 0.120954f, 0.118786f, 0.116635f,
+	0.114501f, 0.112384f, 0.110283f, 0.108199f, 0.106131f, 0.104079f, 0.102043f, 0.100023f,
+	0.0980186f, 0.09603f, 0.094057f, 0.0920994f, 0.0901571f, 0.08823f, 0.0863179f, 0.0844208f,
+	0.0825384f, 0.0806708f, 0.0788178f, 0.0769792f, 0.0751551f, 0.0733451f, 0.0715493f, 0.0697676f,
+	0.0679997f, 0.0662457f, 0.0645054f, 0.0627786f, 0.0610654f, 0.0593655f, 0.0576789f, 0.0560055f,
+	0.0543452f, 0.0526979f, 0.0510634f, 0.0494416f, 0.0478326f, 0.0462361f, 0.0446521f, 0.0430805f,
+	0.0415211f, 0.039974f, 0.0384389f, 0.0369158f, 0.0354046f, 0.0339052f, 0.0324175f, 0.0309415f,
+	0.029477f, 0.0280239f, 0.0265822f, 0.0251517f, 0.0237324f, 0.0223242f, 0.020927f, 0.0195408f,
+	0.0181653f, 0.0168006f, 0.0154466f, 0.0141031f, 0.0127701f, 0.0114476f, 0.0101354f, 0.00883339f,
+	0.00754159f, 0.00625989f, 0.00498819f, 0.00372644f, 0.00247454f, 0.00123242f, 0.f
 };
 
 /* test if a float value is 'nan'
@@ -800,7 +842,7 @@ static float EWA_WTS[EWA_MAXIDX + 1] =
 #endif
 //static int ISNAN(float x) { return (x != x); }
 
-static void radangle2imp(float a2, float b2, float th, float* A, float* B, float* C, float* F)
+static void radangle2imp(float a2, float b2, float th, float *A, float *B, float *C, float *F)
 {
 	float ct2 = cosf(th);
 	const float st2 = 1.0f - ct2 * ct2;	/* <- sin(th)^2 */
@@ -812,7 +854,7 @@ static void radangle2imp(float a2, float b2, float th, float* A, float* B, float
 }
 
 /* all tests here are done to make sure possible overflows are hopefully minimized */
-static void imp2radangle(float A, float B, float C, float F, float* a, float* b, float* th, float* ecc)
+static void imp2radangle(float A, float B, float C, float F, float *a, float *b, float *th, float *ecc)
 {
 	if (F <= 1e-5f) {	/* use arbitrary major radius, zero minor, infinite eccentricity */
 		*a = sqrtf(A > C ? A : C);
@@ -839,7 +881,7 @@ static void imp2radangle(float A, float B, float C, float F, float* a, float* b,
 	}
 }
 
-static void ewa_eval(TexResult* texr, ImBuf* ibuf, float fx, float fy, afdata_t* AFD)
+static void ewa_eval(TexResult *texr, ImBuf *ibuf, float fx, float fy, afdata_t *AFD)
 {
 	/* scaling dxt/dyt by full resolution can cause overflow because of huge A/B/C and esp. F values,
 	 * scaling by aspect ratio alone does the opposite, so try something in between instead... */
@@ -926,7 +968,7 @@ static void ewa_eval(TexResult* texr, ImBuf* ibuf, float fx, float fy, afdata_t*
 	texr->ta = texr->talpha ? texr->ta*d : 1.f; /* TXF alpha (clip ? cw*d : 1.f); */
 }
 
-static void feline_eval(TexResult* texr, ImBuf* ibuf, float fx, float fy, afdata_t* AFD)
+static void feline_eval(TexResult *texr, ImBuf *ibuf, float fx, float fy, afdata_t *AFD)
 {
 	const int maxn = AFD->iProbes - 1;
 	const float ll = ((AFD->majrad == AFD->minrad) ? 2.f*AFD->majrad : 2.f*(AFD->majrad - AFD->minrad)) / (maxn ? (float)maxn : 1.f);
@@ -982,7 +1024,7 @@ static void alpha_clip_aniso(ImBuf *ibuf, float minx, float miny, float maxx, fl
 
 		alphaclip  = clipx_rctf(&rf, 0.0, (float)(ibuf->x));
 		alphaclip *= clipy_rctf(&rf, 0.0, (float)(ibuf->y));
-		alphaclip  = maxf(alphaclip, 0.0f);
+		alphaclip  = max_ff(alphaclip, 0.0f);
 
 		if (alphaclip!=1.0f) {
 			/* premul it all */
@@ -1004,7 +1046,7 @@ static void image_mipmap_test(Tex *tex, ImBuf *ibuf)
 				if (ibuf->userflags & IB_MIPMAP_INVALID) {
 					IMB_remakemipmap(ibuf, tex->imaflag & TEX_GAUSS_MIP);
 					ibuf->userflags &= ~IB_MIPMAP_INVALID;
-				}				
+				}
 				BLI_unlock_thread(LOCK_IMAGE);
 			}
 			if (ibuf->mipmap[0] == NULL) {
@@ -1013,12 +1055,16 @@ static void image_mipmap_test(Tex *tex, ImBuf *ibuf)
 					IMB_makemipmap(ibuf, tex->imaflag & TEX_GAUSS_MIP);
 				BLI_unlock_thread(LOCK_IMAGE);
 			}
+			/* if no mipmap could be made, fall back on non-mipmap render */
+			if (ibuf->mipmap[0] == NULL) {
+				tex->imaflag &= ~TEX_MIPMAP;
+			}
 		}
 	}
 	
 }
 
-static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], float dxt[3], float dyt[3], TexResult *texres)
+static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], float dxt[2], float dyt[2], TexResult *texres, struct ImagePool *pool)
 {
 	TexResult texr;
 	float fx, fy, minx, maxx, miny, maxy;
@@ -1049,15 +1095,29 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 
 	if (ima) {	/* hack for icon render */
 		if ((ima->ibufs.first == NULL) && (R.r.scemode & R_NO_IMAGE_LOAD)) return retval;
-		ibuf = BKE_image_get_ibuf(ima, &tex->iuser); 
+		ibuf = BKE_image_pool_acquire_ibuf(ima, &tex->iuser, pool);
 	}
 
-	if ((ibuf == NULL) || ((ibuf->rect == NULL) && (ibuf->rect_float == NULL))) return retval;
+	if ((ibuf == NULL) || ((ibuf->rect == NULL) && (ibuf->rect_float == NULL))) {
+		if (ima)
+			BKE_image_pool_release_ibuf(ima, ibuf, pool);
+		return retval;
+	}
+
+	if (ima) {
+		ima->flag |= IMA_USED_FOR_RENDER;
+	}
 
 	/* mipmap test */
 	image_mipmap_test(tex, ibuf);
 	
-	if ((tex->imaflag & TEX_USEALPHA) && ((tex->imaflag & TEX_CALCALPHA) == 0)) texres->talpha = 1;
+	if (ima) {
+		if ((tex->imaflag & TEX_USEALPHA) && (ima->flag & IMA_IGNORE_ALPHA) == 0) {
+			if ((tex->imaflag & TEX_CALCALPHA) == 0) {
+				texres->talpha = 1;
+			}
+		}
+	}
 	texr.talpha = texres->talpha;
 
 	if (tex->imaflag & TEX_IMAROT) {
@@ -1081,10 +1141,10 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 	}
 
 	/* pixel coordinates */
-	minx = MIN3(dxt[0], dyt[0], dxt[0] + dyt[0]);
-	maxx = MAX3(dxt[0], dyt[0], dxt[0] + dyt[0]);
-	miny = MIN3(dxt[1], dyt[1], dxt[1] + dyt[1]);
-	maxy = MAX3(dxt[1], dyt[1], dxt[1] + dyt[1]);
+	minx = min_fff(dxt[0], dyt[0], dxt[0] + dyt[0]);
+	maxx = max_fff(dxt[0], dyt[0], dxt[0] + dyt[0]);
+	miny = min_fff(dxt[1], dyt[1], dxt[1] + dyt[1]);
+	maxy = max_fff(dxt[1], dyt[1], dxt[1] + dyt[1]);
 
 	/* tex_sharper has been removed */
 	minx = (maxx - minx)*0.5f;
@@ -1161,8 +1221,16 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 				}
 			}
 			else {
-				if ((tex->flag & TEX_CHECKER_ODD) == 0 && ((xs + ys) & 1) == 0) return retval;
-				if ((tex->flag & TEX_CHECKER_EVEN) == 0 && (xs + ys) & 1) return retval;
+				if ((tex->flag & TEX_CHECKER_ODD) == 0 && ((xs + ys) & 1) == 0) {
+					if (ima)
+						BKE_image_pool_release_ibuf(ima, ibuf, pool);
+					return retval;
+				}
+				if ((tex->flag & TEX_CHECKER_EVEN) == 0 && (xs + ys) & 1) {
+					if (ima)
+						BKE_image_pool_release_ibuf(ima, ibuf, pool);
+					return retval;
+				}
 				fx -= xs;
 				fy -= ys;
 			}
@@ -1178,10 +1246,18 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 	}
 
 	if (tex->extend == TEX_CLIPCUBE) {
-		if ((fx + minx) < 0.f || (fy + miny) < 0.f || (fx - minx) > 1.f || (fy - miny) > 1.f || texvec[2] < -1.f || texvec[2] > 1.f) return retval;
+		if ((fx + minx) < 0.f || (fy + miny) < 0.f || (fx - minx) > 1.f || (fy - miny) > 1.f || texvec[2] < -1.f || texvec[2] > 1.f) {
+			if (ima)
+				BKE_image_pool_release_ibuf(ima, ibuf, pool);
+			return retval;
+		}
 	}
 	else if (tex->extend == TEX_CLIP || tex->extend == TEX_CHECKER) {
-		if ((fx + minx) < 0.f || (fy + miny) < 0.f || (fx - minx) > 1.f || (fy - miny) > 1.f) return retval;
+		if ((fx + minx) < 0.f || (fy + miny) < 0.f || (fx - minx) > 1.f || (fy - miny) > 1.f) {
+			if (ima)
+				BKE_image_pool_release_ibuf(ima, ibuf, pool);
+			return retval;
+		}
 	}
 	else {
 		if (tex->extend == TEX_EXTEND) {
@@ -1219,7 +1295,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 		ImBuf *previbuf, *curibuf;
 		float levf;
 		int maxlev;
-		ImBuf* mipmaps[IB_MIPMAP_LEVELS + 1];
+		ImBuf *mipmaps[IB_MIPMAP_LEVELS + 1];
 
 		/* modify ellipse minor axis if too eccentric, use for area sampling as well
 		 * scaling dxt/dyt as done in pbrt is not the same
@@ -1236,8 +1312,8 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 			float fProbes;
 			a *= ff;
 			b *= ff;
-			a = maxf(a, 1.0f);
-			b = maxf(b, 1.0f);
+			a = max_ff(a, 1.0f);
+			b = max_ff(b, 1.0f);
 			fProbes = 2.f*(a / b) - 1.f;
 			AFD.iProbes = (int)floorf(fProbes + 0.5f);
 			AFD.iProbes = MIN2(AFD.iProbes, tex->afmax);
@@ -1253,7 +1329,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 			if (ecc > (float)tex->afmax) b = a / (float)tex->afmax;
 			b *= ff;
 		}
-		maxd = maxf(b, 1e-8f);
+		maxd = max_ff(b, 1e-8f);
 		levf = ((float)M_LOG2E) * logf(maxd);
 
 		curmap = 0;
@@ -1338,8 +1414,8 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 			imp2radangle(A, B, C, F, &a, &b, &th, &ecc);
 			a *= ff;
 			b *= ff;
-			a = maxf(a, 1.0f);
-			b = maxf(b, 1.0f);
+			a = max_ff(a, 1.0f);
+			b = max_ff(b, 1.0f);
 			fProbes = 2.f*(a / b) - 1.f;
 			/* no limit to number of Probes here */
 			AFD.iProbes = (int)floorf(fProbes + 0.5f);
@@ -1369,7 +1445,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 	}
 
 	if (tex->imaflag & TEX_CALCALPHA)
-		texres->ta = texres->tin = texres->ta * MAX3(texres->tr, texres->tg, texres->tb);
+		texres->ta = texres->tin = texres->ta * max_fff(texres->tr, texres->tg, texres->tb);
 	else
 		texres->tin = texres->ta;
 	if (tex->flag & TEX_NEGALPHA) texres->ta = 1.f - texres->ta;
@@ -1395,12 +1471,16 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 
 	/* brecht: tried to fix this, see "TXF alpha" comments */
 
-	if (texres->ta != 1.f && (texres->ta > 1e-4f)) {
+	/* do not de-premul for generated alpha, it is already in straight */
+	if (texres->ta!=1.0f && texres->ta>1e-4f && !(tex->imaflag & TEX_CALCALPHA)) {
 		fx = 1.f/texres->ta;
 		texres->tr *= fx;
 		texres->tg *= fx;
 		texres->tb *= fx;
 	}
+
+	if (ima)
+		BKE_image_pool_release_ibuf(ima, ibuf, pool);
 
 	BRICONTRGB;
 	
@@ -1408,26 +1488,26 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 }
 
 
-int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const float DXT[3], const float DYT[3], TexResult *texres)
+int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const float DXT[2], const float DYT[2], TexResult *texres, struct ImagePool *pool)
 {
 	TexResult texr;
-	float fx, fy, minx, maxx, miny, maxy, dx, dy, dxt[3], dyt[3];
+	float fx, fy, minx, maxx, miny, maxy, dx, dy, dxt[2], dyt[2];
 	float maxd, pixsize, val1, val2, val3;
 	int curmap, retval, imaprepeat, imapextend;
 
 	/* TXF: since dxt/dyt might be modified here and since they might be needed after imagewraposa() call,
 	 * make a local copy here so that original vecs remain untouched */
-	copy_v3_v3(dxt, DXT);
-	copy_v3_v3(dyt, DYT);
+	copy_v2_v2(dxt, DXT);
+	copy_v2_v2(dyt, DYT);
 
 	/* anisotropic filtering */
 	if (tex->texfilter != TXF_BOX)
-		return imagewraposa_aniso(tex, ima, ibuf, texvec, dxt, dyt, texres);
+		return imagewraposa_aniso(tex, ima, ibuf, texvec, dxt, dyt, texres, pool);
 
 	texres->tin= texres->ta= texres->tr= texres->tg= texres->tb= 0.0f;
 	
 	/* we need to set retval OK, otherwise texture code generates normals itself... */
-	retval= texres->nor?3:1;
+	retval = texres->nor ? 3 : 1;
 	
 	/* quick tests */
 	if (ibuf==NULL && ima==NULL)
@@ -1438,19 +1518,25 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 		if (ima->ibufs.first==NULL && (R.r.scemode & R_NO_IMAGE_LOAD))
 			return retval;
 		
-		ibuf= BKE_image_get_ibuf(ima, &tex->iuser); 
+		ibuf = BKE_image_pool_acquire_ibuf(ima, &tex->iuser, pool);
 
 		ima->flag|= IMA_USED_FOR_RENDER;
 	}
-	if (ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL))
+	if (ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL)) {
+		if (ima)
+			BKE_image_pool_release_ibuf(ima, ibuf, pool);
 		return retval;
+	}
 	
 	/* mipmap test */
 	image_mipmap_test(tex, ibuf);
 
-	if (tex->imaflag & TEX_USEALPHA) {
-		if (tex->imaflag & TEX_CALCALPHA);
-		else texres->talpha= 1;
+	if (ima) {
+		if ((tex->imaflag & TEX_USEALPHA) && (ima->flag & IMA_IGNORE_ALPHA) == 0) {
+			if ((tex->imaflag & TEX_CALCALPHA) == 0) {
+				texres->talpha = TRUE;
+			}
+		}
 	}
 	
 	texr.talpha= texres->talpha;
@@ -1478,10 +1564,10 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 	
 	/* pixel coordinates */
 
-	minx = MIN3(dxt[0], dyt[0], dxt[0] + dyt[0]);
-	maxx = MAX3(dxt[0], dyt[0], dxt[0] + dyt[0]);
-	miny = MIN3(dxt[1], dyt[1], dxt[1] + dyt[1]);
-	maxy = MAX3(dxt[1], dyt[1], dxt[1] + dyt[1]);
+	minx = min_fff(dxt[0], dyt[0], dxt[0] + dyt[0]);
+	maxx = max_fff(dxt[0], dyt[0], dxt[0] + dyt[0]);
+	miny = min_fff(dxt[1], dyt[1], dxt[1] + dyt[1]);
+	maxy = max_fff(dxt[1], dyt[1], dxt[1] + dyt[1]);
 
 	/* tex_sharper has been removed */
 	minx= (maxx-minx)/2.0f;
@@ -1546,11 +1632,21 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 
 			if (boundary==0) {
 				if ( (tex->flag & TEX_CHECKER_ODD)==0) {
-					if ((xs+ys) & 1);
-					else return retval;
+					if ((xs + ys) & 1) {
+						/* pass */
+					}
+					else {
+						if (ima)
+							BKE_image_pool_release_ibuf(ima, ibuf, pool);
+						return retval;
+					}
 				}
 				if ( (tex->flag & TEX_CHECKER_EVEN)==0) {
-					if ((xs+ys) & 1) return retval;
+					if ((xs + ys) & 1) {
+						if (ima)
+							BKE_image_pool_release_ibuf(ima, ibuf, pool);
+						return retval;
+					}
 				}
 				fx-= xs;
 				fy-= ys;
@@ -1584,11 +1680,15 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 
 	if (tex->extend == TEX_CLIPCUBE) {
 		if (fx+minx<0.0f || fy+miny<0.0f || fx-minx>1.0f || fy-miny>1.0f || texvec[2]<-1.0f || texvec[2]>1.0f) {
+			if (ima)
+				BKE_image_pool_release_ibuf(ima, ibuf, pool);
 			return retval;
 		}
 	}
 	else if (tex->extend==TEX_CLIP || tex->extend==TEX_CHECKER) {
 		if (fx+minx<0.0f || fy+miny<0.0f || fx-minx>1.0f || fy-miny>1.0f) {
+			if (ima)
+				BKE_image_pool_release_ibuf(ima, ibuf, pool);
 			return retval;
 		}
 	}
@@ -1624,7 +1724,7 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 		
 		dx = minx;
 		dy = miny;
-		maxd = maxf(dx, dy);
+		maxd = max_ff(dx, dy);
 		if (maxd > 0.5f) maxd = 0.5f;
 
 		pixsize = 1.0f / (float) MIN2(ibuf->x, ibuf->y);
@@ -1755,9 +1855,11 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 	}
 	
 	if (tex->imaflag & TEX_CALCALPHA) {
-		texres->ta= texres->tin= texres->ta*MAX3(texres->tr, texres->tg, texres->tb);
+		texres->ta = texres->tin = texres->ta * max_fff(texres->tr, texres->tg, texres->tb);
 	}
-	else texres->tin= texres->ta;
+	else {
+		texres->tin = texres->ta;
+	}
 
 	if (tex->flag & TEX_NEGALPHA) texres->ta= 1.0f-texres->ta;
 	
@@ -1779,19 +1881,23 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 	}
 
 	/* de-premul, this is being premulled in shade_input_do_shade() */
-	if (texres->ta != 1.0f && texres->ta > 1e-4f) {
+	/* do not de-premul for generated alpha, it is already in straight */
+	if (texres->ta!=1.0f && texres->ta>1e-4f && !(tex->imaflag & TEX_CALCALPHA)) {
 		mul_v3_fl(&texres->tr, 1.0f / texres->ta);
 	}
+
+	if (ima)
+		BKE_image_pool_release_ibuf(ima, ibuf, pool);
 
 	BRICONTRGB;
 	
 	return retval;
 }
 
-void image_sample(Image *ima, float fx, float fy, float dx, float dy, float result[4])
+void image_sample(Image *ima, float fx, float fy, float dx, float dy, float result[4], struct ImagePool *pool)
 {
 	TexResult texres;
-	ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
+	ImBuf *ibuf = BKE_image_pool_acquire_ibuf(ima, NULL, pool);
 	
 	if (UNLIKELY(ibuf == NULL)) {
 		zero_v4(result);
@@ -1809,6 +1915,8 @@ void image_sample(Image *ima, float fx, float fy, float dx, float dy, float resu
 		ibuf->rect-= (ibuf->x*ibuf->y);
 
 	ima->flag|= IMA_USED_FOR_RENDER;
+
+	BKE_image_pool_release_ibuf(ima, ibuf, pool);
 }
 
 void ibuf_sample(ImBuf *ibuf, float fx, float fy, float dx, float dy, float result[4])

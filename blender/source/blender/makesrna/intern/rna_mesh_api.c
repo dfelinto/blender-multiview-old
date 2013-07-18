@@ -34,15 +34,17 @@
 
 #include "RNA_define.h"
 
-#include "BLO_sys_types.h"
+#include "BLI_sys_types.h"
 
 #include "BLI_utildefines.h"
 
 #include "BKE_mesh.h"
 #include "ED_mesh.h"
 
+#include "rna_internal.h"  /* own include */
+
 #ifdef RNA_RUNTIME
-const char *rna_Mesh_unit_test_compare(struct Mesh *mesh, bContext *C, struct Mesh *mesh2)
+static const char *rna_Mesh_unit_test_compare(struct Mesh *mesh, bContext *C, struct Mesh *mesh2)
 {
 	const char *ret = BKE_mesh_cmp(mesh, mesh2, FLT_EPSILON * 60);
 	
@@ -64,7 +66,7 @@ void RNA_api_mesh(StructRNA *srna)
 	parm = RNA_def_float_matrix(func, "matrix", 4, 4, NULL, 0.0f, 0.0f, "", "Matrix", 0.0f, 0.0f);
 	RNA_def_property_flag(parm, PROP_REQUIRED);
 
-	func = RNA_def_function(srna, "calc_normals", "ED_mesh_calc_normals");
+	func = RNA_def_function(srna, "calc_normals", "BKE_mesh_calc_normals");
 	RNA_def_function_ui_description(func, "Calculate vertex normals");
 
 	func = RNA_def_function(srna, "calc_tessface", "ED_mesh_calc_tessface");
@@ -76,7 +78,7 @@ void RNA_api_mesh(StructRNA *srna)
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 
 	func = RNA_def_function(srna, "unit_test_compare", "rna_Mesh_unit_test_compare");
-	parm = RNA_def_pointer(func, "mesh", "Mesh", "", "Mesh to compare to");
+	RNA_def_pointer(func, "mesh", "Mesh", "", "Mesh to compare to");
 	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
 	/* return value */
 	parm = RNA_def_string(func, "result", "nothing", 64, "Return value", "String description of result of comparison");

@@ -46,27 +46,21 @@ struct BMLoop;
 struct BMEdge;
 struct BMVert;
 
-/* id can be from 0 to 3 */
-#define TF_PIN_MASK(id) (TF_PIN1 << id)
-#define TF_SEL_MASK(id) (TF_SEL1 << id)
-
 /* visibility and selection */
-int uvedit_face_visible_nolocal(struct Scene *scene, struct BMFace *efa);
+bool uvedit_face_visible_nolocal(struct Scene *scene, struct BMFace *efa);
 
 /* geometric utilities */
-float uv_poly_area(float uv[][2], int len);
-void  uv_poly_copy_aspect(float uv_orig [][2], float uv[][2], float aspx, float aspy, int len);
-void  uv_poly_center(struct BMEditMesh *em, struct BMFace *f, float r_cent[2]);
+void  uv_poly_copy_aspect(float uv_orig[][2], float uv[][2], float aspx, float aspy, int len);
+void  uv_poly_center(struct BMFace *f, float r_cent[2], const int cd_loop_uv_offset);
 
 /* find nearest */
 
 typedef struct NearestHit {
 	struct BMFace *efa;
 	struct MTexPoly *tf;
-	struct BMLoop *l, *nextl;
-	struct MLoopUV *luv, *nextluv;
-	int lindex; //index of loop within face
-	int vert1, vert2; //index in mesh of edge vertices
+	struct BMLoop *l;
+	struct MLoopUV *luv, *luv_next;
+	int lindex;  /* index of loop within face */
 } NearestHit;
 
 void uv_find_nearest_vert(struct Scene *scene, struct Image *ima, struct BMEditMesh *em,
@@ -76,39 +70,15 @@ void uv_find_nearest_edge(struct Scene *scene, struct Image *ima, struct BMEditM
 
 /* utility tool functions */
 
-struct UvElement *ED_uv_element_get(struct UvElementMap *map, struct BMFace *efa, struct BMLoop *l);
 void uvedit_live_unwrap_update(struct SpaceImage *sima, struct Scene *scene, struct Object *obedit);
-
-/* smart stitch */
-
-/* object that stores display data for previewing before accepting stitching */
-typedef struct StitchPreviewer {
-	/* here we'll store the preview triangle indices of the mesh */
-	float *preview_polys;
-	/* uvs per polygon. */
-	unsigned int *uvs_per_polygon;
-	/*number of preview polygons */
-	unsigned int num_polys;
-	/* preview data. These will be either the previewed vertices or edges depending on stitch mode settings */
-	float *preview_stitchable;
-	float *preview_unstitchable;
-	/* here we'll store the number of elements to be drawn */
-	unsigned int num_stitchable;
-	unsigned int num_unstitchable;
-	unsigned int preview_uvs;
-	/* ...and here we'll store the triangles*/
-	float *static_tris;
-	unsigned int num_static_tris;
-} StitchPreviewer;
-
-StitchPreviewer *uv_get_stitch_previewer(void);
+void uvedit_get_aspect(struct Scene *scene, struct Object *ob, struct BMEditMesh *em, float *aspx, float *aspy);
 
 /* operators */
 
 void UV_OT_average_islands_scale(struct wmOperatorType *ot);
 void UV_OT_cube_project(struct wmOperatorType *ot);
 void UV_OT_cylinder_project(struct wmOperatorType *ot);
-void UV_OT_from_view(struct wmOperatorType *ot);
+void UV_OT_project_from_view(struct wmOperatorType *ot);
 void UV_OT_minimize_stretch(struct wmOperatorType *ot);
 void UV_OT_pack_islands(struct wmOperatorType *ot);
 void UV_OT_reset(struct wmOperatorType *ot);

@@ -31,6 +31,7 @@ void  BM_loop_interp_multires(BMesh *bm, BMLoop *target, BMFace *source);
 void  BM_vert_interp_from_face(BMesh *bm, BMVert *v, BMFace *source);
 
 void  BM_data_interp_from_verts(BMesh *bm, BMVert *v1, BMVert *v2, BMVert *v, const float fac);
+void  BM_data_interp_from_edges(BMesh *bm, BMEdge *e1, BMEdge *e2, BMEdge *e, const float fac);
 void  BM_data_interp_face_vert_edge(BMesh *bm, BMVert *v1, BMVert *v2, BMVert *v, BMEdge *e1, const float fac);
 void  BM_data_layer_add(BMesh *em, CustomData *data, int type);
 void  BM_data_layer_add_named(BMesh *bm, CustomData *data, int type, const char *name);
@@ -41,9 +42,11 @@ void  BM_data_layer_copy(BMesh *bm, CustomData *data, int type, int src_n, int d
 float BM_elem_float_data_get(CustomData *cd, void *element, int type);
 void  BM_elem_float_data_set(CustomData *cd, void *element, int type, const float val);
 
-void  BM_face_interp_from_face(BMesh *bm, BMFace *target, BMFace *source);
+void BM_face_interp_from_face_ex(BMesh *bm, BMFace *target, BMFace *source, const bool do_vertex,
+                                 void **blocks, void **blocks_v, float (*cos_2d)[2], float axis_mat[3][3]);
+void  BM_face_interp_from_face(BMesh *bm, BMFace *target, BMFace *source, const bool do_vertex);
 void  BM_loop_interp_from_face(BMesh *bm, BMLoop *target, BMFace *source,
-                              int do_vertex, int do_multires);
+                               const bool do_vertex, const bool do_multires);
 
 void  BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f);
 

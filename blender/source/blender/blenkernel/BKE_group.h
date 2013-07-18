@@ -36,26 +36,22 @@
 struct Base;
 struct Group;
 struct GroupObject;
+struct Main;
 struct Object;
 struct bAction;
 struct Scene;
 
-void        BKE_group_free(struct Group *group);
-void        BKE_group_unlink(struct Group *group);
-struct Group *add_group(const char *name);
+void          BKE_group_free(struct Group *group);
+void          BKE_group_unlink(struct Group *group);
+struct Group *BKE_group_add(struct Main *bmain, const char *name);
 struct Group *BKE_group_copy(struct Group *group);
-int         add_to_group(struct Group *group, struct Object *ob, struct Scene *scene, struct Base *base);
-int         rem_from_group(struct Group *group, struct Object *ob, struct Scene *scene, struct Base *base);
-struct Group *find_group(struct Object *ob, struct Group *group);
-int         object_in_group(struct Object *ob, struct Group *group);
-int         group_is_animated(struct Object *parent, struct Group *group);
+bool          BKE_group_object_add(struct Group *group, struct Object *ob, struct Scene *scene, struct Base *base);
+bool          BKE_group_object_unlink(struct Group *group, struct Object *ob, struct Scene *scene, struct Base *base);
+struct Group *BKE_group_object_find(struct Group *group, struct Object *ob);
+bool          BKE_group_object_exists(struct Group *group, struct Object *ob);
+bool          BKE_group_is_animated(struct Group *group, struct Object *parent);
 
-void        group_tag_recalc(struct Group *group);
-void        group_handle_recalc_and_update(struct Scene *scene, struct Object *parent, struct Group *group);
-#if 0 /* UNUSED */
-struct Object *group_get_member_with_action(struct Group *group, struct bAction *act);
-void        group_relink_nla_objects(struct Object *ob);
-#endif
+void          BKE_group_tag_recalc(struct Group *group);
+void          BKE_group_handle_recalc_and_update(struct Scene *scene, struct Object *parent, struct Group *group);
 
-#endif
-
+#endif  /* __BKE_GROUP_H__ */

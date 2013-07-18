@@ -56,7 +56,7 @@
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_deform.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "RNA_define.h"
 #include "RNA_access.h"
@@ -102,11 +102,13 @@ static int return_editmesh_indexar(BMEditMesh *em, int *tot, int **indexar, floa
 	return totvert;
 }
 
-static int return_editmesh_vgroup(Object *obedit, BMEditMesh *em, char *name, float *cent)
+static bool return_editmesh_vgroup(Object *obedit, BMEditMesh *em, char *name, float *cent)
 {
+	const int cd_dvert_offset = obedit->actdef ? CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT) : -1;
+
 	zero_v3(cent);
 
-	if (obedit->actdef) {
+	if (cd_dvert_offset != -1) {
 		const int defgrp_index = obedit->actdef - 1;
 		int totvert = 0;
 
@@ -116,24 +118,22 @@ static int return_editmesh_vgroup(Object *obedit, BMEditMesh *em, char *name, fl
 
 		/* find the vertices */
 		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
-			dvert = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
+			dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
 
-			if (dvert) {
-				if (defvert_find_weight(dvert, defgrp_index) > 0.0f) {
-					add_v3_v3(cent, eve->co);
-					totvert++;
-				}
+			if (defvert_find_weight(dvert, defgrp_index) > 0.0f) {
+				add_v3_v3(cent, eve->co);
+				totvert++;
 			}
 		}
 		if (totvert) {
 			bDeformGroup *dg = BLI_findlink(&obedit->defbase, defgrp_index);
 			BLI_strncpy(name, dg->name, sizeof(dg->name));
 			mul_v3_fl(cent, 1.0f / (float)totvert);
-			return 1;
+			return true;
 		}
 	}
 	
-	return 0;
+	return false;
 }	
 
 static void select_editbmesh_hook(Object *ob, HookModifierData *hmd)
@@ -296,7 +296,7 @@ static int return_editcurve_indexar(Object *obedit, int *tot, int **indexar, flo
 	return totvert;
 }
 
-static int object_hook_index_array(Scene *scene, Object *obedit, int *tot, int **indexar, char *name, float *cent_r)
+static bool object_hook_index_array(Scene *scene, Object *obedit, int *tot, int **indexar, char *name, float *cent_r)
 {
 	*indexar = NULL;
 	*tot = 0;
@@ -315,15 +315,14 @@ static int object_hook_index_array(Scene *scene, Object *obedit, int *tot, int *
 			em = me->edit_btmesh;
 
 			EDBM_mesh_normals_update(em);
-			BMEdit_RecalcTessellation(em);
+			BKE_editmesh_tessface_calc(em);
 
 			/* check selected vertices first */
 			if (return_editmesh_indexar(em, tot, indexar, cent_r)) {
-				return 1;
+				return true;
 			}
 			else {
-				int ret = return_editmesh_vgroup(obedit, em, name, cent_r);
-				return ret;
+				return return_editmesh_vgroup(obedit, em, name, cent_r);
 			}
 		}
 		case OB_CURVE:
@@ -335,7 +334,7 @@ static int object_hook_index_array(Scene *scene, Object *obedit, int *tot, int *
 			return return_editlattice_indexar(lt->editlatt->latt, tot, indexar, cent_r);
 		}
 		default:
-			return 0;
+			return false;
 	}
 }
 
@@ -386,6 +385,31 @@ static void select_editcurve_hook(Object *obedit, HookModifierData *hmd)
 	}
 }
 
+static void object_hook_from_context(bContext *C, PointerRNA *ptr, const int num,
+                                     Object **r_ob, HookModifierData **r_hmd)
+{
+	Object *ob;
+	HookModifierData *hmd;
+
+	if (ptr->data) {  /* if modifier context is available, use that */
+		ob = ptr->id.data;
+		hmd = ptr->data;
+	}
+	else {  /* use the provided property */
+		ob = CTX_data_edit_object(C);
+		hmd = (HookModifierData *)BLI_findlink(&ob->modifiers, num);
+	}
+
+	if (ob && hmd && (hmd->modifier.type == eModifierType_Hook)) {
+		*r_ob = ob;
+		*r_hmd = hmd;
+	}
+	else {
+		*r_ob = NULL;
+		*r_hmd = NULL;
+	}
+}
+
 static void object_hook_select(Object *ob, HookModifierData *hmd) 
 {
 	if (hmd->indexar == NULL)
@@ -413,12 +437,12 @@ static int hook_op_edit_poll(bContext *C)
 	return 0;
 }
 
-static Object *add_hook_object_new(Scene *scene, Object *obedit)
+static Object *add_hook_object_new(Main *bmain, Scene *scene, Object *obedit)
 {
 	Base *base, *basedit;
 	Object *ob;
 
-	ob = BKE_object_add(scene, OB_EMPTY);
+	ob = BKE_object_add(bmain, scene, OB_EMPTY);
 	
 	basedit = BKE_scene_base_find(scene, obedit);
 	base = BKE_scene_base_find(scene, ob);
@@ -442,13 +466,13 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	ok = object_hook_index_array(scene, obedit, &tot, &indexar, name, cent);
 
 	if (!ok) {
-		BKE_report(reports, RPT_ERROR, "Requires selected vertices or active Vertex Group");
+		BKE_report(reports, RPT_ERROR, "Requires selected vertices or active vertex group");
 		return FALSE;
 	}
 
 	if (mode == OBJECT_ADDHOOK_NEWOB && !ob) {
 		
-		ob = add_hook_object_new(scene, obedit);
+		ob = add_hook_object_new(bmain, scene, obedit);
 		
 		/* transform cent to global coords for loc */
 		mul_v3_m4v3(ob->loc, obedit->obmat, cent);
@@ -491,7 +515,7 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	mul_serie_m4(hmd->parentinv, ob->imat, obedit->obmat, NULL,
 	             NULL, NULL, NULL, NULL, NULL);
 	
-	DAG_scene_sort(bmain, scene);
+	DAG_relations_tag_update(bmain);
 
 	return TRUE;
 }
@@ -515,12 +539,12 @@ static int object_add_hook_selob_exec(bContext *C, wmOperator *op)
 	CTX_DATA_END;
 	
 	if (!obsel) {
-		BKE_report(op->reports, RPT_ERROR, "Can't add hook with no other selected objects");
+		BKE_report(op->reports, RPT_ERROR, "Cannot add hook with no other selected objects");
 		return OPERATOR_CANCELLED;
 	}
 
 	if (use_bone && obsel->type != OB_ARMATURE) {
-		BKE_report(op->reports, RPT_ERROR, "Can't add hook bone for a non armature object");
+		BKE_report(op->reports, RPT_ERROR, "Cannot add hook bone for a non armature object");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -533,7 +557,7 @@ static int object_add_hook_selob_exec(bContext *C, wmOperator *op)
 	}
 }
 
-void OBJECT_OT_hook_add_selobj(wmOperatorType *ot)
+void OBJECT_OT_hook_add_selob(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Hook to Selected Object";
@@ -567,7 +591,7 @@ static int object_add_hook_newob_exec(bContext *C, wmOperator *op)
 	}
 }
 
-void OBJECT_OT_hook_add_newobj(wmOperatorType *ot)
+void OBJECT_OT_hook_add_newob(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Hook to New Object";
@@ -585,14 +609,12 @@ void OBJECT_OT_hook_add_newobj(wmOperatorType *ot)
 static int object_hook_remove_exec(bContext *C, wmOperator *op)
 {
 	int num = RNA_enum_get(op->ptr, "modifier");
-	Object *ob = NULL;
+	Object *ob = CTX_data_edit_object(C);
 	HookModifierData *hmd = NULL;
 
-	ob = CTX_data_edit_object(C);
 	hmd = (HookModifierData *)BLI_findlink(&ob->modifiers, num);
-
-	if (!ob || !hmd) {
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find hook modifier");
+	if (!hmd) {
+		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -665,17 +687,10 @@ static int object_hook_reset_exec(bContext *C, wmOperator *op)
 	int num = RNA_enum_get(op->ptr, "modifier");
 	Object *ob = NULL;
 	HookModifierData *hmd = NULL;
-	
-	if (ptr.data) {     /* if modifier context is available, use that */
-		ob = ptr.id.data;
-		hmd = ptr.data;
-	} 
-	else {          /* use the provided property */
-		ob = CTX_data_edit_object(C);
-		hmd = (HookModifierData *)BLI_findlink(&ob->modifiers, num);
-	}
-	if (!ob || !hmd) {
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find hook modifier");
+
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
+	if (hmd == NULL) {
+		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -687,7 +702,7 @@ static int object_hook_reset_exec(bContext *C, wmOperator *op)
 			float imat[4][4], mat[4][4];
 			
 			/* calculate the world-space matrix for the pose-channel target first, then carry on as usual */
-			mult_m4_m4m4(mat, hmd->object->obmat, pchan->pose_mat);
+			mul_m4_m4m4(mat, hmd->object->obmat, pchan->pose_mat);
 			
 			invert_m4_m4(imat, mat);
 			mul_serie_m4(hmd->parentinv, imat, ob->obmat, NULL, NULL, NULL, NULL, NULL, NULL);
@@ -734,16 +749,9 @@ static int object_hook_recenter_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	float bmat[3][3], imat[3][3];
 	
-	if (ptr.data) {  /* if modifier context is available, use that */
-		ob = ptr.id.data;
-		hmd = ptr.data;
-	} 
-	else {  /* use the provided property */
-		ob = CTX_data_edit_object(C);
-		hmd = (HookModifierData *)BLI_findlink(&ob->modifiers, num);
-	}
-	if (!ob || !hmd) {
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find hook modifier");
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
+	if (hmd == NULL) {
+		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -792,16 +800,9 @@ static int object_hook_assign_exec(bContext *C, wmOperator *op)
 	char name[MAX_NAME];
 	int *indexar, tot;
 	
-	if (ptr.data) {     /* if modifier context is available, use that */
-		ob = ptr.id.data;
-		hmd = ptr.data;
-	} 
-	else {          /* use the provided property */
-		ob = CTX_data_edit_object(C);
-		hmd = (HookModifierData *)BLI_findlink(&ob->modifiers, num);
-	}
-	if (!ob || !hmd) {
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find hook modifier");
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
+	if (hmd == NULL) {
+		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -854,16 +855,9 @@ static int object_hook_select_exec(bContext *C, wmOperator *op)
 	Object *ob = NULL;
 	HookModifierData *hmd = NULL;
 	
-	if (ptr.data) {     /* if modifier context is available, use that */
-		ob = ptr.id.data;
-		hmd = ptr.data;
-	} 
-	else {          /* use the provided property */
-		ob = CTX_data_edit_object(C);
-		hmd = (HookModifierData *)BLI_findlink(&ob->modifiers, num);
-	}
-	if (!ob || !hmd) {
-		BKE_report(op->reports, RPT_ERROR, "Couldn't find hook modifier");
+	object_hook_from_context(C, &ptr, num, &ob, &hmd);
+	if (hmd == NULL) {
+		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
 	

@@ -33,9 +33,11 @@
 #define __BLF_API_H__
 
 struct rctf;
+struct ColorManagedDisplay;
 
 int BLF_init(int points, int dpi);
 void BLF_exit(void);
+void BLF_default_dpi(int dpi);
 
 void BLF_cache_clear(void);
 
@@ -75,6 +77,7 @@ void BLF_draw_default_ascii(float x, float y, float z, const char *str, size_t l
 /* Draw the string using the current font. */
 void BLF_draw(int fontid, const char *str, size_t len);
 void BLF_draw_ascii(int fontid, const char *str, size_t len);
+int BLF_draw_mono(int fontid, const char *str, size_t len, int cwidth);
 
 /* This function return the bounding box of the string
  * and are not multiplied by the aspect.
@@ -108,6 +111,7 @@ float BLF_fixed_width(int fontid);
  * of the string, using the default font and both value
  * are multiplied by the aspect of the font.
  */
+void  BLF_width_and_height_default(const char *str, float *width, float *height);
 float BLF_width_default(const char *str);
 float BLF_height_default(const char *str);
 
@@ -151,7 +155,7 @@ void BLF_shadow_offset(int fontid, int x, int y);
  *
  *     BLF_buffer(NULL, NULL, 0, 0, 0, FALSE);
  */
-void BLF_buffer(int fontid, float *fbuf, unsigned char *cbuf, int w, int h, int nch, int do_color_management);
+void BLF_buffer(int fontid, float *fbuf, unsigned char *cbuf, int w, int h, int nch, struct ColorManagedDisplay *display);
 
 /* Set the color to be used for text. */
 void BLF_buffer_col(int fontid, float r, float g, float b, float a);
@@ -180,6 +184,7 @@ void BLF_dir_free(char **dirs, int count);
 #define BLF_KERNING_DEFAULT  (1 << 3)
 #define BLF_MATRIX           (1 << 4)
 #define BLF_ASPECT           (1 << 5)
+#define BLF_HINTING          (1 << 6)
 
 #define BLF_DRAW_STR_DUMMY_MAX 1024
 

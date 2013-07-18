@@ -4,12 +4,18 @@ Import('env')
 
 SConscript(['glew/SConscript'])
 SConscript(['colamd/SConscript'])
+SConscript(['rangetree/SConscript'])
+SConscript(['wcwidth/SConscript'])
+SConscript(['libmv/SConscript'])
 
 if env['WITH_BF_GAMEENGINE']:
     SConscript(['recastnavigation/SConscript'])
 
+# now only available in a branch
+'''
 if env['WITH_BF_ELTOPO']:
     SConscript(['eltopo/SConscript'])
+'''
 
 if env['WITH_BF_BULLET']:
     SConscript(['bullet2/src/SConscript'])
@@ -28,9 +34,6 @@ if env['WITH_BF_LZO']:
 
 if env['WITH_BF_LZMA']:
     SConscript(['lzma/SConscript'])
-
-if env['WITH_BF_LIBMV']:
-    SConscript(['libmv/SConscript'])
 
 if env['WITH_BF_BOOLEAN']:
     SConscript(['carve/SConscript'])

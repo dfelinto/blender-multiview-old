@@ -20,9 +20,9 @@
 
 set(INC
 	../include
+	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../../blenloader
 	../../makesdna
 	../../makesrna
 	../../windowmanager
@@ -42,6 +42,9 @@ set(SRC
 	physics_fluid.c
 	physics_ops.c
 	physics_pointcache.c
+	rigidbody_constraint.c
+	rigidbody_object.c
+	rigidbody_world.c
 
 	physics_intern.h
 )
@@ -50,8 +53,15 @@ if(WITH_MOD_FLUID)
 	add_definitions(-DWITH_MOD_FLUID)
 endif()
 
-if(WITH_OPENMP)
-	add_definitions(-DPARALLEL=1)
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
+endif()
+
+if(WITH_BULLET)
+	list(APPEND INC
+		../../../../intern/rigidbody
+	)
+	add_definitions(-DWITH_BULLET)
 endif()
 
 blender_add_lib(bf_editor_physics "${SRC}" "${INC}" "${INC_SYS}")

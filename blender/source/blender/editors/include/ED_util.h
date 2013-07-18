@@ -84,11 +84,12 @@ void crazyspace_set_quats_mesh(struct Mesh *me, float *origcos, float *mappedcos
 int sculpt_get_first_deform_matrices(struct Scene *scene, struct Object *ob, float (**deformmats)[3][3], float (**deformcos)[3]);
 void crazyspace_build_sculpt(struct Scene *scene, struct Object *ob, float (**deformmats)[3][3], float (**deformcos)[3]);
 
+/* cut-paste buffer free */
+void ED_clipboard_posebuf_free(void);
 
 /* ************** XXX OLD CRUFT WARNING ************* */
 
 void apply_keyb_grid(int shift, int ctrl, float *val, float fac1, float fac2, float fac3, int invert);
-int GetButStringLength(const char *str);
 
 /* where else to go ? */
 void unpack_menu(struct bContext *C, const char *opname, const char *id_name, const char *abs_name, const char *folder, struct PackedFile *pf);

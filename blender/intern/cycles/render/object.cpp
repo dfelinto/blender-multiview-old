@@ -19,6 +19,7 @@
 #include "device.h"
 #include "light.h"
 #include "mesh.h"
+#include "curves.h"
 #include "object.h"
 #include "scene.h"
 
@@ -45,26 +46,30 @@ Object::Object()
 	motion.post = transform_identity();
 	use_motion = false;
 	use_holdout = false;
+	curverender = false;
 }
 
 Object::~Object()
 {
 }
 
-void Object::compute_bounds(bool motion_blur)
+void Object::compute_bounds(bool motion_blur, float shuttertime)
 {
 	BoundBox mbounds = mesh->bounds;
 
 	if(motion_blur && use_motion) {
-		MotionTransform decomp;
-		transform_motion_decompose(&decomp, &motion);
+		DecompMotionTransform decomp;
+		transform_motion_decompose(&decomp, &motion, &tfm);
 
 		bounds = BoundBox::empty;
 
 		/* todo: this is really terrible. according to pbrt there is a better
 		 * way to find this iteratively, but did not find implementation yet
 		 * or try to implement myself */
-		for(float t = 0.0f; t < 1.0f; t += 1.0f/128.0f) {
+		float start_t = 0.5f - shuttertime*0.25f;
+		float end_t = 0.5f + shuttertime*0.25f;
+
+		for(float t = start_t; t < end_t; t += (1.0f/128.0f)*shuttertime) {
 			Transform ttfm;
 
 			transform_motion_interpolate(&ttfm, &decomp, t);
@@ -79,37 +84,34 @@ void Object::apply_transform()
 {
 	if(!mesh || tfm == transform_identity())
 		return;
-	
+
+	float3 c0 = transform_get_column(&tfm, 0);
+	float3 c1 = transform_get_column(&tfm, 1);
+	float3 c2 = transform_get_column(&tfm, 2);
+	float scalar = pow(fabsf(dot(cross(c0, c1), c2)), 1.0f/3.0f);
+
 	for(size_t i = 0; i < mesh->verts.size(); i++)
 		mesh->verts[i] = transform_point(&tfm, mesh->verts[i]);
 
-	Attribute *attr_fN = mesh->attributes.find(ATTR_STD_FACE_NORMAL);
-	Attribute *attr_vN = mesh->attributes.find(ATTR_STD_VERTEX_NORMAL);
+	for(size_t i = 0; i < mesh->curve_keys.size(); i++) {
+		mesh->curve_keys[i].co = transform_point(&tfm, mesh->curve_keys[i].co);
+		/* scale for strand radius - only correct for uniform transforms*/
+		mesh->curve_keys[i].radius *= scalar;
+	}
 
-	Transform ntfm = transform_transpose(transform_inverse(tfm));
+	/* store matrix to transform later. when accessing these as attributes we
+	 * do not want the transform to be applied for consistency between static
+	 * and dynamic BVH, so we do it on packing. */
+	mesh->transform_normal = transform_transpose(transform_inverse(tfm));
 
 	/* we keep normals pointing in same direction on negative scale, notify
 	 * mesh about this in it (re)calculates normals */
 	if(transform_negative_scale(tfm))
 		mesh->transform_negative_scaled = true;
 
-	if(attr_fN) {
-		float3 *fN = attr_fN->data_float3();
-
-		for(size_t i = 0; i < mesh->triangles.size(); i++)
-			fN[i] = transform_direction(&ntfm, fN[i]);
-	}
-
-	if(attr_vN) {
-		float3 *vN = attr_vN->data_float3();
-
-		for(size_t i = 0; i < mesh->verts.size(); i++)
-			vN[i] = transform_direction(&ntfm, vN[i]);
-	}
-
 	if(bounds.valid()) {
 		mesh->compute_bounds();
-		compute_bounds(false);
+		compute_bounds(false, 0.0f);
 	}
 
 	/* tfm is not reset to identity, all code that uses it needs to check the
@@ -130,6 +132,7 @@ void Object::tag_update(Scene *scene)
 		}
 	}
 
+	scene->curve_system_manager->need_update = true;
 	scene->mesh_manager->need_update = true;
 	scene->object_manager->need_update = true;
 }
@@ -145,13 +148,19 @@ ObjectManager::~ObjectManager()
 {
 }
 
-void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress)
+void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene, Scene *scene, uint *object_flag, Progress& progress)
 {
-	float4 *objects = dscene->objects.resize(OBJECT_SIZE*scene->objects.size());
-	uint *object_flag = dscene->object_flag.resize(scene->objects.size());
+	float4 *objects;
+	float4 *objects_vector = NULL;
 	int i = 0;
 	map<Mesh*, float> surface_area_map;
-	Scene::MotionType need_motion = scene->need_motion();
+	Scene::MotionType need_motion = scene->need_motion(device->info.advanced_shading);
+	bool have_motion = false;
+	bool have_curves = false;
+
+	objects = dscene->objects.resize(OBJECT_SIZE*scene->objects.size());
+	if(need_motion == Scene::MOTION_PASS)
+		objects_vector = dscene->objects_vector.resize(OBJECT_VECTOR_SIZE*scene->objects.size());
 
 	foreach(Object *ob, scene->objects) {
 		Mesh *mesh = ob->mesh;
@@ -168,7 +177,7 @@ void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene
 		float surface_area = 0.0f;
 		float pass_id = ob->pass_id;
 		float random_number = (float)ob->random_id * (1.0f/(float)0xFFFFFFFF);
-		
+
 		if(transform_uniform_scale(tfm, uniform_scale)) {
 			map<Mesh*, float>::iterator it = surface_area_map.find(mesh);
 
@@ -179,6 +188,20 @@ void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene
 					float3 p3 = mesh->verts[t.v[2]];
 
 					surface_area += triangle_area(p1, p2, p3);
+				}
+
+				foreach(Mesh::Curve& curve, mesh->curves) {
+					int first_key = curve.first_key;
+
+					for(int i = 0; i < curve.num_segments(); i++) {
+						float3 p1 = mesh->curve_keys[first_key + i].co;
+						float r1 = mesh->curve_keys[first_key + i].radius;
+						float3 p2 = mesh->curve_keys[first_key + i + 1].co;
+						float r2 = mesh->curve_keys[first_key + i + 1].radius;
+
+						/* currently ignores segment overlaps*/
+						surface_area += M_PI_F *(r1 + r2) * len(p1 - p2);
+					}
 				}
 
 				surface_area_map[mesh] = surface_area;
@@ -196,14 +219,31 @@ void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene
 
 				surface_area += triangle_area(p1, p2, p3);
 			}
+
+			foreach(Mesh::Curve& curve, mesh->curves) {
+				int first_key = curve.first_key;
+
+				for(int i = 0; i < curve.num_segments(); i++) {
+					float3 p1 = mesh->curve_keys[first_key + i].co;
+					float r1 = mesh->curve_keys[first_key + i].radius;
+					float3 p2 = mesh->curve_keys[first_key + i + 1].co;
+					float r2 = mesh->curve_keys[first_key + i + 1].radius;
+
+					p1 = transform_point(&tfm, p1);
+					p2 = transform_point(&tfm, p2);
+
+					/* currently ignores segment overlaps*/
+					surface_area += M_PI_F *(r1 + r2) * len(p1 - p2);
+				}
+			}
 		}
 
 		/* pack in texture */
 		int offset = i*OBJECT_SIZE;
 
 		memcpy(&objects[offset], &tfm, sizeof(float4)*3);
-		memcpy(&objects[offset+3], &itfm, sizeof(float4)*3);
-		objects[offset+6] = make_float4(surface_area, pass_id, random_number, __int_as_float(ob->particle_id));
+		memcpy(&objects[offset+4], &itfm, sizeof(float4)*3);
+		objects[offset+8] = make_float4(surface_area, pass_id, random_number, __int_as_float(ob->particle_id));
 
 		if(need_motion == Scene::MOTION_PASS) {
 			/* motion transformations, is world/object space depending if mesh
@@ -217,28 +257,35 @@ void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene
 			if(!mesh->attributes.find(ATTR_STD_MOTION_POST))
 				mtfm_post = mtfm_post * itfm;
 
-			memcpy(&objects[offset+8], &mtfm_pre, sizeof(float4)*4);
-			memcpy(&objects[offset+12], &mtfm_post, sizeof(float4)*4);
+			memcpy(&objects_vector[i*OBJECT_VECTOR_SIZE+0], &mtfm_pre, sizeof(float4)*3);
+			memcpy(&objects_vector[i*OBJECT_VECTOR_SIZE+3], &mtfm_post, sizeof(float4)*3);
 		}
+#ifdef __OBJECT_MOTION__
 		else if(need_motion == Scene::MOTION_BLUR) {
 			if(ob->use_motion) {
 				/* decompose transformations for interpolation */
-				MotionTransform decomp;
+				DecompMotionTransform decomp;
 
-				transform_motion_decompose(&decomp, &ob->motion);
-				memcpy(&objects[offset+8], &decomp, sizeof(float4)*8);
+				transform_motion_decompose(&decomp, &ob->motion, &ob->tfm);
+				memcpy(&objects[offset], &decomp, sizeof(float4)*8);
 				flag |= SD_OBJECT_MOTION;
-			}
-			else {
-				float4 no_motion = make_float4(FLT_MAX);
-				memcpy(&objects[offset+8], &no_motion, sizeof(float4));
+				have_motion = true;
 			}
 		}
+#endif
+
+		/* dupli object coords */
+		objects[offset+9] = make_float4(ob->dupli_generated[0], ob->dupli_generated[1], ob->dupli_generated[2], 0.0f);
+		objects[offset+10] = make_float4(ob->dupli_uv[0], ob->dupli_uv[1], 0.0f, 0.0f);
 
 		/* object flag */
 		if(ob->use_holdout)
 			flag |= SD_HOLDOUT_MASK;
 		object_flag[i] = flag;
+
+		/* have curves */
+		if(mesh->curves.size())
+			have_curves = true;
 
 		i++;
 
@@ -246,39 +293,12 @@ void ObjectManager::device_update_transforms(Device *device, DeviceScene *dscene
 	}
 
 	device->tex_alloc("__objects", dscene->objects);
-	device->tex_alloc("__object_flag", dscene->object_flag);
-}
+	if(need_motion == Scene::MOTION_PASS)
+		device->tex_alloc("__objects_vector", dscene->objects_vector);
 
-void ObjectManager::device_update_particles(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress)
-{
-	/* count particles.
-	 * adds one dummy particle at the beginning to avoid invalid lookups,
-	 * in case a shader uses particle info without actual particle data.
-	 */
-	int num_particles = 1;
-	foreach(Object *ob, scene->objects)
-		num_particles += ob->particles.size();
-	
-	float4 *particles = dscene->particles.resize(PARTICLE_SIZE*num_particles);
-	
-	/* dummy particle */
-	particles[0] = make_float4(0.0f, 0.0f, 0.0f, 0.0f);
-	
-	int i = 1;
-	foreach(Object *ob, scene->objects) {
-		foreach(Particle &pa, ob->particles) {
-			/* pack in texture */
-			int offset = i*PARTICLE_SIZE;
-			
-			particles[offset] = make_float4(pa.index, pa.age, pa.lifetime, 0.0f);
-			
-			i++;
-			
-			if(progress.get_cancel()) return;
-		}
-	}
-	
-	device->tex_alloc("__particles", dscene->particles);
+	dscene->data.bvh.have_motion = have_motion;
+	dscene->data.bvh.have_curves = have_curves;
+	dscene->data.bvh.have_instancing = true;
 }
 
 void ObjectManager::device_update(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress)
@@ -288,12 +308,17 @@ void ObjectManager::device_update(Device *device, DeviceScene *dscene, Scene *sc
 	
 	device_free(device, dscene);
 
+	need_update = false;
+
 	if(scene->objects.size() == 0)
 		return;
 
+	/* object info flag */
+	uint *object_flag = dscene->object_flag.resize(scene->objects.size());
+
 	/* set object transform matrices, before applying static transforms */
 	progress.set_status("Updating Objects", "Copying Transformations to device");
-	device_update_transforms(device, dscene, scene, progress);
+	device_update_transforms(device, dscene, scene, object_flag, progress);
 
 	if(progress.get_cancel()) return;
 
@@ -301,17 +326,11 @@ void ObjectManager::device_update(Device *device, DeviceScene *dscene, Scene *sc
 	/* todo: do before to support getting object level coords? */
 	if(scene->params.bvh_type == SceneParams::BVH_STATIC) {
 		progress.set_status("Updating Objects", "Applying Static Transformations");
-		apply_static_transforms(scene, progress);
+		apply_static_transforms(dscene, scene, object_flag, progress);
 	}
 
-	if(progress.get_cancel()) return;
-
-	progress.set_status("Updating Objects", "Copying Particles to device");
-	device_update_particles(device, dscene, scene, progress);
-	
-	if(progress.get_cancel()) return;
-	
-	need_update = false;
+	/* allocate object flag */
+	device->tex_alloc("__object_flag", dscene->object_flag);
 }
 
 void ObjectManager::device_free(Device *device, DeviceScene *dscene)
@@ -319,21 +338,28 @@ void ObjectManager::device_free(Device *device, DeviceScene *dscene)
 	device->tex_free(dscene->objects);
 	dscene->objects.clear();
 
+	device->tex_free(dscene->objects_vector);
+	dscene->objects_vector.clear();
+
 	device->tex_free(dscene->object_flag);
 	dscene->object_flag.clear();
-	
-	device->tex_free(dscene->particles);
-	dscene->particles.clear();
 }
 
-void ObjectManager::apply_static_transforms(Scene *scene, Progress& progress)
+void ObjectManager::apply_static_transforms(DeviceScene *dscene, Scene *scene, uint *object_flag, Progress& progress)
 {
 	/* todo: normals and displacement should be done before applying transform! */
 	/* todo: create objects/meshes in right order! */
 
 	/* counter mesh users */
 	map<Mesh*, int> mesh_users;
-	bool motion_blur = scene->need_motion() == Scene::MOTION_BLUR;
+#ifdef __OBJECT_MOTION__
+	Scene::MotionType need_motion = scene->need_motion();
+	bool motion_blur = need_motion == Scene::MOTION_BLUR;
+#else
+	bool motion_blur = false;
+#endif
+	int i = 0;
+	bool have_instancing = false;
 
 	foreach(Object *object, scene->objects) {
 		map<Mesh*, int>::iterator it = mesh_users.find(object->mesh);
@@ -356,14 +382,25 @@ void ObjectManager::apply_static_transforms(Scene *scene, Progress& progress)
 
 					if(progress.get_cancel()) return;
 				}
+
+				object_flag[i] |= SD_TRANSFORM_APPLIED;
 			}
+			else
+				have_instancing = true;
 		}
+		else
+			have_instancing = true;
+
+		i++;
 	}
+
+	dscene->data.bvh.have_instancing = have_instancing;
 }
 
 void ObjectManager::tag_update(Scene *scene)
 {
 	need_update = true;
+	scene->curve_system_manager->need_update = true;
 	scene->mesh_manager->need_update = true;
 	scene->light_manager->need_update = true;
 }

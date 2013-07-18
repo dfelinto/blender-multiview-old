@@ -55,6 +55,7 @@
 #include "DNA_camera_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_lattice_types.h"
+#include "DNA_linestyle_types.h"
 #include "DNA_key_types.h"
 #include "DNA_mask_types.h"
 #include "DNA_material_types.h"
@@ -86,10 +87,10 @@
 #include "BKE_key.h"
 #include "BKE_main.h"
 #include "BKE_material.h"
+#include "BKE_modifier.h"
 #include "BKE_node.h"
 #include "BKE_mask.h"
 #include "BKE_sequencer.h"
-#include "BKE_utildefines.h"
 
 #include "ED_anim_api.h"
 #include "ED_markers.h"
@@ -100,7 +101,7 @@
 /* ----------- Private Stuff - Action Editor ------------- */
 
 /* Get shapekey data being edited (for Action Editor -> ShapeKey mode) */
-/* Note: there's a similar function in key.c (ob_get_key) */
+/* Note: there's a similar function in key.c (BKE_key_from_object) */
 static Key *actedit_get_shapekeys(bAnimContext *ac)
 {
 	Scene *scene = ac->scene;
@@ -115,7 +116,7 @@ static Key *actedit_get_shapekeys(bAnimContext *ac)
 	//if (saction->pin) return NULL;
 	
 	/* shapekey data is stored with geometry data */
-	key = ob_get_key(ob);
+	key = BKE_key_from_object(ob);
 	
 	if (key) {
 		if (key->type == KEY_RELATIVE)
@@ -164,33 +165,33 @@ static short actedit_get_context(bAnimContext *ac, SpaceAction *saction)
 			
 			ac->mode = saction->mode;
 			return 1;
-
+		
 		case SACTCONT_GPENCIL: /* Grease Pencil */ /* XXX review how this mode is handled... */
 			/* update scene-pointer (no need to check for pinning yet, as not implemented) */
 			saction->ads.source = (ID *)ac->scene;
-
+			
 			ac->datatype = ANIMCONT_GPENCIL;
 			ac->data = &saction->ads;
-
+			
 			ac->mode = saction->mode;
 			return 1;
-
-		case SACTCONT_MASK: /* Grease Pencil */ /* XXX review how this mode is handled... */
-			/* update scene-pointer (no need to check for pinning yet, as not implemented) */
-{
+			
+		case SACTCONT_MASK: /* Mask */ /* XXX review how this mode is handled... */
+		{
 			/* TODO, other methods to get the mask */
 			// Sequence *seq = BKE_sequencer_active_get(ac->scene);
 			//MovieClip *clip = ac->scene->clip;
 //			struct Mask *mask = seq ? seq->mask : NULL;
-
+			
+			/* update scene-pointer (no need to check for pinning yet, as not implemented) */
 			saction->ads.source = (ID *)ac->scene;
-
+			
 			ac->datatype = ANIMCONT_MASK;
 			ac->data = &saction->ads;
-
+			
 			ac->mode = saction->mode;
 			return 1;
-}
+		}
 		case SACTCONT_DOPESHEET: /* DopeSheet */
 			/* update scene-pointer (no need to check for pinning yet, as not implemented) */
 			saction->ads.source = (ID *)ac->scene;
@@ -291,7 +292,7 @@ static short nlaedit_get_context(bAnimContext *ac, SpaceNla *snla)
 short ANIM_animdata_context_getdata(bAnimContext *ac)
 {
 	SpaceLink *sl = ac->sl;
-	short ok = 0;
+	short ok = FALSE;
 	
 	/* context depends on editor we are currently in */
 	if (sl) {
@@ -320,10 +321,7 @@ short ANIM_animdata_context_getdata(bAnimContext *ac)
 	}
 	
 	/* check if there's any valid data */
-	if (ok && ac->data)
-		return 1;
-	else
-		return 0;
+	return (ok && ac->data);
 }
 
 /* Obtain current anim-data context from Blender Context info 
@@ -355,6 +353,7 @@ short ANIM_animdata_get_context(const bContext *C, bAnimContext *ac)
 	ac->regiontype = (ar) ? ar->regiontype : 0;
 	
 	/* get data context info */
+	// XXX: if the below fails, try to grab this info from context instead... (to allow for scripting)
 	return ANIM_animdata_context_getdata(ac);
 }
 
@@ -449,7 +448,7 @@ short ANIM_animdata_get_context(const bContext *C, bAnimContext *ac)
 					if (ANIMDATA_HAS_NLA(id)) { \
 						nlaOk \
 					} \
-					else if (!(ads->filterflag & ADS_FILTER_NLA_NOACT) && ANIMDATA_HAS_KEYS(id)) { \
+					else if (!(ads->filterflag & ADS_FILTER_NLA_NOACT) || ANIMDATA_HAS_KEYS(id)) { \
 						nlaOk \
 					} \
 				} \
@@ -683,18 +682,18 @@ static bAnimListElem *make_new_animlistelem(void *data, short datatype, ID *owne
 				ale->datatype = ALE_ACT;
 				
 				ale->adt = BKE_animdata_from_id(data);
-			}	
+			}
 			break;
 			case ANIMTYPE_DSSPK:
 			{
 				Speaker *spk = (Speaker *)data;
 				AnimData *adt = spk->adt;
-
+				
 				ale->flag = FILTER_SPK_OBJD(spk);
-
+				
 				ale->key_data = (adt) ? adt->action : NULL;
 				ale->datatype = ALE_ACT;
-
+				
 				ale->adt = BKE_animdata_from_id(data);
 			}
 			break;
@@ -730,6 +729,19 @@ static bAnimListElem *make_new_animlistelem(void *data, short datatype, ID *owne
 				AnimData *adt = ntree->adt;
 				
 				ale->flag = FILTER_NTREE_DATA(ntree);
+				
+				ale->key_data = (adt) ? adt->action : NULL;
+				ale->datatype = ALE_ACT;
+				
+				ale->adt = BKE_animdata_from_id(data);
+			}
+			break;
+			case ANIMTYPE_DSLINESTYLE:
+			{
+				FreestyleLineStyle *linestyle = (FreestyleLineStyle *)data;
+				AnimData *adt = linestyle->adt;
+				
+				ale->flag = FILTER_LS_SCED(linestyle); 
 				
 				ale->key_data = (adt) ? adt->action : NULL;
 				ale->datatype = ALE_ACT;
@@ -800,7 +812,7 @@ static bAnimListElem *make_new_animlistelem(void *data, short datatype, ID *owne
 					/* the corresponding keyframes are from the animdata */
 					if (ale->adt && ale->adt->action) {
 						bAction *act = ale->adt->action;
-						char *rna_path = key_get_curValue_rnaPath(key, kb);
+						char *rna_path = BKE_keyblock_curval_rnapath_get(key, kb);
 						
 						/* try to find the F-Curve which corresponds to this exactly,
 						 * then free the MEM_alloc'd string
@@ -812,7 +824,7 @@ static bAnimListElem *make_new_animlistelem(void *data, short datatype, ID *owne
 					}
 					ale->datatype = (ale->key_data) ? ALE_FCURVE : ALE_NONE;
 				}
-			}	
+			}
 			break;
 			
 			case ANIMTYPE_GPLAYER:
@@ -825,18 +837,18 @@ static bAnimListElem *make_new_animlistelem(void *data, short datatype, ID *owne
 				ale->datatype = ALE_GPFRAME;
 			}
 			break;
-
+			
 			case ANIMTYPE_MASKLAYER:
 			{
 				MaskLayer *masklay = (MaskLayer *)data;
-
+				
 				ale->flag = masklay->flag;
-
+				
 				ale->key_data = NULL;
 				ale->datatype = ALE_MASKLAY;
 			}
 			break;
-
+			
 			case ANIMTYPE_NLATRACK:
 			{
 				NlaTrack *nlt = (NlaTrack *)data;
@@ -912,13 +924,15 @@ static short skip_fcurve_selected_data(bDopeSheet *ads, FCurve *fcu, ID *owner_i
 		/* only consider if F-Curve involves sequence_editor.sequences */
 		if ((fcu->rna_path) && strstr(fcu->rna_path, "sequences_all")) {
 			Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
-			Sequence *seq;
+			Sequence *seq = NULL;
 			char *seq_name;
 			
-			/* get strip name, and check if this strip is selected */
-			seq_name = BLI_str_quoted_substrN(fcu->rna_path, "sequences_all[");
-			seq = BKE_sequence_get_by_name(ed->seqbasep, seq_name, FALSE);
-			if (seq_name) MEM_freeN(seq_name);
+			if (ed) {
+				/* get strip name, and check if this strip is selected */
+				seq_name = BLI_str_quoted_substrN(fcu->rna_path, "sequences_all[");
+				seq = BKE_sequence_get_by_name(ed->seqbasep, seq_name, FALSE);
+				if (seq_name) MEM_freeN(seq_name);
+			}
 			
 			/* can only add this F-Curve if it is selected */
 			if (ads->filterflag & ADS_FILTER_ONLYSEL) {
@@ -981,6 +995,44 @@ static short skip_fcurve_with_name(bDopeSheet *ads, FCurve *fcu, ID *owner_id)
 	return 1;
 }
 
+/* Check if F-Curve has errors and/or is disabled 
+ * > returns: (bool) True if F-Curve has errors/is disabled
+ */
+static bool fcurve_has_errors(FCurve *fcu)
+{
+	/* F-Curve disabled - path eval error */
+	if (fcu->flag & FCURVE_DISABLED) {
+		return true;
+	}
+	
+	/* driver? */
+	if (fcu->driver) {
+		ChannelDriver *driver = fcu->driver;
+		DriverVar *dvar;
+		
+		/* error flag on driver usually means that there is an error
+		 * BUT this may not hold with PyDrivers as this flag gets cleared
+		 *     if no critical errors prevent the driver from working...
+		 */
+		if (driver->flag & DRIVER_FLAG_INVALID)
+			return true;
+			
+		/* check variables for other things that need linting... */
+		// TODO: maybe it would be more efficient just to have a quick flag for this?
+		for (dvar = driver->variables.first; dvar; dvar = dvar->next) {
+			DRIVER_TARGETS_USED_LOOPER(dvar)
+			{
+				if (dtar->flag & DTAR_FLAG_INVALID)
+					return true;
+			}
+			DRIVER_TARGETS_LOOPER_END
+		}
+	}
+	
+	/* no errors found */
+	return false;
+}
+
 /* find the next F-Curve that is usable for inclusion */
 static FCurve *animfilter_fcurve_next(bDopeSheet *ads, FCurve *first, bActionGroup *grp, int filter_mode, ID *owner_id)
 {
@@ -1003,7 +1055,7 @@ static FCurve *animfilter_fcurve_next(bDopeSheet *ads, FCurve *first, bActionGro
 				if (skip_fcurve_selected_data(ads, fcu, owner_id, filter_mode))
 					continue;
 			}
-		}	
+		}
 		
 		/* only include if visible (Graph Editor check, not channels check) */
 		if (!(filter_mode & ANIMFILTER_CURVE_VISIBLE) || (fcu->flag & FCURVE_VISIBLE)) {
@@ -1016,6 +1068,13 @@ static FCurve *animfilter_fcurve_next(bDopeSheet *ads, FCurve *first, bActionGro
 						/* name based filtering... */
 						if ( ((ads) && (ads->filterflag & ADS_FILTER_BY_FCU_NAME)) && (owner_id) ) {
 							if (skip_fcurve_with_name(ads, fcu, owner_id))
+								continue;
+						}
+						
+						/* error-based filtering... */
+						if ((ads) && (ads->filterflag & ADS_FILTER_ONLY_ERRORS)) {
+							/* skip if no errors... */
+							if (fcurve_has_errors(fcu) == false)
 								continue;
 						}
 						
@@ -1139,7 +1198,6 @@ static size_t animfilter_action(bAnimContext *ac, ListBase *anim_data, bDopeShee
 	/* don't include anything from this action if it is linked in from another file,
 	 * and we're getting stuff for editing...
 	 */
-	// TODO: need a way of tagging other channels that may also be affected...
 	if ((filter_mode & ANIMFILTER_FOREDIT) && (act->id.lib))
 		return 0;
 		
@@ -1185,7 +1243,7 @@ static size_t animfilter_nla(bAnimContext *UNUSED(ac), ListBase *anim_data, bDop
 		 */
 		if (!(ads->filterflag & ADS_FILTER_NLA_NOACT) || (adt->action)) {
 			/* there isn't really anything editable here, so skip if need editable */
-			if ((filter_mode & ANIMFILTER_FOREDIT) == 0) { 
+			if ((filter_mode & ANIMFILTER_FOREDIT) == 0) {
 				/* just add the action track now (this MUST appear for drawing)
 				 *	- as AnimData may not have an action, we pass a dummy pointer just to get the list elem created, then
 				 *	  overwrite this with the real value - REVIEW THIS...
@@ -1241,11 +1299,11 @@ static size_t animfilter_block_data(bAnimContext *ac, ListBase *anim_data, bDope
 {
 	AnimData *adt = BKE_animdata_from_id(id);
 	size_t items = 0;
-
+	
 	/* image object datablocks have no anim-data so check for NULL */
 	if (adt) {
 		IdAdtTemplate *iat = (IdAdtTemplate *)id;
-
+		
 		/* NOTE: this macro is used instead of inlining the logic here, since this sort of filtering is still needed
 		 * in a few places in he rest of the code still - notably for the few cases where special mode-based
 		 * different types of data expanders are required.
@@ -1253,7 +1311,9 @@ static size_t animfilter_block_data(bAnimContext *ac, ListBase *anim_data, bDope
 		ANIMDATA_FILTER_CASES(iat,
 			{ /* AnimData */
 				/* specifically filter animdata block */
-				ANIMCHANNEL_NEW_CHANNEL(adt, ANIMTYPE_ANIMDATA, id);
+				if (ANIMCHANNEL_SELOK(SEL_ANIMDATA(adt)) ) {
+					ANIMCHANNEL_NEW_CHANNEL(adt, ANIMTYPE_ANIMDATA, id);
+				}
 			},
 			{ /* NLA */
 				items += animfilter_nla(ac, anim_data, ads, adt, filter_mode, id);
@@ -1266,7 +1326,7 @@ static size_t animfilter_block_data(bAnimContext *ac, ListBase *anim_data, bDope
 			}
 		);
 	}
-
+	
 	return items;
 }
 
@@ -1284,7 +1344,6 @@ static size_t animdata_filter_shapekey(bAnimContext *ac, ListBase *anim_data, Ke
 		/* loop through the channels adding ShapeKeys as appropriate */
 		for (kb = key->block.first; kb; kb = kb->next) {
 			/* skip the first one, since that's the non-animatable basis */
-			// XXX maybe in future this may become handy?
 			if (kb == key->block.first) continue;
 			
 			/* only work with this channel and its subchannels if it is editable */
@@ -1304,7 +1363,9 @@ static size_t animdata_filter_shapekey(bAnimContext *ac, ListBase *anim_data, Ke
 		// TODO: somehow manage to pass dopesheet info down here too?
 		if (key->adt) {
 			if (filter_mode & ANIMFILTER_ANIMDATA) {
-				ANIMCHANNEL_NEW_CHANNEL(key->adt, ANIMTYPE_ANIMDATA, key);
+				if (ANIMCHANNEL_SELOK(SEL_ANIMDATA(key->adt)) ) {
+					ANIMCHANNEL_NEW_CHANNEL(key->adt, ANIMTYPE_ANIMDATA, key);
+				}
 			}
 			else if (key->adt->action) {
 				items = animfilter_action(ac, anim_data, NULL, key->adt->action, filter_mode, (ID *)key);
@@ -1395,13 +1456,13 @@ static size_t animdata_filter_mask_data(ListBase *anim_data, Mask *mask, const i
 		/* only if selected */
 		if (ANIMCHANNEL_SELOK(SEL_MASKLAY(masklay)) ) {
 			/* only if editable */
-//			if (!(filter_mode & ANIMFILTER_FOREDIT) || EDITABLE_GPL(gpl)) {
+			if (!(filter_mode & ANIMFILTER_FOREDIT) || EDITABLE_MASK(masklay)) {
 				/* active... */
 				if (!(filter_mode & ANIMFILTER_ACTIVE) || (masklay_act == masklay)) {
 					/* add to list */
 					ANIMCHANNEL_NEW_CHANNEL(masklay, ANIMTYPE_MASKLAYER, mask);
 				}
-//			}
+			}
 		}
 	}
 
@@ -1486,6 +1547,97 @@ static size_t animdata_filter_ds_nodetree(bAnimContext *ac, ListBase *anim_data,
 	return items;
 }
 
+static size_t animdata_filter_ds_linestyle(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Scene *sce, int filter_mode)
+{
+	SceneRenderLayer *srl;
+	size_t items = 0;
+	
+	for (srl = sce->r.layers.first; srl; srl = srl->next) {
+		FreestyleLineSet *lineset;
+		
+		/* skip render layers without Freestyle enabled */
+		if (!(srl->layflag & SCE_LAY_FRS))
+			continue;
+		
+		/* loop over linesets defined in the render layer */
+		for (lineset = srl->freestyleConfig.linesets.first; lineset; lineset = lineset->next) {
+			FreestyleLineStyle *linestyle = lineset->linestyle;
+			ListBase tmp_data = {NULL, NULL};
+			size_t tmp_items = 0;
+			
+			/* add scene-level animation channels */
+			BEGIN_ANIMFILTER_SUBCHANNELS(FILTER_LS_SCED(linestyle))
+			{
+				/* animation data filtering */
+				tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)linestyle, filter_mode);
+			}
+			END_ANIMFILTER_SUBCHANNELS;
+			
+			/* did we find anything? */
+			if (tmp_items) {
+				/* include anim-expand widget first */
+				if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
+					/* check if filtering by active status */
+					if (ANIMCHANNEL_ACTIVEOK(linestyle)) {
+						ANIMCHANNEL_NEW_CHANNEL(linestyle, ANIMTYPE_DSLINESTYLE, sce);
+					}
+				}
+				
+				/* now add the list of collected channels */
+				BLI_movelisttolist(anim_data, &tmp_data);
+				BLI_assert((tmp_data.first == tmp_data.last) && (tmp_data.first == NULL));
+				items += tmp_items;
+			}
+		}
+	}
+	
+	/* return the number of items added to the list */
+	return items;
+}
+
+static size_t animdata_filter_ds_texture(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, 
+                                         Tex *tex, ID *owner_id, int filter_mode)
+{
+	ListBase tmp_data = {NULL, NULL};
+	size_t tmp_items = 0;
+	size_t items = 0;
+	
+	/* add texture's animation data to temp collection */
+	BEGIN_ANIMFILTER_SUBCHANNELS(FILTER_TEX_DATA(tex)) 
+	{
+		/* texture animdata */
+		tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)tex, filter_mode);
+		
+		/* nodes */
+		if ((tex->nodetree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
+			/* owner_id as id instead of texture, since it'll otherwise be impossible to track the depth */
+			// FIXME: perhaps as a result, textures should NOT be included under materials, but under their own section instead
+			// so that free-floating textures can also be animated
+			tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (ID *)tex, tex->nodetree, filter_mode);
+		}
+	}
+	END_ANIMFILTER_SUBCHANNELS;
+	
+	/* did we find anything? */
+	if (tmp_items) {
+		/* include texture-expand widget? */
+		if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
+			/* check if filtering by active status */
+			if (ANIMCHANNEL_ACTIVEOK(tex)) {
+				ANIMCHANNEL_NEW_CHANNEL(tex, ANIMTYPE_DSTEX, owner_id);
+			}
+		}
+		
+		/* now add the list of collected channels */
+		BLI_movelisttolist(anim_data, &tmp_data);
+		BLI_assert((tmp_data.first == tmp_data.last) && (tmp_data.first == NULL));
+		items += tmp_items;
+	}
+	
+	/* return the number of items added to the list */
+	return items;
+}
+
 /* NOTE: owner_id is either material, lamp, or world block, which is the direct owner of the texture stack in question */
 static size_t animdata_filter_ds_textures(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, ID *owner_id, int filter_mode)
 {
@@ -1528,44 +1680,13 @@ static size_t animdata_filter_ds_textures(bAnimContext *ac, ListBase *anim_data,
 	/* firstly check that we actuallly have some textures, by gathering all textures in a temp list */
 	for (a = 0; a < MAX_MTEX; a++) {
 		Tex *tex = (mtex[a]) ? mtex[a]->tex : NULL;
-		ListBase tmp_data = {NULL, NULL};
-		size_t tmp_items = 0;
 		
 		/* for now, if no texture returned, skip (this shouldn't confuse the user I hope) */
 		if (tex == NULL) 
 			continue;
 		
-		/* add texture's animation data to temp collection */
-		BEGIN_ANIMFILTER_SUBCHANNELS(FILTER_TEX_DATA(tex)) 
-		{
-			/* texture animdata */
-			tmp_items += animfilter_block_data(ac, &tmp_data, ads, (ID *)tex, filter_mode);
-			
-			/* nodes */
-			if ((tex->nodetree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
-				/* owner_id as id instead of texture, since it'll otherwise be impossible to track the depth */
-				// FIXME: perhaps as a result, textures should NOT be included under materials, but under their own section instead
-				// so that free-floating textures can also be animated
-				tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (ID *)tex, tex->nodetree, filter_mode);
-			}
-		}
-		END_ANIMFILTER_SUBCHANNELS;
-		
-		/* did we find anything? */
-		if (tmp_items) {
-			/* include texture-expand widget? */
-			if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
-				/* check if filtering by active status */
-				if (ANIMCHANNEL_ACTIVEOK(tex)) {
-					ANIMCHANNEL_NEW_CHANNEL(tex, ANIMTYPE_DSTEX, owner_id);
-				}
-			}
-			
-			/* now add the list of collected channels */
-			BLI_movelisttolist(anim_data, &tmp_data);
-			BLI_assert((tmp_data.first == tmp_data.last) && (tmp_data.first == NULL));
-			items += tmp_items;
-		}
+		/* add texture's anim channels */
+		items += animdata_filter_ds_texture(ac, anim_data, ads, tex, owner_id, filter_mode);
 	}
 	
 	/* return the number of items added to the list */
@@ -1598,7 +1719,6 @@ static size_t animdata_filter_ds_material(bAnimContext *ac, ListBase *anim_data,
 	/* did we find anything? */
 	if (tmp_items) {
 		/* include material-expand widget first */
-		// hmm... do we need to store the index of this material in the array anywhere?
 		if (filter_mode & ANIMFILTER_LIST_CHANNELS) {
 			/* check if filtering by active status */
 			if (ANIMCHANNEL_ACTIVEOK(ma)) {
@@ -1656,6 +1776,87 @@ static size_t animdata_filter_ds_materials(bAnimContext *ac, ListBase *anim_data
 	return items;
 }
 
+
+/* ............ */
+
+/* Temporary context for modifier linked-data channel extraction */
+typedef struct tAnimFilterModifiersContext {
+	bAnimContext *ac;	/* anim editor context */
+	bDopeSheet *ads;    /* dopesheet filtering settings */
+	
+	ListBase tmp_data;  /* list of channels created (but not yet added to the main list) */
+	size_t items;       /* number of channels created */
+	
+	int filter_mode;    /* flags for stuff we want to filter */
+} tAnimFilterModifiersContext;
+
+
+/* dependency walker callback for modifier dependencies */
+static void animfilter_modifier_idpoin_cb(void *afm_ptr, Object *ob, ID **idpoin)
+{
+	tAnimFilterModifiersContext *afm = (tAnimFilterModifiersContext *)afm_ptr;
+	ID *owner_id = &ob->id;
+	ID *id = *idpoin;
+	
+	/* NOTE: the walker only guarantees to give us all the ID-ptr *slots*, 
+	 * not just the ones which are actually used, so be careful!
+	 */
+	if (id == NULL)
+		return;
+		
+	/* check if this is something we're interested in... */
+	switch (GS(id->name)) {
+		case ID_TE: /* Textures */
+		{
+			Tex *tex = (Tex *)id;
+			if (!(afm->ads->filterflag & ADS_FILTER_NOTEX)) {	
+				afm->items += animdata_filter_ds_texture(afm->ac, &afm->tmp_data, afm->ads, tex, owner_id, afm->filter_mode);
+			}
+		}
+		break;
+		
+		/* TODO: images? */
+	}
+}
+
+/* animation linked to data used by modifiers 
+ * NOTE: strictly speaking, modifier animation is already included under Object level
+ *       but for some modifiers (e.g. Displace), there can be linked data that has settings
+ *       which would be nice to animate (i.e. texture parameters) but which are not actually
+ *       attached to any other objects/materials/etc. in the scene
+ */
+// TODO: do we want an expander for this?
+static size_t animdata_filter_ds_modifiers(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
+{
+	tAnimFilterModifiersContext afm = {NULL};
+	size_t items = 0;
+	
+	/* 1) create a temporary "context" containing all the info we have here to pass to the callback 
+	 *    use to walk thorugh the dependencies of the modifiers
+	 *
+	 * ! Assumes that all other unspecified values (i.e. accumulation buffers) are zero'd out properly
+	 */
+	afm.ac          = ac;
+	afm.ads         = ads;
+	afm.filter_mode = filter_mode;
+	
+	/* 2) walk over dependencies */
+	modifiers_foreachIDLink(ob, animfilter_modifier_idpoin_cb, &afm);
+	
+	/* 3) extract data from the context, merging it back into the standard list */
+	if (afm.items) {
+		/* now add the list of collected channels */
+		BLI_movelisttolist(anim_data, &afm.tmp_data);
+		BLI_assert((afm.tmp_data.first == afm.tmp_data.last) && (afm.tmp_data.first == NULL));
+		items += afm.items;
+	}
+	
+	return items;
+}
+
+/* ............ */
+
+
 static size_t animdata_filter_ds_particles(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
 {
 	ParticleSystem *psys;
@@ -1697,6 +1898,7 @@ static size_t animdata_filter_ds_particles(bAnimContext *ac, ListBase *anim_data
 	/* return the number of items added to the list */
 	return items;
 }
+
 
 static size_t animdata_filter_ds_obdata(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
 {
@@ -1810,11 +2012,11 @@ static size_t animdata_filter_ds_obdata(bAnimContext *ac, ListBase *anim_data, b
 			{
 				Lamp *la = ob->data;
 				bNodeTree *ntree = la->nodetree;
-
+				
 				/* nodetree */
 				if ((ntree) && !(ads->filterflag & ADS_FILTER_NONTREE))
 					tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, &la->id, ntree, filter_mode);
-
+				
 				/* textures */
 				if (!(ads->filterflag & ADS_FILTER_NOTEX))
 					tmp_items += animdata_filter_ds_textures(ac, &tmp_data, ads, &la->id, filter_mode);
@@ -1877,6 +2079,7 @@ static size_t animdata_filter_ds_keyanim(bAnimContext *ac, ListBase *anim_data, 
 	/* return the number of items added to the list */
 	return items;
 }
+
 
 /* object-level animation */
 static size_t animdata_filter_ds_obanim(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Object *ob, int filter_mode)
@@ -1944,7 +2147,7 @@ static size_t animdata_filter_dopesheet_ob(bAnimContext *ac, ListBase *anim_data
 	/* filter data contained under object first */
 	BEGIN_ANIMFILTER_SUBCHANNELS(EXPANDED_OBJC(ob))
 	{
-		Key *key = ob_get_key(ob);
+		Key *key = BKE_key_from_object(ob);
 		
 		/* object-level animation */
 		if ((ob->adt) && !(ads->filterflag & ADS_FILTER_NOOBJ)) {
@@ -1954,6 +2157,11 @@ static size_t animdata_filter_dopesheet_ob(bAnimContext *ac, ListBase *anim_data
 		/* shape-key */
 		if ((key && key->adt) && !(ads->filterflag & ADS_FILTER_NOSHAPEKEYS)) {
 			tmp_items += animdata_filter_ds_keyanim(ac, &tmp_data, ads, ob, key, filter_mode);
+		}
+		
+		/* modifiers */
+		if ((ob->modifiers.first) && !(ads->filterflag & ADS_FILTER_NOMODIFIERS)) {
+			tmp_items += animdata_filter_ds_modifiers(ac, &tmp_data, ads, ob, filter_mode);
 		}
 		
 		/* materials */
@@ -2120,7 +2328,12 @@ static size_t animdata_filter_dopesheet_scene(bAnimContext *ac, ListBase *anim_d
 		if ((ntree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
 			tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (ID *)sce, ntree, filter_mode);
 		}
-
+		
+		/* line styles */
+		if ((ads->filterflag & ADS_FILTER_NOLINESTYLE) == 0) {
+			tmp_items += animdata_filter_ds_linestyle(ac, &tmp_data, ads, sce, filter_mode);
+		}
+		
 		/* TODO: one day, when sequencer becomes its own datatype, perhaps it should be included here */
 	}
 	END_ANIMFILTER_SUBCHANNELS;
@@ -2155,7 +2368,7 @@ static size_t animdata_filter_dopesheet(bAnimContext *ac, ListBase *anim_data, b
 	
 	/* check that we do indeed have a scene */
 	if ((ads->source == NULL) || (GS(ads->source->name) != ID_SCE)) {
-		printf("DopeSheet Error: Not scene!\n");
+		printf("Dope Sheet Error: No scene!\n");
 		if (G.debug & G_DEBUG)
 			printf("\tPointer = %p, Name = '%s'\n", (void *)ads->source, (ads->source) ? ads->source->name : NULL);
 		return 0;
@@ -2214,7 +2427,7 @@ static size_t animdata_filter_dopesheet(bAnimContext *ac, ListBase *anim_data, b
 			 *	- used to ease the process of doing multiple-character choreographies
 			 */
 			if (ads->filterflag & ADS_FILTER_ONLYOBGROUP) {
-				if (object_in_group(ob, ads->filter_grp) == 0)
+				if (BKE_group_object_exists(ads->filter_grp, ob) == 0)
 					continue;
 			}
 				
@@ -2278,7 +2491,7 @@ static size_t animdata_filter_animchan(bAnimContext *ac, ListBase *anim_data, bD
 	size_t items = 0;
 	
 	/* data to filter depends on channel type */
-	// XXX: only common channel-types have been handled for now
+	/* NOTE: only common channel-types have been handled for now. More can be added as necessary */
 	switch (channel->type) {
 		case ANIMTYPE_SUMMARY:
 			items += animdata_filter_dopesheet(ac, anim_data, ads, filter_mode);
@@ -2290,6 +2503,14 @@ static size_t animdata_filter_animchan(bAnimContext *ac, ListBase *anim_data, bD
 		
 		case ANIMTYPE_OBJECT:
 			items += animdata_filter_dopesheet_ob(ac, anim_data, ads, channel->data, filter_mode);
+			break;
+			
+		case ANIMTYPE_ANIMDATA:
+			items += animfilter_block_data(ac, anim_data, ads, channel->id, filter_mode);
+			break;
+			
+		default:
+			printf("ERROR: Unsupported channel type (%d) in animdata_filter_animchan()\n", channel->type);
 			break;
 	}
 	
@@ -2415,9 +2636,9 @@ size_t ANIM_animdata_filter(bAnimContext *ac, ListBase *anim_data, int filter_mo
 			}
 			break;
 				
-			case ANIMCONT_FCURVES: /* Graph Editor -> FCurves/Animation Editing */
+			case ANIMCONT_FCURVES: /* Graph Editor -> F-Curves/Animation Editing */
 			case ANIMCONT_DRIVERS: /* Graph Editor -> Drivers Editing */
-			case ANIMCONT_NLA: /* NLA Editor */
+			case ANIMCONT_NLA:     /* NLA Editor */
 			{
 				/* all of these editors use the basic DopeSheet data for filtering options, but don't have all the same features */
 				items = animdata_filter_dopesheet(ac, anim_data, data, filter_mode);

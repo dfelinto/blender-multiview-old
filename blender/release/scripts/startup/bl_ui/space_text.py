@@ -19,6 +19,7 @@
 # <pep8-80 compliant>
 import bpy
 from bpy.types import Header, Menu, Panel
+from bpy.app.translations import pgettext_iface as iface_
 
 
 class TEXT_HT_header(Header):
@@ -56,21 +57,27 @@ class TEXT_HT_header(Header):
         row.prop(st, "show_syntax_highlight", text="")
 
         if text:
-            row = layout.row()
-            row.operator("text.run_script")
+            osl = text.name.endswith(".osl") or text.name.endswith(".oso")
 
-            row = layout.row()
-            row.active = text.name.endswith(".py")
-            row.prop(text, "use_module")
+            if osl:
+                row = layout.row()
+                row.operator("node.shader_script_update")
+            else:
+                row = layout.row()
+                row.operator("text.run_script")
+
+                row = layout.row()
+                row.active = text.name.endswith(".py")
+                row.prop(text, "use_module")
 
             row = layout.row()
             if text.filepath:
                 if text.is_dirty:
-                    row.label(text="File" + ": *%r " %
-                              text.filepath + "(unsaved)")
+                    row.label(text=iface_("File: *%r (unsaved)") %
+                              text.filepath, translate=False)
                 else:
-                    row.label(text="File" + ": %r" %
-                              text.filepath)
+                    row.label(text=iface_("File: %r") %
+                              text.filepath, translate=False)
             else:
                 row.label(text="Text: External"
                           if text.library
@@ -132,9 +139,6 @@ class TEXT_PT_find(Panel):
         row.operator("text.replace_set_selected", text="", icon='TEXT')
         col.operator("text.replace")
 
-        # mark
-        layout.operator("text.mark_all")
-
         # settings
         layout.prop(st, "use_match_case")
         row = layout.row()
@@ -152,17 +156,17 @@ class TEXT_MT_view(Menu):
 
         layout.separator()
 
-        layout.operator("screen.area_dupli")
-        layout.operator("screen.screen_full_area")
-
-        layout.separator()
-
         layout.operator("text.move",
                         text="Top of File",
                         ).type = 'FILE_TOP'
         layout.operator("text.move",
                         text="Bottom of File",
                         ).type = 'FILE_BOTTOM'
+
+        layout.separator()
+
+        layout.operator("screen.area_dupli")
+        layout.operator("screen.screen_full_area")
 
 
 class TEXT_MT_text(Menu):
@@ -191,14 +195,33 @@ class TEXT_MT_text(Menu):
             layout.operator("text.run_script")
 
 
+class TEXT_MT_templates_py(Menu):
+    bl_label = "Python"
+
+    def draw(self, context):
+        self.path_menu(bpy.utils.script_paths("templates_py"),
+                       "text.open",
+                       {"internal": True},
+                       )
+
+
+class TEXT_MT_templates_osl(Menu):
+    bl_label = "Open Shading Language"
+
+    def draw(self, context):
+        self.path_menu(bpy.utils.script_paths("templates_osl"),
+                       "text.open",
+                       {"internal": True},
+                       )
+
+
 class TEXT_MT_templates(Menu):
     bl_label = "Templates"
 
     def draw(self, context):
-        self.path_menu(bpy.utils.script_paths("templates"),
-                       "text.open",
-                       {"internal": True},
-                       )
+        layout = self.layout
+        layout.menu("TEXT_MT_templates_py")
+        layout.menu("TEXT_MT_templates_osl")
 
 
 class TEXT_MT_edit_select(Menu):
@@ -209,17 +232,6 @@ class TEXT_MT_edit_select(Menu):
 
         layout.operator("text.select_all")
         layout.operator("text.select_line")
-
-
-class TEXT_MT_edit_markers(Menu):
-    bl_label = "Markers"
-
-    def draw(self, context):
-        layout = self.layout
-
-        layout.operator("text.markers_clear")
-        layout.operator("text.next_marker")
-        layout.operator("text.previous_marker")
 
 
 class TEXT_MT_format(Menu):
@@ -285,12 +297,12 @@ class TEXT_MT_edit(Menu):
         layout.separator()
 
         layout.menu("TEXT_MT_edit_select")
-        layout.menu("TEXT_MT_edit_markers")
 
         layout.separator()
 
         layout.operator("text.jump")
         layout.operator("text.properties", text="Find...")
+        layout.operator("text.autocomplete")
 
         layout.separator()
 

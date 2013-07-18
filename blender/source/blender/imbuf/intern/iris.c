@@ -32,6 +32,7 @@
 
 #include <string.h>
 
+#include "BLI_utildefines.h"
 #include "BLI_fileops.h"
 
 #include "MEM_guardedalloc.h"
@@ -41,6 +42,9 @@
 #include "IMB_imbuf.h"
 #include "IMB_allocimbuf.h"
 #include "IMB_filetype.h"
+
+#include "IMB_colormanagement.h"
+#include "IMB_colormanagement_intern.h"
 
 typedef struct {
 	unsigned short  imagic;      /* stuff saved on disk . . */
@@ -80,21 +84,21 @@ typedef struct {
 #define OFFSET_R    0   /* this is byte order dependent */
 #define OFFSET_G    1
 #define OFFSET_B    2
-#define OFFSET_A    3
+// #define OFFSET_A    3
 
 #define CHANOFFSET(z)   (3 - (z)) /* this is byte order dependent */
 
-#define TYPEMASK        0xff00
+// #define TYPEMASK        0xff00
 #define BPPMASK         0x00ff
-#define ITYPE_VERBATIM      0x0000
+// #define ITYPE_VERBATIM      0x0000 // UNUSED
 #define ITYPE_RLE       0x0100
 #define ISRLE(type)     (((type) & 0xff00) == ITYPE_RLE)
-#define ISVERBATIM(type)    (((type) & 0xff00) == ITYPE_VERBATIM)
+// #define ISVERBATIM(type)    (((type) & 0xff00) == ITYPE_VERBATIM)
 #define BPP(type)       ((type) & BPPMASK)
 #define RLE(bpp)        (ITYPE_RLE | (bpp))
-#define VERBATIM(bpp)       (ITYPE_VERBATIM | (bpp))
-#define IBUFSIZE(pixels)    ((pixels + (pixels >> 6)) << 2)
-#define RLE_NOP         0x00
+// #define VERBATIM(bpp)       (ITYPE_VERBATIM | (bpp)) // UNUSED
+// #define IBUFSIZE(pixels)    ((pixels + (pixels >> 6)) << 2) // UNUSED
+// #define RLE_NOP         0x00
 
 /* funcs */
 static void readheader(FILE *inf, IMAGE *image);
@@ -247,7 +251,7 @@ int imb_is_a_iris(unsigned char *mem)
  *
  */
 
-struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
+struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags, char colorspace[IM_MAX_SPACE])
 {
 	unsigned int *base, *lptr = NULL;
 	float *fbase, *fptr = NULL;
@@ -264,6 +268,9 @@ struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
 	(void)size; /* unused */
 	
 	if (!imb_is_a_iris(mem)) return NULL;
+
+	/* OCIO_TODO: only tested with 1 byte per pixel, not sure how to test with other settings */
+	colorspace_set_default_role(colorspace, IM_MAX_SPACE, COLOR_ROLE_DEFAULT_BYTE);
 
 	/*printf("new iris\n");*/
 	
@@ -402,7 +409,7 @@ struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
 		}
 		
 		MEM_freeN(starttab);
-		MEM_freeN(lengthtab);	
+		MEM_freeN(lengthtab);
 
 	}
 	else {
@@ -522,15 +529,12 @@ struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
 		
 	}
 
-	if (ibuf) {
-		ibuf->ftype = IMAGIC;
-		ibuf->profile = IB_PROFILE_SRGB;
+	ibuf->ftype = IMAGIC;
 
-		test_endian_zbuf(ibuf);
+	test_endian_zbuf(ibuf);
 
-		if (ibuf->rect) {
-			IMB_convert_rgba_to_abgr(ibuf);
-		}
+	if (ibuf->rect) {
+		IMB_convert_rgba_to_abgr(ibuf);
 	}
 
 	return(ibuf);
@@ -610,7 +614,7 @@ static void expandrow2(float *optr, unsigned char *iptr, int z)
 				optr += 4;
 			}
 		}
-	}	
+	}
 }
 
 static void expandrow(unsigned char *optr, unsigned char *iptr, int z)
@@ -669,7 +673,7 @@ static void expandrow(unsigned char *optr, unsigned char *iptr, int z)
  *	represents one pixel.  xsize and ysize specify the dimensions of
  *	the pixel array.  zsize specifies what kind of image file to
  *	write out.  if zsize is 1, the luminance of the pixels are
- *	calculated, and a sinlge channel black and white image is saved.
+ *	calculated, and a single channel black and white image is saved.
  *	If zsize is 3, an RGB image file is saved.  If zsize is 4, an
  *	RGBA image file is saved.
  *

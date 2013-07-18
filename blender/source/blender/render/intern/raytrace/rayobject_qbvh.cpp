@@ -68,7 +68,7 @@ void bvh_done<QBVHTree>(QBVHTree *obj)
 
 	//Build and optimize the tree
 	//TODO do this in 1 pass (half memory usage during building)
-	VBVHNode *root = BuildBinaryVBVH<VBVHNode>(arena1, &obj->rayobj.control).transform(obj->builder);	
+	VBVHNode *root = BuildBinaryVBVH<VBVHNode>(arena1, &obj->rayobj.control).transform(obj->builder);
 
 	if (RE_rayobjectcontrol_test_break(&obj->rayobj.control)) {
 		BLI_memarena_free(arena1);
@@ -94,7 +94,7 @@ void bvh_done<QBVHTree>(QBVHTree *obj)
 }
 
 template<int StackSize>
-int intersect(QBVHTree *obj, Isect *isec)
+static int intersect(QBVHTree *obj, Isect *isec)
 {
 	//TODO renable hint support
 	if (RE_rayobject_isAligned(obj->root)) {
@@ -108,7 +108,7 @@ int intersect(QBVHTree *obj, Isect *isec)
 }
 
 template<class Tree>
-void bvh_hint_bb(Tree *tree, LCTSHint *hint, float *UNUSED(min), float *UNUSED(max))
+static void bvh_hint_bb(Tree *tree, LCTSHint *hint, float *UNUSED(min), float *UNUSED(max))
 {
 	//TODO renable hint support
 	{
@@ -118,7 +118,7 @@ void bvh_hint_bb(Tree *tree, LCTSHint *hint, float *UNUSED(min), float *UNUSED(m
 }
 /* the cast to pointer function is needed to workarround gcc bug: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=11407 */
 template<class Tree, int STACK_SIZE>
-RayObjectAPI make_api()
+static RayObjectAPI make_api()
 {
 	static RayObjectAPI api = 
 	{

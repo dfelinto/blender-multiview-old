@@ -30,6 +30,7 @@
  */
 
 #include <limits.h>
+#include <string.h>
 
 #include "DNA_action_types.h"
 #include "DNA_node_types.h"
@@ -63,14 +64,20 @@ void node_free_standard_storage(bNode *node)
 	}
 }
 
-void node_copy_curves(bNode *orig_node, bNode *new_node)
+void node_copy_curves(bNodeTree *UNUSED(dest_ntree), bNode *dest_node, bNode *src_node)
 {
-	new_node->storage= curvemapping_copy(orig_node->storage);
+	dest_node->storage = curvemapping_copy(src_node->storage);
 }
 
-void node_copy_standard_storage(bNode *orig_node, bNode *new_node)
+void node_copy_standard_storage(bNodeTree *UNUSED(dest_ntree), bNode *dest_node, bNode *src_node)
 {
-	new_node->storage= MEM_dupallocN(orig_node->storage);
+	dest_node->storage = MEM_dupallocN(src_node->storage);
+}
+
+void *node_initexec_curves(bNodeExecContext *UNUSED(context), bNode *node, bNodeInstanceKey UNUSED(key))
+{
+	curvemapping_initialize(node->storage);
+	return NULL;  /* unused return */
 }
 
 /**** Labels ****/
@@ -103,20 +110,17 @@ const char *node_filter_label(bNode *node)
 	return IFACE_(name);
 }
 
-ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
+void node_update_internal_links_default(bNodeTree *ntree, bNode *node)
 {
-	ListBase ret;
-	bNodeSocket *fromsock_first=NULL, *tosock_first=NULL;	/* used for fallback link if no other reconnections are found */
+	bNodeSocket *fromsock_first = NULL, *tosock_first = NULL;   /* used for fallback link if no other reconnections are found */
 	int datatype;
 	int num_links_in = 0, num_links_out = 0, num_reconnect = 0;
 
-	ret.first = ret.last = NULL;
-
 	/* Security check! */
 	if (!ntree)
-		return ret;
+		return;
 
-	for (datatype=0; datatype < NUM_SOCKET_TYPES; ++datatype) {
+	for (datatype = 0; datatype < NUM_SOCKET_TYPES; ++datatype) {
 		bNodeSocket *fromsock, *tosock;
 		int fromindex, toindex;
 		bNodeLink *link;
@@ -125,7 +129,9 @@ ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
 		
 		fromindex = INT_MAX;
 		fromsock = NULL;
-		for (link=ntree->links.first; link; link=link->next) {
+		for (link = ntree->links.first; link; link = link->next) {
+			if (nodeLinkIsHidden(link))
+				continue;
 			if (link->tonode == node && link->tosock->type == datatype) {
 				int index = BLI_findindex(&node->inputs, link->tosock);
 				if (index < fromindex) {
@@ -142,7 +148,9 @@ ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
 		
 		toindex = INT_MAX;
 		tosock = NULL;
-		for (link=ntree->links.first; link; link=link->next) {
+		for (link = ntree->links.first; link; link = link->next) {
+			if (nodeLinkIsHidden(link))
+				continue;
 			if (link->fromnode == node && link->fromsock->type == datatype) {
 				int index = BLI_findindex(&node->outputs, link->fromsock);
 				if (index < toindex) {
@@ -164,7 +172,7 @@ ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
 				ilink->tosock = tosock;
 				/* internal link is always valid */
 				ilink->flag |= NODE_LINK_VALID;
-				BLI_addtail(&ret, ilink);
+				BLI_addtail(&node->internal_links, ilink);
 				
 				++num_reconnect;
 			}
@@ -174,7 +182,7 @@ ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
 	/* if there is one input and one output link, but no reconnections by type,
 	 * simply connect those two sockets.
 	 */
-	if (num_reconnect==0 && num_links_in==1 && num_links_out==1) {
+	if ((num_reconnect == 0) && (num_links_in == 1) && (num_links_out == 1)) {
 		bNodeLink *ilink = MEM_callocN(sizeof(bNodeLink), "internal node link");
 		ilink->fromnode = node;
 		ilink->fromsock = fromsock_first;
@@ -182,8 +190,48 @@ ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
 		ilink->tosock = tosock_first;
 		/* internal link is always valid */
 		ilink->flag |= NODE_LINK_VALID;
-		BLI_addtail(&ret, ilink);
+		BLI_addtail(&node->internal_links, ilink);
 	}
-	
-	return ret;
+}
+
+float node_socket_get_float(bNodeTree *ntree, bNode *UNUSED(node), bNodeSocket *sock)
+{
+	PointerRNA ptr;
+	RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &ptr);
+	return RNA_float_get(&ptr, "default_value");
+}
+
+void node_socket_set_float(bNodeTree *ntree, bNode *UNUSED(node), bNodeSocket *sock, float value)
+{
+	PointerRNA ptr;
+	RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &ptr);
+	RNA_float_set(&ptr, "default_value", value);
+}
+
+void node_socket_get_color(bNodeTree *ntree, bNode *UNUSED(node), bNodeSocket *sock, float *value)
+{
+	PointerRNA ptr;
+	RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &ptr);
+	RNA_float_get_array(&ptr, "default_value", value);
+}
+
+void node_socket_set_color(bNodeTree *ntree, bNode *UNUSED(node), bNodeSocket *sock, const float *value)
+{
+	PointerRNA ptr;
+	RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &ptr);
+	RNA_float_set_array(&ptr, "default_value", value);
+}
+
+void node_socket_get_vector(bNodeTree *ntree, bNode *UNUSED(node), bNodeSocket *sock, float *value)
+{
+	PointerRNA ptr;
+	RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &ptr);
+	RNA_float_get_array(&ptr, "default_value", value);
+}
+
+void node_socket_set_vector(bNodeTree *ntree, bNode *UNUSED(node), bNodeSocket *sock, const float *value)
+{
+	PointerRNA ptr;
+	RNA_pointer_create((ID *)ntree, &RNA_NodeSocket, sock, &ptr);
+	RNA_float_set_array(&ptr, "default_value", value);
 }

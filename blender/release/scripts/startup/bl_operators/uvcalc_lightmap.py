@@ -189,14 +189,14 @@ class prettyface(object):
 
 
 def lightmap_uvpack(meshes,
-                      PREF_SEL_ONLY=True,
-                      PREF_NEW_UVLAYER=False,
-                      PREF_PACK_IN_ONE=False,
-                      PREF_APPLY_IMAGE=False,
-                      PREF_IMG_PX_SIZE=512,
-                      PREF_BOX_DIV=8,
-                      PREF_MARGIN_DIV=512
-                      ):
+                    PREF_SEL_ONLY=True,
+                    PREF_NEW_UVLAYER=False,
+                    PREF_PACK_IN_ONE=False,
+                    PREF_APPLY_IMAGE=False,
+                    PREF_IMG_PX_SIZE=512,
+                    PREF_BOX_DIV=8,
+                    PREF_MARGIN_DIV=512
+                    ):
     """
     BOX_DIV if the maximum division of the UV map that
     a box may be consolidated into.
@@ -516,7 +516,7 @@ def lightmap_uvpack(meshes,
 
 def unwrap(operator, context, **kwargs):
 
-    is_editmode = (bpy.context.object.mode == 'EDIT')
+    is_editmode = (context.object.mode == 'EDIT')
     if is_editmode:
         bpy.ops.object.mode_set(mode='OBJECT', toggle=False)
 
@@ -552,7 +552,7 @@ class LightMapPack(Operator):
     # Disable REGISTER flag for now because this operator might create new
     # images. This leads to non-proper operator redo because current undo
     # stack is local for edit mode and can not remove images created by this
-    # oprtator.
+    # operator.
     # Proper solution would be to make undo stack aware of such things,
     # but for now just disable redo. Keep undo here so unwanted changes to uv
     # coords might be undone.

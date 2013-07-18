@@ -1,29 +1,33 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file FilterBase.h
  *  \ingroup bgevideotex
  */
- 
+
 #ifndef __FILTERBASE_H__
 #define __FILTERBASE_H__
 
@@ -75,7 +79,7 @@ public:
 	/// get previous filter
 	PyFilter * getPrevious (void) { return m_previous; }
 	/// set previous filter
-	void setPrevious (PyFilter * filt, bool useRefCnt = true);
+	void setPrevious (PyFilter *filt, bool useRefCnt = true);
 
 	/// find first filter in chain
 	FilterBase * findFirst (void);
@@ -88,16 +92,20 @@ protected:
 	PyFilter * m_previous;
 
 	/// filter pixel, source byte buffer
-	virtual unsigned int filter (unsigned char * src, short x, short y,
-		short * size, unsigned int pixSize, unsigned int val = 0)
+	virtual unsigned int filter(unsigned char *src, short x, short y,
+	                            short *size, unsigned int pixSize, unsigned int val = 0)
 	{ return val; }
 	/// filter pixel, source int buffer
-	virtual unsigned int filter (unsigned int * src, short x, short y,
-		short * size, unsigned int pixSize, unsigned int val = 0)
+	virtual unsigned int filter(unsigned int *src, short x, short y,
+	                            short *size, unsigned int pixSize, unsigned int val = 0)
+	{ return val; }
+	/// filter pixel, source float buffer
+	virtual unsigned int filter(float *src, short x, short y,
+	                            short *size, unsigned int pixSize, unsigned int val = 0)
 	{ return val; }
 
 	/// get source pixel size
-	virtual unsigned int getPixelSize (void) { return 1; }
+	virtual unsigned int getPixelSize(void) { return 1; }
 
 	/// get converted pixel from previous filters
 	template <class SRC> unsigned int convertPrevious (SRC src, short x, short y,
@@ -118,9 +126,9 @@ extern PyTypeList pyFilterTypes;
 // functions for python interface
 
 // object initialization
-template <class T> static int Filter_init (PyObject * pySelf, PyObject * args, PyObject * kwds)
+template <class T> static int Filter_init (PyObject *pySelf, PyObject *args, PyObject *kwds)
 {
-	PyFilter * self = reinterpret_cast<PyFilter*>(pySelf);
+	PyFilter *self = reinterpret_cast<PyFilter*>(pySelf);
 	// create filter object
 	if (self->m_filter != NULL) delete self->m_filter;
 	self->m_filter = new T();
@@ -129,14 +137,14 @@ template <class T> static int Filter_init (PyObject * pySelf, PyObject * args, P
 }
 
 // object allocation
-PyObject * Filter_allocNew (PyTypeObject * type, PyObject * args, PyObject * kwds);
+PyObject *Filter_allocNew(PyTypeObject *type, PyObject *args, PyObject *kwds);
 // object deallocation
-void Filter_dealloc (PyFilter * self);
+void Filter_dealloc(PyFilter *self);
 
 // get previous pixel filter object
-PyObject * Filter_getPrevious (PyFilter * self, void * closure);
+PyObject *Filter_getPrevious(PyFilter *self, void *closure);
 // set previous pixel filter object
-int Filter_setPrevious (PyFilter * self, PyObject * value, void * closure);
+int Filter_setPrevious(PyFilter *self, PyObject *value, void *closure);
 
 
 #endif

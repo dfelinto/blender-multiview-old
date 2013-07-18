@@ -69,7 +69,7 @@ struct ColorBlock
 	
 private:
 	
-	Color32 m_color[4*4];
+	Color32 m_color[4 * 4];
 	
 };
 
@@ -104,4 +104,4 @@ inline Color32 & ColorBlock::color(uint x, uint y)
 	return m_color[y * 4 + x];
 }
 
-#endif // __COLORBLOCK_H__
+#endif  /* __COLORBLOCK_H__ */

@@ -175,7 +175,7 @@ void KX_TouchSensor::RegisterSumo(KX_TouchEventManager *touchman)
 	{
 		if (touchman->GetPhysicsEnvironment()->requestCollisionCallback(m_physCtrl))
 		{
-			KX_ClientObjectInfo* client_info = static_cast<KX_ClientObjectInfo*>(m_physCtrl->getNewClientInfo());
+			KX_ClientObjectInfo *client_info = static_cast<KX_ClientObjectInfo*>(m_physCtrl->getNewClientInfo());
 			if (client_info->isSensor())
 				touchman->GetPhysicsEnvironment()->addSensor(m_physCtrl);
 		}
@@ -188,7 +188,7 @@ void KX_TouchSensor::UnregisterSumo(KX_TouchEventManager* touchman)
 		if (touchman->GetPhysicsEnvironment()->removeCollisionCallback(m_physCtrl))
 		{
 			// no more sensor on the controller, can remove it if it is a sensor object
-			KX_ClientObjectInfo* client_info = static_cast<KX_ClientObjectInfo*>(m_physCtrl->getNewClientInfo());
+			KX_ClientObjectInfo *client_info = static_cast<KX_ClientObjectInfo*>(m_physCtrl->getNewClientInfo());
 			if (client_info->isSensor())
 				touchman->GetPhysicsEnvironment()->removeSensor(m_physCtrl);
 		}
@@ -203,8 +203,8 @@ bool	KX_TouchSensor::BroadPhaseSensorFilterCollision(void*obj1,void*obj2)
 
 	KX_GameObject* myobj = (KX_GameObject*)GetParent();
 	KX_GameObject* myparent = myobj->GetParent();
-	KX_ClientObjectInfo* client_info = static_cast<KX_ClientObjectInfo*>(((PHY_IPhysicsController*)obj2)->getNewClientInfo());
-	KX_ClientObjectInfo* my_client_info = static_cast<KX_ClientObjectInfo*>(m_physCtrl->getNewClientInfo());
+	KX_ClientObjectInfo *client_info = static_cast<KX_ClientObjectInfo*>(((PHY_IPhysicsController*)obj2)->getNewClientInfo());
+	KX_ClientObjectInfo *my_client_info = static_cast<KX_ClientObjectInfo*>(m_physCtrl->getNewClientInfo());
 	KX_GameObject* otherobj = ( client_info ? client_info->m_gameobject : NULL);
 
 	// first, decrement refcount as GetParent() increases it
@@ -243,7 +243,7 @@ bool	KX_TouchSensor::NewHandleCollision(void*object1,void*object2,const PHY_Coll
 
 	// need the mapping from PHY_IPhysicsController to gameobjects now
 	
-	KX_ClientObjectInfo* client_info = static_cast<KX_ClientObjectInfo*> (object1 == m_physCtrl? 
+	KX_ClientObjectInfo *client_info = static_cast<KX_ClientObjectInfo*> (object1 == m_physCtrl? 
 					((PHY_IPhysicsController*)object2)->getNewClientInfo(): 
 					((PHY_IPhysicsController*)object1)->getNewClientInfo());
 
@@ -331,9 +331,9 @@ PyAttributeDef KX_TouchSensor::Attributes[] = {
 
 /* Python API */
 
-PyObject* KX_TouchSensor::pyattr_get_object_hit(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *KX_TouchSensor::pyattr_get_object_hit(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
-	KX_TouchSensor* self= static_cast<KX_TouchSensor*>(self_v);
+	KX_TouchSensor* self = static_cast<KX_TouchSensor*>(self_v);
 	
 	if (self->m_hitObject)
 		return self->m_hitObject->GetProxy();
@@ -341,9 +341,9 @@ PyObject* KX_TouchSensor::pyattr_get_object_hit(void *self_v, const KX_PYATTRIBU
 		Py_RETURN_NONE;
 }
 
-PyObject* KX_TouchSensor::pyattr_get_object_hit_list(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
+PyObject *KX_TouchSensor::pyattr_get_object_hit_list(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
-	KX_TouchSensor* self= static_cast<KX_TouchSensor*>(self_v);
+	KX_TouchSensor* self = static_cast<KX_TouchSensor*>(self_v);
 	return self->m_colliders->GetProxy();
 }
 

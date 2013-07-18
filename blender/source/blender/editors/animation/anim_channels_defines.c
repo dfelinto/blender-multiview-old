@@ -36,6 +36,8 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_camera_types.h"
@@ -47,6 +49,7 @@
 #include "DNA_key_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_lattice_types.h"
+#include "DNA_linestyle_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_material_types.h"
 #include "DNA_meta_types.h"
@@ -61,7 +64,6 @@
 #include "BKE_curve.h"
 #include "BKE_key.h"
 #include "BKE_context.h"
-#include "BKE_utildefines.h" /* FILE_MAX */
 
 #include "UI_interface.h"
 #include "UI_interface_icons.h"
@@ -83,8 +85,9 @@
 #define EXTRA_SCROLL_PAD    100.0f
 
 /* size of indent steps */
-#define INDENT_STEP_SIZE    7
+#define INDENT_STEP_SIZE    (0.35f * U.widget_unit)
 
+/* size of string buffers used for animation channel displayed names */
 #define ANIM_CHAN_NAME_SIZE 256
 
 /* get the pointer used for some flag */
@@ -293,7 +296,7 @@ static short acf_nodetree_rootType_offset(bNodeTree *ntree)
 		}
 	}
 	
-	// unknown
+	/* unknown */
 	return 0;
 }
 
@@ -305,15 +308,15 @@ static short acf_generic_group_offset(bAnimContext *ac, bAnimListElem *ale)
 	if (ale->id) {
 		/* texture animdata */
 		if (GS(ale->id->name) == ID_TE) {
-			offset += 21;
+			offset += U.widget_unit;
 		}
 		/* materials and particles animdata */
 		else if (ELEM(GS(ale->id->name), ID_MA, ID_PA))
-			offset += 14;
+			offset += (short)(0.7f * U.widget_unit);
 			
 		/* if not in Action Editor mode, action-groups (and their children) must carry some offset too... */
 		else if (ac->datatype != ANIMCONT_ACTION)
-			offset += 14;
+			offset += (short)(0.7f * U.widget_unit);
 			
 		/* nodetree animdata */
 		if (GS(ale->id->name) == ID_NT) {
@@ -379,6 +382,10 @@ static short acf_generic_dataexpand_setting_valid(bAnimContext *ac, bAnimListEle
 		case ACHANNEL_SETTING_MUTE:
 			return ((ac) && (ac->spacetype == SPACE_NLA));
 			
+		/* select is ok for most "ds*" channels (e.g. dsmat) */
+		case ACHANNEL_SETTING_SELECT:
+			return 1;
+			
 		/* other flags are never supported */
 		default:
 			return 0;
@@ -420,10 +427,10 @@ static void acf_summary_backdrop(bAnimContext *ac, bAnimListElem *ale, float ymi
 static void acf_summary_name(bAnimListElem *UNUSED(ale), char *name)
 {
 	if (name)
-		BLI_strncpy(name, "DopeSheet Summary", ANIM_CHAN_NAME_SIZE);
+		BLI_strncpy(name, IFACE_("Dope Sheet Summary"), ANIM_CHAN_NAME_SIZE);
 }
 
-// TODO: this is really a temp icon I think
+// FIXME: this is really a temp icon I think
 static int acf_summary_icon(bAnimListElem *UNUSED(ale))
 {
 	return ICON_BORDERMOVE;
@@ -602,7 +609,6 @@ static int acf_object_icon(bAnimListElem *ale)
 	Object *ob = base->object;
 	
 	/* icon depends on object-type */
-
 	switch (ob->type) {
 		case OB_LAMP:
 			return ICON_OUTLINER_OB_LAMP;
@@ -629,7 +635,6 @@ static int acf_object_icon(bAnimListElem *ale)
 		default:
 			return ICON_OBJECT_DATA;
 	}
-	
 }
 
 /* name for object */
@@ -754,7 +759,7 @@ static void acf_group_color(bAnimContext *ac, bAnimListElem *ale, float r_color[
 		
 		/* highlight only for active */
 		if (ale->flag & AGRP_ACTIVE)
-			copy_v3_v3_char((char *)cp, agrp->cs.active);
+			copy_v3_v3_char((char *)cp, agrp->cs.select);
 		else
 			copy_v3_v3_char((char *)cp, agrp->cs.solid);
 		
@@ -893,6 +898,27 @@ static void acf_fcurve_name(bAnimListElem *ale, char *name)
 	getname_anim_fcurve(name, ale->id, ale->data);
 }
 
+/* "name" property for fcurve entries */
+static short acf_fcurve_name_prop(bAnimListElem *ale, PointerRNA *ptr, PropertyRNA **prop)
+{
+	FCurve *fcu = (FCurve *)ale->data;
+	
+	/* Ctrl-Click Usability Convenience Hack: 
+	 * For disabled F-Curves, allow access to the RNA Path 
+	 * as our "name" so that user can perform quick fixes
+	 */
+	if (fcu->flag & FCURVE_DISABLED) {
+		RNA_pointer_create(ale->id, &RNA_FCurve, ale->data, ptr);
+		*prop = RNA_struct_find_property(ptr, "data_path");
+	}
+	else {
+		/* for "normal" F-Curves - no editable name, but *prop may not be set properly yet... */
+		*prop = NULL;
+	}
+	
+	return (*prop != NULL);
+}
+
 /* check if some setting exists for this channel */
 static short acf_fcurve_setting_valid(bAnimContext *ac, bAnimListElem *ale, int setting)
 {
@@ -964,7 +990,7 @@ static bAnimChannelType ACF_FCURVE =
 	acf_generic_group_offset,       /* offset */
 
 	acf_fcurve_name,                /* name */
-	NULL,                           /* name prop */
+	acf_fcurve_name_prop,           /* name prop */
 	NULL,                           /* icon */
 
 	acf_fcurve_setting_valid,       /* has setting */
@@ -1067,7 +1093,7 @@ static int acf_filldrivers_icon(bAnimListElem *UNUSED(ale))
 
 static void acf_filldrivers_name(bAnimListElem *UNUSED(ale), char *name)
 {
-	BLI_strncpy(name, "Drivers", ANIM_CHAN_NAME_SIZE);
+	BLI_strncpy(name, IFACE_("Drivers"), ANIM_CHAN_NAME_SIZE);
 }
 
 /* check if some setting exists for this channel */
@@ -1188,7 +1214,7 @@ static void *acf_dsmat_setting_ptr(bAnimListElem *ale, int setting, short *type)
 			if (ma->adt)
 				return GET_ACF_FLAG_PTR(ma->adt->flag, type);
 			else
-				return NULL;	
+				return NULL;
 		
 		default: /* unsupported */
 			return NULL;
@@ -1265,7 +1291,7 @@ static void *acf_dslam_setting_ptr(bAnimListElem *ale, int setting, short *type)
 			if (la->adt)
 				return GET_ACF_FLAG_PTR(la->adt->flag, type);
 			else
-				return NULL;	
+				return NULL;
 		
 		default: /* unsupported */
 			return NULL;
@@ -1349,7 +1375,7 @@ static void *acf_dstex_setting_ptr(bAnimListElem *ale, int setting, short *type)
 			if (tex->adt)
 				return GET_ACF_FLAG_PTR(tex->adt->flag, type);
 			else
-				return NULL;	
+				return NULL;
 		
 		default: /* unsupported */
 			return NULL;
@@ -2012,6 +2038,83 @@ static bAnimChannelType ACF_DSNTREE =
 	acf_dsntree_setting_ptr                 /* pointer for setting */
 };
 
+/* LineStyle Expander  ------------------------------------------- */
+
+/* TODO: just get this from RNA? */
+static int acf_dslinestyle_icon(bAnimListElem *UNUSED(ale))
+{
+	return ICON_BRUSH_DATA; /* FIXME */
+}
+
+/* get the appropriate flag(s) for the setting when it is valid  */
+static int acf_dslinestyle_setting_flag(bAnimContext *UNUSED(ac), int setting, short *neg)
+{
+	/* clear extra return data first */
+	*neg = 0;
+	
+	switch (setting) {
+		case ACHANNEL_SETTING_EXPAND: /* expanded */
+			return LS_DS_EXPAND;
+			
+		case ACHANNEL_SETTING_MUTE: /* mute (only in NLA) */
+			return ADT_NLA_EVAL_OFF;
+			
+		case ACHANNEL_SETTING_VISIBLE: /* visible (only in Graph Editor) */
+			*neg = 1;
+			return ADT_CURVES_NOT_VISIBLE;
+			
+		case ACHANNEL_SETTING_SELECT: /* selected */
+			return ADT_UI_SELECTED;
+			
+		default: /* unsupported */
+			return 0;
+	}
+}
+
+/* get pointer to the setting */
+static void *acf_dslinestyle_setting_ptr(bAnimListElem *ale, int setting, short *type)
+{
+	FreestyleLineStyle *linestyle = (FreestyleLineStyle *)ale->data;
+	
+	/* clear extra return data first */
+	*type = 0;
+	
+	switch (setting) {
+		case ACHANNEL_SETTING_EXPAND: /* expanded */
+			return GET_ACF_FLAG_PTR(linestyle->flag, type);
+			
+		case ACHANNEL_SETTING_SELECT: /* selected */
+		case ACHANNEL_SETTING_MUTE: /* muted (for NLA only) */
+		case ACHANNEL_SETTING_VISIBLE: /* visible (for Graph Editor only) */
+			if (linestyle->adt)
+				return GET_ACF_FLAG_PTR(linestyle->adt->flag, type);
+			else
+				return NULL;
+			
+		default: /* unsupported */
+			return NULL;
+	}
+}
+
+/* node tree expander type define */
+static bAnimChannelType ACF_DSLINESTYLE =
+{
+	"Line Style Expander",			/* type name */
+	
+	acf_generic_dataexpand_color,	/* backdrop color */
+	acf_generic_dataexpand_backdrop,/* backdrop */
+	acf_generic_indention_1,		/* indent level */
+	acf_generic_basic_offset,		/* offset */
+	
+	acf_generic_idblock_name,		/* name */
+	acf_generic_idblock_nameprop,	/* name prop */
+	acf_dslinestyle_icon,			/* icon */
+	
+	acf_generic_dataexpand_setting_valid,	/* has setting */
+	acf_dslinestyle_setting_flag,			/* flag for setting */
+	acf_dslinestyle_setting_ptr				/* pointer for setting */
+};
+
 /* Mesh Expander  ------------------------------------------- */
 
 // TODO: just get this from RNA?
@@ -2179,7 +2282,7 @@ static int acf_dsspk_setting_flag(bAnimContext *UNUSED(ac), int setting, short *
 {
 	/* clear extra return data first */
 	*neg = 0;
-
+	
 	switch (setting) {
 		case ACHANNEL_SETTING_EXPAND: /* expanded */
 			return SPK_DS_EXPAND;
@@ -2203,10 +2306,10 @@ static int acf_dsspk_setting_flag(bAnimContext *UNUSED(ac), int setting, short *
 static void *acf_dsspk_setting_ptr(bAnimListElem *ale, int setting, short *type)
 {
 	Speaker *spk = (Speaker *)ale->data;
-
+	
 	/* clear extra return data first */
 	*type = 0;
-
+	
 	switch (setting) {
 		case ACHANNEL_SETTING_EXPAND: /* expanded */
 			return GET_ACF_FLAG_PTR(spk->flag, type);
@@ -2256,7 +2359,7 @@ static void acf_shapekey_name(bAnimListElem *ale, char *name)
 		if (kb->name[0])
 			BLI_strncpy(name, kb->name, ANIM_CHAN_NAME_SIZE);
 		else
-			BLI_snprintf(name, ANIM_CHAN_NAME_SIZE, "Key %d", ale->index);
+			BLI_snprintf(name, ANIM_CHAN_NAME_SIZE, IFACE_("Key %d"), ale->index);
 	}
 }
 
@@ -2478,7 +2581,7 @@ static int acf_gpl_setting_flag(bAnimContext *UNUSED(ac), int setting, short *ne
 			return GP_LAYER_HIDE;
 			
 		case ACHANNEL_SETTING_PROTECT: /* protected */
-			// *neg = 1; - if we change this to edtiability
+			// *neg = 1; - if we change this to editability
 			return GP_LAYER_LOCKED;
 			
 		default: /* unsupported */
@@ -2527,7 +2630,7 @@ static void acf_mask_color(bAnimContext *UNUSED(ac), bAnimListElem *UNUSED(ale),
 // TODO: just get this from RNA?
 static int acf_mask_icon(bAnimListElem *UNUSED(ale))
 {
-	return ICON_GREASEPENCIL; // MASK_TODO - need real icon
+	return ICON_MOD_MASK;
 }
 
 /* check if some setting exists for this channel */
@@ -2574,15 +2677,15 @@ static void *acf_mask_setting_ptr(bAnimListElem *ale, int UNUSED(setting), short
 /* mask datablock type define */
 static bAnimChannelType ACF_MASKDATA =
 {
-	"Mask Datablock",            /* type name */
+	"Mask Datablock",                /* type name */
 	
 	acf_mask_color,                  /* backdrop color */
-	acf_group_backdrop,             /* backdrop */
-	acf_generic_indention_0,        /* indent level */
-	acf_generic_group_offset,       /* offset */
+	acf_group_backdrop,              /* backdrop */
+	acf_generic_indention_0,         /* indent level */
+	acf_generic_group_offset,        /* offset */
 	
-	acf_generic_idblock_name,       /* name */
-	acf_generic_idfill_nameprop,    /* name prop */
+	acf_generic_idblock_name,        /* name */
+	acf_generic_idfill_nameprop,     /* name prop */
 	acf_mask_icon,                   /* icon */
 	
 	acf_mask_setting_valid,          /* has setting */
@@ -2643,7 +2746,7 @@ static int acf_masklay_setting_flag(bAnimContext *UNUSED(ac), int setting, short
 //			return GP_LAYER_HIDE;
 		
 		case ACHANNEL_SETTING_PROTECT: /* protected */
-			// *neg = 1; - if we change this to edtiability
+			// *neg = 1; - if we change this to editability
 			return MASK_LAYERFLAG_LOCKED;
 		
 		default: /* unsupported */
@@ -2655,7 +2758,7 @@ static int acf_masklay_setting_flag(bAnimContext *UNUSED(ac), int setting, short
 static void *acf_masklay_setting_ptr(bAnimListElem *ale, int UNUSED(setting), short *type)
 {
 	MaskLayer *masklay = (MaskLayer *)ale->data;
-
+	
 	/* all flags are just in agrp->flag for now... */
 	return GET_ACF_FLAG_PTR(masklay->flag, type);
 }
@@ -2663,20 +2766,20 @@ static void *acf_masklay_setting_ptr(bAnimListElem *ale, int UNUSED(setting), sh
 /* grease pencil layer type define */
 static bAnimChannelType ACF_MASKLAYER =
 {
-	"Mask Layer",                /* type name */
-
+	"Mask Layer",                   /* type name */
+	
 	acf_generic_channel_color,      /* backdrop color */
 	acf_generic_channel_backdrop,   /* backdrop */
 	acf_generic_indention_flexible, /* indent level */
 	acf_generic_group_offset,       /* offset */
-
-	acf_masklay_name,                   /* name */
-	acf_masklay_name_prop,              /* name prop */
+	
+	acf_masklay_name,               /* name */
+	acf_masklay_name_prop,          /* name prop */
 	NULL,                           /* icon */
-
-	acf_masklay_setting_valid,          /* has setting */
-	acf_masklay_setting_flag,           /* flag for setting */
-	acf_masklay_setting_ptr             /* pointer for setting */
+	
+	acf_masklay_setting_valid,      /* has setting */
+	acf_masklay_setting_flag,       /* flag for setting */
+	acf_masklay_setting_ptr         /* pointer for setting */
 };
 
 
@@ -2724,6 +2827,7 @@ static void ANIM_init_channel_typeinfo_data(void)
 		animchannelTypeInfo[type++] = &ACF_DSTEX;        /* Texture Channel */
 		animchannelTypeInfo[type++] = &ACF_DSLAT;        /* Lattice Channel */
 		animchannelTypeInfo[type++] = &ACF_DSSPK;        /* Speaker Channel */
+		animchannelTypeInfo[type++] = &ACF_DSLINESTYLE;  /* LineStyle Channel */
 		
 		animchannelTypeInfo[type++] = &ACF_SHAPEKEY;     /* ShapeKey */
 		
@@ -2777,7 +2881,7 @@ void ANIM_channel_debug_print_info(bAnimListElem *ale, short indent_level)
 			acf->name(ale, name);
 		else
 			BLI_strncpy(name, "<No name>", sizeof(name));
-
+		
 		/* print type name + ui name */
 		printf("ChanType: <%s> Name: \"%s\"\n", acf->channel_type_name, name);
 	}
@@ -2913,15 +3017,14 @@ void ANIM_channel_setting_set(bAnimContext *ac, bAnimListElem *ale, int setting,
 
 /* --------------------------- */
 
-// XXX hardcoded size of icons
-#define ICON_WIDTH      17
-// XXX hardcoded width of sliders
-#define SLIDER_WIDTH    80
-// XXX hardcoded width of rename textboxes
-#define RENAME_TEXT_WIDTH 100
+// size of icons
+#define ICON_WIDTH      (0.85f * U.widget_unit)
+// width of sliders
+#define SLIDER_WIDTH    (4 * U.widget_unit)
+// width of rename textboxes
+#define RENAME_TEXT_WIDTH (5 * U.widget_unit)
 
 /* Draw the given channel */
-// TODO: make this use UI controls for the buttons
 void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float ymaxc)
 {
 	bAnimChannelType *acf = ANIM_channel_get_typeinfo(ale);
@@ -2939,13 +3042,11 @@ void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float 
 	else
 		offset = 0;
 		
-	/* calculate appropriate y-coordinates for icon buttons 
-	 *	7 is hardcoded factor for half-height of icons
-	 */
+	/* calculate appropriate y-coordinates for icon buttons */
 	y = (ymaxc - yminc) / 2 + yminc;
-	ymid = y - 7;
+	ymid = y - 0.5f * ICON_WIDTH;
 	/* y-coordinates for text is only 4 down from middle */
-	ytext = y - 4;
+	ytext = y - 0.2f * U.widget_unit;
 	
 	/* check if channel is selected */
 	if (acf->has_setting(ac, ale, ACHANNEL_SETTING_SELECT))
@@ -2992,10 +3093,8 @@ void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float 
 				glColor3fv(fcu->color);
 				
 				/* just a solid color rect
-				 *  hardcoded 17 pixels width is slightly wider than icon width, so that
-				 *	there's a slight border around it 
 				 */
-				glRectf(offset, yminc, offset + 17, ymaxc);
+				glRectf(offset, yminc, offset + ICON_WIDTH, ymaxc);
 			}
 			
 			/* icon is drawn as widget now... */
@@ -3011,20 +3110,20 @@ void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float 
 	/* TODO: when renaming, we might not want to draw this, especially if name happens to be longer than channel */
 	if (acf->name) {
 		char name[ANIM_CHAN_NAME_SIZE]; /* hopefully this will be enough! */
-
+		
 		/* set text color */
 		/* XXX: if active, highlight differently? */
 		if (selected)
 			UI_ThemeColor(TH_TEXT_HI);
 		else
 			UI_ThemeColor(TH_TEXT);
-
+		
 		/* get name */
 		acf->name(ale, name);
-
+		
 		offset += 3;
 		UI_DrawString(offset, ytext, name);
-
+		
 		/* draw red underline if channel is disabled */
 		if ((ale->type == ANIMTYPE_FCURVE) && (ale->flag & FCURVE_DISABLED)) {
 			/* FIXME: replace hardcoded color here, and check on extents! */
@@ -3067,9 +3166,9 @@ void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float 
 				break;
 			}
 		}
-		
+
 		/* check if there's enough space for the toggles if the sliders are drawn too */
-		if (!(draw_sliders) || ((v2d->mask.xmax - v2d->mask.xmin) > ACHANNEL_BUTTON_WIDTH / 2) ) {
+		if (!(draw_sliders) || (BLI_rcti_size_x(&v2d->mask) > ACHANNEL_BUTTON_WIDTH / 2) ) {
 			/* protect... */
 			if (acf->has_setting(ac, ale, ACHANNEL_SETTING_PROTECT))
 				offset += ICON_WIDTH;
@@ -3089,7 +3188,7 @@ void ANIM_channel_draw(bAnimContext *ac, bAnimListElem *ale, float yminc, float 
 		}
 		
 		
-		/* finally draw a backdrop rect behind these 
+		/* finally draw a backdrop rect behind these
 		 *	- starts from the point where the first toggle/slider starts, 
 		 *	- ends past the space that might be reserved for a scroller
 		 */
@@ -3154,7 +3253,6 @@ static void achannel_setting_rename_done_cb(bContext *C, void *ads_poin, void *U
 	ads->renameIndex = 0;
 	
 	/* send notifiers */
-	// XXX: right notifier?
 	WM_event_add_notifier(C, NC_ANIMATION | ND_ANIMCHAN | NA_RENAME, NULL);
 }
 
@@ -3182,7 +3280,7 @@ static void achannel_setting_slider_cb(bContext *C, void *id_poin, void *fcu_poi
 	RNA_id_pointer_create(id, &id_ptr);
 	
 	/* try to resolve the path stored in the F-Curve */
-	if (RNA_path_resolve(&id_ptr, fcu->rna_path, &ptr, &prop)) {
+	if (RNA_path_resolve_property(&id_ptr, fcu->rna_path, &ptr, &prop)) {
 		/* set the special 'replace' flag if on a keyframe */
 		if (fcurve_frame_has_keyframe(fcu, cfra, 0))
 			flag |= INSERTKEY_REPLACE;
@@ -3200,7 +3298,7 @@ static void achannel_setting_slider_shapekey_cb(bContext *C, void *key_poin, voi
 {
 	Key *key = (Key *)key_poin;
 	KeyBlock *kb = (KeyBlock *)kb_poin;
-	char *rna_path = key_get_curValue_rnaPath(key, kb);
+	char *rna_path = BKE_keyblock_curval_rnapath_get(key, kb);
 	
 	ReportList *reports = CTX_wm_reports(C);
 	Scene *scene = CTX_data_scene(C);
@@ -3220,7 +3318,7 @@ static void achannel_setting_slider_shapekey_cb(bContext *C, void *key_poin, voi
 	RNA_id_pointer_create((ID *)key, &id_ptr);
 	
 	/* try to resolve the path stored in the F-Curve */
-	if (RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop)) {
 		/* find or create new F-Curve */
 		// XXX is the group name for this ok?
 		bAction *act = verify_adt_action((ID *)key, 1);
@@ -3255,7 +3353,7 @@ static void draw_setting_widget(bAnimContext *ac, bAnimListElem *ale, bAnimChann
 	/* get the flag and the pointer to that flag */
 	flag = acf->setting_flag(ac, setting, &negflag);
 	ptr = acf->setting_ptr(ale, setting, &ptrsize);
-	/* enabled= ANIM_channel_setting_get(ac, ale, setting); */ /* UNUSED */
+	/* enabled = ANIM_channel_setting_get(ac, ale, setting); */ /* UNUSED */
 	
 	/* get the base icon for the setting */
 	switch (setting) {
@@ -3264,40 +3362,40 @@ static void draw_setting_widget(bAnimContext *ac, bAnimListElem *ale, bAnimChann
 			icon = ICON_VISIBLE_IPO_OFF;
 			
 			if (ale->type == ANIMTYPE_FCURVE)
-				tooltip = "Channel is visible in Graph Editor for editing";
+				tooltip = TIP_("Channel is visible in Graph Editor for editing");
 			else
-				tooltip = "Channel(s) are visible in Graph Editor for editing";
+				tooltip = TIP_("Channels are visible in Graph Editor for editing");
 			break;
 			
 		case ACHANNEL_SETTING_EXPAND: /* expanded triangle */
-			//icon= ((enabled)? ICON_TRIA_DOWN : ICON_TRIA_RIGHT);
+			//icon = ((enabled) ? ICON_TRIA_DOWN : ICON_TRIA_RIGHT);
 			icon = ICON_TRIA_RIGHT;
-			tooltip = "Make channels grouped under this channel visible";
+			tooltip = TIP_("Make channels grouped under this channel visible");
 			break;
 			
 		case ACHANNEL_SETTING_SOLO: /* NLA Tracks only */
-			//icon= ((enabled)? ICON_LAYER_ACTIVE : ICON_LAYER_USED);
+			//icon = ((enabled) ? ICON_LAYER_ACTIVE : ICON_LAYER_USED);
 			icon = ICON_LAYER_USED;
-			tooltip = "NLA Track is the only one evaluated for the AnimData block it belongs to";
+			tooltip = TIP_("NLA Track is the only one evaluated for the AnimData block it belongs to");
 			break;
 		
 		/* --- */
 		
 		case ACHANNEL_SETTING_PROTECT: /* protected lock */
 			// TODO: what about when there's no protect needed?
-			//icon= ((enabled)? ICON_LOCKED : ICON_UNLOCKED);
+			//icon = ((enabled) ? ICON_LOCKED : ICON_UNLOCKED);
 			icon = ICON_UNLOCKED;
-			tooltip = "Editability of keyframes for this channel";
+			tooltip = TIP_("Editability of keyframes for this channel");
 			break;
 			
 		case ACHANNEL_SETTING_MUTE: /* muted speaker */
-			//icon= ((enabled)? ICON_MUTE_IPO_ON : ICON_MUTE_IPO_OFF);
+			//icon = ((enabled) ? ICON_MUTE_IPO_ON : ICON_MUTE_IPO_OFF);
 			icon = ICON_MUTE_IPO_OFF;
 			
 			if (ale->type == ALE_FCURVE) 
-				tooltip = "Does F-Curve contribute to result";
+				tooltip = TIP_("Does F-Curve contribute to result");
 			else
-				tooltip = "Do channels contribute to result";
+				tooltip = TIP_("Do channels contribute to result");
 			break;
 			
 		default:
@@ -3369,12 +3467,9 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 		offset = 0;
 		
 	/* calculate appropriate y-coordinates for icon buttons 
-	 *	7 is hardcoded factor for half-height of icons
 	 */
 	y = (ymaxc - yminc) / 2 + yminc;
-	ymid = y - 7;
-	/* y-coordinates for text is only 4 down from middle */
-	/* ytext= y - 4; */
+	ymid = y - 0.5f * ICON_WIDTH;
 	
 	/* no button backdrop behind icons */
 	uiBlockSetEmboss(block, UI_EMBOSSN);
@@ -3414,10 +3509,13 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 		
 		/* if rename index matches, add widget for this */
 		if (ac->ads->renameIndex == channel_index + 1) {
-			PointerRNA ptr;
-			PropertyRNA *prop;
+			PointerRNA ptr = {{NULL}};
+			PropertyRNA *prop = NULL;
 			
-			/* draw renaming widget if we can get RNA pointer for it */
+			/* draw renaming widget if we can get RNA pointer for it 
+			 * NOTE: property may only be available in some cases, even if we have 
+			 *       a callback available (e.g. broken F-Curve rename)
+			 */
 			if (acf->name_prop(ale, &ptr, &prop)) {
 				uiBut *but;
 				
@@ -3426,7 +3524,7 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 				but = uiDefButR(block, TEX, 1, "", offset + 3, yminc, RENAME_TEXT_WIDTH, channel_height,
 				                &ptr, RNA_property_identifier(prop), -1, 0, 0, -1, -1, NULL);
 				uiButSetFunc(but, achannel_setting_rename_done_cb, ac->ads, NULL);
-				uiButActiveOnly(C, block, but);
+				uiButActiveOnly(C, ac->ar, block, but);
 				
 				uiBlockSetEmboss(block, UI_EMBOSSN);
 			}
@@ -3438,7 +3536,6 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 	offset = 0;
 	
 	// TODO: when drawing sliders, make those draw instead of these toggles if not enough space
-	
 	if (v2d) {
 		short draw_sliders = 0;
 		
@@ -3461,7 +3558,7 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 		}
 		
 		/* check if there's enough space for the toggles if the sliders are drawn too */
-		if (!(draw_sliders) || ((v2d->mask.xmax - v2d->mask.xmin) > ACHANNEL_BUTTON_WIDTH / 2) ) {
+		if (!(draw_sliders) || (BLI_rcti_size_x(&v2d->mask) > ACHANNEL_BUTTON_WIDTH / 2) ) {
 			/* protect... */
 			if (acf->has_setting(ac, ale, ACHANNEL_SETTING_PROTECT)) {
 				offset += ICON_WIDTH; 
@@ -3508,7 +3605,7 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 					KeyBlock *kb = (KeyBlock *)ale->data;
 					Key *key = (Key *)ale->id;
 					
-					rna_path = key_get_curValue_rnaPath(key, kb);
+					rna_path = BKE_keyblock_curval_rnapath_get(key, kb);
 					free_path = 1;
 				}
 				
@@ -3518,7 +3615,7 @@ void ANIM_channel_draw_widgets(bContext *C, bAnimContext *ac, bAnimListElem *ale
 					RNA_id_pointer_create(ale->id, &id_ptr);
 					
 					/* try to resolve the path */
-					if (RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop)) {
+					if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop)) {
 						uiBut *but;
 						
 						/* create the slider button, and assign relevant callback to ensure keyframes are inserted... */

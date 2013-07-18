@@ -32,7 +32,7 @@
 
 #include "BLI_math.h"
 
-void TransformWriter::add_node_transform(COLLADASW::Node& node, float mat[][4], float parent_mat[][4])
+void TransformWriter::add_node_transform(COLLADASW::Node& node, float mat[4][4], float parent_mat[4][4])
 {
 	float loc[3], rot[3], scale[3];
 	float local[4][4];
@@ -40,7 +40,7 @@ void TransformWriter::add_node_transform(COLLADASW::Node& node, float mat[][4], 
 	if (parent_mat) {
 		float invpar[4][4];
 		invert_m4_m4(invpar, parent_mat);
-		mult_m4_m4m4(local, invpar, mat);
+		mul_m4_m4m4(local, invpar, mat);
 	}
 	else {
 		copy_m4_m4(local, mat);
@@ -51,13 +51,17 @@ void TransformWriter::add_node_transform(COLLADASW::Node& node, float mat[][4], 
 	converter->mat4_to_dae_double(dmat, local);
 
 	TransformBase::decompose(local, loc, rot, NULL, scale);
-	if (node.getType() == COLLADASW::Node::JOINT)
+
+	if (node.getType() == COLLADASW::Node::JOINT) {
+		// XXX Why are joints handled differently ?
 		node.addMatrix("transform", dmat);
-	else
+	}
+	else {
 		add_transform(node, loc, rot, scale);
+	}
 }
 
-void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
+void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob, BC_export_transformation_type transformation_type)
 {
 #if 0
 	float rot[3], loc[3], scale[3];
@@ -78,7 +82,7 @@ void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
 		// calculate local mat
 
 		invert_m4_m4(imat, ob->parent->obmat);
-		mult_m4_m4m4(mat, imat, tmat);
+		mul_m4_m4m4(mat, imat, tmat);
 
 		// done
 
@@ -93,12 +97,13 @@ void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
 
 	add_transform(node, loc, rot, scale);
 #endif
-
+	UnitConverter converter;
+	
 	/* Using parentinv should allow use of existing curves */
 	if (ob->parent) {
 		// If parentinv is identity don't add it.
 		bool add_parinv = false;
-
+    		
 		for (int i = 0; i < 16; ++i) {
 			float f = (i % 4 == i / 4) ? 1.0f : 0.0f;
 			add_parinv |= (ob->parentinv[i % 4][i / 4] != f);
@@ -106,32 +111,49 @@ void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
 
 		if (add_parinv) {
 			double dmat[4][4];
-			UnitConverter converter;
 			converter.mat4_to_dae_double(dmat, ob->parentinv);
 			node.addMatrix("parentinverse", dmat);
 		}
 	}
 
-	add_transform(node, ob->loc, ob->rot, ob->size);
+	double d_obmat[4][4];	
+	converter.mat4_to_dae_double(d_obmat, ob->obmat);
+
+	switch (transformation_type) {
+		case BC_TRANSFORMATION_TYPE_MATRIX     : {
+			node.addMatrix("transform",d_obmat);
+			break;
+		}
+		case BC_TRANSFORMATION_TYPE_TRANSROTLOC: {
+			add_transform(node, ob->loc, ob->rot, ob->size); 
+			break;
+		}
+		case BC_TRANSFORMATION_TYPE_BOTH       : {
+			node.addMatrix("transform",d_obmat);
+			add_transform(node, ob->loc, ob->rot, ob->size);
+			break;
+		}
+	}
+
 }
 
 void TransformWriter::add_node_transform_identity(COLLADASW::Node& node)
 {
-	float loc[] = {0.0f, 0.0f, 0.0f}, scale[] = {1.0f, 1.0f, 1.0f}, rot[] = {0.0f, 0.0f, 0.0f};
+	float loc[3] = {0.0f, 0.0f, 0.0f}, scale[3] = {1.0f, 1.0f, 1.0f}, rot[3] = {0.0f, 0.0f, 0.0f};
 	add_transform(node, loc, rot, scale);
 }
 
 void TransformWriter::add_transform(COLLADASW::Node& node, float loc[3], float rot[3], float scale[3])
 {
-	node.addTranslate("location", loc[0], loc[1], loc[2]);
 #if 0
 	node.addRotateZ("rotationZ", COLLADABU::Math::Utils::radToDegF(rot[2]));
 	node.addRotateY("rotationY", COLLADABU::Math::Utils::radToDegF(rot[1]));
 	node.addRotateX("rotationX", COLLADABU::Math::Utils::radToDegF(rot[0]));
 #endif
+	node.addTranslate("location", loc[0], loc[1], loc[2]);
 	node.addRotateZ("rotationZ", RAD2DEGF(rot[2]));
 	node.addRotateY("rotationY", RAD2DEGF(rot[1]));
 	node.addRotateX("rotationX", RAD2DEGF(rot[0]));
-
 	node.addScale("scale", scale[0], scale[1], scale[2]);
+
 }

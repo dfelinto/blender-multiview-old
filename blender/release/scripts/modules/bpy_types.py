@@ -128,6 +128,19 @@ class Object(bpy_types.ID):
                      if self in scene.objects[:])
 
 
+class WindowManager(bpy_types.ID):
+    __slots__ = ()
+
+    def popup_menu(self, draw_func, title="", icon='NONE'):
+        import bpy
+        popup = self.pupmenu_begin__internal(title, icon)
+
+        try:
+            draw_func(popup, bpy.context)
+        finally:
+            self.pupmenu_end__internal(popup)
+
+
 class _GenericBone:
     """
     functions for bones, common between Armature/Pose/Edit bones.
@@ -394,7 +407,7 @@ class Mesh(bpy_types.ID):
             p.vertices = f
             loop_index += loop_len
 
-        # if no edges - calculae them
+        # if no edges - calculate them
         if faces and (not edges):
             self.update(calc_edges=True)
 
@@ -484,6 +497,7 @@ class Text(bpy_types.ID):
                                  if cont.type == 'PYTHON']
                      )
 
+
 # values are module: [(cls, path, line), ...]
 TypeMap = {}
 
@@ -554,21 +568,21 @@ class Operator(StructRNA, metaclass=OrderedMeta):
     def __getattribute__(self, attr):
         properties = StructRNA.path_resolve(self, "properties")
         bl_rna = getattr(properties, "bl_rna", None)
-        if bl_rna and attr in bl_rna.properties:
+        if (bl_rna is not None) and (attr in bl_rna.properties):
             return getattr(properties, attr)
         return super().__getattribute__(attr)
 
     def __setattr__(self, attr, value):
         properties = StructRNA.path_resolve(self, "properties")
         bl_rna = getattr(properties, "bl_rna", None)
-        if bl_rna and attr in bl_rna.properties:
+        if (bl_rna is not None) and (attr in bl_rna.properties):
             return setattr(properties, attr, value)
         return super().__setattr__(attr, value)
 
     def __delattr__(self, attr):
         properties = StructRNA.path_resolve(self, "properties")
         bl_rna = getattr(properties, "bl_rna", None)
-        if bl_rna and attr in bl_rna.properties:
+        if (bl_rna is not None) and (attr in bl_rna.properties):
             return delattr(properties, attr)
         return super().__delattr__(attr)
 
@@ -600,6 +614,10 @@ class RenderEngine(StructRNA, metaclass=RNAMeta):
 
 
 class KeyingSetInfo(StructRNA, metaclass=RNAMeta):
+    __slots__ = ()
+
+
+class AddonPreferences(StructRNA, metaclass=RNAMeta):
     __slots__ = ()
 
 
@@ -664,6 +682,10 @@ class Panel(StructRNA, _GenericUI, metaclass=RNAMeta):
     __slots__ = ()
 
 
+class UIList(StructRNA, _GenericUI, metaclass=RNAMeta):
+    __slots__ = ()
+
+
 class Header(StructRNA, _GenericUI, metaclass=RNAMeta):
     __slots__ = ()
 
@@ -689,16 +711,18 @@ class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
         files = []
         for directory in searchpaths:
             files.extend([(f, os.path.join(directory, f))
-                           for f in os.listdir(directory)
-                           if (not f.startswith("."))
-                           if ((filter_ext is None) or
-                               (filter_ext(os.path.splitext(f)[1])))
+                          for f in os.listdir(directory)
+                          if (not f.startswith("."))
+                          if ((filter_ext is None) or
+                              (filter_ext(os.path.splitext(f)[1])))
                           ])
 
         files.sort()
 
         for f, filepath in files:
-            props = layout.operator(operator, text=bpy.path.display_name(f))
+            props = layout.operator(operator,
+                                    text=bpy.path.display_name(f),
+                                    translate=False)
 
             for attr, value in props_default.items():
                 setattr(props, attr, value)
@@ -717,3 +741,80 @@ class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
         self.path_menu(bpy.utils.preset_paths(self.preset_subdir),
                        self.preset_operator,
                        filter_ext=lambda ext: ext.lower() in {".py", ".xml"})
+
+
+class Region(StructRNA):
+    __slots__ = ()
+
+    def callback_add(self, cb, args, draw_mode):
+        """
+        Append a draw function to this region,
+        deprecated, instead use bpy.types.SpaceView3D.draw_handler_add
+        """
+        for area in self.id_data.areas:
+            for region in area.regions:
+                if region == self:
+                    spacetype = type(area.spaces[0])
+                    return spacetype.draw_handler_add(cb, args, self.type,
+                                                      draw_mode)
+
+        return None
+
+
+class NodeTree(bpy_types.ID, metaclass=RNAMetaPropGroup):
+    __slots__ = ()
+
+
+class Node(StructRNA, metaclass=RNAMetaPropGroup):
+    __slots__ = ()
+
+    @classmethod
+    def poll(cls, ntree):
+        return True
+
+
+class NodeInternal(Node):
+    __slots__ = ()
+
+
+class NodeSocket(StructRNA, metaclass=RNAMetaPropGroup):
+    __slots__ = ()
+
+    @property
+    def links(self):
+        """List of node links from or to this socket"""
+        return tuple(link for link in self.id_data.links
+                     if (link.from_socket == self or
+                         link.to_socket == self))
+
+
+class NodeSocketInterface(StructRNA, metaclass=RNAMetaPropGroup):
+    __slots__ = ()
+
+
+# These are intermediate subclasses, need a bpy type too
+class CompositorNode(NodeInternal):
+    __slots__ = ()
+
+    @classmethod
+    def poll(cls, ntree):
+        return ntree.bl_idname == 'CompositorNodeTree'
+
+    def update(self):
+        self.tag_need_exec()
+
+
+class ShaderNode(NodeInternal):
+    __slots__ = ()
+
+    @classmethod
+    def poll(cls, ntree):
+        return ntree.bl_idname == 'ShaderNodeTree'
+
+
+class TextureNode(NodeInternal):
+    __slots__ = ()
+
+    @classmethod
+    def poll(cls, ntree):
+        return ntree.bl_idname == 'TextureNodeTree'

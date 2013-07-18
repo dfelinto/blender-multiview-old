@@ -35,86 +35,21 @@
 
 /* **************** ID Mask  ******************** */
 
-static bNodeSocketTemplate cmp_node_idmask_in[]= {
+static bNodeSocketTemplate cmp_node_idmask_in[] = {
 	{	SOCK_FLOAT, 1, N_("ID value"),			1.0f, 1.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
-static bNodeSocketTemplate cmp_node_idmask_out[]= {
+static bNodeSocketTemplate cmp_node_idmask_out[] = {
 	{	SOCK_FLOAT, 0, N_("Alpha")},
 	{	-1, 0, ""	}
 };
 
-/* stackbuf should be zeroed */
-static void do_idmask(CompBuf *stackbuf, CompBuf *cbuf, float idnr)
-{
-	float *rect;
-	int x;
-	char *abuf= MEM_mapallocN(cbuf->x*cbuf->y, "anti ali buf");
-	
-	rect= cbuf->rect;
-	for (x= cbuf->x*cbuf->y - 1; x>=0; x--)
-		if (rect[x]==idnr)
-			abuf[x]= 255;
-	
-	antialias_tagbuf(cbuf->x, cbuf->y, abuf);
-	
-	rect= stackbuf->rect;
-	for (x= cbuf->x*cbuf->y - 1; x>=0; x--)
-		if (abuf[x]>1)
-			rect[x]= (1.0f/255.0f)*(float)abuf[x];
-	
-	MEM_freeN(abuf);
-}
-
-/* full sample version */
-static void do_idmask_fsa(CompBuf *stackbuf, CompBuf *cbuf, float idnr)
-{
-	float *rect, *rs;
-	int x;
-	
-	rect= cbuf->rect;
-	rs= stackbuf->rect;
-	for (x= cbuf->x*cbuf->y - 1; x>=0; x--)
-		if (rect[x]==idnr)
-			rs[x]= 1.0f;
-	
-}
-
-
-static void node_composit_exec_idmask(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
-{
-	RenderData *rd= data;
-	
-	if (out[0]->hasoutput==0)
-		return;
-	
-	if (in[0]->data) {
-		CompBuf *cbuf= in[0]->data;
-		CompBuf *stackbuf;
-		
-		if (cbuf->type!=CB_VAL)
-			return;
-		
-		stackbuf= alloc_compbuf(cbuf->x, cbuf->y, CB_VAL, 1); /* allocs */;
-		
-		if ((rd->scemode & R_FULL_SAMPLE) || node->custom2 == 0)
-			do_idmask_fsa(stackbuf, cbuf, (float)node->custom1);
-		else
-			do_idmask(stackbuf, cbuf, (float)node->custom1);
-		
-		out[0]->data= stackbuf;
-	}
-}
-
-
-void register_node_type_cmp_idmask(bNodeTreeType *ttype)
+void register_node_type_cmp_idmask(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, CMP_NODE_ID_MASK, "ID Mask", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	cmp_node_type_base(&ntype, CMP_NODE_ID_MASK, "ID Mask", NODE_CLASS_CONVERTOR, 0);
 	node_type_socket_templates(&ntype, cmp_node_idmask_in, cmp_node_idmask_out);
-	node_type_size(&ntype, 140, 100, 320);
-	node_type_exec(&ntype, node_composit_exec_idmask);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

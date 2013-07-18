@@ -38,6 +38,8 @@ struct Render;
 struct RenderInfo;
 struct Scene;
 struct ScrArea;
+struct RegionView3D;
+struct RenderEngine;
 
 /* render_ops.c */
 
@@ -56,17 +58,11 @@ void ED_render_scene_update(struct Main *bmain, struct Scene *scene, int updated
 typedef struct RenderInfo {
 	int pr_rectx;
 	int pr_recty;
-	short curtile, tottile, status;
+	short curtile, tottile;
 	rcti disprect;          /* storage for view3d preview rect */
 	unsigned int *rect;
 	struct Render *re;      /* persistent render */
 } RenderInfo;
-
-/* ri->status */
-#define PR_DBASE            1
-#define PR_DISPRECT         2
-#define PR_PROJECTED        4
-#define PR_ROTATED          8
 
 /* Render the preview
  *
@@ -90,5 +86,7 @@ void ED_preview_kill_jobs(const struct bContext *C);
 void ED_preview_draw(const struct bContext *C, void *idp, void *parentp, void *slot, rcti *rect);
 
 void ED_render_clear_mtex_copybuf(void);
+
+void ED_render_internal_init(void);
 
 #endif

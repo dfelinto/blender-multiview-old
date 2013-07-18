@@ -116,6 +116,9 @@ typedef struct ParticleData {
 
 	float size;				/* size and multiplier so that we can update size when ever */
 
+	float sphdensity;		/* density of sph particle */
+	int pad;
+
 	int hair_index;
 	short flag;
 	short alive;			/* the life state of a particle */
@@ -130,6 +133,8 @@ typedef struct SPHFluidSettings {
 	float stiffness_k, stiffness_knear, rest_density;
 	float buoyancy;
 	int flag, spring_frames;
+	short solver;
+	short pad[3];
 } SPHFluidSettings;
 
 /* fluid->flag */
@@ -140,6 +145,10 @@ typedef struct SPHFluidSettings {
 #define SPH_FAC_RADIUS				16
 #define SPH_FAC_VISCOSITY			32
 #define SPH_FAC_REST_LENGTH			64
+
+/* fluid->solver (numerical ID field, not bitfield) */
+#define SPH_SOLVER_DDR					0
+#define SPH_SOLVER_CLASSICAL			1
 
 typedef struct ParticleSettings {
 	ID id;
@@ -154,7 +163,8 @@ typedef struct ParticleSettings {
 	short type, from, distr, texact;
 	/* physics modes */
 	short phystype, rotmode, avemode, reactevent;
-	short draw, draw_as, draw_size, childtype;
+	int draw, pad1;
+	short draw_as, draw_size, childtype, pad2;
 	short ren_as, subframes, draw_col;
 	/* number of path segments, power of 2 except */
 	short draw_step, ren_step;
@@ -163,7 +173,8 @@ typedef struct ParticleSettings {
 	/* adaptive path rendering */
 	short adapt_angle, adapt_pix;
 
-	short disp, omat, interpolation, rotfrom, integrator;
+	short disp, omat, interpolation, integrator;
+	short rotfrom DNA_DEPRECATED;
 	short kink, kink_axis;
 
 	/* billboards */
@@ -232,6 +243,11 @@ typedef struct ParticleSettings {
 	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct PartDeflect *pd;
 	struct PartDeflect *pd2;
+
+	/* modified dm support */
+	short use_modifier_stack;
+	short pad[3];
+
 } ParticleSettings;
 
 typedef struct ParticleSystem {
@@ -349,11 +365,6 @@ typedef struct ParticleSystem {
 
 #define PART_SELF_EFFECT	(1<<22)
 
-/* part->rotfrom */
-#define PART_ROT_KEYS		0	/* interpolate directly from keys */
-#define PART_ROT_ZINCR		1	/* same as zdir but done incrementally from previous position */
-#define PART_ROT_IINCR		2	/* same as idir but done incrementally from previous position */
-
 /* part->from */
 #define PART_FROM_VERT		0
 #define PART_FROM_FACE		1
@@ -398,6 +409,7 @@ typedef struct ParticleSystem {
 #define PART_DRAW_MAT_COL		(1<<13) /* deprecated, but used in do_versions */
 #define PART_DRAW_WHOLE_GR		(1<<14)
 #define PART_DRAW_REN_STRAND	(1<<15)
+#define PART_DRAW_NO_SCALE_OB 	(1<<16) /* used with dupliobjects/groups */
 
 /* part->draw_col */
 #define PART_DRAW_COL_NONE		0

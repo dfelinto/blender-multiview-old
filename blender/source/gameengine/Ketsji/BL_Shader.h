@@ -16,8 +16,6 @@
 #include "MT_Tuple3.h"
 #include "MT_Tuple4.h"
 
-#define SHADER_ATTRIBMAX 1
-
 /**
  * BL_Sampler
  *  Sampler access 
@@ -205,9 +203,9 @@ public:
 	void SetUniformfv(int location,int type, float *param, int size,bool transpose=false);
 	void SetUniformiv(int location,int type, int *param, int size,bool transpose=false);
 
-	int GetAttribLocation(const STR_String& name);
-	void BindAttribute(const STR_String& attr, int loc);
-	int GetUniformLocation(const STR_String& name);
+	int GetAttribLocation(const char *name);
+	void BindAttribute(const char *attr, int loc);
+	int GetUniformLocation(const char *name);
 
 	void SetUniform(int uniform, const MT_Tuple2& vec);
 	void SetUniform(int uniform, const MT_Tuple3& vec);
@@ -222,7 +220,7 @@ public:
 
 	// Python interface
 #ifdef WITH_PYTHON
-	virtual PyObject* py_repr(void) { return PyUnicode_FromFormat("BL_Shader\n\tvertex shader:%s\n\n\tfragment shader%s\n\n", vertProg, fragProg); }
+	virtual PyObject *py_repr(void) { return PyUnicode_FromFormat("BL_Shader\n\tvertex shader:%s\n\n\tfragment shader%s\n\n", vertProg, fragProg); }
 
 	// -----------------------------------
 	KX_PYMETHOD_DOC(BL_Shader, setSource);
@@ -252,4 +250,4 @@ public:
 #endif
 };
 
-#endif//__BL_SHADER_H__
+#endif /* __BL_SHADER_H__ */

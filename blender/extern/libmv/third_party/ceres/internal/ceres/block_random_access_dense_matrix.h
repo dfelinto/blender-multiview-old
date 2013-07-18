@@ -84,12 +84,12 @@ class BlockRandomAccessDenseMatrix : public BlockRandomAccessMatrix {
   double* mutable_values() { return values_.get(); }
 
  private:
-  CellInfo cell_info_;
   int num_rows_;
   vector<int> block_layout_;
   scoped_array<double> values_;
+  scoped_array<CellInfo> cell_infos_;
 
-  DISALLOW_COPY_AND_ASSIGN(BlockRandomAccessDenseMatrix);
+  CERES_DISALLOW_COPY_AND_ASSIGN(BlockRandomAccessDenseMatrix);
 };
 
 }  // namespace internal

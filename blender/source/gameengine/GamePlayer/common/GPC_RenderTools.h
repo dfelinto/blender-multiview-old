@@ -36,7 +36,7 @@
 // don't show stl-warnings
 #pragma warning (disable:4786)
 #include <windows.h>
-#endif // WIN32
+#endif  /* WIN32 */
 
 #include "RAS_IRenderTools.h"
 
@@ -69,6 +69,12 @@ public:
 	void				EnableOpenGLLights(RAS_IRasterizer *rasty);
 	void				DisableOpenGLLights();
 	void				ProcessLighting(RAS_IRasterizer *rasty, bool uselights, const MT_Transform& viewmat);
+
+	void				RenderBox2D(int xco,
+						int yco,
+						int width,
+						int height,
+						float percentage);
 
 	void				RenderText3D(int fontid,
 									 const char* text,
@@ -106,7 +112,4 @@ public:
 	virtual void SetClientObject(RAS_IRasterizer *rasty, void* obj);
 };
 
-#endif  // __GPC_RENDERTOOLS_H__
-
-
-
+#endif  /* __GPC_RENDERTOOLS_H__ */

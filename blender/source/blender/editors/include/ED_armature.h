@@ -61,7 +61,7 @@ typedef struct EditBone {
 	                          * normal bones when leaving editmode. */
 	void    *temp;          /* Used to store temporary data */
 
-	char    name[64];       /* MAX_NAME */
+	char    name[64];       /* MAXBONENAME */
 	float   roll;           /* Roll along axis.  We'll ultimately use the axis/angle method
 	                         * for determining the transformation matrix of the bone.  The axis
 	                         * is tail-head while roll provides the angle. Refer to Graphics
@@ -93,8 +93,18 @@ typedef struct EditBone {
 #define BONESEL_NOSEL   (1 << 31) /* Indicates a negative number */
 
 /* useful macros */
-#define EBONE_VISIBLE(arm, ebone) (((arm)->layer & (ebone)->layer) && !((ebone)->flag & BONE_HIDDEN_A))
-#define EBONE_EDITABLE(ebone) (((ebone)->flag & BONE_SELECTED) && !((ebone)->flag & BONE_EDITMODE_LOCKED)) 
+#define EBONE_VISIBLE(arm, ebone) ( \
+	CHECK_TYPE_INLINE(arm, bArmature), \
+	CHECK_TYPE_INLINE(ebone, EditBone), \
+	(((arm)->layer & (ebone)->layer) && !((ebone)->flag & BONE_HIDDEN_A)) \
+	)
+
+#define EBONE_SELECTABLE(arm, ebone) (EBONE_VISIBLE(arm, ebone) && !(ebone->flag & BONE_UNSELECTABLE))
+
+#define EBONE_EDITABLE(ebone) ( \
+	CHECK_TYPE_INLINE(ebone, EditBone), \
+	(((ebone)->flag & BONE_SELECTED) && !((ebone)->flag & BONE_EDITMODE_LOCKED)) \
+	)
 
 /* used in bone_select_hierachy() */
 #define BONE_SELECT_PARENT  0
@@ -113,8 +123,8 @@ void ED_armature_deselect_all(struct Object *obedit, int toggle);
 void ED_armature_deselect_all_visible(struct Object *obedit);
 
 int ED_do_pose_selectbuffer(struct Scene *scene, struct Base *base, unsigned int *buffer, 
-                            short hits, short extend, short deselect, short toggle);
-int mouse_armature(struct bContext *C, const int mval[2], int extend, int deselect, int toggle);
+                            short hits, bool extend, bool deselect, bool toggle);
+bool mouse_armature(struct bContext *C, const int mval[2], bool extend, bool deselect, bool toggle);
 int join_armature_exec(struct bContext *C, struct wmOperator *op);
 struct Bone *get_indexed_bone(struct Object *ob, int index);
 float ED_rollBoneToVector(EditBone *bone, const float new_up_axis[3], const short axis_only);
@@ -125,9 +135,10 @@ void ED_armature_validate_active(struct bArmature *arm);
 void add_primitive_bone(struct Scene *scene, struct View3D *v3d, struct RegionView3D *rv3d);
 struct EditBone *ED_armature_edit_bone_add(struct bArmature *arm, const char *name);
 void ED_armature_edit_bone_remove(struct bArmature *arm, EditBone *exBone);
+bool ED_armature_ebone_is_child_recursive(EditBone *ebone_parent, EditBone *ebone_child);
 
 void transform_armature_mirror_update(struct Object *obedit);
-void docenter_armature(struct Scene *scene, struct Object *ob, float cursor[3], int centermode, int around);
+void ED_armature_origin_set(struct Scene *scene, struct Object *ob, float cursor[3], int centermode, int around);
 
 void ED_armature_apply_transform(struct Object *ob, float mat[4][4]);
 
@@ -148,6 +159,7 @@ void ED_armature_enter_posemode(struct bContext *C, struct Base *base);
 int ED_pose_channel_in_IK_chain(struct Object *ob, struct bPoseChannel *pchan);
 void ED_pose_deselectall(struct Object *ob, int test);
 void ED_pose_recalculate_paths(struct Scene *scene, struct Object *ob);
+struct Object *ED_pose_object_from_context(struct bContext *C);
 
 /* sketch */
 
@@ -173,7 +185,7 @@ int BDR_drawSketchNames(struct ViewContext *vc);
 /* meshlaplacian.c */
 void mesh_deform_bind(struct Scene *scene,
                       struct MeshDeformModifierData *mmd,
-                      float *vertexcos, int totvert, float cagemat[][4]);
+                      float *vertexcos, int totvert, float cagemat[4][4]);
 	
 #ifdef __cplusplus
 }

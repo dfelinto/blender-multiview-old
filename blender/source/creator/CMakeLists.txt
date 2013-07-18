@@ -80,6 +80,11 @@ if(WITH_BINRELOC)
 	blender_include_dirs(${BINRELOC_INCLUDE_DIRS})
 endif()
 
+if(WITH_FREESTYLE)
+	add_definitions(-DWITH_FREESTYLE)
+	blender_include_dirs(../blender/freestyle)
+endif()
+
 # Setup the exe sources and buildinfo
 set(SRC
 	creator.c
@@ -279,15 +284,24 @@ if(WITH_PYTHON)
 		set(ADDON_EXCLUDE_CONDITIONAL "_addons_contrib/*")  # dummy, wont do anything
 	endif()
 
+	# do not install freestyle dir if disabled
+	if(NOT WITH_FREESTYLE)
+		set(FREESTYLE_EXCLUDE_CONDITIONAL "freestyle/*")
+	else()
+		set(FREESTYLE_EXCLUDE_CONDITIONAL "_freestyle/*")  # dummy, wont do anything
+	endif()
+
 	install(
 		DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
 		DESTINATION ${TARGETDIR_VER}
 		PATTERN ".svn" EXCLUDE
 		PATTERN "__pycache__" EXCLUDE
 		PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
+		PATTERN "${FREESTYLE_EXCLUDE_CONDITIONAL}" EXCLUDE
 	)
 	
 	unset(ADDON_EXCLUDE_CONDITIONAL)
+	unset(FREESTYLE_EXCLUDE_CONDITIONAL)
 endif()
 
 # localization
@@ -296,6 +310,15 @@ if(WITH_INTERNATIONAL)
 		DIRECTORY
 			${CMAKE_SOURCE_DIR}/release/datafiles/locale
 			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
+		DESTINATION ${TARGETDIR_VER}/datafiles
+		PATTERN ".svn" EXCLUDE
+	)
+endif()
+
+# color management
+if(WITH_OPENCOLORIO)
+	install(
+		DIRECTORY ${CMAKE_SOURCE_DIR}/release/datafiles/colormanagement
 		DESTINATION ${TARGETDIR_VER}/datafiles
 		PATTERN ".svn" EXCLUDE
 	)
@@ -400,11 +423,15 @@ if(UNIX AND NOT APPLE)
 			# on some platforms (like openSUSE) Python is linked
 			# to be used from lib64 folder.
 			# determine this from Python's libraries path
-			if(${PYTHON_LIBPATH} MATCHES "lib64$")
+			#
+			# ugh, its possible 'lib64' is just a symlink to 'lib' which causes incorrect use of 'lib64'
+			get_filename_component(_pypath_real ${PYTHON_LIBPATH} REALPATH)
+			if(${_pypath_real} MATCHES "lib64$")
 				set(_target_LIB "lib64")
 			else()
 				set(_target_LIB "lib")
 			endif()
+			unset(_pypath_real)
 
 			# Copy the systems python into the install directory
 			# Scons copy in tools/Blender.py
@@ -460,30 +487,19 @@ elseif(WIN32)
 		DESTINATION ${TARGETDIR}
 	)
 
-	if(WITH_INTERNATIONAL AND (NOT WITH_MINGW64))
-		install(
-			FILES ${LIBDIR}/gettext/lib/gnu_gettext.dll
-			DESTINATION ${TARGETDIR}
-		)
-
-		if(NOT CMAKE_CL_64)
-			install(
-				FILES ${LIBDIR}/iconv/lib/iconv.dll
-				DESTINATION ${TARGETDIR}
-			)
-		endif()
-	endif()
-
 	if(WITH_PYTHON)
 		set_lib_path(PYLIB "python")
+
+		string(REPLACE "." "" _PYTHON_VERSION_NO_DOTS ${PYTHON_VERSION})
+
 		install(
-			FILES ${PYLIB}/lib/python32.dll
+			FILES ${PYLIB}/lib/python${_PYTHON_VERSION_NO_DOTS}.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
 		)
 
 		install(
-			FILES ${PYLIB}/lib/python32_d.dll
+			FILES ${PYLIB}/lib/python${_PYTHON_VERSION_NO_DOTS}_d.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Debug
 		)
@@ -507,10 +523,10 @@ elseif(WIN32)
 				"
 				if(\"\${CMAKE_INSTALL_CONFIG_NAME}\" STREQUAL \"Debug\")
 					execute_process(COMMAND \"${CMAKE_COMMAND}\" -E chdir \"${TARGETDIR_VER}/python/lib\"
-						\"${CMAKE_COMMAND}\" -E tar xzfv \"${LIBDIR}/release/python32_d.tar.gz\")
+						\"${CMAKE_COMMAND}\" -E tar xzfv \"${LIBDIR}/release/python${_PYTHON_VERSION_NO_DOTS}_d.tar.gz\")
 				else()
 					execute_process(COMMAND \"${CMAKE_COMMAND}\" -E chdir \"${TARGETDIR_VER}/python/lib\"
-						\"${CMAKE_COMMAND}\" -E tar xzfv \"${LIBDIR}/release/python32.tar.gz\")
+						\"${CMAKE_COMMAND}\" -E tar xzfv \"${LIBDIR}/release/python${_PYTHON_VERSION_NO_DOTS}.tar.gz\")
 				endif()
 				"
 			)
@@ -518,23 +534,8 @@ elseif(WIN32)
 			# doesnt work, todo
 			# install(CODE "execute_process(COMMAND find ${TARGETDIR}/${BLENDER_VERSION}/python/lib/ -name '*.so' -exec strip -s {} '\;')")
 		endif()
-	endif()
 
-	if(CMAKE_CL_64)
-		# gettext and png are statically linked on win64
-		install(
-			FILES ${LIBDIR}/zlib/lib/zlib.dll
-			DESTINATION ${TARGETDIR}
-		)
-	else()
-		#not needed since we link statically, maybe also unneeded for MinGW?
-		if(NOT WITH_MINGW64)
-			install(
-				FILES
-					${LIBDIR}/zlib/lib/zlib.dll
-				DESTINATION ${TARGETDIR}
-			)
-		endif()
+		unset(_PYTHON_VERSION_NO_DOTS)
 	endif()
 
 	if(MSVC)
@@ -569,15 +570,29 @@ elseif(WIN32)
 	endif()
 
 	if(WITH_CODEC_FFMPEG)
-		install(
-			FILES
-				${LIBDIR}/ffmpeg/lib/avcodec-53.dll
-				${LIBDIR}/ffmpeg/lib/avformat-53.dll
-				${LIBDIR}/ffmpeg/lib/avdevice-53.dll
-				${LIBDIR}/ffmpeg/lib/avutil-51.dll
-				${LIBDIR}/ffmpeg/lib/swscale-2.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(MSVC11)
+			install(
+				FILES
+					${LIBDIR}/ffmpeg/lib/avcodec-54.dll
+					${LIBDIR}/ffmpeg/lib/avformat-54.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-54.dll
+					${LIBDIR}/ffmpeg/lib/avutil-52.dll
+					${LIBDIR}/ffmpeg/lib/avfilter-3.dll
+					${LIBDIR}/ffmpeg/lib/swresample-0.dll
+					${LIBDIR}/ffmpeg/lib/swscale-2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${LIBDIR}/ffmpeg/lib/avcodec-53.dll
+					${LIBDIR}/ffmpeg/lib/avformat-53.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-53.dll
+					${LIBDIR}/ffmpeg/lib/avutil-51.dll
+					${LIBDIR}/ffmpeg/lib/swscale-2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 		if(WITH_MINGW64)
 		install(
 			FILES
@@ -596,13 +611,37 @@ elseif(WIN32)
 	endif()
 
 	if(WITH_OPENAL)
-		install(
-			FILES
-				${LIBDIR}/openal/lib/OpenAL32.dll
-				${LIBDIR}/openal/lib/wrap_oal.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(MSVC11)
+			install(
+				FILES
+					${LIBDIR}/openal/lib/OpenAL32.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${LIBDIR}/openal/lib/OpenAL32.dll
+					${LIBDIR}/openal/lib/wrap_oal.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
+
+#	if(WITH_JACK AND MSVC11)
+#		if(CMAKE_CL_64)
+#			install(
+#				FILES
+#					${LIBDIR}/jack/lib/libjack64.dll
+#				DESTINATION ${TARGETDIR}
+#			)
+#		else()
+#			install(
+#				FILES
+#					${LIBDIR}/jack/lib/libjack.dll
+#				DESTINATION ${TARGETDIR}
+#			)
+#		endif()
+#	endif()
 
 	if(WITH_SDL)
 		if(NOT CMAKE_CL_64)
@@ -623,14 +662,20 @@ elseif(WIN32)
 	install( # x86 builds can run on x64 Windows, so this is required at all times
 		FILES ${LIBDIR}/thumbhandler/lib/BlendThumb64.dll
 		DESTINATION ${TARGETDIR}
-	)	
+	)
 
-	if(WITH_OPENIMAGEIO)
+	if(WITH_OPENCOLORIO)
+		set(OCIOBIN ${LIBDIR}/opencolorio/bin)
 		if(NOT MINGW)
-			set_lib_path(OIIOBIN "openimageio")
 			install(
 				FILES
-					${OIIOBIN}/bin/OpenImageIO.dll
+					${OCIOBIN}/OpenColorIO.dll
+				DESTINATION ${TARGETDIR}
+			)
+		else()
+			install(
+				FILES
+					${OCIOBIN}/libOpenColorIO.dll
 				DESTINATION ${TARGETDIR}
 			)
 		endif()
@@ -655,7 +700,7 @@ elseif(APPLE)
 		)
 	endmacro()
 
-	set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blender.app)
+	set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/blender.app)
 
 	# setup Info.plist
 	execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BLENDER_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -683,7 +728,7 @@ elseif(APPLE)
 	)
 
 	# python
-	if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE)
+	if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
 		# the python zip is first extract as part of the build process,
 		# and then later installed as part of make install. this is much
 		# quicker, and means we can easily exclude files on copy
@@ -710,11 +755,11 @@ elseif(APPLE)
 		)
 
 	endif()
-
+	
 	# install blenderplayer bundle - copy of blender.app above. re-using macros et al
 	# note we are using OSX Bundle as base and copying Blender dummy bundle on top of it
 	if(WITH_GAMEENGINE AND WITH_PLAYER)
-		set(OSX_APP_PLAYER_SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blenderplayer.app)
+		set(OSX_APP_PLAYER_SOURCEDIR ${CMAKE_SOURCE_DIR}/release/darwin/blenderplayer.app)
 		set(PLAYER_SOURCEINFO ${OSX_APP_PLAYER_SOURCEDIR}/Contents/Info.plist)
 		set(PLAYER_TARGETDIR_VER ${TARGETDIR}/blenderplayer.app/Contents/MacOS/${BLENDER_VERSION})
 
@@ -736,7 +781,7 @@ elseif(APPLE)
 		)
 
 		# python
-		if(WITH_PYTHON)
+		if(WITH_PYTHON AND NOT WITH_PYTHON_FRAMEWORK)
 			add_custom_command(
 				OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python
 				COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}/python/
@@ -752,6 +797,7 @@ elseif(APPLE)
 		endif()
 
 	endif()
+		
 endif()
 
 # -----------------------------------------------------------------------------
@@ -772,8 +818,7 @@ add_dependencies(blender makesdna)
 
 get_property(BLENDER_LINK_LIBS GLOBAL PROPERTY BLENDER_LINK_LIBS)
 
-set(BLENDER_LINK_LIBS
-	${BLENDER_LINK_LIBS}
+list(APPEND BLENDER_LINK_LIBS
 	bf_windowmanager
 	bf_render
 )
@@ -790,6 +835,9 @@ if(WITH_CYCLES)
 		cycles_kernel
 		cycles_util
 		cycles_subd)
+	if(WITH_CYCLES_OSL)
+		list(APPEND BLENDER_LINK_LIBS cycles_kernel_osl)
+	endif()
 endif()
 
 #if(UNIX)
@@ -821,12 +869,12 @@ endif()
 		bf_editor_util
 		bf_editor_uvedit
 		bf_editor_curve
-		bf_editor_armature
 		bf_editor_gpencil
 		bf_editor_interface
 		bf_editor_mesh
 		bf_editor_metaball
 		bf_editor_object
+		bf_editor_armature
 		bf_editor_physics
 		bf_editor_render
 		bf_editor_screen
@@ -843,6 +891,7 @@ endif()
 		bf_python_ext
 		bf_python_mathutils
 		bf_python_bmesh
+		bf_freestyle
 		bf_ikplugin
 		bf_modifiers
 		bf_bmesh
@@ -860,7 +909,6 @@ endif()
 		bf_imbuf_dds
 		bf_collada
 		bf_intern_bsp
-		bf_intern_decimate
 		bf_intern_elbeem
 		bf_intern_memutil
 		bf_intern_guardedalloc
@@ -876,7 +924,6 @@ endif()
 		extern_colamd
 		ge_logic_ketsji
 		extern_recastnavigation
-		ge_phys_common
 		ge_logic
 		ge_rasterizer
 		ge_oglrasterizer
@@ -884,7 +931,6 @@ endif()
 		ge_scenegraph
 		ge_logic_network
 		ge_logic_ngnetwork
-		extern_bullet
 		ge_logic_loopbacknetwork
 		bf_intern_moto
 		extern_openjpeg
@@ -904,16 +950,19 @@ endif()
 		cycles_util
 		cycles_subd
 		bf_intern_raskter
+		bf_intern_opencolorio
+		extern_rangetree
+		extern_wcwidth
+		extern_libmv
 	)
 
 	if(WITH_COMPOSITOR)
 		# added for opencl compositor
 		list_insert_before(BLENDER_SORTED_LIBS "bf_blenkernel" "bf_compositor")
-		list_insert_after(BLENDER_SORTED_LIBS "bf_compositor" "bf_opencl")
+		list_insert_after(BLENDER_SORTED_LIBS "bf_compositor" "bf_intern_opencl")
 	endif()
 
 	if(WITH_LIBMV)
-		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
 		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 
@@ -951,6 +1000,22 @@ endif()
 
 	if(WITH_GHOST_XDND)
 		list(APPEND BLENDER_SORTED_LIBS extern_xdnd)
+	endif()
+
+	if(WITH_CYCLES_OSL)
+		list_insert_after(BLENDER_SORTED_LIBS "cycles_kernel" "cycles_kernel_osl")
+	endif()
+
+	if(WITH_INTERNATIONAL)
+		list(APPEND BLENDER_SORTED_LIBS bf_intern_locale)
+	endif()
+
+	if(WITH_BULLET)
+		list_insert_after(BLENDER_SORTED_LIBS "bf_blenkernel" "bf_intern_rigidbody")
+	endif()
+
+	if(WITH_BULLET AND NOT WITH_SYSTEM_BULLET)
+		list_insert_after(BLENDER_SORTED_LIBS "ge_logic_ngnetwork" "extern_bullet")
 	endif()
 
 	foreach(SORTLIB ${BLENDER_SORTED_LIBS})

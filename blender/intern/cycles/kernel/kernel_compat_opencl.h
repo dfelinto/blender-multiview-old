@@ -26,6 +26,10 @@
 #define CCL_NAMESPACE_BEGIN
 #define CCL_NAMESPACE_END
 
+#ifdef __KERNEL_OPENCL_AMD__
+#define __CL_NO_FLOAT3__
+#endif
+
 #ifdef __CL_NO_FLOAT3__
 #define float3 float4
 #endif
@@ -40,21 +44,10 @@
 #define __device
 #define __device_inline __device
 #define __device_noinline  __device __noinline
+#define __may_alias
 
 /* no assert in opencl */
 #define kernel_assert(cond)
-
-/* manual implementation of interpolated 1D lookup */
-__device float kernel_tex_interp_(__global float *data, int width, float x)
-{
-	x = clamp(x, 0.0f, 1.0f)*width;
-
-	int index = min((int)x, width-1);
-	int nindex = min(index+1, width-1);
-	float t = x - index;
-
-	return (1.0f - t)*data[index] + t*data[nindex];
-}
 
 /* make_type definitions with opencl style element initializers */
 #ifdef make_float2
@@ -105,15 +98,17 @@ __device float kernel_tex_interp_(__global float *data, int width, float x)
 #define tanf(x) tan(((float)x))
 #define logf(x) log(((float)x))
 #define floorf(x) floor(((float)x))
+#define ceilf(x) ceil(((float)x))
 #define expf(x) exp(((float)x))
 #define hypotf(x, y) hypot(((float)x), ((float)y))
 #define atan2f(x, y) atan2(((float)x), ((float)y))
 #define fmaxf(x, y) fmax(((float)x), ((float)y))
 #define fminf(x, y) fmin(((float)x), ((float)y))
+#define fmodf(x, y) fmod((float)x, (float)y)
 
 /* data lookup defines */
 #define kernel_data (*kg->data)
-#define kernel_tex_interp(t, x, size) kernel_tex_interp_(kg->t, size, x)
+#define kernel_tex_lookup(t, x, offset, size) kernel_tex_lookup_(kg->t, offset, size, x)
 #define kernel_tex_fetch(t, index) kg->t[index]
 
 /* define NULL */

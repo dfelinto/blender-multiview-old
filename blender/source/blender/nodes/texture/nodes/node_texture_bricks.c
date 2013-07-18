@@ -35,7 +35,7 @@
 
 #include <math.h>
 
-static bNodeSocketTemplate inputs[]= {
+static bNodeSocketTemplate inputs[] = {
 	{ SOCK_RGBA,  1, N_("Bricks 1"),    0.596f, 0.282f, 0.0f,  1.0f },
 	{ SOCK_RGBA,  1, N_("Bricks 2"),    0.632f, 0.504f, 0.05f, 1.0f },
 	{ SOCK_RGBA,  1, N_("Mortar"),      0.0f,   0.0f,   0.0f,  1.0f },
@@ -45,12 +45,12 @@ static bNodeSocketTemplate inputs[]= {
 	{ SOCK_FLOAT, 1, N_("Row Height"),  0.25f,  0.0f,   0.0f,  0.0f,  0.001f, 99.0f, PROP_UNSIGNED },
 	{ -1, 0, "" }
 };
-static bNodeSocketTemplate outputs[]= {
+static bNodeSocketTemplate outputs[] = {
 	{ SOCK_RGBA, 0, N_("Color")},
-	{ -1, 0, ""	}
+	{ -1, 0, ""}
 };
 
-static void init(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void init(bNodeTree *UNUSED(ntree), bNode *node)
 {
 	node->custom3 = 0.5; /* offset */
 	node->custom4 = 1.0; /* squash */
@@ -66,7 +66,7 @@ static float noise(int n) /* fast integer noise */
 
 static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, short thread)
 {
-	float *co = p->co;
+	const float *co = p->co;
 	
 	float x = co[0];
 	float y = co[1];
@@ -91,15 +91,15 @@ static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, shor
 	
 	rownum = (int)floor(y / row_height);
 	
-	if ( node->custom1 && node->custom2 ) {
-		brick_width *= ((int)(rownum) % node->custom2 ) ? 1.0f : node->custom4;      /* squash */
-		offset = ((int)(rownum) % node->custom1 ) ? 0 : (brick_width*node->custom3); /* offset */
+	if (node->custom1 && node->custom2) {
+		brick_width *= ((int)(rownum) % node->custom2) ? 1.0f : node->custom4;         /* squash */
+		offset = ((int)(rownum) % node->custom1) ? 0 : (brick_width * node->custom3);  /* offset */
 	}
 	
-	bricknum = (int)floor((x+offset) / brick_width);
+	bricknum = (int)floor((x + offset) / brick_width);
 	
-	ins_x = (x+offset) - brick_width*bricknum;
-	ins_y = y - row_height*rownum;
+	ins_x = (x + offset) - brick_width * bricknum;
+	ins_y = y - row_height * rownum;
 	
 	tint = noise((rownum << 16) + (bricknum & 0xFFFF)) + bias;
 	CLAMP(tint, 0.0f, 1.0f);
@@ -116,20 +116,20 @@ static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, shor
 	}
 }
 
-static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **out)
 {
-	tex_output(node, in, out[0], &colorfn, data);
+	tex_output(node, execdata, in, out[0], &colorfn, data);
 }
 
-void register_node_type_tex_bricks(bNodeTreeType *ttype)
+void register_node_type_tex_bricks(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, TEX_NODE_BRICKS, "Bricks", NODE_CLASS_PATTERN, NODE_PREVIEW|NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_BRICKS, "Bricks", NODE_CLASS_PATTERN, NODE_PREVIEW);
 	node_type_socket_templates(&ntype, inputs, outputs);
-	node_type_size(&ntype, 150, 60, 150);
+	node_type_size_preset(&ntype, NODE_SIZE_MIDDLE);
 	node_type_init(&ntype, init);
-	node_type_exec(&ntype, exec);
+	node_type_exec(&ntype, NULL, NULL, exec);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

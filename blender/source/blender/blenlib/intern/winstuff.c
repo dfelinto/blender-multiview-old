@@ -38,15 +38,14 @@
 #include <conio.h>
 
 #include "MEM_guardedalloc.h"
-#include "BLI_path_util.h"
-#include "BLI_string.h"
-
-#include "BKE_utildefines.h"
-#include "BKE_global.h"
 
 #define WIN32_SKIP_HKEY_PROTECTION      // need to use HKEY
 #include "BLI_winstuff.h"
-#include "BLI_utildefines.h"
+#include "BLI_utildefines.h"z
+#include "BLI_path_util.h"
+#include "BLI_string.h"
+
+#include "../blenkernel/BKE_global.h"  /* G.background, bad level include (no function calls) */
 
 #include "utf_winfunc.h"
 #include "utfconv.h"
@@ -68,7 +67,7 @@ int BLI_getInstallationDir(char *str)
 	return 1;
 }
 
-void RegisterBlendExtension_Fail(HKEY root)
+static void RegisterBlendExtension_Fail(HKEY root)
 {
 	printf("failed\n");
 	if (root)
@@ -141,7 +140,7 @@ void RegisterBlendExtension(void)
 	lresult = RegCreateKeyEx(root, ".blend", 0,
 	                         NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkey, &dwd);
 	if (lresult == ERROR_SUCCESS) {
-		sprintf(buffer, "%s", "blendfile");
+		strcpy(buffer, "blendfile");
 		lresult = RegSetValueEx(hkey, NULL, 0, REG_SZ, (BYTE *)buffer, strlen(buffer) + 1);
 		RegCloseKey(hkey);
 	}
@@ -293,7 +292,7 @@ void get_default_root(char *root)
 					root[3] = '\0';
 					if (GetFileAttributes(root) != 0xFFFFFFFF) {
 						rc = i;
-						break;			
+						break;
 					}
 				}
 			}
@@ -304,7 +303,7 @@ void get_default_root(char *root)
 				root[2] = '\\';
 				root[3] = '\0';
 			}
-		}		
+		}
 	}
 }
 

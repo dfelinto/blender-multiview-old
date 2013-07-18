@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of blendTex library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of blendTex library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/PyTypeList.cpp
  *  \ingroup bgevideotex
@@ -41,7 +45,7 @@ PyTypeList::~PyTypeList()
 }
 
 /// check, if type is in list
-bool PyTypeList::in (PyTypeObject * type)
+bool PyTypeList::in (PyTypeObject *type)
 {
 	// if list exists
 	if (m_list.get() != NULL)
@@ -54,7 +58,7 @@ bool PyTypeList::in (PyTypeObject * type)
 }
 
 /// add type to list
-void PyTypeList::add (PyTypeObject * type, const char * name)
+void PyTypeList::add (PyTypeObject *type, const char *name)
 {
 	// if list doesn't exist, create it
 	if (m_list.get() == NULL) 
@@ -78,7 +82,7 @@ bool PyTypeList::ready (void)
 }
 
 /// register types to module
-void PyTypeList::reg (PyObject * module)
+void PyTypeList::reg(PyObject *module)
 {
 	// if list exists
 	if (m_list.get() != NULL)
@@ -88,6 +92,6 @@ void PyTypeList::reg (PyObject * module)
 			// increase ref count
 			Py_INCREF((*it)->getType());
 			// add type to module
-			PyModule_AddObject(module, (char*)(*it)->getName(), (PyObject*)(*it)->getType());
+			PyModule_AddObject(module, (*it)->getName(), (PyObject *)(*it)->getType());
 		}
 }

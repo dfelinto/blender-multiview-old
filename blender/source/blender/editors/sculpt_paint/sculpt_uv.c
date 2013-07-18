@@ -50,7 +50,7 @@
 #include "BKE_depsgraph.h"
 #include "BKE_mesh.h"
 #include "BKE_customdata.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "ED_screen.h"
 #include "ED_image.h"
@@ -144,6 +144,69 @@ typedef struct UvSculptData {
 	char invert;
 } UvSculptData;
 
+
+static Brush *uv_sculpt_brush(bContext *C)
+{
+	Scene *scene = CTX_data_scene(C);
+	ToolSettings *settings = scene->toolsettings;
+
+	if (!settings->uvsculpt)
+		return NULL;
+	return BKE_paint_brush(&settings->uvsculpt->paint);
+}
+
+
+static int uv_sculpt_brush_poll(bContext *C)
+{
+	BMEditMesh *em;
+	int ret;
+	Object *obedit = CTX_data_edit_object(C);
+	SpaceImage *sima = CTX_wm_space_image(C);
+	Scene *scene = CTX_data_scene(C);
+	ToolSettings *toolsettings = scene->toolsettings;
+
+	if (!uv_sculpt_brush(C) || !obedit || obedit->type != OB_MESH)
+		return 0;
+
+	em = BKE_editmesh_from_object(obedit);
+	ret = EDBM_mtexpoly_check(em);
+
+	if (ret && sima) {
+		ARegion *ar = CTX_wm_region(C);
+		if ((toolsettings->use_uv_sculpt) && ar->regiontype == RGN_TYPE_WINDOW)
+			return 1;
+	}
+
+	return 0;
+}
+
+
+void ED_space_image_uv_sculpt_update(wmWindowManager *wm, ToolSettings *settings)
+{
+	if (settings->use_uv_sculpt) {
+		if (!settings->uvsculpt) {
+			settings->uvsculpt = MEM_callocN(sizeof(*settings->uvsculpt), "UV Smooth paint");
+			settings->uv_sculpt_tool = UV_SCULPT_TOOL_GRAB;
+			settings->uv_sculpt_settings = UV_SCULPT_LOCK_BORDERS | UV_SCULPT_ALL_ISLANDS;
+			settings->uv_relax_method = UV_SCULPT_TOOL_RELAX_LAPLACIAN;
+		}
+
+		BKE_paint_init(&settings->uvsculpt->paint, PAINT_CURSOR_SCULPT);
+
+		WM_paint_cursor_activate(wm, uv_sculpt_brush_poll,
+		                         brush_drawcursor_texpaint_uvsculpt, NULL);
+	}
+	else {
+		if (settings->uvsculpt)
+			settings->uvsculpt->paint.flags &= ~PAINT_SHOW_BRUSH;
+	}
+}
+
+int uv_sculpt_poll(bContext *C)
+{
+	return uv_sculpt_brush_poll(C);
+}
+
 /*********** Improved Laplacian Relaxation Operator ************************/
 /* original code by Raul Fernandez Hernandez "farsthary"                   *
  * adapted to uv smoothing by Antony Riakiatakis                           *
@@ -156,14 +219,14 @@ typedef struct Temp_UvData {
 
 
 
-void HC_relaxation_iteration_uv(BMEditMesh *em, UvSculptData *sculptdata, float mouse_coord[2],
-                                float alpha, float radius, float aspectRatio)
+static void HC_relaxation_iteration_uv(BMEditMesh *em, UvSculptData *sculptdata, float mouse_coord[2],
+                                       float alpha, float radius, float aspectRatio)
 {
 	Temp_UVData *tmp_uvdata;
 	float diff[2];
 	int i;
 	float radius_root = sqrt(radius);
-	Brush *brush = paint_brush(sculptdata->uvsculpt);
+	Brush *brush = BKE_paint_brush(sculptdata->uvsculpt);
 
 	tmp_uvdata = (Temp_UVData *)MEM_callocN(sculptdata->totalUniqueUvs * sizeof(Temp_UVData), "Temporal data");
 
@@ -235,7 +298,7 @@ static void laplacian_relaxation_iteration_uv(BMEditMesh *em, UvSculptData *scul
 	float diff[2];
 	int i;
 	float radius_root = sqrt(radius);
-	Brush *brush = paint_brush(sculptdata->uvsculpt);
+	Brush *brush = BKE_paint_brush(sculptdata->uvsculpt);
 
 	tmp_uvdata = (Temp_UVData *)MEM_callocN(sculptdata->totalUniqueUvs * sizeof(Temp_UVData), "Temporal data");
 
@@ -294,12 +357,12 @@ static void laplacian_relaxation_iteration_uv(BMEditMesh *em, UvSculptData *scul
 }
 
 
-static void uv_sculpt_stroke_apply(bContext *C, wmOperator *op, wmEvent *event, Object *obedit)
+static void uv_sculpt_stroke_apply(bContext *C, wmOperator *op, const wmEvent *event, Object *obedit)
 {
 	float co[2], radius, radius_root;
 	Scene *scene = CTX_data_scene(C);
 	ARegion *ar = CTX_wm_region(C);
-	BMEditMesh *em = BMEdit_FromObject(obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	unsigned int tool;
 	UvSculptData *sculptdata = (UvSculptData *)op->customdata;
 	SpaceImage *sima;
@@ -307,7 +370,7 @@ static void uv_sculpt_stroke_apply(bContext *C, wmOperator *op, wmEvent *event, 
 	int width, height;
 	float aspectRatio;
 	float alpha, zoomx, zoomy;
-	Brush *brush = paint_brush(sculptdata->uvsculpt);
+	Brush *brush = BKE_paint_brush(sculptdata->uvsculpt);
 	ToolSettings *toolsettings = CTX_data_tool_settings(C);
 	tool = sculptdata->tool;
 	invert = sculptdata->invert ? -1 : 1;
@@ -464,13 +527,13 @@ static int uv_edge_compare(const void *a, const void *b)
 }
 
 
-static UvSculptData *uv_sculpt_stroke_init(bContext *C, wmOperator *op, wmEvent *event)
+static UvSculptData *uv_sculpt_stroke_init(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
 	ToolSettings *ts = scene->toolsettings;
 	UvSculptData *data = MEM_callocN(sizeof(*data), "UV Smooth Brush Data");
-	BMEditMesh *em = BMEdit_FromObject(obedit);
+	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	BMesh *bm = em->bm;
 
 	op->customdata = data;
@@ -649,7 +712,7 @@ static UvSculptData *uv_sculpt_stroke_init(bContext *C, wmOperator *op, wmEvent 
 			return NULL;
 		}
 		/* fill the edges with data */
-		for (i = 0; !BLI_ghashIterator_isDone(ghi); BLI_ghashIterator_step(ghi)) {
+		for (i = 0; !BLI_ghashIterator_done(ghi); BLI_ghashIterator_step(ghi)) {
 			data->uvedges[i++] = *((UvEdge *)BLI_ghashIterator_getKey(ghi));
 		}
 		data->totalUvEdges = BLI_ghash_size(edgeHash);
@@ -677,7 +740,7 @@ static UvSculptData *uv_sculpt_stroke_init(bContext *C, wmOperator *op, wmEvent 
 			int width, height;
 			float aspectRatio;
 			float alpha, zoomx, zoomy;
-			Brush *brush = paint_brush(sculptdata->uvsculpt);
+			Brush *brush = BKE_paint_brush(sculptdata->uvsculpt);
 
 			alpha = BKE_brush_alpha_get(scene, brush);
 
@@ -731,7 +794,7 @@ static UvSculptData *uv_sculpt_stroke_init(bContext *C, wmOperator *op, wmEvent 
 	return op->customdata;
 }
 
-static int uv_sculpt_stroke_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int uv_sculpt_stroke_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	UvSculptData *data;
 	Object *obedit = CTX_data_edit_object(C);
@@ -754,7 +817,7 @@ static int uv_sculpt_stroke_invoke(bContext *C, wmOperator *op, wmEvent *event)
 }
 
 
-static int uv_sculpt_stroke_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int uv_sculpt_stroke_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	UvSculptData *data = (UvSculptData *)op->customdata;
 	Object *obedit = CTX_data_edit_object(C);

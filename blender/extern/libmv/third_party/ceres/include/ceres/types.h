@@ -37,6 +37,8 @@
 #ifndef CERES_PUBLIC_TYPES_H_
 #define CERES_PUBLIC_TYPES_H_
 
+#include "ceres/internal/port.h"
+
 namespace ceres {
 
 // Basic integer types. These typedefs are in the Ceres namespace to avoid
@@ -59,13 +61,17 @@ enum LinearSolverType {
   // normal equations A'A x = A'b. They are direct solvers and do not
   // assume any special problem structure.
 
-  // Solve the normal equations using a sparse cholesky solver; based
-  // on CHOLMOD.
-  SPARSE_NORMAL_CHOLESKY,
+  // Solve the normal equations using a dense Cholesky solver; based
+  // on Eigen.
+  DENSE_NORMAL_CHOLESKY,
 
   // Solve the normal equations using a dense QR solver; based on
   // Eigen.
   DENSE_QR,
+
+  // Solve the normal equations using a sparse cholesky solver; requires
+  // SuiteSparse or CXSparse.
+  SPARSE_NORMAL_CHOLESKY,
 
   // Specialized solvers, specific to problems with a generalized
   // bi-partitite structure.
@@ -95,8 +101,7 @@ enum PreconditionerType {
   JACOBI,
 
   // Block diagonal of the Schur complement. This preconditioner may
-  // only be used with the ITERATIVE_SCHUR solver. Requires
-  // SuiteSparse/CHOLMOD.
+  // only be used with the ITERATIVE_SCHUR solver.
   SCHUR_JACOBI,
 
   // Visibility clustering based preconditioners.
@@ -108,6 +113,15 @@ enum PreconditionerType {
   // preconditioner. Requires SuiteSparse/CHOLMOD.
   CLUSTER_JACOBI,
   CLUSTER_TRIDIAGONAL
+};
+
+enum SparseLinearAlgebraLibraryType {
+  // High performance sparse Cholesky factorization and approximate
+  // minimum degree ordering.
+  SUITE_SPARSE,
+
+  // A lightweight replacment for SuiteSparse.
+  CX_SPARSE
 };
 
 enum LinearSolverTerminationType {
@@ -130,18 +144,6 @@ enum LinearSolverTerminationType {
   FAILURE
 };
 
-enum OrderingType {
-  // The order in which the parameter blocks were defined.
-  NATURAL,
-
-  // Use the ordering specificed in the vector ordering.
-  USER,
-
-  // Automatically figure out the best ordering to use the schur
-  // complement based solver.
-  SCHUR
-};
-
 // Logging options
 // The options get progressively noisier.
 enum LoggingType {
@@ -150,7 +152,95 @@ enum LoggingType {
 };
 
 enum MinimizerType {
-  LEVENBERG_MARQUARDT
+  LINE_SEARCH,
+  TRUST_REGION
+};
+
+enum LineSearchDirectionType {
+  // Negative of the gradient.
+  STEEPEST_DESCENT,
+
+  // A generalization of the Conjugate Gradient method to non-linear
+  // functions. The generalization can be performed in a number of
+  // different ways, resulting in a variety of search directions. The
+  // precise choice of the non-linear conjugate gradient algorithm
+  // used is determined by NonlinerConjuateGradientType.
+  NONLINEAR_CONJUGATE_GRADIENT,
+
+  // A limited memory approximation to the inverse Hessian is
+  // maintained and used to compute a quasi-Newton step.
+  //
+  // For more details see
+  //
+  // Nocedal, J. (1980). "Updating Quasi-Newton Matrices with Limited
+  // Storage". Mathematics of Computation 35 (151): 773–782.
+  //
+  // Byrd, R. H.; Nocedal, J.; Schnabel, R. B. (1994).
+  // "Representations of Quasi-Newton Matrices and their use in
+  // Limited Memory Methods". Mathematical Programming 63 (4):
+  // 129–156.
+  LBFGS,
+};
+
+// Nonliner conjugate gradient methods are a generalization of the
+// method of Conjugate Gradients for linear systems. The
+// generalization can be carried out in a number of different ways
+// leading to number of different rules for computing the search
+// direction. Ceres provides a number of different variants. For more
+// details see Numerical Optimization by Nocedal & Wright.
+enum NonlinearConjugateGradientType {
+  FLETCHER_REEVES,
+  POLAK_RIBIRERE,
+  HESTENES_STIEFEL,
+};
+
+enum LineSearchType {
+  // Backtracking line search with polynomial interpolation or
+  // bisection.
+  ARMIJO,
+};
+
+// Ceres supports different strategies for computing the trust region
+// step.
+enum TrustRegionStrategyType {
+  // The default trust region strategy is to use the step computation
+  // used in the Levenberg-Marquardt algorithm. For more details see
+  // levenberg_marquardt_strategy.h
+  LEVENBERG_MARQUARDT,
+
+  // Powell's dogleg algorithm interpolates between the Cauchy point
+  // and the Gauss-Newton step. It is particularly useful if the
+  // LEVENBERG_MARQUARDT algorithm is making a large number of
+  // unsuccessful steps. For more details see dogleg_strategy.h.
+  //
+  // NOTES:
+  //
+  // 1. This strategy has not been experimented with or tested as
+  // extensively as LEVENBERG_MARQUARDT, and therefore it should be
+  // considered EXPERIMENTAL for now.
+  //
+  // 2. For now this strategy should only be used with exact
+  // factorization based linear solvers, i.e., SPARSE_SCHUR,
+  // DENSE_SCHUR, DENSE_QR and SPARSE_NORMAL_CHOLESKY.
+  DOGLEG
+};
+
+// Ceres supports two different dogleg strategies.
+// The "traditional" dogleg method by Powell and the
+// "subspace" method described in
+// R. H. Byrd, R. B. Schnabel, and G. A. Shultz,
+// "Approximate solution of the trust region problem by minimization
+//  over two-dimensional subspaces", Mathematical Programming,
+// 40 (1988), pp. 247--263
+enum DoglegType {
+  // The traditional approach constructs a dogleg path
+  // consisting of two line segments and finds the furthest
+  // point on that path that is still inside the trust region.
+  TRADITIONAL_DOGLEG,
+
+  // The subspace approach finds the exact minimum of the model
+  // constrained to the subspace spanned by the dogleg path.
+  SUBSPACE_DOGLEG
 };
 
 enum SolverTerminationType {
@@ -244,14 +334,54 @@ enum DimensionType {
   DYNAMIC = -1
 };
 
+enum NumericDiffMethod {
+  CENTRAL,
+  FORWARD
+};
+
 const char* LinearSolverTypeToString(LinearSolverType type);
+bool StringToLinearSolverType(string value, LinearSolverType* type);
+
 const char* PreconditionerTypeToString(PreconditionerType type);
+bool StringToPreconditionerType(string value, PreconditionerType* type);
+
+const char* SparseLinearAlgebraLibraryTypeToString(
+    SparseLinearAlgebraLibraryType type);
+bool StringToSparseLinearAlgebraLibraryType(
+    string value,
+    SparseLinearAlgebraLibraryType* type);
+
+const char* TrustRegionStrategyTypeToString(TrustRegionStrategyType type);
+bool StringToTrustRegionStrategyType(string value,
+                                     TrustRegionStrategyType* type);
+
+const char* DoglegTypeToString(DoglegType type);
+bool StringToDoglegType(string value, DoglegType* type);
+
+const char* MinimizerTypeToString(MinimizerType type);
+bool StringToMinimizerType(string value, MinimizerType* type);
+
+const char* LineSearchDirectionTypeToString(LineSearchDirectionType type);
+bool StringToLineSearchDirectionType(string value,
+                                     LineSearchDirectionType* type);
+
+const char* LineSearchTypeToString(LineSearchType type);
+bool StringToLineSearchType(string value, LineSearchType* type);
+
+const char* NonlinearConjugateGradientTypeToString(
+    NonlinearConjugateGradientType type);
+bool StringToNonlinearConjugateGradientType(
+    string value, NonlinearConjugateGradientType* type);
+
 const char* LinearSolverTerminationTypeToString(
     LinearSolverTerminationType type);
-const char* OrderingTypeToString(OrderingType type);
+
 const char* SolverTerminationTypeToString(SolverTerminationType type);
 
 bool IsSchurType(LinearSolverType type);
+bool IsSparseLinearAlgebraLibraryTypeAvailable(
+    SparseLinearAlgebraLibraryType type);
+
 
 }  // namespace ceres
 

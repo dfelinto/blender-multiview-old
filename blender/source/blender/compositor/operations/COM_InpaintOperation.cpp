@@ -84,8 +84,8 @@ float *InpaintSimpleOperation::get_pixel(int x, int y)
 	ASSERT_XY_RANGE(x, y);
 
 	return &this->m_cached_buffer[
-	           y * width * COM_NUMBER_OF_CHANNELS
-	           + x * COM_NUMBER_OF_CHANNELS];
+	        y * width * COM_NUMBER_OF_CHANNELS +
+	        x * COM_NUMBER_OF_CHANNELS];
 }
 
 int InpaintSimpleOperation::mdist(int x, int y) 
@@ -133,9 +133,9 @@ void InpaintSimpleOperation::calc_manhatten_distance()
 			if (this->get_pixel(i, j)[3] < 1.0f) {
 				r = width + height;
 				if (i > 0) 
-					r = mini(r, m[j * width + i - 1] + 1);
+					r = min_ii(r, m[j * width + i - 1] + 1);
 				if (j > 0) 
-					r = mini(r, m[(j - 1) * width + i] + 1);
+					r = min_ii(r, m[(j - 1) * width + i] + 1);
 			}
 			m[j * width + i] = r;
 		}
@@ -146,9 +146,9 @@ void InpaintSimpleOperation::calc_manhatten_distance()
 			int r = m[j * width + i];
 			
 			if (i + 1 < width) 
-				r = mini(r, m[j * width + i + 1] + 1);
+				r = min_ii(r, m[j * width + i + 1] + 1);
 			if (j + 1 < height) 
-				r = mini(r, m[(j + 1) * width + i] + 1);
+				r = min_ii(r, m[(j + 1) * width + i] + 1);
 			
 			m[j * width + i] = r;
 			
@@ -182,8 +182,8 @@ void InpaintSimpleOperation::pix_step(int x, int y)
 
 	for (int dx = -1; dx <= 1; dx++) {
 		for (int dy = -1; dy <= 1; dy++) {
-			if (dx != 0 && dy != 0) {
-
+			/* changing to both != 0 gives dithering artifacts */
+			if (dx != 0 || dy != 0) {
 				int x_ofs = x + dx;
 				int y_ofs = y + dy;
 

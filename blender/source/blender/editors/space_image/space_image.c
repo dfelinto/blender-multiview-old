@@ -38,13 +38,15 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
+#include "BLI_threads.h"
 
 #include "BKE_colortools.h"
 #include "BKE_context.h"
 #include "BKE_image.h"
+#include "BKE_global.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_sequencer.h"
 #include "BKE_node.h"
 
@@ -150,6 +152,7 @@ static SpaceLink *image_new(const bContext *UNUSED(C))
 	simage->spacetype = SPACE_IMAGE;
 	simage->zoom = 1.0f;
 	simage->lock = TRUE;
+	simage->flag = SI_SHOW_GPENCIL | SI_USE_ALPHA;
 
 	simage->iuser.ok = TRUE;
 	simage->iuser.fie_ima = 2;
@@ -194,9 +197,7 @@ static SpaceLink *image_new(const bContext *UNUSED(C))
 static void image_free(SpaceLink *sl)
 {	
 	SpaceImage *simage = (SpaceImage *) sl;
-	
-	if (simage->cumap)
-		curvemapping_free(simage->cumap);
+
 	scopes_free(&simage->scopes);
 }
 
@@ -216,8 +217,6 @@ static SpaceLink *image_duplicate(SpaceLink *sl)
 	SpaceImage *simagen = MEM_dupallocN(sl);
 	
 	/* clear or remove stuff from old */
-	if (simagen->cumap)
-		simagen->cumap = curvemapping_copy(simagen->cumap);
 
 	scopes_new(&simagen->scopes);
 
@@ -253,8 +252,6 @@ static void image_operatortypes(void)
 	WM_operatortype_append(IMAGE_OT_sample);
 	WM_operatortype_append(IMAGE_OT_sample_line);
 	WM_operatortype_append(IMAGE_OT_curves_point_set);
-
-	WM_operatortype_append(IMAGE_OT_record_composite);
 
 	WM_operatortype_append(IMAGE_OT_properties);
 	WM_operatortype_append(IMAGE_OT_scopes);
@@ -294,10 +291,16 @@ static void image_keymap(struct wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_out", PADMINUS, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom", MIDDLEMOUSE, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom", MOUSEZOOM, 0, 0, 0);
+	WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom", MOUSEPAN, 0, KM_CTRL, 0);
 
+	/* ctrl now works as well, shift + numpad works as arrow keys on Windows */
+	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD8, KM_PRESS, KM_CTRL, 0)->ptr, "ratio", 8.0f);
+	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD4, KM_PRESS, KM_CTRL, 0)->ptr, "ratio", 4.0f);
+	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD2, KM_PRESS, KM_CTRL, 0)->ptr, "ratio", 2.0f);
 	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD8, KM_PRESS, KM_SHIFT, 0)->ptr, "ratio", 8.0f);
 	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD4, KM_PRESS, KM_SHIFT, 0)->ptr, "ratio", 4.0f);
 	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD2, KM_PRESS, KM_SHIFT, 0)->ptr, "ratio", 2.0f);
+
 	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD1, KM_PRESS, 0, 0)->ptr, "ratio", 1.0f);
 	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD2, KM_PRESS, 0, 0)->ptr, "ratio", 0.5f);
 	RNA_float_set(WM_keymap_add_item(keymap, "IMAGE_OT_view_zoom_ratio", PAD4, KM_PRESS, 0, 0)->ptr, "ratio", 0.25f);
@@ -334,7 +337,7 @@ static void image_keymap(struct wmKeyConfig *keyconf)
 }
 
 /* dropboxes */
-static int image_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(event))
+static int image_drop_poll(bContext *UNUSED(C), wmDrag *drag, const wmEvent *UNUSED(event))
 {
 	if (drag->type == WM_DRAG_PATH)
 		if (ELEM3(drag->icon, 0, ICON_FILE_IMAGE, ICON_FILE_BLANK)) /* rule might not work? */
@@ -373,7 +376,10 @@ static void image_refresh(const bContext *C, ScrArea *sa)
 	
 	/* check if we have to set the image from the editmesh */
 	if (ima && (ima->source == IMA_SRC_VIEWER && sima->mode == SI_MODE_MASK)) {
-		if (sima->lock) {
+		if (sima->lock == FALSE && G.moving) {
+			/* pass */
+		}
+		else {
 			if (scene->nodetree) {
 				Mask *mask = ED_space_image_get_mask(sima);
 				if (mask) {
@@ -388,35 +394,26 @@ static void image_refresh(const bContext *C, ScrArea *sa)
 	else if (obedit && obedit->type == OB_MESH) {
 		Mesh *me = (Mesh *)obedit->data;
 		struct BMEditMesh *em = me->edit_btmesh;
-		int sloppy = 1; /* partially selected face is ok */
+		int sloppy = TRUE; /* partially selected face is ok */
+		int selected = !(scene->toolsettings->uv_flag & UV_SYNC_SELECTION); /* only selected active face? */
 
 		if (BKE_scene_use_new_shading_nodes(scene)) {
-			/* new shading system, get image from material */
-			BMFace *efa = BM_active_face_get(em->bm, sloppy);
-
-			if (efa) {
-				Image *node_ima;
-				ED_object_get_active_image(obedit, efa->mat_nr + 1, &node_ima, NULL, NULL);
-
-				if (node_ima)
-					sima->image = node_ima;
-			}
+			/* new shading system does not alter image */
 		}
 		else {
 			/* old shading system, we set texface */
 			MTexPoly *tf;
 			
 			if (em && EDBM_mtexpoly_check(em)) {
-				sima->image = NULL;
-				
-				tf = EDBM_mtexpoly_active_get(em, NULL, TRUE); /* partially selected face is ok */
-				
+				tf = EDBM_mtexpoly_active_get(em, NULL, sloppy, selected);
+
 				if (tf) {
 					/* don't need to check for pin here, see above */
 					sima->image = tf->tpage;
 					
-					if (sima->flag & SI_EDITTILE) ;
-					else sima->curtile = tf->tile;
+					if ((sima->flag & SI_EDITTILE) == 0) {
+						sima->curtile = tf->tile;
+					}
 				}
 			}
 		}
@@ -429,6 +426,11 @@ static void image_listener(ScrArea *sa, wmNotifier *wmn)
 	
 	/* context changes */
 	switch (wmn->category) {
+		case NC_WINDOW:
+			/* notifier comes from editing color space */
+			image_scopes_tag_refresh(sa);
+			ED_area_tag_redraw(sa);
+			break;
 		case NC_SCENE:
 			switch (wmn->data) {
 				case ND_FRAME:
@@ -437,7 +439,12 @@ static void image_listener(ScrArea *sa, wmNotifier *wmn)
 					ED_area_tag_redraw(sa);
 					break;
 				case ND_MODE:
+					if (wmn->subtype == NS_EDITMODE_MESH)
+						ED_area_tag_refresh(sa);
+					ED_area_tag_redraw(sa);
+					break;
 				case ND_RENDER_RESULT:
+				case ND_RENDER_OPTIONS:
 				case ND_COMPO_RESULT:
 					if (ED_space_image_show_render(sima))
 						image_scopes_tag_refresh(sa);
@@ -447,12 +454,14 @@ static void image_listener(ScrArea *sa, wmNotifier *wmn)
 			break;
 		case NC_IMAGE:
 			if (wmn->reference == sima->image || !wmn->reference) {
-				image_scopes_tag_refresh(sa);
-				ED_area_tag_refresh(sa);
-				ED_area_tag_redraw(sa);
+				if (wmn->action != NA_PAINTING) {
+					image_scopes_tag_refresh(sa);
+					ED_area_tag_refresh(sa);
+					ED_area_tag_redraw(sa);
+				}
 			}
 			break;
-		case NC_SPACE:	
+		case NC_SPACE:
 			if (wmn->data == ND_SPACE_IMAGE) {
 				image_scopes_tag_refresh(sa);
 				ED_area_tag_redraw(sa);
@@ -545,7 +554,7 @@ static void image_main_area_set_view2d(SpaceImage *sima, ARegion *ar)
 	int width, height, winx, winy;
 	
 #if 0
-	if (image_preview_active(curarea, &width, &height)) ;
+	if (image_preview_active(curarea, &width, &height)) {}
 	else
 #endif
 	ED_space_image_get_size(sima, &width, &height);
@@ -556,8 +565,8 @@ static void image_main_area_set_view2d(SpaceImage *sima, ARegion *ar)
 	if (ima)
 		h *= ima->aspy / ima->aspx;
 
-	winx = ar->winrct.xmax - ar->winrct.xmin + 1;
-	winy = ar->winrct.ymax - ar->winrct.ymin + 1;
+	winx = BLI_rcti_size_x(&ar->winrct) + 1;
+	winy = BLI_rcti_size_y(&ar->winrct) + 1;
 		
 	ar->v2d.tot.xmin = 0;
 	ar->v2d.tot.ymin = 0;
@@ -647,10 +656,13 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 	image_main_area_set_view2d(sima, ar);
 
 	/* we draw image in pixelspace */
-	draw_image_main(sima, ar, scene);
+	draw_image_main(C, ar);
 
 	/* and uvs in 0.0-1.0 space */
 	UI_view2d_view_ortho(v2d);
+
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
+
 	draw_uvedit_main(sima, ar, scene, obedit, obact);
 
 	/* check for mask (delay draw) */
@@ -664,23 +676,45 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_VIEW);
 
-	/* Grease Pencil too (in addition to UV's) */
-	draw_image_grease_pencil((bContext *)C, 1); 
+	if (sima->flag & SI_SHOW_GPENCIL) {
+		/* Grease Pencil too (in addition to UV's) */
+		draw_image_grease_pencil((bContext *)C, TRUE);
+	}
 
 	/* sample line */
 	draw_image_sample_line(sima);
 
 	UI_view2d_view_restore(C);
 
-	/* draw Grease Pencil - screen space only */
-	draw_image_grease_pencil((bContext *)C, 0);
+	if (sima->flag & SI_SHOW_GPENCIL) {
+		/* draw Grease Pencil - screen space only */
+		draw_image_grease_pencil((bContext *)C, FALSE);
+	}
 
 	if (mask) {
-		int width, height;
+		Image *image = ED_space_image(sima);
+		int width, height, show_viewer;
+		float aspx, aspy;
+
+		show_viewer = (image && image->source == IMA_SRC_VIEWER);
+
+		if (show_viewer) {
+			/* ED_space_image_get* will acquire image buffer which requires
+			 * lock here by the same reason why lock is needed in draw_image_main
+			 */
+			BLI_lock_thread(LOCK_DRAW_IMAGE);
+		}
+
 		ED_space_image_get_size(sima, &width, &height);
+		ED_space_image_get_aspect(sima, &aspx, &aspy);
+
+		if (show_viewer)
+			BLI_unlock_thread(LOCK_DRAW_IMAGE);
+
 		ED_mask_draw_region(mask, ar,
 		                    sima->mask_info.draw_flag, sima->mask_info.draw_type,
 		                    width, height,
+		                    aspx, aspy,
 		                    TRUE, FALSE,
 		                    NULL, C);
 
@@ -701,8 +735,12 @@ static void image_main_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
-		case NC_SCREEN:
-			if (wmn->data == ND_GPENCIL)
+		case NC_GPENCIL:
+			if (wmn->action == NA_EDITED)
+				ED_region_tag_redraw(ar);
+			break;
+		case NC_IMAGE:
+			if (wmn->action == NA_PAINTING)
 				ED_region_tag_redraw(ar);
 			break;
 	}
@@ -715,6 +753,7 @@ static void image_buttons_area_init(wmWindowManager *wm, ARegion *ar)
 {
 	wmKeyMap *keymap;
 
+	ar->v2d.scroll = V2D_SCROLL_RIGHT | V2D_SCROLL_VERTICAL_HIDE;
 	ED_region_panels_init(wm, ar);
 	
 	keymap = WM_keymap_find(wm->defaultconf, "Image Generic", SPACE_IMAGE, 0);
@@ -730,8 +769,8 @@ static void image_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
-		case NC_SCREEN:
-			if (wmn->data == ND_GPENCIL)
+		case NC_GPENCIL:
+			if (wmn->data == ND_DATA)
 				ED_region_tag_redraw(ar);
 			break;
 		case NC_BRUSH:
@@ -754,6 +793,7 @@ static void image_scope_area_init(wmWindowManager *wm, ARegion *ar)
 {
 	wmKeyMap *keymap;
 	
+	ar->v2d.scroll = V2D_SCROLL_RIGHT | V2D_SCROLL_VERTICAL_HIDE;
 	ED_region_panels_init(wm, ar);
 	
 	keymap = WM_keymap_find(wm->defaultconf, "Image Generic", SPACE_IMAGE, 0);
@@ -766,13 +806,17 @@ static void image_scope_area_draw(const bContext *C, ARegion *ar)
 	Scene *scene = CTX_data_scene(C);
 	void *lock;
 	ImBuf *ibuf = ED_space_image_acquire_buffer(sima, &lock);
+	
 	if (ibuf) {
 		if (!sima->scopes.ok) {
-			BKE_histogram_update_sample_line(&sima->sample_line_hist, ibuf, scene->r.color_mgt_flag & R_COLOR_MANAGEMENT);
+			BKE_histogram_update_sample_line(&sima->sample_line_hist, ibuf, &scene->view_settings, &scene->display_settings);
 		}
-		scopes_update(&sima->scopes, ibuf, scene->r.color_mgt_flag & R_COLOR_MANAGEMENT);
+		if (sima->image->flag & IMA_VIEW_AS_RENDER)
+			scopes_update(&sima->scopes, ibuf, &scene->view_settings, &scene->display_settings);
+		else
+			scopes_update(&sima->scopes, ibuf, NULL, &scene->display_settings);
 	}
-	ED_space_image_release_buffer(sima, lock);
+	ED_space_image_release_buffer(sima, ibuf, lock);
 	
 	ED_region_panels(C, ar, 1, NULL, -1);
 }
@@ -791,7 +835,8 @@ static void image_scope_area_listener(ARegion *ar, wmNotifier *wmn)
 			}
 			break;
 		case NC_IMAGE:
-			ED_region_tag_redraw(ar);
+			if (wmn->action != NA_PAINTING)
+				ED_region_tag_redraw(ar);
 			break;
 		case NC_NODE:
 			ED_region_tag_redraw(ar);

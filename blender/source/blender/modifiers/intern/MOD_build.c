@@ -37,6 +37,7 @@
 
 #include "BLI_utildefines.h"
 #include "BLI_rand.h"
+#include "BLI_math_vector.h"
 #include "BLI_ghash.h"
 
 #include "DNA_scene_types.h"
@@ -70,9 +71,9 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tbmd->seed = bmd->seed;
 }
 
-static int dependsOnTime(ModifierData *UNUSED(md))
+static bool dependsOnTime(ModifierData *UNUSED(md))
 {
-	return 1;
+	return true;
 }
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
@@ -104,12 +105,19 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 	MVert *mvert_src = dm->getVertArray(dm);
 
 
-	vertMap = MEM_callocN(sizeof(*vertMap) * numVert_src, "build modifier vertMap");
-	for (i = 0; i < numVert_src; i++) vertMap[i] = i;
-	edgeMap = MEM_callocN(sizeof(*edgeMap) * numEdge_src, "build modifier edgeMap");
-	for (i = 0; i < numEdge_src; i++) edgeMap[i] = i;
-	faceMap = MEM_callocN(sizeof(*faceMap) * numPoly_src, "build modifier faceMap");
-	for (i = 0; i < numPoly_src; i++) faceMap[i] = i;
+	vertMap = MEM_mallocN(sizeof(*vertMap) * numVert_src, "build modifier vertMap");
+	edgeMap = MEM_mallocN(sizeof(*edgeMap) * numEdge_src, "build modifier edgeMap");
+	faceMap = MEM_mallocN(sizeof(*faceMap) * numPoly_src, "build modifier faceMap");
+
+#pragma omp parallel sections if (numVert_src + numEdge_src + numPoly_src >= DM_OMP_LIMIT)
+	{
+#pragma omp section
+		{ range_vn_i(vertMap, numVert_src, 0); }
+#pragma omp section
+		{ range_vn_i(edgeMap, numEdge_src, 0); }
+#pragma omp section
+		{ range_vn_i(faceMap, numPoly_src, 0); }
+	}
 
 	frac = (BKE_scene_frame_get(md->scene) - bmd->start) / bmd->length;
 	CLAMP(frac, 0.0f, 1.0f);
@@ -222,7 +230,7 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 
 	/* copy the vertices across */
 	for (hashIter = BLI_ghashIterator_new(vertHash);
-	     !BLI_ghashIterator_isDone(hashIter);
+	     BLI_ghashIterator_done(hashIter) == false;
 	     BLI_ghashIterator_step(hashIter)
 	     )
 	{
@@ -288,32 +296,36 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob),
 	MEM_freeN(edgeMap);
 	MEM_freeN(faceMap);
 
+	if (dm->dirty & DM_DIRTY_NORMALS) {
+		result->dirty |= DM_DIRTY_NORMALS;
+	}
+
 	return result;
 }
 
 
 ModifierTypeInfo modifierType_Build = {
-	/* name */ "Build",
-	/* structName */ "BuildModifierData",
-	/* structSize */ sizeof(BuildModifierData),
-	/* type */ eModifierTypeType_Nonconstructive,
-	/* flags */ eModifierTypeFlag_AcceptsMesh |
-	eModifierTypeFlag_AcceptsCVs,
-	/* copyData */ copyData,
-	/* deformVerts */ NULL,
-	/* deformMatrices */ NULL,
-	/* deformVertsEM */ NULL,
-	/* deformMatricesEM */ NULL,
-	/* applyModifier */ applyModifier,
-	/* applyModifierEM */ NULL,
-	/* initData */ initData,
-	/* requiredDataMask */ NULL,
-	/* freeData */ NULL,
-	/* isDisabled */ NULL,
-	/* updateDepgraph */ NULL,
-	/* dependsOnTime */ dependsOnTime,
-	/* dependsOnNormals */ NULL,
+	/* name */              "Build",
+	/* structName */        "BuildModifierData",
+	/* structSize */        sizeof(BuildModifierData),
+	/* type */              eModifierTypeType_Nonconstructive,
+	/* flags */             eModifierTypeFlag_AcceptsMesh |
+	                        eModifierTypeFlag_AcceptsCVs,
+	/* copyData */          copyData,
+	/* deformVerts */       NULL,
+	/* deformMatrices */    NULL,
+	/* deformVertsEM */     NULL,
+	/* deformMatricesEM */  NULL,
+	/* applyModifier */     applyModifier,
+	/* applyModifierEM */   NULL,
+	/* initData */          initData,
+	/* requiredDataMask */  NULL,
+	/* freeData */          NULL,
+	/* isDisabled */        NULL,
+	/* updateDepgraph */    NULL,
+	/* dependsOnTime */     dependsOnTime,
+	/* dependsOnNormals */  NULL,
 	/* foreachObjectLink */ NULL,
-	/* foreachIDLink */ NULL,
-	/* foreachTexLink */ NULL,
+	/* foreachIDLink */     NULL,
+	/* foreachTexLink */    NULL,
 };

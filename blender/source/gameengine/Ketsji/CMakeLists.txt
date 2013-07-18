@@ -57,6 +57,7 @@ set(INC
 set(INC_SYS
 	${PTHREADS_INCLUDE_DIRS}
 	${GLEW_INCLUDE_PATH}
+	${BOOST_INCLUDE_DIR}
 	../../../extern/recastnavigation/Recast/Include
 	../../../extern/recastnavigation/Detour/Include
 )
@@ -74,6 +75,7 @@ set(SRC
 	KX_Camera.cpp
 	KX_CameraActuator.cpp
 	KX_CameraIpoSGController.cpp
+	KX_CharacterWrapper.cpp
 	KX_ConstraintActuator.cpp
 	KX_ConstraintWrapper.cpp
 	KX_ConvertPhysicsObjects.cpp
@@ -82,6 +84,7 @@ set(SRC
 	KX_FontObject.cpp
 	KX_GameActuator.cpp
 	KX_GameObject.cpp
+	KX_IpoConvert.cpp
 	KX_IPO_SGController.cpp
 	KX_IPhysicsController.cpp
 	KX_IpoActuator.cpp
@@ -99,7 +102,6 @@ set(SRC
 	KX_ObstacleSimulation.cpp
 	KX_OrientationInterpolator.cpp
 	KX_ParentActuator.cpp
-	KX_PhysicsObjectWrapper.cpp
 	KX_PolyProxy.cpp
 	KX_PolygonMaterial.cpp
 	KX_PositionInterpolator.cpp
@@ -107,6 +109,7 @@ set(SRC
 	KX_PyMath.cpp
 	KX_PythonInit.cpp
 	KX_PythonInitTypes.cpp
+	KX_PythonMain.cpp
 	KX_PythonSeq.cpp
 	KX_RadarSensor.cpp
 	KX_RayCast.cpp
@@ -148,6 +151,7 @@ set(SRC
 	KX_Camera.h
 	KX_CameraActuator.h
 	KX_CameraIpoSGController.h
+	KX_CharacterWrapper.h
 	KX_ClientObjectInfo.h
 	KX_ConstraintActuator.h
 	KX_ConstraintWrapper.h
@@ -158,6 +162,7 @@ set(SRC
 	KX_GameActuator.h
 	KX_GameObject.h
 	KX_IInterpolator.h
+	KX_IpoConvert.h
 	KX_IPOTransform.h
 	KX_IPO_SGController.h
 	KX_IPhysicsController.h
@@ -180,7 +185,6 @@ set(SRC
 	KX_OrientationInterpolator.h
 	KX_ParentActuator.h
 	KX_PhysicsEngineEnums.h
-	KX_PhysicsObjectWrapper.h
 	KX_PhysicsPropertiesobsolete.h
 	KX_PolyProxy.h
 	KX_PolygonMaterial.h
@@ -189,6 +193,7 @@ set(SRC
 	KX_PyMath.h
 	KX_PythonInit.h
 	KX_PythonInitTypes.h
+	KX_PythonMain.h
 	KX_PythonSeq.h
 	KX_RadarSensor.h
 	KX_RayCast.h
@@ -217,6 +222,18 @@ set(SRC
 	KX_VisibilityActuator.h
 	KX_WorldInfo.h
 	KX_WorldIpoController.h
+
+	# orphan headers (not apart of a library)
+	../Physics/common/PHY_DynamicTypes.h
+	../Physics/common/PHY_ICharacter.h
+	../Physics/common/PHY_IController.h
+	../Physics/common/PHY_IGraphicController.h
+	../Physics/common/PHY_IMotionState.h
+	../Physics/common/PHY_IPhysicsController.h
+	../Physics/common/PHY_IPhysicsEnvironment.h
+	../Physics/common/PHY_IVehicle.h
+	../Physics/common/PHY_Pro.h
+
 )
 
 add_definitions(-DGLEW_STATIC)
@@ -246,10 +263,12 @@ endif()
 
 if(WITH_BULLET)
 	list(APPEND INC
-		../../../extern/bullet2/src
 		../Physics/Bullet
 	)
-	add_definitions(-DUSE_BULLET)
+	list(APPEND INC_SYS
+		${BULLET_INCLUDE_DIRS}
+	)
+	add_definitions(-DWITH_BULLET)
 endif()
 
 blender_add_lib(ge_logic_ketsji "${SRC}" "${INC}" "${INC_SYS}")

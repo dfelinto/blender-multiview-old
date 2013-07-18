@@ -28,6 +28,8 @@
 #ifndef __IMB_IMBUF_TYPES_H__
 #define __IMB_IMBUF_TYPES_H__
 
+#include "DNA_vec_types.h"  /* for rcti */
+
 /**
  * \file IMB_imbuf_types.h
  * \ingroup imbuf
@@ -93,7 +95,7 @@ typedef struct ImBuf {
 	/* tiled pixel storage */
 	int tilex, tiley;
 	int xtiles, ytiles;
-	unsigned int **tiles;	
+	unsigned int **tiles;
 
 	/* zbuffer */
 	int	*zbuf;				/* z buffer data, original zbuffer */
@@ -101,7 +103,6 @@ typedef struct ImBuf {
 
 	/* parameters used by conversion between byte and float */
 	float dither;				/* random dither value, for conversion from float -> byte rect */
-	short profile;				/* color space/profile preset that the byte rect buffer represents */
 
 	/* mipmapping */
 	struct ImBuf *mipmap[IB_MIPMAP_LEVELS]; /* MipMap levels, a series of halved images */
@@ -127,6 +128,14 @@ typedef struct ImBuf {
 	unsigned int   encodedsize;       /* Size of data written to encodedbuffer */
 	unsigned int   encodedbuffersize; /* Size of encodedbuffer */
 
+	/* color management */
+	struct ColorSpace *rect_colorspace;          /* color space of byte buffer */
+	struct ColorSpace *float_colorspace;         /* color space of float buffer, used by sequencer only */
+	unsigned int *display_buffer_flags;          /* array of per-display display buffers dirty flags */
+	struct ColormanageCache *colormanage_cache;  /* cache used by color management */
+	int colormanage_flag;
+	rcti invalid_rect;
+
 	/* information for compressed textures */
 	struct DDSData dds_data;
 } ImBuf;
@@ -136,10 +145,11 @@ typedef struct ImBuf {
  * \brief userflags: Flags used internally by blender for imagebuffers
  */
 
-#define IB_BITMAPFONT		(1 << 0)	/* this image is a font */
-#define IB_BITMAPDIRTY		(1 << 1)	/* image needs to be saved is not the same as filename */
-#define IB_MIPMAP_INVALID	(1 << 2)	/* image mipmaps are invalid, need recreate */
-#define IB_RECT_INVALID		(1 << 3)    /* float buffer changed, needs recreation of byte rect */
+#define IB_BITMAPFONT			(1 << 0)	/* this image is a font */
+#define IB_BITMAPDIRTY			(1 << 1)	/* image needs to be saved is not the same as filename */
+#define IB_MIPMAP_INVALID		(1 << 2)	/* image mipmaps are invalid, need recreate */
+#define IB_RECT_INVALID			(1 << 3)	/* float buffer changed, needs recreation of byte rect */
+#define IB_DISPLAY_BUFFER_INVALID	(1 << 4)	/* either float or byte buffer changed, need to re-calculate display buffers */
 
 /**
  * \name Imbuf Component flags
@@ -160,14 +170,15 @@ typedef struct ImBuf {
 #define IB_animdeinterlace	(1 << 9)
 #define IB_tiles			(1 << 10)
 #define IB_tilecache		(1 << 11)
-#define IB_premul			(1 << 12)
-#define IB_cm_predivide		(1 << 13)
+#define IB_alphamode_premul	(1 << 12)  /* indicates whether image on disk have premul alpha */
+#define IB_alphamode_detect	(1 << 13)  /* if this flag is set, alpha mode would be guessed from file */
+#define IB_ignore_alpha		(1 << 14)  /* ignore alpha on load and substitude it with 1.0f */
 
 /*
  * The bit flag is stored in the ImBuf.ftype variable.
- * Note that the lower 10 bits is used for storing custom flags
+ * Note that the lower 11 bits is used for storing custom flags
  */
-#define IB_CUSTOM_FLAGS_MASK 0x3ff
+#define IB_CUSTOM_FLAGS_MASK 0x7ff
 
 #define PNG				(1 << 30)
 #define TGA				(1 << 28)
@@ -193,6 +204,10 @@ typedef struct ImBuf {
 #ifdef WITH_CINEON
 #define CINEON			(1 << 21)
 #define DPX				(1 << 20)
+#define CINEON_LOG		(1 << 8)
+#define CINEON_16BIT	(1 << 7)
+#define CINEON_12BIT	(1 << 6)
+#define CINEON_10BIT	(1 << 5)
 #endif
 
 #ifdef WITH_DDS
@@ -206,7 +221,11 @@ typedef struct ImBuf {
 #define JP2_YCC			(1 << 15)
 #define JP2_CINE		(1 << 14)
 #define JP2_CINE_48FPS	(1 << 13) 
+#define JP2_JP2	(1 << 12)
+#define JP2_J2K	(1 << 11)
 #endif
+
+#define PNG_16BIT			(1 << 10)
 
 #define RAWTGA	        (TGA | 1)
 
@@ -235,7 +254,7 @@ typedef struct ImBuf {
 	((unsigned long)(unsigned char)(ch1) << 8) | \
 	((unsigned long)(unsigned char)(ch2) << 16) | \
 	((unsigned long)(unsigned char)(ch3) << 24))
-#endif //MAKEFOURCC
+#endif  /* MAKEFOURCC */
 
 /*
  * FOURCC codes for DX compressed-texture pixel formats
@@ -248,10 +267,14 @@ typedef struct ImBuf {
 #define FOURCC_DXT4  (MAKEFOURCC('D','X','T','4'))
 #define FOURCC_DXT5  (MAKEFOURCC('D','X','T','5'))
 
-#endif // DDS
+#endif  /* DDS */
 extern const char *imb_ext_image[];
 extern const char *imb_ext_image_qt[];
 extern const char *imb_ext_movie[];
 extern const char *imb_ext_audio[];
+
+enum {
+	IMB_COLORMANAGE_IS_DATA = (1 << 0)
+};
 
 #endif

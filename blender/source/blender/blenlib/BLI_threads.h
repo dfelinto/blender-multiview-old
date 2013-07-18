@@ -37,6 +37,10 @@ extern "C" {
 
 #include <pthread.h>
 
+#ifdef __APPLE__
+#include <libkern/OSAtomic.h>
+#endif
+
 /* for tables, button in UI, etc */
 #define BLENDER_MAX_THREADS     64
 
@@ -64,6 +68,8 @@ void BLI_end_threaded_malloc(void);
 /* System Information */
 
 int     BLI_system_thread_count(void); /* gets the number of threads the system can make use of */
+void    BLI_system_num_threads_override_set(int num);
+int     BLI_system_num_threads_override_get(void);
 
 /* Global Mutex Locks
  * 
@@ -77,6 +83,7 @@ int     BLI_system_thread_count(void); /* gets the number of threads the system 
 #define LOCK_OPENGL     5
 #define LOCK_NODES      6
 #define LOCK_MOVIECLIP  7
+#define LOCK_COLORMANAGE 8
 
 void    BLI_lock_thread(int type);
 void    BLI_unlock_thread(int type);
@@ -87,9 +94,26 @@ typedef pthread_mutex_t ThreadMutex;
 #define BLI_MUTEX_INITIALIZER   PTHREAD_MUTEX_INITIALIZER
 
 void BLI_mutex_init(ThreadMutex *mutex);
+void BLI_mutex_end(ThreadMutex *mutex);
+
+ThreadMutex *BLI_mutex_alloc(void);
+void BLI_mutex_free(ThreadMutex *mutex);
+
 void BLI_mutex_lock(ThreadMutex *mutex);
 void BLI_mutex_unlock(ThreadMutex *mutex);
-void BLI_mutex_end(ThreadMutex *mutex);
+
+/* Spin Lock */
+
+#ifdef __APPLE__
+typedef OSSpinLock SpinLock;
+#else
+typedef pthread_spinlock_t SpinLock;
+#endif
+
+void BLI_spin_init(SpinLock *spin);
+void BLI_spin_lock(SpinLock *spin);
+void BLI_spin_unlock(SpinLock *spin);
+void BLI_spin_end(SpinLock *spin);
 
 /* Read/Write Mutex Lock */
 
@@ -99,9 +123,13 @@ void BLI_mutex_end(ThreadMutex *mutex);
 typedef pthread_rwlock_t ThreadRWMutex;
 
 void BLI_rw_mutex_init(ThreadRWMutex *mutex);
+void BLI_rw_mutex_end(ThreadRWMutex *mutex);
+
+ThreadRWMutex *BLI_rw_mutex_alloc(void);
+void BLI_rw_mutex_free(ThreadRWMutex *mutex);
+
 void BLI_rw_mutex_lock(ThreadRWMutex *mutex, int mode);
 void BLI_rw_mutex_unlock(ThreadRWMutex *mutex);
-void BLI_rw_mutex_end(ThreadRWMutex *mutex);
 
 /* ThreadedWorker
  *

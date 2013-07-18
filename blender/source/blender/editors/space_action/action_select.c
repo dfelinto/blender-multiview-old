@@ -255,16 +255,39 @@ static void borderselect_action(bAnimContext *ac, rcti rect, short mode, short s
 		}
 		
 		/* perform vertical suitability check (if applicable) */
-		if ( (mode == ACTKEYS_BORDERSEL_FRAMERANGE) || 
-		     !((ymax < rectf.ymin) || (ymin > rectf.ymax)) )
+		if ((mode == ACTKEYS_BORDERSEL_FRAMERANGE) ||
+		    !((ymax < rectf.ymin) || (ymin > rectf.ymax)))
 		{
 			/* loop over data selecting */
-			if (ale->type == ANIMTYPE_GPLAYER)
-				ED_gplayer_frames_select_border(ale->data, rectf.xmin, rectf.xmax, selectmode);
-			else if (ale->type == ANIMTYPE_MASKLAYER)
-				ED_masklayer_frames_select_border(ale->data, rectf.xmin, rectf.xmax, selectmode);
-			else
-				ANIM_animchannel_keyframes_loop(&ked, ac->ads, ale, ok_cb, select_cb, NULL);
+			switch (ale->type) {
+				case ANIMTYPE_GPDATABLOCK:
+				{
+					bGPdata *gpd = ale->data;
+					bGPDlayer *gpl;
+					for (gpl = gpd->layers.first; gpl; gpl = gpl->next) {
+						ED_gplayer_frames_select_border(gpl, rectf.xmin, rectf.xmax, selectmode);
+					}
+					break;
+				}
+				case ANIMTYPE_GPLAYER:
+					ED_gplayer_frames_select_border(ale->data, rectf.xmin, rectf.xmax, selectmode);
+					break;
+				case ANIMTYPE_MASKDATABLOCK:
+				{
+					Mask *mask = ale->data;
+					MaskLayer *masklay;
+					for (masklay = mask->masklayers.first; masklay; masklay = masklay->next) {
+						ED_masklayer_frames_select_border(masklay, rectf.xmin, rectf.xmax, selectmode);
+					}
+					break;
+				}
+				case ANIMTYPE_MASKLAYER:
+					ED_masklayer_frames_select_border(ale->data, rectf.xmin, rectf.xmax, selectmode);
+					break;
+				default:
+					ANIM_animchannel_keyframes_loop(&ked, ac->ads, ale, ok_cb, select_cb, NULL);
+					break;
+			}
 		}
 		
 		/* set minimum extent to be the maximum of the next channel */
@@ -309,7 +332,7 @@ static int actkeys_borderselect_exec(bContext *C, wmOperator *op)
 		 *	- the frame-range select option is favored over the channel one (x over y), as frame-range one is often
 		 *	  used for tweaking timing when "blocking", while channels is not that useful...
 		 */
-		if ((rect.xmax - rect.xmin) >= (rect.ymax - rect.ymin))
+		if (BLI_rcti_size_x(&rect) >= BLI_rcti_size_y(&rect))
 			mode = ACTKEYS_BORDERSEL_FRAMERANGE;
 		else
 			mode = ACTKEYS_BORDERSEL_CHANNELS;
@@ -763,7 +786,7 @@ static void actkeys_select_leftright(bAnimContext *ac, short leftright, short se
 	if (leftright == ACTKEYS_LRSEL_LEFT) {
 		ked.f1 = MINAFRAMEF;
 		ked.f2 = (float)(CFRA + 0.1f);
-	} 
+	}
 	else {
 		ked.f1 = (float)(CFRA - 0.1f);
 		ked.f2 = MAXFRAMEF;
@@ -785,7 +808,7 @@ static void actkeys_select_leftright(bAnimContext *ac, short leftright, short se
 			ANIM_fcurve_keyframes_loop(&ked, ale->key_data, ok_cb, select_cb, NULL);
 			ANIM_nla_mapping_apply_fcurve(adt, ale->key_data, 1, 1);
 		}
-		else if (ale->type == ANIMTYPE_GPLAYER)	
+		else if (ale->type == ANIMTYPE_GPLAYER)
 			ED_gplayer_frames_select_border(ale->data, ked.f1, ked.f2, select_mode);
 		else if (ale->type == ANIMTYPE_MASKLAYER)
 			ED_masklayer_frames_select_border(ale->data, ked.f1, ked.f2, select_mode);
@@ -802,8 +825,8 @@ static void actkeys_select_leftright(bAnimContext *ac, short leftright, short se
 			TimeMarker *marker;
 			
 			for (marker = markers->first; marker; marker = marker->next) {
-				if ( ((leftright == ACTKEYS_LRSEL_LEFT) && (marker->frame < CFRA)) ||
-				     ((leftright == ACTKEYS_LRSEL_RIGHT) && (marker->frame >= CFRA)) )
+				if (((leftright == ACTKEYS_LRSEL_LEFT)  && (marker->frame <  CFRA)) ||
+				    ((leftright == ACTKEYS_LRSEL_RIGHT) && (marker->frame >= CFRA)))
 				{
 					marker->flag |= SELECT;
 				}
@@ -849,7 +872,7 @@ static int actkeys_select_leftright_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int actkeys_select_leftright_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int actkeys_select_leftright_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	short leftright = RNA_enum_get(op->ptr, "mode");
@@ -869,7 +892,7 @@ static int actkeys_select_leftright_invoke(bContext *C, wmOperator *op, wmEvent 
 		UI_view2d_region_to_view(v2d, event->mval[0], event->mval[1], &x, NULL);
 		if (x < CFRA)
 			RNA_enum_set(op->ptr, "mode", ACTKEYS_LRSEL_LEFT);
-		else 	
+		else
 			RNA_enum_set(op->ptr, "mode", ACTKEYS_LRSEL_RIGHT);
 	}
 	
@@ -912,9 +935,6 @@ void ACTION_OT_select_leftright(wmOperatorType *ot)
  * selection mode between replacing the selection (without) and inverting the selection (with).
  */
 
-/* sensitivity factor for frame-selections */
-#define FRAME_CLICK_THRESH      0.1f
-
 /* ------------------- */
  
 /* option 1) select keyframe directly under mouse */
@@ -947,6 +967,7 @@ static void actkeys_mselect_single(bAnimContext *ac, bAnimListElem *ale, short s
 				else if (ale->type == ANIMTYPE_MASKLAYER)
 					ED_mask_select_frame(ale->data, selx, select_mode);
 			}
+			BLI_freelistN(&anim_data);
 		}
 		else {
 			ANIM_animchannel_keyframes_loop(&ked, ac->ads, ale, ok_cb, select_cb, NULL);
@@ -1084,7 +1105,7 @@ static void mouse_action_keys(bAnimContext *ac, const int mval[2], short select_
 			/* dopesheet summary covers everything */
 			summary_to_keylist(ac, &anim_keys, NULL);
 		}
-		else if (ale->type == ANIMTYPE_GROUP) { 
+		else if (ale->type == ANIMTYPE_GROUP) {
 			// TODO: why don't we just give groups key_data too?
 			bActionGroup *agrp = (bActionGroup *)ale->data;
 			agroup_to_keylist(adt, agrp, &anim_keys, NULL);
@@ -1147,7 +1168,7 @@ static void mouse_action_keys(bAnimContext *ac, const int mval[2], short select_
 					
 					agrp->flag |= AGRP_SELECTED;
 					ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, agrp, ANIMTYPE_GROUP);
-				}	
+				}
 				else if (ale->type == ANIMTYPE_FCURVE) {
 					FCurve *fcu = ale->data;
 					
@@ -1202,7 +1223,7 @@ static void mouse_action_keys(bAnimContext *ac, const int mval[2], short select_
 }
 
 /* handle clicking */
-static int actkeys_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int actkeys_clickselect_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	/* ARegion *ar; */ /* UNUSED */
@@ -1213,7 +1234,7 @@ static int actkeys_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *even
 		return OPERATOR_CANCELLED;
 		
 	/* get useful pointers from animation context data */
-	/* ar= ac.ar; */ /* UNUSED */
+	/* ar = ac.ar; */ /* UNUSED */
 
 	/* select mode is either replace (deselect all, then add) or add/extend */
 	if (RNA_boolean_get(op->ptr, "extend"))
@@ -1243,16 +1264,17 @@ void ACTION_OT_clickselect(wmOperatorType *ot)
 	ot->idname = "ACTION_OT_clickselect";
 	ot->description = "Select keyframes by clicking on them";
 	
-	/* api callbacks - absolutely no exec() this yet... */
+	/* callbacks */
 	ot->invoke = actkeys_clickselect_invoke;
 	ot->poll = ED_operator_action_active;
 	
 	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	ot->flag = OPTYPE_UNDO;
 	
 	/* properties */
 	prop = RNA_def_boolean(ot->srna, "extend", 0, "Extend Select", ""); // SHIFTKEY
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+	
 	prop = RNA_def_boolean(ot->srna, "column", 0, "Column Select", ""); // ALTKEY
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
 }

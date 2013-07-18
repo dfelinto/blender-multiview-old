@@ -28,9 +28,6 @@
 #include "DNA_defs.h"
 #include "DNA_listBase.h"
 
-
-#define MODSTACK_DEBUG 1
-
 /* WARNING ALERT! TYPEDEF VALUES ARE WRITTEN IN FILES! SO DO NOT CHANGE!
  * (ONLY ADD NEW ITEMS AT THE END) */
 
@@ -78,6 +75,10 @@ typedef enum ModifierType {
 	eModifierType_DynamicPaint      = 40,
 	eModifierType_Remesh            = 41,
 	eModifierType_Skin              = 42,
+	eModifierType_LaplacianSmooth   = 43,
+	eModifierType_Triangulate       = 44,
+	eModifierType_UVWarp            = 45,
+	eModifierType_MeshCache         = 46,
 	NUM_MODIFIER_TYPES
 } ModifierType;
 
@@ -351,7 +352,7 @@ typedef struct UVProjectModifierData {
 	int flags;
 	int num_projectors;
 	float aspectx, aspecty;
-	float scalex, scaley;												
+	float scalex, scaley;
 	char uvlayer_name[64];	/* MAX_CUSTOMDATA_LAYER_NAME */
 	int uvlayer_tmp, pad;
 } UVProjectModifierData;
@@ -364,9 +365,30 @@ typedef struct UVProjectModifierData {
 typedef struct DecimateModifierData {
 	ModifierData modifier;
 
-	float percent;
-	int faceCount;
+	float percent;  /* (mode == MOD_DECIM_MODE_COLLAPSE) */
+	short   iter;   /* (mode == MOD_DECIM_MODE_UNSUBDIV) */
+	char delimit;   /* (mode == MOD_DECIM_MODE_DISSOLVE) */
+	char pad;
+	float   angle;  /* (mode == MOD_DECIM_MODE_DISSOLVE) */
+
+	char defgrp_name[64];	/* MAX_VGROUP_NAME */
+	short flag, mode;
+
+	/* runtime only */
+	int face_count, pad2;
 } DecimateModifierData;
+
+enum {
+	MOD_DECIM_FLAG_INVERT_VGROUP       = (1 << 0),
+	MOD_DECIM_FLAG_TRIANGULATE         = (1 << 1),  /* for collapse only. dont convert tri pairs back to quads */
+	MOD_DECIM_FLAG_ALL_BOUNDARY_VERTS  = (1 << 2)   /* for dissolve only. collapse all verts between 2 faces */
+};
+
+enum {
+	MOD_DECIM_MODE_COLLAPSE,
+	MOD_DECIM_MODE_UNSUBDIV,
+	MOD_DECIM_MODE_DISSOLVE   /* called planar in the UI */
+};
 
 /* Smooth modifier flags */
 #define MOD_SMOOTH_X (1<<1)
@@ -567,7 +589,7 @@ typedef struct MeshDeformModifierData {
 	/* runtime */
 	void (*bindfunc)(struct Scene *scene,
 		struct MeshDeformModifierData *mmd,
-		float *vertexcos, int totvert, float cagemat[][4]);
+		float *vertexcos, int totvert, float cagemat[4][4]);
 } MeshDeformModifierData;
 
 typedef enum {
@@ -647,7 +669,8 @@ typedef struct ShrinkwrapModifierData {
 	float keepDist;			/* distance offset to keep from mesh/projection point */
 	short shrinkType;		/* shrink type projection */
 	short shrinkOpts;		/* shrink options */
-	char projAxis;			/* axis to project over */
+	float projLimit;		/* limit the projection ray cast */
+	char  projAxis;			/* axis to project over */
 
 	/*
 	 * if using projection over vertex normal this controls the
@@ -656,7 +679,7 @@ typedef struct ShrinkwrapModifierData {
 	 */
 	char subsurfLevels;
 
-	char pad[6];
+	char pad[2];
 
 } ShrinkwrapModifierData;
 
@@ -686,7 +709,7 @@ typedef struct SimpleDeformModifierData {
 	struct Object *origin;	/* object to control the origin of modifier space coordinates */
 	char vgroup_name[64];	/* optional vertexgroup name, MAX_VGROUP_NAME */
 	float factor;			/* factors to control simple deforms */
-	float limit[2];			/* lower and upper limit */		
+	float limit[2];			/* lower and upper limit */
 
 	char mode;				/* deform function */
 	char axis;				/* lock axis (for taper and strech) */
@@ -705,6 +728,8 @@ typedef struct SimpleDeformModifierData {
 
 /* indicates whether simple deform should use the local
  * coordinates or global coordinates of origin */
+/* XXX, this should have never been an option, all other modifiers work relatively
+ * (so moving both objects makes no change!) - Campbell */
 #define MOD_SIMPLEDEFORM_ORIGIN_LOCAL			(1<<0)
 
 #define MOD_UVPROJECT_MAX				10
@@ -720,6 +745,8 @@ typedef struct SolidifyModifierData {
 	float offset;			/* new surface offset level*/
 	float offset_fac;		/* midpoint of the offset  */
 	float offset_fac_vg;	/* factor for the minimum weight to use when vgroups are used, avoids 0.0 weights giving duplicate geometry */
+	float offset_clamp;		/* clamp offset based on surrounding geometry */
+	float pad;
 	float crease_inner;
 	float crease_outer;
 	float crease_rim;
@@ -1093,4 +1120,106 @@ enum {
 	MOD_SKIN_SMOOTH_SHADING = 1
 };
 
-#endif
+/* Triangulate modifier */
+
+typedef struct TriangulateModifierData {
+	ModifierData modifier;
+	int flag;
+	int pad;
+} TriangulateModifierData;
+
+enum {
+	MOD_TRIANGULATE_BEAUTY = (1 << 0),
+};
+
+/* Smooth modifier flags */
+#define MOD_LAPLACIANSMOOTH_X (1<<1)
+#define MOD_LAPLACIANSMOOTH_Y (1<<2)
+#define MOD_LAPLACIANSMOOTH_Z (1<<3)
+#define MOD_LAPLACIANSMOOTH_PRESERVE_VOLUME (1 << 4)
+#define MOD_LAPLACIANSMOOTH_NORMALIZED (1 << 5)
+
+typedef struct LaplacianSmoothModifierData {
+	ModifierData modifier;
+	float lambda, lambda_border, pad1;
+	char defgrp_name[64]; /* MAX_VGROUP_NAME */
+	short flag, repeat;
+} LaplacianSmoothModifierData;
+
+typedef struct UVWarpModifierData {
+	ModifierData modifier;
+
+	char axis_u, axis_v;
+	char pad[6];
+	float center[2];       /* used for rotate/scale */
+
+	struct Object *object_src;  /* source */
+	char bone_src[64];     /* optional name of bone target, MAX_ID_NAME-2 */
+	struct Object *object_dst;  /* target */
+	char bone_dst[64];     /* optional name of bone target, MAX_ID_NAME-2 */
+
+	char vgroup_name[64];   /* optional vertexgroup name, MAX_VGROUP_NAME */
+	char uvlayer_name[64];  /* MAX_CUSTOMDATA_LAYER_NAME */
+} UVWarpModifierData;
+
+/* cache modifier */
+typedef struct MeshCacheModifierData {
+	ModifierData modifier;
+	char flag;
+	char type;  /* file format */
+	char time_mode;
+	char play_mode;
+
+	/* axis conversion */
+	char forward_axis;
+	char up_axis;
+	char flip_axis;
+
+	char interp;
+
+	float factor;
+	char deform_mode;
+	char pad[7];
+
+	/* play_mode == MOD_MESHCACHE_PLAY_CFEA */
+	float frame_start;
+	float frame_scale;
+
+	/* play_mode == MOD_MESHCACHE_PLAY_EVAL */
+	/* we could use one float for all these but their purpose is very different */
+	float eval_frame;
+	float eval_time;
+	float eval_factor;
+
+	char filepath[1024];	// FILE_MAX
+} MeshCacheModifierData;
+
+enum {
+	MOD_MESHCACHE_TYPE_MDD  = 1,
+	MOD_MESHCACHE_TYPE_PC2  = 2
+};
+
+enum {
+	MOD_MESHCACHE_DEFORM_OVERWRITE  = 0,
+	MOD_MESHCACHE_DEFORM_INTEGRATE  = 1
+};
+
+enum {
+	MOD_MESHCACHE_INTERP_NONE  = 0,
+	MOD_MESHCACHE_INTERP_LINEAR = 1,
+	// MOD_MESHCACHE_INTERP_CARDINAL  = 2
+};
+
+enum {
+	MOD_MESHCACHE_TIME_FRAME = 0,
+	MOD_MESHCACHE_TIME_SECONDS = 1,
+	MOD_MESHCACHE_TIME_FACTOR = 2,
+};
+
+enum {
+	MOD_MESHCACHE_PLAY_CFEA = 0,
+	MOD_MESHCACHE_PLAY_EVAL = 1,
+};
+
+
+#endif  /* __DNA_MODIFIER_TYPES_H__ */

@@ -1,24 +1,28 @@
 /*
------------------------------------------------------------------------------
-This source file is part of VideoTexture library
-
-Copyright (c) 2007 The Zdeno Ash Miklas
-
-This program is free software; you can redistribute it and/or modify it under
-the terms of the GNU Lesser General Public License as published by the Free Software
-Foundation; either version 2 of the License, or (at your option) any later
-version.
-
-This program is distributed in the hope that it will be useful, but WITHOUT
-ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS
-FOR A PARTICULAR PURPOSE. See the GNU Lesser General Public License for more details.
-
-You should have received a copy of the GNU Lesser General Public License along with
-this program; if not, write to the Free Software Foundation, Inc., 59 Temple
-Place - Suite 330, Boston, MA 02111-1307, USA, or go to
-http://www.gnu.org/copyleft/lesser.txt.
------------------------------------------------------------------------------
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Copyright (c) 2007 The Zdeno Ash Miklas
+ *
+ * This source file is part of VideoTexture library
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file gameengine/VideoTexture/VideoBase.cpp
  *  \ingroup bgevideotex
@@ -48,7 +52,7 @@ void VideoBase::init(short width, short height)
 
 
 // process video frame
-void VideoBase::process (BYTE * sample)
+void VideoBase::process (BYTE *sample)
 {
 	// if scale was changed
 	if (m_scaleChange)
@@ -98,11 +102,11 @@ void VideoBase::process (BYTE * sample)
 
 // exceptions for video source initialization
 ExceptionID SourceVideoEmpty, SourceVideoCreation;
-ExpDesc SourceVideoEmptyDesc (SourceVideoEmpty, "Source Video is empty");
-ExpDesc SourceVideoCreationDesc (SourceVideoCreation, "SourceVideo object was not created");
+ExpDesc SourceVideoEmptyDesc(SourceVideoEmpty, "Source Video is empty");
+ExpDesc SourceVideoCreationDesc(SourceVideoCreation, "SourceVideo object was not created");
 
 // open video source
-void Video_open (VideoBase * self, char * file, short captureID)
+void Video_open(VideoBase *self, char *file, short captureID)
 {
 	// if file is empty, throw exception
 	if (file == NULL) THRWEXCP(SourceVideoEmpty, S_OK);
@@ -116,24 +120,24 @@ void Video_open (VideoBase * self, char * file, short captureID)
 
 
 // play video
-PyObject * Video_play (PyImage * self)
+PyObject *Video_play(PyImage *self)
 { if (getVideo(self)->play()) Py_RETURN_TRUE; else Py_RETURN_FALSE; }
 
 // pause video
-PyObject * Video_pause (PyImage * self)
+PyObject *Video_pause(PyImage *self)
 { if (getVideo(self)->pause()) Py_RETURN_TRUE; else Py_RETURN_FALSE; }
 
-PyObject * Video_stop (PyImage * self)
+PyObject *Video_stop(PyImage *self)
 { if (getVideo(self)->stop()) Py_RETURN_TRUE; else Py_RETURN_FALSE; }
 
 // get status
-PyObject * Video_getStatus (PyImage * self, void * closure)
+PyObject *Video_getStatus(PyImage *self, void *closure)
 {
 	return Py_BuildValue("h", getVideo(self)->getStatus());
 }
 
 // refresh video
-PyObject * Video_refresh (PyImage * self)
+PyObject *Video_refresh(PyImage *self)
 {
 	getVideo(self)->refresh();
 	return Video_getStatus(self, NULL);
@@ -141,19 +145,20 @@ PyObject * Video_refresh (PyImage * self)
 
 
 // get range
-PyObject * Video_getRange (PyImage * self, void * closure)
+PyObject *Video_getRange(PyImage *self, void *closure)
 {
 	return Py_BuildValue("[ff]", getVideo(self)->getRange()[0],
 		getVideo(self)->getRange()[1]);
 }
 
 // set range
-int Video_setRange (PyImage * self, PyObject * value, void * closure)
+int Video_setRange(PyImage *self, PyObject *value, void *closure)
 {
 	// check validity of parameter
-	if (value == NULL || !PySequence_Check(value) || PySequence_Size(value) != 2
-		|| !PyFloat_Check(PySequence_Fast_GET_ITEM(value, 0))
-		|| !PyFloat_Check(PySequence_Fast_GET_ITEM(value, 1)))
+	if (value == NULL || !PySequence_Check(value) || PySequence_Size(value) != 2 ||
+	    /* XXX - this is incorrect if the sequence is not a list/tuple! */
+	    !PyFloat_Check(PySequence_Fast_GET_ITEM(value, 0)) ||
+	    !PyFloat_Check(PySequence_Fast_GET_ITEM(value, 1)))
 	{
 		PyErr_SetString(PyExc_TypeError, "The value must be a sequence of 2 float");
 		return -1;
@@ -166,11 +171,11 @@ int Video_setRange (PyImage * self, PyObject * value, void * closure)
 }
 
 // get repeat
-PyObject * Video_getRepeat (PyImage * self, void * closure)
+PyObject *Video_getRepeat (PyImage *self, void *closure)
 { return Py_BuildValue("h", getVideo(self)->getRepeat()); }
 
 // set repeat
-int Video_setRepeat (PyImage * self, PyObject * value, void * closure)
+int Video_setRepeat(PyImage *self, PyObject *value, void *closure)
 {
 	// check validity of parameter
 	if (value == NULL || !PyLong_Check(value))
@@ -179,17 +184,17 @@ int Video_setRepeat (PyImage * self, PyObject * value, void * closure)
 		return -1;
 	}
 	// set repeat
-	getVideo(self)->setRepeat(int(PyLong_AsSsize_t(value)));
+	getVideo(self)->setRepeat(int(PyLong_AsLong(value)));
 	// success
 	return 0;
 }
 
 // get frame rate
-PyObject * Video_getFrameRate (PyImage * self, void * closure)
+PyObject *Video_getFrameRate (PyImage *self, void *closure)
 { return Py_BuildValue("f", double(getVideo(self)->getFrameRate())); }
 
 // set frame rate
-int Video_setFrameRate (PyImage * self, PyObject * value, void * closure)
+int Video_setFrameRate(PyImage *self, PyObject *value, void *closure)
 {
 	// check validity of parameter
 	if (value == NULL || !PyFloat_Check(value))

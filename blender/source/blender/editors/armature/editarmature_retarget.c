@@ -25,12 +25,6 @@
  *  \ingroup edarmature
  */
 
-#include <ctype.h>
-#include <stdlib.h>
-#include <string.h>
-#include <math.h> 
-#include <float.h>
-
 #include "MEM_guardedalloc.h"
 
 #include "PIL_time.h"
@@ -42,22 +36,16 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_utildefines.h"
-#include "BLI_ghash.h"
-#include "BLI_graph.h"
-#include "BLI_rand.h"
-#include "BLI_threads.h"
 
 #include "BKE_constraint.h"
 #include "BKE_armature.h"
 #include "BKE_context.h"
+#include "BKE_scene.h"
 
 #include "ED_armature.h"
 #include "ED_util.h"
 
 #include "BIF_retarget.h"
-
-#include "reeb.h" /* FIX ME */
 
 #include "armature_intern.h"
 
@@ -191,7 +179,7 @@ static float rollBoneByQuatJoint(RigEdge *edge, RigEdge *previous, float qrot[4]
 		
 		if (previous->bone) {
 			sub_v3_v3v3(vec_first, previous->bone->tail, previous->bone->head);
-		} 
+		}
 		else if (previous->prev->bone) {
 			sub_v3_v3v3(vec_first, edge->bone->head, previous->prev->bone->tail);
 		}
@@ -296,14 +284,8 @@ static RigGraph *newRigGraph(void)
 	rg->free_node = NULL;
 	
 #ifdef USE_THREADS
-//	if (G.scene->r.mode & R_FIXED_THREADS)
-//	{
-//		totthread = G.scene->r.threads;
-//	}
-//	else
-//	{
+	//totthread = BKE_scene_num_threads(G.scene);
 	totthread = BLI_system_thread_count();
-//	}
 	
 	rg->worker = BLI_create_worker(exec_retargetArctoArc, totthread, 20); /* fix number of threads */
 #endif
@@ -422,11 +404,11 @@ static void renameTemplateBone(char *name, char *template_name, ListBase *editbo
 	for (i = 0, j = 0; i < (MAXBONENAME - 1) && j < (MAXBONENAME - 1) && template_name[i] != '\0'; i++) {
 		if (template_name[i] == '&') {
 			if (template_name[i + 1] == 'S' || template_name[i + 1] == 's') {
-				j += sprintf(name + j, "%s", side_string);
+				j += BLI_strncpy_rlen(name + j, side_string, MAXBONENAME);
 				i++;
 			}
 			else if (template_name[i + 1] == 'N' || template_name[i + 1] == 'n') {
-				j += sprintf(name + j, "%s", num_string);
+				j += BLI_strncpy_rlen(name + j, num_string, MAXBONENAME);
 				i++;
 			}
 			else {
@@ -653,7 +635,7 @@ static int RIG_parentControl(RigControl *ctrl, EditBone *link)
 		
 		sub_v3_v3v3(offset, ctrl->bone->head, link->head);
 
-		/* if root matches, check for direction too */		
+		/* if root matches, check for direction too */
 		if (dot_v3v3(offset, offset) < 0.0001f) {
 			float vbone[3], vparent[3];
 			
@@ -725,7 +707,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 		/* DO SOME MAGIC HERE */
 		for (pchan = rg->ob->pose->chanbase.first; pchan; pchan = pchan->next) {
 			for (con = pchan->constraints.first; con; con = con->next) {
-				bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+				bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 				ListBase targets = {NULL, NULL};
 				bConstraintTarget *ct;
 				
@@ -802,7 +784,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 			}
 		}
 		
-		/* if not found yet, check child */		
+		/* if not found yet, check child */
 		if (found == 0) {
 			RigArc *arc;
 			RigArc *best_arc = NULL;
@@ -850,7 +832,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 				/* DO SOME MAGIC HERE */
 				for (pchan = rg->ob->pose->chanbase.first; pchan; pchan = pchan->next) {
 					for (con = pchan->constraints.first; con; con = con->next) {
-						bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+						bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 						ListBase targets = {NULL, NULL};
 						bConstraintTarget *ct;
 						
@@ -863,7 +845,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 									/* SET bone link to ctrl corresponding to pchan */
 									RigControl *link = BLI_ghash_lookup(rg->controls_map, pchan->name);
 
-									/* if owner is a control bone, link with it */									
+									/* if owner is a control bone, link with it */
 									if (link && link->link) {
 										RIG_parentControl(ctrl, link->bone);
 										found = 1;
@@ -876,7 +858,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 								cti->flush_constraint_targets(con, &targets, 0);
 						}
 					}
-				}			
+				}
 
 				if (found == 0) {
 					/* check if parent is already linked */
@@ -909,7 +891,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 			/* look on deform bones first */
 			BLI_ghashIterator_init(&ghi, rg->bones_map);
 			
-			for (; !BLI_ghashIterator_isDone(&ghi); BLI_ghashIterator_step(&ghi)) {
+			for (; !BLI_ghashIterator_done(&ghi); BLI_ghashIterator_step(&ghi)) {
 				EditBone *bone = (EditBone *)BLI_ghashIterator_getValue(&ghi);
 				
 				/* don't link with parent */
@@ -1319,12 +1301,12 @@ void RIG_printArc(RigGraph *rg, RigArc *arc)
 	for (edge = arc->edges.first; edge; edge = edge->next) {
 		printf("\tinner joints %0.3f %0.3f %0.3f\n", edge->tail[0], edge->tail[1], edge->tail[2]);
 		printf("\t\tlength %f\n", edge->length);
-		printf("\t\tangle %f\n", edge->angle * 180 / M_PI);
+		printf("\t\tangle %f\n", edge->angle * (float)(180 / M_PI));
 		if (edge->bone) {
 			printf("\t\t%s\n", edge->bone->name);
 			RIG_printLinkedCtrl(rg, edge->bone, 3);
 		}
-	}	
+	}
 	printf("symmetry level: %i flag: %i group %i\n", arc->symmetry_level, arc->symmetry_flag, arc->symmetry_group);
 
 	RIG_printNode((RigNode *)arc->tail, "tail");
@@ -1336,7 +1318,7 @@ void RIG_printGraph(RigGraph *rg)
 
 	printf("---- ARCS ----\n");
 	for (arc = rg->arcs.first; arc; arc = arc->next) {
-		RIG_printArc(rg, arc);	
+		RIG_printArc(rg, arc);
 		printf("\n");
 	}
 
@@ -1345,7 +1327,7 @@ void RIG_printGraph(RigGraph *rg)
 	}
 	else {
 		printf("HEAD NODE: NONE\n");
-	}	
+	}
 }
 
 /*******************************************************************************************************/
@@ -1584,7 +1566,7 @@ static void finalizeControl(RigGraph *rigg, RigControl *ctrl, float resize)
 				repositionTailControl(rigg, ctrl_child);
 			}
 		}
-	}	
+	}
 }
 
 static void repositionTailControl(RigGraph *rigg, RigControl *ctrl)
@@ -1830,7 +1812,9 @@ static float calcCostLengthDistance(BArcIterator *iter, float **vec_cache, RigEd
 }
 #endif
 
-static float calcCostAngleLengthDistance(BArcIterator *iter, float **UNUSED(vec_cache), RigEdge *edge, float *vec0, float *vec1, float *vec2, int i1, int i2, float angle_weight, float length_weight, float distance_weight)
+static float calcCostAngleLengthDistance(BArcIterator *iter, float **UNUSED(vec_cache), RigEdge *edge,
+                                         float *vec0, float *vec1, float *vec2, int i1, int i2,
+                                         float angle_weight, float length_weight, float distance_weight)
 {
 	float vec_second[3], vec_first[3];
 	float length2;
@@ -1840,7 +1824,7 @@ static float calcCostAngleLengthDistance(BArcIterator *iter, float **UNUSED(vec_
 	length2 = normalize_v3(vec_second);
 
 
-	/* Angle cost */	
+	/* Angle cost */
 	if (edge->prev) {
 		sub_v3_v3v3(vec_first, vec1, vec0); 
 		normalize_v3(vec_first);
@@ -1878,7 +1862,9 @@ static void copyMemoPositions(int *positions, MemoNode *table, int nb_positions,
 	}
 }
 
-static MemoNode *solveJoints(MemoNode *table, BArcIterator *iter, float **vec_cache, int nb_joints, int nb_positions, int previous, int current, RigEdge *edge, int joints_left, float angle_weight, float length_weight, float distance_weight)
+static MemoNode *solveJoints(MemoNode *table, BArcIterator *iter, float **vec_cache,
+                             int nb_joints, int nb_positions, int previous, int current, RigEdge *edge,
+                             int joints_left, float angle_weight, float length_weight, float distance_weight)
 {
 	MemoNode *node;
 	int index = indexMemoNode(nb_positions, previous, current, joints_left);
@@ -1962,7 +1948,6 @@ static void retargetArctoArcAggresive(bContext *C, RigGraph *rigg, RigArc *iarc,
 	ReebArcIterator arc_iter;
 	BArcIterator *iter = (BArcIterator *)&arc_iter;
 	RigEdge *edge;
-	EmbedBucket *bucket = NULL;
 	ReebNode *node_start, *node_end;
 	ReebArc *earc = iarc->link_mesh;
 	float angle_weight = 1.0; // GET FROM CONTEXT
@@ -1996,8 +1981,6 @@ static void retargetArctoArcAggresive(bContext *C, RigGraph *rigg, RigArc *iarc,
 
 	/* equal number of joints and potential position, just fill them in */
 	if (nb_joints == earc->bcount) {
-		int i;
-		
 		/* init with first values */
 		for (i = 0; i < nb_joints; i++) {
 			best_positions[i] = i + 1;
@@ -2011,7 +1994,6 @@ static void retargetArctoArcAggresive(bContext *C, RigGraph *rigg, RigArc *iarc,
 		MemoNode *result;
 #endif
 		float **positions_cache = MEM_callocN(sizeof(float *) * (nb_positions + 2), "positions cache");
-		int i;
 		
 		positions_cache[0] = node_start->p;
 		positions_cache[nb_positions + 1] = node_end->p;
@@ -2053,7 +2035,7 @@ static void retargetArctoArcAggresive(bContext *C, RigGraph *rigg, RigArc *iarc,
 	{
 		float *no = NULL;
 		if (i < nb_joints) {
-			bucket = IT_peek(iter, best_positions[i]);
+			EmbedBucket *bucket = IT_peek(iter, best_positions[i]);
 			vec1 = bucket->p;
 			no = bucket->no;
 		}
@@ -2139,7 +2121,7 @@ static void retargetArctoArcLength(bContext *C, RigGraph *rigg, RigArc *iarc, Ri
 			no = node_end->no;
 		}
 
-		/* no need to move virtual edges (space between unconnected bones) */		
+		/* no need to move virtual edges (space between unconnected bones) */
 		if (edge->bone) {
 			repositionBone(C, rigg, edge, vec0, vec1, no);
 		}
@@ -2177,7 +2159,7 @@ void *exec_retargetArctoArc(void *param)
 	RetargetParam *p = (RetargetParam *)param;
 	RigGraph *rigg = p->rigg;
 	RigArc *iarc = p->iarc;
-	bContext *C = p->context;	
+	bContext *C = p->context;
 	RigNode *inode_start = p->inode_start;
 	ReebArc *earc = iarc->link_mesh;
 	
@@ -2226,7 +2208,7 @@ static void matchMultiResolutionNode(RigGraph *rigg, RigNode *inode, ReebNode *t
 		enode = enode->link_down;
 		reebg = BIF_graphForMultiNode(rigg->link_mesh, enode); /* replace with call to link_down once that exists */
 		eshape = BLI_subtreeShape((BGraph *)reebg, (BNode *)enode, NULL, 0) % SHAPE_LEVELS;
-	} 
+	}
 }
 
 static void markMultiResolutionChildArc(ReebNode *end_enode, ReebNode *enode)
@@ -2277,7 +2259,7 @@ static void matchMultiResolutionArc(RigGraph *rigg, RigNode *start_node, RigArc 
 		reebg = reebg->link_up;
 		enode = next_earc->head;
 		eshape = BLI_subtreeShape((BGraph *)reebg, (BNode *)enode, (BArc *)next_earc, 1) % SHAPE_LEVELS;
-	} 
+	}
 
 	next_earc->flag = ARC_USED;
 	next_iarc->link_mesh = next_earc;
@@ -2307,7 +2289,7 @@ static void matchMultiResolutionStartingNode(RigGraph *rigg, ReebGraph *reebg, R
 		enode = reebg->nodes.first;
 		
 		eshape = BLI_subtreeShape((BGraph *)reebg, (BNode *)enode, NULL, 0) % SHAPE_LEVELS;
-	} 
+	}
 
 	inode->link_mesh = enode;
 }
@@ -2604,7 +2586,7 @@ void BIF_retargetArmature(bContext *C)
 	
 	ED_undo_push(C, "Retarget Skeleton");
 
-	// XXX	
+	// XXX
 //	allqueue(REDRAWVIEW3D, 0);
 }
 

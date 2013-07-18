@@ -35,16 +35,10 @@
 #include "BLI_listbase.h"
 
 /**
-  * Class with implementation of green screen gradient rasterization
-  */
+ * Class with implementation of green screen gradient rasterization
+ */
 class TrackPositionOperation : public NodeOperation {
 protected:
-	enum {
-		POSITION_ABSOLUTE = 0,
-		POSITION_RELATIVE_START,
-		POSITION_RELATIVE_FRAME
-	};
-
 	MovieClip *m_movieClip;
 	int m_framenumber;
 	char m_trackingObjectName[64];
@@ -58,8 +52,8 @@ protected:
 	float m_relativePos[2];
 
 	/**
-	  * Determine the output resolution. The resolution is retrieved from the Renderer
-	  */
+	 * Determine the output resolution. The resolution is retrieved from the Renderer
+	 */
 	void determineResolution(unsigned int resolution[2], unsigned int preferredResolution[2]);
 
 public:

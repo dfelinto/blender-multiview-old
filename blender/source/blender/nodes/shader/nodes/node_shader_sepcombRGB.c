@@ -33,79 +33,77 @@
 #include "node_shader_util.h"
 
 /* **************** SEPARATE RGBA ******************** */
-static bNodeSocketTemplate sh_node_seprgb_in[]= {
+static bNodeSocketTemplate sh_node_seprgb_in[] = {
 	{	SOCK_RGBA, 1, N_("Image"),			0.8f, 0.8f, 0.8f, 1.0f},
 	{	-1, 0, ""	}
 };
-static bNodeSocketTemplate sh_node_seprgb_out[]= {
+static bNodeSocketTemplate sh_node_seprgb_out[] = {
 	{	SOCK_FLOAT, 0, N_("R")},
 	{	SOCK_FLOAT, 0, N_("G")},
 	{	SOCK_FLOAT, 0, N_("B")},
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_seprgb(void *UNUSED(data), bNode *UNUSED(node), bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_seprgb(void *UNUSED(data), int UNUSED(thread), bNode *UNUSED(node), bNodeExecData *UNUSED(execdata), bNodeStack **in, bNodeStack **out)
 {
 	out[0]->vec[0] = in[0]->vec[0];
 	out[1]->vec[0] = in[0]->vec[1];
 	out[2]->vec[0] = in[0]->vec[2];
 }
 
-static int gpu_shader_seprgb(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_seprgb(GPUMaterial *mat, bNode *UNUSED(node), bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
 	return GPU_stack_link(mat, "separate_rgb", in, out);
 }
 
-void register_node_type_sh_seprgb(bNodeTreeType *ttype)
+void register_node_type_sh_seprgb(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_SEPRGB, "Separate RGB", NODE_CLASS_CONVERTOR, 0);
-	node_type_compatibility(&ntype, NODE_OLD_SHADING|NODE_NEW_SHADING);
+	sh_node_type_base(&ntype, SH_NODE_SEPRGB, "Separate RGB", NODE_CLASS_CONVERTOR, 0);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING | NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_seprgb_in, sh_node_seprgb_out);
-	node_type_size(&ntype, 80, 40, 140);
-	node_type_exec(&ntype, node_shader_exec_seprgb);
+	node_type_exec(&ntype, NULL, NULL, node_shader_exec_seprgb);
 	node_type_gpu(&ntype, gpu_shader_seprgb);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }
 
 
 
 /* **************** COMBINE RGB ******************** */
-static bNodeSocketTemplate sh_node_combrgb_in[]= {
+static bNodeSocketTemplate sh_node_combrgb_in[] = {
 	{	SOCK_FLOAT, 1, N_("R"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_UNSIGNED},
 	{	SOCK_FLOAT, 1, N_("G"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_UNSIGNED},
 	{	SOCK_FLOAT, 1, N_("B"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_UNSIGNED},
 	{	-1, 0, ""	}
 };
-static bNodeSocketTemplate sh_node_combrgb_out[]= {
+static bNodeSocketTemplate sh_node_combrgb_out[] = {
 	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
-static void node_shader_exec_combrgb(void *UNUSED(data), bNode *UNUSED(node), bNodeStack **in, bNodeStack **out)
+static void node_shader_exec_combrgb(void *UNUSED(data), int UNUSED(thread), bNode *UNUSED(node), bNodeExecData *UNUSED(execdata), bNodeStack **in, bNodeStack **out)
 {
 	out[0]->vec[0] = in[0]->vec[0];
 	out[0]->vec[1] = in[1]->vec[0];
 	out[0]->vec[2] = in[2]->vec[0];
 }
 
-static int gpu_shader_combrgb(GPUMaterial *mat, bNode *UNUSED(node), GPUNodeStack *in, GPUNodeStack *out)
+static int gpu_shader_combrgb(GPUMaterial *mat, bNode *UNUSED(node), bNodeExecData *UNUSED(execdata), GPUNodeStack *in, GPUNodeStack *out)
 {
 	return GPU_stack_link(mat, "combine_rgb", in, out);
 }
 
-void register_node_type_sh_combrgb(bNodeTreeType *ttype)
+void register_node_type_sh_combrgb(void)
 {
 	static bNodeType ntype;
 
-	node_type_base(ttype, &ntype, SH_NODE_COMBRGB, "Combine RGB", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
-	node_type_compatibility(&ntype, NODE_OLD_SHADING|NODE_NEW_SHADING);
+	sh_node_type_base(&ntype, SH_NODE_COMBRGB, "Combine RGB", NODE_CLASS_CONVERTOR, 0);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING | NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_combrgb_in, sh_node_combrgb_out);
-	node_type_size(&ntype, 80, 40, 140);
-	node_type_exec(&ntype, node_shader_exec_combrgb);
+	node_type_exec(&ntype, NULL, NULL, node_shader_exec_combrgb);
 	node_type_gpu(&ntype, gpu_shader_combrgb);
 
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

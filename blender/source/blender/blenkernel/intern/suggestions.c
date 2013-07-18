@@ -47,6 +47,7 @@ static SuggList suggestions = {NULL, NULL, NULL, NULL, NULL};
 static char *documentation = NULL;
 //static int doc_lines = 0;
 
+/* TODO, replace with  BLI_strncasecmp() */
 static int txttl_cmp(const char *first, const char *second, int len)
 {
 	int cmp, i;
@@ -113,19 +114,18 @@ short texttool_text_is_active(Text *text)
 
 void texttool_suggest_add(const char *name, char type)
 {
+	const int len = strlen(name);
+	int cmp;
 	SuggItem *newitem, *item;
-	int len, cmp;
 
-	newitem = MEM_mallocN(sizeof(SuggItem) + strlen(name) + 1, "SuggestionItem");
+	newitem = MEM_mallocN(sizeof(SuggItem) + len + 1, "SuggItem");
 	if (!newitem) {
 		printf("Failed to allocate memory for suggestion.\n");
 		return;
 	}
 
 	newitem->name = (char *) (newitem + 1);
-	len = strlen(name);
-	strncpy(newitem->name, name, len);
-	newitem->name[len] = '\0';
+	memcpy(newitem->name, name, len + 1);
 	newitem->type = type;
 	newitem->prev = newitem->next = NULL;
 
@@ -163,13 +163,13 @@ void texttool_suggest_add(const char *name, char type)
 	suggestions.top = 0;
 }
 
-void texttool_suggest_prefix(const char *prefix)
+void texttool_suggest_prefix(const char *prefix, const int prefix_len)
 {
 	SuggItem *match, *first, *last;
-	int cmp, len = strlen(prefix), top = 0;
+	int cmp, top = 0;
 
 	if (!suggestions.first) return;
-	if (len == 0) {
+	if (prefix_len == 0) {
 		suggestions.selected = suggestions.firstmatch = suggestions.first;
 		suggestions.lastmatch = suggestions.last;
 		return;
@@ -177,7 +177,7 @@ void texttool_suggest_prefix(const char *prefix)
 	
 	first = last = NULL;
 	for (match = suggestions.first; match; match = match->next) {
-		cmp = txttl_cmp(prefix, match->name, len);
+		cmp = txttl_cmp(prefix, match->name, prefix_len);
 		if (cmp == 0) {
 			if (!first) {
 				first = match;

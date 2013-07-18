@@ -114,6 +114,7 @@ PFNCLGETEXTENSIONFUNCTIONADDRESS    __clewGetExtensionFunctionAddress   = NULL;
 #endif  //  CLCC_GENERATE_DOCUMENTATION
 
 
+#if 0
 //! \brief Unloads OpenCL dynamic library, should not be called directly
 static void clewExit(void)
 {
@@ -124,6 +125,7 @@ static void clewExit(void)
 		module = NULL;
 	}
 }
+#endif
 
 //! \param path path to dynamic library to load
 //! \return CLEW_ERROR_OPEN_FAILED if the library could not be opened
@@ -138,7 +140,10 @@ int clLibraryInit()
 #else
 	const char *path = "libOpenCL.so";
 #endif
-	int error = 0;
+
+	// OpenCL disabled for now, only works with this environment variable set
+	if(!getenv("CYCLES_OPENCL_TEST"))
+		return 0;
 
 	//  Check if already initialized
 	if (module != NULL)
@@ -155,8 +160,11 @@ int clLibraryInit()
 		return 0;
 	}
 
+	// Disabled because we retain OpenCL context and it's difficult to ensure
+	// this will exit after releasing the context
+#if 0
 	//  Set unloading
-	error = atexit(clewExit);
+	int error = atexit(clewExit);
 
 	if (error)
 	{
@@ -166,6 +174,7 @@ int clLibraryInit()
 
 		return 0;
 	}
+#endif
 
 	//  Determine function entry-points
 	__clewGetPlatformIDs                = (PFNCLGETPLATFORMIDS              )CLCC_DYNLIB_IMPORT(module, "clGetPlatformIDs");
@@ -235,8 +244,10 @@ int clLibraryInit()
 	__clewEnqueueBarrier                = (PFNCLENQUEUEBARRIER              )CLCC_DYNLIB_IMPORT(module, "clEnqueueBarrier");
 	__clewGetExtensionFunctionAddress   = (PFNCLGETEXTENSIONFUNCTIONADDRESS )CLCC_DYNLIB_IMPORT(module, "clGetExtensionFunctionAddress");
 
-	if(__clewGetPlatformIDs == NULL)
-		return 0;
+	if(__clewGetPlatformIDs == NULL) return 0;
+	if(__clewGetPlatformInfo == NULL) return 0;
+	if(__clewGetDeviceIDs == NULL) return 0;
+	if(__clewGetDeviceInfo == NULL) return 0;
 
 	return 1;
 }

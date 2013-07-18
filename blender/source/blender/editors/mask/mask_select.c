@@ -34,6 +34,7 @@
 #include "BLI_utildefines.h"
 #include "BLI_rect.h"
 #include "BLI_lasso.h"
+#include "BLI_math.h"
 
 #include "BKE_context.h"
 #include "BKE_mask.h"
@@ -148,7 +149,7 @@ void ED_mask_select_toggle_all(Mask *mask, int action)
 		}
 
 		if (action == SEL_INVERT) {
-			/* we don't have generic functons for this, its restricted to this operator
+			/* we don't have generic functions for this, its restricted to this operator
 			 * if one day we need to re-use such functionality, they can be split out */
 
 			MaskSpline *spline;
@@ -251,9 +252,9 @@ static int select_exec(bContext *C, wmOperator *op)
 	MaskSpline *spline;
 	MaskSplinePoint *point = NULL;
 	float co[2];
-	short extend = RNA_boolean_get(op->ptr, "extend");
-	short deselect = RNA_boolean_get(op->ptr, "deselect");
-	short toggle = RNA_boolean_get(op->ptr, "toggle");
+	bool extend = RNA_boolean_get(op->ptr, "extend");
+	bool deselect = RNA_boolean_get(op->ptr, "deselect");
+	bool toggle = RNA_boolean_get(op->ptr, "toggle");
 
 	int is_handle = 0;
 	const float threshold = 19;
@@ -262,7 +263,7 @@ static int select_exec(bContext *C, wmOperator *op)
 
 	point = ED_mask_point_find_nearest(C, mask, co, threshold, &masklay, &spline, &is_handle, NULL);
 
-	if (extend == 0 && deselect == 0 && toggle == 0)
+	if (extend == false && deselect == false && toggle == false)
 		ED_mask_select_toggle_all(mask, SEL_DESELECT);
 
 	if (point) {
@@ -360,7 +361,7 @@ static int select_exec(bContext *C, wmOperator *op)
 	return OPERATOR_PASS_THROUGH;
 }
 
-static int select_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int select_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ScrArea *sa = CTX_wm_area(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -440,7 +441,7 @@ static int border_select_exec(bContext *C, wmOperator *op)
 				/* TODO: handles? */
 				/* TODO: uw? */
 
-				if (BLI_in_rctf_v(&rectf, point_deform->bezt.vec[1])) {
+				if (BLI_rctf_isect_pt_v(&rectf, point_deform->bezt.vec[1])) {
 					BKE_mask_point_select_set(point, mode == GESTURE_MODAL_SELECT);
 					BKE_mask_point_select_set_handle(point, mode == GESTURE_MODAL_SELECT);
 				}
@@ -485,7 +486,7 @@ void MASK_OT_select_border(wmOperatorType *ot)
 	WM_operator_properties_gesture_border(ot, TRUE);
 }
 
-static int do_lasso_select_mask(bContext *C, int mcords[][2], short moves, short select)
+static int do_lasso_select_mask(bContext *C, const int mcords[][2], short moves, short select)
 {
 	ScrArea *sa = CTX_wm_area(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -525,7 +526,7 @@ static int do_lasso_select_mask(bContext *C, int mcords[][2], short moves, short
 				                           point_deform->bezt.vec[1][0], point_deform->bezt.vec[1][1],
 				                           &screen_co[0], &screen_co[1]);
 
-				if (BLI_in_rcti(&rect, screen_co[0], screen_co[1]) &&
+				if (BLI_rcti_isect_pt(&rect, screen_co[0], screen_co[1]) &&
 				    BLI_lasso_is_point_inside(mcords, moves, screen_co[0], screen_co[1], INT_MAX))
 				{
 					BKE_mask_point_select_set(point, select);
@@ -549,7 +550,7 @@ static int do_lasso_select_mask(bContext *C, int mcords[][2], short moves, short
 static int clip_lasso_select_exec(bContext *C, wmOperator *op)
 {
 	int mcords_tot;
-	int (*mcords)[2] = WM_gesture_lasso_path_to_array(C, op, &mcords_tot);
+	const int (*mcords)[2] = WM_gesture_lasso_path_to_array(C, op, &mcords_tot);
 
 	if (mcords) {
 		short select;
@@ -557,7 +558,7 @@ static int clip_lasso_select_exec(bContext *C, wmOperator *op)
 		select = !RNA_boolean_get(op->ptr, "deselect");
 		do_lasso_select_mask(C, mcords, mcords_tot, select);
 
-		MEM_freeN(mcords);
+		MEM_freeN((void *)mcords);
 
 		return OPERATOR_FINISHED;
 	}
@@ -589,7 +590,7 @@ void MASK_OT_select_lasso(wmOperatorType *ot)
 
 /********************** circle select operator *********************/
 
-static int mask_spline_point_inside_ellipse(BezTriple *bezt, float offset[2], float ellipse[2])
+static int mask_spline_point_inside_ellipse(BezTriple *bezt, const float offset[2], const float ellipse[2])
 {
 	/* normalized ellipse: ell[0] = scaleX, ell[1] = scaleY */
 	float x, y;
@@ -622,7 +623,7 @@ static int circle_select_exec(bContext *C, wmOperator *op)
 	/* compute ellipse and position in unified coordinates */
 	ED_mask_get_size(sa, &width, &height);
 	ED_mask_zoom(sa, ar, &zoomx, &zoomy);
-	width = height = MAX2(width, height);
+	width = height = max_ii(width, height);
 
 	ellipse[0] = width * zoomx / radius;
 	ellipse[1] = height * zoomy / radius;
@@ -688,7 +689,7 @@ void MASK_OT_select_circle(wmOperatorType *ot)
 	RNA_def_int(ot->srna, "gesture_mode", 0, INT_MIN, INT_MAX, "Gesture Mode", "", INT_MIN, INT_MAX);
 }
 
-static int mask_select_linked_pick_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int mask_select_linked_pick_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ScrArea *sa = CTX_wm_area(C);
 	ARegion *ar = CTX_wm_region(C);

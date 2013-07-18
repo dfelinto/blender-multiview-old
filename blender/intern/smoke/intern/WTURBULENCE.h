@@ -32,16 +32,19 @@ class SIMPLE_PARSER;
 ///////////////////////////////////////////////////////////////////////////////
 /// Main WTURBULENCE class, stores large density array etc.
 ///////////////////////////////////////////////////////////////////////////////
-class WTURBULENCE  
+struct WTURBULENCE  
 {
 	public:
 		// both config files can be NULL, altCfg might override values from noiseCfg
-		WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int noisetype);
+		WTURBULENCE(int xResSm, int yResSm, int zResSm, int amplify, int noisetype, const char *noisefile_path, int init_fire, int init_colors);
 
 		/// destructor
 		virtual ~WTURBULENCE();
+
+		void initFire();
+		void initColors(float init_r, float init_g, float init_b);
 		
-		void setNoise(int type);
+		void setNoise(int type, const char *noisefile_path);
 		void initBlenderRNA(float *strength);
 
 		// step more readable version -- no rotation correction
@@ -63,6 +66,8 @@ class WTURBULENCE
 
 		// access functions
 		inline float* getDensityBig() { return _densityBig; }
+		inline float* getFlameBig() { return _flameBig; }
+		inline float* getFuelBig() { return _fuelBig; }
 		inline float* getArrayTcU() { return _tcU; }
 		inline float* getArrayTcV() { return _tcV; }
 		inline float* getArrayTcW() { return _tcW; }
@@ -111,6 +116,18 @@ class WTURBULENCE
 
 		float* _densityBig;
 		float* _densityBigOld;
+		float* _flameBig;
+		float* _fuelBig;
+		float* _fuelBigOld;
+		float* _reactBig;
+		float* _reactBigOld;
+
+		float* _color_rBig;
+		float* _color_rBigOld;
+		float* _color_gBig;
+		float* _color_gBigOld;
+		float* _color_bBig;
+		float* _color_bBigOld;
 
 		// texture coordinates for noise
 		float* _tcU;

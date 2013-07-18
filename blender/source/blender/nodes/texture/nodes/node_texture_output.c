@@ -34,14 +34,14 @@
 #include "NOD_texture.h"
 
 /* **************** COMPOSITE ******************** */
-static bNodeSocketTemplate inputs[]= {
+static bNodeSocketTemplate inputs[] = {
 	{ SOCK_RGBA,   1, N_("Color"),  0.0f, 0.0f, 0.0f, 1.0f},
 	{ SOCK_VECTOR, 1, N_("Normal"), 0.0f, 0.0f, 1.0f, 0.0f, 0.0f, 1.0f, PROP_DIRECTION},
-	{ -1, 0, ""	}
+	{ -1, 0, ""}
 };
 
 /* applies to render pipeline */
-static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(out))
+static void exec(void *data, int UNUSED(thread), bNode *node, bNodeExecData *execdata, bNodeStack **in, bNodeStack **UNUSED(out))
 {
 	TexCallData *cdata = (TexCallData *)data;
 	TexResult *target = cdata->target;
@@ -54,7 +54,7 @@ static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(o
 			tex_input_rgba(&target->tr, in[1], &params, cdata->thread);
 		else
 			tex_input_rgba(&target->tr, in[0], &params, cdata->thread);
-		tex_do_preview(node, params.co, &target->tr);
+		tex_do_preview(execdata->preview, params.co, &target->tr);
 	}
 	else {
 		/* 0 means don't care, so just use first */
@@ -65,7 +65,7 @@ static void exec(void *data, bNode *node, bNodeStack **in, bNodeStack **UNUSED(o
 			tex_input_rgba(&target->tr, in[0], &params, cdata->thread);
 		
 			target->tin = (target->tr + target->tg + target->tb) / 3.0f;
-			target->talpha = 1;
+			target->talpha = TRUE;
 		
 			if (target->nor) {
 				if (in[1] && in[1]->hasinput)
@@ -88,10 +88,10 @@ static void unique_name(bNode *node)
 	
 	i = node;
 	while (i->prev) i = i->prev;
-	for ( ; i; i = i->next) {
+	for (; i; i = i->next) {
 		if (i == node ||
 		    i->type != TEX_NODE_OUTPUT ||
-		    strcmp(name, ((TexNodeOutput*)(i->storage))->name))
+		    !STREQ(name, ((TexNodeOutput *)(i->storage))->name))
 		{
 			continue;
 		}
@@ -130,47 +130,47 @@ static void assign_index(struct bNode *node)
 	while (tnode->prev)
 		tnode = tnode->prev;
 	
-	check_index:
-	for (; tnode; tnode= tnode->next)
+check_index:
+	for (; tnode; tnode = tnode->next)
 		if (tnode->type == TEX_NODE_OUTPUT && tnode != node)
 			if (tnode->custom1 == index) {
-				index ++;
+				index++;
 				goto check_index;
 			}
 			
 	node->custom1 = index;
 }
 
-static void init(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
+static void init(bNodeTree *UNUSED(ntree), bNode *node)
 {
 	TexNodeOutput *tno = MEM_callocN(sizeof(TexNodeOutput), "TEX_output");
-	node->storage= tno;
+	node->storage = tno;
 	
 	strcpy(tno->name, "Default");
 	unique_name(node);
 	assign_index(node);
 }
 
-static void copy(bNode *orig, bNode *new)
+static void copy(bNodeTree *dest_ntree, bNode *dest_node, bNode *src_node)
 {
-	node_copy_standard_storage(orig, new);
-	unique_name(new);
-	assign_index(new);
+	node_copy_standard_storage(dest_ntree, dest_node, src_node);
+	unique_name(dest_node);
+	assign_index(dest_node);
 }
 
-void register_node_type_tex_output(bNodeTreeType *ttype)
+void register_node_type_tex_output(void)
 {
 	static bNodeType ntype;
 	
-	node_type_base(ttype, &ntype, TEX_NODE_OUTPUT, "Output", NODE_CLASS_OUTPUT, NODE_PREVIEW|NODE_OPTIONS);
+	tex_node_type_base(&ntype, TEX_NODE_OUTPUT, "Output", NODE_CLASS_OUTPUT, NODE_PREVIEW);
 	node_type_socket_templates(&ntype, inputs, NULL);
-	node_type_size(&ntype, 150, 60, 200);
+	node_type_size_preset(&ntype, NODE_SIZE_MIDDLE);
 	node_type_init(&ntype, init);
 	node_type_storage(&ntype, "TexNodeOutput", node_free_standard_storage, copy);
-	node_type_exec(&ntype, exec);
+	node_type_exec(&ntype, NULL, NULL, exec);
 	
 	/* Do not allow muting output. */
-	node_type_internal_connect(&ntype, NULL);
+	node_type_internal_links(&ntype, NULL);
 	
-	nodeRegisterType(ttype, &ntype);
+	nodeRegisterType(&ntype);
 }

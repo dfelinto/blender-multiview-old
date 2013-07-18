@@ -91,7 +91,7 @@ FCurve *verify_driver_fcurve(ID *id, const char rna_path[], const int array_inde
 	adt = BKE_animdata_from_id(id);
 	if ((adt == NULL) && (add))
 		adt = BKE_id_add_animdata(id);
-	if (adt == NULL) { 
+	if (adt == NULL) {
 		/* if still none (as not allowed to add, or ID doesn't have animdata for some reason) */
 		return NULL;
 	}
@@ -145,9 +145,9 @@ short ANIM_add_driver(ReportList *reports, ID *id, const char rna_path[], int ar
 	
 	/* validate pointer first - exit if failure */
 	RNA_id_pointer_create(id, &id_ptr);
-	if ((RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop) == 0) || (prop == NULL)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
 		BKE_reportf(reports, RPT_ERROR, 
-		            "Could not add Driver, as RNA Path is invalid for the given ID (ID = %s, Path = %s)",
+		            "Could not add driver, as RNA path is invalid for the given ID (ID = %s, path = %s)",
 		            id->name, rna_path);
 		return 0;
 	}
@@ -308,9 +308,9 @@ short ANIM_copy_driver(ReportList *reports, ID *id, const char rna_path[], int a
 	
 	/* validate pointer first - exit if failure */
 	RNA_id_pointer_create(id, &id_ptr);
-	if ((RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop) == 0) || (prop == NULL)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
 		BKE_reportf(reports, RPT_ERROR,
-		            "Could not find Driver to copy, as RNA Path is invalid for the given ID (ID = %s, Path = %s)",
+		            "Could not find driver to copy, as RNA path is invalid for the given ID (ID = %s, path = %s)",
 		            id->name, rna_path);
 		return 0;
 	}
@@ -355,16 +355,16 @@ short ANIM_paste_driver(ReportList *reports, ID *id, const char rna_path[], int 
 	
 	/* validate pointer first - exit if failure */
 	RNA_id_pointer_create(id, &id_ptr);
-	if ((RNA_path_resolve(&id_ptr, rna_path, &ptr, &prop) == 0) || (prop == NULL)) {
+	if (RNA_path_resolve_property(&id_ptr, rna_path, &ptr, &prop) == false) {
 		BKE_reportf(reports, RPT_ERROR,
-		            "Could not paste Driver, as RNA Path is invalid for the given ID (ID = %s, Path = %s)",
+		            "Could not paste driver, as RNA path is invalid for the given ID (ID = %s, path = %s)",
 		            id->name, rna_path);
 		return 0;
 	}
 	
 	/* if the buffer is empty, cannot paste... */
 	if (channeldriver_copypaste_buf == NULL) {
-		BKE_report(reports, RPT_ERROR, "Paste Driver: No Driver to paste");
+		BKE_report(reports, RPT_ERROR, "Paste driver: no driver to paste");
 		return 0;
 	}
 	
@@ -434,11 +434,17 @@ static char *get_driver_path_hack(bContext *C, PointerRNA *ptr, PropertyRNA *pro
 					
 					/* assumes: texture will only be shown if it is active material's active texture it's ok */
 					if ((ID *)tex == id) {
+						char name_esc_ma[(sizeof(ma->id.name) - 2) * 2];
+						char name_esc_tex[(sizeof(tex->id.name) - 2) * 2];
+
+						BLI_strescape(name_esc_ma, ma->id.name + 2, sizeof(name_esc_ma));
+						BLI_strescape(name_esc_tex, tex->id.name + 2, sizeof(name_esc_tex));
+
 						/* create new path */
 						// TODO: use RNA path functions to construct step by step instead?
 						// FIXME: maybe this isn't even needed anymore...
 						path = BLI_sprintfN("material_slots[\"%s\"].material.texture_slots[\"%s\"].texture.%s", 
-						                    ma->id.name + 2, tex->id.name + 2, basepath);
+						                    name_esc_ma, name_esc_tex, basepath);
 							
 						/* free old one */
 						MEM_freeN(basepath);
@@ -478,7 +484,7 @@ static int add_driver_button_exec(bContext *C, wmOperator *op)
 		char *path = get_driver_path_hack(C, &ptr, prop);
 		short flags = CREATEDRIVER_WITH_DEFAULT_DVAR;
 		
-		if (path) {			
+		if (path) {
 			success += ANIM_add_driver(op->reports, ptr.id.data, path, index, flags, DRIVER_TYPE_PYTHON);
 			
 			MEM_freeN(path);
@@ -488,8 +494,6 @@ static int add_driver_button_exec(bContext *C, wmOperator *op)
 	if (success) {
 		/* send updates */
 		uiContextAnimUpdate(C);
-		
-		DAG_ids_flush_update(CTX_data_main(C), 0);
 		
 		WM_event_add_notifier(C, NC_ANIMATION | ND_FCURVES_ORDER, NULL); // XXX
 	}
@@ -509,7 +513,7 @@ void ANIM_OT_driver_button_add(wmOperatorType *ot)
 	//op->poll = ??? // TODO: need to have some animatable property to do this
 	
 	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 1, "All", "Create drivers for all elements of the array");
@@ -541,8 +545,6 @@ static int remove_driver_button_exec(bContext *C, wmOperator *op)
 		/* send updates */
 		uiContextAnimUpdate(C);
 		
-		DAG_ids_flush_update(CTX_data_main(C), 0);
-		
 		WM_event_add_notifier(C, NC_ANIMATION | ND_FCURVES_ORDER, NULL);  // XXX
 	}
 	
@@ -561,7 +563,7 @@ void ANIM_OT_driver_button_remove(wmOperatorType *ot)
 	//op->poll = ??? // TODO: need to have some driver to be able to do this...
 	
 	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_boolean(ot->srna, "all", 1, "All", "Delete drivers for all elements of the array");
@@ -608,7 +610,7 @@ void ANIM_OT_copy_driver_button(wmOperatorType *ot)
 	//op->poll = ??? // TODO: need to have some driver to be able to do this...
 	
 	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
 /* Paste Driver Button Operator ------------------------ */
@@ -652,7 +654,7 @@ void ANIM_OT_paste_driver_button(wmOperatorType *ot)
 	//op->poll = ??? // TODO: need to have some driver to be able to do this...
 	
 	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
 /* ************************************************** */

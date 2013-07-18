@@ -40,13 +40,20 @@ SVMShaderManager::~SVMShaderManager()
 {
 }
 
+void SVMShaderManager::reset(Scene *scene)
+{
+}
+
 void SVMShaderManager::device_update(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress)
 {
 	if(!need_update)
 		return;
 
 	/* test if we need to update */
-	device_free(device, dscene);
+	device_free(device, dscene, scene);
+
+	/* determine which shaders are in use */
+	device_update_shaders_used(scene);
 
 	/* svm_nodes */
 	vector<int4> svm_nodes;
@@ -92,9 +99,9 @@ void SVMShaderManager::device_update(Device *device, DeviceScene *dscene, Scene 
 	need_update = false;
 }
 
-void SVMShaderManager::device_free(Device *device, DeviceScene *dscene)
+void SVMShaderManager::device_free(Device *device, DeviceScene *dscene, Scene *scene)
 {
-	device_free_common(device, dscene);
+	device_free_common(device, dscene, scene);
 
 	device->tex_free(dscene->svm_nodes);
 	dscene->svm_nodes.clear();
@@ -117,21 +124,28 @@ SVMCompiler::SVMCompiler(ShaderManager *shader_manager_, ImageManager *image_man
 
 int SVMCompiler::stack_size(ShaderSocketType type)
 {
-	if(type == SHADER_SOCKET_FLOAT)
-		return 1;
-	else if(type == SHADER_SOCKET_COLOR)
-		return 3;
-	else if(type == SHADER_SOCKET_VECTOR)
-		return 3;
-	else if(type == SHADER_SOCKET_NORMAL)
-		return 3;
-	else if(type == SHADER_SOCKET_POINT)
-		return 3;
-	else if(type == SHADER_SOCKET_CLOSURE)
-		return 0;
-
-	assert(0);
-	return 0;
+	int size = 0;
+	
+	switch (type) {
+		case SHADER_SOCKET_FLOAT:
+		case SHADER_SOCKET_INT:
+			size = 1;
+			break;
+		case SHADER_SOCKET_COLOR:
+		case SHADER_SOCKET_VECTOR:
+		case SHADER_SOCKET_NORMAL:
+		case SHADER_SOCKET_POINT:
+			size = 3;
+			break;
+		case SHADER_SOCKET_CLOSURE:
+			size = 0;
+			break;
+		default:
+			assert(0);
+			break;
+	}
+	
+	return size;
 }
 
 int SVMCompiler::stack_find_offset(ShaderSocketType type)
@@ -212,10 +226,13 @@ void SVMCompiler::stack_assign(ShaderInput *input)
 			if(input->type == SHADER_SOCKET_FLOAT) {
 				add_node(NODE_VALUE_F, __float_as_int(input->value.x), input->stack_offset);
 			}
+			else if(input->type == SHADER_SOCKET_INT) {
+				add_node(NODE_VALUE_F, (int)input->value.x, input->stack_offset);
+			}
 			else if(input->type == SHADER_SOCKET_VECTOR ||
-				input->type == SHADER_SOCKET_NORMAL ||
-				input->type == SHADER_SOCKET_POINT ||
-				input->type == SHADER_SOCKET_COLOR) {
+			        input->type == SHADER_SOCKET_NORMAL ||
+			        input->type == SHADER_SOCKET_POINT ||
+			        input->type == SHADER_SOCKET_COLOR) {
 
 				add_node(NODE_VALUE_V, input->stack_offset);
 				add_node(NODE_VALUE_V, input->value);
@@ -470,65 +487,39 @@ void SVMCompiler::generate_closure(ShaderNode *node, set<ShaderNode*>& done)
 		stack_clear_users(node, done);
 		stack_clear_temporary(node);
 
-		if(node->name == ustring("emission"))
+		if(node->has_surface_emission())
 			current_shader->has_surface_emission = true;
-		if(node->name == ustring("transparent"))
+		if(node->has_surface_transparent())
 			current_shader->has_surface_transparent = true;
+		if(node->has_surface_bssrdf())
+			current_shader->has_surface_bssrdf = true;
 
 		/* end node is added outside of this */
 	}
 }
 
-void SVMCompiler::generate_multi_closure(ShaderNode *node, set<ShaderNode*>& done, uint in_offset)
+void SVMCompiler::generate_multi_closure(ShaderNode *node, set<ShaderNode*>& done, set<ShaderNode*>& closure_done)
 {
 	/* todo: the weaks point here is that unlike the single closure sampling 
 	 * we will evaluate all nodes even if they are used as input for closures
 	 * that are unused. it's not clear what would be the best way to skip such
 	 * nodes at runtime, especially if they are tangled up  */
+	
+	/* only generate once */
+	if(closure_done.find(node) != closure_done.end())
+		return;
+
+	closure_done.insert(node);
 
 	if(node->name == ustring("mix_closure") || node->name == ustring("add_closure")) {
-		ShaderInput *fin = node->input("Fac");
+		/* weighting is already taken care of in ShaderGraph::transform_multi_closure */
 		ShaderInput *cl1in = node->input("Closure1");
 		ShaderInput *cl2in = node->input("Closure2");
 
-		uint out1_offset = SVM_STACK_INVALID;
-		uint out2_offset = SVM_STACK_INVALID;
-
-		if(fin) {
-			/* mix closure */
-			set<ShaderNode*> dependencies;
-			find_dependencies(dependencies, done, fin);
-			generate_svm_nodes(dependencies, done);
-
-			stack_assign(fin);
-
-			if(cl1in->link)
-				out1_offset = stack_find_offset(SHADER_SOCKET_FLOAT);
-			if(cl2in->link)
-				out2_offset = stack_find_offset(SHADER_SOCKET_FLOAT);
-
-			add_node(NODE_MIX_CLOSURE, 
-				encode_uchar4(fin->stack_offset, in_offset, out1_offset, out2_offset));
-		}
-		else {
-			/* add closure */
-			out1_offset = in_offset;
-			out2_offset = in_offset;
-		}
-
-		if(cl1in->link) {
-			generate_multi_closure(cl1in->link->parent, done, out1_offset);
-
-			if(fin)
-				stack_clear_offset(SHADER_SOCKET_FLOAT, out1_offset);
-		}
-
-		if(cl2in->link) {
-			generate_multi_closure(cl2in->link->parent, done, out2_offset);
-
-			if(fin)
-				stack_clear_offset(SHADER_SOCKET_FLOAT, out2_offset);
-		}
+		if(cl1in->link)
+			generate_multi_closure(cl1in->link->parent, done, closure_done);
+		if(cl2in->link)
+			generate_multi_closure(cl2in->link->parent, done, closure_done);
 	}
 	else {
 		/* execute dependencies for closure */
@@ -540,7 +531,16 @@ void SVMCompiler::generate_multi_closure(ShaderNode *node, set<ShaderNode*>& don
 			}
 		}
 
-		mix_weight_offset = in_offset;
+		/* closure mix weight */
+		const char *weight_name = (current_type == SHADER_TYPE_VOLUME)? "VolumeMixWeight": "SurfaceMixWeight";
+		ShaderInput *weight_in = node->input(weight_name);
+
+		if(weight_in && (weight_in->link || weight_in->value.x != 1.0f)) {
+			stack_assign(weight_in);
+			mix_weight_offset = weight_in->stack_offset;
+		}
+		else
+			mix_weight_offset = SVM_STACK_INVALID;
 
 		/* compile closure itself */
 		node->compile(*this);
@@ -549,13 +549,15 @@ void SVMCompiler::generate_multi_closure(ShaderNode *node, set<ShaderNode*>& don
 
 		mix_weight_offset = SVM_STACK_INVALID;
 
-		if(node->name == ustring("emission"))
+		if(node->has_surface_emission())
 			current_shader->has_surface_emission = true;
-		if(node->name == ustring("transparent"))
+		if(node->has_surface_transparent())
 			current_shader->has_surface_transparent = true;
-
-		/* end node is added outside of this */
+		if(node->has_surface_bssrdf())
+			current_shader->has_surface_bssrdf = true;
 	}
+
+	done.insert(node);
 }
 
 
@@ -584,14 +586,20 @@ void SVMCompiler::compile_type(Shader *shader, ShaderGraph *graph, ShaderType ty
 	ShaderNode *node = graph->output();
 	ShaderInput *clin = NULL;
 	
-	if(type == SHADER_TYPE_SURFACE)
-		clin = node->input("Surface");
-	else if(type == SHADER_TYPE_VOLUME)
-		clin = node->input("Volume");
-	else if(type == SHADER_TYPE_DISPLACEMENT)
-		clin = node->input("Displacement");
-	else
-		assert(0);
+	switch (type) {
+		case SHADER_TYPE_SURFACE:
+			clin = node->input("Surface");
+			break;
+		case SHADER_TYPE_VOLUME:
+			clin = node->input("Volume");
+			break;
+		case SHADER_TYPE_DISPLACEMENT:
+			clin = node->input("Displacement");
+			break;
+		default:
+			assert(0);
+			break;
+	}
 
 	/* clear all compiler state */
 	memset(&active_stack, 0, sizeof(active_stack));
@@ -604,36 +612,42 @@ void SVMCompiler::compile_type(Shader *shader, ShaderGraph *graph, ShaderType ty
 			output->stack_offset = SVM_STACK_INVALID;
 	}
 
-	if(clin->link) {
-		bool generate = false;
-		if(type == SHADER_TYPE_SURFACE) {
-			/* generate surface shader */
-			generate = true;
-			shader->has_surface = true;
-		}
-		else if(type == SHADER_TYPE_VOLUME) {
-			/* generate volume shader */
-			generate = true;
-			shader->has_volume = true;
-		}
-		else if(type == SHADER_TYPE_DISPLACEMENT) {
-			/* generate displacement shader */
-			generate = true;
-			shader->has_displacement = true;
+	if(shader->used) {
+		if(clin->link) {
+			bool generate = false;
+			
+			switch (type) {
+				case SHADER_TYPE_SURFACE: /* generate surface shader */		
+					generate = true;
+					shader->has_surface = true;
+					break;
+				case SHADER_TYPE_VOLUME: /* generate volume shader */
+					generate = true;
+					shader->has_volume = true;
+					break;
+				case SHADER_TYPE_DISPLACEMENT: /* generate displacement shader */
+					generate = true;
+					shader->has_displacement = true;
+					break;
+				default:
+					break;
+			}
+
+			if(generate) {
+				set<ShaderNode*> done;
+
+				if(use_multi_closure) {
+					set<ShaderNode*> closure_done;
+					generate_multi_closure(clin->link->parent, done, closure_done);
+				}
+				else
+					generate_closure(clin->link->parent, done);
+			}
 		}
 
-		if(generate) {
-			set<ShaderNode*> done;
-
-			if(use_multi_closure)
-				generate_multi_closure(clin->link->parent, done, SVM_STACK_INVALID);
-			else
-				generate_closure(clin->link->parent, done);
-		}
+		/* compile output node */
+		node->compile(*this);
 	}
-
-	/* compile output node */
-	node->compile(*this);
 
 	add_node(NODE_END, 0, 0, 0);
 }
@@ -648,15 +662,16 @@ void SVMCompiler::compile(Shader *shader, vector<int4>& global_svm_nodes, int in
 			shader->graph_bump = shader->graph->copy();
 
 	/* finalize */
-	shader->graph->finalize(false, false);
+	shader->graph->finalize(false, false, use_multi_closure);
 	if(shader->graph_bump)
-		shader->graph_bump->finalize(true, false);
+		shader->graph_bump->finalize(true, false, use_multi_closure);
 
 	current_shader = shader;
 
 	shader->has_surface = false;
 	shader->has_surface_emission = false;
 	shader->has_surface_transparent = false;
+	shader->has_surface_bssrdf = false;
 	shader->has_volume = false;
 	shader->has_displacement = false;
 

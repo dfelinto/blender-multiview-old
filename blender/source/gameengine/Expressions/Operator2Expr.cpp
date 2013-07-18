@@ -102,7 +102,7 @@ and m_rhs
 		
 		m_cached_calculate = ffleft->Calc(m_op,ffright);
 		
-		//if (m_cached_calculate)				
+		//if (m_cached_calculate)
 		//	m_cached_calculate->Action(CValue::SETOWNEREXPR,&CVoidValue(this,false,CValue::STACKVALUE));
 
 		ffleft->Release();
@@ -113,60 +113,60 @@ and m_rhs
 	
 }
 
-/*
+#if 0
 bool COperator2Expr::IsInside(float x, float y, float z,bool bBorderInclude)
 {
 	bool inside;
 	inside = false;
 	
-	switch (m_op) 
-	{
-	case VALUE_ADD_OPERATOR: {
-	//	inside = first || second; // optimized with early out if first is inside
-		// todo: calculate smallest leaf first ! is much faster...
-			
-		bool second;//first ;//,second;
-		
-		//first = m_lhs->IsInside(x,y,z);
-		second = m_rhs->IsInside(x,y,z,bBorderInclude);
-		if (second)
-			return true; //early out
-	
-	//	second = m_rhs->IsInside(x,y,z);
+	switch (m_op) {
+		case VALUE_ADD_OPERATOR:
+		{
+			//	inside = first || second; // optimized with early out if first is inside
+			// todo: calculate smallest leaf first ! is much faster...
 
-		return m_lhs->IsInside(x,y,z,bBorderInclude);
-			
-		break;
-							 }
-		
-	case VALUE_SUB_OPERATOR: {
-		//inside = first && !second; // optimized with early out
-		// todo: same as with add_operator: calc smallest leaf first
+			bool second;//first ;//,second;
 
-		bool second;//first ;//,second;
-		//first = m_lhs->IsInside(x,y,z);
-		second = m_rhs->IsInside(x,y,z,bBorderInclude);
-		if (second)
-			return false;
+			//first = m_lhs->IsInside(x,y,z);
+			second = m_rhs->IsInside(x,y,z,bBorderInclude);
+			if (second)
+				return true; //early out
 
-		// second space get subtracted -> negate!
-		//second = m_rhs->IsInside(x,y,z);
+			//	second = m_rhs->IsInside(x,y,z);
 
-		return (m_lhs->IsInside(x,y,z,bBorderInclude));
+			return m_lhs->IsInside(x,y,z,bBorderInclude);
 
-		
-		break;
-							 }
-	default:{
-		assert(false);
-		// not yet implemented, only add or sub csg operations
-			}
+			break;
+		}
+
+		case VALUE_SUB_OPERATOR:
+		{
+			//inside = first && !second; // optimized with early out
+			// todo: same as with add_operator: calc smallest leaf first
+
+			bool second;//first ;//,second;
+			//first = m_lhs->IsInside(x,y,z);
+			second = m_rhs->IsInside(x,y,z,bBorderInclude);
+			if (second)
+				return false;
+
+			// second space get subtracted -> negate!
+			//second = m_rhs->IsInside(x,y,z);
+
+			return (m_lhs->IsInside(x,y,z,bBorderInclude));
+
+
+			break;
+		}
+		default:
+		{
+			assert(false);
+			// not yet implemented, only add or sub csg operations
+		}
 	}
 	
-	return inside;	
+	return inside;
 }
-
-
 
 bool COperator2Expr::IsRightInside(float x, float y, float z,bool bBorderInclude)
 {
@@ -177,7 +177,8 @@ bool COperator2Expr::IsLeftInside(float x, float y, float z,bool bBorderInclude)
 {
 	return m_lhs->IsInside(x,y,z,bBorderInclude);
 }
-*/
+#endif
+
 bool COperator2Expr::NeedsRecalculated()
 {
 	// added some lines, just for debugging purposes, it could be a one-liner :)
@@ -241,7 +242,7 @@ CExpression* COperator2Expr::CheckLink(std::vector<CBrokenLinkInfo*>& brokenlink
 	
 	if (m_rhs)
 		return Release(m_rhs->AddRef());
-/		
+/
 
   */
 	return Release();

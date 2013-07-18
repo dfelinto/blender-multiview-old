@@ -168,7 +168,7 @@ Object *SkinInfo::set_armature(Object *ob_arm)
 	return ob_arm;
 }
 
-bool SkinInfo::get_joint_inv_bind_matrix(float inv_bind_mat[][4], COLLADAFW::Node *node)
+bool SkinInfo::get_joint_inv_bind_matrix(float inv_bind_mat[4][4], COLLADAFW::Node *node)
 {
 	const COLLADAFW::UniqueId& uid = node->getUniqueId();
 	std::vector<JointData>::iterator it;
@@ -237,10 +237,9 @@ void SkinInfo::link_armature(bContext *C, Object *ob, std::map<COLLADAFW::Unique
 	BKE_object_workob_calc_parent(scene, ob, &workob);
 	invert_m4_m4(ob->parentinv, workob.obmat);
 
-	ob->recalc |= OB_RECALC_OB | OB_RECALC_DATA;
+	DAG_id_tag_update(&obn->id, OB_RECALC_OB | OB_RECALC_DATA);
 
-	DAG_scene_sort(bmain, scene);
-	DAG_ids_flush_update(bmain, 0);
+	DAG_relations_tag_update(bmain);
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 #endif
 
@@ -317,12 +316,15 @@ void SkinInfo::find_root_joints(const std::vector<COLLADAFW::Node *> &root_joint
 		std::vector<JointData>::iterator ji;
 		//for each joint_data in this skin
 		for (ji = joint_data.begin(); ji != joint_data.end(); ji++) {
-			//get joint node from joint map
-			COLLADAFW::Node *joint = joint_by_uid[(*ji).joint_uid];
-			//find if joint node is in the tree belonging to the root_joint
-			if (find_node_in_tree(joint, root)) {
-				if (std::find(result.begin(), result.end(), root) == result.end())
-					result.push_back(root);
+			if (joint_by_uid.find((*ji).joint_uid) != joint_by_uid.end()) {
+				//get joint node from joint map
+				COLLADAFW::Node *joint = joint_by_uid[(*ji).joint_uid];
+
+				//find if joint node is in the tree belonging to the root_joint
+				if (find_node_in_tree(joint, root)) {
+					if (std::find(result.begin(), result.end(), root) == result.end())
+						result.push_back(root);
+				}
 			}
 		}
 	}

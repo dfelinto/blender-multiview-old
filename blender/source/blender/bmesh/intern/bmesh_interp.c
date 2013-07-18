@@ -36,53 +36,73 @@
 #include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 
-#include "BKE_customdata.h"
-#include "BKE_multires.h"
-
 #include "BLI_array.h"
 #include "BLI_math.h"
+
+#include "BKE_customdata.h"
+#include "BKE_multires.h"
 
 #include "bmesh.h"
 #include "intern/bmesh_private.h"
 
-/**
- * \brief Data, Interp From Verts
- *
- * Interpolates per-vertex data from two sources to a target.
- */
-void BM_data_interp_from_verts(BMesh *bm, BMVert *v1, BMVert *v2, BMVert *v, const float fac)
+/* edge and vertex share, currently theres no need to have different logic */
+static void bm_data_interp_from_elem(CustomData *data_layer, BMElem *ele1, BMElem *ele2, BMElem *ele_dst, const float fac)
 {
-	if (v1->head.data && v2->head.data) {
+	if (ele1->head.data && ele2->head.data) {
 		/* first see if we can avoid interpolation */
 		if (fac <= 0.0f) {
-			if (v1 == v) {
+			if (ele1 == ele_dst) {
 				/* do nothing */
 			}
 			else {
-				CustomData_bmesh_free_block(&bm->vdata, &v->head.data);
-				CustomData_bmesh_copy_data(&bm->vdata, &bm->vdata, v1->head.data, &v->head.data);
+				CustomData_bmesh_free_block_data(data_layer, &ele_dst->head.data);
+				CustomData_bmesh_copy_data(data_layer, data_layer, ele1->head.data, &ele_dst->head.data);
 			}
 		}
 		else if (fac >= 1.0f) {
-			if (v2 == v) {
+			if (ele2 == ele_dst) {
 				/* do nothing */
 			}
 			else {
-				CustomData_bmesh_free_block(&bm->vdata, &v->head.data);
-				CustomData_bmesh_copy_data(&bm->vdata, &bm->vdata, v2->head.data, &v->head.data);
+				CustomData_bmesh_free_block_data(data_layer, &ele_dst->head.data);
+				CustomData_bmesh_copy_data(data_layer, data_layer, ele2->head.data, &ele_dst->head.data);
 			}
 		}
 		else {
 			void *src[2];
 			float w[2];
 
-			src[0] = v1->head.data;
-			src[1] = v2->head.data;
+			src[0] = ele1->head.data;
+			src[1] = ele2->head.data;
 			w[0] = 1.0f - fac;
 			w[1] = fac;
-			CustomData_bmesh_interp(&bm->vdata, src, w, NULL, 2, v->head.data);
+			CustomData_bmesh_interp(data_layer, src, w, NULL, 2, ele_dst->head.data);
 		}
 	}
+}
+
+/**
+ * \brief Data, Interp From Verts
+ *
+ * Interpolates per-vertex data from two sources to a target.
+ *
+ * \note This is an exact match to #BM_data_interp_from_edges
+ */
+void BM_data_interp_from_verts(BMesh *bm, BMVert *v1, BMVert *v2, BMVert *v, const float fac)
+{
+	bm_data_interp_from_elem(&bm->vdata, (BMElem *)v1, (BMElem *)v2, (BMElem *)v, fac);
+}
+
+/**
+ * \brief Data, Interp From Edges
+ *
+ * Interpolates per-edge data from two sources to a target.
+ *
+ * \note This is an exact match to #BM_data_interp_from_verts
+ */
+void BM_data_interp_from_edges(BMesh *bm, BMEdge *e1, BMEdge *e2, BMEdge *e, const float fac)
+{
+	bm_data_interp_from_elem(&bm->edata, (BMElem *)e1, (BMElem *)e2, (BMElem *)e, fac);
 }
 
 /**
@@ -106,7 +126,7 @@ void BM_data_interp_face_vert_edge(BMesh *bm, BMVert *v1, BMVert *UNUSED(v2), BM
 {
 	void *src[2];
 	float w[2];
-	BMLoop *v1loop = NULL, *vloop = NULL, *v2loop = NULL;
+	BMLoop *l_v1 = NULL, *l_v = NULL, *l_v2 = NULL;
 	BMLoop *l_iter = NULL;
 
 	if (!e1->l) {
@@ -119,23 +139,23 @@ void BM_data_interp_face_vert_edge(BMesh *bm, BMVert *v1, BMVert *UNUSED(v2), BM
 	l_iter = e1->l;
 	do {
 		if (l_iter->v == v1) {
-			v1loop = l_iter;
-			vloop = v1loop->next;
-			v2loop = vloop->next;
+			l_v1 = l_iter;
+			l_v = l_v1->next;
+			l_v2 = l_v->next;
 		}
 		else if (l_iter->v == v) {
-			v1loop = l_iter->next;
-			vloop = l_iter;
-			v2loop = l_iter->prev;
+			l_v1 = l_iter->next;
+			l_v = l_iter;
+			l_v2 = l_iter->prev;
 		}
 		
-		if (!v1loop || !v2loop)
+		if (!l_v1 || !l_v2)
 			return;
 		
-		src[0] = v1loop->head.data;
-		src[1] = v2loop->head.data;
+		src[0] = l_v1->head.data;
+		src[1] = l_v2->head.data;
 
-		CustomData_bmesh_interp(&bm->ldata, src, w, NULL, 2, vloop->head.data);
+		CustomData_bmesh_interp(&bm->ldata, src, w, NULL, 2, l_v->head.data);
 	} while ((l_iter = l_iter->radial_next) != e1->l);
 }
 
@@ -147,39 +167,56 @@ void BM_data_interp_face_vert_edge(BMesh *bm, BMVert *v1, BMVert *UNUSED(v2), BM
  *
  * \note Only handles loop customdata. multires is handled.
  */
-void BM_face_interp_from_face(BMesh *bm, BMFace *target, BMFace *source)
+void BM_face_interp_from_face_ex(BMesh *bm, BMFace *target, BMFace *source, const bool do_vertex,
+                                 void **blocks_l, void **blocks_v, float (*cos_2d)[2], float axis_mat[3][3])
 {
 	BMLoop *l_iter;
 	BMLoop *l_first;
 
-	void **blocks = NULL;
-	float (*cos)[3] = NULL, *w = NULL;
-	BLI_array_fixedstack_declare(cos,     BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(w,       BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(blocks,  BM_NGON_STACK_SIZE, source->len, __func__);
+	float *w = BLI_array_alloca(w, source->len);
+	float co[2];
 	int i;
-	
-	BM_elem_attrs_copy(bm, bm, source, target);
+
+	if (source != target)
+		BM_elem_attrs_copy(bm, bm, source, target);
+
+	/* interpolate */
+	i = 0;
+	l_iter = l_first = BM_FACE_FIRST_LOOP(target);
+	do {
+		mul_v2_m3v3(co, axis_mat, l_iter->v->co);
+		interp_weights_poly_v2(w, cos_2d, source->len, co);
+		CustomData_bmesh_interp(&bm->ldata, blocks_l, w, NULL, source->len, l_iter->head.data);
+		if (do_vertex) {
+			CustomData_bmesh_interp(&bm->vdata, blocks_v, w, NULL, source->len, l_iter->v->head.data);
+		}
+	} while (i++, (l_iter = l_iter->next) != l_first);
+}
+
+void BM_face_interp_from_face(BMesh *bm, BMFace *target, BMFace *source, const bool do_vertex)
+{
+	BMLoop *l_iter;
+	BMLoop *l_first;
+
+	void **blocks_l    = BLI_array_alloca(blocks_l, source->len);
+	void **blocks_v    = do_vertex ? BLI_array_alloca(blocks_v, source->len) : NULL;
+	float (*cos_2d)[2] = BLI_array_alloca(cos_2d, source->len);
+	float axis_mat[3][3];  /* use normal to transform into 2d xy coords */
+	int i;
+
+	/* convert the 3d coords into 2d for projection */
+	axis_dominant_v3_to_m3(axis_mat, source->no);
 
 	i = 0;
 	l_iter = l_first = BM_FACE_FIRST_LOOP(source);
 	do {
-		copy_v3_v3(cos[i], l_iter->v->co);
-		blocks[i] = l_iter->head.data;
-		i++;
-	} while ((l_iter = l_iter->next) != l_first);
+		mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
+		blocks_l[i] = l_iter->head.data;
+		if (do_vertex) blocks_v[i] = l_iter->v->head.data;
+	} while (i++, (l_iter = l_iter->next) != l_first);
 
-	i = 0;
-	l_iter = l_first = BM_FACE_FIRST_LOOP(target);
-	do {
-		interp_weights_poly_v3(w, cos, source->len, l_iter->v->co);
-		CustomData_bmesh_interp(&bm->ldata, blocks, w, NULL, source->len, l_iter->head.data);
-		i++;
-	} while ((l_iter = l_iter->next) != l_first);
-
-	BLI_array_fixedstack_free(cos);
-	BLI_array_fixedstack_free(w);
-	BLI_array_fixedstack_free(blocks);
+	BM_face_interp_from_face_ex(bm, target, source, do_vertex,
+	                            blocks_l, blocks_v, cos_2d, axis_mat);
 }
 
 /**
@@ -204,10 +241,8 @@ static int compute_mdisp_quad(BMLoop *l, float v1[3], float v2[3], float v3[3], 
 	/* computer center */
 	BM_face_calc_center_mean(l->f, cent);
 
-	add_v3_v3v3(p, l->prev->v->co, l->v->co);
-	mul_v3_fl(p, 0.5);
-	add_v3_v3v3(n, l->next->v->co, l->v->co);
-	mul_v3_fl(n, 0.5);
+	mid_v3_v3v3(p, l->prev->v->co, l->v->co);
+	mid_v3_v3v3(n, l->next->v->co, l->v->co);
 	
 	copy_v3_v3(v1, cent);
 	copy_v3_v3(v2, p);
@@ -237,7 +272,7 @@ static float quad_coord(float aa[3], float bb[3], float cc[3], float dd[3], int 
 
 		f1 = fabsf(f1);
 		f2 = fabsf(f2);
-		f1 = minf(f1, f2);
+		f1 = min_ff(f1, f2);
 		CLAMP(f1, 0.0f, 1.0f + FLT_EPSILON);
 	}
 	else {
@@ -325,9 +360,9 @@ static int mdisp_in_mdispquad(BMLoop *l, BMLoop *tl, float p[3], float *x, float
 	float v1[3], v2[3], c[3], v3[3], v4[3], e1[3], e2[3];
 	float eps = FLT_EPSILON * 4000;
 	
-	if (len_v3(l->v->no) == 0.0f)
+	if (is_zero_v3(l->v->no))
 		BM_vert_normal_update_all(l->v);
-	if (len_v3(tl->v->no) == 0.0f)
+	if (is_zero_v3(tl->v->no))
 		BM_vert_normal_update_all(tl->v);
 
 	compute_mdisp_quad(tl, v1, v2, v3, v4, e1, e2);
@@ -397,14 +432,12 @@ static void bm_loop_flip_disp(float source_axis_x[3], float source_axis_y[3],
 static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 {
 	MDisps *mdisps;
-	BMLoop *l_iter;
-	BMLoop *l_first;
-	float x, y, d, v1[3], v2[3], v3[3], v4[3] = {0.0f, 0.0f, 0.0f}, e1[3], e2[3];
-	int ix, iy, res;
+	float d, v1[3], v2[3], v3[3], v4[3] = {0.0f, 0.0f, 0.0f}, e1[3], e2[3];
+	int ix, res;
 	float axis_x[3], axis_y[3];
 	
 	/* ignore 2-edged faces */
-	if (target->f->len < 3)
+	if (UNLIKELY(target->f->len < 3))
 		return;
 	
 	if (!CustomData_has_layer(&bm->ldata, CD_MDISPS))
@@ -432,10 +465,15 @@ static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 
 	res = (int)sqrt(mdisps->totdisp);
 	d = 1.0f / (float)(res - 1);
-	for (x = 0.0f, ix = 0; ix < res; x += d, ix++) {
+	#pragma omp parallel for if(res > 3)
+	for (ix = 0; ix < res; ix++) {
+		float x = d * ix, y;
+		int iy;
 		for (y = 0.0f, iy = 0; iy < res; y += d, iy++) {
+			BMLoop *l_iter;
+			BMLoop *l_first;
 			float co1[3], co2[3], co[3];
-			
+
 			copy_v3_v3(co1, e1);
 			
 			mul_v3_fl(co1, y);
@@ -470,7 +508,7 @@ static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 }
 
 /**
- * smoothes boundaries between multires grids,
+ * smooths boundaries between multires grids,
  * including some borders in adjacent faces
  */
 void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
@@ -505,8 +543,7 @@ void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
 
 		sides = (int)sqrt(mdp->totdisp);
 		for (y = 0; y < sides; y++) {
-			add_v3_v3v3(co1, mdn->disps[y * sides], mdl->disps[y]);
-			mul_v3_fl(co1, 0.5);
+			mid_v3_v3v3(co1, mdn->disps[y * sides], mdl->disps[y]);
 
 			copy_v3_v3(mdn->disps[y * sides], co1);
 			copy_v3_v3(mdl->disps[y], co1);
@@ -588,74 +625,42 @@ void BM_loop_interp_multires(BMesh *bm, BMLoop *target, BMFace *source)
  * if do_vertex is true, target's vert data will also get interpolated.
  */
 void BM_loop_interp_from_face(BMesh *bm, BMLoop *target, BMFace *source,
-                              int do_vertex, int do_multires)
+                              const bool do_vertex, const bool do_multires)
 {
 	BMLoop *l_iter;
 	BMLoop *l_first;
-	void **blocks = NULL;
-	void **vblocks = NULL;
-	float (*cos)[3] = NULL, co[3], *w = NULL;
-	float cent[3] = {0.0f, 0.0f, 0.0f};
-	BLI_array_fixedstack_declare(cos,      BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(w,        BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(blocks,   BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(vblocks,  BM_NGON_STACK_SIZE, do_vertex ? source->len : 0, __func__);
-	int i, ax, ay;
+	void **vblocks  = do_vertex ? BLI_array_alloca(vblocks, source->len) : NULL;
+	void **blocks   = BLI_array_alloca(blocks, source->len);
+	float (*cos_2d)[2] = BLI_array_alloca(cos_2d, source->len);
+	float *w        = BLI_array_alloca(w, source->len);
+	float axis_mat[3][3];  /* use normal to transform into 2d xy coords */
+	float co[2];
+	int i;
+
+	/* convert the 3d coords into 2d for projection */
+	axis_dominant_v3_to_m3(axis_mat, source->no);
 
 	BM_elem_attrs_copy(bm, bm, source, target->f);
 
 	i = 0;
 	l_iter = l_first = BM_FACE_FIRST_LOOP(source);
 	do {
-		copy_v3_v3(cos[i], l_iter->v->co);
-		add_v3_v3(cent, cos[i]);
-
-		w[i] = 0.0f;
+		mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
 		blocks[i] = l_iter->head.data;
 
 		if (do_vertex) {
 			vblocks[i] = l_iter->v->head.data;
 		}
-		i++;
+	} while (i++, (l_iter = l_iter->next) != l_first);
 
-	} while ((l_iter = l_iter->next) != l_first);
-
-	/* find best projection of face XY, XZ or YZ: barycentric weights of
-	 * the 2d projected coords are the same and faster to compute */
-
-	axis_dominant_v3(&ax, &ay, source->no);
-
-	/* scale source face coordinates a bit, so points sitting directly on an
-	 * edge will work. */
-	mul_v3_fl(cent, 1.0f / (float)source->len);
-	for (i = 0; i < source->len; i++) {
-		float vec[3], tmp[3];
-		sub_v3_v3v3(vec, cent, cos[i]);
-		mul_v3_fl(vec, 0.001f);
-		add_v3_v3(cos[i], vec);
-
-		copy_v3_v3(tmp, cos[i]);
-		cos[i][0] = tmp[ax];
-		cos[i][1] = tmp[ay];
-		cos[i][2] = 0.0f;
-	}
-
+	mul_v2_m3v3(co, axis_mat, target->v->co);
 
 	/* interpolate */
-	co[0] = target->v->co[ax];
-	co[1] = target->v->co[ay];
-	co[2] = 0.0f;
-
-	interp_weights_poly_v3(w, cos, source->len, co);
+	interp_weights_poly_v2(w, cos_2d, source->len, co);
 	CustomData_bmesh_interp(&bm->ldata, blocks, w, NULL, source->len, target->head.data);
 	if (do_vertex) {
 		CustomData_bmesh_interp(&bm->vdata, vblocks, w, NULL, source->len, target->v->head.data);
-		BLI_array_fixedstack_free(vblocks);
 	}
-
-	BLI_array_fixedstack_free(cos);
-	BLI_array_fixedstack_free(w);
-	BLI_array_fixedstack_free(blocks);
 
 	if (do_multires) {
 		if (CustomData_has_layer(&bm->ldata, CD_MDISPS)) {
@@ -669,42 +674,28 @@ void BM_vert_interp_from_face(BMesh *bm, BMVert *v, BMFace *source)
 {
 	BMLoop *l_iter;
 	BMLoop *l_first;
-	void **blocks = NULL;
-	float (*cos)[3] = NULL, *w = NULL;
-	float cent[3] = {0.0f, 0.0f, 0.0f};
-	BLI_array_fixedstack_declare(cos,      BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(w,        BM_NGON_STACK_SIZE, source->len, __func__);
-	BLI_array_fixedstack_declare(blocks,   BM_NGON_STACK_SIZE, source->len, __func__);
+	void **blocks   = BLI_array_alloca(blocks, source->len);
+	float (*cos_2d)[2] = BLI_array_alloca(cos_2d, source->len);
+	float *w        = BLI_array_alloca(w,      source->len);
+	float axis_mat[3][3];  /* use normal to transform into 2d xy coords */
+	float co[2];
 	int i;
+
+	/* convert the 3d coords into 2d for projection */
+	axis_dominant_v3_to_m3(axis_mat, source->no);
 
 	i = 0;
 	l_iter = l_first = BM_FACE_FIRST_LOOP(source);
 	do {
-		copy_v3_v3(cos[i], l_iter->v->co);
-		add_v3_v3(cent, cos[i]);
-
-		w[i] = 0.0f;
+		mul_v2_m3v3(cos_2d[i], axis_mat, l_iter->v->co);
 		blocks[i] = l_iter->v->head.data;
-		i++;
-	} while ((l_iter = l_iter->next) != l_first);
+	} while (i++, (l_iter = l_iter->next) != l_first);
 
-	/* scale source face coordinates a bit, so points sitting directly on an
-	 * edge will work. */
-	mul_v3_fl(cent, 1.0f / (float)source->len);
-	for (i = 0; i < source->len; i++) {
-		float vec[3];
-		sub_v3_v3v3(vec, cent, cos[i]);
-		mul_v3_fl(vec, 0.01f);
-		add_v3_v3(cos[i], vec);
-	}
+	mul_v2_m3v3(co, axis_mat, v->co);
 
 	/* interpolate */
-	interp_weights_poly_v3(w, cos, source->len, v->co);
+	interp_weights_poly_v2(w, cos_2d, source->len, co);
 	CustomData_bmesh_interp(&bm->vdata, blocks, w, NULL, source->len, v->head.data);
-
-	BLI_array_fixedstack_free(cos);
-	BLI_array_fixedstack_free(w);
-	BLI_array_fixedstack_free(blocks);
 }
 
 static void update_data_blocks(BMesh *bm, CustomData *olddata, CustomData *data)
@@ -816,6 +807,7 @@ void BM_data_layer_add_named(BMesh *bm, CustomData *data, int type, const char *
 void BM_data_layer_free(BMesh *bm, CustomData *data, int type)
 {
 	CustomData olddata;
+	bool has_layer;
 
 	olddata = *data;
 	olddata.layers = (olddata.layers) ? MEM_dupallocN(olddata.layers): NULL;
@@ -823,7 +815,9 @@ void BM_data_layer_free(BMesh *bm, CustomData *data, int type)
 	/* the pool is now owned by olddata and must not be shared */
 	data->pool = NULL;
 
-	CustomData_free_layer_active(data, type, 0);
+	has_layer = CustomData_free_layer_active(data, type, 0);
+	/* assert because its expensive to realloc - better not do if layer isnt present */
+	BLI_assert(has_layer != false);
 
 	update_data_blocks(bm, &olddata, data);
 	if (olddata.layers) MEM_freeN(olddata.layers);
@@ -832,6 +826,7 @@ void BM_data_layer_free(BMesh *bm, CustomData *data, int type)
 void BM_data_layer_free_n(BMesh *bm, CustomData *data, int type, int n)
 {
 	CustomData olddata;
+	bool has_layer;
 
 	olddata = *data;
 	olddata.layers = (olddata.layers) ? MEM_dupallocN(olddata.layers): NULL;
@@ -839,7 +834,9 @@ void BM_data_layer_free_n(BMesh *bm, CustomData *data, int type, int n)
 	/* the pool is now owned by olddata and must not be shared */
 	data->pool = NULL;
 
-	CustomData_free_layer(data, type, 0, CustomData_get_layer_index_n(data, type, n));
+	has_layer = CustomData_free_layer(data, type, 0, CustomData_get_layer_index_n(data, type, n));
+	/* assert because its expensive to realloc - better not do if layer isnt present */
+	BLI_assert(has_layer != false);
 	
 	update_data_blocks(bm, &olddata, data);
 	if (olddata.layers) MEM_freeN(olddata.layers);

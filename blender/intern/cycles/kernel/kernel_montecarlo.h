@@ -36,40 +36,19 @@
 CCL_NAMESPACE_BEGIN
 
 /// Given values x and y on [0,1], convert them in place to values on
-/// [-1,1] uniformly distributed over a unit sphere.  This code is
-/// derived from Peter Shirley, "Realistic Ray Tracing", p. 103.
+/// [-1,1] uniformly distributed over a unit sphere.
 __device void to_unit_disk(float *x, float *y)
 {
-	float r, phi;
-	float a = 2.0f * (*x) - 1.0f;
-	float b = 2.0f * (*y) - 1.0f;
-	if(a > -b) {
-		if(a > b) {
-			r = a;
-			 phi = M_PI_4_F *(b/a);
-		 } else {
-			 r = b;
-			 phi = M_PI_4_F *(2.0f - a/b);
-		 }
-	} else {
-		if(a < b) {
-			r = -a;
-			phi = M_PI_4_F *(4.0f + b/a);
-		} else {
-			r = -b;
-			if(b != 0.0f)
-				phi = M_PI_4_F *(6.0f - a/b);
-			else
-				phi = 0.0f;
-		}
-	}
+	float phi = 2.0f * M_PI_F * (*x);
+	float r = sqrtf(*y);
+
 	*x = r * cosf(phi);
 	*y = r * sinf(phi);
 }
 
 __device void make_orthonormals_tangent(const float3 N, const float3 T, float3 *a, float3 *b)
 {
-	*b = cross(N, T);
+	*b = normalize(cross(N, T));
 	*a = cross(*b, N);
 }
 
@@ -92,7 +71,7 @@ __device_inline void sample_uniform_hemisphere(const float3 N,
 {
 	float z = randu;
 	float r = sqrtf(max(0.0f, 1.0f - z*z));
-	float phi = 2.0f * M_PI_F * randv;
+	float phi = M_2PI_F * randv;
 	float x = r * cosf(phi);
 	float y = r * sinf(phi);
 
@@ -102,11 +81,27 @@ __device_inline void sample_uniform_hemisphere(const float3 N,
 	*pdf = 0.5f * M_1_PI_F;
 }
 
+__device_inline void sample_uniform_cone(const float3 N, float angle,
+                                         float randu, float randv,
+                                         float3 *omega_in, float *pdf)
+{
+	float z = cosf(angle*randu);
+	float r = sqrtf(max(0.0f, 1.0f - z*z));
+	float phi = M_2PI_F * randv;
+	float x = r * cosf(phi);
+	float y = r * sinf(phi);
+
+	float3 T, B;
+	make_orthonormals (N, &T, &B);
+	*omega_in = x * T + y * B + z * N;
+	*pdf = 0.5f * M_1_PI_F / (1.0f - cosf(angle));
+}
+
 __device float3 sample_uniform_sphere(float u1, float u2)
 {
 	float z = 1.0f - 2.0f*u1;
 	float r = sqrtf(fmaxf(0.0f, 1.0f - z*z));
-	float phi = 2.0f*M_PI_F*u2;
+	float phi = M_2PI_F*u2;
 	float x = r*cosf(phi);
 	float y = r*sinf(phi);
 

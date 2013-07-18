@@ -36,9 +36,13 @@
 
 #include "BLI_string_cursor_utf8.h" /* own include */
 
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wsign-conversion"
+#endif
+
 typedef enum strCursorDelimType {
 	STRCUR_DELIM_NONE,
-	STRCUR_DELIM_ALPHA,
+	STRCUR_DELIM_ALPHANUMERIC,
 	STRCUR_DELIM_PUNCT,
 	STRCUR_DELIM_BRACE,
 	STRCUR_DELIM_OPERATOR,
@@ -47,20 +51,11 @@ typedef enum strCursorDelimType {
 	STRCUR_DELIM_OTHER
 } strCursorDelimType;
 
-/* return 1 if char ch is special character, otherwise return 0 */
-static strCursorDelimType test_special_char(const char *ch_utf8)
+static strCursorDelimType cursor_delim_type(const char *ch_utf8)
 {
 	/* for full unicode support we really need to have large lookup tables to figure
 	 * out whats what in every possible char set - and python, glib both have these. */
 	unsigned int uch = BLI_str_utf8_as_unicode(ch_utf8);
-
-	if ((uch >= 'a' && uch <= 'z') ||
-	    (uch >= 'A' && uch <= 'Z') ||
-	    (uch == '_') /* not quite correct but allow for python, could become configurable */
-	    )
-	{
-		return STRCUR_DELIM_ALPHA;
-	}
 
 	switch (uch) {
 		case ',':
@@ -86,10 +81,11 @@ static strCursorDelimType test_special_char(const char *ch_utf8)
 		case '^':
 		case '*':
 		case '&':
+		case '|':
 			return STRCUR_DELIM_OPERATOR;
 
 		case '\'':
-		case '\"': // " - an extra closing one for Aligorith's text editor
+		case '\"':
 			return STRCUR_DELIM_QUOTE;
 
 		case ' ':
@@ -97,20 +93,22 @@ static strCursorDelimType test_special_char(const char *ch_utf8)
 			return STRCUR_DELIM_WHITESPACE;
 
 		case '\\':
-		case '!':
 		case '@':
 		case '#':
 		case '$':
 		case ':':
 		case ';':
 		case '?':
+		case '!':
+		case 0xA3:  /* pound */
+		case 0x80:  /* euro */
 			/* case '_': *//* special case, for python */
 			return STRCUR_DELIM_OTHER;
 
 		default:
 			break;
 	}
-	return STRCUR_DELIM_NONE;
+	return STRCUR_DELIM_ALPHANUMERIC; /* Not quite true, but ok for now */
 }
 
 int BLI_str_cursor_step_next_utf8(const char *str, size_t maxlen, int *pos)
@@ -120,8 +118,8 @@ int BLI_str_cursor_step_next_utf8(const char *str, size_t maxlen, int *pos)
 	const char *str_next = BLI_str_find_next_char_utf8(str_pos, str_end);
 	if (str_next) {
 		(*pos) += (str_next - str_pos);
-		if ((*pos) > maxlen) {
-			(*pos) = maxlen;
+		if ((*pos) > (int)maxlen) {
+			(*pos) = (int)maxlen;
 		}
 		return TRUE;
 	}
@@ -145,22 +143,28 @@ int BLI_str_cursor_step_prev_utf8(const char *str, size_t UNUSED(maxlen), int *p
 
 void BLI_str_cursor_step_utf8(const char *str, size_t maxlen,
                               int *pos, strCursorJumpDirection direction,
-                              strCursorJumpType jump)
+                              strCursorJumpType jump, bool use_init_step)
 {
-	const short pos_prev = *pos;
+	const int pos_orig = *pos;
 
 	if (direction == STRCUR_DIR_NEXT) {
-		BLI_str_cursor_step_next_utf8(str, maxlen, pos);
+		if (use_init_step) {
+			BLI_str_cursor_step_next_utf8(str, maxlen, pos);
+		}
+		else {
+			BLI_assert(jump == STRCUR_JUMP_DELIM);
+		}
 
 		if (jump != STRCUR_JUMP_NONE) {
-			const strCursorDelimType is_special = (*pos) < maxlen ? test_special_char(&str[*pos]) : STRCUR_DELIM_NONE;
+			const strCursorDelimType delim_type = (*pos) < maxlen ? cursor_delim_type(&str[*pos]) : STRCUR_DELIM_NONE;
 			/* jump between special characters (/,\,_,-, etc.),
-			 * look at function test_special_char() for complete
+			 * look at function cursor_delim_type() for complete
 			 * list of special character, ctr -> */
 			while ((*pos) < maxlen) {
 				if (BLI_str_cursor_step_next_utf8(str, maxlen, pos)) {
-					if ((jump != STRCUR_JUMP_ALL) && (is_special != test_special_char(&str[*pos])))
+					if ((jump != STRCUR_JUMP_ALL) && (delim_type != cursor_delim_type(&str[*pos]))) {
 						break;
+					}
 				}
 				else {
 					break; /* unlikely but just in case */
@@ -169,26 +173,32 @@ void BLI_str_cursor_step_utf8(const char *str, size_t maxlen,
 		}
 	}
 	else if (direction == STRCUR_DIR_PREV) {
-		BLI_str_cursor_step_prev_utf8(str, maxlen, pos);
+		if (use_init_step) {
+			BLI_str_cursor_step_prev_utf8(str, maxlen, pos);
+		}
+		else {
+			BLI_assert(jump == STRCUR_JUMP_DELIM);
+		}
 
 		if (jump != STRCUR_JUMP_NONE) {
-			const strCursorDelimType is_special = (*pos) > 1 ? test_special_char(&str[(*pos) - 1]) : STRCUR_DELIM_NONE;
+			const strCursorDelimType delim_type = (*pos) > 0 ? cursor_delim_type(&str[(*pos) - 1]) : STRCUR_DELIM_NONE;
 			/* jump between special characters (/,\,_,-, etc.),
-			 * look at function test_special_char() for complete
+			 * look at function cursor_delim_type() for complete
 			 * list of special character, ctr -> */
 			while ((*pos) > 0) {
+				const int pos_prev = *pos;
 				if (BLI_str_cursor_step_prev_utf8(str, maxlen, pos)) {
-					if ((jump != STRCUR_JUMP_ALL) && (is_special != test_special_char(&str[*pos])))
+					if ((jump != STRCUR_JUMP_ALL) && (delim_type != cursor_delim_type(&str[*pos]))) {
+						/* left only: compensate for index/change in direction */
+						if ((pos_orig - (*pos)) >= 1) {
+							*pos = pos_prev;
+						}
 						break;
+					}
 				}
 				else {
 					break;
 				}
-			}
-
-			/* left only: compensate for index/change in direction */
-			if (((*pos) != 0) && ABS(pos_prev - (*pos)) >= 1) {
-				BLI_str_cursor_step_next_utf8(str, maxlen, pos);
 			}
 		}
 	}

@@ -24,14 +24,17 @@
  *  \ingroup RNA
  */
 
-
 #include <stdlib.h>
+
+#include "DNA_object_fluidsim.h"
+
+#include "BLI_threads.h"
+#include "BLI_utildefines.h"
+#include "BLI_path_util.h"
 
 #include "RNA_define.h"
 
 #include "rna_internal.h"
-
-#include "DNA_object_fluidsim.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -195,8 +198,10 @@ static char *rna_FluidSettings_path(PointerRNA *ptr)
 {
 	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)fss->fmd;
+	char name_esc[sizeof(md->name) * 2];
 
-	return BLI_sprintfN("modifiers[\"%s\"].settings", md->name);
+	BLI_strescape(name_esc, md->name, sizeof(name_esc));
+	return BLI_sprintfN("modifiers[\"%s\"].settings", name_esc);
 }
 
 static void rna_FluidMeshVertex_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -278,6 +283,11 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 
 	/* standard settings */
 
+	prop = RNA_def_property(srna, "threads", PROP_INT, PROP_NONE);
+	RNA_def_property_int_sdna(prop, NULL, "threads");
+	RNA_def_property_range(prop, 0, BLENDER_MAX_THREADS);
+	RNA_def_property_ui_text(prop, "Simulation Threads", "Override number of threads for the simulation, 0 is automatic");
+	
 	prop = RNA_def_property(srna, "resolution", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "resolutionxyz");
 	RNA_def_property_range(prop, 1, 1024);
@@ -409,7 +419,7 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Generate Speed Vectors", "Generate speed vectors for vector blur");
 
 	/* no collision object surface */
-	prop = RNA_def_property(srna, "surface_noobs", PROP_BOOLEAN, PROP_NONE);
+	prop = RNA_def_property(srna, "use_surface_noobs", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "typeFlags", OB_FSSG_NOOBS);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Remove air bubbles",
@@ -698,7 +708,7 @@ void RNA_def_fluidsim(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Type", "Type of participation in the fluid simulation");
 	RNA_def_property_update(prop, 0, "rna_FluidSettings_update_type");
 
-	/*prop= RNA_def_property(srna, "ipo", PROP_POINTER, PROP_NONE); */
+	/*prop = RNA_def_property(srna, "ipo", PROP_POINTER, PROP_NONE); */
 	/*RNA_def_property_ui_text(prop, "IPO Curves", "IPO curves used by fluid simulation settings"); */
 
 	/* types */

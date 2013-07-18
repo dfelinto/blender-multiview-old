@@ -43,14 +43,13 @@
 #include "bmesh_py_ops.h"
 #include "bmesh_py_utils.h"
 
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 
 #include "DNA_mesh_types.h"
 
 #include "../generic/py_capi_utils.h"
 
 #include "bmesh_py_api.h" /* own include */
-
 
 PyDoc_STRVAR(bpy_bm_new_doc,
 ".. method:: new()\n"
@@ -73,6 +72,8 @@ PyDoc_STRVAR(bpy_bm_from_edit_mesh_doc,
 "\n"
 "   Return a BMesh from this mesh, currently the mesh must already be in editmode.\n"
 "\n"
+"   :arg mesh: The editmode mesh.\n"
+"   :type mesh: :class:`bpy.types.Mesh`\n"
 "   :return: the BMesh associated with this mesh.\n"
 "   :rtype: :class:`bmesh.types.BMesh`\n"
 );
@@ -96,21 +97,62 @@ static PyObject *bpy_bm_from_edit_mesh(PyObject *UNUSED(self), PyObject *value)
 	return BPy_BMesh_CreatePyObject(bm, BPY_BMFLAG_IS_WRAPPED);
 }
 
+PyDoc_STRVAR(bpy_bm_update_edit_mesh_doc,
+".. method:: update_edit_mesh(mesh, tessface=True, destructive=True)\n"
+"\n"
+"   Update the mesh after changes to the BMesh in editmode, \n"
+"   optionally recalculating n-gon tessellation.\n"
+"\n"
+"   :arg mesh: The editmode mesh.\n"
+"   :type mesh: :class:`bpy.types.Mesh`\n"
+"   :arg tessface: Option to recalculate n-gon tessellation.\n"
+"   :type tessface: boolean\n"
+"   :arg destructive: Use when grometry has been added or removed.\n"
+"   :type destructive: boolean\n"
+);
+static PyObject *bpy_bm_update_edit_mesh(PyObject *UNUSED(self), PyObject *args, PyObject *kw)
+{
+	static const char *kwlist[] = {"mesh", "tessface", "destructive", NULL};
+	PyObject *py_me;
+	Mesh *me;
+	int do_tessface = true;
+	int is_destructive = true;
+
+	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|ii:update_edit_mesh", (char **)kwlist,
+	                                 &py_me, &do_tessface, &is_destructive))
+	{
+		return NULL;
+	}
+
+	me = PyC_RNA_AsPointer(py_me, "Mesh");
+
+	if (me == NULL) {
+		return NULL;
+	}
+
+	if (me->edit_btmesh == NULL) {
+		PyErr_SetString(PyExc_ValueError,
+		                "The mesh must be in editmode");
+		return NULL;
+	}
+
+	{
+		extern void EDBM_update_generic(BMEditMesh *em, const bool do_tessface, const bool is_destructive);
+		EDBM_update_generic(me->edit_btmesh, do_tessface, is_destructive);
+	}
+
+	Py_RETURN_NONE;
+}
+
 static struct PyMethodDef BPy_BM_methods[] = {
-    {"new",            (PyCFunction)bpy_bm_new,            METH_NOARGS,  bpy_bm_new_doc},
-    {"from_edit_mesh", (PyCFunction)bpy_bm_from_edit_mesh, METH_O,       bpy_bm_from_edit_mesh_doc},
-    {NULL, NULL, 0, NULL}
+	{"new",            (PyCFunction)bpy_bm_new,            METH_NOARGS,  bpy_bm_new_doc},
+	{"from_edit_mesh", (PyCFunction)bpy_bm_from_edit_mesh, METH_O,       bpy_bm_from_edit_mesh_doc},
+	{"update_edit_mesh", (PyCFunction)bpy_bm_update_edit_mesh, METH_VARARGS | METH_KEYWORDS, bpy_bm_update_edit_mesh_doc},
+	{NULL, NULL, 0, NULL}
 };
 
 PyDoc_STRVAR(BPy_BM_doc,
 "This module provides access to blenders bmesh data structures.\n"
-"\n"
-"\n"
-"Submodules:\n"
-"\n"
-"* :mod:`bmesh.utils`\n"
-"* :mod:`bmesh.types`\n"
-"\n"
 "\n"
 ".. include:: include__bmesh.rst\n"
 );

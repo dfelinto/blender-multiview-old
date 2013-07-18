@@ -29,6 +29,10 @@
 
 /** \file DNA_key_types.h
  *  \ingroup DNA
+ *
+ * This file defines structures for Shape-Keys (not animation keyframes),
+ * attached to Mesh, Curve and Lattice Data. Even though Key's are ID blocks they
+ * aren't intended to be shared between multiple data blocks as with other ID types.
  */
 
 #include "DNA_defs.h"
@@ -105,7 +109,7 @@ typedef struct Key {
 
 /* Key->type: KeyBlocks are interpreted as... */
 enum {
-	/* Sequencial positions over time (using KeyBlock->pos and Key->ctime) */
+	/* Sequential positions over time (using KeyBlock->pos and Key->ctime) */
 	KEY_NORMAL      = 0,
 
 	/* States to blend between (default) */

@@ -43,6 +43,8 @@
 #include "BLI_kdopbvh.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_armature_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_constraint_types.h"
@@ -79,19 +81,13 @@
 #include "BKE_mesh.h"
 #include "BKE_shrinkwrap.h"
 #include "BKE_mesh.h"
-#include "BKE_tessmesh.h"
+#include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_movieclip.h"
 
 #ifdef WITH_PYTHON
-#include "BPY_extern.h"
+#  include "BPY_extern.h"
 #endif
-
-#ifndef M_PI
-#define M_PI        3.14159265358979323846
-#endif
-
-
 
 /* ************************ Constraints - General Utilities *************************** */
 /* These functions here don't act on any specific constraints, and are therefore should/will
@@ -102,16 +98,16 @@
 /* -------------- Naming -------------- */
 
 /* Find the first available, non-duplicate name for a given constraint */
-void unique_constraint_name(bConstraint *con, ListBase *list)
+void BKE_unique_constraint_name(bConstraint *con, ListBase *list)
 {
-	BLI_uniquename(list, con, "Const", '.', offsetof(bConstraint, name), sizeof(con->name));
+	BLI_uniquename(list, con, DATA_("Const"), '.', offsetof(bConstraint, name), sizeof(con->name));
 }
 
 /* ----------------- Evaluation Loop Preparation --------------- */
 
 /* package an object/bone for use in constraint evaluation */
 /* This function MEM_calloc's a bConstraintOb struct, that will need to be freed after evaluation */
-bConstraintOb *constraints_make_evalob(Scene *scene, Object *ob, void *subdata, short datatype)
+bConstraintOb *BKE_constraints_make_evalob(Scene *scene, Object *ob, void *subdata, short datatype)
 {
 	bConstraintOb *cob;
 	
@@ -156,7 +152,7 @@ bConstraintOb *constraints_make_evalob(Scene *scene, Object *ob, void *subdata, 
 				}
 				
 				/* matrix in world-space */
-				mult_m4_m4m4(cob->matrix, ob->obmat, cob->pchan->pose_mat);
+				mul_m4_m4m4(cob->matrix, ob->obmat, cob->pchan->pose_mat);
 			}
 			else
 				unit_m4(cob->matrix);
@@ -175,7 +171,7 @@ bConstraintOb *constraints_make_evalob(Scene *scene, Object *ob, void *subdata, 
 }
 
 /* cleanup after constraint evaluation */
-void constraints_clear_evalob(bConstraintOb *cob)
+void BKE_constraints_clear_evalob(bConstraintOb *cob)
 {
 	float delta[4][4], imat[4][4];
 	
@@ -185,7 +181,7 @@ void constraints_clear_evalob(bConstraintOb *cob)
 	
 	/* calculate delta of constraints evaluation */
 	invert_m4_m4(imat, cob->startmat);
-	mult_m4_m4m4(delta, cob->matrix, imat);
+	mul_m4_m4m4(delta, cob->matrix, imat);
 	
 	/* copy matrices back to source */
 	switch (cob->type) {
@@ -206,7 +202,7 @@ void constraints_clear_evalob(bConstraintOb *cob)
 			/* cob->ob or cob->pchan might not exist */
 			if (cob->ob && cob->pchan) {
 				/* copy new pose-matrix back to owner */
-				mult_m4_m4m4(cob->pchan->pose_mat, cob->ob->imat, cob->matrix);
+				mul_m4_m4m4(cob->pchan->pose_mat, cob->ob->imat, cob->matrix);
 				
 				/* copy inverse of delta back to owner */
 				invert_m4_m4(cob->pchan->constinv, delta);
@@ -221,56 +217,11 @@ void constraints_clear_evalob(bConstraintOb *cob)
 
 /* -------------- Space-Conversion API -------------- */
 
-#if 0 /* XXX Old code, does the same as one in armature.c, will remove it later. */
-static void constraint_pchan_diff_mat(bPoseChannel *pchan, float diff_mat[4][4])
-{
-	if (pchan->parent) {
-		float offs_bone[4][4];
-
-		/* construct offs_bone the same way it is done in armature.c */
-		copy_m4_m3(offs_bone, pchan->bone->bone_mat);
-		copy_v3_v3(offs_bone[3], pchan->bone->head);
-		offs_bone[3][1] += pchan->bone->parent->length;
-
-		if (pchan->bone->flag & BONE_HINGE) {
-			/* pose_mat = par_pose-space_location * chan_mat */
-			float tmat[4][4];
-
-			/* the rotation of the parent restposition */
-			copy_m4_m4(tmat, pchan->bone->parent->arm_mat);
-
-			/* the location of actual parent transform */
-			copy_v3_v3(tmat[3], offs_bone[3]);
-			zero_v3(offs_bone[3]);
-			mul_m4_v3(pchan->parent->pose_mat, tmat[3]);
-
-			mult_m4_m4m4(diff_mat, tmat, offs_bone);
-		}
-		else {
-			/* pose_mat = par_pose_mat * bone_mat * chan_mat */
-			if (pchan->bone->flag & BONE_NO_SCALE) {
-				float tmat[4][4];
-				copy_m4_m4(tmat, pchan->parent->pose_mat);
-				normalize_m4(tmat);
-				mult_m4_m4m4(diff_mat, tmat, offs_bone);
-			}
-			else {
-				mult_m4_m4m4(diff_mat, pchan->parent->pose_mat, offs_bone);
-			}
-		}
-	}
-	else {
-		/* pose_mat = chan_mat * arm_mat */
-		copy_m4_m4(diff_mat, pchan->bone->arm_mat);
-	}
-}
-#endif
-
 /* This function is responsible for the correct transformations/conversions 
  * of a matrix from one space to another for constraint evaluation.
  * For now, this is only implemented for Objects and PoseChannels.
  */
-void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4], short from, short to)
+void BKE_constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[4][4], short from, short to)
 {
 	float diff_mat[4][4];
 	float imat[4][4];
@@ -288,12 +239,12 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 			{
 				/* world to pose */
 				invert_m4_m4(imat, ob->obmat);
-				mult_m4_m4m4(mat, imat, mat);
+				mul_m4_m4m4(mat, imat, mat);
 				
 				/* use pose-space as stepping stone for other spaces... */
 				if (ELEM(to, CONSTRAINT_SPACE_LOCAL, CONSTRAINT_SPACE_PARLOCAL)) {
 					/* call self with slightly different values */
-					constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, to);
+					BKE_constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, to);
 				}
 			}
 			break;
@@ -301,31 +252,19 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 			{
 				/* pose to world */
 				if (to == CONSTRAINT_SPACE_WORLD) {
-					mult_m4_m4m4(mat, ob->obmat, mat);
+					mul_m4_m4m4(mat, ob->obmat, mat);
 				}
 				/* pose to local */
 				else if (to == CONSTRAINT_SPACE_LOCAL) {
 					if (pchan->bone) {
 						BKE_armature_mat_pose_to_bone(pchan, mat, mat);
-#if 0  /* XXX Old code, will remove it later. */
-						constraint_pchan_diff_mat(pchan, diff_mat);
-
-						invert_m4_m4(imat, diff_mat);
-						mult_m4_m4m4(mat, imat, mat);
-
-						/* override with local location */
-						if ((pchan->parent) && (pchan->bone->flag & BONE_NO_LOCAL_LOCATION)) {
-							BKE_armature_mat_pose_to_bone_ex(ob, pchan, pchan->pose_mat, tempmat);
-							copy_v3_v3(mat[3], tempmat[3]);
-						}
-#endif
 					}
 				}
 				/* pose to local with parent */
 				else if (to == CONSTRAINT_SPACE_PARLOCAL) {
 					if (pchan->bone) {
 						invert_m4_m4(imat, pchan->bone->arm_mat);
-						mult_m4_m4m4(mat, imat, mat);
+						mul_m4_m4m4(mat, imat, mat);
 					}
 				}
 			}
@@ -336,32 +275,27 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 				if (pchan->bone) {
 					/* we need the posespace_matrix = local_matrix + (parent_posespace_matrix + restpos) */
 					BKE_armature_mat_bone_to_pose(pchan, mat, mat);
-#if 0
-					constraint_pchan_diff_mat(pchan, diff_mat);
-
-					mult_m4_m4m4(mat, diff_mat, mat);
-#endif
 				}
 				
 				/* use pose-space as stepping stone for other spaces */
 				if (ELEM(to, CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_PARLOCAL)) {
 					/* call self with slightly different values */
-					constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, to);
-				}				
+					BKE_constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, to);
+				}
 			}
 			break;
 			case CONSTRAINT_SPACE_PARLOCAL: /* -------------- FROM LOCAL WITH PARENT ---------- */
 			{
 				/* local + parent to pose */
-				if (pchan->bone) {					
+				if (pchan->bone) {
 					copy_m4_m4(diff_mat, pchan->bone->arm_mat);
-					mult_m4_m4m4(mat, mat, diff_mat);
+					mul_m4_m4m4(mat, mat, diff_mat);
 				}
 				
 				/* use pose-space as stepping stone for other spaces */
 				if (ELEM(to, CONSTRAINT_SPACE_WORLD, CONSTRAINT_SPACE_LOCAL)) {
 					/* call self with slightly different values */
-					constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, to);
+					BKE_constraint_mat_convertspace(ob, pchan, mat, CONSTRAINT_SPACE_POSE, to);
 				}
 			}
 			break;
@@ -373,9 +307,9 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 			/* check if object has a parent */
 			if (ob->parent) {
 				/* 'subtract' parent's effects from owner */
-				mult_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
+				mul_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
 				invert_m4_m4(imat, diff_mat);
-				mult_m4_m4m4(mat, imat, mat);
+				mul_m4_m4m4(mat, imat, mat);
 			}
 			else {
 				/* Local space in this case will have to be defined as local to the owner's 
@@ -386,15 +320,15 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 				zero_v3(diff_mat[3]);
 				
 				invert_m4_m4(imat, diff_mat);
-				mult_m4_m4m4(mat, imat, mat);
+				mul_m4_m4m4(mat, imat, mat);
 			}
 		}
 		else if (from == CONSTRAINT_SPACE_LOCAL && to == CONSTRAINT_SPACE_WORLD) {
 			/* check that object has a parent - otherwise this won't work */
 			if (ob->parent) {
 				/* 'add' parent's effect back to owner */
-				mult_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
-				mult_m4_m4m4(mat, diff_mat, mat);
+				mul_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
+				mul_m4_m4m4(mat, diff_mat, mat);
 			}
 			else {
 				/* Local space in this case will have to be defined as local to the owner's 
@@ -404,7 +338,7 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 				normalize_m4(diff_mat);
 				zero_v3(diff_mat[3]);
 				
-				mult_m4_m4m4(mat, diff_mat, mat);
+				mul_m4_m4m4(mat, diff_mat, mat);
 			}
 		}
 	}
@@ -413,11 +347,10 @@ void constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[][4]
 /* ------------ General Target Matrix Tools ---------- */
 
 /* function that sets the given matrix based on given vertex group in mesh */
-static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[][4])
+static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[4][4])
 {
 	DerivedMesh *dm = NULL;
-	Mesh *me = ob->data;
-	BMEditMesh *em = me->edit_btmesh;
+	BMEditMesh *em = BKE_editmesh_from_object(ob);
 	float vec[3] = {0.0f, 0.0f, 0.0f};
 	float normal[3] = {0.0f, 0.0f, 0.0f}, plane[3];
 	float imat[3][3], tmat[3][3];
@@ -433,7 +366,7 @@ static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[
 	/* get DerivedMesh */
 	if (em) {
 		/* target is in editmode, so get a special derived mesh */
-		dm = CDDM_from_BMEditMesh(em, ob->data, FALSE, FALSE);
+		dm = CDDM_from_editbmesh(em, FALSE, FALSE);
 		freeDM = 1;
 	}
 	else {
@@ -447,29 +380,31 @@ static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[
 	if (dm) {
 		MDeformVert *dvert = dm->getVertDataArray(dm, CD_MDEFORMVERT);
 		int numVerts = dm->getNumVerts(dm);
-		int i, count = 0;
+		int i;
 		float co[3], nor[3];
 		
 		/* check that dvert is a valid pointers (just in case) */
 		if (dvert) {
 			MDeformVert *dv = dvert;
+			float weightsum = 0.0f;
+
 			/* get the average of all verts with that are in the vertex-group */
 			for (i = 0; i < numVerts; i++, dv++) {
 				MDeformWeight *dw = defvert_find_index(dv, defgroup);
-				if (dw && dw->weight != 0.0f) {
+
+				if (dw && dw->weight > 0.0f) {
 					dm->getVertCo(dm, i, co);
 					dm->getVertNo(dm, i, nor);
-					add_v3_v3(vec, co);
-					add_v3_v3(normal, nor);
-					count++;
-					
+					madd_v3_v3fl(vec, co, dw->weight);
+					madd_v3_v3fl(normal, nor, dw->weight);
+					weightsum += dw->weight;
 				}
 			}
 
 			/* calculate averages of normal and coordinates */
-			if (count > 0) {
-				mul_v3_fl(vec, 1.0f / count);
-				mul_v3_fl(normal, 1.0f / count);
+			if (weightsum > 0) {
+				mul_v3_fl(vec, 1.0f / weightsum);
+				mul_v3_fl(normal, 1.0f / weightsum);
 			}
 			
 			
@@ -510,7 +445,7 @@ static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[
 }
 
 /* function that sets the given matrix based on given vertex group in lattice */
-static void contarget_get_lattice_mat(Object *ob, const char *substring, float mat[][4])
+static void contarget_get_lattice_mat(Object *ob, const char *substring, float mat[4][4])
 {
 	Lattice *lt = (Lattice *)ob->data;
 	
@@ -563,12 +498,12 @@ static void contarget_get_lattice_mat(Object *ob, const char *substring, float m
 
 /* generic function to get the appropriate matrix for most target cases */
 /* The cases where the target can be object data have not been implemented */
-static void constraint_target_to_mat4(Object *ob, const char *substring, float mat[][4], short from, short to, float headtail)
+static void constraint_target_to_mat4(Object *ob, const char *substring, float mat[4][4], short from, short to, float headtail)
 {
 	/*	Case OBJECT */
 	if (!strlen(substring)) {
 		copy_m4_m4(mat, ob->obmat);
-		constraint_mat_convertspace(ob, NULL, mat, from, to);
+		BKE_constraint_mat_convertspace(ob, NULL, mat, from, to);
 	}
 	/*  Case VERTEXGROUP */
 	/* Current method just takes the average location of all the points in the
@@ -581,11 +516,11 @@ static void constraint_target_to_mat4(Object *ob, const char *substring, float m
 	 */
 	else if (ob->type == OB_MESH) {
 		contarget_get_mesh_mat(ob, substring, mat);
-		constraint_mat_convertspace(ob, NULL, mat, from, to);
+		BKE_constraint_mat_convertspace(ob, NULL, mat, from, to);
 	}
 	else if (ob->type == OB_LATTICE) {
 		contarget_get_lattice_mat(ob, substring, mat);
-		constraint_mat_convertspace(ob, NULL, mat, from, to);
+		BKE_constraint_mat_convertspace(ob, NULL, mat, from, to);
 	}
 	/*	Case BONE */
 	else {
@@ -599,26 +534,26 @@ static void constraint_target_to_mat4(Object *ob, const char *substring, float m
 			 */
 			if (headtail < 0.000001f) {
 				/* skip length interpolation if set to head */
-				mult_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
+				mul_m4_m4m4(mat, ob->obmat, pchan->pose_mat);
 			}
 			else {
 				float tempmat[4][4], loc[3];
 				
 				/* interpolate along length of bone */
-				interp_v3_v3v3(loc, pchan->pose_head, pchan->pose_tail, headtail);	
+				interp_v3_v3v3(loc, pchan->pose_head, pchan->pose_tail, headtail);
 				
 				/* use interpolated distance for subtarget */
-				copy_m4_m4(tempmat, pchan->pose_mat);	
+				copy_m4_m4(tempmat, pchan->pose_mat);
 				copy_v3_v3(tempmat[3], loc);
 				
-				mult_m4_m4m4(mat, ob->obmat, tempmat);
+				mul_m4_m4m4(mat, ob->obmat, tempmat);
 			}
-		} 
+		}
 		else
 			copy_m4_m4(mat, ob->obmat);
 			
 		/* convert matrix space as required */
-		constraint_mat_convertspace(ob, pchan, mat, from, to);
+		BKE_constraint_mat_convertspace(ob, pchan, mat, from, to);
 	}
 }
 
@@ -822,12 +757,12 @@ static void childof_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 			/* multiply target (parent matrix) by offset (parent inverse) to get 
 			 * the effect of the parent that will be exerted on the owner
 			 */
-			mult_m4_m4m4(parmat, ct->matrix, data->invmat);
+			mul_m4_m4m4(parmat, ct->matrix, data->invmat);
 			
 			/* now multiply the parent matrix by the owner matrix to get the 
 			 * the effect of this constraint (i.e. owner is 'parented' to parent)
 			 */
-			mult_m4_m4m4(cob->matrix, parmat, cob->matrix);
+			mul_m4_m4m4(cob->matrix, parmat, cob->matrix);
 		}
 		else {
 			float invmat[4][4], tempmat[4][4];
@@ -864,13 +799,13 @@ static void childof_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 			/* multiply target (parent matrix) by offset (parent inverse) to get 
 			 * the effect of the parent that will be exerted on the owner
 			 */
-			mult_m4_m4m4(parmat, ct->matrix, invmat);
+			mul_m4_m4m4(parmat, ct->matrix, invmat);
 			
 			/* now multiply the parent matrix by the owner matrix to get the 
 			 * the effect of this constraint (i.e.  owner is 'parented' to parent)
 			 */
 			copy_m4_m4(tempmat, cob->matrix);
-			mult_m4_m4m4(cob->matrix, parmat, tempmat);
+			mul_m4_m4m4(cob->matrix, parmat, tempmat);
 			
 			/* without this, changes to scale and rotation can change location
 			 * of a parentless bone or a disconnected bone. Even though its set
@@ -886,7 +821,7 @@ static void childof_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 static bConstraintTypeInfo CTI_CHILDOF = {
 	CONSTRAINT_TYPE_CHILDOF, /* type */
 	sizeof(bChildOfConstraint), /* size */
-	"ChildOf", /* name */
+	"Child Of", /* name */
 	"bChildOfConstraint", /* struct name */
 	NULL, /* free data */
 	childof_id_looper, /* id looper */
@@ -959,7 +894,7 @@ static int basis_cross(int n, int m)
 	}
 }
 
-static void vectomat(const float vec[3], const float target_up[3], short axis, short upflag, short flags, float m[][3])
+static void vectomat(const float vec[3], const float target_up[3], short axis, short upflag, short flags, float m[3][3])
 {
 	float n[3];
 	float u[3]; /* vector specifying the up axis */
@@ -977,11 +912,11 @@ static void vectomat(const float vec[3], const float target_up[3], short axis, s
 	else negate_v3(n);
 
 	/* n specifies the transformation of the track axis */
-	if (flags & TARGET_Z_UP) { 
+	if (flags & TARGET_Z_UP) {
 		/* target Z axis is the global up axis */
 		copy_v3_v3(u, target_up);
 	}
-	else { 
+	else {
 		/* world Z axis is the global up axis */
 		u[0] = 0;
 		u[1] = 0;
@@ -1031,12 +966,11 @@ static void trackto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 	if (VALID_CONS_TARGET(ct)) {
 		float size[3], vec[3];
 		float totmat[3][3];
-		float tmat[4][4];
 		
 		/* Get size property, since ob->size is only the object's own relative size, not its global one */
 		mat4_to_size(size, cob->matrix);
 		
-		/* Clear the object's rotation */ 	
+		/* Clear the object's rotation */
 		cob->matrix[0][0] = size[0];
 		cob->matrix[0][1] = 0;
 		cob->matrix[0][2] = 0;
@@ -1054,16 +988,15 @@ static void trackto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *tar
 		vectomat(vec, ct->matrix[2], 
 		         (short)data->reserved1, (short)data->reserved2,
 		         data->flags, totmat);
-		
-		copy_m4_m4(tmat, cob->matrix);
-		mul_m4_m3m4(cob->matrix, totmat, tmat);
+
+		mul_m4_m3m4(cob->matrix, totmat, cob->matrix);
 	}
 }
 
 static bConstraintTypeInfo CTI_TRACKTO = {
 	CONSTRAINT_TYPE_TRACKTO, /* type */
 	sizeof(bTrackToConstraint), /* size */
-	"TrackTo", /* name */
+	"Track To", /* name */
 	"bTrackToConstraint", /* struct name */
 	NULL, /* free data */
 	trackto_id_looper, /* id looper */
@@ -1273,8 +1206,8 @@ static void followpath_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 					vec_to_quat(quat, dir, (short)data->trackflag, (short)data->upflag);
 					
 					normalize_v3(dir);
-					q[0] = (float)cos(0.5 * vec[3]);
-					x1 = (float)sin(0.5 * vec[3]);
+					q[0] = cosf(0.5 * vec[3]);
+					x1 = sinf(0.5 * vec[3]);
 					q[1] = -x1 * dir[0];
 					q[2] = -x1 * dir[1];
 					q[3] = -x1 * dir[2];
@@ -1289,7 +1222,7 @@ static void followpath_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 				if (data->followflag & FOLLOWPATH_RADIUS) {
 					float tmat[4][4], rmat[4][4];
 					scale_m4_fl(tmat, radius);
-					mult_m4_m4m4(rmat, tmat, totmat);
+					mul_m4_m4m4(rmat, tmat, totmat);
 					copy_m4_m4(totmat, rmat);
 				}
 				
@@ -1471,7 +1404,7 @@ static void sizelimit_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *U
 	
 	if (data->flag & LIMIT_XMIN) {
 		if (size[0] < data->xmin) 
-			size[0] = data->xmin;	
+			size[0] = data->xmin;
 	}
 	if (data->flag & LIMIT_XMAX) {
 		if (size[0] > data->xmax) 
@@ -1479,7 +1412,7 @@ static void sizelimit_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *U
 	}
 	if (data->flag & LIMIT_YMIN) {
 		if (size[1] < data->ymin) 
-			size[1] = data->ymin;	
+			size[1] = data->ymin;
 	}
 	if (data->flag & LIMIT_YMAX) {
 		if (size[1] > data->ymax) 
@@ -1487,7 +1420,7 @@ static void sizelimit_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *U
 	}
 	if (data->flag & LIMIT_ZMIN) {
 		if (size[2] < data->zmin) 
-			size[2] = data->zmin;	
+			size[2] = data->zmin;
 	}
 	if (data->flag & LIMIT_ZMAX) {
 		if (size[2] > data->zmax) 
@@ -2005,7 +1938,7 @@ static void pycon_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstraintTa
 			
 			/* this check is to make sure curve objects get updated on file load correctly.*/
 			if (cu->path == NULL || cu->path->data == NULL) /* only happens on reload file, but violates depsgraph still... fix! */
-				BKE_displist_make_curveTypes(cob->scene, ct->tar, 0);				
+				BKE_displist_make_curveTypes(cob->scene, ct->tar, 0);
 		}
 		
 		/* firstly calculate the matrix the normal way, then let the py-function override
@@ -2209,7 +2142,7 @@ static void actcon_evaluate(bConstraint *UNUSED(con), bConstraintOb *cob, ListBa
 		 * function has already taken care of everything else.
 		 */
 		copy_m4_m4(temp, cob->matrix);
-		mult_m4_m4m4(cob->matrix, temp, ct->matrix);
+		mul_m4_m4m4(cob->matrix, temp, ct->matrix);
 	}
 }
 
@@ -2282,7 +2215,6 @@ static void locktrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 		float totmat[3][3];
 		float tmpmat[3][3];
 		float invmat[3][3];
-		float tmat[4][4];
 		float mdet;
 		
 		/* Vector object -> target */
@@ -2510,8 +2442,6 @@ static void locktrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 		totmat[1][0] = tmpmat[1][0]; totmat[1][1] = tmpmat[1][1]; totmat[1][2] = tmpmat[1][2];
 		totmat[2][0] = tmpmat[2][0]; totmat[2][1] = tmpmat[2][1]; totmat[2][2] = tmpmat[2][2];
 		
-		copy_m4_m4(tmat, cob->matrix);
-		
 		mdet = determinant_m3(totmat[0][0], totmat[0][1], totmat[0][2],
 		                      totmat[1][0], totmat[1][1], totmat[1][2],
 		                      totmat[2][0], totmat[2][1], totmat[2][2]);
@@ -2520,7 +2450,7 @@ static void locktrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 		}
 		
 		/* apply out transformaton to the object */
-		mul_m4_m3m4(cob->matrix, totmat, tmat);
+		mul_m4_m3m4(cob->matrix, totmat, cob->matrix);
 	}
 }
 
@@ -2718,7 +2648,6 @@ static void stretchto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 	if (VALID_CONS_TARGET(ct)) {
 		float size[3], scale[3], vec[3], xx[3], zz[3], orth[3];
 		float totmat[3][3];
-		float tmat[4][4];
 		float dist;
 		
 		/* store scaling before destroying obmat */
@@ -2771,7 +2700,7 @@ static void stretchto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 			default: /* should not happen, but in case*/
 				return;
 		} /* switch (data->volmode) */
-
+		
 		/* Clear the object's rotation and scale */
 		cob->matrix[0][0] = size[0] * scale[0];
 		cob->matrix[0][1] = 0;
@@ -2794,10 +2723,10 @@ static void stretchto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 				/* othogonal to "new Y" "old X! plane */
 				cross_v3_v3v3(orth, vec, xx);
 				normalize_v3(orth);
-
+				
 				/* new Z*/
 				copy_v3_v3(totmat[2], orth);
-
+				
 				/* we decided to keep X plane*/
 				cross_v3_v3v3(xx, orth, vec);
 				normalize_v3_v3(totmat[0], xx);
@@ -2807,18 +2736,17 @@ static void stretchto_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 				/* othogonal to "new Y" "old Z! plane */
 				cross_v3_v3v3(orth, vec, zz);
 				normalize_v3(orth);
-
+				
 				/* new X */
 				negate_v3_v3(totmat[0], orth);
-
+				
 				/* we decided to keep Z */
 				cross_v3_v3v3(zz, orth, vec);
 				normalize_v3_v3(totmat[2], zz);
 				break;
 		} /* switch (data->plane) */
 		
-		copy_m4_m4(tmat, cob->matrix);
-		mul_m4_m3m4(cob->matrix, totmat, tmat);
+		mul_m4_m3m4(cob->matrix, totmat, cob->matrix);
 	}
 }
 
@@ -2900,7 +2828,7 @@ static void minmax_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targ
 		if (data->flag & MINMAX_USEROT) {
 			/* take rotation of target into account by doing the transaction in target's localspace */
 			invert_m4_m4(imat, tarmat);
-			mult_m4_m4m4(tmat, imat, obmat);
+			mul_m4_m4m4(tmat, imat, obmat);
 			copy_m4_m4(obmat, tmat);
 			unit_m4(tarmat);
 		}
@@ -2945,7 +2873,7 @@ static void minmax_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targ
 			if (data->flag & MINMAX_STICKY) {
 				if (data->flag & MINMAX_STUCK) {
 					copy_v3_v3(obmat[3], data->cache);
-				} 
+				}
 				else {
 					copy_v3_v3(data->cache, obmat[3]);
 					data->flag |= MINMAX_STUCK;
@@ -2953,13 +2881,13 @@ static void minmax_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *targ
 			}
 			if (data->flag & MINMAX_USEROT) {
 				/* get out of localspace */
-				mult_m4_m4m4(tmat, ct->matrix, obmat);
+				mul_m4_m4m4(tmat, ct->matrix, obmat);
 				copy_m4_m4(cob->matrix, tmat);
-			} 
-			else {			
+			}
+			else {
 				copy_v3_v3(cob->matrix[3], obmat[3]);
 			}
-		} 
+		}
 		else {
 			data->flag &= ~MINMAX_STUCK;
 		}
@@ -3299,7 +3227,7 @@ static void transform_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 		/* extract components of owner's matrix */
 		copy_v3_v3(loc, cob->matrix[3]);
 		mat4_to_eulO(eul, cob->rotOrder, cob->matrix);
-		mat4_to_size(size, cob->matrix);	
+		mat4_to_size(size, cob->matrix);
 		
 		/* determine where in range current transforms lie */
 		if (data->expo) {
@@ -3331,15 +3259,16 @@ static void transform_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 			case 1: /* rotation */
 				for (i = 0; i < 3; i++) {
 					float tmin, tmax;
+					float val;
 					
 					tmin = data->to_min[i];
 					tmax = data->to_max[i];
 					
 					/* all values here should be in degrees */
-					eul[i] = tmin + (sval[(int)data->map[i]] * (tmax - tmin));
+					val = tmin + (sval[(int)data->map[i]] * (tmax - tmin));
 					
-					/* now convert final value back to radians */
-					eul[i] = DEG2RADF(eul[i]);
+					/* now convert final value back to radians, and add to original rotation (so that it can still be rotated) */
+					eul[i] += DEG2RADF(val);
 				}
 				break;
 			default: /* location */
@@ -3623,7 +3552,7 @@ static void damptrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase *t
 		cross_v3_v3v3(raxis, obvec, tarvec);
 		
 		rangle = dot_v3v3(obvec, tarvec);
-		rangle = acos(maxf(-1.0f, minf(1.0f, rangle)));
+		rangle = acos(max_ff(-1.0f, min_ff(1.0f, rangle)));
 		
 		/* construct rotation matrix from the axis-angle rotation found above 
 		 *	- this call takes care to make sure that the axis provided is a unit vector first
@@ -3950,7 +3879,7 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 			else {
 				BKE_tracking_get_camera_object_matrix(cob->scene, camob, mat);
 
-				mult_m4_m4m4(cob->matrix, obmat, mat);
+				mul_m4_m4m4(cob->matrix, obmat, mat);
 				translate_m4(cob->matrix, track->bundle_pos[0], track->bundle_pos[1], track->bundle_pos[2]);
 			}
 		}
@@ -4036,7 +3965,7 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 
 				copy_m4_m4(rmat, camob->obmat);
 				zero_v3(rmat[3]);
-				mult_m4_m4m4(cob->matrix, cob->matrix, rmat);
+				mul_m4_m4m4(cob->matrix, cob->matrix, rmat);
 
 				copy_v3_v3(cob->matrix[3], disp);
 			}
@@ -4057,37 +3986,41 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 				/* apply camera rotation so Z-axis would be co-linear */
 				copy_m4_m4(rmat, camob->obmat);
 				zero_v3(rmat[3]);
-				mult_m4_m4m4(cob->matrix, cob->matrix, rmat);
+				mul_m4_m4m4(cob->matrix, cob->matrix, rmat);
 
 				copy_v3_v3(cob->matrix[3], disp);
 			}
 
-			if (data->depth_ob && data->depth_ob->derivedFinal) {
+			if (data->depth_ob) {
 				Object *depth_ob = data->depth_ob;
-				BVHTreeFromMesh treeData = NULL_BVHTreeFromMesh;
-				BVHTreeRayHit hit;
-				float ray_start[3], ray_end[3], ray_nor[3], imat[4][4];
-				int result;
+				DerivedMesh *target = object_get_derived_final(depth_ob);
+				if (target) {
+					BVHTreeFromMesh treeData = NULL_BVHTreeFromMesh;
+					BVHTreeRayHit hit;
+					float ray_start[3], ray_end[3], ray_nor[3], imat[4][4];
+					int result;
 
-				invert_m4_m4(imat, depth_ob->obmat);
+					invert_m4_m4(imat, depth_ob->obmat);
 
-				mul_v3_m4v3(ray_start, imat, camob->obmat[3]);
-				mul_v3_m4v3(ray_end, imat, cob->matrix[3]);
+					mul_v3_m4v3(ray_start, imat, camob->obmat[3]);
+					mul_v3_m4v3(ray_end, imat, cob->matrix[3]);
 
-				sub_v3_v3v3(ray_nor, ray_end, ray_start);
+					sub_v3_v3v3(ray_nor, ray_end, ray_start);
 
-				bvhtree_from_mesh_faces(&treeData, depth_ob->derivedFinal, 0.0f, 4, 6);
+					bvhtree_from_mesh_faces(&treeData, target, 0.0f, 4, 6);
 
-				hit.dist = FLT_MAX;
-				hit.index = -1;
+					hit.dist = FLT_MAX;
+					hit.index = -1;
 
-				result = BLI_bvhtree_ray_cast(treeData.tree, ray_start, ray_nor, 0.0f, &hit, treeData.raycast_callback, &treeData);
+					result = BLI_bvhtree_ray_cast(treeData.tree, ray_start, ray_nor, 0.0f, &hit, treeData.raycast_callback, &treeData);
 
-				if (result != -1) {
-					mul_v3_m4v3(cob->matrix[3], depth_ob->obmat, hit.co);
+					if (result != -1) {
+						mul_v3_m4v3(cob->matrix[3], depth_ob->obmat, hit.co);
+					}
+
+					free_bvhtree_from_mesh(&treeData);
+					target->release(target);
 				}
-
-				free_bvhtree_from_mesh(&treeData);
 			}
 		}
 	}
@@ -4144,7 +4077,7 @@ static void camerasolver_evaluate(bConstraint *con, bConstraintOb *cob, ListBase
 
 		copy_m4_m4(obmat, cob->matrix);
 
-		mult_m4_m4m4(cob->matrix, obmat, mat);
+		mul_m4_m4m4(cob->matrix, obmat, mat);
 	}
 }
 
@@ -4210,7 +4143,7 @@ static void objectsolver_evaluate(bConstraint *con, bConstraintOb *cob, ListBase
 			BKE_tracking_camera_get_reconstructed_interpolate(tracking, object, framenr, mat);
 
 			invert_m4_m4(camimat, cammat);
-			mult_m4_m4m4(parmat, cammat, data->invmat);
+			mul_m4_m4m4(parmat, cammat, data->invmat);
 
 			copy_m4_m4(cammat, camob->obmat);
 			copy_m4_m4(obmat, cob->matrix);
@@ -4283,7 +4216,7 @@ static void constraints_init_typeinfo(void)
 /* This function should be used for getting the appropriate type-info when only
  * a constraint type is known
  */
-bConstraintTypeInfo *get_constraint_typeinfo(int type)
+bConstraintTypeInfo *BKE_get_constraint_typeinfo(int type)
 {
 	/* initialize the type-info list? */
 	if (CTI_INIT) {
@@ -4292,8 +4225,8 @@ bConstraintTypeInfo *get_constraint_typeinfo(int type)
 	}
 	
 	/* only return for valid types */
-	if ( (type >= CONSTRAINT_TYPE_NULL) && 
-	     (type < NUM_CONSTRAINT_TYPES) )
+	if ((type >= CONSTRAINT_TYPE_NULL) &&
+	    (type < NUM_CONSTRAINT_TYPES))
 	{
 		/* there shouldn't be any segfaults here... */
 		return constraintsTypeInfo[type];
@@ -4308,11 +4241,11 @@ bConstraintTypeInfo *get_constraint_typeinfo(int type)
 /* This function should always be used to get the appropriate type-info, as it
  * has checks which prevent segfaults in some weird cases.
  */
-bConstraintTypeInfo *constraint_get_typeinfo(bConstraint *con)
+bConstraintTypeInfo *BKE_constraint_get_typeinfo(bConstraint *con)
 {
 	/* only return typeinfo for valid constraints */
 	if (con)
-		return get_constraint_typeinfo(con->type);
+		return BKE_get_constraint_typeinfo(con->type);
 	else
 		return NULL;
 }
@@ -4324,7 +4257,7 @@ bConstraintTypeInfo *constraint_get_typeinfo(bConstraint *con)
  
 /* ---------- Data Management ------- */
 
-/* helper function for free_constraint_data() - unlinks references */
+/* helper function for BKE_free_constraint_data() - unlinks references */
 static void con_unlink_refs_cb(bConstraint *UNUSED(con), ID **idpoin, short isReference, void *UNUSED(userData))
 {
 	if (*idpoin && isReference)
@@ -4333,12 +4266,12 @@ static void con_unlink_refs_cb(bConstraint *UNUSED(con), ID **idpoin, short isRe
 
 /* Free data of a specific constraint if it has any info.
  * be sure to run BIK_clear_data() when freeing an IK constraint,
- * unless DAG_scene_sort is called. 
+ * unless DAG_relations_tag_update is called. 
  */
-void free_constraint_data(bConstraint *con)
+void BKE_free_constraint_data(bConstraint *con)
 {
 	if (con->data) {
-		bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 		
 		if (cti) {
 			/* perform any special freeing constraint may have */
@@ -4356,13 +4289,13 @@ void free_constraint_data(bConstraint *con)
 }
 
 /* Free all constraints from a constraint-stack */
-void free_constraints(ListBase *list)
+void BKE_free_constraints(ListBase *list)
 {
 	bConstraint *con;
 	
 	/* Free constraint data and also any extra data */
 	for (con = list->first; con; con = con->next)
-		free_constraint_data(con);
+		BKE_free_constraint_data(con);
 	
 	/* Free the whole list */
 	BLI_freelistN(list);
@@ -4370,10 +4303,10 @@ void free_constraints(ListBase *list)
 
 
 /* Remove the specified constraint from the given constraint stack */
-int remove_constraint(ListBase *list, bConstraint *con)
+int BKE_remove_constraint(ListBase *list, bConstraint *con)
 {
 	if (con) {
-		free_constraint_data(con);
+		BKE_free_constraint_data(con);
 		BLI_freelinkN(list, con);
 		return 1;
 	}
@@ -4382,7 +4315,7 @@ int remove_constraint(ListBase *list, bConstraint *con)
 }
 
 /* Remove all the constraints of the specified type from the given constraint stack */
-void remove_constraints_type(ListBase *list, short type, short last_only)
+void BKE_remove_constraints_type(ListBase *list, short type, short last_only)
 {
 	bConstraint *con, *conp;
 	
@@ -4394,7 +4327,7 @@ void remove_constraints_type(ListBase *list, short type, short last_only)
 		conp = con->prev;
 		
 		if (con->type == type) {
-			remove_constraint(list, con);
+			BKE_remove_constraint(list, con);
 			if (last_only) 
 				return;
 		}
@@ -4407,7 +4340,7 @@ void remove_constraints_type(ListBase *list, short type, short last_only)
 static bConstraint *add_new_constraint_internal(const char *name, short type)
 {
 	bConstraint *con = MEM_callocN(sizeof(bConstraint), "Constraint");
-	bConstraintTypeInfo *cti = get_constraint_typeinfo(type);
+	bConstraintTypeInfo *cti = BKE_get_constraint_typeinfo(type);
 	const char *newName;
 
 	/* Set up a generic constraint datablock */
@@ -4425,12 +4358,12 @@ static bConstraint *add_new_constraint_internal(const char *name, short type)
 			cti->new_data(con->data);
 		
 		/* if no name is provided, use the type of the constraint as the name */
-		newName = (name && name[0]) ? name : cti->name;
+		newName = (name && name[0]) ? name : DATA_(cti->name);
 	}
 	else {
 		/* if no name is provided, use the generic "Const" name */
 		/* NOTE: any constraint type that gets here really shouldn't get added... */
-		newName = (name && name[0]) ? name : "Const";
+		newName = (name && name[0]) ? name : DATA_("Const");
 	}
 	
 	/* copy the name */
@@ -4457,17 +4390,17 @@ static bConstraint *add_new_constraint(Object *ob, bPoseChannel *pchan, const ch
 		 * (otherwise unique-naming code will fail, since it assumes element exists in list)
 		 */
 		BLI_addtail(list, con);
-		unique_constraint_name(con, list);
+		BKE_unique_constraint_name(con, list);
 		
 		/* if the target list is a list on some PoseChannel belonging to a proxy-protected
 		 * Armature layer, we must tag newly added constraints with a flag which allows them
 		 * to persist after proxy syncing has been done
 		 */
-		if (proxylocked_constraints_owner(ob, pchan))
+		if (BKE_proxylocked_constraints_owner(ob, pchan))
 			con->flag |= CONSTRAINT_PROXY_LOCAL;
 		
 		/* make this constraint the active one */
-		constraints_set_active(list, con);
+		BKE_constraints_set_active(list, con);
 	}
 
 	/* set type+owner specific immutable settings */
@@ -4491,7 +4424,7 @@ static bConstraint *add_new_constraint(Object *ob, bPoseChannel *pchan, const ch
 /* ......... */
 
 /* Add new constraint for the given bone */
-bConstraint *add_pose_constraint(Object *ob, bPoseChannel *pchan, const char *name, short type)
+bConstraint *BKE_add_pose_constraint(Object *ob, bPoseChannel *pchan, const char *name, short type)
 {
 	if (pchan == NULL)
 		return NULL;
@@ -4500,41 +4433,41 @@ bConstraint *add_pose_constraint(Object *ob, bPoseChannel *pchan, const char *na
 }
 
 /* Add new constraint for the given object */
-bConstraint *add_ob_constraint(Object *ob, const char *name, short type)
+bConstraint *BKE_add_ob_constraint(Object *ob, const char *name, short type)
 {
 	return add_new_constraint(ob, NULL, name, type);
 }
 
 /* ......... */
 
-/* helper for relink_constraints() - call ID_NEW() on every ID reference the constraint has */
+/* helper for BKE_relink_constraints() - call ID_NEW() on every ID reference the constraint has */
 static void con_relink_id_cb(bConstraint *UNUSED(con), ID **idpoin, short UNUSED(isReference), void *UNUSED(userdata))
 {
 	/* ID_NEW() expects a struct with inline "id" member as first
 	 * since we've got the actual ID block, let's just inline this
 	 * code. 
 	 *
-	 * See ID_NEW(a) in BKE_utildefines.h
+	 * See ID_NEW(a) in DNA_ID.h
 	 */
 	if ((*idpoin) && (*idpoin)->newid)
 		(*idpoin) = (void *)(*idpoin)->newid;
 }
 
 /* Reassign links that constraints have to other data (called during file loading?) */
-void relink_constraints(ListBase *conlist)
+void BKE_relink_constraints(ListBase *conlist)
 {
 	/* just a wrapper around ID-loop for just calling ID_NEW() on all ID refs */
-	id_loop_constraints(conlist, con_relink_id_cb, NULL);
+	BKE_id_loop_constraints(conlist, con_relink_id_cb, NULL);
 }
 
 
 /* Run the given callback on all ID-blocks in list of constraints */
-void id_loop_constraints(ListBase *conlist, ConstraintIDFunc func, void *userdata)
+void BKE_id_loop_constraints(ListBase *conlist, ConstraintIDFunc func, void *userdata)
 {
 	bConstraint *con;
 	
 	for (con = conlist->first; con; con = con->next) {
-		bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 		
 		if (cti) {
 			if (cti->id_looper)
@@ -4545,14 +4478,14 @@ void id_loop_constraints(ListBase *conlist, ConstraintIDFunc func, void *userdat
 
 /* ......... */
 
-/* helper for copy_constraints(), to be used for making sure that ID's are valid */
+/* helper for BKE_copy_constraints(), to be used for making sure that ID's are valid */
 static void con_extern_cb(bConstraint *UNUSED(con), ID **idpoin, short UNUSED(isReference), void *UNUSED(userData))
 {
 	if (*idpoin && (*idpoin)->lib)
 		id_lib_extern(*idpoin);
 }
 
-/* helper for copy_constraints(), to be used for making sure that usercounts of copied ID's are fixed up */
+/* helper for BKE_copy_constraints(), to be used for making sure that usercounts of copied ID's are fixed up */
 static void con_fix_copied_refs_cb(bConstraint *UNUSED(con), ID **idpoin, short isReference, void *UNUSED(userData))
 {
 	/* increment usercount if this is a reference type */
@@ -4561,7 +4494,7 @@ static void con_fix_copied_refs_cb(bConstraint *UNUSED(con), ID **idpoin, short 
 }
 
 /* duplicate all of the constraints in a constraint stack */
-void copy_constraints(ListBase *dst, const ListBase *src, int do_extern)
+void BKE_copy_constraints(ListBase *dst, const ListBase *src, int do_extern)
 {
 	bConstraint *con, *srccon;
 	
@@ -4569,7 +4502,7 @@ void copy_constraints(ListBase *dst, const ListBase *src, int do_extern)
 	BLI_duplicatelist(dst, src);
 	
 	for (con = dst->first, srccon = src->first; con && srccon; srccon = srccon->next, con = con->next) {
-		bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 		
 		/* make a new copy of the constraint's data */
 		con->data = MEM_dupallocN(con->data);
@@ -4596,13 +4529,13 @@ void copy_constraints(ListBase *dst, const ListBase *src, int do_extern)
 
 /* ......... */
 
-bConstraint *constraints_findByName(ListBase *list, const char *name)
+bConstraint *BKE_constraints_findByName(ListBase *list, const char *name)
 {
 	return BLI_findstring(list, name, offsetof(bConstraint, name));
 }
 
 /* finds the 'active' constraint in a constraint stack */
-bConstraint *constraints_get_active(ListBase *list)
+bConstraint *BKE_constraints_get_active(ListBase *list)
 {
 	bConstraint *con;
 	
@@ -4619,7 +4552,7 @@ bConstraint *constraints_get_active(ListBase *list)
 }
 
 /* Set the given constraint as the active one (clearing all the others) */
-void constraints_set_active(ListBase *list, bConstraint *con)
+void BKE_constraints_set_active(ListBase *list, bConstraint *con)
 {
 	bConstraint *c;
 	
@@ -4636,7 +4569,7 @@ void constraints_set_active(ListBase *list, bConstraint *con)
 /* -------- Constraints and Proxies ------- */
 
 /* Rescue all constraints tagged as being CONSTRAINT_PROXY_LOCAL (i.e. added to bone that's proxy-synced in this file) */
-void extract_proxylocal_constraints(ListBase *dst, ListBase *src)
+void BKE_extract_proxylocal_constraints(ListBase *dst, ListBase *src)
 {
 	bConstraint *con, *next;
 	
@@ -4653,7 +4586,7 @@ void extract_proxylocal_constraints(ListBase *dst, ListBase *src)
 }
 
 /* Returns if the owner of the constraint is proxy-protected */
-short proxylocked_constraints_owner(Object *ob, bPoseChannel *pchan)
+short BKE_proxylocked_constraints_owner(Object *ob, bPoseChannel *pchan)
 {
 	/* Currently, constraints can only be on object or bone level */
 	if (ob && ob->proxy) {
@@ -4667,7 +4600,7 @@ short proxylocked_constraints_owner(Object *ob, bPoseChannel *pchan)
 		else {
 			/* FIXME: constraints on object-level are not handled well yet */
 			return 1;
-		}	
+		}
 	}
 	
 	return 0;
@@ -4682,9 +4615,9 @@ short proxylocked_constraints_owner(Object *ob, bPoseChannel *pchan)
  * None of the actual calculations of the matrices should be done here! Also, this function is
  * not to be used by any new constraints, particularly any that have multiple targets.
  */
-void get_constraint_target_matrix(struct Scene *scene, bConstraint *con, int n, short ownertype, void *ownerdata, float mat[][4], float ctime)
+void BKE_get_constraint_target_matrix(Scene *scene, bConstraint *con, int index, short ownertype, void *ownerdata, float mat[4][4], float ctime)
 {
-	bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+	bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 	ListBase targets = {NULL, NULL};
 	bConstraintOb *cob;
 	bConstraintTarget *ct;
@@ -4707,7 +4640,7 @@ void get_constraint_target_matrix(struct Scene *scene, bConstraint *con, int n, 
 					unit_m4(cob->matrix);
 					unit_m4(cob->startmat);
 				}
-			}	
+			}
 			break;
 			case CONSTRAINT_OBTYPE_BONE: /* this may occur in some cases */
 			{
@@ -4729,10 +4662,8 @@ void get_constraint_target_matrix(struct Scene *scene, bConstraint *con, int n, 
 		cti->get_constraint_targets(con, &targets);
 		
 		/* only calculate the target matrix on the first target */
-		ct = (bConstraintTarget *)targets.first;
-		while (ct && n-- > 0)
-			ct = ct->next;
-
+		ct = (bConstraintTarget *)BLI_findlink(&targets, index);
+		
 		if (ct) {
 			if (cti->get_target_matrix)
 				cti->get_target_matrix(con, cob, ct, ctime);
@@ -4751,9 +4682,9 @@ void get_constraint_target_matrix(struct Scene *scene, bConstraint *con, int n, 
 }
 
 /* Get the list of targets required for solving a constraint */
-void get_constraint_targets_for_solving(bConstraint *con, bConstraintOb *cob, ListBase *targets, float ctime)
+void BKE_get_constraint_targets_for_solving(bConstraint *con, bConstraintOb *cob, ListBase *targets, float ctime)
 {
-	bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+	bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 	
 	if (cti && cti->get_constraint_targets) {
 		bConstraintTarget *ct;
@@ -4781,12 +4712,12 @@ void get_constraint_targets_for_solving(bConstraint *con, bConstraintOb *cob, Li
 /* ---------- Evaluation ----------- */
 
 /* This function is called whenever constraints need to be evaluated. Currently, all
- * constraints that can be evaluated are everytime this gets run.
+ * constraints that can be evaluated are every time this gets run.
  *
- * constraints_make_evalob and constraints_clear_evalob should be called before and 
+ * BKE_constraints_make_evalob and BKE_constraints_clear_evalob should be called before and 
  * after running this function, to sort out cob
  */
-void solve_constraints(ListBase *conlist, bConstraintOb *cob, float ctime)
+void BKE_solve_constraints(ListBase *conlist, bConstraintOb *cob, float ctime)
 {
 	bConstraint *con;
 	float oldmat[4][4];
@@ -4798,7 +4729,7 @@ void solve_constraints(ListBase *conlist, bConstraintOb *cob, float ctime)
 	
 	/* loop over available constraints, solving and blending them */
 	for (con = conlist->first; con; con = con->next) {
-		bConstraintTypeInfo *cti = constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
 		ListBase targets = {NULL, NULL};
 		
 		/* these we can skip completely (invalid constraints...) */
@@ -4818,10 +4749,10 @@ void solve_constraints(ListBase *conlist, bConstraintOb *cob, float ctime)
 		copy_m4_m4(oldmat, cob->matrix);
 		
 		/* move owner matrix into right space */
-		constraint_mat_convertspace(cob->ob, cob->pchan, cob->matrix, CONSTRAINT_SPACE_WORLD, con->ownspace);
+		BKE_constraint_mat_convertspace(cob->ob, cob->pchan, cob->matrix, CONSTRAINT_SPACE_WORLD, con->ownspace);
 		
 		/* prepare targets for constraint solving */
-		get_constraint_targets_for_solving(con, cob, &targets, ctime);
+		BKE_get_constraint_targets_for_solving(con, cob, &targets, ctime);
 		
 		/* Solve the constraint and put result in cob->matrix */
 		cti->evaluate_constraint(con, cob, &targets);
@@ -4836,14 +4767,14 @@ void solve_constraints(ListBase *conlist, bConstraintOb *cob, float ctime)
 		
 		/* move owner back into worldspace for next constraint/other business */
 		if ((con->flag & CONSTRAINT_SPACEONCE) == 0) 
-			constraint_mat_convertspace(cob->ob, cob->pchan, cob->matrix, con->ownspace, CONSTRAINT_SPACE_WORLD);
+			BKE_constraint_mat_convertspace(cob->ob, cob->pchan, cob->matrix, con->ownspace, CONSTRAINT_SPACE_WORLD);
 			
 		/* Interpolate the enforcement, to blend result of constraint into final owner transform 
 		 *  - all this happens in worldspace to prevent any weirdness creeping in ([#26014] and [#25725]),
 		 *    since some constraints may not convert the solution back to the input space before blending
 		 *    but all are guaranteed to end up in good "worldspace" result
 		 */
-		/* Note: all kind of stuff here before (caused trouble), much easier to just interpolate, or did I miss something? -jahka */
+		/* Note: all kind of stuff here before (caused trouble), much easier to just interpolate, or did I miss something? -jahka (r.32105) */
 		if (enf < 1.0f) {
 			float solution[4][4];
 			copy_m4_m4(solution, cob->matrix);

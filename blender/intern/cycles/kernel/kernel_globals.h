@@ -18,14 +18,6 @@
 
 /* Constant Globals */
 
-#ifdef __KERNEL_CPU__
-
-#ifdef __OSL__
-#include "osl_globals.h"
-#endif
-
-#endif
-
 CCL_NAMESPACE_BEGIN
 
 /* On the CPU, we pass along the struct KernelGlobals to nearly everywhere in
@@ -35,10 +27,21 @@ CCL_NAMESPACE_BEGIN
 
 #ifdef __KERNEL_CPU__
 
+#ifdef __OSL__
+struct OSLGlobals;
+struct OSLThreadData;
+struct OSLShadingSystem;
+#endif
+
+#define MAX_BYTE_IMAGES   512
+#define MAX_FLOAT_IMAGES  5
+
 typedef struct KernelGlobals {
+	texture_image_uchar4 texture_byte_images[MAX_BYTE_IMAGES];
+	texture_image_float4 texture_float_images[MAX_FLOAT_IMAGES];
 
 #define KERNEL_TEX(type, ttype, name) ttype name;
-#define KERNEL_IMAGE_TEX(type, ttype, name) ttype name;
+#define KERNEL_IMAGE_TEX(type, ttype, name)
 #include "kernel_textures.h"
 
 	KernelData __data;
@@ -46,7 +49,9 @@ typedef struct KernelGlobals {
 #ifdef __OSL__
 	/* On the CPU, we also have the OSL globals here. Most data structures are shared
 	 * with SVM, the difference is in the shaders and object/mesh attributes. */
-	OSLGlobals osl;
+	OSLGlobals *osl;
+	OSLShadingSystem *osl_ss;
+	OSLThreadData *osl_tdata;
 #endif
 
 } KernelGlobals;
@@ -82,6 +87,40 @@ typedef struct KernelGlobals {
 } KernelGlobals;
 
 #endif
+
+/* Interpolated lookup table access */
+
+__device float lookup_table_read(KernelGlobals *kg, float x, int offset, int size)
+{
+	x = clamp(x, 0.0f, 1.0f)*(size-1);
+
+	int index = min(float_to_int(x), size-1);
+	int nindex = min(index+1, size-1);
+	float t = x - index;
+
+	float data0 = kernel_tex_fetch(__lookup_table, index + offset);
+	if(t == 0.0f)
+		return data0;
+
+	float data1 = kernel_tex_fetch(__lookup_table, nindex + offset);
+	return (1.0f - t)*data0 + t*data1;
+}
+
+__device float lookup_table_read_2D(KernelGlobals *kg, float x, float y, int offset, int xsize, int ysize)
+{
+	y = clamp(y, 0.0f, 1.0f)*(ysize-1);
+
+	int index = min(float_to_int(y), ysize-1);
+	int nindex = min(index+1, ysize-1);
+	float t = y - index;
+
+	float data0 = lookup_table_read(kg, x, offset + xsize*index, xsize);
+	if(t == 0.0f)
+		return data0;
+
+	float data1 = lookup_table_read(kg, x, offset + xsize*nindex, xsize);
+	return (1.0f - t)*data0 + t*data1;
+}
 
 CCL_NAMESPACE_END
 

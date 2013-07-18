@@ -202,7 +202,7 @@ static DerivedMesh *applyModifier(ModifierData *md,
 	}
 
 	CDDM_calc_edges(result);
-	CDDM_calc_normals(result);
+	result->dirty |= DM_DIRTY_NORMALS;
 	return result;
 }
 
@@ -223,7 +223,7 @@ ModifierTypeInfo modifierType_Remesh = {
 	/* structSize */        sizeof(RemeshModifierData),
 	/* type */              eModifierTypeType_Nonconstructive,
 	/* flags */             eModifierTypeFlag_AcceptsMesh |
-							eModifierTypeFlag_AcceptsCVs |
+	                        eModifierTypeFlag_AcceptsCVs |
 	                        eModifierTypeFlag_SupportsEditmode,
 	/* copyData */          copyData,
 	/* deformVerts */       NULL,

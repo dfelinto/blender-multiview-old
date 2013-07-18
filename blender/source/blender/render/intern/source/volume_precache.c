@@ -43,6 +43,8 @@
 #include "BLI_voxel.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "PIL_time.h"
 
 #include "RE_shader_ext.h"
@@ -92,7 +94,7 @@ static int intersect_outside_volume(RayObject *tree, Isect *isect, float *offset
 }
 
 /* Uses ray tracing to check if a point is inside or outside an ObjectInstanceRen */
-static int point_inside_obi(RayObject *tree, ObjectInstanceRen *UNUSED(obi), float *co)
+static int point_inside_obi(RayObject *tree, ObjectInstanceRen *UNUSED(obi), const float co[3])
 {
 	Isect isect= {{0}};
 	float dir[3] = {0.0f, 0.0f, 1.0f};
@@ -118,7 +120,7 @@ static int point_inside_obi(RayObject *tree, ObjectInstanceRen *UNUSED(obi), flo
 }
 
 /* find the bounding box of an objectinstance in global space */
-void global_bounds_obi(Render *re, ObjectInstanceRen *obi, float *bbmin, float *bbmax)
+void global_bounds_obi(Render *re, ObjectInstanceRen *obi, float bbmin[3], float bbmax[3])
 {
 	ObjectRen *obr = obi->obr;
 	VolumePrecache *vp = obi->volume_precache;
@@ -270,7 +272,7 @@ BLI_INLINE int ms_I(int x, int y, int z, int *n) /* has a pad of 1 voxel surroun
 BLI_INLINE int v_I_pad(int x, int y, int z, int *n) /* has a pad of 1 voxel surrounding the core for boundary simulation */
 {
 	/* same ordering to light cache, with padding */
-	return z*(n[1]+2)*(n[0]+2) + y*(n[0]+2) + x;  	
+	return z*(n[1]+2)*(n[0]+2) + y*(n[0]+2) + x;
 }
 
 BLI_INLINE int lc_to_ms_I(int x, int y, int z, int *n)
@@ -354,7 +356,7 @@ static void ms_diffuse(Render *re, int do_test_break, float *x0, float *x, float
 static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Material *ma)
 {
 	const float diff = ma->vol.ms_diff * 0.001f; 	/* compensate for scaling for a nicer UI range */
-	const int simframes = (int)(ma->vol.ms_spread * (float)MAX3(vp->res[0], vp->res[1], vp->res[2]));
+	const int simframes = (int)(ma->vol.ms_spread * (float)max_iii(vp->res[0], vp->res[1], vp->res[2]));
 	const int shade_type = ma->vol.shade_type;
 	float fac = ma->vol.ms_intensity;
 	
@@ -389,7 +391,7 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 					const int j = ms_I(x, y, z, n);			//ms index
 					
 					time= PIL_check_seconds_timer();
-					c++;										
+					c++;
 					if (vp->data_r[i] > 0.0f)
 						sr[j] += vp->data_r[i];
 					if (vp->data_g[i] > 0.0f)
@@ -400,10 +402,11 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 					/* Displays progress every second */
 					if (time-lasttime>1.0) {
 						char str[64];
-						BLI_snprintf(str, sizeof(str), "Simulating multiple scattering: %d%%", (int)(100.0f * (c / total)));
-						re->i.infostr= str;
+						BLI_snprintf(str, sizeof(str), IFACE_("Simulating multiple scattering: %d%%"),
+						             (int)(100.0f * (c / total)));
+						re->i.infostr = str;
 						re->stats_draw(re->sdh, &re->i);
-						re->i.infostr= NULL;
+						re->i.infostr = NULL;
 						lasttime= time;
 					}
 				}
@@ -493,7 +496,7 @@ typedef struct VolPrecacheQueue {
  */
 static void *vol_precache_part(void *data)
 {
-	VolPrecacheQueue *queue = (VolPrecacheQueue*)data;
+	VolPrecacheQueue *queue = (VolPrecacheQueue *)data;
 	VolPrecachePart *pa;
 
 	while ((pa = BLI_thread_queue_pop(queue->work))) {
@@ -652,7 +655,7 @@ static int precache_resolution(Render *re, VolumePrecache *vp, ObjectInstanceRen
 	global_bounds_obi(re, obi, bbmin, bbmax);
 	sub_v3_v3v3(dim, bbmax, bbmin);
 	
-	div = MAX3(dim[0], dim[1], dim[2]);
+	div = max_fff(dim[0], dim[1], dim[2]);
 	dim[0] /= div;
 	dim[1] /= div;
 	dim[2] /= div;
@@ -742,11 +745,12 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 		time= PIL_check_seconds_timer();
 		if (time-lasttime>1.0) {
 			char str[64];
-			BLI_snprintf(str, sizeof(str), "Precaching volume: %d%%", (int)(100.0f * ((float)counter / (float)totparts)));
-			re->i.infostr= str;
+			BLI_snprintf(str, sizeof(str), IFACE_("Precaching volume: %d%%"),
+			             (int)(100.0f * ((float)counter / (float)totparts)));
+			re->i.infostr = str;
 			re->stats_draw(re->sdh, &re->i);
-			re->i.infostr= NULL;
-			lasttime= time;
+			re->i.infostr = NULL;
+			lasttime = time;
 		}
 	}
 	
@@ -784,7 +788,7 @@ void volume_precache(Render *re)
 	ObjectInstanceRen *obi;
 	VolumeOb *vo;
 
-	re->i.infostr= "Volume preprocessing";
+	re->i.infostr = IFACE_("Volume preprocessing");
 	re->stats_draw(re->sdh, &re->i);
 
 	for (vo= re->volumes.first; vo; vo= vo->next) {
@@ -803,7 +807,7 @@ void volume_precache(Render *re)
 		}
 	}
 	
-	re->i.infostr= NULL;
+	re->i.infostr = NULL;
 	re->stats_draw(re->sdh, &re->i);
 }
 
@@ -826,7 +830,7 @@ void free_volume_precache(Render *re)
 	BLI_freelistN(&re->volumes);
 }
 
-int point_inside_volume_objectinstance(Render *re, ObjectInstanceRen *obi, float *co)
+int point_inside_volume_objectinstance(Render *re, ObjectInstanceRen *obi, const float co[3])
 {
 	RayObject *tree;
 	int inside=0;

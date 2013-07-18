@@ -39,7 +39,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_rand.h"
 
 #include "BKE_nla.h"
 #include "BKE_context.h"
@@ -245,8 +244,8 @@ static void borderselect_nla_strips(bAnimContext *ac, rcti rect, short mode, sho
 		ymin = ymax - NLACHANNEL_STEP(snla);
 		
 		/* perform vertical suitability check (if applicable) */
-		if ( (mode == NLA_BORDERSEL_FRAMERANGE) ||
-		     !((ymax < rectf.ymin) || (ymin > rectf.ymax)) )
+		if ((mode == NLA_BORDERSEL_FRAMERANGE) ||
+		    !((ymax < rectf.ymin) || (ymin > rectf.ymax)))
 		{
 			/* loop over data selecting (only if NLA-Track) */
 			if (ale->type == ANIMTYPE_NLATRACK) {
@@ -255,8 +254,8 @@ static void borderselect_nla_strips(bAnimContext *ac, rcti rect, short mode, sho
 				
 				/* only select strips if they fall within the required ranges (if applicable) */
 				for (strip = nlt->strips.first; strip; strip = strip->next) {
-					if ( (mode == NLA_BORDERSEL_CHANNELS) ||
-					     BKE_nlastrip_within_bounds(strip, rectf.xmin, rectf.xmax))
+					if ((mode == NLA_BORDERSEL_CHANNELS) ||
+					    BKE_nlastrip_within_bounds(strip, rectf.xmin, rectf.xmax))
 					{
 						/* set selection */
 						ACHANNEL_SET_FLAG(strip, selectmode, NLASTRIP_FLAG_SELECT);
@@ -309,7 +308,7 @@ static int nlaedit_borderselect_exec(bContext *C, wmOperator *op)
 		 *	- the frame-range select option is favored over the channel one (x over y), as frame-range one is often
 		 *	  used for tweaking timing when "blocking", while channels is not that useful...
 		 */
-		if ((rect.xmax - rect.xmin) >= (rect.ymax - rect.ymin))
+		if (BLI_rcti_size_x(&rect) >= BLI_rcti_size_y(&rect))
 			mode = NLA_BORDERSEL_FRAMERANGE;
 		else
 			mode = NLA_BORDERSEL_CHANNELS;
@@ -390,7 +389,7 @@ static void nlaedit_select_leftright(bContext *C, bAnimContext *ac, short leftri
 	if (leftright == NLAEDIT_LRSEL_LEFT) {
 		xmin = MINAFRAMEF;
 		xmax = (float)(CFRA + 0.1f);
-	} 
+	}
 	else {
 		xmin = (float)(CFRA - 0.1f);
 		xmax = MAXFRAMEF;
@@ -451,7 +450,7 @@ static int nlaedit_select_leftright_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int nlaedit_select_leftright_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int nlaedit_select_leftright_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	short leftright = RNA_enum_get(op->ptr, "mode");
@@ -471,7 +470,7 @@ static int nlaedit_select_leftright_invoke(bContext *C, wmOperator *op, wmEvent 
 		UI_view2d_region_to_view(v2d, event->mval[0], event->mval[1], &x, NULL);
 		if (x < CFRA)
 			RNA_int_set(op->ptr, "mode", NLAEDIT_LRSEL_LEFT);
-		else 	
+		else
 			RNA_int_set(op->ptr, "mode", NLAEDIT_LRSEL_RIGHT);
 	}
 	
@@ -582,7 +581,7 @@ static void mouse_nla_strips(bContext *C, bAnimContext *ac, const int mval[2], s
 		ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
 		
 		/* Highlight NLA-Track */
-		if (ale->type == ANIMTYPE_NLATRACK) {	
+		if (ale->type == ANIMTYPE_NLATRACK) {
 			NlaTrack *nlt = (NlaTrack *)ale->data;
 			
 			nlt->flag |= NLATRACK_SELECTED;
@@ -613,7 +612,7 @@ static void mouse_nla_strips(bContext *C, bAnimContext *ac, const int mval[2], s
 /* ------------------- */
 
 /* handle clicking */
-static int nlaedit_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int nlaedit_clickselect_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	/* Scene *scene; */ /* UNUSED */
@@ -660,7 +659,7 @@ void NLA_OT_click_select(wmOperatorType *ot)
 	ot->poll = ED_operator_nla_active;
 	
 	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+	ot->flag = OPTYPE_UNDO;
 	
 	/* properties */
 	prop = RNA_def_boolean(ot->srna, "extend", 0, "Extend Select", ""); // SHIFTKEY

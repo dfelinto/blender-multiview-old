@@ -325,7 +325,7 @@ static int graphkeys_borderselect_exec(bContext *C, wmOperator *op)
 		 *	- the frame-range select option is favored over the channel one (x over y), as frame-range one is often
 		 *	  used for tweaking timing when "blocking", while channels is not that useful...
 		 */
-		if ((rect.xmax - rect.xmin) >= (rect.ymax - rect.ymin))
+		if ((BLI_rcti_size_x(&rect)) >= (BLI_rcti_size_y(&rect)))
 			mode = BEZT_OK_FRAMERANGE;
 		else
 			mode = BEZT_OK_VALUERANGE;
@@ -757,7 +757,7 @@ static void graphkeys_select_leftright(bAnimContext *ac, short leftright, short 
 	if (leftright == GRAPHKEYS_LRSEL_LEFT) {
 		ked.f1 = MINAFRAMEF;
 		ked.f2 = (float)(CFRA + 0.1f);
-	} 
+	}
 	else {
 		ked.f1 = (float)(CFRA - 0.1f);
 		ked.f2 = MAXFRAMEF;
@@ -815,7 +815,7 @@ static int graphkeys_select_leftright_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-static int graphkeys_select_leftright_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int graphkeys_select_leftright_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	short leftright = RNA_enum_get(op->ptr, "mode");
@@ -835,7 +835,7 @@ static int graphkeys_select_leftright_invoke(bContext *C, wmOperator *op, wmEven
 		UI_view2d_region_to_view(v2d, event->mval[0], event->mval[1], &x, NULL);
 		if (x < CFRA)
 			RNA_enum_set(op->ptr, "mode", GRAPHKEYS_LRSEL_LEFT);
-		else 	
+		else
 			RNA_enum_set(op->ptr, "mode", GRAPHKEYS_LRSEL_RIGHT);
 	}
 	
@@ -942,7 +942,7 @@ static void nearest_fcurve_vert_store(ListBase *matches, View2D *v2d, FCurve *fc
 			/* if there is already a point for the F-Curve, check if this point is closer than that was */
 			if ((nvi) && (nvi->fcu == fcu)) {
 				/* replace if we are closer, or if equal and that one wasn't selected but we are... */
-				if ( (nvi->dist > dist) || ((nvi->sel == 0) && BEZSELECTED(bezt)) )
+				if ((nvi->dist > dist) || ((nvi->sel == 0) && BEZSELECTED(bezt)))
 					replace = 1;
 			}
 			/* add new if not replacing... */
@@ -1113,7 +1113,7 @@ static void mouse_graph_keys(bAnimContext *ac, const int mval[2], short select_m
 	nvi = find_nearest_fcurve_vert(ac, mval);
 	
 	/* check if anything to select */
-	if (nvi == NULL)	
+	if (nvi == NULL)
 		return;
 	
 	/* deselect all other curves? */
@@ -1241,7 +1241,7 @@ static void graphkeys_mselect_column(bAnimContext *ac, const int mval[2], short 
 	nvi = find_nearest_fcurve_vert(ac, mval);
 	
 	/* check if anything to select */
-	if (nvi == NULL)	
+	if (nvi == NULL)
 		return;
 	
 	/* get frame number on which elements should be selected */
@@ -1297,7 +1297,7 @@ static void graphkeys_mselect_column(bAnimContext *ac, const int mval[2], short 
 /* ------------------- */
 
 /* handle clicking */
-static int graphkeys_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int graphkeys_clickselect_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	bAnimContext ac;
 	short selectmode;
@@ -1342,9 +1342,12 @@ void GRAPH_OT_clickselect(wmOperatorType *ot)
 	ot->idname = "GRAPH_OT_clickselect";
 	ot->description = "Select keyframes by clicking on them";
 	
-	/* api callbacks */
+	/* callbacks */
 	ot->invoke = graphkeys_clickselect_invoke;
 	ot->poll = graphop_visible_keyframes_poll;
+	
+	/* flags */
+	ot->flag = OPTYPE_UNDO;
 	
 	/* properties */
 	prop = RNA_def_boolean(ot->srna, "extend", 0, "Extend Select", ""); // SHIFTKEY

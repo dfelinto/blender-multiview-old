@@ -35,6 +35,7 @@
  */
 
 struct Lattice;
+struct Main;
 struct Object;
 struct Scene;
 struct DerivedMesh;
@@ -42,11 +43,11 @@ struct BPoint;
 struct MDeformVert;
 
 void BKE_lattice_resize(struct Lattice *lt, int u, int v, int w, struct Object *ltOb);
-struct Lattice *BKE_lattice_add(const char *name);
+struct Lattice *BKE_lattice_add(struct Main *bmain, const char *name);
 struct Lattice *BKE_lattice_copy(struct Lattice *lt);
 void BKE_lattice_free(struct Lattice *lt);
 void BKE_lattice_make_local(struct Lattice *lt);
-void calc_lat_fudu(int flag, int res, float *fu, float *du);
+void calc_lat_fudu(int flag, int res, float *r_fu, float *r_du);
 
 void init_latt_deform(struct Object *oblatt, struct Object *ob);
 void calc_latt_deform(struct Object *, float co[3], float weight);
@@ -59,7 +60,7 @@ void curve_deform_verts(struct Scene *scene, struct Object *cuOb, struct Object 
                         struct DerivedMesh *dm, float (*vertexCos)[3],
                         int numVerts, const char *vgroup, short defaxis);
 void curve_deform_vector(struct Scene *scene, struct Object *cuOb, struct Object *target,
-                         float orco[3], float vec[3], float mat[][3], int no_rot_axis);
+                         float orco[3], float vec[3], float mat[3][3], int no_rot_axis);
 
 void lattice_deform_verts(struct Object *laOb, struct Object *target,
                           struct DerivedMesh *dm, float (*vertexCos)[3],
@@ -74,6 +75,12 @@ void    BKE_lattice_vertexcos_apply(struct Object *ob, float (*vertexCos)[3]);
 void    BKE_lattice_modifiers_calc(struct Scene *scene, struct Object *ob);
 
 struct MDeformVert *BKE_lattice_deform_verts_get(struct Object *lattice);
+struct BPoint *BKE_lattice_active_point_get(struct Lattice *lt);
+
+void BKE_lattice_minmax(struct Lattice *lt, float min[3], float max[3]);
+void BKE_lattice_center_median(struct Lattice *lt, float cent[3]);
+void BKE_lattice_center_bounds(struct Lattice *lt, float cent[3]);
+void BKE_lattice_translate(struct Lattice *lt, float offset[3], int do_keys);
 
 #endif
 

@@ -34,12 +34,13 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLO_sys_types.h" /* for intptr_t support */
+#include "BLI_sys_types.h" /* for intptr_t support */
 
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_lattice_types.h"
 #include "DNA_screen_types.h"
+#include "DNA_sequence_types.h"
 #include "DNA_space_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
@@ -55,10 +56,14 @@
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "RNA_access.h"
 
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
+
+#include "BIK_api.h"
 
 #include "BKE_animsys.h"
 #include "BKE_action.h"
@@ -71,7 +76,8 @@
 #include "BKE_mesh.h"
 #include "BKE_nla.h"
 #include "BKE_context.h"
-#include "BKE_tessmesh.h"
+#include "BKE_sequencer.h"
+#include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_mask.h"
 
@@ -126,6 +132,7 @@ void getViewVector(TransInfo *t, float coord[3], float vec[3])
 
 /* ************************** GENERICS **************************** */
 
+
 static void clipMirrorModifier(TransInfo *t, Object *ob)
 {
 	ModifierData *md = ob->modifiers.first;
@@ -159,7 +166,7 @@ static void clipMirrorModifier(TransInfo *t, Object *ob)
 						float obinv[4][4];
 						
 						invert_m4_m4(obinv, mmd->mirror_ob->obmat);
-						mult_m4_m4m4(mtx, obinv, ob->obmat);
+						mul_m4_m4m4(mtx, obinv, ob->obmat);
 						invert_m4_m4(imtx, mtx);
 					}
 					
@@ -373,6 +380,8 @@ static void recalcData_graphedit(TransInfo *t)
 	
 	bAnimListElem *ale;
 	int dosort = 0;
+
+	const bool use_local_center = checkUseLocalCenter_GraphEdit(t);
 	
 	
 	/* initialize relevant anim-context 'context' data from TransInfo data */
@@ -401,9 +410,10 @@ static void recalcData_graphedit(TransInfo *t)
 		/* ignore unselected fcurves */
 		if (!fcu_test_selected(fcu))
 			continue;
-		
-		// fixme: only do this for selected verts...
-		ANIM_unit_mapping_apply_fcurve(ac.scene, ale->id, ale->key_data, ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS | ANIM_UNITCONV_RESTORE);
+
+		ANIM_unit_mapping_apply_fcurve(ac.scene, ale->id, ale->key_data,
+		                               ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS | ANIM_UNITCONV_RESTORE |
+		                               (use_local_center ? ANIM_UNITCONV_SKIPKNOTS : 0));
 		
 		
 		/* watch it: if the time is wrong: do not correct handles yet */
@@ -546,9 +556,16 @@ static void recalcData_nla(TransInfo *t)
 				break;
 		}
 		
-		/* use RNA to write the values... */
-		// TODO: do we need to write in 2 passes to make sure that no truncation goes on?
+		/* Use RNA to write the values to ensure that constraints on these are obeyed
+		 * (e.g. for transition strips, the values are taken from the neighbours)
+		 * 
+		 * NOTE: we write these twice to avoid truncation errors which can arise when
+		 * moving the strips a large distance using numeric input [#33852] 
+		 */
 		RNA_pointer_create(NULL, &RNA_NlaStrip, strip, &strip_ptr);
+		
+		RNA_float_set(&strip_ptr, "frame_start", tdn->h1[0]);
+		RNA_float_set(&strip_ptr, "frame_end", tdn->h2[0]);
 		
 		RNA_float_set(&strip_ptr, "frame_start", tdn->h1[0]);
 		RNA_float_set(&strip_ptr, "frame_end", tdn->h2[0]);
@@ -703,7 +720,7 @@ static void recalcData_view3d(TransInfo *t)
 					BKE_nurb_handles_calc(nu); /* Cant do testhandlesNurb here, it messes up the h1 and h2 flags */
 					nu = nu->next;
 				}
-			} 
+			}
 			else {
 				/* Normal updating */
 				while (nu) {
@@ -725,7 +742,7 @@ static void recalcData_view3d(TransInfo *t)
 			if (la->editlatt->latt->flag & LT_OUTSIDE) outside_lattice(la->editlatt->latt);
 		}
 		else if (t->obedit->type == OB_MESH) {
-			BMEditMesh *em = BMEdit_FromObject(t->obedit);
+			BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 			/* mirror modifier clipping? */
 			if (t->state != TRANS_CANCEL) {
 				/* apply clipping after so we never project past the clip plane [#25423] */
@@ -738,7 +755,7 @@ static void recalcData_view3d(TransInfo *t)
 			DAG_id_tag_update(t->obedit->data, 0);  /* sets recalc flags */
 			
 			EDBM_mesh_normals_update(em);
-			BMEdit_RecalcTessellation(em);
+			BKE_editmesh_tessface_calc(em);
 		}
 		else if (t->obedit->type == OB_ARMATURE) { /* no recalc flag, does pose */
 			bArmature *arm = t->obedit->data;
@@ -794,6 +811,7 @@ static void recalcData_view3d(TransInfo *t)
 					if (td->extra) {
 						float vec[3], up_axis[3];
 						float qrot[4];
+						float roll;
 						
 						ebo = td->extra;
 						copy_v3_v3(up_axis, td->axismtx[2]);
@@ -808,7 +826,9 @@ static void recalcData_view3d(TransInfo *t)
 							mul_m3_v3(t->mat, up_axis);
 						}
 						
-						ebo->roll = ED_rollBoneToVector(ebo, up_axis, FALSE);
+						/* roll has a tendency to flip in certain orientations - [#34283], [#33974] */
+						roll = ED_rollBoneToVector(ebo, up_axis, false);
+						ebo->roll = angle_compat_rad(roll, ebo->roll);
 					}
 				}
 			}
@@ -845,6 +865,8 @@ static void recalcData_view3d(TransInfo *t)
 		/* old optimize trick... this enforces to bypass the depgraph */
 		if (!(arm->flag & ARM_DELAYDEFORM)) {
 			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);  /* sets recalc flags */
+			/* transformation of pose may affect IK tree, make sure it is rebuilt */
+			BIK_clear_data(ob->pose);
 		}
 		else
 			BKE_pose_where_is(t->scene, ob);
@@ -886,8 +908,34 @@ static void recalcData_view3d(TransInfo *t)
 			 * otherwise proxies don't function correctly
 			 */
 			DAG_id_tag_update(&ob->id, OB_RECALC_OB);
+
+			if(t->flag & T_TEXTURE)
+				DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 		}
 	}
+}
+
+/* helper for recalcData() - for sequencer transforms */
+static void recalcData_sequencer(TransInfo *t)
+{
+	TransData *td;
+	int a;
+	Sequence *seq_prev = NULL;
+
+	for (a = 0, td = t->data; a < t->total; a++, td++) {
+		TransDataSeq *tdsq = (TransDataSeq *) td->extra;
+		Sequence *seq = tdsq->seq;
+
+		if (seq != seq_prev) {
+			BKE_sequence_invalidate_dependent(t->scene, seq);
+		}
+
+		seq_prev = seq;
+	}
+
+	BKE_sequencer_preprocessed_cache_cleanup();
+
+	flushTransSeq(t);
 }
 
 /* called for updating while transform acts, once per redraw */
@@ -897,7 +945,7 @@ void recalcData(TransInfo *t)
 		flushTransNodes(t);
 	}
 	else if (t->spacetype == SPACE_SEQ) {
-		flushTransSeq(t);
+		recalcData_sequencer(t);
 	}
 	else if (t->spacetype == SPACE_ACTION) {
 		recalcData_actedit(t);
@@ -916,10 +964,6 @@ void recalcData(TransInfo *t)
 	}
 	else if (t->spacetype == SPACE_CLIP) {
 		recalcData_spaceclip(t);
-	}
-
-	if (t->options & CTX_MASK) {
-
 	}
 }
 
@@ -961,13 +1005,26 @@ void drawLine(TransInfo *t, const float center[3], const float dir[3], char axis
 	}
 }
 
+/**
+ * Free data before switching to another mode.
+ */
+void resetTransModal(TransInfo *t)
+{
+	if (t->mode == TFM_EDGE_SLIDE) {
+		freeEdgeSlideVerts(t);
+	}
+	else if (t->mode == TFM_VERT_SLIDE) {
+		freeVertSlideVerts(t);
+	}
+}
+
 void resetTransRestrictions(TransInfo *t)
 {
 	t->flag &= ~T_ALL_RESTRICTIONS;
 }
 
 /* the *op can be NULL */
-int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
+int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, const wmEvent *event)
 {
 	Scene *sce = CTX_data_scene(C);
 	ToolSettings *ts = CTX_data_tool_settings(C);
@@ -977,16 +1034,21 @@ int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 	
 	/* moving: is shown in drawobject() (transform color) */
 //  TRANSFORM_FIX_ME
-//	if (obedit || (t->flag & T_POSE) ) G.moving= G_TRANSFORM_EDIT;
-//	else if (G.f & G_PARTICLEEDIT) G.moving= G_TRANSFORM_PARTICLE;
-//	else G.moving= G_TRANSFORM_OBJ;
+//	if (obedit || (t->flag & T_POSE) ) G.moving = G_TRANSFORM_EDIT;
+//	else if (G.f & G_PARTICLEEDIT) G.moving = G_TRANSFORM_PARTICLE;
+//	else G.moving = G_TRANSFORM_OBJ;
 	
 	t->scene = sce;
 	t->sa = sa;
 	t->ar = ar;
 	t->obedit = obedit;
 	t->settings = ts;
-	
+
+	if (obedit) {
+		copy_m3_m4(t->obedit_mat, obedit->obmat);
+		normalize_m3(t->obedit_mat);
+	}
+
 	t->data = NULL;
 	t->ext = NULL;
 	
@@ -1115,7 +1177,7 @@ int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 			t->options |= CTX_MASK;
 		}
 		else {
-			BLI_assert(0);
+			/* image not in uv edit, nor in mask mode, can happen for some tools */
 		}
 	}
 	else if (t->spacetype == SPACE_NODE) {
@@ -1227,7 +1289,7 @@ int initTransInfo(bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		
 		/* TRANSFORM_FIX_ME rna restrictions */
 		if (t->prop_size <= 0.00001f) {
-			printf("Proportional size (%f) under 0.00001, reseting to 1!\n", t->prop_size);
+			printf("Proportional size (%f) under 0.00001, resetting to 1!\n", t->prop_size);
 			t->prop_size = 1.0f;
 		}
 		
@@ -1272,19 +1334,26 @@ void postTrans(bContext *C, TransInfo *t)
 	if (t->customFree) {
 		/* Can take over freeing t->data and data2d etc... */
 		t->customFree(t);
+		BLI_assert(t->customData == NULL);
 	}
 	else if ((t->customData != NULL) && (t->flag & T_FREE_CUSTOMDATA)) {
 		MEM_freeN(t->customData);
+		t->customData = NULL;
 	}
 
 	/* postTrans can be called when nothing is selected, so data is NULL already */
 	if (t->data) {
-		int a;
 		
 		/* free data malloced per trans-data */
-		for (a = 0, td = t->data; a < t->total; a++, td++) {
-			if (td->flag & TD_BEZTRIPLE) 
-				MEM_freeN(td->hdata);
+		if ((t->obedit && ELEM(t->obedit->type, OB_CURVE, OB_SURF)) ||
+		    (t->spacetype == SPACE_IPO))
+		{
+			int a;
+			for (a = 0, td = t->data; a < t->total; a++, td++) {
+				if (td->flag & TD_BEZTRIPLE) {
+					MEM_freeN(td->hdata);
+				}
+			}
 		}
 		MEM_freeN(t->data);
 	}
@@ -1413,7 +1482,7 @@ void calculateCenter2D(TransInfo *t)
 
 void calculateCenterCursor(TransInfo *t)
 {
-	float *cursor;
+	const float *cursor;
 	
 	cursor = give_cursor(t->scene, t->view);
 	copy_v3_v3(t->center, cursor);
@@ -1497,13 +1566,6 @@ void calculateCenterMedian(TransInfo *t)
 				total++;
 			}
 		}
-		else {
-			/*
-			 * All the selected elements are at the head of the array
-			 * which means we can stop when it finds unselected data
-			 */
-			break;
-		}
 	}
 	if (i)
 		mul_v3_fl(partial, 1.0f / total);
@@ -1523,22 +1585,14 @@ void calculateCenterBound(TransInfo *t)
 				if (!(t->data[i].flag & TD_NOCENTER))
 					minmax_v3v3_v3(min, max, t->data[i].center);
 			}
-			else {
-				/*
-				 * All the selected elements are at the head of the array
-				 * which means we can stop when it finds unselected data
-				 */
-				break;
-			}
 		}
 		else {
 			copy_v3_v3(max, t->data[i].center);
 			copy_v3_v3(min, t->data[i].center);
 		}
 	}
-	add_v3_v3v3(t->center, min, max);
-	mul_v3_fl(t->center, 0.5);
-	
+	mid_v3_v3v3(t->center, min, max);
+
 	calculateCenter2D(t);
 }
 
@@ -1572,7 +1626,7 @@ void calculateCenter(TransInfo *t)
 			if (t->obedit) {
 				if (t->obedit && t->obedit->type == OB_MESH) {
 					BMEditSelection ese;
-					BMEditMesh *em = BMEdit_FromObject(t->obedit);
+					BMEditMesh *em = BKE_editmesh_from_object(t->obedit);
 
 					if (BM_select_history_active_get(em->bm, &ese)) {
 						BM_editselection_center(&ese, t->center);
@@ -1586,6 +1640,15 @@ void calculateCenter(TransInfo *t)
 
 					if (ED_curve_actSelection(cu, center)) {
 						copy_v3_v3(t->center, center);
+						calculateCenter2D(t);
+						break;
+					}
+				}
+				else if (t->obedit && t->obedit->type == OB_LATTICE) {
+					BPoint *actbp = BKE_lattice_active_point_get(t->obedit->data);
+
+					if (actbp) {
+						copy_v3_v3(t->center, actbp->vec);
 						calculateCenter2D(t);
 						break;
 					}
@@ -1632,7 +1695,7 @@ void calculateCenter(TransInfo *t)
 				
 				projectIntView(t, axis, t->center2d);
 				
-				/* rotate only needs correct 2d center, grab needs initgrabz() value */
+				/* rotate only needs correct 2d center, grab needs ED_view3d_calc_zfac() value */
 				if (t->mode == TFM_TRANSLATION) {
 					copy_v3_v3(t->center, axis);
 					copy_v3_v3(t->con.center, t->center);
@@ -1642,17 +1705,27 @@ void calculateCenter(TransInfo *t)
 	}
 	
 	if (t->spacetype == SPACE_VIEW3D) {
-		/* initgrabz() defines a factor for perspective depth correction, used in window_to_3d_delta() */
+		/* ED_view3d_calc_zfac() defines a factor for perspective depth correction, used in ED_view3d_win_to_delta() */
+		float vec[3];
 		if (t->flag & (T_EDIT | T_POSE)) {
 			Object *ob = t->obedit ? t->obedit : t->poseobj;
-			float vec[3];
-			
-			copy_v3_v3(vec, t->center);
-			mul_m4_v3(ob->obmat, vec);
-			initgrabz(t->ar->regiondata, vec[0], vec[1], vec[2]);
+			mul_v3_m4v3(vec, ob->obmat, t->center);
 		}
 		else {
-			initgrabz(t->ar->regiondata, t->center[0], t->center[1], t->center[2]);
+			copy_v3_v3(vec, t->center);
+		}
+
+		/* zfac is only used convertViewVec only in cases operator was invoked in RGN_TYPE_WINDOW
+		 * and never used in other cases.
+		 *
+		 * We need special case here as well, since ED_view3d_calc_zfac will crahs when called
+		 * for a region different from RGN_TYPE_WINDOW.
+		 */
+		if (t->ar->regiontype == RGN_TYPE_WINDOW) {
+			t->zfac = ED_view3d_calc_zfac(t->ar->regiondata, vec, NULL);
+		}
+		else {
+			t->zfac = 0.0f;
 		}
 	}
 }
@@ -1680,8 +1753,9 @@ void calculatePropRatio(TransInfo *t)
 				/*
 				 * The elements are sorted according to their dist member in the array,
 				 * that means we can stop when it finds one element outside of the propsize.
+				 * do not set 'td->flag |= TD_NOACTION', the prop circle is being changed.
 				 */
-				td->flag |= TD_NOACTION;
+				
 				td->factor = 0.0f;
 				restoreElement(td);
 			}
@@ -1722,7 +1796,6 @@ void calculatePropRatio(TransInfo *t)
 						td->factor = (float)sqrt(2 * dist - dist * dist);
 						break;
 					case PROP_RANDOM:
-						BLI_srand(BLI_rand()); /* random seed */
 						td->factor = BLI_frand() * dist;
 						break;
 					default:
@@ -1732,25 +1805,25 @@ void calculatePropRatio(TransInfo *t)
 		}
 		switch (t->prop_mode) {
 			case PROP_SHARP:
-				strcpy(t->proptext, "(Sharp)");
+				strcpy(t->proptext, IFACE_("(Sharp)"));
 				break;
 			case PROP_SMOOTH:
-				strcpy(t->proptext, "(Smooth)");
+				strcpy(t->proptext, IFACE_("(Smooth)"));
 				break;
 			case PROP_ROOT:
-				strcpy(t->proptext, "(Root)");
+				strcpy(t->proptext, IFACE_("(Root)"));
 				break;
 			case PROP_LIN:
-				strcpy(t->proptext, "(Linear)");
+				strcpy(t->proptext, IFACE_("(Linear)"));
 				break;
 			case PROP_CONST:
-				strcpy(t->proptext, "(Constant)");
+				strcpy(t->proptext, IFACE_("(Constant)"));
 				break;
 			case PROP_SPHERE:
-				strcpy(t->proptext, "(Sphere)");
+				strcpy(t->proptext, IFACE_("(Sphere)"));
 				break;
 			case PROP_RANDOM:
-				strcpy(t->proptext, "(Random)");
+				strcpy(t->proptext, IFACE_("(Random)"));
 				break;
 			default:
 				t->proptext[0] = '\0';

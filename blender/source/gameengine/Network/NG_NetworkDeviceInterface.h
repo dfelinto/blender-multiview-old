@@ -43,22 +43,22 @@ private:
 	// candidates for shared/common implementation class
 	bool m_online;
 public:
-	NG_NetworkDeviceInterface() {};
-	virtual ~NG_NetworkDeviceInterface() {};
+	NG_NetworkDeviceInterface() {}
+	virtual ~NG_NetworkDeviceInterface() {}
 
 	virtual void NextFrame()=0;
 
 	/**
-	  * Mark network connection online
-	  */
+	 * Mark network connection online
+	 */
 	void Online(void) { m_online = true; }
 	/**
-	  * Mark network connection offline
-	  */
+	 * Mark network connection offline
+	 */
 	void Offline(void) { m_online = false; }
 	/**
-	  * Is the network connection established ?
-	  */
+	 * Is the network connection established ?
+	 */
 	bool IsOnline(void) { return m_online; }
 
 	virtual bool Connect(char *address, unsigned int port, char *password,
@@ -67,9 +67,9 @@ public:
 
 	virtual void SendNetworkMessage(NG_NetworkMessage* msg)=0;
 	/**
-	  * read NG_NetworkMessage from library buffer, may be
-	  * irrelevant for loopbackdevices
-	  */
+	 * read NG_NetworkMessage from library buffer, may be
+	 * irrelevant for loopbackdevices
+	 */
 	
 	virtual std::vector<NG_NetworkMessage*> RetrieveNetworkMessages()=0;
 	
@@ -79,5 +79,4 @@ public:
 #endif
 };
 
-#endif //__NG_NETWORKDEVICEINTERFACE_H__
-
+#endif  /* __NG_NETWORKDEVICEINTERFACE_H__ */

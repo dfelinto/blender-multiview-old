@@ -29,8 +29,6 @@
  *  \ingroup edutil
  */
 
-
-
 #include <stdlib.h>
 #include <string.h>
 #include <math.h>
@@ -44,7 +42,7 @@
 #include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 
-
+#include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
 #include "BKE_global.h"
@@ -82,8 +80,6 @@
 static void error(const char *UNUSED(arg)) {}
 /* ****** XXX ***** */
 
-
-#define MAXUNDONAME 64
 typedef struct UndoElem {
 	struct UndoElem *next, *prev;
 	ID id;          // copy of editmode object ID
@@ -91,7 +87,7 @@ typedef struct UndoElem {
 	int type;       // type of edited object
 	void *undodata;
 	uintptr_t undosize;
-	char name[MAXUNDONAME];
+	char name[BKE_UNDO_STR_MAX];
 	void * (*getdata)(bContext * C);
 	void (*freedata)(void *);
 	void (*to_editmode)(void *, void *, void *);
@@ -108,7 +104,7 @@ static UndoElem *curundo = NULL;
 static void undo_restore(UndoElem *undo, void *editdata, void *obdata)
 {
 	if (undo) {
-		undo->to_editmode(undo->undodata, editdata, obdata);	
+		undo->to_editmode(undo->undodata, editdata, obdata);
 	}
 }
 
@@ -237,7 +233,7 @@ static void undo_clean_stack(bContext *C)
 	if (curundo == NULL) curundo = undobase.last;
 }
 
-/* 1= an undo, -1 is a redo. we have to make sure 'curundo' remains at current situation */
+/* 1 = an undo, -1 is a redo. we have to make sure 'curundo' remains at current situation */
 void undo_editmode_step(bContext *C, int step)
 {
 	Object *obedit = CTX_data_edit_object(C);
@@ -250,7 +246,9 @@ void undo_editmode_step(bContext *C, int step)
 	}
 	else if (step == 1) {
 		
-		if (curundo == NULL || curundo->prev == NULL) error("No more steps to undo");
+		if (curundo == NULL || curundo->prev == NULL) {
+			error("No more steps to undo");
+		}
 		else {
 			if (G.debug & G_DEBUG) printf("undo %s\n", curundo->name);
 			curundo = curundo->prev;
@@ -260,7 +258,9 @@ void undo_editmode_step(bContext *C, int step)
 	else {
 		/* curundo has to remain current situation! */
 		
-		if (curundo == NULL || curundo->next == NULL) error("No more steps to redo");
+		if (curundo == NULL || curundo->next == NULL) {
+			error("No more steps to redo");
+		}
 		else {
 			undo_restore(curundo->next, curundo->getdata(C), obedit->data);
 			curundo = curundo->next;

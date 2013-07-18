@@ -36,7 +36,7 @@
 #include "MEM_guardedalloc.h"
 #endif
 
-unsigned int			KX_Hash(void * inDWord);
+unsigned int			KX_Hash(void *inDWord);
 
 class CHashedPtr
 {
@@ -50,7 +50,7 @@ public:
 	inline friend bool operator ==( const CHashedPtr & rhs,const CHashedPtr & lhs)
 	{
 		return rhs.m_valptr == lhs.m_valptr;
-	}	
+	}
 	
 	
 #ifdef WITH_CXX_GUARDEDALLOC
@@ -58,5 +58,4 @@ public:
 #endif
 };
 
-#endif //__KX_HASHEDPTR_H__
-
+#endif  /* __KX_HASHEDPTR_H__ */

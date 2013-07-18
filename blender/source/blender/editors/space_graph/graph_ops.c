@@ -39,6 +39,7 @@
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
+#include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_sound.h"
 
@@ -65,6 +66,15 @@
  *	1) Current Frame Indicator (as per ANIM_OT_change_frame)
  *	2) Value Indicator (stored per Graph Editor instance)
  */
+
+static int graphview_cursor_poll(bContext *C)
+{
+	/* prevent changes during render */
+	if (G.is_rendering)
+		return 0;
+
+	return ED_operator_graphedit_active(C);
+}
 
 /* Set the new frame number */
 static void graphview_cursor_apply(bContext *C, wmOperator *op)
@@ -99,7 +109,7 @@ static int graphview_cursor_exec(bContext *C, wmOperator *op)
 /* ... */
 
 /* set the operator properties from the initial event */
-static void graphview_cursor_setprops(bContext *C, wmOperator *op, wmEvent *event)
+static void graphview_cursor_setprops(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	ARegion *ar = CTX_wm_region(C);
 	float viewx, viewy;
@@ -118,7 +128,7 @@ static void graphview_cursor_setprops(bContext *C, wmOperator *op, wmEvent *even
 }
 
 /* Modal Operator init */
-static int graphview_cursor_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int graphview_cursor_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	/* Change to frame that mouse is over before adding modal handler,
 	 * as user could click on a single frame (jump to frame) as well as
@@ -135,7 +145,7 @@ static int graphview_cursor_invoke(bContext *C, wmOperator *op, wmEvent *event)
 }
 
 /* Modal event handling of cursor changing */
-static int graphview_cursor_modal(bContext *C, wmOperator *op, wmEvent *event)
+static int graphview_cursor_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
 	/* execute the events */
 	switch (event->type) {
@@ -172,7 +182,7 @@ static void GRAPH_OT_cursor_set(wmOperatorType *ot)
 	ot->exec = graphview_cursor_exec;
 	ot->invoke = graphview_cursor_invoke;
 	ot->modal = graphview_cursor_modal;
-	ot->poll = ED_operator_graphedit_active;
+	ot->poll = graphview_cursor_poll;
 	
 	/* flags */
 	ot->flag = OPTYPE_BLOCKING | OPTYPE_UNDO;
@@ -346,9 +356,8 @@ static void graphedit_keymap_keyframes(wmKeyConfig *keyconf, wmKeyMap *keymap)
 	
 	
 	/* graph_edit.c */
-	/* snap - current frame to selected keys */
-	// TODO: maybe since this is called jump, we're better to have it on <something>-J?
-	WM_keymap_add_item(keymap, "GRAPH_OT_frame_jump", SKEY, KM_PRESS, KM_CTRL | KM_SHIFT, 0);
+	/* jump to selected keyframes */
+	WM_keymap_add_item(keymap, "GRAPH_OT_frame_jump", GKEY, KM_PRESS, KM_CTRL, 0);
 		
 	/* menu + single-step transform */
 	WM_keymap_add_item(keymap, "GRAPH_OT_snap", SKEY, KM_PRESS, KM_SHIFT, 0);
@@ -372,12 +381,16 @@ static void graphedit_keymap_keyframes(wmKeyConfig *keyconf, wmKeyMap *keymap)
 	
 	/* insertkey */
 	WM_keymap_add_item(keymap, "GRAPH_OT_keyframe_insert", IKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "GRAPH_OT_click_insert", LEFTMOUSE, KM_CLICK, KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "GRAPH_OT_click_insert", ACTIONMOUSE, KM_CLICK, KM_CTRL, 0);
 	
 	/* copy/paste */
 	WM_keymap_add_item(keymap, "GRAPH_OT_copy", CKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "GRAPH_OT_paste", VKEY, KM_PRESS, KM_CTRL, 0);
-	
+#ifdef __APPLE__
+	WM_keymap_add_item(keymap, "GRAPH_OT_copy", CKEY, KM_PRESS, KM_OSKEY, 0);
+	WM_keymap_add_item(keymap, "GRAPH_OT_paste", VKEY, KM_PRESS, KM_OSKEY, 0);
+#endif
+
 	/* auto-set range */
 	WM_keymap_add_item(keymap, "GRAPH_OT_previewrange_set", PKEY, KM_PRESS, KM_CTRL | KM_ALT, 0);
 	WM_keymap_add_item(keymap, "GRAPH_OT_view_all", HOMEKEY, KM_PRESS, 0, 0);

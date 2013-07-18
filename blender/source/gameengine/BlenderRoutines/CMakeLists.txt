@@ -23,16 +23,16 @@ set(INC
 	../../blender/makesdna
 	../../blender/makesrna
 	../../blender/windowmanager
-	../../../extern/bullet2/src
 	../../../intern/container
 	../../../intern/guardedalloc
 	../../../intern/moto/include
 	../../../intern/string
-	${GLEW_INCLUDE_PATH}
 )
 
 set(INC_SYS
 	${PTHREADS_INCLUDE_DIRS}
+	${GLEW_INCLUDE_PATH}
+	${BOOST_INCLUDE_DIR}
 )
 
 set(SRC
@@ -68,5 +68,13 @@ endif()
 if(WITH_CODEC_FFMPEG)
 	add_definitions(-DWITH_FFMPEG)
 endif()
+
+if(WITH_BULLET)
+	list(APPEND INC_SYS
+		${BULLET_INCLUDE_DIRS}
+	)
+	add_definitions(-DWITH_BULLET)
+endif()
+
 
 blender_add_lib(ge_blen_routines "${SRC}" "${INC}" "${INC_SYS}")

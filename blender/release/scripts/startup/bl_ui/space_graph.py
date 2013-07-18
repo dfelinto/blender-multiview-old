@@ -96,7 +96,6 @@ class GRAPH_MT_view(Menu):
         layout.operator("graph.previewrange_set")
 
         layout.separator()
-        layout.operator("graph.frame_jump")
         layout.operator("graph.view_all")
         layout.operator("graph.view_selected")
 
@@ -162,9 +161,13 @@ class GRAPH_MT_channel(Menu):
         layout.operator("anim.channels_delete")
 
         layout.separator()
-        layout.operator("anim.channels_setting_toggle")
-        layout.operator("anim.channels_setting_enable")
-        layout.operator("anim.channels_setting_disable")
+        layout.operator("anim.channels_group")
+        layout.operator("anim.channels_ungroup")
+
+        layout.separator()
+        layout.operator_menu_enum("anim.channels_setting_toggle", "type")
+        layout.operator_menu_enum("anim.channels_setting_enable", "type")
+        layout.operator_menu_enum("anim.channels_setting_disable", "type")
 
         layout.separator()
         layout.operator("anim.channels_editable_toggle")
@@ -197,6 +200,9 @@ class GRAPH_MT_key(Menu):
         layout.operator("graph.keyframe_insert")
         layout.operator("graph.fmodifier_add")
         layout.operator("graph.sound_bake")
+
+        layout.separator()
+        layout.operator("graph.frame_jump")
 
         layout.separator()
         layout.operator("graph.duplicate_move")

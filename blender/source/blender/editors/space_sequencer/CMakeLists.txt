@@ -23,7 +23,6 @@ set(INC
 	../../blenfont
 	../../blenkernel
 	../../blenlib
-	../../blenloader
 	../../imbuf
 	../../makesdna
 	../../makesrna
@@ -40,9 +39,11 @@ set(SRC
 	sequencer_buttons.c
 	sequencer_draw.c
 	sequencer_edit.c
+	sequencer_modifier.c
 	sequencer_ops.c
 	sequencer_scopes.c
 	sequencer_select.c
+	sequencer_view.c
 	space_sequencer.c
 
 	sequencer_intern.h
@@ -53,6 +54,10 @@ if(WITH_AUDASPACE)
 		../../../../intern/audaspace/intern
 	)
 	add_definitions(-DWITH_AUDASPACE)
+endif()
+
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 blender_add_lib(bf_editor_space_sequencer "${SRC}" "${INC}" "${INC_SYS}")
