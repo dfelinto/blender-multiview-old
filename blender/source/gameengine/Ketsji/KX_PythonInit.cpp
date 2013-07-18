@@ -1310,7 +1310,7 @@ static PyObject* gPyGetRenderMode(PyObject*)
 		flag = KX_STEREO_ENABLED;
 	else
 		flag = KX_STEREO_DOME;
-	
+
 	return PyLong_FromSsize_t(flag);
 }
 
@@ -1329,23 +1329,6 @@ static PyObject* gPySetAnaglyphMode(PyObject*,
 		return NULL;
 
 	gs->anaglyphmode = type;
-
-	Py_RETURN_NONE;
-}
-
-static PyObject *gPySetAnisotropicFiltering(PyObject *, PyObject *args)
-{
-	short level;
-
-	if (!PyArg_ParseTuple(args, "h:setAnisotropicFiltering", &level))
-		return NULL;
-
-	if (level != 1 && level != 2 && level != 4 && level != 8 && level != 16) {
-		PyErr_SetString(PyExc_ValueError, "Rasterizer.setAnisotropicFiltering(level): Expected value of 1, 2, 4, 8, or 16 for value");
-		return NULL;
-	}
-
-	gp_Rasterizer->SetAnisotropicFiltering(level);
 
 	Py_RETURN_NONE;
 }
@@ -1404,6 +1387,23 @@ static PyObject* gPySetDomeWarpData(PyObject*,
 		printf("error: invalid warpdata text file - %s\n", filename);
 	else
 		gs->dome.warptext = domeText;
+
+	Py_RETURN_NONE;
+}
+
+static PyObject *gPySetAnisotropicFiltering(PyObject *, PyObject *args)
+{
+	short level;
+
+	if (!PyArg_ParseTuple(args, "h:setAnisotropicFiltering", &level))
+		return NULL;
+
+	if (level != 1 && level != 2 && level != 4 && level != 8 && level != 16) {
+		PyErr_SetString(PyExc_ValueError, "Rasterizer.setAnisotropicFiltering(level): Expected value of 1, 2, 4, 8, or 16 for value");
+		return NULL;
+	}
+
+	gp_Rasterizer->SetAnisotropicFiltering(level);
 
 	Py_RETURN_NONE;
 }

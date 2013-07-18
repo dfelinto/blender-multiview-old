@@ -544,8 +544,7 @@ void RAS_OpenGLRasterizer::SetRenderArea()
 			break;
 	}
 }
-
-
+	
 void RAS_OpenGLRasterizer::SetAnaglyphColor(const int anaglyph_mode)
 {
 	switch(anaglyph_mode) {

@@ -240,7 +240,6 @@ void KX_Dome::CalculateImageSize(void)
 
 	m_buffersize = (canvaswidth > canvasheight?canvasheight:canvaswidth);
 	m_buffersize = (int)(m_buffersize*m_resbuffer); //reduce buffer size for better performance
-
 	
 	int i = 0;
 	while ((1 << i) <= m_buffersize)

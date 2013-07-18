@@ -255,7 +255,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 	gs.glslflag= startscene->gm.flag;
 	gs.stereoflag= startscene->gm.stereoflag;
 	gs.dome= startscene->gm.dome;
-	
+
 	do
 	{
 		View3D *v3d= CTX_wm_view3d(C);
@@ -429,7 +429,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			if (scene->gm.stereoflag == STEREO_ENABLED) {
 				if (scene->gm.stereomode != RAS_IRasterizer::RAS_STEREO_QUADBUFFERED)
 					rasterizer->SetStereoMode((RAS_IRasterizer::StereoMode) scene->gm.stereomode);
-				
+
 				rasterizer->SetAnaglyphColor(scene->gm.anaglyphmode);
 
 				rasterizer->SetEyeSeparation(scene->gm.eyeseparation);

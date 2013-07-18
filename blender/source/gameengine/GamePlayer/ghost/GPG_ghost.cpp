@@ -851,6 +851,8 @@ int main(int argc, char** argv)
 							gs.glslflag= scene->gm.flag;
 							gs.stereoflag= scene->gm.stereoflag;
 							gs.dome= scene->gm.dome;
+							gs.anaglyphmode= scene->gm.anaglyphmode;
+							gs.stereomode= scene->gm.stereomode;
 						}
 
 						//Seg Fault; icon.c gIcons == 0
@@ -880,14 +882,14 @@ int main(int argc, char** argv)
 						
 						// Check whether the game should be displayed in stereo
 						if (!stereoParFound) {
-							if (scene->gm.stereoflag == STEREO_ENABLED) {
+							if (gs.stereoflag == STEREO_ENABLED) {
 								stereomode = (RAS_IRasterizer::StereoMode) scene->gm.stereomode;
 								if (stereomode == RAS_IRasterizer::RAS_STEREO_QUADBUFFERED)
 									stereoWindow = true;
 							}
 						}
 						else {
-							scene->gm.stereoflag = STEREO_ENABLED;
+							gs.stereoflag = STEREO_ENABLED;
 						}
 
 						if (!samplesParFound)
