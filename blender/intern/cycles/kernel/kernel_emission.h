@@ -21,7 +21,7 @@ CCL_NAMESPACE_BEGIN
 /* Direction Emission */
 
 __device float3 direct_emissive_eval(KernelGlobals *kg, float rando,
-	LightSample *ls, float u, float v, float3 I)
+	LightSample *ls, float u, float v, float3 I, float t, float time)
 {
 	/* setup shading at emitter */
 	ShaderData sd;
@@ -40,11 +40,11 @@ __device float3 direct_emissive_eval(KernelGlobals *kg, float rando,
 	else
 #endif
 	{
-		shader_setup_from_sample(kg, &sd, ls->P, ls->Ng, I, ls->shader, ls->object, ls->prim, u, v);
+		shader_setup_from_sample(kg, &sd, ls->P, ls->Ng, I, ls->shader, ls->object, ls->prim, u, v, t, time);
 		ls->Ng = sd.Ng;
 
 		/* no path flag, we're evaluating this for all closures. that's weak but
-		   we'd have to do multiple evaluations otherwise */
+		 * we'd have to do multiple evaluations otherwise */
 		shader_eval_surface(kg, &sd, rando, 0);
 
 		/* evaluate emissive closure */
@@ -60,13 +60,14 @@ __device float3 direct_emissive_eval(KernelGlobals *kg, float rando,
 }
 
 __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
-	float randt, float rando, float randu, float randv, Ray *ray, BsdfEval *eval)
+	float randt, float rando, float randu, float randv, Ray *ray, BsdfEval *eval,
+	bool *is_lamp)
 {
 	LightSample ls;
 
 	float pdf = -1.0f;
 
-#ifdef __MULTI_LIGHT__
+#ifdef __NON_PROGRESSIVE__
 	if(lindex != -1) {
 		/* sample position on a specified light */
 		light_select(kg, lindex, randu, randv, sd->P, &ls, &pdf);
@@ -75,7 +76,7 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 #endif
 	{
 		/* sample a light and position on int */
-		light_sample(kg, randt, randu, randv, sd->P, &ls, &pdf);
+		light_sample(kg, randt, randu, randv, sd->time, sd->P, &ls, &pdf);
 	}
 
 	/* compute pdf */
@@ -86,7 +87,7 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 		return false;
 
 	/* evaluate closure */
-	float3 light_eval = direct_emissive_eval(kg, rando, &ls, randu, randv, -ls.D);
+	float3 light_eval = direct_emissive_eval(kg, rando, &ls, randu, randv, -ls.D, ls.t, sd->time);
 
 	if(is_zero(light_eval))
 		return false;
@@ -103,13 +104,8 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 		float mis_weight = power_heuristic(pdf, bsdf_pdf);
 		light_eval *= mis_weight;
 	}
-	/* todo: clean up these weights */
-	else if(ls.shader & SHADER_AREA_LIGHT)
-		light_eval *= 0.25f; /* area lamp */
-	else if(ls.t != FLT_MAX)
-		light_eval *= 0.25f*M_1_PI_F; /* point lamp */
 	
-	bsdf_eval_mul(eval, light_eval/pdf);
+	bsdf_eval_mul(eval, light_eval*(ls.eval_fac/pdf));
 
 	if(bsdf_eval_is_zero(eval))
 		return false;
@@ -135,6 +131,8 @@ __device bool direct_emission(KernelGlobals *kg, ShaderData *sd, int lindex,
 		ray->t = 0.0f;
 	}
 
+	*is_lamp = (ls.prim == ~0);
+
 	return true;
 }
 
@@ -147,7 +145,7 @@ __device float3 indirect_emission(KernelGlobals *kg, ShaderData *sd, float t, in
 
 	if(!(path_flag & PATH_RAY_MIS_SKIP) && (sd->flag & SD_SAMPLE_AS_LIGHT)) {
 		/* multiple importance sampling, get triangle light pdf,
-		   and compute weight with respect to BSDF pdf */
+		 * and compute weight with respect to BSDF pdf */
 		float pdf = triangle_light_pdf(kg, sd->Ng, sd->I, t);
 		float mis_weight = power_heuristic(bsdf_pdf, pdf);
 
@@ -174,7 +172,7 @@ __device float3 indirect_background(KernelGlobals *kg, Ray *ray, int path_flag, 
 
 	if(!(path_flag & PATH_RAY_MIS_SKIP) && res) {
 		/* multiple importance sampling, get background light pdf for ray
-		   direction, and compute weight with respect to BSDF pdf */
+		 * direction, and compute weight with respect to BSDF pdf */
 		float pdf = background_light_pdf(kg, ray->D);
 		float mis_weight = power_heuristic(bsdf_pdf, pdf);
 

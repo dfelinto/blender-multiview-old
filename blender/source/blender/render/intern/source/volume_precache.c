@@ -57,10 +57,6 @@
 #include "volumetric.h"
 #include "volume_precache.h"
 
-#if defined( _MSC_VER ) && !defined( __cplusplus )
-# define inline __inline
-#endif // defined( _MSC_VER ) && !defined( __cplusplus )
-
 #include "BKE_global.h"
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -89,7 +85,8 @@ static int intersect_outside_volume(RayObject *tree, Isect *isect, float *offset
 		isect->orig.ob= isect->hit.ob;
 		
 		return intersect_outside_volume(tree, isect, offset, limit-1, depth+1);
-	} else {
+	}
+	else {
 		return depth;
 	}
 }
@@ -98,7 +95,7 @@ static int intersect_outside_volume(RayObject *tree, Isect *isect, float *offset
 static int point_inside_obi(RayObject *tree, ObjectInstanceRen *UNUSED(obi), float *co)
 {
 	Isect isect= {{0}};
-	float dir[3] = {0.0f,0.0f,1.0f};
+	float dir[3] = {0.0f, 0.0f, 1.0f};
 	int final_depth=0, depth=0, limit=20;
 	
 	/* set up the isect */
@@ -140,20 +137,20 @@ void global_bounds_obi(Render *re, ObjectInstanceRen *obi, float *bbmin, float *
 	
 	INIT_MINMAX(bbmin, bbmax);
 	
-	for(a=0; a<obr->totvert; a++) {
-		if((a & 255)==0) ver= obr->vertnodes[a>>8].vert;
+	for (a=0; a<obr->totvert; a++) {
+		if ((a & 255)==0) ver= obr->vertnodes[a>>8].vert;
 		else ver++;
 		
 		copy_v3_v3(co, ver->co);
 		
 		/* transformed object instance in camera space */
-		if(obi->flag & R_TRANSFORMED)
+		if (obi->flag & R_TRANSFORMED)
 			mul_m4_v3(obi->mat, co);
 		
 		/* convert to global space */
 		mul_m4_v3(re->viewinv, co);
 		
-		DO_MINMAX(co, vp->bbmin, vp->bbmax);
+		minmax_v3v3_v3(vp->bbmin, vp->bbmax, co);
 	}
 	
 	copy_v3_v3(bbmin, vp->bbmin);
@@ -180,7 +177,7 @@ static float get_avg_surrounds(float *cache, int *res, int xx, int yy, int zz)
 					for (x=-1; x <= 1; x++) {
 						x_ = xx+x;
 						if (x_ >= 0 && x_ <= res[0]-1) {
-							const int i= V_I(x_, y_, z_, res);
+							const int i = BLI_VOXEL_INDEX(x_, y_, z_, res);
 							
 							if (cache[i] > 0.0f) {
 								tot += cache[i];
@@ -211,7 +208,7 @@ static void lightcache_filter(VolumePrecache *vp)
 		for (y=0; y < vp->res[1]; y++) {
 			for (x=0; x < vp->res[0]; x++) {
 				/* trigger for outside mesh */
-				const int i= V_I(x, y, z, vp->res);
+				const int i = BLI_VOXEL_INDEX(x, y, z, vp->res);
 				
 				if (vp->data_r[i] < -0.f)
 					vp->data_r[i] = get_avg_surrounds(vp->data_r, vp->res, x, y, z);
@@ -243,7 +240,7 @@ static void lightcache_filter2(VolumePrecache *vp)
 		for (y=0; y < vp->res[1]; y++) {
 			for (x=0; x < vp->res[0]; x++) {
 				/* trigger for outside mesh */
-				const int i= V_I(x, y, z, vp->res);
+				const int i = BLI_VOXEL_INDEX(x, y, z, vp->res);
 				if (vp->data_r[i] < -0.f)
 					new_r[i] = get_avg_surrounds(vp->data_r, vp->res, x, y, z);
 				if (vp->data_g[i] < -0.f)
@@ -264,19 +261,19 @@ static void lightcache_filter2(VolumePrecache *vp)
 }
 #endif
 
-static inline int ms_I(int x, int y, int z, int *n) //has a pad of 1 voxel surrounding the core for boundary simulation
-{ 
+BLI_INLINE int ms_I(int x, int y, int z, int *n) /* has a pad of 1 voxel surrounding the core for boundary simulation */
+{
 	/* different ordering to light cache */
-	return x*(n[1]+2)*(n[2]+2) + y*(n[2]+2) + z; 	
+	return x*(n[1]+2)*(n[2]+2) + y*(n[2]+2) + z;
 }
 
-static inline int v_I_pad(int x, int y, int z, int *n) //has a pad of 1 voxel surrounding the core for boundary simulation
-{ 
+BLI_INLINE int v_I_pad(int x, int y, int z, int *n) /* has a pad of 1 voxel surrounding the core for boundary simulation */
+{
 	/* same ordering to light cache, with padding */
 	return z*(n[1]+2)*(n[0]+2) + y*(n[0]+2) + x;  	
 }
 
-static inline int lc_to_ms_I(int x, int y, int z, int *n)
+BLI_INLINE int lc_to_ms_I(int x, int y, int z, int *n)
 { 
 	/* converting light cache index to multiple scattering index */
 	return (x-1)*(n[1]*n[2]) + (y-1)*(n[2]) + z-1;
@@ -294,7 +291,7 @@ static float total_ss_energy(Render *re, int do_test_break, VolumePrecache *vp)
 	for (z=0; z < res[2]; z++) {
 		for (y=0; y < res[1]; y++) {
 			for (x=0; x < res[0]; x++) {
-				const int i=V_I(x, y, z, res);
+				const int i = BLI_VOXEL_INDEX(x, y, z, res);
 			
 				if (vp->data_r[i] > 0.f) energy += vp->data_r[i];
 				if (vp->data_g[i] > 0.f) energy += vp->data_g[i];
@@ -316,7 +313,7 @@ static float total_ms_energy(Render *re, int do_test_break, float *sr, float *sg
 	for (z=1;z<=res[2];z++) {
 		for (y=1;y<=res[1];y++) {
 			for (x=1;x<=res[0];x++) {
-				const int i = ms_I(x,y,z,res);
+				const int i = ms_I(x, y, z, res);
 				
 				if (sr[i] > 0.f) energy += sr[i];
 				if (sg[i] > 0.f) energy += sg[i];
@@ -337,16 +334,12 @@ static void ms_diffuse(Render *re, int do_test_break, float *x0, float *x, float
 	size_t size = n[0]*n[1]*n[2];
 	const float a = dt*diff*size;
 	
-	for (l=0; l<20; l++)
-	{
-		for (k=1; k<=n[2]; k++)
-		{
-			for (j=1; j<=n[1]; j++)
-			{
-				for (i=1; i<=n[0]; i++)
-				{
-				   x[v_I_pad(i,j,k,n)] = (x0[v_I_pad(i,j,k,n)]) + a*(	x0[v_I_pad(i-1,j,k,n)]+ x0[v_I_pad(i+1,j,k,n)]+ x0[v_I_pad(i,j-1,k,n)]+
-																		x0[v_I_pad(i,j+1,k,n)]+ x0[v_I_pad(i,j,k-1,n)]+x0[v_I_pad(i,j,k+1,n)]
+	for (l=0; l<20; l++) {
+		for (k=1; k<=n[2]; k++) {
+			for (j=1; j<=n[1]; j++) {
+				for (i=1; i<=n[0]; i++) {
+				   x[v_I_pad(i, j, k, n)] = (x0[v_I_pad(i, j, k, n)]) + a*(	x0[v_I_pad(i-1, j, k, n)]+ x0[v_I_pad(i+1, j, k, n)]+ x0[v_I_pad(i, j-1, k, n)]+
+																		x0[v_I_pad(i, j+1, k, n)]+ x0[v_I_pad(i, j, k-1, n)]+x0[v_I_pad(i, j, k+1, n)]
 																		) / (1+6*a);
 				}
 			}
@@ -387,16 +380,12 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 	energy_ss = total_ss_energy(re, do_test_break, vp);
 	
 	/* Scattering as diffusion pass */
-	for (m=0; m<simframes; m++)
-	{
+	for (m=0; m<simframes; m++) {
 		/* add sources */
-		for (z=1; z<=n[2]; z++)
-		{
-			for (y=1; y<=n[1]; y++)
-			{
-				for (x=1; x<=n[0]; x++)
-				{
-					const int i = lc_to_ms_I(x, y ,z, n);	//lc index					
+		for (z=1; z<=n[2]; z++) {
+			for (y=1; y<=n[1]; y++) {
+				for (x=1; x<=n[0]; x++) {
+					const int i = lc_to_ms_I(x, y, z, n);	//lc index
 					const int j = ms_I(x, y, z, n);			//ms index
 					
 					time= PIL_check_seconds_timer();
@@ -409,7 +398,7 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 						sb[j] += vp->data_b[i];
 					
 					/* Displays progress every second */
-					if(time-lasttime>1.0) {
+					if (time-lasttime>1.0) {
 						char str[64];
 						BLI_snprintf(str, sizeof(str), "Simulating multiple scattering: %d%%", (int)(100.0f * (c / total)));
 						re->i.infostr= str;
@@ -425,9 +414,9 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 
 		if (re->test_break(re->tbh)) break;
 
-		SWAP(float *,sr,sr0);
-		SWAP(float *,sg,sg0);
-		SWAP(float *,sb,sb0);
+		SWAP(float *, sr, sr0);
+		SWAP(float *, sg, sg0);
+		SWAP(float *, sb, sb0);
 
 		/* main diffusion simulation */
 		ms_diffuse(re, do_test_break, sr0, sr, diff, n);
@@ -446,17 +435,15 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 		/* conserve energy - half single, half multiple */
 		origf = 0.5f;
 		fac *= 0.5f;
-	} else {
+	}
+	else {
 		origf = 0.0f;
 	}
 
-	for (z=1;z<=n[2];z++)
-	{
-		for (y=1;y<=n[1];y++)
-		{
-			for (x=1;x<=n[0];x++)
-			{
-				const int i = lc_to_ms_I(x, y ,z, n);	//lc index					
+	for (z=1;z<=n[2];z++) {
+		for (y=1;y<=n[1];y++) {
+			for (x=1;x<=n[0];x++) {
+				const int i = lc_to_ms_I(x, y, z, n);	//lc index
 				const int j = ms_I(x, y, z, n);			//ms index
 				
 				vp->data_r[i] = origf * vp->data_r[i] + fac * sr[j];
@@ -478,16 +465,16 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 
 
 
-#if 0 // debug stuff
+#if 0  /* debug stuff */
 static void *vol_precache_part_test(void *data)
 {
 	VolPrecachePart *pa = data;
 
-	printf("part number: %d \n", pa->num);
-	printf("done: %d \n", pa->done);
-	printf("x min: %d   x max: %d \n", pa->minx, pa->maxx);
-	printf("y min: %d   y max: %d \n", pa->miny, pa->maxy);
-	printf("z min: %d   z max: %d \n", pa->minz, pa->maxz);
+	printf("part number: %d\n", pa->num);
+	printf("done: %d\n", pa->done);
+	printf("x min: %d   x max: %d\n", pa->minx, pa->maxx);
+	printf("y min: %d   y max: %d\n", pa->miny, pa->maxy);
+	printf("z min: %d   z max: %d\n", pa->minz, pa->maxz);
 
 	return NULL;
 }
@@ -539,10 +526,10 @@ static void *vol_precache_part(void *data)
 					
 					/* convert from world->camera space for shading */
 					mul_v3_m4v3(cco, pa->viewmat, co);
-					
-					i= V_I(x, y, z, res);
-					
-					// don't bother if the point is not inside the volume mesh
+
+					i = BLI_VOXEL_INDEX(x, y, z, res);
+
+					/* don't bother if the point is not inside the volume mesh */
 					if (!point_inside_obi(tree, obi, cco)) {
 						obi->volume_precache->data_r[i] = -1.0f;
 						obi->volume_precache->data_g[i] = -1.0f;
@@ -576,7 +563,7 @@ static void precache_setup_shadeinput(Render *re, ObjectInstanceRen *obi, Materi
 	shi->mask= 1;
 	shi->mat = ma;
 	shi->vlr = NULL;
-	memcpy(&shi->r, &shi->mat->r, 23*sizeof(float));	// note, keep this synced with render_types.h
+	memcpy(&shi->r, &shi->mat->r, 23*sizeof(float));	/* note, keep this synced with render_types.h */
 	shi->har= shi->mat->har;
 	shi->obi= obi;
 	shi->obr= obi->obr;
@@ -735,25 +722,25 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 	queue.done = BLI_thread_queue_init();
 	BLI_thread_queue_nowait(queue.work);
 
-	for(pa= re->volume_precache_parts.first; pa; pa= pa->next)
+	for (pa= re->volume_precache_parts.first; pa; pa= pa->next)
 		BLI_thread_queue_push(queue.work, pa);
 	
 	/* launch threads */
 	BLI_init_threads(&threads, vol_precache_part, totthread);
 
-	for(thread= 0; thread<totthread; thread++)
+	for (thread= 0; thread<totthread; thread++)
 		BLI_insert_thread(&threads, &queue);
 	
 	/* loop waiting for work to be done */
-	while(counter < totparts) {
-		if(re->test_break && re->test_break(re->tbh))
+	while (counter < totparts) {
+		if (re->test_break && re->test_break(re->tbh))
 			break;
 
-		if(BLI_thread_queue_pop_timeout(queue.done, 50))
+		if (BLI_thread_queue_pop_timeout(queue.done, 50))
 			counter++;
 
 		time= PIL_check_seconds_timer();
-		if(time-lasttime>1.0) {
+		if (time-lasttime>1.0) {
 			char str[64];
 			BLI_snprintf(str, sizeof(str), "Precaching volume: %d%%", (int)(100.0f * ((float)counter / (float)totparts)));
 			re->i.infostr= str;
@@ -769,8 +756,9 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 	BLI_thread_queue_free(queue.done);
 	BLI_freelistN(&re->volume_precache_parts);
 	
-	if(tree) {
-		//TODO: makeraytree_object creates a tree and saves it on OBI, if we free this tree we should also clear other pointers to it
+	if (tree) {
+		/* TODO: makeraytree_object creates a tree and saves it on OBI,
+		 * if we free this tree we should also clear other pointers to it */
 		//RE_rayobject_free(tree);
 		//tree= NULL;
 	}
@@ -785,8 +773,8 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 
 static int using_lightcache(Material *ma)
 {
-	return (((ma->vol.shadeflag & MA_VOL_PRECACHESHADING) && (ma->vol.shade_type == MA_VOL_SHADE_SHADED))
-		|| (ELEM(ma->vol.shade_type, MA_VOL_SHADE_MULTIPLE, MA_VOL_SHADE_SHADEDPLUSMULTIPLE)));
+	return (((ma->vol.shadeflag & MA_VOL_PRECACHESHADING) && (ma->vol.shade_type == MA_VOL_SHADE_SHADED)) ||
+	        (ELEM(ma->vol.shade_type, MA_VOL_SHADE_MULTIPLE, MA_VOL_SHADE_SHADEDPLUSMULTIPLE)));
 }
 
 /* loop through all objects (and their associated materials)
@@ -799,18 +787,18 @@ void volume_precache(Render *re)
 	re->i.infostr= "Volume preprocessing";
 	re->stats_draw(re->sdh, &re->i);
 
-	for(vo= re->volumes.first; vo; vo= vo->next) {
+	for (vo= re->volumes.first; vo; vo= vo->next) {
 		if (using_lightcache(vo->ma)) {
-			for(obi= re->instancetable.first; obi; obi= obi->next) {
+			for (obi= re->instancetable.first; obi; obi= obi->next) {
 				if (obi->obr == vo->obr) {
 					vol_precache_objectinstance_threads(re, obi, vo->ma);
 
-					if(re->test_break && re->test_break(re->tbh))
+					if (re->test_break && re->test_break(re->tbh))
 						break;
 				}
 			}
 
-			if(re->test_break && re->test_break(re->tbh))
+			if (re->test_break && re->test_break(re->tbh))
 				break;
 		}
 	}
@@ -823,7 +811,7 @@ void free_volume_precache(Render *re)
 {
 	ObjectInstanceRen *obi;
 	
-	for(obi= re->instancetable.first; obi; obi= obi->next) {
+	for (obi= re->instancetable.first; obi; obi= obi->next) {
 		if (obi->volume_precache != NULL) {
 			MEM_freeN(obi->volume_precache->data_r);
 			MEM_freeN(obi->volume_precache->data_g);

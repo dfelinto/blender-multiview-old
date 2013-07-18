@@ -35,22 +35,35 @@ struct Transform;
 
 /* Object */
 
+struct Particle {
+	int index;
+	float age;
+	float lifetime;
+};
+
 class Object {
 public:
 	Mesh *mesh;
 	Transform tfm;
 	BoundBox bounds;
 	ustring name;
+	uint random_id;
 	int pass_id;
 	vector<ParamValue> attributes;
 	uint visibility;
+	MotionTransform motion;
+	bool use_motion;
+	bool use_holdout;
+
+	int particle_id;
+	vector<Particle> particles;
 
 	Object();
 	~Object();
 
 	void tag_update(Scene *scene);
 
-	void compute_bounds();
+	void compute_bounds(bool motion_blur);
 	void apply_transform();
 };
 
@@ -65,6 +78,7 @@ public:
 
 	void device_update(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
 	void device_update_transforms(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
+	void device_update_particles(Device *device, DeviceScene *dscene, Scene *scene, Progress& progress);
 	void device_free(Device *device, DeviceScene *dscene);
 
 	void tag_update(Scene *scene);

@@ -58,7 +58,7 @@
 
 static void initData(ModifierData *md)
 {
-	DisplaceModifierData *dmd = (DisplaceModifierData*) md;
+	DisplaceModifierData *dmd = (DisplaceModifierData *) md;
 
 	dmd->texture = NULL;
 	dmd->strength = 1;
@@ -68,8 +68,8 @@ static void initData(ModifierData *md)
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
-	DisplaceModifierData *dmd = (DisplaceModifierData*) md;
-	DisplaceModifierData *tdmd = (DisplaceModifierData*) target;
+	DisplaceModifierData *dmd = (DisplaceModifierData *) md;
+	DisplaceModifierData *tdmd = (DisplaceModifierData *) target;
 
 	tdmd->texture = dmd->texture;
 	tdmd->strength = dmd->strength;
@@ -87,10 +87,10 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
-	if(dmd->defgrp_name[0]) dataMask |= CD_MASK_MDEFORMVERT;
+	if (dmd->defgrp_name[0]) dataMask |= CD_MASK_MDEFORMVERT;
 
 	/* ask for UV coordinates if we need them */
-	if(dmd->texmapping == MOD_DISP_MAP_UV) dataMask |= CD_MASK_MTFACE;
+	if (dmd->texmapping == MOD_DISP_MAP_UV) dataMask |= CD_MASK_MTFACE;
 
 	return dataMask;
 }
@@ -99,7 +99,7 @@ static int dependsOnTime(ModifierData *md)
 {
 	DisplaceModifierData *dmd = (DisplaceModifierData *)md;
 
-	if(dmd->texture) {
+	if (dmd->texture) {
 		return BKE_texture_dependsOnTime(dmd->texture);
 	}
 	else {
@@ -114,17 +114,17 @@ static int dependsOnNormals(ModifierData *md)
 }
 
 static void foreachObjectLink(ModifierData *md, Object *ob,
-						   ObjectWalkFunc walk, void *userData)
+                              ObjectWalkFunc walk, void *userData)
 {
-	DisplaceModifierData *dmd = (DisplaceModifierData*) md;
+	DisplaceModifierData *dmd = (DisplaceModifierData *) md;
 
 	walk(userData, ob, &dmd->map_object);
 }
 
 static void foreachIDLink(ModifierData *md, Object *ob,
-					   IDWalkFunc walk, void *userData)
+                          IDWalkFunc walk, void *userData)
 {
-	DisplaceModifierData *dmd = (DisplaceModifierData*) md;
+	DisplaceModifierData *dmd = (DisplaceModifierData *) md;
 
 	walk(userData, ob, (ID **)&dmd->texture);
 
@@ -132,26 +132,25 @@ static void foreachIDLink(ModifierData *md, Object *ob,
 }
 
 static void foreachTexLink(ModifierData *md, Object *ob,
-					   TexWalkFunc walk, void *userData)
+                           TexWalkFunc walk, void *userData)
 {
 	walk(userData, ob, md, "texture");
 }
 
 static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
-	DisplaceModifierData *dmd = (DisplaceModifierData*) md;
-
-	return (!dmd->texture || dmd->strength == 0.0f);
+	DisplaceModifierData *dmd = (DisplaceModifierData *) md;
+	return ((!dmd->texture && dmd->direction == MOD_DISP_DIR_RGB_XYZ) || dmd->strength == 0.0f);
 }
 
 static void updateDepgraph(ModifierData *md, DagForest *forest,
-						struct Scene *UNUSED(scene),
-						Object *UNUSED(ob),
-						DagNode *obNode)
+                           struct Scene *UNUSED(scene),
+                           Object *UNUSED(ob),
+                           DagNode *obNode)
 {
-	DisplaceModifierData *dmd = (DisplaceModifierData*) md;
+	DisplaceModifierData *dmd = (DisplaceModifierData *) md;
 
-	if(dmd->map_object && dmd->texmapping == MOD_DISP_MAP_OBJECT) {
+	if (dmd->map_object && dmd->texmapping == MOD_DISP_MAP_OBJECT) {
 		DagNode *curNode = dag_get_node(forest, dmd->map_object);
 
 		dag_add_relation(forest, curNode, obNode,
@@ -159,7 +158,7 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 	}
 	
 
-	if(dmd->texmapping == MOD_DISP_MAP_GLOBAL)
+	if (dmd->texmapping == MOD_DISP_MAP_GLOBAL)
 		dag_add_relation(forest, obNode, obNode,
 		                 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
 	
@@ -167,46 +166,59 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 
 /* dm must be a CDDerivedMesh */
 static void displaceModifier_do(
-				DisplaceModifierData *dmd, Object *ob,
-	DerivedMesh *dm, float (*vertexCos)[3], int numVerts)
+    DisplaceModifierData *dmd, Object *ob,
+    DerivedMesh *dm, float (*vertexCos)[3], int numVerts)
 {
 	int i;
 	MVert *mvert;
 	MDeformVert *dvert;
 	int defgrp_index;
 	float (*tex_co)[3];
-	float weight= 1.0f; /* init value unused but some compilers may complain */
+	float weight = 1.0f; /* init value unused but some compilers may complain */
+	const float delta_fixed = 1.0f - dmd->midlevel;  /* when no texture is used, we fallback to white */
 
-	if(!dmd->texture) return;
-	if(dmd->strength == 0.0f) return;
+	if (!dmd->texture && dmd->direction == MOD_DISP_DIR_RGB_XYZ) return;
+	if (dmd->strength == 0.0f) return;
 
 	mvert = CDDM_get_verts(dm);
 	modifier_get_vgroup(ob, dm, dmd->defgrp_name, &dvert, &defgrp_index);
 
-	tex_co = MEM_callocN(sizeof(*tex_co) * numVerts,
-				 "displaceModifier_do tex_co");
-	get_texture_coords((MappingInfoModifierData *)dmd, ob, dm, vertexCos, tex_co, numVerts);
+	if (dmd->texture) {
+		tex_co = MEM_callocN(sizeof(*tex_co) * numVerts,
+							 "displaceModifier_do tex_co");
+		get_texture_coords((MappingInfoModifierData *)dmd, ob, dm, vertexCos, tex_co, numVerts);
 
-	for(i = 0; i < numVerts; ++i) {
+		modifier_init_texture(dmd->modifier.scene, dmd->texture);
+	}
+	else {
+		tex_co = NULL;
+	}
+
+	for (i = 0; i < numVerts; i++) {
 		TexResult texres;
-		float delta = 0, strength = dmd->strength;
+		float strength = dmd->strength;
+		float delta;
 
-		if(dvert) {
-			weight= defvert_find_weight(dvert + i, defgrp_index);
-			if(weight == 0.0f) continue;
+		if (dvert) {
+			weight = defvert_find_weight(dvert + i, defgrp_index);
+			if (weight == 0.0f) continue;
 		}
 
-		texres.nor = NULL;
-		get_texture_value(dmd->texture, tex_co[i], &texres);
+		if (dmd->texture) {
+			texres.nor = NULL;
+			get_texture_value(dmd->texture, tex_co[i], &texres);
+			delta = texres.tin - dmd->midlevel;
+		}
+		else {
+			delta = delta_fixed;  /* (1.0f - dmd->midlevel) */  /* never changes */
+		}
 
-		delta = texres.tin - dmd->midlevel;
-
-		if(dvert) strength *= weight;
+		if (dvert) strength *= weight;
 
 		delta *= strength;
 		CLAMP(delta, -10000, 10000);
 
-		switch(dmd->direction) {
+		switch (dmd->direction) {
 			case MOD_DISP_DIR_X:
 				vertexCos[i][0] += delta;
 				break;
@@ -229,35 +241,36 @@ static void displaceModifier_do(
 		}
 	}
 
-	MEM_freeN(tex_co);
+	if (tex_co) {
+		MEM_freeN(tex_co);
+	}
 }
 
 static void deformVerts(ModifierData *md, Object *ob,
-						DerivedMesh *derivedData,
-						float (*vertexCos)[3],
-						int numVerts,
-						int UNUSED(useRenderParams),
-						int UNUSED(isFinalCalc))
+                        DerivedMesh *derivedData,
+                        float (*vertexCos)[3],
+                        int numVerts,
+                        ModifierApplyFlag UNUSED(flag))
 {
-	DerivedMesh *dm= get_cddm(ob, NULL, derivedData, vertexCos);
+	DerivedMesh *dm = get_cddm(ob, NULL, derivedData, vertexCos);
 
 	displaceModifier_do((DisplaceModifierData *)md, ob, dm,
 	                    vertexCos, numVerts);
 
-	if(dm != derivedData)
+	if (dm != derivedData)
 		dm->release(dm);
 }
 
 static void deformVertsEM(
-					   ModifierData *md, Object *ob, struct BMEditMesh *editData,
-	DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
+        ModifierData *md, Object *ob, struct BMEditMesh *editData,
+        DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
-	DerivedMesh *dm= get_cddm(ob, editData, derivedData, vertexCos);
+	DerivedMesh *dm = get_cddm(ob, editData, derivedData, vertexCos);
 
 	displaceModifier_do((DisplaceModifierData *)md, ob, dm,
 	                    vertexCos, numVerts);
 
-	if(dm != derivedData)
+	if (dm != derivedData)
 		dm->release(dm);
 }
 
@@ -267,8 +280,8 @@ ModifierTypeInfo modifierType_Displace = {
 	/* structName */        "DisplaceModifierData",
 	/* structSize */        sizeof(DisplaceModifierData),
 	/* type */              eModifierTypeType_OnlyDeform,
-	/* flags */             eModifierTypeFlag_AcceptsMesh
-							| eModifierTypeFlag_SupportsEditmode,
+	/* flags */             eModifierTypeFlag_AcceptsMesh |
+	                        eModifierTypeFlag_SupportsEditmode,
 
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,

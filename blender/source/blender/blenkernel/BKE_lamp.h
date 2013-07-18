@@ -38,11 +38,11 @@ extern "C" {
 
 struct Lamp;
 
-void *add_lamp(const char *name);
-struct Lamp *copy_lamp(struct Lamp *la);
-struct Lamp *localize_lamp(struct Lamp *la);
-void make_local_lamp(struct Lamp *la);
-void free_lamp(struct Lamp *la);
+struct Lamp *BKE_lamp_add(const char *name) WARN_UNUSED;
+struct Lamp *BKE_lamp_copy(struct Lamp *la) WARN_UNUSED;
+struct Lamp *localize_lamp(struct Lamp *la) WARN_UNUSED;
+void BKE_lamp_make_local(struct Lamp *la);
+void BKE_lamp_free(struct Lamp *la);
 
 #ifdef __cplusplus
 }

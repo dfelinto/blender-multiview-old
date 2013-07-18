@@ -65,7 +65,7 @@ def modules(module_cache):
     def fake_module(mod_name, mod_path, speedy=True, force_support=None):
         global error_encoding
 
-        if _bpy.app.debug:
+        if _bpy.app.debug_python:
             print("fake_module", mod_path, mod_name)
         import ast
         ModuleType = type(ast)
@@ -139,6 +139,8 @@ def modules(module_cache):
 
             return mod
         else:
+            print("fake_module: addon missing 'bl_info' "
+                  "gives bad performance!: %r" % mod_path)
             return None
 
     modules_stale = set(module_cache.keys())
@@ -183,8 +185,8 @@ def modules(module_cache):
     del modules_stale
 
     mod_list = list(module_cache.values())
-    mod_list.sort(key=lambda mod: (mod.bl_info['category'],
-                                   mod.bl_info['name'],
+    mod_list.sort(key=lambda mod: (mod.bl_info["category"],
+                                   mod.bl_info["name"],
                                    ))
     return mod_list
 
@@ -212,10 +214,13 @@ def check(module_name):
 
         loaded_state = False
 
+    if mod and getattr(mod, "__addon_persistent__", False):
+        loaded_default = True
+
     return loaded_default, loaded_state
 
 
-def enable(module_name, default_set=True):
+def enable(module_name, default_set=True, persistent=False):
     """
     Enables an addon by name.
 
@@ -283,8 +288,9 @@ def enable(module_name, default_set=True):
             ext.module = module_name
 
     mod.__addon_enabled__ = True
+    mod.__addon_persistent__ = persistent
 
-    if _bpy.app.debug:
+    if _bpy.app.debug_python:
         print("\taddon_utils.enable", mod.__name__)
 
     return mod
@@ -305,6 +311,7 @@ def disable(module_name, default_set=True):
     # the addon in the user prefs.
     if mod:
         mod.__addon_enabled__ = False
+        mod.__addon_persistent = False
 
         try:
             mod.unregister()
@@ -323,7 +330,7 @@ def disable(module_name, default_set=True):
             if addon:
                 addons.remove(addon)
 
-    if _bpy.app.debug:
+    if _bpy.app.debug_python:
         print("\taddon_utils.disable", module_name)
 
 

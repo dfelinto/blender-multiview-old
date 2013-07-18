@@ -444,6 +444,7 @@ class ConstraintButtonsPanel():
         col = split.column()
         col.label(text="To Action:")
         col.prop(con, "action", text="")
+        col.prop(con, "use_bone_object_action")
 
         split = layout.split()
 
@@ -772,16 +773,26 @@ class ConstraintButtonsPanel():
         row.prop(con, "use_active_clip")
         row.prop(con, "use_3d_position")
 
+        col = layout.column()
+
         if not con.use_active_clip:
-            layout.prop(con, "clip")
+            col.prop(con, "clip")
+
+        row = col.row()
+        row.prop(con, "frame_method", expand=True)
 
         if clip:
-            layout.prop_search(con, "object", clip.tracking, "objects", icon='OBJECT_DATA')
-            layout.prop_search(con, "track", clip.tracking, "tracks", icon='ANIM_DATA')
+            tracking = clip.tracking
 
-        layout.prop(con, "camera")
+            col.prop_search(con, "object", tracking, "objects", icon='OBJECT_DATA')
 
-        row = layout.row()
+            tracking_object = tracking.objects.get(con.object, tracking.objects[0])
+
+            col.prop_search(con, "track", tracking_object, "tracks", icon='ANIM_DATA')
+
+        col.prop(con, "camera")
+
+        row = col.row()
         row.active = not con.use_3d_position
         row.prop(con, "depth_object")
 
@@ -796,7 +807,6 @@ class ConstraintButtonsPanel():
         layout.operator("clip.constraint_to_fcurve")
 
     def OBJECT_SOLVER(self, context, layout, con):
-        scene = context.scene
         clip = self._getConstraintClip(context, con)
 
         layout.prop(con, "use_active_clip")
@@ -816,7 +826,7 @@ class ConstraintButtonsPanel():
         layout.operator("clip.constraint_to_fcurve")
 
     def SCRIPT(self, context, layout, con):
-        layout.label("Blender 2.5 has no py-constraints")
+        layout.label("Blender 2.6 doesn't support python constraints yet.")
 
 
 class OBJECT_PT_constraints(ConstraintButtonsPanel, Panel):

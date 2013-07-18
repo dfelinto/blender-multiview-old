@@ -78,7 +78,7 @@ void BM_data_interp_from_verts(BMesh *bm, BMVert *v1, BMVert *v2, BMVert *v, con
 
 			src[0] = v1->head.data;
 			src[1] = v2->head.data;
-			w[0] = 1.0f-fac;
+			w[0] = 1.0f - fac;
 			w[1] = fac;
 			CustomData_bmesh_interp(&bm->vdata, src, w, NULL, 2, v->head.data);
 		}
@@ -186,7 +186,7 @@ void BM_face_interp_from_face(BMesh *bm, BMFace *target, BMFace *source)
  * \brief Multires Interpolation
  *
  * mdisps is a grid of displacements, ordered thus:
- *
+ * <pre>
  *      v1/center----v4/next -> x
  *          |           |
  *          |           |
@@ -194,24 +194,16 @@ void BM_face_interp_from_face(BMesh *bm, BMFace *target, BMFace *source)
  *          |
  *          V
  *          y
+ * </pre>
  */
 static int compute_mdisp_quad(BMLoop *l, float v1[3], float v2[3], float v3[3], float v4[3],
                               float e1[3], float e2[3])
 {
-	float cent[3] = {0.0f, 0.0f, 0.0f}, n[3], p[3];
-	BMLoop *l_first;
-	BMLoop *l_iter;
-	
+	float cent[3], n[3], p[3];
+
 	/* computer center */
-	l_iter = l_first = BM_FACE_FIRST_LOOP(l->f);
-	do {
-		cent[0] += (float)l_iter->v->co[0];
-		cent[1] += (float)l_iter->v->co[1];
-		cent[2] += (float)l_iter->v->co[2];
-	} while ((l_iter = l_iter->next) != l_first);
-	
-	mul_v3_fl(cent, (1.0 / (float)l->f->len));
-	
+	BM_face_calc_center_mean(l->f, cent);
+
 	add_v3_v3v3(p, l->prev->v->co, l->v->co);
 	mul_v3_fl(p, 0.5);
 	add_v3_v3v3(n, l->next->v->co, l->v->co);
@@ -240,19 +232,19 @@ static float quad_coord(float aa[3], float bb[3], float cc[3], float dd[3], int 
 	if (fabsf(2.0f * (x - y + z)) > FLT_EPSILON * 10.0f) {
 		float f2;
 
-		f1 = (sqrt(y * y - 4.0 * x * z) - y + 2.0 * z) / (2.0 * (x - y + z));
-		f2 = (-sqrt(y * y - 4.0 * x * z) - y + 2.0 * z) / (2.0 * (x - y + z));
+		f1 = ( sqrtf(y * y - 4.0f * x * z) - y + 2.0f * z) / (2.0f * (x - y + z));
+		f2 = (-sqrtf(y * y - 4.0f * x * z) - y + 2.0f * z) / (2.0f * (x - y + z));
 
 		f1 = fabsf(f1);
 		f2 = fabsf(f2);
-		f1 = MIN2(f1, f2);
+		f1 = minf(f1, f2);
 		CLAMP(f1, 0.0f, 1.0f + FLT_EPSILON);
 	}
 	else {
 		f1 = -z / (y - 2 * z);
 		CLAMP(f1, 0.0f, 1.0f + FLT_EPSILON);
 		
-		if (isnan(f1) || f1 > 1.0 || f1 < 0.0f) {
+		if (isnan(f1) || f1 > 1.0f || f1 < 0.0f) {
 			int i;
 			
 			for (i = 0; i < 2; i++) {
@@ -327,16 +319,16 @@ static void mdisp_axis_from_quad(float v1[3], float v2[3], float UNUSED(v3[3]), 
 
 /* tl is loop to project onto, l is loop whose internal displacement, co, is being
  * projected.  x and y are location in loop's mdisps grid of point co. */
-static int mdisp_in_mdispquad(BMesh *bm, BMLoop *l, BMLoop *tl, float p[3], float *x, float *y,
+static int mdisp_in_mdispquad(BMLoop *l, BMLoop *tl, float p[3], float *x, float *y,
                               int res, float axis_x[3], float axis_y[3])
 {
 	float v1[3], v2[3], c[3], v3[3], v4[3], e1[3], e2[3];
 	float eps = FLT_EPSILON * 4000;
 	
 	if (len_v3(l->v->no) == 0.0f)
-		BM_vert_normal_update_all(bm, l->v);
+		BM_vert_normal_update_all(l->v);
 	if (len_v3(tl->v->no) == 0.0f)
-		BM_vert_normal_update_all(bm, tl->v);
+		BM_vert_normal_update_all(tl->v);
 
 	compute_mdisp_quad(tl, v1, v2, v3, v4, e1, e2);
 
@@ -345,8 +337,8 @@ static int mdisp_in_mdispquad(BMesh *bm, BMLoop *l, BMLoop *tl, float p[3], floa
 	
 	sub_v3_v3(v1, c); sub_v3_v3(v2, c);
 	sub_v3_v3(v3, c); sub_v3_v3(v4, c);
-	mul_v3_fl(v1, 1.0 + eps); mul_v3_fl(v2, 1.0 + eps);
-	mul_v3_fl(v3, 1.0 + eps); mul_v3_fl(v4, 1.0 + eps);
+	mul_v3_fl(v1, 1.0f + eps); mul_v3_fl(v2, 1.0f + eps);
+	mul_v3_fl(v3, 1.0f + eps); mul_v3_fl(v4, 1.0f + eps);
 	add_v3_v3(v1, c); add_v3_v3(v2, c);
 	add_v3_v3(v3, c); add_v3_v3(v4, c);
 	
@@ -392,9 +384,9 @@ static void bm_loop_flip_disp(float source_axis_x[3], float source_axis_y[3],
 
 	d = bm_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 0, 1);
 
-	if (fabsf(d) < 1e-4) {
+	if (fabsf(d) < 1e-4f) {
 		d = bm_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 0, 2);
-		if (fabsf(d) < 1e-4)
+		if (fabsf(d) < 1e-4f)
 			d = bm_loop_flip_equotion(mat, b, target_axis_x, target_axis_y, coord, 1, 2);
 	}
 
@@ -439,7 +431,7 @@ static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 	mdisp_axis_from_quad(v1, v2, v3, v4, axis_x, axis_y);
 
 	res = (int)sqrt(mdisps->totdisp);
-	d = 1.0 / (float)(res - 1);
+	d = 1.0f / (float)(res - 1);
 	for (x = 0.0f, ix = 0; ix < res; x += d, ix++) {
 		for (y = 0.0f, iy = 0; iy < res; y += d, iy++) {
 			float co1[3], co2[3], co[3];
@@ -466,7 +458,7 @@ static void bm_loop_interp_mdisps(BMesh *bm, BMLoop *target, BMFace *source)
 				md1 = CustomData_bmesh_get(&bm->ldata, target->head.data, CD_MDISPS);
 				md2 = CustomData_bmesh_get(&bm->ldata, l_iter->head.data, CD_MDISPS);
 				
-				if (mdisp_in_mdispquad(bm, target, l_iter, co, &x2, &y2, res, src_axis_x, src_axis_y)) {
+				if (mdisp_in_mdispquad(target, l_iter, co, &x2, &y2, res, src_axis_x, src_axis_y)) {
 					old_mdisps_bilinear(md1->disps[iy * res + ix], md2->disps, res, (float)x2, (float)y2);
 					bm_loop_flip_disp(src_axis_x, src_axis_y, axis_x, axis_y, md1->disps[iy * res + ix]);
 
@@ -489,7 +481,7 @@ void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
 	if (!CustomData_has_layer(&bm->ldata, CD_MDISPS))
 		return;
 	
-	BM_ITER(l, &liter, bm, BM_LOOPS_OF_FACE, f) {
+	BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
 		MDisps *mdp = CustomData_bmesh_get(&bm->ldata, l->prev->head.data, CD_MDISPS);
 		MDisps *mdl = CustomData_bmesh_get(&bm->ldata, l->head.data, CD_MDISPS);
 		MDisps *mdn = CustomData_bmesh_get(&bm->ldata, l->next->head.data, CD_MDISPS);
@@ -521,7 +513,7 @@ void BM_face_multires_bounds_smooth(BMesh *bm, BMFace *f)
 		}
 	}
 	
-	BM_ITER(l, &liter, bm, BM_LOOPS_OF_FACE, f) {
+	BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
 		MDisps *mdl1 = CustomData_bmesh_get(&bm->ldata, l->head.data, CD_MDISPS);
 		MDisps *mdl2;
 		float co1[3], co2[3], co[3];
@@ -726,7 +718,7 @@ static void update_data_blocks(BMesh *bm, CustomData *olddata, CustomData *data)
 
 		CustomData_bmesh_init_pool(data, bm->totvert, BM_VERT);
 
-		BM_ITER(eve, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+		BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 			block = NULL;
 			CustomData_bmesh_set_default(data, &block);
 			CustomData_bmesh_copy_data(olddata, data, eve->head.data, &block);
@@ -739,7 +731,7 @@ static void update_data_blocks(BMesh *bm, CustomData *olddata, CustomData *data)
 
 		CustomData_bmesh_init_pool(data, bm->totedge, BM_EDGE);
 
-		BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+		BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 			block = NULL;
 			CustomData_bmesh_set_default(data, &block);
 			CustomData_bmesh_copy_data(olddata, data, eed->head.data, &block);
@@ -753,8 +745,8 @@ static void update_data_blocks(BMesh *bm, CustomData *olddata, CustomData *data)
 		BMLoop *l;
 
 		CustomData_bmesh_init_pool(data, bm->totloop, BM_LOOP);
-		BM_ITER(efa, &iter, bm, BM_FACES_OF_MESH, NULL) {
-			BM_ITER(l, &liter, bm, BM_LOOPS_OF_FACE, efa) {
+		BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
+			BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
 				block = NULL;
 				CustomData_bmesh_set_default(data, &block);
 				CustomData_bmesh_copy_data(olddata, data, l->head.data, &block);
@@ -768,7 +760,7 @@ static void update_data_blocks(BMesh *bm, CustomData *olddata, CustomData *data)
 
 		CustomData_bmesh_init_pool(data, bm->totface, BM_FACE);
 
-		BM_ITER(efa, &iter, bm, BM_FACES_OF_MESH, NULL) {
+		BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
 			block = NULL;
 			CustomData_bmesh_set_default(data, &block);
 			CustomData_bmesh_copy_data(olddata, data, efa->head.data, &block);
@@ -851,6 +843,52 @@ void BM_data_layer_free_n(BMesh *bm, CustomData *data, int type, int n)
 	
 	update_data_blocks(bm, &olddata, data);
 	if (olddata.layers) MEM_freeN(olddata.layers);
+}
+
+void BM_data_layer_copy(BMesh *bm, CustomData *data, int type, int src_n, int dst_n)
+{
+	BMIter iter;
+
+	if (&bm->vdata == data) {
+		BMVert *eve;
+
+		BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+			void *ptr = CustomData_bmesh_get_n(data, eve->head.data, type, src_n);
+			CustomData_bmesh_set_n(data, eve->head.data, type, dst_n, ptr);
+		}
+	}
+	else if (&bm->edata == data) {
+		BMEdge *eed;
+
+		BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
+			void *ptr = CustomData_bmesh_get_n(data, eed->head.data, type, src_n);
+			CustomData_bmesh_set_n(data, eed->head.data, type, dst_n, ptr);
+		}
+	}
+	else if (&bm->pdata == data) {
+		BMFace *efa;
+
+		BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
+			void *ptr = CustomData_bmesh_get_n(data, efa->head.data, type, src_n);
+			CustomData_bmesh_set_n(data, efa->head.data, type, dst_n, ptr);
+		}
+	}
+	else if (&bm->ldata == data) {
+		BMIter liter;
+		BMFace *efa;
+		BMLoop *l;
+
+		BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
+			BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
+				void *ptr = CustomData_bmesh_get_n(data, l->head.data, type, src_n);
+				CustomData_bmesh_set_n(data, l->head.data, type, dst_n, ptr);
+			}
+		}
+	}
+	else {
+		/* should never reach this! */
+		BLI_assert(0);
+	}
 }
 
 float BM_elem_float_data_get(CustomData *cd, void *element, int type)

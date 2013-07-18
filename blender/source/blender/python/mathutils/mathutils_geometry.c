@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -444,7 +443,8 @@ static PyObject *M_Geometry_intersect_line_line_2d(PyObject *UNUSED(self), PyObj
 PyDoc_STRVAR(M_Geometry_intersect_line_plane_doc,
 ".. function:: intersect_line_plane(line_a, line_b, plane_co, plane_no, no_flip=False)\n"
 "\n"
-"   Takes 2 lines (as 4 vectors) and returns a vector for their point of intersection or None.\n"
+"   Calculate the intersection between a line (as 2 vectors) and a plane.\n"
+"   Returns a vector for the intersection or None.\n"
 "\n"
 "   :arg line_a: First point of the first line\n"
 "   :type line_a: :class:`mathutils.Vector`\n"
@@ -627,10 +627,10 @@ static PyObject *M_Geometry_intersect_line_sphere(PyObject *UNUSED(self), PyObje
 		}
 
 		if (use_a) { PyTuple_SET_ITEM(ret, 0,  Vector_CreatePyObject(isect_a, 3, Py_NEW, NULL)); }
-		else      { PyTuple_SET_ITEM(ret, 0,  Py_None); Py_INCREF(Py_None); }
+		else       { PyTuple_SET_ITEM(ret, 0,  Py_None); Py_INCREF(Py_None); }
 
 		if (use_b) { PyTuple_SET_ITEM(ret, 1,  Vector_CreatePyObject(isect_b, 3, Py_NEW, NULL)); }
-		else      { PyTuple_SET_ITEM(ret, 1,  Py_None); Py_INCREF(Py_None); }
+		else       { PyTuple_SET_ITEM(ret, 1,  Py_None); Py_INCREF(Py_None); }
 
 		return ret;
 	}
@@ -700,10 +700,10 @@ static PyObject *M_Geometry_intersect_line_sphere_2d(PyObject *UNUSED(self), PyO
 		}
 
 		if (use_a) { PyTuple_SET_ITEM(ret, 0,  Vector_CreatePyObject(isect_a, 2, Py_NEW, NULL)); }
-		else      { PyTuple_SET_ITEM(ret, 0,  Py_None); Py_INCREF(Py_None); }
+		else       { PyTuple_SET_ITEM(ret, 0,  Py_None); Py_INCREF(Py_None); }
 
 		if (use_b) { PyTuple_SET_ITEM(ret, 1,  Vector_CreatePyObject(isect_b, 2, Py_NEW, NULL)); }
-		else      { PyTuple_SET_ITEM(ret, 1,  Py_None); Py_INCREF(Py_None); }
+		else       { PyTuple_SET_ITEM(ret, 1,  Py_None); Py_INCREF(Py_None); }
 
 		return ret;
 	}
@@ -745,13 +745,13 @@ static PyObject *M_Geometry_intersect_point_line(PyObject *UNUSED(self), PyObjec
 	}
 
 	/* accept 2d verts */
-	if (pt->size == 3) {     copy_v3_v3(pt_in, pt->vec);}
+	if (pt->size == 3) {     copy_v3_v3(pt_in, pt->vec); }
 	else { pt_in[2] = 0.0f;  copy_v2_v2(pt_in, pt->vec); }
 	
-	if (line_1->size == 3) { copy_v3_v3(l1, line_1->vec);}
+	if (line_1->size == 3) { copy_v3_v3(l1, line_1->vec); }
 	else { l1[2] = 0.0f;     copy_v2_v2(l1, line_1->vec); }
 	
-	if (line_2->size == 3) { copy_v3_v3(l2, line_2->vec);}
+	if (line_2->size == 3) { copy_v3_v3(l2, line_2->vec); }
 	else { l2[2] = 0.0f;     copy_v2_v2(l2, line_2->vec); }
 	
 	/* do the calculation */
@@ -807,6 +807,7 @@ PyDoc_STRVAR(M_Geometry_intersect_point_quad_2d_doc,
 "\n"
 "   Takes 5 vectors (using only the x and y coordinates): one is the point and the next 4 define the quad, \n"
 "   only the x and y are used from the vectors. Returns 1 if the point is within the quad, otherwise 0.\n"
+"   Works only with convex quads without singular edges."
 "\n"
 "   :arg pt: Point\n"
 "   :type pt: :class:`mathutils.Vector`\n"
@@ -937,10 +938,113 @@ static PyObject *M_Geometry_barycentric_transform(PyObject *UNUSED(self), PyObje
 	}
 
 	barycentric_transform(vec, vec_pt->vec,
-			vec_t1_tar->vec, vec_t2_tar->vec, vec_t3_tar->vec,
-			vec_t1_src->vec, vec_t2_src->vec, vec_t3_src->vec);
+	                      vec_t1_tar->vec, vec_t2_tar->vec, vec_t3_tar->vec,
+	                      vec_t1_src->vec, vec_t2_src->vec, vec_t3_src->vec);
 
 	return Vector_CreatePyObject(vec, 3, Py_NEW, NULL);
+}
+
+PyDoc_STRVAR(M_Geometry_points_in_planes_doc,
+".. function:: points_in_planes(planes)\n"
+"\n"
+"   Returns a list of points inside all planes given and a list of index values for the planes used.\n"
+"\n"
+"   :arg planes: List of planes (4D vectors).\n"
+"   :type planes: list of :class:`mathutils.Vector`\n"
+"   :return: two lists, once containing the vertices inside the planes, another containing the plane indicies used\n"
+"   :rtype: pair of lists\n"
+);
+/* note: this function could be optimized by some spatial structure */
+static PyObject *M_Geometry_points_in_planes(PyObject *UNUSED(self), PyObject *args)
+{
+	PyObject *py_planes;
+	float (*planes)[4];
+	unsigned int planes_len;
+
+	if (!PyArg_ParseTuple(args, "O:points_in_planes",
+	                      &py_planes))
+	{
+		return NULL;
+	}
+
+	if ((planes_len = mathutils_array_parse_alloc_v((float **)&planes, 4, py_planes, "points_in_planes")) == -1) {
+		return NULL;
+	}
+	else {
+		/* note, this could be refactored into plain C easy - py bits are noted */
+		const float eps = 0.0001f;
+		const unsigned int len = (unsigned int)planes_len;
+		unsigned int i, j, k, l;
+
+		float n1n2[3], n2n3[3], n3n1[3];
+		float potentialVertex[3];
+		char *planes_used = MEM_callocN(sizeof(char) * len, __func__);
+
+		/* python */
+		PyObject *py_verts = PyList_New(0);
+		PyObject *py_plene_index = PyList_New(0);
+
+		for (i = 0; i < len; i++) {
+			const float *N1 = planes[i];
+			for (j = i + 1; j < len; j++) {
+				const float *N2 = planes[j];
+				cross_v3_v3v3(n1n2, N1, N2);
+				if (len_squared_v3(n1n2) > eps) {
+					for (k = j + 1; k < len; k++) {
+						const float *N3 = planes[k];
+						cross_v3_v3v3(n2n3, N2, N3);
+						if (len_squared_v3(n2n3) > eps) {
+							cross_v3_v3v3(n3n1, N3, N1);
+							if (len_squared_v3(n3n1) > eps) {
+								const float quotient = dot_v3v3(N1, n2n3);
+								if (fabsf(quotient) > eps) {
+									/* potentialVertex = (n2n3 * N1[3] + n3n1 * N2[3] + n1n2 * N3[3]) * (-1.0 / quotient); */
+									const float quotient_ninv = -1.0f / quotient;
+									potentialVertex[0] = ((n2n3[0] * N1[3]) + (n3n1[0] * N2[3]) + (n1n2[0] * N3[3])) * quotient_ninv;
+									potentialVertex[1] = ((n2n3[1] * N1[3]) + (n3n1[1] * N2[3]) + (n1n2[1] * N3[3])) * quotient_ninv;
+									potentialVertex[2] = ((n2n3[2] * N1[3]) + (n3n1[2] * N2[3]) + (n1n2[2] * N3[3])) * quotient_ninv;
+									for (l = 0; l < len; l++) {
+										const float *NP = planes[l];
+										if ((dot_v3v3(NP, potentialVertex) + NP[3]) > 0.000001f) {
+											break;
+										}
+									}
+
+									if (l == len) { /* ok */
+										/* python */
+										PyObject *item = Vector_CreatePyObject(potentialVertex, 3, Py_NEW, NULL);
+										PyList_Append(py_verts, item);
+										Py_DECREF(item);
+
+										planes_used[i] = planes_used[j] = planes_used[k] = TRUE;
+									}
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		PyMem_Free(planes);
+
+		/* now make a list of used planes */
+		for (i = 0; i < len; i++) {
+			if (planes_used[i]) {
+				PyObject *item = PyLong_FromLong(i);
+				PyList_Append(py_plene_index, item);
+				Py_DECREF(item);
+			}
+		}
+		MEM_freeN(planes_used);
+
+		{
+			PyObject *ret = PyTuple_New(2);
+			PyTuple_SET_ITEM(ret, 0, py_verts);
+			PyTuple_SET_ITEM(ret, 1, py_plene_index);
+			return ret;
+		}
+	}
 }
 
 #ifndef MATH_STANDALONE
@@ -1010,7 +1114,7 @@ static PyObject *M_Geometry_interpolate_bezier(PyObject *UNUSED(self), PyObject 
 
 	coord_array = MEM_callocN(dims * (resolu) * sizeof(float), "interpolate_bezier");
 	for (i = 0; i < dims; i++) {
-		forward_diff_bezier(k1[i], h1[i], h2[i], k2[i], coord_array + i, resolu - 1, sizeof(float)*dims);
+		BKE_curve_forward_diff_bezier(k1[i], h1[i], h2[i], k2[i], coord_array + i, resolu - 1, sizeof(float) * dims);
 	}
 
 	list = PyList_New(resolu);
@@ -1023,8 +1127,8 @@ static PyObject *M_Geometry_interpolate_bezier(PyObject *UNUSED(self), PyObject 
 }
 
 
-PyDoc_STRVAR(M_Geometry_tesselate_polygon_doc,
-".. function:: tesselate_polygon(veclist_list)\n"
+PyDoc_STRVAR(M_Geometry_tessellate_polygon_doc,
+".. function:: tessellate_polygon(veclist_list)\n"
 "\n"
 "   Takes a list of polylines (each point a vector) and returns the point indices for a polyline filled with triangles.\n"
 "\n"
@@ -1032,7 +1136,7 @@ PyDoc_STRVAR(M_Geometry_tesselate_polygon_doc,
 "   :rtype: list\n"
 );
 /* PolyFill function, uses Blenders scanfill to fill multiple poly lines */
-static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *polyLineSeq)
+static PyObject *M_Geometry_tessellate_polygon(PyObject *UNUSED(self), PyObject *polyLineSeq)
 {
 	PyObject *tri_list; /*return this list of tri's */
 	PyObject *polyLine, *polyVec;
@@ -1055,7 +1159,7 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 	for (i = 0; i < len_polylines; i++) {
 		polyLine = PySequence_GetItem(polyLineSeq, i);
 		if (!PySequence_Check(polyLine)) {
-			freedisplist(&dispbase);
+			BKE_displist_free(&dispbase);
 			Py_XDECREF(polyLine); /* may be null so use Py_XDECREF*/
 			PyErr_SetString(PyExc_TypeError,
 			                "One or more of the polylines is not a sequence of mathutils.Vector's");
@@ -1095,7 +1199,7 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 					if (((VectorObject *)polyVec)->size > 2)
 						fp[2] = ((VectorObject *)polyVec)->vec[2];
 					else
-						fp[2] = 0.0f; /* if its a 2d vector then set the z to be zero */
+						fp[2] = 0.0f;  /* if its a 2d vector then set the z to be zero */
 				}
 				else {
 					ls_error = 1;
@@ -1109,7 +1213,7 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 	}
 
 	if (ls_error) {
-		freedisplist(&dispbase); /* possible some dl was allocated */
+		BKE_displist_free(&dispbase); /* possible some dl was allocated */
 		PyErr_SetString(PyExc_TypeError,
 		                "A point in one of the polylines "
 		                "is not a mathutils.Vector type");
@@ -1117,7 +1221,7 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 	}
 	else if (totpoints) {
 		/* now make the list to return */
-		filldisplist(&dispbase, &dispbase, 0);
+		BKE_displist_fill(&dispbase, &dispbase, 0);
 
 		/* The faces are stored in a new DisplayList
 		 * thats added to the head of the listbase */
@@ -1125,7 +1229,7 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 
 		tri_list = PyList_New(dl->parts);
 		if (!tri_list) {
-			freedisplist(&dispbase);
+			BKE_displist_free(&dispbase);
 			PyErr_SetString(PyExc_RuntimeError,
 			                "failed to make a new list");
 			return NULL;
@@ -1138,11 +1242,11 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 			dl_face += 3;
 			index++;
 		}
-		freedisplist(&dispbase);
+		BKE_displist_free(&dispbase);
 	}
 	else {
 		/* no points, do this so scripts don't barf */
-		freedisplist(&dispbase); /* possible some dl was allocated */
+		BKE_displist_free(&dispbase); /* possible some dl was allocated */
 		tri_list = PyList_New(0);
 	}
 
@@ -1150,11 +1254,11 @@ static PyObject *M_Geometry_tesselate_polygon(PyObject *UNUSED(self), PyObject *
 }
 
 
-static int boxPack_FromPyObject(PyObject *value, boxPack **boxarray)
+static int boxPack_FromPyObject(PyObject *value, BoxPack **boxarray)
 {
 	Py_ssize_t len, i;
 	PyObject *list_item, *item_1, *item_2;
-	boxPack *box;
+	BoxPack *box;
 
 
 	/* Error checking must already be done */
@@ -1166,7 +1270,7 @@ static int boxPack_FromPyObject(PyObject *value, boxPack **boxarray)
 
 	len = PyList_GET_SIZE(value);
 
-	*boxarray = MEM_mallocN(len * sizeof(boxPack), "boxPack box");
+	*boxarray = MEM_mallocN(len * sizeof(BoxPack), "BoxPack box");
 
 
 	for (i = 0; i < len; i++) {
@@ -1201,11 +1305,11 @@ static int boxPack_FromPyObject(PyObject *value, boxPack **boxarray)
 	return 0;
 }
 
-static void boxPack_ToPyObject(PyObject *value, boxPack **boxarray)
+static void boxPack_ToPyObject(PyObject *value, BoxPack **boxarray)
 {
 	Py_ssize_t len, i;
 	PyObject *list_item;
-	boxPack *box;
+	BoxPack *box;
 
 	len = PyList_GET_SIZE(value);
 
@@ -1243,13 +1347,13 @@ static PyObject *M_Geometry_box_pack_2d(PyObject *UNUSED(self), PyObject *boxlis
 
 	len = PyList_GET_SIZE(boxlist);
 	if (len) {
-		boxPack *boxarray = NULL;
+		BoxPack *boxarray = NULL;
 		if (boxPack_FromPyObject(boxlist, &boxarray) == -1) {
 			return NULL; /* exception set */
 		}
 
 		/* Non Python function */
-		boxPack2D(boxarray, len, &tot_width, &tot_height);
+		BLI_box_pack_2D(boxarray, len, &tot_width, &tot_height);
 
 		boxPack_ToPyObject(boxlist, &boxarray);
 	}
@@ -1278,9 +1382,10 @@ static PyMethodDef M_Geometry_methods[] = {
 	{"area_tri", (PyCFunction) M_Geometry_area_tri, METH_VARARGS, M_Geometry_area_tri_doc},
 	{"normal", (PyCFunction) M_Geometry_normal, METH_VARARGS, M_Geometry_normal_doc},
 	{"barycentric_transform", (PyCFunction) M_Geometry_barycentric_transform, METH_VARARGS, M_Geometry_barycentric_transform_doc},
+	{"points_in_planes", (PyCFunction) M_Geometry_points_in_planes, METH_VARARGS, M_Geometry_points_in_planes_doc},
 #ifndef MATH_STANDALONE
 	{"interpolate_bezier", (PyCFunction) M_Geometry_interpolate_bezier, METH_VARARGS, M_Geometry_interpolate_bezier_doc},
-	{"tesselate_polygon", (PyCFunction) M_Geometry_tesselate_polygon, METH_O, M_Geometry_tesselate_polygon_doc},
+	{"tessellate_polygon", (PyCFunction) M_Geometry_tessellate_polygon, METH_O, M_Geometry_tessellate_polygon_doc},
 	{"box_pack_2d", (PyCFunction) M_Geometry_box_pack_2d, METH_O, M_Geometry_box_pack_2d_doc},
 #endif
 	{NULL, NULL, 0, NULL}

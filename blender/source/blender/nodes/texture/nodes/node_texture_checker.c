@@ -35,13 +35,13 @@
 #include <math.h>
 
 static bNodeSocketTemplate inputs[]= {
-	{ SOCK_RGBA, 1, "Color1", 1.0f, 0.0f, 0.0f, 1.0f },
-	{ SOCK_RGBA, 1, "Color2", 1.0f, 1.0f, 1.0f, 1.0f },
-	{ SOCK_FLOAT, 1, "Size",   0.5f, 0.0f, 0.0f, 0.0f,  0.0f, 100.0f, PROP_UNSIGNED },
+	{ SOCK_RGBA, 1, N_("Color1"), 1.0f, 0.0f, 0.0f, 1.0f },
+	{ SOCK_RGBA, 1, N_("Color2"), 1.0f, 1.0f, 1.0f, 1.0f },
+	{ SOCK_FLOAT, 1, N_("Size"),   0.5f, 0.0f, 0.0f, 0.0f,  0.0f, 100.0f, PROP_UNSIGNED },
 	{ -1, 0, "" }
 };
 static bNodeSocketTemplate outputs[]= {
-	{ SOCK_RGBA, 0, "Color" },
+	{ SOCK_RGBA, 0, N_("Color") },
 	{ -1, 0, "" }
 };
 
@@ -57,9 +57,10 @@ static void colorfn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **
 	int yi = (int)fabs(floor(0.00001f + y / sz));
 	int zi = (int)fabs(floor(0.00001f + z / sz));
 	
-	if( (xi % 2 == yi % 2) == (zi % 2) ) {
+	if ( (xi % 2 == yi % 2) == (zi % 2) ) {
 		tex_input_rgba(out, in[0], p, thread);
-	} else {
+	}
+	else {
 		tex_input_rgba(out, in[1], p, thread);
 	} 
 }

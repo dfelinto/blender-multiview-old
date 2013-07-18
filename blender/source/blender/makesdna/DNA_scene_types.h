@@ -34,7 +34,7 @@
 
 #include "DNA_defs.h"
 
-// XXX, temp feature - campbell
+/* XXX, temp feature - campbell */
 #define DURIAN_CAMERA_SWITCH
 
 #ifdef __cplusplus
@@ -176,14 +176,16 @@ typedef struct SceneRenderLayer {
 	struct Material *mat_override;
 	struct Group *light_override;
 	
-	unsigned int lay;		/* scene->lay itself has priority over this */
-	unsigned int lay_zmask;	/* has to be after lay, this is for Z-masking */
+	unsigned int lay;		  /* scene->lay itself has priority over this */
+	unsigned int lay_zmask;	  /* has to be after lay, this is for Z-masking */
+	unsigned int lay_exclude; /* not used by internal, exclude */
 	int layflag;
-	
-	int pad;
 	
 	int passflag;			/* pass_xor has to be after passflag */
 	int pass_xor;
+
+	int samples;
+	int pad;
 } SceneRenderLayer;
 
 /* srl->layflag */
@@ -249,7 +251,7 @@ typedef struct ImageFormatData {
 	char depth;    /* bits per channel, R_IMF_CHAN_DEPTH_8 -> 32,
 	                * not a flag, only set 1 at a time */
 
-	char planes  ; /* - R_IMF_PLANES_BW, R_IMF_PLANES_RGB, R_IMF_PLANES_RGBA */
+	char planes;   /* - R_IMF_PLANES_BW, R_IMF_PLANES_RGB, R_IMF_PLANES_RGBA */
 	char flag;     /* generic options for all image types, alpha zbuffer */
 
 	char quality;  /* (0 - 100), eg: jpeg quality */
@@ -286,7 +288,7 @@ typedef struct ImageFormatData {
 #define R_IMF_IMTYPE_AVIRAW         15
 #define R_IMF_IMTYPE_AVIJPEG        16
 #define R_IMF_IMTYPE_PNG            17
-#define R_IMF_IMTYPE_AVICODEC       18
+/* #define R_IMF_IMTYPE_AVICODEC    18 */ /* avicodec is nomore */
 #define R_IMF_IMTYPE_QUICKTIME      19
 #define R_IMF_IMTYPE_BMP            20
 #define R_IMF_IMTYPE_RADHDR         21
@@ -594,9 +596,10 @@ typedef struct GameData {
 	struct GameFraming framing;
 	short playerflag, xplay, yplay, freqplay;
 	short depth, attrib, rt1, rt2;
-	short aasamples, pad4[3];
+	short aasamples, pad4[2];
 
 	/* stereo/dome mode */
+	short anaglyphmode;
 	struct GameDome dome;
 	short stereoflag, stereomode;
 	float eyeseparation;
@@ -621,15 +624,9 @@ typedef struct GameData {
 	short physicsEngine;
 	short exitkey, pad;
 	short ticrate, maxlogicstep, physubstep, maxphystep;
-
-	/* stereo/dome mode */
-	struct GameDome dome;
-	short stereoflag, stereomode;
-	short anaglyphmode, use_desktop;
-	float eyeseparation, pad1;
-
 	short obstacleSimulation, pad1;
 	float levelHeight;
+	float deactivationtime, lineardeactthreshold, angulardeactthreshold, pad2;
 } GameData;
 
 #define STEREO_NOSTEREO		1
@@ -652,10 +649,6 @@ typedef struct GameData {
 
 /* physicsEngine */
 #define WOPHY_NONE		0
-#define WOPHY_ENJI		1
-#define WOPHY_SUMO		2
-#define WOPHY_DYNAMO	3
-#define WOPHY_ODE		4
 #define WOPHY_BULLET	5
 
 /* obstacleSimulation */
@@ -716,6 +709,8 @@ typedef struct TimeMarker {
 /* *************************************************************** */
 /* Paint Mode/Tool Data */
 
+#define PAINT_MAX_INPUT_SAMPLES 64
+
 /* Paint Tool Base */
 typedef struct Paint {
 	struct Brush *brush;
@@ -724,7 +719,14 @@ typedef struct Paint {
 	void *paint_cursor;
 	unsigned char paint_cursor_col[4];
 
+	/* enum PaintFlags */
 	int flags;
+
+	/* Paint stroke can use up to PAINT_MAX_INPUT_SAMPLES inputs to
+	 * smooth the stroke */
+	int num_input_samples;
+	
+	int pad;
 } Paint;
 
 /* ------------------------------------------- */
@@ -865,13 +867,18 @@ typedef struct UnifiedPaintSettings {
 	/* unified strength of brush */
 	float alpha;
 
+	/* unified brush weight, [0, 1] */
+	float weight;
+
 	/* user preferences for sculpt and paint */
 	int flag;
+	int pad;
 } UnifiedPaintSettings;
 
 typedef enum {
 	UNIFIED_PAINT_SIZE  = (1<<0),
 	UNIFIED_PAINT_ALPHA = (1<<1),
+	UNIFIED_PAINT_WEIGHT = (1<<5),
 
 	/* only used if unified size is enabled, mirros the brush flags
 	 * BRUSH_LOCK_SIZE and BRUSH_SIZE_PRESSURE */
@@ -892,12 +899,13 @@ typedef struct ToolSettings {
 	Sculpt *sculpt;
 	UvSculpt *uvsculpt;	/* uv smooth */
 	
-	/* Vertex groups */
+	/* Vertex group weight - used only for editmode, not weight
+	 * paint */
 	float vgroup_weight;
 
 	/* Subdivide Settings */
 	short cornertype;
-	short editbutflag;
+	short pad1;
 	/*Triangle to Quad conversion threshold*/
 	float jointrilimit;
 	/* Editmode Tools */
@@ -955,11 +963,11 @@ typedef struct ToolSettings {
 
 	/* Auto-Keying Mode */
 	short autokey_mode, autokey_flag;	/* defines in DNA_userdef_types.h */
-	
+
 	/* Multires */
 	char multires_subdiv_type;
 	char pad2[5];
-	
+
 	/* Skeleton generation */
 	short skgen_resolution;
 	float skgen_threshold_internal;
@@ -977,7 +985,7 @@ typedef struct ToolSettings {
 	char  skgen_postpro_passes;
 	char  skgen_subdivisions[3];
 	char  skgen_multi_level;
-	
+
 	/* Skeleton Sketching */
 	struct Object *skgen_template;
 	char bone_sketching;
@@ -993,11 +1001,13 @@ typedef struct ToolSettings {
 	char edge_mode_live_unwrap;
 
 	/* Transform */
-	char snap_mode;
+	char snap_mode, snap_node_mode;
+	char pad3;
 	short snap_flag, snap_target;
 	short proportional, prop_mode;
 	char proportional_objects; /* proportional edit, object mode */
-	char pad[5];
+	char proportional_mask; /* proportional edit, object mode */
+	char pad4[2];
 
 	char auto_normalize; /*auto normalizing mode in wpaint*/
 	char multipaint; /* paint multiple bones in wpaint */
@@ -1009,7 +1019,7 @@ typedef struct ToolSettings {
 	int uv_relax_method;
 	/* XXX: these sculpt_paint_* fields are deprecated, use the
 	 * unified_paint_settings field instead! */
-	short sculpt_paint_settings DNA_DEPRECATED;	short pad1;
+	short sculpt_paint_settings DNA_DEPRECATED;	short pad5;
 	int sculpt_paint_unified_size DNA_DEPRECATED;
 	float sculpt_paint_unified_unprojected_radius DNA_DEPRECATED;
 	float sculpt_paint_unified_alpha DNA_DEPRECATED;
@@ -1127,7 +1137,7 @@ typedef struct Scene {
 	/* Movie Tracking */
 	struct MovieClip *clip;			/* active movie clip */
 
-	uint64_t customdata_mask;	/* XXX. runtime flag for drawing, actually belongs in the window, only used by object_handle_update() */
+	uint64_t customdata_mask;	/* XXX. runtime flag for drawing, actually belongs in the window, only used by BKE_object_handle_update() */
 	uint64_t customdata_mask_modal; /* XXX. same as above but for temp operator use (gl renders) */
 } Scene;
 
@@ -1334,9 +1344,6 @@ typedef struct Scene {
 #define V3D_CAMERA_LOCAL(v3d) ((!(v3d)->scenelock && (v3d)->camera) ? (v3d)->camera : NULL)
 #define V3D_CAMERA_SCENE(scene, v3d) ((!(v3d)->scenelock && (v3d)->camera) ? (v3d)->camera : (scene)->camera)
 
-#define ID_NEW(a)		if( (a) && (a)->id.newid ) (a)= (void *)(a)->id.newid
-#define ID_NEW_US(a)	if( (a)->id.newid) {(a)= (void *)(a)->id.newid; (a)->id.us++;}
-#define ID_NEW_US2(a)	if( ((ID *)a)->newid) {(a)= ((ID *)a)->newid; ((ID *)a)->us++;}
 #define	CFRA			(scene->r.cfra)
 #define SUBFRA			(scene->r.subframe)
 #define	SFRA			(scene->r.sfra)
@@ -1370,6 +1377,9 @@ typedef struct Scene {
 #define SCE_SNAP_MODE_EDGE		2
 #define SCE_SNAP_MODE_FACE		3
 #define SCE_SNAP_MODE_VOLUME	4
+#define SCE_SNAP_MODE_NODE_X	5
+#define SCE_SNAP_MODE_NODE_Y	6
+#define SCE_SNAP_MODE_NODE_XY	7
 
 /* toolsettings->selectmode */
 #define SCE_SELECT_VERTEX	1 /* for mesh */
@@ -1406,7 +1416,7 @@ typedef struct Scene {
 #define SCE_FRAME_DROP			(1<<3)
 
 
-	/* return flag next_object function */
+	/* return flag BKE_scene_base_iter_next function */
 #define F_ERROR			-1
 #define F_START			0
 #define F_SCENE			1

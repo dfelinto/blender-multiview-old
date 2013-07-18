@@ -31,6 +31,8 @@
 
 #include <Python.h>
 
+#include "BLI_utildefines.h"
+
 #include "bmesh.h"
 
 #include "bmesh_py_types.h"
@@ -38,9 +40,8 @@
 #include "bmesh_py_types_customdata.h"
 #include "bmesh_py_types_meshdata.h"
 
+#include "bmesh_py_ops.h"
 #include "bmesh_py_utils.h"
-
-#include "BLI_utildefines.h"
 
 #include "BKE_tessmesh.h"
 
@@ -72,7 +73,7 @@ PyDoc_STRVAR(bpy_bm_from_edit_mesh_doc,
 "\n"
 "   Return a BMesh from this mesh, currently the mesh must already be in editmode.\n"
 "\n"
-"   :return: the BMesh assosiated with this mesh.\n"
+"   :return: the BMesh associated with this mesh.\n"
 "   :rtype: :class:`bmesh.types.BMesh`\n"
 );
 static PyObject *bpy_bm_from_edit_mesh(PyObject *UNUSED(self), PyObject *value)
@@ -129,7 +130,7 @@ PyObject *BPyInit_bmesh(void)
 {
 	PyObject *mod;
 	PyObject *submodule;
-	PyObject *sys_modules = PySys_GetObject("modules"); /* not pretty */
+	PyObject *sys_modules = PyThreadState_GET()->interp->modules;
 
 	BPy_BM_init_types();
 	BPy_BM_init_types_select();
@@ -140,11 +141,16 @@ PyObject *BPyInit_bmesh(void)
 
 	/* bmesh.types */
 	PyModule_AddObject(mod, "types", (submodule = BPyInit_bmesh_types()));
-	PyDict_SetItemString(sys_modules, "bmesh.types", submodule);
+	PyDict_SetItemString(sys_modules, PyModule_GetName(submodule), submodule);
+	Py_INCREF(submodule);
+
+	PyModule_AddObject(mod, "ops", (submodule = BPyInit_bmesh_ops()));
+	/* PyDict_SetItemString(sys_modules, PyModule_GetName(submodule), submodule); */
+	PyDict_SetItemString(sys_modules, "bmesh.ops", submodule); /* fake module */
 	Py_INCREF(submodule);
 
 	PyModule_AddObject(mod, "utils", (submodule = BPyInit_bmesh_utils()));
-	PyDict_SetItemString(sys_modules, "bmesh.utils", submodule);
+	PyDict_SetItemString(sys_modules, PyModule_GetName(submodule), submodule);
 	Py_INCREF(submodule);
 
 	return mod;

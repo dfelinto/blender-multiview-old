@@ -81,9 +81,9 @@ void Shader::tag_update(Scene *scene)
 		scene->light_manager->need_update = true;
 
 	/* get requested attributes. this could be optimized by pruning unused
-	   nodes here already, but that's the job of the shader manager currently,
-	   and may not be so great for interactive rendering where you temporarily
-	   disconnect a node */
+	 * nodes here already, but that's the job of the shader manager currently,
+	 * and may not be so great for interactive rendering where you temporarily
+	 * disconnect a node */
 	AttributeRequestSet prev_attributes = attributes;
 
 	attributes.clear();
@@ -91,7 +91,7 @@ void Shader::tag_update(Scene *scene)
 		node->attributes(&attributes);
 	
 	/* compare if the attributes changed, mesh manager will check
-	   need_update_attributes, update the relevant meshes and clear it. */
+	 * need_update_attributes, update the relevant meshes and clear it. */
 	if(attributes.modified(prev_attributes)) {
 		need_update_attributes = true;
 		scene->mesh_manager->need_update = true;
@@ -133,12 +133,12 @@ uint ShaderManager::get_attribute_id(ustring name)
 	if(it != unique_attribute_id.end())
 		return it->second;
 	
-	uint id = (uint)Attribute::STD_NUM + unique_attribute_id.size();
+	uint id = (uint)ATTR_STD_NUM + unique_attribute_id.size();
 	unique_attribute_id[name] = id;
 	return id;
 }
 
-uint ShaderManager::get_attribute_id(Attribute::Standard std)
+uint ShaderManager::get_attribute_id(AttributeStandard std)
 {
 	return (uint)std;
 }
@@ -271,6 +271,17 @@ void ShaderManager::add_default(Scene *scene)
 		shader->graph = graph;
 		scene->shaders.push_back(shader);
 		scene->default_holdout = scene->shaders.size() - 1;
+	}
+
+	/* default empty */
+	{
+		graph = new ShaderGraph();
+
+		shader = new Shader();
+		shader->name = "default_empty";
+		shader->graph = graph;
+		scene->shaders.push_back(shader);
+		scene->default_empty = scene->shaders.size() - 1;
 	}
 }
 

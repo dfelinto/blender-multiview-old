@@ -48,7 +48,6 @@ struct Material;
 struct MTex;
 struct OceanTex;
 struct ParticleSettings;
-struct PluginTex;
 struct PointDensity;
 struct Tex;
 struct TexMapping;
@@ -59,11 +58,7 @@ struct World;
 #define MAXCOLORBAND 32
 
 
-void free_texture(struct Tex *t); 
-int test_dlerr(const char *name,  const char *symbol);
-void open_plugin_tex(struct PluginTex *pit);
-struct PluginTex *add_plugin_tex(char *str);
-void free_plugin_tex(struct PluginTex *pit);
+void BKE_texture_free(struct Tex *t); 
 
 void init_colorband(struct ColorBand *coba, int rangetype);
 struct ColorBand *add_colorband(int rangetype);
@@ -79,9 +74,9 @@ void tex_set_type(struct Tex *tex, int type);
 void default_mtex(struct MTex *mtex);
 struct MTex *add_mtex(void);
 struct MTex *add_mtex_id(struct ID *id, int slot);
-struct Tex *copy_texture(struct Tex *tex);
+struct Tex *BKE_texture_copy(struct Tex *tex);
 struct Tex *localize_texture(struct Tex *tex);
-void make_local_texture(struct Tex *tex);
+void BKE_texture_make_local(struct Tex *tex);
 void autotexname(struct Tex *tex);
 
 struct Tex *give_current_object_texture(struct Object *ob);
@@ -93,8 +88,8 @@ struct Tex *give_current_particle_texture(struct ParticleSettings *part);
 
 struct bNode *give_current_material_texture_node(struct Material *ma);
 
-int			 give_active_mtex(struct ID *id, struct MTex ***mtex_ar, short *act);
-void		 set_active_mtex(struct ID *id, short act);
+int  give_active_mtex(struct ID *id, struct MTex ***mtex_ar, short *act);
+void set_active_mtex(struct ID *id, short act);
 
 void set_current_brush_texture(struct Brush *br, struct Tex *tex);
 void set_current_world_texture(struct World *wo, struct Tex *tex);

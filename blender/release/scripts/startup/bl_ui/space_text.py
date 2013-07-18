@@ -273,6 +273,14 @@ class TEXT_MT_edit(Menu):
         layout.operator("text.cut")
         layout.operator("text.copy")
         layout.operator("text.paste")
+        layout.operator("text.duplicate_line")
+
+        layout.separator()
+
+        layout.operator("text.move_lines",
+                        text="Move line(s) up").direction = 'UP'
+        layout.operator("text.move_lines",
+                        text="Move line(s) down").direction = 'DOWN'
 
         layout.separator()
 
@@ -294,6 +302,7 @@ class TEXT_MT_toolbox(Menu):
 
     def draw(self, context):
         layout = self.layout
+
         layout.operator_context = 'INVOKE_DEFAULT'
 
         layout.operator("text.cut")

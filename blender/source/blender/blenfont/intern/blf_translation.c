@@ -39,7 +39,7 @@
 
 /* needed for windows version of gettext */
 #ifndef LC_MESSAGES
-#	define LC_MESSAGES 1729
+#  define LC_MESSAGES 1729
 #endif
 
 #endif
@@ -57,7 +57,7 @@
 #include "DNA_userdef_types.h" /* For user settings. */
 
 #ifdef WITH_INTERNATIONAL
-static const char unifont_filename[] ="droidsans.ttf.gz";
+static const char unifont_filename[] = "droidsans.ttf.gz";
 static unsigned char *unifont_ttf = NULL;
 static int unifont_size = 0;
 
@@ -70,7 +70,7 @@ unsigned char *BLF_get_unifont(int *unifont_size_r)
 
 			BLI_snprintf(unifont_path, sizeof(unifont_path), "%s/%s", fontpath, unifont_filename);
 
-			unifont_ttf = (unsigned char*)BLI_file_ungzip_to_mem(unifont_path, &unifont_size);
+			unifont_ttf = (unsigned char *)BLI_file_ungzip_to_mem(unifont_path, &unifont_size);
 		}
 		else {
 			printf("%s: 'fonts' data path not found for international font, continuing\n", __func__);
@@ -90,10 +90,10 @@ void BLF_free_unifont(void)
 
 #endif
 
-const char* BLF_gettext(const char *msgid)
+const char *BLF_gettext(const char *msgid)
 {
 #ifdef WITH_INTERNATIONAL
-	if (msgid[0])
+	if (msgid && msgid[0])
 		return gettext(msgid);
 	return "";
 #else
@@ -111,6 +111,9 @@ const char *BLF_pgettext(const char *context, const char *message)
 
 	size_t overall_length = strlen(context) + strlen(message) + sizeof(GETTEXT_CONTEXT_GLUE) + 1;
 
+	if (!message || !context || !message[0])
+		return "";
+
 	if (overall_length > sizeof(static_msg_ctxt_id)) {
 		dynamic_msg_ctxt_id = malloc(overall_length);
 		msg_ctxt_id = dynamic_msg_ctxt_id;
@@ -121,7 +124,7 @@ const char *BLF_pgettext(const char *context, const char *message)
 
 	sprintf(msg_ctxt_id, "%s%s%s", context, GETTEXT_CONTEXT_GLUE, message);
 
-	translation = (char*)dcgettext(TEXT_DOMAIN_NAME, msg_ctxt_id, LC_MESSAGES);
+	translation = (char *)dcgettext(TEXT_DOMAIN_NAME, msg_ctxt_id, LC_MESSAGES);
 
 	if (dynamic_msg_ctxt_id)
 		free(dynamic_msg_ctxt_id);
@@ -157,7 +160,7 @@ int BLF_translate_tooltips(void)
 const char *BLF_translate_do_iface(const char *context, const char *msgid)
 {
 #ifdef WITH_INTERNATIONAL
-	if(BLF_translate_iface()) {
+	if (BLF_translate_iface()) {
 		if (context)
 			return BLF_pgettext(context, msgid);
 		else
@@ -174,7 +177,7 @@ const char *BLF_translate_do_iface(const char *context, const char *msgid)
 const char *BLF_translate_do_tooltip(const char *context, const char *msgid)
 {
 #ifdef WITH_INTERNATIONAL
-	if(BLF_translate_tooltips()) {
+	if (BLF_translate_tooltips()) {
 		if (context)
 			return BLF_pgettext(context, msgid);
 		else

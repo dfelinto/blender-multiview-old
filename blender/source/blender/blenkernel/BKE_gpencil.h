@@ -41,7 +41,7 @@ struct bGPDframe;
 void free_gpencil_strokes(struct bGPDframe *gpf);
 void free_gpencil_frames(struct bGPDlayer *gpl);
 void free_gpencil_layers(struct ListBase *list);
-void free_gpencil_data(struct bGPdata *gpd);
+void BKE_gpencil_free(struct bGPdata *gpd);
 
 struct bGPDframe *gpencil_frame_addnew(struct bGPDlayer *gpl, int cframe);
 struct bGPDlayer *gpencil_layer_addnew(struct bGPdata *gpd);
@@ -57,6 +57,7 @@ struct bGPdata *gpencil_data_duplicate(struct bGPdata *gpd);
 
 void gpencil_frame_delete_laststroke(struct bGPDlayer *gpl, struct bGPDframe *gpf);
 
+struct bGPDframe *BKE_gpencil_layer_find_frame(struct bGPDlayer *gpl, int cframe);
 struct bGPDframe *gpencil_layer_getframe(struct bGPDlayer *gpl, int cframe, short addnew);
 void gpencil_layer_delframe(struct bGPDlayer *gpl, struct bGPDframe *gpf);
 struct bGPDlayer *gpencil_layer_getactive(struct bGPdata *gpd);

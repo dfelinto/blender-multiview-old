@@ -28,9 +28,9 @@ add_subdirectory(ghost)
 add_subdirectory(guardedalloc)
 add_subdirectory(moto)
 add_subdirectory(memutil)
-add_subdirectory(iksolver)
 add_subdirectory(opennl)
 add_subdirectory(mikktspace)
+add_subdirectory(raskter)
 
 if(WITH_AUDASPACE)
 	add_subdirectory(audaspace)
@@ -54,8 +54,11 @@ if(WITH_MOD_DECIMATE)
 endif()
 
 if(WITH_MOD_BOOLEAN)
-	add_subdirectory(boolop)
 	add_subdirectory(bsp)
+endif()
+
+if(WITH_IK_SOLVER)
+	add_subdirectory(iksolver)
 endif()
 
 if(WITH_IK_ITASC)
@@ -66,3 +69,7 @@ if(WITH_CYCLES)
 	add_subdirectory(cycles)
 endif()
 
+# only windows needs utf16 converter
+if(WIN32)
+	add_subdirectory(utfconv)
+endif()

@@ -45,24 +45,88 @@
 
 /* **************** OUTPUT FILE ******************** */
 
+/* find unique path */
+static int unique_path_unique_check(void *arg, const char *name)
+{
+	struct {ListBase *lb; bNodeSocket *sock;} *data= arg;
+	bNodeSocket *sock;
+	for (sock=data->lb->first; sock; sock=sock->next) {
+		if (sock != data->sock) {
+			NodeImageMultiFileSocket *sockdata = sock->storage;
+			if (strcmp(sockdata->path, name)==0)
+				return 1;
+		}
+	}
+	return 0;
+}
+void ntreeCompositOutputFileUniquePath(ListBase *list, bNodeSocket *sock, const char defname[], char delim)
+{
+	NodeImageMultiFileSocket *sockdata;
+	struct {ListBase *lb; bNodeSocket *sock;} data;
+	data.lb = list;
+	data.sock = sock;
+
+	/* See if we are given an empty string */
+	if (ELEM(NULL, sock, defname))
+		return;
+
+	sockdata = sock->storage;
+	BLI_uniquename_cb(unique_path_unique_check, &data, defname, delim, sockdata->path, sizeof(sockdata->path));
+}
+
+/* find unique EXR layer */
+static int unique_layer_unique_check(void *arg, const char *name)
+{
+	struct {ListBase *lb; bNodeSocket *sock;} *data= arg;
+	bNodeSocket *sock;
+	for (sock=data->lb->first; sock; sock=sock->next) {
+		if (sock != data->sock) {
+			NodeImageMultiFileSocket *sockdata = sock->storage;
+			if (strcmp(sockdata->layer, name)==0)
+				return 1;
+		}
+	}
+	return 0;
+}
+void ntreeCompositOutputFileUniqueLayer(ListBase *list, bNodeSocket *sock, const char defname[], char delim)
+{
+	NodeImageMultiFileSocket *sockdata;
+	struct {ListBase *lb; bNodeSocket *sock;} data;
+	data.lb = list;
+	data.sock = sock;
+
+	/* See if we are given an empty string */
+	if (ELEM(NULL, sock, defname))
+		return;
+
+	sockdata = sock->storage;
+	BLI_uniquename_cb(unique_layer_unique_check, &data, defname, delim, sockdata->layer, sizeof(sockdata->layer));
+}
+
 bNodeSocket *ntreeCompositOutputFileAddSocket(bNodeTree *ntree, bNode *node, const char *name, ImageFormatData *im_format)
 {
 	NodeImageMultiFile *nimf = node->storage;
-	bNodeSocket *sock = nodeAddSocket(ntree, node, SOCK_IN, name, SOCK_RGBA);
+	bNodeSocket *sock = nodeAddSocket(ntree, node, SOCK_IN, "", SOCK_RGBA);
 	
 	/* create format data for the input socket */
 	NodeImageMultiFileSocket *sockdata = MEM_callocN(sizeof(NodeImageMultiFileSocket), "socket image format");
 	sock->storage = sockdata;
-	sock->struct_type = SOCK_STRUCT_OUTPUT_FILE;
 	
-	if(im_format) {
+	BLI_strncpy_utf8(sockdata->path, name, sizeof(sockdata->path));
+	ntreeCompositOutputFileUniquePath(&node->inputs, sock, name, '_');
+	BLI_strncpy_utf8(sockdata->layer, name, sizeof(sockdata->layer));
+	ntreeCompositOutputFileUniqueLayer(&node->inputs, sock, name, '_');
+	
+	if (im_format) {
 		sockdata->format= *im_format;
 		if (BKE_imtype_is_movie(sockdata->format.imtype)) {
 			sockdata->format.imtype= R_IMF_IMTYPE_OPENEXR;
 		}
 	}
+	else
+		BKE_imformat_defaults(&sockdata->format);
 	/* use node data format by default */
-	sockdata->use_node_format = 1;
+	sockdata->use_node_format = TRUE;
 	
 	nimf->active_input = BLI_findindex(&node->inputs, sock);
 	
@@ -88,17 +152,41 @@ int ntreeCompositOutputFileRemoveActiveSocket(bNodeTree *ntree, bNode *node)
 	return 1;
 }
 
+void ntreeCompositOutputFileSetPath(bNode *node, bNodeSocket *sock, const char *name)
+{
+	NodeImageMultiFileSocket *sockdata = sock->storage;
+	BLI_strncpy_utf8(sockdata->path, name, sizeof(sockdata->path));
+	ntreeCompositOutputFileUniquePath(&node->inputs, sock, name, '_');
+}
+
+void ntreeCompositOutputFileSetLayer(bNode *node, bNodeSocket *sock, const char *name)
+{
+	NodeImageMultiFileSocket *sockdata = sock->storage;
+	BLI_strncpy_utf8(sockdata->layer, name, sizeof(sockdata->layer));
+	ntreeCompositOutputFileUniqueLayer(&node->inputs, sock, name, '_');
+}
+
 static void init_output_file(bNodeTree *ntree, bNode* node, bNodeTemplate *ntemp)
 {
-	RenderData *rd = &ntemp->scene->r;
 	NodeImageMultiFile *nimf= MEM_callocN(sizeof(NodeImageMultiFile), "node image multi file");
+	ImageFormatData *format = NULL;
 	node->storage= nimf;
 
-	BLI_strncpy(nimf->base_path, rd->pic, sizeof(nimf->base_path));
-	nimf->format = rd->im_format;
+	if (ntemp->scene) {
+		RenderData *rd = &ntemp->scene->r;
+		BLI_strncpy(nimf->base_path, rd->pic, sizeof(nimf->base_path));
+		nimf->format = rd->im_format;
+		if (BKE_imtype_is_movie(nimf->format.imtype)) {
+			nimf->format.imtype= R_IMF_IMTYPE_OPENEXR;
+		}
+		
+		format = &nimf->format;
+	}
+	else
+		BKE_imformat_defaults(&nimf->format);
 	
 	/* add one socket by default */
-	ntreeCompositOutputFileAddSocket(ntree, node, "Image", &rd->im_format);
+	ntreeCompositOutputFileAddSocket(ntree, node, "Image", format);
 }
 
 static void free_output_file(bNode *node)
@@ -183,10 +271,10 @@ static void exec_output_file_singlelayer(RenderData *rd, bNode *node, bNodeStack
 				ibuf->profile = IB_PROFILE_LINEAR_RGB;
 			
 			/* get full path */
-			BLI_join_dirfile(path, FILE_MAX, nimf->base_path, sock->name);
+			BLI_join_dirfile(path, FILE_MAX, nimf->base_path, sockdata->path);
 			BKE_makepicstring(filename, path, bmain->name, rd->cfra, format->imtype, (rd->scemode & R_EXTENSION), TRUE);
 			
-			if(0 == BKE_write_ibuf(ibuf, filename, format))
+			if (0 == BKE_imbuf_write(ibuf, filename, format))
 				printf("Cannot save Node File Output to %s\n", filename);
 			else
 				printf("Saved: %s\n", filename);
@@ -199,7 +287,7 @@ static void exec_output_file_singlelayer(RenderData *rd, bNode *node, bNodeStack
 				has_preview = 1;
 			}
 			
-			if(in[i]->data != cbuf) 
+			if (in[i]->data != cbuf) 
 				free_compbuf(cbuf);
 		}
 	}
@@ -224,9 +312,9 @@ static void exec_output_file_multilayer(RenderData *rd, bNode *node, bNodeStack 
 	
 	for (sock=node->inputs.first, i=0; sock; sock=sock->next, ++i) {
 		if (in[i]->data) {
+			NodeImageMultiFileSocket *sockdata = sock->storage;
 			CompBuf *cbuf = in[i]->data;
-			char layname[EXR_LAY_MAXNAME];
-			char channelname[EXR_PASS_MAXNAME];
+			char channelname[EXR_TOT_MAXNAME];	/* '.' and single character channel name is appended */
 			char *channelname_ext;
 			
 			if (cbuf->rect_procedural) {
@@ -242,39 +330,38 @@ static void exec_output_file_multilayer(RenderData *rd, bNode *node, bNodeStack 
 				continue;
 			}
 			
-			BLI_strncpy(layname, sock->name, sizeof(layname));
-			BLI_strncpy(channelname, sock->name, sizeof(channelname)-2);
+			BLI_strncpy(channelname, sockdata->layer, sizeof(channelname)-2);
 			channelname_ext = channelname + strlen(channelname);
 			
 			/* create channels */
 			switch (cbuf->type) {
 			case CB_VAL:
 				strcpy(channelname_ext, ".V");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 1, rectx, cbuf->rect);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 1, rectx, cbuf->rect);
 				break;
 			case CB_VEC2:
 				strcpy(channelname_ext, ".X");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 2, 2*rectx, cbuf->rect);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 2, 2*rectx, cbuf->rect);
 				strcpy(channelname_ext, ".Y");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 2, 2*rectx, cbuf->rect+1);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 2, 2*rectx, cbuf->rect+1);
 				break;
 			case CB_VEC3:
 				strcpy(channelname_ext, ".X");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 3, 3*rectx, cbuf->rect);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 3, 3*rectx, cbuf->rect);
 				strcpy(channelname_ext, ".Y");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 3, 3*rectx, cbuf->rect+1);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 3, 3*rectx, cbuf->rect+1);
 				strcpy(channelname_ext, ".Z");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 3, 3*rectx, cbuf->rect+2);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 3, 3*rectx, cbuf->rect+2);
 				break;
 			case CB_RGBA:
 				strcpy(channelname_ext, ".R");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 4, 4*rectx, cbuf->rect);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 4, 4*rectx, cbuf->rect);
 				strcpy(channelname_ext, ".G");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 4, 4*rectx, cbuf->rect+1);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 4, 4*rectx, cbuf->rect+1);
 				strcpy(channelname_ext, ".B");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 4, 4*rectx, cbuf->rect+2);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 4, 4*rectx, cbuf->rect+2);
 				strcpy(channelname_ext, ".A");
-				IMB_exr_add_channel(exrhandle, layname, channelname, 4, 4*rectx, cbuf->rect+3);
+				IMB_exr_add_channel(exrhandle, NULL, channelname, 4, 4*rectx, cbuf->rect+3);
 				break;
 			}
 			
@@ -287,7 +374,7 @@ static void exec_output_file_multilayer(RenderData *rd, bNode *node, bNodeStack 
 	}
 	
 	/* when the filename has no permissions, this can fail */
-	if(IMB_exr_begin_write(exrhandle, filename, rectx, recty, nimf->format.exr_codec)) {
+	if (IMB_exr_begin_write(exrhandle, filename, rectx, recty, nimf->format.exr_codec)) {
 		IMB_exr_write_channels(exrhandle);
 	}
 	else {
@@ -304,7 +391,7 @@ static void exec_output_file(void *data, bNode *node, bNodeStack **in, bNodeStac
 	RenderData *rd= data;
 	NodeImageMultiFile *nimf= node->storage;
 	
-	if (!G.rendering) {
+	if (G.is_rendering == FALSE) {
 		/* only output files when rendering a sequence -
 		 * otherwise, it overwrites the output files just 
 		 * scrubbing through the timeline when the compositor updates */

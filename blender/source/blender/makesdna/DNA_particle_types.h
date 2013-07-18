@@ -234,9 +234,9 @@ typedef struct ParticleSettings {
 	struct PartDeflect *pd2;
 } ParticleSettings;
 
-typedef struct ParticleSystem
-{	/* note1: make sure all (runtime) are NULL's in 'copy_particlesystem' XXX, this function is no more! - need to invstigate */
-	/* note2: make sure any uses of this struct in DNA are accounted for in 'copy_object_particlesystems' */
+typedef struct ParticleSystem {
+	/* note1: make sure all (runtime) are NULL's in 'copy_particlesystem' XXX, this function is no more! - need to invstigate */
+	/* note2: make sure any uses of this struct in DNA are accounted for in 'BKE_object_copy_particlesystems' */
 
 	struct ParticleSystem *next, *prev;
 
@@ -463,8 +463,13 @@ typedef struct ParticleSystem
 #define PART_ROT_OB_Z		8
 
 /* part->avemode */
-#define PART_AVE_SPIN		1
+#define PART_AVE_VELOCITY	1
 #define PART_AVE_RAND		2
+#define PART_AVE_HORIZONTAL	3
+#define PART_AVE_VERTICAL	4
+#define PART_AVE_GLOBAL_X	5
+#define PART_AVE_GLOBAL_Y	6
+#define PART_AVE_GLOBAL_Z	7
 
 /* part->reactevent */
 #define PART_EVENT_DEATH	0
@@ -476,13 +481,13 @@ typedef struct ParticleSystem
 #define PART_CHILD_FACES		2
 
 /* psys->recalc */
-/* starts from 8 so that the first bits can be ob->recalc */
-#define PSYS_RECALC_REDO	8	/* only do pathcache etc */
-#define PSYS_RECALC_RESET	16	/* reset everything including pointcache */
-#define PSYS_RECALC_TYPE	32	/* handle system type change */
-#define PSYS_RECALC_CHILD	64	/* only child settings changed */
-#define PSYS_RECALC_PHYS	128	/* physics type changed */
-#define PSYS_RECALC			248
+/* starts from (1 << 3) so that the first bits can be ob->recalc */
+#define PSYS_RECALC_REDO   (1 << 3) /* only do pathcache etc */
+#define PSYS_RECALC_RESET  (1 << 4) /* reset everything including pointcache */
+#define PSYS_RECALC_TYPE   (1 << 5) /* handle system type change */
+#define PSYS_RECALC_CHILD  (1 << 6) /* only child settings changed */
+#define PSYS_RECALC_PHYS   (1 << 7) /* physics type changed */
+#define PSYS_RECALC        (PSYS_RECALC_REDO | PSYS_RECALC_RESET | PSYS_RECALC_TYPE | PSYS_RECALC_CHILD | PSYS_RECALC_PHYS)
 
 /* psys->flag */
 #define PSYS_CURRENT		1

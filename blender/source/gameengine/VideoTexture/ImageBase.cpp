@@ -33,7 +33,7 @@ extern "C" {
 #include <vector>
 #include <string.h>
 
-#include <PyObjectPlus.h>
+#include "PyObjectPlus.h"
 #include <structmember.h>
 
 #include "FilterBase.h"
@@ -246,7 +246,8 @@ bool ImageBase::checkSourceSizes (void)
 				// set current size as reference
 				refSize = curSize;
 		// otherwise check with current size
-			} else if (curSize[0] != refSize[0] || curSize[1] != refSize[1]) {
+			}
+			else if (curSize[0] != refSize[0] || curSize[1] != refSize[1]) {
 				// if they don't match, report it
 				return false;
 			}
@@ -444,9 +445,9 @@ PyObject * Image_getImage (PyImage * self, char * mode)
 				// get an empty buffer
 				buffer = BGL_MakeBuffer( GL_BYTE, 1, &dimensions, NULL);
 				// and fill it
-				for (i=0, d=(unsigned char*)buffer->buf.asbyte, s=(unsigned char*)image; 
-					 i<pixels; 
-					 ++i, d+=ncolor, s+=4)
+				for (i = 0, d = (unsigned char *)buffer->buf.asbyte, s = (unsigned char *)image;
+				     i < pixels;
+				     i++, d += ncolor, s += 4)
 				{
 					for (c=0; c<ncolor; c++)
 					{

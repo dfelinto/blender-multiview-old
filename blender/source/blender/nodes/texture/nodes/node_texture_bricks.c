@@ -36,17 +36,17 @@
 #include <math.h>
 
 static bNodeSocketTemplate inputs[]= {
-	{ SOCK_RGBA,  1, "Bricks 1",    0.596f, 0.282f, 0.0f,  1.0f },
-	{ SOCK_RGBA,  1, "Bricks 2",    0.632f, 0.504f, 0.05f, 1.0f },
-	{ SOCK_RGBA,  1, "Mortar",      0.0f,   0.0f,   0.0f,  1.0f },
-	{ SOCK_FLOAT, 1, "Thickness",   0.02f,  0.0f,   0.0f,  0.0f,  0.0f,    1.0f, PROP_UNSIGNED },
-	{ SOCK_FLOAT, 1, "Bias",        0.0f,   0.0f,   0.0f,  0.0f, -1.0f,    1.0f, PROP_NONE },
-	{ SOCK_FLOAT, 1, "Brick Width", 0.5f,   0.0f,   0.0f,  0.0f,  0.001f, 99.0f, PROP_UNSIGNED },
-	{ SOCK_FLOAT, 1, "Row Height",  0.25f,  0.0f,   0.0f,  0.0f,  0.001f, 99.0f, PROP_UNSIGNED },
+	{ SOCK_RGBA,  1, N_("Bricks 1"),    0.596f, 0.282f, 0.0f,  1.0f },
+	{ SOCK_RGBA,  1, N_("Bricks 2"),    0.632f, 0.504f, 0.05f, 1.0f },
+	{ SOCK_RGBA,  1, N_("Mortar"),      0.0f,   0.0f,   0.0f,  1.0f },
+	{ SOCK_FLOAT, 1, N_("Thickness"),   0.02f,  0.0f,   0.0f,  0.0f,  0.0f,    1.0f, PROP_UNSIGNED },
+	{ SOCK_FLOAT, 1, N_("Bias"),        0.0f,   0.0f,   0.0f,  0.0f, -1.0f,    1.0f, PROP_NONE },
+	{ SOCK_FLOAT, 1, N_("Brick Width"), 0.5f,   0.0f,   0.0f,  0.0f,  0.001f, 99.0f, PROP_UNSIGNED },
+	{ SOCK_FLOAT, 1, N_("Row Height"),  0.25f,  0.0f,   0.0f,  0.0f,  0.001f, 99.0f, PROP_UNSIGNED },
 	{ -1, 0, "" }
 };
 static bNodeSocketTemplate outputs[]= {
-	{ SOCK_RGBA, 0, "Color"},
+	{ SOCK_RGBA, 0, N_("Color")},
 	{ -1, 0, ""	}
 };
 
@@ -91,7 +91,7 @@ static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, shor
 	
 	rownum = (int)floor(y / row_height);
 	
-	if( node->custom1 && node->custom2 ) {
+	if ( node->custom1 && node->custom2 ) {
 		brick_width *= ((int)(rownum) % node->custom2 ) ? 1.0f : node->custom4;      /* squash */
 		offset = ((int)(rownum) % node->custom1 ) ? 0 : (brick_width*node->custom3); /* offset */
 	}
@@ -102,15 +102,17 @@ static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, shor
 	ins_y = y - row_height*rownum;
 	
 	tint = noise((rownum << 16) + (bricknum & 0xFFFF)) + bias;
-	CLAMP(tint,0.0f,1.0f);
+	CLAMP(tint, 0.0f, 1.0f);
 	
-	if( ins_x < mortar_thickness || ins_y < mortar_thickness ||
-		ins_x > (brick_width - mortar_thickness) ||
-		ins_y > (row_height - mortar_thickness) ) {
-		copy_v4_v4( out, mortar );
-	} else {
-		copy_v4_v4( out, bricks1 );
-		ramp_blend( MA_RAMP_BLEND, out, tint, bricks2 );
+	if (ins_x < mortar_thickness || ins_y < mortar_thickness ||
+	    ins_x > (brick_width - mortar_thickness) ||
+	    ins_y > (row_height - mortar_thickness))
+	{
+		copy_v4_v4(out, mortar);
+	}
+	else {
+		copy_v4_v4(out, bricks1);
+		ramp_blend(MA_RAMP_BLEND, out, tint, bricks2);
 	}
 }
 

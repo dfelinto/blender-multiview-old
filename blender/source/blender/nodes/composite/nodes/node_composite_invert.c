@@ -33,26 +33,28 @@
 
 /* **************** INVERT ******************** */
 static bNodeSocketTemplate cmp_node_invert_in[]= { 
-	{ SOCK_FLOAT, 1, "Fac", 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_FACTOR}, 
-	{ SOCK_RGBA, 1, "Color", 1.0f, 1.0f, 1.0f, 1.0f}, 
+	{ SOCK_FLOAT, 1, N_("Fac"), 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_FACTOR}, 
+	{ SOCK_RGBA, 1, N_("Color"), 1.0f, 1.0f, 1.0f, 1.0f}, 
 	{ -1, 0, "" } 
 };
 
 static bNodeSocketTemplate cmp_node_invert_out[]= { 
-	{ SOCK_RGBA, 0, "Color"}, 
+	{ SOCK_RGBA, 0, N_("Color")}, 
 	{ -1, 0, "" } 
 };
 
 static void do_invert(bNode *node, float *out, float *in)
 {
-	if(node->custom1 & CMP_CHAN_RGB) {
+	if (node->custom1 & CMP_CHAN_RGB) {
 		out[0] = 1.0f - in[0];
 		out[1] = 1.0f - in[1];
 		out[2] = 1.0f - in[2];
-	} else
+	}
+	else {
 		copy_v3_v3(out, in);
+	}
 		
-	if(node->custom1 & CMP_CHAN_A)
+	if (node->custom1 & CMP_CHAN_A)
 		out[3] = 1.0f - in[3];
 	else
 		out[3] = in[3];
@@ -67,12 +69,12 @@ static void do_invert_fac(bNode *node, float *out, float *in, float *fac)
 	/* blend inverted result against original input with fac */
 	facm = 1.0f - fac[0];
 
-	if(node->custom1 & CMP_CHAN_RGB) {
+	if (node->custom1 & CMP_CHAN_RGB) {
 		col[0] = fac[0]*col[0] + (facm*in[0]);
 		col[1] = fac[0]*col[1] + (facm*in[1]);
 		col[2] = fac[0]*col[2] + (facm*in[2]);
 	}
-	if(node->custom1 & CMP_CHAN_A)
+	if (node->custom1 & CMP_CHAN_A)
 		col[3] = fac[0]*col[3] + (facm*in[3]);
 	
 	copy_v4_v4(out, col);
@@ -84,10 +86,10 @@ static void node_composit_exec_invert(void *UNUSED(data), bNode *node, bNodeStac
 	/* stack order out: Image */
 	float *fac= in[0]->vec;
 	
-	if(out[0]->hasoutput==0) return;
+	if (out[0]->hasoutput==0) return;
 	
 	/* input no image? then only color operation */
-	if(in[1]->data==NULL && in[0]->data==NULL) {
+	if (in[1]->data==NULL && in[0]->data==NULL) {
 		do_invert_fac(node, out[0]->vec, in[1]->vec, fac);
 	}
 	else {
@@ -105,7 +107,8 @@ static void node_composit_exec_invert(void *UNUSED(data), bNode *node, bNodeStac
 			out[0]->data= stackbuf;
 			return;
 			
-		} else {
+		}
+		else {
 			out[0]->data = pass_on_compbuf(cbuf);
 			return;
 		}

@@ -34,6 +34,8 @@
 #include "SPHERE.h"
 #include <zlib.h>
 
+#include "float.h"
+
 #if PARALLEL==1
 #include <omp.h>
 #endif // PARALLEL 
@@ -42,11 +44,11 @@
 // Construction/Destruction
 //////////////////////////////////////////////////////////////////////
 
-FLUID_3D::FLUID_3D(int *res, float *p0) :
+FLUID_3D::FLUID_3D(int *res, float *p0, float dtdef) :
 	_xRes(res[0]), _yRes(res[1]), _zRes(res[2]), _res(0.0f)
 {
 	// set simulation consts
-	_dt = DT_DEFAULT;	// just in case. set in step from a RNA factor
+	_dt = dtdef;	// just in case. set in step from a RNA factor
 	
 	// start point of array
 	_p0[0] = p0[0];
@@ -81,6 +83,9 @@ FLUID_3D::FLUID_3D(int *res, float *p0) :
 	_xVelocity    = new float[_totalCells];
 	_yVelocity    = new float[_totalCells];
 	_zVelocity    = new float[_totalCells];
+	_xVelocityOb  = new float[_totalCells];
+	_yVelocityOb  = new float[_totalCells];
+	_zVelocityOb  = new float[_totalCells];
 	_xVelocityOld = new float[_totalCells];
 	_yVelocityOld = new float[_totalCells];
 	_zVelocityOld = new float[_totalCells];
@@ -111,6 +116,9 @@ FLUID_3D::FLUID_3D(int *res, float *p0) :
 		_xVelocity[x]    = 0.0f;
 		_yVelocity[x]    = 0.0f;
 		_zVelocity[x]    = 0.0f;
+		_xVelocityOb[x]  = 0.0f;
+		_yVelocityOb[x]  = 0.0f;
+		_zVelocityOb[x]  = 0.0f;
 		_xVelocityOld[x] = 0.0f;
 		_yVelocityOld[x] = 0.0f;
 		_zVelocityOld[x] = 0.0f;
@@ -131,19 +139,25 @@ FLUID_3D::FLUID_3D(int *res, float *p0) :
 
 	_colloPrev = 1;	// default value
 
+	setBorderObstacles(); // walls
 
+}
+
+void FLUID_3D::setBorderObstacles()
+{
+	
 	// set side obstacles
-	int index;
+	unsigned int index;
 	for (int y = 0; y < _yRes; y++)
 	for (int x = 0; x < _xRes; x++)
 	{
 		// bottom slab
 		index = x + y * _xRes;
-		if(_domainBcBottom==1) _obstacles[index] = 1;
+		if(_domainBcBottom) _obstacles[index] = 1;
 
 		// top slab
 		index += _totalCells - _slabSize;
-		if(_domainBcTop==1) _obstacles[index] = 1;
+		if(_domainBcTop) _obstacles[index] = 1;
 	}
 
 	for (int z = 0; z < _zRes; z++)
@@ -151,11 +165,11 @@ FLUID_3D::FLUID_3D(int *res, float *p0) :
 	{
 		// front slab
 		index = x + z * _slabSize;
-		if(_domainBcFront==1) _obstacles[index] = 1;
+		if(_domainBcFront) _obstacles[index] = 1;
 
 		// back slab
 		index += _slabSize - _xRes;
-		if(_domainBcBack==1) _obstacles[index] = 1;
+		if(_domainBcBack) _obstacles[index] = 1;
 	}
 
 	for (int z = 0; z < _zRes; z++)
@@ -163,13 +177,12 @@ FLUID_3D::FLUID_3D(int *res, float *p0) :
 	{
 		// left slab
 		index = y * _xRes + z * _slabSize;
-		if(_domainBcLeft==1) _obstacles[index] = 1;
+		if(_domainBcLeft) _obstacles[index] = 1;
 
 		// right slab
 		index += _xRes - 1;
-		if(_domainBcRight==1) _obstacles[index] = 1;
+		if(_domainBcRight) _obstacles[index] = 1;
 	}
-
 }
 
 FLUID_3D::~FLUID_3D()
@@ -177,6 +190,9 @@ FLUID_3D::~FLUID_3D()
 	if (_xVelocity) delete[] _xVelocity;
 	if (_yVelocity) delete[] _yVelocity;
 	if (_zVelocity) delete[] _zVelocity;
+	if (_xVelocityOb) delete[] _xVelocityOb;
+	if (_yVelocityOb) delete[] _yVelocityOb;
+	if (_zVelocityOb) delete[] _zVelocityOb;
 	if (_xVelocityOld) delete[] _xVelocityOld;
 	if (_yVelocityOld) delete[] _yVelocityOld;
 	if (_zVelocityOld) delete[] _zVelocityOld;
@@ -214,17 +230,24 @@ void FLUID_3D::initBlenderRNA(float *alpha, float *beta, float *dt_factor, float
 //////////////////////////////////////////////////////////////////////
 void FLUID_3D::step(float dt)
 {
+#if 0
 	// If border rules have been changed
 	if (_colloPrev != *_borderColli) {
+		printf("Border collisions changed\n");
+		
+		// DG TODO: Need to check that no animated obstacle flags are overwritten
 		setBorderCollisions();
 	}
+#endif
+
+	// DG: TODO for the moment redo border for every timestep since it's been deleted every time by moving obstacles
+	setBorderCollisions();
 
 
 	// set delta time by dt_factor
 	_dt = (*_dtFactor) * dt;
 	// set vorticity from RNA value
 	_vorticityEps = (*_vorticityRNA)/_constantScaling;
-
 
 #if PARALLEL==1
 	int threadval = 1;
@@ -426,48 +449,7 @@ void FLUID_3D::setBorderCollisions() {
 
 
 	// set side obstacles
-	int index;
-	for (int y = 0; y < _yRes; y++)
-	for (int x = 0; x < _xRes; x++)
-	{
-		// front slab
-		index = x + y * _xRes;
-		if(_domainBcBottom==1) _obstacles[index] = 1;
-		else _obstacles[index] = 0;
-
-		// back slab
-		index += _totalCells - _slabSize;
-		if(_domainBcTop==1) _obstacles[index] = 1;
-		else _obstacles[index] = 0;
-	}
-
-	for (int z = 0; z < _zRes; z++)
-	for (int x = 0; x < _xRes; x++)
-	{
-		// bottom slab
-		index = x + z * _slabSize;
-		if(_domainBcFront==1) _obstacles[index] = 1;
-		else _obstacles[index] = 0;
-
-		// top slab
-		index += _slabSize - _xRes;
-		if(_domainBcBack==1) _obstacles[index] = 1;
-		else _obstacles[index] = 0;
-	}
-
-	for (int z = 0; z < _zRes; z++)
-	for (int y = 0; y < _yRes; y++)
-	{
-		// left slab
-		index = y * _xRes + z * _slabSize;
-		if(_domainBcLeft==1) _obstacles[index] = 1;
-		else _obstacles[index] = 0;
-
-		// right slab
-		index += _xRes - 1;
-		if(_domainBcRight==1) _obstacles[index] = 1;
-		else _obstacles[index] = 0;
-	}
+	setBorderObstacles();
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -786,17 +768,47 @@ void FLUID_3D::project()
 	memset(_pressure, 0, sizeof(float)*_totalCells);
 	memset(_divergence, 0, sizeof(float)*_totalCells);
 	
+	// set velocity and pressure inside of obstacles to zero
 	setObstacleBoundaries(_pressure, 0, _zRes);
 	
 	// copy out the boundaries
-	if(_domainBcLeft == 0)  setNeumannX(_xVelocity, _res, 0, _zRes);
+	if(!_domainBcLeft)  setNeumannX(_xVelocity, _res, 0, _zRes);
 	else setZeroX(_xVelocity, _res, 0, _zRes); 
 
-	if(_domainBcFront == 0)   setNeumannY(_yVelocity, _res, 0, _zRes);
+	if(!_domainBcFront)   setNeumannY(_yVelocity, _res, 0, _zRes);
 	else setZeroY(_yVelocity, _res, 0, _zRes); 
 
-	if(_domainBcTop == 0) setNeumannZ(_zVelocity, _res, 0, _zRes);
+	if(!_domainBcTop) setNeumannZ(_zVelocity, _res, 0, _zRes);
 	else setZeroZ(_zVelocity, _res, 0, _zRes);
+
+	/*
+	{
+		float maxx = 0, maxy = 0, maxz = 0;
+		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
+		{
+			if(_xVelocity[i] > maxx)
+				maxx = _xVelocity[i];
+			if(_yVelocity[i] > maxy)
+				maxy = _yVelocity[i];
+			if(_zVelocity[i] > maxz)
+				maxz = _zVelocity[i];
+		}
+		printf("Max velx: %f, vely: %f, velz: %f\n", maxx, maxy, maxz);
+	}
+	*/
+
+	/*
+	{
+		float maxvalue = 0;
+		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
+		{
+			if(_heat[i] > maxvalue)
+				maxvalue = _heat[i];
+
+		}
+		printf("Max heat: %f\n", maxvalue);
+	}
+	*/
 
 	// calculate divergence
 	index = _slabSize + _xRes + 1;
@@ -804,6 +816,14 @@ void FLUID_3D::project()
 		for (y = 1; y < _yRes - 1; y++, index += 2)
 			for (x = 1; x < _xRes - 1; x++, index++)
 			{
+				
+				if(_obstacles[index])
+				{
+					_divergence[index] = 0.0f;
+					continue;
+				}
+				
+
 				float xright = _xVelocity[index + 1];
 				float xleft  = _xVelocity[index - 1];
 				float yup    = _yVelocity[index + _xRes];
@@ -811,25 +831,81 @@ void FLUID_3D::project()
 				float ztop   = _zVelocity[index + _slabSize];
 				float zbottom = _zVelocity[index - _slabSize];
 
-				if(_obstacles[index+1]) xright = - _xVelocity[index];
+				if(_obstacles[index+1]) xright = - _xVelocity[index]; // DG: +=
 				if(_obstacles[index-1]) xleft  = - _xVelocity[index];
 				if(_obstacles[index+_xRes]) yup    = - _yVelocity[index];
 				if(_obstacles[index-_xRes]) ydown  = - _yVelocity[index];
 				if(_obstacles[index+_slabSize]) ztop    = - _zVelocity[index];
 				if(_obstacles[index-_slabSize]) zbottom = - _zVelocity[index];
 
+				if(_obstacles[index+1] & 8)			xright	+= _xVelocityOb[index + 1];
+				if(_obstacles[index-1] & 8)			xleft	+= _xVelocityOb[index - 1];
+				if(_obstacles[index+_xRes] & 8)		yup		+= _yVelocityOb[index + _xRes];
+				if(_obstacles[index-_xRes] & 8)		ydown	+= _yVelocityOb[index - _xRes];
+				if(_obstacles[index+_slabSize] & 8) ztop    += _zVelocityOb[index + _slabSize];
+				if(_obstacles[index-_slabSize] & 8) zbottom += _zVelocityOb[index - _slabSize];
+
 				_divergence[index] = -_dx * 0.5f * (
 						xright - xleft +
 						yup - ydown +
 						ztop - zbottom );
 
-				// DG: commenting this helps CG to get a better start, 10-20% speed improvement
-				// _pressure[index] = 0.0f;
+				// Pressure is zero anyway since now a local array is used
+				_pressure[index] = 0.0f;
 			}
+
+
+	/*
+	{
+		float maxvalue = 0;
+		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
+		{
+			if(_divergence[i] > maxvalue)
+				maxvalue = _divergence[i];
+
+		}
+		printf("Max divergence: %f\n", maxvalue);
+	}
+	*/
+
 	copyBorderAll(_pressure, 0, _zRes);
+
+	/*
+	{
+		float maxvalue = 0;
+		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
+		{
+			if(_pressure[i] > maxvalue)
+				maxvalue = _pressure[i];
+		}
+		printf("Max pressure BEFORE: %f\n", maxvalue);
+	}
+	*/
 
 	// solve Poisson equation
 	solvePressurePre(_pressure, _divergence, _obstacles);
+
+	{
+		float maxvalue = 0;
+		for(unsigned int i = 0; i < _xRes * _yRes * _zRes; i++)
+		{
+			if(_pressure[i] > maxvalue)
+				maxvalue = _pressure[i];
+
+			/* HACK: Animated collision object sometimes result in a non converging solvePressurePre() */ 
+			if(_pressure[i] > _dx * _dt)
+				_pressure[i] = _dx * _dt;
+			else if(_pressure[i] < -_dx * _dt)
+				_pressure[i] = -_dx * _dt;
+
+			// if(_obstacle[i] && _pressure[i] != 0.0)
+			// 	printf("BAD PRESSURE i\n");
+
+			// if(_pressure[i]>1)
+			// 	printf("index: %d\n", i);
+		}
+		// printf("Max pressure: %f, dx: %f\n", maxvalue, _dx);
+	}
 
 	setObstaclePressure(_pressure, 0, _zRes);
 
@@ -848,12 +924,74 @@ void FLUID_3D::project()
 				}
 			}
 
+	setObstacleVelocity(0, _zRes);
+
 	if (_pressure) delete[] _pressure;
 	if (_divergence) delete[] _divergence;
 }
 
+//////////////////////////////////////////////////////////////////////
+// calculate the obstacle velocity at boundary
+//////////////////////////////////////////////////////////////////////
+void FLUID_3D::setObstacleVelocity(int zBegin, int zEnd)
+{
+	
+	// completely TODO <-- who wrote this and what is here TODO? DG
 
+	const size_t index_ = _slabSize + _xRes + 1;
 
+	//int vIndex=_slabSize + _xRes + 1;
+
+	int bb=0;
+	int bt=0;
+
+	if (zBegin == 0) {bb = 1;}
+	if (zEnd == _zRes) {bt = 1;}
+
+	// tag remaining obstacle blocks
+	for (int z = zBegin + bb; z < zEnd - bt; z++)
+	{
+		size_t index = index_ +(z-1)*_slabSize;
+
+		for (int y = 1; y < _yRes - 1; y++, index += 2)
+		{
+			for (int x = 1; x < _xRes - 1; x++, index++)
+		{
+			if (!_obstacles[index])
+			{
+				// if(_obstacles[index+1]) xright = - _xVelocityOb[index]; 
+				if((_obstacles[index - 1] & 8) && abs(_xVelocityOb[index - 1]) > FLT_EPSILON )
+				{
+					// printf("velocity x!\n");
+					_xVelocity[index]  = _xVelocityOb[index - 1];
+					_xVelocity[index - 1]  = _xVelocityOb[index - 1];
+				}
+				// if(_obstacles[index+_xRes]) yup    = - _yVelocityOb[index];
+				if((_obstacles[index - _xRes] & 8) && abs(_yVelocityOb[index - _xRes]) > FLT_EPSILON)
+				{
+					// printf("velocity y!\n");
+					_yVelocity[index]  = _yVelocityOb[index - _xRes];
+					_yVelocity[index - _xRes]  = _yVelocityOb[index - _xRes];
+				}
+				// if(_obstacles[index+_slabSize]) ztop    = - _zVelocityOb[index];
+				if((_obstacles[index - _slabSize] & 8) && abs(_zVelocityOb[index - _slabSize]) > FLT_EPSILON)
+				{
+					// printf("velocity z!\n");
+					_zVelocity[index] = _zVelocityOb[index - _slabSize];
+					_zVelocity[index - _slabSize] = _zVelocityOb[index - _slabSize];
+				}
+			}
+			else
+			{
+				_density[index] = 0;
+			}
+			//vIndex++;
+		}	// x loop
+		//vIndex += 2;
+		}	// y loop
+		//vIndex += 2 * _xRes;
+	}	// z loop
+}
 
 //////////////////////////////////////////////////////////////////////
 // diffuse heat
@@ -892,7 +1030,7 @@ void FLUID_3D::addObstacle(OBSTACLE* obstacle)
 void FLUID_3D::setObstaclePressure(float *_pressure, int zBegin, int zEnd)
 {
 
-	// compleately TODO
+	// completely TODO <-- who wrote this and what is here TODO? DG
 
 	const size_t index_ = _slabSize + _xRes + 1;
 
@@ -914,7 +1052,7 @@ void FLUID_3D::setObstaclePressure(float *_pressure, int zBegin, int zEnd)
 			for (int x = 1; x < _xRes - 1; x++, index++)
 		{
 			// could do cascade of ifs, but they are a pain
-			if (_obstacles[index])
+			if (_obstacles[index] /* && !(_obstacles[index] & 8) DG TODO TEST THIS CONDITION */)
 			{
 				const int top   = _obstacles[index + _slabSize];
 				const int bottom= _obstacles[index - _slabSize];
@@ -928,9 +1066,11 @@ void FLUID_3D::setObstaclePressure(float *_pressure, int zBegin, int zEnd)
 				// const bool fully = (up && down);
 				//const bool fullx = (left && right);
 
+				/*
 				_xVelocity[index] =
 				_yVelocity[index] =
 				_zVelocity[index] = 0.0f;
+				*/
 				_pressure[index] = 0.0f;
 
 				// average pressure neighbors
@@ -1158,7 +1298,7 @@ void FLUID_3D::addVorticity(int zBegin, int zEnd)
 					N[2] = (_vorticity[out] - _vorticity[in]) * dz;
 
 					float magnitude = sqrtf(N[0] * N[0] + N[1] * N[1] + N[2] * N[2]);
-					if (magnitude > 0.0f)
+					if (magnitude > FLT_EPSILON)
 					{
 						magnitude = 1.0f / magnitude;
 						N[0] *= magnitude;
@@ -1166,7 +1306,7 @@ void FLUID_3D::addVorticity(int zBegin, int zEnd)
 						N[2] *= magnitude;
 
 						_xForce[index] += (N[1] * _zVorticity[vIndex] - N[2] * _yVorticity[vIndex]) * _dx * eps;
-						_yForce[index] -= (N[0] * _zVorticity[vIndex] - N[2] * _xVorticity[vIndex]) * _dx * eps;
+						_yForce[index] += (N[2] * _xVorticity[vIndex] - N[0] * _zVorticity[vIndex]) * _dx * eps;
 						_zForce[index] += (N[0] * _yVorticity[vIndex] - N[1] * _xVorticity[vIndex]) * _dx * eps;
 					}
 					}	// if
@@ -1188,13 +1328,13 @@ void FLUID_3D::advectMacCormackBegin(int zBegin, int zEnd)
 {
 	Vec3Int res = Vec3Int(_xRes,_yRes,_zRes);
 
-	if(_domainBcLeft == 0) copyBorderX(_xVelocityOld, res, zBegin, zEnd);
+	if(!_domainBcLeft) copyBorderX(_xVelocityOld, res, zBegin, zEnd);
 	else setZeroX(_xVelocityOld, res, zBegin, zEnd);
 
-	if(_domainBcFront == 0) copyBorderY(_yVelocityOld, res, zBegin, zEnd);
+	if(!_domainBcFront) copyBorderY(_yVelocityOld, res, zBegin, zEnd);
 	else setZeroY(_yVelocityOld, res, zBegin, zEnd); 
 
-	if(_domainBcTop == 0) copyBorderZ(_zVelocityOld, res, zBegin, zEnd);
+	if(!_domainBcTop) copyBorderZ(_zVelocityOld, res, zBegin, zEnd);
 	else setZeroZ(_zVelocityOld, res, zBegin, zEnd);
 }
 
@@ -1242,18 +1382,46 @@ void FLUID_3D::advectMacCormackEnd2(int zBegin, int zEnd)
 	advectFieldMacCormack2(dt0, _xVelocityOld, _yVelocityOld, _zVelocityOld, _yVelocityOld, _yVelocityTemp, _yVelocity, t1, res, _obstacles, zBegin, zEnd);
 	advectFieldMacCormack2(dt0, _xVelocityOld, _yVelocityOld, _zVelocityOld, _zVelocityOld, _zVelocityTemp, _zVelocity, t1, res, _obstacles, zBegin, zEnd);
 
-	if(_domainBcLeft == 0) copyBorderX(_xVelocityTemp, res, zBegin, zEnd);
+	if(!_domainBcLeft) copyBorderX(_xVelocityTemp, res, zBegin, zEnd);
 	else setZeroX(_xVelocityTemp, res, zBegin, zEnd);				
 
-	if(_domainBcFront == 0) copyBorderY(_yVelocityTemp, res, zBegin, zEnd);
+	if(!_domainBcFront) copyBorderY(_yVelocityTemp, res, zBegin, zEnd);
 	else setZeroY(_yVelocityTemp, res, zBegin, zEnd); 
 
-	if(_domainBcTop == 0) copyBorderZ(_zVelocityTemp, res, zBegin, zEnd);
+	if(!_domainBcTop) copyBorderZ(_zVelocityTemp, res, zBegin, zEnd);
 	else setZeroZ(_zVelocityTemp, res, zBegin, zEnd);
 
 	setZeroBorder(_density, res, zBegin, zEnd);
 	setZeroBorder(_heat, res, zBegin, zEnd);
+#if 0
+	{
+	const size_t index_ = _slabSize + _xRes + 1;
+	int bb=0;
+	int bt=0;
 
+	if (zBegin == 0) {bb = 1;}
+	if (zEnd == _zRes) {bt = 1;}
+	
+	for (int z = zBegin + bb; z < zEnd - bt; z++)
+	{
+		size_t index = index_ +(z-1)*_slabSize;
+
+		for (int y = 1; y < _yRes - 1; y++, index += 2)
+		{
+			for (int x = 1; x < _xRes - 1; x++, index++)
+			{
+				// clean custom velocities from moving obstacles again
+				if (_obstacles[index])
+				{
+					_xVelocity[index] =
+					_yVelocity[index] =
+					_zVelocity[index] = 0.0f;
+				}
+			}
+		}
+	}
+	}
+#endif
 
 	/*int begin=zBegin * _slabSize;
 	int end=begin + (zEnd - zBegin) * _slabSize;

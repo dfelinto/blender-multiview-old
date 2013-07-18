@@ -1,4 +1,3 @@
-# -*- mode: cmake; indent-tabs-mode: t; -*-
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -40,9 +39,17 @@ blender_include_dirs(
 	../blender/windowmanager
 )
 
+if(WIN32)
+	blender_include_dirs(../../intern/utfconv)
+endif()
+
 if(WITH_LIBMV)
 	blender_include_dirs(../../extern/libmv)
 	add_definitions(-DWITH_LIBMV)
+endif()
+
+if(WITH_CODEC_FFMPEG)
+	add_definitions(-DWITH_FFMPEG)
 endif()
 
 if(WITH_PYTHON)
@@ -226,7 +233,7 @@ set(BLENDER_TEXT_FILES
 
 
 # -----------------------------------------------------------------------------
-# Platform Spesific Var: TARGETDIR_VER
+# Platform Specific Var: TARGETDIR_VER
 
 if(UNIX AND NOT APPLE)
 	if(WITH_INSTALL_PORTABLE)
@@ -388,14 +395,6 @@ if(UNIX AND NOT APPLE)
 		)
 	endif()
 
-		# plugins in blender 2.5 don't work at the moment.
-		#
-		# install(
-		# 	DIRECTORY ${CMAKE_SOURCE_DIR}/release/plugins
-		# 	DESTINATION ${TARGETDIR_VER}
-		# 	PATTERN ".svn" EXCLUDE
-		# )
-
 	if(WITH_PYTHON)
 		if(WITH_PYTHON_INSTALL)
 			# on some platforms (like openSUSE) Python is linked
@@ -430,7 +429,28 @@ if(UNIX AND NOT APPLE)
 
 			# # doesnt work, todo
 			# install(CODE "execute_process(COMMAND find ${TARGETDIR}/${BLENDER_VERSION}/python/lib/ -name '*.so' -exec strip -s {} '\;')")
+			
+			if(WITH_PYTHON_INSTALL_NUMPY)
+				install(
+					DIRECTORY ${PYTHON_NUMPY_PATH}/numpy
+					DESTINATION ${TARGETDIR_VER}/python/${_target_LIB}/python${PYTHON_VERSION}/site-packages
+					PATTERN ".svn" EXCLUDE
+					PATTERN "__pycache__" EXCLUDE           # * any cache *
+					PATTERN "*.pyc" EXCLUDE                 # * any cache *
+					PATTERN "*.pyo" EXCLUDE                 # * any cache *
+					PATTERN "distutils" EXCLUDE             # ./distutils
+					PATTERN "oldnumeric" EXCLUDE            # ./oldnumeric
+					PATTERN "doc" EXCLUDE                   # ./doc
+					PATTERN "tests" EXCLUDE                 # ./tests
+					PATTERN "f2py" EXCLUDE                  # ./f2py - fortran/python interface code, not fun for blender devs.
+					PATTERN "include" EXCLUDE               # include dirs all over, we wont use NumPy/CAPI
+					PATTERN "*.h" EXCLUDE                   # some includes are not in include dirs
+					PATTERN "*.a" EXCLUDE                   # ./core/lib/libnpymath.a - for linking, we dont need.
+				)
+			endif()
+			
 			unset(_target_LIB)
+			
 		endif()
 	endif()
 elseif(WIN32)
@@ -440,7 +460,7 @@ elseif(WIN32)
 		DESTINATION ${TARGETDIR}
 	)
 
-	if(WITH_INTERNATIONAL)
+	if(WITH_INTERNATIONAL AND (NOT WITH_MINGW64))
 		install(
 			FILES ${LIBDIR}/gettext/lib/gnu_gettext.dll
 			DESTINATION ${TARGETDIR}
@@ -454,24 +474,16 @@ elseif(WIN32)
 		endif()
 	endif()
 
-	# plugins in blender 2.5 don't work at the moment.
-	#
-	# install(
-	# 	DIRECTORY ${CMAKE_SOURCE_DIR}/release/plugins
-	# 	DESTINATION ${TARGETDIR_VER}
-	# 	PATTERN ".svn" EXCLUDE
-	# )
-
 	if(WITH_PYTHON)
-		set_lib_path(PYLIB "python/lib")
+		set_lib_path(PYLIB "python")
 		install(
-			FILES ${PYLIB}/python32.dll
+			FILES ${PYLIB}/lib/python32.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
 		)
 
 		install(
-			FILES ${PYLIB}/python32_d.dll
+			FILES ${PYLIB}/lib/python32_d.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Debug
 		)
@@ -515,11 +527,14 @@ elseif(WIN32)
 			DESTINATION ${TARGETDIR}
 		)
 	else()
-		install(
-			FILES
-				${LIBDIR}/zlib/lib/zlib.dll
-			DESTINATION ${TARGETDIR}
-		)
+		#not needed since we link statically, maybe also unneeded for MinGW?
+		if(NOT WITH_MINGW64)
+			install(
+				FILES
+					${LIBDIR}/zlib/lib/zlib.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
 
 	if(MSVC)
@@ -528,10 +543,29 @@ elseif(WIN32)
 			DESTINATION ${TARGETDIR}
 		)
 	else()
-		install(
-			FILES ${LIBDIR}/pthreads/lib/pthreadGC2.dll
-			DESTINATION ${TARGETDIR}
-		)
+		#MinGW64 comes with own version. For portable builds it will probaly have to be copied to work
+		if(NOT WITH_MINGW64)
+			install(
+				FILES ${LIBDIR}/pthreads/lib/pthreadGC2.dll
+				DESTINATION ${TARGETDIR}
+			)
+		elseif(WITH_MINGW64)
+			install(
+				FILES 
+					${LIBDIR}/binaries/libgcc_s_sjlj-1.dll
+					${LIBDIR}/binaries/libwinpthread-1.dll
+					${LIBDIR}/binaries/libstdc++-6.dll
+				DESTINATION ${TARGETDIR}
+			)
+			
+			if(WITH_OPENMP)
+				install(
+					FILES 
+					${LIBDIR}/binaries/libgomp-1.dll
+					DESTINATION ${TARGETDIR}
+				)
+			endif()
+		endif()
 	endif()
 
 	if(WITH_CODEC_FFMPEG)
@@ -544,7 +578,14 @@ elseif(WIN32)
 				${LIBDIR}/ffmpeg/lib/swscale-2.dll
 			DESTINATION ${TARGETDIR}
 		)
-
+		if(WITH_MINGW64)
+		install(
+			FILES
+				${LIBDIR}/ffmpeg/lib/swresample-0.dll
+				${LIBDIR}/ffmpeg/lib/xvidcore.dll
+			DESTINATION ${TARGETDIR}
+		)
+		endif()
 	endif()
 
 	if(WITH_CODEC_SNDFILE)
@@ -585,12 +626,14 @@ elseif(WIN32)
 	)	
 
 	if(WITH_OPENIMAGEIO)
-		set_lib_path(OIIOBIN "openimageio/bin")
-		install(
-			FILES
-				${OIIOBIN}/OpenImageIO.dll
-			DESTINATION ${TARGETDIR}
-		)
+		if(NOT MINGW)
+			set_lib_path(OIIOBIN "openimageio")
+			install(
+				FILES
+					${OIIOBIN}/bin/OpenImageIO.dll
+				DESTINATION ${TARGETDIR}
+			)
+		endif()
 	endif()
 
 elseif(APPLE)
@@ -791,6 +834,8 @@ endif()
 		bf_editor_sound
 		bf_editor_animation
 		bf_editor_datafiles
+		bf_editor_mask
+		bf_editor_io
 
 		bf_render
 		bf_intern_opennl
@@ -809,20 +854,18 @@ endif()
 		bf_blenlib
 		bf_intern_ghost
 		bf_intern_string
-		bf_blenpluginapi
 		bf_avi
 		bf_imbuf_cineon
 		bf_imbuf_openexr
 		bf_imbuf_dds
 		bf_collada
 		bf_intern_bsp
-		bf_intern_bop
 		bf_intern_decimate
 		bf_intern_elbeem
-		bf_intern_ik
 		bf_intern_memutil
 		bf_intern_guardedalloc
 		bf_intern_ctr
+		bf_intern_utfconv
 		ge_blen_routines
 		ge_converter
 		ge_phys_dummy
@@ -860,17 +903,25 @@ endif()
 		cycles_kernel
 		cycles_util
 		cycles_subd
+		bf_intern_raskter
 	)
+
+	if(WITH_COMPOSITOR)
+		# added for opencl compositor
+		list_insert_before(BLENDER_SORTED_LIBS "bf_blenkernel" "bf_compositor")
+		list_insert_after(BLENDER_SORTED_LIBS "bf_compositor" "bf_opencl")
+	endif()
 
 	if(WITH_LIBMV)
 		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
+		list(APPEND BLENDER_SORTED_LIBS extern_ceres)
 	endif()
 
 	if(WITH_MOD_CLOTH_ELTOPO)
 		list(APPEND BLENDER_SORTED_LIBS extern_eltopo)
 	endif()
 
-	if(WITH_BUILTIN_GLEW)
+	if(NOT WITH_SYSTEM_GLEW)
 		list(APPEND BLENDER_SORTED_LIBS extern_glew)
 	endif()
 
@@ -882,6 +933,10 @@ endif()
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_guardedalloc_cpp)
 	endif()
 
+	if(WITH_IK_SOLVER)
+		list_insert_after(BLENDER_SORTED_LIBS "bf_intern_elbeem" "bf_intern_iksolver")
+	endif()
+
 	if(WITH_IK_ITASC)
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_itasc)
 	endif()
@@ -890,7 +945,7 @@ endif()
 		list(APPEND BLENDER_SORTED_LIBS bf_quicktime)
 	endif()
 
-	if(WITH_CARVE)
+	if(WITH_MOD_BOOLEAN)
 		list(APPEND BLENDER_SORTED_LIBS extern_carve)
 	endif()
 

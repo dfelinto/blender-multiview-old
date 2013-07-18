@@ -39,6 +39,13 @@ enum {
 	SUBD_STRAIGHT_CUT
 };
 
+enum {
+	SUBDIV_SELECT_ORIG,
+	SUBDIV_SELECT_INNER,
+	SUBDIV_SELECT_INNER_SEL,
+	SUBDIV_SELECT_LOOPCUT
+};
+
 /* similar face selection slot values */
 enum {
 	SIMFACE_MATERIAL = 201,
@@ -56,6 +63,7 @@ enum {
 	SIMEDGE_FACE,
 	SIMEDGE_FACE_ANGLE,
 	SIMEDGE_CREASE,
+	SIMEDGE_BEVEL,
 	SIMEDGE_SEAM,
 	SIMEDGE_SHARP
 };
@@ -64,7 +72,8 @@ enum {
 enum {
 	SIMVERT_NORMAL = 0,
 	SIMVERT_FACE,
-	SIMVERT_VGROUP
+	SIMVERT_VGROUP,
+	SIMVERT_EDGE
 };
 
 enum {
@@ -90,8 +99,13 @@ extern int bmesh_total_ops;
 
 struct Object;
 
-void BM_mesh_esubdivideflag(struct Object *obedit, BMesh *bm, int flag, float smooth,
-                            float fractal, int beauty, int numcuts, int seltype,
-                            int cornertype, int singleedge, int gridfill, int seed);
+void BM_mesh_esubdivide(BMesh *bm, const char edge_hflag,
+                        float smooth, float fractal, float along_normal,
+                        int numcuts,
+                        int seltype, int cornertype,
+                        const short use_singleedge, const short use_gridfill,
+                        int seed);
+
+#include "intern/bmesh_operator_api_inline.h"
 
 #endif /* __BMESH_OPERATORS_H__ */

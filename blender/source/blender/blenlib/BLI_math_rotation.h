@@ -34,12 +34,12 @@
 extern "C" {
 #endif
 
-#define RAD2DEG(_rad) ((_rad)*(180.0/M_PI))
-#define DEG2RAD(_deg) ((_deg)*(M_PI/180.0))
+#define RAD2DEG(_rad) ((_rad) * (180.0 / M_PI))
+#define DEG2RAD(_deg) ((_deg) * (M_PI / 180.0))
 
 
-#define RAD2DEGF(_rad) ((_rad)*(float)(180.0/M_PI))
-#define DEG2RADF(_deg) ((_deg)*(float)(M_PI/180.0))
+#define RAD2DEGF(_rad) ((_rad) * (float)(180.0 / M_PI))
+#define DEG2RADF(_deg) ((_deg) * (float)(M_PI / 180.0))
 
 /******************************** Quaternions ********************************/
 /* stored in (w, x, y, z) order                                              */
@@ -92,7 +92,7 @@ void print_qt(const char *str, const float q[4]);
 /******************************** Axis Angle *********************************/
 
 /* conversion */
-void axis_angle_to_quat(float r[4], const float axis[3], float angle);
+void axis_angle_to_quat(float r[4], const float axis[3], const float angle);
 void axis_angle_to_mat3(float R[3][3], const float axis[3], const float angle);
 void axis_angle_to_mat4(float R[4][4], const float axis[3], const float angle);
 
@@ -107,9 +107,7 @@ void single_axis_angle_to_mat3(float R[3][3], const char axis, const float angle
 /* TODO: the following calls should probably be depreceated sometime         */
 
 /* conversion */
-void vec_rot_to_quat(float quat[4], const float vec[3], const float phi);
 void vec_rot_to_mat3(float mat[3][3], const float vec[3], const float phi);
-void vec_rot_to_mat4(float mat[4][4], const float vec[3], const float phi);
 
 /******************************** XYZ Eulers *********************************/
 
@@ -171,10 +169,10 @@ typedef struct DualQuat {
 void copy_dq_dq(DualQuat *r, DualQuat *dq);
 void normalize_dq(DualQuat *dq, float totw);
 void add_weighted_dq_dq(DualQuat *r, DualQuat *dq, float weight);
-void mul_v3m3_dq(float r[3], float R[3][3], DualQuat *dq);
+void mul_v3m3_dq(float r[3], float R[3][3], DualQuat * dq);
 
-void mat4_to_dquat(DualQuat *r, float base[4][4], float M[4][4]);
-void dquat_to_mat4(float R[4][4], DualQuat *dq);
+void mat4_to_dquat(DualQuat * r, float base[4][4], float M[4][4]);
+void dquat_to_mat4(float R[4][4], DualQuat * dq);
 
 void quat_apply_track(float quat[4], short axis, short upflag);
 void vec_apply_track(float vec[3], short axis);

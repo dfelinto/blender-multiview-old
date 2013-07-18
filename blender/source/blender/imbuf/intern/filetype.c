@@ -44,13 +44,26 @@
 
 #include "imbuf.h"
 
-static int imb_ftype_default(ImFileType *type, ImBuf *ibuf) { return (ibuf->ftype & type->filetype); }
+static int imb_ftype_default(ImFileType *type, ImBuf *ibuf)
+{
+	return (ibuf->ftype & type->filetype);
+}
 #if defined(__APPLE__) && defined(IMBUF_COCOA)
-static int imb_ftype_cocoa(ImFileType *type, ImBuf *ibuf) { return (ibuf->ftype & TIF); }
+static int imb_ftype_cocoa(ImFileType *type, ImBuf *ibuf)
+{
+	return (ibuf->ftype & TIF);
+}
 #endif
-static int imb_ftype_iris(ImFileType *type, ImBuf *ibuf) { (void)type; return (ibuf->ftype == IMAGIC); }
+static int imb_ftype_iris(ImFileType *type, ImBuf *ibuf)
+{
+	(void)type;
+	return (ibuf->ftype == IMAGIC);
+}
 #ifdef WITH_QUICKTIME
-static int imb_ftype_quicktime(ImFileType *type, ImBuf *ibuf) { return 0; } // XXX
+static int imb_ftype_quicktime(ImFileType *type, ImBuf *ibuf)
+{
+	return 0; /* XXX */
+}
 #endif
 
 #ifdef WITH_QUICKTIME
@@ -58,7 +71,7 @@ void quicktime_init(void);
 void quicktime_exit(void);
 #endif
 
-ImFileType IMB_FILE_TYPES[]= {
+ImFileType IMB_FILE_TYPES[] = {
 	{NULL, NULL, imb_is_a_jpeg, imb_ftype_default, imb_load_jpeg, imb_savejpeg, NULL, 0, JPG},
 	{NULL, NULL, imb_is_a_png, imb_ftype_default, imb_loadpng, imb_savepng, NULL, 0, PNG},
 	{NULL, NULL, imb_is_a_bmp, imb_ftype_default, imb_bmp_decode, imb_savebmp, NULL, 0, BMP},
@@ -77,7 +90,7 @@ ImFileType IMB_FILE_TYPES[]= {
 	{NULL, NULL, imb_is_a_hdr, imb_ftype_default, imb_loadhdr, imb_savehdr, NULL, IM_FTYPE_FLOAT, RADHDR},
 #endif
 #ifdef WITH_OPENEXR
-	{NULL, NULL, imb_is_a_openexr, imb_ftype_default, imb_load_openexr, imb_save_openexr, NULL, IM_FTYPE_FLOAT, OPENEXR},
+	{imb_initopenexr, NULL, imb_is_a_openexr, imb_ftype_default, imb_load_openexr, imb_save_openexr, NULL, IM_FTYPE_FLOAT, OPENEXR},
 #endif
 #ifdef WITH_OPENJPEG
 	{NULL, NULL, imb_is_a_jp2, imb_ftype_default, imb_jp2_decode, imb_savejp2, NULL, IM_FTYPE_FLOAT, JP2},
@@ -87,15 +100,16 @@ ImFileType IMB_FILE_TYPES[]= {
 #endif
 #ifdef WITH_QUICKTIME
 	{quicktime_init, quicktime_exit, imb_is_a_quicktime, imb_ftype_quicktime, imb_quicktime_decode, NULL, NULL, 0, QUICKTIME},
-#endif	
-	{NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0}};
+#endif
+	{NULL, NULL, NULL, NULL, NULL, NULL, NULL, 0}
+};
 	
 void imb_filetypes_init(void)
 {
 	ImFileType *type;
 
-	for(type=IMB_FILE_TYPES; type->is_a; type++)
-		if(type->init)
+	for (type = IMB_FILE_TYPES; type->is_a; type++)
+		if (type->init)
 			type->init();
 }
 
@@ -103,8 +117,8 @@ void imb_filetypes_exit(void)
 {
 	ImFileType *type;
 
-	for(type=IMB_FILE_TYPES; type->is_a; type++)
-		if(type->exit)
+	for (type = IMB_FILE_TYPES; type->is_a; type++)
+		if (type->exit)
 			type->exit();
 }
 

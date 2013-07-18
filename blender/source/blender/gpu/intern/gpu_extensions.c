@@ -51,19 +51,32 @@
 #include <stdio.h>
 #include <string.h>
 
-#include "BLI_winstuff.h"
+#ifdef WIN32
+#  include "BLI_winstuff.h"
+#endif
 
 /* Extensions support */
 
 /* extensions used:
  * - texture border clamp: 1.3 core
- * - fragement shader: 2.0 core
+ * - fragment shader: 2.0 core
  * - framebuffer object: ext specification
  * - multitexture 1.3 core
  * - arb non power of two: 2.0 core
  * - pixel buffer objects? 2.1 core
  * - arb draw buffers? 2.0 core
  */
+
+/* Non-generated shaders */
+extern char datatoc_gpu_shader_vsm_store_vert_glsl[];
+extern char datatoc_gpu_shader_vsm_store_frag_glsl[];
+extern char datatoc_gpu_shader_sep_gaussian_blur_vert_glsl[];
+extern char datatoc_gpu_shader_sep_gaussian_blur_frag_glsl[];
+
+typedef struct GPUShaders {
+	GPUShader *vsm_store;
+	GPUShader *sep_gaussian_blur;
+} GPUShaders;
 
 static struct GPUGlobal {
 	GLint maxtextures;
@@ -75,7 +88,8 @@ static struct GPUGlobal {
 	GPUDeviceType device;
 	GPUOSType os;
 	GPUDriverType driver;
-} GG = {1, 0, 0, 0, 0};
+	GPUShaders shaders;
+} GG = {1, 0};
 
 /* GPU Types */
 
@@ -99,7 +113,7 @@ void GPU_extensions_init(void)
 	const char *vendor, *renderer;
 
 	/* can't avoid calling this multiple times, see wm_window_add_ghostwindow */
-	if(gpu_extensions_init) return;
+	if (gpu_extensions_init) return;
 	gpu_extensions_init= 1;
 
 	glewInit();
@@ -123,38 +137,38 @@ void GPU_extensions_init(void)
 	vendor = (const char*)glGetString(GL_VENDOR);
 	renderer = (const char*)glGetString(GL_RENDERER);
 
-	if(strstr(vendor, "ATI")) {
+	if (strstr(vendor, "ATI")) {
 		GG.device = GPU_DEVICE_ATI;
 		GG.driver = GPU_DRIVER_OFFICIAL;
 	}
-	else if(strstr(vendor, "NVIDIA")) {
+	else if (strstr(vendor, "NVIDIA")) {
 		GG.device = GPU_DEVICE_NVIDIA;
 		GG.driver = GPU_DRIVER_OFFICIAL;
 	}
-	else if(strstr(vendor, "Intel") ||
+	else if (strstr(vendor, "Intel") ||
 	        /* src/mesa/drivers/dri/intel/intel_context.c */
 	        strstr(renderer, "Mesa DRI Intel") ||
 		strstr(renderer, "Mesa DRI Mobile Intel")) {
 		GG.device = GPU_DEVICE_INTEL;
 		GG.driver = GPU_DRIVER_OFFICIAL;
 	}
-	else if(strstr(renderer, "Mesa DRI R") || (strstr(renderer, "Gallium ") && strstr(renderer, " on ATI "))) {
+	else if (strstr(renderer, "Mesa DRI R") || (strstr(renderer, "Gallium ") && strstr(renderer, " on ATI "))) {
 		GG.device = GPU_DEVICE_ATI;
 		GG.driver = GPU_DRIVER_OPENSOURCE;
 	}
-	else if(strstr(renderer, "Nouveau") || strstr(vendor, "nouveau")) {
+	else if (strstr(renderer, "Nouveau") || strstr(vendor, "nouveau")) {
 		GG.device = GPU_DEVICE_NVIDIA;
 		GG.driver = GPU_DRIVER_OPENSOURCE;
 	}
-	else if(strstr(vendor, "Mesa")) {
+	else if (strstr(vendor, "Mesa")) {
 		GG.device = GPU_DEVICE_SOFTWARE;
 		GG.driver = GPU_DRIVER_SOFTWARE;
 	}
-	else if(strstr(vendor, "Microsoft")) {
+	else if (strstr(vendor, "Microsoft")) {
 		GG.device = GPU_DEVICE_SOFTWARE;
 		GG.driver = GPU_DRIVER_SOFTWARE;
 	}
-	else if(strstr(renderer, "Apple Software Renderer")) {
+	else if (strstr(renderer, "Apple Software Renderer")) {
 		GG.device = GPU_DEVICE_SOFTWARE;
 		GG.driver = GPU_DRIVER_SOFTWARE;
 	}
@@ -163,20 +177,22 @@ void GPU_extensions_init(void)
 		GG.driver = GPU_DRIVER_ANY;
 	}
 
-	if(GG.device == GPU_DEVICE_ATI) {
+	if (GG.device == GPU_DEVICE_ATI) {
 		/* ATI 9500 to X2300 cards support NPoT textures poorly
 		 * Incomplete list http://dri.freedesktop.org/wiki/ATIRadeon
 		 * New IDs from MESA's src/gallium/drivers/r300/r300_screen.c
 		 */
-		if(strstr(renderer, "R3") || strstr(renderer, "RV3") ||
-		   strstr(renderer, "R4") || strstr(renderer, "RV4") ||
-		   strstr(renderer, "RS4") || strstr(renderer, "RC4") ||
-		   strstr(renderer, "R5") || strstr(renderer, "RV5") ||
-		   strstr(renderer, "RS600") || strstr(renderer, "RS690") ||
-		   strstr(renderer, "RS740") || strstr(renderer, "X1") ||
-		   strstr(renderer, "X2") || strstr(renderer, "Radeon 9") ||
-		   strstr(renderer, "RADEON 9"))
+		if (strstr(renderer, "R3") || strstr(renderer, "RV3") ||
+		    strstr(renderer, "R4") || strstr(renderer, "RV4") ||
+		    strstr(renderer, "RS4") || strstr(renderer, "RC4") ||
+		    strstr(renderer, "R5") || strstr(renderer, "RV5") ||
+		    strstr(renderer, "RS600") || strstr(renderer, "RS690") ||
+		    strstr(renderer, "RS740") || strstr(renderer, "X1") ||
+		    strstr(renderer, "X2") || strstr(renderer, "Radeon 9") ||
+		    strstr(renderer, "RADEON 9"))
+		{
 			GG.npotdisabled = 1;
+		}
 	}
 
 	/* make sure double side isn't used by default and only getting enabled in places where it's
@@ -205,7 +221,7 @@ int GPU_glsl_support(void)
 
 int GPU_non_power_of_two_support(void)
 {
-	if(GG.npotdisabled)
+	if (GG.npotdisabled)
 		return 0;
 
 	return GLEW_ARB_texture_non_power_of_two;
@@ -220,7 +236,7 @@ int GPU_print_error(const char *str)
 {
 	GLenum errCode;
 
-	if (G.f & G_DEBUG) {
+	if (G.debug & G_DEBUG) {
 		if ((errCode = glGetError()) != GL_NO_ERROR) {
 			fprintf(stderr, "%s opengl error: %s\n", str, gluErrorString(errCode));
 			return 1;
@@ -234,7 +250,7 @@ static void GPU_print_framebuffer_error(GLenum status, char err_out[256])
 {
 	const char *err= "unknown";
 
-	switch(status) {
+	switch (status) {
 		case GL_FRAMEBUFFER_COMPLETE_EXT:
 			break;
 		case GL_FRAMEBUFFER_INCOMPLETE_ATTACHMENT_EXT:
@@ -260,7 +276,7 @@ static void GPU_print_framebuffer_error(GLenum status, char err_out[256])
 			break;
 	}
 
-	if(err_out) {
+	if (err_out) {
 		BLI_snprintf(err_out, 256, "GPUFrameBuffer: framebuffer incomplete error %d '%s'",
 			(int)status, err);
 	}
@@ -318,7 +334,7 @@ static GPUTexture *GPU_texture_create_nD(int w, int h, int n, float *fpixels, in
 	GLenum type, format, internalformat;
 	void *pixels = NULL;
 
-	if(depth && !GLEW_ARB_depth_texture)
+	if (depth && !GLEW_ARB_depth_texture)
 		return NULL;
 
 	tex = MEM_callocN(sizeof(GPUTexture), "GPUTexture");
@@ -332,7 +348,7 @@ static GPUTexture *GPU_texture_create_nD(int w, int h, int n, float *fpixels, in
 	glGenTextures(1, &tex->bindcode);
 
 	if (!tex->bindcode) {
-		if(err_out) {
+		if (err_out) {
 			BLI_snprintf(err_out, 256, "GPUTexture: texture create failed: %d",
 				(int)glGetError());
 		}
@@ -352,7 +368,7 @@ static GPUTexture *GPU_texture_create_nD(int w, int h, int n, float *fpixels, in
 	tex->number = 0;
 	glBindTexture(tex->target, tex->bindcode);
 
-	if(depth) {
+	if (depth) {
 		type = GL_UNSIGNED_BYTE;
 		format = GL_DEPTH_COMPONENT;
 		internalformat = GL_DEPTH_COMPONENT;
@@ -396,7 +412,7 @@ static GPUTexture *GPU_texture_create_nD(int w, int h, int n, float *fpixels, in
 	if (pixels)
 		MEM_freeN(pixels);
 
-	if(depth) {
+	if (depth) {
 		glTexParameteri(tex->target, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
 		glTexParameteri(tex->target, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
 		glTexParameteri(tex->target, GL_TEXTURE_COMPARE_MODE_ARB, GL_COMPARE_R_TO_TEXTURE);
@@ -433,7 +449,7 @@ GPUTexture *GPU_texture_create_3D(int w, int h, int depth, float *fpixels)
 	void *pixels = NULL;
 	float vfBorderColor[4] = {0.0f, 0.0f, 0.0f, 0.0f};
 
-	if(!GLEW_VERSION_1_2)
+	if (!GLEW_VERSION_1_2)
 		return NULL;
 
 	tex = MEM_callocN(sizeof(GPUTexture), "GPUTexture");
@@ -476,7 +492,7 @@ GPUTexture *GPU_texture_create_3D(int w, int h, int depth, float *fpixels)
 	GPU_print_error("3D glTexImage3D");
 
 	if (fpixels) {
-		if(!GPU_non_power_of_two_support() && (w != tex->w || h != tex->h || depth != tex->depth)) {
+		if (!GPU_non_power_of_two_support() && (w != tex->w || h != tex->h || depth != tex->depth)) {
 			/* clear first to avoid unitialized pixels */
 			float *zero= MEM_callocN(sizeof(float)*tex->w*tex->h*tex->depth, "zero");
 			glTexSubImage3D(tex->target, 0, 0, 0, 0, tex->w, tex->h, tex->depth, format, type, zero);
@@ -516,13 +532,13 @@ GPUTexture *GPU_texture_from_blender(Image *ima, ImageUser *iuser, double time, 
 	GPU_update_image_time(ima, time);
 	bindcode = GPU_verify_image(ima, iuser, 0, 0, mipmap);
 
-	if(ima->gputexture) {
+	if (ima->gputexture) {
 		ima->gputexture->bindcode = bindcode;
 		glBindTexture(GL_TEXTURE_2D, lastbindcode);
 		return ima->gputexture;
 	}
 
-	if(!bindcode) {
+	if (!bindcode) {
 		glBindTexture(GL_TEXTURE_2D, lastbindcode);
 		return NULL;
 	}
@@ -584,6 +600,25 @@ GPUTexture *GPU_texture_create_depth(int w, int h, char err_out[256])
 	return tex;
 }
 
+/**
+ * A shadow map for VSM needs two components (depth and depth^2)
+ */
+GPUTexture *GPU_texture_create_vsm_shadow_map(int size, char err_out[256])
+{
+	GPUTexture *tex = GPU_texture_create_nD(size, size, 2, NULL, 0, err_out);
+
+	if (tex) {
+		/* Now we tweak some of the settings */
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RG32F, size, size, 0, GL_RG, GL_FLOAT, 0);
+
+		GPU_texture_unbind(tex);
+	}
+
+	return tex;
+}
+
 void GPU_texture_bind(GPUTexture *tex, int number)
 {
 	GLenum arbnumber;
@@ -593,7 +628,7 @@ void GPU_texture_bind(GPUTexture *tex, int number)
 		return;
 	}
 
-	if(number == -1)
+	if (number == -1)
 		return;
 
 	GPU_print_error("Pre Texture Bind");
@@ -618,7 +653,7 @@ void GPU_texture_unbind(GPUTexture *tex)
 		return;
 	}
 
-	if(tex->number == -1)
+	if (tex->number == -1)
 		return;
 	
 	GPU_print_error("Pre Texture Unbind");
@@ -714,7 +749,7 @@ int GPU_framebuffer_texture_attach(GPUFrameBuffer *fb, GPUTexture *tex, char err
 	GLenum status;
 	GLenum attachment;
 
-	if(tex->depth)
+	if (tex->depth)
 		attachment = GL_DEPTH_ATTACHMENT_EXT;
 	else
 		attachment = GL_COLOR_ATTACHMENT0_EXT;
@@ -725,7 +760,7 @@ int GPU_framebuffer_texture_attach(GPUFrameBuffer *fb, GPUTexture *tex, char err
 	glFramebufferTexture2DEXT(GL_FRAMEBUFFER_EXT, attachment, 
 		tex->target, tex->bindcode, 0);
 
-	if(tex->depth) {
+	if (tex->depth) {
 		glDrawBuffer(GL_NONE);
 		glReadBuffer(GL_NONE);
 	}
@@ -742,7 +777,7 @@ int GPU_framebuffer_texture_attach(GPUFrameBuffer *fb, GPUTexture *tex, char err
 		return 0;
 	}
 
-	if(tex->depth)
+	if (tex->depth)
 		fb->depthtex = tex;
 	else
 		fb->colortex = tex;
@@ -756,15 +791,15 @@ void GPU_framebuffer_texture_detach(GPUFrameBuffer *fb, GPUTexture *tex)
 {
 	GLenum attachment;
 
-	if(!tex->fb)
+	if (!tex->fb)
 		return;
 
-	if(GG.currentfb != tex->fb->object) {
+	if (GG.currentfb != tex->fb->object) {
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, tex->fb->object);
 		GG.currentfb = tex->fb->object;
 	}
 
-	if(tex->depth) {
+	if (tex->depth) {
 		fb->depthtex = NULL;
 		attachment = GL_DEPTH_ATTACHMENT_EXT;
 	}
@@ -817,12 +852,12 @@ void GPU_framebuffer_texture_unbind(GPUFrameBuffer *UNUSED(fb), GPUTexture *UNUS
 
 void GPU_framebuffer_free(GPUFrameBuffer *fb)
 {
-	if(fb->depthtex)
+	if (fb->depthtex)
 		GPU_framebuffer_texture_detach(fb, fb->depthtex);
-	if(fb->colortex)
+	if (fb->colortex)
 		GPU_framebuffer_texture_detach(fb, fb->colortex);
 
-	if(fb->object) {
+	if (fb->object) {
 		glDeleteFramebuffersEXT(1, &fb->object);
 
 		if (GG.currentfb == fb->object) {
@@ -840,6 +875,67 @@ void GPU_framebuffer_restore(void)
 		glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, 0);
 		GG.currentfb = 0;
 	}
+}
+
+void GPU_framebuffer_blur(GPUFrameBuffer *fb, GPUTexture *tex, GPUFrameBuffer *blurfb, GPUTexture *blurtex)
+{
+	float scaleh[2] = {1.0f/GPU_texture_opengl_width(blurtex), 0.0f};
+	float scalev[2] = {0.0f, 1.0f/GPU_texture_opengl_height(tex)};
+
+	GPUShader *blur_shader = GPU_shader_get_builtin_shader(GPU_SHADER_SEP_GAUSSIAN_BLUR);
+	int scale_uniform, texture_source_uniform;
+
+	if (!blur_shader)
+		return;
+
+	scale_uniform = GPU_shader_get_uniform(blur_shader, "ScaleU");
+	texture_source_uniform = GPU_shader_get_uniform(blur_shader, "textureSource");
+		
+	/* Blurring horizontally */
+
+	/* We do the bind ourselves rather than using GPU_framebuffer_texture_bind() to avoid
+	 * pushing unnecessary matrices onto the OpenGL stack. */
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, blurfb->object);
+
+	GPU_shader_bind(blur_shader);
+	GPU_shader_uniform_vector(blur_shader, scale_uniform, 2, 1, (float*)scaleh);
+	GPU_shader_uniform_texture(blur_shader, texture_source_uniform, tex);
+	glViewport(0, 0, GPU_texture_opengl_width(blurtex), GPU_texture_opengl_height(blurtex));
+
+	/* Peparing to draw quad */
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	glMatrixMode(GL_TEXTURE);
+	glLoadIdentity();
+	glMatrixMode(GL_PROJECTION);
+	glLoadIdentity();
+
+	GPU_texture_bind(tex, 0);
+
+	/* Drawing quad */
+	glBegin(GL_QUADS);
+	glTexCoord2d(0, 0); glVertex2f(1, 1);
+	glTexCoord2d(1, 0); glVertex2f(-1, 1);
+	glTexCoord2d(1, 1); glVertex2f(-1, -1);
+	glTexCoord2d(0, 1); glVertex2f(1, -1);
+	glEnd();
+		
+	/* Blurring vertically */
+
+	glBindFramebufferEXT(GL_FRAMEBUFFER_EXT, fb->object);
+	glViewport(0, 0, GPU_texture_opengl_width(tex), GPU_texture_opengl_height(tex));
+	GPU_shader_uniform_vector(blur_shader, scale_uniform, 2, 1, (float*)scalev);
+	GPU_shader_uniform_texture(blur_shader, texture_source_uniform, blurtex);
+	GPU_texture_bind(blurtex, 0);
+
+	glBegin(GL_QUADS);
+	glTexCoord2d(0, 0); glVertex2f(1, 1);
+	glTexCoord2d(1, 0); glVertex2f(-1, 1);
+	glTexCoord2d(1, 1); glVertex2f(-1, -1);
+	glTexCoord2d(0, 1); glVertex2f(1, -1);
+	glEnd();
+
+	GPU_shader_unbind(blur_shader);
 }
 
 /* GPUOffScreen */
@@ -863,29 +959,29 @@ GPUOffScreen *GPU_offscreen_create(int width, int height, char err_out[256])
 	ofs->h= height;
 
 	ofs->fb = GPU_framebuffer_create();
-	if(!ofs->fb) {
+	if (!ofs->fb) {
 		GPU_offscreen_free(ofs);
 		return NULL;
 	}
 
 	ofs->depth = GPU_texture_create_depth(width, height, err_out);
-	if(!ofs->depth) {
+	if (!ofs->depth) {
 		GPU_offscreen_free(ofs);
 		return NULL;
 	}
 
-	if(!GPU_framebuffer_texture_attach(ofs->fb, ofs->depth, err_out)) {
+	if (!GPU_framebuffer_texture_attach(ofs->fb, ofs->depth, err_out)) {
 		GPU_offscreen_free(ofs);
 		return NULL;
 	}
 
 	ofs->color = GPU_texture_create_2D(width, height, NULL, err_out);
-	if(!ofs->color) {
+	if (!ofs->color) {
 		GPU_offscreen_free(ofs);
 		return NULL;
 	}
 
-	if(!GPU_framebuffer_texture_attach(ofs->fb, ofs->color, err_out)) {
+	if (!GPU_framebuffer_texture_attach(ofs->fb, ofs->color, err_out)) {
 		GPU_offscreen_free(ofs);
 		return NULL;
 	}
@@ -897,11 +993,11 @@ GPUOffScreen *GPU_offscreen_create(int width, int height, char err_out[256])
 
 void GPU_offscreen_free(GPUOffScreen *ofs)
 {
-	if(ofs->fb)
+	if (ofs->fb)
 		GPU_framebuffer_free(ofs->fb);
-	if(ofs->color)
+	if (ofs->color)
 		GPU_texture_free(ofs->color);
-	if(ofs->depth)
+	if (ofs->depth)
 		GPU_texture_free(ofs->depth);
 	
 	MEM_freeN(ofs);
@@ -942,7 +1038,7 @@ static void shader_print_errors(const char *task, char *log, const char *code)
 
 	fprintf(stderr, "GPUShader: %s error:\n", task);
 
-	if(G.f & G_DEBUG) {
+	if (G.debug & G_DEBUG) {
 		c = code;
 		while ((c < end) && (pos = strchr(c, '\n'))) {
 			fprintf(stderr, "%2d  ", line);
@@ -971,21 +1067,22 @@ GPUShader *GPU_shader_create(const char *vertexcode, const char *fragcode, /*GPU
 
 	shader = MEM_callocN(sizeof(GPUShader), "GPUShader");
 
-	if(vertexcode)
+	if (vertexcode)
 		shader->vertex = glCreateShaderObjectARB(GL_VERTEX_SHADER_ARB);
-	if(fragcode)
+	if (fragcode)
 		shader->fragment = glCreateShaderObjectARB(GL_FRAGMENT_SHADER_ARB);
 	shader->object = glCreateProgramObjectARB();
 
 	if (!shader->object ||
-		(vertexcode && !shader->vertex) ||
-		(fragcode && !shader->fragment)) {
+	    (vertexcode && !shader->vertex) ||
+	    (fragcode && !shader->fragment))
+	{
 		fprintf(stderr, "GPUShader, object creation failed.\n");
 		GPU_shader_free(shader);
 		return NULL;
 	}
 
-	if(vertexcode) {
+	if (vertexcode) {
 		glAttachObjectARB(shader->object, shader->vertex);
 		glShaderSourceARB(shader->vertex, 1, (const char**)&vertexcode, NULL);
 
@@ -1001,10 +1098,10 @@ GPUShader *GPU_shader_create(const char *vertexcode, const char *fragcode, /*GPU
 		}
 	}
 
-	if(fragcode) {
+	if (fragcode) {
 		count = 0;
-		if(libcode) fragsource[count++] = libcode;
-		if(fragcode) fragsource[count++] = fragcode;
+		if (libcode) fragsource[count++] = libcode;
+		if (fragcode) fragsource[count++] = fragcode;
 
 		glAttachObjectARB(shader->object, shader->fragment);
 		glShaderSourceARB(shader->fragment, count, fragsource, NULL);
@@ -1022,7 +1119,7 @@ GPUShader *GPU_shader_create(const char *vertexcode, const char *fragcode, /*GPU
 	}
 
 #if 0
-	if(lib && lib->lib)
+	if (lib && lib->lib)
 		glAttachObjectARB(shader->object, lib->lib);
 #endif
 
@@ -1113,7 +1210,7 @@ int GPU_shader_get_uniform(GPUShader *shader, const char *name)
 
 void GPU_shader_uniform_vector(GPUShader *UNUSED(shader), int location, int length, int arraysize, float *value)
 {
-	if(location == -1)
+	if (location == -1)
 		return;
 
 	GPU_print_error("Pre Uniform Vector");
@@ -1137,10 +1234,10 @@ void GPU_shader_uniform_texture(GPUShader *UNUSED(shader), int location, GPUText
 		return;
 	}
 		
-	if(tex->number == -1)
+	if (tex->number == -1)
 		return;
 
-	if(location == -1)
+	if (location == -1)
 		return;
 
 	GPU_print_error("Pre Uniform Texture");
@@ -1167,6 +1264,42 @@ int GPU_shader_get_attribute(GPUShader *shader, const char *name)
 	GPU_print_error("Post Get Attribute");
 
 	return index;
+}
+
+GPUShader *GPU_shader_get_builtin_shader(GPUBuiltinShader shader)
+{
+	GPUShader *retval = NULL;
+
+	switch (shader) {
+		case GPU_SHADER_VSM_STORE:
+			if (!GG.shaders.vsm_store)
+				GG.shaders.vsm_store = GPU_shader_create(datatoc_gpu_shader_vsm_store_vert_glsl, datatoc_gpu_shader_vsm_store_frag_glsl, NULL);
+			retval = GG.shaders.vsm_store;
+			break;
+		case GPU_SHADER_SEP_GAUSSIAN_BLUR:
+			if (!GG.shaders.sep_gaussian_blur)
+				GG.shaders.sep_gaussian_blur = GPU_shader_create(datatoc_gpu_shader_sep_gaussian_blur_vert_glsl, datatoc_gpu_shader_sep_gaussian_blur_frag_glsl, NULL);
+			retval = GG.shaders.sep_gaussian_blur;
+			break;
+	}
+
+	if (retval == NULL)
+		printf("Unable to create a GPUShader for builtin shader: %d\n", shader);
+
+	return retval;
+}
+
+void GPU_shader_free_builtin_shaders()
+{
+	if (GG.shaders.vsm_store) {
+		MEM_freeN(GG.shaders.vsm_store);
+		GG.shaders.vsm_store = NULL;
+	}
+
+	if (GG.shaders.sep_gaussian_blur) {
+		MEM_freeN(GG.shaders.sep_gaussian_blur);
+		GG.shaders.sep_gaussian_blur = NULL;
+	}
 }
 
 #if 0

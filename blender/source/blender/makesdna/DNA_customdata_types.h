@@ -63,12 +63,11 @@ typedef struct CustomDataExternal {
  * layers, each with a data type (e.g. MTFace, MDeformVert, etc.). */
 typedef struct CustomData {
 	CustomDataLayer *layers;      /* CustomDataLayers, ordered by type */
-	int typemap[34];              /* runtime only! - maps types to indices of first layer of that type,
+	int typemap[37];              /* runtime only! - maps types to indices of first layer of that type,
 	                               * MUST be >= CD_NUMTYPES, but we cant use a define here.
 	                               * Correct size is ensured in CustomData_update_typemap assert() */
-
 	int totlayer, maxlayer;       /* number of layers, size of layers array */
-	int totsize, pad2;             /* in editmode, total size of all data layers */
+	int totsize;                  /* in editmode, total size of all data layers */
 	void *pool;                   /* Bmesh: Memory pool for allocation of blocks */
 	CustomDataExternal *external; /* external file storing customdata layers */
 } CustomData;
@@ -94,7 +93,7 @@ typedef struct CustomData {
 #define CD_MLOOPCOL		17
 #define CD_TANGENT		18
 #define CD_MDISPS		19
-#define CD_WEIGHT_MCOL	20 /* for displaying weightpaint colors */
+#define CD_PREVIEW_MCOL	20 /* for displaying weightpaint colors */
 #define CD_ID_MCOL		21
 #define CD_TEXTURE_MCOL	22
 #define CD_CLOTH_ORCO	23
@@ -108,11 +107,14 @@ typedef struct CustomData {
 #define CD_BWEIGHT		29
 #define CD_CREASE		30
 #define CD_ORIGSPACE_MLOOP	31
-#define CD_WEIGHT_MLOOPCOL	32
+#define CD_PREVIEW_MLOOPCOL	32
 #define CD_BM_ELEM_PYPTR	33
 /* BMESH ONLY END */
 
-#define CD_NUMTYPES		34
+#define CD_PAINT_MASK	34
+#define CD_GRID_PAINT_MASK	35
+#define CD_MVERT_SKIN	36
+#define CD_NUMTYPES		37
 
 /* Bits for CustomDataMask */
 #define CD_MASK_MVERT		(1 << CD_MVERT)
@@ -135,7 +137,7 @@ typedef struct CustomData {
 #define CD_MASK_MLOOPCOL	(1 << CD_MLOOPCOL)
 #define CD_MASK_TANGENT		(1 << CD_TANGENT)
 #define CD_MASK_MDISPS		(1 << CD_MDISPS)
-#define CD_MASK_WEIGHT_MCOL	(1 << CD_WEIGHT_MCOL)
+#define CD_MASK_PREVIEW_MCOL	(1 << CD_PREVIEW_MCOL)
 #define CD_MASK_CLOTH_ORCO	(1 << CD_CLOTH_ORCO)
 #define CD_MASK_RECAST		(1 << CD_RECAST)
 
@@ -147,9 +149,13 @@ typedef struct CustomData {
 #define CD_MASK_BWEIGHT		(1 << CD_BWEIGHT)
 #define CD_MASK_CREASE		(1 << CD_CREASE)
 #define CD_MASK_ORIGSPACE_MLOOP	(1 << CD_ORIGSPACE_MLOOP)
-#define CD_MASK_WEIGHT_MLOOPCOL (1LL << CD_WEIGHT_MLOOPCOL)
+#define CD_MASK_PREVIEW_MLOOPCOL (1LL << CD_PREVIEW_MLOOPCOL)
 #define CD_MASK_BM_ELEM_PYPTR (1LL << CD_BM_ELEM_PYPTR)
 /* BMESH ONLY END */
+
+#define CD_MASK_PAINT_MASK		(1LL << CD_PAINT_MASK)
+#define CD_MASK_GRID_PAINT_MASK	(1LL << CD_GRID_PAINT_MASK)
+#define CD_MASK_MVERT_SKIN		(1LL << CD_MVERT_SKIN)
 
 /* CustomData.flag */
 

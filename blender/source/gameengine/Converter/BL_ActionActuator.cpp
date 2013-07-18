@@ -145,7 +145,6 @@ void BL_ActionActuator::SetLocalTime(float curtime)
 		case ACT_ACTION_PLAY:
 			// Clamp
 			m_localtime = m_endframe;
-			((KX_GameObject*)GetParent())->StopAction(m_layer);
 			break;
 		case ACT_ACTION_LOOP_END:
 			// Put the time back to the beginning
@@ -339,7 +338,7 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 		}
 	}
 
-	return true;
+	return m_flag & ACT_FLAG_ACTIVE;
 }
 
 #ifdef WITH_PYTHON
@@ -350,6 +349,9 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 
 PyObject* BL_ActionActuator::PyGetChannel(PyObject* value)
 {
+	PyErr_SetString(PyExc_NotImplementedError, "BL_ActionActuator.getChannel() no longer works, please use BL_ArmatureObject.channels instead");
+	return NULL;
+#if 0 // XXX To be removed in a later version (first removed in 2.64)
 	const char *string= _PyUnicode_AsString(value);
 
 	if (GetParent()->GetGameObjectType() != SCA_IObject::OBJ_ARMATURE)
@@ -365,15 +367,15 @@ PyObject* BL_ActionActuator::PyGetChannel(PyObject* value)
 	
 	bPoseChannel *pchan;
 	
-	if(m_userpose==NULL && m_pose==NULL) {
+	if (m_userpose==NULL && m_pose==NULL) {
 		BL_ArmatureObject *obj = (BL_ArmatureObject*)GetParent();
 		obj->GetPose(&m_pose); /* Get the underlying pose from the armature */
 	}
 	
-	// get_pose_channel accounts for NULL pose, run on both in case one exists but
+	// BKE_pose_channel_find_name accounts for NULL pose, run on both in case one exists but
 	// the channel doesnt
-	if(		!(pchan=get_pose_channel(m_userpose, string)) &&
-			!(pchan=get_pose_channel(m_pose, string))  )
+	if (		!(pchan=BKE_pose_channel_find_name(m_userpose, string)) &&
+			!(pchan=BKE_pose_channel_find_name(m_pose, string))  )
 	{
 		PyErr_SetString(PyExc_ValueError, "channel doesnt exist");
 		return NULL;
@@ -407,6 +409,7 @@ PyObject* BL_ActionActuator::PyGetChannel(PyObject* value)
 		pchan->size[0], pchan->size[1], pchan->size[2],
 		pchan->quat[0], pchan->quat[1], pchan->quat[2], pchan->quat[3] );
 #endif
+#endif
 }
 
 /*     setChannel                                                         */
@@ -416,6 +419,10 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 "\t - matrix    : A 4x4 matrix specifying the overriding transformation\n"
 "\t               as an offset from the bone's rest position.\n")
 {
+	PyErr_SetString(PyExc_NotImplementedError, "BL_ActionActuator.setChannel() no longer works, please use BL_ArmatureObject.channels instead");
+	return NULL;
+
+#if 0 // XXX To be removed in a later version (first removed in 2.64)
 	BL_ArmatureObject *obj = (BL_ArmatureObject*)GetParent();
 	char *string;
 	PyObject *pymat= NULL;
@@ -428,11 +435,11 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 		return NULL;
 	}
 	
-	if(PyTuple_Size(args)==2) {
+	if (PyTuple_Size(args)==2) {
 		if (!PyArg_ParseTuple(args,"sO:setChannel", &string, &pymat)) // matrix
 			return NULL;
 	}
-	else if(PyTuple_Size(args)==4) {
+	else if (PyTuple_Size(args)==4) {
 		if (!PyArg_ParseTuple(args,"sOOO:setChannel", &string, &pyloc, &pysize, &pyquat)) // loc/size/quat
 			return NULL;
 	}
@@ -441,11 +448,11 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 		return NULL;
 	}
 	
-	if(pymat) {
+	if (pymat) {
 		float matrix[4][4];
 		MT_Matrix4x4 mat;
 		
-		if(!PyMatTo(pymat, mat))
+		if (!PyMatTo(pymat, mat))
 			return NULL;
 		
 		mat.getValue((float*)matrix);
@@ -453,14 +460,14 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 		BL_ArmatureObject *obj = (BL_ArmatureObject*)GetParent();
 		
 		if (!m_userpose) {
-			if(!m_pose)
+			if (!m_pose)
 				obj->GetPose(&m_pose); /* Get the underlying pose from the armature */
 			game_copy_pose(&m_userpose, m_pose, 0);
 		}
-		// pchan= verify_pose_channel(m_userpose, string); // adds the channel if its not there.
-		pchan= get_pose_channel(m_userpose, string); // adds the channel if its not there.
+		// pchan= BKE_pose_channel_verify(m_userpose, string); // adds the channel if its not there.
+		pchan= BKE_pose_channel_find_name(m_userpose, string); // adds the channel if its not there.
 		
-		if(pchan) {
+		if (pchan) {
 			copy_v3_v3(pchan->loc, matrix[3]);
 			mat4_to_size(pchan->size, matrix);
 			mat4_to_quat(pchan->quat, matrix);
@@ -476,27 +483,28 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 		
 		// same as above
 		if (!m_userpose) {
-			if(!m_pose)
+			if (!m_pose)
 				obj->GetPose(&m_pose); /* Get the underlying pose from the armature */
 			game_copy_pose(&m_userpose, m_pose, 0);
 		}
-		// pchan= verify_pose_channel(m_userpose, string);
-		pchan= get_pose_channel(m_userpose, string); // adds the channel if its not there.
+		// pchan= BKE_pose_channel_verify(m_userpose, string);
+		pchan= BKE_pose_channel_find_name(m_userpose, string); // adds the channel if its not there.
 		
 		// for some reason loc.setValue(pchan->loc) fails
-		if(pchan) {
+		if (pchan) {
 			pchan->loc[0]= loc[0]; pchan->loc[1]= loc[1]; pchan->loc[2]= loc[2];
 			pchan->size[0]= size[0]; pchan->size[1]= size[1]; pchan->size[2]= size[2];
 			pchan->quat[0]= quat[3]; pchan->quat[1]= quat[0]; pchan->quat[2]= quat[1]; pchan->quat[3]= quat[2]; /* notice xyzw -> wxyz is intentional */
 		}
 	}
 	
-	if(pchan==NULL) {
+	if (pchan==NULL) {
 		PyErr_SetString(PyExc_ValueError, "Channel could not be found, use the 'channelNames' attribute to get a list of valid channels");
 		return NULL;
 	}
 	
 	Py_RETURN_NONE;
+#endif
 }
 
 /* ------------------------------------------------------------------------- */
@@ -583,6 +591,10 @@ int BL_ActionActuator::pyattr_set_action(void *self_v, const KX_PYATTRIBUTE_DEF 
 
 PyObject* BL_ActionActuator::pyattr_get_channel_names(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
+	PyErr_SetString(PyExc_NotImplementedError, "BL_ActionActuator.channelNames no longer works, please use BL_ArmatureObject.channels instead");
+	return NULL;
+
+#if 0 // XXX To be removed in a later version (first removed in 2.64)
 	BL_ActionActuator* self= static_cast<BL_ActionActuator*>(self_v);
 	PyObject *ret= PyList_New(0);
 	PyObject *item;
@@ -595,9 +607,9 @@ PyObject* BL_ActionActuator::pyattr_get_channel_names(void *self_v, const KX_PYA
 
 	bPose *pose= ((BL_ArmatureObject*)self->GetParent())->GetOrigPose();
 	
-	if(pose) {
+	if (pose) {
 		bPoseChannel *pchan;
-		for(pchan= (bPoseChannel *)pose->chanbase.first; pchan; pchan= (bPoseChannel *)pchan->next) {
+		for (pchan= (bPoseChannel *)pose->chanbase.first; pchan; pchan= (bPoseChannel *)pchan->next) {
 			item= PyUnicode_FromString(pchan->name);
 			PyList_Append(ret, item);
 			Py_DECREF(item);
@@ -605,6 +617,7 @@ PyObject* BL_ActionActuator::pyattr_get_channel_names(void *self_v, const KX_PYA
 	}
 	
 	return ret;
+#endif
 }
 
 PyObject* BL_ActionActuator::pyattr_get_use_continue(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)

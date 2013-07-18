@@ -40,14 +40,14 @@ extern ListBase builtin_keyingsets;
 
 /* Main Keyframe Management operators: 
  *	These handle keyframes management from various spaces. They only make use of
- * 	Keying Sets.
+ *  Keying Sets.
  */
 void ANIM_OT_keyframe_insert(struct wmOperatorType *ot);
 void ANIM_OT_keyframe_delete(struct wmOperatorType *ot);
 
 /* Main Keyframe Management operators: 
  *	These handle keyframes management from various spaces. They will handle the menus 
- * 	required for each space.
+ *  required for each space.
  */
 void ANIM_OT_keyframe_insert_menu(struct wmOperatorType *ot);
 void ANIM_OT_keyframe_delete_v3d(struct wmOperatorType *ot);
@@ -55,6 +55,7 @@ void ANIM_OT_keyframe_delete_v3d(struct wmOperatorType *ot);
 /* Keyframe managment operators for UI buttons (RMB menu). */
 void ANIM_OT_keyframe_insert_button(struct wmOperatorType *ot);
 void ANIM_OT_keyframe_delete_button(struct wmOperatorType *ot);
+void ANIM_OT_keyframe_clear_button(struct wmOperatorType *ot);
 
 /* .......... */
 

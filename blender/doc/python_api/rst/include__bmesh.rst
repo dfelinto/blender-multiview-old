@@ -30,10 +30,18 @@ For an overview of BMesh data types and how they reference each other see:
    *Campbell Barton, 13, March 2012*
 
 
-.. todo::
+.. warning::
+
+   TODO items are...
 
    * add access to BMesh **walkers**
-   * add a way to re-tessellate an editmode bmesh.
+   * add api for calling BMesh operators (unrelated to bpy.ops)
+   * add custom-data manipulation functions add/remove/rename.
+
+Example Script
+--------------
+
+.. literalinclude:: ../../../release/scripts/templates/bmesh_simple.py
 
 
 Stand-Alone Module
@@ -66,16 +74,76 @@ its good practice to call :class:`bmesh.types.BMesh.free` which will remove all 
 further access.
 
 
+EditMode Tessellation
+^^^^^^^^^^^^^^^^^^^^^
+
+When writing scripts that operate on editmode data you will normally want to re-calculate the tessellation after
+running the  script, this needs to be called explicitly.
+
+The BMesh its self does not store the triangulated faces, they are stored in the :class:`bpy.types.Mesh`,
+to refresh tessellation faces call :class:`bpy.types.Mesh.calc_tessface`.
+
+
+CustomData Access
+-----------------
+
+BMesh has a unified way to access mesh attributes such as UV's vertex colors, shape keys, edge crease etc.
+
+This works by having a **layers** property on bmesh data sequences to access the custom data layers which can then be
+used to access the actual data on each vert/edge/face/loop.
+
+Here are some examples ...
+
+.. code-block:: python
+
+   uv_lay = bm.loops.layers.uv.active
+
+   for face in bm.faces:
+       for loop in face.loops:
+           uv = loop[uv_lay].uv
+           print("Loop UV: %f, %f" % uv[:])
+           vert = loop.vert
+           print("Loop Vert: (%f,%f,%f)" % vert.co[:])
+
+
+.. code-block:: python
+
+   shape_lay = bm.verts.layers.shape["Key.001"]
+
+   for vert in bm.verts:
+       shape = vert[shape_lay]
+       print("Vert Shape: %f, %f, %f" % (shape.x, shape.y, shape.z))
+
+
+.. code-block:: python
+
+   # in this example the active vertex group index is used,
+   # this is stored in the object, not the BMesh
+   group_index = obj.vertex_groups.active_index
+
+   # only ever one deform weight layer
+   dvert_lay = bm.verts.layers.deform.active
+
+   for vert in bm.verts:
+       dvert = vert[dvert_lay]
+
+       if group_index in dvert:
+           print("Weight %f" % dvert[group_index])
+       else:
+           print("Setting Weight")
+           dvert[group_index] = 0.5
+
+
 Keeping a Correct State
 -----------------------
 
 When modeling in blender there are certain assumptions made about the state of the mesh.
 
 * hidden geometry isn't selected.
-* when an edge is selected, its vertices's are selected too.
-* when a face is selected, its edges and vertices's are selected.
+* when an edge is selected, its vertices are selected too.
+* when a face is selected, its edges and vertices are selected.
 * duplicate edges / faces don't exist.
-* faces have at least 3 vertices's.
+* faces have at least 3 vertices.
 
 To give developers flexibility these conventions are not enforced,
 however tools must leave the mesh in a valid state else other tools may behave incorrectly.
@@ -90,12 +158,6 @@ Selection / Flushing
 As mentioned above, it is possible to create an invalid selection state
 (by selecting a state and then de-selecting one of its vertices's for example), mostly the best way to solve this is to
 flush the selection after performing a series of edits. this validates the selection state.
-
-
-Example Script
---------------
-
-.. literalinclude:: ../../../release/scripts/templates/bmesh_simple.py
 
 
 Module Functions

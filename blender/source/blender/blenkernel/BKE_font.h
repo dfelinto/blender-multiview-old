@@ -46,10 +46,10 @@ struct TmpFont;
 struct CharInfo;
 struct Main;
 
-struct chartrans {
+struct CharTrans {
 	float xof, yof;
 	float rot;
-	short linenr,charnr;
+	short linenr, charnr;
 	char dobreak;
 };
 
@@ -71,17 +71,21 @@ typedef struct EditFont {
 } EditFont;
 
 
-void BKE_font_register_builtin(void *mem, int size);
+int  BKE_vfont_is_builtin(struct VFont *vfont);
+void BKE_vfont_builtin_register(void *mem, int size);
 
-void free_vfont(struct VFont *sc); 
-void free_ttfont(void);
-struct VFont *get_builtin_font(void);
-struct VFont *load_vfont(struct Main *bmain, const char *name);
-struct TmpFont *vfont_find_tmpfont(struct VFont *vfont);
+void BKE_vfont_free_data(struct VFont *vfont);
+void BKE_vfont_free(struct VFont *sc); 
+void BKE_vfont_free_global_ttf(void);
+struct VFont *BKE_vfont_builtin_get(void);
+struct VFont *BKE_vfont_load(struct Main *bmain, const char *name);
 
-struct chartrans *BKE_text_to_curve(struct Main *bmain, struct Scene *scene, struct Object *ob, int mode);
+struct TmpFont *BKE_vfont_tmpfont_find(struct VFont *vfont);
+void            BKE_vfont_tmpfont_remove(struct VFont *vfont);
 
-int BKE_font_getselection(struct Object *ob, int *start, int *end);
+struct CharTrans *BKE_vfont_to_curve(struct Main *bmain, struct Scene *scene, struct Object *ob, int mode);
+
+int BKE_vfont_select_get(struct Object *ob, int *start, int *end);
 
 #ifdef __cplusplus
 }

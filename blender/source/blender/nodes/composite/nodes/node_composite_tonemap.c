@@ -33,11 +33,11 @@
 #include "node_composite_util.h"
 
 static bNodeSocketTemplate cmp_node_tonemap_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_tonemap_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
@@ -51,16 +51,16 @@ static float avgLogLum(CompBuf *src, float* auto_key, float* Lav, float* Cav)
 	const float sc = 1.f/(src->x*src->y);
 	*Lav = 0.f;
 	while (p--) {
-		float L = 0.212671f*bc[0][0] + 0.71516f*bc[0][1] + 0.072169f*bc[0][2];
+		float L = rgb_to_luma_y(bc[0]);
 		*Lav += L;
-		fRGB_add(Cav, bc[0]);
+		add_v3_v3(Cav, bc[0]);
 		lsum += (float)log((double)MAX2(L, 0.0) + 1e-5);
 		maxl = (L > maxl) ? L : maxl;
 		minl = (L < minl) ? L : minl;
 		bc++;
 	}
 	*Lav *= sc;
-	fRGB_mult(Cav, sc);
+	mul_v3_fl(Cav, sc);
 	maxl = log((double)maxl + 1e-5); minl = log((double)minl + 1e-5f); avl = lsum*sc;
 	*auto_key = (maxl > minl) ? ((maxl - avl) / (maxl - minl)) : 1.f;
 	return exp((double)avl);
@@ -86,7 +86,7 @@ static void tonemap(NodeTonemap* ntm, CompBuf* dst, CompBuf* src)
 			fRGB* sp = (fRGB*)&src->rect[y*src->x*src->type];
 			fRGB* dp = (fRGB*)&dst->rect[y*src->x*src->type];
 			for (x=0; x<src->x; ++x) {
-				const float L = 0.212671f*sp[x][0] + 0.71516f*sp[x][1] + 0.072169f*sp[x][2];
+				const float L = rgb_to_luma_y(sp[x]);
 				float I_l = sp[x][0] + ic*(L - sp[x][0]);
 				float I_g = Cav[0] + ic*(Lav - Cav[0]);
 				float I_a = I_l + ia*(I_g - I_l);
@@ -94,7 +94,7 @@ static void tonemap(NodeTonemap* ntm, CompBuf* dst, CompBuf* src)
 				I_l = sp[x][1] + ic*(L - sp[x][1]);
 				I_g = Cav[1] + ic*(Lav - Cav[1]);
 				I_a = I_l + ia*(I_g - I_l);
-				dp[x][1] /= (dp[x][1] + pow((double)f*I_a,(double)m));
+				dp[x][1] /= (dp[x][1] + pow((double)f*I_a, (double)m));
 				I_l = sp[x][2] + ic*(L - sp[x][2]);
 				I_g = Cav[2] + ic*(Lav - Cav[2]);
 				I_a = I_l + ia*(I_g - I_l);
@@ -109,8 +109,8 @@ static void tonemap(NodeTonemap* ntm, CompBuf* dst, CompBuf* src)
 		fRGB* sp = (fRGB*)&src->rect[y*src->x*src->type];
 		fRGB* dp = (fRGB*)&dst->rect[y*src->x*src->type];
 		for (x=0; x<src->x; x++) {
-			fRGB_copy(dp[x], sp[x]);
-			fRGB_mult(dp[x], al);
+			copy_v4_v4(dp[x], sp[x]);
+			mul_v3_fl(dp[x], al);
 			dr = dp[x][0] + ntm->offset;
 			dg = dp[x][1] + ntm->offset;
 			db = dp[x][2] + ntm->offset;
@@ -118,9 +118,9 @@ static void tonemap(NodeTonemap* ntm, CompBuf* dst, CompBuf* src)
 			dp[x][1] /= ((dg == 0.f) ? 1.f : dg);
 			dp[x][2] /= ((db == 0.f) ? 1.f : db);
 			if (igm != 0.f) {
-				dp[x][0] = pow((double)MAX2(dp[x][0], 0.), igm);
-				dp[x][1] = pow((double)MAX2(dp[x][1], 0.), igm);
-				dp[x][2] = pow((double)MAX2(dp[x][2], 0.), igm);
+				dp[x][0] = pow((double)MAX2(dp[x][0], 0.0), igm);
+				dp[x][1] = pow((double)MAX2(dp[x][1], 0.0), igm);
+				dp[x][2] = pow((double)MAX2(dp[x][2], 0.0), igm);
 			}
 		}
 	}
@@ -142,7 +142,7 @@ static void node_composit_exec_tonemap(void *UNUSED(data), bNode *node, bNodeSta
 
 	out[0]->data = new;
 	
-	if(img!=in[0]->data)
+	if (img!=in[0]->data)
 		free_compbuf(img);
 }
 

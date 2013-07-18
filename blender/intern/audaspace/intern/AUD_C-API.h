@@ -29,10 +29,6 @@
 #ifndef __AUD_C_API_H__
 #define __AUD_C_API_H__
 
-#ifdef WITH_PYTHON
-#include "Python.h"
-#endif
-
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -446,10 +442,10 @@ extern void AUD_closeReadDevice(AUD_Device* device);
  * The sound is therefore bandpassed, rectified and resampled.
  */
 extern float* AUD_readSoundBuffer(const char* filename, float low, float high,
-								  float attack, float release, float threshold,
-								  int accumulate, int additive, int square,
-								  float sthreshold, double samplerate,
-								  int* length);
+                                  float attack, float release, float threshold,
+                                  int accumulate, int additive, int square,
+                                  float sthreshold, double samplerate,
+                                  int* length);
 
 /**
  * Pauses a playing sound after a specific amount of time.
@@ -497,7 +493,7 @@ extern void AUD_setSequencerFPS(AUD_Sound* sequencer, float fps);
  * \return The entry added.
  */
 extern AUD_SEntry* AUD_addSequence(AUD_Sound* sequencer, AUD_Sound* sound,
-								   float begin, float end, float skip);
+                                   float begin, float end, float skip);
 
 /**
  * Removes an entry from the scene.
@@ -571,8 +567,8 @@ extern void AUD_setSequencerAnimData(AUD_Sound* sequencer, AUD_AnimateableProper
  * \param cone_volume_outer The volume outside the outer cone.
  */
 extern void AUD_updateSequenceData(AUD_SEntry* entry, float volume_max, float volume_min,
-								   float distance_max, float distance_reference, float attenuation,
-								   float cone_angle_outer, float cone_angle_inner, float cone_volume_outer);
+                                   float distance_max, float distance_reference, float attenuation,
+                                   float cone_angle_outer, float cone_angle_inner, float cone_volume_outer);
 
 /**
  * Updates all non-animated parameters of the entry.
@@ -582,7 +578,7 @@ extern void AUD_updateSequenceData(AUD_SEntry* entry, float volume_max, float vo
  * \param model The distance model for distance calculation.
  */
 extern void AUD_updateSequencerData(AUD_Sound* sequencer, float speed_of_sound,
-									float factor, AUD_DistanceModel model);
+                                    float factor, AUD_DistanceModel model);
 
 /**
  * Sets the audio output specification of the sound scene to the specs of the
@@ -710,6 +706,21 @@ extern void* AUD_getSet(void* set);
 extern const char* AUD_mixdown(AUD_Sound* sound, unsigned int start, unsigned int length, unsigned int buffersize, const char* filename, AUD_DeviceSpecs specs, AUD_Container format, AUD_Codec codec, unsigned int bitrate);
 
 /**
+ * Mixes a sound down into multiple files.
+ * \param sound The sound scene to mix down.
+ * \param start The start frame.
+ * \param length The count of frames to write.
+ * \param buffersize How many samples should be written at once.
+ * \param filename The file to write to, the channel number and an underscore are added at the beginning.
+ * \param specs The file's audio specification.
+ * \param format The file's container format.
+ * \param codec The codec used for encoding the audio data.
+ * \param bitrate The bitrate for encoding.
+ * \return An error message or NULL in case of success.
+ */
+extern const char* AUD_mixdown_per_channel(AUD_Sound* sound, unsigned int start, unsigned int length, unsigned int buffersize, const char* filename, AUD_DeviceSpecs specs, AUD_Container format, AUD_Codec codec, unsigned int bitrate);
+
+/**
  * Opens a read device and prepares it for mixdown of the sound scene.
  * \param specs Output audio specifications.
  * \param sequencer The sound scene to mix down.
@@ -725,14 +736,14 @@ extern AUD_Device* AUD_openMixdownDevice(AUD_DeviceSpecs specs, AUD_Sound* seque
  * \param sound The sound factory.
  * \return The python factory.
  */
-extern PyObject* AUD_getPythonFactory(AUD_Sound* sound);
+extern void* AUD_getPythonFactory(AUD_Sound* sound);
 
 /**
  * Retrieves the sound factory of a python factory.
  * \param sound The python factory.
  * \return The sound factory.
  */
-extern AUD_Sound* AUD_getPythonSound(PyObject* sound);
+extern AUD_Sound* AUD_getPythonSound(void* sound);
 #endif
 
 #ifdef __cplusplus

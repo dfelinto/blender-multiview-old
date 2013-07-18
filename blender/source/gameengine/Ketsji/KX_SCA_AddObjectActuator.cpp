@@ -1,40 +1,39 @@
+/*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
 /** \file gameengine/Ketsji/KX_SCA_AddObjectActuator.cpp
  *  \ingroup ketsji
+ *
+ * Add an object when this actuator is triggered
  */
-//
-// Add an object when this actuator is triggered
-//
-//
-// ***** BEGIN GPL LICENSE BLOCK *****
-//
-// This program is free software; you can redistribute it and/or
-// modify it under the terms of the GNU General Public License
-// as published by the Free Software Foundation; either version 2
-// of the License, or (at your option) any later version.
-//
-// This program is distributed in the hope that it will be useful,
-// but WITHOUT ANY WARRANTY; without even the implied warranty of
-// MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-// GNU General Public License for more details.
-//
-// You should have received a copy of the GNU General Public License
-// along with this program; if not, write to the Free Software Foundation,
-// Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-//
-// The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
-// All rights reserved.
-//
-// The Original Code is: all of this file.
-//
-// Contributor(s): none yet.
-//
-// ***** END GPL LICENSE BLOCK *****
-// Previously existed as:
 
-// \source\gameengine\GameLogic\SCA_AddObjectActuator.cpp
-
-// Please look here for revision history.
-
+/* Previously existed as:
+ * \source\gameengine\GameLogic\SCA_AddObjectActuator.cpp
+ * Please look here for revision history. */
 
 #include "KX_SCA_AddObjectActuator.h"
 #include "SCA_IScene.h"
@@ -258,7 +257,7 @@ void	KX_SCA_AddObjectActuator::InstantAddObject()
 		// Now it needs to be added to the current scene.
 		SCA_IObject* replica = m_scene->AddReplicaObject(m_OriginalObject,GetParent(),m_timeProp );
 		KX_GameObject * game_obj = static_cast<KX_GameObject *>(replica);
-		game_obj->setLinearVelocity(m_linear_velocity ,m_localLinvFlag);
+		game_obj->setLinearVelocity(m_linear_velocity, m_localLinvFlag);
 		game_obj->setAngularVelocity(m_angular_velocity,m_localAngvFlag);
 		game_obj->ResolveCombinedVelocities(m_linear_velocity, m_angular_velocity, m_localLinvFlag, m_localAngvFlag);
 

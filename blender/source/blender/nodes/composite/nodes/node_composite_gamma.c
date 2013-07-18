@@ -36,21 +36,21 @@
 /* **************** Gamma Tools  ******************** */
   
 static bNodeSocketTemplate cmp_node_gamma_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
-	{	SOCK_FLOAT, 1, "Gamma",			1.0f, 0.0f, 0.0f, 0.0f, 0.001f, 10.0f, PROP_UNSIGNED},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_FLOAT, 1, N_("Gamma"),			1.0f, 0.0f, 0.0f, 0.0f, 0.001f, 10.0f, PROP_UNSIGNED},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_gamma_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
 static void do_gamma(bNode *UNUSED(node), float *out, float *in, float *fac)
 {
 	int i=0;
-	for(i=0; i<3; i++) {
+	for (i=0; i<3; i++) {
 		/* check for negative to avoid nan's */
-		out[i] = (in[i] > 0.0f)? powf(in[i],fac[0]): in[i];
+		out[i] = (in[i] > 0.0f)? powf(in[i], fac[0]): in[i];
 	}
 	out[3] = in[3];
 }
@@ -58,10 +58,10 @@ static void node_composit_exec_gamma(void *UNUSED(data), bNode *node, bNodeStack
 {
 	/* stack order in: Fac, Image */
 	/* stack order out: Image */
-	if(out[0]->hasoutput==0) return;
+	if (out[0]->hasoutput==0) return;
 	
 	/* input no image? then only color operation */
-	if(in[0]->data==NULL) {
+	if (in[0]->data==NULL) {
 		do_gamma(node, out[0]->vec, in[0]->vec, in[1]->vec);
 	}
 	else {

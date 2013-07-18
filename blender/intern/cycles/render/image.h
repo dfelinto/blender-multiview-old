@@ -31,6 +31,12 @@ CCL_NAMESPACE_BEGIN
 #define TEX_IMAGE_MAX			(TEX_NUM_IMAGES + TEX_NUM_FLOAT_IMAGES)
 #define TEX_IMAGE_FLOAT_START	TEX_NUM_IMAGES
 
+/* color to use when textures are not found */
+#define TEX_IMAGE_MISSING_R 1
+#define TEX_IMAGE_MISSING_G 0
+#define TEX_IMAGE_MISSING_B 1
+#define TEX_IMAGE_MISSING_A 1
+
 class Device;
 class DeviceScene;
 class Progress;
@@ -47,6 +53,7 @@ public:
 	void device_free(Device *device, DeviceScene *dscene);
 
 	void set_osl_texture_system(void *texture_system);
+	void set_pack_images(bool pack_images_);
 
 	bool need_update;
 
@@ -61,12 +68,15 @@ private:
 	vector<Image*> images;
 	vector<Image*> float_images;
 	void *osl_texture_system;
+	bool pack_images;
 
 	bool file_load_image(Image *img, device_vector<uchar4>& tex_img);
 	bool file_load_float_image(Image *img, device_vector<float4>& tex_img);
 
-	void device_load_image(Device *device, DeviceScene *dscene, int slot);
+	void device_load_image(Device *device, DeviceScene *dscene, int slot, Progress *progess);
 	void device_free_image(Device *device, DeviceScene *dscene, int slot);
+
+	void device_pack_images(Device *device, DeviceScene *dscene, Progress& progess);
 };
 
 CCL_NAMESPACE_END

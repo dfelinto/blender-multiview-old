@@ -55,6 +55,7 @@
 
 #include "RE_shader_ext.h"
 
+#include "node_common.h"
 #include "node_exec.h"
 #include "node_util.h"
 #include "node_shader_util.h"
@@ -65,45 +66,45 @@ static void foreach_nodetree(Main *main, void *calldata, bNodeTreeCallback func)
 	Lamp *la;
 	World *wo;
 
-	for(ma= main->mat.first; ma; ma= ma->id.next)
-		if(ma->nodetree)
+	for (ma= main->mat.first; ma; ma= ma->id.next)
+		if (ma->nodetree)
 			func(calldata, &ma->id, ma->nodetree);
 
-	for(la= main->lamp.first; la; la= la->id.next)
-		if(la->nodetree)
+	for (la= main->lamp.first; la; la= la->id.next)
+		if (la->nodetree)
 			func(calldata, &la->id, la->nodetree);
 
-	for(wo= main->world.first; wo; wo= wo->id.next)
-		if(wo->nodetree)
+	for (wo= main->world.first; wo; wo= wo->id.next)
+		if (wo->nodetree)
 			func(calldata, &wo->id, wo->nodetree);
 }
 
 static void foreach_nodeclass(Scene *scene, void *calldata, bNodeClassCallback func)
 {
-	func(calldata, NODE_CLASS_INPUT, IFACE_("Input"));
-	func(calldata, NODE_CLASS_OUTPUT, IFACE_("Output"));
+	func(calldata, NODE_CLASS_INPUT, N_("Input"));
+	func(calldata, NODE_CLASS_OUTPUT, N_("Output"));
 
-	if(scene_use_new_shading_nodes(scene)) {
-		func(calldata, NODE_CLASS_SHADER, IFACE_("Shader"));
-		func(calldata, NODE_CLASS_TEXTURE, IFACE_("Texture"));
+	if (BKE_scene_use_new_shading_nodes(scene)) {
+		func(calldata, NODE_CLASS_SHADER, N_("Shader"));
+		func(calldata, NODE_CLASS_TEXTURE, N_("Texture"));
 	}
 
-	func(calldata, NODE_CLASS_OP_COLOR, IFACE_("Color"));
-	func(calldata, NODE_CLASS_OP_VECTOR, IFACE_("Vector"));
-	func(calldata, NODE_CLASS_CONVERTOR, IFACE_("Convertor"));
-	func(calldata, NODE_CLASS_GROUP, IFACE_("Group"));
-	func(calldata, NODE_CLASS_LAYOUT, IFACE_("Layout"));
+	func(calldata, NODE_CLASS_OP_COLOR, N_("Color"));
+	func(calldata, NODE_CLASS_OP_VECTOR, N_("Vector"));
+	func(calldata, NODE_CLASS_CONVERTOR, N_("Convertor"));
+	func(calldata, NODE_CLASS_GROUP, N_("Group"));
+	func(calldata, NODE_CLASS_LAYOUT, N_("Layout"));
 }
 
 static void localize(bNodeTree *localtree, bNodeTree *UNUSED(ntree))
 {
 	bNode *node, *node_next;
 	
-	/* replace muted nodes by internal links */
+	/* replace muted nodes and reroute nodes by internal links */
 	for (node= localtree->nodes.first; node; node= node_next) {
 		node_next = node->next;
 		
-		if (node->flag & NODE_MUTED) {
+		if (node->flag & NODE_MUTED || node->type == NODE_REROUTE) {
 			nodeInternalRelink(localtree, node);
 			nodeFreeNode(localtree, node);
 		}
@@ -115,12 +116,12 @@ static void local_sync(bNodeTree *localtree, bNodeTree *ntree)
 	bNode *lnode;
 	
 	/* copy over contents of previews */
-	for(lnode= localtree->nodes.first; lnode; lnode= lnode->next) {
-		if(ntreeNodeExists(ntree, lnode->new_node)) {
+	for (lnode= localtree->nodes.first; lnode; lnode= lnode->next) {
+		if (ntreeNodeExists(ntree, lnode->new_node)) {
 			bNode *node= lnode->new_node;
 			
-			if(node->preview && node->preview->rect) {
-				if(lnode->preview && lnode->preview->rect) {
+			if (node->preview && node->preview->rect) {
+				if (lnode->preview && lnode->preview->rect) {
 					int xsize= node->preview->xsize;
 					int ysize= node->preview->ysize;
 					memcpy(node->preview->rect, lnode->preview->rect, 4*xsize + xsize*ysize*sizeof(char)*4);
@@ -133,6 +134,8 @@ static void local_sync(bNodeTree *localtree, bNodeTree *ntree)
 static void update(bNodeTree *ntree)
 {
 	ntreeSetOutput(ntree);
+	
+	ntree_update_reroute_nodes(ntree);
 }
 
 bNodeTreeType ntreeType_Shader = {
@@ -202,7 +205,7 @@ bNodeTreeExec *ntreeShaderBeginExecTree(bNodeTree *ntree, int use_tree_data)
 	/* allocate the thread stack listbase array */
 	exec->threadstack= MEM_callocN(BLENDER_MAX_THREADS*sizeof(ListBase), "thread stack array");
 	
-	for(node= exec->nodetree->nodes.first; node; node= node->next)
+	for (node= exec->nodetree->nodes.first; node; node= node->next)
 		node->need_exec= 1;
 	
 	if (use_tree_data) {
@@ -220,14 +223,14 @@ bNodeTreeExec *ntreeShaderBeginExecTree(bNodeTree *ntree, int use_tree_data)
  */
 void ntreeShaderEndExecTree(bNodeTreeExec *exec, int use_tree_data)
 {
-	if(exec) {
+	if (exec) {
 		bNodeTree *ntree= exec->nodetree;
 		bNodeThreadStack *nts;
 		int a;
 		
-		if(exec->threadstack) {
-			for(a=0; a<BLENDER_MAX_THREADS; a++) {
-				for(nts=exec->threadstack[a].first; nts; nts=nts->next)
+		if (exec->threadstack) {
+			for (a=0; a<BLENDER_MAX_THREADS; a++) {
+				for (nts=exec->threadstack[a].first; nts; nts=nts->next)
 					if (nts->stack) MEM_freeN(nts->stack);
 				BLI_freelistN(&exec->threadstack[a]);
 			}
@@ -266,7 +269,7 @@ void ntreeShaderExecTree(bNodeTree *ntree, ShadeInput *shi, ShadeResult *shr)
 	/* ensure execdata is only initialized once */
 	if (!exec) {
 		BLI_lock_thread(LOCK_NODES);
-		if(!ntree->execdata)
+		if (!ntree->execdata)
 			ntree->execdata = ntreeShaderBeginExecTree(ntree, 1);
 		BLI_unlock_thread(LOCK_NODES);
 
@@ -280,7 +283,7 @@ void ntreeShaderExecTree(bNodeTree *ntree, ShadeInput *shi, ShadeResult *shr)
 	// \note: set material back to preserved material
 	shi->mat = mat;
 	/* better not allow negative for now */
-	if(shr->combined[0]<0.0f) shr->combined[0]= 0.0f;
-	if(shr->combined[1]<0.0f) shr->combined[1]= 0.0f;
-	if(shr->combined[2]<0.0f) shr->combined[2]= 0.0f;
+	if (shr->combined[0]<0.0f) shr->combined[0]= 0.0f;
+	if (shr->combined[1]<0.0f) shr->combined[1]= 0.0f;
+	if (shr->combined[2]<0.0f) shr->combined[2]= 0.0f;
 }

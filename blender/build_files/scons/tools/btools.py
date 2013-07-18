@@ -107,6 +107,8 @@ def validate_arguments(args, bc):
             'WITH_BF_FFMPEG', 'BF_FFMPEG_LIB','BF_FFMPEG_EXTRA', 'BF_FFMPEG',  'BF_FFMPEG_INC', 'BF_FFMPEG_DLL',
             'WITH_BF_STATICFFMPEG', 'BF_FFMPEG_LIB_STATIC',
             'WITH_BF_OGG', 'BF_OGG', 'BF_OGG_LIB',
+            'WITH_BF_FRAMESERVER',
+            'WITH_BF_COMPOSITOR',
             'WITH_BF_JPEG', 'BF_JPEG', 'BF_JPEG_INC', 'BF_JPEG_LIB', 'BF_JPEG_LIBPATH',
             'WITH_BF_OPENJPEG', 'BF_OPENJPEG', 'BF_OPENJPEG_INC', 'BF_OPENJPEG_LIB', 'BF_OPENJPEG_LIBPATH',
             'WITH_BF_REDCODE', 'BF_REDCODE', 'BF_REDCODE_INC', 'BF_REDCODE_LIB', 'BF_REDCODE_LIBPATH',
@@ -118,7 +120,7 @@ def validate_arguments(args, bc):
             'WITH_BF_ICONV', 'BF_ICONV', 'BF_ICONV_INC', 'BF_ICONV_LIB', 'BF_ICONV_LIBPATH',
             'WITH_BF_GAMEENGINE',
             'WITH_BF_BULLET', 'BF_BULLET', 'BF_BULLET_INC', 'BF_BULLET_LIB',
-            'WITH_BF_ELTOPO',
+            'WITH_BF_ELTOPO', 'BF_LAPACK', 'BF_LAPACK_LIB', 'BF_LAPACK_LIBPATH', 'BF_LAPACK_LIB_STATIC',
             'BF_WINTAB', 'BF_WINTAB_INC',
             'BF_FREETYPE', 'BF_FREETYPE_INC', 'BF_FREETYPE_LIB', 'BF_FREETYPE_LIBPATH', 'BF_FREETYPE_LIB_STATIC', 'WITH_BF_FREETYPE_STATIC',
             'WITH_BF_QUICKTIME', 'BF_QUICKTIME', 'BF_QUICKTIME_INC', 'BF_QUICKTIME_LIB', 'BF_QUICKTIME_LIBPATH',
@@ -133,7 +135,7 @@ def validate_arguments(args, bc):
             'BF_CXX', 'WITH_BF_STATICCXX', 'BF_CXX_LIB_STATIC',
             'BF_TWEAK_MODE', 'BF_SPLIT_SRC',
             'WITHOUT_BF_INSTALL',
-            'WITHOUT_BF_PYTHON_INSTALL',
+            'WITHOUT_BF_PYTHON_INSTALL', 'WITHOUT_BF_PYTHON_UNPACK', 'WITH_BF_PYTHON_INSTALL_NUMPY'
             'WITHOUT_BF_OVERWRITE_INSTALL',
             'WITH_BF_OPENMP', 'BF_OPENMP', 'BF_OPENMP_LIBPATH',
             'WITH_GHOST_COCOA',
@@ -147,7 +149,6 @@ def validate_arguments(args, bc):
             'WITH_BF_DOCS',
             'BF_NUMJOBS',
             'BF_MSVS',
-            'BF_VERSION',
             'WITH_BF_RAYOPTIMIZATION',
             'BF_RAYOPTIMIZATION_SSE_FLAGS',
             'WITH_BF_FLUID',
@@ -155,6 +156,7 @@ def validate_arguments(args, bc):
             'WITH_BF_BOOLEAN',
             'WITH_BF_REMESH',
             'WITH_BF_OCEANSIM',
+            'WITH_BF_SMOKE',
             'WITH_BF_CXX_GUARDEDALLOC',
             'WITH_BF_JEMALLOC', 'WITH_BF_STATICJEMALLOC', 'BF_JEMALLOC', 'BF_JEMALLOC_INC', 'BF_JEMALLOC_LIBPATH', 'BF_JEMALLOC_LIB', 'BF_JEMALLOC_LIB_STATIC',
             'BUILDBOT_BRANCH',
@@ -162,7 +164,7 @@ def validate_arguments(args, bc):
             'WITH_BF_CYCLES', 'WITH_BF_CYCLES_CUDA_BINARIES', 'BF_CYCLES_CUDA_NVCC', 'BF_CYCLES_CUDA_NVCC', 'WITH_BF_CYCLES_CUDA_THREADED_COMPILE',
             'WITH_BF_OIIO', 'WITH_BF_STATICOIIO', 'BF_OIIO', 'BF_OIIO_INC', 'BF_OIIO_LIB', 'BF_OIIO_LIB_STATIC', 'BF_OIIO_LIBPATH',
             'WITH_BF_BOOST', 'WITH_BF_STATICBOOST', 'BF_BOOST', 'BF_BOOST_INC', 'BF_BOOST_LIB', 'BF_BOOST_LIB_STATIC', 'BF_BOOST_LIBPATH',
-            'WITH_BF_LIBMV', 'WITH_BF_CARVE'
+            'WITH_BF_LIBMV'
             ]
     
     # Have options here that scons expects to be lists
@@ -176,6 +178,7 @@ def validate_arguments(args, bc):
             'BF_DEBUG_CFLAGS', 'BF_DEBUG_CCFLAGS', 'BF_DEBUG_CXXFLAGS',
             'C_WARN', 'CC_WARN', 'CXX_WARN',
             'LLIBS', 'PLATFORM_LINKFLAGS','MACOSX_ARCHITECTURE', 'MACOSX_SDK_CHECK', 'XCODE_CUR_VER',
+            'BF_CYCLES_CUDA_BINARIES_ARCH',
     ]
     
     
@@ -243,8 +246,8 @@ def SetupSpawn( env ):
 def read_opts(env, cfg, args):
     localopts = Variables.Variables(cfg, args)
     localopts.AddVariables(
-        ('LCGDIR', 'location of cvs lib dir'),
-        ('LIBDIR', 'root dir of libs'),
+        ('LCGDIR', 'Location of SVN lib dir'),
+        ('LIBDIR', 'Root dir of libs'),
         (BoolVariable('WITH_BF_PYTHON', 'Compile with python', True)),
         (BoolVariable('WITH_BF_PYTHON_SAFETY', 'Internal API error checking to track invalid data to prevent crash on access (at the expense of some effeciency)', False)),
         ('BF_PYTHON', 'Base path for python', ''),
@@ -265,6 +268,7 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_BOOLEAN', 'Build with boolean modifier', True)),
         (BoolVariable('WITH_BF_REMESH', 'Build with remesh modifier', True)),
         (BoolVariable('WITH_BF_OCEANSIM', 'Build with ocean simulation', False)),
+        (BoolVariable('WITH_BF_SMOKE', 'Build with smoke simulation', True)),
         ('BF_PROFILE_FLAGS', 'Profiling compiler flags', ''),
         (BoolVariable('WITH_BF_OPENAL', 'Use OpenAL if true', False)),
         ('BF_OPENAL', 'Base path for OpenAL', ''),
@@ -312,6 +316,8 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_CINEON', 'Support CINEON and DPX image formats if true', True)),
 
         (BoolVariable('WITH_BF_HDR', 'Support HDR image formats if true', True)),
+        
+        (BoolVariable('WITH_BF_FRAMESERVER', 'Support export to a frameserver', True)),
 
         (BoolVariable('WITH_BF_FFMPEG', 'Use FFMPEG if true', False)),
         ('BF_FFMPEG', 'FFMPEG base path', ''),
@@ -387,7 +393,13 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_GAMEENGINE', 'Build with gameengine' , False)),
 
         (BoolVariable('WITH_BF_BULLET', 'Use Bullet if true', True)),
+        
         (BoolVariable('WITH_BF_ELTOPO', 'Use Eltopo collision library if true', False)),
+        ('BF_LAPACK', 'LAPACK base path', ''),
+        ('BF_LAPACK_LIB', 'LAPACK library', ''),
+        ('BF_LAPACK_LIB_STATIC', 'LAPACK library', ''),
+        ('BF_LAPACK_LIBPATH', 'LAPACK library path', ''),
+        (BoolVariable('WITH_BF_STATICLAPACK', 'Staticly link to LAPACK', False)),
         
         ('BF_BULLET', 'Bullet base dir', ''),
         ('BF_BULLET_INC', 'Bullet include path', ''),
@@ -514,6 +526,8 @@ def read_opts(env, cfg, args):
         (BoolVariable('BF_SPLIT_SRC', 'Split src lib into several chunks if true', False)),
         (BoolVariable('WITHOUT_BF_INSTALL', 'dont install if true', False)),
         (BoolVariable('WITHOUT_BF_PYTHON_INSTALL', 'dont install Python modules if true', False)),
+        (BoolVariable('WITH_BF_PYTHON_INSTALL_NUMPY', 'install Python mumpy module', False)),
+        (BoolVariable('WITHOUT_BF_PYTHON_UNPACK', 'dont remove and unpack Python modules everytime if true', False)),
         (BoolVariable('WITHOUT_BF_OVERWRITE_INSTALL', 'dont remove existing files before breating the new install directory (set to False when making packages for others)', False)),
         (BoolVariable('BF_FANCY', 'Enable fancy output if true', True)),
         (BoolVariable('BF_QUIET', 'Enable silent output if true', True)),
@@ -522,9 +536,10 @@ def read_opts(env, cfg, args):
         
         (BoolVariable('WITH_BF_LZO', 'Enable fast LZO pointcache compression', True)),
         (BoolVariable('WITH_BF_LZMA', 'Enable best LZMA pointcache compression', True)),
-        (BoolVariable('WITH_BF_CARVE', 'Enable carve library for mesh boolean operations', True)),
         
         (BoolVariable('WITH_BF_LIBMV', 'Enable libmv structure from motion library', True)),
+        
+        (BoolVariable('WITH_BF_COMPOSITOR', 'Enable the tile based nodal compositor', True)),
 
         ('BF_X264_CONFIG', 'configuration flags for x264', ''),
         ('BF_XVIDCORE_CONFIG', 'configuration flags for xvidcore', ''),
@@ -533,8 +548,6 @@ def read_opts(env, cfg, args):
         ('BF_CONFIG', 'SCons python config file used to set default options', 'user_config.py'),
         ('BF_NUMJOBS', 'Number of build processes to spawn', '1'),
         ('BF_MSVS', 'Generate MSVS project files and solution', False),
-
-        ('BF_VERSION', 'The root path for Unix (non-apple)', '2.5'),
 
         (BoolVariable('BF_UNIT_TEST', 'Build with unit test support.', False)),
         
@@ -615,12 +628,18 @@ def buildslave(target=None, source=None, env=None):
     Builder for buildbot integration. Used by buildslaves of http://builder.blender.org only.
     """
 
-    if env['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw', 'darwin'):
+    if env['OURPLATFORM'] in ('win32-vc', 'win64-vc', 'win32-mingw', 'darwin', 'win64-mingw'):
         extension = '.zip'
     else:
         extension = '.tar.bz2'
 
-    platform = env['OURPLATFORM'].split('-')[0]
+    if env['OURPLATFORM'] == 'win32-mingw':
+        platform = 'mingw32'
+    elif env['OURPLATFORM'] == 'win64-mingw':
+        platform = 'mingw64'
+    else:
+        platform = env['OURPLATFORM'].split('-')[0]
+
     if platform == 'linux':
         import platform
 
@@ -660,15 +679,13 @@ def NSIS_print(target, source, env):
 def NSIS_Installer(target=None, source=None, env=None):
     print "="*35
 
-    if env['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc'):
+    if env['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'win64-mingw'):
         print "NSIS installer is only available on Windows."
         Exit()
-    if env['OURPLATFORM'] == 'win32-vc':
+    if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw'):
         bitness = '32'
-    elif env['OURPLATFORM'] == 'win64-vc':
+    elif env['OURPLATFORM'] in ('win64-vc', 'win64-mingw'):
         bitness = '64'
-    else:
-        bitness = '-mingw'
 
     start_dir = os.getcwd()
     rel_dir = os.path.join(start_dir,'release','windows','installer')
@@ -760,7 +777,7 @@ def NSIS_Installer(target=None, source=None, env=None):
     cmdline = "makensis " + "\""+tmpnsi+"\""
 
     startupinfo = subprocess.STARTUPINFO()
-    startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
+    #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
     proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
         stderr=subprocess.PIPE, startupinfo=startupinfo, shell = True)
     data, err = proc.communicate()

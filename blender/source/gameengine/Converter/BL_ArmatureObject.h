@@ -83,7 +83,7 @@ public:
 
 	bool SetActiveAction(class BL_ActionActuator *act, short priority, double curtime);
 	
-	struct bArmature * GetArmature() { return m_armature; }
+	struct bArmature *GetArmature() { return m_armature; }
 	const struct bArmature * GetArmature() const { return m_armature; }
 	const struct Scene * GetScene() const { return m_scene; }
 	
@@ -132,7 +132,7 @@ protected:
 	struct bPose		*m_pose;
 	struct bPose		*m_armpose;
 	struct bPose		*m_framePose;
-	struct Scene		*m_scene; // need for where_is_pose 
+	struct Scene		*m_scene; // need for BKE_pose_where_is 
 	double	m_lastframe;
 	double  m_timestep;		// delta since last pose evaluation.
 	class BL_ActionActuator *m_activeAct;

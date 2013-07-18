@@ -34,15 +34,15 @@
 
 /* ******************* Color Key ********************************************************** */
 static bNodeSocketTemplate cmp_node_color_in[]={
-	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
-	{SOCK_RGBA,1,"Key Color", 1.0f, 1.0f, 1.0f, 1.0f},
-	{-1,0,""}
+	{SOCK_RGBA, 1, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA, 1, N_("Key Color"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{-1, 0, ""}
 };
 
 static bNodeSocketTemplate cmp_node_color_out[]={
-	{SOCK_RGBA,0,"Image"},
-	{SOCK_FLOAT,0,"Matte"},
-	{-1,0,""}
+	{SOCK_RGBA, 0, N_("Image")},
+	{SOCK_FLOAT, 0, N_("Matte")},
+	{-1, 0, ""}
 };
 
 static void do_color_key(bNode *node, float *out, float *in)
@@ -54,7 +54,7 @@ static void do_color_key(bNode *node, float *out, float *in)
 
 	copy_v3_v3(out, in);
 
-	if(
+	if (
 	/* do hue last because it needs to wrap, and does some more checks  */
 
 	/* sat */	(fabsf(in[1]-c->key[1]) < c->t2) &&
@@ -79,9 +79,9 @@ static void node_composit_exec_color_matte(void *data, bNode *node, bNodeStack *
 	CompBuf *colorbuf;
 	NodeChroma *c;
 	
-	if(in[0]->hasinput==0) return;
-	if(in[0]->data==NULL) return;
-	if(out[0]->hasoutput==0 && out[1]->hasoutput==0) return;
+	if (in[0]->hasinput==0) return;
+	if (in[0]->data==NULL) return;
+	if (out[0]->hasoutput==0 && out[1]->hasoutput==0) return;
 	
 	cbuf= typecheck_compbuf(in[0]->data, CB_RGBA);
 	
@@ -92,7 +92,7 @@ static void node_composit_exec_color_matte(void *data, bNode *node, bNodeStack *
 	/*convert rgbbuf to hsv*/
 	composit1_pixel_processor(node, colorbuf, cbuf, in[0]->vec, do_rgba_to_hsva, CB_RGBA);
 	
-   /*convert key to hsv*/
+	/*convert key to hsv*/
 	do_rgba_to_hsva(node, c->key, in[1]->vec);
 	
 
@@ -103,12 +103,12 @@ static void node_composit_exec_color_matte(void *data, bNode *node, bNodeStack *
 	composit1_pixel_processor(node, colorbuf, colorbuf, in[0]->vec, do_hsva_to_rgba, CB_RGBA);
 	
 	out[0]->data= colorbuf;
-	if(out[1]->hasoutput)
+	if (out[1]->hasoutput)
 		out[1]->data= valbuf_from_rgbabuf(colorbuf, CHAN_A);
 	
 	generate_preview(data, node, colorbuf);
 
-	if(cbuf!=in[0]->data)
+	if (cbuf!=in[0]->data)
 		free_compbuf(cbuf);
 }
 

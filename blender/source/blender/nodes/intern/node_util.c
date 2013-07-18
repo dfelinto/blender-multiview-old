@@ -29,6 +29,7 @@
  *  \ingroup nodes
  */
 
+#include <limits.h>
 
 #include "DNA_action_types.h"
 #include "DNA_node_types.h"
@@ -57,7 +58,9 @@ void node_free_curves(bNode *node)
 
 void node_free_standard_storage(bNode *node)
 {
-	MEM_freeN(node->storage);
+	if (node->storage) {
+		MEM_freeN(node->storage);
+	}
 }
 
 void node_copy_curves(bNode *orig_node, bNode *new_node)
@@ -102,43 +105,85 @@ const char *node_filter_label(bNode *node)
 
 ListBase node_internal_connect_default(bNodeTree *ntree, bNode *node)
 {
-	static int types[] = { SOCK_FLOAT, SOCK_VECTOR, SOCK_RGBA };
-	bNodeLink *link;
-	bNodeSocket *fromsock, *tosock;
 	ListBase ret;
-	int in, out, i;
+	bNodeSocket *fromsock_first=NULL, *tosock_first=NULL;	/* used for fallback link if no other reconnections are found */
+	int datatype;
+	int num_links_in = 0, num_links_out = 0, num_reconnect = 0;
 
 	ret.first = ret.last = NULL;
 
 	/* Security check! */
-	if(!ntree)
+	if (!ntree)
 		return ret;
 
-	/* Connect the first input of each type with first output of the same type. */
-
-	for (i=0; i < 3; ++i) {
-		/* find input socket */
-		for (in=0, fromsock=node->inputs.first; fromsock; in++, fromsock=fromsock->next) {
-			if (fromsock->type==types[i] && nodeCountSocketLinks(ntree, fromsock) > 0)
-				break;
+	for (datatype=0; datatype < NUM_SOCKET_TYPES; ++datatype) {
+		bNodeSocket *fromsock, *tosock;
+		int fromindex, toindex;
+		bNodeLink *link;
+		
+		/* Connect the first input of each type with outputs of the same type. */
+		
+		fromindex = INT_MAX;
+		fromsock = NULL;
+		for (link=ntree->links.first; link; link=link->next) {
+			if (link->tonode == node && link->tosock->type == datatype) {
+				int index = BLI_findindex(&node->inputs, link->tosock);
+				if (index < fromindex) {
+					fromindex = index;
+					fromsock = link->tosock;
+				}
+			}
 		}
 		if (fromsock) {
-			for (out=0, tosock=node->outputs.first; tosock; out++, tosock=tosock->next) {
-				if (tosock->type==types[i] && (nodeCountSocketLinks(ntree, tosock) > 0))
-					break;
+			++num_links_in;
+			if (!fromsock_first)
+				fromsock_first = fromsock;
+		}
+		
+		toindex = INT_MAX;
+		tosock = NULL;
+		for (link=ntree->links.first; link; link=link->next) {
+			if (link->fromnode == node && link->fromsock->type == datatype) {
+				int index = BLI_findindex(&node->outputs, link->fromsock);
+				if (index < toindex) {
+					toindex = index;
+					tosock = link->fromsock;
+				}
 			}
-			if (tosock) {
-				link = MEM_callocN(sizeof(bNodeLink), "internal node link");
-				link->fromnode = node;
-				link->fromsock = fromsock;
-				link->tonode = node;
-				link->tosock = tosock;
+		}
+		if (tosock) {
+			++num_links_out;
+			if (!tosock_first)
+				tosock_first = tosock;
+			
+			if (fromsock) {
+				bNodeLink *ilink = MEM_callocN(sizeof(bNodeLink), "internal node link");
+				ilink->fromnode = node;
+				ilink->fromsock = fromsock;
+				ilink->tonode = node;
+				ilink->tosock = tosock;
 				/* internal link is always valid */
-				link->flag |= NODE_LINK_VALID;
-				BLI_addtail(&ret, link);
+				ilink->flag |= NODE_LINK_VALID;
+				BLI_addtail(&ret, ilink);
+				
+				++num_reconnect;
 			}
 		}
 	}
-
+	
+	/* if there is one input and one output link, but no reconnections by type,
+	 * simply connect those two sockets.
+	 */
+	if (num_reconnect==0 && num_links_in==1 && num_links_out==1) {
+		bNodeLink *ilink = MEM_callocN(sizeof(bNodeLink), "internal node link");
+		ilink->fromnode = node;
+		ilink->fromsock = fromsock_first;
+		ilink->tonode = node;
+		ilink->tosock = tosock_first;
+		/* internal link is always valid */
+		ilink->flag |= NODE_LINK_VALID;
+		BLI_addtail(&ret, ilink);
+	}
+	
 	return ret;
 }

@@ -33,6 +33,7 @@ set(SRC_HEADERS
 	kernel_object.h
 	kernel_passes.h
 	kernel_path.h
+	kernel_projection.h
 	kernel_qbvh.h
 	kernel_random.h
 	kernel_shader.h
@@ -78,6 +79,7 @@ set(SRC_SVM_HEADERS
 	svm/svm_noise.h
 	svm/svm_noisetex.h
 	svm/svm_normal.h
+	svm/svm_ramp.h
 	svm/svm_sepcomb_rgb.h
 	svm/svm_sky.h
 	svm/svm_tex_coord.h
@@ -112,7 +114,7 @@ if(WITH_CYCLES_CUDA_BINARIES)
 
 		add_custom_command(
 			OUTPUT ${cuda_cubin}
-			COMMAND ${CUDA_NVCC_EXECUTABLE} -arch=${arch} -m${CUDA_BITS} --cubin ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cu --use_fast_math -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_cubin} --ptxas-options="-v" --maxrregcount=24 --opencc-options -OPT:Olimit=0 -I${CMAKE_CURRENT_SOURCE_DIR}/../util -I${CMAKE_CURRENT_SOURCE_DIR}/svm -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DNVCC
+			COMMAND ${CUDA_NVCC_EXECUTABLE} -arch=${arch} -m${CUDA_BITS} --cubin ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cu -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_cubin} --ptxas-options="-v" --maxrregcount=24 --opencc-options -OPT:Olimit=0 -I${CMAKE_CURRENT_SOURCE_DIR}/../util -I${CMAKE_CURRENT_SOURCE_DIR}/svm -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DNVCC
 			DEPENDS ${cuda_sources})
 
 		delayed_install("${CMAKE_CURRENT_BINARY_DIR}" "${cuda_cubin}" ${CYCLES_INSTALL_PATH}/lib)

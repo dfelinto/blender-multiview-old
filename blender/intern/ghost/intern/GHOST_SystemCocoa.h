@@ -62,7 +62,7 @@ public:
 	~GHOST_SystemCocoa();
 
 	/***************************************************************************************
-	 ** Time(r) functionality
+	 * Time(r) functionality
 	 ***************************************************************************************/
 
 	/**
@@ -74,14 +74,14 @@ public:
 	virtual GHOST_TUns64 getMilliSeconds() const;
 
 	/***************************************************************************************
-	 ** Display/window management functionality
+	 * Display/window management functionality
 	 ***************************************************************************************/
 
 	/**
 	 * Returns the number of displays on this system.
 	 * @return The number of displays.
 	 */
-	virtual	GHOST_TUns8 getNumDisplays() const;
+	virtual GHOST_TUns8 getNumDisplays() const;
 
 	/**
 	 * Returns the dimensions of the main display on this system.
@@ -102,24 +102,24 @@ public:
 	 * @param	type			The type of drawing context installed in this window.
 	 * @param	stereoVisual	Stereo visual for quad buffered stereo.
 	 * @param	numOfAASamples	Number of samples used for AA (zero if no AA)
-	 * @param	parentWindow 	Parent (embedder) window
+	 * @param	parentWindow    Parent (embedder) window
 	 * @return	The new window (or 0 if creation failed).
 	 */
-	virtual GHOST_IWindow* createWindow(
-	        const STR_String& title,
-	        GHOST_TInt32 left,
-	        GHOST_TInt32 top,
-	        GHOST_TUns32 width,
-	        GHOST_TUns32 height,
-	        GHOST_TWindowState state,
-	        GHOST_TDrawingContextType type,
-	        const bool stereoVisual = false,
-	        const GHOST_TUns16 numOfAASamples = 0,
-	        const GHOST_TEmbedderWindowID parentWindow = 0
-	        );
+	virtual GHOST_IWindow *createWindow(
+	    const STR_String& title,
+	    GHOST_TInt32 left,
+	    GHOST_TInt32 top,
+	    GHOST_TUns32 width,
+	    GHOST_TUns32 height,
+	    GHOST_TWindowState state,
+	    GHOST_TDrawingContextType type,
+	    const bool stereoVisual = false,
+	    const GHOST_TUns16 numOfAASamples = 0,
+	    const GHOST_TEmbedderWindowID parentWindow = 0
+	    );
 	
 	/***************************************************************************************
-	 ** Event management functionality
+	 * Event management functionality
 	 ***************************************************************************************/
 
 	/**
@@ -151,10 +151,10 @@ public:
 	 * @return Indication whether the event was handled.
 	 */
 	GHOST_TSuccess handleDraggingEvent(GHOST_TEventType eventType, GHOST_TDragnDropTypes draggedObjectType,
-	                                   GHOST_WindowCocoa* window, int mouseX, int mouseY, void* data);
+	                                   GHOST_WindowCocoa *window, int mouseX, int mouseY, void *data);
 	
 	/***************************************************************************************
-	 ** Cursor management functionality
+	 * Cursor management functionality
 	 ***************************************************************************************/
 
 	/**
@@ -174,7 +174,7 @@ public:
 	virtual GHOST_TSuccess setCursorPosition(GHOST_TInt32 x, GHOST_TInt32 y);
 	
 	/***************************************************************************************
-	 ** Access to mouse button and keyboard states.
+	 * Access to mouse button and keyboard states.
 	 ***************************************************************************************/
 
 	/**
@@ -196,7 +196,7 @@ public:
 	 * @param selection		Indicate which buffer to return
 	 * @return				Returns the selected buffer
 	 */
-	virtual GHOST_TUns8* getClipboard(bool selection) const;
+	virtual GHOST_TUns8 *getClipboard(bool selection) const;
 	
 	/**
 	 * Puts buffer to system clipboard
@@ -211,7 +211,7 @@ public:
 	 * @param window The window on which the event occurred
 	 * @return Indication whether the event was handled.
 	 */
-	GHOST_TSuccess handleWindowEvent(GHOST_TEventType eventType, GHOST_WindowCocoa* window);
+	GHOST_TSuccess handleWindowEvent(GHOST_TEventType eventType, GHOST_WindowCocoa *window);
 	
 	/**
 	 * Handles the Cocoa event telling the application has become active (again)
@@ -227,7 +227,9 @@ public:
 	/**
 	 * @see GHOST_ISystem
 	 */
-	int toggleConsole(int action) { return 0; }
+	int toggleConsole(int action) {
+		return 0;
+	}
 	
 	
 protected:
@@ -247,6 +249,7 @@ protected:
 	 * @return Indication whether the event was handled.
 	 */
 	GHOST_TSuccess handleTabletEvent(void *eventPtr, short eventType);
+	bool handleTabletEvent(void *eventPtr);
 
 	/**
 	 * Handles a mouse event.

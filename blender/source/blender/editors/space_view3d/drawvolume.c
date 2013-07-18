@@ -45,9 +45,8 @@
 #include "BLI_rand.h"
 
 #include "BKE_curve.h"
-#include "BKE_constraint.h" // for the get_constraint_target function
+#include "BKE_constraint.h"  /* for the get_constraint_target function */
 #include "BKE_DerivedMesh.h"
-#include "BKE_deform.h"
 #include "BKE_displist.h"
 #include "BKE_effect.h"
 #include "BKE_font.h"
@@ -77,7 +76,7 @@
 #include "BLF_api.h"
 
 
-#include "view3d_intern.h"	// own include
+#include "view3d_intern.h"  // own include
 
 
 #ifdef _WIN32
@@ -90,38 +89,38 @@ static LARGE_INTEGER liFrequency;
 static LARGE_INTEGER liStartTime;
 static LARGE_INTEGER liCurrentTime;
 
-static void tstart ( void )
+static void tstart(void)
 {
-	QueryPerformanceFrequency ( &liFrequency );
-	QueryPerformanceCounter ( &liStartTime );
+	QueryPerformanceFrequency(&liFrequency);
+	QueryPerformanceCounter(&liStartTime);
 }
-static void tend ( void )
+static void tend(void)
 {
-	QueryPerformanceCounter ( &liCurrentTime );
+	QueryPerformanceCounter(&liCurrentTime);
 }
-static double tval( void )
+static double tval(void)
 {
-	return ((double)( (liCurrentTime.QuadPart - liStartTime.QuadPart)* (double)1000.0/(double)liFrequency.QuadPart ));
+	return ((double)( (liCurrentTime.QuadPart - liStartTime.QuadPart) * (double)1000.0 / (double)liFrequency.QuadPart));
 }
 #else
 #include <sys/time.h>
 static struct timeval _tstart, _tend;
 static struct timezone tz;
-static void tstart ( void )
+static void tstart(void)
 {
-	gettimeofday ( &_tstart, &tz );
+	gettimeofday(&_tstart, &tz);
 }
-static void tend ( void )
+static void tend(void)
 {
-	gettimeofday ( &_tend,&tz );
+	gettimeofday(&_tend, &tz);
 }
   #if 0
 static double tval()
 {
 	double t1, t2;
-	t1 = ( double ) _tstart.tv_sec*1000 + ( double ) _tstart.tv_usec/ ( 1000 );
-	t2 = ( double ) _tend.tv_sec*1000 + ( double ) _tend.tv_usec/ ( 1000 );
-	return t2-t1;
+	t1 = ( double ) _tstart.tv_sec * 1000 + ( double ) _tstart.tv_usec / (1000);
+	t2 = ( double ) _tend.tv_sec * 1000 + ( double ) _tend.tv_usec / (1000);
+	return t2 - t1;
 }
   #endif
 #endif
@@ -134,22 +133,22 @@ static int intersect_edges(float *points, float a, float b, float c, float d, fl
 	float t;
 	int numpoints = 0;
 	
-	for (i=0; i<12; i++) {
-		t = -(a*edges[i][0][0] + b*edges[i][0][1] + c*edges[i][0][2] + d)
-			/ (a*edges[i][1][0] + b*edges[i][1][1] + c*edges[i][1][2]);
-		if ((t>0)&&(t<1)) {
-			points[numpoints * 3 + 0] = edges[i][0][0] + edges[i][1][0]*t;
-			points[numpoints * 3 + 1] = edges[i][0][1] + edges[i][1][1]*t;
-			points[numpoints * 3 + 2] = edges[i][0][2] + edges[i][1][2]*t;
+	for (i = 0; i < 12; i++) {
+		t = -(a * edges[i][0][0] + b * edges[i][0][1] + c * edges[i][0][2] + d) /
+		     (a * edges[i][1][0] + b * edges[i][1][1] + c * edges[i][1][2]);
+		if ((t > 0) && (t < 1)) {
+			points[numpoints * 3 + 0] = edges[i][0][0] + edges[i][1][0] * t;
+			points[numpoints * 3 + 1] = edges[i][0][1] + edges[i][1][1] * t;
+			points[numpoints * 3 + 2] = edges[i][0][2] + edges[i][1][2] * t;
 			numpoints++;
 		}
 	}
 	return numpoints;
 }
 
-static int convex(float *p0, float *up, float *a, float *b)
+static int convex(const float p0[3], const float up[3], const float a[3], const float b[3])
 {
-	// Vec3 va = a-p0, vb = b-p0;
+	/* Vec3 va = a-p0, vb = b-p0; */
 	float va[3], vb[3], tmp[3];
 	sub_v3_v3v3(va, a, p0);
 	sub_v3_v3v3(vb, b, p0);
@@ -157,16 +156,16 @@ static int convex(float *p0, float *up, float *a, float *b)
 	return dot_v3v3(up, tmp) >= 0;
 }
 
-void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3], float dx, GPUTexture *tex_shadow)
+void draw_volume(ARegion *ar, GPUTexture *tex, float min[3], float max[3], int res[3], float dx, GPUTexture *tex_shadow)
 {
-	RegionView3D *rv3d= ar->regiondata;
+	RegionView3D *rv3d = ar->regiondata;
 
 	float viewnormal[3];
 	int i, j, n, good_index;
 	float d /*, d0 */ /* UNUSED */, dd, ds;
 	float *points = NULL;
 	int numpoints = 0;
-	float cor[3] = {1.,1.,1.};
+	float cor[3] = {1.0f, 1.0f, 1.0f};
 	int gl_depth = 0, gl_blend = 0;
 
 	/* draw slices of smoke is adapted from c++ code authored
@@ -176,7 +175,7 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 		{1.0f, 1.0f, -1.0f}, {-1.0f, 1.0f, -1.0f}, {-1.0f, -1.0f, -1.0f}, {1.0f, -1.0f, -1.0f}
 	};
 
-	// edges have the form edges[n][0][xyz] + t*edges[n][1][xyz]
+	/* edges have the form edges[n][0][xyz] + t*edges[n][1][xyz] */
 	float edges[12][2][3] = {
 		{{1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 2.0f}},
 		{{-1.0f, 1.0f, -1.0f}, {0.0f, 0.0f, 2.0f}},
@@ -197,22 +196,22 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 	/* Fragment program to calculate the view3d of smoke */
 	/* using 2 textures, density and shadow */
 	const char *text = "!!ARBfp1.0\n"
-					"PARAM dx = program.local[0];\n"
-					"PARAM darkness = program.local[1];\n"
-					"PARAM f = {1.442695041, 1.442695041, 1.442695041, 0.01};\n"
-					"TEMP temp, shadow, value;\n"
-					"TEX temp, fragment.texcoord[0], texture[0], 3D;\n"
-					"TEX shadow, fragment.texcoord[0], texture[1], 3D;\n"
-					"MUL value, temp, darkness;\n"
-					"MUL value, value, dx;\n"
-					"MUL value, value, f;\n"
-					"EX2 temp, -value.r;\n"
-					"SUB temp.a, 1.0, temp.r;\n"
-					"MUL temp.r, temp.r, shadow.r;\n"
-					"MUL temp.g, temp.g, shadow.r;\n"
-					"MUL temp.b, temp.b, shadow.r;\n"
-					"MOV result.color, temp;\n"
-					"END\n";
+	                   "PARAM dx = program.local[0];\n"
+	                   "PARAM darkness = program.local[1];\n"
+	                   "PARAM f = {1.442695041, 1.442695041, 1.442695041, 0.01};\n"
+	                   "TEMP temp, shadow, value;\n"
+	                   "TEX temp, fragment.texcoord[0], texture[0], 3D;\n"
+	                   "TEX shadow, fragment.texcoord[0], texture[1], 3D;\n"
+	                   "MUL value, temp, darkness;\n"
+	                   "MUL value, value, dx;\n"
+	                   "MUL value, value, f;\n"
+	                   "EX2 temp, -value.r;\n"
+	                   "SUB temp.a, 1.0, temp.r;\n"
+	                   "MUL temp.r, temp.r, shadow.r;\n"
+	                   "MUL temp.g, temp.g, shadow.r;\n"
+	                   "MUL temp.b, temp.b, shadow.r;\n"
+	                   "MOV result.color, temp;\n"
+	                   "END\n";
 	GLuint prog;
 
 	
@@ -227,54 +226,54 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 
 	sub_v3_v3v3(size, max, min);
 
-	// maxx, maxy, maxz
+	/* maxx, maxy, maxz */
 	cv[0][0] = max[0];
 	cv[0][1] = max[1];
 	cv[0][2] = max[2];
-	// minx, maxy, maxz
+	/* minx, maxy, maxz */
 	cv[1][0] = min[0];
 	cv[1][1] = max[1];
 	cv[1][2] = max[2];
-	// minx, miny, maxz
+	/* minx, miny, maxz */
 	cv[2][0] = min[0];
 	cv[2][1] = min[1];
 	cv[2][2] = max[2];
-	// maxx, miny, maxz
+	/* maxx, miny, maxz */
 	cv[3][0] = max[0];
 	cv[3][1] = min[1];
 	cv[3][2] = max[2];
 
-	// maxx, maxy, minz
+	/* maxx, maxy, minz */
 	cv[4][0] = max[0];
 	cv[4][1] = max[1];
 	cv[4][2] = min[2];
-	// minx, maxy, minz
+	/* minx, maxy, minz */
 	cv[5][0] = min[0];
 	cv[5][1] = max[1];
 	cv[5][2] = min[2];
-	// minx, miny, minz
+	/* minx, miny, minz */
 	cv[6][0] = min[0];
 	cv[6][1] = min[1];
 	cv[6][2] = min[2];
-	// maxx, miny, minz
+	/* maxx, miny, minz */
 	cv[7][0] = max[0];
 	cv[7][1] = min[1];
 	cv[7][2] = min[2];
 
-	copy_v3_v3(edges[0][0], cv[4]); // maxx, maxy, minz
-	copy_v3_v3(edges[1][0], cv[5]); // minx, maxy, minz
-	copy_v3_v3(edges[2][0], cv[6]); // minx, miny, minz
-	copy_v3_v3(edges[3][0], cv[7]); // maxx, miny, minz
+	copy_v3_v3(edges[0][0], cv[4]); /* maxx, maxy, minz */
+	copy_v3_v3(edges[1][0], cv[5]); /* minx, maxy, minz */
+	copy_v3_v3(edges[2][0], cv[6]); /* minx, miny, minz */
+	copy_v3_v3(edges[3][0], cv[7]); /* maxx, miny, minz */
 
-	copy_v3_v3(edges[4][0], cv[3]); // maxx, miny, maxz
-	copy_v3_v3(edges[5][0], cv[2]); // minx, miny, maxz
-	copy_v3_v3(edges[6][0], cv[6]); // minx, miny, minz
-	copy_v3_v3(edges[7][0], cv[7]); // maxx, miny, minz
+	copy_v3_v3(edges[4][0], cv[3]); /* maxx, miny, maxz */
+	copy_v3_v3(edges[5][0], cv[2]); /* minx, miny, maxz */
+	copy_v3_v3(edges[6][0], cv[6]); /* minx, miny, minz */
+	copy_v3_v3(edges[7][0], cv[7]); /* maxx, miny, minz */
 
-	copy_v3_v3(edges[8][0], cv[1]); // minx, maxy, maxz
-	copy_v3_v3(edges[9][0], cv[2]); // minx, miny, maxz
-	copy_v3_v3(edges[10][0], cv[6]); // minx, miny, minz
-	copy_v3_v3(edges[11][0], cv[5]); // minx, maxy, minz
+	copy_v3_v3(edges[8][0], cv[1]); /* minx, maxy, maxz */
+	copy_v3_v3(edges[9][0], cv[2]); /* minx, miny, maxz */
+	copy_v3_v3(edges[10][0], cv[6]); /* minx, miny, minz */
+	copy_v3_v3(edges[11][0], cv[5]); /* minx, maxy, minz */
 
 	// printf("size x: %f, y: %f, z: %f\n", size[0], size[1], size[2]);
 	// printf("min[2]: %f, max[2]: %f\n", min[2], max[2]);
@@ -312,28 +311,29 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 	printf("%f, %f, %f\n", rv3d->viewinv[2][0], rv3d->viewinv[2][1], rv3d->viewinv[2][2]);
 #endif
 
-	// get view vector
+	/* get view vector */
 	copy_v3_v3(viewnormal, rv3d->viewinv[2]);
 	normalize_v3(viewnormal);
 
-	// find cube vertex that is closest to the viewer
-	for (i=0; i<8; i++) {
-		float x,y,z;
+	/* find cube vertex that is closest to the viewer */
+	for (i = 0; i < 8; i++) {
+		float x, y, z;
 
-		x = cv[i][0] - viewnormal[0];
-		y = cv[i][1] - viewnormal[1];
-		z = cv[i][2] - viewnormal[2];
+		x = cv[i][0] - viewnormal[0]*size[0]*0.5f;
+		y = cv[i][1] - viewnormal[1]*size[1]*0.5f;
+		z = cv[i][2] - viewnormal[2]*size[2]*0.5f;
 
-		if ((x>=min[0])&&(x<=max[0])
-			&&(y>=min[1])&&(y<=max[1])
-			&&(z>=min[2])&&(z<=max[2])) {
+		if ((x >= min[0]) && (x <= max[0]) &&
+		    (y >= min[1]) && (y <= max[1]) &&
+		    (z >= min[2]) && (z <= max[2]))
+		{
 			break;
 		}
 	}
 
 	if (i >= 8) {
 		/* fallback, avoid using buffer over-run */
-		i= 0;
+		i = 0;
 	}
 
 	// printf("i: %d\n", i);
@@ -346,10 +346,10 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 		glBindProgramARB(GL_FRAGMENT_PROGRAM_ARB, prog);
 		glProgramStringARB(GL_FRAGMENT_PROGRAM_ARB, GL_PROGRAM_FORMAT_ASCII_ARB, (GLsizei)strlen(text), text);
 
-		// cell spacing
-		glProgramLocalParameter4fARB (GL_FRAGMENT_PROGRAM_ARB, 0, dx, dx, dx, 1.0);
-		// custom parameter for smoke style (higher = thicker)
-		glProgramLocalParameter4fARB (GL_FRAGMENT_PROGRAM_ARB, 1, 7.0, 7.0, 7.0, 1.0);
+		/* cell spacing */
+		glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 0, dx, dx, dx, 1.0);
+		/* custom parameter for smoke style (higher = thicker) */
+		glProgramLocalParameter4fARB(GL_FRAGMENT_PROGRAM_ARB, 1, 7.0, 7.0, 7.0, 1.0);
 	}
 	else
 		printf("Your gfx card does not support 3D View smoke drawing.\n");
@@ -361,42 +361,42 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 		printf("No volume shadow\n");
 
 	if (!GPU_non_power_of_two_support()) {
-		cor[0] = (float)res[0]/(float)power_of_2_max_i(res[0]);
-		cor[1] = (float)res[1]/(float)power_of_2_max_i(res[1]);
-		cor[2] = (float)res[2]/(float)power_of_2_max_i(res[2]);
+		cor[0] = (float)res[0] / (float)power_of_2_max_i(res[0]);
+		cor[1] = (float)res[1] / (float)power_of_2_max_i(res[1]);
+		cor[2] = (float)res[2] / (float)power_of_2_max_i(res[2]);
 	}
 
-	// our slices are defined by the plane equation a*x + b*y +c*z + d = 0
-	// (a,b,c), the plane normal, are given by viewdir
-	// d is the parameter along the view direction. the first d is given by
-	// inserting previously found vertex into the plane equation
+	/* our slices are defined by the plane equation a*x + b*y +c*z + d = 0
+	 * (a,b,c), the plane normal, are given by viewdir
+	 * d is the parameter along the view direction. the first d is given by
+	 * inserting previously found vertex into the plane equation */
 
 	/* d0 = (viewnormal[0]*cv[i][0] + viewnormal[1]*cv[i][1] + viewnormal[2]*cv[i][2]); */ /* UNUSED */
-	ds = (ABS(viewnormal[0])*size[0] + ABS(viewnormal[1])*size[1] + ABS(viewnormal[2])*size[2]);
-	dd = 0.05; // ds/512.0f;
+	ds = (ABS(viewnormal[0]) * size[0] + ABS(viewnormal[1]) * size[1] + ABS(viewnormal[2]) * size[2]);
+	dd = ds / 96.f;
 	n = 0;
 	good_index = i;
 
 	// printf("d0: %f, dd: %f, ds: %f\n\n", d0, dd, ds);
 
-	points = MEM_callocN(sizeof(float)*12*3, "smoke_points_preview");
+	points = MEM_callocN(sizeof(float) * 12 * 3, "smoke_points_preview");
 
 	while (1) {
 		float p0[3];
 		float tmp_point[3], tmp_point2[3];
 
-		if (dd*(float)n > ds)
+		if (dd * (float)n > ds)
 			break;
 
 		copy_v3_v3(tmp_point, viewnormal);
-		mul_v3_fl(tmp_point, -dd*((ds/dd)-(float)n));
+		mul_v3_fl(tmp_point, -dd * ((ds / dd) - (float)n));
 		add_v3_v3v3(tmp_point2, cv[good_index], tmp_point);
 		d = dot_v3v3(tmp_point2, viewnormal);
 
 		// printf("my d: %f\n", d);
 
-		// intersect_edges returns the intersection points of all cube edges with
-		// the given plane that lie within the cube
+		/* intersect_edges returns the intersection points of all cube edges with
+		 * the given plane that lie within the cube */
 		numpoints = intersect_edges(points, viewnormal[0], viewnormal[1], viewnormal[2], -d, edges);
 
 		// printf("points: %d\n", numpoints);
@@ -404,7 +404,7 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 		if (numpoints > 2) {
 			copy_v3_v3(p0, points);
 
-			// sort points to get a convex polygon
+			/* sort points to get a convex polygon */
 			for (i = 1; i < numpoints - 1; i++) {
 				for (j = i + 1; j < numpoints; j++) {
 					if (!convex(p0, viewnormal, &points[j * 3], &points[i * 3])) {
@@ -431,7 +431,7 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 	}
 
 	tend();
-	// printf ( "Draw Time: %f\n",( float ) tval() );
+	// printf ( "Draw Time: %f\n",(float) tval() );
 
 	if (tex_shadow)
 		GPU_texture_unbind(tex_shadow);
@@ -454,4 +454,3 @@ void draw_volume(ARegion *ar, GPUTexture *tex, float *min, float *max, int res[3
 		glDepthMask(GL_TRUE);	
 	}
 }
-

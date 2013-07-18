@@ -192,93 +192,58 @@
  * - bmo_xxx() -    Low level / internal operator API functions.
  * - _bm_xxx() -    Functions which are called via macros only.
  *
+ * \section bm_todo BMesh TODO's
+ *
+ * There may be a better place for this section, but adding here for now.
+ *
+ *
+ * \subsection bm_todo_tools Tools
+ *
+ * Probably most of these will be bmesh operators.
+ *
+ * - make ngons flat.
+ * - make ngons into tris/quads (ngon poke?), many methods could be used here (triangulate/fan/quad-fan).
+ * - solidify (precise mode), keeps even wall thickness, re-creates outlines of offset faces with plane-plane
+ *   intersections.
+ * - split vert (we already have in our API, just no tool)
+ * - bridge (add option to bridge between different edge loop counts, option to remove selected face regions)
+ * - flip selected region (invert all faces about the plane defined by the selected region outline)
+ * - interactive dissolve (like the knife tool but draw over edges to dissolve)
+ *
+ *
+ * \subsection bm_todo_optimize Optimizations
+ *
+ * - skip normal calc when its not needed (when calling chain of operators & for modifiers, flag as dirty)
+ * - skip BMO flag allocation, its not needed in many cases, this is fairly redundant to calc by default.
+ * - ability to call BMO's with option not to create return data (will save some time)
+ * - binary diff UNDO, currently this uses huge amount of ram when all shapes are stored for each undo step for eg.
+ * - use two differnt iterator types for BMO map/buffer types.
+ * - avoid string lookups for BMO slot lookups _especially_ when used in loops, this is very crappy.
+ *
+ *
+ * \subsection bm_todo_tools_enhance Tool Enhancements
+ *
+ * - face inset interpolate loop data from face (currently copies - but this stretches UV's in an ugly way)
+ * - vert slide UV correction (like we have for edge slide)
+ * - fill-face edge net - produce consistent normals, currently it won't, fix should be to fill in edge-net node
+ *   connected with previous one - since they already check for normals of adjacent edge-faces before creating.
  */
 
 #ifdef __cplusplus
 extern "C" {
 #endif
 
-#include "DNA_listBase.h"
-#include "DNA_customdata_types.h"
+#include "DNA_listBase.h" /* selection history uses */
+#include "DNA_customdata_types.h" /* BMesh struct in bmesh_class.h uses */
 
 #include <stdlib.h>
-#include "BLI_utildefines.h"
+#include <stdio.h>
 
 #include "bmesh_class.h"
 
-/*forward declarations*/
-
-/* ------------------------------------------------------------------------- */
-/* bmesh_inline.c */
-
-/* stuff for dealing with header flags */
-#define BM_elem_flag_test(   ele, hflag)      _bm_elem_flag_test    (&(ele)->head, hflag)
-#define BM_elem_flag_enable( ele, hflag)      _bm_elem_flag_enable  (&(ele)->head, hflag)
-#define BM_elem_flag_disable(ele, hflag)      _bm_elem_flag_disable (&(ele)->head, hflag)
-#define BM_elem_flag_set(    ele, hflag, val) _bm_elem_flag_set     (&(ele)->head, hflag, val)
-#define BM_elem_flag_toggle( ele, hflag)      _bm_elem_flag_toggle  (&(ele)->head, hflag)
-#define BM_elem_flag_merge(  ele_a, ele_b)    _bm_elem_flag_merge   (&(ele_a)->head, &(ele_b)->head)
-
-BM_INLINE char _bm_elem_flag_test(const BMHeader *head, const char hflag);
-BM_INLINE void _bm_elem_flag_enable(BMHeader *head, const char hflag);
-BM_INLINE void _bm_elem_flag_disable(BMHeader *head, const char hflag);
-BM_INLINE void _bm_elem_flag_set(BMHeader *head, const char hflag, const int val);
-BM_INLINE void _bm_elem_flag_toggle(BMHeader *head, const char hflag);
-BM_INLINE void _bm_elem_flag_merge(BMHeader *head_a, BMHeader *head_b);
-
-/* notes on BM_elem_index_set(...) usage,
- * Set index is sometimes abused as temp storage, other times we cant be
- * sure if the index values are valid because certain operations have modified
- * the mesh structure.
- *
- * To set the elements to valid indices 'BM_mesh_elem_index_ensure' should be used
- * rather then adding inline loops, however there are cases where we still
- * set the index directly
- *
- * In an attempt to manage this, here are 3 tags Im adding to uses of
- * 'BM_elem_index_set'
- *
- * - 'set_inline'  -- since the data is already being looped over set to a
- *                    valid value inline.
- *
- * - 'set_dirty!'  -- intentionally sets the index to an invalid value,
- *                    flagging 'bm->elem_index_dirty' so we don't use it.
- *
- * - 'set_ok'      -- this is valid use since the part of the code is low level.
- *
- * - 'set_ok_invalid'  -- set to -1 on purpose since this should not be
- *                    used without a full array re-index, do this on
- *                    adding new vert/edge/faces since they may be added at
- *                    the end of the array.
- *
- * - 'set_loop'    -- currently loop index values are not used used much so
- *                    assume each case they are dirty.
- * - campbell */
-
-#define BM_elem_index_get(ele)           _bm_elem_index_get(&(ele)->head)
-#define BM_elem_index_set(ele, index)    _bm_elem_index_set(&(ele)->head, index)
-BM_INLINE int  _bm_elem_index_get(const BMHeader *ele);
-BM_INLINE void _bm_elem_index_set(BMHeader *ele, const int index);
-
-#ifdef USE_BMESH_HOLES
-#  define BM_FACE_FIRST_LOOP(p) (((BMLoopList *)((p)->loops.first))->first)
-#else
-#  define BM_FACE_FIRST_LOOP(p) ((p)->l_first)
-#endif
-
-/* size to use for static arrays when dealing with NGons,
- * alloc after this limit is reached.
- * this value is rather arbitrary */
-#define BM_NGON_STACK_SIZE 32
-
-/* avoid inf loop, this value is arbitrary
- * but should not error on valid cases */
-#define BM_LOOP_RADIAL_MAX 10000
-#define BM_NGON_MAX 100000
-
 /* include the rest of the API */
-#include "bmesh_operator_api.h"
-#include "bmesh_error.h"
+#include "intern/bmesh_operator_api.h"
+#include "intern/bmesh_error.h"
 
 #include "intern/bmesh_construct.h"
 #include "intern/bmesh_core.h"
@@ -287,15 +252,14 @@ BM_INLINE void _bm_elem_index_set(BMHeader *ele, const int index);
 #include "intern/bmesh_marking.h"
 #include "intern/bmesh_mesh.h"
 #include "intern/bmesh_mesh_conv.h"
+#include "intern/bmesh_mesh_validate.h"
 #include "intern/bmesh_mods.h"
 #include "intern/bmesh_operators.h"
 #include "intern/bmesh_polygon.h"
 #include "intern/bmesh_queries.h"
 #include "intern/bmesh_walkers.h"
-#include "intern/bmesh_walkers.h"
 
-#include "intern/bmesh_inline.c"
-#include "intern/bmesh_operator_api_inline.c"
+#include "intern/bmesh_inline.h"
 
 #ifdef __cplusplus
 }

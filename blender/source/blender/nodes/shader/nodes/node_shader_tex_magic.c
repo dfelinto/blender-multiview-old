@@ -30,15 +30,15 @@
 /* **************** OUTPUT ******************** */
 
 static bNodeSocketTemplate sh_node_tex_magic_in[]= {
-	{	SOCK_VECTOR, 1, "Vector",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
-	{	SOCK_FLOAT, 1, "Scale",			5.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f},
-	{	SOCK_FLOAT, 1, "Distortion",	1.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f},
+	{	SOCK_VECTOR, 1, N_("Vector"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
+	{	SOCK_FLOAT, 1, N_("Scale"),			5.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f},
+	{	SOCK_FLOAT, 1, N_("Distortion"),	1.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate sh_node_tex_magic_out[]= {
-	{	SOCK_RGBA, 0, "Color",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "Fac",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, N_("Color"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, N_("Fac"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
@@ -57,7 +57,7 @@ static int node_shader_gpu_tex_magic(GPUMaterial *mat, bNode *node, GPUNodeStack
 	NodeTexMagic *tex = (NodeTexMagic*)node->storage;
 	float depth = tex->depth;
 
-	if(!in[0].link)
+	if (!in[0].link)
 		in[0].link = GPU_attribute(CD_ORCO, "");
 
 	node_shader_gpu_tex_mapping(mat, node, in, out);

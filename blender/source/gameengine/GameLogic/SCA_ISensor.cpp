@@ -101,8 +101,9 @@ bool SCA_ISensor::IsPositiveTrigger()
 }
 
 void SCA_ISensor::SetPulseMode(bool posmode, 
-							   bool negmode,
-							   int freq) {
+                               bool negmode,
+                               int freq)
+{
 	m_pos_pulsemode = posmode;
 	m_neg_pulsemode = negmode;
 	m_pulse_frequency = freq;
@@ -174,7 +175,7 @@ void SCA_ISensor::RegisterToManager()
 
 void SCA_ISensor::Replace_EventManager(class SCA_LogicManager* logicmgr)
 {
-	if(m_links) { /* true if we're used currently */
+	if (m_links) { /* true if we're used currently */
 
 		m_eventmgr->RemoveSensor(this);
 		m_eventmgr= logicmgr->FindEventManager(m_eventmgr->GetType());
@@ -225,7 +226,7 @@ void SCA_ISensor::UnregisterToManager()
 
 void SCA_ISensor::ActivateControllers(class SCA_LogicManager* logicmgr)
 {
-	for(vector<SCA_IController*>::const_iterator c= m_linkedcontrollers.begin();
+	for (vector<SCA_IController*>::const_iterator c= m_linkedcontrollers.begin();
 	    c!=m_linkedcontrollers.end();++c)
 	{
 		SCA_IController* contr = *c;
@@ -305,7 +306,7 @@ void SCA_ISensor::Activate(class SCA_LogicManager* logicmgr)
 		{
 			// This level sensor is connected to at least one controller that was just made 
 			// active but it did not generate an event yet, do it now to those controllers only 
-			for(vector<SCA_IController*>::const_iterator c= m_linkedcontrollers.begin();
+			for (vector<SCA_IController*>::const_iterator c= m_linkedcontrollers.begin();
 				c!=m_linkedcontrollers.end();++c)
 			{
 				SCA_IController* contr = *c;

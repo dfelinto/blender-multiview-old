@@ -33,30 +33,6 @@ CCL_NAMESPACE_BEGIN
 
 /* Find/Add */
 
-static bool mesh_need_attribute(Scene *scene, Mesh *mesh, Attribute::Standard std)
-{
-	if(std == Attribute::STD_NONE)
-		return false;
-
-	foreach(uint shader, mesh->used_shaders)
-		if(scene->shaders[shader]->attributes.find(std))
-			return true;
-	
-	return false;
-}
-
-static bool mesh_need_attribute(Scene *scene, Mesh *mesh, ustring name)
-{
-	if(name == ustring())
-		return false;
-
-	foreach(uint shader, mesh->used_shaders)
-		if(scene->shaders[shader]->attributes.find(name))
-			return true;
-	
-	return false;
-}
-
 static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<uint>& used_shaders)
 {
 	/* create vertices */
@@ -66,17 +42,17 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 		mesh->verts.push_back(get_float3(v->co()));
 
 	/* create vertex normals */
-	Attribute *attr_N = mesh->attributes.add(Attribute::STD_VERTEX_NORMAL);
+	Attribute *attr_N = mesh->attributes.add(ATTR_STD_VERTEX_NORMAL);
 	float3 *N = attr_N->data_float3();
 
 	for(b_mesh.vertices.begin(v); v != b_mesh.vertices.end(); ++v, ++N)
-		*N= get_float3(v->normal());
+		*N = get_float3(v->normal());
 
 	/* create faces */
-	BL::Mesh::faces_iterator f;
+	BL::Mesh::tessfaces_iterator f;
 	vector<int> nverts;
 
-	for(b_mesh.faces.begin(f); f != b_mesh.faces.end(); ++f) {
+	for(b_mesh.tessfaces.begin(f); f != b_mesh.tessfaces.end(); ++f) {
 		int4 vi = get_int4(f->vertices_raw());
 		int n = (vi[3] == 0)? 3: 4;
 		int mi = clamp(f->material_index(), 0, used_shaders.size()-1);
@@ -92,10 +68,10 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 	}
 
 	/* create generated coordinates. todo: we should actually get the orco
-	   coordinates from modifiers, for now we use texspace loc/size which
-	   is available in the api. */
-	if(mesh_need_attribute(scene, mesh, Attribute::STD_GENERATED)) {
-		Attribute *attr = mesh->attributes.add(Attribute::STD_GENERATED);
+	 * coordinates from modifiers, for now we use texspace loc/size which
+	 * is available in the api. */
+	if(mesh->need_attribute(scene, ATTR_STD_GENERATED)) {
+		Attribute *attr = mesh->attributes.add(ATTR_STD_GENERATED);
 		float3 loc = get_float3(b_mesh.texspace_location());
 		float3 size = get_float3(b_mesh.texspace_size());
 
@@ -106,7 +82,6 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 		loc = loc*size - make_float3(0.5f, 0.5f, 0.5f);
 
 		float3 *fdata = attr->data_float3();
-		BL::Mesh::vertices_iterator v;
 		size_t i = 0;
 
 		for(b_mesh.vertices.begin(v); v != b_mesh.vertices.end(); ++v)
@@ -118,7 +93,7 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 		BL::Mesh::tessface_vertex_colors_iterator l;
 
 		for(b_mesh.tessface_vertex_colors.begin(l); l != b_mesh.tessface_vertex_colors.end(); ++l) {
-			if(!mesh_need_attribute(scene, mesh, ustring(l->name().c_str())))
+			if(!mesh->need_attribute(scene, ustring(l->name().c_str())))
 				continue;
 
 			Attribute *attr = mesh->attributes.add(
@@ -150,10 +125,10 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 		BL::Mesh::tessface_uv_textures_iterator l;
 
 		for(b_mesh.tessface_uv_textures.begin(l); l != b_mesh.tessface_uv_textures.end(); ++l) {
-			Attribute::Standard std = (l->active_render())? Attribute::STD_UV: Attribute::STD_NONE;
+			AttributeStandard std = (l->active_render())? ATTR_STD_UV: ATTR_STD_NONE;
 			ustring name = ustring(l->name().c_str());
 
-			if(!(mesh_need_attribute(scene, mesh, name) || mesh_need_attribute(scene, mesh, std)))
+			if(!(mesh->need_attribute(scene, name) || mesh->need_attribute(scene, std)))
 				continue;
 
 			Attribute *attr;
@@ -196,17 +171,19 @@ static void create_subd_mesh(Mesh *mesh, BL::Mesh b_mesh, PointerRNA *cmesh, con
 		sdmesh.add_vert(get_float3(v->co()));
 
 	/* create faces */
-	BL::Mesh::faces_iterator f;
+	BL::Mesh::tessfaces_iterator f;
 
-	for(b_mesh.faces.begin(f); f != b_mesh.faces.end(); ++f) {
+	for(b_mesh.tessfaces.begin(f); f != b_mesh.tessfaces.end(); ++f) {
 		int4 vi = get_int4(f->vertices_raw());
-		int n= (vi[3] == 0)? 3: 4;
+		int n = (vi[3] == 0) ? 3: 4;
 		//int shader = used_shaders[f->material_index()];
 
 		if(n == 4)
 			sdmesh.add_face(vi[0], vi[1], vi[2], vi[3]);
-		/*else
-			sdmesh.add_face(vi[0], vi[1], vi[2]);*/
+#if 0
+		else
+			sdmesh.add_face(vi[0], vi[1], vi[2]);
+#endif
 	}
 
 	/* finalize subd mesh */
@@ -217,34 +194,35 @@ static void create_subd_mesh(Mesh *mesh, BL::Mesh b_mesh, PointerRNA *cmesh, con
 	dsplit.camera = NULL;
 	dsplit.dicing_rate = RNA_float_get(cmesh, "dicing_rate");
 
-	sdmesh.tesselate(&dsplit, false, mesh, used_shaders[0], true);
+	sdmesh.tessellate(&dsplit, false, mesh, used_shaders[0], true);
 }
 
 /* Sync */
 
-Mesh *BlenderSync::sync_mesh(BL::Object b_ob, bool holdout, bool object_updated)
+Mesh *BlenderSync::sync_mesh(BL::Object b_ob, bool object_updated)
 {
 	/* test if we can instance or if the object is modified */
 	BL::ID b_ob_data = b_ob.data();
-	BL::ID key = (object_is_modified(b_ob) || holdout)? b_ob: b_ob_data;
+	BL::ID key = (BKE_object_is_modified(b_ob))? b_ob: b_ob_data;
+	BL::Material material_override = render_layer.material_override;
 
 	/* find shader indices */
 	vector<uint> used_shaders;
 
 	BL::Object::material_slots_iterator slot;
 	for(b_ob.material_slots.begin(slot); slot != b_ob.material_slots.end(); ++slot) {
-		BL::Material material_override = render_layer.material_override;
-
-		if(holdout)
-			find_shader(PointerRNA_NULL, used_shaders, scene->default_holdout);
-		else if(material_override)
+		if(material_override)
 			find_shader(material_override, used_shaders, scene->default_surface);
 		else
 			find_shader(slot->material(), used_shaders, scene->default_surface);
 	}
 
-	if(used_shaders.size() == 0)
-		used_shaders.push_back(scene->default_surface);
+	if(used_shaders.size() == 0) {
+		if(material_override)
+			find_shader(material_override, used_shaders, scene->default_surface);
+		else
+			used_shaders.push_back(scene->default_surface);
+	}
 	
 	/* test if we need to sync */
 	Mesh *mesh;
@@ -253,7 +231,7 @@ Mesh *BlenderSync::sync_mesh(BL::Object b_ob, bool holdout, bool object_updated)
 		/* if transform was applied to mesh, need full update */
 		if(object_updated && mesh->transform_applied);
 		/* test if shaders changed, these can be object level so mesh
-		   does not get tagged for recalc */
+		 * does not get tagged for recalc */
 		else if(mesh->used_shaders != used_shaders);
 		else {
 			/* even if not tagged for recalc, we may need to sync anyway
@@ -320,6 +298,38 @@ Mesh *BlenderSync::sync_mesh(BL::Object b_ob, bool holdout, bool object_updated)
 	mesh->tag_update(scene, rebuild);
 
 	return mesh;
+}
+
+void BlenderSync::sync_mesh_motion(BL::Object b_ob, Mesh *mesh, int motion)
+{
+	/* todo: displacement, subdivision */
+	size_t size = mesh->verts.size();
+
+	/* skip objects without deforming modifiers. this is not a totally reliable,
+	 * would need a more extensive check to see which objects are animated */
+	if(!size || !ccl::BKE_object_is_deform_modified(b_ob, b_scene, preview))
+		return;
+
+	/* get derived mesh */
+	BL::Mesh b_mesh = object_to_mesh(b_ob, b_scene, true, !preview);
+
+	if(b_mesh) {
+		BL::Mesh::vertices_iterator v;
+		AttributeStandard std = (motion == -1)? ATTR_STD_MOTION_PRE: ATTR_STD_MOTION_POST;
+		Attribute *attr_M = mesh->attributes.add(std);
+		float3 *M = attr_M->data_float3();
+		size_t i = 0;
+
+		for(b_mesh.vertices.begin(v); v != b_mesh.vertices.end() && i < size; ++v, M++, i++)
+			*M = get_float3(v->co());
+
+		/* if number of vertices changed, or if coordinates stayed the same, drop it */
+		if(i != size || memcmp(M, &mesh->verts[0], sizeof(float3)*size) == 0)
+			mesh->attributes.remove(std);
+
+		/* free derived mesh */
+		object_remove_mesh(b_data, b_mesh);
+	}
 }
 
 CCL_NAMESPACE_END

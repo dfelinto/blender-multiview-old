@@ -35,12 +35,12 @@
 
 /* **************** VALTORGB ******************** */
 static bNodeSocketTemplate cmp_node_valtorgb_in[]= {
-	{	SOCK_FLOAT, 1, "Fac",			0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_FACTOR},
+	{	SOCK_FLOAT, 1, N_("Fac"),			0.5f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_FACTOR},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_valtorgb_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
-	{	SOCK_FLOAT, 0, "Alpha"},
+	{	SOCK_RGBA, 0, N_("Image")},
+	{	SOCK_FLOAT, 0, N_("Alpha")},
 	{	-1, 0, ""	}
 };
 
@@ -54,12 +54,12 @@ static void node_composit_exec_valtorgb(void *UNUSED(data), bNode *node, bNodeSt
 	/* stack order in: fac */
 	/* stack order out: col, alpha */
 	
-	if(out[0]->hasoutput==0 && out[1]->hasoutput==0) 
+	if (out[0]->hasoutput==0 && out[1]->hasoutput==0) 
 		return;
 	
-	if(node->storage) {
+	if (node->storage) {
 		/* input no image? then only color operation */
-		if(in[0]->data==NULL) {
+		if (in[0]->data==NULL) {
 			do_colorband(node->storage, in[0]->vec[0], out[0]->vec);
 		}
 		else {
@@ -71,7 +71,7 @@ static void node_composit_exec_valtorgb(void *UNUSED(data), bNode *node, bNodeSt
 			
 			out[0]->data= stackbuf;
 			
-			if(out[1]->hasoutput)
+			if (out[1]->hasoutput)
 				out[1]->data= valbuf_from_rgbabuf(stackbuf, CHAN_A);
 
 		}
@@ -101,17 +101,17 @@ void register_node_type_cmp_valtorgb(bNodeTreeType *ttype)
 
 /* **************** RGBTOBW ******************** */
 static bNodeSocketTemplate cmp_node_rgbtobw_in[]= {
-	{	SOCK_RGBA, 1, "Image",			0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 1, N_("Image"),			0.8f, 0.8f, 0.8f, 1.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_rgbtobw_out[]= {
-	{	SOCK_FLOAT, 0, "Val",			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, N_("Val"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
 static void do_rgbtobw(bNode *UNUSED(node), float *out, float *in)
 {
-	out[0]= in[0]*0.35f + in[1]*0.45f + in[2]*0.2f;
+	out[0] = rgb_to_bw(in);
 }
 
 static void node_composit_exec_rgbtobw(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
@@ -119,11 +119,11 @@ static void node_composit_exec_rgbtobw(void *UNUSED(data), bNode *node, bNodeSta
 	/* stack order out: bw */
 	/* stack order in: col */
 	
-	if(out[0]->hasoutput==0)
+	if (out[0]->hasoutput==0)
 		return;
 	
 	/* input no image? then only color operation */
-	if(in[0]->data==NULL) {
+	if (in[0]->data==NULL) {
 		do_rgbtobw(node, out[0]->vec, in[0]->vec);
 	}
 	else {

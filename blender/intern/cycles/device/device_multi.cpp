@@ -257,13 +257,14 @@ public:
 
 	void task_add(DeviceTask& task)
 	{
-		ThreadQueue<DeviceTask> tasks;
+		list<DeviceTask> tasks;
 		task.split(tasks, devices.size());
 
 		foreach(SubDevice& sub, devices) {
-			DeviceTask subtask;
+			if(!tasks.empty()) {
+				DeviceTask subtask = tasks.front();
+				tasks.pop_front();
 
-			if(tasks.worker_wait_pop(subtask)) {
 				if(task.buffer) subtask.buffer = sub.ptr_map[task.buffer];
 				if(task.rng_state) subtask.rng_state = sub.ptr_map[task.rng_state];
 				if(task.rgba) subtask.rgba = sub.ptr_map[task.rgba];
@@ -303,6 +304,7 @@ static bool device_multi_add(vector<DeviceInfo>& devices, DeviceType type, bool 
 	int num_added = 0, num_display = 0;
 
 	info.advanced_shading = with_advanced_shading;
+	info.pack_images = false;
 
 	foreach(DeviceInfo& subinfo, devices) {
 		if(subinfo.type == type) {
@@ -325,6 +327,7 @@ static bool device_multi_add(vector<DeviceInfo>& devices, DeviceType type, bool 
 			info.multi_devices.push_back(subinfo);
 			if(subinfo.display_device)
 				info.display_device = true;
+			info.pack_images = info.pack_images || subinfo.pack_images;
 			num_added++;
 		}
 	}

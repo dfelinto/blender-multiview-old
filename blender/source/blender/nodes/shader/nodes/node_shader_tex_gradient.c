@@ -30,13 +30,13 @@
 /* **************** BLEND ******************** */
 
 static bNodeSocketTemplate sh_node_tex_gradient_in[]= {
-	{	SOCK_VECTOR, 1, "Vector",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
+	{	SOCK_VECTOR, 1, N_("Vector"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate sh_node_tex_gradient_out[]= {
-	{	SOCK_RGBA, 0, "Color",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_FLOAT, 0, "Fac",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, N_("Color"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, N_("Fac"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
@@ -52,7 +52,7 @@ static void node_shader_init_tex_gradient(bNodeTree *UNUSED(ntree), bNode* node,
 
 static int node_shader_gpu_tex_gradient(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
 {
-	if(!in[0].link)
+	if (!in[0].link)
 		in[0].link = GPU_attribute(CD_ORCO, "");
 
 	node_shader_gpu_tex_mapping(mat, node, in, out);

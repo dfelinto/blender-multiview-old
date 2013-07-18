@@ -39,7 +39,7 @@ __device void camera_sample_perspective(KernelGlobals *kg, float raster_x, float
 {
 	/* create ray form raster position */
 	Transform rastertocamera = kernel_data.cam.rastertocamera;
-	float3 Pcamera = transform(&rastertocamera, make_float3(raster_x, raster_y, 0.0f));
+	float3 Pcamera = transform_perspective(&rastertocamera, make_float3(raster_x, raster_y, 0.0f));
 
 	ray->P = make_float3(0.0f, 0.0f, 0.0f);
 	ray->D = Pcamera;
@@ -63,7 +63,12 @@ __device void camera_sample_perspective(KernelGlobals *kg, float raster_x, float
 	/* transform ray from camera to world */
 	Transform cameratoworld = kernel_data.cam.cameratoworld;
 
-	ray->P = transform(&cameratoworld, ray->P);
+#ifdef __MOTION__
+	if(kernel_data.cam.have_motion)
+		transform_motion_interpolate(&cameratoworld, &kernel_data.cam.motion, ray->time);
+#endif
+
+	ray->P = transform_point(&cameratoworld, ray->P);
 	ray->D = transform_direction(&cameratoworld, ray->D);
 	ray->D = normalize(ray->D);
 
@@ -93,7 +98,7 @@ __device void camera_sample_orthographic(KernelGlobals *kg, float raster_x, floa
 {
 	/* create ray form raster position */
 	Transform rastertocamera = kernel_data.cam.rastertocamera;
-	float3 Pcamera = transform(&rastertocamera, make_float3(raster_x, raster_y, 0.0f));
+	float3 Pcamera = transform_perspective(&rastertocamera, make_float3(raster_x, raster_y, 0.0f));
 
 	ray->P = Pcamera;
 	ray->D = make_float3(0.0f, 0.0f, 1.0f);
@@ -101,7 +106,12 @@ __device void camera_sample_orthographic(KernelGlobals *kg, float raster_x, floa
 	/* transform ray from camera to world */
 	Transform cameratoworld = kernel_data.cam.cameratoworld;
 
-	ray->P = transform(&cameratoworld, ray->P);
+#ifdef __MOTION__
+	if(kernel_data.cam.have_motion)
+		transform_motion_interpolate(&cameratoworld, &kernel_data.cam.motion, ray->time);
+#endif
+
+	ray->P = transform_point(&cameratoworld, ray->P);
 	ray->D = transform_direction(&cameratoworld, ray->D);
 	ray->D = normalize(ray->D);
 
@@ -122,21 +132,40 @@ __device void camera_sample_orthographic(KernelGlobals *kg, float raster_x, floa
 #endif
 }
 
-/* Environment Camera */
+/* Panorama Camera */
 
-__device void camera_sample_environment(KernelGlobals *kg, float raster_x, float raster_y, Ray *ray)
+__device void camera_sample_panorama(KernelGlobals *kg, float raster_x, float raster_y, Ray *ray)
 {
 	Transform rastertocamera = kernel_data.cam.rastertocamera;
-	float3 Pcamera = transform(&rastertocamera, make_float3(raster_x, raster_y, 0.0f));
+	float3 Pcamera = transform_perspective(&rastertocamera, make_float3(raster_x, raster_y, 0.0f));
 
 	/* create ray form raster position */
-	ray->P = make_float3(0.0, 0.0f, 0.0f);
-	ray->D = equirectangular_to_direction(Pcamera.x, Pcamera.y);
+	ray->P = make_float3(0.0f, 0.0f, 0.0f);
+
+#ifdef __CAMERA_CLIPPING__
+	/* clipping */
+	ray->t = kernel_data.cam.cliplength;
+#else
+	ray->t = FLT_MAX;
+#endif
+
+	ray->D = panorama_to_direction(kg, Pcamera.x, Pcamera.y);
+
+	/* indicates ray should not receive any light, outside of the lens */
+	if(len_squared(ray->D) == 0.0f) {
+		ray->t = 0.0f;
+		return;
+	}
 
 	/* transform ray from camera to world */
 	Transform cameratoworld = kernel_data.cam.cameratoworld;
 
-	ray->P = transform(&cameratoworld, ray->P);
+#ifdef __MOTION__
+	if(kernel_data.cam.have_motion)
+		transform_motion_interpolate(&cameratoworld, &kernel_data.cam.motion, ray->time);
+#endif
+
+	ray->P = transform_point(&cameratoworld, ray->P);
 	ray->D = transform_direction(&cameratoworld, ray->D);
 	ray->D = normalize(ray->D);
 
@@ -145,31 +174,31 @@ __device void camera_sample_environment(KernelGlobals *kg, float raster_x, float
 	ray->dP.dx = make_float3(0.0f, 0.0f, 0.0f);
 	ray->dP.dy = make_float3(0.0f, 0.0f, 0.0f);
 
-	Pcamera = transform(&rastertocamera, make_float3(raster_x + 1.0f, raster_y, 0.0f));
-	ray->dD.dx = equirectangular_to_direction(Pcamera.x, Pcamera.y) - ray->D;
+	Pcamera = transform_perspective(&rastertocamera, make_float3(raster_x + 1.0f, raster_y, 0.0f));
+	ray->dD.dx = normalize(transform_direction(&cameratoworld, panorama_to_direction(kg, Pcamera.x, Pcamera.y))) - ray->D;
 
-	Pcamera = transform(&rastertocamera, make_float3(raster_x, raster_y + 1.0f, 0.0f));
-	ray->dD.dy = equirectangular_to_direction(Pcamera.x, Pcamera.y) - ray->D;
-#endif
+	Pcamera = transform_perspective(&rastertocamera, make_float3(raster_x, raster_y + 1.0f, 0.0f));
+	ray->dD.dy = normalize(transform_direction(&cameratoworld, panorama_to_direction(kg, Pcamera.x, Pcamera.y))) - ray->D;
 
-#ifdef __CAMERA_CLIPPING__
-	/* clipping */
-	ray->t = kernel_data.cam.cliplength;
-#else
-	ray->t = FLT_MAX;
 #endif
 }
 
 /* Common */
 
-__device void camera_sample(KernelGlobals *kg, int x, int y, float filter_u, float filter_v, float lens_u, float lens_v, Ray *ray)
+__device void camera_sample(KernelGlobals *kg, int x, int y, float filter_u, float filter_v,
+	float lens_u, float lens_v, float time, Ray *ray)
 {
 	/* pixel filter */
 	float raster_x = x + kernel_tex_interp(__filter_table, filter_u, FILTER_TABLE_SIZE);
 	float raster_y = y + kernel_tex_interp(__filter_table, filter_v, FILTER_TABLE_SIZE);
 
+#ifdef __MOTION__
 	/* motion blur */
-	//ray->time = lerp(time_t, kernel_data.cam.shutter_open, kernel_data.cam.shutter_close);
+	if(kernel_data.cam.shuttertime == 0.0f)
+		ray->time = TIME_INVALID;
+	else
+		ray->time = 0.5f + (time - 0.5f)*kernel_data.cam.shuttertime;
+#endif
 
 	/* sample */
 	if(kernel_data.cam.type == CAMERA_PERSPECTIVE)
@@ -177,7 +206,7 @@ __device void camera_sample(KernelGlobals *kg, int x, int y, float filter_u, flo
 	else if(kernel_data.cam.type == CAMERA_ORTHOGRAPHIC)
 		camera_sample_orthographic(kg, raster_x, raster_y, ray);
 	else
-		camera_sample_environment(kg, raster_x, raster_y, ray);
+		camera_sample_panorama(kg, raster_x, raster_y, ray);
 }
 
 CCL_NAMESPACE_END

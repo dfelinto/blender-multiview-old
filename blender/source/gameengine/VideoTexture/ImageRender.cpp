@@ -26,7 +26,7 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 // implementation
 
-#include <PyObjectPlus.h>
+#include "PyObjectPlus.h"
 #include <structmember.h>
 #include <float.h>
 #include <math.h>
@@ -138,7 +138,7 @@ void ImageRender::Render()
 		// compute distance of observer to mirror = D - observerPos . normal
 		MT_Scalar observerDistance = mirrorPlaneDTerm - observerWorldPos.dot(mirrorWorldZ);
 		// if distance < 0.01 => observer is on wrong side of mirror, don't render
-		if (observerDistance < 0.01f)
+		if (observerDistance < 0.01)
 			return;
 		// set camera world position = observerPos + normal * 2 * distance
 		MT_Point3 cameraWorldPos = observerWorldPos + (MT_Scalar(2.0)*observerDistance)*mirrorWorldZ;
@@ -208,11 +208,11 @@ void ImageRender::Render()
 		            frustrum.x1, frustrum.x2, frustrum.y1, frustrum.y2, frustrum.camnear, frustrum.camfar);
 
 		m_camera->SetProjectionMatrix(projmat);
-	} else if (m_camera->hasValidProjectionMatrix())
-	{
+	}
+	else if (m_camera->hasValidProjectionMatrix()) {
 		m_rasterizer->SetProjectionMatrix(m_camera->GetProjectionMatrix());
-	} else
-	{
+	}
+	else {
 		float lens = m_camera->GetLens();
 		float sensor_x = m_camera->GetSensorWidth();
 		float sensor_y = m_camera->GetSensorHeight();
@@ -241,8 +241,8 @@ void ImageRender::Render()
 
 			projmat = m_rasterizer->GetOrthoMatrix(
 			            frustrum.x1, frustrum.x2, frustrum.y1, frustrum.y2, frustrum.camnear, frustrum.camfar);
-		} else
-		{
+		}
+		else {
 			RAS_FramingManager::ComputeDefaultFrustum(
 			            nearfrust,
 			            farfrust,
@@ -359,7 +359,7 @@ static int setBackground (PyImage * self, PyObject * value, void * closure)
 	getImageRender(self)->setBackground((unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 0))),
 		(unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 1))),
 		(unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 2))),
-        (unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 3))));
+		(unsigned char)(PyLong_AsSsize_t(PySequence_Fast_GET_ITEM(value, 3))));
 	// success
 	return 0;
 }
@@ -459,7 +459,7 @@ static int ImageMirror_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 		else
 			THRWEXCP(SceneInvalid, S_OK);
 		
-		if(scenePtr==NULL) /* in case the python proxy reference is invalid */
+		if (scenePtr==NULL) /* in case the python proxy reference is invalid */
 			THRWEXCP(SceneInvalid, S_OK);
 		
 		// get observer pointer
@@ -471,7 +471,7 @@ static int ImageMirror_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 		else
 			THRWEXCP(ObserverInvalid, S_OK);
 		
-		if(observerPtr==NULL) /* in case the python proxy reference is invalid */
+		if (observerPtr==NULL) /* in case the python proxy reference is invalid */
 			THRWEXCP(ObserverInvalid, S_OK);
 
 		// get mirror pointer
@@ -481,7 +481,7 @@ static int ImageMirror_init (PyObject * pySelf, PyObject * args, PyObject * kwds
 		else
 			THRWEXCP(MirrorInvalid, S_OK);
 		
-		if(mirrorPtr==NULL) /* in case the python proxy reference is invalid */
+		if (mirrorPtr==NULL) /* in case the python proxy reference is invalid */
 			THRWEXCP(MirrorInvalid, S_OK);
 
 		// locate the material in the mirror
@@ -604,14 +604,13 @@ ImageRender::ImageRender (KX_Scene * scene, KX_GameObject * observer, KX_GameObj
 				mirrorVerts.push_back(v1);
 				mirrorVerts.push_back(v2);
 				mirrorVerts.push_back(v3);
-				if (polygon->VertexCount() == 4)
-				{
+				if (polygon->VertexCount() == 4) {
 					v4 = polygon->GetVertex(3);
 					mirrorVerts.push_back(v4);
-					area = normal_quad_v3( normal,(float*)v1->getXYZ(), (float*)v2->getXYZ(), (float*)v3->getXYZ(), (float*)v4->getXYZ());
-				} else
-				{
-					area = normal_tri_v3( normal,(float*)v1->getXYZ(), (float*)v2->getXYZ(), (float*)v3->getXYZ());
+					area = normal_quad_v3(normal,(float*)v1->getXYZ(), (float*)v2->getXYZ(), (float*)v3->getXYZ(), (float*)v4->getXYZ());
+				}
+				else {
+					area = normal_tri_v3(normal,(float*)v1->getXYZ(), (float*)v2->getXYZ(), (float*)v3->getXYZ());
 				}
 				area = fabs(area);
 				mirrorArea += area;
@@ -637,8 +636,8 @@ ImageRender::ImageRender (KX_Scene * scene, KX_GameObject * observer, KX_GameObj
 	// otherwise the Y axis is the up direction.
 	// If the mirror is not perfectly vertical(horizontal), the Z(Y) axis projection on the mirror
 	// plan by the normal will be the up direction.
-	if (fabs(mirrorNormal[2]) > fabs(mirrorNormal[1]) &&
-	        fabs(mirrorNormal[2]) > fabs(mirrorNormal[0]))
+	if (fabsf(mirrorNormal[2]) > fabsf(mirrorNormal[1]) &&
+	    fabsf(mirrorNormal[2]) > fabsf(mirrorNormal[0]))
 	{
 		// the mirror is more horizontal than vertical
 		copy_v3_v3(axis, yaxis);
@@ -649,7 +648,7 @@ ImageRender::ImageRender (KX_Scene * scene, KX_GameObject * observer, KX_GameObj
 		copy_v3_v3(axis, zaxis);
 	}
 	dist = dot_v3v3(mirrorNormal, axis);
-	if (fabs(dist) < FLT_EPSILON)
+	if (fabsf(dist) < FLT_EPSILON)
 	{
 		// the mirror is already fully aligned with up axis
 		copy_v3_v3(mirrorUp, axis);

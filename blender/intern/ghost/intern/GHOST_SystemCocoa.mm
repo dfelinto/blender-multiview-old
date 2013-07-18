@@ -527,7 +527,7 @@ int cocoa_request_qtcodec_settings(bContext *C, wmOperator *op)
 // So WM_exit needs to be called directly, as the event loop will never run before termination
 - (void)applicationWillTerminate:(NSNotification *)aNotification
 {
-	/*G.afbreek = 0; //Let Cocoa perform the termination at the end
+	/*G.is_break = FALSE; //Let Cocoa perform the termination at the end
 	WM_exit(C);*/
 }
 
@@ -915,7 +915,7 @@ bool GHOST_SystemCocoa::processEvents(bool waitForEvent)
 				case NSFlagsChanged:
 					handleKeyEvent(event);
 					
-					/* Support system-wide keyboard shortcuts, like Expos√©, ...) =>included in always NSApp sendEvent */
+					/* Support system-wide keyboard shortcuts, like Exposé, ...) =>included in always NSApp sendEvent */
 					/*		if (([event modifierFlags] & NSCommandKeyMask) || [event type] == NSFlagsChanged) {
 					 [NSApp sendEvent:event];
 					 }*/
@@ -1280,7 +1280,7 @@ GHOST_TUns8 GHOST_SystemCocoa::handleQuitRequest()
 	GHOST_Window* window = (GHOST_Window*)m_windowManager->getActiveWindow();
 	
 	//Discard quit event if we are in cursor grab sequence
-	if (window && (window->getCursorGrabMode() != GHOST_kGrabDisable) && (window->getCursorGrabMode() != GHOST_kGrabNormal))
+	if (window && window->getCursorGrabModeIsWarp())
 		return GHOST_kExitCancel;
 	
 	//Check open windows if some changes are not saved
@@ -1329,7 +1329,7 @@ bool GHOST_SystemCocoa::handleOpenDocumentRequest(void *filepathStr)
 	}	
 	
 	//Discard event if we are in cursor grab sequence, it'll lead to "stuck cursor" situation if the alert panel is raised
-	if (window && (window->getCursorGrabMode() != GHOST_kGrabDisable) && (window->getCursorGrabMode() != GHOST_kGrabNormal))
+	if (window && window->getCursorGrabModeIsWarp())
 		return GHOST_kExitCancel;
 
 	//Check open windows if some changes are not saved
@@ -1421,6 +1421,23 @@ GHOST_TSuccess GHOST_SystemCocoa::handleTabletEvent(void *eventPtr, short eventT
 	return GHOST_kSuccess;
 }
 
+bool GHOST_SystemCocoa::handleTabletEvent(void *eventPtr)
+{
+	NSEvent *event = (NSEvent *)eventPtr;
+
+	switch ([event subtype]) {
+		case NX_SUBTYPE_TABLET_POINT:
+			handleTabletEvent(eventPtr, NSTabletPoint);
+			return true;
+		case NX_SUBTYPE_TABLET_PROXIMITY:
+			handleTabletEvent(eventPtr, NSTabletProximity);
+			return true;
+		default:
+			//No tablet event included : do nothing
+			return false;
+	}
+
+}
 
 GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
 {
@@ -1432,7 +1449,7 @@ GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
 		//printf("\nW failure for event 0x%x",[event type]);
 		return GHOST_kFailure;
 	}
-	
+
 	switch ([event type])
     {
 		case NSLeftMouseDown:
@@ -1440,17 +1457,7 @@ GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
 		case NSOtherMouseDown:
 			pushEvent(new GHOST_EventButton([event timestamp]*1000, GHOST_kEventButtonDown, window, convertButton([event buttonNumber])));
 			//Handle tablet events combined with mouse events
-			switch ([event subtype]) {
-				case NX_SUBTYPE_TABLET_POINT:
-					handleTabletEvent(eventPtr, NSTabletPoint);
-					break;
-				case NX_SUBTYPE_TABLET_PROXIMITY:
-					handleTabletEvent(eventPtr, NSTabletProximity);
-					break;
-				default:
-					//No tablet event included : do nothing
-					break;
-			}
+			handleTabletEvent(event);
 			break;
 						
 		case NSLeftMouseUp:
@@ -1458,37 +1465,27 @@ GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
 		case NSOtherMouseUp:
 			pushEvent(new GHOST_EventButton([event timestamp]*1000, GHOST_kEventButtonUp, window, convertButton([event buttonNumber])));
 			//Handle tablet events combined with mouse events
-			switch ([event subtype]) {
-				case NX_SUBTYPE_TABLET_POINT:
-					handleTabletEvent(eventPtr, NSTabletPoint);
-					break;
-				case NX_SUBTYPE_TABLET_PROXIMITY:
-					handleTabletEvent(eventPtr, NSTabletProximity);
-					break;
-				default:
-					//No tablet event included : do nothing
-					break;
-			}
+			handleTabletEvent(event);
 			break;
 			
 		case NSLeftMouseDragged:
 		case NSRightMouseDragged:
 		case NSOtherMouseDragged:				
 			//Handle tablet events combined with mouse events
-			switch ([event subtype]) {
-				case NX_SUBTYPE_TABLET_POINT:
-					handleTabletEvent(eventPtr, NSTabletPoint);
-					break;
-				case NX_SUBTYPE_TABLET_PROXIMITY:
-					handleTabletEvent(eventPtr, NSTabletProximity);
-					break;
-				default:
-					//No tablet event included : do nothing
-					break;
-			}
+			handleTabletEvent(event);
 			
-		case NSMouseMoved:
-				switch (window->getCursorGrabMode()) {
+		case NSMouseMoved: 
+			{
+				GHOST_TGrabCursorMode grab_mode = window->getCursorGrabMode();
+
+				/* TODO: CHECK IF THIS IS A TABLET EVENT */
+				bool is_tablet = false;
+
+				if (is_tablet && window->getCursorGrabModeIsWarp()) {
+					grab_mode = GHOST_kGrabDisable;
+				}
+
+				switch (grab_mode) {
 					case GHOST_kGrabHide: //Cursor hidden grab operation : no cursor move
 					{
 						GHOST_TInt32 x_warp, y_warp, x_accum, y_accum, x, y;
@@ -1563,7 +1560,8 @@ GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
 					}
 						break;
 				}
-				break;
+			}
+			break;
 			
 		case NSScrollWheel:
 			{
@@ -1664,17 +1662,19 @@ GHOST_TSuccess GHOST_SystemCocoa::handleKeyEvent(void *eventPtr)
 		case NSKeyDown:
 		case NSKeyUp:
 			charsIgnoringModifiers = [event charactersIgnoringModifiers];
-			if ([charsIgnoringModifiers length]>0)
+			if ([charsIgnoringModifiers length] > 0) {
 				keyCode = convertKey([event keyCode],
 									 [charsIgnoringModifiers characterAtIndex:0],
 									 [event type] == NSKeyDown?kUCKeyActionDown:kUCKeyActionUp);
-			else
+			}
+			else {
 				keyCode = convertKey([event keyCode],0,
 									 [event type] == NSKeyDown?kUCKeyActionDown:kUCKeyActionUp);
+			}
 
 			/* handling both unicode or ascii */
 			characters = [event characters];
-			if ([characters length]>0) {
+			if ([characters length] > 0) {
 				convertedCharacters = [characters dataUsingEncoding:NSUTF8StringEncoding];
 				
 				for (int x = 0; x < [convertedCharacters length]; x++) {

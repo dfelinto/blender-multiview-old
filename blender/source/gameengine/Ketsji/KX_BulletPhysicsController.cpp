@@ -20,8 +20,8 @@
 #include "BulletSoftBody/btSoftBody.h"
 
 
-KX_BulletPhysicsController::KX_BulletPhysicsController (const CcdConstructionInfo& ci, bool dyna, bool sensor, bool compound)
-: KX_IPhysicsController(dyna,sensor,compound,(PHY_IPhysicsController*)this),
+KX_BulletPhysicsController::KX_BulletPhysicsController (const CcdConstructionInfo& ci, bool dyna, bool sensor, bool character, bool compound)
+: KX_IPhysicsController(dyna,sensor,character,compound,(PHY_IPhysicsController*)this),
 CcdPhysicsController(ci),
 m_savedCollisionFlags(0),
 m_savedCollisionFilterGroup(0),
@@ -121,8 +121,8 @@ void	KX_BulletPhysicsController::RelativeTranslate(const MT_Vector3& dloc,bool l
 
 void	KX_BulletPhysicsController::RelativeRotate(const MT_Matrix3x3& drot,bool local)
 {
-	float	rotval[12];
-	drot.getValue(rotval);
+	float	rotval[9];
+	drot.getValue3x3(rotval);
 	CcdPhysicsController::RelativeRotate(rotval,local);
 }
 
@@ -232,6 +232,7 @@ MT_Vector3	KX_BulletPhysicsController::getReactionForce()
 }
 void	KX_BulletPhysicsController::setRigidBody(bool rigid)
 {
+	CcdPhysicsController::setRigidBody(rigid);
 }
 
 /* This function dynamically adds the collision shape of another controller to
@@ -472,7 +473,7 @@ SG_Controller*	KX_BulletPhysicsController::GetReplica(class SG_Node* destnode)
 void	KX_BulletPhysicsController::SetSumoTransform(bool nondynaonly)
 {
 
-	if (!m_bDyna && !m_bSensor)
+	if (!m_bDyna && !m_bSensor && !m_bCharacter)
 	{
 		btCollisionObject* object = GetRigidBody();
 		object->setActivationState(ACTIVE_TAG);

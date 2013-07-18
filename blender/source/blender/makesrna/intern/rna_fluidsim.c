@@ -51,9 +51,9 @@
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
 
-static StructRNA* rna_FluidSettings_refine(struct PointerRNA *ptr)
+static StructRNA *rna_FluidSettings_refine(struct PointerRNA *ptr)
 {
-	FluidsimSettings *fss = (FluidsimSettings*)ptr->data;
+	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
 
 	switch (fss->type) {
 		case OB_FLUIDSIM_DOMAIN:
@@ -80,7 +80,7 @@ static void rna_fluid_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerR
 	Object *ob = ptr->id.data;
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-	WM_main_add_notifier(NC_OBJECT|ND_MODIFIER, ob);
+	WM_main_add_notifier(NC_OBJECT | ND_MODIFIER, ob);
 }
 
 static int fluidsim_find_lastframe(Object *ob, FluidsimSettings *fss)
@@ -103,7 +103,7 @@ static int fluidsim_find_lastframe(Object *ob, FluidsimSettings *fss)
 static void rna_fluid_find_enframe(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	Object *ob = ptr->id.data;
-	FluidsimModifierData *fluidmd = (FluidsimModifierData*)modifiers_findByType(ob, eModifierType_Fluidsim);
+	FluidsimModifierData *fluidmd = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);
 
 	if (fluidmd->fss->flag & OB_FLUIDSIM_REVERSE) {
 		fluidmd->fss->lastgoodframe = fluidsim_find_lastframe(ob, fluidmd->fss);
@@ -116,13 +116,13 @@ static void rna_fluid_find_enframe(Main *bmain, Scene *scene, PointerRNA *ptr)
 
 static void rna_FluidSettings_update_type(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
-	Object *ob = (Object*)ptr->id.data;
+	Object *ob = (Object *)ptr->id.data;
 	FluidsimModifierData *fluidmd;
 	ParticleSystemModifierData *psmd;
 	ParticleSystem *psys;
 	ParticleSettings *part;
 	
-	fluidmd = (FluidsimModifierData*)modifiers_findByType(ob, eModifierType_Fluidsim);
+	fluidmd = (FluidsimModifierData *)modifiers_findByType(ob, eModifierType_Fluidsim);
 	fluidmd->fss->flag &= ~OB_FLUIDSIM_REVERSE; /* clear flag */
 
 	/* remove fluidsim particle system */
@@ -141,10 +141,10 @@ static void rna_FluidSettings_update_type(Main *bmain, Scene *scene, PointerRNA 
 			psys->pointcache = BKE_ptcache_add(&psys->ptcaches);
 			psys->flag |= PSYS_ENABLED;
 			BLI_strncpy(psys->name, "FluidParticles", sizeof(psys->name));
-			BLI_addtail(&ob->particlesystem,psys);
+			BLI_addtail(&ob->particlesystem, psys);
 
 			/* add modifier */
-			psmd = (ParticleSystemModifierData*)modifier_new(eModifierType_ParticleSystem);
+			psmd = (ParticleSystemModifierData *)modifier_new(eModifierType_ParticleSystem);
 			BLI_strncpy(psmd->modifier.name, "FluidParticleSystem", sizeof(psmd->modifier.name));
 			psmd->psys = psys;
 			BLI_addtail(&ob->modifiers, psmd);
@@ -175,8 +175,8 @@ static void rna_DomainFluidSettings_memory_estimate_get(PointerRNA *ptr, char *v
 	(void)ptr;
 	value[0] = '\0';
 #else
-	Object *ob = (Object*)ptr->id.data;
-	FluidsimSettings *fss = (FluidsimSettings*)ptr->data;
+	Object *ob = (Object *)ptr->id.data;
+	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
 
 	fluid_estimate_memory(ob, fss, value);
 #endif
@@ -193,7 +193,7 @@ static int rna_DomainFluidSettings_memory_estimate_length(PointerRNA *UNUSED(ptr
 
 static char *rna_FluidSettings_path(PointerRNA *ptr)
 {
-	FluidsimSettings *fss = (FluidsimSettings*)ptr->data;
+	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
 	ModifierData *md = (ModifierData *)fss->fmd;
 
 	return BLI_sprintfN("modifiers[\"%s\"].settings", md->name);
@@ -201,13 +201,13 @@ static char *rna_FluidSettings_path(PointerRNA *ptr)
 
 static void rna_FluidMeshVertex_data_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
 {
-	FluidsimSettings *fss = (FluidsimSettings*)ptr->data;
-	rna_iterator_array_begin(iter, fss->meshVelocities, sizeof(float)*3, fss->totvert, 0, NULL);
+	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
+	rna_iterator_array_begin(iter, fss->meshVelocities, sizeof(float) * 3, fss->totvert, 0, NULL);
 }
 
 static int rna_FluidMeshVertex_data_length(PointerRNA *ptr)
 {
-	FluidsimSettings *fss = (FluidsimSettings*)ptr->data;
+	FluidsimSettings *fss = (FluidsimSettings *)ptr->data;
 	return fss->totvert;
 }
 
@@ -225,7 +225,8 @@ static void rna_def_fluidsim_slip(StructRNA *srna)
 		                    "Mix between no-slip and free-slip (non moving objects only!)"},
 		{OB_FSBND_FREESLIP, "FREESLIP", 0, "Free Slip",
 		                    "Obstacle only causes zero normal velocity (=not sticky, non moving objects only!)"},
-		{0, NULL, 0, NULL, NULL}};
+		{0, NULL, 0, NULL, NULL}
+	};
 
 	prop = RNA_def_property(srna, "slip_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_bitflag_sdna(prop, NULL, "typeFlags");
@@ -267,14 +268,8 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 		{OB_FSDOM_GEOM, "GEOMETRY", 0, "Geometry", "Display geometry"},
 		{OB_FSDOM_PREVIEW, "PREVIEW", 0, "Preview", "Display preview quality results"},
 		{OB_FSDOM_FINAL, "FINAL", 0, "Final", "Display final quality results"},
-		{0, NULL, 0, NULL, NULL}};
-
-	static EnumPropertyItem viscosity_items[] = {
-		{1, "MANUAL", 0, "Manual", "Manual viscosity settings"},
-		{2, "WATER", 0, "Water", "Viscosity of 1.0 * 10^-6"},
-		{3, "OIL", 0, "Oil", "Viscosity of 5.0 * 10^-5"},
-		{4, "HONEY", 0, "Honey", "Viscosity of 2.0 * 10^-3"},
-		{0, NULL, 0, NULL, NULL}};
+		{0, NULL, 0, NULL, NULL}
+	};
 
 	srna = RNA_def_struct(brna, "DomainFluidSettings", "FluidSettings");
 	RNA_def_struct_sdna(srna, "FluidsimSettings");
@@ -287,11 +282,13 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "resolutionxyz");
 	RNA_def_property_range(prop, 1, 1024);
 	RNA_def_property_ui_text(prop, "Resolution", "Domain resolution in X,Y and Z direction");
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 
 	prop = RNA_def_property(srna, "preview_resolution", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "previewresxyz");
 	RNA_def_property_range(prop, 1, 100);
 	RNA_def_property_ui_text(prop, "Preview Resolution", "Preview resolution in X,Y and Z direction");
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 
 	prop = RNA_def_property(srna, "viewport_display_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "guiDisplayMode");
@@ -352,18 +349,12 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "simulation_scale", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "realsize");
 	RNA_def_property_range(prop, 0.001, 10);
-	RNA_def_property_ui_text(prop, "Real World Size", "Size of the simulation domain in metres");
+	RNA_def_property_ui_text(prop, "Real World Size", "Size of the simulation domain in meters");
 	
 	prop = RNA_def_property(srna, "simulation_rate", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "animRate");
 	RNA_def_property_range(prop, 0.0, 100.0);
 	RNA_def_property_ui_text(prop, "Simulation Speed", "Fluid motion rate (0 = stationary, 1 = normal speed)");
-	
-	prop = RNA_def_property(srna, "viscosity_preset", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_sdna(prop, NULL, "viscosityMode");
-	RNA_def_property_enum_items(prop, viscosity_items);
-	RNA_def_property_ui_text(prop, "Viscosity Preset",
-	                         "Set viscosity of the fluid to a preset value, or use manual input");
 
 	prop = RNA_def_property(srna, "viscosity_base", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "viscosityValue");
@@ -421,7 +412,9 @@ static void rna_def_fluidsim_domain(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "surface_noobs", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "typeFlags", OB_FSSG_NOOBS);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_ui_text(prop, "Hide fluid surface", "");
+	RNA_def_property_ui_text(prop, "Remove air bubbles",
+	                         "Removes the air gap between fluid surface and obstacles - WARNING: Can result "
+	                         "in a dissolving surface in other areas");
 
 	/* particles */
 
@@ -455,7 +448,8 @@ static void rna_def_fluidsim_volume(StructRNA *srna)
 		{1, "VOLUME", 0, "Volume", "Use only the inner volume of the mesh"},
 		{2, "SHELL", 0, "Shell", "Use only the outer shell of the mesh"},
 		{3, "BOTH", 0, "Both", "Use both the inner volume and the outer shell of the mesh"},
-		{0, NULL, 0, NULL, NULL}};
+		{0, NULL, 0, NULL, NULL}
+	};
 
 	prop = RNA_def_property(srna, "volume_initialization", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_bitflag_sdna(prop, NULL, "volumeInitType");
@@ -467,8 +461,9 @@ static void rna_def_fluidsim_volume(StructRNA *srna)
 	RNA_def_property_boolean_sdna(prop, NULL, "domainNovecgen", 0);
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
 	RNA_def_property_ui_text(prop, "Export Animated Mesh",
-	                         "Export this mesh as an animated one (slower, only use if really necessary [e.g. "
-	                         "armatures or parented objects], animated pos/rot/scale F-Curves do not require it)");
+	                         "Export this mesh as an animated one (slower and enforces No Slip, only use if really "
+	                         "necessary [e.g. armatures or parented objects], animated pos/rot/scale F-Curves "
+	                         "do not require it)");
 }
 
 static void rna_def_fluidsim_active(StructRNA *srna)
@@ -598,7 +593,7 @@ static void rna_def_fluidsim_particle(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0.0, 2.0);
 	RNA_def_property_ui_text(prop, "Alpha Influence",
 	                         "Amount of particle alpha change, inverse of size influence: 0=off (all same alpha), "
-	                         "1=full (large particles get lower alphas, smaller ones higher values)");
+	                         "1=full (larger particles get lower alphas, smaller ones higher values)");
 
 	prop = RNA_def_property(srna, "filepath", PROP_STRING, PROP_FILEPATH);
 	RNA_def_property_string_maxlength(prop, FILE_MAX);
@@ -684,8 +679,9 @@ void RNA_def_fluidsim(BlenderRNA *brna)
 		                       "Object is made a particle system to display particles generated by a "
 		                       "fluidsim domain object"},
 		{OB_FLUIDSIM_CONTROL, "CONTROL", 0, "Control",
-		                      "Object is made a fluid control mesh, which influences the fluid"},
-		{0, NULL, 0, NULL, NULL}};
+		 "Object is made a fluid control mesh, which influences the fluid"},
+		{0, NULL, 0, NULL, NULL}
+	};
 
 
 	srna = RNA_def_struct(brna, "FluidSettings", NULL);

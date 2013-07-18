@@ -81,7 +81,7 @@ public:
 	/**
 	 * Scales the bounding box about the optional point.
 	 */
-	void scale(const MT_Vector3 &size, const MT_Point3 &point = MT_Point3(0., 0., 0.));
+	void scale(const MT_Vector3 &size, const MT_Point3 &point = MT_Point3(0.0, 0.0, 0.0));
 #endif
 	SG_BBox transform(const MT_Transform &world) const;
 	/**
@@ -136,9 +136,7 @@ public:
 
 
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:SG_BBox"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:SG_BBox")
 #endif
 };
 

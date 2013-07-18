@@ -292,13 +292,13 @@ void BVH::pack_triangles()
 void BVH::pack_instances(size_t nodes_size)
 {
 	/* The BVH's for instances are built separately, but for traversal all
-	   BVH's are stored in global arrays. This function merges them into the
-	   top level BVH, adjusting indexes and offsets where appropriate. */
+	 * BVH's are stored in global arrays. This function merges them into the
+	 * top level BVH, adjusting indexes and offsets where appropriate. */
 	bool use_qbvh = params.use_qbvh;
 	size_t nsize = (use_qbvh)? BVH_QNODE_SIZE: BVH_NODE_SIZE;
 
 	/* adjust primitive index to point to the triangle in the global array, for
-	   meshes with transform applied and already in the top level BVH */
+	 * meshes with transform applied and already in the top level BVH */
 	for(size_t i = 0; i < pack.prim_index.size(); i++)
 		if(pack.prim_index[i] != -1)
 			pack.prim_index[i] += objects[pack.prim_object[i]]->mesh->tri_offset;
@@ -356,14 +356,14 @@ void BVH::pack_instances(size_t nodes_size)
 		Mesh *mesh = ob->mesh;
 
 		/* if mesh transform is applied, that means it's already in the top
-		   level BVH, and we don't need to merge it in */
+		 * level BVH, and we don't need to merge it in */
 		if(mesh->transform_applied) {
 			pack.object_node[object_offset++] = 0;
 			continue;
 		}
 
 		/* if mesh already added once, don't add it again, but used set
-		   node offset for this object */
+		 * node offset for this object */
 		map<Mesh*, int>::iterator it = mesh_map.find(mesh);
 
 		if(mesh_map.find(mesh) != mesh_map.end()) {
@@ -378,7 +378,7 @@ void BVH::pack_instances(size_t nodes_size)
 		int mesh_tri_offset = mesh->tri_offset;
 
 		/* fill in node indexes for instances */
-		if(bvh->pack.is_leaf[0])
+		if((bvh->pack.is_leaf.size() != 0) && bvh->pack.is_leaf[0])
 			pack.object_node[object_offset++] = -noffset-1;
 		else
 			pack.object_node[object_offset++] = noffset;
@@ -530,7 +530,7 @@ void RegularBVH::refit_nodes()
 {
 	assert(!params.top_level);
 
-	BoundBox bbox;
+	BoundBox bbox = BoundBox::empty;
 	uint visibility = 0;
 	refit_node(0, (pack.is_leaf[0])? true: false, bbox, visibility);
 }
@@ -572,7 +572,7 @@ void RegularBVH::refit_node(int idx, bool leaf, BoundBox& bbox, uint& visibility
 	}
 	else {
 		/* refit inner node, set bbox from children */
-		BoundBox bbox0, bbox1;
+		BoundBox bbox0 = BoundBox::empty, bbox1 = BoundBox::empty;
 		uint visibility0 = 0, visibility1 = 0;
 
 		refit_node((c0 < 0)? -c0-1: c0, (c0 < 0), bbox0, visibility0);

@@ -1,5 +1,46 @@
-# -*- mode: cmake; indent-tabs-mode: t; -*-
+# ***** BEGIN GPL LICENSE BLOCK *****
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+#
+# The Original Code is Copyright (C) 2006, Blender Foundation
+# All rights reserved.
+#
+# The Original Code is: all of this file.
+#
+# Contributor(s): Jacques Beaurain.
+#
+# ***** END GPL LICENSE BLOCK *****
 
+macro(list_insert_after
+	list_id item_check item_add
+	)
+	set(_index)
+	list(FIND ${list_id} "${item_check}" _index)
+	math(EXPR _index "${_index} + 1")
+	list(INSERT ${list_id} "${_index}" ${item_add})
+	unset(_index)
+endmacro()
+
+macro(list_insert_before
+	list_id item_check item_add
+	)
+	set(_index)
+	list(FIND ${list_id} "${item_check}" _index)
+	list(INSERT ${list_id} "${_index}" ${item_add})
+	unset(_index)
+endmacro()
 
 # foo_bar.spam --> foo_barMySuffix.spam
 macro(file_suffix
@@ -171,7 +212,7 @@ macro(SETUP_LIBDIRS)
 	if(WITH_OPENIMAGEIO)
 		link_directories(${OPENIMAGEIO_LIBPATH})
 	endif()
-	if(WITH_IMAGE_OPENJPEG AND UNIX AND NOT APPLE)
+	if(WITH_IMAGE_OPENJPEG AND WITH_SYSTEM_OPENJPEG)
 		link_directories(${OPENJPEG_LIBPATH})
 	endif()
 	if(WITH_CODEC_QUICKTIME)
@@ -212,11 +253,9 @@ macro(setup_liblinks
 	target_link_libraries(${target}
 			${OPENGL_gl_LIBRARY}
 			${OPENGL_glu_LIBRARY}
-			${JPEG_LIBRARIES}
 			${PNG_LIBRARIES}
 			${ZLIB_LIBRARIES}
-			${FREETYPE_LIBRARY}
-			${PLATFORM_LINKLIBS})
+			${FREETYPE_LIBRARY})
 
 	# since we are using the local libs for python when compiling msvc projects, we need to add _d when compiling debug versions
 	if(WITH_PYTHON)  # AND NOT WITH_PYTHON_MODULE  # WIN32 needs
@@ -232,7 +271,7 @@ macro(setup_liblinks
 		endif()
 	endif()
 
-	if(NOT WITH_BUILTIN_GLEW)
+	if(WITH_SYSTEM_GLEW)
 		target_link_libraries(${target} ${GLEW_LIBRARY})
 	endif()
 
@@ -271,6 +310,7 @@ macro(setup_liblinks
 	if(WITH_BOOST)
 		target_link_libraries(${target} ${BOOST_LIBRARIES})
 	endif()
+	target_link_libraries(${target} ${JPEG_LIBRARIES})
 	if(WITH_IMAGE_OPENEXR)
 		if(WIN32 AND NOT UNIX AND NOT CMAKE_COMPILER_IS_GNUCC)
 			file_list_suffix(OPENEXR_LIBRARIES_DEBUG "${OPENEXR_LIBRARIES}" "_d")
@@ -281,7 +321,7 @@ macro(setup_liblinks
 			target_link_libraries(${target} ${OPENEXR_LIBRARIES})
 		endif()
 	endif()
-	if(WITH_IMAGE_OPENJPEG AND UNIX AND NOT APPLE)
+	if(WITH_IMAGE_OPENJPEG AND WITH_SYSTEM_OPENJPEG)
 		target_link_libraries(${target} ${OPENJPEG_LIBRARIES})
 	endif()
 	if(WITH_CODEC_FFMPEG)
@@ -324,10 +364,14 @@ macro(setup_liblinks
 	if(WITH_INPUT_NDOF)
 		target_link_libraries(${target} ${NDOF_LIBRARIES})
 	endif()
-
+	if(WITH_MOD_CLOTH_ELTOPO)
+		target_link_libraries(${target} ${LAPACK_LIBRARIES})
+	endif()
 	if(WIN32 AND NOT UNIX)
 		target_link_libraries(${target} ${PTHREADS_LIBRARIES})
 	endif()
+
+	target_link_libraries(${target} ${PLATFORM_LINKLIBS})
 endmacro()
 
 macro(TEST_SSE_SUPPORT
@@ -426,6 +470,12 @@ macro(remove_strict_flags)
 
 		# negate flags implied by '-Wall'
 		add_cc_flag("${CC_REMOVE_STRICT_FLAGS}")
+	endif()
+
+	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		remove_cc_flag("-Wunused-parameter")
+		remove_cc_flag("-Wunused-variable")
+		remove_cc_flag("-Werror")
 	endif()
 
 	if(MSVC)
@@ -588,7 +638,7 @@ macro(blender_project_hack_post)
 	# --------------
 	# MINGW HACK END
 	if (_reset_standard_libraries)
-		# Must come after project(...)
+		# Must come after projecINCt(...)
 		#
 		# MINGW workaround for -ladvapi32 being included which surprisingly causes
 		# string formatting of floats, eg: printf("%.*f", 3, value). to crash blender
@@ -669,12 +719,51 @@ macro(set_lib_path
 		lvar
 		lproj)
 
-	
-	if(MSVC10 AND EXISTS ${LIBDIR}/vc2010/${lproj})
-		set(${lvar} ${LIBDIR}/vc2010/${lproj})
+	if(MSVC10)
+		set(${lvar} ${LIBDIR}/${lproj}/vc2010)
 	else()
 		set(${lvar} ${LIBDIR}/${lproj})
 	endif()
+endmacro()
 
 
+macro(data_to_c
+      file_from file_to
+      list_to_add)
+
+	list(APPEND ${list_to_add} ${file_to})
+
+	get_filename_component(_file_to_path ${file_to} PATH)
+
+	add_custom_command(
+		OUTPUT ${file_to}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${_file_to_path}
+		COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/datatoc ${file_from} ${file_to}
+		DEPENDS ${file_from} datatoc)
+	unset(_file_to_path)
+endmacro()
+
+
+# same as above but generates the var name and output automatic.
+macro(data_to_c_simple
+      file_from
+      list_to_add)
+
+	# remove ../'s
+	get_filename_component(_file_from ${CMAKE_CURRENT_SOURCE_DIR}/${file_from}   REALPATH)
+	get_filename_component(_file_to   ${CMAKE_CURRENT_BINARY_DIR}/${file_from}.c REALPATH)
+
+	list(APPEND ${list_to_add} ${_file_to})
+
+	get_filename_component(_file_to_path ${_file_to} PATH)
+
+	add_custom_command(
+		OUTPUT  ${_file_to}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${_file_to_path}
+		COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/datatoc ${_file_from} ${_file_to}
+		DEPENDS ${_file_from} datatoc)
+
+	unset(_file_from)
+	unset(_file_to)
+	unset(_file_to_path)
 endmacro()

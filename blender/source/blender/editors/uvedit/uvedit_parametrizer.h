@@ -1,9 +1,31 @@
-/** \file blender/editors/uvedit/uvedit_parametrizer.h
- *  \ingroup eduv
+/*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Contributor(s):
+ *
+ * ***** END GPL LICENSE BLOCK *****
  */
 
 #ifndef __UVEDIT_PARAMETRIZER_H__
 #define __UVEDIT_PARAMETRIZER_H__
+
+/** \file blender/editors/uvedit/uvedit_parametrizer.h
+ *  \ingroup eduv
+ */
 
 #ifdef __cplusplus
 extern "C" {
@@ -33,19 +55,17 @@ ParamHandle *param_construct_begin(void);
 
 void param_aspect_ratio(ParamHandle *handle, float aspx, float aspy);
 
-int p_face_exists(ParamHandle *handle, ParamKey *vkeys, int i1, int i2, int i3);
-
 void param_face_add(ParamHandle *handle,
-					ParamKey key,
-					int nverts,	
-					ParamKey *vkeys,
-					float **co,
-					float **uv,
-					ParamBool *pin,
-					ParamBool *select);
+                    ParamKey key,
+                    int nverts,
+                    ParamKey *vkeys,
+                    float **co,
+                    float **uv,
+                    ParamBool *pin,
+                    ParamBool *select);
 
 void param_edge_set_seam(ParamHandle *handle,
-						 ParamKey *vkeys);
+                         ParamKey *vkeys);
 
 void param_construct_end(ParamHandle *handle, ParamBool fill, ParamBool impl);
 void param_delete(ParamHandle *chart);

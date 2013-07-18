@@ -30,12 +30,13 @@
 /* **************** OUTPUT ******************** */
 
 static bNodeSocketTemplate sh_node_tex_image_in[]= {
-	{	SOCK_VECTOR, 1, "Vector",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
+	{	SOCK_VECTOR, 1, N_("Vector"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE, SOCK_HIDE_VALUE},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate sh_node_tex_image_out[]= {
-	{	SOCK_RGBA, 0, "Color",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 0, N_("Color"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 0, N_("Alpha"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
@@ -45,6 +46,10 @@ static void node_shader_init_tex_image(bNodeTree *UNUSED(ntree), bNode* node, bN
 	default_tex_mapping(&tex->base.tex_mapping);
 	default_color_mapping(&tex->base.color_mapping);
 	tex->color_space = SHD_COLORSPACE_COLOR;
+	tex->iuser.frames= 1;
+	tex->iuser.sfra= 1;
+	tex->iuser.fie_ima= 2;
+	tex->iuser.ok= 1;
 
 	node->storage = tex;
 }
@@ -54,13 +59,10 @@ static int node_shader_gpu_tex_image(GPUMaterial *mat, bNode *node, GPUNodeStack
 	Image *ima= (Image*)node->id;
 	ImageUser *iuser= NULL;
 
-	if(!ima) {
-		float black[4] = {0.0f, 0.0f, 0.0f, 1.0f};
-		GPUNodeLink *vec = GPU_uniform(black);
-		return GPU_stack_link(mat, "set_rgba", out, out, vec);
-	}
+	if (!ima)
+		return GPU_stack_link(mat, "node_tex_image_empty", in, out);
 	
-	if(!in[0].link)
+	if (!in[0].link)
 		in[0].link = GPU_attribute(CD_MTFACE, "");
 
 	node_shader_gpu_tex_mapping(mat, node, in, out);

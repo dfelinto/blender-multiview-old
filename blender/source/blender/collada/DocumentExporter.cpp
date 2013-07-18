@@ -27,54 +27,10 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
+#include <vector>
+#include <algorithm> // std::find
 
-extern "C" 
-{
-#include "DNA_scene_types.h"
-#include "DNA_object_types.h"
-#include "DNA_group_types.h"
-#include "DNA_meshdata_types.h"
-#include "DNA_mesh_types.h"
-#include "DNA_image_types.h"
-#include "DNA_material_types.h"
-#include "DNA_texture_types.h"
-#include "DNA_anim_types.h"
-#include "DNA_action_types.h"
-#include "DNA_curve_types.h"
-#include "DNA_armature_types.h"
-#include "DNA_modifier_types.h"
-#include "DNA_userdef_types.h"
-
-#include "BKE_DerivedMesh.h"
-#include "BKE_fcurve.h"
-#include "BKE_animsys.h"
-#include "BLI_path_util.h"
-#include "BLI_fileops.h"
-#include "ED_keyframing.h"
-#ifdef WITH_BUILDINFO
-extern char build_rev[];
-#endif
-}
-
-#include "MEM_guardedalloc.h"
-
-#include "BKE_blender.h" // version info
-#include "BKE_scene.h"
-#include "BKE_global.h"
-#include "BKE_main.h"
-#include "BKE_material.h"
-#include "BKE_action.h" // pose functions
-#include "BKE_armature.h"
-#include "BKE_image.h"
-#include "BKE_utildefines.h"
-#include "BKE_object.h"
-
-#include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_listbase.h"
-
-#include "RNA_access.h"
-
+#include "COLLADASWCamera.h"
 #include "COLLADASWAsset.h"
 #include "COLLADASWLibraryVisualScenes.h"
 #include "COLLADASWNode.h"
@@ -106,9 +62,57 @@ extern char build_rev[];
 #include "COLLADASWInstanceNode.h"
 #include "COLLADASWBaseInputElement.h"
 
+extern "C" 
+{
+#include "DNA_scene_types.h"
+#include "DNA_object_types.h"
+#include "DNA_group_types.h"
+#include "DNA_meshdata_types.h"
+#include "DNA_mesh_types.h"
+#include "DNA_image_types.h"
+#include "DNA_material_types.h"
+#include "DNA_texture_types.h"
+#include "DNA_anim_types.h"
+#include "DNA_action_types.h"
+#include "DNA_curve_types.h"
+#include "DNA_armature_types.h"
+#include "DNA_modifier_types.h"
+#include "DNA_userdef_types.h"
+
+#include "BKE_DerivedMesh.h"
+#include "BKE_fcurve.h"
+#include "BKE_animsys.h"
+#include "BLI_path_util.h"
+#include "BLI_fileops.h"
+#include "ED_keyframing.h"
+#ifdef WITH_BUILDINFO
+extern char build_rev[];
+#endif
+
+#include "MEM_guardedalloc.h"
+
+#include "BKE_blender.h" // version info
+#include "BKE_scene.h"
+#include "BKE_global.h"
+#include "BKE_main.h"
+#include "BKE_material.h"
+#include "BKE_action.h" // pose functions
+#include "BKE_armature.h"
+#include "BKE_image.h"
+#include "BKE_utildefines.h"
+#include "BKE_object.h"
+
+#include "BLI_math.h"
+#include "BLI_string.h"
+#include "BLI_listbase.h"
+
+#include "RNA_access.h"
+}
+
 #include "collada_internal.h"
 #include "DocumentExporter.h"
-#include "ExportSettings.h"
+
+extern bool bc_has_object_type(LinkNode *export_set, short obtype);
 
 // can probably go after refactor is complete
 #include "InstanceWriter.h"
@@ -124,27 +128,26 @@ extern char build_rev[];
 #include "LightExporter.h"
 #include "MaterialExporter.h"
 
-#include <vector>
-#include <algorithm> // std::find
 
 char *bc_CustomData_get_layer_name(const struct CustomData *data, int type, int n)
 {
 	int layer_index = CustomData_get_layer_index(data, type);
-	if(layer_index < 0) return NULL;
+	if (layer_index < 0) return NULL;
 
-	return data->layers[layer_index+n].name;
+	return data->layers[layer_index + n].name;
 }
 
 char *bc_CustomData_get_active_layer_name(const CustomData *data, int type)
 {
 	/* get the layer index of the active layer of type */
 	int layer_index = CustomData_get_active_layer_index(data, type);
-	if(layer_index < 0) return NULL;
+	if (layer_index < 0) return NULL;
 
 	return data->layers[layer_index].name;
 }
 
-DocumentExporter::DocumentExporter(const ExportSettings *export_settings) : export_settings(export_settings) {}
+DocumentExporter::DocumentExporter(const ExportSettings *export_settings) : export_settings(export_settings) {
+}
 
 // TODO: it would be better to instantiate animations rather than create a new one per object
 // COLLADA allows this through multiple <channel>s in <animation>.
@@ -158,7 +161,7 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 	clear_global_id_map();
 	
 	COLLADABU::NativeString native_filename =
-		COLLADABU::NativeString(std::string(this->export_settings->filepath));
+	    COLLADABU::NativeString(std::string(this->export_settings->filepath));
 	COLLADASW::StreamWriter sw(native_filename);
 
 	// open <collada>
@@ -175,33 +178,33 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 	std::string unitname = "meter";
 	float linearmeasure = RNA_float_get(&unit_settings, "scale_length");
 
-	switch(RNA_property_enum_get(&unit_settings, system)) {
+	switch (RNA_property_enum_get(&unit_settings, system)) {
 		case USER_UNIT_NONE:
 		case USER_UNIT_METRIC:
-			if(linearmeasure == 0.001f) {
+			if (linearmeasure == 0.001f) {
 				unitname = "millimeter";
 			}
-			else if(linearmeasure == 0.01f) {
+			else if (linearmeasure == 0.01f) {
 				unitname = "centimeter";
 			}
-			else if(linearmeasure == 0.1f) {
+			else if (linearmeasure == 0.1f) {
 				unitname = "decimeter";
 			}
-			else if(linearmeasure == 1.0f) {
+			else if (linearmeasure == 1.0f) {
 				unitname = "meter";
 			}
-			else if(linearmeasure == 1000.0f) {
+			else if (linearmeasure == 1000.0f) {
 				unitname = "kilometer";
 			}
 			break;
 		case USER_UNIT_IMPERIAL:
-			if(linearmeasure == 0.0254f) {
+			if (linearmeasure == 0.0254f) {
 				unitname = "inch";
 			}
-			else if(linearmeasure == 0.3048f) {
+			else if (linearmeasure == 0.3048f) {
 				unitname = "foot";
 			}
-			else if(linearmeasure == 0.9144f) {
+			else if (linearmeasure == 0.9144f) {
 				unitname = "yard";
 			}
 			break;
@@ -211,29 +214,30 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 
 	asset.setUnit(unitname, linearmeasure);
 	asset.setUpAxisType(COLLADASW::Asset::Z_UP);
-	if(U.author[0] != '\0') {
+	if (U.author[0] != '\0') {
 		asset.getContributor().mAuthor = U.author;
 	}
 	else {
 		asset.getContributor().mAuthor = "Blender User";
 	}
-#ifdef WITH_BUILDINFO
 	char version_buf[128];
-	sprintf(version_buf, "Blender %d.%02d.%d r%s", BLENDER_VERSION/100, BLENDER_VERSION%100, BLENDER_SUBVERSION, build_rev);
-	asset.getContributor().mAuthoringTool = version_buf;
+#ifdef WITH_BUILDINFO
+	sprintf(version_buf, "Blender %d.%02d.%d r%s", BLENDER_VERSION / 100, BLENDER_VERSION % 100, BLENDER_SUBVERSION, build_rev);
 #else
-	asset.getContributor().mAuthoringTool = "Blender 2.5x";
+	sprintf(version_buf, "Blender %d.%02d.%d", BLENDER_VERSION / 100, BLENDER_VERSION % 100, BLENDER_SUBVERSION);
 #endif
+	asset.getContributor().mAuthoringTool = version_buf;
 	asset.add();
 	
+	LinkNode *export_set = this->export_settings->export_set;
 	// <library_cameras>
-	if(has_object_type(sce, OB_CAMERA)) {
+	if (bc_has_object_type(export_set, OB_CAMERA)) {
 		CamerasExporter ce(&sw, this->export_settings);
 		ce.exportCameras(sce);
 	}
 	
 	// <library_lights>
-	if(has_object_type(sce, OB_LAMP)) {
+	if (bc_has_object_type(export_set, OB_LAMP)) {
 		LightsExporter le(&sw, this->export_settings);
 		le.exportLights(sce);
 	}
@@ -251,7 +255,7 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 	me.exportMaterials(sce);
 
 	// <library_geometries>
-	if(has_object_type(sce, OB_MESH)) {
+	if (bc_has_object_type(export_set, OB_MESH)) {
 		GeometryExporter ge(&sw, this->export_settings);
 		ge.exportGeom(sce);
 	}
@@ -262,7 +266,7 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 
 	// <library_controllers>
 	ArmatureExporter arm_exporter(&sw, this->export_settings);
-	if(has_object_type(sce, OB_ARMATURE)) {
+	if (bc_has_object_type(export_set, OB_ARMATURE)) {
 		arm_exporter.export_controllers(sce);
 	}
 
@@ -273,7 +277,7 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 	// <scene>
 	std::string scene_name(translate_id(id_name(sce)));
 	COLLADASW::Scene scene(&sw, COLLADASW::URI(COLLADABU::Utils::EMPTY_STRING,
-											   scene_name));
+	                                           scene_name));
 	scene.add();
 	
 	// close <Collada>
@@ -281,14 +285,13 @@ void DocumentExporter::exportCurrentScene(Scene *sce)
 
 }
 
-void DocumentExporter::exportScenes(const char* filename)
+void DocumentExporter::exportScenes(const char *filename)
 {
 }
 
 /*
-
-NOTES:
-
-* AnimationExporter::sample_animation enables all curves on armature, this is undesirable for a user
-
+ * NOTES:
+ *
+ * AnimationExporter::sample_animation enables all curves on armature, this is undesirable for a user
+ *
  */

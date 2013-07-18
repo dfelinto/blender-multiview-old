@@ -258,7 +258,7 @@ PyObject* BL_ArmatureChannel::py_attr_get_joint_rotation(void *self_v, const str
 		joints[2] = -joint_mat[1][0];
 		norm = normalize_v3(joints);
 		if (norm < FLT_EPSILON) {
-			norm = (joint_mat[1][1] < 0.f) ? M_PI : 0.f;
+			norm = (joint_mat[1][1] < 0.0f) ? (float)M_PI : 0.0f;
 		} else {
 			norm = acos(joint_mat[1][1]);
 		}
@@ -275,7 +275,7 @@ PyObject* BL_ArmatureChannel::py_attr_get_joint_rotation(void *self_v, const str
 		joints[2] = (joint_mat[0][1]-joint_mat[1][0])*0.5f;
 		sa = len_v3(joints);
 		ca = (joint_mat[0][0]+joint_mat[1][1]+joint_mat[1][1]-1.0f)*0.5f;
-		if (sa > FLT_EPSILON) {
+		if (sa > (double)FLT_EPSILON) {
 			norm = atan2(sa,ca)/sa;
 		} else {
 			if (ca < 0.0) {
@@ -307,7 +307,7 @@ int BL_ArmatureChannel::py_attr_set_joint_rotation(void *self_v, const struct KX
 	float quat[4];
 
 	if (!PySequence_Check(value) || PySequence_Size(value) != 3) {
-		PyErr_SetString(PyExc_AttributeError, "expected a sequence of [3] floats");
+		PyErr_SetString(PyExc_AttributeError, "expected a sequence of 3 floats");
 		return PY_SET_ATTR_FAIL;
 	}
 	for (int i=0; i<3; i++) {
@@ -315,7 +315,7 @@ int BL_ArmatureChannel::py_attr_set_joint_rotation(void *self_v, const struct KX
 		joints[i] = PyFloat_AsDouble(item);
 		Py_DECREF(item);
 		if (joints[i] == -1.0f && PyErr_Occurred()) {
-			PyErr_SetString(PyExc_AttributeError, "expected a sequence of [3] floats");
+			PyErr_SetString(PyExc_AttributeError, "expected a sequence of 3 floats");
 			return PY_SET_ATTR_FAIL;
 		}
 	}

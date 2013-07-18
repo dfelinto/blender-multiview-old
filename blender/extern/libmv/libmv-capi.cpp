@@ -28,6 +28,10 @@
    tracking between which failed */
 #undef DUMP_FAILURE
 
+/* define this to generate PNG images with content of search areas
+   on every itteration of tracking */
+#undef DUMP_ALWAYS
+
 #include "libmv-capi.h"
 
 #include "third_party/gflags/gflags/gflags.h"
@@ -36,6 +40,8 @@
 
 #include "Math/v3d_optimization.h"
 
+#include "libmv/numeric/numeric.h"
+
 #include "libmv/tracking/esm_region_tracker.h"
 #include "libmv/tracking/brute_region_tracker.h"
 #include "libmv/tracking/hybrid_region_tracker.h"
@@ -43,8 +49,7 @@
 #include "libmv/tracking/trklt_region_tracker.h"
 #include "libmv/tracking/lmicklt_region_tracker.h"
 #include "libmv/tracking/pyramid_region_tracker.h"
-
-#include "libmv/tracking/sad.h"
+#include "libmv/tracking/track_region.h"
 
 #include "libmv/simple_pipeline/callbacks.h"
 #include "libmv/simple_pipeline/tracks.h"
@@ -53,11 +58,13 @@
 #include "libmv/simple_pipeline/detect.h"
 #include "libmv/simple_pipeline/pipeline.h"
 #include "libmv/simple_pipeline/camera_intrinsics.h"
+#include "libmv/simple_pipeline/rigid_registration.h"
+#include "libmv/simple_pipeline/modal_solver.h"
 
 #include <stdlib.h>
 #include <assert.h>
 
-#ifdef DUMP_FAILURE
+#if defined(DUMP_FAILURE) || defined (DUMP_ALWAYS)
 #  include <png.h>
 #endif
 
@@ -95,7 +102,7 @@ void libmv_initLogging(const char *argv0)
 void libmv_startDebugLogging(void)
 {
 	google::SetCommandLineOption("logtostderr", "1");
-	google::SetCommandLineOption("v", "0");
+	google::SetCommandLineOption("v", "2");
 	google::SetCommandLineOption("stderrthreshold", "1");
 	google::SetCommandLineOption("minloglevel", "0");
 	V3D::optimizerVerbosenessLevel = 1;
@@ -137,26 +144,54 @@ libmv_RegionTracker *libmv_hybridRegionTrackerNew(int max_iterations, int half_w
 	libmv::BruteRegionTracker *brute_region_tracker = new libmv::BruteRegionTracker;
 	brute_region_tracker->half_window_size = half_window_size;
 
+	/* do not use correlation check for brute checker itself,
+	 * this check will happen in esm tracker */
+	brute_region_tracker->minimum_correlation = 0.0;
+
 	libmv::HybridRegionTracker *hybrid_region_tracker =
 		new libmv::HybridRegionTracker(brute_region_tracker, esm_region_tracker);
 
 	return (libmv_RegionTracker *)hybrid_region_tracker;
 }
 
-static void floatBufToImage(const float *buf, int width, int height, libmv::FloatImage *image)
+libmv_RegionTracker *libmv_bruteRegionTrackerNew(int half_window_size, double minimum_correlation)
 {
-	int x, y, a = 0;
+	libmv::BruteRegionTracker *brute_region_tracker = new libmv::BruteRegionTracker;
+	brute_region_tracker->half_window_size = half_window_size;
+	brute_region_tracker->minimum_correlation = minimum_correlation;
 
-	image->resize(height, width);
+	return (libmv_RegionTracker *)brute_region_tracker;
+}
+
+static void floatBufToImage(const float *buf, int width, int height, int channels, libmv::FloatImage *image)
+{
+	int x, y, k, a = 0;
+
+	image->Resize(height, width, channels);
 
 	for (y = 0; y < height; y++) {
 		for (x = 0; x < width; x++) {
-			(*image)(y, x, 0) = buf[a++];
+			for (k = 0; k < channels; k++) {
+				(*image)(y, x, k) = buf[a++];
+			}
 		}
 	}
 }
 
-#ifdef DUMP_FAILURE
+static void imageToFloatBuf(const libmv::FloatImage *image, int channels, float *buf)
+{
+	int x, y, k, a = 0;
+
+	for (y = 0; y < image->Height(); y++) {
+		for (x = 0; x < image->Width(); x++) {
+			for (k = 0; k < channels; k++) {
+				buf[a++] = (*image)(y, x, k);
+			}
+		}
+	}
+}
+
+#if defined(DUMP_FAILURE) || defined (DUMP_ALWAYS)
 void savePNGImage(png_bytep *row_pointers, int width, int height, int depth, int color_type, char *file_name)
 {
 	png_infop info_ptr;
@@ -208,7 +243,7 @@ void savePNGImage(png_bytep *row_pointers, int width, int height, int depth, int
 	fclose(fp);
 }
 
-static void saveImage(char *prefix, libmv::FloatImage image, int x0, int y0)
+static void saveImage(const char *prefix, libmv::FloatImage image, int x0, int y0)
 {
 	int x, y;
 	png_bytep *row_pointers;
@@ -219,14 +254,14 @@ static void saveImage(char *prefix, libmv::FloatImage image, int x0, int y0)
 		row_pointers[y]= (png_bytep)malloc(sizeof(png_byte)*4*image.Width());
 
 		for (x = 0; x < image.Width(); x++) {
-			if (x0 == x && y0 == y) {
+			if (x0 == x && image.Height() - y0 - 1 == y) {
 				row_pointers[y][x*4+0]= 255;
 				row_pointers[y][x*4+1]= 0;
 				row_pointers[y][x*4+2]= 0;
 				row_pointers[y][x*4+3]= 255;
 			}
 			else {
-				float pixel = image(y, x, 0);
+				float pixel = image(image.Height() - y - 1, x, 0);
 				row_pointers[y][x*4+0]= pixel*255;
 				row_pointers[y][x*4+1]= pixel*255;
 				row_pointers[y][x*4+2]= pixel*255;
@@ -248,7 +283,7 @@ static void saveImage(char *prefix, libmv::FloatImage image, int x0, int y0)
 	free(row_pointers);
 }
 
-static void saveBytesImage(char *prefix, unsigned char *data, int width, int height)
+static void saveBytesImage(const char *prefix, unsigned char *data, int width, int height)
 {
 	int x, y;
 	png_bytep *row_pointers;
@@ -287,19 +322,23 @@ int libmv_regionTrackerTrack(libmv_RegionTracker *libmv_tracker, const float *im
 	libmv::RegionTracker *region_tracker = (libmv::RegionTracker *)libmv_tracker;
 	libmv::FloatImage old_patch, new_patch;
 
-	floatBufToImage(ima1, width, height, &old_patch);
-	floatBufToImage(ima2, width, height, &new_patch);
+	floatBufToImage(ima1, width, height, 1, &old_patch);
+	floatBufToImage(ima2, width, height, 1, &new_patch);
 
-#ifndef DUMP_FAILURE
+#if !defined(DUMP_FAILURE) && !defined(DUMP_ALWAYS)
 	return region_tracker->Track(old_patch, new_patch, x1, y1, x2, y2);
 #else
 	{
-		double sx2 = *x2, sy2 = *y2;
+		/* double sx2 = *x2, sy2 = *y2; */
 		int result = region_tracker->Track(old_patch, new_patch, x1, y1, x2, y2);
 
+#if defined(DUMP_ALWAYS)
+		{
+#else
 		if (!result) {
+#endif
 			saveImage("old_patch", old_patch, x1, y1);
-			saveImage("new_patch", new_patch, sx2, sy2);
+			saveImage("new_patch", new_patch, *x2, *y2);
 		}
 
 		return result;
@@ -314,31 +353,118 @@ void libmv_regionTrackerDestroy(libmv_RegionTracker *libmv_tracker)
 	delete region_tracker;
 }
 
-/* ************ Tracks ************ */
+/* ************ Planar tracker ************ */
 
-void libmv_SADSamplePattern(unsigned char *image, int stride,
-			float warp[3][2], unsigned char *pattern, int pattern_size)
+/* TrackRegion (new planar tracker) */
+int libmv_trackRegion(const struct libmv_trackRegionOptions *options,
+                      const float *image1, int image1_width, int image1_height,
+                      const float *image2, int image2_width, int image2_height,
+                      const double *x1, const double *y1,
+                      struct libmv_trackRegionResult *result,
+                      double *x2, double *y2)
 {
-	libmv::mat32 mat32;
+	double xx1[5], yy1[5];
+	double xx2[5], yy2[5];
+	bool tracking_result = false;
 
-	memcpy(mat32.data, warp, sizeof(float)*3*2);
+	/* Convert to doubles for the libmv api. The four corners and the center. */
+	for (int i = 0; i < 5; ++i) {
+		xx1[i] = x1[i];
+		yy1[i] = y1[i];
+		xx2[i] = x2[i];
+		yy2[i] = y2[i];
+	}
 
-	libmv::SamplePattern(image, stride, mat32, pattern, pattern_size);
+	libmv::TrackRegionOptions track_region_options;
+	libmv::FloatImage image1_mask;
+
+	switch (options->motion_model) {
+#define LIBMV_CONVERT(the_model) \
+    case libmv::TrackRegionOptions::the_model: \
+		track_region_options.mode = libmv::TrackRegionOptions::the_model; \
+		break;
+		LIBMV_CONVERT(TRANSLATION)
+		LIBMV_CONVERT(TRANSLATION_ROTATION)
+		LIBMV_CONVERT(TRANSLATION_SCALE)
+		LIBMV_CONVERT(TRANSLATION_ROTATION_SCALE)
+		LIBMV_CONVERT(AFFINE)
+		LIBMV_CONVERT(HOMOGRAPHY)
+#undef LIBMV_CONVERT
+	}
+
+	track_region_options.minimum_correlation = options->minimum_correlation;
+	track_region_options.max_iterations = options->num_iterations;
+	track_region_options.sigma = options->sigma;
+	track_region_options.num_extra_points = 1;
+	track_region_options.image1_mask = NULL;
+	track_region_options.use_brute_initialization = options->use_brute;
+	track_region_options.use_normalized_intensities = options->use_normalization;
+
+	if (options->image1_mask) {
+		floatBufToImage(options->image1_mask, image1_width, image1_height, 1, &image1_mask);
+
+		track_region_options.image1_mask = &image1_mask;
+	}
+
+	/* Convert from raw float buffers to libmv's FloatImage. */
+	libmv::FloatImage old_patch, new_patch;
+	floatBufToImage(image1, image1_width, image1_height, 1, &old_patch);
+	floatBufToImage(image2, image2_width, image2_height, 1, &new_patch);
+
+	libmv::TrackRegionResult track_region_result;
+	libmv::TrackRegion(old_patch, new_patch, xx1, yy1, track_region_options, xx2, yy2, &track_region_result);
+
+	/* Convert to floats for the blender api. */
+	for (int i = 0; i < 5; ++i) {
+		x2[i] = xx2[i];
+		y2[i] = yy2[i];
+	}
+
+	/* TODO(keir): Update the termination string with failure details. */
+	if (track_region_result.termination == libmv::TrackRegionResult::PARAMETER_TOLERANCE ||
+	    track_region_result.termination == libmv::TrackRegionResult::FUNCTION_TOLERANCE  ||
+	    track_region_result.termination == libmv::TrackRegionResult::GRADIENT_TOLERANCE  ||
+	    track_region_result.termination == libmv::TrackRegionResult::NO_CONVERGENCE)
+	{
+		tracking_result = true;
+	}
+
+#if defined(DUMP_FAILURE) || defined(DUMP_ALWAYS)
+#if defined(DUMP_ALWAYS)
+	{
+#else
+	if (!tracking_result) {
+#endif
+		saveImage("old_patch", old_patch, x1[4], y1[4]);
+		saveImage("new_patch", new_patch, x2[4], y2[4]);
+	}
+#endif
+
+	return tracking_result;
 }
 
-float libmv_SADTrackerTrack(unsigned char *pattern, unsigned char *warped, int pattern_size, unsigned char *image, int stride,
-			int width, int height, float warp[3][2])
+void libmv_samplePlanarPatch(const float *image, int width, int height,
+                             int channels, const double *xs, const double *ys,
+                             int num_samples_x, int num_samples_y,
+                             const float *mask, float *patch,
+                             double *warped_position_x, double *warped_position_y)
 {
-	float result;
-	libmv::mat32 mat32;
+	libmv::FloatImage libmv_image, libmv_patch, libmv_mask;
+	libmv::FloatImage *libmv_mask_for_sample = NULL;
 
-	memcpy(mat32.data, warp, sizeof(float)*3*2);
+	floatBufToImage(image, width, height, channels, &libmv_image);
 
-	result = libmv::Track(pattern, warped, pattern_size, image, stride, width, height, &mat32, 16, 16);
+	if (mask) {
+		floatBufToImage(mask, width, height, 1, &libmv_mask);
 
-	memcpy(warp, mat32.data, sizeof(float)*3*2);
+		libmv_mask_for_sample = &libmv_mask;
+	}
 
-	return result;
+	libmv::SamplePlanarPatch(libmv_image, xs, ys, num_samples_x, num_samples_y,
+	                         libmv_mask_for_sample, &libmv_patch,
+	                         warped_position_x, warped_position_y);
+
+	imageToFloatBuf(&libmv_patch, channels, patch);
 }
 
 /* ************ Tracks ************ */
@@ -397,6 +523,31 @@ int libmv_refineParametersAreValid(int parameters) {
 	                       LIBMV_REFINE_RADIAL_DISTORTION_K1));
 }
 
+void libmv_solveRefineIntrinsics(libmv::Tracks *tracks, libmv::CameraIntrinsics *intrinsics,
+			libmv::EuclideanReconstruction *reconstruction, int refine_intrinsics,
+			reconstruct_progress_update_cb progress_update_callback, void *callback_customdata)
+{
+	/* only a few combinations are supported but trust the caller */
+	int libmv_refine_flags = 0;
+
+	if (refine_intrinsics & LIBMV_REFINE_FOCAL_LENGTH) {
+		libmv_refine_flags |= libmv::BUNDLE_FOCAL_LENGTH;
+	}
+	if (refine_intrinsics & LIBMV_REFINE_PRINCIPAL_POINT) {
+		libmv_refine_flags |= libmv::BUNDLE_PRINCIPAL_POINT;
+	}
+	if (refine_intrinsics & LIBMV_REFINE_RADIAL_DISTORTION_K1) {
+		libmv_refine_flags |= libmv::BUNDLE_RADIAL_K1;
+	}
+	if (refine_intrinsics & LIBMV_REFINE_RADIAL_DISTORTION_K2) {
+		libmv_refine_flags |= libmv::BUNDLE_RADIAL_K2;
+	}
+
+	progress_update_callback(callback_customdata, 1.0, "Refining solution");
+
+	libmv::EuclideanBundleCommonIntrinsics(*(libmv::Tracks *)tracks, libmv_refine_flags,
+		reconstruction, intrinsics);
+}
 
 libmv_Reconstruction *libmv_solveReconstruction(libmv_Tracks *tracks, int keyframe1, int keyframe2,
 			int refine_intrinsics, double focal_length, double principal_x, double principal_y, double k1, double k2, double k3,
@@ -436,25 +587,44 @@ libmv_Reconstruction *libmv_solveReconstruction(libmv_Tracks *tracks, int keyfra
 	libmv::EuclideanCompleteReconstruction(normalized_tracks, reconstruction, &update_callback);
 
 	if (refine_intrinsics) {
-		/* only a few combinations are supported but trust the caller */
-		int libmv_refine_flags = 0;
-		if (refine_intrinsics & LIBMV_REFINE_FOCAL_LENGTH) {
-			libmv_refine_flags |= libmv::BUNDLE_FOCAL_LENGTH;
-		}
-		if (refine_intrinsics & LIBMV_REFINE_PRINCIPAL_POINT) {
-			libmv_refine_flags |= libmv::BUNDLE_PRINCIPAL_POINT;
-		}
-		if (refine_intrinsics & LIBMV_REFINE_RADIAL_DISTORTION_K1) {
-			libmv_refine_flags |= libmv::BUNDLE_RADIAL_K1;
-		}
-		if (refine_intrinsics & LIBMV_REFINE_RADIAL_DISTORTION_K2) {
-			libmv_refine_flags |= libmv::BUNDLE_RADIAL_K2;
-		}
-
-		progress_update_callback(callback_customdata, 1.0, "Refining solution");
-		libmv::EuclideanBundleCommonIntrinsics(*(libmv::Tracks *)tracks, libmv_refine_flags,
-			reconstruction, intrinsics);
+		libmv_solveRefineIntrinsics((libmv::Tracks *)tracks, intrinsics, reconstruction,
+			refine_intrinsics, progress_update_callback, callback_customdata);
 	}
+
+	progress_update_callback(callback_customdata, 1.0, "Finishing solution");
+	libmv_reconstruction->tracks = *(libmv::Tracks *)tracks;
+	libmv_reconstruction->error = libmv::EuclideanReprojectionError(*(libmv::Tracks *)tracks, *reconstruction, *intrinsics);
+
+	return (libmv_Reconstruction *)libmv_reconstruction;
+}
+
+struct libmv_Reconstruction *libmv_solveModal(struct libmv_Tracks *tracks, double focal_length,
+			double principal_x, double principal_y, double k1, double k2, double k3,
+			reconstruct_progress_update_cb progress_update_callback, void *callback_customdata)
+{
+	/* Invert the camera intrinsics. */
+	libmv::vector<libmv::Marker> markers = ((libmv::Tracks*)tracks)->AllMarkers();
+	libmv_Reconstruction *libmv_reconstruction = new libmv_Reconstruction();
+	libmv::EuclideanReconstruction *reconstruction = &libmv_reconstruction->reconstruction;
+	libmv::CameraIntrinsics *intrinsics = &libmv_reconstruction->intrinsics;
+
+	ReconstructUpdateCallback update_callback =
+		ReconstructUpdateCallback(progress_update_callback, callback_customdata);
+
+	intrinsics->SetFocalLength(focal_length, focal_length);
+	intrinsics->SetPrincipalPoint(principal_x, principal_y);
+	intrinsics->SetRadialDistortion(k1, k2, k3);
+
+	for (int i = 0; i < markers.size(); ++i) {
+		intrinsics->InvertIntrinsics(markers[i].x,
+			markers[i].y,
+			&(markers[i].x),
+			&(markers[i].y));
+	}
+
+	libmv::Tracks normalized_tracks(markers);
+
+	libmv::ModalSolver(normalized_tracks, reconstruction, &update_callback);
 
 	progress_update_callback(callback_customdata, 1.0, "Finishing solution");
 	libmv_reconstruction->tracks = *(libmv::Tracks *)tracks;
@@ -853,4 +1023,57 @@ void libmv_InvertIntrinsics(double focal_length, double principal_x, double prin
 
 		intrinsics.InvertIntrinsics(x, y, x1, y1);
 	}
+}
+
+/* ************ point clouds ************ */
+
+void libmvTransformToMat4(libmv::Mat3 &R, libmv::Vec3 &S, libmv::Vec3 &t, double M[4][4])
+{
+	for (int j = 0; j < 3; ++j)
+		for (int k = 0; k < 3; ++k)
+			M[j][k] = R(k, j) * S(j);
+
+	for (int i = 0; i < 3; ++i) {
+		M[3][0] = t(0);
+		M[3][1] = t(1);
+		M[3][2] = t(2);
+
+		M[0][3] = M[1][3] = M[2][3] = 0;
+	}
+
+	M[3][3] = 1.0;
+}
+
+void libmv_rigidRegistration(float (*reference_points)[3], float (*points)[3], int total_points,
+                             int use_scale, int use_translation, double M[4][4])
+{
+	libmv::Mat3 R;
+	libmv::Vec3 S;
+	libmv::Vec3 t;
+	libmv::vector<libmv::Vec3> reference_points_vector, points_vector;
+
+	for (int i = 0; i < total_points; i++) {
+		reference_points_vector.push_back(libmv::Vec3(reference_points[i][0],
+		                                              reference_points[i][1],
+		                                              reference_points[i][2]));
+
+		points_vector.push_back(libmv::Vec3(points[i][0],
+		                                    points[i][1],
+		                                    points[i][2]));
+	}
+
+	if (use_scale && use_translation) {
+		libmv::RigidRegistration(reference_points_vector, points_vector, R, S, t);
+	}
+	else if (use_translation) {
+		S = libmv::Vec3(1.0, 1.0, 1.0);
+		libmv::RigidRegistration(reference_points_vector, points_vector, R, t);
+	}
+	else {
+		S = libmv::Vec3(1.0, 1.0, 1.0);
+		t = libmv::Vec3::Zero();
+		libmv::RigidRegistration(reference_points_vector, points_vector, R);
+	}
+
+	libmvTransformToMat4(R, S, t, M);
 }

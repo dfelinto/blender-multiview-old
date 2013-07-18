@@ -61,6 +61,7 @@ set(SRC
 	intern/graph.c
 	intern/gsqueue.c
 	intern/jitter.c
+	intern/lasso.c
 	intern/listbase.c
 	intern/math_base.c
 	intern/math_base_inline.c
@@ -80,6 +81,7 @@ set(SRC
 	intern/rct.c
 	intern/scanfill.c
 	intern/smallhash.c
+	intern/stack.c
 	intern/storage.c
 	intern/string.c
 	intern/string_cursor_utf8.c
@@ -88,12 +90,12 @@ set(SRC
 	intern/time.c
 	intern/uvproject.c
 	intern/voxel.c
+	intern/voronoi.c
 	intern/winstuff.c
 
+	BLI_args.h
 	BLI_array.h
 	BLI_bitmap.h
-	BLI_smallhash.h
-	BLI_args.h
 	BLI_blenlib.h
 	BLI_boxpack2d.h
 	BLI_bpath.h
@@ -103,7 +105,6 @@ set(SRC
 	BLI_dynlib.h
 	BLI_dynstr.h
 	BLI_edgehash.h
-	BLI_editVert.h
 	BLI_fileops.h
 	BLI_fileops_types.h
 	BLI_fnmatch.h
@@ -114,6 +115,7 @@ set(SRC
 	BLI_jitter.h
 	BLI_kdopbvh.h
 	BLI_kdtree.h
+	BLI_lasso.h
 	BLI_linklist.h
 	BLI_listbase.h
 	BLI_math.h
@@ -133,6 +135,8 @@ set(SRC
 	BLI_rand.h
 	BLI_rect.h
 	BLI_scanfill.h
+	BLI_smallhash.h
+	BLI_stack.h
 	BLI_string.h
 	BLI_string_cursor_utf8.h
 	BLI_string_utf8.h
@@ -156,8 +160,10 @@ if(WITH_OPENMP)
 	add_definitions(-DPARALLEL=1)
 endif()
 
-if(WITH_XDG_USER_DIRS)
-	add_definitions(-DWITH_XDG_USER_DIRS)
+if(WIN32)
+	list(APPEND INC
+		../../../intern/utfconv
+	)
 endif()
 
 blender_add_lib(bf_blenlib "${SRC}" "${INC}" "${INC_SYS}")

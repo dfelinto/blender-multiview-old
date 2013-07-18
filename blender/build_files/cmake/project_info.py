@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3.2
 
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
@@ -231,8 +231,13 @@ def project_name_get(path, fallback="Blender", prefix="Blender_"):
         return fallback
 
     import subprocess
-    info = subprocess.Popen(["svn", "info", path],
-                            stdout=subprocess.PIPE).communicate()[0]
+    try:
+        info = subprocess.Popen(["svn", "info", path],
+                                stdout=subprocess.PIPE).communicate()[0]
+    except:
+        # possibly 'svn' isnt found/installed
+        return fallback
+
     # string version, we only want the URL
     info = info.decode(encoding="utf-8", errors="ignore")
 

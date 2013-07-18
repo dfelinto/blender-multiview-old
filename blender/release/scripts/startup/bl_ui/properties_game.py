@@ -49,7 +49,14 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
 
         physics_type = game.physics_type
 
-        if physics_type in {'DYNAMIC', 'RIGID_BODY'}:
+        if physics_type == 'CHARACTER':
+            layout.prop(game, "use_actor")
+            layout.prop(ob, "hide_render", text="Invisible")  # out of place but useful
+            layout.prop(game, "step_height", slider=True)
+            layout.prop(game, "jump_speed")
+            layout.prop(game, "fall_speed")
+
+        elif physics_type in {'DYNAMIC', 'RIGID_BODY'}:
             split = layout.split()
 
             col = split.column()
@@ -122,7 +129,8 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
             col = split.column()
             col.label(text="Attributes:")
             col.prop(game, "mass")
-            col.prop(soft, "weld_threshold")
+            # disabled in the code
+            # col.prop(soft, "weld_threshold")
             col.prop(soft, "location_iterations")
             col.prop(soft, "linear_stiffness", slider=True)
             col.prop(soft, "dynamic_friction", slider=True)
@@ -165,7 +173,12 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
             subsub.active = game.use_anisotropic_friction
             subsub.prop(game, "friction_coefficients", text="", slider=True)
 
-        elif physics_type in {'SENSOR', 'INVISIBLE', 'NO_COLLISION', 'OCCLUDE'}:
+        elif physics_type == 'SENSOR':
+            col = layout.column()
+            col.prop(game, "use_actor", text="Detect Actors")
+            col.prop(ob, "hide_render", text="Invisible")
+
+        elif physics_type in {'INVISIBLE', 'NO_COLLISION', 'OCCLUDE'}:
             layout.prop(ob, "hide_render", text="Invisible")
 
         elif physics_type == 'NAVMESH':
@@ -186,7 +199,7 @@ class PHYSICS_PT_game_collision_bounds(PhysicsButtonsPanel, Panel):
     def poll(cls, context):
         game = context.object.game
         rd = context.scene.render
-        return (game.physics_type in {'DYNAMIC', 'RIGID_BODY', 'SENSOR', 'SOFT_BODY', 'STATIC'}) and (rd.engine in cls.COMPAT_ENGINES)
+        return (game.physics_type in {'DYNAMIC', 'RIGID_BODY', 'SENSOR', 'SOFT_BODY', 'STATIC', 'CHARACTER'}) and (rd.engine in cls.COMPAT_ENGINES)
 
     def draw_header(self, context):
         game = context.active_object.game
@@ -326,7 +339,6 @@ class RENDER_PT_game_stereo(RenderButtonsPanel, Panel):
 
             if dome_type in {'FISHEYE', 'TRUNCATED_REAR', 'TRUNCATED_FRONT'}:
                 col = split.column()
-
                 col.prop(gs, "dome_buffer_resolution", text="Resolution", slider=True)
                 col.prop(gs, "dome_angle", slider=True)
 
@@ -336,14 +348,13 @@ class RENDER_PT_game_stereo(RenderButtonsPanel, Panel):
 
             elif dome_type == 'PANORAM_SPH':
                 col = split.column()
-
                 col.prop(gs, "dome_buffer_resolution", text="Resolution", slider=True)
+
                 col = split.column()
                 col.prop(gs, "dome_tessellation", text="Tessellation")
 
             else:  # cube map
                 col = split.column()
-
                 col.prop(gs, "dome_buffer_resolution", text="Resolution", slider=True)
 
                 col = split.column()
@@ -385,6 +396,7 @@ class RENDER_PT_game_system(RenderButtonsPanel, Panel):
         layout = self.layout
 
         gs = context.scene.game_settings
+
         row = layout.row()
         row.prop(gs, "use_frame_rate")
         row.prop(gs, "restrict_animation_updates")
@@ -404,10 +416,10 @@ class RENDER_PT_game_display(RenderButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        row = layout.row()
-        row.prop(context.scene.render, "fps", text="Animation Frame Rate", slider=False)
-
         gs = context.scene.game_settings
+
+        layout.prop(context.scene.render, "fps", text="Animation Frame Rate", slider=False)
+
         flow = layout.column_flow()
         flow.prop(gs, "show_debug_properties", text="Debug Properties")
         flow.prop(gs, "show_framerate_profile", text="Framerate and Profile")
@@ -443,7 +455,7 @@ class SCENE_PT_game_navmesh(SceneButtonsPanel, Panel):
 
         rd = context.scene.game_settings.recast_data
 
-        layout.operator("mesh.navmesh_make", text='Build navigation mesh')
+        layout.operator("mesh.navmesh_make", text="Build navigation mesh")
 
         col = layout.column()
         col.label(text="Rasterization:")
@@ -571,14 +583,14 @@ class WORLD_PT_game_mist(WorldButtonsPanel, Panel):
         world = context.world
 
         layout.active = world.mist_settings.use_mist
-        row = layout.row()
-        row.prop(world.mist_settings, "falloff")
+
+        layout.prop(world.mist_settings, "falloff")
 
         row = layout.row(align=True)
         row.prop(world.mist_settings, "start")
         row.prop(world.mist_settings, "depth")
-        row = layout.row()
-        row.prop(world.mist_settings, "intensity", text="Minimum Intensity")
+
+        layout.prop(world.mist_settings, "intensity", text="Minimum Intensity")
 
 
 class WORLD_PT_game_physics(WorldButtonsPanel, Panel):
@@ -611,6 +623,14 @@ class WORLD_PT_game_physics(WorldButtonsPanel, Panel):
             col = split.column()
             col.label(text="Logic Steps:")
             col.prop(gs, "logic_step_max", text="Max")
+
+            col = layout.column()
+            col.label(text="Physics Deactivation:")
+            sub = col.row(align=True)
+            sub.prop(gs, "deactivation_linear_threshold", text="Linear Threshold")
+            sub.prop(gs, "deactivation_angular_threshold", text="Angular Threshold")
+            sub = col.row()
+            sub.prop(gs, "deactivation_time", text="Time")
 
             col = layout.column()
             col.prop(gs, "use_occlusion_culling", text="Occlusion Culling")
@@ -648,6 +668,65 @@ class WORLD_PT_game_physics_obstacles(WorldButtonsPanel, Panel):
         if gs.obstacle_simulation != 'NONE':
             layout.prop(gs, "level_height")
             layout.prop(gs, "show_obstacle_simulation")
+
+
+class DataButtonsPanel():
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "data"
+
+
+class DATA_PT_shadow_game(DataButtonsPanel, Panel):
+    bl_label = "Shadow"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        COMPAT_LIGHTS = {'SPOT', 'SUN'}
+        lamp = context.lamp
+        engine = context.scene.render.engine
+        return (lamp and lamp.type in COMPAT_LIGHTS) and (engine in cls.COMPAT_ENGINES)
+
+    def draw_header(self, context):
+        lamp = context.lamp
+
+        self.layout.prop(lamp, "use_shadow", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        lamp = context.lamp
+
+        layout.active = lamp.use_shadow
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(lamp, "shadow_color", text="")
+
+        col = split.column()
+        col.prop(lamp, "use_shadow_layer", text="This Layer Only")
+        col.prop(lamp, "use_only_shadow")
+
+        col = layout.column()
+        col.label("Buffer Type:")
+        col.prop(lamp, "ge_shadow_buffer_type", text="", toggle=True)
+        col.label("Quality:")
+        col = layout.column(align=True)
+        col.prop(lamp, "shadow_buffer_size", text="Size")
+        col.prop(lamp, "shadow_buffer_bias", text="Bias")
+        col.prop(lamp, "shadow_buffer_bleed_bias", text="Bleed Bias")
+
+        row = layout.row()
+        row.label("Clipping:")
+        row = layout.row(align=True)
+        row.prop(lamp, "shadow_buffer_clip_start", text="Clip Start")
+        row.prop(lamp, "shadow_buffer_clip_end", text="Clip End")
+
+        if lamp.type == 'SUN':
+            row = layout.row()
+            row.prop(lamp, "shadow_frustum_size", text="Frustum Size")
+
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

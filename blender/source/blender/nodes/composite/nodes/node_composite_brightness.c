@@ -37,13 +37,13 @@
 /* **************** Brigh and contrsast  ******************** */
 
 static bNodeSocketTemplate cmp_node_brightcontrast_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
-	{	SOCK_FLOAT, 1, "Bright",		0.0f, 0.0f, 0.0f, 0.0f, -100.0f, 100.0f, PROP_NONE},
-	{	SOCK_FLOAT, 1, "Contrast",		0.0f, 0.0f, 0.0f, 0.0f, -100.0f, 100.0f, PROP_NONE},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_FLOAT, 1, N_("Bright"),		0.0f, 0.0f, 0.0f, 0.0f, -100.0f, 100.0f, PROP_NONE},
+	{	SOCK_FLOAT, 1, N_("Contrast"),		0.0f, 0.0f, 0.0f, 0.0f, -100.0f, 100.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_brightcontrast_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
@@ -57,10 +57,10 @@ static void do_brightnesscontrast(bNode *UNUSED(node), float *out, float *in, fl
 	float delta = contrast / 200.0f;
 	a = 1.0f - delta * 2.0f;
 	/*
-	* The algorithm is by Werner D. Streidt
-	* (http://visca.com/ffactory/archives/5-99/msg00021.html)
-	* Extracted of OpenCV demhist.c
-	*/
+	 * The algorithm is by Werner D. Streidt
+	 * (http://visca.com/ffactory/archives/5-99/msg00021.html)
+	 * Extracted of OpenCV demhist.c
+	 */
 	if (contrast > 0) {
 		a = 1.0f / a;
 		b = a * (brightness - delta);
@@ -70,7 +70,7 @@ static void do_brightnesscontrast(bNode *UNUSED(node), float *out, float *in, fl
 		b = a * (brightness + delta);
 	}
 	
-	for(c=0; c<3; c++){        
+	for (c=0; c<3; c++) {        
 		i = in[c];
 		v = a*i + b;
 		out[c] = v;
@@ -79,15 +79,15 @@ static void do_brightnesscontrast(bNode *UNUSED(node), float *out, float *in, fl
 
 static void node_composit_exec_brightcontrast(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
-	if(out[0]->hasoutput==0)
+	if (out[0]->hasoutput==0)
 		return;
 	
-	if(in[0]->data) {
+	if (in[0]->data) {
 		CompBuf *stackbuf, *cbuf= typecheck_compbuf(in[0]->data, CB_RGBA);
 		stackbuf= dupalloc_compbuf(cbuf);
 		composit3_pixel_processor(node, stackbuf, in[0]->data, in[0]->vec, in[1]->data, in[1]->vec, in[2]->data, in[2]->vec, do_brightnesscontrast, CB_RGBA, CB_VAL, CB_VAL);
 		out[0]->data = stackbuf;
-		if(cbuf != in[0]->data)
+		if (cbuf != in[0]->data)
 			free_compbuf(cbuf);
 	}
 }

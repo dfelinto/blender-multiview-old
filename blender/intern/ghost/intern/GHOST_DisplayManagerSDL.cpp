@@ -39,13 +39,13 @@ GHOST_DisplayManagerSDL::GHOST_DisplayManagerSDL(GHOST_SystemSDL *system)
       GHOST_DisplayManager(),
       m_system(system)
 {
-	/* do nothing */
+	memset(&m_mode, 0, sizeof m_mode);
 }
 
 GHOST_TSuccess
 GHOST_DisplayManagerSDL::getNumDisplays(GHOST_TUns8& numDisplays) const
 {
-	numDisplays=  SDL_GetNumVideoDisplays();
+	numDisplays =  SDL_GetNumVideoDisplays();
 	return GHOST_kSuccess;
 }
 
@@ -105,6 +105,13 @@ GHOST_DisplayManagerSDL::getCurrentDisplaySetting(GHOST_TUns8 display,
 }
 
 GHOST_TSuccess
+GHOST_DisplayManagerSDL::getCurrentDisplayModeSDL(SDL_DisplayMode &mode) const
+{
+	mode = m_mode;
+	return GHOST_kSuccess;
+}
+
+GHOST_TSuccess
 GHOST_DisplayManagerSDL:: setCurrentDisplaySetting(GHOST_TUns8 display,
                                                    const GHOST_DisplaySetting& setting)
 {
@@ -133,8 +140,10 @@ GHOST_DisplayManagerSDL:: setCurrentDisplaySetting(GHOST_TUns8 display,
 			SDL_GetDisplayMode(display, i, &mode);
 
 			if (setting.xPixels > mode.w ||
-				setting.yPixels > mode.h)
+			    setting.yPixels > mode.h)
+			{
 				continue;
+			}
 
 			x = setting.xPixels - mode.w;
 			y = setting.yPixels - mode.h;
@@ -150,6 +159,8 @@ GHOST_DisplayManagerSDL:: setCurrentDisplaySetting(GHOST_TUns8 display,
 
 		SDL_GetDisplayMode(display, best_fit, &mode);
 	}
+
+	m_mode = mode;
 
 	/* evil, SDL2 needs a window to adjust display modes */
 	GHOST_WindowSDL *win = (GHOST_WindowSDL *)m_system->getWindowManager()->getActiveWindow();
@@ -168,6 +179,8 @@ GHOST_DisplayManagerSDL:: setCurrentDisplaySetting(GHOST_TUns8 display,
 		/* this is a problem for the BGE player :S, perhaps SDL2 will resolve at some point.
 		 * we really need SDL_SetDisplayModeForDisplay() to become an API func! - campbell */
 		printf("no windows available, cant fullscreen");
-		return GHOST_kFailure;
+
+		/* do not fail, we will try again later when the window is created - wander */
+		return GHOST_kSuccess;
 	}
 }

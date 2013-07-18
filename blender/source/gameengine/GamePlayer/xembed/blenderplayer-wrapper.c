@@ -38,12 +38,12 @@
 #include <fcntl.h>
 
 #include <pwd.h>
-#include <stdlib.h> // exit
-#include <string.h> // memcpy
+#include <stdlib.h> /* exit */
+#include <string.h> /* memcpy */
 
 #include <signal.h>
 
-// the blenderplayer id (used by sigterm_handler handler)
+/* the blenderplayer id (used by sigterm_handler handler) */
 pid_t blenderplayer_id = 0;
 
 
@@ -86,7 +86,7 @@ int main(int argc, char *argv[])
 	/** This code runs with elevated privileges   */
 
 	struct passwd *pw;
-	pw = getpwnam("nobody"); // make it a param on a config file
+	pw = getpwnam("nobody"); /* make it a param on a config file */
 	uid_t  new_id = pw->pw_uid;
 
 	if (argc != 3) {
@@ -122,7 +122,7 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
-	if (fchown(fd, new_id, -1) != 0 ){
+	if (fchown(fd, new_id, -1) != 0 ) {
 		perror("Cannot chown file\n");
 		exit(EXIT_FAILURE);
 	}
@@ -163,15 +163,17 @@ int main(int argc, char *argv[])
 
 		print_id();	
 	
-		int e = execlp ("xauth", "xauth", "-f", auth_file_name, "generate", display, ".", "trusted", (char*)NULL);
+		int e = execlp ("xauth", "xauth", "-f", auth_file_name, "generate", display, ".", "trusted", (char *)NULL);
 		perror("Error executing xauth!\n"); 
 		exit(EXIT_FAILURE);
 
-	} if (id_auth < 0 )  { //error
+	}
+
+	if (id_auth < 0 ) { /* error */
 		perror("Cannot fork!\n");
 		exit(EXIT_FAILURE);
-	
-	} else { // parent
+	}
+	else { /* parent */
 		int status;
 		fprintf(stderr, "Waiting for xauth....\n");
 		wait(&status);
@@ -179,7 +181,7 @@ int main(int argc, char *argv[])
 	}
 
 	/* xauth file must be readable by the privsep user */
-	if (chown(auth_file_name, new_id, -1) != 0 ){
+	if (chown(auth_file_name, new_id, -1) != 0 ) {
 		perror("Cannot chown auth file\n");
 		exit(EXIT_FAILURE);
 	}
@@ -208,16 +210,17 @@ int main(int argc, char *argv[])
 		setenv("XAUTHORITY", auth_file_name, 1);
 	
 		const char* blenderplayer = "/usr/bin/blenderplayer";
-		execl(blenderplayer, "blenderplayer", "-i", window_id, file_name, (char*)NULL);
-	} else {
+		execl(blenderplayer, "blenderplayer", "-i", window_id, file_name, (char *)NULL);
+	}
+	else {
 		/** Still running with higher privileges */
 		int status;
 		fprintf(stderr, "Waiting for blenderplayer....\n");
 		wait(&status);
 		fprintf(stderr, "blenderplayer done!\n");
 
-		// We have to remove xauth file and I have to chown blender file back to the original user
-		if (chown(file_name, caller_id, -1) != 0 ){
+		/* We have to remove xauth file and I have to chown blender file back to the original user */
+		if (chown(file_name, caller_id, -1) != 0 ) {
 			perror("Cannot chown file back to original user\n");
 			exit(EXIT_FAILURE);
 		}

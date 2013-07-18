@@ -41,7 +41,10 @@ public:
 	float3 rotation;
 	float3 scale;
 
-	enum Mapping { NONE=0, X=1, Y=2, Z=3 };
+	float3 min, max;
+	bool use_minmax;
+
+	enum Mapping { NONE = 0, X = 1, Y = 2, Z = 3 };
 	Mapping x_mapping, y_mapping, z_mapping;
 
 	enum Projection { FLAT, CUBE, TUBE, SPHERE };
@@ -52,7 +55,7 @@ public:
 
 class TextureNode : public ShaderNode {
 public:
-	TextureNode(const char *name) : ShaderNode(name) {}
+	TextureNode(const char *name_) : ShaderNode(name_) {}
 	TextureMapping tex_mapping;
 };
 
@@ -277,6 +280,22 @@ public:
 	SHADER_NODE_CLASS(LightPathNode)
 };
 
+class LightFalloffNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(LightFalloffNode)
+};
+
+class ObjectInfoNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(ObjectInfoNode)
+};
+
+class ParticleInfoNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(ParticleInfoNode)
+	void attributes(AttributeRequestSet *attributes);
+};
+
 class ValueNode : public ShaderNode {
 public:
 	SHADER_NODE_CLASS(ValueNode)
@@ -388,6 +407,18 @@ public:
 class BumpNode : public ShaderNode {
 public:
 	SHADER_NODE_CLASS(BumpNode)
+};
+
+class RGBCurvesNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(RGBCurvesNode)
+	float4 curves[RAMP_TABLE_SIZE];
+};
+
+class RGBRampNode : public ShaderNode {
+public:
+	SHADER_NODE_CLASS(RGBRampNode)
+	float4 ramp[RAMP_TABLE_SIZE];
 };
 
 CCL_NAMESPACE_END

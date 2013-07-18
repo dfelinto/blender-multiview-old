@@ -27,6 +27,8 @@
 
 #include "util_foreach.h"
 #include "util_function.h"
+#include "util_opengl.h"
+#include "util_task.h"
 #include "util_time.h"
 
 CCL_NAMESPACE_BEGIN
@@ -36,6 +38,8 @@ Session::Session(const SessionParams& params_)
   tile_manager(params.progressive, params.samples, params.tile_size, params.min_size)
 {
 	device_use_gl = ((params.device.type != DEVICE_CPU) && !params.background);
+
+	TaskScheduler::init(params.threads);
 
 	device = Device::create(params.device, params.background, params.threads);
 	buffers = new RenderBuffers(device);
@@ -88,6 +92,8 @@ Session::~Session()
 	delete display;
 	delete scene;
 	delete device;
+
+	TaskScheduler::exit();
 }
 
 void Session::start()
@@ -110,8 +116,8 @@ bool Session::ready_to_reset()
 void Session::reset_gpu(BufferParams& buffer_params, int samples)
 {
 	/* block for buffer acces and reset immediately. we can't do this
-	   in the thread, because we need to allocate an OpenGL buffer, and
-	   that only works in the main thread */
+	 * in the thread, because we need to allocate an OpenGL buffer, and
+	 * that only works in the main thread */
 	thread_scoped_lock display_lock(display->mutex);
 	thread_scoped_lock buffers_lock(buffers->mutex);
 
@@ -134,10 +140,10 @@ bool Session::draw_gpu(BufferParams& buffer_params)
 	/* first check we already rendered something */
 	if(gpu_draw_ready) {
 		/* then verify the buffers have the expected size, so we don't
-		   draw previous results in a resized window */
+		 * draw previous results in a resized window */
 		if(!buffer_params.modified(display->params)) {
 			/* for CUDA we need to do tonemapping still, since we can
-			   only access GL buffers from the main thread */
+			 * only access GL buffers from the main thread */
 			if(gpu_need_tonemap) {
 				thread_scoped_lock buffers_lock(buffers->mutex);
 				tonemap();
@@ -164,7 +170,7 @@ void Session::run_gpu()
 	paused_time = 0.0;
 
 	if(!params.background)
-		progress.set_start_time(start_time - paused_time);
+		progress.set_start_time(start_time + paused_time);
 
 	while(!progress.get_cancel()) {
 		/* advance to next tile */
@@ -179,7 +185,7 @@ void Session::run_gpu()
 		}
 		else {
 			/* if in interactive mode, and we are either paused or done for now,
-			   wait for pause condition notify to wake up again */
+			 * wait for pause condition notify to wake up again */
 			thread_scoped_lock pause_lock(pause_mutex);
 
 			if(pause || no_tiles) {
@@ -191,7 +197,7 @@ void Session::run_gpu()
 					paused_time += time_dt() - pause_start;
 
 					if(!params.background)
-						progress.set_start_time(start_time - paused_time);
+						progress.set_start_time(start_time + paused_time);
 
 					update_status_time(pause, no_tiles);
 					progress.set_update();
@@ -218,8 +224,8 @@ void Session::run_gpu()
 
 		if(!no_tiles) {
 			/* buffers mutex is locked entirely while rendering each
-			   sample, and released/reacquired on each iteration to allow
-			   reset and draw in between */
+			 * sample, and released/reacquired on each iteration to allow
+			 * reset and draw in between */
 			thread_scoped_lock buffers_lock(buffers->mutex);
 
 			/* update status and timing */
@@ -288,7 +294,7 @@ bool Session::draw_cpu(BufferParams& buffer_params)
 	/* first check we already rendered something */
 	if(display->draw_ready()) {
 		/* then verify the buffers have the expected size, so we don't
-		   draw previous results in a resized window */
+		 * draw previous results in a resized window */
 		if(!buffer_params.modified(display->params)) {
 			display->draw(device);
 
@@ -328,7 +334,7 @@ void Session::run_cpu()
 		}
 		else {
 			/* if in interactive mode, and we are either paused or done for now,
-			   wait for pause condition notify to wake up again */
+			 * wait for pause condition notify to wake up again */
 			thread_scoped_lock pause_lock(pause_mutex);
 
 			if(pause || no_tiles) {
@@ -340,7 +346,7 @@ void Session::run_cpu()
 					paused_time += time_dt() - pause_start;
 
 					if(!params.background)
-						progress.set_start_time(start_time - paused_time);
+						progress.set_start_time(start_time + paused_time);
 
 					update_status_time(pause, no_tiles);
 					progress.set_update();
@@ -356,8 +362,8 @@ void Session::run_cpu()
 
 		if(!no_tiles) {
 			/* buffers mutex is locked entirely while rendering each
-			   sample, and released/reacquired on each iteration to allow
-			   reset and draw in between */
+			 * sample, and released/reacquired on each iteration to allow
+			 * reset and draw in between */
 			thread_scoped_lock buffers_lock(buffers->mutex);
 
 			/* update scene */
@@ -400,7 +406,7 @@ void Session::run_cpu()
 			}
 			else if(need_tonemap) {
 				/* tonemap only if we do not reset, we don't we don't
-				   want to show the result of an incomplete sample*/
+				 * wan't to show the result of an incomplete sample*/
 				tonemap();
 			}
 
@@ -473,7 +479,7 @@ void Session::reset_(BufferParams& buffer_params, int samples)
 	sample = 0;
 
 	if(!params.background)
-		progress.set_start_time(start_time - paused_time);
+		progress.set_start_time(start_time + paused_time);
 }
 
 void Session::reset(BufferParams& buffer_params, int samples)
@@ -529,8 +535,8 @@ void Session::update_scene()
 	progress.set_status("Updating Scene");
 
 	/* update camera if dimensions changed for progressive render. the camera
-	   knows nothing about progressive or cropped rendering, it just gets the
-	   image dimensions passed in */
+	 * knows nothing about progressive or cropped rendering, it just gets the
+	 * image dimensions passed in */
 	Camera *cam = scene->camera;
 	int width = tile_manager.state.buffer.full_width;
 	int height = tile_manager.state.buffer.full_height;

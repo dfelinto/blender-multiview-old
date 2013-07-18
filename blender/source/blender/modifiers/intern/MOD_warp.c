@@ -29,6 +29,9 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_object_types.h"
+#include "DNA_meshdata_types.h"
+
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "BLI_string.h"
@@ -39,9 +42,6 @@
 #include "BKE_texture.h"
 #include "BKE_colortools.h"
 
-#include "DNA_object_types.h"
-#include "DNA_meshdata_types.h"
-
 #include "depsgraph_private.h"
 
 #include "RE_shader_ext.h"
@@ -51,7 +51,7 @@
 
 static void initData(ModifierData *md)
 {
-	WarpModifierData *wmd = (WarpModifierData*) md;
+	WarpModifierData *wmd = (WarpModifierData *) md;
 
 	wmd->curfalloff = curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
 	wmd->texture = NULL;
@@ -63,8 +63,8 @@ static void initData(ModifierData *md)
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
-	WarpModifierData *wmd = (WarpModifierData*) md;
-	WarpModifierData *twmd = (WarpModifierData*) target;
+	WarpModifierData *wmd = (WarpModifierData *) md;
+	WarpModifierData *twmd = (WarpModifierData *) target;
 
 	twmd->object_from = wmd->object_from;
 	twmd->object_to = wmd->object_to;
@@ -79,7 +79,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	twmd->texture = wmd->texture;
 	twmd->map_object = wmd->map_object;
 	BLI_strncpy(twmd->uvlayer_name, wmd->uvlayer_name, sizeof(twmd->uvlayer_name));
-	twmd->texmapping= wmd->texmapping;
+	twmd->texmapping = wmd->texmapping;
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -88,11 +88,11 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
-	if(wmd->defgrp_name[0]) dataMask |= (CD_MASK_MDEFORMVERT);
+	if (wmd->defgrp_name[0]) dataMask |= (CD_MASK_MDEFORMVERT);
 	dataMask |= (CD_MASK_MDEFORMVERT);
 
 	/* ask for UV coordinates if we need them */
-	if(wmd->texmapping == MOD_DISP_MAP_UV) dataMask |= (1 << CD_MTFACE);
+	if (wmd->texmapping == MOD_DISP_MAP_UV) dataMask |= (1 << CD_MTFACE);
 
 	return dataMask;
 }
@@ -101,7 +101,7 @@ static int dependsOnTime(ModifierData *md)
 {
 	WarpModifierData *wmd = (WarpModifierData *)md;
 
-	if(wmd->texture) {
+	if (wmd->texture) {
 		return BKE_texture_dependsOnTime(wmd->texture);
 	}
 	else {
@@ -118,14 +118,14 @@ static void freeData(ModifierData *md)
 
 static int isDisabled(ModifierData *md, int UNUSED(userRenderParams))
 {
-	WarpModifierData *wmd = (WarpModifierData*) md;
+	WarpModifierData *wmd = (WarpModifierData *) md;
 
 	return !(wmd->object_from && wmd->object_to);
 }
 
 static void foreachObjectLink(ModifierData *md, Object *ob, ObjectWalkFunc walk, void *userData)
 {
-	WarpModifierData *wmd = (WarpModifierData*) md;
+	WarpModifierData *wmd = (WarpModifierData *) md;
 
 	walk(userData, ob, &wmd->object_from);
 	walk(userData, ob, &wmd->object_to);
@@ -134,7 +134,7 @@ static void foreachObjectLink(ModifierData *md, Object *ob, ObjectWalkFunc walk,
 
 static void foreachIDLink(ModifierData *md, Object *ob, IDWalkFunc walk, void *userData)
 {
-	WarpModifierData *wmd = (WarpModifierData*) md;
+	WarpModifierData *wmd = (WarpModifierData *) md;
 
 	walk(userData, ob, (ID **)&wmd->texture);
 
@@ -151,9 +151,9 @@ static void foreachTexLink(ModifierData *md, Object *ob, TexWalkFunc walk, void 
 static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *UNUSED(scene),
                            Object *UNUSED(ob), DagNode *obNode)
 {
-	WarpModifierData *wmd = (WarpModifierData*) md;
+	WarpModifierData *wmd = (WarpModifierData *) md;
 
-	if(wmd->object_from && wmd->object_to) {
+	if (wmd->object_from && wmd->object_to) {
 		DagNode *fromNode = dag_get_node(forest, wmd->object_from);
 		DagNode *toNode = dag_get_node(forest, wmd->object_to);
 
@@ -161,7 +161,7 @@ static void updateDepgraph(ModifierData *md, DagForest *forest, struct Scene *UN
 		dag_add_relation(forest, toNode, obNode, DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Warp Modifier2");
 	}
 
-	if((wmd->texmapping == MOD_DISP_MAP_OBJECT) && wmd->map_object) {
+	if ((wmd->texmapping == MOD_DISP_MAP_OBJECT) && wmd->map_object) {
 		DagNode *curNode = dag_get_node(forest, wmd->map_object);
 		dag_add_relation(forest, curNode, obNode, DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Warp Modifier3");
 	}
@@ -183,16 +183,16 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 	float fac = 1.0f, weight;
 	int i;
 	int defgrp_index;
-	MDeformVert *dvert, *dv= NULL;
+	MDeformVert *dvert, *dv = NULL;
 
-	float (*tex_co)[3]= NULL;
+	float (*tex_co)[3] = NULL;
 
-	if(!(wmd->object_from && wmd->object_to))
+	if (!(wmd->object_from && wmd->object_to))
 		return;
 
 	modifier_get_vgroup(ob, dm, wmd->defgrp_name, &dvert, &defgrp_index);
 
-	if(wmd->curfalloff==NULL) /* should never happen, but bad lib linking could cause it */
+	if (wmd->curfalloff == NULL) /* should never happen, but bad lib linking could cause it */
 		wmd->curfalloff = curvemapping_add(1, 0.0f, 0.0f, 1.0f, 1.0f);
 
 	invert_m4_m4(obinv, ob->obmat);
@@ -207,7 +207,7 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 
 	unit_m4(mat_unit);
 
-	if(strength < 0.0f) {
+	if (strength < 0.0f) {
 		float loc[3];
 		strength = -strength;
 
@@ -217,62 +217,65 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 		negate_v3_v3(mat_final[3], loc);
 
 	}
-	weight= strength;
+	weight = strength;
 
-	if(wmd->texture) {
+	if (wmd->texture) {
 		tex_co = MEM_mallocN(sizeof(*tex_co) * numVerts, "warpModifier_do tex_co");
 		get_texture_coords((MappingInfoModifierData *)wmd, ob, dm, vertexCos, tex_co, numVerts);
+
+		modifier_init_texture(wmd->modifier.scene, wmd->texture);
 	}
 
-	for(i = 0; i < numVerts; i++) {
+	for (i = 0; i < numVerts; i++) {
 		float *co = vertexCos[i];
 
-		if(wmd->falloff_type==eWarp_Falloff_None ||
-		        ((fac=len_v3v3(co, mat_from[3])) < wmd->falloff_radius && (fac=(wmd->falloff_radius-fac)/wmd->falloff_radius)) ) {
-
+		if (wmd->falloff_type == eWarp_Falloff_None ||
+		    ((fac = len_v3v3(co, mat_from[3])) < wmd->falloff_radius &&
+		     (fac = (wmd->falloff_radius - fac) / wmd->falloff_radius)))
+		{
 			/* skip if no vert group found */
-			if(dvert && defgrp_index >= 0) {
+			if (dvert && defgrp_index >= 0) {
 				dv = &dvert[i];
 
-				if(dv) {
+				if (dv) {
 					weight = defvert_find_weight(dv, defgrp_index) * strength;
-					if(weight <= 0.0f) /* Should never occure... */
+					if (weight <= 0.0f) /* Should never occure... */
 						continue;
 				}
 			}
 
 
 			/* closely match PROP_SMOOTH and similar */
-			switch(wmd->falloff_type) {
-			case eWarp_Falloff_None:
-				fac = 1.0f;
-				break;
-			case eWarp_Falloff_Curve:
-				fac = curvemapping_evaluateF(wmd->curfalloff, 0, fac);
-				break;
-			case eWarp_Falloff_Sharp:
-				fac = fac*fac;
-				break;
-			case eWarp_Falloff_Smooth:
-				fac = 3.0f*fac*fac - 2.0f*fac*fac*fac;
-				break;
-			case eWarp_Falloff_Root:
-				fac = (float)sqrt(fac);
-				break;
-			case eWarp_Falloff_Linear:
-				/* pass */
-				break;
-			case eWarp_Falloff_Const:
-				fac = 1.0f;
-				break;
-			case eWarp_Falloff_Sphere:
-				fac = (float)sqrt(2*fac - fac * fac);
-				break;
+			switch (wmd->falloff_type) {
+				case eWarp_Falloff_None:
+					fac = 1.0f;
+					break;
+				case eWarp_Falloff_Curve:
+					fac = curvemapping_evaluateF(wmd->curfalloff, 0, fac);
+					break;
+				case eWarp_Falloff_Sharp:
+					fac = fac * fac;
+					break;
+				case eWarp_Falloff_Smooth:
+					fac = 3.0f * fac * fac - 2.0f * fac * fac * fac;
+					break;
+				case eWarp_Falloff_Root:
+					fac = (float)sqrt(fac);
+					break;
+				case eWarp_Falloff_Linear:
+					/* pass */
+					break;
+				case eWarp_Falloff_Const:
+					fac = 1.0f;
+					break;
+				case eWarp_Falloff_Sphere:
+					fac = (float)sqrt(2 * fac - fac * fac);
+					break;
 			}
 
 			fac *= weight;
 
-			if(tex_co) {
+			if (tex_co) {
 				TexResult texres;
 				texres.nor = NULL;
 				get_texture_value(wmd->texture, tex_co[i], &texres);
@@ -282,11 +285,11 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 			/* into the 'from' objects space */
 			mul_m4_v3(mat_from_inv, co);
 
-			if(fac >= 1.0f) {
+			if (fac >= 1.0f) {
 				mul_m4_v3(mat_final, co);
 			}
-			else if(fac > 0.0f) {
-				if(wmd->flag & MOD_WARP_VOLUME_PRESERVE) {
+			else if (fac > 0.0f) {
+				if (wmd->flag & MOD_WARP_VOLUME_PRESERVE) {
 					/* interpolate the matrix for nicer locations */
 					blend_m4_m4m4(tmat, mat_unit, mat_final, fac);
 					mul_m4_v3(tmat, co);
@@ -303,7 +306,7 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 		}
 	}
 
-	if(tex_co)
+	if (tex_co)
 		MEM_freeN(tex_co);
 
 }
@@ -314,19 +317,19 @@ static int warp_needs_dm(WarpModifierData *wmd)
 }
 
 static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData,
-                        float (*vertexCos)[3], int numVerts, int UNUSED(useRenderParams), int UNUSED(isFinalCalc))
+                        float (*vertexCos)[3], int numVerts, ModifierApplyFlag UNUSED(flag))
 {
-	DerivedMesh *dm= NULL;
-	int use_dm= warp_needs_dm((WarpModifierData *)md);
+	DerivedMesh *dm = NULL;
+	int use_dm = warp_needs_dm((WarpModifierData *)md);
 
-	if(use_dm) {
-		dm= get_cddm(ob, NULL, derivedData, vertexCos);
+	if (use_dm) {
+		dm = get_cddm(ob, NULL, derivedData, vertexCos);
 	}
 
 	warpModifier_do((WarpModifierData *)md, ob, dm, vertexCos, numVerts);
 
-	if(use_dm) {
-		if(dm != derivedData) dm->release(dm);
+	if (use_dm) {
+		if (dm != derivedData) dm->release(dm);
 	}
 }
 
@@ -334,43 +337,43 @@ static void deformVertsEM(ModifierData *md, Object *ob, struct BMEditMesh *editD
                           DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = derivedData;
-	int use_dm= warp_needs_dm((WarpModifierData *)md);
+	int use_dm = warp_needs_dm((WarpModifierData *)md);
 
-	if(use_dm) {
-		if(!derivedData)
+	if (use_dm) {
+		if (!derivedData)
 			dm = CDDM_from_BMEditMesh(editData, ob->data, FALSE, FALSE);
 	}
 
-	deformVerts(md, ob, dm, vertexCos, numVerts, 0, 0);
+	deformVerts(md, ob, dm, vertexCos, numVerts, 0);
 
-	if(use_dm) {
-		if(!derivedData) dm->release(dm);
+	if (use_dm) {
+		if (!derivedData) dm->release(dm);
 	}
 }
 
 
 ModifierTypeInfo modifierType_Warp = {
-	/* name */              "Warp",
-	/* structName */        "WarpModifierData",
-	/* structSize */        sizeof(WarpModifierData),
-	/* type */              eModifierTypeType_OnlyDeform,
-	/* flags */             eModifierTypeFlag_AcceptsCVs
-							| eModifierTypeFlag_SupportsEditmode,
-	/* copyData */          copyData,
-	/* deformVerts */       deformVerts,
-	/* deformMatrices */    NULL,
-	/* deformVertsEM */     deformVertsEM,
-	/* deformMatricesEM */  NULL,
-	/* applyModifier */     0,
-	/* applyModifierEM */   0,
-	/* initData */          initData,
-	/* requiredDataMask */  requiredDataMask,
-	/* freeData */          freeData,
-	/* isDisabled */        isDisabled,
-	/* updateDepgraph */    updateDepgraph,
-	/* dependsOnTime */     dependsOnTime,
-	/* dependsOnNormals */	NULL,
+	/* name */ "Warp",
+	/* structName */ "WarpModifierData",
+	/* structSize */ sizeof(WarpModifierData),
+	/* type */ eModifierTypeType_OnlyDeform,
+	/* flags */ eModifierTypeFlag_AcceptsCVs |
+	eModifierTypeFlag_SupportsEditmode,
+	/* copyData */ copyData,
+	/* deformVerts */ deformVerts,
+	/* deformMatrices */ NULL,
+	/* deformVertsEM */ deformVertsEM,
+	/* deformMatricesEM */ NULL,
+	/* applyModifier */ 0,
+	/* applyModifierEM */ 0,
+	/* initData */ initData,
+	/* requiredDataMask */ requiredDataMask,
+	/* freeData */ freeData,
+	/* isDisabled */ isDisabled,
+	/* updateDepgraph */ updateDepgraph,
+	/* dependsOnTime */ dependsOnTime,
+	/* dependsOnNormals */ NULL,
 	/* foreachObjectLink */ foreachObjectLink,
-	/* foreachIDLink */     foreachIDLink,
-	/* foreachTexLink */    foreachTexLink,
+	/* foreachIDLink */ foreachIDLink,
+	/* foreachTexLink */ foreachTexLink,
 };

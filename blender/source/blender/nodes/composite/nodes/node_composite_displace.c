@@ -36,14 +36,14 @@
 /* **************** Displace  ******************** */
 
 static bNodeSocketTemplate cmp_node_displace_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
-	{	SOCK_VECTOR, 1, "Vector",			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_TRANSLATION},
-	{	SOCK_FLOAT, 1, "X Scale",				0.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f, PROP_FACTOR},
-	{	SOCK_FLOAT, 1, "Y Scale",				0.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f, PROP_FACTOR},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_VECTOR, 1, N_("Vector"),			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_TRANSLATION},
+	{	SOCK_FLOAT, 1, N_("X Scale"),				0.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f, PROP_FACTOR},
+	{	SOCK_FLOAT, 1, N_("Y Scale"),				0.0f, 0.0f, 0.0f, 0.0f, -1000.0f, 1000.0f, PROP_FACTOR},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_displace_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
@@ -66,8 +66,8 @@ static void do_displace(bNode *node, CompBuf *stackbuf, CompBuf *cbuf, CompBuf *
 	ibuf= IMB_allocImBuf(cbuf->x, cbuf->y, 32, 0);
 	ibuf->rect_float= cbuf->rect;
 	
-	for(y=0; y < stackbuf->y; y++) {
-		for(x=0; x < stackbuf->x; x++) {
+	for (y=0; y < stackbuf->y; y++) {
+		for (x=0; x < stackbuf->x; x++) {
 			/* calc pixel coordinates */
 			qd_getPixel(vecbuf, x-vecbuf->xof, y-vecbuf->yof, vec);
 			
@@ -105,7 +105,7 @@ static void do_displace(bNode *node, CompBuf *stackbuf, CompBuf *cbuf, CompBuf *
 			qd_getPixel(vecbuf, x-vecbuf->xof+1, y-vecbuf->yof, vecdx);
 			qd_getPixel(vecbuf, x-vecbuf->xof, y-vecbuf->yof+1, vecdy);
 			d_dx = vecdx[0] * xs;
-			d_dy = vecdy[0] * ys;
+			d_dy = vecdy[1] * ys;
 
 			/* clamp derivatives to minimum displacement distance in UV space */
 			dxt = p_dx - d_dx;
@@ -117,24 +117,24 @@ static void do_displace(bNode *node, CompBuf *stackbuf, CompBuf *cbuf, CompBuf *
 			ibuf_sample(ibuf, u, v, dxt, dyt, col);
 			qd_setPixel(stackbuf, x, y, col);
 			
-			if(node->exec & NODE_BREAK) break;
+			if (node->exec & NODE_BREAK) break;
 		}
 		
-		if(node->exec & NODE_BREAK) break;
+		if (node->exec & NODE_BREAK) break;
 	}
 	IMB_freeImBuf(ibuf);
 	
 	
 /* simple method for reference, linear interpolation */
-/*	
+#if 0
 	int x, y;
 	float dx, dy;
 	float u, v;
 	float vec[3];
 	float col[3];
 	
-	for(y=0; y < stackbuf->y; y++) {
-		for(x=0; x < stackbuf->x; x++) {
+	for (y=0; y < stackbuf->y; y++) {
+		for (x=0; x < stackbuf->x; x++) {
 			qd_getPixel(vecbuf, x, y, vec);
 			
 			dx = vec[0] * (xscale[0]);
@@ -147,16 +147,16 @@ static void do_displace(bNode *node, CompBuf *stackbuf, CompBuf *cbuf, CompBuf *
 			qd_setPixel(stackbuf, x, y, col);
 		}
 	}
-*/
+#endif
 }
 
 
 static void node_composit_exec_displace(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
-	if(out[0]->hasoutput==0)
+	if (out[0]->hasoutput==0)
 		return;
 	
-	if(in[0]->data && in[1]->data) {
+	if (in[0]->data && in[1]->data) {
 		CompBuf *cbuf= in[0]->data;
 		CompBuf *vecbuf= in[1]->data;
 		CompBuf *xbuf= in[2]->data;
@@ -175,9 +175,9 @@ static void node_composit_exec_displace(void *UNUSED(data), bNode *node, bNodeSt
 		out[0]->data= stackbuf;
 		
 		
-		if(cbuf!=in[0]->data)
+		if (cbuf!=in[0]->data)
 			free_compbuf(cbuf);
-		if(vecbuf!=in[1]->data)
+		if (vecbuf!=in[1]->data)
 			free_compbuf(vecbuf);
 	}
 }

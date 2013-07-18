@@ -52,7 +52,7 @@
 
 #include "MEM_guardedalloc.h"
 
- /* external util modules */
+/* external util modules */
 #include "../generic/idprop_py_api.h"
 #include "../generic/bgl.h"
 #include "../generic/blf_py_api.h"
@@ -71,12 +71,17 @@ PyDoc_STRVAR(bpy_script_paths_doc,
 static PyObject *bpy_script_paths(PyObject *UNUSED(self))
 {
 	PyObject *ret = PyTuple_New(2);
+	PyObject *item;
 	char *path;
 
 	path = BLI_get_folder(BLENDER_SYSTEM_SCRIPTS, NULL);
-	PyTuple_SET_ITEM(ret, 0, PyUnicode_FromString(path?path:""));
+	item = PyUnicode_DecodeFSDefault(path ? path : "");
+	BLI_assert(item != NULL);
+	PyTuple_SET_ITEM(ret, 0, item);
 	path = BLI_get_folder(BLENDER_USER_SCRIPTS, NULL);
-	PyTuple_SET_ITEM(ret, 1, PyUnicode_FromString(path?path:""));
+	item = PyUnicode_DecodeFSDefault(path ? path : "");
+	BLI_assert(item != NULL);
+	PyTuple_SET_ITEM(ret, 1, item);
 
 	return ret;
 }
@@ -120,13 +125,13 @@ static PyObject *bpy_blend_paths(PyObject *UNUSED(self), PyObject *args, PyObjec
 		return NULL;
 	}
 
-	if (absolute) flag |= BPATH_TRAVERSE_ABS;
-	if (!packed)  flag |= BPATH_TRAVERSE_SKIP_PACKED;
-	if (local)    flag |= BPATH_TRAVERSE_SKIP_LIBRARY;
+	if (absolute) flag |= BLI_BPATH_TRAVERSE_ABS;
+	if (!packed)  flag |= BLI_BPATH_TRAVERSE_SKIP_PACKED;
+	if (local)    flag |= BLI_BPATH_TRAVERSE_SKIP_LIBRARY;
 
 	list = PyList_New(0);
 
-	bpath_traverse_main(G.main, bpy_blend_paths_visit_cb, flag, (void *)list);
+	BLI_bpath_traverse_main(G.main, bpy_blend_paths_visit_cb, flag, (void *)list);
 
 	return list;
 }
@@ -190,7 +195,7 @@ static PyObject *bpy_resource_path(PyObject *UNUSED(self), PyObject *args, PyObj
 		return NULL;
 
 	/* stupid string compare */
-	if     (!strcmp(type, "USER"))     folder_id = BLENDER_RESOURCE_PATH_USER;
+	if      (!strcmp(type, "USER"))    folder_id = BLENDER_RESOURCE_PATH_USER;
 	else if (!strcmp(type, "LOCAL"))   folder_id = BLENDER_RESOURCE_PATH_LOCAL;
 	else if (!strcmp(type, "SYSTEM"))  folder_id = BLENDER_RESOURCE_PATH_SYSTEM;
 	else {
@@ -200,17 +205,17 @@ static PyObject *bpy_resource_path(PyObject *UNUSED(self), PyObject *args, PyObj
 
 	path = BLI_get_folder_version(folder_id, (major * 100) + minor, FALSE);
 
-	return PyUnicode_DecodeFSDefault(path);
+	return PyUnicode_DecodeFSDefault(path ? path : "");
 }
 
 static PyMethodDef meth_bpy_script_paths =
 	{"script_paths", (PyCFunction)bpy_script_paths, METH_NOARGS, bpy_script_paths_doc};
 static PyMethodDef meth_bpy_blend_paths =
-	{"blend_paths", (PyCFunction)bpy_blend_paths, METH_VARARGS|METH_KEYWORDS, bpy_blend_paths_doc};
+	{"blend_paths", (PyCFunction)bpy_blend_paths, METH_VARARGS | METH_KEYWORDS, bpy_blend_paths_doc};
 static PyMethodDef meth_bpy_user_resource =
-	{"user_resource", (PyCFunction)bpy_user_resource, METH_VARARGS|METH_KEYWORDS, NULL};
+	{"user_resource", (PyCFunction)bpy_user_resource, METH_VARARGS | METH_KEYWORDS, NULL};
 static PyMethodDef meth_bpy_resource_path =
-	{"resource_path", (PyCFunction)bpy_resource_path, METH_VARARGS|METH_KEYWORDS, bpy_resource_path_doc};
+	{"resource_path", (PyCFunction)bpy_resource_path, METH_VARARGS | METH_KEYWORDS, bpy_resource_path_doc};
 
 
 static PyObject *bpy_import_test(const char *modname)
@@ -274,7 +279,7 @@ void BPy_init_modules(void)
 	PyModule_AddObject(mod, "data", BPY_rna_module()); /* imports bpy_types by running this */
 	bpy_import_test("bpy_types");
 	PyModule_AddObject(mod, "props", BPY_rna_props());	
-	 /* ops is now a python module that does the conversion from SOME_OT_foo -> some.foo */
+	/* ops is now a python module that does the conversion from SOME_OT_foo -> some.foo */
 	PyModule_AddObject(mod, "ops", BPY_operator_module());
 	PyModule_AddObject(mod, "app", BPY_app_struct());
 

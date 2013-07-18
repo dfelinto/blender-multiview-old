@@ -129,20 +129,20 @@ struct DDSHeader
 	void setPixelFormat(uint bitcount, uint rmask, uint gmask, uint bmask, uint amask);
 	void setDX10Format(uint format);
 	void setNormalFlag(bool b);
-    void setSrgbFlag(bool b);
+	void setSrgbFlag(bool b);
 	void setHasAlphaFlag(bool b);
-        void setUserVersion(int version);
+	void setUserVersion(int version);
 	
 	/*void swapBytes();*/
 	
 	bool hasDX10Header() const;
-    uint signature() const;
-    uint toolVersion() const;
-    uint userVersion() const;
-    bool isNormalMap() const;
-    bool isSrgb() const;
-    bool hasAlpha() const;
-    uint d3d9Format() const;
+	uint signature() const;
+	uint toolVersion() const;
+	uint userVersion() const;
+	bool isNormalMap() const;
+	bool isSrgb() const;
+	bool hasAlpha() const;
+	uint d3d9Format() const;
 };
 
 /// DirectDraw Surface. (DDS)
@@ -158,6 +158,7 @@ public:
 	bool hasAlpha() const;
 	
 	uint mipmapCount() const;
+	uint fourCC() const;
 	uint width() const;
 	uint height() const;
 	uint depth() const;
@@ -171,6 +172,7 @@ public:
         void setUserVersion(int version);
 	
 	void mipmap(Image * img, uint f, uint m);
+	void* readData(uint &size);
 	//	void mipmap(FloatImage * img, uint f, uint m);
 	
 	void printInfo() const;

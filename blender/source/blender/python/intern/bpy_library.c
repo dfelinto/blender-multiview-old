@@ -39,18 +39,18 @@
 
 #include "BLO_readfile.h"
 
+#include "BLI_utildefines.h"
+#include "BLI_string.h"
+#include "BLI_linklist.h"
+#include "BLI_path_util.h"
+#include "BLI_listbase.h"
+
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_library.h"
 #include "BKE_idcode.h"
 #include "BKE_report.h"
 #include "BKE_context.h"
-
-#include "BLI_utildefines.h"
-#include "BLI_string.h"
-#include "BLI_linklist.h"
-#include "BLI_path_util.h"
-#include "BLI_listbase.h"
 
 #include "DNA_space_types.h" /* FILE_LINK, FILE_RELPATH */
 
@@ -92,75 +92,75 @@ static void bpy_lib_dealloc(BPy_Library *self)
 
 static PyTypeObject bpy_lib_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
-	"bpy_lib",		/* tp_name */
-	sizeof(BPy_Library),			/* tp_basicsize */
-	0,							/* tp_itemsize */
+	"bpy_lib",      /* tp_name */
+	sizeof(BPy_Library),            /* tp_basicsize */
+	0,                          /* tp_itemsize */
 	/* methods */
-	(destructor)bpy_lib_dealloc,/* tp_dealloc */
+	(destructor)bpy_lib_dealloc, /* tp_dealloc */
 	NULL,                       /* printfunc tp_print; */
-	NULL,						/* getattrfunc tp_getattr; */
+	NULL,                       /* getattrfunc tp_getattr; */
 	NULL,                       /* setattrfunc tp_setattr; */
-	NULL,						/* tp_compare */ /* DEPRECATED in python 3.0! */
-	NULL,						/* tp_repr */
+	NULL,                       /* tp_compare */ /* DEPRECATED in python 3.0! */
+	NULL,                       /* tp_repr */
 
 	/* Method suites for standard classes */
 
-	NULL,						/* PyNumberMethods *tp_as_number; */
-	NULL,						/* PySequenceMethods *tp_as_sequence; */
-	NULL,						/* PyMappingMethods *tp_as_mapping; */
+	NULL,                       /* PyNumberMethods *tp_as_number; */
+	NULL,                       /* PySequenceMethods *tp_as_sequence; */
+	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
-	NULL,						/* hashfunc tp_hash; */
+	NULL,                       /* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 
 	/* will only use these if this is a subtype of a py class */
-	NULL /*PyObject_GenericGetAttr is assigned later */,	/* getattrofunc tp_getattro; */
-	NULL,						/* setattrofunc tp_setattro; */
+	NULL /*PyObject_GenericGetAttr is assigned later */,    /* getattrofunc tp_getattro; */
+	NULL,                       /* setattrofunc tp_setattro; */
 
 	/* Functions to access object as input/output buffer */
 	NULL,                       /* PyBufferProcs *tp_as_buffer; */
 
-  /*** Flags to define presence of optional/expanded features ***/
+	/*** Flags to define presence of optional/expanded features ***/
 	Py_TPFLAGS_DEFAULT,         /* long tp_flags; */
 
-	NULL,						/*  char *tp_doc;  Documentation string */
-  /*** Assigned meaning in release 2.0 ***/
+	NULL,                       /*  char *tp_doc;  Documentation string */
+	/*** Assigned meaning in release 2.0 ***/
 	/* call function for all accessible objects */
 	NULL,                       /* traverseproc tp_traverse; */
 
 	/* delete references to contained objects */
 	NULL,                       /* inquiry tp_clear; */
 
-  /***  Assigned meaning in release 2.1 ***/
-  /*** rich comparisons ***/
+	/***  Assigned meaning in release 2.1 ***/
+	/*** rich comparisons ***/
 	NULL, /* subclassed */		/* richcmpfunc tp_richcompare; */
 
-  /***  weak reference enabler ***/
+	/***  weak reference enabler ***/
 	0,
-  /*** Added in release 2.2 ***/
+	/*** Added in release 2.2 ***/
 	/*   Iterators */
-	NULL,						/* getiterfunc tp_iter; */
+	NULL,                       /* getiterfunc tp_iter; */
 	NULL,                       /* iternextfunc tp_iternext; */
 
-  /*** Attribute descriptor and subclassing stuff ***/
-	bpy_lib_methods,			/* struct PyMethodDef *tp_methods; */
+	/*** Attribute descriptor and subclassing stuff ***/
+	bpy_lib_methods,            /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
-	NULL,				      	/* struct PyGetSetDef *tp_getset; */
+	NULL,                       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
 	NULL,                       /* PyObject *tp_dict; */
 	NULL,                       /* descrgetfunc tp_descr_get; */
 	NULL,                       /* descrsetfunc tp_descr_set; */
-	offsetof(BPy_Library, dict),/* long tp_dictoffset; */
+	offsetof(BPy_Library, dict), /* long tp_dictoffset; */
 	NULL,                       /* initproc tp_init; */
 	NULL,                       /* allocfunc tp_alloc; */
-	NULL,						/* newfunc tp_new; */
+	NULL,                       /* newfunc tp_new; */
 	/*  Low-level free-memory routine */
 	NULL,                       /* freefunc tp_free;  */
 	/* For PyObject_IS_GC */
 	NULL,                       /* inquiry tp_is_gc;  */
-	NULL,						/* PyObject *tp_bases; */
+	NULL,                       /* PyObject *tp_bases; */
 	/* method resolution order */
 	NULL,                       /* PyObject *tp_mro;  */
 	NULL,                       /* PyObject *tp_cache; */
@@ -222,7 +222,7 @@ static PyObject *_bpy_names(BPy_Library *self, int blocktype)
 			PyList_SET_ITEM(list, counter, PyUnicode_FromString((char *)l->link));
 			counter++;
 		}
-		BLI_linklist_free(names, free);	/* free linklist *and* each node's data */
+		BLI_linklist_free(names, free); /* free linklist *and* each node's data */
 	}
 	else {
 		list = PyList_New(0);
@@ -291,7 +291,8 @@ static void bpy_lib_exit_warn_idname(BPy_Library *self, const char *name_plural,
 	PyErr_Fetch(&exc, &val, &tb);
 	if (PyErr_WarnFormat(PyExc_UserWarning, 1,
 	                     "load: '%s' does not contain %s[\"%s\"]",
-	                     self->abspath, name_plural, idname)) {
+	                     self->abspath, name_plural, idname))
+	{
 		/* Spurious errors can appear at shutdown */
 		if (PyErr_ExceptionMatches(PyExc_Warning)) {
 			PyErr_WriteUnraisable((PyObject *)self);
@@ -306,7 +307,8 @@ static void bpy_lib_exit_warn_type(BPy_Library *self, PyObject *item)
 	PyErr_Fetch(&exc, &val, &tb);
 	if (PyErr_WarnFormat(PyExc_UserWarning, 1,
 	                     "load: '%s' expected a string type, not a %.200s",
-	                     self->abspath, Py_TYPE(item)->tp_name)) {
+	                     self->abspath, Py_TYPE(item)->tp_name))
+	{
 		/* Spurious errors can appear at shutdown */
 		if (PyErr_ExceptionMatches(PyExc_Warning)) {
 			PyErr_WriteUnraisable((PyObject *)self);
@@ -401,7 +403,8 @@ static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 		BLO_blendhandle_close(self->blo_handle);
 		self->blo_handle = NULL;
 
-		{	/* copied from wm_operator.c */
+		/* copied from wm_operator.c */
+		{
 			/* mark all library linked objects to be updated */
 			recalc_all_library_objects(G.main);
 
@@ -426,8 +429,8 @@ static PyObject *bpy_lib_dir(BPy_Library *self)
 int bpy_lib_init(PyObject *mod_par)
 {
 	static PyMethodDef load_meth = {"load", (PyCFunction)bpy_lib_load,
-	                               METH_STATIC|METH_VARARGS|METH_KEYWORDS,
-	                               bpy_lib_load_doc};
+	                                METH_STATIC | METH_VARARGS | METH_KEYWORDS,
+	                                bpy_lib_load_doc};
 
 	PyModule_AddObject(mod_par, "_library_load", PyCFunction_New(&load_meth, NULL));
 

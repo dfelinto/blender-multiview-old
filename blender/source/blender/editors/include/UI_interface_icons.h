@@ -41,12 +41,12 @@ struct Material;
 
 typedef struct IconFile {
 	struct IconFile *next, *prev;
-	char filename[256];	// FILE_MAXFILE size
+	char filename[256]; /* FILE_MAXFILE size */
 	int index;
 } IconFile;
 
 #define ICON_DEFAULT_HEIGHT 16
-#define ICON_DEFAULT_WIDTH	16
+#define ICON_DEFAULT_WIDTH  16
 
 #define ICON_DEFAULT_HEIGHT_SCALE ((int)(UI_UNIT_Y * 0.8f))
 #define ICON_DEFAULT_WIDTH_SCALE  ((int)(UI_UNIT_X * 0.8f))
@@ -66,7 +66,7 @@ void UI_icon_draw_preview_aspect(float x, float y, int icon_id, float aspect);
 void UI_icon_draw_preview_aspect_size(float x, float y, int icon_id, float aspect, int size);
 
 void UI_icon_draw_aspect(float x, float y, int icon_id, float aspect, float alpha);
-void UI_icon_draw_aspect_color(float x, float y, int icon_id, float aspect, float *rgb);
+void UI_icon_draw_aspect_color(float x, float y, int icon_id, float aspect, const float rgb[3]);
 void UI_icon_draw_size(float x, float y, int size, int icon_id, float alpha);
 void UI_icons_free(void);
 void UI_icons_free_drawinfo(void *drawinfo);

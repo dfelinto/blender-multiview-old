@@ -42,14 +42,14 @@ void nodestack_get_vec(float *in, short type_in, bNodeStack *ns)
 {
 	float *from= ns->vec;
 		
-	if(type_in==SOCK_FLOAT) {
-		if(ns->sockettype==SOCK_FLOAT)
+	if (type_in==SOCK_FLOAT) {
+		if (ns->sockettype==SOCK_FLOAT)
 			*in= *from;
 		else 
 			*in= 0.333333f*(from[0]+from[1]+from[2]);
 	}
-	else if(type_in==SOCK_VECTOR) {
-		if(ns->sockettype==SOCK_FLOAT) {
+	else if (type_in==SOCK_VECTOR) {
+		if (ns->sockettype==SOCK_FLOAT) {
 			in[0]= from[0];
 			in[1]= from[0];
 			in[2]= from[0];
@@ -59,10 +59,10 @@ void nodestack_get_vec(float *in, short type_in, bNodeStack *ns)
 		}
 	}
 	else { /* type_in==SOCK_RGBA */
-		if(ns->sockettype==SOCK_RGBA) {
+		if (ns->sockettype==SOCK_RGBA) {
 			copy_v4_v4(in, from);
 		}
-		else if(ns->sockettype==SOCK_FLOAT) {
+		else if (ns->sockettype==SOCK_FLOAT) {
 			in[0]= from[0];
 			in[1]= from[0];
 			in[2]= from[0];
@@ -84,23 +84,24 @@ void ntreeShaderGetTexcoMode(bNodeTree *ntree, int r_mode, short *texco, int *mo
 	bNodeSocket *sock;
 	int a;
 	
-	for(node= ntree->nodes.first; node; node= node->next) {
-		if(node->type==SH_NODE_TEXTURE) {
-			if((r_mode & R_OSA) && node->id) {
+	for (node= ntree->nodes.first; node; node= node->next) {
+		if (node->type==SH_NODE_TEXTURE) {
+			if ((r_mode & R_OSA) && node->id) {
 				Tex *tex= (Tex *)node->id;
-				if ELEM3(tex->type, TEX_IMAGE, TEX_PLUGIN, TEX_ENVMAP) 
+				if (ELEM(tex->type, TEX_IMAGE, TEX_ENVMAP)) {
 					*texco |= TEXCO_OSA|NEED_UV;
+				}
 			}
 			/* usability exception... without input we still give the node orcos */
 			sock= node->inputs.first;
-			if(sock==NULL || sock->link==NULL)
+			if (sock==NULL || sock->link==NULL)
 				*texco |= TEXCO_ORCO|NEED_UV;
 		}
-		else if(node->type==SH_NODE_GEOMETRY) {
+		else if (node->type==SH_NODE_GEOMETRY) {
 			/* note; sockets always exist for the given type! */
-			for(a=0, sock= node->outputs.first; sock; sock= sock->next, a++) {
-				if(sock->flag & SOCK_IN_USE) {
-					switch(a) {
+			for (a=0, sock= node->outputs.first; sock; sock= sock->next, a++) {
+				if (sock->flag & SOCK_IN_USE) {
+					switch (a) {
 						case GEOM_OUT_GLOB: 
 							*texco |= TEXCO_GLOB|NEED_UV; break;
 						case GEOM_OUT_VIEW: 
@@ -125,18 +126,18 @@ void ntreeShaderGetTexcoMode(bNodeTree *ntree, int r_mode, short *texco, int *mo
 /* nodes that use ID data get synced with local data */
 void nodeShaderSynchronizeID(bNode *node, int copyto)
 {
-	if(node->id==NULL) return;
+	if (node->id==NULL) return;
 	
-	if(ELEM(node->type, SH_NODE_MATERIAL, SH_NODE_MATERIAL_EXT)) {
+	if (ELEM(node->type, SH_NODE_MATERIAL, SH_NODE_MATERIAL_EXT)) {
 		bNodeSocket *sock;
 		Material *ma= (Material *)node->id;
 		int a;
 		
 		/* hrmf, case in loop isn't super fast, but we don't edit 100s of material at same time either! */
-		for(a=0, sock= node->inputs.first; sock; sock= sock->next, a++) {
-			if(!nodeSocketIsHidden(sock)) {
-				if(copyto) {
-					switch(a) {
+		for (a=0, sock= node->inputs.first; sock; sock= sock->next, a++) {
+			if (!nodeSocketIsHidden(sock)) {
+				if (copyto) {
+					switch (a) {
 						case MAT_IN_COLOR:
 							copy_v3_v3(&ma->r, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
 						case MAT_IN_SPEC:
@@ -160,7 +161,7 @@ void nodeShaderSynchronizeID(bNode *node, int copyto)
 					}
 				}
 				else {
-					switch(a) {
+					switch (a) {
 						case MAT_IN_COLOR:
 							copy_v3_v3(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->r); break;
 						case MAT_IN_SPEC:
@@ -210,7 +211,7 @@ void node_gpu_stack_from_data(struct GPUNodeStack *gs, int type, bNodeStack *ns)
 	
 	gs->name = "";
 	gs->hasinput= ns->hasinput && ns->data;
-	/* XXX Commented out the ns->data check here, as it seems it's not alwas set,
+	/* XXX Commented out the ns->data check here, as it seems it's not always set,
 	 *     even though there *is* a valid connection/output... But that might need
 	 *     further investigation.
 	 */
@@ -249,19 +250,19 @@ bNode *nodeGetActiveTexture(bNodeTree *ntree)
 	/* this is the node we texture paint and draw in textured draw */
 	bNode *node;
 
-	if(!ntree)
+	if (!ntree)
 		return NULL;
 
 	/* check for group edit */
-	for(node= ntree->nodes.first; node; node= node->next)
-		if(node->flag & NODE_GROUP_EDIT)
+	for (node= ntree->nodes.first; node; node= node->next)
+		if (node->flag & NODE_GROUP_EDIT)
 			break;
 
-	if(node)
+	if (node)
 		ntree= (bNodeTree*)node->id;
 
-	for(node= ntree->nodes.first; node; node= node->next)
-		if(node->flag & NODE_ACTIVE_TEXTURE)
+	for (node= ntree->nodes.first; node; node= node->next)
+		if (node->flag & NODE_ACTIVE_TEXTURE)
 			return node;
 	
 	return NULL;
@@ -276,35 +277,35 @@ void ntreeExecGPUNodes(bNodeTreeExec *exec, GPUMaterial *mat, int do_outputs)
 	bNodeStack *nsin[MAX_SOCKET];	/* arbitrary... watch this */
 	bNodeStack *nsout[MAX_SOCKET];	/* arbitrary... watch this */
 	GPUNodeStack gpuin[MAX_SOCKET+1], gpuout[MAX_SOCKET+1];
-	int doit;
+	int do_it;
 
 	stack= exec->stack;
 
-	for(n=0, nodeexec= exec->nodeexec; n < exec->totnodes; ++n, ++nodeexec) {
+	for (n=0, nodeexec= exec->nodeexec; n < exec->totnodes; ++n, ++nodeexec) {
 		node = nodeexec->node;
 		
-		doit = 0;
+		do_it = FALSE;
 		/* for groups, only execute outputs for edited group */
-		if(node->typeinfo->nclass==NODE_CLASS_OUTPUT) {
-			if(do_outputs && (node->flag & NODE_DO_OUTPUT))
-				doit = 1;
+		if (node->typeinfo->nclass==NODE_CLASS_OUTPUT) {
+			if (do_outputs && (node->flag & NODE_DO_OUTPUT))
+				do_it = TRUE;
 		}
 		else
-			doit = 1;
+			do_it = TRUE;
 
-		if (doit) {
-			if(node->typeinfo->gpufunc) {
+		if (do_it) {
+			if (node->typeinfo->gpufunc) {
 				node_get_stack(node, stack, nsin, nsout);
 				gpu_stack_from_data_list(gpuin, &node->inputs, nsin);
 				gpu_stack_from_data_list(gpuout, &node->outputs, nsout);
-				if(node->typeinfo->gpufunc(mat, node, gpuin, gpuout))
+				if (node->typeinfo->gpufunc(mat, node, gpuin, gpuout))
 					data_from_gpu_stack_list(&node->outputs, nsout, gpuout);
 			}
-			else if(node->typeinfo->gpuextfunc) {
+			else if (node->typeinfo->gpuextfunc) {
 				node_get_stack(node, stack, nsin, nsout);
 				gpu_stack_from_data_list(gpuin, &node->inputs, nsin);
 				gpu_stack_from_data_list(gpuout, &node->outputs, nsout);
-				if(node->typeinfo->gpuextfunc(mat, node, nodeexec->data, gpuin, gpuout))
+				if (node->typeinfo->gpuextfunc(mat, node, nodeexec->data, gpuin, gpuout))
 					data_from_gpu_stack_list(&node->outputs, nsout, gpuout);
 			}
 		}
@@ -318,7 +319,7 @@ void node_shader_gpu_tex_mapping(GPUMaterial *mat, bNode *node, GPUNodeStack *in
 	float domin= (texmap->flag & TEXMAP_CLIP_MIN) != 0;
 	float domax= (texmap->flag & TEXMAP_CLIP_MAX) != 0;
 
-	if(domin || domax || !(texmap->flag & TEXMAP_UNIT_MATRIX)) {
+	if (domin || domax || !(texmap->flag & TEXMAP_UNIT_MATRIX)) {
 		GPUNodeLink *tmat = GPU_uniform((float*)texmap->mat);
 		GPUNodeLink *tmin = GPU_uniform(texmap->min);
 		GPUNodeLink *tmax = GPU_uniform(texmap->max);

@@ -33,13 +33,13 @@
 #include "node_composite_util.h"
 
 static bNodeSocketTemplate cmp_node_huecorrect_in[]= {
-	{	SOCK_FLOAT, 1, "Fac",	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
-	{	SOCK_RGBA, 1, "Image",	1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
+	{	SOCK_RGBA, 1, N_("Image"),	1.0f, 1.0f, 1.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate cmp_node_huecorrect_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
@@ -109,16 +109,16 @@ static void node_composit_exec_huecorrect(void *UNUSED(data), bNode *node, bNode
 	/* stack order input:  fac, image, black level, white level */
 	/* stack order output: image */
 	
-	if(out[0]->hasoutput==0)
+	if (out[0]->hasoutput==0)
 		return;
 
-	if(in[0]->vec[0] == 0.f && in[0]->data == NULL) {
+	if (in[0]->vec[0] == 0.f && in[0]->data == NULL) {
 		out[0]->data = pass_on_compbuf(cbuf);
 		return;
 	}
 	
 	/* input no image? then only color operation */
-	if(in[1]->data==NULL) {
+	if (in[1]->data==NULL) {
 		do_huecorrect_fac(node, out[0]->vec, in[1]->vec, in[0]->vec);
 	}
 	

@@ -133,25 +133,25 @@ public:
 
 	virtual
 		int
-	GetMouseX( int x
+	GetMouseX(int x
 	)=0;
 
 	virtual
 		int
-	GetMouseY( int y
+	GetMouseY(int y
 	)= 0;
 
 	virtual
 		float
-	GetMouseNormalizedX( int x
+	GetMouseNormalizedX(int x
 	)=0;
 
 	virtual
 		float
-	GetMouseNormalizedY( int y
+	GetMouseNormalizedY(int y
 	)= 0;
 
-	virtual 
+	virtual
 		const RAS_Rect &
 	GetDisplayArea(
 	) const = 0;
@@ -217,11 +217,10 @@ public:
 	
 protected:
 	RAS_MouseState m_mousestate;
-	
+
+
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:RAS_ICanvas"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_ICanvas")
 #endif
 };
 

@@ -172,10 +172,17 @@ public:
 
 		CUresult result;
 
-		if(background)
+		if(background) {
 			result = cuCtxCreate(&cuContext, 0, cuDevice);
-		else
+		}
+		else {
 			result = cuGLCtxCreate(&cuContext, 0, cuDevice);
+
+			if(result != CUDA_SUCCESS) {
+				result = cuCtxCreate(&cuContext, 0, cuDevice);
+				background = true;
+			}
+		}
 
 		if(cuda_error(result))
 			return;
@@ -219,7 +226,7 @@ public:
 		string kernel_path = path_get("kernel");
 		string md5 = path_files_md5_hash(kernel_path);
 
-		cubin = string_printf("cycles_kernel_sm%d%d_%s.cubin", major, minor, md5.c_str());;
+		cubin = string_printf("cycles_kernel_sm%d%d_%s.cubin", major, minor, md5.c_str());
 		cubin = path_user_get(path_join("cache", cubin));
 
 		/* if exists already, use it */
@@ -252,7 +259,7 @@ public:
 
 		path_create_directories(cubin);
 
-		string command = string_printf("\"%s\" -arch=sm_%d%d -m%d --cubin \"%s\" --use_fast_math "
+		string command = string_printf("\"%s\" -arch=sm_%d%d -m%d --cubin \"%s\" "
 			"-o \"%s\" --ptxas-options=\"-v\" --maxrregcount=%d --opencc-options -OPT:Olimit=0 -I\"%s\" -DNVCC",
 			nvcc.c_str(), major, minor, machine, kernel.c_str(), cubin.c_str(), maxreg, include.c_str());
 
@@ -686,14 +693,25 @@ public:
 			glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 			glBindTexture(GL_TEXTURE_2D, 0);
 			
-			cuda_assert(cuGraphicsGLRegisterBuffer(&pmem.cuPBOresource, pmem.cuPBO, CU_GRAPHICS_MAP_RESOURCE_FLAGS_NONE))
+			CUresult result = cuGraphicsGLRegisterBuffer(&pmem.cuPBOresource, pmem.cuPBO, CU_GRAPHICS_MAP_RESOURCE_FLAGS_NONE);
 
-			cuda_pop_context();
+			if(!cuda_error(result)) {
+				cuda_pop_context();
 
-			mem.device_pointer = pmem.cuTexId;
-			pixel_mem_map[mem.device_pointer] = pmem;
+				mem.device_pointer = pmem.cuTexId;
+				pixel_mem_map[mem.device_pointer] = pmem;
 
-			return;
+				return;
+			}
+			else {
+				/* failed to register buffer, fallback to no interop */
+				glDeleteBuffers(1, &pmem.cuPBO);
+				glDeleteTextures(1, &pmem.cuTexId);
+
+				cuda_pop_context();
+
+				background = true;
+			}
 		}
 
 		Device::pixels_alloc(mem);
@@ -753,7 +771,7 @@ public:
 			cuda_push_context();
 
 			/* for multi devices, this assumes the ineffecient method that we allocate
-			   all pixels on the device even though we only render to a subset */
+			 * all pixels on the device even though we only render to a subset */
 			size_t offset = sizeof(uint8_t)*4*y*w;
 
 			glBindBufferARB(GL_PIXEL_UNPACK_BUFFER_ARB, pmem.cuPBO);
@@ -859,6 +877,7 @@ void device_cuda_info(vector<DeviceInfo>& devices)
 		int major, minor;
 		cuDeviceComputeCapability(&major, &minor, num);
 		info.advanced_shading = (major >= 2);
+		info.pack_images = false;
 
 		/* if device has a kernel timeout, assume it is used for display */
 		if(cuDeviceGetAttribute(&attr, CU_DEVICE_ATTRIBUTE_KERNEL_EXEC_TIMEOUT, num) == CUDA_SUCCESS && attr == 1) {

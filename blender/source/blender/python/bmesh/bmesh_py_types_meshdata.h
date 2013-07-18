@@ -31,6 +31,7 @@
 #define __BMESH_PY_TYPES_MESHDATA_H__
 
 extern PyTypeObject BPy_BMLoopUV_Type;
+extern PyTypeObject BPy_BMDeformVert_Type;
 
 #define BPy_BMLoopUV_Check(v)  (Py_TYPE(v) == &BPy_BMLoopUV_Type)
 
@@ -39,13 +40,26 @@ typedef struct BPy_BMGenericMeshData {
 	void *data;
 } BPy_BMGenericMeshData;
 
+struct MTexPoly;
 struct MLoopUV;
+struct MLoopCol;
+struct MDeformVert;
+
+int       BPy_BMTexPoly_AssignPyObject(struct MTexPoly *mloopuv, PyObject *value);
+PyObject *BPy_BMTexPoly_CreatePyObject(struct MTexPoly *mloopuv);
 
 int       BPy_BMLoopUV_AssignPyObject(struct MLoopUV *data, PyObject *value);
 PyObject *BPy_BMLoopUV_CreatePyObject(struct MLoopUV *data);
 
-int       BPy_BMLoopColor_AssignPyObject(struct MLoopUV *data, PyObject *value);
-PyObject *BPy_BMLoopColor_CreatePyObject(struct MLoopUV *data);
+int       BPy_BMLoopUV_AssignPyObject(struct MLoopUV *data, PyObject *value);
+PyObject *BPy_BMLoopUV_CreatePyObject(struct MLoopUV *data);
+
+int       BPy_BMLoopColor_AssignPyObject(struct MLoopCol *data, PyObject *value);
+PyObject *BPy_BMLoopColor_CreatePyObject(struct MLoopCol *data);
+
+int       BPy_BMDeformVert_AssignPyObject(struct MDeformVert *dvert, PyObject *value);
+PyObject *BPy_BMDeformVert_CreatePyObject(struct MDeformVert *dvert);
+
 
 void BPy_BM_init_types_meshdata(void);
 

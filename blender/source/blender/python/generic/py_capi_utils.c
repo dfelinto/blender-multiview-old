@@ -152,12 +152,27 @@ void PyC_LineSpit(void)
 	fprintf(stderr, "%s:%d\n", filename, lineno);
 }
 
+void PyC_StackSpit(void)
+{
+	/* Note, allow calling from outside python (RNA) */
+	if (!PYC_INTERPRETER_ACTIVE) {
+		fprintf(stderr, "python line lookup failed, interpreter inactive\n");
+		return;
+	}
+	else {
+		/* lame but handy */
+		PyGILState_STATE gilstate = PyGILState_Ensure();
+		PyRun_SimpleString("__import__('traceback').print_stack()");
+		PyGILState_Release(gilstate);
+	}
+}
+
 void PyC_FileAndNum(const char **filename, int *lineno)
 {
 	PyFrameObject *frame;
 	
-	if (filename)	*filename = NULL;
-	if (lineno)		*lineno = -1;
+	if (filename) *filename = NULL;
+	if (lineno)   *lineno = -1;
 
 	if (!(frame = PyThreadState_GET()->frame)) {
 		return;
@@ -229,7 +244,7 @@ PyObject *PyC_Object_GetAttrStringArgs(PyObject *o, Py_ssize_t n, ...)
 /* similar to PyErr_Format(),
  *
  * implementation - we cant actually preprend the existing exception,
- * because it could have _any_ argiments given to it, so instead we get its
+ * because it could have _any_ arguments given to it, so instead we get its
  * __str__ output and raise our own exception including it.
  */
 PyObject *PyC_Err_Format_Prefix(PyObject *exception_type_prefix, const char *format, ...)
@@ -399,7 +414,7 @@ const char *PyC_UnicodeAsByte(PyObject *py_str, PyObject **coerce)
 
 PyObject *PyC_UnicodeFromByteAndSize(const char *str, Py_ssize_t size)
 {
-    PyObject *result = PyUnicode_FromStringAndSize(str, size);
+	PyObject *result = PyUnicode_FromStringAndSize(str, size);
 	if (result) {
 		/* 99% of the time this is enough but we better support non unicode
 		 * chars since blender doesnt limit this */
@@ -437,8 +452,10 @@ PyObject *PyC_DefaultNameSpace(const char *filename)
 	PyDict_SetItemString(interp->modules, "__main__", mod_main);
 	Py_DECREF(mod_main); /* sys.modules owns now */
 	PyModule_AddStringConstant(mod_main, "__name__", "__main__");
-	if (filename)
-		PyModule_AddStringConstant(mod_main, "__file__", filename); /* __file__ only for nice UI'ness */
+	if (filename) {
+		/* __file__ mainly for nice UI'ness */
+		PyModule_AddObject(mod_main, "__file__", PyUnicode_DecodeFSDefault(filename));
+	}
 	PyModule_AddObject(mod_main, "__builtins__", interp->builtins);
 	Py_INCREF(interp->builtins); /* AddObject steals a reference */
 	return PyModule_GetDict(mod_main);
@@ -481,12 +498,15 @@ void PyC_SetHomePath(const char *py_path_bundle)
 			   \nThis may make python import function fail\n");
 #endif
 
+
+#if 0 /* disable for now [#31506] - campbell */
 #ifdef _WIN32
 	/* cmake/MSVC debug build crashes without this, why only
 	 * in this case is unknown.. */
 	{
-		BLI_setenv("PYTHONPATH", py_path_bundle);
+		/*BLI_setenv("PYTHONPATH", py_path_bundle)*/;
 	}
+#endif
 #endif
 
 	{
@@ -536,7 +556,7 @@ void PyC_RunQuicky(const char *filepath, int n, ...)
 			ret = PyObject_CallFunction(calcsize, (char *)"s", format);
 
 			if (ret) {
-				sizes[i]= PyLong_AsSsize_t(ret);
+				sizes[i] = PyLong_AsSsize_t(ret);
 				Py_DECREF(ret);
 				ret = PyObject_CallFunction(unpack, (char *)"sy#", format, (char *)ptr, sizes[i]);
 			}
@@ -549,7 +569,7 @@ void PyC_RunQuicky(const char *filepath, int n, ...)
 				PyList_SET_ITEM(values, i, Py_None); /* hold user */
 				Py_INCREF(Py_None);
 
-				sizes[i]= 0;
+				sizes[i] = 0;
 			}
 			else {
 				if (PyTuple_GET_SIZE(ret) == 1) {
@@ -705,7 +725,7 @@ char *PyC_FlagSet_AsString(PyC_FlagSet *item)
 
 int PyC_FlagSet_ValueFromID_int(PyC_FlagSet *item, const char *identifier, int *value)
 {
-	for( ; item->identifier; item++) {
+	for ( ; item->identifier; item++) {
 		if (strcmp(item->identifier, identifier) == 0) {
 			*value = item->value;
 			return 1;

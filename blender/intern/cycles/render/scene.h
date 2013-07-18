@@ -33,6 +33,7 @@
 
 CCL_NAMESPACE_BEGIN
 
+class AttributeRequestSet;
 class Background;
 class Camera;
 class Device;
@@ -81,9 +82,13 @@ public:
 	device_vector<float2> light_background_marginal_cdf;
 	device_vector<float2> light_background_conditional_cdf;
 
+	/* particles */
+	device_vector<float4> particles;
+
 	/* shaders */
 	device_vector<uint4> svm_nodes;
 	device_vector<uint> shader_flag;
+	device_vector<uint> object_flag;
 
 	/* filter */
 	device_vector<float> filter_table;
@@ -94,6 +99,10 @@ public:
 	/* images */
 	device_vector<uchar4> tex_image[TEX_NUM_IMAGES];
 	device_vector<float4> tex_float_image[TEX_NUM_FLOAT_IMAGES];
+
+	/* opencl images */
+	device_vector<uchar4> tex_image_packed;
+	device_vector<uint4> tex_image_packed_info;
 
 	KernelData data;
 };
@@ -158,6 +167,7 @@ public:
 	int default_light;
 	int default_background;
 	int default_holdout;
+	int default_empty;
 
 	/* device */
 	Device *device;
@@ -173,6 +183,12 @@ public:
 	~Scene();
 
 	void device_update(Device *device, Progress& progress);
+
+	bool need_global_attribute(AttributeStandard std);
+	void need_global_attributes(AttributeRequestSet& attributes);
+
+	enum MotionType { MOTION_NONE = 0, MOTION_PASS, MOTION_BLUR };
+	MotionType need_motion();
 
 	bool need_update();
 	bool need_reset();

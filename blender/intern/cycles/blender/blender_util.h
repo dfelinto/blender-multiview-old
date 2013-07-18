@@ -27,7 +27,7 @@
 #include "util_vector.h"
 
 /* Hacks to hook into Blender API
-   todo: clean this up ... */
+ * todo: clean this up ... */
 
 extern "C" {
 
@@ -49,7 +49,12 @@ void RE_engine_update_progress(struct RenderEngine *engine, float progress);
 void engine_tag_redraw(void *engine);
 void engine_tag_update(void *engine);
 int rna_Object_is_modified(void *ob, void *scene, int settings);
+int rna_Object_is_deform_modified(void *ob, void *scene, int settings);
 void BLI_timestr(double _time, char *str);
+void rna_ColorRamp_eval(void *coba, float position, float color[4]);
+void rna_Scene_frame_set(void *scene, int frame, float subframe);
+void BKE_image_user_frame_calc(void *iuser, int cfra, int fieldnr);
+void BKE_image_user_file_path(void *iuser, void *ima, char *path);
 
 }
 
@@ -61,6 +66,16 @@ static inline BL::Mesh object_to_mesh(BL::Object self, BL::Scene scene, bool app
 	PointerRNA ptr;
 	RNA_id_pointer_create(data, &ptr);
 	return BL::Mesh(ptr);
+}
+
+static inline void colorramp_to_array(BL::ColorRamp ramp, float4 *data, int size)
+{
+	for(int i = 0; i < size; i++) {
+		float color[4];
+
+		rna_ColorRamp_eval(ramp.ptr.data, i/(float)(size-1), color);
+		data[i] = make_float4(color[0], color[1], color[2], color[3]);
+	}
 }
 
 static inline void object_remove_mesh(BL::BlendData data, BL::Mesh mesh)
@@ -78,9 +93,27 @@ static inline void object_free_duplilist(BL::Object self)
 	rna_Object_free_duplilist(self.ptr.data, NULL);
 }
 
-static inline bool object_is_modified(BL::Object self, BL::Scene scene, bool preview)
+static inline bool BKE_object_is_modified(BL::Object self, BL::Scene scene, bool preview)
 {
 	return rna_Object_is_modified(self.ptr.data, scene.ptr.data, (preview)? (1<<0): (1<<1))? true: false;
+}
+
+static inline bool BKE_object_is_deform_modified(BL::Object self, BL::Scene scene, bool preview)
+{
+	return rna_Object_is_deform_modified(self.ptr.data, scene.ptr.data, (preview)? (1<<0): (1<<1))? true: false;
+}
+
+static inline string image_user_file_path(BL::ImageUser iuser, BL::Image ima, int cfra)
+{
+	char filepath[1024];
+	BKE_image_user_frame_calc(iuser.ptr.data, cfra, 0);
+	BKE_image_user_file_path(iuser.ptr.data, ima.ptr.data, filepath);
+	return string(filepath);
+}
+
+static inline void scene_frame_set(BL::Scene scene, int frame)
+{
+	rna_Scene_frame_set(scene.ptr.data, frame, 0.0f);
 }
 
 /* Utilities */
@@ -90,7 +123,7 @@ static inline Transform get_transform(BL::Array<float, 16> array)
 	Transform tfm;
 
 	/* we assume both types to be just 16 floats, and transpose because blender
-	   use column major matrix order while we use row major */
+	 * use column major matrix order while we use row major */
 	memcpy(&tfm, &array, sizeof(float)*16);
 	tfm = transform_transpose(tfm);
 
@@ -133,12 +166,36 @@ static inline uint get_layer(BL::Array<int, 20> array)
 	return layer;
 }
 
-/*static inline float3 get_float3(PointerRNA& ptr, const char *name)
+static inline uint get_layer(BL::Array<int, 20> array, BL::Array<int, 8> local_array, bool is_light = false)
+{
+	uint layer = 0;
+
+	for(uint i = 0; i < 20; i++)
+		if(array[i])
+			layer |= (1 << i);
+
+	if(is_light) {
+		/* consider lamps on all local view layers */
+		for(uint i = 0; i < 8; i++)
+			layer |= (1 << (20+i));
+	}
+	else {
+		for(uint i = 0; i < 8; i++)
+			if(local_array[i])
+				layer |= (1 << (20+i));
+	}
+	
+	return layer;
+}
+
+#if 0
+static inline float3 get_float3(PointerRNA& ptr, const char *name)
 {
 	float3 f;
 	RNA_float_get_array(&ptr, name, &f.x);
 	return f;
-}*/
+}
+#endif
 
 static inline bool get_boolean(PointerRNA& ptr, const char *name)
 {

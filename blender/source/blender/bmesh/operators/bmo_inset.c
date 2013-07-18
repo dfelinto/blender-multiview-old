@@ -20,6 +20,10 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/bmesh/operators/bmo_inset.c
+ *  \ingroup bmesh
+ */
+
 #include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
@@ -35,17 +39,45 @@ typedef struct SplitEdgeInfo {
 	float   length;
 	BMEdge *e_old;
 	BMEdge *e_new;
+	BMLoop *l;
 } SplitEdgeInfo;
 
-static void edge_loop_tangent(BMEdge *e, BMLoop *e_loop, float r_no[3])
+/**
+ * return the tag loop where there is...
+ * - only 1 tagged face attached to this edge.
+ * - 1 or more untagged faces.
+ *
+ * \note this function looks to be expensive
+ * but in most cases it will only do 2 iterations.
+ */
+static BMLoop *bm_edge_is_mixed_face_tag(BMLoop *l)
 {
-	float tvec[3];
-	BMVert *v1, *v2;
-	BM_edge_ordered_verts_ex(e, &v1, &v2, e_loop);
+	if (LIKELY(l != NULL)) {
+		int tot_tag = 0;
+		int tot_untag = 0;
+		BMLoop *l_iter;
+		BMLoop *l_tag = NULL;
+		l_iter = l;
+		do {
+			if (BM_elem_flag_test(l_iter->f, BM_ELEM_TAG)) {
+				/* more then one tagged face - bail out early! */
+				if (tot_tag == 1) {
+					return NULL;
+				}
+				l_tag = l_iter;
+				tot_tag++;
+			}
+			else {
+				tot_untag++;
+			}
 
-	sub_v3_v3v3(tvec, v1->co, v2->co); /* use for temp storage */
-	cross_v3_v3v3(r_no, tvec, e_loop->f->no);
-	normalize_v3(r_no);
+		} while ((l_iter = l_iter->radial_next) != l);
+
+		return ((tot_tag == 1) && (tot_untag >= 1)) ? l_tag : NULL;
+	}
+	else {
+		return NULL;
+	}
 }
 
 /**
@@ -60,10 +92,13 @@ static void edge_loop_tangent(BMEdge *e, BMLoop *e_loop, float r_no[3])
 
 void bmo_inset_exec(BMesh *bm, BMOperator *op)
 {
+	const int use_outset          = BMO_slot_bool_get(op, "use_outset");
+	const int use_boundary        = BMO_slot_bool_get(op, "use_boundary") && (use_outset == FALSE);
 	const int use_even_offset     = BMO_slot_bool_get(op, "use_even_offset");
 	const int use_even_boundry    = use_even_offset; /* could make own option */
 	const int use_relative_offset = BMO_slot_bool_get(op, "use_relative_offset");
-	const float thickness = BMO_slot_float_get(op, "thickness");
+	const float thickness         = BMO_slot_float_get(op, "thickness");
+	const float depth             = BMO_slot_float_get(op, "depth");
 
 	int edge_info_len = 0;
 
@@ -76,15 +111,24 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 	BMFace *f;
 	int i, j, k;
 
-	BM_mesh_elem_flag_disable_all(bm, BM_FACE, BM_ELEM_TAG);
-	BMO_slot_buffer_hflag_enable(bm, op, "faces", BM_FACE, BM_ELEM_TAG, FALSE);
+	if (use_outset == FALSE) {
+		BM_mesh_elem_hflag_disable_all(bm, BM_FACE, BM_ELEM_TAG, FALSE);
+		BMO_slot_buffer_hflag_enable(bm, op, "faces", BM_FACE, BM_ELEM_TAG, FALSE);
+	}
+	else {
+		BM_mesh_elem_hflag_enable_all(bm, BM_FACE, BM_ELEM_TAG, FALSE);
+		BMO_slot_buffer_hflag_disable(bm, op, "faces", BM_FACE, BM_ELEM_TAG, FALSE);
+	}
 
 	/* first count all inset edges we will split */
 	/* fill in array and initialize tagging */
-	BM_ITER(e, &iter, bm, BM_EDGES_OF_MESH, NULL) {
-		BMLoop *la, *lb;
-		if ((BM_edge_loop_pair(e, &la, &lb)) &&
-		    (BM_elem_flag_test(la->f, BM_ELEM_TAG) != BM_elem_flag_test(lb->f, BM_ELEM_TAG)))
+	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
+		if (
+		    /* tag if boundary is enabled */
+		    (use_boundary && BM_edge_is_boundary(e) && BM_elem_flag_test(e->l->f, BM_ELEM_TAG)) ||
+
+		    /* tag if edge is an interior edge inbetween a tagged and untagged face */
+		    (bm_edge_is_mixed_face_tag(e->l)))
 		{
 			/* tag */
 			BM_elem_flag_enable(e->v1, BM_ELEM_TAG);
@@ -108,11 +152,11 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 
 	/* fill in array and initialize tagging */
 	es = edge_info;
-	BM_ITER(e, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 		i = BM_elem_index_get(e);
 		if (i != -1) {
 			/* calc edge-split info */
-			es->length = BM_edge_length_calc(e);
+			es->length = BM_edge_calc_length(e);
 			es->e_old = e;
 			es++;
 			/* initialize no and e_new after */
@@ -120,17 +164,25 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 	}
 
 	for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
-		BMLoop *l, *la, *lb;
+		if ((es->l = bm_edge_is_mixed_face_tag(es->e_old->l))) {
+			/* do nothing */
+		}
+		else {
+			es->l = es->e_old->l; /* must be a boundary */
+		}
 
-		BM_edge_loop_pair(es->e_old, &la, &lb); /* we know this will succeed, already checked above */
-		l = BM_elem_flag_test(la->f, BM_ELEM_TAG) ? la : lb;
 
 		/* run the separate arg */
-		bmesh_edge_separate(bm, es->e_old, l);
+		bmesh_edge_separate(bm, es->e_old, es->l);
 
 		/* calc edge-split info */
-		es->e_new = l->e;
-		edge_loop_tangent(es->e_new, l, es->no);
+		es->e_new = es->l->e;
+		BM_edge_calc_face_tangent(es->e_new, es->l, es->no);
+
+		if (es->e_new == es->e_old) { /* happens on boundary edges */
+			/* take care here, we're creating this double edge which _must_ have its verts replaced later on */
+			es->e_old = BM_edge_create(bm, es->e_new->v1, es->e_new->v2, es->e_new, FALSE);
+		}
 
 		/* store index back to original in 'edge_info' */
 		BM_elem_index_set(es->e_new, i);
@@ -163,8 +215,8 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 	for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
 		for (j = 0; j < 2; j++) {
 			v = (j == 0) ? es->e_new->v1 : es->e_new->v2;
-			/* end confusing part - just pretend this is a typical loop on verts */
 
+			/* end confusing part - just pretend this is a typical loop on verts */
 
 			/* only split of tagged verts - used by separated edges */
 
@@ -180,6 +232,12 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 				bmesh_vert_separate(bm, v, &vout, &r_vout_len);
 				v = NULL; /* don't use again */
 
+				/* in some cases the edge doesn't split off */
+				if (r_vout_len == 1) {
+					MEM_freeN(vout);
+					continue;
+				}
+
 				for (k = 0; k < r_vout_len; k++) {
 					BMVert *v_split = vout[k]; /* only to avoid vout[k] all over */
 
@@ -188,10 +246,9 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 					int vecpair[2];
 
 					/* find adjacent */
-					BM_ITER(e, &iter, bm, BM_EDGES_OF_VERT, v_split) {
-						if (BM_edge_is_boundary(e) && /* this will be true because bmesh_edge_separate() has run */
-						    BM_elem_flag_test(e, BM_ELEM_TAG) &&
-						    BM_elem_flag_test(e->l->f, BM_ELEM_TAG))
+					BM_ITER_ELEM (e, &iter, v_split, BM_EDGES_OF_VERT) {
+						if (BM_elem_flag_test(e, BM_ELEM_TAG) &&
+						    e->l && BM_elem_flag_test(e->l->f, BM_ELEM_TAG))
 						{
 							if (vert_edge_tag_tot < 2) {
 								vecpair[vert_edge_tag_tot] = BM_elem_index_get(e);
@@ -206,15 +263,58 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 						float tvec[3];
 
 						if (vert_edge_tag_tot >= 2) { /* 2 edge users - common case */
-							const float *e_no_a = edge_info[vecpair[0]].no;
-							const float *e_no_b = edge_info[vecpair[1]].no;
+							/* now there are 2 cases to check for,
+							 *
+							 * if both edges use the same face OR both faces have the same normal,
+							 * ...then we can calculate an edge that fits nicely between the 2 edge normals.
+							 *
+							 * Otherwise use the shared edge OR the corner defined by these 2 face normals,
+							 * when both edges faces are adjacent this works best but even when this vertex
+							 * fans out faces it should work ok.
+							 */
 
-							add_v3_v3v3(tvec, e_no_a, e_no_b);
-							normalize_v3(tvec);
+							SplitEdgeInfo *e_info_a = &edge_info[vecpair[0]];
+							SplitEdgeInfo *e_info_b = &edge_info[vecpair[1]];
+
+							BMFace *f_a = e_info_a->l->f;
+							BMFace *f_b = e_info_b->l->f;
+
+							/* we use this as either the normal OR to find the right direction for the
+							 * cross product between both face normals */
+							add_v3_v3v3(tvec, e_info_a->no, e_info_b->no);
+
+							if ((f_a == f_b) || compare_v3v3(f_a->no, f_b->no, 0.00001f)) {
+								normalize_v3(tvec);
+							}
+							else {
+								/* these lookups are very quick */
+								BMLoop *l_other_a = BM_loop_other_vert_loop(e_info_a->l, v_split);
+								BMLoop *l_other_b = BM_loop_other_vert_loop(e_info_b->l, v_split);
+
+								if (l_other_a->v == l_other_b->v) {
+									/* both edges faces are adjacent, but we don't need to know the shared edge
+									 * having both verts is enough. */
+									sub_v3_v3v3(tvec, l_other_a->v->co, v_split->co);
+								}
+								else {
+									/* faces don't touch,
+									 * just get cross product of their normals, its *good enough*
+									 */
+									float tno[3];
+									cross_v3_v3v3(tno, f_a->no, f_b->no);
+									if (dot_v3v3(tvec, tno) < 0.0f) {
+										negate_v3(tno);
+									}
+									copy_v3_v3(tvec, tno);
+								}
+
+								normalize_v3(tvec);
+							}
 
 							/* scale by edge angle */
 							if (use_even_offset) {
-								mul_v3_fl(tvec, shell_angle_to_dist(angle_normalized_v3v3(e_no_a, e_no_b) / 2.0f));
+								mul_v3_fl(tvec, shell_angle_to_dist(angle_normalized_v3v3(e_info_a->no,
+								                                                          e_info_b->no) / 2.0f));
 							}
 
 							/* scale relative to edge lengths */
@@ -246,7 +346,7 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 								 *   |                                         |
 								 *
 								 * note, the fact we are doing location comparisons on verts that are moved about
-								 * doesn’t matter because the direction will remain the same in this case.
+								 * doesn't matter because the direction will remain the same in this case.
 								 */
 
 								BMEdge *e_other;
@@ -312,7 +412,7 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 					if (r_vout_len > 2) {
 						int ok = TRUE;
 						/* last step, NULL this vertex if has a tagged face */
-						BM_ITER(f, &iter, bm, BM_FACES_OF_VERT, v_split) {
+						BM_ITER_ELEM (f, &iter, v_split, BM_FACES_OF_VERT) {
 							if (BM_elem_flag_test(f, BM_ELEM_TAG)) {
 								ok = FALSE;
 								break;
@@ -338,27 +438,109 @@ void bmo_inset_exec(BMesh *bm, BMOperator *op)
 
 	/* create faces */
 	for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
-		BMVert *v1, *v2, *v3, *v4;
-
+		BMVert *varr[4] = {NULL};
 		/* get the verts in the correct order */
-		BM_edge_ordered_verts(es->e_new, &v1, &v2);
-		if (v1 == es->e_new->v1) {
-			v3 = es->e_old->v2;
-			v4 = es->e_old->v1;
+		BM_edge_ordered_verts_ex(es->e_new, &varr[1], &varr[0], es->l);
+#if 0
+		if (varr[0] == es->e_new->v1) {
+			varr[2] = es->e_old->v2;
+			varr[3] = es->e_old->v1;
 		}
 		else {
-			v3 = es->e_old->v1;
-			v4 = es->e_old->v2;
+			varr[2] = es->e_old->v1;
+			varr[3] = es->e_old->v2;
+		}
+		j = 4;
+#else
+		/* slightly trickier check - since we can't assume the verts are split */
+		j = 2; /* 2 edges are set */
+		if (varr[0] == es->e_new->v1) {
+			if (es->e_old->v2 != es->e_new->v2) { varr[j++] = es->e_old->v2; }
+			if (es->e_old->v1 != es->e_new->v1) { varr[j++] = es->e_old->v1; }
+		}
+		else {
+			if (es->e_old->v1 != es->e_new->v1) { varr[j++] = es->e_old->v1; }
+			if (es->e_old->v2 != es->e_new->v2) { varr[j++] = es->e_old->v2; }
 		}
 
+		if (j == 2) {
+			/* can't make face! */
+			continue;
+		}
+#endif
 		/* no need to check doubles, we KNOW there won't be any */
 		/* yes - reverse face is correct in this case */
-		f = BM_face_create_quad_tri(bm, v4, v3, v2, v1, es->e_new->l->f, FALSE);
+		f = BM_face_create_quad_tri_v(bm, varr, j, es->l->f, FALSE);
 		BMO_elem_flag_enable(bm, f, ELE_NEW);
+
+		/* copy for loop data, otherwise UV's and vcols are no good.
+		 * tiny speedup here we could be more clever and copy from known adjacent data
+		 * also - we could attempt to interpolate the loop data, this would be much slower but more useful too */
+		BM_face_copy_shared(bm, f);
+	}
+
+	/* we could flag new edges/verts too, is it useful? */
+	BMO_slot_buffer_from_enabled_flag(bm, op, "faceout", BM_FACE, ELE_NEW);
+
+	/* cheap feature to add depth to the inset */
+	if (depth != 0.0f) {
+		float (*varr_co)[3];
+		BMOIter oiter;
+
+		/* we need to re-calculate tagged normals, but for this purpose we can copy tagged verts from the
+		 * faces they inset from,  */
+		for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
+			zero_v3(es->e_new->v1->no);
+			zero_v3(es->e_new->v2->no);
+		}
+		for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
+			float *no = es->l->f->no;
+			add_v3_v3(es->e_new->v1->no, no);
+			add_v3_v3(es->e_new->v2->no, no);
+		}
+		for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
+			/* annoying, avoid normalizing twice */
+			if (len_squared_v3(es->e_new->v1->no) != 1.0f) {
+				normalize_v3(es->e_new->v1->no);
+			}
+			if (len_squared_v3(es->e_new->v2->no) != 1.0f) {
+				normalize_v3(es->e_new->v2->no);
+			}
+		}
+		/* done correcting edge verts normals */
+
+		/* untag verts */
+		BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, FALSE);
+
+		/* tag face verts */
+		BMO_ITER (f, &oiter, bm, op, "faces", BM_FACE) {
+			BM_ITER_ELEM (v, &iter, f, BM_VERTS_OF_FACE) {
+				BM_elem_flag_enable(v, BM_ELEM_TAG);
+			}
+		}
+
+		/* do in 2 passes so moving the verts doesn't feed back into face angle checks
+		 * which BM_vert_calc_shell_factor uses. */
+
+		/* over allocate */
+		varr_co = MEM_callocN(sizeof(*varr_co) * bm->totvert, __func__);
+
+		BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+			if (BM_elem_flag_test(v, BM_ELEM_TAG)) {
+				const float fac = (depth *
+				                   (use_relative_offset ? BM_vert_calc_mean_tagged_edge_length(v) : 1.0f) *
+				                   (use_even_boundry    ? BM_vert_calc_shell_factor(v) : 1.0f));
+				madd_v3_v3v3fl(varr_co[i], v->co, v->no, fac);
+			}
+		}
+
+		BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
+			if (BM_elem_flag_test(v, BM_ELEM_TAG)) {
+				copy_v3_v3(v->co, varr_co[i]);
+			}
+		}
+		MEM_freeN(varr_co);
 	}
 
 	MEM_freeN(edge_info);
-
-	/* we could flag new edges/verts too, is it useful? */
-	BMO_slot_buffer_from_flag(bm, op, "faceout", BM_FACE, ELE_NEW);
 }

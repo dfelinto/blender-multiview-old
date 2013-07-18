@@ -36,25 +36,27 @@ extern "C" {
 	#include "SDL.h"
 }
 
-#if !SDL_VERSION_ATLEAST(1, 3, 0)
-#  error "SDL 1.3 or newer is needed to build with Ghost"
+#if !SDL_VERSION_ATLEAST(2, 0, 0)
+#  error "SDL 2.0 or newer is needed to build with Ghost"
 #endif
 
 class STR_String;
 
 class GHOST_WindowSDL : public GHOST_Window
 {
-private :
-	GHOST_SystemSDL  * m_system;
-	bool               m_invalid_window;
+private:
+	GHOST_SystemSDL  *m_system;
+	bool m_invalid_window;
 
-	SDL_Window       * m_sdl_win;
-	SDL_GLContext      m_sdl_glcontext;
-	SDL_Cursor		 * m_sdl_custom_cursor;
+	SDL_Window       *m_sdl_win;
+	SDL_GLContext     m_sdl_glcontext;
+	SDL_Cursor       *m_sdl_custom_cursor;
 
 public:
 
-	const GHOST_TabletData* GetTabletData() { return NULL; }
+	const GHOST_TabletData *GetTabletData() {
+		return NULL;
+	}
 
 	GHOST_WindowSDL(GHOST_SystemSDL *system,
 	                const STR_String& title,
@@ -158,7 +160,11 @@ protected:
 	GHOST_TWindowState
 	getState() const;
 
-	GHOST_TSuccess setOrder(GHOST_TWindowOrder order) { return GHOST_kSuccess; } // TODO
+	GHOST_TSuccess setOrder(GHOST_TWindowOrder order)
+	{
+		// TODO
+		return GHOST_kSuccess;
+	}
 
 };
 

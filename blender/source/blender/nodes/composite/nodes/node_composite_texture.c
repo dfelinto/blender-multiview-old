@@ -34,13 +34,13 @@
 
 /* **************** TEXTURE ******************** */
 static bNodeSocketTemplate cmp_node_texture_in[]= {
-	{	SOCK_VECTOR, 1, "Offset",		0.0f, 0.0f, 0.0f, 0.0f, -2.0f, 2.0f, PROP_TRANSLATION},
-	{	SOCK_VECTOR, 1, "Scale",		1.0f, 1.0f, 1.0f, 1.0f, -10.0f, 10.0f, PROP_XYZ},
+	{	SOCK_VECTOR, 1, N_("Offset"),		0.0f, 0.0f, 0.0f, 0.0f, -2.0f, 2.0f, PROP_TRANSLATION},
+	{	SOCK_VECTOR, 1, N_("Scale"),		1.0f, 1.0f, 1.0f, 1.0f, -10.0f, 10.0f, PROP_XYZ},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_texture_out[]= {
-	{	SOCK_FLOAT, 0, "Value"},
-	{	SOCK_RGBA , 0, "Color"},
+	{	SOCK_FLOAT, 0, N_("Value")},
+	{	SOCK_RGBA, 0, N_("Color")},
 	{	-1, 0, ""	}
 };
 
@@ -60,24 +60,24 @@ static void texture_procedural(CompBuf *cbuf, float *out, float xco, float yco)
 	
 	retval= multitex_ext((Tex *)node->id, vec, NULL, NULL, 0, &texres);
 	
-	if(type==CB_VAL) {
-		if(texres.talpha)
+	if (type==CB_VAL) {
+		if (texres.talpha)
 			col[0]= texres.ta;
 		else
 			col[0]= texres.tin;
 	}
-	else if(type==CB_RGBA) {
-		if(texres.talpha)
+	else if (type==CB_RGBA) {
+		if (texres.talpha)
 			col[3]= texres.ta;
 		else
 			col[3]= texres.tin;
 		
-		if((retval & TEX_RGB)) {
-			col[0]= texres.tr;
-			col[1]= texres.tg;
-			col[2]= texres.tb;
+		if ((retval & TEX_RGB)) {
+			copy_v3_v3(col, &texres.tr);
 		}
-		else col[0]= col[1]= col[2]= col[3];
+		else {
+			copy_v3_fl(col, col[3]);
+		}
 	}
 	else { 
 		copy_v3_v3(col, nor);
@@ -92,7 +92,7 @@ static void node_composit_exec_texture(void *data, bNode *node, bNodeStack **in,
 {
 	/* outputs: value, color, normal */
 	
-	if(node->id) {
+	if (node->id) {
 		RenderData *rd= data;
 		short sizex, sizey;
 		
@@ -113,7 +113,7 @@ static void node_composit_exec_texture(void *data, bNode *node, bNodeStack **in,
 		sizex = (rd->size*rd->xsch)/100;
 		sizey = (rd->size*rd->ysch)/100;
 		
-		if(out[0]->hasoutput) {
+		if (out[0]->hasoutput) {
 			CompBuf *stackbuf= alloc_compbuf(sizex, sizey, CB_VAL, 1); /* alloc */
 			
 			stackbuf->rect_procedural= texture_procedural;
@@ -126,7 +126,7 @@ static void node_composit_exec_texture(void *data, bNode *node, bNodeStack **in,
 			
 			out[0]->data= stackbuf; 
 		}
-		if(out[1]->hasoutput) {
+		if (out[1]->hasoutput) {
 			CompBuf *stackbuf= alloc_compbuf(sizex, sizey, CB_RGBA, 1); /* alloc */
 			
 			stackbuf->rect_procedural= texture_procedural;

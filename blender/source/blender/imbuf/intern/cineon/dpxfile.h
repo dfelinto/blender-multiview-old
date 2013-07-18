@@ -1,6 +1,3 @@
-/** \file blender/imbuf/intern/cineon/dpxfile.h
- *  \ingroup imbcineon
- */
 /*
  *	 Cineon image file format library definitions.
  *	 Dpx file format structures.
@@ -28,6 +25,10 @@
 
 #ifndef __DPXFILE_H__
 #define __DPXFILE_H__
+
+/** \file blender/imbuf/intern/cineon/dpxfile.h
+ *  \ingroup imbcineon
+ */
 
 #include "logImageCore.h"
 
@@ -61,7 +62,7 @@ typedef struct {
 		R32		 ref_high_quantity;/* reference high quantity represented */
 		U8		 designator1;
 		U8		 transfer_characteristics;
-		U8		 colourimetry;
+		U8		 colorimetry;
 		U8		 bits_per_pixel;
 		U16		 packing;
 		U16		 encoding;

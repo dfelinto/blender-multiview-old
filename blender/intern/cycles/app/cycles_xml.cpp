@@ -254,6 +254,16 @@ static void xml_read_film(const XMLReadState& state, pugi::xml_node node)
 static void xml_read_integrator(const XMLReadState& state, pugi::xml_node node)
 {
 	Integrator *integrator = state.scene->integrator;
+	
+	xml_read_bool(&integrator->progressive, node, "progressive");
+	
+	if(!integrator->progressive) {
+		xml_read_int(&integrator->diffuse_samples, node, "diffuse_samples");
+		xml_read_int(&integrator->glossy_samples, node, "glossy_samples");
+		xml_read_int(&integrator->transmission_samples, node, "transmission_samples");
+		xml_read_int(&integrator->ao_samples, node, "ao_samples");
+		xml_read_int(&integrator->mesh_light_samples, node, "mesh_light_samples");
+	}
 
 	xml_read_int(&integrator->min_bounce, node, "min_bounce");
 	xml_read_int(&integrator->max_bounce, node, "max_bounce");
@@ -267,8 +277,10 @@ static void xml_read_integrator(const XMLReadState& state, pugi::xml_node node)
 	
 	xml_read_bool(&integrator->transparent_shadows, node, "transparent_shadows");
 	xml_read_bool(&integrator->no_caustics, node, "no_caustics");
+	xml_read_float(&integrator->filter_glossy, node, "blur_glossy");
 	
 	xml_read_int(&integrator->seed, node, "seed");
+	xml_read_float(&integrator->sample_clamp, node, "sample_clamp");
 }
 
 /* Camera */
@@ -284,15 +296,28 @@ static void xml_read_camera(const XMLReadState& state, pugi::xml_node node)
 	xml_read_float(&cam->farclip, node, "farclip");
 	xml_read_float(&cam->aperturesize, node, "aperturesize"); // 0.5*focallength/fstop
 	xml_read_float(&cam->focaldistance, node, "focaldistance");
-	xml_read_float(&cam->shutteropen, node, "shutteropen");
-	xml_read_float(&cam->shutterclose, node, "shutterclose");
+	xml_read_float(&cam->shuttertime, node, "shuttertime");
 
 	if(xml_equal_string(node, "type", "orthographic"))
 		cam->type = CAMERA_ORTHOGRAPHIC;
 	else if(xml_equal_string(node, "type", "perspective"))
 		cam->type = CAMERA_PERSPECTIVE;
-	else if(xml_equal_string(node, "type", "environment"))
-		cam->type = CAMERA_ENVIRONMENT;
+	else if(xml_equal_string(node, "type", "panorama"))
+		cam->type = CAMERA_PANORAMA;
+
+	if(xml_equal_string(node, "panorama_type", "equirectangular"))
+		cam->panorama_type = PANORAMA_EQUIRECTANGULAR;
+	else if(xml_equal_string(node, "panorama_type", "fisheye_equidistant"))
+		cam->panorama_type = PANORAMA_FISHEYE_EQUIDISTANT;
+	else if(xml_equal_string(node, "panorama_type", "fisheye_equisolid"))
+		cam->panorama_type = PANORAMA_FISHEYE_EQUISOLID;
+
+	xml_read_float(&cam->fisheye_fov, node, "fisheye_fov");
+	xml_read_float(&cam->fisheye_lens, node, "fisheye_lens");
+
+	xml_read_float(&cam->sensorwidth, node, "sensorwidth");
+	xml_read_float(&cam->sensorheight, node, "sensorheight");
+
 
 	cam->matrix = state.tfm;
 
@@ -379,9 +404,9 @@ static void xml_read_shader_graph(const XMLReadState& state, Shader *shader, pug
 			snode = dist;
 		}
 		else if(string_iequals(node.name(), "wave_texture")) {
-			WaveTextureNode *wood = new WaveTextureNode();
-			xml_read_enum(&wood->type, WaveTextureNode::type_enum, node, "type");
-			snode = wood;
+			WaveTextureNode *wave = new WaveTextureNode();
+			xml_read_enum(&wave->type, WaveTextureNode::type_enum, node, "type");
+			snode = wave;
 		}
 		else if(string_iequals(node.name(), "normal")) {
 			snode = new NormalNode();
@@ -660,7 +685,7 @@ static void xml_read_mesh(const XMLReadState& state, pugi::xml_node node)
 				for(int j = 0; j < nverts[i]-2; j++) {
 					int v0 = verts[index_offset];
 					int v1 = verts[index_offset + j + 1];
-					int v2 = verts[index_offset + j + 2];;
+					int v2 = verts[index_offset + j + 2];
 
 					sdmesh.add_face(v0, v1, v2);
 				}
@@ -678,7 +703,7 @@ static void xml_read_mesh(const XMLReadState& state, pugi::xml_node node)
 		//dsplit.dicing_rate = 5.0f;
 		dsplit.dicing_rate = state.dicing_rate;
 		xml_read_float(&dsplit.dicing_rate, node, "dicing_rate");
-		sdmesh.tesselate(&dsplit, false, mesh, shader, smooth);
+		sdmesh.tessellate(&dsplit, false, mesh, shader, smooth);
 	}
 	else {
 		/* create vertices */
@@ -705,7 +730,7 @@ static void xml_read_mesh(const XMLReadState& state, pugi::xml_node node)
 	}
 
 	/* temporary for test compatibility */
-	mesh->attributes.remove(Attribute::STD_VERTEX_NORMAL);
+	mesh->attributes.remove(ATTR_STD_VERTEX_NORMAL);
 }
 
 /* Patch */
@@ -724,7 +749,7 @@ static void xml_read_patch(const XMLReadState& state, pugi::xml_node node)
 			LinearQuadPatch *bpatch = new LinearQuadPatch();
 
 			for(int i = 0; i < 4; i++)
-				P[i] = transform(&state.tfm, P[i]);
+				P[i] = transform_point(&state.tfm, P[i]);
 			memcpy(bpatch->hull, &P[0], sizeof(bpatch->hull));
 
 			patch = bpatch;
@@ -738,7 +763,7 @@ static void xml_read_patch(const XMLReadState& state, pugi::xml_node node)
 			BicubicPatch *bpatch = new BicubicPatch();
 
 			for(int i = 0; i < 16; i++)
-				P[i] = transform(&state.tfm, P[i]);
+				P[i] = transform_point(&state.tfm, P[i]);
 			memcpy(bpatch->hull, &P[0], sizeof(bpatch->hull));
 
 			patch = bpatch;
@@ -766,7 +791,7 @@ static void xml_read_patch(const XMLReadState& state, pugi::xml_node node)
 		delete patch;
 
 		/* temporary for test compatibility */
-		mesh->attributes.remove(Attribute::STD_VERTEX_NORMAL);
+		mesh->attributes.remove(ATTR_STD_VERTEX_NORMAL);
 	}
 }
 
@@ -777,7 +802,7 @@ static void xml_read_light(const XMLReadState& state, pugi::xml_node node)
 	Light *light = new Light();
 	light->shader = state.shader;
 	xml_read_float3(&light->co, node, "P");
-	light->co = transform(&state.tfm, light->co);
+	light->co = transform_point(&state.tfm, light->co);
 
 	state.scene->lights.push_back(light);
 }

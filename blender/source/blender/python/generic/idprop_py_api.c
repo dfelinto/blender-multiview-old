@@ -88,7 +88,7 @@ static PyObject *idprop_py_from_idp_group(ID *id, IDProperty *prop, IDProperty *
 	group->id = id;
 	group->prop = prop;
 	group->parent = parent; /* can be NULL */
-	return (PyObject*)group;
+	return (PyObject *)group;
 }
 
 static PyObject *idprop_py_from_idp_array(ID *id, IDProperty *prop)
@@ -96,7 +96,7 @@ static PyObject *idprop_py_from_idp_array(ID *id, IDProperty *prop)
 	BPy_IDProperty *array = PyObject_New(BPy_IDProperty, &BPy_IDArray_Type);
 	array->id = id;
 	array->prop = prop;
-	return (PyObject*)array;
+	return (PyObject *)array;
 }
 
 static PyObject *idprop_py_from_idp_idparray(ID *id, IDProperty *prop)
@@ -134,7 +134,8 @@ static Py_hash_t BPy_IDGroup_hash(BPy_IDProperty *self)
 
 static PyObject *BPy_IDGroup_repr(BPy_IDProperty *self)
 {
-	return PyUnicode_FromFormat("<bpy id property from \"%s\">", self->id->name);
+	return PyUnicode_FromFormat("<bpy id prop: owner=\"%s\", name=\"%s\", address=%p>",
+	                            self->id ? self->id->name : "<NONE>", self->prop->name, self->prop);
 }
 
 PyObject *BPy_IDGroup_WrapData(ID *id, IDProperty *prop, IDProperty *parent)
@@ -151,7 +152,7 @@ PyObject *BPy_IDGroup_WrapData(ID *id, IDProperty *prop, IDProperty *parent)
 	}
 }
 
-#if 0 /* UNUSED, currenly assignment overwrites into new properties, rather than setting in-place */
+#if 0 /* UNUSED, currently assignment overwrites into new properties, rather than setting in-place */
 static int BPy_IDGroup_SetData(BPy_IDProperty *self, IDProperty *prop, PyObject *value)
 {
 	switch (prop->type) {
@@ -178,7 +179,7 @@ static int BPy_IDGroup_SetData(BPy_IDProperty *self, IDProperty *prop, PyObject 
 			}
 #else
 			st = _PyUnicode_AsString(value);
-			IDP_ResizeArray(prop, strlen(st)+1);
+			IDP_ResizeArray(prop, strlen(st) + 1);
 			strcpy(IDP_Array(prop), st);
 #endif
 
@@ -258,7 +259,7 @@ static PyObject *BPy_IDGroup_GetType(BPy_IDProperty *self)
 
 static PyGetSetDef BPy_IDGroup_getseters[] = {
 	{(char *)"name", (getter)BPy_IDGroup_GetName, (setter)BPy_IDGroup_SetName, (char *)"The name of this Group.", NULL},
-	 {NULL, NULL, NULL, NULL, NULL}
+	{NULL, NULL, NULL, NULL, NULL}
 };
 
 static Py_ssize_t BPy_IDGroup_Map_Len(BPy_IDProperty *self)
@@ -276,7 +277,7 @@ static PyObject *BPy_IDGroup_Map_GetItem(BPy_IDProperty *self, PyObject *item)
 	IDProperty *idprop;
 	const char *name;
 
-	if (self->prop->type  != IDP_GROUP) {
+	if (self->prop->type != IDP_GROUP) {
 		PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
 		return NULL;
 	}
@@ -482,7 +483,7 @@ const char *BPy_IDProperty_Map_ValidateAndCreate(PyObject *name_obj, IDProperty 
 
 int BPy_Wrap_SetMapItem(IDProperty *prop, PyObject *key, PyObject *val)
 {
-	if (prop->type  != IDP_GROUP) {
+	if (prop->type != IDP_GROUP) {
 		PyErr_SetString(PyExc_TypeError, "unsubscriptable object");
 		return -1;
 	}
@@ -530,7 +531,7 @@ static PyObject *BPy_IDGroup_iter(BPy_IDProperty *self)
 	iter->mode = IDPROP_ITER_KEYS;
 	iter->cur = self->prop->data.group.first;
 	Py_XINCREF(iter);
-	return (PyObject*)iter;
+	return (PyObject *)iter;
 }
 
 /* for simple, non nested types this is the same as BPy_IDGroup_WrapData */
@@ -679,7 +680,7 @@ static PyObject *BPy_IDGroup_IterItems(BPy_IDProperty *self)
 	iter->mode = IDPROP_ITER_ITEMS;
 	iter->cur = self->prop->data.group.first;
 	Py_XINCREF(iter);
-	return (PyObject*)iter;
+	return (PyObject *)iter;
 }
 
 /* utility function */
@@ -793,7 +794,7 @@ static int BPy_IDGroup_Contains(BPy_IDProperty *self, PyObject *value)
 		return -1;
 	}
 
-	return IDP_GetPropertyFromGroup(self->prop, name) ? 1:0;
+	return IDP_GetPropertyFromGroup(self->prop, name) ? 1 : 0;
 }
 
 static PyObject *BPy_IDGroup_Update(BPy_IDProperty *self, PyObject *value)
@@ -845,64 +846,64 @@ static PyObject *BPy_IDGroup_Get(BPy_IDProperty *self, PyObject *args)
 
 static struct PyMethodDef BPy_IDGroup_methods[] = {
 	{"pop", (PyCFunction)BPy_IDGroup_Pop, METH_O,
-		"pop an item from the group; raises KeyError if the item doesn't exist"},
+	 "pop an item from the group; raises KeyError if the item doesn't exist"},
 	{"iteritems", (PyCFunction)BPy_IDGroup_IterItems, METH_NOARGS,
-		"iterate through the items in the dict; behaves like dictionary method iteritems"},
+	 "iterate through the items in the dict; behaves like dictionary method iteritems"},
 	{"keys", (PyCFunction)BPy_IDGroup_GetKeys, METH_NOARGS,
-		"get the keys associated with this group as a list of strings"},
+	 "get the keys associated with this group as a list of strings"},
 	{"values", (PyCFunction)BPy_IDGroup_GetValues, METH_NOARGS,
-		"get the values associated with this group"},
+	 "get the values associated with this group"},
 	{"items", (PyCFunction)BPy_IDGroup_GetItems, METH_NOARGS,
-		"get the items associated with this group"},
+	 "get the items associated with this group"},
 	{"update", (PyCFunction)BPy_IDGroup_Update, METH_O,
-		"updates the values in the group with the values of another or a dict"},
+	 "updates the values in the group with the values of another or a dict"},
 	{"get", (PyCFunction)BPy_IDGroup_Get, METH_VARARGS,
-		"idprop.get(k[,d]) -> idprop[k] if k in idprop, else d.  d defaults to None"},
+	 "idprop.get(k[,d]) -> idprop[k] if k in idprop, else d.  d defaults to None"},
 	{"to_dict", (PyCFunction)BPy_IDGroup_to_dict, METH_NOARGS,
-		"return a purely python version of the group"},
+	 "return a purely python version of the group"},
 	{NULL, NULL, 0, NULL}
 };
 
 static PySequenceMethods BPy_IDGroup_Seq = {
-	(lenfunc) BPy_IDGroup_Map_Len,		/* lenfunc sq_length */
-	NULL,								/* binaryfunc sq_concat */
-	NULL,								/* ssizeargfunc sq_repeat */
-	NULL,								/* ssizeargfunc sq_item */ /* TODO - setting this will allow PySequence_Check to return True */
-	NULL,								/* intintargfunc ***was_sq_slice*** */
-	NULL,								/* intobjargproc sq_ass_item */
-	NULL,								/* ssizeobjargproc ***was_sq_ass_slice*** */
-	(objobjproc) BPy_IDGroup_Contains,	/* objobjproc sq_contains */
-	NULL,								/* binaryfunc sq_inplace_concat */
-	NULL,								/* ssizeargfunc sq_inplace_repeat */
+	(lenfunc) BPy_IDGroup_Map_Len,      /* lenfunc sq_length */
+	NULL,                               /* binaryfunc sq_concat */
+	NULL,                               /* ssizeargfunc sq_repeat */
+	NULL,                               /* ssizeargfunc sq_item */ /* TODO - setting this will allow PySequence_Check to return True */
+	NULL,                               /* intintargfunc ***was_sq_slice*** */
+	NULL,                               /* intobjargproc sq_ass_item */
+	NULL,                               /* ssizeobjargproc ***was_sq_ass_slice*** */
+	(objobjproc) BPy_IDGroup_Contains,  /* objobjproc sq_contains */
+	NULL,                               /* binaryfunc sq_inplace_concat */
+	NULL,                               /* ssizeargfunc sq_inplace_repeat */
 };
 
 static PyMappingMethods BPy_IDGroup_Mapping = {
-	(lenfunc)BPy_IDGroup_Map_Len, 		/*inquiry mp_length */
-	(binaryfunc)BPy_IDGroup_Map_GetItem,/*binaryfunc mp_subscript */
-	(objobjargproc)BPy_IDGroup_Map_SetItem,	/*objobjargproc mp_ass_subscript */
+	(lenfunc)BPy_IDGroup_Map_Len,           /*inquiry mp_length */
+	(binaryfunc)BPy_IDGroup_Map_GetItem,    /*binaryfunc mp_subscript */
+	(objobjargproc)BPy_IDGroup_Map_SetItem, /*objobjargproc mp_ass_subscript */
 };
 
 PyTypeObject BPy_IDGroup_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	/*  For printing, in format "<module>.<name>" */
-	"Blender IDProperty",		/* char *tp_name; */
-	sizeof(BPy_IDProperty),		/* int tp_basicsize; */
+	"IDPropertyGroup",       /* char *tp_name; */
+	sizeof(BPy_IDProperty),     /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	NULL,						/* destructor tp_dealloc; */
+	NULL,                       /* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
-	NULL,     /* getattrfunc tp_getattr; */
-	NULL,     /* setattrfunc tp_setattr; */
+	NULL,                       /* getattrfunc tp_getattr; */
+	NULL,                       /* setattrfunc tp_setattr; */
 	NULL,                       /* cmpfunc tp_compare; */
 	(reprfunc)BPy_IDGroup_repr,     /* reprfunc tp_repr; */
 
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&BPy_IDGroup_Seq,			/* PySequenceMethods *tp_as_sequence; */
-	&BPy_IDGroup_Mapping,		/* PyMappingMethods *tp_as_mapping; */
+	&BPy_IDGroup_Seq,           /* PySequenceMethods *tp_as_sequence; */
+	&BPy_IDGroup_Mapping,       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
@@ -915,29 +916,29 @@ PyTypeObject BPy_IDGroup_Type = {
 	/* Functions to access object as input/output buffer */
 	NULL,                       /* PyBufferProcs *tp_as_buffer; */
 
-  /*** Flags to define presence of optional/expanded features ***/
+	/*** Flags to define presence of optional/expanded features ***/
 	Py_TPFLAGS_DEFAULT,         /* long tp_flags; */
 
 	NULL,                       /*  char *tp_doc;  Documentation string */
-  /*** Assigned meaning in release 2.0 ***/
+	/*** Assigned meaning in release 2.0 ***/
 	/* call function for all accessible objects */
 	NULL,                       /* traverseproc tp_traverse; */
 
 	/* delete references to contained objects */
 	NULL,                       /* inquiry tp_clear; */
 
-  /***  Assigned meaning in release 2.1 ***/
-  /*** rich comparisons ***/
+	/***  Assigned meaning in release 2.1 ***/
+	/*** rich comparisons ***/
 	NULL,                       /* richcmpfunc tp_richcompare; */
 
-  /***  weak reference enabler ***/
+	/***  weak reference enabler ***/
 	0,                          /* long tp_weaklistoffset; */
 
-  /*** Added in release 2.2 ***/
+	/*** Added in release 2.2 ***/
 	/*   Iterators */
 	(getiterfunc)BPy_IDGroup_iter, /* getiterfunc tp_iter; */
 	NULL,                       /* iternextfunc tp_iternext; */
-  /*** Attribute descriptor and subclassing stuff ***/
+	/*** Attribute descriptor and subclassing stuff ***/
 	BPy_IDGroup_methods,        /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	BPy_IDGroup_getseters,       /* struct PyGetSetDef *tp_getset; */
@@ -984,7 +985,7 @@ static PyObject *BPy_IDArray_GetType(BPy_IDArray *self)
 }
 
 static PyGetSetDef BPy_IDArray_getseters[] = {
-    /* matches pythons array.typecode */
+	/* matches pythons array.typecode */
 	{(char *)"typecode", (getter)BPy_IDArray_GetType, (setter)NULL, (char *)"The type of the data in the array, is an int.", NULL},
 	{NULL, NULL, NULL, NULL, NULL},
 };
@@ -996,7 +997,7 @@ static PyObject *BPy_IDArray_to_list(BPy_IDArray *self)
 
 static PyMethodDef BPy_IDArray_methods[] = {
 	{"to_list", (PyCFunction)BPy_IDArray_to_list, METH_NOARGS,
-		"return the array as a list"},
+	 "return the array as a list"},
 	{NULL, NULL, 0, NULL}
 };
 
@@ -1070,17 +1071,17 @@ static int BPy_IDArray_SetItem(BPy_IDArray *self, int index, PyObject *value)
 }
 
 static PySequenceMethods BPy_IDArray_Seq = {
-	(lenfunc) BPy_IDArray_Len,			/* inquiry sq_length */
-	NULL,								/* binaryfunc sq_concat */
-	NULL,								/* intargfunc sq_repeat */
-	(ssizeargfunc)BPy_IDArray_GetItem,	/* intargfunc sq_item */
-	NULL,								/* intintargfunc sq_slice */
-	(ssizeobjargproc)BPy_IDArray_SetItem,/* intobjargproc sq_ass_item */
-	NULL,								/* intintobjargproc sq_ass_slice */
-	NULL,								/* objobjproc sq_contains */
-				/* Added in release 2.0 */
-	NULL,								/* binaryfunc sq_inplace_concat */
-	NULL,								/* intargfunc sq_inplace_repeat */
+	(lenfunc) BPy_IDArray_Len,          /* inquiry sq_length */
+	NULL,                               /* binaryfunc sq_concat */
+	NULL,                               /* intargfunc sq_repeat */
+	(ssizeargfunc)BPy_IDArray_GetItem,  /* intargfunc sq_item */
+	NULL,                               /* intintargfunc sq_slice */
+	(ssizeobjargproc)BPy_IDArray_SetItem, /* intobjargproc sq_ass_item */
+	NULL,                               /* intintobjargproc sq_ass_slice */
+	NULL,                               /* objobjproc sq_contains */
+	/* Added in release 2.0 */
+	NULL,                               /* binaryfunc sq_inplace_concat */
+	NULL,                               /* intargfunc sq_inplace_repeat */
 };
 
 
@@ -1235,13 +1236,13 @@ static PyMappingMethods BPy_IDArray_AsMapping = {
 PyTypeObject BPy_IDArray_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	/*  For printing, in format "<module>.<name>" */
-	"Blender IDArray",           /* char *tp_name; */
+	"IDPropertyArray",           /* char *tp_name; */
 	sizeof(BPy_IDArray),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	NULL,						/* destructor tp_dealloc; */
+	NULL,                       /* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,     /* getattrfunc tp_getattr; */
 	NULL,     /* setattrfunc tp_setattr; */
@@ -1251,12 +1252,12 @@ PyTypeObject BPy_IDArray_Type = {
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	&BPy_IDArray_Seq,   		/* PySequenceMethods *tp_as_sequence; */
+	&BPy_IDArray_Seq,           /* PySequenceMethods *tp_as_sequence; */
 	&BPy_IDArray_AsMapping,     /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
 
-	NULL,						/* hashfunc tp_hash; */
+	NULL,                       /* hashfunc tp_hash; */
 	NULL,                       /* ternaryfunc tp_call; */
 	NULL,                       /* reprfunc tp_str; */
 	NULL,                       /* getattrofunc tp_getattro; */
@@ -1265,31 +1266,31 @@ PyTypeObject BPy_IDArray_Type = {
 	/* Functions to access object as input/output buffer */
 	NULL,                       /* PyBufferProcs *tp_as_buffer; */
 
-  /*** Flags to define presence of optional/expanded features ***/
+	/*** Flags to define presence of optional/expanded features ***/
 	Py_TPFLAGS_DEFAULT,         /* long tp_flags; */
 
 	NULL,                       /*  char *tp_doc;  Documentation string */
-  /*** Assigned meaning in release 2.0 ***/
+	/*** Assigned meaning in release 2.0 ***/
 	/* call function for all accessible objects */
 	NULL,                       /* traverseproc tp_traverse; */
 
 	/* delete references to contained objects */
 	NULL,                       /* inquiry tp_clear; */
 
-  /***  Assigned meaning in release 2.1 ***/
-  /*** rich comparisons ***/
+	/***  Assigned meaning in release 2.1 ***/
+	/*** rich comparisons ***/
 	NULL,                       /* richcmpfunc tp_richcompare; */
 
-  /***  weak reference enabler ***/
+	/***  weak reference enabler ***/
 	0,                          /* long tp_weaklistoffset; */
 
-  /*** Added in release 2.2 ***/
+	/*** Added in release 2.2 ***/
 	/*   Iterators */
 	NULL,                       /* getiterfunc tp_iter; */
 	NULL,                       /* iternextfunc tp_iternext; */
 
-  /*** Attribute descriptor and subclassing stuff ***/
-	BPy_IDArray_methods,		/* struct PyMethodDef *tp_methods; */
+	/*** Attribute descriptor and subclassing stuff ***/
+	BPy_IDArray_methods,        /* struct PyMethodDef *tp_methods; */
 	NULL,                       /* struct PyMemberDef *tp_members; */
 	BPy_IDArray_getseters,       /* struct PyGetSetDef *tp_getset; */
 	NULL,                       /* struct _typeobject *tp_base; */
@@ -1349,13 +1350,13 @@ static PyObject *BPy_Group_Iter_Next(BPy_IDGroup_Iter *self)
 PyTypeObject BPy_IDGroup_Iter_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	/*  For printing, in format "<module>.<name>" */
-	"Blender IDGroup_Iter",           /* char *tp_name; */
+	"IDPropertyGroupIter",           /* char *tp_name; */
 	sizeof(BPy_IDGroup_Iter),       /* int tp_basicsize; */
 	0,                          /* tp_itemsize;  For allocation */
 
 	/* Methods to implement standard operations */
 
-	NULL,						/* destructor tp_dealloc; */
+	NULL,                       /* destructor tp_dealloc; */
 	NULL,                       /* printfunc tp_print; */
 	NULL,     /* getattrfunc tp_getattr; */
 	NULL,     /* setattrfunc tp_setattr; */
@@ -1365,7 +1366,7 @@ PyTypeObject BPy_IDGroup_Iter_Type = {
 	/* Method suites for standard classes */
 
 	NULL,                       /* PyNumberMethods *tp_as_number; */
-	NULL,						/* PySequenceMethods *tp_as_sequence; */
+	NULL,                       /* PySequenceMethods *tp_as_sequence; */
 	NULL,                       /* PyMappingMethods *tp_as_mapping; */
 
 	/* More standard operations (here for binary compatibility) */
@@ -1379,25 +1380,25 @@ PyTypeObject BPy_IDGroup_Iter_Type = {
 	/* Functions to access object as input/output buffer */
 	NULL,                       /* PyBufferProcs *tp_as_buffer; */
 
-  /*** Flags to define presence of optional/expanded features ***/
+	/*** Flags to define presence of optional/expanded features ***/
 	Py_TPFLAGS_DEFAULT,         /* long tp_flags; */
 
 	NULL,                       /*  char *tp_doc;  Documentation string */
-  /*** Assigned meaning in release 2.0 ***/
+	/*** Assigned meaning in release 2.0 ***/
 	/* call function for all accessible objects */
 	NULL,                       /* traverseproc tp_traverse; */
 
 	/* delete references to contained objects */
 	NULL,                       /* inquiry tp_clear; */
 
-  /***  Assigned meaning in release 2.1 ***/
-  /*** rich comparisons ***/
+	/***  Assigned meaning in release 2.1 ***/
+	/*** rich comparisons ***/
 	NULL,                       /* richcmpfunc tp_richcompare; */
 
-  /***  weak reference enabler ***/
+	/***  weak reference enabler ***/
 	0,                          /* long tp_weaklistoffset; */
 
-  /*** Added in release 2.2 ***/
+	/*** Added in release 2.2 ***/
 	/*   Iterators */
 	PyObject_SelfIter,                  /* getiterfunc tp_iter; */
 	(iternextfunc) BPy_Group_Iter_Next, /* iternextfunc tp_iternext; */
@@ -1408,4 +1409,77 @@ void IDProp_Init_Types(void)
 	PyType_Ready(&BPy_IDGroup_Type);
 	PyType_Ready(&BPy_IDGroup_Iter_Type);
 	PyType_Ready(&BPy_IDArray_Type);
+}
+
+/*----------------------------MODULE INIT-------------------------*/
+
+/* --- */
+
+static struct PyModuleDef IDProp_types_module_def = {
+    PyModuleDef_HEAD_INIT,
+    "idprop.types",  /* m_name */
+    NULL,  /* m_doc */
+    0,  /* m_size */
+    NULL,  /* m_methods */
+    NULL,  /* m_reload */
+    NULL,  /* m_traverse */
+    NULL,  /* m_clear */
+    NULL,  /* m_free */
+};
+
+static PyObject *BPyInit_idprop_types(void)
+{
+	PyObject *submodule;
+
+	submodule = PyModule_Create(&IDProp_types_module_def);
+
+#define MODULE_TYPE_ADD(s, t) \
+	PyModule_AddObject(s, t.tp_name, (PyObject *)&t); Py_INCREF((PyObject *)&t)
+
+	/* bmesh_py_types.c */
+	MODULE_TYPE_ADD(submodule, BPy_IDGroup_Type);
+	MODULE_TYPE_ADD(submodule, BPy_IDGroup_Iter_Type);
+	MODULE_TYPE_ADD(submodule, BPy_IDArray_Type);
+
+#undef MODULE_TYPE_ADD
+
+	return submodule;
+}
+
+/* --- */
+
+static PyMethodDef IDProp_methods[] = {
+	{NULL, NULL, 0, NULL}
+};
+
+
+PyDoc_STRVAR(IDProp_module_doc,
+"This module provides access id property types (currently mainly for docs)."
+);
+static struct PyModuleDef IDProp_module_def = {
+	PyModuleDef_HEAD_INIT,
+	"idprop",  /* m_name */
+	IDProp_module_doc,  /* m_doc */
+	0,  /* m_size */
+	IDProp_methods,  /* m_methods */
+	NULL,  /* m_reload */
+	NULL,  /* m_traverse */
+	NULL,  /* m_clear */
+	NULL,  /* m_free */
+};
+
+PyObject *BPyInit_idprop(void)
+{
+	PyObject *mod;
+	PyObject *submodule;
+	PyObject *sys_modules = PyThreadState_GET()->interp->modules;
+
+	mod = PyModule_Create(&IDProp_module_def);
+
+	/* bmesh.types */
+	PyModule_AddObject(mod, "types", (submodule = BPyInit_idprop_types()));
+	PyDict_SetItemString(sys_modules, PyModule_GetName(submodule), submodule);
+	Py_INCREF(submodule);
+
+	return mod;
 }

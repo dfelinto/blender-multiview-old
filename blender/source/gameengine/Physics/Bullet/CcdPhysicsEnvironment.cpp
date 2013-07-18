@@ -26,6 +26,7 @@ subject to the following restrictions:
 #include <algorithm>
 #include "btBulletDynamicsCommon.h"
 #include "LinearMath/btIDebugDraw.h"
+#include "BulletCollision/CollisionDispatch/btGhostObject.h"
 #include "BulletCollision/CollisionDispatch/btSimulationIslandManager.h"
 #include "BulletSoftBody/btSoftRigidDynamicsWorld.h"
 #include "BulletSoftBody/btSoftBodyRigidBodyCollisionConfiguration.h"
@@ -337,6 +338,7 @@ m_enableSatCollisionDetection(false),
 m_solver(NULL),
 m_ownPairCache(NULL),
 m_filterCallback(NULL),
+m_ghostPairCallback(NULL),
 m_ownDispatcher(NULL),
 m_scalingPropagated(false)
 {
@@ -368,7 +370,9 @@ m_scalingPropagated(false)
 	}
 
 	m_filterCallback = new CcdOverlapFilterCallBack(this);
+	m_ghostPairCallback = new btGhostPairCallback();
 	m_broadphase->getOverlappingPairCache()->setOverlapFilterCallback(m_filterCallback);
+	m_broadphase->getOverlappingPairCache()->setInternalGhostPairCallback(m_ghostPairCallback);
 
 	setSolverType(1);//issues with quickstep and memory allocations
 //	m_dynamicsWorld = new btDiscreteDynamicsWorld(dispatcher,m_broadphase,m_solver,m_collisionConfiguration);
@@ -406,7 +410,11 @@ void	CcdPhysicsEnvironment::addCcdPhysicsController(CcdPhysicsController* ctrl)
 		{
 			if (obj->getCollisionShape())
 			{
-				m_dynamicsWorld->addCollisionObject(obj,ctrl->GetCollisionFilterGroup(), ctrl->GetCollisionFilterMask());
+				m_dynamicsWorld->addCollisionObject(obj, ctrl->GetCollisionFilterGroup(), ctrl->GetCollisionFilterMask());
+			}
+			if (ctrl->GetCharacterController())
+			{
+				m_dynamicsWorld->addAction(ctrl->GetCharacterController());
 			}
 		}
 	}
@@ -443,6 +451,11 @@ bool	CcdPhysicsEnvironment::removeCcdPhysicsController(CcdPhysicsController* ctr
 		} else
 		{
 			m_dynamicsWorld->removeCollisionObject(ctrl->GetCollisionObject());
+
+			if (ctrl->GetCharacterController())
+			{
+				m_dynamicsWorld->removeAction(ctrl->GetCharacterController());
+			}
 		}
 	}
 	if (ctrl->m_registerCount != 0)
@@ -713,8 +726,8 @@ void	CcdPhysicsEnvironment::processFhSprings(double curTime,float interval)
 					{
 						if (ctrl->getConstructionInfo().m_do_fh) 
 						{
-							btVector3 lspot = cl_object->getCenterOfMassPosition()
-								+ rayDirLocal * resultCallback.m_closestHitFraction;
+							btVector3 lspot = cl_object->getCenterOfMassPosition() +
+							        rayDirLocal * resultCallback.m_closestHitFraction;
 
 
 								
@@ -785,7 +798,7 @@ void	CcdPhysicsEnvironment::processFhSprings(double curTime,float interval)
 
 void		CcdPhysicsEnvironment::setDebugMode(int debugMode)
 {
-	if (m_debugDrawer){
+	if (m_debugDrawer) {
 		m_debugDrawer->setDebugMode(debugMode);
 	}
 }
@@ -822,16 +835,16 @@ void		CcdPhysicsEnvironment::setCcdMode(int ccdMode)
 
 void		CcdPhysicsEnvironment::setSolverSorConstant(float sor)
 {
-	m_solverInfo.m_sor = sor;
+	m_dynamicsWorld->getSolverInfo().m_sor = sor;
 }
 
 void		CcdPhysicsEnvironment::setSolverTau(float tau)
 {
-	m_solverInfo.m_tau = tau;
+	m_dynamicsWorld->getSolverInfo().m_tau = tau;
 }
 void		CcdPhysicsEnvironment::setSolverDamping(float damping)
 {
-	m_solverInfo.m_damping = damping;
+	m_dynamicsWorld->getSolverInfo().m_damping = damping;
 }
 
 
@@ -1247,7 +1260,7 @@ struct OcclusionBuffer
 {
 	struct WriteOCL
 	{
-		static inline bool Process(btScalar& q,btScalar v) { if(q<v) q=v;return(false); }
+		static inline bool Process(btScalar& q,btScalar v) { if (q<v) q=v;return(false); }
 		static inline void Occlusion(bool& flag) { flag = true; }
 	};
 	struct QueryOCL
@@ -1377,7 +1390,7 @@ struct OcclusionBuffer
 	// convert polygon to device coordinates
 	static bool	project(btVector4* p,int n)
 	{
-		for(int i=0;i<n;++i)
+		for (int i=0;i<n;++i)
 		{			
 			p[i][2]=1/p[i][3];
 			p[i][0]*=p[i][2];
@@ -1394,21 +1407,21 @@ struct OcclusionBuffer
 		btVector4	pn[2*NP];
 		int			i, j, m, n, ni;
 		// deal with near clipping
-		for(i=0, m=0;i<NP;++i)
+		for (i=0, m=0;i<NP;++i)
 		{
 			s[i]=pi[i][2]+pi[i][3];
-			if(s[i]<0) m+=1<<i;
+			if (s[i]<0) m+=1<<i;
 		}
-		if(m==((1<<NP)-1)) 
+		if (m==((1<<NP)-1)) 
 			return(0);
-		if(m!=0)
+		if (m!=0)
 		{
-			for(i=NP-1,j=0,n=0;j<NP;i=j++)
+			for (i=NP-1,j=0,n=0;j<NP;i=j++)
 			{
 				const btVector4&	a=pi[i];
 				const btVector4&	b=pi[j];
 				const btScalar		t=s[i]/(a[3]+a[2]-b[3]-b[2]);
-				if((t>0)&&(t<1))
+				if ((t>0)&&(t<1))
 				{
 					pn[n][0]	=	a[0]+(b[0]-a[0])*t;
 					pn[n][1]	=	a[1]+(b[1]-a[1])*t;
@@ -1416,7 +1429,7 @@ struct OcclusionBuffer
 					pn[n][3]	=	a[3]+(b[3]-a[3])*t;
 					++n;
 				}
-				if(s[j]>0) pn[n++]=b;
+				if (s[j]>0) pn[n++]=b;
 			}
 			// ready to test far clipping, start from the modified polygon
 			pi = pn;
@@ -1427,21 +1440,21 @@ struct OcclusionBuffer
 			ni = NP;
 		}
 		// now deal with far clipping
-		for(i=0, m=0;i<ni;++i)
+		for (i=0, m=0;i<ni;++i)
 		{
 			s[i]=pi[i][2]-pi[i][3];
-			if(s[i]>0) m+=1<<i;
+			if (s[i]>0) m+=1<<i;
 		}
-		if(m==((1<<ni)-1)) 
+		if (m==((1<<ni)-1)) 
 			return(0);
-		if(m!=0)
+		if (m!=0)
 		{
-			for(i=ni-1,j=0,n=0;j<ni;i=j++)
+			for (i=ni-1,j=0,n=0;j<ni;i=j++)
 			{
 				const btVector4&	a=pi[i];
 				const btVector4&	b=pi[j];
 				const btScalar		t=s[i]/(a[2]-a[3]-b[2]+b[3]);
-				if((t>0)&&(t<1))
+				if ((t>0)&&(t<1))
 				{
 					po[n][0]	=	a[0]+(b[0]-a[0])*t;
 					po[n][1]	=	a[1]+(b[1]-a[1])*t;
@@ -1449,11 +1462,11 @@ struct OcclusionBuffer
 					po[n][3]	=	a[3]+(b[3]-a[3])*t;
 					++n;
 				}
-				if(s[j]<0) po[n++]=b;
+				if (s[j]<0) po[n++]=b;
 			}
 			return(n);
 		}
-		for(int i=0;i<ni;++i) po[i]=pi[i];
+		for (int i=0;i<ni;++i) po[i]=pi[i];
 		return(ni);
 	}
 	// write or check a triangle to buffer. a,b,c in device coordinates (-1,+1)
@@ -1465,7 +1478,7 @@ struct OcclusionBuffer
 						const btScalar minarea)
 	{
 		const btScalar		a2=btCross(b-a,c-a)[2];
-		if((face*a2)<0.f || btFabs(a2)<minarea)
+		if ((face*a2)<0.f || btFabs(a2)<minarea)
 			return false;
 		// further down we are normally going to write to the Zbuffer, mark it so
 		POLICY::Occlusion(m_occlusion);
@@ -1499,15 +1512,15 @@ struct OcclusionBuffer
 			// degenerated in at most one single pixel
 			btScalar* scan=&m_buffer[miy*m_sizes[0]+mix];
 			// use for loop to detect the case where width or height == 0
-			for(int iy=miy;iy<mxy;++iy)
+			for (int iy=miy;iy<mxy;++iy)
 			{
-				for(int ix=mix;ix<mxx;++ix)
+				for (int ix=mix;ix<mxx;++ix)
 				{
-					if(POLICY::Process(*scan,z[0])) 
+					if (POLICY::Process(*scan,z[0])) 
 						return(true);
-					if(POLICY::Process(*scan,z[1])) 
+					if (POLICY::Process(*scan,z[1])) 
 						return(true);
-					if(POLICY::Process(*scan,z[2])) 
+					if (POLICY::Process(*scan,z[2])) 
 						return(true);
 				}
 			}
@@ -1537,13 +1550,13 @@ struct OcclusionBuffer
 			dy[1] = y[0]-y[1];
 			dy[2] = y[2]-y[0];
 			btScalar* scan=&m_buffer[miy*m_sizes[0]+mix];
-			for(int iy=miy;iy<mxy;++iy)
+			for (int iy=miy;iy<mxy;++iy)
 			{
-				if(dy[0] >= 0 && POLICY::Process(*scan,v[0])) 
+				if (dy[0] >= 0 && POLICY::Process(*scan,v[0])) 
 					return(true);
-				if(dy[1] >= 0 && POLICY::Process(*scan,v[1])) 
+				if (dy[1] >= 0 && POLICY::Process(*scan,v[1])) 
 					return(true);
-				if(dy[2] >= 0 && POLICY::Process(*scan,v[2])) 
+				if (dy[2] >= 0 && POLICY::Process(*scan,v[2])) 
 					return(true);
 				scan+=m_sizes[0];
 				v[0] += dzy[0]; v[1] += dzy[1]; v[2] += dzy[2];
@@ -1574,13 +1587,13 @@ struct OcclusionBuffer
 			dx[1] = x[0]-x[1];
 			dx[2] = x[2]-x[0];
 			btScalar* scan=&m_buffer[miy*m_sizes[0]+mix];
-			for(int ix=mix;ix<mxx;++ix)
+			for (int ix=mix;ix<mxx;++ix)
 			{
-				if(dx[0] >= 0 && POLICY::Process(*scan,v[0])) 
+				if (dx[0] >= 0 && POLICY::Process(*scan,v[0])) 
 					return(true);
-				if(dx[1] >= 0 && POLICY::Process(*scan,v[1])) 
+				if (dx[1] >= 0 && POLICY::Process(*scan,v[1])) 
 					return(true);
-				if(dx[2] >= 0 && POLICY::Process(*scan,v[2])) 
+				if (dx[2] >= 0 && POLICY::Process(*scan,v[2])) 
 					return(true);
 				scan++;
 				v[0] += dzx[0]; v[1] += dzx[1]; v[2] += dzx[2];
@@ -1604,13 +1617,13 @@ struct OcclusionBuffer
 									miy*x[0]+mix*y[2]-x[0]*y[2]-mix*y[0]+x[2]*y[0]-miy*x[2]};
 			btScalar		v=ia*((z[2]*c[0])+(z[0]*c[1])+(z[1]*c[2]));
 			btScalar*		scan=&m_buffer[miy*m_sizes[0]];
-			for(int iy=miy;iy<mxy;++iy)
+			for (int iy=miy;iy<mxy;++iy)
 			{
-				for(int ix=mix;ix<mxx;++ix)
+				for (int ix=mix;ix<mxx;++ix)
 				{
-					if((c[0]>=0)&&(c[1]>=0)&&(c[2]>=0))
+					if ((c[0]>=0)&&(c[1]>=0)&&(c[2]>=0))
 					{
-						if(POLICY::Process(scan[ix],v)) 
+						if (POLICY::Process(scan[ix],v)) 
 							return(true);
 					}
 					c[0]+=dx[0];c[1]+=dx[1];c[2]+=dx[2];v+=dzx;
@@ -1633,7 +1646,7 @@ struct OcclusionBuffer
 		if (n)
 		{
 			project(o,n);
-			for(int i=2;i<n && !earlyexit;++i)
+			for (int i=2;i<n && !earlyexit;++i)
 			{
 				earlyexit|=draw<POLICY>(o[0],o[i-1],o[i],face,minarea);
 			}
@@ -1685,10 +1698,10 @@ struct OcclusionBuffer
 		transformW(btVector3(c[0]+e[0],c[1]-e[1],c[2]+e[2]),x[5]);
 		transformW(btVector3(c[0]+e[0],c[1]+e[1],c[2]+e[2]),x[6]);
 		transformW(btVector3(c[0]-e[0],c[1]+e[1],c[2]+e[2]),x[7]);
-		for(int i=0;i<8;++i)
+		for (int i=0;i<8;++i)
 		{
 			// the box is clipped, it's probably a large box, don't waste our time to check
-			if((x[i][2]+x[i][3])<=0) return(true);
+			if ((x[i][2]+x[i][3])<=0) return(true);
 		}
 		static const int	d[]={	1,0,3,2,
 									4,5,6,7,
@@ -1696,13 +1709,13 @@ struct OcclusionBuffer
 									6,5,1,2,
 									7,6,2,3,
 									5,4,0,1};
-		for(unsigned int i=0;i<(sizeof(d)/sizeof(d[0]));)
+		for (unsigned int i=0;i<(sizeof(d)/sizeof(d[0]));)
 		{
 			const btVector4	p[]={	x[d[i++]],
 									x[d[i++]],
 									x[d[i++]],
 									x[d[i++]]};
-			if(clipDraw<4,QueryOCL>(p,1.f,0.f)) 
+			if (clipDraw<4,QueryOCL>(p,1.f,0.f)) 
 				return(true);
 		}
 		return(false);
@@ -1805,8 +1818,8 @@ bool CcdPhysicsEnvironment::cullingTest(PHY_CullingCallback callback, void* user
 		// occlusion culling, the direction of the view is taken from the first plan which MUST be the near plane
 		btDbvt::collideOCL(m_cullingTree->m_sets[1].m_root,planes_n,planes_o,planes_n[0],nplanes,dispatcher);
 		btDbvt::collideOCL(m_cullingTree->m_sets[0].m_root,planes_n,planes_o,planes_n[0],nplanes,dispatcher);		
-	}else 
-	{
+	}
+	else {
 		btDbvt::collideKDOP(m_cullingTree->m_sets[1].m_root,planes_n,planes_o,nplanes,dispatcher);
 		btDbvt::collideKDOP(m_cullingTree->m_sets[0].m_root,planes_n,planes_o,nplanes,dispatcher);		
 	}
@@ -1879,6 +1892,9 @@ CcdPhysicsEnvironment::~CcdPhysicsEnvironment()
 
 	if (NULL != m_filterCallback)
 		delete m_filterCallback;
+
+	if (NULL != m_ghostPairCallback)
+		delete m_ghostPairCallback;
 
 	if (NULL != m_collisionConfiguration)
 		delete m_collisionConfiguration;
@@ -2008,7 +2024,7 @@ void	CcdPhysicsEnvironment::setConstraintParam(int constraintId,int param,float 
 				{
 					//param = 3,4,5 are constraint limits, high limit values
 					btConeTwistConstraint* coneTwist = (btConeTwistConstraint*)typedConstraint;
-					if(value1<0.0f)
+					if (value1<0.0f)
 						coneTwist->setLimit(param,btScalar(BT_LARGE_FLOAT));
 					else
 						coneTwist->setLimit(param,value1);

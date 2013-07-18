@@ -52,13 +52,12 @@
 
 static void initData(ModifierData *md)
 {
-	CastModifierData *cmd = (CastModifierData*) md;
+	CastModifierData *cmd = (CastModifierData *) md;
 
 	cmd->fac = 0.5f;
 	cmd->radius = 0.0f;
 	cmd->size = 0.0f;
-	cmd->flag = MOD_CAST_X | MOD_CAST_Y | MOD_CAST_Z
-			| MOD_CAST_SIZE_FROM_RADIUS;
+	cmd->flag = MOD_CAST_X | MOD_CAST_Y | MOD_CAST_Z | MOD_CAST_SIZE_FROM_RADIUS;
 	cmd->type = MOD_CAST_TYPE_SPHERE;
 	cmd->defgrp_name[0] = '\0';
 	cmd->object = NULL;
@@ -67,8 +66,8 @@ static void initData(ModifierData *md)
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
-	CastModifierData *cmd = (CastModifierData*) md;
-	CastModifierData *tcmd = (CastModifierData*) target;
+	CastModifierData *cmd = (CastModifierData *) md;
+	CastModifierData *tcmd = (CastModifierData *) target;
 
 	tcmd->fac = cmd->fac;
 	tcmd->radius = cmd->radius;
@@ -81,12 +80,12 @@ static void copyData(ModifierData *md, ModifierData *target)
 
 static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
 {
-	CastModifierData *cmd = (CastModifierData*) md;
+	CastModifierData *cmd = (CastModifierData *) md;
 	short flag;
 	
-	flag = cmd->flag & (MOD_CAST_X|MOD_CAST_Y|MOD_CAST_Z);
+	flag = cmd->flag & (MOD_CAST_X | MOD_CAST_Y | MOD_CAST_Z);
 
-	if((cmd->fac == 0.0f) || flag == 0) return 1;
+	if ((cmd->fac == 0.0f) || flag == 0) return 1;
 
 	return 0;
 }
@@ -97,39 +96,39 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
-	if(cmd->defgrp_name[0]) dataMask |= CD_MASK_MDEFORMVERT;
+	if (cmd->defgrp_name[0]) dataMask |= CD_MASK_MDEFORMVERT;
 
 	return dataMask;
 }
 
 static void foreachObjectLink(
-					   ModifierData *md, Object *ob,
-	void (*walk)(void *userData, Object *ob, Object **obpoin),
-		   void *userData)
+        ModifierData *md, Object *ob,
+        void (*walk)(void *userData, Object *ob, Object **obpoin),
+        void *userData)
 {
-	CastModifierData *cmd = (CastModifierData*) md;
+	CastModifierData *cmd = (CastModifierData *) md;
 
-	walk (userData, ob, &cmd->object);
+	walk(userData, ob, &cmd->object);
 }
 
 static void updateDepgraph(ModifierData *md, DagForest *forest,
-						struct Scene *UNUSED(scene),
-						Object *UNUSED(ob),
-						DagNode *obNode)
+                           struct Scene *UNUSED(scene),
+                           Object *UNUSED(ob),
+                           DagNode *obNode)
 {
-	CastModifierData *cmd = (CastModifierData*) md;
+	CastModifierData *cmd = (CastModifierData *) md;
 
 	if (cmd->object) {
 		DagNode *curNode = dag_get_node(forest, cmd->object);
 
 		dag_add_relation(forest, curNode, obNode, DAG_RL_OB_DATA,
-			"Cast Modifier");
+		                 "Cast Modifier");
 	}
 }
 
 static void sphere_do(
-				   CastModifierData *cmd, Object *ob, DerivedMesh *dm,
-	   float (*vertexCos)[3], int numVerts)
+    CastModifierData *cmd, Object *ob, DerivedMesh *dm,
+    float (*vertexCos)[3], int numVerts)
 {
 	MDeformVert *dvert = NULL;
 
@@ -157,7 +156,7 @@ static void sphere_do(
 	 * space), by default, but if the user defined a control object,
 	 * we use its location, transformed to ob's local space */
 	if (ctrl_ob) {
-		if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+		if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 			invert_m4_m4(ctrl_ob->imat, ctrl_ob->obmat);
 			mult_m4_m4m4(mat, ctrl_ob->imat, ob->obmat);
 			invert_m4_m4(imat, mat);
@@ -178,14 +177,14 @@ static void sphere_do(
 	 * only those vertices should be affected */
 	modifier_get_vgroup(ob, dm, cmd->defgrp_name, &dvert, &defgrp_index);
 
-	if(flag & MOD_CAST_SIZE_FROM_RADIUS) {
+	if (flag & MOD_CAST_SIZE_FROM_RADIUS) {
 		len = cmd->radius;
 	}
 	else {
 		len = cmd->size;
 	}
 
-	if(len <= 0) {
+	if (len <= 0) {
 		for (i = 0; i < numVerts; i++) {
 			len += len_v3v3(center, vertexCos[i]);
 		}
@@ -200,17 +199,18 @@ static void sphere_do(
 	 * with or w/o a vgroup. With lots of if's in the code below,
 	 * further optimization's are possible, if needed */
 	if (dvert) { /* with a vgroup */
-		MDeformVert *dv= dvert;
+		MDeformVert *dv = dvert;
 		float fac_orig = fac;
 		for (i = 0; i < numVerts; i++, dv++) {
 			float tmp_co[3];
 			float weight;
 
 			copy_v3_v3(tmp_co, vertexCos[i]);
-			if(ctrl_ob) {
-				if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+			if (ctrl_ob) {
+				if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 					mul_m4_v3(mat, tmp_co);
-				} else {
+				}
+				else {
 					sub_v3_v3(tmp_co, center);
 				}
 			}
@@ -224,7 +224,7 @@ static void sphere_do(
 				if (len_v3(vec) > cmd->radius) continue;
 			}
 
-			weight= defvert_find_weight(dv, defgrp_index);
+			weight = defvert_find_weight(dv, defgrp_index);
 			if (weight <= 0.0f) continue;
 
 			fac = fac_orig * weight;
@@ -233,16 +233,17 @@ static void sphere_do(
 			normalize_v3(vec);
 
 			if (flag & MOD_CAST_X)
-				tmp_co[0] = fac*vec[0]*len + facm*tmp_co[0];
+				tmp_co[0] = fac * vec[0] * len + facm * tmp_co[0];
 			if (flag & MOD_CAST_Y)
-				tmp_co[1] = fac*vec[1]*len + facm*tmp_co[1];
+				tmp_co[1] = fac * vec[1] * len + facm * tmp_co[1];
 			if (flag & MOD_CAST_Z)
-				tmp_co[2] = fac*vec[2]*len + facm*tmp_co[2];
+				tmp_co[2] = fac * vec[2] * len + facm * tmp_co[2];
 
-			if(ctrl_ob) {
-				if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+			if (ctrl_ob) {
+				if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 					mul_m4_v3(imat, tmp_co);
-				} else {
+				}
+				else {
 					add_v3_v3(tmp_co, center);
 				}
 			}
@@ -257,10 +258,11 @@ static void sphere_do(
 		float tmp_co[3];
 
 		copy_v3_v3(tmp_co, vertexCos[i]);
-		if(ctrl_ob) {
-			if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+		if (ctrl_ob) {
+			if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 				mul_m4_v3(mat, tmp_co);
-			} else {
+			}
+			else {
 				sub_v3_v3(tmp_co, center);
 			}
 		}
@@ -277,16 +279,17 @@ static void sphere_do(
 		normalize_v3(vec);
 
 		if (flag & MOD_CAST_X)
-			tmp_co[0] = fac*vec[0]*len + facm*tmp_co[0];
+			tmp_co[0] = fac * vec[0] * len + facm * tmp_co[0];
 		if (flag & MOD_CAST_Y)
-			tmp_co[1] = fac*vec[1]*len + facm*tmp_co[1];
+			tmp_co[1] = fac * vec[1] * len + facm * tmp_co[1];
 		if (flag & MOD_CAST_Z)
-			tmp_co[2] = fac*vec[2]*len + facm*tmp_co[2];
+			tmp_co[2] = fac * vec[2] * len + facm * tmp_co[2];
 
-		if(ctrl_ob) {
-			if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+		if (ctrl_ob) {
+			if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 				mul_m4_v3(imat, tmp_co);
-			} else {
+			}
+			else {
 				add_v3_v3(tmp_co, center);
 			}
 		}
@@ -296,8 +299,8 @@ static void sphere_do(
 }
 
 static void cuboid_do(
-				   CastModifierData *cmd, Object *ob, DerivedMesh *dm,
-	   float (*vertexCos)[3], int numVerts)
+    CastModifierData *cmd, Object *ob, DerivedMesh *dm,
+    float (*vertexCos)[3], int numVerts)
 {
 	MDeformVert *dvert = NULL;
 	Object *ctrl_ob = NULL;
@@ -329,7 +332,7 @@ static void cuboid_do(
 	modifier_get_vgroup(ob, dm, cmd->defgrp_name, &dvert, &defgrp_index);
 
 	if (ctrl_ob) {
-		if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+		if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 			invert_m4_m4(ctrl_ob->imat, ctrl_ob->obmat);
 			mult_m4_m4m4(mat, ctrl_ob->imat, ob->obmat);
 			invert_m4_m4(imat, mat);
@@ -339,17 +342,19 @@ static void cuboid_do(
 		mul_v3_m4v3(center, ob->imat, ctrl_ob->obmat[3]);
 	}
 
-	if((flag & MOD_CAST_SIZE_FROM_RADIUS) && has_radius) {
-		for(i = 0; i < 3; i++) {
+	if ((flag & MOD_CAST_SIZE_FROM_RADIUS) && has_radius) {
+		for (i = 0; i < 3; i++) {
 			min[i] = -cmd->radius;
 			max[i] = cmd->radius;
 		}
-	} else if(!(flag & MOD_CAST_SIZE_FROM_RADIUS) && cmd->size > 0) {
-		for(i = 0; i < 3; i++) {
+	}
+	else if (!(flag & MOD_CAST_SIZE_FROM_RADIUS) && cmd->size > 0) {
+		for (i = 0; i < 3; i++) {
 			min[i] = -cmd->size;
 			max[i] = cmd->size;
 		}
-	} else {
+	}
+	else {
 		/* get bound box */
 		/* We can't use the object's bound box because other modifiers
 		 * may have changed the vertex data. */
@@ -362,23 +367,23 @@ static void cuboid_do(
 			float vec[3];
 
 			/* let the center of the ctrl_ob be part of the bound box: */
-			DO_MINMAX(center, min, max);
+			minmax_v3v3_v3(min, max, center);
 
 			for (i = 0; i < numVerts; i++) {
 				sub_v3_v3v3(vec, vertexCos[i], center);
-				DO_MINMAX(vec, min, max);
+				minmax_v3v3_v3(min, max, vec);
 			}
 		}
 		else {
 			for (i = 0; i < numVerts; i++) {
-				DO_MINMAX(vertexCos[i], min, max);
+				minmax_v3v3_v3(min, max, vertexCos[i]);
 			}
 		}
 
 		/* we want a symmetric bound box around the origin */
-		if (fabs(min[0]) > fabs(max[0])) max[0] = fabs(min[0]); 
-		if (fabs(min[1]) > fabs(max[1])) max[1] = fabs(min[1]); 
-		if (fabs(min[2]) > fabs(max[2])) max[2] = fabs(min[2]);
+		if (fabsf(min[0]) > fabsf(max[0])) max[0] = fabsf(min[0]);
+		if (fabsf(min[1]) > fabsf(max[1])) max[1] = fabsf(min[1]);
+		if (fabsf(min[2]) > fabsf(max[2])) max[2] = fabsf(min[2]);
 		min[0] = -max[0];
 		min[1] = -max[1];
 		min[2] = -max[2];
@@ -406,22 +411,26 @@ static void cuboid_do(
 			float tmp_co[3];
 
 			copy_v3_v3(tmp_co, vertexCos[i]);
-			if(ctrl_ob) {
-				if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+			if (ctrl_ob) {
+				if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 					mul_m4_v3(mat, tmp_co);
-				} else {
+				}
+				else {
 					sub_v3_v3(tmp_co, center);
 				}
 			}
 
 			if (has_radius) {
 				if (fabsf(tmp_co[0]) > cmd->radius ||
-								fabsf(tmp_co[1]) > cmd->radius ||
-								fabsf(tmp_co[2]) > cmd->radius) continue;
+				    fabsf(tmp_co[1]) > cmd->radius ||
+				    fabsf(tmp_co[2]) > cmd->radius)
+				{
+					continue;
+				}
 			}
 
 			for (j = 0; j < dvert[i].totweight; ++j) {
-				if(dvert[i].dw[j].def_nr == defgrp_index) {
+				if (dvert[i].dw[j].def_nr == defgrp_index) {
 					dw = &dvert[i].dw[j];
 					break;
 				}
@@ -482,10 +491,11 @@ static void cuboid_do(
 			if (flag & MOD_CAST_Z)
 				tmp_co[2] = facm * tmp_co[2] + fac * tmp_co[2] * fbb;
 
-			if(ctrl_ob) {
-				if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+			if (ctrl_ob) {
+				if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 					mul_m4_v3(imat, tmp_co);
-				} else {
+				}
+				else {
 					add_v3_v3(tmp_co, center);
 				}
 			}
@@ -502,18 +512,22 @@ static void cuboid_do(
 		float tmp_co[3];
 
 		copy_v3_v3(tmp_co, vertexCos[i]);
-		if(ctrl_ob) {
-			if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+		if (ctrl_ob) {
+			if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 				mul_m4_v3(mat, tmp_co);
-			} else {
+			}
+			else {
 				sub_v3_v3(tmp_co, center);
 			}
 		}
 
 		if (has_radius) {
 			if (fabsf(tmp_co[0]) > cmd->radius ||
-						 fabsf(tmp_co[1]) > cmd->radius ||
-						 fabsf(tmp_co[2]) > cmd->radius) continue;
+			    fabsf(tmp_co[1]) > cmd->radius ||
+			    fabsf(tmp_co[2]) > cmd->radius)
+			{
+				continue;
+			}
 		}
 
 		octant = 0;
@@ -550,10 +564,11 @@ static void cuboid_do(
 		if (flag & MOD_CAST_Z)
 			tmp_co[2] = facm * tmp_co[2] + fac * tmp_co[2] * fbb;
 
-		if(ctrl_ob) {
-			if(flag & MOD_CAST_USE_OB_TRANSFORM) {
+		if (ctrl_ob) {
+			if (flag & MOD_CAST_USE_OB_TRANSFORM) {
 				mul_m4_v3(imat, tmp_co);
-			} else {
+			}
+			else {
 				add_v3_v3(tmp_co, center);
 			}
 		}
@@ -563,11 +578,10 @@ static void cuboid_do(
 }
 
 static void deformVerts(ModifierData *md, Object *ob,
-						DerivedMesh *derivedData,
-						float (*vertexCos)[3],
-						int numVerts,
-						int UNUSED(useRenderParams),
-						int UNUSED(isFinalCalc))
+                        DerivedMesh *derivedData,
+                        float (*vertexCos)[3],
+                        int numVerts,
+                        ModifierApplyFlag UNUSED(flag))
 {
 	DerivedMesh *dm = NULL;
 	CastModifierData *cmd = (CastModifierData *)md;
@@ -576,28 +590,30 @@ static void deformVerts(ModifierData *md, Object *ob,
 
 	if (cmd->type == MOD_CAST_TYPE_CUBOID) {
 		cuboid_do(cmd, ob, dm, vertexCos, numVerts);
-	} else { /* MOD_CAST_TYPE_SPHERE or MOD_CAST_TYPE_CYLINDER */
+	}
+	else { /* MOD_CAST_TYPE_SPHERE or MOD_CAST_TYPE_CYLINDER */
 		sphere_do(cmd, ob, dm, vertexCos, numVerts);
 	}
 
-	if(dm != derivedData)
+	if (dm != derivedData)
 		dm->release(dm);
 }
 
 static void deformVertsEM(
-					   ModifierData *md, Object *ob, struct BMEditMesh *editData,
-	   DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
+    ModifierData *md, Object *ob, struct BMEditMesh *editData,
+    DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = get_dm(ob, editData, derivedData, NULL, 0);
 	CastModifierData *cmd = (CastModifierData *)md;
 
 	if (cmd->type == MOD_CAST_TYPE_CUBOID) {
 		cuboid_do(cmd, ob, dm, vertexCos, numVerts);
-	} else { /* MOD_CAST_TYPE_SPHERE or MOD_CAST_TYPE_CYLINDER */
+	}
+	else { /* MOD_CAST_TYPE_SPHERE or MOD_CAST_TYPE_CYLINDER */
 		sphere_do(cmd, ob, dm, vertexCos, numVerts);
 	}
 
-	if(dm != derivedData)
+	if (dm != derivedData)
 		dm->release(dm);
 }
 
@@ -607,8 +623,8 @@ ModifierTypeInfo modifierType_Cast = {
 	/* structName */        "CastModifierData",
 	/* structSize */        sizeof(CastModifierData),
 	/* type */              eModifierTypeType_OnlyDeform,
-	/* flags */             eModifierTypeFlag_AcceptsCVs
-							| eModifierTypeFlag_SupportsEditmode,
+	/* flags */             eModifierTypeFlag_AcceptsCVs |
+	                        eModifierTypeFlag_SupportsEditmode,
 
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,

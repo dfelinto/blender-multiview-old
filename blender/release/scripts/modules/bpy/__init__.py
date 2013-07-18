@@ -50,7 +50,9 @@ def main():
     # Possibly temp. addons path
     from os.path import join, dirname, normpath
     sys.path.append(normpath(join(dirname(__file__),
-                                   "..", "..", "addons", "modules")))
+                                  "..", "..", "addons", "modules")))
+    sys.path.append(join(utils.user_resource('SCRIPTS'),
+                         "addons", "modules"))
 
     # fake module to allow:
     #   from bpy.types import Panel
@@ -61,11 +63,11 @@ def main():
     #~ if "-d" in sys.argv: # Enable this to measure start up speed
     if 0:
         import cProfile
-        cProfile.run('import bpy; bpy.utils.load_scripts()', 'blender.prof')
+        cProfile.run("import bpy; bpy.utils.load_scripts()", "blender.prof")
 
         import pstats
-        p = pstats.Stats('blender.prof')
-        p.sort_stats('cumulative').print_stats(100)
+        p = pstats.Stats("blender.prof")
+        p.sort_stats("cumulative").print_stats(100)
 
     else:
         utils.load_scripts()

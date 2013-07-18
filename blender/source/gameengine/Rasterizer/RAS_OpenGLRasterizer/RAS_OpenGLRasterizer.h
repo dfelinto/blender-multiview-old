@@ -306,9 +306,9 @@ public:
 	virtual int		GetMotionBlurState() { return m_motionblur; }
 	virtual void	SetMotionBlurState(int newstate)
 	{
-		if(newstate<0) 
+		if (newstate < 0)
 			m_motionblur = 0;
-		else if(newstate>2)
+		else if (newstate > 2)
 			m_motionblur = 2;
 		else 
 			m_motionblur = newstate;
@@ -319,12 +319,10 @@ public:
 	
 	virtual void	SetAnisotropicFiltering(short level);
 	virtual short	GetAnisotropicFiltering();
-	
-	
+
+
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:RAS_OpenGLRasterizer"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_OpenGLRasterizer")
 #endif
 };
 

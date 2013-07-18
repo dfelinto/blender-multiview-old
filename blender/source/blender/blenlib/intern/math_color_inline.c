@@ -78,7 +78,7 @@ MINLINE void linearrgb_to_srgb_uchar4(unsigned char srgb[4], const float linear[
 	F4TOCHAR4(srgb_f, srgb);
 }
 
-/* predivide versions to work on associated/premultipled alpha. if this should
+/* predivide versions to work on associated/pre-multipled alpha. if this should
  * be done or not depends on the background the image will be composited over,
  * ideally you would never do color space conversion on an image with alpha
  * because it is ill defined */
@@ -87,13 +87,13 @@ MINLINE void srgb_to_linearrgb_predivide_v4(float linear[4], const float srgb[4]
 {
 	float alpha, inv_alpha;
 
-	if(srgb[3] == 1.0f || srgb[3] == 0.0f) {
+	if (srgb[3] == 1.0f || srgb[3] == 0.0f) {
 		alpha = 1.0f;
 		inv_alpha = 1.0f;
 	}
 	else {
 		alpha = srgb[3];
-		inv_alpha = 1.0f/alpha;
+		inv_alpha = 1.0f / alpha;
 	}
 
 	linear[0] = srgb_to_linearrgb(srgb[0] * inv_alpha) * alpha;
@@ -106,13 +106,13 @@ MINLINE void linearrgb_to_srgb_predivide_v4(float srgb[4], const float linear[4]
 {
 	float alpha, inv_alpha;
 
-	if(linear[3] == 1.0f || linear[3] == 0.0f) {
+	if (linear[3] == 1.0f || linear[3] == 0.0f) {
 		alpha = 1.0f;
 		inv_alpha = 1.0f;
 	}
 	else {
 		alpha = linear[3];
-		inv_alpha = 1.0f/alpha;
+		inv_alpha = 1.0f / alpha;
 	}
 
 	srgb[0] = linearrgb_to_srgb(linear[0] * inv_alpha) * alpha;
@@ -128,6 +128,7 @@ extern unsigned short BLI_color_to_srgb_table[0x10000];
 
 MINLINE unsigned short to_srgb_table_lookup(const float f)
 {
+
 	union {
 		float f;
 		unsigned short us[2];
@@ -153,17 +154,17 @@ MINLINE void linearrgb_to_srgb_ushort4_predivide(unsigned short srgb[4], const f
 	float alpha, inv_alpha, t;
 	int i;
 
-	if(linear[3] == 1.0f || linear[3] == 0.0f) {
+	if (linear[3] == 1.0f || linear[3] == 0.0f) {
 		linearrgb_to_srgb_ushort4(srgb, linear);
 		return;
 	}
 
 	alpha = linear[3];
-	inv_alpha = 1.0f/alpha;
+	inv_alpha = 1.0f / alpha;
 
-	for(i=0; i<3; ++i) {
+	for (i = 0; i < 3; ++i) {
 		t = linear[i] * inv_alpha;
-		srgb[i] = (t < 1.0f)? (unsigned short)(to_srgb_table_lookup(t) * alpha) : FTOUSHORT(linearrgb_to_srgb(t) * alpha);
+		srgb[i] = (t < 1.0f) ? (unsigned short) (to_srgb_table_lookup(t) * alpha) : FTOUSHORT(linearrgb_to_srgb(t) * alpha);
 	}
 
 	srgb[3] = FTOUSHORT(linear[3]);
@@ -174,7 +175,7 @@ MINLINE void srgb_to_linearrgb_uchar4(float linear[4], const unsigned char srgb[
 	linear[0] = BLI_color_from_srgb_table[srgb[0]];
 	linear[1] = BLI_color_from_srgb_table[srgb[1]];
 	linear[2] = BLI_color_from_srgb_table[srgb[2]];
-	linear[3] = srgb[3] * (1.0f/255.0f);
+	linear[3] = srgb[3] * (1.0f / 255.0f);
 }
 
 MINLINE void srgb_to_linearrgb_uchar4_predivide(float linear[4], const unsigned char srgb[4])
@@ -182,15 +183,95 @@ MINLINE void srgb_to_linearrgb_uchar4_predivide(float linear[4], const unsigned 
 	float fsrgb[4];
 	int i;
 
-	if(srgb[3] == 255 || srgb[3] == 0) {
+	if (srgb[3] == 255 || srgb[3] == 0) {
 		srgb_to_linearrgb_uchar4(linear, srgb);
 		return;
 	}
 
-	for (i=0; i<4; i++)
-		fsrgb[i] = srgb[i] * (1.0f/255.0f);
+	for (i = 0; i < 4; i++)
+		fsrgb[i] = srgb[i] * (1.0f / 255.0f);
 
 	srgb_to_linearrgb_predivide_v4(linear, fsrgb);
 }
+
+/* color macros for themes */
+#define rgba_char_args_set_fl(col, r, g, b, a)  rgba_char_args_set(col, r * 255, g * 255, b * 255, a * 255)
+
+MINLINE void rgba_char_args_set(char col[4], const char r, const char g, const char b, const char a)
+{
+	col[0] = r;
+	col[1] = g;
+	col[2] = b;
+	col[3] = a;
+}
+
+MINLINE void rgba_char_args_test_set(char col[4], const char r, const char g, const char b, const char a)
+{
+	if (col[3] == 0) {
+		col[0] = r;
+		col[1] = g;
+		col[2] = b;
+		col[3] = a;
+	}
+}
+
+MINLINE void cpack_cpy_3ub(unsigned char r_col[3], const unsigned int pack)
+{
+	r_col[0] = ((pack) >>  0) & 0xFF;
+	r_col[1] = ((pack) >>  8) & 0xFF;
+	r_col[2] = ((pack) >> 16) & 0xFF;
+}
+
+/* TODO:
+ *
+ * regarding #rgb_to_bw vs #rgb_to_grayscale,
+ * it seems nobody knows why we have both functions which convert color to grays
+ * but with different influences, this is quite stupid, and should be resolved
+ * by someone who knows this stuff: see this thread
+ * http://lists.blender.org/pipermail/bf-committers/2012-June/037180.html
+ *
+ * Only conclusion is that rgb_to_grayscale is used more for compositing.
+ */
+MINLINE float rgb_to_bw(const float rgb[3])
+{
+	return 0.35f * rgb[0] + 0.45f * rgb[1] + 0.2f * rgb[2];
+}
+
+/* non-linear luma from ITU-R BT.601-2
+ * see: http://www.poynton.com/notes/colour_and_gamma/ColorFAQ.html#RTFToC11
+ * note: the values used for are not exact matches to those documented above,
+ * but they are from the same */
+MINLINE float rgb_to_grayscale(const float rgb[3])
+{
+	return 0.3f * rgb[0] + 0.58f * rgb[1] + 0.12f * rgb[2];
+}
+
+MINLINE unsigned char rgb_to_grayscale_byte(const unsigned char rgb[3])
+{
+	return (76 * (unsigned short) rgb[0] + 148 * (unsigned short) rgb[1] + 31 * (unsigned short) rgb[2]) / 255;
+}
+
+/* luma from defined by 'YCC_JFIF', see #rgb_to_ycc */
+MINLINE float rgb_to_luma(const float rgb[3])
+{
+	return 0.299f * rgb[0] + 0.587f * rgb[1] + 0.114f * rgb[2];
+}
+
+MINLINE unsigned char rgb_to_luma_byte(const unsigned char rgb[3])
+{
+	return (76 * (unsigned short) rgb[0] + 150 * (unsigned short) rgb[1] + 29 * (unsigned short) rgb[2]) / 255;
+}
+
+/* gamma-corrected RGB --> CIE XYZ
+ * for this function we only get the Y component
+ * see: http://software.intel.com/sites/products/documentation/hpc/ipp/ippi/ippi_ch6/ch6_color_models.html
+ *
+ * also known as:
+ * luminance rec. 709 */
+MINLINE float rgb_to_luma_y(const float rgb[3])
+{
+	return 0.212671f * rgb[0] + 0.71516f * rgb[1] + 0.072169f * rgb[2];
+}
+
 
 #endif /* __MATH_COLOR_INLINE_C__ */

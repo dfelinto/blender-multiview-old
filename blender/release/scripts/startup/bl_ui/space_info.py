@@ -42,6 +42,7 @@ class INFO_HT_header(Header):
                 sub.menu("INFO_MT_game")
             else:
                 sub.menu("INFO_MT_render")
+            sub.menu("INFO_MT_window")
             sub.menu("INFO_MT_help")
 
         if window.screen.show_fullscreen:
@@ -65,9 +66,6 @@ class INFO_HT_header(Header):
         row = layout.row(align=True)
         row.operator("wm.splash", text="", icon='BLENDER', emboss=False)
         row.label(text=scene.statistics())
-
-        # XXX: this should be right-aligned to the RHS of the region
-        layout.operator("wm.window_fullscreen_toggle", icon='FULLSCREEN_ENTER', text="")
 
         # XXX: BEFORE RELEASE, MOVE FILE MENU OUT OF INFO!!!
         """
@@ -105,9 +103,8 @@ class INFO_MT_file(Menu):
     def draw(self, context):
         layout = self.layout
 
-        layout.operator_context = 'EXEC_AREA'
-        layout.operator("wm.read_homefile", text="New", icon='NEW')
         layout.operator_context = 'INVOKE_AREA'
+        layout.operator("wm.read_homefile", text="New", icon='NEW')
         layout.operator("wm.open_mainfile", text="Open...", icon='FILE_FOLDER')
         layout.menu("INFO_MT_file_open_recent", icon='OPEN_RECENT')
         layout.operator("wm.recover_last_session", icon='RECOVER_LAST')
@@ -159,7 +156,7 @@ class INFO_MT_file_import(Menu):
 
     def draw(self, context):
         if hasattr(bpy.types, "WM_OT_collada_import"):
-            self.layout.operator("wm.collada_import", text="COLLADA (.dae)")
+            self.layout.operator("wm.collada_import", text="Collada (Default) (.dae)")
 
 
 class INFO_MT_file_export(Menu):
@@ -168,7 +165,7 @@ class INFO_MT_file_export(Menu):
 
     def draw(self, context):
         if hasattr(bpy.types, "WM_OT_collada_export"):
-            self.layout.operator("wm.collada_export", text="COLLADA (.dae)")
+            self.layout.operator("wm.collada_export", text="Collada (Default) (.dae)")
 
 
 class INFO_MT_file_external_data(Menu):
@@ -353,37 +350,47 @@ class INFO_MT_render(Menu):
         layout.operator("render.play_rendered_anim")
 
 
-class INFO_MT_help(Menu):
-    bl_label = "Help"
+class INFO_MT_window(Menu):
+    bl_label = "Window"
 
     def draw(self, context):
         import sys
 
         layout = self.layout
 
-        layout.operator("wm.url_open", text="Manual", icon='HELP').url = 'http://wiki.blender.org/index.php/Doc:2.6/Manual'
-        layout.operator("wm.url_open", text="Release Log", icon='URL').url = 'http://www.blender.org/development/release-logs/blender-262/'
+        layout.operator("wm.window_duplicate")
+        layout.operator("wm.window_fullscreen_toggle", icon='FULLSCREEN_ENTER')
+        if sys.platform[:3] == "win":
+            layout.separator()
+            layout.operator("wm.console_toggle", icon='CONSOLE')
 
+
+class INFO_MT_help(Menu):
+    bl_label = "Help"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("wm.url_open", text="Manual", icon='HELP').url = "http://wiki.blender.org/index.php/Doc:2.6/Manual"
+        layout.operator("wm.url_open", text="Release Log", icon='URL').url = "http://www.blender.org/development/release-logs/blender-264"
         layout.separator()
 
-        layout.operator("wm.url_open", text="Blender Website", icon='URL').url = 'http://www.blender.org/'
-        layout.operator("wm.url_open", text="Blender e-Shop", icon='URL').url = 'http://www.blender.org/e-shop'
-        layout.operator("wm.url_open", text="Developer Community", icon='URL').url = 'http://www.blender.org/community/get-involved/'
-        layout.operator("wm.url_open", text="User Community", icon='URL').url = 'http://www.blender.org/community/user-community/'
+        layout.operator("wm.url_open", text="Blender Website", icon='URL').url = "http://www.blender.org"
+        layout.operator("wm.url_open", text="Blender e-Shop", icon='URL').url = "http://www.blender.org/e-shop"
+        layout.operator("wm.url_open", text="Developer Community", icon='URL').url = "http://www.blender.org/community/get-involved"
+        layout.operator("wm.url_open", text="User Community", icon='URL').url = "http://www.blender.org/community/user-community"
         layout.separator()
-        layout.operator("wm.url_open", text="Report a Bug", icon='URL').url = 'http://projects.blender.org/tracker/?atid=498&group_id=9&func=browse'
+        layout.operator("wm.url_open", text="Report a Bug", icon='URL').url = "http://projects.blender.org/tracker/?atid=498&group_id=9&func=browse"
         layout.separator()
 
         layout.operator("wm.url_open", text="Python API Reference", icon='URL').url = bpy.types.WM_OT_doc_view._prefix
         layout.operator("wm.operator_cheat_sheet", icon='TEXT')
         layout.operator("wm.sysinfo", icon='TEXT')
         layout.separator()
-        if sys.platform[:3] == "win":
-            layout.operator("wm.console_toggle", icon='CONSOLE')
-            layout.separator()
         layout.operator("anim.update_data_paths", text="FCurve/Driver Version fix", icon='HELP')
         layout.operator("logic.texface_convert", text="TexFace to Material Convert", icon='GAME')
         layout.separator()
+
         layout.operator("wm.splash", icon='BLENDER')
 
 if __name__ == "__main__":  # only for live edit.

@@ -43,6 +43,7 @@ struct HookModifierData;
 enum {
 	OBJECT_ADDHOOK_NEWOB = 1,
 	OBJECT_ADDHOOK_SELOB,
+	OBJECT_ADDHOOK_SELOB_BONE
 } eObject_Hook_Add_Mode;
 
 /* internal exports only */
@@ -84,6 +85,7 @@ void OBJECT_OT_proxy_make(struct wmOperatorType *ot);
 void OBJECT_OT_shade_smooth(struct wmOperatorType *ot);
 void OBJECT_OT_shade_flat(struct wmOperatorType *ot);
 void OBJECT_OT_paths_calculate(struct wmOperatorType *ot);
+void OBJECT_OT_paths_update(struct wmOperatorType *ot);
 void OBJECT_OT_paths_clear(struct wmOperatorType *ot);
 void OBJECT_OT_forcefield_toggle(struct wmOperatorType *ot);
 
@@ -138,6 +140,7 @@ void LATTICE_OT_make_regular(struct wmOperatorType *ot);
 
 /* object_group.c */
 void GROUP_OT_create(struct wmOperatorType *ot);
+void GROUP_OT_objects_remove_all(struct wmOperatorType *ot);
 void GROUP_OT_objects_remove(struct wmOperatorType *ot);
 void GROUP_OT_objects_add_active(struct wmOperatorType *ot);
 void GROUP_OT_objects_remove_active(struct wmOperatorType *ot);
@@ -159,6 +162,10 @@ void OBJECT_OT_multires_external_pack(struct wmOperatorType *ot);
 void OBJECT_OT_meshdeform_bind(struct wmOperatorType *ot);
 void OBJECT_OT_explode_refresh(struct wmOperatorType *ot);
 void OBJECT_OT_ocean_bake(struct wmOperatorType *ot);
+void OBJECT_OT_skin_root_mark(struct wmOperatorType *ot);
+void OBJECT_OT_skin_loose_mark_clear(struct wmOperatorType *ot);
+void OBJECT_OT_skin_radii_equalize(struct wmOperatorType *ot);
+void OBJECT_OT_skin_armature_create(struct wmOperatorType *ot);
 
 /* object_constraint.c */
 void OBJECT_OT_constraint_add(struct wmOperatorType *ot);
@@ -185,7 +192,7 @@ void CONSTRAINT_OT_limitdistance_reset(struct wmOperatorType *ot);
 void CONSTRAINT_OT_childof_set_inverse(struct wmOperatorType *ot);
 void CONSTRAINT_OT_childof_clear_inverse(struct wmOperatorType *ot);
 void CONSTRAINT_OT_objectsolver_set_inverse(struct wmOperatorType *ot);
-void CONSTRAINT_OT_objectsolver_clear_inverse (struct wmOperatorType *ot);
+void CONSTRAINT_OT_objectsolver_clear_inverse(struct wmOperatorType *ot);
 
 /* object_vgroup.c */
 void OBJECT_OT_vertex_group_add(struct wmOperatorType *ot);
@@ -214,6 +221,7 @@ void OBJECT_OT_vertex_group_move(struct wmOperatorType *ot);
 void OBJECT_OT_shape_key_add(struct wmOperatorType *ot);
 void OBJECT_OT_shape_key_remove(struct wmOperatorType *ot);
 void OBJECT_OT_shape_key_clear(struct wmOperatorType *ot);
+void OBJECT_OT_shape_key_retime(struct wmOperatorType *ot);
 void OBJECT_OT_shape_key_mirror(struct wmOperatorType *ot);
 void OBJECT_OT_shape_key_move(struct wmOperatorType *ot);
 

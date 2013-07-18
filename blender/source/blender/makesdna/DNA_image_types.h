@@ -65,6 +65,7 @@ typedef struct ImageUser {
 #define	IMA_ANIM_ALWAYS		1
 #define IMA_ANIM_REFRESHED	2
 /* #define IMA_DO_PREMUL	4 */
+#define IMA_NEED_FRAME_RECALC	8
 
 typedef struct Image {
 	ID id;
@@ -92,8 +93,8 @@ typedef struct Image {
 	unsigned int bindcode;	/* only for current image... */
 	unsigned int *repbind;	/* for repeat of parts of images */
 	
-	struct PackedFile * packedfile;
-	struct PreviewImage * preview;
+	struct PackedFile *packedfile;
+	struct PreviewImage *preview;
 
 	/* game engine tile animation */
 	float lastupdate;
@@ -121,6 +122,7 @@ typedef struct Image {
 #define IMA_OLD_PREMUL		128
 #define IMA_CM_PREDIVIDE	256
 #define IMA_USED_FOR_RENDER	512
+#define IMA_USER_FRAME_IN_RANGE	1024 /* for image user, but these flags are mixed */
 
 /* Image.tpageflag */
 #define IMA_TILES			1
@@ -141,4 +143,3 @@ typedef struct Image {
 #define IMA_GEN_FLOAT		1
 
 #endif
-

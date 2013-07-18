@@ -34,14 +34,14 @@
 
 /* **************** SEPARATE RGBA ******************** */
 static bNodeSocketTemplate cmp_node_seprgba_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_seprgba_out[]= {
-	{	SOCK_FLOAT, 0, "R"},
-	{	SOCK_FLOAT, 0, "G"},
-	{	SOCK_FLOAT, 0, "B"},
-	{	SOCK_FLOAT, 0, "A"},
+	{	SOCK_FLOAT, 0, N_("R")},
+	{	SOCK_FLOAT, 0, N_("G")},
+	{	SOCK_FLOAT, 0, N_("B")},
+	{	SOCK_FLOAT, 0, N_("A")},
 	{	-1, 0, ""	}
 };
 
@@ -51,7 +51,7 @@ static void node_composit_exec_seprgba(void *UNUSED(data), bNode *UNUSED(node), 
 	/* stack order in: col */
 	
 	/* input no image? then only color operation */
-	if(in[0]->data==NULL) {
+	if (in[0]->data==NULL) {
 		out[0]->vec[0] = in[0]->vec[0];
 		out[1]->vec[0] = in[0]->vec[1];
 		out[2]->vec[0] = in[0]->vec[2];
@@ -62,16 +62,16 @@ static void node_composit_exec_seprgba(void *UNUSED(data), bNode *UNUSED(node), 
 		CompBuf *cbuf= typecheck_compbuf(in[0]->data, CB_RGBA);
 
 		/* don't do any pixel processing, just copy the stack directly (faster, I presume) */
-		if(out[0]->hasoutput)
+		if (out[0]->hasoutput)
 			out[0]->data= valbuf_from_rgbabuf(cbuf, CHAN_R);
-		if(out[1]->hasoutput)
+		if (out[1]->hasoutput)
 			out[1]->data= valbuf_from_rgbabuf(cbuf, CHAN_G);
-		if(out[2]->hasoutput)
+		if (out[2]->hasoutput)
 			out[2]->data= valbuf_from_rgbabuf(cbuf, CHAN_B);
-		if(out[3]->hasoutput)
+		if (out[3]->hasoutput)
 			out[3]->data= valbuf_from_rgbabuf(cbuf, CHAN_A);
 		
-		if(cbuf!=in[0]->data) 
+		if (cbuf!=in[0]->data) 
 			free_compbuf(cbuf);
 
 	}
@@ -93,14 +93,14 @@ void register_node_type_cmp_seprgba(bNodeTreeType *ttype)
 
 /* **************** COMBINE RGBA ******************** */
 static bNodeSocketTemplate cmp_node_combrgba_in[]= {
-	{	SOCK_FLOAT, 1, "R",			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
-	{	SOCK_FLOAT, 1, "G",			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
-	{	SOCK_FLOAT, 1, "B",			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
-	{	SOCK_FLOAT, 1, "A",			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
+	{	SOCK_FLOAT, 1, N_("R"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
+	{	SOCK_FLOAT, 1, N_("G"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
+	{	SOCK_FLOAT, 1, N_("B"),			0.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
+	{	SOCK_FLOAT, 1, N_("A"),			1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_combrgba_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
@@ -118,7 +118,7 @@ static void node_composit_exec_combrgba(void *UNUSED(data), bNode *node, bNodeSt
 	/* stack order in: 4 value channels */
 	
 	/* input no image? then only color operation */
-	if((in[0]->data==NULL) && (in[1]->data==NULL) && (in[2]->data==NULL) && (in[3]->data==NULL)) {
+	if ((in[0]->data==NULL) && (in[1]->data==NULL) && (in[2]->data==NULL) && (in[3]->data==NULL)) {
 		out[0]->vec[0] = in[0]->vec[0];
 		out[0]->vec[1] = in[1]->vec[0];
 		out[0]->vec[2] = in[2]->vec[0];

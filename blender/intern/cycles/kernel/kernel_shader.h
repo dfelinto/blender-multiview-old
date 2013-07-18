@@ -53,16 +53,9 @@ __device_inline void shader_setup_from_ray(KernelGlobals *kg, ShaderData *sd,
 	float3 Ng = make_float3(Ns.x, Ns.y, Ns.z);
 	int shader = __float_as_int(Ns.w);
 
-	/* vectors */
-	sd->P = bvh_triangle_refine(kg, isect, ray);
-	sd->Ng = Ng;
-	sd->N = Ng;
-	sd->I = -ray->D;
-	sd->shader = shader;
-
 	/* triangle */
 #ifdef __INSTANCING__
-	sd->object = isect->object;
+	sd->object = (isect->object == ~0)? kernel_tex_fetch(__prim_object, isect->prim): isect->object;
 #endif
 	sd->prim = prim;
 #ifdef __UV__
@@ -70,11 +63,28 @@ __device_inline void shader_setup_from_ray(KernelGlobals *kg, ShaderData *sd,
 	sd->v = isect->v;
 #endif
 
+	/* matrices and time */
+#ifdef __MOTION__
+	sd->ob_tfm = object_fetch_transform(kg, sd->object, ray->time, OBJECT_TRANSFORM);
+	sd->ob_itfm = object_fetch_transform(kg, sd->object, ray->time, OBJECT_INVERSE_TRANSFORM);
+
+	sd->time = ray->time;
+#endif
+
+	/* vectors */
+	sd->P = bvh_triangle_refine(kg, sd, isect, ray);
+	sd->Ng = Ng;
+	sd->N = Ng;
+	sd->I = -ray->D;
+	sd->shader = shader;
+	sd->ray_length = isect->t;
+
 	/* smooth normal */
 	if(sd->shader & SHADER_SMOOTH_NORMAL)
 		sd->N = triangle_smooth_normal(kg, sd->prim, sd->u, sd->v);
 
 	sd->flag = kernel_tex_fetch(__shader_flag, (sd->shader & SHADER_MASK)*2);
+	sd->flag |= kernel_tex_fetch(__object_flag, sd->object);
 
 #ifdef __DPDU__
 	/* dPdu/dPdv */
@@ -82,18 +92,14 @@ __device_inline void shader_setup_from_ray(KernelGlobals *kg, ShaderData *sd,
 #endif
 
 #ifdef __INSTANCING__
-	if(sd->object != ~0) {
+	if(isect->object != ~0) {
 		/* instance transform */
-		object_normal_transform(kg, sd->object, &sd->N);
-		object_normal_transform(kg, sd->object, &sd->Ng);
+		object_normal_transform(kg, sd, &sd->N);
+		object_normal_transform(kg, sd, &sd->Ng);
 #ifdef __DPDU__
-		object_dir_transform(kg, sd->object, &sd->dPdu);
-		object_dir_transform(kg, sd->object, &sd->dPdv);
+		object_dir_transform(kg, sd, &sd->dPdu);
+		object_dir_transform(kg, sd, &sd->dPdv);
 #endif
-	}
-	else {
-		/* non-instanced object index */
-		sd->object = kernel_tex_fetch(__prim_object, isect->prim);
 	}
 #endif
 
@@ -122,7 +128,7 @@ __device_inline void shader_setup_from_ray(KernelGlobals *kg, ShaderData *sd,
 
 __device void shader_setup_from_sample(KernelGlobals *kg, ShaderData *sd,
 	const float3 P, const float3 Ng, const float3 I,
-	int shader, int object, int prim,  float u, float v)
+	int shader, int object, int prim, float u, float v, float t, float time)
 {
 	/* vectors */
 	sd->P = P;
@@ -140,6 +146,7 @@ __device void shader_setup_from_sample(KernelGlobals *kg, ShaderData *sd,
 	sd->u = u;
 	sd->v = v;
 #endif
+	sd->ray_length = t;
 
 	/* detect instancing, for non-instanced the object index is -object-1 */
 #ifdef __INSTANCING__
@@ -155,17 +162,26 @@ __device void shader_setup_from_sample(KernelGlobals *kg, ShaderData *sd,
 	}
 #endif
 
+#ifdef __MOTION__
+	sd->time = time;
+
+	sd->ob_tfm = object_fetch_transform(kg, sd->object, time, OBJECT_TRANSFORM);
+	sd->ob_itfm = object_fetch_transform(kg, sd->object, time, OBJECT_INVERSE_TRANSFORM);
+#endif
+
 	/* smooth normal */
 	if(sd->shader & SHADER_SMOOTH_NORMAL) {
 		sd->N = triangle_smooth_normal(kg, sd->prim, sd->u, sd->v);
 
 #ifdef __INSTANCING__
 		if(instanced)
-			object_normal_transform(kg, sd->object, &sd->N);
+			object_normal_transform(kg, sd, &sd->N);
 #endif
 	}
 
 	sd->flag = kernel_tex_fetch(__shader_flag, (sd->shader & SHADER_MASK)*2);
+	if(sd->object != -1)
+		sd->flag |= kernel_tex_fetch(__object_flag, sd->object);
 
 #ifdef __DPDU__
 	/* dPdu/dPdv */
@@ -178,8 +194,8 @@ __device void shader_setup_from_sample(KernelGlobals *kg, ShaderData *sd,
 
 #ifdef __INSTANCING__
 		if(instanced) {
-			object_dir_transform(kg, sd->object, &sd->dPdu);
-			object_dir_transform(kg, sd->object, &sd->dPdv);
+			object_dir_transform(kg, sd, &sd->dPdu);
+			object_dir_transform(kg, sd, &sd->dPdv);
 		}
 #endif
 	}
@@ -229,7 +245,7 @@ __device void shader_setup_from_displace(KernelGlobals *kg, ShaderData *sd,
 
 	/* watch out: no instance transform currently */
 
-	shader_setup_from_sample(kg, sd, P, Ng, I, shader, object, prim, u, v);
+	shader_setup_from_sample(kg, sd, P, Ng, I, shader, object, prim, u, v, 0.0f, TIME_INVALID);
 }
 
 /* ShaderData setup from ray into background */
@@ -243,6 +259,10 @@ __device_inline void shader_setup_from_background(KernelGlobals *kg, ShaderData 
 	sd->I = -sd->P;
 	sd->shader = kernel_data.background.shader;
 	sd->flag = kernel_tex_fetch(__shader_flag, (sd->shader & SHADER_MASK)*2);
+#ifdef __MOTION__
+	sd->time = ray->time;
+#endif
+	sd->ray_length = 0.0f;
 
 #ifdef __INSTANCING__
 	sd->object = ~0;
@@ -387,6 +407,25 @@ __device int shader_bsdf_sample(KernelGlobals *kg, const ShaderData *sd,
 #endif
 }
 
+__device int shader_bsdf_sample_closure(KernelGlobals *kg, const ShaderData *sd,
+	const ShaderClosure *sc, float randu, float randv, BsdfEval *bsdf_eval,
+	float3 *omega_in, differential3 *domega_in, float *pdf)
+{
+	int label;
+	float3 eval;
+
+	*pdf = 0.0f;
+#ifdef __OSL__
+	label = OSLShader::bsdf_sample(sd, sc, randu, randv, eval, *omega_in, *domega_in, *pdf);
+#else
+	label = svm_bsdf_sample(sd, sc, randu, randv, &eval, omega_in, domega_in, pdf);
+#endif
+	if(*pdf != 0.0f)
+		bsdf_eval_init(bsdf_eval, sc->type, eval*sc->weight, kernel_data.film.use_light_pass);
+
+	return label;
+}
+
 __device void shader_bsdf_blur(KernelGlobals *kg, ShaderData *sd, float roughness)
 {
 #ifndef __OSL__
@@ -500,7 +539,7 @@ __device float3 shader_emissive_eval(KernelGlobals *kg, ShaderData *sd)
 
 		if(CLOSURE_IS_EMISSION(sc->type)) {
 #ifdef __OSL__
-			eval += OSLShader::emissive_eval(sd)*sc->weight;
+			eval += OSLShader::emissive_eval(sd, sc)*sc->weight;
 #else
 			eval += svm_emissive_eval(sd, sc)*sc->weight;
 #endif
@@ -604,7 +643,7 @@ __device float3 shader_volume_eval_phase(KernelGlobals *kg, ShaderData *sd,
 
 		if(CLOSURE_IS_VOLUME(sc->type)) {
 #ifdef __OSL__
-			eval += OSLShader::volume_eval_phase(sd, omega_in, omega_out);
+			eval += OSLShader::volume_eval_phase(sd, sc, omega_in, omega_out);
 #else
 			eval += volume_eval_phase(sd, sc, omega_in, omega_out);
 #endif
@@ -659,10 +698,34 @@ __device bool shader_transparent_shadow(KernelGlobals *kg, Intersection *isect)
 }
 #endif
 
-__device int shader_pass_id(KernelGlobals *kg, ShaderData *sd)
+/* Merging */
+
+#ifdef __NON_PROGRESSIVE__
+__device void shader_merge_closures(KernelGlobals *kg, ShaderData *sd)
 {
-	return kernel_tex_fetch(__shader_flag, (sd->shader & SHADER_MASK)*2 + 1);
+#ifndef __OSL__
+	/* merge identical closures, better when we sample a single closure at a time */
+	for(int i = 0; i < sd->num_closure; i++) {
+		ShaderClosure *sci = &sd->closure[i];
+
+		for(int j = i + 1; j < sd->num_closure; j++) {
+			ShaderClosure *scj = &sd->closure[j];
+
+			if(sci->type == scj->type && sci->data0 == scj->data0 && sci->data1 == scj->data1) {
+				sci->weight += scj->weight;
+				sci->sample_weight += scj->sample_weight;
+
+				int size = sd->num_closure - (j+1);
+				if(size > 0)
+					memmove(scj, scj+1, size*sizeof(ShaderClosure));
+
+				sd->num_closure--;
+			}
+		}
+	}
+#endif
 }
+#endif
 
 /* Free ShaderData */
 

@@ -1,5 +1,4 @@
-/* 
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,14 +25,12 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#ifndef __MATHUTILS_H__
+#define __MATHUTILS_H__
+
 /** \file blender/python/mathutils/mathutils.h
  *  \ingroup pymathutils
  */
-
-//Include this file for access to vector, quat, matrix, euler, etc...
-
-#ifndef __MATHUTILS_H__
-#define __MATHUTILS_H__
 
 /* Can cast different mathutils types to this, use for generic funcs */
 
@@ -118,11 +115,13 @@ int _BaseMathObject_WriteIndexCallback(BaseMathObject *self, int index);
 /* utility func */
 int mathutils_array_parse(float *array, int array_min, int array_max, PyObject *value, const char *error_prefix);
 int mathutils_array_parse_alloc(float **array, int array_min, PyObject *value, const char *error_prefix);
+int mathutils_array_parse_alloc_v(float **array, int array_dim, PyObject *value, const char *error_prefix);
 int mathutils_any_to_rotmat(float rmat[3][3], PyObject *value, const char *error_prefix);
 
 int column_vector_multiplication(float rvec[4], VectorObject *vec, MatrixObject *mat);
 
 /* dynstr as python string utility funcions */
 PyObject *mathutils_dynstr_to_py(struct DynStr *ds);
+int mathutils_deepcopy_args_check(PyObject *args);
 
 #endif /* __MATHUTILS_H__ */

@@ -38,15 +38,16 @@ set(INC_SYS
 )
 
 set(SRC
-	bmesh_select.c
-	bmesh_selecthistory.c
-	bmesh_tools.c
-	bmesh_utils.c
 	editface.c
 	editmesh_add.c
 	editmesh_bvh.c
-	knifetool.c
-	loopcut.c
+	editmesh_knife.c
+	editmesh_loopcut.c
+	editmesh_rip.c
+	editmesh_select.c
+	editmesh_tools.c
+	editmesh_utils.c
+	editmesh_slide.c
 	mesh_data.c
 	mesh_ops.c
 	meshtools.c

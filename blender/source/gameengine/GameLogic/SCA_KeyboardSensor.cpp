@@ -39,6 +39,10 @@
 #include "StringValue.h"
 #include "SCA_IInputDevice.h"
 
+extern "C" {
+	#include "BLI_string_cursor_utf8.h"
+}
+
 /* ------------------------------------------------------------------------- */
 /* Native functions                                                          */
 /* ------------------------------------------------------------------------- */
@@ -50,7 +54,8 @@ SCA_KeyboardSensor::SCA_KeyboardSensor(SCA_KeyboardManager* keybdmgr,
 									   bool bAllKeys,
 									   const STR_String& targetProp,
 									   const STR_String& toggleProp,
-									   SCA_IObject* gameobj)
+									   SCA_IObject* gameobj,
+									   short int exitKey)
 	:SCA_ISensor(gameobj,keybdmgr),
 	 m_hotkey(hotkey),
 	 m_qual(qual),
@@ -59,7 +64,7 @@ SCA_KeyboardSensor::SCA_KeyboardSensor(SCA_KeyboardManager* keybdmgr,
 	 m_targetprop(targetProp),
 	 m_toggleprop(toggleProp)
 {
-	if (hotkey == SCA_IInputDevice::KX_ESCKEY)
+	if (hotkey == exitKey)
 		keybdmgr->GetInputDevice()->HookEscape();
 //	SetDrawColor(0xff0000ff);
 	Init();
@@ -338,7 +343,11 @@ void SCA_KeyboardSensor::AddToTargetProp(int keyIndex)
 				STR_String newprop = tprop->GetText();
 				int oldlength = newprop.Length();
 				if (oldlength >= 1 ) {
-					newprop.SetLength(oldlength - 1);
+					int newlength=oldlength;
+
+					BLI_str_cursor_step_prev_utf8(newprop, newprop.Length(), &newlength);
+					newprop.SetLength(newlength);
+
 					CStringValue * newstringprop = new CStringValue(newprop, m_targetprop);
 					GetParent()->SetProperty(m_targetprop, newstringprop);
 					newstringprop->Release();
@@ -432,7 +441,7 @@ KX_PYMETHODDEF_DOC_O(SCA_KeyboardSensor, getKeyStatus,
 	int keycode = PyLong_AsSsize_t(value);
 	
 	if ((keycode < SCA_IInputDevice::KX_BEGINKEY)
-		|| (keycode > SCA_IInputDevice::KX_ENDKEY)){
+		|| (keycode > SCA_IInputDevice::KX_ENDKEY)) {
 		PyErr_SetString(PyExc_AttributeError, "sensor.getKeyStatus(int): Keyboard Sensor, invalid keycode specified!");
 		return NULL;
 	}
@@ -611,7 +620,7 @@ bool IsPrintable(int keyIndex)
 	 * - numerals: KX_ZEROKEY to KX_NINEKEY
 	 * - alphas:   KX_AKEY to KX_ZKEY. 
 	 * - specials: KX_RETKEY, KX_PADASTERKEY, KX_PADCOMMAKEY to KX_PERIODKEY,
-	 *             KX_TABKEY , KX_SEMICOLONKEY to KX_RIGHTBRACKETKEY, 
+	 *             KX_TABKEY, KX_SEMICOLONKEY to KX_RIGHTBRACKETKEY,
 	 *             KX_PAD2 to KX_PADPLUSKEY
 	 * - delete and backspace: also printable in the sense that they modify 
 	 *                         the string

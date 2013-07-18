@@ -308,7 +308,7 @@ static const uint DDPF_SRGB = 0x40000000U;
 	const char * getDxgiFormatString(DXGI_FORMAT dxgiFormat)
 	{
 #define CASE(format) case DXGI_FORMAT_##format: return #format
-		switch(dxgiFormat)
+		switch (dxgiFormat)
 		{
 			CASE(UNKNOWN);
 			
@@ -431,7 +431,7 @@ static const uint DDPF_SRGB = 0x40000000U;
 	
 	const char * getD3d10ResourceDimensionString(D3D10_RESOURCE_DIMENSION resourceDimension)
 	{
-		switch(resourceDimension)
+		switch (resourceDimension)
 		{
 			default:
 			case D3D10_RESOURCE_DIMENSION_UNKNOWN: return "UNKNOWN";
@@ -803,7 +803,7 @@ void DDSHeader::swapBytes()
 	this->depth = POSH_LittleU32(this->depth);
 	this->mipmapcount = POSH_LittleU32(this->mipmapcount);
 	
-	for(int i = 0; i < 11; i++) {
+	for (int i = 0; i < 11; i++) {
 		this->reserved[i] = POSH_LittleU32(this->reserved[i]);
 	}
 
@@ -899,7 +899,7 @@ bool DirectDrawSurface::isValid() const
 	}
 	
 	const uint required = (DDSD_WIDTH|DDSD_HEIGHT/*|DDSD_CAPS|DDSD_PIXELFORMAT*/);
-	if( (header.flags & required) != required ) {
+	if ( (header.flags & required) != required ) {
 		return false;
 	}
 	
@@ -909,7 +909,7 @@ bool DirectDrawSurface::isValid() const
 
 	/* in some files DDSCAPS_TEXTURE is missing: silently ignore */
 	/*
-	if( !(header.caps.caps1 & DDSCAPS_TEXTURE) ) {
+	if ( !(header.caps.caps1 & DDSCAPS_TEXTURE) ) {
 		return false;
 	}
 	*/
@@ -1016,6 +1016,10 @@ uint DirectDrawSurface::mipmapCount() const
 	else return 1;
 }
 
+uint DirectDrawSurface::fourCC() const
+{
+	return header.pf.fourcc;
+}
 
 uint DirectDrawSurface::width() const
 {
@@ -1129,6 +1133,29 @@ void DirectDrawSurface::mipmap(Image * img, uint face, uint mipmap)
 			readBlockImage(img);
 		}
 	}
+}
+
+// It was easier to copy this function from upstream than to resync.
+// This should be removed if a resync ever occurs.
+void* DirectDrawSurface::readData(uint &rsize)
+{
+	uint header_size = 128; // sizeof(DDSHeader);
+	if (header.hasDX10Header())
+	{
+		header_size += 20; // sizeof(DDSHeader10);
+	}
+
+	uint size = stream.size - header_size;
+	rsize = size;
+
+	unsigned char *data = new unsigned char[size];
+
+	stream.seek(header_size);
+	mem_read(stream, data, size);
+
+	// Maybe check if size == rsize? assert() isn't in this scope...
+
+	return data;
 }
 
 void DirectDrawSurface::readLinearImage(Image * img)
@@ -1305,7 +1332,7 @@ void DirectDrawSurface::readBlock(ColorBlock * rgba)
 
 uint DirectDrawSurface::blockSize() const
 {
-	switch(header.pf.fourcc)
+	switch (header.pf.fourcc)
 	{
 		case FOURCC_DXT1:
 		case FOURCC_ATI1:
@@ -1318,7 +1345,7 @@ uint DirectDrawSurface::blockSize() const
 		case FOURCC_ATI2:
 			return 16;
 		case FOURCC_DX10:
-			switch(header.header10.dxgiFormat)
+			switch (header.header10.dxgiFormat)
 			{
 				case DXGI_FORMAT_BC1_TYPELESS:
 				case DXGI_FORMAT_BC1_UNORM:
@@ -1507,7 +1534,7 @@ void DirectDrawSurface::printInfo() const
 		printf("\tMisc flag: %u\n", header.header10.miscFlag);
 		printf("\tArray size: %u\n", header.header10.arraySize);
 	}
-	
+
     if (header.reserved[9] == FOURCC_NVTT)
 	{
 		int major = (header.reserved[10] >> 16) & 0xFF;

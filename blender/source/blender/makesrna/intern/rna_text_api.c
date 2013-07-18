@@ -37,14 +37,14 @@
 
 static void rna_Text_clear(Text *text)
 {
-	clear_text(text);
-	WM_main_add_notifier(NC_TEXT|NA_EDITED, text);
+	BKE_text_clear(text);
+	WM_main_add_notifier(NC_TEXT | NA_EDITED, text);
 }
 
 static void rna_Text_write(Text *text, const char *str)
 {
-	write_text(text, str);
-	WM_main_add_notifier(NC_TEXT|NA_EDITED, text);
+	BKE_text_write(text, str);
+	WM_main_add_notifier(NC_TEXT | NA_EDITED, text);
 }
 
 #else

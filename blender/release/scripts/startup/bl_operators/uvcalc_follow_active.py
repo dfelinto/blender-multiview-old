@@ -46,11 +46,11 @@ def extend(obj, operator, EXTEND_MODE):
     OTHER_INDEX = 2, 3, 0, 1
 
     def extend_uvs(face_source, face_target, edge_key):
-        '''
+        """
         Takes 2 faces,
         Projects its extends its UV coords onto the face next to it.
         Both faces must share an edge
-        '''
+        """
 
         def face_edge_vs(vi):
             vlen = len(vi)
@@ -59,9 +59,9 @@ def extend(obj, operator, EXTEND_MODE):
         vidx_source = face_source.vertices
         vidx_target = face_target.vertices
 
-        uv_layer = me.uv_loop_layers.active.data
-        uvs_source = [uv_layer[i].uv for i in face_source.loops]
-        uvs_target = [uv_layer[i].uv for i in face_target.loops]
+        uv_layer = me.uv_layers.active.data
+        uvs_source = [uv_layer[i].uv for i in face_source.loop_indices]
+        uvs_target = [uv_layer[i].uv for i in face_target.loop_indices]
 
         # vertex index is the key, uv is the value
 
@@ -168,7 +168,7 @@ def extend(obj, operator, EXTEND_MODE):
                 edge_faces[edkey] = [i]
 
     if EXTEND_MODE == 'LENGTH':
-        edge_loops = mesh_utils.edge_loops_from_faces(me, face_sel, [ed.key for ed in me.edges if ed.use_seam])
+        edge_loops = mesh_utils.edge_loops_from_tessfaces(me, face_sel, [ed.key for ed in me.edges if ed.use_seam])
         me_verts = me.vertices
         for loop in edge_loops:
             looplen = [0.0]
@@ -224,7 +224,7 @@ def main(context, operator):
 
 
 class FollowActiveQuads(Operator):
-    '''Follow UVs from active quads along continuous face loops'''
+    """Follow UVs from active quads along continuous face loops"""
     bl_idname = "uv.follow_active_quads"
     bl_label = "Follow Active Quads"
     bl_options = {'REGISTER', 'UNDO'}
@@ -232,7 +232,7 @@ class FollowActiveQuads(Operator):
     mode = bpy.props.EnumProperty(
             name="Edge Length Mode",
             description="Method to space UV edge loops",
-            items=(('EVEN', "Even", "Space all UVs evently"),
+            items=(('EVEN', "Even", "Space all UVs evenly"),
                    ('LENGTH', "Length", "Average space UVs edge length of each loop")),
             default='LENGTH',
             )

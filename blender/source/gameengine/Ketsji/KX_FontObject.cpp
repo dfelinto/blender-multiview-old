@@ -60,7 +60,7 @@ std::vector<STR_String> split_string(STR_String str)
 	int begin=0, end=0;
 	while (end < str.Length())
 	{
-		if(str.GetAt(end) == '\n')
+		if (str.GetAt(end) == '\n')
 		{
 			text.push_back(str.Mid(begin, end-begin));
 			begin = end+1;
@@ -117,25 +117,25 @@ void KX_FontObject::ProcessReplica()
 	KX_GetActiveScene()->AddFont(this);
 }
 
-int GetFontId (VFont *font)
+int GetFontId (VFont *vfont)
 {
 	PackedFile *packedfile=NULL;
 	int fontid = -1;
 
-	if (font->packedfile) {
-		packedfile= font->packedfile;
-		fontid= BLF_load_mem(font->name, (unsigned char*)packedfile->data, packedfile->size);
+	if (vfont->packedfile) {
+		packedfile= vfont->packedfile;
+		fontid= BLF_load_mem(vfont->name, (unsigned char*)packedfile->data, packedfile->size);
 		
 		if (fontid == -1) {
-			printf("ERROR: packed font \"%s\" could not be loaded.\n", font->name);
+			printf("ERROR: packed font \"%s\" could not be loaded.\n", vfont->name);
 			fontid = BLF_load("default");
 		}
 		return fontid;
 	}
 	
-	/* once we have packed working we can load the FO_BUILTIN_NAME font	*/
-	const char *filepath = font->name;
-	if (strcmp(FO_BUILTIN_NAME, filepath) == 0) {
+	/* once we have packed working we can load the builtin font	*/
+	const char *filepath = vfont->name;
+	if (BKE_vfont_is_builtin(vfont)) {
 		fontid = BLF_load("default");
 		
 		/* XXX the following code is supposed to work (after you add get_builtin_packedfile to BKE_font.h )
@@ -165,11 +165,11 @@ int GetFontId (VFont *font)
 void KX_FontObject::DrawText()
 {
 	/* Allow for some logic brick control */
-	if(this->GetProperty("Text"))
+	if (this->GetProperty("Text"))
 		m_text = split_string(this->GetProperty("Text")->GetText());
 
 	/* only draws the text if visible */
-	if(this->GetVisible() == 0) return;
+	if (this->GetVisible() == 0) return;
 
 	/* update the animated color */
 	this->GetObjectColor().getValue(m_color);
@@ -193,7 +193,7 @@ void KX_FontObject::DrawText()
 	spacing = this->NodeGetWorldOrientation() * spacing * this->NodeGetWorldScaling()[1];
 
 	/* Draw each line, taking spacing into consideration */
-	for(int i=0; i<m_text.size(); ++i)
+	for (int i=0; i<m_text.size(); ++i)
 	{
 		if (i!=0)
 		{
@@ -256,9 +256,9 @@ PyObject* KX_FontObject::pyattr_get_text(void *self_v, const KX_PYATTRIBUTE_DEF 
 {
 	KX_FontObject* self= static_cast<KX_FontObject*>(self_v);
 	STR_String str = STR_String();
-	for(int i=0; i<self->m_text.size(); ++i)
+	for (int i=0; i<self->m_text.size(); ++i)
 	{
-		if(i!=0)
+		if (i!=0)
 			str += '\n';
 		str += self->m_text[i];
 	}
@@ -268,13 +268,13 @@ PyObject* KX_FontObject::pyattr_get_text(void *self_v, const KX_PYATTRIBUTE_DEF 
 int KX_FontObject::pyattr_set_text(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef, PyObject *value)
 {
 	KX_FontObject* self= static_cast<KX_FontObject*>(self_v);
-	if(!PyUnicode_Check(value))
+	if (!PyUnicode_Check(value))
 		return PY_SET_ATTR_FAIL;
 	char* chars = _PyUnicode_AsString(value);
 
 	/* Allow for some logic brick control */
 	CValue* tprop = self->GetProperty("Text");
-	if(tprop) {
+	if (tprop) {
 		CValue *newstringprop = new CStringValue(STR_String(chars), "Text");
 		self->SetProperty("Text", newstringprop);
 		newstringprop->Release();

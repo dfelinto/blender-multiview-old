@@ -31,35 +31,66 @@ class MotionPathButtonsPanel():
     bl_label = "Motion Paths"
     bl_options = {'DEFAULT_CLOSED'}
 
-    def draw_settings(self, context, avs, bones=False):
+    def draw_settings(self, context, avs, mpath, bones=False):
         layout = self.layout
 
         mps = avs.motion_path
 
+        # Display Range
         layout.prop(mps, "type", expand=True)
 
         split = layout.split()
 
         col = split.column()
+        col.label(text="Display Range:")
         sub = col.column(align=True)
-        if (mps.type == 'CURRENT_FRAME'):
+        if mps.type == 'CURRENT_FRAME':
             sub.prop(mps, "frame_before", text="Before")
             sub.prop(mps, "frame_after", text="After")
-        elif (mps.type == 'RANGE'):
+        elif mps.type == 'RANGE':
             sub.prop(mps, "frame_start", text="Start")
             sub.prop(mps, "frame_end", text="End")
 
         sub.prop(mps, "frame_step", text="Step")
-        if bones:
-            col.row().prop(mps, "bake_location", expand=True)
 
         col = split.column()
-        col.label(text="Display:")
-        col.prop(mps, "show_frame_numbers", text="Frame Numbers")
-        col.prop(mps, "show_keyframe_highlight", text="Keyframes")
         if bones:
-            col.prop(mps, "show_keyframe_action_all", text="+ Non-Grouped Keyframes")
-        col.prop(mps, "show_keyframe_numbers", text="Keyframe Numbers")
+            col.label(text="Cache for Bone:")
+        else:
+            col.label(text="Cache:")
+
+        if mpath:
+            sub = col.column(align=True)
+            sub.enabled = False
+            sub.prop(mpath, "frame_start", text="From")
+            sub.prop(mpath, "frame_end", text="To")
+
+            if bones:
+                col.operator("pose.paths_update", text="Update Paths", icon='BONE_DATA')
+            else:
+                col.operator("object.paths_update", text="Update Paths", icon='OBJECT_DATA')
+        else:
+            sub = col.column(align=True)
+            sub.label(text="Nothing to show yet...", icon='ERROR')
+            if bones:
+                sub.operator("pose.paths_calculate", text="Calculate...", icon='BONE_DATA')
+            else:
+                sub.operator("object.paths_calculate", text="Calculate...", icon='OBJECT_DATA')
+
+        # Display Settings
+        split = layout.split()
+
+        col = split.column()
+        col.label(text="Show:")
+        col.prop(mps, "show_frame_numbers", text="Frame Numbers")
+
+        col = split.column()
+        col.prop(mps, "show_keyframe_highlight", text="Keyframes")
+        sub = col.column()
+        sub.enabled = mps.show_keyframe_highlight
+        if bones:
+            sub.prop(mps, "show_keyframe_action_all", text="+ Non-Grouped Keyframes")
+        sub.prop(mps, "show_keyframe_numbers", text="Keyframe Numbers")
 
 
 # FIXME: this panel still needs to be ported so that it will work correctly with animviz

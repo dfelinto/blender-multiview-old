@@ -34,21 +34,21 @@
 #include "NOD_texture.h"
 
 static bNodeSocketTemplate inputs[]= {
-	{ SOCK_FLOAT, 1, "Red",   0.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
-	{ SOCK_FLOAT, 1, "Green", 0.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
-	{ SOCK_FLOAT, 1, "Blue",  0.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
-	{ SOCK_FLOAT, 1, "Alpha", 1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
+	{ SOCK_FLOAT, 1, N_("Red"),   0.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
+	{ SOCK_FLOAT, 1, N_("Green"), 0.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
+	{ SOCK_FLOAT, 1, N_("Blue"),  0.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
+	{ SOCK_FLOAT, 1, N_("Alpha"), 1.0f, 0.0f, 0.0f, 0.0f,  0.0f, 1.0f, PROP_UNSIGNED },
 	{ -1, 0, "" }
 };
 static bNodeSocketTemplate outputs[]= {
-	{ SOCK_RGBA, 0, "Color" },
+	{ SOCK_RGBA, 0, N_("Color") },
 	{ -1, 0, "" }
 };
 
 static void colorfn(float *out, TexParams *p, bNode *UNUSED(node), bNodeStack **in, short thread)
 {
 	int i;
-	for(i = 0; i < 4; i++)
+	for (i = 0; i < 4; i++)
 		out[i] = tex_input_value(in[i], p, thread);
 }
 

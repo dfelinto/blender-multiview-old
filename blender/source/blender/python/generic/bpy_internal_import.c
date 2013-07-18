@@ -47,11 +47,15 @@
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
- /* UNUSED */	
-#include "BKE_text.h" /* txt_to_buf */	
+/* UNUSED */
+#include "BKE_text.h"  /* txt_to_buf */
 #include "BKE_main.h"
 
 static Main *bpy_import_main = NULL;
+static ListBase bpy_import_main_list;
+
+static PyMethodDef bpy_import_meth;
+static PyMethodDef bpy_reload_meth;
 
 /* 'builtins' is most likely PyEval_GetBuiltins() */
 void bpy_import_init(PyObject *builtins)
@@ -90,6 +94,16 @@ struct Main *bpy_import_main_get(void)
 void bpy_import_main_set(struct Main *maggie)
 {
 	bpy_import_main = maggie;
+}
+
+void bpy_import_main_extra_add(struct Main *maggie)
+{
+	BLI_addhead(&bpy_import_main_list, maggie);
+}
+
+void bpy_import_main_extra_remove(struct Main *maggie)
+{
+	BLI_remlink_safe(&bpy_import_main_list, maggie);
 }
 
 /* returns a dummy filename for a textblock so we can tell what file a text block comes from */
@@ -143,12 +157,25 @@ PyObject *bpy_text_import_name(const char *name, int *found)
 	}
 
 	/* we know this cant be importable, the name is too long for blender! */
-	if (namelen >= (MAX_ID_NAME - 2) - 3) return NULL;
+	if (namelen >= (MAX_ID_NAME - 2) - 3)
+		return NULL;
 
 	memcpy(txtname, name, namelen);
 	memcpy(&txtname[namelen], ".py", 4);
 
 	text = BLI_findstring(&maggie->text, txtname, offsetof(ID, name) + 2);
+
+	if (text) {
+		*found = 1;
+		return bpy_text_import(text);
+	}
+
+	/* If we still haven't found the module try additional modules form bpy_import_main_list */
+	maggie = bpy_import_main_list.first;
+	while (maggie && !text) {
+		text = BLI_findstring(&maggie->text, txtname, offsetof(ID, name) + 2);
+		maggie = maggie->next;
+	}
 
 	if (!text)
 		return NULL;
@@ -226,7 +253,7 @@ static PyObject *blender_import(PyObject *UNUSED(self), PyObject *args, PyObject
 	char *name;
 	int found = 0;
 	PyObject *globals = NULL, *locals = NULL, *fromlist = NULL;
-	int level = -1; /* relative imports */
+	int level = 0; /* relative imports */
 	
 	PyObject *newmodule;
 	//PyObject_Print(args, stderr, 0);
@@ -244,12 +271,12 @@ static PyObject *blender_import(PyObject *UNUSED(self), PyObject *args, PyObject
 	if (newmodule)
 		return newmodule;
 	
-	PyErr_Fetch(&exception, &err, &tb);	/* get the python error in case we cant import as blender text either */
+	PyErr_Fetch(&exception, &err, &tb); /* get the python error in case we cant import as blender text either */
 	
 	/* importing from existing modules failed, see if we have this module as blender text */
 	newmodule = bpy_text_import_name(name, &found);
 	
-	if (newmodule) {/* found module as blender text, ignore above exception */
+	if (newmodule) { /* found module as blender text, ignore above exception */
 		PyErr_Clear();
 		Py_XDECREF(exception);
 		Py_XDECREF(err);
@@ -264,7 +291,7 @@ static PyObject *blender_import(PyObject *UNUSED(self), PyObject *args, PyObject
 	}
 	else {
 		/* no blender text was found that could import the module
-		 * rause the original error from PyImport_ImportModuleEx */
+		 * reuse the original error from PyImport_ImportModuleEx */
 		PyErr_Restore(exception, err, tb);
 	}
 	return newmodule;
@@ -287,10 +314,10 @@ static PyObject *blender_reload(PyObject *UNUSED(self), PyObject *module)
 		return newmodule;
 
 	/* no file, try importing from memory */
-	PyErr_Fetch(&exception, &err, &tb);	/*restore for probable later use */
+	PyErr_Fetch(&exception, &err, &tb); /*restore for probable later use */
 
 	newmodule = bpy_text_reimport(module, &found);
-	if (newmodule) {/* found module as blender text, ignore above exception */
+	if (newmodule) { /* found module as blender text, ignore above exception */
 		PyErr_Clear();
 		Py_XDECREF(exception);
 		Py_XDECREF(err);
@@ -312,5 +339,5 @@ static PyObject *blender_reload(PyObject *UNUSED(self), PyObject *module)
 	return newmodule;
 }
 
-PyMethodDef bpy_import_meth = {"bpy_import_meth", (PyCFunction)blender_import, METH_VARARGS | METH_KEYWORDS, "blenders import"};
-PyMethodDef bpy_reload_meth = {"bpy_reload_meth", (PyCFunction)blender_reload, METH_O, "blenders reload"};
+static PyMethodDef bpy_import_meth = {"bpy_import_meth", (PyCFunction)blender_import, METH_VARARGS | METH_KEYWORDS, "blenders import"};
+static PyMethodDef bpy_reload_meth = {"bpy_reload_meth", (PyCFunction)blender_reload, METH_O, "blenders reload"};

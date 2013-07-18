@@ -32,12 +32,13 @@
 /* **************** OUTPUT ******************** */
 
 static bNodeSocketTemplate sh_node_tex_coord_out[]= {
-	{	SOCK_VECTOR, 0, "Generated",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "UV",				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "Object",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "Camera",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "Window",			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
-	{	SOCK_VECTOR, 0, "Reflection",		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("Generated"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("Normal"),			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("UV"),				0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("Object"),			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("Camera"),			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("Window"),			0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_VECTOR, 0, N_("Reflection"),		0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
@@ -48,7 +49,7 @@ static int node_shader_gpu_tex_coord(GPUMaterial *mat, bNode *UNUSED(node), GPUN
 
 	return GPU_stack_link(mat, "node_tex_coord", in, out,
 		GPU_builtin(GPU_VIEW_POSITION), GPU_builtin(GPU_VIEW_NORMAL),
-		GPU_builtin(GPU_INVERSE_VIEW_MATRIX), orco, mtface);
+		GPU_builtin(GPU_INVERSE_VIEW_MATRIX), GPU_builtin(GPU_INVERSE_OBJECT_MATRIX), orco, mtface);
 }
 
 /* node type definition */

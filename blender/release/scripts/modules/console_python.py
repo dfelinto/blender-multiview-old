@@ -48,14 +48,14 @@ def replace_help(namespace):
 
 
 def get_console(console_id):
-    '''
+    """
     helper function for console operators
     currently each text data block gets its own
     console - code.InteractiveConsole()
     ...which is stored in this function.
 
     console_id can be any hashable type
-    '''
+    """
     from code import InteractiveConsole
 
     consoles = getattr(get_console, "consoles", None)
@@ -96,7 +96,10 @@ def get_console(console_id):
 
         namespace["__builtins__"] = sys.modules["builtins"]
         namespace["bpy"] = bpy
+
+        # weak! - but highly convenient
         namespace["C"] = bpy.context
+        namespace["D"] = bpy.data
 
         replace_help(namespace)
 
@@ -246,7 +249,7 @@ def autocomplete(context):
                 line=line,
                 cursor=current_line.current_character,
                 namespace=console.locals,
-                private=bpy.app.debug)
+                private=bpy.app.debug_python)
 
         line_new = result[0]
         current_line.body, current_line.current_character, scrollback = result
@@ -305,10 +308,9 @@ def banner(context):
                    'OUTPUT')
     add_scrollback("Convenience Imports: from mathutils import *; "
                    "from math import *", 'OUTPUT')
+    add_scrollback("Convenience Variables: C = bpy.context, D = bpy.data",
+                   'OUTPUT')
     add_scrollback("", 'OUTPUT')
-    # add_scrollback("  WARNING!!! Blender 2.5 API is subject to change, "
-    #                "see API reference for more info", 'ERROR')
-    # add_scrollback("", 'OUTPUT')
     sc.prompt = PROMPT
 
     return {'FINISHED'}

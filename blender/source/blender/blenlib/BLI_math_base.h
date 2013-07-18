@@ -53,6 +53,9 @@
 #ifndef M_SQRT1_2
 #define M_SQRT1_2   0.70710678118654752440
 #endif
+#ifndef M_SQRT3
+#define M_SQRT3   1.7320508075688772
+#endif
 #ifndef M_1_PI
 #define M_1_PI      0.318309886183790671538
 #endif
@@ -127,19 +130,19 @@
 #endif
 
 #ifdef WIN32
-#ifndef FREE_WINDOWS
-#define isnan(n) _isnan(n)
-#define finite _finite
-#define hypot _hypot
-#endif
+#  ifndef FREE_WINDOWS
+#    define isnan(n) _isnan(n)
+#    define finite _finite
+#    define hypot _hypot
+#  endif
 #endif
 
 #ifndef SWAP
-#define SWAP(type, a, b)	{ type sw_ap; sw_ap=(a); (a)=(b); (b)=sw_ap; }
+#  define SWAP(type, a, b)  { type sw_ap; sw_ap = (a); (a) = (b); (b) = sw_ap; } (void)0
 #endif
 
 #ifndef CLAMP
-#define CLAMP(a, b, c)		if((a)<(b)) (a)=(b); else if((a)>(c)) (a)=(c)
+#  define CLAMP(a, b, c)  if ((a) < (b)) (a) = (b); else if ((a) > (c)) (a) = (c)
 #endif
 
 #ifdef __BLI_MATH_INLINE_H__

@@ -1,6 +1,3 @@
-/** \file blender/imbuf/intern/cineon/dpxlib.c
- *  \ingroup imbcineon
- */
 /*
  *	 Dpx image file format library routines.
  *
@@ -22,6 +19,10 @@
  *
  */
 
+/** \file blender/imbuf/intern/cineon/dpxlib.c
+ *  \ingroup imbcineon
+ */
+
 #include "dpxfile.h"
 #include "dpxlib.h"
 
@@ -38,6 +39,7 @@
 #include <string.h>			 /* memset */
 #include "cin_debug_stuff.h"
 #include "logmemfile.h"
+#include "BLI_fileops.h"
 
 static void
 fillDpxChannelInfo(DpxFile* dpx, DpxChannelInformation* chan, int des) {
@@ -51,7 +53,7 @@ fillDpxChannelInfo(DpxFile* dpx, DpxChannelInformation* chan, int des) {
 	chan->ref_high_quantity = htonf(2.046);
 	chan->designator1 = des;
 	chan->transfer_characteristics = 0;
-	chan->colourimetry = 0;
+	chan->colorimetry = 0;
 	chan->bits_per_pixel = 10;
 	chan->packing = htons(1);
 	chan->encoding = 0;
@@ -141,7 +143,8 @@ fillDpxImageInfo(
 	if (dpx->depth == 1) {
 		fillDpxChannelInfo(dpx, &imageInfo->channel[0], 0);
 
-	} else if (dpx->depth == 3) {
+	}
+	else if (dpx->depth == 3) {
 		fillDpxChannelInfo(dpx, &imageInfo->channel[0], 50);
 	}
 }
@@ -269,7 +272,8 @@ dpxGetRowBytes(DpxFile* dpx, unsigned short* row, int y) {
 			dpx->pixelBuffer[pixelIndex+2] = t & 0x3ff;
 			pixelIndex += 3;
 		}
-	} else /* if (dpx->depth == 3) */ {
+	}
+	else /* if (dpx->depth == 3) */ {
 		for (longIndex = 0; longIndex < readLongs; ++longIndex) {
 			unsigned int t = ntohl(dpx->lineBuffer[longIndex]);
 			t = t >> 2;
@@ -285,7 +289,7 @@ dpxGetRowBytes(DpxFile* dpx, unsigned short* row, int y) {
 
 	/* extract required pixels */
 	for (pixelIndex = 0; pixelIndex < numPixels; ++pixelIndex) {
-		if(dpx->params.doLogarithm)
+		if (dpx->params.doLogarithm)
 			row[pixelIndex] = dpx->lut10_16[dpx->pixelBuffer[pixelIndex]];
 		else
 			row[pixelIndex] = dpx->pixelBuffer[pixelIndex] << 6;
@@ -328,7 +332,7 @@ dpxSetRowBytes(DpxFile* dpx, const unsigned short* row, int y) {
 
 	/* put new pixels into pixelBuffer */
 	for (pixelIndex = 0; pixelIndex < numPixels; ++pixelIndex) {
-		if(dpx->params.doLogarithm)
+		if (dpx->params.doLogarithm)
 			dpx->pixelBuffer[dpx->pixelBufferUsed + pixelIndex] = dpx->lut16_16[row[pixelIndex]];
 		else
 			dpx->pixelBuffer[dpx->pixelBufferUsed + pixelIndex] = row[pixelIndex] >> 6;
@@ -350,7 +354,8 @@ dpxSetRowBytes(DpxFile* dpx, const unsigned short* row, int y) {
 			dpx->lineBuffer[longIndex] = htonl(t);
 			pixelIndex += 3;
 		}
-	} else {
+	}
+	else {
 		for (longIndex = 0; longIndex < writeLongs; ++longIndex) {
 			unsigned int t = dpx->pixelBuffer[pixelIndex+2] << 2 |
 					(dpx->pixelBuffer[pixelIndex+1] << 12) |
@@ -401,7 +406,7 @@ intern_dpxOpen(int mode, const char* bytestuff, int bufsize) {
 
 	if (mode == LFREALFILE) {
 		filename = bytestuff;
-		dpx->file = fopen(filename, "rb");
+		dpx->file = BLI_fopen(filename, "rb");
 		if (dpx->file == 0) {	
 			if (verbose) d_printf("Failed to open file \"%s\".\n", filename);
 			dpxClose(dpx);
@@ -410,7 +415,8 @@ intern_dpxOpen(int mode, const char* bytestuff, int bufsize) {
 		dpx->membuffer = 0;
 		dpx->memcursor = 0;
 		dpx->membuffersize = 0;
-	} else if (mode == LFMEMFILE) {
+	}
+	else if (mode == LFMEMFILE) {
 		dpx->membuffer = (unsigned char *)bytestuff;
 		dpx->memcursor = (unsigned char *)bytestuff;
 		dpx->membuffersize = bufsize;
@@ -589,7 +595,7 @@ dpxCreate(const char* filename, int width, int height, int depth) {
 	dpx->lineBuffer = 0;
 	dpx->pixelBuffer = 0;
 
-	dpx->file = fopen(filename, "wb");
+	dpx->file = BLI_fopen(filename, "wb");
 	if (dpx->file == 0) {
 		if (verbose) d_printf("Couldn't open file %s\n", filename);
 		dpxClose(dpx);
@@ -624,7 +630,8 @@ dpxCreate(const char* filename, int width, int height, int depth) {
 	shortFilename = strrchr(filename, '/');
 	if (shortFilename == 0) {
 		shortFilename = filename;
-	} else {
+	}
+	else {
 		++shortFilename;
 	}
 	initDpxMainHeader(dpx, &header, shortFilename);
@@ -687,7 +694,7 @@ dpxDump(const char* filename) {
 	DpxMainHeader header;
 	FILE* file;
 
-	file = fopen(filename, "rb");
+	file = BLI_fopen(filename, "rb");
 	if (file == 0) {
 		d_printf("Failed to open file \"%s\".\n", filename);
 		return;

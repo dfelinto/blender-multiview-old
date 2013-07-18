@@ -38,12 +38,12 @@
 extern "C" {
 #endif
 
-#define FFMPEG_MPEG1 	0
-#define FFMPEG_MPEG2 	1
-#define FFMPEG_MPEG4 	2
-#define FFMPEG_AVI	3
-#define FFMPEG_MOV	4
-#define FFMPEG_DV	5
+#define FFMPEG_MPEG1    0
+#define FFMPEG_MPEG2    1
+#define FFMPEG_MPEG4    2
+#define FFMPEG_AVI  3
+#define FFMPEG_MOV  4
+#define FFMPEG_DV   5
 #define FFMPEG_H264     6
 #define FFMPEG_XVID     7
 #define FFMPEG_FLV      8
@@ -52,34 +52,34 @@ extern "C" {
 #define FFMPEG_WAV      11
 #define FFMPEG_MP3      12
 
-#define FFMPEG_PRESET_NONE		0
-#define FFMPEG_PRESET_DVD		1
-#define FFMPEG_PRESET_SVCD		2
-#define FFMPEG_PRESET_VCD 		3
-#define FFMPEG_PRESET_DV		4
-#define FFMPEG_PRESET_H264		5
-#define FFMPEG_PRESET_THEORA	6
-#define FFMPEG_PRESET_XVID		7
+#define FFMPEG_PRESET_NONE      0
+#define FFMPEG_PRESET_DVD       1
+#define FFMPEG_PRESET_SVCD      2
+#define FFMPEG_PRESET_VCD       3
+#define FFMPEG_PRESET_DV        4
+#define FFMPEG_PRESET_H264      5
+#define FFMPEG_PRESET_THEORA    6
+#define FFMPEG_PRESET_XVID      7
 
 struct IDProperty;
 struct RenderData;	
 struct ReportList;
 struct Scene;
 
-extern int start_ffmpeg(struct Scene *scene, struct RenderData *rd, int rectx, int recty, struct ReportList *reports);
-extern void end_ffmpeg(void);
-extern int append_ffmpeg(struct RenderData *rd, int start_frame, int frame, int *pixels,
-                         int rectx, int recty, struct ReportList *reports);
-void filepath_ffmpeg(char* string, struct RenderData* rd);
+int BKE_ffmpeg_start(struct Scene *scene, struct RenderData *rd, int rectx, int recty, struct ReportList *reports);
+void BKE_ffmpeg_end(void);
+int BKE_ffmpeg_append(struct RenderData *rd, int start_frame, int frame, int *pixels,
+                      int rectx, int recty, struct ReportList *reports);
+void BKE_ffmpeg_filepath_get(char *string, struct RenderData *rd);
 
-extern void ffmpeg_set_preset(struct RenderData *rd, int preset);
-extern void ffmpeg_verify_image_type(struct RenderData *rd, struct ImageFormatData *imf);
-extern void ffmpeg_verify_codec_settings(struct RenderData *rd);
-extern int  ffmpeg_alpha_channel_supported(struct RenderData *rd);
+void BKE_ffmpeg_preset_set(struct RenderData *rd, int preset);
+void BKE_ffmpeg_image_type_verify(struct RenderData *rd, struct ImageFormatData *imf);
+void BKE_ffmpeg_codec_settings_verify(struct RenderData *rd);
+int  BKE_ffmpeg_alpha_channel_is_supported(struct RenderData *rd);
 
-extern struct IDProperty *ffmpeg_property_add(struct RenderData *Rd, const char *type, int opt_index, int parent_index);
-extern int ffmpeg_property_add_string(struct RenderData *rd, const char *type, const char *str);
-extern void ffmpeg_property_del(struct RenderData *rd, void *type, void *prop_);
+struct IDProperty *BKE_ffmpeg_property_add(struct RenderData *Rd, const char *type, int opt_index, int parent_index);
+int BKE_ffmpeg_property_add_string(struct RenderData *rd, const char *type, const char *str);
+void BKE_ffmpeg_property_del(struct RenderData *rd, void *type, void *prop_);
 
 #ifdef __cplusplus
 }

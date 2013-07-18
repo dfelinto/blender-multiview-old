@@ -326,7 +326,7 @@ void RAS_OpenGLRasterizer::SetDrawingMode(int drawingmode)
 {
 	m_drawingmode = drawingmode;
 
-	if(m_drawingmode == KX_WIREFRAME)
+	if (m_drawingmode == KX_WIREFRAME)
 		glDisable(GL_CULL_FACE);
 }
 
@@ -362,7 +362,7 @@ void RAS_OpenGLRasterizer::ClearCachingInfo(void)
 
 void RAS_OpenGLRasterizer::FlushDebugShapes()
 {
-	if(!m_debugShapes.size())
+	if (!m_debugShapes.size())
 		return;
 
 	// DrawDebugLines
@@ -371,8 +371,8 @@ void RAS_OpenGLRasterizer::FlushDebugShapes()
 	light= glIsEnabled(GL_LIGHTING);
 	tex= glIsEnabled(GL_TEXTURE_2D);
 
-	if(light) glDisable(GL_LIGHTING);
-	if(tex) glDisable(GL_TEXTURE_2D);
+	if (light) glDisable(GL_LIGHTING);
+	if (tex) glDisable(GL_TEXTURE_2D);
 
 	//draw lines
 	glBegin(GL_LINES);
@@ -396,7 +396,7 @@ void RAS_OpenGLRasterizer::FlushDebugShapes()
 		glBegin(GL_LINE_LOOP);
 		glColor4f(m_debugShapes[i].m_color[0],m_debugShapes[i].m_color[1],m_debugShapes[i].m_color[2],1.f);
 
-		static const MT_Vector3 worldUp(0.,0.,1.);
+		static const MT_Vector3 worldUp(0.0, 0.0, 1.0);
 		MT_Vector3 norm = m_debugShapes[i].m_param;
 		MT_Matrix3x3 tr;
 		if (norm.fuzzyZero() || norm == worldUp)
@@ -417,7 +417,7 @@ void RAS_OpenGLRasterizer::FlushDebugShapes()
 		for (int j = 0; j<n; j++)
 		{
 			MT_Scalar theta = j*M_PI*2/n;
-			MT_Vector3 pos(cos(theta)*rad, sin(theta)*rad, 0.);
+			MT_Vector3 pos(cos(theta) * rad, sin(theta) * rad, 0.0);
 			pos = pos*tr;
 			pos += m_debugShapes[i].m_pos;
 			const MT_Scalar* posPtr = &pos.x();
@@ -426,8 +426,8 @@ void RAS_OpenGLRasterizer::FlushDebugShapes()
 		glEnd();
 	}
 
-	if(light) glEnable(GL_LIGHTING);
-	if(tex) glEnable(GL_TEXTURE_2D);
+	if (light) glEnable(GL_LIGHTING);
+	if (tex) glEnable(GL_TEXTURE_2D);
 
 	m_debugShapes.clear();
 }
@@ -551,7 +551,7 @@ RAS_IRasterizer::StereoMode RAS_OpenGLRasterizer::GetStereoMode()
 
 bool RAS_OpenGLRasterizer::Stereo()
 {
-	if(m_stereomode > RAS_STEREO_NOSTEREO) // > 0
+	if (m_stereomode > RAS_STEREO_NOSTEREO) // > 0
 		return true;
 	else
 		return false;
@@ -574,7 +574,9 @@ void RAS_OpenGLRasterizer::SetEye(const StereoEye eye)
 			if (m_curreye == RAS_STEREO_LEFTEYE)
 			{
 				glColorMask(m_anaglyphleft[0], m_anaglyphleft[1], m_anaglyphleft[2], GL_FALSE);
-			} else {
+			}
+			else {
+				//glAccum(GL_LOAD, 1.0);
 				glColorMask(m_anaglyphright[0], m_anaglyphright[1], m_anaglyphright[2], GL_FALSE);
 				ClearDepthBuffer();
 			}
@@ -661,17 +663,17 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot& ms,
 	else
 		glEnableClientState(GL_COLOR_ARRAY);
 
-	for(ms.begin(it); !ms.end(it); ms.next(it)) {
+	for (ms.begin(it); !ms.end(it); ms.next(it)) {
 		RAS_TexVert *vertex;
 		size_t i, j, numvert;
 		
 		numvert = it.array->m_type;
 
-		if(it.array->m_type == RAS_DisplayArray::LINE) {
+		if (it.array->m_type == RAS_DisplayArray::LINE) {
 			// line drawing, no text
 			glBegin(GL_LINES);
 
-			for(i=0; i<it.totindex; i+=2)
+			for (i=0; i<it.totindex; i+=2)
 			{
 				vertex = &it.vertex[it.index[i]];
 				glVertex3fv(vertex->getXYZ());
@@ -684,12 +686,12 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot& ms,
 		}
 		else {
 			// triangle and quad text drawing
-			for(i=0; i<it.totindex; i+=numvert)
+			for (i=0; i<it.totindex; i+=numvert)
 			{
 				float v[4][3];
 				int glattrib, unit;
 
-				for(j=0; j<numvert; j++) {
+				for (j=0; j<numvert; j++) {
 					vertex = &it.vertex[it.index[i+j]];
 
 					v[j][0] = vertex->getXYZ()[0];
@@ -699,9 +701,9 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot& ms,
 
 				// find the right opengl attribute
 				glattrib = -1;
-				if(GLEW_ARB_vertex_program)
-					for(unit=0; unit<m_attrib_num; unit++)
-						if(m_attrib[unit] == RAS_TEXCO_UV1)
+				if (GLEW_ARB_vertex_program)
+					for (unit=0; unit<m_attrib_num; unit++)
+						if (m_attrib[unit] == RAS_TEXCO_UV1)
 							glattrib = unit;
 				
 				rendertools->RenderText(polymat->GetDrawingMode(), polymat,
@@ -718,28 +720,28 @@ void RAS_OpenGLRasterizer::IndexPrimitives_3DText(RAS_MeshSlot& ms,
 void RAS_OpenGLRasterizer::SetTexCoordNum(int num)
 {
 	m_texco_num = num;
-	if(m_texco_num > RAS_MAX_TEXCO)
+	if (m_texco_num > RAS_MAX_TEXCO)
 		m_texco_num = RAS_MAX_TEXCO;
 }
 
 void RAS_OpenGLRasterizer::SetAttribNum(int num)
 {
 	m_attrib_num = num;
-	if(m_attrib_num > RAS_MAX_ATTRIB)
+	if (m_attrib_num > RAS_MAX_ATTRIB)
 		m_attrib_num = RAS_MAX_ATTRIB;
 }
 
 void RAS_OpenGLRasterizer::SetTexCoord(TexCoGen coords, int unit)
 {
 	// this changes from material to material
-	if(unit < RAS_MAX_TEXCO)
+	if (unit < RAS_MAX_TEXCO)
 		m_texco[unit] = coords;
 }
 
 void RAS_OpenGLRasterizer::SetAttrib(TexCoGen coords, int unit)
 {
 	// this changes from material to material
-	if(unit < RAS_MAX_ATTRIB)
+	if (unit < RAS_MAX_ATTRIB)
 		m_attrib[unit] = coords;
 }
 
@@ -747,9 +749,9 @@ void RAS_OpenGLRasterizer::TexCoord(const RAS_TexVert &tv)
 {
 	int unit;
 
-	if(GLEW_ARB_multitexture) {
-		for(unit=0; unit<m_texco_num; unit++) {
-			if(tv.getFlag() & RAS_TexVert::SECOND_UV && (int)tv.getUnit() == unit) {
+	if (GLEW_ARB_multitexture) {
+		for (unit=0; unit<m_texco_num; unit++) {
+			if (tv.getFlag() & RAS_TexVert::SECOND_UV && (int)tv.getUnit() == unit) {
 				glMultiTexCoord2fvARB(GL_TEXTURE0_ARB+unit, tv.getUV2());
 				continue;
 			}
@@ -776,8 +778,8 @@ void RAS_OpenGLRasterizer::TexCoord(const RAS_TexVert &tv)
 		}
 	}
 
-	if(GLEW_ARB_vertex_program) {
-		for(unit=0; unit<m_attrib_num; unit++) {
+	if (GLEW_ARB_vertex_program) {
+		for (unit=0; unit<m_attrib_num; unit++) {
 			switch(m_attrib[unit]) {
 			case RAS_TEXCO_ORCO:
 			case RAS_TEXCO_GLOB:
@@ -929,7 +931,8 @@ void RAS_OpenGLRasterizer::IndexPrimitivesInternal(RAS_MeshSlot& ms, bool multi)
 			int current_blend_mode = GPU_get_material_alpha_blend();
 			ms.m_pDerivedMesh->drawFacesGLSL(ms.m_pDerivedMesh, CheckMaterialDM);
 			GPU_set_material_alpha_blend(current_blend_mode);
-		} else {
+		}
+		else {
 			//ms.m_pDerivedMesh->drawMappedFacesTex(ms.m_pDerivedMesh, CheckTexfaceDM, mcol);
 			current_blmat_nr = current_polymat->GetMaterialIndex();
 			current_image = current_polymat->GetBlenderImage();
@@ -938,17 +941,17 @@ void RAS_OpenGLRasterizer::IndexPrimitivesInternal(RAS_MeshSlot& ms, bool multi)
 		return;
 	}
 	// iterate over display arrays, each containing an index + vertex array
-	for(ms.begin(it); !ms.end(it); ms.next(it)) {
+	for (ms.begin(it); !ms.end(it); ms.next(it)) {
 		RAS_TexVert *vertex;
 		size_t i, j, numvert;
 		
 		numvert = it.array->m_type;
 
-		if(it.array->m_type == RAS_DisplayArray::LINE) {
+		if (it.array->m_type == RAS_DisplayArray::LINE) {
 			// line drawing
 			glBegin(GL_LINES);
 
-			for(i=0; i<it.totindex; i+=2)
+			for (i=0; i<it.totindex; i+=2)
 			{
 				vertex = &it.vertex[it.index[i]];
 				glVertex3fv(vertex->getXYZ());
@@ -961,26 +964,26 @@ void RAS_OpenGLRasterizer::IndexPrimitivesInternal(RAS_MeshSlot& ms, bool multi)
 		}
 		else {
 			// triangle and quad drawing
-			if(it.array->m_type == RAS_DisplayArray::TRIANGLE)
+			if (it.array->m_type == RAS_DisplayArray::TRIANGLE)
 				glBegin(GL_TRIANGLES);
 			else
 				glBegin(GL_QUADS);
 
-			for(i=0; i<it.totindex; i+=numvert)
+			for (i=0; i<it.totindex; i+=numvert)
 			{
-				if(obcolor)
+				if (obcolor)
 					glColor4d(rgba[0], rgba[1], rgba[2], rgba[3]);
 
-				for(j=0; j<numvert; j++) {
+				for (j=0; j<numvert; j++) {
 					vertex = &it.vertex[it.index[i+j]];
 
-					if(!wireframe) {
-						if(!obcolor)
+					if (!wireframe) {
+						if (!obcolor)
 							glColor4ubv((const GLubyte *)(vertex->getRGBA()));
 
 						glNormal3fv(vertex->getNormal());
 
-						if(multi)
+						if (multi)
 							TexCoord(*vertex);
 						else
 							glTexCoord2fv(vertex->getUV1());
@@ -998,10 +1001,10 @@ void RAS_OpenGLRasterizer::IndexPrimitivesInternal(RAS_MeshSlot& ms, bool multi)
 void RAS_OpenGLRasterizer::SetProjectionMatrix(MT_CmMatrix4x4 &mat)
 {
 	glMatrixMode(GL_PROJECTION);
-	double* matrix = &mat(0,0);
+	double* matrix = &mat(0, 0);
 	glLoadMatrixd(matrix);
 
-	m_camortho= (mat(3, 3) != 0.0f);
+	m_camortho = (mat(3, 3) != 0.0);
 }
 
 void RAS_OpenGLRasterizer::SetProjectionMatrix(const MT_Matrix4x4 & mat)
@@ -1013,7 +1016,7 @@ void RAS_OpenGLRasterizer::SetProjectionMatrix(const MT_Matrix4x4 & mat)
 	/* Internally, MT_Matrix4x4 uses doubles (MT_Scalar). */
 	glLoadMatrixd(matrix);	
 
-	m_camortho= (mat[3][3] != 0.0f);
+	m_camortho= (mat[3][3] != 0.0);
 }
 
 MT_Matrix4x4 RAS_OpenGLRasterizer::GetFrustumMatrix(
@@ -1025,12 +1028,12 @@ MT_Matrix4x4 RAS_OpenGLRasterizer::GetFrustumMatrix(
 	float frustfar,
 	float focallength,
 	bool 
-){
+) {
 	MT_Matrix4x4 result;
 	double mat[16];
 
 	// correction for stereo
-	if(Stereo())
+	if (Stereo())
 	{
 			float near_div_focallength;
 			float offset;
@@ -1038,11 +1041,11 @@ MT_Matrix4x4 RAS_OpenGLRasterizer::GetFrustumMatrix(
 			// if Rasterizer.setFocalLength is not called we use the camera focallength
 			if (!m_setfocallength)
 				// if focallength is null we use a value known to be reasonable
-				m_focallength = (focallength == 0.f) ? m_eyeseparation * 30.0
+				m_focallength = (focallength == 0.f) ? m_eyeseparation * 30.0f
 					: focallength;
 
 			near_div_focallength = frustnear / m_focallength;
-			offset = 0.5 * m_eyeseparation * near_div_focallength;
+			offset = 0.5f * m_eyeseparation * near_div_focallength;
 			switch(m_curreye)
 			{
 				case RAS_STEREO_LEFTEYE:
@@ -1074,7 +1077,7 @@ MT_Matrix4x4 RAS_OpenGLRasterizer::GetOrthoMatrix(
 	float top,
 	float frustnear,
 	float frustfar
-){
+) {
 	MT_Matrix4x4 result;
 	double mat[16];
 
@@ -1099,7 +1102,7 @@ void RAS_OpenGLRasterizer::SetViewMatrix(const MT_Matrix4x4 &mat,
 	m_viewmatrix = mat;
 
 	// correction for stereo
-	if(Stereo() && perspective)
+	if (Stereo() && perspective)
 	{
 		MT_Vector3 unitViewDir(0.0, -1.0, 0.0);  // minus y direction, Blender convention
 		MT_Vector3 unitViewupVec(0.0, 0.0, 1.0);
@@ -1229,7 +1232,7 @@ void RAS_OpenGLRasterizer::EnableMotionBlur(float motionblurvalue)
 {
 	/* don't just set m_motionblur to 1, but check if it is 0 so
 	 * we don't reset a motion blur that is already enabled */
-	if(m_motionblur == 0)
+	if (m_motionblur == 0)
 		m_motionblur = 1;
 	m_motionblurvalue = motionblurvalue;
 }
@@ -1244,26 +1247,26 @@ void RAS_OpenGLRasterizer::SetAlphaBlend(int alphablend)
 {
 	GPU_set_material_alpha_blend(alphablend);
 /*
-	if(alphablend == m_last_alphablend)
+	if (alphablend == m_last_alphablend)
 		return;
 
-	if(alphablend == GPU_BLEND_SOLID) {
+	if (alphablend == GPU_BLEND_SOLID) {
 		glDisable(GL_BLEND);
 		glDisable(GL_ALPHA_TEST);
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 	}
-	else if(alphablend == GPU_BLEND_ADD) {
+	else if (alphablend == GPU_BLEND_ADD) {
 		glBlendFunc(GL_ONE, GL_ONE);
 		glEnable(GL_BLEND);
 		glDisable(GL_ALPHA_TEST);
 	}
-	else if(alphablend == GPU_BLEND_ALPHA) {
+	else if (alphablend == GPU_BLEND_ALPHA) {
 		glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 		glEnable(GL_BLEND);
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0.0f);
 	}
-	else if(alphablend == GPU_BLEND_CLIP) {
+	else if (alphablend == GPU_BLEND_CLIP) {
 		glDisable(GL_BLEND); 
 		glEnable(GL_ALPHA_TEST);
 		glAlphaFunc(GL_GREATER, 0.5f);
@@ -1275,10 +1278,10 @@ void RAS_OpenGLRasterizer::SetAlphaBlend(int alphablend)
 
 void RAS_OpenGLRasterizer::SetFrontFace(bool ccw)
 {
-	if(m_last_frontface == ccw)
+	if (m_last_frontface == ccw)
 		return;
 
-	if(ccw)
+	if (ccw)
 		glFrontFace(GL_CCW);
 	else
 		glFrontFace(GL_CW);

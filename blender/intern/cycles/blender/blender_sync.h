@@ -54,21 +54,23 @@ public:
 
 	/* sync */
 	bool sync_recalc();
-	void sync_data(BL::SpaceView3D b_v3d, const char *layer = 0);
-	void sync_camera(int width, int height);
+	void sync_data(BL::SpaceView3D b_v3d, BL::Object b_override, const char *layer = 0);
+	void sync_camera(BL::Object b_override, int width, int height);
 	void sync_view(BL::SpaceView3D b_v3d, BL::RegionView3D b_rv3d, int width, int height);
+	int get_layer_samples() { return render_layer.samples; }
 
 	/* get parameters */
 	static SceneParams get_scene_params(BL::Scene b_scene, bool background);
 	static SessionParams get_session_params(BL::UserPreferences b_userpref, BL::Scene b_scene, bool background);
 	static bool get_session_pause(BL::Scene b_scene, bool background);
-	static BufferParams get_buffer_params(BL::Scene b_scene, BL::RegionView3D b_rv3d, int width, int height);
+	static BufferParams get_buffer_params(BL::Scene b_scene, Camera *cam, int width, int height);
 
 private:
 	/* sync */
 	void sync_lamps();
 	void sync_materials();
-	void sync_objects(BL::SpaceView3D b_v3d);
+	void sync_objects(BL::SpaceView3D b_v3d, int motion = 0);
+	void sync_motion(BL::SpaceView3D b_v3d, BL::Object b_override);
 	void sync_film();
 	void sync_integrator();
 	void sync_view();
@@ -77,16 +79,21 @@ private:
 	void sync_shaders();
 
 	void sync_nodes(Shader *shader, BL::ShaderNodeTree b_ntree);
-	Mesh *sync_mesh(BL::Object b_ob, bool holdout, bool object_updated);
-	void sync_object(BL::Object b_parent, int b_index, BL::Object b_object, Transform& tfm, uint layer_flag);
+	Mesh *sync_mesh(BL::Object b_ob, bool object_updated);
+	void sync_object(BL::Object b_parent, int b_index, BL::Object b_object, Transform& tfm, uint layer_flag, int motion, int particle_id);
 	void sync_light(BL::Object b_parent, int b_index, BL::Object b_ob, Transform& tfm);
 	void sync_background_light();
+	void sync_mesh_motion(BL::Object b_ob, Mesh *mesh, int motion);
+	void sync_camera_motion(BL::Object b_ob, int motion);
+	void sync_particles(Object *ob, BL::Object b_ob);
 
 	/* util */
 	void find_shader(BL::ID id, vector<uint>& used_shaders, int default_shader);
-	bool object_is_modified(BL::Object b_ob);
+	bool BKE_object_is_modified(BL::Object b_ob);
 	bool object_is_mesh(BL::Object b_ob);
 	bool object_is_light(BL::Object b_ob);
+	bool object_need_particle_update(BL::Object b_ob);
+	int object_count_particles(BL::Object b_ob);
 
 	/* variables */
 	BL::BlendData b_data;
@@ -107,7 +114,10 @@ private:
 	struct RenderLayerInfo {
 		RenderLayerInfo()
 		: scene_layer(0), layer(0), holdout_layer(0),
-		  material_override(PointerRNA_NULL)
+		  material_override(PointerRNA_NULL),
+		  use_background(true),
+		  use_viewport_visibility(false),
+		  samples(0)
 		{}
 
 		string name;
@@ -115,8 +125,26 @@ private:
 		uint layer;
 		uint holdout_layer;
 		BL::Material material_override;
+		bool use_background;
+		bool use_viewport_visibility;
+		bool use_localview;
+		int samples;
 	} render_layer;
 };
+
+/* we don't have spare bits for localview (normally 20-28)
+ * because PATH_RAY_LAYER_SHIFT uses 20-32.
+ * So - check if we have localview and if so, shift local
+ * view bits down to 1-8, since this is done for the view
+ * port only - it should be OK and not conflict with
+ * render layers. - Campbell.
+ *
+ * ... as an alternative we could use uint64_t
+ */
+#define CYCLES_LOCAL_LAYER_HACK(use_localview, layer)   \
+	if (use_localview) {                                \
+		layer >>= 20;                                   \
+	} (void)0
 
 CCL_NAMESPACE_END
 

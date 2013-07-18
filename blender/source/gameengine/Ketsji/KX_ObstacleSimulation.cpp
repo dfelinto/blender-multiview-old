@@ -40,7 +40,7 @@ namespace
 	inline float vdist(const float* a, const float* b) { return sqrtf(vdistsqr(a,b)); }
 	inline void vcpy(float* a, const float* b) { a[0]=b[0]; a[1]=b[1]; }
 	inline float vdot(const float* a, const float* b) { return a[0]*b[0] + a[1]*b[1]; }
-	inline float vperp(const float* a, const float* b) { return a[0]*b[1] - a[1]*b[0]; }
+/*	inline float vperp(const float* a, const float* b) { return a[0]*b[1] - a[1]*b[0]; } */ /* UNUSED */
 	inline void vsub(float* v, const float* a, const float* b) { v[0] = a[0]-b[0]; v[1] = a[1]-b[1]; }
 	inline void vadd(float* v, const float* a, const float* b) { v[0] = a[0]+b[0]; v[1] = a[1]+b[1]; }
 	inline void vscale(float* v, const float* a, const float s) { v[0] = a[0]*s; v[1] = a[1]*s; }
@@ -48,7 +48,7 @@ namespace
 	inline float vlensqr(const float* v) { return vdot(v,v); }
 	inline float vlen(const float* v) { return sqrtf(vlensqr(v)); }
 	inline void vlerp(float* v, const float* a, const float* b, float t) { v[0] = lerp(a[0], b[0], t); v[1] = lerp(a[1], b[1], t); }
-	inline void vmad(float* v, const float* a, const float* b, float s) { v[0] = a[0] + b[0]*s; v[1] = a[1] + b[1]*s; }
+/*	inline void vmad(float* v, const float* a, const float* b, float s) { v[0] = a[0] + b[0]*s; v[1] = a[1] + b[1]*s; } */ /* UNUSED */
 	inline void vnorm(float* v)
 	{
 		float d = vlen(v);
@@ -343,7 +343,7 @@ void KX_ObstacleSimulation::DrawObstacles()
 	if (!m_enableVisualization)
 		return;
 	static const MT_Vector3 bluecolor(0,0,1);
-	static const MT_Vector3 normal(0.,0.,1.);
+	static const MT_Vector3 normal(0.0, 0.0, 1.0);
 	static const int SECTORS_NUM = 32;
 	for (size_t i=0; i<m_obstacles.size(); i++)
 	{
@@ -378,13 +378,14 @@ static MT_Point3 nearestPointToObstacle(MT_Point3& pos ,KX_Obstacle* obstacle)
 		MT_Vector3 ab = obstacle->m_pos2 - obstacle->m_pos;
 		if (!ab.fuzzyZero())
 		{
+			const MT_Scalar dist = ab.length();
 			MT_Vector3 abdir = ab.normalized();
 			MT_Vector3  v = pos - obstacle->m_pos;
 			MT_Scalar proj = abdir.dot(v);
-			CLAMP(proj, 0, ab.length());
+			CLAMP(proj, 0, dist);
 			MT_Point3 res = obstacle->m_pos + abdir*proj;
 			return res;
-		}		
+		}
 	}
 	case KX_OBSTACLE_CIRCLE :
 	default:
@@ -548,6 +549,9 @@ void KX_ObstacleSimulationTOI_rays::sampleRVO(KX_Obstacle* activeObst, KX_NavMes
 				if (!sweepCircleSegment(activeObst->m_pos, activeObst->m_rad, svel, 
 					p1, p2, ob->m_rad, htmin, htmax))
 					continue;
+			}
+			else {
+				continue;
 			}
 
 			if (htmin > 0.0f)
@@ -742,6 +746,9 @@ static void processSamples(KX_Obstacle* activeObst, KX_NavMeshObject* activeNavM
 
 				// Avoid less when facing walls.
 				htmin *= 2.0f;
+			}
+			else {
+				continue;
 			}
 
 			if (htmin >= 0.0f)

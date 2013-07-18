@@ -32,6 +32,8 @@ elif cmd_res[:2]=='10':
     MAC_CUR_VER='10.6'
 elif cmd_res[:2]=='11':
     MAC_CUR_VER='10.7'
+elif cmd_res[:2]=='12':
+    MAC_CUR_VER='10.8'
 cmd = 'xcodebuild -version'
 cmd_xcode=commands.getoutput(cmd)
 XCODE_CUR_VER=cmd_xcode[6:][:3] # truncate output to major.minor version
@@ -75,7 +77,7 @@ else :
         LCGDIR = '#../lib/darwin-9.x.universal'
         CC = 'gcc-4.2'
         CXX = 'g++-4.2'
-    else:
+    elif 'Mac OS X 10.6' in MACOSX_SDK_CHECK:
         # OSX 10.6/7 with Xcode 4.x
         MAC_MIN_VERS = '10.6'
         MACOSX_DEPLOYMENT_TARGET = '10.6'
@@ -83,6 +85,14 @@ else :
         LCGDIR = '#../lib/darwin-9.x.universal'
         CC = 'gcc-4.2'
         CXX = 'g++-4.2'
+    else:
+        # OSX 10.8 with Xcode 4.4 and higher (no 10.6sdk! )
+        MAC_MIN_VERS = '10.6'
+        MACOSX_DEPLOYMENT_TARGET = '10.6'
+        MACOSX_SDK='/Developer/SDKs/MacOSX10.7.sdk'
+        LCGDIR = '#../lib/darwin-9.x.universal'
+        CC = 'gcc'
+        CXX = 'g++'
 
 LIBDIR = '${LCGDIR}'
 
@@ -101,7 +111,7 @@ else:
     WITH_BF_OPENMP = False
 
 # enable ffmpeg  support
-WITH_BF_FFMPEG = True  # -DWITH_FFMPEG
+WITH_BF_FFMPEG = True
 BF_FFMPEG = LIBDIR + '/ffmpeg'
 BF_FFMPEG_INC = "${BF_FFMPEG}/include"
 BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
@@ -233,24 +243,6 @@ BF_FFTW3_INC = '${BF_FFTW3}/include'
 BF_FFTW3_LIB = 'libfftw3'
 BF_FFTW3_LIBPATH = '${BF_FFTW3}/lib'
 
-#WITH_BF_NSPR = True
-#BF_NSPR = $(LIBDIR)/nspr
-#BF_NSPR_INC = -I$(BF_NSPR)/include -I$(BF_NSPR)/include/nspr
-#BF_NSPR_LIB =
-
-# Uncomment the following line to use Mozilla inplace of netscape
-#CPPFLAGS += -DMOZ_NOT_NET
-# Location of MOZILLA/Netscape header files...
-#BF_MOZILLA = $(LIBDIR)/mozilla
-#BF_MOZILLA_INC = -I$(BF_MOZILLA)/include/mozilla/nspr -I$(BF_MOZILLA)/include/mozilla -I$(BF_MOZILLA)/include/mozilla/xpcom -I$(BF_MOZILLA)/include/mozilla/idl
-#BF_MOZILLA_LIB =
-# Will fall back to look in BF_MOZILLA_INC/nspr and BF_MOZILLA_LIB
-# if this is not set.
-#
-# Be paranoid regarding library creation (do not update archives)
-#BF_PARANOID = True
-
-# enable freetype2 support for text objects
 BF_FREETYPE = LIBDIR + '/freetype'
 BF_FREETYPE_INC = '${BF_FREETYPE}/include ${BF_FREETYPE}/include/freetype2'
 BF_FREETYPE_LIB = 'freetype'
@@ -351,8 +343,8 @@ if not WITH_OSX_STATICPYTHON:
 
 
 #note to build succesfully on 10.3.9 SDK you need to patch  10.3.9 by adding the SystemStubs.a lib from 10.4
-#for 10.7.sdk, SystemStubs needs to be excluded (lib doesn't exist anymore)
-if MACOSX_DEPLOYMENT_TARGET == '10.7':
+#for > 10.7.sdk, SystemStubs needs to be excluded (lib doesn't exist anymore)
+if MACOSX_SDK.endswith("10.7.sdk") or MACOSX_SDK.endswith("10.8.sdk"):
     LLIBS = ['stdc++']
 else:
     LLIBS = ['stdc++', 'SystemStubs']

@@ -20,7 +20,7 @@
 
 """
 This module contains utility functions specific to blender but
-not assosiated with blenders internal data.
+not associated with blenders internal data.
 """
 
 __all__ = (
@@ -34,13 +34,14 @@ __all__ = (
     "register_class",
     "register_module",
     "resource_path",
+    "script_path_user",
+    "script_path_pref",
     "script_paths",
     "smpte_from_frame",
     "smpte_from_seconds",
     "unregister_class",
     "unregister_module",
     "user_resource",
-    "user_script_path",
     )
 
 from _bpy import register_class, unregister_class, blend_paths, resource_path
@@ -57,7 +58,7 @@ _script_module_dirs = "startup", "modules"
 
 
 def _test_import(module_name, loaded_modules):
-    use_time = _bpy.app.debug
+    use_time = _bpy.app.debug_python
 
     if module_name in loaded_modules:
         return None
@@ -126,7 +127,7 @@ def load_scripts(reload_scripts=False, refresh_scripts=False):
        as modules.
     :type refresh_scripts: bool
     """
-    use_time = _bpy.app.debug
+    use_time = _bpy.app.debug_python
 
     prefs = _bpy.context.user_preferences
 
@@ -252,15 +253,16 @@ _scripts = _os.path.join(_os.path.dirname(__file__),
 _scripts = (_os.path.normpath(_scripts), )
 
 
-def user_script_path():
-    prefs = _bpy.context.user_preferences
-    path = prefs.filepaths.script_directory
+def script_path_user():
+    """returns the env var and falls back to home dir or None"""
+    path = _user_resource('SCRIPTS')
+    return _os.path.normpath(path) if path else None
 
-    if path:
-        path = _os.path.normpath(path)
-        return path
-    else:
-        return None
+
+def script_path_pref():
+    """returns the user preference or None"""
+    path = _bpy.context.user_preferences.filepaths.script_directory
+    return _os.path.normpath(path) if path else None
 
 
 def script_paths(subdir=None, user_pref=True, check_all=False):
@@ -278,10 +280,6 @@ def script_paths(subdir=None, user_pref=True, check_all=False):
     :rtype: list
     """
     scripts = list(_scripts)
-    prefs = _bpy.context.user_preferences
-
-    # add user scripts dir
-    user_script = prefs.filepaths.script_directory if user_pref else None
 
     if check_all:
         # all possible paths
@@ -291,7 +289,7 @@ def script_paths(subdir=None, user_pref=True, check_all=False):
         # only paths blender uses
         base_paths = _bpy_script_paths()
 
-    for path in base_paths + (user_script, ):
+    for path in base_paths + (script_path_user(), script_path_pref()):
         if path:
             path = _os.path.normpath(path)
             if path not in scripts and _os.path.isdir(path):
@@ -345,8 +343,7 @@ def preset_paths(subdir):
             dirs.append(directory)
 
     # Find addons preset paths
-    import addon_utils
-    for path in addon_utils.paths():
+    for path in _addon_utils.paths():
         directory = _os.path.join(path, "presets", subdir)
         if _os.path.isdir(directory):
             dirs.append(directory)
@@ -391,6 +388,11 @@ def smpte_from_frame(frame, fps=None, fps_base=None):
     Returns an SMPTE formatted string from the frame: "HH:MM:SS:FF".
 
     If *fps* and *fps_base* are not given the current scene is used.
+
+    :arg time: time in seconds.
+    :type time: number or timedelta object
+    :return: the frame.
+    :rtype: float
     """
 
     if fps is None:
@@ -400,6 +402,56 @@ def smpte_from_frame(frame, fps=None, fps_base=None):
         fps_base = _bpy.context.scene.render.fps_base
 
     return smpte_from_seconds((frame * fps_base) / fps, fps)
+
+
+def time_from_frame(frame, fps=None, fps_base=None):
+    """
+    Returns the time from a frame number .
+
+    If *fps* and *fps_base* are not given the current scene is used.
+
+    :arg frame: number.
+    :type frame: the frame number
+    :return: the time in seconds.
+    :rtype: timedate.timedelta
+    """
+
+    if fps is None:
+        fps = _bpy.context.scene.render.fps
+
+    if fps_base is None:
+        fps_base = _bpy.context.scene.render.fps_base
+
+    from datetime import timedelta
+
+    return timedelta((frame * fps_base) / fps)
+
+
+def time_to_frame(time, fps=None, fps_base=None):
+    """
+    Returns a float frame number from a time given in seconds or
+    as a timedate.timedelta object.
+
+    If *fps* and *fps_base* are not given the current scene is used.
+
+    :arg time: time in seconds.
+    :type time: number or a timedate.timedelta object
+    :return: the frame.
+    :rtype: float
+    """
+
+    if fps is None:
+        fps = _bpy.context.scene.render.fps
+
+    if fps_base is None:
+        fps_base = _bpy.context.scene.render.fps_base
+
+    from datetime import timedelta
+
+    if isinstance(time, timedelta):
+        time = time.total_seconds()
+
+    return (time / fps_base) * fps
 
 
 def preset_find(name, preset_path, display_name=False, ext=".py"):
@@ -426,7 +478,7 @@ def preset_find(name, preset_path, display_name=False, ext=".py"):
 def keyconfig_set(filepath):
     from os.path import basename, splitext
 
-    if _bpy.app.debug:
+    if _bpy.app.debug_python:
         print("loading preset:", filepath)
 
     keyconfigs = _bpy.context.window_manager.keyconfigs
@@ -435,7 +487,7 @@ def keyconfig_set(filepath):
 
     try:
         keyfile = open(filepath)
-        exec(compile(keyfile.read(), filepath, 'exec'), {"__file__": filepath})
+        exec(compile(keyfile.read(), filepath, "exec"), {"__file__": filepath})
         keyfile.close()
     except:
         import traceback

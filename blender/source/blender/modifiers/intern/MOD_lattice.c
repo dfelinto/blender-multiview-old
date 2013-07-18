@@ -40,7 +40,6 @@
 #include "BLI_utildefines.h"
 #include "BLI_string.h"
 
-
 #include "BKE_cdderivedmesh.h"
 #include "BKE_lattice.h"
 #include "BKE_modifier.h"
@@ -49,11 +48,16 @@
 
 #include "MOD_util.h"
 
+static void initData(ModifierData *md)
+{
+	LatticeModifierData *lmd = (LatticeModifierData *) md;
+	lmd->strength = 1.0f;
+}
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
-	LatticeModifierData *lmd = (LatticeModifierData*) md;
-	LatticeModifierData *tlmd = (LatticeModifierData*) target;
+	LatticeModifierData *lmd = (LatticeModifierData *) md;
+	LatticeModifierData *tlmd = (LatticeModifierData *) target;
 
 	tlmd->object = lmd->object;
 	BLI_strncpy(tlmd->name, lmd->name, sizeof(tlmd->name));
@@ -65,36 +69,36 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	CustomDataMask dataMask = 0;
 
 	/* ask for vertexgroups if we need them */
-	if(lmd->name[0]) dataMask |= CD_MASK_MDEFORMVERT;
+	if (lmd->name[0]) dataMask |= CD_MASK_MDEFORMVERT;
 
 	return dataMask;
 }
 
 static int isDisabled(ModifierData *md, int UNUSED(userRenderParams))
 {
-	LatticeModifierData *lmd = (LatticeModifierData*) md;
+	LatticeModifierData *lmd = (LatticeModifierData *) md;
 
 	return !lmd->object;
 }
 
 static void foreachObjectLink(
-						  ModifierData *md, Object *ob,
-	   void (*walk)(void *userData, Object *ob, Object **obpoin),
-		  void *userData)
+    ModifierData *md, Object *ob,
+    void (*walk)(void *userData, Object *ob, Object **obpoin),
+    void *userData)
 {
-	LatticeModifierData *lmd = (LatticeModifierData*) md;
+	LatticeModifierData *lmd = (LatticeModifierData *) md;
 
 	walk(userData, ob, &lmd->object);
 }
 
 static void updateDepgraph(ModifierData *md, DagForest *forest,
-						struct Scene *UNUSED(scene),
-						Object *UNUSED(ob),
-						DagNode *obNode)
+                           struct Scene *UNUSED(scene),
+                           Object *UNUSED(ob),
+                           DagNode *obNode)
 {
-	LatticeModifierData *lmd = (LatticeModifierData*) md;
+	LatticeModifierData *lmd = (LatticeModifierData *) md;
 
-	if(lmd->object) {
+	if (lmd->object) {
 		DagNode *latNode = dag_get_node(forest, lmd->object);
 
 		dag_add_relation(forest, latNode, obNode,
@@ -103,32 +107,31 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 }
 
 static void deformVerts(ModifierData *md, Object *ob,
-						DerivedMesh *derivedData,
-						float (*vertexCos)[3],
-						int numVerts,
-						int UNUSED(useRenderParams),
-						int UNUSED(isFinalCalc))
+                        DerivedMesh *derivedData,
+                        float (*vertexCos)[3],
+                        int numVerts,
+                        ModifierApplyFlag UNUSED(flag))
 {
-	LatticeModifierData *lmd = (LatticeModifierData*) md;
+	LatticeModifierData *lmd = (LatticeModifierData *) md;
 
 
 	modifier_vgroup_cache(md, vertexCos); /* if next modifier needs original vertices */
 	
 	lattice_deform_verts(lmd->object, ob, derivedData,
-	                     vertexCos, numVerts, lmd->name);
+	                     vertexCos, numVerts, lmd->name, lmd->strength);
 }
 
 static void deformVertsEM(
-					  ModifierData *md, Object *ob, struct BMEditMesh *editData,
-	   DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
+        ModifierData *md, Object *ob, struct BMEditMesh *editData,
+        DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = derivedData;
 
-	if(!derivedData) dm = CDDM_from_BMEditMesh(editData, ob->data, FALSE, FALSE);
+	if (!derivedData) dm = CDDM_from_BMEditMesh(editData, ob->data, FALSE, FALSE);
 
-	deformVerts(md, ob, dm, vertexCos, numVerts, 0, 0);
+	deformVerts(md, ob, dm, vertexCos, numVerts, 0);
 
-	if(!derivedData) dm->release(dm);
+	if (!derivedData) dm->release(dm);
 }
 
 
@@ -137,8 +140,8 @@ ModifierTypeInfo modifierType_Lattice = {
 	/* structName */        "LatticeModifierData",
 	/* structSize */        sizeof(LatticeModifierData),
 	/* type */              eModifierTypeType_OnlyDeform,
-	/* flags */             eModifierTypeFlag_AcceptsCVs
-							| eModifierTypeFlag_SupportsEditmode,
+	/* flags */             eModifierTypeFlag_AcceptsCVs |
+	                        eModifierTypeFlag_SupportsEditmode,
 	/* copyData */          copyData,
 	/* deformVerts */       deformVerts,
 	/* deformMatrices */    NULL,
@@ -146,7 +149,7 @@ ModifierTypeInfo modifierType_Lattice = {
 	/* deformMatricesEM */  NULL,
 	/* applyModifier */     NULL,
 	/* applyModifierEM */   NULL,
-	/* initData */          NULL,
+	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,
 	/* freeData */          NULL,
 	/* isDisabled */        isDisabled,

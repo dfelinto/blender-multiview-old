@@ -148,9 +148,10 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
 
         col = row.column(align=True)
         col.operator("object.vertex_group_add", icon='ZOOMIN', text="")
-        col.operator("object.vertex_group_remove", icon='ZOOMOUT', text="")
+        col.operator("object.vertex_group_remove", icon='ZOOMOUT', text="").all = False
         col.menu("MESH_MT_vertex_group_specials", icon='DOWNARROW_HLT', text="")
         if group:
+            col.separator()
             col.operator("object.vertex_group_move", icon='TRIA_UP', text="").direction = 'UP'
             col.operator("object.vertex_group_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
 
@@ -162,7 +163,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
             row = layout.row()
 
             sub = row.row(align=True)
-            sub.operator("object.vertex_group_assign", text="Assign")
+            sub.operator("object.vertex_group_assign", text="Assign").new = False
             sub.operator("object.vertex_group_remove_from", text="Remove")
 
             sub = row.row(align=True)
@@ -233,7 +234,10 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
             sub.prop(ob, "use_shape_key_edit_mode", text="")
 
             sub = row.row()
-            sub.operator("object.shape_key_clear", icon='X', text="")
+            if key.use_relative:
+                sub.operator("object.shape_key_clear", icon='X', text="")
+            else:
+                sub.operator("object.shape_key_retime", icon='RECOVER_LAST', text="")
 
             row = layout.row()
             row.prop(kb, "name")
@@ -259,8 +263,10 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
                     col.prop_search(kb, "relative_key", key, "key_blocks", text="")
 
             else:
-                row = layout.row()
+                layout.prop(kb, "interpolation")
+                row = layout.column()
                 row.active = enable_edit_value
+                row.prop(key, "eval_time")
                 row.prop(key, "slurph")
 
 

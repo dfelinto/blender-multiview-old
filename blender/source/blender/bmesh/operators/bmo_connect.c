@@ -20,13 +20,19 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/bmesh/operators/bmo_connect.c
+ *  \ingroup bmesh
+ */
+
 #include "MEM_guardedalloc.h"
-
-
-#include "bmesh.h"
 
 #include "BLI_math.h"
 #include "BLI_array.h"
+#include "BLI_utildefines.h"
+
+#include "bmesh.h"
+
+#include "intern/bmesh_operators_private.h" /* own include */
 
 #define VERT_INPUT	1
 #define EDGE_OUT	1
@@ -34,7 +40,7 @@
 #define EDGE_MARK	4
 #define EDGE_DONE	8
 
-void bmo_connectverts_exec(BMesh *bm, BMOperator *op)
+void bmo_connect_verts_exec(BMesh *bm, BMOperator *op)
 {
 	BMIter iter, liter;
 	BMFace *f, *nf;
@@ -65,10 +71,10 @@ void bmo_connectverts_exec(BMesh *bm, BMOperator *op)
 				}
 
 				if (lastl != l->prev && lastl != l->next) {
-					BLI_array_growone(loops);
+					BLI_array_grow_one(loops);
 					loops[BLI_array_count(loops) - 1] = lastl;
 
-					BLI_array_growone(loops);
+					BLI_array_grow_one(loops);
 					loops[BLI_array_count(loops) - 1] = l;
 
 				}
@@ -81,10 +87,10 @@ void bmo_connectverts_exec(BMesh *bm, BMOperator *op)
 		}
 		
 		if (BLI_array_count(loops) > 2) {
-			BLI_array_growone(loops);
+			BLI_array_grow_one(loops);
 			loops[BLI_array_count(loops) - 1] = loops[BLI_array_count(loops) - 2];
 
-			BLI_array_growone(loops);
+			BLI_array_grow_one(loops);
 			loops[BLI_array_count(loops) - 1] = loops[0];
 		}
 
@@ -95,10 +101,10 @@ void bmo_connectverts_exec(BMesh *bm, BMOperator *op)
 				continue;
 			}
 
-			BLI_array_growone(verts);
+			BLI_array_grow_one(verts);
 			verts[BLI_array_count(verts) - 1] = loops[i * 2]->v;
 
-			BLI_array_growone(verts);
+			BLI_array_grow_one(verts);
 			verts[BLI_array_count(verts) - 1] = loops[i * 2 + 1]->v;
 		}
 
@@ -116,7 +122,7 @@ void bmo_connectverts_exec(BMesh *bm, BMOperator *op)
 		}
 	}
 
-	BMO_slot_buffer_from_flag(bm, op, "edgeout", BM_EDGE, EDGE_OUT);
+	BMO_slot_buffer_from_enabled_flag(bm, op, "edgeout", BM_EDGE, EDGE_OUT);
 
 	BLI_array_free(loops);
 	BLI_array_free(verts);
@@ -129,7 +135,7 @@ static BMVert *get_outer_vert(BMesh *bm, BMEdge *e)
 	int i;
 
 	i = 0;
-	BM_ITER(e2, &iter, bm, BM_EDGES_OF_VERT, e->v1) {
+	BM_ITER_ELEM (e2, &iter, e->v1, BM_EDGES_OF_VERT) {
 		if (BMO_elem_flag_test(bm, e2, EDGE_MARK)) {
 			i++;
 		}
@@ -141,7 +147,16 @@ static BMVert *get_outer_vert(BMesh *bm, BMEdge *e)
 /* Clamp x to the interval {0..len-1}, with wrap-around */
 static int clamp_index(const int x, const int len)
 {
-	return (x < 0) ? (len - (-x % len)) : (x % len);
+	if (x >= 0) {
+		return x % len;
+	}
+	else {
+		int r = len - (-x % len);
+		if (r == len)
+			return len - 1;
+		else
+			return r;
+	}
 }
 
 /* There probably is a better way to swap BLI_arrays, or if there
@@ -163,7 +178,7 @@ static int clamp_index(const int x, const int len)
 			BLI_array_append(arr2, arr_tmp[i]);                               \
 		}                                                                     \
 		BLI_array_free(arr_tmp);                                              \
-	}
+	} (void)0
 
 /* get the 2 loops matching 2 verts.
  * first attempt to get the face corners that use the edge defined by v1 & v2,
@@ -176,7 +191,7 @@ static void bm_vert_loop_pair(BMesh *bm, BMVert *v1, BMVert *v2, BMLoop **l1, BM
 	if ((v1->e && v1->e->l) &&
 	    (v2->e && v2->e->l))
 	{
-		BM_ITER(l, &liter, bm, BM_LOOPS_OF_VERT, v1) {
+		BM_ITER_ELEM (l, &liter, v1, BM_LOOPS_OF_VERT) {
 			if (l->prev->v == v2) {
 				*l1 = l;
 				*l2 = l->prev;
@@ -210,7 +225,7 @@ void bmo_bridge_loops_exec(BMesh *bm, BMOperator *op)
 
 	BMO_slot_buffer_flag_enable(bm, op, "edges", BM_EDGE, EDGE_MARK);
 
-	BMO_ITER(e, &siter, bm, op, "edges", BM_EDGE) {
+	BMO_ITER (e, &siter, bm, op, "edges", BM_EDGE) {
 		if (!BMO_elem_flag_test(bm, e, EDGE_DONE)) {
 			BMVert *v, *ov;
 			/* BMEdge *e2, *e3, *oe = e; */ /* UNUSED */
@@ -226,7 +241,7 @@ void bmo_bridge_loops_exec(BMesh *bm, BMOperator *op)
 			do {
 				v = BM_edge_other_vert(e2, v);
 				nexte = NULL;
-				BM_ITER(e3, &iter, bm, BM_EDGES_OF_VERT, v) {
+				BM_ITER_ELEM (e3, &iter, v, BM_EDGES_OF_VERT) {
 					if (e3 != e2 && BMO_elem_flag_test(bm, e3, EDGE_MARK)) {
 						if (nexte == NULL) {
 							nexte = e3;
@@ -263,7 +278,7 @@ void bmo_bridge_loops_exec(BMesh *bm, BMOperator *op)
 				BMO_elem_flag_enable(bm, e2, EDGE_DONE);
 				
 				v = BM_edge_other_vert(e2, v);
-				BM_ITER(e3, &iter, bm, BM_EDGES_OF_VERT, v) {
+				BM_ITER_ELEM (e3, &iter, v, BM_EDGES_OF_VERT) {
 					if (e3 != e2 && BMO_elem_flag_test(bm, e3, EDGE_MARK) && !BMO_elem_flag_test(bm, e3, EDGE_DONE)) {
 						break;
 					}
@@ -429,7 +444,7 @@ void bmo_bridge_loops_exec(BMesh *bm, BMOperator *op)
 			i2 = i;
 			i2next = clamp_index(i + 1, lenv2);
 
-			if (vv1[i1] ==  vv1[i1next]) {
+			if (vv1[i1] == vv1[i1next]) {
 				continue;
 			}
 

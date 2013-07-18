@@ -83,20 +83,20 @@ void BlenderSession::create_session()
 	SessionParams session_params = BlenderSync::get_session_params(b_userpref, b_scene, background);
 
 	/* reset status/progress */
-	last_status= "";
-	last_progress= -1.0f;
+	last_status = "";
+	last_progress = -1.0f;
 
 	/* create scene */
 	scene = new Scene(scene_params);
 
 	/* create sync */
 	sync = new BlenderSync(b_data, b_scene, scene, !background);
-	sync->sync_data(b_v3d);
+	sync->sync_data(b_v3d, b_engine.camera_override());
 
 	if(b_rv3d)
 		sync->sync_view(b_v3d, b_rv3d, width, height);
 	else
-		sync->sync_camera(width, height);
+		sync->sync_camera(b_engine.camera_override(), width, height);
 
 	/* create session */
 	session = new Session(session_params);
@@ -106,7 +106,7 @@ void BlenderSession::create_session()
 	session->set_pause(BlenderSync::get_session_pause(b_scene, background));
 
 	/* set buffer parameters */
-	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, b_rv3d, width, height);
+	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, scene->camera, width, height);
 	session->reset(buffer_params, session_params.samples);
 }
 
@@ -130,6 +130,8 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 			return PASS_OBJECT_ID;
 		case BL::RenderPass::type_UV:
 			return PASS_UV;
+		case BL::RenderPass::type_VECTOR:
+			return PASS_MOTION;
 		case BL::RenderPass::type_MATERIAL_INDEX:
 			return PASS_MATERIAL_ID;
 
@@ -160,14 +162,14 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 			return PASS_BACKGROUND;
 		case BL::RenderPass::type_AO:
 			return PASS_AO;
+		case BL::RenderPass::type_SHADOW:
+			return PASS_SHADOW;
 
 		case BL::RenderPass::type_DIFFUSE:
-		case BL::RenderPass::type_SHADOW:
 		case BL::RenderPass::type_COLOR:
 		case BL::RenderPass::type_REFRACTION:
 		case BL::RenderPass::type_SPECULAR:
 		case BL::RenderPass::type_REFLECTION:
-		case BL::RenderPass::type_VECTOR:
 		case BL::RenderPass::type_MIST:
 			return PASS_NONE;
 	}
@@ -179,7 +181,7 @@ void BlenderSession::render()
 {
 	/* get buffer parameters */
 	SessionParams session_params = BlenderSync::get_session_params(b_userpref, b_scene, background);
-	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, b_rv3d, width, height);
+	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, scene->camera, width, height);
 	int w = buffer_params.width, h = buffer_params.height;
 
 	/* create render result */
@@ -208,20 +210,24 @@ void BlenderSession::render()
 				BL::RenderPass b_pass(*b_pass_iter);
 				PassType pass_type = get_pass_type(b_pass);
 
+				if(pass_type == PASS_MOTION && scene->integrator->motion_blur)
+					continue;
 				if(pass_type != PASS_NONE)
 					Pass::add(pass_type, passes);
 			}
 		}
 
 		buffer_params.passes = passes;
-		scene->film->passes = passes;
+		scene->film->tag_passes_update(scene, passes);
 		scene->film->tag_update(scene);
-
-		/* update session */
-		session->reset(buffer_params, session_params.samples);
+		scene->integrator->tag_update(scene);
 
 		/* update scene */
-		sync->sync_data(b_v3d, b_iter->name().c_str());
+		sync->sync_data(b_v3d, b_engine.camera_override(), b_iter->name().c_str());
+
+		/* update session */
+		int samples = sync->get_layer_samples();
+		session->reset(buffer_params, (samples == 0)? session_params.samples: samples);
 
 		/* render */
 		session->start();
@@ -286,7 +292,8 @@ void BlenderSession::synchronize()
 	SessionParams session_params = BlenderSync::get_session_params(b_userpref, b_scene, background);
 
 	if(session->params.modified(session_params) ||
-	   scene->params.modified(scene_params)) {
+	   scene->params.modified(scene_params))
+	{
 		free_session();
 		create_session();
 		session->start();
@@ -298,7 +305,7 @@ void BlenderSession::synchronize()
 	session->set_pause(BlenderSync::get_session_pause(b_scene, background));
 
 	/* copy recalc flags, outside of mutex so we can decide to do the real
-	   synchronization at a later time to not block on running updates */
+	 * synchronization at a later time to not block on running updates */
 	sync->sync_recalc();
 
 	/* try to acquire mutex. if we don't want to or can't, come back later */
@@ -308,19 +315,19 @@ void BlenderSession::synchronize()
 	}
 
 	/* data and camera synchronize */
-	sync->sync_data(b_v3d);
+	sync->sync_data(b_v3d, b_engine.camera_override());
 
 	if(b_rv3d)
 		sync->sync_view(b_v3d, b_rv3d, width, height);
 	else
-		sync->sync_camera(width, height);
+		sync->sync_camera(b_engine.camera_override(), width, height);
 
 	/* unlock */
 	session->scene->mutex.unlock();
 
 	/* reset if needed */
 	if(scene->need_reset()) {
-		BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, b_rv3d, width, height);
+		BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, scene->camera, width, height);
 		session->reset(buffer_params, session_params.samples);
 	}
 }
@@ -328,7 +335,7 @@ void BlenderSession::synchronize()
 bool BlenderSession::draw(int w, int h)
 {
 	/* before drawing, we verify camera and viewport size changes, because
-	   we do not get update callbacks for those, we must detect them here */
+	 * we do not get update callbacks for those, we must detect them here */
 	if(session->ready_to_reset()) {
 		bool reset = false;
 
@@ -358,7 +365,7 @@ bool BlenderSession::draw(int w, int h)
 		/* reset if requested */
 		if(reset) {
 			SessionParams session_params = BlenderSync::get_session_params(b_userpref, b_scene, background);
-			BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, b_rv3d, width, height);
+			BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, scene->camera, w, h);
 
 			session->reset(buffer_params, session_params.samples);
 		}
@@ -368,7 +375,7 @@ bool BlenderSession::draw(int w, int h)
 	update_status_progress();
 
 	/* draw */
-	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, b_rv3d, width, height);
+	BufferParams buffer_params = BlenderSync::get_buffer_params(b_scene, scene->camera, width, height);
 
 	return !session->draw(buffer_params);
 }
@@ -423,11 +430,11 @@ void BlenderSession::tag_redraw()
 {
 	if(background) {
 		/* update stats and progress, only for background here because
-		   in 3d view we do it in draw for thread safety reasons */
+		 * in 3d view we do it in draw for thread safety reasons */
 		update_status_progress();
 
 		/* offline render, redraw if timeout passed */
-		if(time_dt() - last_redraw_time > 1.0f) {
+		if(time_dt() - last_redraw_time > 1.0) {
 			write_render_result();
 			engine_tag_redraw((RenderEngine*)b_engine.ptr.data);
 			last_redraw_time = time_dt();

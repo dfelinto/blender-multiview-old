@@ -37,7 +37,7 @@
 
 /* custom1 = sfra, custom2 = efra */
 static bNodeSocketTemplate time_outputs[]= {
-	{ SOCK_FLOAT, 0, "Value" },
+	{ SOCK_FLOAT, 0, N_("Value") },
 	{ -1, 0, "" }
 };
 
@@ -46,7 +46,7 @@ static void time_colorfn(float *out, TexParams *p, bNode *node, bNodeStack **UNU
 	/* stack order output: fac */
 	float fac= 0.0f;
 	
-	if(node->custom1 < node->custom2)
+	if (node->custom1 < node->custom2)
 		fac = (p->cfra - node->custom1)/(float)(node->custom2-node->custom1);
 	
 	fac = curvemapping_evaluateF(node->storage, 0, fac);
@@ -82,12 +82,12 @@ void register_node_type_tex_curve_time(bNodeTreeType *ttype)
 
 /* **************** CURVE RGB  ******************** */
 static bNodeSocketTemplate rgb_inputs[]= {
-	{	SOCK_RGBA, 1, "Color",	0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 1, N_("Color"),	0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate rgb_outputs[]= {
-	{	SOCK_RGBA, 0, "Color"},
+	{	SOCK_RGBA, 0, N_("Color")},
 	{	-1, 0, ""	}
 };
 

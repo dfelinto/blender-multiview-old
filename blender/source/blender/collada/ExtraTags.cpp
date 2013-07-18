@@ -32,7 +32,7 @@
 
 #include "ExtraTags.h"
 
-ExtraTags::ExtraTags( std::string profile)
+ExtraTags::ExtraTags(std::string profile)
 {
 	this->profile = profile;
 	this->tags = std::map<std::string, std::string>();
@@ -42,21 +42,21 @@ ExtraTags::~ExtraTags()
 {
 }
 
-bool ExtraTags::isProfile( std::string profile)
+bool ExtraTags::isProfile(std::string profile)
 {
 	return this->profile == profile;
 }
 
-bool ExtraTags::addTag( std::string tag,  std::string data)
+bool ExtraTags::addTag(std::string tag,  std::string data)
 {
 	tags[tag] = data;
 	
 	return true;
 }
 
-int ExtraTags::asInt( std::string tag, bool *ok)
+int ExtraTags::asInt(std::string tag, bool *ok)
 {
-	if(tags.find(tag) == tags.end()) {
+	if (tags.find(tag) == tags.end()) {
 		*ok = false;
 		return -1;
 	}
@@ -64,9 +64,9 @@ int ExtraTags::asInt( std::string tag, bool *ok)
 	return atoi(tags[tag].c_str());
 }
 
-float ExtraTags::asFloat( std::string tag, bool *ok)
+float ExtraTags::asFloat(std::string tag, bool *ok)
 {
-	if(tags.find(tag) == tags.end()) {
+	if (tags.find(tag) == tags.end()) {
 		*ok = false;
 		return -1.0f;
 	}
@@ -74,9 +74,9 @@ float ExtraTags::asFloat( std::string tag, bool *ok)
 	return (float)atof(tags[tag].c_str());
 }
 
-std::string ExtraTags::asString( std::string tag, bool *ok)
+std::string ExtraTags::asString(std::string tag, bool *ok)
 {
-	if(tags.find(tag) == tags.end()) {
+	if (tags.find(tag) == tags.end()) {
 		*ok = false;
 		return "";
 	}
@@ -89,28 +89,28 @@ void ExtraTags::setData(std::string tag, short *data)
 {
 	bool ok = false;
 	int tmp = asInt(tag, &ok);
-	if(ok)
+	if (ok)
 		*data = (short)tmp;
 }
 void ExtraTags::setData(std::string tag, int *data)
 {
 	bool ok = false;
 	int tmp = asInt(tag, &ok);
-	if(ok)
+	if (ok)
 		*data = tmp;
 }
 void ExtraTags::setData(std::string tag, float *data)
 {
 	bool ok = false;
 	float tmp = asFloat(tag, &ok);
-	if(ok)
+	if (ok)
 		*data = tmp;
 }
 void ExtraTags::setData(std::string tag, char *data)
 {
 	bool ok = false;
 	int tmp = asInt(tag, &ok);
-	if(ok)
+	if (ok)
 		*data = (char)tmp;
 }
 	

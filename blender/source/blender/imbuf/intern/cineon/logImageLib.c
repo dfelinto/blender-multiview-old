@@ -1,6 +1,3 @@
-/** \file blender/imbuf/intern/cineon/logImageLib.c
- *  \ingroup imbcineon
- */
 /*
  *	 Cineon and DPX image file format library routines.
  *
@@ -22,6 +19,10 @@
  *
  */
 
+/** \file blender/imbuf/intern/cineon/logImageLib.c
+ *  \ingroup imbcineon
+ */
+
 #include "cineonlib.h"
 #include "dpxlib.h"
 
@@ -36,6 +37,7 @@
 #include <netinet/in.h>	 /* htonl() */
 #endif
 #include <string.h>			 /* memset */
+#include "BLI_fileops.h"
 
 #define MIN_GAMMA 0.01
 #define MAX_GAMMA 99.9
@@ -55,7 +57,8 @@ logImageOpen(const char* filename, int cineon)
 {
 	if (cineon) {
 		return cineonOpen(filename);
-	} else {
+	}
+	else {
 		return dpxOpen(filename);
 	}
 	return 0;
@@ -66,7 +69,8 @@ logImageOpenFromMem(unsigned char *buffer, unsigned int size, int cineon)
 {
 	if (cineon) {
 		return cineonOpenFromMem(buffer, size);
-	} else {
+	}
+	else {
 		return dpxOpenFromMem(buffer, size);
 	}
 	return 0;
@@ -77,7 +81,8 @@ logImageCreate(const char* filename, int cineon, int width, int height, int dept
 {
 	if (cineon) {
 		return cineonCreate(filename, width, height, depth);
-	} else {
+	}
+	else {
 		return dpxCreate(filename, width, height, depth);
 	}
 	return 0;
@@ -116,10 +121,11 @@ int
 logImageSetByteConversion(LogImageFile* logImage, const LogImageByteConversionParameters* params)
 {
 	if ((params->gamma >= MIN_GAMMA) &&
-			(params->gamma <= MAX_GAMMA) &&
-			(params->blackPoint >= 0) &&
-			(params->blackPoint < params->whitePoint) &&
-			(params->whitePoint <= 1023)) {
+	    (params->gamma <= MAX_GAMMA) &&
+	    (params->blackPoint >= 0) &&
+	    (params->blackPoint < params->whitePoint) &&
+	    (params->whitePoint <= 1023))
+	{
 		logImage->params.gamma = params->gamma;
 		logImage->params.blackPoint = params->blackPoint;
 		logImage->params.whitePoint = params->whitePoint;
@@ -154,7 +160,7 @@ logImageDump(const char* filename)
 
 	U32 magic;
 
-	FILE* foo = fopen(filename, "rb");
+	FILE* foo = BLI_fopen(filename, "rb");
 	if (foo == 0) {
 		return;
 	}
@@ -170,7 +176,8 @@ logImageDump(const char* filename)
 #if 0
 		cineonDump(filename);
 #endif
-	} else if (magic == ntohl(DPX_FILE_MAGIC)) {
+	}
+	else if (magic == ntohl(DPX_FILE_MAGIC)) {
 		dpxDump(filename);
 	}
 }

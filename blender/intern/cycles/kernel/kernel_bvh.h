@@ -34,8 +34,8 @@ CCL_NAMESPACE_BEGIN
 #define TRI_NODE_SIZE 3
 
 /* silly workaround for float extended precision that happens when compiling
-   without sse support on x86, it results in different results for float ops
-   that you would otherwise expect to compare correctly */
+ * without sse support on x86, it results in different results for float ops
+ * that you would otherwise expect to compare correctly */
 #if !defined(__i386__) || defined(__SSE__)
 #define NO_EXTENDED_PRECISION
 #else
@@ -57,9 +57,9 @@ __device_inline float3 bvh_inverse_direction(float3 dir)
 
 __device_inline void bvh_instance_push(KernelGlobals *kg, int object, const Ray *ray, float3 *P, float3 *idir, float *t, const float tmax)
 {
-	Transform tfm = object_fetch_transform(kg, object, OBJECT_INVERSE_TRANSFORM);
+	Transform tfm = object_fetch_transform(kg, object, ray->time, OBJECT_INVERSE_TRANSFORM);
 
-	*P = transform(&tfm, ray->P);
+	*P = transform_point(&tfm, ray->P);
 
 	float3 dir = transform_direction(&tfm, ray->D);
 
@@ -74,10 +74,10 @@ __device_inline void bvh_instance_push(KernelGlobals *kg, int object, const Ray 
 
 __device_inline void bvh_instance_pop(KernelGlobals *kg, int object, const Ray *ray, float3 *P, float3 *idir, float *t, const float tmax)
 {
-	Transform tfm = object_fetch_transform(kg, object, OBJECT_TRANSFORM);
-
-	if(*t != FLT_MAX)
+	if(*t != FLT_MAX) {
+		Transform tfm = object_fetch_transform(kg, object, ray->time, OBJECT_TRANSFORM);
 		*t *= len(transform_direction(&tfm, 1.0f/(*idir)));
+	}
 
 	*P = ray->P;
 	*idir = bvh_inverse_direction(ray->D);
@@ -160,7 +160,7 @@ __device_inline void bvh_triangle_intersect(KernelGlobals *kg, Intersection *ise
 			if(v >= 0.0f && u + v <= 1.0f) {
 #ifdef __VISIBILITY_FLAG__
 				/* visibility flag test. we do it here under the assumption
-				   that most triangles are culled by node flags */
+				 * that most triangles are culled by node flags */
 				if(kernel_tex_fetch(__prim_visibility, triAddr) & visibility)
 #endif
 				{
@@ -341,7 +341,7 @@ __device_inline float3 ray_offset(float3 P, float3 Ng)
 #endif
 }
 
-__device_inline float3 bvh_triangle_refine(KernelGlobals *kg, const Intersection *isect, const Ray *ray)
+__device_inline float3 bvh_triangle_refine(KernelGlobals *kg, ShaderData *sd, const Intersection *isect, const Ray *ray)
 {
 	float3 P = ray->P;
 	float3 D = ray->D;
@@ -349,9 +349,13 @@ __device_inline float3 bvh_triangle_refine(KernelGlobals *kg, const Intersection
 
 #ifdef __INTERSECTION_REFINE__
 	if(isect->object != ~0) {
-		Transform tfm = object_fetch_transform(kg, isect->object, OBJECT_INVERSE_TRANSFORM);
+#ifdef __MOTION__
+		Transform tfm = sd->ob_itfm;
+#else
+		Transform tfm = object_fetch_transform(kg, isect->object, ray->time, OBJECT_INVERSE_TRANSFORM);
+#endif
 
-		P = transform(&tfm, P);
+		P = transform_point(&tfm, P);
 		D = transform_direction(&tfm, D*t);
 		D = normalize_len(D, &t);
 	}
@@ -366,8 +370,13 @@ __device_inline float3 bvh_triangle_refine(KernelGlobals *kg, const Intersection
 	P = P + D*rt;
 
 	if(isect->object != ~0) {
-		Transform tfm = object_fetch_transform(kg, isect->object, OBJECT_TRANSFORM);
-		P = transform(&tfm, P);
+#ifdef __MOTION__
+		Transform tfm = sd->ob_tfm;
+#else
+		Transform tfm = object_fetch_transform(kg, isect->object, ray->time, OBJECT_TRANSFORM);
+#endif
+
+		P = transform_point(&tfm, P);
 	}
 
 	return P;

@@ -82,10 +82,6 @@ extern "C" {
 /* #include "BKE_screen.h" */ /* cant include this because of 'new' function name */
 extern float BKE_screen_view3d_zoom_to_fac(float camzoom);
 
-
-//XXX #include "BIF_screen.h"
-//XXX #include "BIF_scrarea.h"
-
 #include "BKE_main.h"
 #include "BLI_blenlib.h"
 #include "BLO_readfile.h"
@@ -93,7 +89,6 @@ extern float BKE_screen_view3d_zoom_to_fac(float camzoom);
 #include "BKE_ipo.h"
 	/***/
 
-//XXX #include "BSE_headerbuttons.h"
 #include "BKE_context.h"
 #include "../../blender/windowmanager/WM_types.h"
 #include "../../blender/windowmanager/wm_window.h"
@@ -194,7 +189,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		bool mouse_state = startscene->gm.flag & GAME_SHOW_MOUSE;
 		bool restrictAnimFPS = startscene->gm.flag & GAME_RESTRICT_ANIM_UPDATES;
 
-		if(animation_record) usefixed= true; /* override since you's always want fixed time for sim recording */
+		if (animation_record) usefixed= false; /* override since you don't want to run full-speed for sim recording */
 
 		// create the canvas, rasterizer and rendertools
 		RAS_ICanvas* canvas = new KX_BlenderCanvas(win, area_rect, ar);
@@ -207,7 +202,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		RAS_IRenderTools* rendertools = new KX_BlenderRenderTools();
 		RAS_IRasterizer* rasterizer = NULL;
 		
-		if(displaylists) {
+		if (displaylists) {
 			if (GLEW_VERSION_1_1 && !novertexarrays)
 				rasterizer = new RAS_ListRasterizer(canvas, true, true);
 			else
@@ -259,7 +254,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		int tmp_lay= startscene->lay;
 		Object *tmp_camera = startscene->camera;
 
-		if (v3d->scenelock==0){
+		if (v3d->scenelock==0) {
 			startscene->lay= v3d->lay;
 			startscene->camera= v3d->camera;
 		}
@@ -268,8 +263,8 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		float camzoom;
 		int draw_letterbox = 0;
 		
-		if(rv3d->persp==RV3D_CAMOB) {
-			if(startscene->gm.framing.type == SCE_GAMEFRAMING_BARS) { /* Letterbox */
+		if (rv3d->persp==RV3D_CAMOB) {
+			if (startscene->gm.framing.type == SCE_GAMEFRAMING_BARS) { /* Letterbox */
 				camzoom = 1.0f;
 				draw_letterbox = 1;
 			}
@@ -323,7 +318,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				blenderdata = bfd->main;
 				startscenename = bfd->curscene->id.name + 2;
 
-				if(blenderdata) {
+				if (blenderdata) {
 					BLI_strncpy(G.main->name, blenderdata->name, sizeof(G.main->name));
 					BLI_strncpy(pathname, blenderdata->name, sizeof(pathname));
 #ifdef WITH_PYTHON
@@ -346,7 +341,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			ketsjiengine->SetAnimRecordMode(animation_record, startFrame);
 			
 			// Quad buffered needs a special window.
-			if(gs.stereoflag == STEREO_ENABLED){
+			if (scene->gm.stereoflag == STEREO_ENABLED) {
 				if (scene->gm.stereomode != RAS_IRasterizer::RAS_STEREO_QUADBUFFERED)
 					rasterizer->SetStereoMode((RAS_IRasterizer::StereoMode) scene->gm.stereomode);
 				
@@ -366,7 +361,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				ketsjiengine->SetCameraOverrideUseOrtho((rv3d->persp == RV3D_ORTHO));
 				ketsjiengine->SetCameraOverrideProjectionMatrix(MT_CmMatrix4x4(rv3d->winmat));
 				ketsjiengine->SetCameraOverrideViewMatrix(MT_CmMatrix4x4(rv3d->viewmat));
-				if(rv3d->persp == RV3D_ORTHO)
+				if (rv3d->persp == RV3D_ORTHO)
 				{
 					ketsjiengine->SetCameraOverrideClipping(-v3d->far, v3d->far);
 				}
@@ -386,17 +381,17 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 
 			bool usemat = false, useglslmat = false;
 
-			if(GLEW_ARB_multitexture && GLEW_VERSION_1_1)
+			if (GLEW_ARB_multitexture && GLEW_VERSION_1_1)
 				usemat = true;
 
-			if(GPU_glsl_support())
+			if (GPU_glsl_support())
 				useglslmat = true;
-			else if(gs.matmode == GAME_MAT_GLSL)
+			else if (gs.matmode == GAME_MAT_GLSL)
 				usemat = false;
 
-			if(usemat && (gs.matmode != GAME_MAT_TEXFACE))
+			if (usemat && (gs.matmode != GAME_MAT_TEXFACE))
 				sceneconverter->SetMaterials(true);
-			if(useglslmat && (gs.matmode == GAME_MAT_GLSL))
+			if (useglslmat && (gs.matmode == GAME_MAT_GLSL))
 				sceneconverter->SetGLSLMaterials(true);
 					
 			KX_Scene* startscene = new KX_Scene(keyboarddevice,
@@ -413,12 +408,12 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 #endif // WITH_PYTHON
 
 			//initialize Dome Settings
-			if(gs.stereoflag == STEREO_DOME)
-				ketsjiengine->InitDome(gs.dome.res, gs.dome.mode, gs.dome.angle, gs.dome.resbuf, gs.dome.tilt, gs.dome.warptext);
+			if (scene->gm.stereoflag == STEREO_DOME)
+				ketsjiengine->InitDome(scene->gm.dome.res, scene->gm.dome.mode, scene->gm.dome.angle, scene->gm.dome.resbuf, scene->gm.dome.tilt, scene->gm.dome.warptext);
 
 			// initialize 3D Audio Settings
 			AUD_I3DDevice* dev = AUD_get3DDevice();
-			if(dev)
+			if (dev)
 			{
 				dev->setSpeedOfSound(scene->audio.speed_of_sound);
 				dev->setDopplerFactor(scene->audio.doppler_factor);
@@ -464,7 +459,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 					
 					if (render)
 					{
-						if(draw_letterbox) {
+						if (draw_letterbox) {
 							// Clear screen to border color
 							// We do this here since we set the canvas to be within the frames. This means the engine
 							// itself is unaware of the extra space, so we clear the whole region for it.
@@ -509,7 +504,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 						wm_event_free(event);
 					}
 					
-					if(win != CTX_wm_window(C)) {
+					if (win != CTX_wm_window(C)) {
 						exitrequested= KX_EXIT_REQUEST_OUTSIDE; /* window closed while bge runs */
 					}
 				}
@@ -532,7 +527,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				PyObject *gameLogic_keys_new = PyDict_Keys(PyModule_GetDict(gameLogic));
 				const Py_ssize_t numitems= PyList_GET_SIZE(gameLogic_keys_new);
 				Py_ssize_t listIndex;
-				for (listIndex=0; listIndex < numitems; listIndex++)  {
+				for (listIndex=0; listIndex < numitems; listIndex++) {
 					PyObject* item = PyList_GET_ITEM(gameLogic_keys_new, listIndex);
 					if (!PySequence_Contains(gameLogic_keys, item)) {
 						PyDict_DelItem(	PyModule_GetDict(gameLogic), item);
@@ -559,12 +554,12 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 #endif
 		}
 		//lock frame and camera enabled - restoring global values
-		if (v3d->scenelock==0){
+		if (v3d->scenelock==0) {
 			startscene->lay= tmp_lay;
 			startscene->camera= tmp_camera;
 		}
 
-		if(exitrequested != KX_EXIT_REQUEST_OUTSIDE)
+		if (exitrequested != KX_EXIT_REQUEST_OUTSIDE)
 		{
 			// set the cursor back to normal
 			canvas->SetMouseState(RAS_ICanvas::MOUSE_NORMAL);

@@ -23,6 +23,7 @@
 #ifndef __BKE_TESSMESH_H__
 #define __BKE_TESSMESH_H__
 
+#include "BKE_customdata.h"
 #include "bmesh.h"
 
 struct BMesh;
@@ -58,10 +59,10 @@ typedef struct BMEditMesh {
 
 	/*derivedmesh stuff*/
 	struct DerivedMesh *derivedFinal, *derivedCage;
-	int lastDataMask;
+	CustomDataMask lastDataMask;
 
 	/* index tables, to map indices to elements via
-	 * EDBM_init_index_arrays and associated functions.  don't
+	 * EDBM_index_arrays_init and associated functions.  don't
 	 * touch this or read it directly.*/
 	struct BMVert **vert_index;
 	struct BMEdge **edge_index;
@@ -80,12 +81,8 @@ typedef struct BMEditMesh {
 	int mirr_free_arrays;
 } BMEditMesh;
 
-/* undo triggers editmesh tessface update, this is odd but works OK.
- * BMESH_TODO, look into having the update elsewhere. */
-#define BMESH_EM_UNDO_RECALC_TESSFACE_WORKAROUND
-
 void BMEdit_RecalcTessellation(BMEditMesh *tm);
-BMEditMesh *BMEdit_Create(BMesh *bm, int do_tesselate);
+BMEditMesh *BMEdit_Create(BMesh *bm, int do_tessellate);
 BMEditMesh *BMEdit_Copy(BMEditMesh *tm);
 BMEditMesh *BMEdit_FromObject(struct Object *ob);
 void BMEdit_Free(BMEditMesh *em);

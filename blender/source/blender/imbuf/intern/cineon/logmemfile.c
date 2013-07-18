@@ -1,6 +1,3 @@
-/** \file blender/imbuf/intern/cineon/logmemfile.c
- *  \ingroup imbcineon
- */
 /*
  *	 Cineon image file format library routines.
  *
@@ -21,6 +18,11 @@
  *	 Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  */
+
+/** \file blender/imbuf/intern/cineon/logmemfile.c
+ *  \ingroup imbcineon
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,10 +41,12 @@ int logimage_fseek(void* logfile, intptr_t offsett, int origin)
 		if (origin==SEEK_SET) {
 			if (offset > file->membuffersize) return 1;
 			file->memcursor = file->membuffer + offset;
-		} else if (origin==SEEK_END) {
+		}
+		else if (origin==SEEK_END) {
 			if (offset > file->membuffersize) return 1;
 			file->memcursor = (file->membuffer + file->membuffersize) - offset;
-		} else if (origin==SEEK_CUR) {
+		}
+		else if (origin==SEEK_CUR) {
 			uintptr_t pos = (uintptr_t)file->membuffer - (uintptr_t)file->memcursor;
 			if (pos + offset > file->membuffersize) return 1;
 			if (pos < 0) return 1;

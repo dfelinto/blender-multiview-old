@@ -38,6 +38,7 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_modifier_types.h"
 #include "DNA_object_types.h"
+#include "DNA_scene_types.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_colortools.h"       /* CurveMapping. */
@@ -64,41 +65,43 @@ void weightvg_do_map(int num, float *new_w, short falloff_type, CurveMapping *cm
 
 	/* Return immediately, if we have nothing to do! */
 	/* Also security checks... */
-	if(((falloff_type == MOD_WVG_MAPPING_CURVE) && (cmap == NULL))
-	        || !ELEM7(falloff_type, MOD_WVG_MAPPING_CURVE, MOD_WVG_MAPPING_SHARP, MOD_WVG_MAPPING_SMOOTH,
-	                  MOD_WVG_MAPPING_ROOT, MOD_WVG_MAPPING_SPHERE, MOD_WVG_MAPPING_RANDOM,
-	                  MOD_WVG_MAPPING_STEP))
+	if (((falloff_type == MOD_WVG_MAPPING_CURVE) && (cmap == NULL)) ||
+	    !ELEM7(falloff_type, MOD_WVG_MAPPING_CURVE, MOD_WVG_MAPPING_SHARP, MOD_WVG_MAPPING_SMOOTH,
+	           MOD_WVG_MAPPING_ROOT, MOD_WVG_MAPPING_SPHERE, MOD_WVG_MAPPING_RANDOM,
+	           MOD_WVG_MAPPING_STEP))
+	{
 		return;
+	}
 
 	/* Map each weight (vertex) to its new value, accordingly to the chosen mode. */
-	for(i = 0; i < num; ++i) {
+	for (i = 0; i < num; ++i) {
 		float fac = new_w[i];
 
 		/* Code borrowed from the warp modifier. */
 		/* Closely matches PROP_SMOOTH and similar. */
-		switch(falloff_type) {
-		case MOD_WVG_MAPPING_CURVE:
-			fac = curvemapping_evaluateF(cmap, 0, fac);
-			break;
-		case MOD_WVG_MAPPING_SHARP:
-			fac = fac*fac;
-			break;
-		case MOD_WVG_MAPPING_SMOOTH:
-			fac = 3.0f*fac*fac - 2.0f*fac*fac*fac;
-			break;
-		case MOD_WVG_MAPPING_ROOT:
-			fac = (float)sqrt(fac);
-			break;
-		case MOD_WVG_MAPPING_SPHERE:
-			fac = (float)sqrt(2*fac - fac * fac);
-			break;
-		case MOD_WVG_MAPPING_RANDOM:
-			BLI_srand(BLI_rand()); /* random seed */
-			fac = BLI_frand()*fac;
-			break;
-		case MOD_WVG_MAPPING_STEP:
-			fac = (fac >= 0.5f)?1.0f:0.0f;
-			break;
+		switch (falloff_type) {
+			case MOD_WVG_MAPPING_CURVE:
+				fac = curvemapping_evaluateF(cmap, 0, fac);
+				break;
+			case MOD_WVG_MAPPING_SHARP:
+				fac = fac * fac;
+				break;
+			case MOD_WVG_MAPPING_SMOOTH:
+				fac = 3.0f * fac * fac - 2.0f * fac * fac * fac;
+				break;
+			case MOD_WVG_MAPPING_ROOT:
+				fac = (float)sqrt(fac);
+				break;
+			case MOD_WVG_MAPPING_SPHERE:
+				fac = (float)sqrt(2 * fac - fac * fac);
+				break;
+			case MOD_WVG_MAPPING_RANDOM:
+				BLI_srand(BLI_rand()); /* random seed */
+				fac = BLI_frand() * fac;
+				break;
+			case MOD_WVG_MAPPING_STEP:
+				fac = (fac >= 0.5f) ? 1.0f : 0.0f;
+				break;
 		}
 
 		new_w[i] = fac;
@@ -113,7 +116,7 @@ void weightvg_do_map(int num, float *new_w, short falloff_type, CurveMapping *cm
  */
 void weightvg_do_mask(int num, const int *indices, float *org_w, const float *new_w,
                       Object *ob, DerivedMesh *dm, float fact, const char defgrp_name[MAX_VGROUP_NAME],
-                      Tex *texture, int tex_use_channel, int tex_mapping,
+                      Scene *scene, Tex *texture, int tex_use_channel, int tex_mapping,
                       Object *tex_map_object, const char *tex_uvlayer_name)
 {
 	int ref_didx;
@@ -145,46 +148,48 @@ void weightvg_do_mask(int num, const int *indices, float *org_w, const float *ne
 		get_texture_coords(&t_map, ob, dm, v_co, tex_co, num);
 		MEM_freeN(v_co);
 
+		modifier_init_texture(scene, texture);
+
 		/* For each weight (vertex), make the mix between org and new weights. */
-		for(i = 0; i < num; ++i) {
+		for (i = 0; i < num; ++i) {
 			int idx = indices ? indices[i] : i;
 			TexResult texres;
-			float h, s, v; /* For HSV color space. */
+			float hsv[3]; /* For HSV color space. */
 
 			texres.nor = NULL;
 			get_texture_value(texture, tex_co[idx], &texres);
 			/* Get the good channel value... */
-			switch(tex_use_channel) {
-			case MOD_WVG_MASK_TEX_USE_INT:
-				org_w[i] = (new_w[i] * texres.tin * fact) + (org_w[i] * (1.0f - (texres.tin*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_RED:
-				org_w[i] = (new_w[i] * texres.tr * fact) + (org_w[i] * (1.0f - (texres.tr*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_GREEN:
-				org_w[i] = (new_w[i] * texres.tg * fact) + (org_w[i] * (1.0f - (texres.tg*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_BLUE:
-				org_w[i] = (new_w[i] * texres.tb * fact) + (org_w[i] * (1.0f - (texres.tb*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_HUE:
-				rgb_to_hsv(texres.tr, texres.tg, texres.tb, &h, &s, &v);
-				org_w[i] = (new_w[i] * h * fact) + (org_w[i] * (1.0f - (h*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_SAT:
-				rgb_to_hsv(texres.tr, texres.tg, texres.tb, &h, &s, &v);
-				org_w[i] = (new_w[i] * s * fact) + (org_w[i] * (1.0f - (s*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_VAL:
-				rgb_to_hsv(texres.tr, texres.tg, texres.tb, &h, &s, &v);
-				org_w[i] = (new_w[i] * v * fact) + (org_w[i] * (1.0f - (v*fact)));
-				break;
-			case MOD_WVG_MASK_TEX_USE_ALPHA:
-				org_w[i] = (new_w[i] * texres.ta * fact) + (org_w[i] * (1.0f - (texres.ta*fact)));
-				break;
-			default:
-				org_w[i] = (new_w[i] * texres.tin * fact) + (org_w[i] * (1.0f - (texres.tin*fact)));
-				break;
+			switch (tex_use_channel) {
+				case MOD_WVG_MASK_TEX_USE_INT:
+					org_w[i] = (new_w[i] * texres.tin * fact) + (org_w[i] * (1.0f - (texres.tin * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_RED:
+					org_w[i] = (new_w[i] * texres.tr * fact) + (org_w[i] * (1.0f - (texres.tr * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_GREEN:
+					org_w[i] = (new_w[i] * texres.tg * fact) + (org_w[i] * (1.0f - (texres.tg * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_BLUE:
+					org_w[i] = (new_w[i] * texres.tb * fact) + (org_w[i] * (1.0f - (texres.tb * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_HUE:
+					rgb_to_hsv_v(&texres.tr, hsv);
+					org_w[i] = (new_w[i] * hsv[0] * fact) + (org_w[i] * (1.0f - (hsv[0] * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_SAT:
+					rgb_to_hsv_v(&texres.tr, hsv);
+					org_w[i] = (new_w[i] * hsv[1] * fact) + (org_w[i] * (1.0f - (hsv[1] * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_VAL:
+					rgb_to_hsv_v(&texres.tr, hsv);
+					org_w[i] = (new_w[i] * hsv[2] * fact) + (org_w[i] * (1.0f - (hsv[2] * fact)));
+					break;
+				case MOD_WVG_MASK_TEX_USE_ALPHA:
+					org_w[i] = (new_w[i] * texres.ta * fact) + (org_w[i] * (1.0f - (texres.ta * fact)));
+					break;
+				default:
+					org_w[i] = (new_w[i] * texres.tin * fact) + (org_w[i] * (1.0f - (texres.tin * fact)));
+					break;
 			}
 		}
 
@@ -208,7 +213,7 @@ void weightvg_do_mask(int num, const int *indices, float *org_w, const float *ne
 		for (i = 0; i < num; i++) {
 			int idx = indices ? indices[i] : i;
 			const float f = defvert_find_weight(&dvert[idx], ref_didx) * fact;
-			org_w[i] = (new_w[i] * f) + (org_w[i] * (1.0f-f));
+			org_w[i] = (new_w[i] * f) + (org_w[i] * (1.0f - f));
 			/* If that vertex is not in ref vgroup, assume null factor, and hence do nothing! */
 		}
 	}
@@ -237,7 +242,7 @@ void weightvg_update_vg(MDeformVert *dvert, int defgrp_idx, MDeformWeight **dws,
 {
 	int i;
 
-	for(i = 0; i < num; i++) {
+	for (i = 0; i < num; i++) {
 		float w = weights[i];
 		MDeformVert *dv = &dvert[indices ? indices[i] : i];
 		MDeformWeight *dw = dws ? dws[i] : defvert_find_index(dv, defgrp_idx);
@@ -246,8 +251,8 @@ void weightvg_update_vg(MDeformVert *dvert, int defgrp_idx, MDeformWeight **dws,
 		CLAMP(w, 0.0f, 1.0f);
 
 		/* If the vertex is in this vgroup, remove it if needed, or just update it. */
-		if(dw != NULL) {
-			if(do_rem && w < rem_thresh) {
+		if (dw != NULL) {
+			if (do_rem && w < rem_thresh) {
 				defvert_remove_group(dv, dw);
 			}
 			else {
@@ -255,7 +260,7 @@ void weightvg_update_vg(MDeformVert *dvert, int defgrp_idx, MDeformWeight **dws,
 			}
 		}
 		/* Else, add it if needed! */
-		else if(do_add && w > add_thresh) {
+		else if (do_add && w > add_thresh) {
 			defvert_add_index_notest(dv, defgrp_idx, w);
 		}
 	}

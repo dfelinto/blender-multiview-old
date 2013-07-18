@@ -112,7 +112,8 @@ bool KX_NavMeshObject::BuildVertIndArrays(float *&vertices, int& nverts,
 {
 	DerivedMesh* dm = mesh_create_derived_no_virtual(KX_GetActiveScene()->GetBlenderScene(), GetBlenderObject(), 
 													NULL, CD_MASK_MESH);
-	int* recastData = (int*) dm->getTessFaceDataArray(dm, CD_RECAST);
+	CustomData *pdata = dm->getPolyDataLayout(dm);
+	int* recastData = (int*) CustomData_get_layer(pdata, CD_RECAST);
 	if (recastData)
 	{
 		int *dtrisToPolysMap=NULL, *dtrisToTrisMap=NULL, *trisToFacesMap=NULL;
@@ -287,7 +288,7 @@ bool KX_NavMeshObject::BuildNavMesh()
 
 	if (GetMeshCount()==0)
 	{
-		printf("Can't find mesh for navmesh object: %s \n", m_name.ReadPtr());
+		printf("Can't find mesh for navmesh object: %s\n", m_name.ReadPtr());
 		return false;
 	}
 
@@ -299,7 +300,7 @@ bool KX_NavMeshObject::BuildNavMesh()
 							dmeshes, dvertices, ndvertsuniq, dtris, ndtris, vertsPerPoly ) 
 			|| vertsPerPoly<3)
 	{
-		printf("Can't build navigation mesh data for object:%s \n", m_name.ReadPtr());
+		printf("Can't build navigation mesh data for object:%s\n", m_name.ReadPtr());
 		return false;
 	}
 	
@@ -420,7 +421,7 @@ bool KX_NavMeshObject::BuildNavMesh()
 		}
 		// setup triangles.
 		unsigned char* tri = navDTris;
-		for(size_t i=0; i<ndtris; i++)
+		for (size_t i=0; i<ndtris; i++)
 		{
 			for (size_t j=0; j<3; j++)
 				tri[4*i+j] = j;
@@ -432,7 +433,7 @@ bool KX_NavMeshObject::BuildNavMesh()
 		memcpy(navDVerts, dvertices, ndvertsuniq*3*sizeof(float));
 		//tris
 		unsigned char* tri = navDTris;
-		for(size_t i=0; i<ndtris; i++)
+		for (size_t i=0; i<ndtris; i++)
 		{
 			for (size_t j=0; j<3; j++)
 				tri[4*i+j] = dtris[6*i+j];

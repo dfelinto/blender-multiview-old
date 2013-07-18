@@ -20,6 +20,10 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/bmesh/operators/bmo_create.c
+ *  \ingroup bmesh
+ */
+
 #include "MEM_guardedalloc.h"
 
 #include "BLI_heap.h"
@@ -31,6 +35,7 @@
 
 #include "bmesh.h"
 
+#include "intern/bmesh_operators_private.h" /* own include */
 
 #define EDGE_MARK	1
 #define EDGE_VIS	2
@@ -76,10 +81,10 @@ static int count_edge_faces(BMesh *bm, BMEdge *e);
 
 /****  rotation system code * */
 
-BM_INLINE BMDiskLink *rs_edge_link_get(BMEdge *e, BMVert *v, EdgeData *e_data)
+BLI_INLINE BMDiskLink *rs_edge_link_get(BMEdge *e, BMVert *v, EdgeData *e_data)
 {
-	return 	v == ((BMEdge *)e)->v1 ? &(((EdgeData *)e_data)->v1_disk_link) :
-	                                 &(((EdgeData *)e_data)->v2_disk_link) ;
+	return v == ((BMEdge *)e)->v1 ? &(((EdgeData *)e_data)->v1_disk_link) :
+	                                &(((EdgeData *)e_data)->v2_disk_link) ;
 }
 
 static int rotsys_append_edge(BMEdge *e, BMVert *v,
@@ -220,7 +225,7 @@ static int UNUSED_FUNCTION(rotsys_fill_faces)(BMesh *bm, EdgeData *edata, VertDa
 	SmallHash visithash, *hash = &visithash;
 	int i;
 	
-	BM_ITER(e, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 		BMEdge *e2, *starte;
 		BMVert *startv;
 		int rad, ok;
@@ -359,9 +364,9 @@ static void init_rotsys(BMesh *bm, EdgeData *edata, VertData *vdata)
 	/* BLI_array_staticdeclare(verts, BM_NGON_STACK_SIZE); */ /* UNUSE */
 	int i;
 	
-#define SIGN(n) ((n)<0.0f)
+#define SIGN(n) ((n) < 0.0f)
 	
-	BM_ITER(v, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 		BMIter eiter;
 		float no[3], cent[3];
 		int j, k = 0, totedge = 0;
@@ -371,7 +376,7 @@ static void init_rotsys(BMesh *bm, EdgeData *edata, VertData *vdata)
 		
 		BLI_array_empty(edges);
 		
-		BM_ITER(e, &eiter, bm, BM_EDGES_OF_VERT, v) {
+		BM_ITER_ELEM (e, &eiter, v, BM_EDGES_OF_VERT) {
 			if (BMO_elem_flag_test(bm, e, EDGE_MARK)) {
 				BLI_array_append(edges, e);
 				totedge++;
@@ -466,7 +471,7 @@ static void init_rotsys(BMesh *bm, EdgeData *edata, VertData *vdata)
 				copy_v3_v3(cent, v->co);
 
 				for (j = 0; j < 3; j++) {
-					float fac = (BLI_frand() - 0.5f)*size;
+					float fac = (BLI_frand() - 0.5f) * size;
 					cent[j] += fac;
 				}
 				
@@ -576,7 +581,7 @@ static void init_rotsys(BMesh *bm, EdgeData *edata, VertData *vdata)
 #if 0
 	/* create visualizing geometr */
 	BMVert *lastv;
-	BM_ITER(v, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 		BMVert *v2;
 		BMFace *f;
 		int totedge = BM_vert_edge_count(v);
@@ -609,10 +614,10 @@ static void init_rotsys(BMesh *bm, EdgeData *edata, VertData *vdata)
 			BM_elem_index_set(v2, -1); /* set_dirty! */
 			//BM_edge_create(bm, cv, v2, NULL, FALSE);
 			
-			BM_elem_select_set(bm, v2, TRUE);
+			BM_vert_select_set(bm, v2, TRUE);
 			if (lastv) {
 				e2 = BM_edge_create(bm, lastv, v2, NULL, FALSE);
-				BM_elem_select_set(bm, e2, TRUE);
+				BM_edge_select_set(bm, e2, TRUE);
 			}
 			
 			lastv = v2;
@@ -728,7 +733,7 @@ static EPath *edge_find_shortest_path(BMesh *bm, BMOperator *op, BMEdge *edge, E
                                       VertData *vdata, PathBase *pathbase, int group)
 {
 	BMEdge *e;
-	GHash *gh = BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "createops find shortest path");
+	GHash *gh = BLI_ghash_ptr_new("createops find shortest path");
 	BMVert *v1, *v2;
 	BMVert **verts = NULL;
 	BLI_array_staticdeclare(verts, 1024);
@@ -761,7 +766,7 @@ static EPath *edge_find_shortest_path(BMesh *bm, BMOperator *op, BMEdge *edge, E
 			i = 0;
 			BLI_array_empty(verts);
 			for (i = 0, node = path->nodes.first; node; node = node->next, i++) {
-				BLI_array_growone(verts);
+				BLI_array_grow_one(verts);
 				verts[i] = node->v;
 			}
 
@@ -866,7 +871,7 @@ static int count_edge_faces(BMesh *bm, BMEdge *e)
 	return i;
 }
 
-BM_INLINE void vote_on_winding(BMEdge *edge, EPathNode *node, unsigned int winding[2])
+BLI_INLINE void vote_on_winding(BMEdge *edge, EPathNode *node, unsigned int winding[2])
 {
 	BMVert *test_v1, *test_v2;
 	/* we want to use the reverse winding to the existing order */
@@ -891,8 +896,10 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 	BMEdge **edges = NULL;
 	PathBase *pathbase;
 	BLI_array_declare(edges);
-	int use_restrict   = BMO_slot_bool_get(op, "use_restrict");
-	int use_fill_check = BMO_slot_bool_get(op, "use_fill_check");
+	int use_restrict       = BMO_slot_bool_get(op, "use_restrict");
+	int use_fill_check     = BMO_slot_bool_get(op, "use_fill_check");
+	const short mat_nr     = BMO_slot_int_get(op,  "mat_nr");
+	const short use_smooth = BMO_slot_bool_get(op, "use_smooth");
 	int i, j, group = 0;
 	unsigned int winding[2]; /* accumulte winding directions for each edge which has a face */
 
@@ -909,12 +916,12 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 	
 	BM_mesh_elem_index_ensure(bm, BM_VERT);
 
-	BM_ITER(f, &iter, bm, BM_FACES_OF_MESH, NULL) {
+	BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
 		BMO_elem_flag_enable(bm, f, ELE_ORIG);
 	}
 
 	i = 0;
-	BM_ITER(e, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+	BM_ITER_MESH (e, &iter, bm, BM_EDGES_OF_MESH) {
 		BM_elem_index_set(e, i); /* set_inline */
 		
 		if (!BMO_elem_flag_test(bm, e, EDGE_MARK)) {
@@ -931,7 +938,7 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 		edge = NULL;
 		group = 0;
 		
-		BMO_ITER(e, &siter, bm, op, "edges", BM_EDGE) {
+		BMO_ITER (e, &siter, bm, op, "edges", BM_EDGE) {
 			/* if restrict is on, only start on faces in the restrict map */
 			if (use_restrict && !BMO_slot_map_contains(bm, op, "restrict", e))
 				continue;
@@ -992,7 +999,7 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 			}
 
 			edata[BM_elem_index_get(e)].ftag++;
-			BLI_array_growone(edges);
+			BLI_array_grow_one(edges);
 			edges[i++] = e;
 
 			BLI_array_append(verts, node->v);
@@ -1002,7 +1009,7 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 			vote_on_winding(edge, path->nodes.last, winding);
 		}
 
-		BLI_array_growone(edges);
+		BLI_array_grow_one(edges);
 		edges[i++] = edge;
 		edata[BM_elem_index_get(edge)].ftag++;
 		
@@ -1024,7 +1031,7 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 			 * otherwise we could leave this as-is */
 			edge = edges[0];
 
-			/* if these are even it doesnt really matter what to do,
+			/* if these are even it doesn't really matter what to do,
 			 * with consistent geometry one will be zero, the choice is clear */
 			if (winding[0] < winding[1]) {
 				v1 = verts[0];
@@ -1037,11 +1044,15 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 
 			if ((use_fill_check == FALSE) ||
 			    /* fairly expensive check - see if there are already faces filling this area */
-			    (BM_face_exists_multi_edge(bm, edges, i) == FALSE))
+			    (BM_face_exists_multi_edge(edges, i) == FALSE))
 			{
 				f = BM_face_create_ngon(bm, v1, v2, edges, i, TRUE);
 				if (f && !BMO_elem_flag_test(bm, f, ELE_ORIG)) {
 					BMO_elem_flag_enable(bm, f, FACE_NEW);
+					f->mat_nr = mat_nr;
+					if (use_smooth) {
+						BM_elem_flag_enable(f, BM_ELEM_SMOOTH);
+					}
 				}
 
 				if (use_restrict) {
@@ -1053,7 +1064,7 @@ void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 		edge_free_path(pathbase, path);
 	}
 
-	BMO_slot_buffer_from_flag(bm, op, "faceout", BM_FACE, FACE_NEW);
+	BMO_slot_buffer_from_enabled_flag(bm, op, "faceout", BM_FACE, FACE_NEW);
 
 	BLI_array_free(edges);
 	BLI_array_free(verts);
@@ -1069,7 +1080,7 @@ static BMEdge *edge_next(BMesh *bm, BMEdge *e)
 	int i;
 
 	for (i = 0; i < 2; i++) {
-		BM_ITER(e2, &iter, bm, BM_EDGES_OF_VERT, i ? e->v2 : e->v1) {
+		BM_ITER_ELEM (e2, &iter, i ? e->v2 : e->v1, BM_EDGES_OF_VERT) {
 			if ((BMO_elem_flag_test(bm, e2, EDGE_MARK)) &&
 			    (!BMO_elem_flag_test(bm, e2, EDGE_VIS)) &&
 			    (e2 != e))
@@ -1097,7 +1108,7 @@ void bmo_edgenet_prepare(BMesh *bm, BMOperator *op)
 	
 	/* validate that each edge has at most one other tagged edge in the
 	 * disk cycle around each of it's vertices */
-	BMO_ITER(e, &siter, bm, op, "edges", BM_EDGE) {
+	BMO_ITER (e, &siter, bm, op, "edges", BM_EDGE) {
 		for (i = 0; i < 2; i++) {
 			count = BMO_vert_edge_flags_count(bm, i ? e->v2 : e->v1, EDGE_MARK);
 			if (count > 2) {
@@ -1119,7 +1130,7 @@ void bmo_edgenet_prepare(BMesh *bm, BMOperator *op)
 	/* find connected loops within the input edge */
 	count = 0;
 	while (1) {
-		BMO_ITER(e, &siter, bm, op, "edges", BM_EDGE) {
+		BMO_ITER (e, &siter, bm, op, "edges", BM_EDGE) {
 			if (!BMO_elem_flag_test(bm, e, EDGE_VIS)) {
 				if (BMO_vert_edge_flags_count(bm, e->v1, EDGE_MARK) == 1 ||
 				    BMO_vert_edge_flags_count(bm, e->v2, EDGE_MARK) == 1)
@@ -1146,7 +1157,7 @@ void bmo_edgenet_prepare(BMesh *bm, BMOperator *op)
 		i = 0;
 		while (e) {
 			BMO_elem_flag_enable(bm, e, EDGE_VIS);
-			BLI_array_growone(edges);
+			BLI_array_grow_one(edges);
 			edges[i] = e;
 
 			e = edge_next(bm, e);
@@ -1155,11 +1166,11 @@ void bmo_edgenet_prepare(BMesh *bm, BMOperator *op)
 
 		if (!count) {
 			edges1 = edges;
-			BLI_array_set_length(edges1, BLI_array_count(edges));
+			BLI_array_length_set(edges1, BLI_array_count(edges));
 		}
 		else {
 			edges2 = edges;
-			BLI_array_set_length(edges2, BLI_array_count(edges));
+			BLI_array_length_set(edges2, BLI_array_count(edges));
 		}
 
 		BLI_array_empty(edges);
@@ -1250,7 +1261,7 @@ void bmo_edgenet_prepare(BMesh *bm, BMOperator *op)
 		}
 	}
 	
-	BMO_slot_buffer_from_flag(bm, op, "edgeout", BM_EDGE, ELE_NEW);
+	BMO_slot_buffer_from_enabled_flag(bm, op, "edgeout", BM_EDGE, ELE_NEW);
 
 	BLI_array_free(edges1);
 	BLI_array_free(edges2);
@@ -1270,9 +1281,11 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 	BMEdge *e;
 	BMFace *f;
 	int totv = 0, tote = 0, totf = 0, amount;
+	const short mat_nr = BMO_slot_int_get(op, "mat_nr");
+	const short use_smooth = BMO_slot_bool_get(op, "use_smooth");
 
 	/* count number of each element type we were passe */
-	BMO_ITER(h, &oiter, bm, op, "geom", BM_VERT|BM_EDGE|BM_FACE) {
+	BMO_ITER (h, &oiter, bm, op, "geom", BM_VERT | BM_EDGE | BM_FACE) {
 		switch (h->htype) {
 			case BM_VERT: totv++; break;
 			case BM_EDGE: tote++; break;
@@ -1299,17 +1312,17 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 	 *
 	 */
 
-	/* Here we check for consistancy and create 2 edges */
+	/* Here we check for consistency and create 2 edges */
 	if (totf == 0 && totv >= 4 && totv == tote + 2) {
 		/* find a free standing vertex and 2 endpoint verts */
 		BMVert *v_free = NULL, *v_a = NULL, *v_b = NULL;
 		int ok = TRUE;
 
 
-		BMO_ITER(v, &oiter, bm, op, "geom", BM_VERT) {
+		BMO_ITER (v, &oiter, bm, op, "geom", BM_VERT) {
 			/* count how many flagged edges this vertex uses */
 			int tot_edges = 0;
-			BM_ITER(e, &iter, bm, BM_EDGES_OF_VERT, v) {
+			BM_ITER_ELEM (e, &iter, v, BM_EDGES_OF_VERT) {
 				if (BMO_elem_flag_test(bm, e, ELE_NEW)) {
 					tot_edges++;
 					if (tot_edges > 2) {
@@ -1352,12 +1365,15 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 
 	/* call edgenet create */
 	/* call edgenet prepare op so additional face creation cases wore */
-	BMO_op_initf(bm, &op2, "edgenet_prepare edges=%fe", ELE_NEW);
+	BMO_op_initf(bm, &op2, op->flag, "edgenet_prepare edges=%fe", ELE_NEW);
 	BMO_op_exec(bm, &op2);
 	BMO_slot_buffer_flag_enable(bm, &op2, "edgeout", BM_EDGE, ELE_NEW);
 	BMO_op_finish(bm, &op2);
 
-	BMO_op_initf(bm, &op2, "edgenet_fill edges=%fe use_fill_check=%b", ELE_NEW, TRUE);
+	BMO_op_initf(bm, &op2, op->flag,
+	             "edgenet_fill edges=%fe use_fill_check=%b mat_nr=%i use_smooth=%b",
+	             ELE_NEW, TRUE, mat_nr, use_smooth);
+
 	BMO_op_exec(bm, &op2);
 
 	/* return if edge net create did something */
@@ -1370,7 +1386,7 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 	BMO_op_finish(bm, &op2);
 	
 	/* now call dissolve face */
-	BMO_op_initf(bm, &op2, "dissolve_faces faces=%ff", ELE_NEW);
+	BMO_op_initf(bm, &op2, op->flag, "dissolve_faces faces=%ff", ELE_NEW);
 	BMO_op_exec(bm, &op2);
 	
 	/* if we dissolved anything, then return */
@@ -1384,12 +1400,14 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 
 	/* now, count how many verts we have */
 	amount = 0;
-	BM_ITER(v, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 		if (BMO_elem_flag_test(bm, v, ELE_NEW)) {
 			verts[amount] = v;
+			if (amount == 3) {
+				break;
+			}
 			amount++;
 
-			if (amount > 4) break;
 		}
 	}
 
@@ -1451,7 +1469,7 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 		BMVert **vert_arr = MEM_mallocN(sizeof(BMVert **) * totv, __func__);
 		int i = 0;
 
-		BMO_ITER(v, &oiter, bm, op, "geom", BM_VERT) {
+		BMO_ITER (v, &oiter, bm, op, "geom", BM_VERT) {
 			vert_arr[i] = v;
 			i++;
 		}
@@ -1460,6 +1478,10 @@ void bmo_contextual_create_exec(BMesh *bm, BMOperator *op)
 
 		if (f) {
 			BMO_elem_flag_enable(bm, f, ELE_OUT);
+			f->mat_nr = mat_nr;
+			if (use_smooth) {
+				BM_elem_flag_enable(f, BM_ELEM_SMOOTH);
+			}
 		}
 
 		MEM_freeN(vert_arr);

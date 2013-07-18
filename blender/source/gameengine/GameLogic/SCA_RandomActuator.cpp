@@ -34,13 +34,13 @@
 
 
 #include <stddef.h>
+#include <math.h>
 
 #include "BoolValue.h"
 #include "IntValue.h"
 #include "FloatValue.h"
 #include "SCA_IActuator.h"
 #include "SCA_RandomActuator.h"
-#include "math.h"
 #include "MT_Transform.h"
 
 /* ------------------------------------------------------------------------- */
@@ -141,8 +141,7 @@ bool SCA_RandomActuator::Update()
 		int res; 
 		/* The [0, 1] interval is projected onto the [min, max+1] domain,    */
 		/* and then rounded.                                                 */
-		res = (int) floor( ((m_parameter2 - m_parameter1 + 1) * m_base->DrawFloat())
-						   + m_parameter1);
+		res = (int)floor( ((m_parameter2 - m_parameter1 + 1) * m_base->DrawFloat()) + m_parameter1);
 		tmpval = new CIntValue(res);
 	}
 	break;
@@ -172,8 +171,7 @@ bool SCA_RandomActuator::Update()
 	}
 	break;
 	case KX_RANDOMACT_FLOAT_UNIFORM: {
-		float res = ((m_parameter2 - m_parameter1) * m_base->DrawFloat())
-			+ m_parameter1;
+		float res = ((m_parameter2 - m_parameter1) * m_base->DrawFloat()) + m_parameter1;
 		tmpval = new CFloatValue(res);
 	}
 	break;
@@ -239,8 +237,7 @@ bool SCA_RandomActuator::Update()
 		/* controlling parameter. Using the 'normal' exponent is not very     */
 		/* intuitive...                                                       */
 		/* tmpval = new CFloatValue( (1.0 / m_parameter1)                     */
-		tmpval = new CFloatValue( (m_parameter1) 
-								  * (-log(1.0 - m_base->DrawFloat())) );
+		tmpval = new CFloatValue((m_parameter1)  * (-log(1.0 - m_base->DrawFloat())));
 
 	}
 	break;
@@ -392,7 +389,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setBoolConst,
 "\tSet this generator to produce a constant boolean value.\n") 
 {
 	int paraArg;
-	if(!PyArg_ParseTuple(args, "i:setBoolConst", &paraArg)) {
+	if (!PyArg_ParseTuple(args, "i:setBoolConst", &paraArg)) {
 		return NULL;
 	}
 	
@@ -418,7 +415,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setBoolBernouilli,
 "\tReturn false value * 100%% of the time.\n")
 {
 	float paraArg;
-	if(!PyArg_ParseTuple(args, "f:setBoolBernouilli", &paraArg)) {
+	if (!PyArg_ParseTuple(args, "f:setBoolBernouilli", &paraArg)) {
 		return NULL;
 	}
 	
@@ -434,7 +431,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setIntConst,
 "\tAlways return value\n") 
 {
 	int paraArg;
-	if(!PyArg_ParseTuple(args, "i:setIntConst", &paraArg)) {
+	if (!PyArg_ParseTuple(args, "i:setIntConst", &paraArg)) {
 		return NULL;
 	}
 	
@@ -452,7 +449,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setIntUniform,
 "\tupper_bound. The boundaries are included.\n")
 {
 	int paraArg1, paraArg2;
-	if(!PyArg_ParseTuple(args, "ii:setIntUniform", &paraArg1, &paraArg2)) {
+	if (!PyArg_ParseTuple(args, "ii:setIntUniform", &paraArg1, &paraArg2)) {
 		return NULL;
 	}
 	
@@ -471,7 +468,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setIntPoisson,
 "\tnumber of tries needed to achieve succes.\n")
 {
 	float paraArg;
-	if(!PyArg_ParseTuple(args, "f:setIntPoisson", &paraArg)) {
+	if (!PyArg_ParseTuple(args, "f:setIntPoisson", &paraArg)) {
 		return NULL;
 	}
 	
@@ -487,7 +484,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setFloatConst,
 "\tAlways return value\n")
 {
 	float paraArg;
-	if(!PyArg_ParseTuple(args, "f:setFloatConst", &paraArg)) {
+	if (!PyArg_ParseTuple(args, "f:setFloatConst", &paraArg)) {
 		return NULL;
 	}
 	
@@ -505,7 +502,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setFloatUniform,
 "\tupper_bound.\n")
 {
 	float paraArg1, paraArg2;
-	if(!PyArg_ParseTuple(args, "ff:setFloatUniform", &paraArg1, &paraArg2)) {
+	if (!PyArg_ParseTuple(args, "ff:setFloatUniform", &paraArg1, &paraArg2)) {
 		return NULL;
 	}
 	
@@ -524,7 +521,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setFloatNormal,
 "\tdeviation from the mean is characterized by standard_deviation.\n")
 {
 	float paraArg1, paraArg2;
-	if(!PyArg_ParseTuple(args, "ff:setFloatNormal", &paraArg1, &paraArg2)) {
+	if (!PyArg_ParseTuple(args, "ff:setFloatNormal", &paraArg1, &paraArg2)) {
 		return NULL;
 	}
 	
@@ -542,7 +539,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setFloatNegativeExponential,
 "\tis characterized by half_life.\n")
 {
 	float paraArg;
-	if(!PyArg_ParseTuple(args, "f:setFloatNegativeExponential", &paraArg)) {
+	if (!PyArg_ParseTuple(args, "f:setFloatNegativeExponential", &paraArg)) {
 		return NULL;
 	}
 	

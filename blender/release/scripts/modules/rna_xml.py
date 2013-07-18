@@ -346,13 +346,13 @@ def xml_file_run(context, filepath, rna_map):
         value = _get_context_val(context, rna_path)
 
         if value is not Ellipsis and value is not None:
-            print("  loading XML: %r" % rna_path)
+            print("  loading XML: %r -> %r" % (filepath, rna_path))
             xml2rna(xml_node, root_rna=value)
 
 
 def xml_file_write(context, filepath, rna_map):
 
-    file = open(filepath, 'w', encoding='utf-8')
+    file = open(filepath, "w", encoding="utf-8")
     fw = file.write
 
     fw("<bpy>\n")

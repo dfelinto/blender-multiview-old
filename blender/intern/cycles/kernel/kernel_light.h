@@ -23,6 +23,7 @@ typedef struct LightSample {
 	float3 D;
 	float3 Ng;
 	float t;
+	float eval_fac;
 	int object;
 	int prim;
 	int shader;
@@ -59,11 +60,12 @@ __device float3 area_light_sample(float3 axisu, float3 axisv, float randu, float
 	return axisu*randu + axisv*randv;
 }
 
+#ifdef __BACKGROUND_MIS__
 __device float3 background_light_sample(KernelGlobals *kg, float randu, float randv, float *pdf)
 {
 	/* for the following, the CDF values are actually a pair of floats, with the
-	   function value as X and the actual CDF as Y.  The last entry's function
-	   value is the CDF total. */
+	 * function value as X and the actual CDF as Y.  The last entry's function
+	 * value is the CDF total. */
 	int res = kernel_data.integrator.pdf_background_res;
 	int cdf_count = res + 1;
 
@@ -165,6 +167,7 @@ __device float background_light_pdf(KernelGlobals *kg, float3 direction)
 
 	return pdf * kernel_data.integrator.pdf_lights;
 }
+#endif
 
 __device void regular_light_sample(KernelGlobals *kg, int point,
 	float randu, float randv, float3 P, LightSample *ls, float *pdf)
@@ -187,6 +190,7 @@ __device void regular_light_sample(KernelGlobals *kg, int point,
 		ls->Ng = D;
 		ls->D = -D;
 		ls->t = FLT_MAX;
+		ls->eval_fac = 1.0f;
 	}
 #ifdef __BACKGROUND_MIS__
 	else if(type == LIGHT_BACKGROUND) {
@@ -197,6 +201,7 @@ __device void regular_light_sample(KernelGlobals *kg, int point,
 		ls->Ng = D;
 		ls->D = -D;
 		ls->t = FLT_MAX;
+		ls->eval_fac = 1.0f;
 	}
 #endif
 	else {
@@ -210,6 +215,36 @@ __device void regular_light_sample(KernelGlobals *kg, int point,
 				ls->P += sphere_light_sample(P, ls->P, size, randu, randv);
 
 			ls->Ng = normalize(P - ls->P);
+			ls->eval_fac = 0.25f*M_1_PI_F;
+		}
+		else if(type == LIGHT_SPOT) {
+			float4 data2 = kernel_tex_fetch(__light_data, point*LIGHT_SIZE + 2);
+			float size = data1.y;
+
+			/* spot light */
+			if(size > 0.0f)
+				ls->P += sphere_light_sample(P, ls->P, size, randu, randv);
+
+			float3 dir = make_float3(data1.z, data1.w, data2.x);
+			float3 I = normalize(P - ls->P);
+
+			float spot_angle = data2.y;
+			float spot_smooth = data2.z;
+
+			float eval_fac = dot(dir, I);
+
+			if(eval_fac <= spot_angle) {
+				eval_fac = 0.0f;
+			}
+			else {
+				float t = eval_fac - spot_angle;
+
+				if(t < spot_smooth && spot_smooth != 0.0f)
+					eval_fac *= smoothstepf(t/spot_smooth);
+			}
+
+			ls->Ng = I;
+			ls->eval_fac = eval_fac*0.25f*M_1_PI_F;
 		}
 		else {
 			/* area light */
@@ -222,6 +257,7 @@ __device void regular_light_sample(KernelGlobals *kg, int point,
 
 			ls->P += area_light_sample(axisu, axisv, randu, randv);
 			ls->Ng = D;
+			ls->eval_fac = 0.25f;
 		}
 
 		ls->t = 0.0f;
@@ -251,7 +287,7 @@ __device float regular_light_pdf(KernelGlobals *kg,
 /* Triangle Light */
 
 __device void triangle_light_sample(KernelGlobals *kg, int prim, int object,
-	float randu, float randv, LightSample *ls)
+	float randu, float randv, float time, LightSample *ls)
 {
 	/* triangle, so get position, normal, shader */
 	ls->P = triangle_sample_MT(kg, prim, randu, randv);
@@ -260,12 +296,16 @@ __device void triangle_light_sample(KernelGlobals *kg, int prim, int object,
 	ls->prim = prim;
 	ls->t = 0.0f;
 	ls->type = LIGHT_AREA;
+	ls->eval_fac = 1.0f;
 
 #ifdef __INSTANCING__
 	/* instance transform */
 	if(ls->object >= 0) {
-		object_position_transform(kg, ls->object, &ls->P);
-		object_normal_transform(kg, ls->object, &ls->Ng);
+		Transform tfm = object_fetch_transform(kg, ls->object, time, OBJECT_TRANSFORM);
+		Transform itfm = object_fetch_transform(kg, ls->object, time, OBJECT_INVERSE_TRANSFORM);
+
+		ls->P = transform_point(&tfm, ls->P);
+		ls->Ng = normalize(transform_direction_transposed(&itfm, ls->Ng));
 	}
 #endif
 }
@@ -286,9 +326,9 @@ __device float triangle_light_pdf(KernelGlobals *kg,
 __device int light_distribution_sample(KernelGlobals *kg, float randt)
 {
 	/* this is basically std::upper_bound as used by pbrt, to find a point light or
-	   triangle to emit from, proportional to area. a good improvement would be to
-	   also sample proportional to power, though it's not so well defined with
-	   OSL shaders. */
+	 * triangle to emit from, proportional to area. a good improvement would be to
+	 * also sample proportional to power, though it's not so well defined with
+	 * OSL shaders. */
 	int first = 0;
 	int len = kernel_data.integrator.num_distribution + 1;
 
@@ -313,7 +353,7 @@ __device int light_distribution_sample(KernelGlobals *kg, float randt)
 
 /* Generic Light */
 
-__device void light_sample(KernelGlobals *kg, float randt, float randu, float randv, float3 P, LightSample *ls, float *pdf)
+__device void light_sample(KernelGlobals *kg, float randt, float randu, float randv, float time, float3 P, LightSample *ls, float *pdf)
 {
 	/* sample index */
 	int index = light_distribution_sample(kg, randt);
@@ -324,7 +364,7 @@ __device void light_sample(KernelGlobals *kg, float randt, float randu, float ra
 
 	if(prim >= 0) {
 		int object = __float_as_int(l.w);
-		triangle_light_sample(kg, prim, object, randu, randv, ls);
+		triangle_light_sample(kg, prim, object, randu, randv, time, ls);
 	}
 	else {
 		int point = -prim-1;
@@ -348,9 +388,19 @@ __device float light_sample_pdf(KernelGlobals *kg, LightSample *ls, float3 I, fl
 	return pdf;
 }
 
+__device int light_select_num_samples(KernelGlobals *kg, int index)
+{
+	float4 data3 = kernel_tex_fetch(__light_data, index*LIGHT_SIZE + 3);
+	return __float_as_int(data3.x);
+}
+
 __device void light_select(KernelGlobals *kg, int index, float randu, float randv, float3 P, LightSample *ls, float *pdf)
 {
 	regular_light_sample(kg, index, randu, randv, P, ls, pdf);
+
+	/* compute incoming direction and distance */
+	if(ls->t != FLT_MAX)
+		ls->D = normalize_len(ls->P - P, &ls->t);
 }
 
 __device float light_select_pdf(KernelGlobals *kg, LightSample *ls, float3 I, float t)

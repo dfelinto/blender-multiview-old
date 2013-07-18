@@ -113,14 +113,14 @@ public:
 	 */
 	virtual 
 		void	
-	RenderText3D(int fontid,
-				 const char* text,
-				 int size,
-				 int dpi,
-				 float* color,
-				 double* mat,
-				 float aspect
-	) = 0;
+		RenderText3D(int fontid,
+		             const char* text,
+		             int size,
+		             int dpi,
+		             float* color,
+		             double* mat,
+		             float aspect
+		             ) = 0;
 
 
 	/**
@@ -201,12 +201,10 @@ public:
 	virtual
 		void
 	MotionBlur(RAS_IRasterizer* rasterizer)=0;
-		
-		
+
+
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:RAS_IRenderTools"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_IRenderTools")
 #endif
 };
 

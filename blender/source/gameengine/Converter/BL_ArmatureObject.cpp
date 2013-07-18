@@ -61,7 +61,7 @@
 /** 
  * Move here pose function for game engine so that we can mix with GE objects
  * Principle is as follow:
- * Use Blender structures so that where_is_pose can be used unchanged
+ * Use Blender structures so that BKE_pose_where_is can be used unchanged
  * Copy the constraint so that they can be enabled/disabled/added/removed at runtime
  * Don't copy the constraints for the pose used by the Action actuator, it does not need them.
  * Scan the constraint structures so that the KX equivalent of target objects are identified and 
@@ -84,7 +84,7 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 		return;
 	}
 	else if (*dst==src) {
-		printf("copy_pose source and target are the same\n");
+		printf("BKE_pose_copy_data source and target are the same\n");
 		*dst=NULL;
 		return;
 	}
@@ -121,7 +121,7 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 
 		// fails to link, props are not used in the BGE yet.
 #if 0
-		if(pchan->prop)
+		if (pchan->prop)
 			pchan->prop= IDP_CopyProperty(pchan->prop);
 #endif
 		pchan->prop= NULL;
@@ -129,7 +129,7 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 
 	BLI_ghash_free(ghash, NULL, NULL);
 	// set acceleration structure for channel lookup
-	make_pose_channels_hash(out);
+	BKE_pose_channels_hash_make(out);
 	*dst=out;
 }
 
@@ -146,7 +146,7 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 	float dstweight;
 	int i;
 
-	switch (mode){
+	switch (mode) {
 	case ACTSTRIPMODE_BLEND:
 		dstweight = 1.0F - srcweight;
 		break;
@@ -158,7 +158,7 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 	}
 	
 	schan= (bPoseChannel*)src->chanbase.first;
-	for (dchan = (bPoseChannel*)dst->chanbase.first; dchan; dchan=(bPoseChannel*)dchan->next, schan= (bPoseChannel*)schan->next){
+	for (dchan = (bPoseChannel*)dst->chanbase.first; dchan; dchan=(bPoseChannel*)dchan->next, schan= (bPoseChannel*)schan->next) {
 		// always blend on all channels since we don't know which one has been set
 		/* quat interpolation done separate */
 		if (schan->rotmode == ROT_MODE_QUAT) {
@@ -186,7 +186,7 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 			if (schan->rotmode)
 				dchan->eul[i] = (dchan->eul[i]*dstweight) + (schan->eul[i]*srcweight);
 		}
-		for(dcon= (bConstraint*)dchan->constraints.first, scon= (bConstraint*)schan->constraints.first; dcon && scon; dcon= (bConstraint*)dcon->next, scon= (bConstraint*)scon->next) {
+		for (dcon= (bConstraint*)dchan->constraints.first, scon= (bConstraint*)schan->constraints.first; dcon && scon; dcon= (bConstraint*)dcon->next, scon= (bConstraint*)scon->next) {
 			/* no 'add' option for constraint blending */
 			dcon->enforce= dcon->enforce*(1.0f-srcweight) + scon->enforce*srcweight;
 		}
@@ -200,7 +200,7 @@ void game_free_pose(bPose *pose)
 {
 	if (pose) {
 		/* free pose-channels and constraints */
-		free_pose_channels(pose);
+		BKE_pose_channels_free(pose);
 		
 		/* free IK solver state */
 		BIK_clear_data(pose);
@@ -225,7 +225,7 @@ BL_ArmatureObject::BL_ArmatureObject(
 	m_poseChannels(),
 	m_objArma(armature),
 	m_framePose(NULL),
-	m_scene(scene), // maybe remove later. needed for where_is_pose
+	m_scene(scene), // maybe remove later. needed for BKE_pose_where_is
 	m_lastframe(0.0),
 	m_timestep(0.040),
 	m_activeAct(NULL),
@@ -469,7 +469,7 @@ void BL_ArmatureObject::ApplyPose()
 	// in the GE, we use ctime to store the timestep
 	m_pose->ctime = (float)m_timestep;
 	//m_scene->r.cfra++;
-	if(m_lastapplyframe != m_lastframe) {
+	if (m_lastapplyframe != m_lastframe) {
 		// update the constraint if any, first put them all off so that only the active ones will be updated
 		SG_DList::iterator<BL_ArmatureConstraint> cit(m_controlledConstraints);
 		for (cit.begin(); !cit.end(); ++cit) {
@@ -477,7 +477,7 @@ void BL_ArmatureObject::ApplyPose()
 		}
 		// update ourself
 		UpdateBlenderObjectMatrix(m_objArma);
-		where_is_pose(m_scene, m_objArma); // XXX
+		BKE_pose_where_is(m_scene, m_objArma); // XXX
 		// restore ourself
 		memcpy(m_objArma->obmat, m_obmat, sizeof(m_obmat));
 		// restore active targets
@@ -502,7 +502,7 @@ void BL_ArmatureObject::SetPose(bPose *pose)
 
 bool BL_ArmatureObject::SetActiveAction(BL_ActionActuator *act, short priority, double curtime)
 {
-	if (curtime != m_lastframe){
+	if (curtime != m_lastframe) {
 		m_activePriority = 9999;
 		// compute the timestep for the underlying IK algorithm
 		m_timestep = curtime-m_lastframe;
@@ -529,7 +529,7 @@ bool BL_ArmatureObject::SetActiveAction(BL_ActionActuator *act, short priority, 
 		
 			return true;
 		}
-		else{
+		else {
 			act->SetBlendTime(0.0);
 			return false;
 		}
@@ -590,8 +590,8 @@ bool BL_ArmatureObject::GetBoneMatrix(Bone* bone, MT_Matrix4x4& matrix)
 	bPoseChannel *pchan;
 
 	ApplyPose();
-	pchan = get_pose_channel(m_objArma->pose, bone->name);
-	if(pchan)
+	pchan = BKE_pose_channel_find_name(m_objArma->pose, bone->name);
+	if (pchan)
 		matrix.setValue(&pchan->pose_mat[0][0]);
 	RestorePose();
 

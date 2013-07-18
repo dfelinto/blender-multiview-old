@@ -35,13 +35,13 @@
 
 /* **************** NORMAL  ******************** */
 static bNodeSocketTemplate cmp_node_normal_in[]= {
-	{	SOCK_VECTOR, 1, "Normal",	0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_DIRECTION},
+	{	SOCK_VECTOR, 1, N_("Normal"),	0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_DIRECTION},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate cmp_node_normal_out[]= {
-	{	SOCK_VECTOR, 0, "Normal"},
-	{	SOCK_FLOAT, 0, "Dot"},
+	{	SOCK_VECTOR, 0, N_("Normal")},
+	{	SOCK_FLOAT, 0, N_("Dot")},
 	{	-1, 0, ""	}
 };
 
@@ -63,12 +63,12 @@ static void node_composit_exec_normal(void *UNUSED(data), bNode *node, bNodeStac
 	/* stack order output: normal, value */
 	
 	/* input no image? then only vector op */
-	if(in[0]->data==NULL) {
+	if (in[0]->data==NULL) {
 		copy_v3_v3(out[0]->vec, nor);
 		/* render normals point inside... the widget points outside */
 		out[1]->vec[0]= -dot_v3v3(out[0]->vec, in[0]->vec);
 	}
-	else if(out[1]->hasoutput) {
+	else if (out[1]->hasoutput) {
 		/* make output size of input image */
 		CompBuf *cbuf= in[0]->data;
 		CompBuf *stackbuf= alloc_compbuf(cbuf->x, cbuf->y, CB_VAL, 1); /* allocs */

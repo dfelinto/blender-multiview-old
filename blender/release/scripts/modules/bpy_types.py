@@ -304,7 +304,7 @@ class EditBone(StructRNA, _GenericBone, metaclass=StructMetaPropGroup):
         Align this bone to another by moving its tail and settings its roll
         the length of the other bone is not used.
         """
-        vec = other.vector.normalize() * self.length
+        vec = other.vector.normalized() * self.length
         self.tail = self.head + vec
         self.roll = other.roll
 
@@ -411,7 +411,7 @@ class MeshEdge(StructRNA):
         return ord_ind(*tuple(self.vertices))
 
 
-class MeshFace(StructRNA):
+class MeshTessFace(StructRNA):
     __slots__ = ()
 
     @property
@@ -457,7 +457,7 @@ class MeshPolygon(StructRNA):
         return [ord_ind(verts[i], verts[(i + 1) % vlen]) for i in range(vlen)]
 
     @property
-    def loops(self):
+    def loop_indices(self):
         start = self.loop_start
         end = start + self.loop_total
         return range(start, end)
@@ -671,7 +671,9 @@ class Header(StructRNA, _GenericUI, metaclass=RNAMeta):
 class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
     __slots__ = ()
 
-    def path_menu(self, searchpaths, operator, props_default={}):
+    def path_menu(self, searchpaths, operator,
+                  props_default={}, filter_ext=None):
+
         layout = self.layout
         # hard coded to set the operators 'filepath' to the filename.
 
@@ -687,17 +689,16 @@ class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
         files = []
         for directory in searchpaths:
             files.extend([(f, os.path.join(directory, f))
-                           for f in os.listdir(directory)])
+                           for f in os.listdir(directory)
+                           if (not f.startswith("."))
+                           if ((filter_ext is None) or
+                               (filter_ext(os.path.splitext(f)[1])))
+                          ])
 
         files.sort()
 
         for f, filepath in files:
-
-            if f.startswith("."):
-                continue
-
-            preset_name = bpy.path.display_name(f)
-            props = layout.operator(operator, text=preset_name)
+            props = layout.operator(operator, text=bpy.path.display_name(f))
 
             for attr, value in props_default.items():
                 setattr(props, attr, value)
@@ -714,4 +715,5 @@ class Menu(StructRNA, _GenericUI, metaclass=RNAMeta):
         """
         import bpy
         self.path_menu(bpy.utils.preset_paths(self.preset_subdir),
-                       self.preset_operator)
+                       self.preset_operator,
+                       filter_ext=lambda ext: ext.lower() in {".py", ".xml"})

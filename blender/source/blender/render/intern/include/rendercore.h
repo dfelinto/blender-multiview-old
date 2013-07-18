@@ -1,7 +1,4 @@
 /*
- * rendercore_ext.h
- *
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,20 +25,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+#ifndef __RENDERCORE_H__
+#define __RENDERCORE_H__ 
+
 /** \file blender/render/intern/include/rendercore.h
  *  \ingroup render
  */
 
-
-#ifndef __RENDERCORE_H__
-#define __RENDERCORE_H__ 
-
 #include "render_types.h"
-
-
-/* vector defines */
-
-#define CROSS(dest, a, b)		{ dest[0]= a[1] * b[2] - a[2] * b[1]; dest[1]= a[2] * b[0] - a[0] * b[2]; dest[2]= a[0] * b[1] - a[1] * b[0]; }
 
 struct HaloRen;
 struct ShadeInput;
@@ -55,16 +46,14 @@ struct RayObject;
 
 /* ------------------------------------------------------------------------- */
 
-typedef struct PixStr
-{
+typedef struct PixStr {
 	struct PixStr *next;
 	int obi, facenr, z, maskz;
 	unsigned short mask;
 	short shadfac;
 } PixStr;
 
-typedef struct PixStrMain
-{
+typedef struct PixStrMain {
 	struct PixStrMain *next, *prev;
 	struct PixStr *ps;
 	int counter;

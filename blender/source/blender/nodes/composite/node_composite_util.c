@@ -32,6 +32,8 @@
 
 #include "node_composite_util.h"
 
+#include <limits.h>
+
 CompBuf *alloc_compbuf(int sizex, int sizey, int type, int alloc)
 {
 	CompBuf *cbuf= MEM_callocN(sizeof(CompBuf), "compbuf");
@@ -42,21 +44,21 @@ CompBuf *alloc_compbuf(int sizex, int sizey, int type, int alloc)
 	cbuf->yrad= sizey/2;
 	
 	cbuf->type= type;
-	if(alloc) {
-		if(cbuf->type==CB_RGBA)
+	if (alloc) {
+		if (cbuf->type==CB_RGBA)
 			cbuf->rect= MEM_mapallocN(4*sizeof(float)*sizex*sizey, "compbuf RGBA rect");
-		else if(cbuf->type==CB_VEC3)
+		else if (cbuf->type==CB_VEC3)
 			cbuf->rect= MEM_mapallocN(3*sizeof(float)*sizex*sizey, "compbuf Vector3 rect");
-		else if(cbuf->type==CB_VEC2)
+		else if (cbuf->type==CB_VEC2)
 			cbuf->rect= MEM_mapallocN(2*sizeof(float)*sizex*sizey, "compbuf Vector2 rect");
 		else
 			cbuf->rect= MEM_mapallocN(sizeof(float)*sizex*sizey, "compbuf Fac rect");
 		cbuf->malloc= 1;
 	}
-	cbuf->disprect.xmin= 0;
-	cbuf->disprect.ymin= 0;
-	cbuf->disprect.xmax= sizex;
-	cbuf->disprect.ymax= sizey;
+	cbuf->disprect.xmin = 0;
+	cbuf->disprect.ymin = 0;
+	cbuf->disprect.xmax = sizex;
+	cbuf->disprect.ymax = sizey;
 	
 	return cbuf;
 }
@@ -64,7 +66,7 @@ CompBuf *alloc_compbuf(int sizex, int sizey, int type, int alloc)
 CompBuf *dupalloc_compbuf(CompBuf *cbuf)
 {
 	CompBuf *dupbuf= alloc_compbuf(cbuf->x, cbuf->y, cbuf->type, 1);
-	if(dupbuf) {
+	if (dupbuf) {
 		memcpy(dupbuf->rect, cbuf->rect, cbuf->type*sizeof(float)*cbuf->x*cbuf->y);
 	
 		dupbuf->xof= cbuf->xof;
@@ -79,15 +81,15 @@ CompBuf *pass_on_compbuf(CompBuf *cbuf)
 	CompBuf *dupbuf= (cbuf)? alloc_compbuf(cbuf->x, cbuf->y, cbuf->type, 0): NULL;
 	CompBuf *lastbuf;
 	
-	if(dupbuf) {
+	if (dupbuf) {
 		dupbuf->rect= cbuf->rect;
 		dupbuf->xof= cbuf->xof;
 		dupbuf->yof= cbuf->yof;
 		dupbuf->malloc= 0;
 		
 		/* get last buffer in list, and append dupbuf */
-		for(lastbuf= cbuf; lastbuf; lastbuf= lastbuf->next)
-			if(lastbuf->next==NULL)
+		for (lastbuf= cbuf; lastbuf; lastbuf= lastbuf->next)
+			if (lastbuf->next==NULL)
 				break;
 		lastbuf->next= dupbuf;
 		dupbuf->prev= lastbuf;
@@ -99,13 +101,13 @@ CompBuf *pass_on_compbuf(CompBuf *cbuf)
 void free_compbuf(CompBuf *cbuf)
 {
 	/* check referencing, then remove from list and set malloc tag */
-	if(cbuf->prev || cbuf->next) {
-		if(cbuf->prev)
+	if (cbuf->prev || cbuf->next) {
+		if (cbuf->prev)
 			cbuf->prev->next= cbuf->next;
-		if(cbuf->next)
+		if (cbuf->next)
 			cbuf->next->prev= cbuf->prev;
-		if(cbuf->malloc) {
-			if(cbuf->prev)
+		if (cbuf->malloc) {
+			if (cbuf->prev)
 				cbuf->prev->malloc= 1;
 			else
 				cbuf->next->malloc= 1;
@@ -113,7 +115,7 @@ void free_compbuf(CompBuf *cbuf)
 		}
 	}
 	
-	if(cbuf->malloc && cbuf->rect)
+	if (cbuf->malloc && cbuf->rect)
 		MEM_freeN(cbuf->rect);
 
 	MEM_freeN(cbuf);
@@ -138,16 +140,16 @@ CompBuf *get_cropped_compbuf(rcti *drect, float *rectf, int rectx, int recty, in
 	float *outfp;
 	int dx, y;
 	
-	if(disprect.xmax>rectx) disprect.xmax= rectx;
-	if(disprect.ymax>recty) disprect.ymax= recty;
-	if(disprect.xmin>= disprect.xmax) return NULL;
-	if(disprect.ymin>= disprect.ymax) return NULL;
+	if (disprect.xmax>rectx) disprect.xmax = rectx;
+	if (disprect.ymax>recty) disprect.ymax = recty;
+	if (disprect.xmin>= disprect.xmax) return NULL;
+	if (disprect.ymin>= disprect.ymax) return NULL;
 	
 	cbuf= alloc_compbuf(disprect.xmax-disprect.xmin, disprect.ymax-disprect.ymin, type, 1);
 	outfp= cbuf->rect;
 	rectf += type*(disprect.ymin*rectx + disprect.xmin);
 	dx= type*cbuf->x;
-	for(y=cbuf->y; y>0; y--, outfp+=dx, rectf+=type*rectx)
+	for (y=cbuf->y; y>0; y--, outfp+=dx, rectf+=type*rectx)
 		memcpy(outfp, rectf, sizeof(float)*dx);
 	
 	return cbuf;
@@ -160,7 +162,7 @@ CompBuf *scalefast_compbuf(CompBuf *inbuf, int newx, int newy)
 	int x, y, c, pixsize= inbuf->type;
 	int ofsx, ofsy, stepx, stepy;
 	
-	if(inbuf->x==newx && inbuf->y==newy)
+	if (inbuf->x==newx && inbuf->y==newy)
 		return dupalloc_compbuf(inbuf);
 	
 	outbuf= alloc_compbuf(newx, newy, inbuf->type, 1);
@@ -170,7 +172,7 @@ CompBuf *scalefast_compbuf(CompBuf *inbuf, int newx, int newy)
 	stepy = (65536.0 * (inbuf->y - 1.0) / (newy - 1.0)) + 0.5;
 	ofsy = 32768;
 	
-	for (y = newy; y > 0 ; y--){
+	for (y = newy; y > 0 ; y--) {
 		rectf = inbuf->rect;
 		rectf += pixsize * (ofsy >> 16) * inbuf->x;
 
@@ -180,7 +182,7 @@ CompBuf *scalefast_compbuf(CompBuf *inbuf, int newx, int newy)
 		for (x = newx ; x>0 ; x--) {
 			
 			rf= rectf + pixsize*(ofsx >> 16);
-			for(c=0; c<pixsize; c++)
+			for (c=0; c<pixsize; c++)
 				newrectf[c] = rf[c];
 			
 			newrectf+= pixsize;
@@ -194,65 +196,65 @@ CompBuf *scalefast_compbuf(CompBuf *inbuf, int newx, int newy)
 
 void typecheck_compbuf_color(float *out, float *in, int outtype, int intype)
 {
-	if(intype == outtype) {
+	if (intype == outtype) {
 		memcpy(out, in, sizeof(float)*outtype);
 	}
-	else if(outtype==CB_VAL) {
-		if(intype==CB_VEC2) {
+	else if (outtype==CB_VAL) {
+		if (intype==CB_VEC2) {
 			*out= 0.5f*(in[0]+in[1]);
 		}
-		else if(intype==CB_VEC3) {
+		else if (intype==CB_VEC3) {
 			*out= 0.333333f*(in[0]+in[1]+in[2]);
 		}
-		else if(intype==CB_RGBA) {
-			*out= in[0]*0.35f + in[1]*0.45f + in[2]*0.2f;
+		else if (intype==CB_RGBA) {
+			*out = rgb_to_bw(in);
 		}
 	}
-	else if(outtype==CB_VEC2) {
-		if(intype==CB_VAL) {
+	else if (outtype==CB_VEC2) {
+		if (intype==CB_VAL) {
 			out[0]= in[0];
 			out[1]= in[0];
 		}
-		else if(intype==CB_VEC3) {
+		else if (intype==CB_VEC3) {
 			out[0]= in[0];
 			out[1]= in[1];
 		}
-		else if(intype==CB_RGBA) {
+		else if (intype==CB_RGBA) {
 			out[0]= in[0];
 			out[1]= in[1];
 		}
 	}
-	else if(outtype==CB_VEC3) {
-		if(intype==CB_VAL) {
+	else if (outtype==CB_VEC3) {
+		if (intype==CB_VAL) {
 			out[0]= in[0];
 			out[1]= in[0];
 			out[2]= in[0];
 		}
-		else if(intype==CB_VEC2) {
+		else if (intype==CB_VEC2) {
 			out[0]= in[0];
 			out[1]= in[1];
 			out[2]= 0.0f;
 		}
-		else if(intype==CB_RGBA) {
+		else if (intype==CB_RGBA) {
 			out[0]= in[0];
 			out[1]= in[1];
 			out[2]= in[2];
 		}
 	}
-	else if(outtype==CB_RGBA) {
-		if(intype==CB_VAL) {
+	else if (outtype==CB_RGBA) {
+		if (intype==CB_VAL) {
 			out[0]= in[0];
 			out[1]= in[0];
 			out[2]= in[0];
 			out[3]= 1.0f;
 		}
-		else if(intype==CB_VEC2) {
+		else if (intype==CB_VEC2) {
 			out[0]= in[0];
 			out[1]= in[1];
 			out[2]= 0.0f;
 			out[3]= 1.0f;
 		}
-		else if(intype==CB_VEC3) {
+		else if (intype==CB_VEC3) {
 			out[0]= in[0];
 			out[1]= in[1];
 			out[2]= in[2];
@@ -263,7 +265,7 @@ void typecheck_compbuf_color(float *out, float *in, int outtype, int intype)
 
 CompBuf *typecheck_compbuf(CompBuf *inbuf, int type)
 {
-	if(inbuf && inbuf->type!=type) {
+	if (inbuf && inbuf->type!=type) {
 		CompBuf *outbuf;
 		float *inrf, *outrf;
 		int x;
@@ -274,7 +276,7 @@ CompBuf *typecheck_compbuf(CompBuf *inbuf, int type)
 		outbuf->xof= inbuf->xof;
 		outbuf->yof= inbuf->yof;
 
-		if(inbuf->rect_procedural) {
+		if (inbuf->rect_procedural) {
 			outbuf->rect_procedural= inbuf->rect_procedural;
 			copy_v3_v3(outbuf->procedural_size, inbuf->procedural_size);
 			copy_v3_v3(outbuf->procedural_offset, inbuf->procedural_offset);
@@ -287,82 +289,82 @@ CompBuf *typecheck_compbuf(CompBuf *inbuf, int type)
 		outrf= outbuf->rect;
 		x= inbuf->x*inbuf->y;
 		
-		if(type==CB_VAL) {
-			if(inbuf->type==CB_VEC2) {
-				for(; x>0; x--, outrf+= 1, inrf+= 2)
+		if (type==CB_VAL) {
+			if (inbuf->type==CB_VEC2) {
+				for (; x>0; x--, outrf+= 1, inrf+= 2)
 					*outrf= 0.5f*(inrf[0]+inrf[1]);
 			}
-			else if(inbuf->type==CB_VEC3) {
-				for(; x>0; x--, outrf+= 1, inrf+= 3)
+			else if (inbuf->type==CB_VEC3) {
+				for (; x>0; x--, outrf+= 1, inrf+= 3)
 					*outrf= 0.333333f*(inrf[0]+inrf[1]+inrf[2]);
 			}
-			else if(inbuf->type==CB_RGBA) {
-				for(; x>0; x--, outrf+= 1, inrf+= 4)
-					*outrf= inrf[0]*0.35f + inrf[1]*0.45f + inrf[2]*0.2f;
+			else if (inbuf->type==CB_RGBA) {
+				for (; x>0; x--, outrf+= 1, inrf+= 4)
+					*outrf = rgb_to_bw(inrf);
 			}
 		}
-		else if(type==CB_VEC2) {
-			if(inbuf->type==CB_VAL) {
-				for(; x>0; x--, outrf+= 2, inrf+= 1) {
+		else if (type==CB_VEC2) {
+			if (inbuf->type==CB_VAL) {
+				for (; x>0; x--, outrf+= 2, inrf+= 1) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[0];
 				}
 			}
-			else if(inbuf->type==CB_VEC3) {
-				for(; x>0; x--, outrf+= 2, inrf+= 3) {
+			else if (inbuf->type==CB_VEC3) {
+				for (; x>0; x--, outrf+= 2, inrf+= 3) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[1];
 				}
 			}
-			else if(inbuf->type==CB_RGBA) {
-				for(; x>0; x--, outrf+= 2, inrf+= 4) {
+			else if (inbuf->type==CB_RGBA) {
+				for (; x>0; x--, outrf+= 2, inrf+= 4) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[1];
 				}
 			}
 		}
-		else if(type==CB_VEC3) {
-			if(inbuf->type==CB_VAL) {
-				for(; x>0; x--, outrf+= 3, inrf+= 1) {
+		else if (type==CB_VEC3) {
+			if (inbuf->type==CB_VAL) {
+				for (; x>0; x--, outrf+= 3, inrf+= 1) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[0];
 					outrf[2]= inrf[0];
 				}
 			}
-			else if(inbuf->type==CB_VEC2) {
-				for(; x>0; x--, outrf+= 3, inrf+= 2) {
+			else if (inbuf->type==CB_VEC2) {
+				for (; x>0; x--, outrf+= 3, inrf+= 2) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[1];
 					outrf[2]= 0.0f;
 				}
 			}
-			else if(inbuf->type==CB_RGBA) {
-				for(; x>0; x--, outrf+= 3, inrf+= 4) {
+			else if (inbuf->type==CB_RGBA) {
+				for (; x>0; x--, outrf+= 3, inrf+= 4) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[1];
 					outrf[2]= inrf[2];
 				}
 			}
 		}
-		else if(type==CB_RGBA) {
-			if(inbuf->type==CB_VAL) {
-				for(; x>0; x--, outrf+= 4, inrf+= 1) {
+		else if (type==CB_RGBA) {
+			if (inbuf->type==CB_VAL) {
+				for (; x>0; x--, outrf+= 4, inrf+= 1) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[0];
 					outrf[2]= inrf[0];
 					outrf[3]= 1.0f;
 				}
 			}
-			else if(inbuf->type==CB_VEC2) {
-				for(; x>0; x--, outrf+= 4, inrf+= 2) {
+			else if (inbuf->type==CB_VEC2) {
+				for (; x>0; x--, outrf+= 4, inrf+= 2) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[1];
 					outrf[2]= 0.0f;
 					outrf[3]= 1.0f;
 				}
 			}
-			else if(inbuf->type==CB_VEC3) {
-				for(; x>0; x--, outrf+= 4, inrf+= 3) {
+			else if (inbuf->type==CB_VEC3) {
+				for (; x>0; x--, outrf+= 4, inrf+= 3) {
 					outrf[0]= inrf[0];
 					outrf[1]= inrf[1];
 					outrf[2]= inrf[2];
@@ -378,8 +380,8 @@ CompBuf *typecheck_compbuf(CompBuf *inbuf, int type)
 
 float *compbuf_get_pixel(CompBuf *cbuf, float *defcol, float *use, int x, int y, int xrad, int yrad)
 {
-	if(cbuf) {
-		if(cbuf->rect_procedural) {
+	if (cbuf) {
+		if (cbuf->rect_procedural) {
 			cbuf->rect_procedural(cbuf, use, (float)x/(float)xrad, (float)y/(float)yrad);
 			return use;
 		}
@@ -390,8 +392,8 @@ float *compbuf_get_pixel(CompBuf *cbuf, float *defcol, float *use, int x, int y,
 			x-= cbuf->xof;
 			y-= cbuf->yof;
 			
-			if(y<-cbuf->yrad || y>= -cbuf->yrad+cbuf->y) return col;
-			if(x<-cbuf->xrad || x>= -cbuf->xrad+cbuf->x) return col;
+			if (y<-cbuf->yrad || y>= -cbuf->yrad+cbuf->y) return col;
+			if (x<-cbuf->xrad || x>= -cbuf->xrad+cbuf->x) return col;
 			
 			return cbuf->rect + cbuf->type*( (cbuf->yrad+y)*cbuf->x + (cbuf->xrad+x) );
 		}
@@ -407,7 +409,7 @@ static CompBuf *composit_check_compbuf(CompBuf *cbuf, int type, CompBuf *outbuf)
 	CompBuf *dbuf= typecheck_compbuf(cbuf, type);
 
 	/* if same as output and translated, duplicate so pixels don't interfere */
-	if(dbuf == outbuf && !dbuf->rect_procedural && (dbuf->xof || dbuf->yof))
+	if (dbuf == outbuf && !dbuf->rect_procedural && (dbuf->xof || dbuf->yof))
 		dbuf= dupalloc_compbuf(dbuf);
 	
 	return dbuf;
@@ -428,14 +430,14 @@ void composit1_pixel_processor(bNode *node, CompBuf *out, CompBuf *src_buf, floa
 	xrad= out->xrad;
 	yrad= out->yrad;
 	
-	for(y= -yrad; y<-yrad+out->y; y++) {
-		for(x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
+	for (y= -yrad; y<-yrad+out->y; y++) {
+		for (x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
 			srcfp= compbuf_get_pixel(src_use, src_col, color, x, y, xrad, yrad);
 			func(node, outfp, srcfp);
 		}
 	}
 	
-	if(src_use!=src_buf)
+	if (src_use!=src_buf)
 		free_compbuf(src_use);
 }
 
@@ -455,17 +457,17 @@ void composit2_pixel_processor(bNode *node, CompBuf *out, CompBuf *src_buf, floa
 	xrad= out->xrad;
 	yrad= out->yrad;
 	
-	for(y= -yrad; y<-yrad+out->y; y++) {
-		for(x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
+	for (y= -yrad; y<-yrad+out->y; y++) {
+		for (x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
 			srcfp= compbuf_get_pixel(src_use, src_col, color, x, y, xrad, yrad);
 			facfp= compbuf_get_pixel(fac_use, fac, color, x, y, xrad, yrad);
 			
 			func(node, outfp, srcfp, facfp);
 		}
 	}
-	if(src_use!=src_buf)
+	if (src_use!=src_buf)
 		free_compbuf(src_use);
-	if(fac_use!=fac_buf)
+	if (fac_use!=fac_buf)
 		free_compbuf(fac_use);
 }
 
@@ -486,8 +488,8 @@ void composit3_pixel_processor(bNode *node, CompBuf *out, CompBuf *src1_buf, flo
 	xrad= out->xrad;
 	yrad= out->yrad;
 	
-	for(y= -yrad; y<-yrad+out->y; y++) {
-		for(x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
+	for (y= -yrad; y<-yrad+out->y; y++) {
+		for (x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
 			src1fp= compbuf_get_pixel(src1_use, src1_col, color, x, y, xrad, yrad);
 			src2fp= compbuf_get_pixel(src2_use, src2_col, color, x, y, xrad, yrad);
 			facfp= compbuf_get_pixel(fac_use, fac, color, x, y, xrad, yrad);
@@ -496,11 +498,11 @@ void composit3_pixel_processor(bNode *node, CompBuf *out, CompBuf *src1_buf, flo
 		}
 	}
 	
-	if(src1_use!=src1_buf)
+	if (src1_use!=src1_buf)
 		free_compbuf(src1_use);
-	if(src2_use!=src2_buf)
+	if (src2_use!=src2_buf)
 		free_compbuf(src2_use);
-	if(fac_use!=fac_buf)
+	if (fac_use!=fac_buf)
 		free_compbuf(fac_use);
 }
 
@@ -523,8 +525,8 @@ void composit4_pixel_processor(bNode *node, CompBuf *out, CompBuf *src1_buf, flo
 	xrad= out->xrad;
 	yrad= out->yrad;
 	
-	for(y= -yrad; y<-yrad+out->y; y++) {
-		for(x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
+	for (y= -yrad; y<-yrad+out->y; y++) {
+		for (x= -xrad; x<-xrad+out->x; x++, outfp+=out->type) {
 			src1fp= compbuf_get_pixel(src1_use, src1_col, color, x, y, xrad, yrad);
 			src2fp= compbuf_get_pixel(src2_use, src2_col, color, x, y, xrad, yrad);
 			fac1fp= compbuf_get_pixel(fac1_use, fac1, color, x, y, xrad, yrad);
@@ -534,13 +536,13 @@ void composit4_pixel_processor(bNode *node, CompBuf *out, CompBuf *src1_buf, flo
 		}
 	}
 	
-	if(src1_use!=src1_buf)
+	if (src1_use!=src1_buf)
 		free_compbuf(src1_use);
-	if(src2_use!=src2_buf)
+	if (src2_use!=src2_buf)
 		free_compbuf(src2_use);
-	if(fac1_use!=fac1_buf)
+	if (fac1_use!=fac1_buf)
 		free_compbuf(fac1_use);
-	if(fac2_use!=fac2_buf)
+	if (fac2_use!=fac2_buf)
 		free_compbuf(fac2_use);
 }
 
@@ -562,10 +564,26 @@ CompBuf *valbuf_from_rgbabuf(CompBuf *cbuf, int channel)
 
 	rectf= cbuf->rect + channel;
 	
-	for(tot= cbuf->x*cbuf->y; tot>0; tot--, valf++, rectf+=4)
+	for (tot= cbuf->x*cbuf->y; tot>0; tot--, valf++, rectf+=4)
 		*valf= *rectf;
 	
 	return valbuf;
+}
+
+void valbuf_to_rgbabuf(CompBuf *valbuf, CompBuf *cbuf, int channel)
+{
+	float *valf, *rectf;
+	int tot;
+
+	valf= valbuf->rect;
+
+	/* defaults to returning alpha channel */
+	if ((channel < CHAN_R) || (channel > CHAN_A)) channel = CHAN_A;
+
+	rectf = cbuf->rect + channel;
+
+	for (tot= cbuf->x*cbuf->y; tot>0; tot--, valf++, rectf+=4)
+		*rectf = *valf;
 }
 
 static CompBuf *generate_procedural_preview(CompBuf *cbuf, int newx, int newy)
@@ -580,8 +598,8 @@ static CompBuf *generate_procedural_preview(CompBuf *cbuf, int newx, int newy)
 	xrad= outbuf->xrad;
 	yrad= outbuf->yrad;
 	
-	for(y= -yrad; y<-yrad+outbuf->y; y++)
-		for(x= -xrad; x<-xrad+outbuf->x; x++, outfp+=outbuf->type)
+	for (y= -yrad; y<-yrad+outbuf->y; y++)
+		for (x= -xrad; x<-xrad+outbuf->x; x++, outfp+=outbuf->type)
 			cbuf->rect_procedural(cbuf, outfp, (float)x/(float)xrad, (float)y/(float)yrad);
 
 	return outbuf;
@@ -597,14 +615,14 @@ void generate_preview(void *data, bNode *node, CompBuf *stackbuf)
 	int dither= 0;
 	unsigned char *rect;
 	
-	if(preview && stackbuf) {
+	if (preview && stackbuf) {
 		CompBuf *cbuf, *stackbuf_use;
 		
-		if(stackbuf->rect==NULL && stackbuf->rect_procedural==NULL) return;
+		if (stackbuf->rect==NULL && stackbuf->rect_procedural==NULL) return;
 		
 		stackbuf_use= typecheck_compbuf(stackbuf, CB_RGBA);
 
-		if(stackbuf->x > stackbuf->y) {
+		if (stackbuf->x > stackbuf->y) {
 			xsize= 140;
 			ysize= (140*stackbuf->y)/stackbuf->x;
 		}
@@ -613,7 +631,7 @@ void generate_preview(void *data, bNode *node, CompBuf *stackbuf)
 			xsize= (140*stackbuf->x)/stackbuf->y;
 		}
 		
-		if(stackbuf_use->rect_procedural)
+		if (stackbuf_use->rect_procedural)
 			cbuf= generate_procedural_preview(stackbuf_use, xsize, ysize);
 		else
 			cbuf= scalefast_compbuf(stackbuf_use, xsize, ysize);
@@ -626,54 +644,54 @@ void generate_preview(void *data, bNode *node, CompBuf *stackbuf)
 			xsize, ysize, xsize, xsize);
 		
 		free_compbuf(cbuf);
-		if(stackbuf_use!=stackbuf)
+		if (stackbuf_use!=stackbuf)
 			free_compbuf(stackbuf_use);
 
-		BLI_lock_thread(LOCK_PREVIEW);
+		// BLI_lock_thread(LOCK_PREVIEW);
 
-		if(preview->rect)
+		if (preview->rect)
 			MEM_freeN(preview->rect);
 		preview->xsize= xsize;
 		preview->ysize= ysize;
 		preview->rect= rect;
 
-		BLI_unlock_thread(LOCK_PREVIEW);
+		// BLI_unlock_thread(LOCK_PREVIEW);
 	}
 }
 
 void do_rgba_to_yuva(bNode *UNUSED(node), float *out, float *in)
 {
-	rgb_to_yuv(in[0],in[1],in[2], &out[0], &out[1], &out[2]);
+	rgb_to_yuv(in[0], in[1], in[2], &out[0], &out[1], &out[2]);
 	out[3]=in[3];
 }
 
 void do_rgba_to_hsva(bNode *UNUSED(node), float *out, float *in)
 {
-	rgb_to_hsv(in[0],in[1],in[2], &out[0], &out[1], &out[2]);
+	rgb_to_hsv(in[0], in[1], in[2], &out[0], &out[1], &out[2]);
 	out[3]=in[3];
 }
 
 void do_rgba_to_ycca(bNode *UNUSED(node), float *out, float *in)
 {
-	rgb_to_ycc(in[0],in[1],in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
+	rgb_to_ycc(in[0], in[1], in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
 	out[3]=in[3];
 }
 
 void do_yuva_to_rgba(bNode *UNUSED(node), float *out, float *in)
 {
-	yuv_to_rgb(in[0],in[1],in[2], &out[0], &out[1], &out[2]);
+	yuv_to_rgb(in[0], in[1], in[2], &out[0], &out[1], &out[2]);
 	out[3]=in[3];
 }
 
 void do_hsva_to_rgba(bNode *UNUSED(node), float *out, float *in)
 {
-	hsv_to_rgb(in[0],in[1],in[2], &out[0], &out[1], &out[2]);
+	hsv_to_rgb(in[0], in[1], in[2], &out[0], &out[1], &out[2]);
 	out[3]=in[3];
 }
 
 void do_ycca_to_rgba(bNode *UNUSED(node), float *out, float *in)
 {
-	ycc_to_rgb(in[0],in[1],in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
+	ycc_to_rgb(in[0], in[1], in[2], &out[0], &out[1], &out[2], BLI_YCC_ITU_BT601);
 	out[3]=in[3];
 }
 
@@ -705,21 +723,21 @@ void gamma_correct_compbuf(CompBuf *img, int inversed)
 	float *drect;
 	int x;
 
-	if(img->type!=CB_RGBA) return;
+	if (img->type!=CB_RGBA) return;
 
 	drect= img->rect;
-	if(inversed) {
-		for(x=img->x*img->y; x>0; x--, drect+=4) {
-			if(drect[0]>0.0f) drect[0]= sqrt(drect[0]); else drect[0]= 0.0f;
-			if(drect[1]>0.0f) drect[1]= sqrt(drect[1]); else drect[1]= 0.0f;
-			if(drect[2]>0.0f) drect[2]= sqrt(drect[2]); else drect[2]= 0.0f;
+	if (inversed) {
+		for (x=img->x*img->y; x>0; x--, drect+=4) {
+			if (drect[0]>0.0f) drect[0]= sqrt(drect[0]); else drect[0]= 0.0f;
+			if (drect[1]>0.0f) drect[1]= sqrt(drect[1]); else drect[1]= 0.0f;
+			if (drect[2]>0.0f) drect[2]= sqrt(drect[2]); else drect[2]= 0.0f;
 		}
 	}
 	else {
-		for(x=img->x*img->y; x>0; x--, drect+=4) {
-			if(drect[0]>0.0f) drect[0]*= drect[0]; else drect[0]= 0.0f;
-			if(drect[1]>0.0f) drect[1]*= drect[1]; else drect[1]= 0.0f;
-			if(drect[2]>0.0f) drect[2]*= drect[2]; else drect[2]= 0.0f;
+		for (x=img->x*img->y; x>0; x--, drect+=4) {
+			if (drect[0]>0.0f) drect[0]*= drect[0]; else drect[0]= 0.0f;
+			if (drect[1]>0.0f) drect[1]*= drect[1]; else drect[1]= 0.0f;
+			if (drect[2]>0.0f) drect[2]*= drect[2]; else drect[2]= 0.0f;
 		}
 	}
 }
@@ -729,12 +747,12 @@ void premul_compbuf(CompBuf *img, int inversed)
 	float *drect;
 	int x;
 
-	if(img->type!=CB_RGBA) return;
+	if (img->type!=CB_RGBA) return;
 
 	drect= img->rect;
-	if(inversed) {
-		for(x=img->x*img->y; x>0; x--, drect+=4) {
-			if(fabsf(drect[3]) < 1e-5f) {
+	if (inversed) {
+		for (x=img->x*img->y; x>0; x--, drect+=4) {
+			if (fabsf(drect[3]) < 1e-5f) {
 				drect[0]= 0.0f;
 				drect[1]= 0.0f;
 				drect[2]= 0.0f;
@@ -747,7 +765,7 @@ void premul_compbuf(CompBuf *img, int inversed)
 		}
 	}
 	else {
-		for(x=img->x*img->y; x>0; x--, drect+=4) {
+		for (x=img->x*img->y; x>0; x--, drect+=4) {
 			drect[0] *= drect[3];
 			drect[1] *= drect[3];
 			drect[2] *= drect[3];
@@ -854,8 +872,8 @@ static void FHT(fREAL* data, unsigned int M, unsigned int inverse)
 }
 //------------------------------------------------------------------------------
 /* 2D Fast Hartley Transform, Mx/My -> log2 of width/height,
-	nzp -> the row where zero pad data starts,
-	inverse -> see above */
+ * nzp -> the row where zero pad data starts,
+ * inverse -> see above */
 static void FHT2D(fREAL *data, unsigned int Mx, unsigned int My,
 		unsigned int nzp, unsigned int inverse)
 {
@@ -881,12 +899,13 @@ static void FHT2D(fREAL *data, unsigned int Mx, unsigned int My,
 	else {  // rectangular
 		unsigned int k, Nym = Ny-1, stm = 1 << (Mx + My);
 		for (i=0; stm>0; i++) {
-			#define pred(k) (((k & Nym) << Mx) + (k >> My))
-			for (j=pred(i); j>i; j=pred(j));
+			#define PRED(k) (((k & Nym) << Mx) + (k >> My))
+			for (j=PRED(i); j>i; j=PRED(j));
 			if (j < i) continue;
-			for (k=i, j=pred(i); j!=i; k=j, j=pred(j), stm--)
-				{ t=data[j], data[j]=data[k], data[k]=t; }
-			#undef pred
+			for (k=i, j=PRED(i); j!=i; k=j, j=PRED(j), stm--) {
+				t=data[j], data[j]=data[k], data[k]=t;
+			}
+			#undef PRED
 			stm--;
 		}
 	}
@@ -985,7 +1004,7 @@ void convolve(CompBuf* dst, CompBuf* in1, CompBuf* in2)
 	fRGB wt, *colp;
 	int x, y, ch;
 	int xbl, ybl, nxb, nyb, xbsz, ybsz;
-	int in2done = 0;
+	int in2done = FALSE;
 
 	CompBuf* rdst = alloc_compbuf(in1->x, in1->y, in1->type, 1);
 
@@ -1005,7 +1024,7 @@ void convolve(CompBuf* dst, CompBuf* in1, CompBuf* in2)
 	for (y=0; y<in2->y; y++) {
 		colp = (fRGB*)&in2->rect[y*in2->x*in2->type];
 		for (x=0; x<in2->x; x++)
-			fRGB_add(wt, colp[x]);
+			add_v3_v3(wt, colp[x]);
 	}
 	if (wt[0] != 0.f) wt[0] = 1.f/wt[0];
 	if (wt[1] != 0.f) wt[1] = 1.f/wt[1];
@@ -1013,7 +1032,7 @@ void convolve(CompBuf* dst, CompBuf* in1, CompBuf* in2)
 	for (y=0; y<in2->y; y++) {
 		colp = (fRGB*)&in2->rect[y*in2->x*in2->type];
 		for (x=0; x<in2->x; x++)
-			fRGB_colormult(colp[x], wt);
+			mul_v3_v3(colp[x], wt);
 	}
 
 	// copy image data, unpacking interleaved RGBA into separate channels
@@ -1085,7 +1104,7 @@ void convolve(CompBuf* dst, CompBuf* in1, CompBuf* in2)
 				}
 
 			}
-			in2done = 1;
+			in2done = TRUE;
 		}
 	}
 
@@ -1104,11 +1123,11 @@ void convolve(CompBuf* dst, CompBuf* in1, CompBuf* in2)
 // sets fcol to pixelcolor at (x, y)
 void qd_getPixel(CompBuf* src, int x, int y, float* col)
 {
-	if(src->rect_procedural) {
+	if (src->rect_procedural) {
 		float bc[4];
 		src->rect_procedural(src, bc, (float)x/(float)src->xrad, (float)y/(float)src->yrad);
 
-		switch(src->type){
+		switch (src->type) {
 			/* these fallthrough to get all the channels */
 			case CB_RGBA: col[3]=bc[3]; 
 			case CB_VEC3: col[2]=bc[2];
@@ -1118,7 +1137,7 @@ void qd_getPixel(CompBuf* src, int x, int y, float* col)
 	}
 	else if ((x >= 0) && (x < src->x) && (y >= 0) && (y < src->y)) {
 		float* bc = &src->rect[(x + y*src->x)*src->type];
-		switch(src->type){
+		switch (src->type) {
 			/* these fallthrough to get all the channels */
 			case CB_RGBA: col[3]=bc[3]; 
 			case CB_VEC3: col[2]=bc[2];
@@ -1127,7 +1146,7 @@ void qd_getPixel(CompBuf* src, int x, int y, float* col)
 		}
 	}
 	else {
-		switch(src->type){
+		switch (src->type) {
 			/* these fallthrough to get all the channels */
 			case CB_RGBA: col[3]=0.0; 
 			case CB_VEC3: col[2]=0.0; 
@@ -1142,7 +1161,7 @@ void qd_setPixel(CompBuf* src, int x, int y, float* col)
 {
 	if ((x >= 0) && (x < src->x) && (y >= 0) && (y < src->y)) {
 		float* bc = &src->rect[(x + y*src->x)*src->type];
-		switch(src->type){
+		switch (src->type) {
 			/* these fallthrough to get all the channels */
 			case CB_RGBA: bc[3]=col[3]; 
 			case CB_VEC3: bc[2]=col[2];
@@ -1199,7 +1218,7 @@ void qd_getPixelLerp(CompBuf* src, float u, float v, float* col)
 	const int x1 = (int)ufl, y1 = (int)vfl;
 	const int x2 = (int)ceil(u), y2 = (int)ceil(v);
 	if ((x2 >= 0) && (y2 >= 0) && (x1 < src->x) && (y1 < src->y)) {
-		const float B[4] = {0,0,0,0};
+		const float B[4] = {0, 0, 0, 0};
 		const int ox1 = (x1 < 0), oy1 = (y1 < 0), ox2 = (x2 >= src->x), oy2 = (y2 >= src->y);
 		const float* c00 = (ox1 || oy1) ? B : &src->rect[(x1 + y1*src->x)*src->type];
 		const float* c10 = (ox2 || oy1) ? B : &src->rect[(x2 + y1*src->x)*src->type];
@@ -1225,7 +1244,7 @@ void qd_getPixelLerpChan(CompBuf* src, float u, float v, int chan, float* out)
 	const int x2 = (int)ceil(u), y2 = (int)ceil(v);
 	if (chan >= src->type) chan = 0;
 	if ((x2 >= 0) && (y2 >= 0) && (x1 < src->x) && (y1 < src->y)) {
-		const float B[4] = {0,0,0,0};
+		const float B[4] = {0, 0, 0, 0};
 		const int ox1 = (x1 < 0), oy1 = (y1 < 0), ox2 = (x2 >= src->x), oy2 = (y2 >= src->y);
 		const float* c00 = (ox1 || oy1) ? B : &src->rect[(x1 + y1*src->x)*src->type + chan];
 		const float* c10 = (ox2 || oy1) ? B : &src->rect[(x2 + y1*src->x)*src->type + chan];
@@ -1262,14 +1281,14 @@ CompBuf* qd_downScaledCopy(CompBuf* src, int scale)
 					xx = x*scale;
 					mx = xx + scale;
 					if (mx > src->x) mx = src->x;
-					colsum[0] = colsum[1] = colsum[2] = 0.f;
+					zero_v3(colsum);
 					for (sy=yy; sy<my; sy++) {
 						fRGB* scolp = (fRGB*)&src->rect[sy*src->x*src->type];
 						for (sx=xx; sx<mx; sx++)
-							fRGB_add(colsum, scolp[sx]);
+							add_v3_v3(colsum, scolp[sx]);
 					}
-					fRGB_mult(colsum, fscale);
-					fRGB_copy(fcolp[x], colsum);
+					mul_v3_fl(colsum, fscale);
+					copy_v3_v3(fcolp[x], colsum);
 				}
 			}
 		}
@@ -1283,33 +1302,35 @@ void IIR_gauss(CompBuf* src, float sigma, int chan, int xy)
 {
 	double q, q2, sc, cf[4], tsM[9], tsu[3], tsv[3];
 	double *X, *Y, *W;
-	int i, x, y, sz;
+	const unsigned int src_width = src->x;
+	const unsigned int src_height = src->y;
+	unsigned int i, x, y, sz;
 
 	// <0.5 not valid, though can have a possibly useful sort of sharpening effect
 	if (sigma < 0.5f) return;
-	
+
 	if ((xy < 1) || (xy > 3)) xy = 3;
-	
+
 	// XXX The YVV macro defined below explicitly expects sources of at least 3x3 pixels,
 	//     so just skiping blur along faulty direction if src's def is below that limit!
-	if (src->x < 3) xy &= ~(int) 1;
-	if (src->y < 3) xy &= ~(int) 2;
+	if (src_width < 3) xy &= ~(int) 1;
+	if (src_height < 3) xy &= ~(int) 2;
 	if (xy < 1) return;
 
 	// see "Recursive Gabor Filtering" by Young/VanVliet
 	// all factors here in double.prec. Required, because for single.prec it seems to blow up if sigma > ~200
 	if (sigma >= 3.556f)
-		q = 0.9804f*(sigma - 3.556f) + 2.5091f;
-	else // sigma >= 0.5
-		q = (0.0561f*sigma + 0.5784f)*sigma - 0.2568f;
-	q2 = q*q;
-	sc = (1.1668 + q)*(3.203729649  + (2.21566 + q)*q);
+		q = 0.9804f * (sigma - 3.556f) + 2.5091f;
+	else     // sigma >= 0.5
+		q = (0.0561f * sigma + 0.5784f) * sigma - 0.2568f;
+	q2 = q * q;
+	sc = (1.1668 + q) * (3.203729649  + (2.21566 + q) * q);
 	// no gabor filtering here, so no complex multiplies, just the regular coefs.
 	// all negated here, so as not to have to recalc Triggs/Sdika matrix
-	cf[1] = q*(5.788961737 + (6.76492 + 3.0*q)*q)/ sc;
-	cf[2] = -q2*(3.38246 + 3.0*q)/sc;
+	cf[1] = q * (5.788961737 + (6.76492 + 3.0 * q) * q) / sc;
+	cf[2] = -q2 * (3.38246 + 3.0 * q) / sc;
 	// 0 & 3 unchanged
-	cf[3] = q2*q/sc;
+	cf[3] = q2 * q / sc;
 	cf[0] = 1.0 - cf[1] - cf[2] - cf[3];
 
 	// Triggs/Sdika border corrections,
@@ -1319,59 +1340,62 @@ void IIR_gauss(CompBuf* src, float sigma, int chan, int xy)
 	// but neither seem to be quite the same, result seems to be ok so far anyway.
 	// Extra scale factor here to not have to do it in filter,
 	// though maybe this had something to with the precision errors
-	sc = cf[0]/((1.0 + cf[1] - cf[2] + cf[3])*(1.0 - cf[1] - cf[2] - cf[3])*(1.0 + cf[2] + (cf[1] - cf[3])*cf[3]));
-	tsM[0] = sc*(-cf[3]*cf[1] + 1.0 - cf[3]*cf[3] - cf[2]);
-	tsM[1] = sc*((cf[3] + cf[1])*(cf[2] + cf[3]*cf[1]));
-	tsM[2] = sc*(cf[3]*(cf[1] + cf[3]*cf[2]));
-	tsM[3] = sc*(cf[1] + cf[3]*cf[2]);
-	tsM[4] = sc*(-(cf[2] - 1.0)*(cf[2] + cf[3]*cf[1]));
-	tsM[5] = sc*(-(cf[3]*cf[1] + cf[3]*cf[3] + cf[2] - 1.0)*cf[3]);
-	tsM[6] = sc*(cf[3]*cf[1] + cf[2] + cf[1]*cf[1] - cf[2]*cf[2]);
-	tsM[7] = sc*(cf[1]*cf[2] + cf[3]*cf[2]*cf[2] - cf[1]*cf[3]*cf[3] - cf[3]*cf[3]*cf[3] - cf[3]*cf[2] + cf[3]);
-	tsM[8] = sc*(cf[3]*(cf[1] + cf[3]*cf[2]));
+	sc = cf[0] / ((1.0 + cf[1] - cf[2] + cf[3]) * (1.0 - cf[1] - cf[2] - cf[3]) * (1.0 + cf[2] + (cf[1] - cf[3]) * cf[3]));
+	tsM[0] = sc * (-cf[3] * cf[1] + 1.0 - cf[3] * cf[3] - cf[2]);
+	tsM[1] = sc * ((cf[3] + cf[1]) * (cf[2] + cf[3] * cf[1]));
+	tsM[2] = sc * (cf[3] * (cf[1] + cf[3] * cf[2]));
+	tsM[3] = sc * (cf[1] + cf[3] * cf[2]);
+	tsM[4] = sc * (-(cf[2] - 1.0) * (cf[2] + cf[3] * cf[1]));
+	tsM[5] = sc * (-(cf[3] * cf[1] + cf[3] * cf[3] + cf[2] - 1.0) * cf[3]);
+	tsM[6] = sc * (cf[3] * cf[1] + cf[2] + cf[1] * cf[1] - cf[2] * cf[2]);
+	tsM[7] = sc * (cf[1] * cf[2] + cf[3] * cf[2] * cf[2] - cf[1] * cf[3] * cf[3] - cf[3] * cf[3] * cf[3] - cf[3] * cf[2] + cf[3]);
+	tsM[8] = sc * (cf[3] * (cf[1] + cf[3] * cf[2]));
 
-#define YVV(L)                                                                \
-{                                                                             \
-	W[0] = cf[0]*X[0] + cf[1]*X[0] + cf[2]*X[0] + cf[3]*X[0];                 \
-	W[1] = cf[0]*X[1] + cf[1]*W[0] + cf[2]*X[0] + cf[3]*X[0];                 \
-	W[2] = cf[0]*X[2] + cf[1]*W[1] + cf[2]*W[0] + cf[3]*X[0];                 \
-	for (i=3; i<L; i++)                                                       \
-		W[i] = cf[0]*X[i] + cf[1]*W[i-1] + cf[2]*W[i-2] + cf[3]*W[i-3];       \
-	tsu[0] = W[L-1] - X[L-1];                                                 \
-	tsu[1] = W[L-2] - X[L-1];                                                 \
-	tsu[2] = W[L-3] - X[L-1];                                                 \
-	tsv[0] = tsM[0]*tsu[0] + tsM[1]*tsu[1] + tsM[2]*tsu[2] + X[L-1];          \
-	tsv[1] = tsM[3]*tsu[0] + tsM[4]*tsu[1] + tsM[5]*tsu[2] + X[L-1];          \
-	tsv[2] = tsM[6]*tsu[0] + tsM[7]*tsu[1] + tsM[8]*tsu[2] + X[L-1];          \
-	Y[L-1] = cf[0]*W[L-1] + cf[1]*tsv[0] + cf[2]*tsv[1] + cf[3]*tsv[2];       \
-	Y[L-2] = cf[0]*W[L-2] + cf[1]*Y[L-1] + cf[2]*tsv[0] + cf[3]*tsv[1];       \
-	Y[L-3] = cf[0]*W[L-3] + cf[1]*Y[L-2] + cf[2]*Y[L-1] + cf[3]*tsv[0];       \
-	for (i=L-4; i>=0; i--)                                                    \
-		Y[i] = cf[0]*W[i] + cf[1]*Y[i+1] + cf[2]*Y[i+2] + cf[3]*Y[i+3];       \
-}
+#define YVV(L)                                                                          \
+{                                                                                       \
+	W[0] = cf[0] * X[0] + cf[1] * X[0] + cf[2] * X[0] + cf[3] * X[0];                   \
+	W[1] = cf[0] * X[1] + cf[1] * W[0] + cf[2] * X[0] + cf[3] * X[0];                   \
+	W[2] = cf[0] * X[2] + cf[1] * W[1] + cf[2] * W[0] + cf[3] * X[0];                   \
+	for (i = 3; i < L; i++) {                                                           \
+		W[i] = cf[0] * X[i] + cf[1] * W[i - 1] + cf[2] * W[i - 2] + cf[3] * W[i - 3];   \
+	}                                                                                   \
+	tsu[0] = W[L - 1] - X[L - 1];                                                       \
+	tsu[1] = W[L - 2] - X[L - 1];                                                       \
+	tsu[2] = W[L - 3] - X[L - 1];                                                       \
+	tsv[0] = tsM[0] * tsu[0] + tsM[1] * tsu[1] + tsM[2] * tsu[2] + X[L - 1];            \
+	tsv[1] = tsM[3] * tsu[0] + tsM[4] * tsu[1] + tsM[5] * tsu[2] + X[L - 1];            \
+	tsv[2] = tsM[6] * tsu[0] + tsM[7] * tsu[1] + tsM[8] * tsu[2] + X[L - 1];            \
+	Y[L - 1] = cf[0] * W[L - 1] + cf[1] * tsv[0] + cf[2] * tsv[1] + cf[3] * tsv[2];     \
+	Y[L - 2] = cf[0] * W[L - 2] + cf[1] * Y[L - 1] + cf[2] * tsv[0] + cf[3] * tsv[1];   \
+	Y[L - 3] = cf[0] * W[L - 3] + cf[1] * Y[L - 2] + cf[2] * Y[L - 1] + cf[3] * tsv[0]; \
+	/* 'i != UINT_MAX' is really 'i >= 0', but necessary for unsigned int wrapping */   \
+	for (i = L - 4; i != UINT_MAX; i--) {                                               \
+		Y[i] = cf[0] * W[i] + cf[1] * Y[i + 1] + cf[2] * Y[i + 2] + cf[3] * Y[i + 3];   \
+	}                                                                                   \
+} (void)0
 
 	// intermediate buffers
-	sz = MAX2(src->x, src->y);
-	X = MEM_callocN(sz*sizeof(double), "IIR_gauss X buf");
-	Y = MEM_callocN(sz*sizeof(double), "IIR_gauss Y buf");
-	W = MEM_callocN(sz*sizeof(double), "IIR_gauss W buf");
-	if (xy & 1) {	// H
-		for (y=0; y<src->y; ++y) {
-			const int yx = y*src->x;
-			for (x=0; x<src->x; ++x)
-				X[x] = src->rect[(x + yx)*src->type + chan];
-			YVV(src->x);
-			for (x=0; x<src->x; ++x)
-				src->rect[(x + yx)*src->type + chan] = Y[x];
+	sz = MAX2(src_width, src_height);
+	X = MEM_callocN(sz * sizeof(double), "IIR_gauss X buf");
+	Y = MEM_callocN(sz * sizeof(double), "IIR_gauss Y buf");
+	W = MEM_callocN(sz * sizeof(double), "IIR_gauss W buf");
+	if (xy & 1) {       // H
+		for (y = 0; y < src_height; ++y) {
+			const int yx = y * src_width;
+			for (x = 0; x < src_width; ++x)
+				X[x] = src->rect[(x + yx) * src->type + chan];
+			YVV(src_width);
+			for (x = 0; x < src_width; ++x)
+				src->rect[(x + yx) * src->type + chan] = Y[x];
 		}
 	}
-	if (xy & 2) {	// V
-		for (x=0; x<src->x; ++x) {
-			for (y=0; y<src->y; ++y)
-				X[y] = src->rect[(x + y*src->x)*src->type + chan];
-			YVV(src->y);
-			for (y=0; y<src->y; ++y)
-				src->rect[(x + y*src->x)*src->type + chan] = Y[y];
+	if (xy & 2) {       // V
+		for (x = 0; x < src_width; ++x) {
+			for (y = 0; y < src_height; ++y)
+				X[y] = src->rect[(x + y * src_width) * src->type + chan];
+			YVV(src_height);
+			for (y = 0; y < src_height; ++y)
+				src->rect[(x + y * src_width) * src->type + chan] = Y[y];
 		}
 	}
 

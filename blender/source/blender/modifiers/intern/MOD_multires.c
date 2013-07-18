@@ -38,6 +38,8 @@
 #include "DNA_mesh_types.h"
 #include "DNA_object_types.h"
 
+#include "BLI_utildefines.h"
+
 #include "BKE_cdderivedmesh.h"
 #include "BKE_mesh.h"
 #include "BKE_multires.h"
@@ -49,7 +51,7 @@
 
 static void initData(ModifierData *md)
 {
-	MultiresModifierData *mmd = (MultiresModifierData*)md;
+	MultiresModifierData *mmd = (MultiresModifierData *)md;
 
 	mmd->lvl = 0;
 	mmd->sculptlvl = 0;
@@ -59,8 +61,8 @@ static void initData(ModifierData *md)
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
-	MultiresModifierData *mmd = (MultiresModifierData*) md;
-	MultiresModifierData *tmmd = (MultiresModifierData*) target;
+	MultiresModifierData *mmd = (MultiresModifierData *) md;
+	MultiresModifierData *tmmd = (MultiresModifierData *) target;
 
 	tmmd->lvl = mmd->lvl;
 	tmmd->sculptlvl = mmd->sculptlvl;
@@ -71,49 +73,68 @@ static void copyData(ModifierData *md, ModifierData *target)
 }
 
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *dm,
-						   int useRenderParams, int isFinalCalc)
+                                  ModifierApplyFlag flag)
 {
-	MultiresModifierData *mmd = (MultiresModifierData*)md;
+	MultiresModifierData *mmd = (MultiresModifierData *)md;
 	DerivedMesh *result;
-	Mesh *me= (Mesh*)ob->data;
+	Mesh *me = (Mesh *)ob->data;
+	const int useRenderParams = flag & MOD_APPLY_RENDER;
+	MultiresFlags flags = 0;
 
-	if(mmd->totlvl) {
-		if(!CustomData_get_layer(&me->ldata, CD_MDISPS)) {
+	if (mmd->totlvl) {
+		if (!CustomData_get_layer(&me->ldata, CD_MDISPS)) {
 			/* multires always needs a displacement layer */
 			CustomData_add_layer(&me->ldata, CD_MDISPS, CD_CALLOC, NULL, me->totloop);
 		}
 	}
 
-	result = multires_dm_create_from_derived(mmd, 0, dm, ob, useRenderParams);
+	flags = MULTIRES_ALLOC_PAINT_MASK;
+	if (useRenderParams)
+		flags |= MULTIRES_USE_RENDER_PARAMS;
 
-	if(result == dm)
+	result = multires_make_derived_from_derived(dm, mmd, ob, flags);
+
+	if (result == dm)
 		return dm;
 
-	if(useRenderParams || !isFinalCalc) {
+	if (useRenderParams || !(flag & MOD_APPLY_USECACHE)) {
 		DerivedMesh *cddm;
 		
-		cddm= CDDM_copy(result);
+		cddm = CDDM_copy(result);
 
-		/* copy hidden flag to vertices */
-		if(!useRenderParams) {
+		/* copy hidden/masks to vertices */
+		if (!useRenderParams) {
 			struct MDisps *mdisps;
+			struct GridPaintMask *grid_paint_mask;
+			
 			mdisps = CustomData_get_layer(&me->ldata, CD_MDISPS);
-			if(mdisps) {
+			grid_paint_mask = CustomData_get_layer(&me->ldata, CD_GRID_PAINT_MASK);
+			
+			if (mdisps) {
 				subsurf_copy_grid_hidden(result, me->mpoly,
-										 cddm->getVertArray(cddm),
-										 mdisps);
+				                         cddm->getVertArray(cddm),
+				                         mdisps);
 
-				mesh_flush_hidden_from_verts(cddm->getVertArray(cddm),
-											 cddm->getLoopArray(cddm),
-											 cddm->getEdgeArray(cddm),
-											 cddm->getNumEdges(cddm),
-											 cddm->getPolyArray(cddm),
-											 cddm->getNumPolys(cddm));
+				BKE_mesh_flush_hidden_from_verts(cddm->getVertArray(cddm),
+				                                 cddm->getLoopArray(cddm),
+				                                 cddm->getEdgeArray(cddm),
+				                                 cddm->getNumEdges(cddm),
+				                                 cddm->getPolyArray(cddm),
+				                                 cddm->getNumPolys(cddm));
+			}
+			if (grid_paint_mask) {
+				float *paint_mask = CustomData_add_layer(&cddm->vertData,
+				                                         CD_PAINT_MASK,
+				                                         CD_CALLOC, NULL,
+				                                         cddm->getNumVerts(cddm));
+
+				subsurf_copy_grid_paint_mask(result, me->mpoly,
+				                             paint_mask, grid_paint_mask);
 			}
 		}
 
 		result->release(result);
-		result= cddm;
+		result = cddm;
 	}
 
 	return result;
@@ -125,9 +146,9 @@ ModifierTypeInfo modifierType_Multires = {
 	/* structName */        "MultiresModifierData",
 	/* structSize */        sizeof(MultiresModifierData),
 	/* type */              eModifierTypeType_Constructive,
-	/* flags */             eModifierTypeFlag_AcceptsMesh
-							| eModifierTypeFlag_SupportsMapping
-							| eModifierTypeFlag_RequiresOriginalData,
+	/* flags */             eModifierTypeFlag_AcceptsMesh |
+	                        eModifierTypeFlag_SupportsMapping |
+	                        eModifierTypeFlag_RequiresOriginalData,
 
 	/* copyData */          copyData,
 	/* deformVerts */       NULL,

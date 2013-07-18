@@ -56,6 +56,11 @@
 #define SM_BORDER_VERTICAL	1
 #define SM_BORDER_CLOSED	2
 
+/* collision types */
+#define SM_COLL_STATIC		0
+#define SM_COLL_RIGID		1
+#define SM_COLL_ANIMATED	2
+
 typedef struct SmokeDomainSettings {
 	struct SmokeModifierData *smd; /* for fast RNA access */
 	struct FLUID_3D *fluid;
@@ -75,11 +80,11 @@ typedef struct SmokeDomainSettings {
 	float tempAmb; /* ambient temperature */
 	float alpha;
 	float beta;
+	float scale; /* largest domain size */
 	int res[3]; /* domain resolution */
 	int amplify; /* wavelet amplification */
 	int maxres; /* longest axis on the BB gets this resolution assigned */
 	int flags; /* show up-res or low res, etc */
-	int pad; 
 	int viewsettings;
 	short noise; /* noise type: wave, curl, anisotropic */
 	short diss_percent; 
@@ -111,7 +116,6 @@ typedef struct SmokeDomainSettings {
 #define MOD_SMOKE_FLOW_ABSOLUTE (1<<1) /*old style emission*/
 #define MOD_SMOKE_FLOW_INITVELOCITY (1<<2) /* passes particles speed to the smoke */
 
-
 typedef struct SmokeFlowSettings {
 	struct SmokeModifierData *smd; /* for fast RNA access */
 	struct ParticleSystem *psys;
@@ -136,15 +140,16 @@ typedef struct SmokeFlowSettings {
 typedef struct SmokeCollSettings {
 	struct SmokeModifierData *smd; /* for fast RNA access */
 	struct BVHTree *bvhtree; /* bounding volume hierarchy for this cloth object */
-
-//	struct DerivedMesh *dm; // UNUSED, ifdef'd in code for now.
 	float *points;
 	float *points_old;
-	float *vel;
+	float *vel; // UNUSED
+	int *tridivs;
 	float mat[4][4];
 	float mat_old[4][4];
 	int numpoints;
 	int numverts; // check if mesh changed
+	int numtris;
+	float dx; /* global domain cell length taken from (scale / resolution) */
 	short type; // static = 0, rigid = 1, dynamic = 2
 	short pad;
 	int pad2;

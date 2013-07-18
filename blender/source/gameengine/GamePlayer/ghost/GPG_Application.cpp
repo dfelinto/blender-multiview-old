@@ -138,7 +138,7 @@ GPG_Application::GPG_Application(GHOST_ISystem* system)
 
 GPG_Application::~GPG_Application(void)
 {
-	if(m_pyGlobalDictString) {
+	if (m_pyGlobalDictString) {
 		delete [] m_pyGlobalDictString;
 		m_pyGlobalDictString = 0;
 		m_pyGlobalDictString_Length = 0;
@@ -464,31 +464,34 @@ bool GPG_Application::processEvent(GHOST_IEvent* event)
 			handled = false;
 			break;
 
-		case GHOST_kEventWindowUpdate:
-			{
-				GHOST_IWindow* window = event->getWindow();
-				if (!m_system->validWindow(window)) break;
-				// Update the state of the game engine
-				if (m_kxsystem && !m_exitRequested)
-				{
-					// Proceed to next frame
-					window->activateDrawingContext();
+		// The player now runs as often as it can (repsecting vsync and fixedtime).
+		// This allows the player to break 100fps, but this code is being left here
+		// as reference. (see EngineNextFrame)
+		//case GHOST_kEventWindowUpdate:
+		//	{
+		//		GHOST_IWindow* window = event->getWindow();
+		//		if (!m_system->validWindow(window)) break;
+		//		// Update the state of the game engine
+		//		if (m_kxsystem && !m_exitRequested)
+		//		{
+		//			// Proceed to next frame
+		//			window->activateDrawingContext();
 
-					// first check if we want to exit
-					m_exitRequested = m_ketsjiengine->GetExitCode();
-					
-					// kick the engine
-					bool renderFrame = m_ketsjiengine->NextFrame();
-					if (renderFrame)
-					{
-						// render the frame
-						m_ketsjiengine->Render();
-					}
-				}
-				m_exitString = m_ketsjiengine->GetExitString();
-			}
-			break;
-		
+		//			// first check if we want to exit
+		//			m_exitRequested = m_ketsjiengine->GetExitCode();
+		//			
+		//			// kick the engine
+		//			bool renderFrame = m_ketsjiengine->NextFrame();
+		//			if (renderFrame)
+		//			{
+		//				// render the frame
+		//				m_ketsjiengine->Render();
+		//			}
+		//		}
+		//		m_exitString = m_ketsjiengine->GetExitString();
+		//	}
+		//	break;
+		//
 		case GHOST_kEventWindowSize:
 			{
 			GHOST_IWindow* window = event->getWindow();
@@ -558,12 +561,12 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		bool nodepwarnings = (SYS_GetCommandLineInt(syshandle, "ignore_deprecation_warnings", 1) != 0);
 		bool restrictAnimFPS = gm->flag & GAME_RESTRICT_ANIM_UPDATES;
 
-		if(GLEW_ARB_multitexture && GLEW_VERSION_1_1)
+		if (GLEW_ARB_multitexture && GLEW_VERSION_1_1)
 			m_blendermat = (SYS_GetCommandLineInt(syshandle, "blender_material", 1) != 0);
 
-		if(GPU_glsl_support())
+		if (GPU_glsl_support())
 			m_blenderglslmat = (SYS_GetCommandLineInt(syshandle, "blender_glsl_material", 1) != 0);
-		else if(m_globalSettings->matmode == GAME_MAT_GLSL)
+		else if (m_globalSettings->matmode == GAME_MAT_GLSL)
 			m_blendermat = false;
 
 		// create the canvas, rasterizer and rendertools
@@ -579,8 +582,8 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		if (!m_rendertools)
 			goto initFailed;
 		
-		if(useLists) {
-			if(GLEW_VERSION_1_1)
+		if (useLists) {
+			if (GLEW_VERSION_1_1)
 				m_rasterizer = new RAS_ListRasterizer(m_canvas, true);
 			else
 				m_rasterizer = new RAS_ListRasterizer(m_canvas);
@@ -702,9 +705,9 @@ bool GPG_Application::startEngine(void)
 
 		//	if (always_use_expand_framing)
 		//		sceneconverter->SetAlwaysUseExpandFraming(true);
-		if(m_blendermat && (m_globalSettings->matmode != GAME_MAT_TEXFACE))
+		if (m_blendermat && (m_globalSettings->matmode != GAME_MAT_TEXFACE))
 			m_sceneconverter->SetMaterials(true);
-		if(m_blenderglslmat && (m_globalSettings->matmode == GAME_MAT_GLSL))
+		if (m_blenderglslmat && (m_globalSettings->matmode == GAME_MAT_GLSL))
 			m_sceneconverter->SetGLSLMaterials(true);
 
 		KX_Scene* startscene = new KX_Scene(m_keyboard,
@@ -721,8 +724,8 @@ bool GPG_Application::startEngine(void)
 #endif // WITH_PYTHON
 
 		//initialize Dome Settings
-		if(m_globalSettings->stereoflag == STEREO_DOME)
-			m_ketsjiengine->InitDome(m_globalSettings->dome.res, m_globalSettings->dome.mode, m_globalSettings->dome.angle, m_globalSettings->dome.resbuf, m_globalSettings->dome.tilt, m_globalSettings->dome.warptext);
+		if (m_startScene->gm.stereoflag == STEREO_DOME)
+			m_ketsjiengine->InitDome(m_startScene->gm.dome.res, m_startScene->gm.dome.mode, m_startScene->gm.dome.angle, m_startScene->gm.dome.resbuf, m_startScene->gm.dome.tilt, m_startScene->gm.dome.warptext);
 
 #ifdef WITH_PYTHON
 		// Set the GameLogic.globalDict from marshal'd data, so we can
@@ -765,7 +768,7 @@ void GPG_Application::stopEngine()
 	// GameLogic.globalDict gets converted into a buffer, and sorted in
 	// m_pyGlobalDictString so we can restore after python has stopped
 	// and started between .blend file loads.
-	if(m_pyGlobalDictString) {
+	if (m_pyGlobalDictString) {
 		delete [] m_pyGlobalDictString;
 		m_pyGlobalDictString = 0;
 	}
@@ -790,6 +793,28 @@ void GPG_Application::stopEngine()
 	m_engineRunning = false;
 }
 
+void GPG_Application::EngineNextFrame()
+{
+	// Update the state of the game engine
+	if (m_kxsystem && !m_exitRequested)
+	{
+		// Proceed to next frame
+		if (m_mainWindow)
+			m_mainWindow->activateDrawingContext();
+
+		// first check if we want to exit
+		m_exitRequested = m_ketsjiengine->GetExitCode();
+		
+		// kick the engine
+		bool renderFrame = m_ketsjiengine->NextFrame();
+		if (renderFrame && m_mainWindow)
+		{
+			// render the frame
+			m_ketsjiengine->Render();
+		}
+	}
+	m_exitString = m_ketsjiengine->GetExitString();
+}
 
 void GPG_Application::exitEngine()
 {

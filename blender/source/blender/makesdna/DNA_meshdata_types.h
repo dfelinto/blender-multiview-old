@@ -95,7 +95,7 @@ typedef struct MLoop {
 typedef struct MTexPoly {
 	struct Image *tpage;
 	char flag, transp;
-	short mode,tile,unwrap;
+	short mode, tile, pad;
 } MTexPoly;
 
 /* can copy from/to MTexPoly/MTFace */
@@ -106,8 +106,7 @@ typedef struct MTexPoly {
 	(dst)->transp = (src)->transp;  \
 	(dst)->mode   = (src)->mode;    \
 	(dst)->tile   = (src)->tile;    \
-	(dst)->unwrap = (src)->unwrap;  \
-}
+} (void)0
 
 typedef struct MLoopUV {
 	float uv[2];
@@ -189,9 +188,9 @@ typedef struct MDisps {
 	float (*disps)[3];
 	
 	/* Used for hiding parts of a multires mesh. Essentially the multires
-	   equivalent of MVert.flag's ME_HIDE bit.
-	
-	   This is a bitmap, keep in sync with type used in BLI_bitmap.h */
+	 * equivalent of MVert.flag's ME_HIDE bit.
+	 *
+	 * This is a bitmap, keep in sync with type used in BLI_bitmap.h */
 	unsigned int *hidden;
 } MDisps;
 
@@ -247,6 +246,37 @@ typedef struct MRecast {
 	int		i;
 } MRecast;
 
+typedef struct GridPaintMask {
+	/* The data array contains gridsize*gridsize elements */
+	float *data;
+
+	/* The maximum multires level associated with this grid */
+	unsigned int level;
+
+	int pad;
+} GridPaintMask;
+
+typedef enum MVertSkinFlag {
+	/* Marks a vertex as the edge-graph root, used for calculating
+	 * rotations for all connected edges (recursively.) Also used to
+	 * choose a root when generating an armature. */
+	MVERT_SKIN_ROOT = 1,
+
+	/* Marks a branch vertex (vertex with more than two connected
+	 * edges) so that it's neighbors are directly hulled together,
+	 * rather than the default of generating intermediate frames. */
+	MVERT_SKIN_LOOSE = 2
+} MVertSkinFlag;
+
+typedef struct MVertSkin {
+	/* Radii of the skin, define how big the generated frames
+	 * are. Currently only the first two elements are used. */
+	float radius[3];
+
+	/* MVertSkinFlag */
+	int flag;
+} MVertSkin;
+
 /* mvert->flag (1=SELECT) */
 #define ME_SPHERETEST		2
 #define ME_VERT_TMP_TAG		4
@@ -257,7 +287,7 @@ typedef struct MRecast {
 /* medge->flag (1=SELECT)*/
 #define ME_EDGEDRAW			(1<<1)
 #define ME_SEAM				(1<<2)
-#define ME_FGON				(1<<3)
+#define ME_FGON				(1<<3) /* no longer used (now we have ngons), only defined so we can clear it */
 						/* reserve 16 for ME_HIDE */
 #define ME_EDGERENDER		(1<<5)
 #define ME_LOOSEEDGE		(1<<7)
@@ -329,13 +359,13 @@ typedef struct MRecast {
 
 
 /* mtface->unwrap */
-#define TF_DEPRECATED1	1
-#define TF_DEPRECATED2	2
-#define TF_DEPRECATED3	4
-#define TF_DEPRECATED4	8
-#define TF_PIN1		    16
-#define TF_PIN2		    32
-#define TF_PIN3	   		64
-#define TF_PIN4	    	128
+#define TF_DEPRECATED1     1
+#define TF_DEPRECATED2     2
+#define TF_DEPRECATED3     4
+#define TF_DEPRECATED4     8
+#define TF_PIN1            16
+#define TF_PIN2	           32
+#define TF_PIN3	   	       64
+#define TF_PIN4	           128
 
 #endif

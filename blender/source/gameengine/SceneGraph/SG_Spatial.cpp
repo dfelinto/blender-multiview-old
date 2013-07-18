@@ -94,7 +94,7 @@ SG_Spatial::
 SG_Spatial::
 SetParentRelation(
 	SG_ParentRelation *relation
-){
+) {
 	delete (m_parent_relation);
 	m_parent_relation = relation;
 	SetModified();
@@ -112,8 +112,8 @@ SG_Spatial::
 UpdateSpatialData(
 	        const SG_Spatial *parent,
 	        double time,
-	        bool& parentUpdated
-	        ){
+	        bool& parentUpdated)
+{
 	bool bComputesWorldTransform = false;
 
 	// update spatial controllers
@@ -148,13 +148,15 @@ RelativeTranslate(
 	const MT_Vector3& trans,
 	const SG_Spatial *parent,
 	bool local
-){
+) {
 	if (local) {
 			m_localPosition += m_localRotation * trans;
-	} else {
+	}
+	else {
 		if (parent) {
 			m_localPosition += trans * parent->GetWorldOrientation();
-		} else {
+		}
+		else {
 			m_localPosition += trans;
 		}
 	}
@@ -177,7 +179,7 @@ SG_Spatial::
 RelativeRotate(
 	const MT_Matrix3x3& rot,
 	bool local
-){
+) {
 	m_localRotation = m_localRotation * (
 	local ? 
 		rot 

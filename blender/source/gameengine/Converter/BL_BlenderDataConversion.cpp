@@ -30,7 +30,6 @@
  *  \ingroup bgeconv
  */
 
-
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable : 4786)
 #endif
@@ -186,10 +185,8 @@ extern Material defmaterial;	/* material.c */
 #ifdef __cplusplus
 extern "C" {
 #endif
-//XXX #include "BSE_headerbuttons.h"
 //XXX void update_for_newframe();
-//void scene_update_for_newframe(struct Scene *sce, unsigned int lay);
-//#include "BKE_ipo.h"
+//void BKE_scene_update_for_newframe(struct Scene *sce, unsigned int lay);
 //void do_all_data_ipos(void);
 #ifdef __cplusplus
 }
@@ -414,7 +411,7 @@ static void SetDefaultLightMode(Scene* scene)
 	Scene *sce_iter;
 	Base *base;
 
-	for(SETLOOPER(scene, sce_iter, base))
+	for (SETLOOPER(scene, sce_iter, base))
 	{
 		if (base->object->type == OB_LAMP)
 		{
@@ -440,14 +437,14 @@ static void GetRGB(short type,
 	{
 		case 0:	// vertex colors
 		{
-			if(mmcol) {
+			if (mmcol) {
 				c0 = KX_Mcol2uint_new(mmcol[0]);
 				c1 = KX_Mcol2uint_new(mmcol[1]);
 				c2 = KX_Mcol2uint_new(mmcol[2]);
 				if (mface->v4)
 					c3 = KX_Mcol2uint_new(mmcol[3]);
-			}else // backup white
-			{
+			}
+			else { // backup white
 				c0 = KX_rgbaint2uint_new(color);
 				c1 = KX_rgbaint2uint_new(color);
 				c2 = KX_rgbaint2uint_new(color);	
@@ -464,10 +461,10 @@ static void GetRGB(short type,
 					unsigned char cp[4];
 					unsigned int integer;
 				} col_converter;
-				col_converter.cp[3] = (unsigned char) (mat->r*255.0);
-				col_converter.cp[2] = (unsigned char) (mat->g*255.0);
-				col_converter.cp[1] = (unsigned char) (mat->b*255.0);
-				col_converter.cp[0] = (unsigned char) (mat->alpha*255.0);
+				col_converter.cp[3] = (unsigned char) (mat->r     * 255.0f);
+				col_converter.cp[2] = (unsigned char) (mat->g     * 255.0f);
+				col_converter.cp[1] = (unsigned char) (mat->b     * 255.0f);
+				col_converter.cp[0] = (unsigned char) (mat->alpha * 255.0f);
 				color = col_converter.integer;
 			}
 			c0 = KX_rgbaint2uint_new(color);
@@ -488,11 +485,10 @@ static void GetRGB(short type,
 	}
 }
 
-typedef struct MTF_localLayer
-{
+typedef struct MTF_localLayer {
 	MTFace *face;
 	const char *name;
-}MTF_localLayer;
+} MTF_localLayer;
 
 // ------------------------------------
 bool ConvertMaterial(
@@ -511,7 +507,7 @@ bool ConvertMaterial(
 	bool validface	= (tface!=0);
 	
 	short type = 0;
-	if( validmat )
+	if ( validmat )
 		type = 1; // material color 
 	
 	material->IdMode = DEFAULT_BLENDER;
@@ -519,10 +515,10 @@ bool ConvertMaterial(
 	material->materialindex = mface->mat_nr;
 
 	// --------------------------------
-	if(validmat) {
+	if (validmat) {
 
 		// use vertex colors by explicitly setting
-		if(mat->mode &MA_VERTEXCOLP || glslmat)
+		if (mat->mode &MA_VERTEXCOLP || glslmat)
 			type = 0;
 
 		// use lighting?
@@ -539,21 +535,21 @@ bool ConvertMaterial(
 		 * it is set in the buttons
 		 * In GLSL is not working yet :/ 3.2011 */
 		bool facetex = false;
-		if(validface && mat->mode &MA_FACETEXTURE) 
+		if (validface && mat->mode &MA_FACETEXTURE) 
 			facetex = true;
 
 		numchan = numchan>MAXTEX?MAXTEX:numchan;
 		if (facetex && numchan == 0) numchan = 1;
 	
 		// foreach MTex
-		for(int i=0; i<numchan; i++) {
+		for (int i=0; i<numchan; i++) {
 			// use face tex
 
-			if(i==0 && facetex ) {
+			if (i==0 && facetex ) {
 				facetex = false;
 				Image*tmp = (Image*)(tface->tpage);
 
-				if(tmp) {
+				if (tmp) {
 					material->img[i] = tmp;
 					material->texname[i] = material->img[i]->id.name;
 					material->flag[i] |= MIPMAP;
@@ -562,12 +558,12 @@ bool ConvertMaterial(
 					material->flag[i] |= ( mat->game.alpha_blend & GEMAT_ALPHA )?USEALPHA:0;
 					material->flag[i] |= ( mat->game.alpha_blend & GEMAT_ADD )?CALCALPHA:0;
 
-					if(material->img[i]->flag & IMA_REFLECT)
+					if (material->img[i]->flag & IMA_REFLECT)
 						material->mapping[i].mapping |= USEREFL;
 					else
 					{
 						mttmp = getImageFromMaterial( mat, i );
-						if(mttmp && mttmp->texco &TEXCO_UV)
+						if (mttmp && mttmp->texco &TEXCO_UV)
 						{
 							STR_String uvName = mttmp->uvname;
 
@@ -589,24 +585,24 @@ bool ConvertMaterial(
 			}
 
 			mttmp = getImageFromMaterial( mat, i );
-			if( mttmp ) {
-				if( mttmp->tex ) {
-					if( mttmp->tex->type == TEX_IMAGE ) {
+			if ( mttmp ) {
+				if ( mttmp->tex ) {
+					if ( mttmp->tex->type == TEX_IMAGE ) {
 						material->mtexname[i] = mttmp->tex->id.name;
 						material->img[i] = mttmp->tex->ima;
-						if( material->img[i] ) {
+						if ( material->img[i] ) {
 
 							material->texname[i] = material->img[i]->id.name;
 							material->flag[i] |= ( mttmp->tex->imaflag &TEX_MIPMAP )?MIPMAP:0;
 							// -----------------------
-							if( mttmp->tex->imaflag &TEX_USEALPHA ) {
+							if ( mttmp->tex->imaflag &TEX_USEALPHA ) {
 								material->flag[i]	|= USEALPHA;
 							}
 							// -----------------------
-							else if( mttmp->tex->imaflag &TEX_CALCALPHA ) {
+							else if ( mttmp->tex->imaflag &TEX_CALCALPHA ) {
 								material->flag[i]	|= CALCALPHA;
 							}
-							else if(mttmp->tex->flag &TEX_NEGALPHA) {
+							else if (mttmp->tex->flag &TEX_NEGALPHA) {
 								material->flag[i]	|= USENEGALPHA;
 							}
 
@@ -614,12 +610,12 @@ bool ConvertMaterial(
 							material->flag[i] |= ( mttmp->mapto  & MAP_ALPHA		)?TEXALPHA:0;
 							material->flag[i] |= ( mttmp->texflag& MTEX_NEGATIVE	)?TEXNEG:0;
 
-							if(!glslmat && (material->flag[i] & TEXALPHA))
+							if (!glslmat && (material->flag[i] & TEXALPHA))
 								texalpha = 1;
 						}
 					}
-					else if(mttmp->tex->type == TEX_ENVMAP) {
-						if( mttmp->tex->env->stype == ENV_LOAD ) {
+					else if (mttmp->tex->type == TEX_ENVMAP) {
+						if ( mttmp->tex->env->stype == ENV_LOAD ) {
 					
 							material->mtexname[i]     = mttmp->tex->id.name;
 							EnvMap *env = mttmp->tex->env;
@@ -643,16 +639,16 @@ bool ConvertMaterial(
 					// mapping methods
 					material->mapping[i].mapping |= ( mttmp->texco  & TEXCO_REFL	)?USEREFL:0;
 					
-					if(mttmp->texco & TEXCO_OBJECT) {
+					if (mttmp->texco & TEXCO_OBJECT) {
 						material->mapping[i].mapping |= USEOBJ;
-						if(mttmp->object)
+						if (mttmp->object)
 							material->mapping[i].objconame = mttmp->object->id.name;
 					}
-					else if(mttmp->texco &TEXCO_REFL)
+					else if (mttmp->texco &TEXCO_REFL)
 						material->mapping[i].mapping |= USEREFL;
-					else if(mttmp->texco &(TEXCO_ORCO|TEXCO_GLOB))
+					else if (mttmp->texco &(TEXCO_ORCO|TEXCO_GLOB))
 						material->mapping[i].mapping |= USEORCO;
-					else if(mttmp->texco &TEXCO_UV)
+					else if (mttmp->texco &TEXCO_UV)
 					{
 						STR_String uvName = mttmp->uvname;
 
@@ -662,9 +658,9 @@ bool ConvertMaterial(
 							material->mapping[i].uvCoName = "";
 						material->mapping[i].mapping |= USEUV;
 					}
-					else if(mttmp->texco &TEXCO_NORM)
+					else if (mttmp->texco &TEXCO_NORM)
 						material->mapping[i].mapping |= USENORM;
-					else if(mttmp->texco &TEXCO_TANGENT)
+					else if (mttmp->texco &TEXCO_TANGENT)
 						material->mapping[i].mapping |= USETANG;
 					else
 						material->mapping[i].mapping |= DISABLE;
@@ -740,15 +736,15 @@ bool ConvertMaterial(
 		int valid = 0;
 
 		// check for tface tex to fallback on
-		if( validface ){
+		if ( validface ) {
 			material->img[0] = (Image*)(tface->tpage);
 			// ------------------------
-			if(material->img[0]) {
+			if (material->img[0]) {
 				material->texname[0] = material->img[0]->id.name;
 				material->mapping[0].mapping |= ( (material->img[0]->flag & IMA_REFLECT)!=0 )?USEREFL:0;
 
 				/* see if depth of the image is 32bits */
-				if(BKE_image_has_alpha(material->img[0])) {
+				if (BKE_image_has_alpha(material->img[0])) {
 					material->flag[0] |= USEALPHA;
 					material->alphablend = GEMAT_ALPHA;
 				}
@@ -786,7 +782,7 @@ bool ConvertMaterial(
 
 	/* No material, what to do? let's see what is in the UV and set the material accordingly
 	 * light and visible is always on */
-	if( validface ) {
+	if ( validface ) {
 		material->tile	= tface->tile;
 			
 		uv[0].setValue(tface->uv[0]);
@@ -811,17 +807,17 @@ bool ConvertMaterial(
 	}
 
 	// with ztransp enabled, enforce alpha blending mode
-	if(validmat && (mat->mode & MA_TRANSP) && (mat->mode & MA_ZTRANSP) && (material->alphablend == GEMAT_SOLID))
+	if (validmat && (mat->mode & MA_TRANSP) && (mat->mode & MA_ZTRANSP) && (material->alphablend == GEMAT_SOLID))
 		material->alphablend = GEMAT_ALPHA;
 
 	// always zsort alpha + add
-	if((ELEM3(material->alphablend, GEMAT_ALPHA, GEMAT_ALPHA_SORT, GEMAT_ADD) || texalpha) && (material->alphablend != GEMAT_CLIP )) {
+	if ((ELEM3(material->alphablend, GEMAT_ALPHA, GEMAT_ALPHA_SORT, GEMAT_ADD) || texalpha) && (material->alphablend != GEMAT_CLIP )) {
 		material->ras_mode |= ALPHA;
 		material->ras_mode |= (mat && (mat->game.alpha_blend & GEMAT_ALPHA_SORT))? ZSORT: 0;
 	}
 
 	// get uv sets
-	if(validmat) 
+	if (validmat) 
 	{
 		bool isFirstSet = true;
 
@@ -860,7 +856,7 @@ bool ConvertMaterial(
 							isFirstSet = false;
 							uvName = layer.name;
 						}
-						else if(strcmp(layer.name, uvName) != 0)
+						else if (strcmp(layer.name, uvName) != 0)
 						{
 							uv2[0] = uvSet[0]; uv2[1] = uvSet[1];
 							uv2[2] = uvSet[2]; uv2[3] = uvSet[3];
@@ -889,10 +885,15 @@ bool ConvertMaterial(
 	material->SetConversionUV(uvName, uv);
 	material->SetConversionUV2(uv2Name, uv2);
 
-	if(validmat)
+	if (validmat)
 		material->matname	=(mat->id.name);
 
-	material->tface		= tface;
+	if (tface) {
+		material->tface		= *tface;
+	}
+	else {
+		memset(&material->tface, 0, sizeof(material->tface));
+	}
 	material->material	= mat;
 	return true;
 }
@@ -919,7 +920,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 	int totface = dm->getNumTessFaces(dm);
 	const char *tfaceName = "";
 
-	if(tface) {
+	if (tface) {
 		DM_add_tangent_layer(dm);
 		tangent = (float(*)[4])dm->getTessFaceDataArray(dm, CD_TANGENT);
 	}
@@ -942,7 +943,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 
 			layers[validLayers].face = (MTFace*)(dm->faceData.layers[i].data);
 			layers[validLayers].name = dm->faceData.layers[i].name;
-			if(tface == layers[validLayers].face)
+			if (tface == layers[validLayers].face)
 				tfaceName = layers[validLayers].name;
 			validLayers++;
 		}
@@ -976,7 +977,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 		pt2.setValue(mvert[mface->v3].co);
 		if (mface->v4) pt3.setValue(mvert[mface->v4].co);
 
-		if(mface->flag & ME_SMOOTH) {
+		if (mface->flag & ME_SMOOTH) {
 			float n0[3], n1[3], n2[3], n3[3];
 
 			normal_short_to_float_v3(n0, mvert[mface->v1].no);
@@ -986,7 +987,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 			no1 = n1;
 			no2 = n2;
 
-			if(mface->v4) {
+			if (mface->v4) {
 				normal_short_to_float_v3(n3, mvert[mface->v4].no);
 				no3 = n3;
 			}
@@ -994,15 +995,15 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 		else {
 			float fno[3];
 
-			if(mface->v4)
-				normal_quad_v3( fno,mvert[mface->v1].co, mvert[mface->v2].co, mvert[mface->v3].co, mvert[mface->v4].co);
+			if (mface->v4)
+				normal_quad_v3(fno,mvert[mface->v1].co, mvert[mface->v2].co, mvert[mface->v3].co, mvert[mface->v4].co);
 			else
-				normal_tri_v3( fno,mvert[mface->v1].co, mvert[mface->v2].co, mvert[mface->v3].co);
+				normal_tri_v3(fno,mvert[mface->v1].co, mvert[mface->v2].co, mvert[mface->v3].co);
 
 			no0 = no1 = no2 = no3 = MT_Vector3(fno);
 		}
 
-		if(tangent) {
+		if (tangent) {
 			tan0 = tangent[f*4 + 0];
 			tan1 = tangent[f*4 + 1];
 			tan2 = tangent[f*4 + 2];
@@ -1010,13 +1011,13 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 			if (mface->v4)
 				tan3 = tangent[f*4 + 3];
 		}
-		if(blenderobj)
+		if (blenderobj)
 			ma = give_current_material(blenderobj, mface->mat_nr+1);
 		else
 			ma = mesh->mat ? mesh->mat[mface->mat_nr]:NULL;
 
 		/* ckeck for texface since texface _only_ is used as a fallback */
-		if(ma == NULL && tface == NULL) {
+		if (ma == NULL && tface == NULL) {
 			ma= &defmaterial;
 		}
 
@@ -1024,7 +1025,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 			bool visible = true;
 			bool twoside = false;
 
-			if(converter->GetMaterials()) {
+			if (converter->GetMaterials()) {
 				/* do Blender Multitexture and Blender GLSL materials */
 				unsigned int rgb[4];
 				MT_Point2 uv[4];
@@ -1102,7 +1103,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 				}
 
 				/* set UV properties */
-				if(tface) {
+				if (tface) {
 					uv0.setValue(tface->uv[0]);
 					uv1.setValue(tface->uv[1]);
 					uv2.setValue(tface->uv[2]);
@@ -1139,10 +1140,10 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 							unsigned int integer;
 						} col_converter;
 						
-						col_converter.cp[3] = (unsigned char) (ma->r*255.0);
-						col_converter.cp[2] = (unsigned char) (ma->g*255.0);
-						col_converter.cp[1] = (unsigned char) (ma->b*255.0);
-						col_converter.cp[0] = (unsigned char) (ma->alpha*255.0);
+						col_converter.cp[3] = (unsigned char) (ma->r     * 255.0f);
+						col_converter.cp[2] = (unsigned char) (ma->g     * 255.0f);
+						col_converter.cp[1] = (unsigned char) (ma->b     * 255.0f);
+						col_converter.cp[0] = (unsigned char) (ma->alpha * 255.0f);
 						
 						color = col_converter.integer;
 					}
@@ -1188,7 +1189,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 				twoside = ((ma->game.flag  & GEMAT_BACKCULL)==0);
 				collider = ((ma->game.flag & GEMAT_NOPHYSICS)==0);
 			}
-			else{
+			else {
 				visible = true;
 				twoside = false;
 				collider = true;
@@ -1204,7 +1205,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 			if (bucketCreated) {
 				// this is needed to free up memory afterwards
 				converter->RegisterPolyMaterial(polymat);
-				if(converter->GetMaterials()) {
+				if (converter->GetMaterials()) {
 					converter->RegisterBlenderMaterial(bl_mat);
 					// the poly material has been stored in the bucket, next time we must create a new one
 					bl_mat = NULL;
@@ -1254,7 +1255,7 @@ RAS_MeshObject* BL_ConvertMesh(Mesh* mesh, Object* blenderobj, KX_Scene* scene, 
 	meshobj->EndConversion();
 
 	// pre calculate texture generation
-	for(list<RAS_MeshMaterial>::iterator mit = meshobj->GetFirstMaterial();
+	for (list<RAS_MeshMaterial>::iterator mit = meshobj->GetFirstMaterial();
 		mit != meshobj->GetLastMaterial(); ++ mit) {
 		mit->m_bucket->GetPolyMaterial()->OnConstruction(lightlayer);
 	}
@@ -1326,8 +1327,8 @@ static PHY_ShapeProps *CreateShapePropsFromBlenderObject(struct Object* blendero
 	MT_assert(0.0f <= blenderobject->damping && blenderobject->damping <= 1.0f);
 	MT_assert(0.0f <= blenderobject->rdamping && blenderobject->rdamping <= 1.0f);
 	
-	shapeProps->m_lin_drag = 1.0 - blenderobject->damping;
-	shapeProps->m_ang_drag = 1.0 - blenderobject->rdamping;
+	shapeProps->m_lin_drag = 1.0f - blenderobject->damping;
+	shapeProps->m_ang_drag = 1.0f - blenderobject->rdamping;
 	
 	shapeProps->m_friction_scaling[0] = blenderobject->anisotropicFriction[0]; 
 	shapeProps->m_friction_scaling[1] = blenderobject->anisotropicFriction[1];
@@ -1340,6 +1341,11 @@ static PHY_ShapeProps *CreateShapePropsFromBlenderObject(struct Object* blendero
 //	velocity clamping XXX
 	shapeProps->m_clamp_vel_min = blenderobject->min_vel;
 	shapeProps->m_clamp_vel_max = blenderobject->max_vel;
+	
+//  Character physics properties
+	shapeProps->m_step_height = blenderobject->step_height;
+	shapeProps->m_jump_speed = blenderobject->jump_speed;
+	shapeProps->m_fall_speed = blenderobject->fall_speed;
 	
 	return shapeProps;
 }
@@ -1361,7 +1367,7 @@ static float my_boundbox_mesh(Mesh *me, float *loc, float *size)
 	float radius=0.0f, vert_radius, *co;
 	int a;
 	
-	if(me->bb==0) me->bb= (struct BoundBox *)MEM_callocN(sizeof(BoundBox), "boundbox");
+	if (me->bb==0) me->bb= (struct BoundBox *)MEM_callocN(sizeof(BoundBox), "boundbox");
 	bb= me->bb;
 	
 	INIT_MINMAX(min, max);
@@ -1370,19 +1376,20 @@ static float my_boundbox_mesh(Mesh *me, float *loc, float *size)
 	if (!size) size= msize;
 	
 	mvert= me->mvert;
-	for(a=0; a<me->totvert; a++, mvert++) {
-		co= mvert->co;
+	for (a = 0; a<me->totvert; a++, mvert++) {
+		co = mvert->co;
 		
 		/* bounds */
-		DO_MINMAX(co, min, max);
+		minmax_v3v3_v3(min, max, co);
 		
 		/* radius */
-		vert_radius= co[0]*co[0] + co[1]*co[1] + co[2]*co[2];
+
+		vert_radius = len_squared_v3(co);
 		if (vert_radius > radius)
-			radius= vert_radius;
+			radius = vert_radius;
 	}
 		
-	if(me->totvert) {
+	if (me->totvert) {
 		loc[0]= (min[0]+max[0])/2.0f;
 		loc[1]= (min[1]+max[1])/2.0f;
 		loc[2]= (min[2]+max[2])/2.0f;
@@ -1419,18 +1426,18 @@ static void my_tex_space_mesh(Mesh *me)
 
 	my_boundbox_mesh(me, loc, size);
 	
-	if(me->texflag & ME_AUTOSPACE) {
-		if(me->key) {
+	if (me->texflag & ME_AUTOSPACE) {
+		if (me->key) {
 			kb= me->key->refkey;
 			if (kb) {
 
 				INIT_MINMAX(min, max);
 
 				fp= (float *)kb->data;
-				for(a=0; a<kb->totelem; a++, fp+=3) {
-					DO_MINMAX(fp, min, max);
+				for (a=0; a<kb->totelem; a++, fp += 3) {
+					minmax_v3v3_v3(min, max, fp);
 				}
-				if(kb->totelem) {
+				if (kb->totelem) {
 					loc[0]= (min[0]+max[0])/2.0f; loc[1]= (min[1]+max[1])/2.0f; loc[2]= (min[2]+max[2])/2.0f;
 					size[0]= (max[0]-min[0])/2.0f; size[1]= (max[1]-min[1])/2.0f; size[2]= (max[2]-min[2])/2.0f;
 				}
@@ -1446,17 +1453,17 @@ static void my_tex_space_mesh(Mesh *me)
 		copy_v3_v3(me->size, size);
 		me->rot[0]= me->rot[1]= me->rot[2]= 0.0f;
 
-		if(me->size[0]==0.0) me->size[0]= 1.0f;
-		else if(me->size[0]>0.0 && me->size[0]< 0.00001f) me->size[0]= 0.00001f;
-		else if(me->size[0]<0.0 && me->size[0]> -0.00001f) me->size[0]= -0.00001f;
+		if (me->size[0] == 0.0f) me->size[0] = 1.0f;
+		else if (me->size[0] > 0.0f && me->size[0]< 0.00001f) me->size[0]= 0.00001f;
+		else if (me->size[0] < 0.0f && me->size[0]> -0.00001f) me->size[0]= -0.00001f;
 
-		if(me->size[1]==0.0) me->size[1]= 1.0f;
-		else if(me->size[1]>0.0 && me->size[1]< 0.00001f) me->size[1]= 0.00001f;
-		else if(me->size[1]<0.0 && me->size[1]> -0.00001f) me->size[1]= -0.00001f;
+		if (me->size[1] == 0.0f) me->size[1]= 1.0f;
+		else if (me->size[1] > 0.0f && me->size[1]< 0.00001f) me->size[1]= 0.00001f;
+		else if (me->size[1] < 0.0f && me->size[1]> -0.00001f) me->size[1]= -0.00001f;
 
-		if(me->size[2]==0.0) me->size[2]= 1.0f;
-		else if(me->size[2]>0.0 && me->size[2]< 0.00001f) me->size[2]= 0.00001f;
-		else if(me->size[2]<0.0 && me->size[2]> -0.00001f) me->size[2]= -0.00001f;
+		if (me->size[2] == 0.0f) me->size[2]= 1.0f;
+		else if (me->size[2] > 0.0f && me->size[2]< 0.00001f) me->size[2]= 0.00001f;
+		else if (me->size[2] < 0.0f && me->size[2]> -0.00001f) me->size[2]= -0.00001f;
 	}
 	
 }
@@ -1484,7 +1491,7 @@ static void my_get_local_bounds(Object *ob, DerivedMesh *dm, float *center, floa
 			} else
 			{
 				bb= ( (Mesh *)ob->data )->bb;
-				if(bb==0) 
+				if (bb==0) 
 				{
 					my_tex_space_mesh((struct Mesh *)ob->data);
 					bb= ( (Mesh *)ob->data )->bb;
@@ -1505,20 +1512,20 @@ static void my_get_local_bounds(Object *ob, DerivedMesh *dm, float *center, floa
 			break;
 	}
 	
-	if(bb==NULL) 
+	if (bb==NULL) 
 	{
 		center[0]= center[1]= center[2]= 0.0;
 		size[0] = size[1]=size[2]=1.0;
 	}
 	else 
 	{
-		size[0]= 0.5f*fabs(bb->vec[0][0] - bb->vec[4][0]);
-		size[1]= 0.5f*fabs(bb->vec[0][1] - bb->vec[2][1]);
-		size[2]= 0.5f*fabs(bb->vec[0][2] - bb->vec[1][2]);
+		size[0] = 0.5f * fabsf(bb->vec[0][0] - bb->vec[4][0]);
+		size[1] = 0.5f * fabsf(bb->vec[0][1] - bb->vec[2][1]);
+		size[2] = 0.5f * fabsf(bb->vec[0][2] - bb->vec[1][2]);
 					
-		center[0]= 0.5f*(bb->vec[0][0] + bb->vec[4][0]);
-		center[1]= 0.5f*(bb->vec[0][1] + bb->vec[2][1]);
-		center[2]= 0.5f*(bb->vec[0][2] + bb->vec[1][2]);
+		center[0] = 0.5f * (bb->vec[0][0] + bb->vec[4][0]);
+		center[1] = 0.5f * (bb->vec[0][1] + bb->vec[2][1]);
+		center[2] = 0.5f * (bb->vec[0][2] + bb->vec[1][2]);
 	}
 }
 	
@@ -1632,6 +1639,7 @@ void BL_CreatePhysicsObjectNew(KX_GameObject* gameobj,
 	objprop.m_dyna = (blenderobject->gameflag & OB_DYNAMIC) != 0;
 	objprop.m_softbody = (blenderobject->gameflag & OB_SOFT_BODY) != 0;
 	objprop.m_angular_rigidbody = (blenderobject->gameflag & OB_RIGID_BODY) != 0;
+	objprop.m_character = (blenderobject->gameflag & OB_CHARACTER) != 0;
 	
 	///contact processing threshold is only for rigid bodies and static geometry, not 'dynamic'
 	if (objprop.m_angular_rigidbody || !objprop.m_dyna )
@@ -1748,6 +1756,11 @@ void BL_CreatePhysicsObjectNew(KX_GameObject* gameobj,
 		objprop.m_boundclass = KX_BOUNDMESH;
 	}
 
+	if ((blenderobject->gameflag & OB_CHARACTER) && !(blenderobject->gameflag & OB_BOUNDS))
+	{
+		objprop.m_boundclass = KX_BOUNDSPHERE;
+	}
+
 	KX_BoxBounds bb;
 	DerivedMesh* dm = NULL;
 	if (gameobj->GetDeformer())
@@ -1834,10 +1847,6 @@ void BL_CreatePhysicsObjectNew(KX_GameObject* gameobj,
 			break;
 
 #endif
-		case UseDynamo:
-			//KX_ConvertDynamoObject(gameobj,meshobj,kxscene,shapeprops,	smmaterial,	&objprop);
-			break;
-			
 		case UseNone:
 		default:
 			break;
@@ -1876,7 +1885,7 @@ static KX_LightObject *gamelight_from_blamp(Object *ob, Lamp *la, unsigned int l
 	bool glslmat = converter->GetGLSLMaterials();
 
 	// in GLSL NEGATIVE LAMP is handled inside the lamp update function
-	if(glslmat==0) {
+	if (glslmat==0) {
 		if (la->mode & LA_NEG)
 		{
 			lightobj.m_red = -lightobj.m_red;
@@ -1918,16 +1927,20 @@ static KX_GameObject *gameobject_from_blenderobject(
 								KX_BlenderSceneConverter *converter) 
 {
 	KX_GameObject *gameobj = NULL;
+	Scene *blenderscene = kxscene->GetBlenderScene();
 	
 	switch(ob->type)
 	{
 	case OB_LAMP:
 	{
-		KX_LightObject* gamelight= gamelight_from_blamp(ob, static_cast<Lamp*>(ob->data), ob->lay, kxscene, rendertools, converter);
+		KX_LightObject* gamelight = gamelight_from_blamp(ob, static_cast<Lamp*>(ob->data), ob->lay, kxscene, rendertools, converter);
 		gameobj = gamelight;
 		
-		gamelight->AddRef();
-		kxscene->GetLightList()->Add(gamelight);
+		if (blenderscene->lay & ob->lay)
+		{
+			gamelight->AddRef();
+			kxscene->GetLightList()->Add(gamelight);
+		}
 
 		break;
 	}
@@ -2049,7 +2062,7 @@ static KX_GameObject *gameobject_from_blenderobject(
 		gameobj = new KX_FontObject(kxscene,KX_Scene::m_callbacks, rendertools, ob);
 
 		/* add to the list only the visible fonts */
-		if((ob->lay & kxscene->GetBlenderScene()->lay) != 0)
+		if ((ob->lay & kxscene->GetBlenderScene()->lay) != 0)
 			kxscene->AddFont(static_cast<KX_FontObject*>(gameobj));
 		break;
 	}
@@ -2060,7 +2073,7 @@ static KX_GameObject *gameobject_from_blenderobject(
 		gameobj->SetLayer(ob->lay);
 		gameobj->SetBlenderObject(ob);
 		/* set the visibility state based on the objects render option in the outliner */
-		if(ob->restrictflag & OB_RESTRICT_RENDER) gameobj->SetVisible(0, 0);
+		if (ob->restrictflag & OB_RESTRICT_RENDER) gameobj->SetVisible(0, 0);
 	}
 	return gameobj;
 }
@@ -2079,8 +2092,8 @@ bPoseChannel *get_active_posechannel2 (Object *ob)
 	bPoseChannel *pchan;
 	
 	/* find active */
-	for(pchan= (bPoseChannel *)ob->pose->chanbase.first; pchan; pchan= pchan->next) {
-		if(pchan->bone && (pchan->bone == arm->act_bone) && (pchan->bone->layer & arm->layer))
+	for (pchan= (bPoseChannel *)ob->pose->chanbase.first; pchan; pchan= pchan->next) {
+		if (pchan->bone && (pchan->bone == arm->act_bone) && (pchan->bone->layer & arm->layer))
 			return pchan;
 	}
 	
@@ -2128,7 +2141,7 @@ void RBJconstraints(Object *ob)//not used
 #include "KX_IPhysicsController.h"
 #include "PHY_DynamicTypes.h"
 
-KX_IPhysicsController* getPhId(CListValue* sumolist,STR_String busc){//not used
+KX_IPhysicsController* getPhId(CListValue* sumolist,STR_String busc) {//not used
 
 	for (int j=0;j<sumolist->GetCount();j++)
 	{
@@ -2180,7 +2193,7 @@ static void bl_ConvertBlenderObject_Single(
 	);
 	MT_Vector3 eulxyz(blenderobject->rot);
 	MT_Vector3 scale(blenderobject->size);
-	if (converter->addInitFromFrame){//rcruiz
+	if (converter->addInitFromFrame) {//rcruiz
 		float eulxyzPrev[3];
 		blenderscene->r.cfra=blenderscene->r.sfra-1;
 		//XXX update_for_newframe();
@@ -2277,7 +2290,7 @@ static void bl_ConvertBlenderObject_Single(
 
 	logicbrick_conversionlist->Add(gameobj->AddRef());
 
-	if (converter->addInitFromFrame){
+	if (converter->addInitFromFrame) {
 		posPrev=gameobj->NodeGetWorldPosition();
 		angor=gameobj->NodeGetWorldOrientation();
 	}
@@ -2359,8 +2372,8 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 			frame_type = RAS_FrameSettings::e_frame_scale;
 		}
 		
-		aspect_width = blenderscene->r.xsch*blenderscene->r.xasp;
-		aspect_height = blenderscene->r.ysch*blenderscene->r.yasp;
+		aspect_width  = (int)(blenderscene->r.xsch * blenderscene->r.xasp);
+		aspect_height = (int)(blenderscene->r.ysch * blenderscene->r.yasp);
 	}
 	
 	RAS_FrameSettings frame_settings(
@@ -2470,7 +2483,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 			{
 				Group* group = *git;
 				GroupObject* go;
-				for(go=(GroupObject*)group->gobject.first; go; go=(GroupObject*)go->next) 
+				for (go=(GroupObject*)group->gobject.first; go; go=(GroupObject*)go->next)
 				{
 					Object* blenderobject = go->ob;
 					if (converter->FindGameObject(blenderobject) == NULL)
@@ -2521,22 +2534,22 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 	if (blenderscene->camera && blenderscene->camera->type == OB_CAMERA) {
 		KX_Camera *gamecamera= (KX_Camera*) converter->FindGameObject(blenderscene->camera);
 		
-		if(gamecamera)
+		if (gamecamera)
 			kxscene->SetActiveCamera(gamecamera);
 	}
 
 	//	Set up armatures
 	set<Object*>::iterator oit;
-	for(oit=allblobj.begin(); oit!=allblobj.end(); oit++)
+	for (oit=allblobj.begin(); oit!=allblobj.end(); oit++)
 	{
 		Object* blenderobj = *oit;
 		if (blenderobj->type==OB_MESH) {
 			Mesh *me = (Mesh*)blenderobj->data;
 	
-			if (me->dvert){
+			if (me->dvert) {
 				BL_DeformableGameObject *obj = (BL_DeformableGameObject*)converter->FindGameObject(blenderobj);
 
-				if (obj && BL_ModifierDeformer::HasArmatureDeformer(blenderobj) && blenderobj->parent && blenderobj->parent->type==OB_ARMATURE){
+				if (obj && BL_ModifierDeformer::HasArmatureDeformer(blenderobj) && blenderobj->parent && blenderobj->parent->type==OB_ARMATURE) {
 					KX_GameObject *par = converter->FindGameObject(blenderobj->parent);
 					if (par && obj->GetDeformer())
 						((BL_SkinDeformer*)obj->GetDeformer())->SetArmature((BL_ArmatureObject*) par);
@@ -2608,9 +2621,9 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 			case PARBONE:
 			{
 				// parent this to a bone
-				Bone *parent_bone = get_named_bone( (bArmature *)(blenderchild->parent)->data, blenderchild->parsubstr);
+				Bone *parent_bone = BKE_armature_find_bone_name( (bArmature *)(blenderchild->parent)->data, blenderchild->parsubstr);
 
-				if(parent_bone) {
+				if (parent_bone) {
 					KX_BoneParentRelation *bone_parent_relation = KX_BoneParentRelation::New(parent_bone);
 					pcit->m_gamechildnode->SetParentRelation(bone_parent_relation);
 				}
@@ -2722,7 +2735,7 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 		for (i=0;i<sumolist->GetCount();i++)
 		{
 			KX_GameObject* gameobj = (KX_GameObject*) sumolist->GetValue(i);
-			if (gameobj->IsDynamic()){
+			if (gameobj->IsDynamic()) {
 				gameobj->setLinearVelocity(inivel[i],false);
 				gameobj->setAngularVelocity(iniang[i],false);
 			}
@@ -2739,16 +2752,16 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 		bConstraint *curcon;
 		conlist = get_active_constraints2(blenderobject);
 
-		if((gameobj->GetLayer()&activeLayerBitInfo)==0)
+		if ((gameobj->GetLayer()&activeLayerBitInfo)==0)
 			continue;
 
 		if (conlist) {
 			for (curcon = (bConstraint *)conlist->first; curcon; curcon=(bConstraint *)curcon->next) {
-				if (curcon->type==CONSTRAINT_TYPE_RIGIDBODYJOINT){
+				if (curcon->type==CONSTRAINT_TYPE_RIGIDBODYJOINT) {
 
 					bRigidBodyJointConstraint *dat=(bRigidBodyJointConstraint *)curcon->data;
 
-					if (!dat->child){
+					if (!dat->child && !(curcon->flag & CONSTRAINT_OFF)) {
 
 						PHY_IPhysicsController* physctr2 = 0;
 
@@ -2795,14 +2808,14 @@ void BL_ConvertBlenderObjects(struct Main* maggie,
 										dofbit<<=1;
 									}
 								}
-								else if(dat->type == PHY_CONE_TWIST_CONSTRAINT)
+								else if (dat->type == PHY_CONE_TWIST_CONSTRAINT)
 								{
 									int dof;
 									int dofbit = 1<<3; // bitflag use_angular_limit_x
 									
 									for (dof=3;dof<6;dof++)
 									{
-										if(dat->flag & dofbit)
+										if (dat->flag & dofbit)
 										{
 											kxscene->GetPhysicsEnvironment()->setConstraintParam(constraintId,dof,dat->minLimit[dof],dat->maxLimit[dof]);
 										}

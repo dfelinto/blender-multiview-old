@@ -29,19 +29,19 @@
  * This file defines the types for 'BMesh.select_history'
  * sequence and iterator.
  *
- * select_history is very loosely based on pytons set() type,
+ * select_history is very loosely based on pythons set() type,
  * since items can only exist once. however they do have an order.
  */
 
 #include <Python.h>
 
+#include "BLI_utildefines.h"
+#include "BLI_listbase.h"
+
 #include "bmesh.h"
 
 #include "bmesh_py_types.h"
 #include "bmesh_py_types_select.h"
-
-#include "BLI_utildefines.h"
-#include "BLI_listbase.h"
 
 #include "BKE_tessmesh.h"
 
@@ -116,7 +116,7 @@ static PyObject *bpy_bmeditselseq_add(BPy_BMEditSelSeq *self, BPy_BMElem *value)
 
 	BPY_BM_CHECK_OBJ(value);
 
-	if (self->bm != value->bm)	{
+	if (self->bm != value->bm) {
 		PyErr_SetString(PyExc_ValueError,
 		                "Element is not from this mesh");
 		return NULL;
@@ -422,7 +422,7 @@ void BPy_BM_init_types_select(void)
 /* utility function */
 
 /**
- * \note doesnt actually check selection.
+ * \note doesn't actually check selection.
  */
 int BPy_BMEditSel_Assign(BPy_BMesh *self, PyObject *value)
 {

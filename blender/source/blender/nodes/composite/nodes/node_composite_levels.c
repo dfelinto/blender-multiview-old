@@ -35,38 +35,33 @@
 
 /* **************** LEVELS ******************** */
 static bNodeSocketTemplate cmp_node_view_levels_in[]= {
-	{	SOCK_RGBA, 1, "Image", 0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 1, N_("Image"), 0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate cmp_node_view_levels_out[]={
-	{SOCK_FLOAT, 0,"Mean"},
-	{SOCK_FLOAT, 0,"Std Dev"},
-	{-1,0,""}
+	{SOCK_FLOAT, 0, N_("Mean")},
+	{SOCK_FLOAT, 0, N_("Std Dev")},
+	{-1, 0, ""}
 };
-
-static void rgb_tobw(float r, float g, float b, float* out)
-{
-	*out= r*0.35f + g*0.45f + b*0.2f;
-}
 
 static void fill_bins(bNode* node, CompBuf* in, int* bins)
 {
 	float value[4];
 	int ivalue=0;
-	int x,y;
+	int x, y;
 
 	/*fill bins */
-	for(y=0; y<in->y; y++) {
-		for(x=0; x<in->x; x++) {
+	for (y=0; y<in->y; y++) {
+		for (x=0; x<in->x; x++) {
 
 			/* get the pixel */
 			qd_getPixel(in, x, y, value);
 
-			if(value[3] > 0.0f) { /* don't count transparent pixels */
-				switch(node->custom1) {
+			if (value[3] > 0.0f) { /* don't count transparent pixels */
+				switch (node->custom1) {
 					case 1: { /* all colors */
-						rgb_tobw(value[0],value[1],value[2], &value[0]);
+						value[0] = rgb_to_bw(value);
 						value[0]=value[0]*255; /* scale to 0-255 range */
 						ivalue=(int)value[0];
 						break;
@@ -89,7 +84,7 @@ static void fill_bins(bNode* node, CompBuf* in, int* bins)
 					}
 					case 5: /* luminence */
 					{
-						rgb_to_yuv(value[0],value[1],value[2], &value[0], &value[1], &value[2]);
+						rgb_to_yuv(value[0], value[1], value[2], &value[0], &value[1], &value[2]);
 						value[0]=value[0]*255; /* scale to 0-255 range */
 						ivalue=(int)value[0];
 						break;
@@ -97,8 +92,8 @@ static void fill_bins(bNode* node, CompBuf* in, int* bins)
 				} /*end switch */
 
 				/*clip*/
-				if(ivalue<0) ivalue=0;
-				if(ivalue>255) ivalue=255;
+				if (ivalue<0) ivalue=0;
+				if (ivalue>255) ivalue=255;
 
 				/*put in the correct bin*/
 				bins[ivalue]+=1;
@@ -111,22 +106,21 @@ static float brightness_mean(bNode* node, CompBuf* in)
 {
 	float sum=0.0;
 	int numPixels=0.0;
-	int x,y;
+	int x, y;
 	float value[4];
 
-	for(x=0; x< in->x; x++) {
-		for(y=0; y < in->y; y++) {
+	for (x=0; x< in->x; x++) {
+		for (y=0; y < in->y; y++) {
 			
 			/* get the pixel */
 			qd_getPixel(in, x, y, value);
 
-			if(value[3] > 0.0f) { /* don't count transparent pixels */
+			if (value[3] > 0.0f) { /* don't count transparent pixels */
 				numPixels++;
-				switch(node->custom1)
-				{
+				switch (node->custom1) {
 				case 1:
 					{
-						rgb_tobw(value[0],value[1],value[2], &value[0]);
+						value[0] = rgb_to_bw(value);
 						sum+=value[0];
 						break;
 					}
@@ -147,7 +141,7 @@ static float brightness_mean(bNode* node, CompBuf* in)
 					}
 				case 5:
 					{
-						rgb_to_yuv(value[0],value[1],value[2], &value[0], &value[1], &value[2]);
+						rgb_to_yuv(value[0], value[1], value[2], &value[0], &value[1], &value[2]);
 						sum+=value[0];
 						break;
 					}
@@ -163,22 +157,21 @@ static float brightness_standard_deviation(bNode* node, CompBuf* in, float mean)
 {
 	float sum=0.0;
 	int numPixels=0.0;
-	int x,y;
+	int x, y;
 	float value[4];
 
-	for(x=0; x< in->x; x++) {
-		for(y=0; y < in->y; y++) {
+	for (x=0; x< in->x; x++) {
+		for (y=0; y < in->y; y++) {
 			
 			/* get the pixel */
 			qd_getPixel(in, x, y, value);
 
-			if(value[3] > 0.0f) { /* don't count transparent pixels */
+			if (value[3] > 0.0f) { /* don't count transparent pixels */
 				numPixels++;
-				switch(node->custom1)
-				{
+				switch (node->custom1) {
 				case 1:
 					{
-						rgb_tobw(value[0],value[1],value[2], &value[0]);
+						value[0] = rgb_to_bw(value);
 						sum+=(value[0]-mean)*(value[0]-mean);
 						break;
 					}
@@ -202,7 +195,7 @@ static float brightness_standard_deviation(bNode* node, CompBuf* in, float mean)
 					}
 				case 5:
 					{
-						rgb_to_yuv(value[0],value[1],value[2], &value[0], &value[1], &value[2]);
+						rgb_to_yuv(value[0], value[1], value[2], &value[0], &value[1], &value[2]);
 						sum+=(value[0]-mean)*(value[0]-mean);
 						break;
 					}
@@ -217,25 +210,25 @@ static float brightness_standard_deviation(bNode* node, CompBuf* in, float mean)
 
 static void draw_histogram(bNode *node, CompBuf *out, int* bins)
 {
-	int x,y;
+	int x, y;
 	float color[4]; 
 	float value;
 	int max;
 
 	/* find max value */
 	max=0;
-	for(x=0; x<256; x++) {
-		if(bins[x]>max) max=bins[x];
+	for (x=0; x<256; x++) {
+		if (bins[x]>max) max=bins[x];
 	}
 
 	/*draw histogram in buffer */
-	for(x=0; x<out->x; x++) {
-		for(y=0;y<out->y; y++) {
+	for (x=0; x<out->x; x++) {
+		for (y=0;y<out->y; y++) {
 
 			/* get normalized value (0..255) */
 			value=((float)bins[x]/(float)max)*255.0f;
 
-			if(y < (int)value) { /*if the y value is below the height of the bar for this line then draw with the color */
+			if (y < (int)value) { /*if the y value is below the height of the bar for this line then draw with the color */
 				switch (node->custom1) {
 					case 1: { /* draw in black */
 						color[0]=0.0; color[1]=0.0; color[2]=0.0; color[3]=1.0;
@@ -259,7 +252,7 @@ static void draw_histogram(bNode *node, CompBuf *out, int* bins)
 					}
 				}
 			}
-			else{
+			else {
 				color[0]=0.8; color[1]=0.8; color[2]=0.8; color[3]=1.0;
 			}
 
@@ -277,14 +270,14 @@ static void node_composit_exec_view_levels(void *data, bNode *node, bNodeStack *
 	int bins[256];
 	int x;
 
-	if(in[0]->hasinput==0)  return;
-	if(in[0]->data==NULL) return;
+	if (in[0]->hasinput==0)  return;
+	if (in[0]->data==NULL) return;
 
 	histogram=alloc_compbuf(256, 256, CB_RGBA, 1);	
 	cbuf=typecheck_compbuf(in[0]->data, CB_RGBA);	
 		
 	/*initalize bins*/
-	for(x=0; x<256; x++) {
+	for (x=0; x<256; x++) {
 		bins[x]=0;
 	}
 	
@@ -298,19 +291,20 @@ static void node_composit_exec_view_levels(void *data, bNode *node, bNodeStack *
 	mean=brightness_mean(node, in[0]->data);
 	std_dev=brightness_standard_deviation(node, in[0]->data, mean);
 
-	/*  Printf debuging ;) 
+	/*  Printf debuging ;) */
+#if 0
 	printf("Mean: %f\n", mean);
 	printf("Std Dev: %f\n", std_dev);
-	*/
+#endif
 
-	if(out[0]->hasoutput)
+	if (out[0]->hasoutput)
 			out[0]->vec[0]= mean;
-	if(out[1]->hasoutput)
+	if (out[1]->hasoutput)
 			out[1]->vec[0]= std_dev;
 
 	generate_preview(data, node, histogram);
 
-	if(cbuf!=in[0]->data)
+	if (cbuf!=in[0]->data)
 		free_compbuf(cbuf);
 	free_compbuf(histogram);
 }

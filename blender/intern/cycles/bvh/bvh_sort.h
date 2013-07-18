@@ -1,4 +1,4 @@
- /*
+/*
  * Adapted from code copyright 2009-2010 NVIDIA Corporation
  * Modifications Copyright 2011, Blender Foundation.
  *
@@ -20,7 +20,7 @@
 
 CCL_NAMESPACE_BEGIN
 
-void bvh_reference_sort(int start, int end, BVHBuild::Reference *data, int dim);
+void bvh_reference_sort(int start, int end, BVHReference *data, int dim);
 
 CCL_NAMESPACE_END
 

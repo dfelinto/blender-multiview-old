@@ -416,8 +416,6 @@ void bilinear_interpolation_color_wrap(struct ImBuf *in, unsigned char *col, flo
 /**
  *
  * \attention defined in readimage.c
- * \deprecated Only here for backwards compatibility of the
- * \deprecated plugin system.
  */  
 struct ImBuf *IMB_loadifffile(int file, int flags, const char *descr);
 
@@ -480,11 +478,13 @@ void IMB_freezbuffloatImBuf(struct ImBuf *ibuf);
  * \attention Defined in rectop.c
  */
 void IMB_rectfill(struct ImBuf *drect, const float col[4]);
-void IMB_rectfill_area(struct ImBuf *ibuf, float *col, int x1, int y1, int x2, int y2);
+void IMB_rectfill_area(struct ImBuf *ibuf, const float col[4], int x1, int y1, int x2, int y2);
 void IMB_rectfill_alpha(struct ImBuf *ibuf, const float value);
 
 /* this should not be here, really, we needed it for operating on render data, IMB_rectfill_area calls it */
-void buf_rectfill_area(unsigned char *rect, float *rectf, int width, int height, const float col[4], int x1, int y1, int x2, int y2);
+void buf_rectfill_area(unsigned char *rect, float *rectf, int width, int height,
+					   const float col[4], const int do_color_management,
+					   int x1, int y1, int x2, int y2);
 
 /* defined in metadata.c */
 int IMB_metadata_change_field(struct ImBuf *img, const char *key, const char *field);
@@ -499,6 +499,12 @@ void imb_freemipmapImBuf(struct ImBuf *ibuf);
 
 short imb_addtilesImBuf(struct ImBuf *ibuf);
 void imb_freetilesImBuf(struct ImBuf *ibuf);
+
+/* threaded processors */
+void IMB_processor_apply_threaded(int buffer_lines, int handle_size, void *init_customdata,
+                                  void (init_handle) (void *handle, int start_line, int tot_line,
+                                                      void *customdata),
+                                  void *(do_thread) (void *));
 
 #endif
 

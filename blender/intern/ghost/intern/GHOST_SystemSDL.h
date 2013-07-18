@@ -39,8 +39,8 @@ extern "C" {
 	#include "SDL.h"
 }
 
-#if !SDL_VERSION_ATLEAST(1, 3, 0)
-#  error "SDL 1.3 or newer is needed to build with Ghost"
+#if !SDL_VERSION_ATLEAST(2, 0, 0)
+#  error "SDL 2.0 or newer is needed to build with Ghost"
 #endif
 
 
@@ -110,7 +110,7 @@ private:
 	             );
 
 	/* SDL specific */
-	GHOST_WindowSDL * findGhostWindow(SDL_Window *sdl_win);
+	GHOST_WindowSDL *findGhostWindow(SDL_Window *sdl_win);
 
 	bool
 	generateWindowExposeEvents();

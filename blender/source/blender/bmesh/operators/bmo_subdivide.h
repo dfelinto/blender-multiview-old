@@ -20,18 +20,22 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef __BMO_SUBDIVIDE_H__
-#define __BMO_SUBDIVIDE_H__
-
 /** \file blender/bmesh/operators/bmo_subdivide.h
  *  \ingroup bmesh
  */
+
+#ifndef __BMO_SUBDIVIDE_H__
+#define __BMO_SUBDIVIDE_H__
 
 typedef struct SubDParams {
 	int numcuts;
 	float smooth;
 	float fractal;
-	int beauty;
+	float along_normal;
+	//int beauty;
+	short use_smooth;
+	short use_sphere;
+	short use_fractal;
 	int seed;
 	int origkey; /* shapekey holding displaced vertex coordinates for current geometry */
 	BMOperator *op;

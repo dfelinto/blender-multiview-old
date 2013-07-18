@@ -58,15 +58,6 @@ void DeviceTask::split_max_size(list<DeviceTask>& tasks, int max_size)
 	split(tasks, num);
 }
 
-void DeviceTask::split(ThreadQueue<DeviceTask>& queue, int num)
-{
-	list<DeviceTask> tasks;
-	split(tasks, num);
-
-	foreach(DeviceTask& task, tasks)
-		queue.push(task);
-}
-
 void DeviceTask::split(list<DeviceTask>& tasks, int num)
 {
 	if(type == SHADER) {
@@ -133,7 +124,7 @@ void Device::draw_pixels(device_memory& rgba, int y, int w, int h, int dy, int w
 	uint8_t *pixels = (uint8_t*)rgba.data_pointer;
 
 	/* for multi devices, this assumes the ineffecient method that we allocate
-	   all pixels on the device even though we only render to a subset */
+	 * all pixels on the device even though we only render to a subset */
 	pixels += 4*y*w;
 
 	glDrawPixels(w, h, GL_RGBA, GL_UNSIGNED_BYTE, pixels);

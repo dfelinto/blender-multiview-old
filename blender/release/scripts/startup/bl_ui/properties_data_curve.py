@@ -33,7 +33,7 @@ class CurveButtonsPanel():
 
 
 class CurveButtonsPanelCurve(CurveButtonsPanel):
-    '''Same as above but for curves only'''
+    """Same as above but for curves only"""
 
     @classmethod
     def poll(cls, context):
@@ -41,7 +41,7 @@ class CurveButtonsPanelCurve(CurveButtonsPanel):
 
 
 class CurveButtonsPanelActive(CurveButtonsPanel):
-    '''Same as above but for curves only'''
+    """Same as above but for curves only"""
 
     @classmethod
     def poll(cls, context):
@@ -93,7 +93,7 @@ class DATA_PT_shape_curve(CurveButtonsPanel, Panel):
             col.label(text="Twisting:")
             col.prop(curve, "twist_mode", text="")
             col.prop(curve, "twist_smooth", text="Smooth")
-        if is_text:
+        elif is_text:
             col.label(text="Display:")
             col.prop(curve, "use_fast_edit", text="Fast Editing")
 
@@ -106,7 +106,7 @@ class DATA_PT_shape_curve(CurveButtonsPanel, Panel):
             sub.prop(curve, "resolution_v", text="Preview V")
             sub.prop(curve, "render_resolution_v", text="Render V")
 
-        if (is_curve or is_text):
+        if is_curve or is_text:
             col.label(text="Fill:")
             sub = col.column()
             sub.active = (curve.dimensions == '2D' or (curve.bevel_object is None and curve.dimensions == '3D'))
@@ -116,9 +116,9 @@ class DATA_PT_shape_curve(CurveButtonsPanel, Panel):
         if is_curve:
             col.label(text="Path / Curve-Deform:")
             sub = col.column()
-            rowsub = sub.row()
-            rowsub.prop(curve, "use_radius")
-            rowsub.prop(curve, "use_stretch")
+            subsub = sub.row()
+            subsub.prop(curve, "use_radius")
+            subsub.prop(curve, "use_stretch")
             sub.prop(curve, "use_deform_bounds")
 
 
@@ -173,9 +173,11 @@ class DATA_PT_geometry_curve(CurveButtonsPanel, Panel):
         col.label(text="Bevel Object:")
         col.prop(curve, "bevel_object", text="")
 
-        row = col.row()
-        row.active = (curve.bevel_object is not None)
-        row.prop(curve, "use_fill_caps")
+        col = layout.column(align=True)
+        col.active = (curve.bevel_object is not None)
+        col.prop(curve, "use_fill_caps")
+        col.prop(curve, "bevel_factor_start")
+        col.prop(curve, "bevel_factor_end")
 
 
 class DATA_PT_pathanim(CurveButtonsPanelCurve, Panel):
@@ -194,8 +196,8 @@ class DATA_PT_pathanim(CurveButtonsPanelCurve, Panel):
         layout.active = curve.use_path
 
         col = layout.column()
-        layout.prop(curve, "path_duration", text="Frames")
-        layout.prop(curve, "eval_time")
+        col.prop(curve, "path_duration", text="Frames")
+        col.prop(curve, "eval_time")
 
         # these are for paths only
         row = layout.row()
@@ -322,10 +324,10 @@ class DATA_PT_font(CurveButtonsPanel, Panel):
         split = layout.split()
 
         col = split.column()
-        colsub = col.column(align=True)
-        colsub.label(text="Underline:")
-        colsub.prop(text, "underline_position", text="Position")
-        colsub.prop(text, "underline_height", text="Thickness")
+        sub = col.column(align=True)
+        sub.label(text="Underline:")
+        sub.prop(text, "underline_position", text="Position")
+        sub.prop(text, "underline_height", text="Thickness")
 
         col = split.column()
         col.label(text="Character:")
@@ -404,7 +406,7 @@ class DATA_PT_text_boxes(CurveButtonsPanel, Panel):
             col.prop(box, "x", text="X")
             col.prop(box, "y", text="Y")
 
-            row.operator("font.textbox_remove", text='', icon='X', emboss=False).index = i
+            row.operator("font.textbox_remove", text="", icon='X', emboss=False).index = i
 
 
 class DATA_PT_custom_props_curve(CurveButtonsPanel, PropertyPanel, Panel):

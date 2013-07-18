@@ -35,12 +35,12 @@
 /* **************** Rotate  ******************** */
 
 static bNodeSocketTemplate cmp_node_rotate_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
-	{	SOCK_FLOAT, 1, "Degr",			0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_ANGLE},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_FLOAT, 1, N_("Degr"),			0.0f, 0.0f, 0.0f, 0.0f, -10000.0f, 10000.0f, PROP_ANGLE},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_rotate_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
@@ -48,10 +48,10 @@ static bNodeSocketTemplate cmp_node_rotate_out[]= {
 static void node_composit_exec_rotate(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
 
-	if(out[0]->hasoutput==0)
+	if (out[0]->hasoutput==0)
 		return;
 
-	if(in[0]->data) {
+	if (in[0]->data) {
 		CompBuf *cbuf= typecheck_compbuf(in[0]->data, CB_RGBA);
 		CompBuf *stackbuf= alloc_compbuf(cbuf->x, cbuf->y, CB_RGBA, 1);	/* note, this returns zero'd image */
 		float rad, u, v, s, c, centx, centy, miny, maxy, minx, maxx;
@@ -75,19 +75,19 @@ static void node_composit_exec_rotate(void *UNUSED(data), bNode *node, bNodeStac
 		ibuf=IMB_allocImBuf(cbuf->x, cbuf->y, 32, 0);
 		obuf=IMB_allocImBuf(stackbuf->x, stackbuf->y, 32, 0);
 
-		if(ibuf && obuf){
+		if (ibuf && obuf) {
 			ibuf->rect_float=cbuf->rect;
 			obuf->rect_float=stackbuf->rect;
 
-			for(y=miny; y<maxy; y++) {
+			for (y=miny; y<maxy; y++) {
 				yo= y+(int)centy;
 
-				for(x=minx; x<maxx;x++) {
+				for (x=minx; x<maxx;x++) {
 					u=c*x + y*s + centx;
 					v=-s*x + c*y + centy;
 					xo= x+(int)centx;
 
-					switch(node->custom1) {
+					switch (node->custom1) {
 					case 0:
 						neareast_interpolation(ibuf, obuf, u, v, xo, yo);
 						break;
@@ -115,7 +115,7 @@ static void node_composit_exec_rotate(void *UNUSED(data), bNode *node, bNodeStac
 
 		/* pass on output and free */
 		out[0]->data= stackbuf;
-		if(cbuf!=in[0]->data) {
+		if (cbuf!=in[0]->data) {
 			free_compbuf(cbuf);
 		}
 	}

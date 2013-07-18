@@ -36,14 +36,14 @@
 
 /* ******************* Color Balance ********************************* */
 static bNodeSocketTemplate cmp_node_colorbalance_in[]={
-	{SOCK_FLOAT, 1, "Fac",	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
-	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
-	{-1,0,""}
+	{SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
+	{SOCK_RGBA, 1, N_("Image"), 1.0f, 1.0f, 1.0f, 1.0f},
+	{-1, 0, ""}
 };
 
 static bNodeSocketTemplate cmp_node_colorbalance_out[]={
-	{SOCK_RGBA,0,"Image"},
-	{-1,0,""}
+	{SOCK_RGBA, 0, N_("Image")},
+	{-1, 0, ""}
 };
 
 /* this function implements ASC-CDL according to the spec at http://www.asctech.org/
@@ -130,9 +130,9 @@ static void node_composit_exec_colorbalance(void *UNUSED(data), bNode *node, bNo
 	
 	/* stack order input:  fac, image */
 	/* stack order output: image */
-	if(out[0]->hasoutput==0) return;
+	if (out[0]->hasoutput==0) return;
 	
-	if(in[0]->vec[0] == 0.f && in[0]->data == NULL) {
+	if (in[0]->vec[0] == 0.f && in[0]->data == NULL) {
 		out[0]->data = pass_on_compbuf(cbuf);
 		return;
 	}
@@ -158,7 +158,8 @@ static void node_composit_exec_colorbalance(void *UNUSED(data), bNode *node, bNo
 			else {
 				composit2_pixel_processor(node, stackbuf, in[1]->data, in[1]->vec, in[0]->data, in[0]->vec, do_colorbalance_lgg_fac, CB_RGBA, CB_VAL);
 			}
-		} else {
+		}
+		else {
 			/* offset/power/slope : ASC-CDL */
 			if ((in[0]->data==NULL) && (in[0]->vec[0] >= 1.f)) {
 				composit1_pixel_processor(node, stackbuf, in[1]->data, in[1]->vec, do_colorbalance_cdl, CB_RGBA);

@@ -20,6 +20,7 @@
 #include "device.h"
 #include "film.h"
 #include "integrator.h"
+#include "mesh.h"
 #include "scene.h"
 
 #include "util_algorithm.h"
@@ -38,11 +39,16 @@ static bool compare_pass_order(const Pass& a, const Pass& b)
 
 void Pass::add(PassType type, vector<Pass>& passes)
 {
+	foreach(Pass& existing_pass, passes)
+		if(existing_pass.type == type)
+			return;
+
 	Pass pass;
 
 	pass.type = type;
 	pass.filter = true;
 	pass.exposure = false;
+	pass.divide_type = PASS_NONE;
 
 	switch(type) {
 		case PASS_NONE:
@@ -61,6 +67,13 @@ void Pass::add(PassType type, vector<Pass>& passes)
 			break;
 		case PASS_UV:
 			pass.components = 4;
+			break;
+		case PASS_MOTION:
+			pass.components = 4;
+			pass.divide_type = PASS_MOTION_WEIGHT;
+			break;
+		case PASS_MOTION_WEIGHT:
+			pass.components = 1;
 			break;
 		case PASS_OBJECT_ID:
 			pass.components = 1;
@@ -82,26 +95,32 @@ void Pass::add(PassType type, vector<Pass>& passes)
 		case PASS_DIFFUSE_INDIRECT:
 			pass.components = 4;
 			pass.exposure = true;
+			pass.divide_type = PASS_DIFFUSE_COLOR;
 			break;
 		case PASS_GLOSSY_INDIRECT:
 			pass.components = 4;
 			pass.exposure = true;
+			pass.divide_type = PASS_GLOSSY_COLOR;
 			break;
 		case PASS_TRANSMISSION_INDIRECT:
 			pass.components = 4;
 			pass.exposure = true;
+			pass.divide_type = PASS_TRANSMISSION_COLOR;
 			break;
 		case PASS_DIFFUSE_DIRECT:
 			pass.components = 4;
 			pass.exposure = true;
+			pass.divide_type = PASS_DIFFUSE_COLOR;
 			break;
 		case PASS_GLOSSY_DIRECT:
 			pass.components = 4;
 			pass.exposure = true;
+			pass.divide_type = PASS_GLOSSY_COLOR;
 			break;
 		case PASS_TRANSMISSION_DIRECT:
 			pass.components = 4;
 			pass.exposure = true;
+			pass.divide_type = PASS_TRANSMISSION_COLOR;
 			break;
 
 		case PASS_EMISSION:
@@ -114,15 +133,21 @@ void Pass::add(PassType type, vector<Pass>& passes)
 			break;
 		case PASS_AO:
 			pass.components = 4;
-			pass.exposure = true;
+			break;
+		case PASS_SHADOW:
+			pass.components = 4;
+			pass.exposure = false;
 			break;
 	}
 
 	passes.push_back(pass);
 
 	/* order from by components, to ensure alignment so passes with size 4
-	   come first and then passes with size 1 */
+	 * come first and then passes with size 1 */
 	sort(passes.begin(), passes.end(), compare_pass_order);
+
+	if(pass.divide_type != PASS_NONE)
+		Pass::add(pass.divide_type, passes);
 }
 
 bool Pass::equals(const vector<Pass>& A, const vector<Pass>& B)
@@ -135,6 +160,15 @@ bool Pass::equals(const vector<Pass>& A, const vector<Pass>& B)
 			return false;
 	
 	return true;
+}
+
+bool Pass::contains(const vector<Pass>& passes, PassType type)
+{
+	foreach(const Pass& pass, passes)
+		if(pass.type == type)
+			return true;
+	
+	return false;
 }
 
 /* Film */
@@ -178,6 +212,12 @@ void Film::device_update(Device *device, DeviceScene *dscene)
 				break;
 			case PASS_UV:
 				kfilm->pass_uv = kfilm->pass_stride;
+				break;
+			case PASS_MOTION:
+				kfilm->pass_motion = kfilm->pass_stride;
+				break;
+			case PASS_MOTION_WEIGHT:
+				kfilm->pass_motion_weight = kfilm->pass_stride;
 				break;
 			case PASS_OBJECT_ID:
 				kfilm->pass_object_id = kfilm->pass_stride;
@@ -232,6 +272,9 @@ void Film::device_update(Device *device, DeviceScene *dscene)
 			case PASS_AO:
 				kfilm->pass_ao = kfilm->pass_stride;
 				kfilm->use_light_pass = 1;
+			case PASS_SHADOW:
+				kfilm->pass_shadow = kfilm->pass_stride;
+				kfilm->use_light_pass = 1;
 			case PASS_NONE:
 				break;
 		}
@@ -254,9 +297,18 @@ bool Film::modified(const Film& film)
 		&& Pass::equals(passes, film.passes));
 }
 
+void Film::tag_passes_update(Scene *scene, const vector<Pass>& passes_)
+{
+	if(Pass::contains(passes, PASS_UV) != Pass::contains(passes_, PASS_UV))
+		scene->mesh_manager->tag_update(scene);
+	else if(Pass::contains(passes, PASS_MOTION) != Pass::contains(passes_, PASS_MOTION))
+		scene->mesh_manager->tag_update(scene);
+
+	passes = passes_;
+}
+
 void Film::tag_update(Scene *scene)
 {
-	scene->integrator->tag_update(scene);
 	need_update = true;
 }
 

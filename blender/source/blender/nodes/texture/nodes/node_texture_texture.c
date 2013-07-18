@@ -36,21 +36,21 @@
 #include "RE_shader_ext.h"
 
 static bNodeSocketTemplate inputs[]= {
-	{ SOCK_RGBA, 1, "Color1", 1.0f, 1.0f, 1.0f, 1.0f },
-	{ SOCK_RGBA, 1, "Color2", 0.0f, 0.0f, 0.0f, 1.0f },
+	{ SOCK_RGBA, 1, N_("Color1"), 1.0f, 1.0f, 1.0f, 1.0f },
+	{ SOCK_RGBA, 1, N_("Color2"), 0.0f, 0.0f, 0.0f, 1.0f },
 	{ -1, 0, "" }
 };
 
 static bNodeSocketTemplate outputs[]= {
-	{ SOCK_RGBA, 0, "Color" },
+	{ SOCK_RGBA, 0, N_("Color") },
 	{ -1, 0, "" }
 };
 
 static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, short thread)
 {
 	Tex *nodetex = (Tex *)node->id;
-	static float red[] = {1,0,0,1};
-	static float white[] = {1,1,1,1};
+	static float red[] = {1, 0, 0, 1};
+	static float white[] = {1, 1, 1, 1};
 	float co[3], dxt[3], dyt[3];
 	
 	copy_v3_v3(co, p->co);
@@ -63,14 +63,14 @@ static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, shor
 		zero_v3(dyt);
 	}
 	
-	if(node->custom2 || node->need_exec==0) {
+	if (node->custom2 || node->need_exec==0) {
 		/* this node refers to its own texture tree! */
-		copy_v4_v4(out, (fabs(co[0] - co[1]) < .01) ? white : red );
+		copy_v4_v4(out, (fabsf(co[0] - co[1]) < 0.01f) ? white : red);
 	}
-	else if(nodetex) {
+	else if (nodetex) {
 		TexResult texres;
 		int textype;
-		float nor[] = {0,0,0};
+		float nor[] = {0, 0, 0};
 		float col1[4], col2[4];
 		
 		tex_input_rgba(col1, in[0], p, thread);
@@ -80,7 +80,7 @@ static void colorfn(float *out, TexParams *p, bNode *node, bNodeStack **in, shor
 		textype = multitex_nodes(nodetex, co, dxt, dyt, p->osatex,
 			&texres, thread, 0, p->shi, p->mtex);
 		
-		if(textype & TEX_RGB) {
+		if (textype & TEX_RGB) {
 			copy_v4_v4(out, &texres.tr);
 		}
 		else {

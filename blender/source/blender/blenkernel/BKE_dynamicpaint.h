@@ -1,10 +1,19 @@
-/**
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
  * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * Contributor(s): Miika Hämäläinen
  *
@@ -13,6 +22,10 @@
 
 #ifndef __BKE_DYNAMICPAINT_H__
 #define __BKE_DYNAMICPAINT_H__
+
+/** \file BKE_dynamicpaint.h
+ *  \ingroup bke
+ */
 
 struct bContext;
 struct wmOperator;
@@ -51,7 +64,7 @@ typedef struct PaintWavePoint {
 } PaintWavePoint;
 
 struct DerivedMesh *dynamicPaint_Modifier_do(struct DynamicPaintModifierData *pmd, struct Scene *scene, struct Object *ob, struct DerivedMesh *dm);
-void dynamicPaint_Modifier_free (struct DynamicPaintModifierData *pmd);
+void dynamicPaint_Modifier_free(struct DynamicPaintModifierData *pmd);
 void dynamicPaint_Modifier_copy(struct DynamicPaintModifierData *pmd, struct DynamicPaintModifierData *tsmd);
 
 int dynamicPaint_createType(struct DynamicPaintModifierData *pmd, int type, struct Scene *scene);
@@ -74,7 +87,7 @@ struct DynamicPaintSurface *get_activeSurface(struct DynamicPaintCanvasSettings 
 /* image sequence baking */
 int dynamicPaint_createUVSurface(struct DynamicPaintSurface *surface);
 int dynamicPaint_calculateFrame(struct DynamicPaintSurface *surface, struct Scene *scene, struct Object *cObject, int frame);
-void dynamicPaint_outputSurfaceImage(struct DynamicPaintSurface *surface, char* filename, short output_layer);
+void dynamicPaint_outputSurfaceImage(struct DynamicPaintSurface *surface, char *filename, short output_layer);
 
 /* PaintPoint state */
 #define DPAINT_PAINT_NONE -1

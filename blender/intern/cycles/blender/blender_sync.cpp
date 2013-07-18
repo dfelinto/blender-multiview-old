@@ -63,7 +63,7 @@ BlenderSync::~BlenderSync()
 bool BlenderSync::sync_recalc()
 {
 	/* sync recalc flags from blender to cycles. actual update is done separate,
-	   so we can do it later on if doing it immediate is not suitable */
+	 * so we can do it later on if doing it immediate is not suitable */
 
 	BL::BlendData::materials_iterator b_mat;
 
@@ -87,7 +87,7 @@ bool BlenderSync::sync_recalc()
 
 		if(object_is_mesh(*b_ob)) {
 			if(b_ob->is_updated_data() || b_ob->data().is_updated()) {
-				BL::ID key = object_is_modified(*b_ob)? *b_ob: b_ob->data();
+				BL::ID key = BKE_object_is_modified(*b_ob)? *b_ob: b_ob->data();
 				mesh_map.set_recalc(key);
 			}
 		}
@@ -105,10 +105,13 @@ bool BlenderSync::sync_recalc()
 
 	BL::BlendData::worlds_iterator b_world;
 
-	for(b_data.worlds.begin(b_world); b_world != b_data.worlds.end(); ++b_world)
+	for(b_data.worlds.begin(b_world); b_world != b_data.worlds.end(); ++b_world) {
 		if(world_map == b_world->ptr.data &&
-			(b_world->is_updated() || (b_world->node_tree() && b_world->node_tree().is_updated())))
+		   (b_world->is_updated() || (b_world->node_tree() && b_world->node_tree().is_updated())))
+		{
 			world_recalc = true;
+		}
+	}
 
 	bool recalc =
 		shader_map.has_recalc() ||
@@ -121,13 +124,14 @@ bool BlenderSync::sync_recalc()
 	return recalc;
 }
 
-void BlenderSync::sync_data(BL::SpaceView3D b_v3d, const char *layer)
+void BlenderSync::sync_data(BL::SpaceView3D b_v3d, BL::Object b_override, const char *layer)
 {
 	sync_render_layers(b_v3d, layer);
 	sync_integrator();
 	sync_film();
 	sync_shaders();
 	sync_objects(b_v3d);
+	sync_motion(b_v3d, b_override);
 }
 
 /* Integrator */
@@ -153,9 +157,23 @@ void BlenderSync::sync_integrator()
 	integrator->transparent_shadows = get_boolean(cscene, "use_transparent_shadows");
 
 	integrator->no_caustics = get_boolean(cscene, "no_caustics");
+	integrator->filter_glossy = get_float(cscene, "blur_glossy");
+
 	integrator->seed = get_int(cscene, "seed");
 
 	integrator->layer_flag = render_layer.layer;
+
+	integrator->sample_clamp = get_float(cscene, "sample_clamp");
+#ifdef __MOTION__
+	integrator->motion_blur = (!preview && r.use_motion_blur());
+#endif
+
+	integrator->diffuse_samples = get_int(cscene, "diffuse_samples");
+	integrator->glossy_samples = get_int(cscene, "glossy_samples");
+	integrator->transmission_samples = get_int(cscene, "transmission_samples");
+	integrator->ao_samples = get_int(cscene, "ao_samples");
+	integrator->mesh_light_samples = get_int(cscene, "mesh_light_samples");
+	integrator->progressive = get_boolean(cscene, "progressive");
 
 	if(integrator->modified(previntegrator))
 		integrator->tag_update(scene);
@@ -189,29 +207,51 @@ void BlenderSync::sync_film()
 
 void BlenderSync::sync_render_layers(BL::SpaceView3D b_v3d, const char *layer)
 {
+	string layername;
+
+	/* 3d view */
 	if(b_v3d) {
-		render_layer.scene_layer = get_layer(b_v3d.layers());
-		render_layer.layer = render_layer.scene_layer;
-		render_layer.holdout_layer = 0;
-		render_layer.material_override = PointerRNA_NULL;
-	}
-	else {
-		BL::RenderSettings r = b_scene.render();
-		BL::RenderSettings::layers_iterator b_rlay;
-		bool first_layer = true;
+		PointerRNA cscene = RNA_pointer_get(&b_scene.ptr, "cycles");
 
-		for(r.layers.begin(b_rlay); b_rlay != r.layers.end(); ++b_rlay) {
-			if((!layer && first_layer) || (layer && b_rlay->name() == layer)) {
-				render_layer.name = b_rlay->name();
-				render_layer.scene_layer = get_layer(b_scene.layers());
-				render_layer.layer = get_layer(b_rlay->layers());
-				render_layer.holdout_layer = get_layer(b_rlay->layers_zmask());
-				render_layer.layer |= render_layer.holdout_layer;
-				render_layer.material_override = b_rlay->material_override();
-			}
-
-			first_layer = false;
+		if(RNA_boolean_get(&cscene, "preview_active_layer")) {
+			BL::RenderLayers layers(b_scene.render().ptr);
+			layername = layers.active().name();
+			layer = layername.c_str();
 		}
+		else {
+			render_layer.use_localview = (b_v3d.local_view() ? true : false);
+			render_layer.scene_layer = get_layer(b_v3d.layers(), b_v3d.layers_local_view());
+			CYCLES_LOCAL_LAYER_HACK(render_layer.use_localview, render_layer.scene_layer);
+			render_layer.layer = render_layer.scene_layer;
+			render_layer.holdout_layer = 0;
+			render_layer.material_override = PointerRNA_NULL;
+			render_layer.use_background = true;
+			render_layer.use_viewport_visibility = true;
+			render_layer.samples = 0;
+			return;
+		}
+	}
+
+	/* render layer */
+	BL::RenderSettings r = b_scene.render();
+	BL::RenderSettings::layers_iterator b_rlay;
+	bool first_layer = true;
+
+	for(r.layers.begin(b_rlay); b_rlay != r.layers.end(); ++b_rlay) {
+		if((!layer && first_layer) || (layer && b_rlay->name() == layer)) {
+			render_layer.name = b_rlay->name();
+			render_layer.scene_layer = get_layer(b_scene.layers()) & ~get_layer(b_rlay->layers_exclude());
+			render_layer.layer = get_layer(b_rlay->layers());
+			render_layer.holdout_layer = get_layer(b_rlay->layers_zmask());
+			render_layer.layer |= render_layer.holdout_layer;
+			render_layer.material_override = b_rlay->material_override();
+			render_layer.use_background = b_rlay->use_sky();
+			render_layer.use_viewport_visibility = false;
+			render_layer.use_localview = false;
+			render_layer.samples = b_rlay->samples();
+		}
+
+		first_layer = false;
 	}
 }
 
@@ -278,15 +318,27 @@ SessionParams BlenderSync::get_session_params(BL::UserPreferences b_userpref, BL
 
 	/* Background */
 	params.background = background;
-			
+
 	/* samples */
-	if(background) {
-		params.samples = get_int(cscene, "samples");
+	if(get_boolean(cscene, "progressive")) {
+		if(background) {
+			params.samples = get_int(cscene, "samples");
+		}
+		else {
+			params.samples = get_int(cscene, "preview_samples");
+			if(params.samples == 0)
+				params.samples = INT_MAX;
+		}
 	}
 	else {
-		params.samples = get_int(cscene, "preview_samples");
-		if(params.samples == 0)
-			params.samples = INT_MAX;
+		if(background) {
+			params.samples = get_int(cscene, "aa_samples");
+		}
+		else {
+			params.samples = get_int(cscene, "preview_aa_samples");
+			if(params.samples == 0)
+				params.samples = INT_MAX;
+		}
 	}
 
 	/* other parameters */

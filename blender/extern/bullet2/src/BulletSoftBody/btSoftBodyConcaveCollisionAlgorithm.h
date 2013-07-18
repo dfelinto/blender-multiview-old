@@ -13,8 +13,8 @@ subject to the following restrictions:
 3. This notice may not be removed or altered from any source distribution.
 */
 
-#ifndef SOFT_BODY_CONCAVE_COLLISION_ALGORITHM_H
-#define SOFT_BODY_CONCAVE_COLLISION_ALGORITHM_H
+#ifndef BT_SOFT_BODY_CONCAVE_COLLISION_ALGORITHM_H
+#define BT_SOFT_BODY_CONCAVE_COLLISION_ALGORITHM_H
 
 #include "BulletCollision/BroadphaseCollision/btCollisionAlgorithm.h"
 #include "BulletCollision/BroadphaseCollision/btDispatcher.h"
@@ -45,7 +45,9 @@ struct btTriIndex
 	int	getTriangleIndex() const
 	{
 		// Get only the lower bits where the triangle index is stored
-		return (m_PartIdTriangleIndex&~((~0)<<(31-MAX_NUM_PARTS_IN_BITS)));
+		unsigned int x = 0;
+		unsigned int y = (~(x&0))<<(31-MAX_NUM_PARTS_IN_BITS);
+		return (m_PartIdTriangleIndex&~(y));
 	}
 	int	getPartId() const
 	{
@@ -150,4 +152,4 @@ public:
 
 };
 
-#endif //SOFT_BODY_CONCAVE_COLLISION_ALGORITHM_H
+#endif //BT_SOFT_BODY_CONCAVE_COLLISION_ALGORITHM_H

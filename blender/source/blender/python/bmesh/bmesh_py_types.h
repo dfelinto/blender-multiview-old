@@ -175,8 +175,24 @@ char     *BPy_BMElem_StringFromHType(const char htype);
 
 #define BPY_BM_IS_VALID(obj) (LIKELY((obj)->bm != NULL))
 
-#define BM_ITER_BPY_BM_SEQ(ele, iter, bpy_bmelemseq)                \
-	BM_ITER(ele, iter, (bpy_bmelemseq)->bm, (bpy_bmelemseq)->itype, \
-	(bpy_bmelemseq)->py_ele ? ((BPy_BMElem *)(bpy_bmelemseq)->py_ele)->ele : NULL)
+#define BM_ITER_BPY_BM_SEQ(ele, iter, bpy_bmelemseq)                          \
+	for (ele = BM_iter_new(iter,                                              \
+	                       (bpy_bmelemseq)->bm,                               \
+	                       (bpy_bmelemseq)->itype,                            \
+	                       (bpy_bmelemseq)->py_ele ?                          \
+	                           ((BPy_BMElem *)(bpy_bmelemseq)->py_ele)->ele : \
+	                           NULL                                           \
+	                       );                                                 \
+	     ele;                                                                 \
+	     ele = BM_iter_step(iter))
+
+
+#ifdef __PY_CAPI_UTILS_H__
+struct PyC_FlagSet;
+extern struct PyC_FlagSet bpy_bm_scene_vert_edge_face_flags[];
+extern struct PyC_FlagSet bpy_bm_htype_vert_edge_face_flags[];
+extern struct PyC_FlagSet bpy_bm_htype_all_flags[];
+extern struct PyC_FlagSet bpy_bm_hflag_all_flags[];
+#endif
 
 #endif /* __BMESH_TYPES_H__ */

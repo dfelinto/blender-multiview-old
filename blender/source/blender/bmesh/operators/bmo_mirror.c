@@ -20,6 +20,10 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/bmesh/operators/bmo_mirror.c
+ *  \ingroup bmesh
+ */
+
 #include "MEM_guardedalloc.h"
 
 #include "DNA_meshdata_types.h"
@@ -39,7 +43,7 @@ void bmo_mirror_exec(BMesh *bm, BMOperator *op)
 	BMOperator dupeop, weldop;
 	BMOIter siter;
 	BMIter iter;
-	BMVert *v, *v2, **vmap = NULL;
+	BMVert *v /* , *v2 */ /* UNUSED */, **vmap = NULL;
 	BLI_array_declare(vmap);
 	BMEdge /*  *e, */ **emap = NULL;
 	BLI_array_declare(emap);
@@ -48,7 +52,7 @@ void bmo_mirror_exec(BMesh *bm, BMOperator *op)
 	float scale[3] = {1.0f, 1.0f, 1.0f};
 	float dist = BMO_slot_float_get(op, "mergedist");
 	int i, ototvert /*, ototedge */;
-    int axis = BMO_slot_int_get(op, "axis");
+	int axis = BMO_slot_int_get(op, "axis");
 	int mirroru = BMO_slot_bool_get(op, "mirror_u");
 	int mirrorv = BMO_slot_bool_get(op, "mirror_v");
 
@@ -58,33 +62,29 @@ void bmo_mirror_exec(BMesh *bm, BMOperator *op)
 	BMO_slot_mat4_get(op, "mat", mtx);
 	invert_m4_m4(imtx, mtx);
 	
-	BMO_op_initf(bm, &dupeop, "dupe geom=%s", op, "geom");
+	BMO_op_initf(bm, &dupeop, op->flag, "duplicate geom=%s", op, "geom");
 	BMO_op_exec(bm, &dupeop);
 	
 	BMO_slot_buffer_flag_enable(bm, &dupeop, "newout", BM_ALL, ELE_NEW);
 
 	/* create old -> new mappin */
 	i = 0;
-	v2 = BM_iter_new(&iter, bm, BM_VERTS_OF_MESH, NULL);
-	BMO_ITER(v, &siter, bm, &dupeop, "newout", BM_VERT) {
-		BLI_array_growone(vmap);
+	/* v2 = BM_iter_new(&iter, bm, BM_VERTS_OF_MESH, NULL); */ /* UNUSED */
+	BMO_ITER (v, &siter, bm, &dupeop, "newout", BM_VERT) {
+		BLI_array_grow_one(vmap);
 		vmap[i] = v;
-
-		/* BMESH_TODO, double check this is being used, calling following operators will overwrite anyway - campbell */
-		BM_elem_index_set(v2, i); /* set_dirty! */
-		v2 = BM_iter_step(&iter);
-
+		/* v2 = BM_iter_step(&iter); */ /* UNUSED */
 		i++;
 	}
 	bm->elem_index_dirty |= BM_VERT;
 
 	/* feed old data to transform bmo */
 	scale[axis] = -1.0f;
-	BMO_op_callf(bm, "transform verts=%fv mat=%m4", ELE_NEW, mtx);
-	BMO_op_callf(bm, "scale verts=%fv vec=%v", ELE_NEW, scale);
-	BMO_op_callf(bm, "transform verts=%fv mat=%m4", ELE_NEW, imtx);
+	BMO_op_callf(bm, op->flag, "transform verts=%fv mat=%m4", ELE_NEW, mtx);
+	BMO_op_callf(bm, op->flag, "scale verts=%fv vec=%v", ELE_NEW, scale);
+	BMO_op_callf(bm, op->flag, "transform verts=%fv mat=%m4", ELE_NEW, imtx);
 	
-	BMO_op_init(bm, &weldop, "weldverts");
+	BMO_op_init(bm, &weldop, op->flag, "weld_verts");
 
 	v = BM_iter_new(&iter, bm, BM_VERTS_OF_MESH, NULL);
 	for (i = 0; i < ototvert; i++) {
@@ -101,8 +101,8 @@ void bmo_mirror_exec(BMesh *bm, BMOperator *op)
 		int totlayer;
 		BMIter liter;
 
-		BMO_ITER(f, &siter, bm, &dupeop, "newout", BM_FACE) {
-			BM_ITER(l, &liter, bm, BM_LOOPS_OF_FACE, f) {
+		BMO_ITER (f, &siter, bm, &dupeop, "newout", BM_FACE) {
+			BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
 				totlayer = CustomData_number_of_layers(&bm->ldata, CD_MLOOPUV);
 				for (i = 0; i < totlayer; i++) {
 					luv = CustomData_bmesh_get_n(&bm->ldata, l->head.data, CD_MLOOPUV, i);
@@ -120,7 +120,7 @@ void bmo_mirror_exec(BMesh *bm, BMOperator *op)
 	BMO_op_finish(bm, &weldop);
 	BMO_op_finish(bm, &dupeop);
 
-	BMO_slot_buffer_from_flag(bm, op, "newout", BM_ALL, ELE_NEW);
+	BMO_slot_buffer_from_enabled_flag(bm, op, "newout", BM_ALL, ELE_NEW);
 
 	BLI_array_free(vmap);
 	BLI_array_free(emap);

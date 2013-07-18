@@ -482,7 +482,7 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 	i=0;
 	pixelFormatAttrsWindow[i++] = NSOpenGLPFADoubleBuffer;
 	
-	// Guarantees the back buffer contents to be valid after a call to NSOpenGLContext object’s flushBuffer
+	// Guarantees the back buffer contents to be valid after a call to NSOpenGLContext object's flushBuffer
 	// needed for 'Draw Overlap' drawing method
 	pixelFormatAttrsWindow[i++] = NSOpenGLPFABackingStore; 
 	
@@ -502,7 +502,7 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 	
 	if (stereoVisual) pixelFormatAttrsWindow[i++] = NSOpenGLPFAStereo;
 	
-	if (numOfAASamples>0) {
+	if (numOfAASamples > 0) {
 		// Multisample anti-aliasing
 		pixelFormatAttrsWindow[i++] = NSOpenGLPFAMultisample;
 		
@@ -525,7 +525,7 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 		i=0;
 		pixelFormatAttrsWindow[i++] = NSOpenGLPFADoubleBuffer;
 		
-		// Guarantees the back buffer contents to be valid after a call to NSOpenGLContext object’s flushBuffer
+		// Guarantees the back buffer contents to be valid after a call to NSOpenGLContext object's flushBuffer
 		// needed for 'Draw Overlap' drawing method
 		pixelFormatAttrsWindow[i++] = NSOpenGLPFABackingStore;
 		
@@ -550,7 +550,7 @@ GHOST_WindowCocoa::GHOST_WindowCocoa(
 		
 	}
 	
-	if (numOfAASamples>0) { //Set m_numOfAASamples to the actual value
+	if (numOfAASamples > 0) { //Set m_numOfAASamples to the actual value
 		GLint gli;
 		[pixelFormat getValues:&gli forAttribute:NSOpenGLPFASamples forVirtualScreen:0];
 		if (m_numOfAASamples != (GHOST_TUns16)gli) {
@@ -653,7 +653,7 @@ void GHOST_WindowCocoa::setTitle(const STR_String& title)
 		fileStrRange.location = [windowTitle rangeOfString:@"["].location+1;
 		len = [windowTitle rangeOfString:@"]"].location - fileStrRange.location;
 	
-		if (len >0)
+		if (len > 0)
 		{
 			fileStrRange.length = len;
 			associatedFileName = [windowTitle substringWithRange:fileStrRange];
@@ -1235,9 +1235,11 @@ GHOST_TSuccess GHOST_WindowCocoa::setProgressBar(float progress)
         
         // Progress fill
         progressBox = NSInsetRect(progressBox, 1, 1);
-        [[NSColor knobColor] setFill];
+        
         progressBox.size.width = progressBox.size.width * progress;
-		NSRectFill(progressBox);
+        NSGradient *gradient = [[NSGradient alloc] initWithStartingColor:[NSColor darkGrayColor] endingColor:[NSColor lightGrayColor]];
+        [gradient drawInRect:progressBox angle:90];
+        [gradient release];
 		
 		[dockIcon unlockFocus];
 		
@@ -1422,9 +1424,9 @@ GHOST_TSuccess GHOST_WindowCocoa::setWindowCursorShape(GHOST_TStandardCursor sha
 /** Reverse the bits in a GHOST_TUns8
 static GHOST_TUns8 uns8ReverseBits(GHOST_TUns8 ch)
 {
-	ch= ((ch>>1)&0x55) | ((ch<<1)&0xAA);
-	ch= ((ch>>2)&0x33) | ((ch<<2)&0xCC);
-	ch= ((ch>>4)&0x0F) | ((ch<<4)&0xF0);
+	ch= ((ch >> 1) & 0x55) | ((ch << 1) & 0xAA);
+	ch= ((ch >> 2) & 0x33) | ((ch << 2) & 0xCC);
+	ch= ((ch >> 4) & 0x0F) | ((ch << 4) & 0xF0);
 	return ch;
 }
 */
@@ -1433,15 +1435,15 @@ static GHOST_TUns8 uns8ReverseBits(GHOST_TUns8 ch)
 /** Reverse the bits in a GHOST_TUns16 */
 static GHOST_TUns16 uns16ReverseBits(GHOST_TUns16 shrt)
 {
-	shrt= ((shrt>>1)&0x5555) | ((shrt<<1)&0xAAAA);
-	shrt= ((shrt>>2)&0x3333) | ((shrt<<2)&0xCCCC);
-	shrt= ((shrt>>4)&0x0F0F) | ((shrt<<4)&0xF0F0);
-	shrt= ((shrt>>8)&0x00FF) | ((shrt<<8)&0xFF00);
+	shrt = ((shrt >> 1) & 0x5555) | ((shrt << 1) & 0xAAAA);
+	shrt = ((shrt >> 2) & 0x3333) | ((shrt << 2) & 0xCCCC);
+	shrt = ((shrt >> 4) & 0x0F0F) | ((shrt << 4) & 0xF0F0);
+	shrt = ((shrt >> 8) & 0x00FF) | ((shrt << 8) & 0xFF00);
 	return shrt;
 }
 
 GHOST_TSuccess GHOST_WindowCocoa::setWindowCustomCursorShape(GHOST_TUns8 *bitmap, GHOST_TUns8 *mask,
-					int sizex, int sizey, int hotX, int hotY, int fg_color, int bg_color)
+                                                             int sizex, int sizey, int hotX, int hotY, int fg_color, int bg_color)
 {
 	int y,nbUns16;
 	NSPoint hotSpotPoint;
@@ -1509,7 +1511,7 @@ GHOST_TSuccess GHOST_WindowCocoa::setWindowCustomCursorShape(GHOST_TUns8 *bitmap
 }
 
 GHOST_TSuccess GHOST_WindowCocoa::setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2], 
-												GHOST_TUns8 mask[16][2], int hotX, int hotY)
+                                                             GHOST_TUns8 mask[16][2], int hotX, int hotY)
 {
 	return setWindowCustomCursorShape((GHOST_TUns8*)bitmap, (GHOST_TUns8*) mask, 16, 16, hotX, hotY, 0, 1);
 }

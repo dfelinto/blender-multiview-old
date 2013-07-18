@@ -52,10 +52,12 @@
 #include "DNA_text_types.h"
 
 #include "BLI_path_util.h"
+#include "BLI_fileops.h"
 #include "BLI_math_base.h"
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
 #include "BLI_utildefines.h"
+#include "BLI_threads.h"
 
 #include "BKE_context.h"
 #include "BKE_text.h"
@@ -72,8 +74,10 @@
 /* inittab initialization functions */
 #include "../generic/bgl.h"
 #include "../generic/blf_py_api.h"
+#include "../generic/idprop_py_api.h"
 #include "../bmesh/bmesh_py_api.h"
 #include "../mathutils/mathutils.h"
+
 
 /* for internal use, when starting and ending python scripts */
 
@@ -85,15 +89,21 @@ BPy_StructRNA *bpy_context_module = NULL; /* for fast access */
 
 #ifdef TIME_PY_RUN
 #include "PIL_time.h"
-static int		bpy_timer_count = 0;
-static double	bpy_timer; /* time since python starts */
-static double	bpy_timer_run; /* time for each python script run */
-static double	bpy_timer_run_tot; /* accumulate python runs */
+static int     bpy_timer_count = 0;
+static double  bpy_timer;   /* time since python starts */
+static double  bpy_timer_run;   /* time for each python script run */
+static double  bpy_timer_run_tot;   /* accumulate python runs */
 #endif
 
 /* use for updating while a python script runs - in case of file load */
-void bpy_context_update(bContext *C)
+void BPY_context_update(bContext *C)
 {
+	/* don't do this from a non-main (e.g. render) thread, it can cause a race
+	 * condition on C->data.recursion. ideal solution would be to disable
+	 * context entirely from non-main threads, but that's more complicated */
+	if (!BLI_thread_is_main())
+		return;
+
 	BPy_SetContext(C);
 	bpy_import_main_set(CTX_data_main(C));
 	BPY_modules_update(C); /* can give really bad results if this isn't here */
@@ -107,7 +117,7 @@ void bpy_context_set(bContext *C, PyGILState_STATE *gilstate)
 		*gilstate = PyGILState_Ensure();
 
 	if (py_call_level == 1) {
-		bpy_context_update(C);
+		BPY_context_update(C);
 
 #ifdef TIME_PY_RUN
 		if (bpy_timer_count == 0) {
@@ -168,7 +178,8 @@ void BPY_modules_update(bContext *C)
 
 	/* refreshes the main struct */
 	BPY_update_rna_module();
-	bpy_context_module->ptr.data = (void *)C;
+	if (bpy_context_module)
+		bpy_context_module->ptr.data = (void *)C;
 }
 
 void BPY_context_set(bContext *C)
@@ -183,7 +194,7 @@ extern PyObject *AUD_initPython(void);
 /* defined in cycles module */
 static PyObject *CCL_initPython(void)
 {
-	return (PyObject*)CCL_python_module_init();
+	return (PyObject *)CCL_python_module_init();
 }
 #endif
 
@@ -194,8 +205,8 @@ static struct _inittab bpy_internal_modules[] = {
 	{(char *)"bgl", BPyInit_bgl},
 	{(char *)"blf", BPyInit_blf},
 	{(char *)"bmesh", BPyInit_bmesh},
-    // {(char *)"bmesh.types", BPyInit_bmesh_types},
-    // {(char *)"bmesh.utils", BPyInit_bmesh_utils},
+	// {(char *)"bmesh.types", BPyInit_bmesh_types},
+	// {(char *)"bmesh.utils", BPyInit_bmesh_utils},
 #ifdef WITH_AUDASPACE
 	{(char *)"aud", AUD_initPython},
 #endif
@@ -203,6 +214,7 @@ static struct _inittab bpy_internal_modules[] = {
 	{(char *)"_cycles", CCL_initPython},
 #endif
 	{(char *)"gpu", GPU_initPython},
+	{(char *)"idprop", BPyInit_idprop},
 	{NULL, NULL}
 };
 
@@ -211,6 +223,7 @@ void BPY_python_start(int argc, const char **argv)
 {
 #ifndef WITH_PYTHON_MODULE
 	PyThreadState *py_tstate = NULL;
+	const char *py_path_bundle = BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL);
 
 	/* not essential but nice to set our name */
 	static wchar_t program_path_wchar[FILE_MAX]; /* python holds a reference */
@@ -221,7 +234,7 @@ void BPY_python_start(int argc, const char **argv)
 	PyImport_ExtendInittab(bpy_internal_modules);
 
 	/* allow to use our own included python */
-	PyC_SetHomePath(BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL));
+	PyC_SetHomePath(py_path_bundle);
 
 	/* without this the sys.stdout may be set to 'ascii'
 	 * (it is on my system at least), where printing unicode values will raise
@@ -233,7 +246,11 @@ void BPY_python_start(int argc, const char **argv)
 	/* Python 3.2 now looks for '2.xx/python/include/python3.2d/pyconfig.h' to
 	 * parse from the 'sysconfig' module which is used by 'site',
 	 * so for now disable site. alternatively we could copy the file. */
-	Py_NoSiteFlag = 1;
+	if (py_path_bundle) {
+		Py_NoSiteFlag = 1;
+	}
+
+	Py_FrozenFlag = 1;
 
 	Py_Initialize();
 
@@ -286,7 +303,7 @@ void BPY_python_end(void)
 
 	PyGILState_Ensure(); /* finalizing, no need to grab the state */
 	
-	// free other python data.
+	/* free other python data. */
 	pyrna_free_types();
 
 	/* clear all python data from structs */
@@ -300,17 +317,17 @@ void BPY_python_end(void)
 	Py_Finalize();
 	
 #ifdef TIME_PY_RUN
-	// measure time since py started
+	/* measure time since py started */
 	bpy_timer = PIL_check_seconds_timer() - bpy_timer;
 
 	printf("*bpy stats* - ");
 	printf("tot exec: %d,  ", bpy_timer_count);
 	printf("tot run: %.4fsec,  ", bpy_timer_run_tot);
 	if (bpy_timer_count > 0)
-		printf("average run: %.6fsec,  ", (bpy_timer_run_tot/bpy_timer_count));
+		printf("average run: %.6fsec,  ", (bpy_timer_run_tot / bpy_timer_count));
 
 	if (bpy_timer > 0.0)
-		printf("tot usage %.4f%%", (bpy_timer_run_tot/bpy_timer) * 100.0);
+		printf("tot usage %.4f%%", (bpy_timer_run_tot / bpy_timer) * 100.0);
 
 	printf("\n");
 
@@ -366,7 +383,7 @@ static int python_script_exec(bContext *C, const char *fn, struct Text *text,
 		char fn_dummy[FILE_MAXDIR];
 		bpy_text_filename_get(fn_dummy, sizeof(fn_dummy), text);
 
-		if (text->compiled == NULL) {	/* if it wasn't already compiled, do it now */
+		if (text->compiled == NULL) {   /* if it wasn't already compiled, do it now */
 			char *buf = txt_to_buf(text);
 
 			text->compiled = Py_CompileString(buf, fn_dummy, Py_file_input);
@@ -388,7 +405,7 @@ static int python_script_exec(bContext *C, const char *fn, struct Text *text,
 
 	}
 	else {
-		FILE *fp = fopen(fn, "r");
+		FILE *fp = BLI_fopen(fn, "r");
 
 		if (fp) {
 			py_dict = PyC_DefaultNameSpace(fn);
@@ -404,9 +421,9 @@ static int python_script_exec(bContext *C, const char *fn, struct Text *text,
 
 				fclose(fp);
 
-				pystring = MEM_mallocN(strlen(fn) + 32, "pystring");
+				pystring = MEM_mallocN(strlen(fn) + 37, "pystring");
 				pystring[0] = '\0';
-				sprintf(pystring, "exec(open(r'%s').read())", fn);
+				sprintf(pystring, "f=open(r'%s');exec(f.read());f.close()", fn);
 				py_result = PyRun_String(pystring, Py_file_input, py_dict, py_dict);
 				MEM_freeN(pystring);
 			}
@@ -520,7 +537,12 @@ int BPY_button_exec(bContext *C, const char *expr, double *value, const short ve
 			val = 0.0;
 
 			for (i = 0; i < PyTuple_GET_SIZE(retval); i++) {
-				val += PyFloat_AsDouble(PyTuple_GET_ITEM(retval, i));
+				const double val_item = PyFloat_AsDouble(PyTuple_GET_ITEM(retval, i));
+				if (val_item == -1 && PyErr_Occurred()) {
+					val = -1;
+					break;
+				}
+				val += val_item;
 			}
 		}
 		else {
@@ -612,12 +634,12 @@ void BPY_modules_load_user(bContext *C)
 	/* update pointers since this can run from a nested script
 	 * on file load */
 	if (py_call_level) {
-		bpy_context_update(C);
+		BPY_context_update(C);
 	}
 
 	bpy_context_set(C, &gilstate);
 
-	for (text = CTX_data_main(C)->text.first; text; text = text->id.next) {
+	for (text = bmain->text.first; text; text = text->id.next) {
 		if (text->flags & TXT_ISSCRIPT && BLI_testextensie(text->id.name + 2, ".py")) {
 			if (!(G.f & G_SCRIPT_AUTOEXEC)) {
 				printf("scripts disabled for \"%s\", skipping '%s'\n", bmain->name, text->id.name + 2);
@@ -643,7 +665,7 @@ int BPY_context_member_get(bContext *C, const char *member, bContextDataResult *
 	PyObject *pyctx = (PyObject *)CTX_py_dict_get(C);
 	PyObject *item = PyDict_GetItemString(pyctx, member);
 	PointerRNA *ptr = NULL;
-	int done = 0;
+	int done = FALSE;
 
 	if (item == NULL) {
 		/* pass */
@@ -656,7 +678,7 @@ int BPY_context_member_get(bContext *C, const char *member, bContextDataResult *
 
 		//result->ptr = ((BPy_StructRNA *)item)->ptr;
 		CTX_data_pointer_set(result, ptr->id.data, ptr->type, ptr->data);
-		done = 1;
+		done = TRUE;
 	}
 	else if (PySequence_Check(item)) {
 		PyObject *seq_fast = PySequence_Fast(item, "bpy_context_get sequence conversion");
@@ -686,16 +708,16 @@ int BPY_context_member_get(bContext *C, const char *member, bContextDataResult *
 			}
 			Py_DECREF(seq_fast);
 
-			done = 1;
+			done = TRUE;
 		}
 	}
 
 	if (done == 0) {
-		if (item)	printf("PyContext '%s' not a valid type\n", member);
-		else		printf("PyContext '%s' not found\n", member);
+		if (item) printf("PyContext '%s' not a valid type\n", member);
+		else      printf("PyContext '%s' not found\n", member);
 	}
 	else {
-		if (G.f & G_DEBUG) {
+		if (G.debug & G_DEBUG_PYTHON) {
 			printf("PyContext '%s' found\n", member);
 		}
 	}

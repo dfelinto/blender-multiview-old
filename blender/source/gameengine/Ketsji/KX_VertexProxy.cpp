@@ -500,7 +500,7 @@ PyObject* KX_VertexProxy::PyGetRGBA()
 
 PyObject* KX_VertexProxy::PySetRGBA(PyObject* value)
 {
-	if PyLong_Check(value) {
+	if (PyLong_Check(value)) {
 		int rgba = PyLong_AsSsize_t(value);
 		m_vertex->SetRGBA(rgba);
 		m_mesh->SetMeshModified(true);
@@ -548,7 +548,7 @@ PyObject* KX_VertexProxy::PySetUV2(PyObject* args)
 	unsigned int unit= RAS_TexVert::SECOND_UV;
 
 	PyObject* list= NULL;
-	if(!PyArg_ParseTuple(args, "O|i:setUV2", &list, &unit))
+	if (!PyArg_ParseTuple(args, "O|i:setUV2", &list, &unit))
 		return NULL;
 
 	if (!PyVecTo(list, vec))

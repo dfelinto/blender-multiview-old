@@ -83,44 +83,9 @@
 
 
 /* ******************* view3d space & buttons ************** */
-#define B_NOP		1
-#define B_REDR		2
-#define B_OBJECTPANELROT 	1007
+#define B_NOP               1
+#define B_REDR              2
 #define B_OBJECTPANELMEDIAN 1008
-#define B_ARMATUREPANEL1 	1009
-#define B_ARMATUREPANEL2 	1010
-#define B_OBJECTPANELPARENT 1011
-#define B_OBJECTPANEL		1012
-#define B_ARMATUREPANEL3 	1013
-#define B_OBJECTPANELSCALE 	1014
-#define B_OBJECTPANELDIMS 	1015
-#define B_TRANSFORMSPACEADD	1016
-#define B_TRANSFORMSPACECLEAR	1017
-#define B_SETPT_AUTO	2125
-#define B_SETPT_VECTOR	2126
-#define B_SETPT_ALIGN	2127
-#define B_SETPT_FREE	2128
-#define B_RECALCMBALL	2501
-
-#define B_WEIGHT0_0		2840
-#define B_WEIGHT1_4		2841
-#define B_WEIGHT1_2		2842
-#define B_WEIGHT3_4		2843
-#define B_WEIGHT1_0		2844
-
-#define B_OPA1_8		2845
-#define B_OPA1_4		2846
-#define B_OPA1_2		2847
-#define B_OPA3_4		2848
-#define B_OPA1_0		2849
-
-#define B_CLR_WPAINT	2850
-
-#define B_RV3D_LOCKED	2900
-#define B_RV3D_BOXVIEW	2901
-#define B_RV3D_BOXCLIP	2902
-
-#define B_IDNAME		3000
 
 /* temporary struct for storing transform properties */
 typedef struct {
@@ -128,7 +93,7 @@ typedef struct {
 	float ob_scale[3]; /* need temp space due to linked values */
 	float ob_dims[3];
 	short link_scale;
-	float ve_median[7];
+	float ve_median[9];
 	int curdef;
 	float *defweightp;
 } TransformProperties;
@@ -167,16 +132,16 @@ static float compute_scale_factor(const float ve_median, const float median)
 /* is used for both read and write... */
 static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float lim)
 {
-	uiBlock *block = (layout)? uiLayoutAbsoluteBlock(layout): NULL;
-	MDeformVert *dvert =NULL;
+	uiBlock *block = (layout) ? uiLayoutAbsoluteBlock(layout) : NULL;
+	MDeformVert *dvert = NULL;
 	TransformProperties *tfp;
-	float median[7], ve_median[7];
-	int tot, totw, totweight, totedge, totradius;
+	float median[9], ve_median[9];
+	int tot, totw, totweight, totedge, totradius, totskinradius;
 	char defstr[320];
 	PointerRNA radius_ptr;
 
-	median[0] = median[1] = median[2] = median[3] = median[4] = median[5] = median[6] = 0.0;
-	tot = totw = totweight = totedge = totradius = 0;
+	median[0] = median[1] = median[2] = median[3] = median[4] = median[5] = median[6] = median[7] = median[8] = 0.0;
+	tot = totw = totweight = totedge = totradius = totskinradius = 0;
 	defstr[0] = 0;
 
 	/* make sure we got storage */
@@ -192,15 +157,23 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		BMEdge *eed;
 		BMIter iter;
 
-		BM_ITER(eve, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+		BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+				MVertSkin *vs;
+
 				evedef = eve;
 				tot++;
 				add_v3_v3(median, eve->co);
+
+				vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
+				if (vs) {
+					add_v2_v2(median + 7, vs->radius); /* Third val not used currently. */
+					totskinradius++;
+				}
 			}
 		}
 
-		BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+		BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 			if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
 				float *f;
 
@@ -221,8 +194,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			int i, max = 1, init = 1;
 			char str[320];
 
-			for (i = 0; i<dvert->totweight; i++) {
-				dg = BLI_findlink (&ob->defbase, dvert->dw[i].def_nr);
+			for (i = 0; i < dvert->totweight; i++) {
+				dg = BLI_findlink(&ob->defbase, dvert->dw[i].def_nr);
 				if (dg) {
 					max += BLI_snprintf(str, sizeof(str), "%s %%x%d|", dg->name, dvert->dw[i].def_nr);
 					if (max < sizeof(str)) strcat(defstr, str);
@@ -246,7 +219,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		BPoint *bp;
 		BezTriple *bezt;
 		int a;
-		ListBase *nurbs = curve_editnurbs(cu);
+		ListBase *nurbs = BKE_curve_editNurbs_get(cu);
 		StructRNA *seltype = NULL;
 		void *selp = NULL;
 
@@ -281,7 +254,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			}
 			else {
 				bp = nu->bp;
-				a = nu->pntsu*nu->pntsv;
+				a = nu->pntsu * nu->pntsv;
 				while (a--) {
 					if (bp->f1 & SELECT) {
 						add_v3_v3(median, bp->vec);
@@ -339,76 +312,110 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		median[4] /= (float)totweight;
 	if (totradius)
 		median[5] /= (float)totradius;
+	if (totskinradius) {
+		median[7] /= (float)totskinradius;
+		median[8] /= (float)totskinradius;
+	}
 
 	if (v3d->flag & V3D_GLOBAL_STATS)
 		mul_m4_v3(ob->obmat, median);
 
 	if (block) { /* buttons */
 		uiBut *but;
+		int yi = 200;
+		const int buth = 20 * UI_DPI_ICON_FAC;
+		const int but_margin = 2;
 
 		memcpy(tfp->ve_median, median, sizeof(tfp->ve_median));
 
 		uiBlockBeginAlign(block);
 		if (tot == 1) {
-			uiDefBut(block, LABEL, 0, IFACE_("Vertex:"), 0, 150, 200, 20, NULL, 0, 0, 0, 0, "");
+			uiDefBut(block, LABEL, 0, IFACE_("Vertex:"), 0, yi -= buth, 200, buth, NULL, 0, 0, 0, 0, "");
 		}
 		else {
-			uiDefBut(block, LABEL, 0, IFACE_("Median:"), 0, 150, 200, 20, NULL, 0, 0, 0, 0, "");
+			uiDefBut(block, LABEL, 0, IFACE_("Median:"), 0, yi -= buth, 200, buth, NULL, 0, 0, 0, 0, "");
 		}
 
 		uiBlockBeginAlign(block);
 
 		/* Should be no need to translate these. */
-		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "X:", 0, 130, 200, 20,
-		                &(tfp->ve_median[0]), -lim, lim, 10, 3, "");
+		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "X:", 0, yi -= buth, 200, buth,
+		                &(tfp->ve_median[0]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
 		uiButSetUnitType(but, PROP_UNIT_LENGTH);
-		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Y:", 0, 110, 200, 20,
-		                &(tfp->ve_median[1]), -lim, lim, 10, 3, "");
+		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Y:", 0, yi -= buth, 200, buth,
+		                &(tfp->ve_median[1]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
 		uiButSetUnitType(but, PROP_UNIT_LENGTH);
-		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Z:", 0, 90, 200, 20,
-		                &(tfp->ve_median[2]), -lim, lim, 10, 3, "");
+		but = uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "Z:", 0, yi -= buth, 200, buth,
+		                &(tfp->ve_median[2]), -lim, lim, 10, RNA_TRANSLATION_PREC_DEFAULT, "");
 		uiButSetUnitType(but, PROP_UNIT_LENGTH);
 
 		if (totw == tot) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "W:", 0, 70, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, "W:", 0, yi -= buth, 200, buth,
 			          &(tfp->ve_median[3]), 0.01, 100.0, 1, 3, "");
 		}
 
 		uiBlockBeginAlign(block);
-		uiDefButBitS(block, TOG, V3D_GLOBAL_STATS, B_REDR, IFACE_("Global"), 0, 65, 100, 20,
+		uiDefButBitS(block, TOG, V3D_GLOBAL_STATS, B_REDR, IFACE_("Global"),
+		             0, yi -= buth + but_margin, 100, buth,
 		             &v3d->flag, 0, 0, 0, 0, "Displays global values");
-		uiDefButBitS(block, TOGN, V3D_GLOBAL_STATS, B_REDR, IFACE_("Local"), 100, 65, 100, 20,
+		uiDefButBitS(block, TOGN, V3D_GLOBAL_STATS, B_REDR, IFACE_("Local"),
+		             100, yi, 100, buth,
 		             &v3d->flag, 0, 0, 0, 0, "Displays local values");
 		uiBlockEndAlign(block);
 
 		if (totweight == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Weight:"), 0, 40, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Weight:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[4]), 0.0, 1.0, 1, 3, TIP_("Weight used for SoftBody Goal"));
 		}
 		else if (totweight > 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Weight:"), 0, 40, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Weight:"),
+			          0, yi -= buth, 200, buth,
 			          &(tfp->ve_median[4]), 0.0, 1.0, 1, 3, TIP_("Weight used for SoftBody Goal"));
 		}
 
 		if (totradius == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius:"), 0, 20, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[5]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
 		}
 		else if (totradius > 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius:"), 0, 20, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[5]), 0.0, 100.0, 1, 3, TIP_("Radius of curve control points"));
 		}
 
+		if (totskinradius == 1) {
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius X:"),
+			          0, yi -= buth + but_margin, 200, buth,
+			          &(tfp->ve_median[7]), 0.0, 100.0, 1, 3, TIP_("X radius used by Skin modifier"));
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Radius Y:"),
+			          0, yi -= buth + but_margin, 200, buth,
+			          &(tfp->ve_median[8]), 0.0, 100.0, 1, 3, TIP_("Y radius used by Skin modifier"));
+		}
+		else if (totskinradius > 1) {
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius X:"),
+			          0, yi -= buth + but_margin, 200, buth,
+			          &(tfp->ve_median[7]), 0.0, 100.0, 1, 3, TIP_("Median X radius used by Skin modifier"));
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Radius Y:"),
+			          0, yi -= buth + but_margin, 200, buth,
+			          &(tfp->ve_median[8]), 0.0, 100.0, 1, 3, TIP_("Median Y radius used by Skin modifier"));
+		}
+
 		if (totedge == 1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Crease:"), 0, 40, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Crease:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[3]), 0.0, 1.0, 1, 3, TIP_("Weight used by SubSurf modifier"));
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Bevel Weight:"), 0, 20, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Bevel Weight:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[6]), 0.0, 1.0, 1, 3, TIP_("Weight used by Bevel modifier"));
 		}
-		else if (totedge>1) {
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Crease:"), 0, 40, 200, 20,
+		else if (totedge > 1) {
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Crease:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[3]), 0.0, 1.0, 1, 3, TIP_("Weight used by SubSurf modifier"));
-			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Bevel Weight:"), 0, 20, 200, 20,
+			uiDefButF(block, NUM, B_OBJECTPANELMEDIAN, IFACE_("Mean Bevel Weight:"),
+			          0, yi -= buth + but_margin, 200, buth,
 			          &(tfp->ve_median[6]), 0.0, 1.0, 1, 3, TIP_("Weight used by Bevel modifier"));
 		}
 
@@ -429,6 +436,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		median[4] = ve_median[4] - median[4];
 		median[5] = ve_median[5] - median[5];
 		median[6] = ve_median[6] - median[6];
+		median[7] = ve_median[7] - median[7];
+		median[8] = ve_median[8] - median[8];
 
 		if (ob->type == OB_MESH) {
 			Mesh *me = ob->data;
@@ -439,13 +448,13 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 
 			if (len_v3(median) > 0.000001f) {
 
-				BM_ITER(eve, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+				BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 					if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
 						add_v3_v3(eve->co, median);
 					}
 				}
 
-				EDBM_RecalcNormals(em);
+				EDBM_mesh_normals_update(em);
 			}
 
 			if (median[3] != 0.0f) {
@@ -453,7 +462,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				const float sca = compute_scale_factor(ve_median[3], median[3]);
 
 				if (ELEM(sca, 0.0f, 1.0f)) {
-					BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
 							float *crease = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
 							if (crease) {
@@ -463,7 +472,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					}
 				}
 				else if (sca > 0.0f) {
-					BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
 							float *crease = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
 							if (crease) {
@@ -474,7 +483,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					}
 				}
 				else {
-					BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
 							float *crease = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_CREASE);
 							if (crease) {
@@ -491,7 +500,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				const float sca = compute_scale_factor(ve_median[6], median[6]);
 
 				if (ELEM(sca, 0.0f, 1.0f)) {
-					BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
 							float *bweight = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
 							if (bweight) {
@@ -501,7 +510,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					}
 				}
 				else if (sca > 0.0f) {
-					BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
 							float *bweight = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
 							if (bweight) {
@@ -512,7 +521,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					}
 				}
 				else {
-					BM_ITER(eed, &iter, bm, BM_EDGES_OF_MESH, NULL) {
+					BM_ITER_MESH (eed, &iter, bm, BM_EDGES_OF_MESH) {
 						if (BM_elem_flag_test(eed, BM_ELEM_SELECT) && !BM_elem_flag_test(eed, BM_ELEM_HIDDEN)) {
 							float *bweight = (float *)CustomData_bmesh_get(&bm->edata, eed->head.data, CD_BWEIGHT);
 							if (bweight) {
@@ -523,7 +532,56 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					}
 				}
 			}
-			EDBM_RecalcNormals(em);
+
+			if (median[7] != 0.0f) {
+				BMVert *eve;
+				/* That one is not clamped to [0.0, 1.0]. */
+				float sca = ve_median[7];
+				if (ve_median[7] - median[7] == 0.0f) {
+					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
+							if (vs)
+								vs->radius[0] = sca;
+						}
+					}
+				}
+				else {
+					sca /= (ve_median[7] - median[7]);
+					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
+							if (vs)
+								vs->radius[0] *= sca;
+						}
+					}
+				}
+			}
+			if (median[8] != 0.0f) {
+				BMVert *eve;
+				/* That one is not clamped to [0.0, 1.0]. */
+				float sca = ve_median[8];
+				if (ve_median[8] - median[8] == 0.0f) {
+					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
+							if (vs)
+								vs->radius[1] = sca;
+						}
+					}
+				}
+				else {
+					sca /= (ve_median[8] - median[8]);
+					BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
+						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+							MVertSkin *vs = (MVertSkin *)CustomData_bmesh_get(&bm->vdata, eve->head.data, CD_MVERT_SKIN);
+							if (vs)
+								vs->radius[1] *= sca;
+						}
+					}
+				}
+			}
+			EDBM_mesh_normals_update(em);
 		}
 		else if (ELEM(ob->type, OB_CURVE, OB_SURF)) {
 			Curve *cu = ob->data;
@@ -531,7 +589,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			BPoint *bp;
 			BezTriple *bezt;
 			int a;
-			ListBase *nurbs = curve_editnurbs(cu);
+			ListBase *nurbs = BKE_curve_editNurbs_get(cu);
 			const float scale_w = compute_scale_factor(ve_median[4], median[4]);
 
 			nu = nurbs->first;
@@ -571,7 +629,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 				}
 				else {
 					bp = nu->bp;
-					a = nu->pntsu*nu->pntsv;
+					a = nu->pntsu * nu->pntsv;
 					while (a--) {
 						if (bp->f1 & SELECT) {
 							add_v3_v3(bp->vec, median);
@@ -593,8 +651,8 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 						bp++;
 					}
 				}
-				test2DNurb(nu);
-				testhandlesNurb(nu); /* test for bezier too */
+				BKE_nurb_test2D(nu);
+				BKE_nurb_handles_test(nu); /* test for bezier too */
 
 				nu = nu->next;
 			}
@@ -605,7 +663,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 			int a;
 			const float scale_w = compute_scale_factor(ve_median[4], median[4]);
 
-			a = lt->editlatt->latt->pntsu*lt->editlatt->latt->pntsv*lt->editlatt->latt->pntsw;
+			a = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
 			bp = lt->editlatt->latt->def;
 			while (a--) {
 				if (bp->f1 & SELECT) {
@@ -617,7 +675,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 						}
 						else {
 							bp->weight = scale_w > 0.0f ? bp->weight * scale_w :
-							                              1.0f + ((1.0f - bp->weight) * scale_w);
+							             1.0f + ((1.0f - bp->weight) * scale_w);
 							CLAMP(bp->weight, 0.0f, 1.0f);
 						}
 					}
@@ -713,7 +771,7 @@ static void vgroup_copy_active_to_sel(Object *ob)
 		MDeformVert *dvert;
 		int index = 0;
 
-		BM_ITER(eve, &iter, em->bm, BM_VERTS_OF_MESH, NULL) {
+		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
 				dvert = CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
 				if (dvert) {
@@ -820,7 +878,7 @@ static void do_view3d_vgroup_buttons(bContext *C, void *UNUSED(arg), int event)
 
 	/* default for now */
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-	WM_event_add_notifier(C, NC_GEOM|ND_DATA, ob->data);
+	WM_event_add_notifier(C, NC_GEOM | ND_DATA, ob->data);
 }
 
 static int view3d_panel_vgroup_poll(const bContext *C, PanelType *UNUSED(pt))
@@ -856,13 +914,13 @@ static void view3d_panel_vgroup(const bContext *C, Panel *pa)
 
 		uiBlockSetHandleFunc(block, do_view3d_vgroup_buttons, NULL);
 
-		col = uiLayoutColumn(pa->layout, 0);
+		col = uiLayoutColumn(pa->layout, FALSE);
 		block = uiLayoutAbsoluteBlock(col);
 
 		uiBlockBeginAlign(block);
 
 		for (i = dv->totweight; i != 0; i--, dw++) {
-			dg = BLI_findlink (&ob->defbase, dw->def_nr);
+			dg = BLI_findlink(&ob->defbase, dw->def_nr);
 			if (dg) {
 				uiDefButF(block, NUM, B_VGRP_PNL_EDIT_SINGLE + dw->def_nr, dg->name, 0, yco, 180, 20,
 				          &dw->weight, 0.0, 1.0, 1, 3, "");
@@ -878,7 +936,7 @@ static void view3d_panel_vgroup(const bContext *C, Panel *pa)
 		uiDefBut(block, BUT, B_VGRP_PNL_NORMALIZE, IFACE_("Normalize"), 0, yco, 100, 20,
 		         NULL, 0, 0, 0, 0, TIP_("Normalize active vertex weights"));
 		uiDefBut(block, BUT, B_VGRP_PNL_COPY, IFACE_("Copy"), 100, yco, 100, 20,
-		         NULL, 0, 0, 0, 0, TIP_("Copy active vertex to other seleted verts"));
+		         NULL, 0, 0, 0, 0, TIP_("Copy active vertex to other selected verts"));
 		uiBlockEndAlign(block);
 	}
 }
@@ -887,7 +945,7 @@ static void v3d_transform_butsR(uiLayout *layout, PointerRNA *ptr)
 {
 	uiLayout *split, *colsub;
 
-	split = uiLayoutSplit(layout, 0.8, 0);
+	split = uiLayoutSplit(layout, 0.8f, FALSE);
 
 	if (ptr->type == &RNA_PoseBone) {
 		PointerRNA boneptr;
@@ -897,30 +955,30 @@ static void v3d_transform_butsR(uiLayout *layout, PointerRNA *ptr)
 		bone = boneptr.data;
 		uiLayoutSetActive(split, !(bone->parent && bone->flag & BONE_CONNECTED));
 	}
-	colsub = uiLayoutColumn(split, 1);
+	colsub = uiLayoutColumn(split, TRUE);
 	uiItemR(colsub, ptr, "location", 0, NULL, ICON_NONE);
-	colsub = uiLayoutColumn(split, 1);
+	colsub = uiLayoutColumn(split, TRUE);
 	uiItemL(colsub, "", ICON_NONE);
 	uiItemR(colsub, ptr, "lock_location", UI_ITEM_R_TOGGLE | UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 
-	split = uiLayoutSplit(layout, 0.8, 0);
+	split = uiLayoutSplit(layout, 0.8f, FALSE);
 
 	switch (RNA_enum_get(ptr, "rotation_mode")) {
 		case ROT_MODE_QUAT: /* quaternion */
-			colsub = uiLayoutColumn(split, 1);
+			colsub = uiLayoutColumn(split, TRUE);
 			uiItemR(colsub, ptr, "rotation_quaternion", 0, IFACE_("Rotation"), ICON_NONE);
-			colsub = uiLayoutColumn(split, 1);
+			colsub = uiLayoutColumn(split, TRUE);
 			uiItemR(colsub, ptr, "lock_rotations_4d", UI_ITEM_R_TOGGLE, IFACE_("4L"), ICON_NONE);
 			if (RNA_boolean_get(ptr, "lock_rotations_4d"))
-				uiItemR(colsub, ptr, "lock_rotation_w", UI_ITEM_R_TOGGLE+UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
+				uiItemR(colsub, ptr, "lock_rotation_w", UI_ITEM_R_TOGGLE + UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 			else
 				uiItemL(colsub, "", ICON_NONE);
 			uiItemR(colsub, ptr, "lock_rotation", UI_ITEM_R_TOGGLE | UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 			break;
 		case ROT_MODE_AXISANGLE: /* axis angle */
-			colsub = uiLayoutColumn(split, 1);
+			colsub = uiLayoutColumn(split, TRUE);
 			uiItemR(colsub, ptr, "rotation_axis_angle", 0, IFACE_("Rotation"), ICON_NONE);
-			colsub = uiLayoutColumn(split, 1);
+			colsub = uiLayoutColumn(split, TRUE);
 			uiItemR(colsub, ptr, "lock_rotations_4d", UI_ITEM_R_TOGGLE, IFACE_("4L"), ICON_NONE);
 			if (RNA_boolean_get(ptr, "lock_rotations_4d"))
 				uiItemR(colsub, ptr, "lock_rotation_w", UI_ITEM_R_TOGGLE | UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
@@ -929,19 +987,19 @@ static void v3d_transform_butsR(uiLayout *layout, PointerRNA *ptr)
 			uiItemR(colsub, ptr, "lock_rotation", UI_ITEM_R_TOGGLE | UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 			break;
 		default: /* euler rotations */
-			colsub = uiLayoutColumn(split, 1);
+			colsub = uiLayoutColumn(split, TRUE);
 			uiItemR(colsub, ptr, "rotation_euler", 0, IFACE_("Rotation"), ICON_NONE);
-			colsub = uiLayoutColumn(split, 1);
+			colsub = uiLayoutColumn(split, TRUE);
 			uiItemL(colsub, "", ICON_NONE);
 			uiItemR(colsub, ptr, "lock_rotation", UI_ITEM_R_TOGGLE | UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 			break;
 	}
 	uiItemR(layout, ptr, "rotation_mode", 0, "", ICON_NONE);
 
-	split = uiLayoutSplit(layout, 0.8, 0);
-	colsub = uiLayoutColumn(split, 1);
+	split = uiLayoutSplit(layout, 0.8f, FALSE);
+	colsub = uiLayoutColumn(split, TRUE);
 	uiItemR(colsub, ptr, "scale", 0, NULL, ICON_NONE);
-	colsub = uiLayoutColumn(split, 1);
+	colsub = uiLayoutColumn(split, TRUE);
 	uiItemL(colsub, "", ICON_NONE);
 	uiItemR(colsub, ptr, "lock_scale", UI_ITEM_R_TOGGLE | UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 
@@ -957,120 +1015,31 @@ static void v3d_transform_butsR(uiLayout *layout, PointerRNA *ptr)
 
 static void v3d_posearmature_buts(uiLayout *layout, Object *ob)
 {
-/*	uiBlock *block = uiLayoutGetBlock(layout); */
-/*	bArmature *arm; */
 	bPoseChannel *pchan;
-/*	TransformProperties *tfp = v3d->properties_storage; */
 	PointerRNA pchanptr;
 	uiLayout *col;
-/*	uiLayout *row; */
-/*	uiBut *but; */
 
-	pchan = get_active_posechannel(ob);
+	pchan = BKE_pose_channel_active(ob);
 
-/*	row = uiLayoutRow(layout, 0); */
-
-	if (!pchan)	{
+	if (!pchan) {
 		uiItemL(layout, IFACE_("No Bone Active"), ICON_NONE);
 		return;
 	}
 
 	RNA_pointer_create(&ob->id, &RNA_PoseBone, pchan, &pchanptr);
 
-	col = uiLayoutColumn(layout, 0);
+	col = uiLayoutColumn(layout, FALSE);
 
 	/* XXX: RNA buts show data in native types (i.e. quats, 4-component axis/angle, etc.)
 	 * but old-school UI shows in eulers always. Do we want to be able to still display in Eulers?
 	 * Maybe needs RNA/ui options to display rotations as different types... */
 	v3d_transform_butsR(col, &pchanptr);
-
-#if 0 /* TODO: delete this? */
-	uiLayoutAbsoluteBlock(layout);
-
-	if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-		float quat[4];
-		/* convert to euler, passing through quats... */
-		axis_angle_to_quat(quat, pchan->rotAxis, pchan->rotAngle);
-		quat_to_eul( tfp->ob_eul,quat);
-	}
-	else if (pchan->rotmode == ROT_MODE_QUAT)
-		quat_to_eul( tfp->ob_eul,pchan->quat);
-	else
-		copy_v3_v3(tfp->ob_eul, pchan->eul);
-	tfp->ob_eul[0]*= RAD2DEGF(1.0f);
-	tfp->ob_eul[1]*= RAD2DEGF(1.0f);
-	tfp->ob_eul[2]*= RAD2DEGF(1.0f);
-
-	uiDefBut(block, LABEL, 0, "Location:", 0, 240, 100, 20, 0, 0, 0, 0, 0, "");
-	uiBlockBeginAlign(block);
-
-	but= uiDefButF(block, NUM, B_ARMATUREPANEL2, "X:",	0, 220, 120, 19, pchan->loc, -lim, lim, 100, 3, "");
-	uiButSetUnitType(but, PROP_UNIT_LENGTH);
-	but= uiDefButF(block, NUM, B_ARMATUREPANEL2, "Y:",	0, 200, 120, 19, pchan->loc+1, -lim, lim, 100, 3, "");
-	uiButSetUnitType(but, PROP_UNIT_LENGTH);
-	but= uiDefButF(block, NUM, B_ARMATUREPANEL2, "Z:",	0, 180, 120, 19, pchan->loc+2, -lim, lim, 100, 3, "");
-	uiButSetUnitType(but, PROP_UNIT_LENGTH);
-	uiBlockEndAlign(block);
-
-	uiBlockBeginAlign(block);
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_LOCX, B_REDR, ICON_UNLOCKED,	125, 220, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects X Location value from being Transformed");
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_LOCY, B_REDR, ICON_UNLOCKED,	125, 200, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects Y Location value from being Transformed");
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_LOCZ, B_REDR, ICON_UNLOCKED,	125, 180, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects Z Location value from being Transformed");
-	uiBlockEndAlign(block);
-
-	uiDefBut(block, LABEL, 0, "Rotation:",			0, 160, 100, 20, 0, 0, 0, 0, 0, "");
-	uiBlockBeginAlign(block);
-	uiDefButF(block, NUM, B_ARMATUREPANEL3, "X:",	0, 140, 120, 19, tfp->ob_eul, -1000.0, 1000.0, 100, 3, "");
-	uiDefButF(block, NUM, B_ARMATUREPANEL3, "Y:",	0, 120, 120, 19, tfp->ob_eul+1, -1000.0, 1000.0, 100, 3, "");
-	uiDefButF(block, NUM, B_ARMATUREPANEL3, "Z:",	0, 100, 120, 19, tfp->ob_eul+2, -1000.0, 1000.0, 100, 3, "");
-	uiBlockEndAlign(block);
-
-	uiBlockBeginAlign(block);
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_ROTX, B_REDR, ICON_UNLOCKED,	125, 140, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects X Rotation value from being Transformed");
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_ROTY, B_REDR, ICON_UNLOCKED,	125, 120, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects Y Rotation value from being Transformed");
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_ROTZ, B_REDR, ICON_UNLOCKED,	125, 100, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects Z Rotation value from being Transformed");
-	uiBlockEndAlign(block);
-
-	uiDefBut(block, LABEL, 0, "Scale:",				0, 80, 100, 20, 0, 0, 0, 0, 0, "");
-	uiBlockBeginAlign(block);
-	uiDefButF(block, NUM, B_ARMATUREPANEL2, "X:",	0, 60, 120, 19, pchan->size, -lim, lim, 10, 3, "");
-	uiDefButF(block, NUM, B_ARMATUREPANEL2, "Y:",	0, 40, 120, 19, pchan->size+1, -lim, lim, 10, 3, "");
-	uiDefButF(block, NUM, B_ARMATUREPANEL2, "Z:",	0, 20, 120, 19, pchan->size+2, -lim, lim, 10, 3, "");
-	uiBlockEndAlign(block);
-
-	uiBlockBeginAlign(block);
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_SCALEX, B_REDR, ICON_UNLOCKED,	125, 60, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects X Scale value from being Transformed");
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_SCALEY, B_REDR, ICON_UNLOCKED,	125, 40, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects Y Scale value from being Transformed");
-	uiDefIconButBitS(block, ICONTOG, OB_LOCK_SCALEZ, B_REDR, ICON_UNLOCKED,	125, 20, 25, 19, &(pchan->protectflag), 0, 0, 0, 0, "Protects z Scale value from being Transformed");
-	uiBlockEndAlign(block);
-#endif
 }
-
-/* assumes armature editmode */
-#if 0
-static void validate_editbonebutton_cb(bContext *C, void *bonev, void *namev)
-{
-	EditBone *eBone = bonev;
-	char oldname[sizeof(eBone->name)], newname[sizeof(eBone->name)];
-
-	/* need to be on the stack */
-	BLI_strncpy(newname, eBone->name, sizeof(eBone->name));
-	BLI_strncpy(oldname, (char *)namev, sizeof(eBone->name));
-	/* restore */
-	BLI_strncpy(eBone->name, oldname, sizeof(eBone->name));
-
-	ED_armature_bone_rename(CTX_data_edit_object(C)->data, oldname, newname);      /* editarmature.c */
-	WM_event_add_notifier(C, NC_OBJECT | ND_BONE_SELECT, CTX_data_edit_object(C)); /* XXX fix */
-}
-#endif
 
 static void v3d_editarmature_buts(uiLayout *layout, Object *ob)
 {
-/*	uiBlock *block = uiLayoutGetBlock(layout); */
 	bArmature *arm = ob->data;
 	EditBone *ebone;
-/*	TransformProperties *tfp = v3d->properties_storage; */
-/*	uiLayout *row; */
 	uiLayout *col;
 	PointerRNA eboneptr;
 
@@ -1080,12 +1049,12 @@ static void v3d_editarmature_buts(uiLayout *layout, Object *ob)
 		uiItemL(layout, IFACE_("Nothing selected"), ICON_NONE);
 		return;
 	}
-/*	row = uiLayoutRow(layout, 0); */
+
 	RNA_pointer_create(&arm->id, &RNA_EditBone, ebone, &eboneptr);
 
-	col = uiLayoutColumn(layout, 0);
+	col = uiLayoutColumn(layout, FALSE);
 	uiItemR(col, &eboneptr, "head", 0, NULL, ICON_NONE);
-	if (ebone->parent && ebone->flag & BONE_CONNECTED ) {
+	if (ebone->parent && ebone->flag & BONE_CONNECTED) {
 		PointerRNA parptr = RNA_pointer_get(&eboneptr, "parent");
 		uiItemR(col, &parptr, "tail_radius", 0, IFACE_("Radius (Parent)"), ICON_NONE);
 	}
@@ -1104,7 +1073,6 @@ static void v3d_editmetaball_buts(uiLayout *layout, Object *ob)
 {
 	PointerRNA mbptr, ptr;
 	MetaBall *mball = ob->data;
-/*	uiLayout *row; */
 	uiLayout *col;
 
 	if (!mball || !(mball->lastelem))
@@ -1112,11 +1080,9 @@ static void v3d_editmetaball_buts(uiLayout *layout, Object *ob)
 
 	RNA_pointer_create(&mball->id, &RNA_MetaBall, mball, &mbptr);
 
-/*	row = uiLayoutRow(layout, 0); */
-
 	RNA_pointer_create(&mball->id, &RNA_MetaElement, mball->lastelem, &ptr);
 
-	col = uiLayoutColumn(layout, 0);
+	col = uiLayoutColumn(layout, FALSE);
 	uiItemR(col, &ptr, "co", 0, NULL, ICON_NONE);
 
 	uiItemR(col, &ptr, "radius", 0, NULL, ICON_NONE);
@@ -1124,7 +1090,7 @@ static void v3d_editmetaball_buts(uiLayout *layout, Object *ob)
 
 	uiItemR(col, &ptr, "type", 0, NULL, ICON_NONE);
 
-	col = uiLayoutColumn(layout, 1);
+	col = uiLayoutColumn(layout, TRUE);
 	switch (RNA_enum_get(&ptr, "type")) {
 		case MB_BALL:
 			break;
@@ -1154,169 +1120,26 @@ static void v3d_editmetaball_buts(uiLayout *layout, Object *ob)
 
 static void do_view3d_region_buttons(bContext *C, void *UNUSED(index), int event)
 {
-	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
-/*	Object *obedit = CTX_data_edit_object(C); */
 	View3D *v3d = CTX_wm_view3d(C);
-/*	BoundBox *bb; */
 	Object *ob = OBACT;
-	TransformProperties *tfp = v3d->properties_storage;
 
 	switch (event) {
 
-	case B_REDR:
-		ED_area_tag_redraw(CTX_wm_area(C));
-		return; /* no notifier! */
+		case B_REDR:
+			ED_area_tag_redraw(CTX_wm_area(C));
+			return; /* no notifier! */
 
-	case B_OBJECTPANEL:
-		DAG_id_tag_update(&ob->id, OB_RECALC_OB);
-		break;
-
-	case B_OBJECTPANELMEDIAN:
-		if (ob) {
-			v3d_editvertex_buts(NULL, v3d, ob, 1.0);
-			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-		}
-		break;
-		/* note; this case also used for parbone */
-
-	case B_OBJECTPANELPARENT:
-		if (ob) {
-			if (ob->id.lib || BKE_object_parent_loop_check(ob->parent, ob))
-				ob->parent = NULL;
-			else {
-				DAG_scene_sort(bmain, scene);
-				DAG_id_tag_update(&ob->id, OB_RECALC_OB);
-			}
-		}
-		break;
-
-	case B_ARMATUREPANEL3:  /* rotate button on channel */
-		{
-			bPoseChannel *pchan;
-			float eul[3];
-
-			pchan = get_active_posechannel(ob);
-			if (!pchan)
-				return;
-
-			/* make a copy to eul[3], to allow TAB on buttons to work */
-			eul[0] = DEG2RADF(tfp->ob_eul[0]);
-			eul[1] = DEG2RADF(tfp->ob_eul[1]);
-			eul[2] = DEG2RADF(tfp->ob_eul[2]);
-
-			if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-				float quat[4];
-				/* convert to axis-angle, passing through quats  */
-				eul_to_quat(quat, eul);
-				quat_to_axis_angle(pchan->rotAxis, &pchan->rotAngle, quat);
-			}
-			else if (pchan->rotmode == ROT_MODE_QUAT)
-				eul_to_quat(pchan->quat, eul);
-			else
-				copy_v3_v3(pchan->eul, eul);
-		}
-		/* no break, pass on */
-
-	case B_ARMATUREPANEL2:
-		ob->pose->flag |= (POSE_LOCKED|POSE_DO_UNLOCK);
-		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-		break;
-
-	case B_TRANSFORMSPACEADD:
-		{
-			char names[sizeof(((TransformOrientation *)NULL)->name)] = "";
-			BIF_createTransformOrientation(C, NULL, names, 1, 0);
-		}
-		break;
-
-	case B_TRANSFORMSPACECLEAR:
-		BIF_clearTransformOrientation(C);
-		break;
-
-#if 0 /* XXX */
-	case B_WEIGHT0_0:
-		wpaint->weight = 0.0f;
-		break;
-
-	case B_WEIGHT1_4:
-		wpaint->weight = 0.25f;
-		break;
-	case B_WEIGHT1_2:
-		wpaint->weight = 0.5f;
-		break;
-	case B_WEIGHT3_4:
-		wpaint->weight = 0.75f;
-		break;
-	case B_WEIGHT1_0:
-		wpaint->weight = 1.0f;
-		break;
-
-	case B_OPA1_8:
-		wpaint->a = 0.125f;
-		break;
-	case B_OPA1_4:
-		wpaint->a = 0.25f;
-		break;
-	case B_OPA1_2:
-		wpaint->a = 0.5f;
-		break;
-	case B_OPA3_4:
-		wpaint->a = 0.75f;
-		break;
-	case B_OPA1_0:
-		wpaint->a = 1.0f;
-		break;
-#endif
-	case B_CLR_WPAINT:
-/*		if (!multires_level1_test()) { */
-		{
-			bDeformGroup *defGroup = BLI_findlink(&ob->defbase, ob->actdef-1);
-			if (defGroup) {
-				Mesh *me = ob->data;
-				int a;
-				for (a = 0; a < me->totvert; a++)
-					ED_vgroup_vert_remove (ob, defGroup, a);
+		case B_OBJECTPANELMEDIAN:
+			if (ob) {
+				v3d_editvertex_buts(NULL, v3d, ob, 1.0);
 				DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			}
-		}
-		break;
-
-	case B_RV3D_LOCKED:
-	case B_RV3D_BOXVIEW:
-	case B_RV3D_BOXCLIP:
-		{
-			ScrArea *sa = CTX_wm_area(C);
-			ARegion *ar = sa->regionbase.last;
-			RegionView3D *rv3d;
-			short viewlock;
-
-			ar = ar->prev;
-			rv3d = ar->regiondata;
-			viewlock = rv3d->viewlock;
-
-			if (!(viewlock & RV3D_LOCKED))
-				viewlock = 0;
-			else if (!(viewlock & RV3D_BOXVIEW))
-				viewlock &= ~RV3D_BOXCLIP;
-
-			for (; ar; ar = ar->prev) {
-				if (ar->alignment == RGN_ALIGN_QSPLIT) {
-					rv3d = ar->regiondata;
-					rv3d->viewlock = viewlock;
-				}
-			}
-
-			if (rv3d->viewlock & RV3D_BOXVIEW)
-				view3d_boxview_copy(sa, sa->regionbase.last);
-
-			ED_area_tag_redraw(sa);
-		}
-		break;
+			break;
 	}
 
 	/* default for now */
-	WM_event_add_notifier(C, NC_SPACE|ND_SPACE_VIEW3D, v3d);
+	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
 }
 
 static void view3d_panel_object(const bContext *C, Panel *pa)
@@ -1325,40 +1148,21 @@ static void view3d_panel_object(const bContext *C, Panel *pa)
 	Scene *scene = CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
 	View3D *v3d = CTX_wm_view3d(C);
-	/* uiBut *bt; */
 	Object *ob = OBACT;
-	/* TransformProperties *tfp; */ /* UNUSED */
 	PointerRNA obptr;
-	uiLayout *col /* , *row */ /* UNUSED */;
+	uiLayout *col;
 	float lim;
 
 	if (ob == NULL)
 		return;
-
-	/* make sure we got storage */
-#if 0
-	if (v3d->properties_storage == NULL)
-		v3d->properties_storage = MEM_callocN(sizeof(TransformProperties), "TransformProperties");
-	tfp = v3d->properties_storage;
-	
-	/* XXX	uiSetButLock(object_is_libdata(ob), ERROR_LIBDATA_MESSAGE); */
-
-	if (ob->mode & (OB_MODE_VERTEX_PAINT|OB_MODE_WEIGHT_PAINT|OB_MODE_TEXTURE_PAINT)) {
-	}
-	else {
-		if ((ob->mode & OB_MODE_PARTICLE_EDIT) == 0) {
-			uiBlockEndAlign(block);
-		}
-	}
-#endif
 
 	lim = 10000.0f * MAX2(1.0f, v3d->grid);
 
 	block = uiLayoutGetBlock(pa->layout);
 	uiBlockSetHandleFunc(block, do_view3d_region_buttons, NULL);
 
-	col = uiLayoutColumn(pa->layout, 0);
-	/* row = uiLayoutRow(col, 0); */ /* UNUSED */
+	col = uiLayoutColumn(pa->layout, FALSE);
+	/* row = uiLayoutRow(col, FALSE); */ /* UNUSED */
 	RNA_id_pointer_create(&ob->id, &obptr);
 
 	if (ob == obedit) {
@@ -1376,33 +1180,6 @@ static void view3d_panel_object(const bContext *C, Panel *pa)
 		v3d_transform_butsR(col, &obptr);
 	}
 }
-
-#if 0
-static void view3d_panel_preview(bContext *C, ARegion *ar, short cntrl) /* VIEW3D_HANDLER_PREVIEW */
-{
-	uiBlock *block;
-	View3D *v3d = sa->spacedata.first;
-	int ofsx, ofsy;
-
-	block = uiBeginBlock(C, ar, __func__, UI_EMBOSS);
-	uiPanelControl(UI_PNL_SOLID | UI_PNL_CLOSE | UI_PNL_SCALE | cntrl);
-	uiSetPanelHandler(VIEW3D_HANDLER_PREVIEW);  /* for close and esc */
-
-	ofsx = -150 + (sa->winx/2) / v3d->blockscale;
-	ofsy = -100 + (sa->winy/2) / v3d->blockscale;
-	if (uiNewPanel(C, ar, block, "Preview", "View3d", ofsx, ofsy, 300, 200) == 0)
-		return;
-
-	uiBlockSetDrawExtraFunc(block, BIF_view3d_previewdraw);
-
-	if (scene->recalc & SCE_PRV_CHANGED) {
-		scene->recalc &= ~SCE_PRV_CHANGED;
-		/* printf("found recalc\n"); */
-		BIF_view3d_previewrender_free(sa->spacedata.first);
-		BIF_preview_changed(0);
-	}
-}
-#endif
 
 void view3d_buttons_register(ARegionType *art)
 {
@@ -1426,8 +1203,6 @@ void view3d_buttons_register(ARegionType *art)
 	pt->draw = view3d_panel_vgroup;
 	pt->poll = view3d_panel_vgroup_poll;
 	BLI_addtail(&art->paneltypes, pt);
-
-	/* XXX view3d_panel_preview(C, ar, 0); */
 }
 
 static int view3d_properties(bContext *C, wmOperator *UNUSED(op))

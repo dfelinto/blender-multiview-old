@@ -58,6 +58,7 @@ dict_custom = {
     "tooltip",
 
     # general computer terms
+    "contructor",
     "unicode",
     "jitter",
     "quantized",
@@ -82,6 +83,9 @@ dict_custom = {
     "nurbs",
     "compositing",
     "deinterlace",
+    "shader",
+    "shaders",
+    "centroid",
 
     # blender terms
     "bpy",

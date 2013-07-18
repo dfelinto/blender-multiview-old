@@ -1,3 +1,20 @@
+/*
+ * Copyright 2011, Blender Foundation.
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ */
 
 #ifndef KERNEL_TEX
 #define KERNEL_TEX(type, ttype, name)
@@ -6,7 +23,6 @@
 #ifndef KERNEL_IMAGE_TEX
 #define KERNEL_IMAGE_TEX(type, ttype, name)
 #endif
-
 
 /* bvh */
 KERNEL_TEX(float4, texture_float4, __bvh_nodes)
@@ -36,9 +52,13 @@ KERNEL_TEX(float4, texture_float4, __light_data)
 KERNEL_TEX(float2, texture_float2, __light_background_marginal_cdf)
 KERNEL_TEX(float2, texture_float2, __light_background_conditional_cdf)
 
+/* particles */
+KERNEL_TEX(float4, texture_float4, __particles)
+
 /* shaders */
 KERNEL_TEX(uint4, texture_uint4, __svm_nodes)
 KERNEL_TEX(uint, texture_uint, __shader_flag)
+KERNEL_TEX(uint, texture_uint, __object_flag)
 
 /* camera/film */
 KERNEL_TEX(float, texture_float, __filter_table)
@@ -149,6 +169,10 @@ KERNEL_IMAGE_TEX(float4, texture_image_float4, __tex_image_float_096)
 KERNEL_IMAGE_TEX(float4, texture_image_float4, __tex_image_float_097)
 KERNEL_IMAGE_TEX(float4, texture_image_float4, __tex_image_float_098)
 KERNEL_IMAGE_TEX(float4, texture_image_float4, __tex_image_float_099)
+
+/* packed image (opencl) */
+KERNEL_TEX(uchar4, texture_uchar4, __tex_image_packed)
+KERNEL_TEX(uint4, texture_uint4, __tex_image_packed_info)
 
 #undef KERNEL_TEX
 #undef KERNEL_IMAGE_TEX

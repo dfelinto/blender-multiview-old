@@ -36,27 +36,27 @@
 /* **************** Premul and Key Alpha Convert ******************** */
 
 static bNodeSocketTemplate cmp_node_premulkey_in[]= {
-	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
+	{	SOCK_RGBA, 1, N_("Image"),			1.0f, 1.0f, 1.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_premulkey_out[]= {
-	{	SOCK_RGBA, 0, "Image"},
+	{	SOCK_RGBA, 0, N_("Image")},
 	{	-1, 0, ""	}
 };
 
 static void node_composit_exec_premulkey(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
 {
-	if(out[0]->hasoutput==0)
+	if (out[0]->hasoutput==0)
 		return;
 	
-	if(in[0]->data) {
+	if (in[0]->data) {
 		CompBuf *stackbuf, *cbuf= typecheck_compbuf(in[0]->data, CB_RGBA);
 
 		stackbuf= dupalloc_compbuf(cbuf);
 		premul_compbuf(stackbuf, node->custom1 == 1);
 
 		out[0]->data = stackbuf;
-		if(cbuf != in[0]->data)
+		if (cbuf != in[0]->data)
 			free_compbuf(cbuf);
 	}
 }

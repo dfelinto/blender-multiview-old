@@ -35,13 +35,13 @@
 
 /* **************** CURVE VEC  ******************** */
 static bNodeSocketTemplate sh_node_curve_vec_in[]= {
-	{	SOCK_FLOAT, 0, "Fac",	1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
-	{	SOCK_VECTOR, 1, "Vector",	0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_NONE},
+	{	SOCK_FLOAT, 0, N_("Fac"),	1.0f, 0.0f, 1.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
+	{	SOCK_VECTOR, 1, N_("Vector"),	0.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate sh_node_curve_vec_out[]= {
-	{	SOCK_VECTOR, 0, "Vector"},
+	{	SOCK_VECTOR, 0, N_("Vector")},
 	{	-1, 0, ""	}
 };
 
@@ -88,13 +88,13 @@ void register_node_type_sh_curve_vec(bNodeTreeType *ttype)
 
 /* **************** CURVE RGB  ******************** */
 static bNodeSocketTemplate sh_node_curve_rgb_in[]= {
-	{	SOCK_FLOAT, 1, "Fac",	1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_FACTOR},
-	{	SOCK_RGBA, 1, "Color",	0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_FLOAT, 1, N_("Fac"),	1.0f, 0.0f, 0.0f, 1.0f, -1.0f, 1.0f, PROP_FACTOR},
+	{	SOCK_RGBA, 1, N_("Color"),	0.0f, 0.0f, 0.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
 static bNodeSocketTemplate sh_node_curve_rgb_out[]= {
-	{	SOCK_RGBA, 0, "Color"},
+	{	SOCK_RGBA, 0, N_("Color")},
 	{	-1, 0, ""	}
 };
 
@@ -106,7 +106,7 @@ static void node_shader_exec_curve_rgb(void *UNUSED(data), bNode *node, bNodeSta
 	/* stack order output: vec */
 	nodestack_get_vec(vec, SOCK_VECTOR, in[1]);
 	curvemapping_evaluateRGBF(node->storage, out[0]->vec, vec);
-	if(in[0]->vec[0] != 1.0f) {
+	if (in[0]->vec[0] != 1.0f) {
 		interp_v3_v3v3(out[0]->vec, vec, out[0]->vec, *in[0]->vec);
 	}
 }

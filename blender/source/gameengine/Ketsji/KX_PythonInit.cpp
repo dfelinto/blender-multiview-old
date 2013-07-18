@@ -524,7 +524,7 @@ static PyObject* gPyGetBlendFileList(PyObject*, PyObject* args)
 		BLI_split_dir_part(gp_GamePythonPath, cpath, sizeof(cpath));
 	}
 
-	if((dp  = opendir(cpath)) == NULL) {
+	if ((dp  = opendir(cpath)) == NULL) {
 		/* todo, show the errno, this shouldnt happen anyway if the blendfile is readable */
 		fprintf(stderr, "Could not read directoty (%s) failed, code %d (%s)\n", cpath, errno, strerror(errno));
 		return list;
@@ -608,7 +608,7 @@ static PyObject *pyPrintExt(PyObject *,PyObject *,PyObject *)
 	support= GLEW_ARB_vertex_shader;
 	pprint(" GL_ARB_vertex_shader supported?        "<< (support?"yes.":"no."));
 	count = 1;
-	if(support){
+	if (support) {
 		pprint(" ----------Details----------");
 		int max=0;
 		glGetIntegerv(GL_MAX_VERTEX_UNIFORM_COMPONENTS_ARB, (GLint*)&max);
@@ -628,7 +628,7 @@ static PyObject *pyPrintExt(PyObject *,PyObject *,PyObject *)
 	support=GLEW_ARB_fragment_shader;
 	pprint(" GL_ARB_fragment_shader supported?      "<< (support?"yes.":"no."));
 	count = 1;
-	if(support){
+	if (support) {
 		pprint(" ----------Details----------");
 		int max=0;
 		glGetIntegerv(GL_MAX_FRAGMENT_UNIFORM_COMPONENTS_ARB, (GLint*)&max);
@@ -639,7 +639,7 @@ static PyObject *pyPrintExt(PyObject *,PyObject *,PyObject *)
 	support = GLEW_ARB_texture_cube_map;
 	pprint(" GL_ARB_texture_cube_map supported?     "<< (support?"yes.":"no."));
 	count = 1;
-	if(support){
+	if (support) {
 		pprint(" ----------Details----------");
 		int size=0;
 		glGetIntegerv(GL_MAX_CUBE_MAP_TEXTURE_SIZE_ARB, (GLint*)&size);
@@ -650,7 +650,7 @@ static PyObject *pyPrintExt(PyObject *,PyObject *,PyObject *)
 	support = GLEW_ARB_multitexture;
 	count = 1;
 	pprint(" GL_ARB_multitexture supported?         "<< (support?"yes.":"no."));
-	if(support){
+	if (support) {
 		pprint(" ----------Details----------");
 		int units=0;
 		glGetIntegerv(GL_MAX_TEXTURE_UNITS_ARB, (GLint*)&units);
@@ -661,7 +661,7 @@ static PyObject *pyPrintExt(PyObject *,PyObject *,PyObject *)
 	pprint(" GL_ARB_texture_env_combine supported?  "<< (GLEW_ARB_texture_env_combine?"yes.":"no."));
 	count = 1;
 
-	if(!count)
+	if (!count)
 		pprint("No extenstions are used in this build");
 
 	Py_RETURN_NONE;
@@ -677,12 +677,12 @@ static PyObject *gLibLoad(PyObject*, PyObject* args, PyObject* kwds)
 	char *err_str= NULL;
 
 	short options=0;
-	int load_actions=0, verbose=0;
+	int load_actions=0, verbose=0, load_scripts=1;
 
-	static const char *kwlist[] = {"path", "group", "buffer", "load_actions", "verbose", NULL};
+	static const char *kwlist[] = {"path", "group", "buffer", "load_actions", "verbose", "load_scripts", NULL};
 	
-	if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss|y*ii:LibLoad", const_cast<char**>(kwlist),
-									&path, &group, &py_buffer, &load_actions, &verbose))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "ss|y*iii:LibLoad", const_cast<char**>(kwlist),
+									&path, &group, &py_buffer, &load_actions, &verbose, &load_scripts))
 		return NULL;
 
 	/* setup options */
@@ -690,6 +690,8 @@ static PyObject *gLibLoad(PyObject*, PyObject* args, PyObject* kwds)
 		options |= KX_BlenderSceneConverter::LIB_LOAD_LOAD_ACTIONS;
 	if (verbose != 0)
 		options |= KX_BlenderSceneConverter::LIB_LOAD_VERBOSE;
+	if (load_scripts != 0)
+		options |= KX_BlenderSceneConverter::LIB_LOAD_LOAD_SCRIPTS;
 
 	if (!py_buffer.buf)
 	{
@@ -698,14 +700,14 @@ static PyObject *gLibLoad(PyObject*, PyObject* args, PyObject* kwds)
 		BLI_strncpy(abs_path, path, sizeof(abs_path));
 		BLI_path_abs(abs_path, gp_GamePythonPath);
 
-		if(kx_scene->GetSceneConverter()->LinkBlendFilePath(abs_path, group, kx_scene, &err_str, options)) {
+		if (kx_scene->GetSceneConverter()->LinkBlendFilePath(abs_path, group, kx_scene, &err_str, options)) {
 			Py_RETURN_TRUE;
 		}
 	}
 	else
 	{
 
-		if(kx_scene->GetSceneConverter()->LinkBlendFileMemory(py_buffer.buf, py_buffer.len, path, group, kx_scene, &err_str, options))	{
+		if (kx_scene->GetSceneConverter()->LinkBlendFileMemory(py_buffer.buf, py_buffer.len, path, group, kx_scene, &err_str, options))	{
 			PyBuffer_Release(&py_buffer);
 			Py_RETURN_TRUE;
 		}
@@ -713,7 +715,7 @@ static PyObject *gLibLoad(PyObject*, PyObject* args, PyObject* kwds)
 		PyBuffer_Release(&py_buffer);
 	}
 	
-	if(err_str) {
+	if (err_str) {
 		PyErr_SetString(PyExc_ValueError, err_str);
 		return NULL;
 	}
@@ -733,14 +735,14 @@ static PyObject *gLibNew(PyObject*, PyObject* args)
 	if (!PyArg_ParseTuple(args,"ssO!:LibNew",&path, &group, &PyList_Type, &names))
 		return NULL;
 	
-	if(kx_scene->GetSceneConverter()->GetMainDynamicPath(path))
+	if (kx_scene->GetSceneConverter()->GetMainDynamicPath(path))
 	{
 		PyErr_SetString(PyExc_KeyError, "the name of the path given exists");
 		return NULL;
 	}
 	
 	idcode= BKE_idcode_from_name(group);
-	if(idcode==0) {
+	if (idcode==0) {
 		PyErr_Format(PyExc_ValueError, "invalid group given \"%s\"", group);
 		return NULL;
 	}
@@ -750,14 +752,14 @@ static PyObject *gLibNew(PyObject*, PyObject* args)
 	strncpy(maggie->name, path, sizeof(maggie->name)-1);
 	
 	/* Copy the object into main */
-	if(idcode==ID_ME) {
+	if (idcode==ID_ME) {
 		PyObject *ret= PyList_New(0);
 		PyObject *item;
-		for(Py_ssize_t i= 0; i < PyList_GET_SIZE(names); i++) {
+		for (Py_ssize_t i= 0; i < PyList_GET_SIZE(names); i++) {
 			name= _PyUnicode_AsString(PyList_GET_ITEM(names, i));
-			if(name) {
+			if (name) {
 				RAS_MeshObject *meshobj= kx_scene->GetSceneConverter()->ConvertMeshSpecial(kx_scene, maggie, name);
-				if(meshobj) {
+				if (meshobj) {
 					KX_MeshProxy* meshproxy = new KX_MeshProxy(meshobj);
 					item= meshproxy->NewProxy(true);
 					PyList_Append(ret, item);
@@ -1114,25 +1116,25 @@ static PyObject* gPyDisableMotionBlur(PyObject*)
 
 static int getGLSLSettingFlag(const char *setting)
 {
-	if(strcmp(setting, "lights") == 0)
+	if (strcmp(setting, "lights") == 0)
 		return GAME_GLSL_NO_LIGHTS;
-	else if(strcmp(setting, "shaders") == 0)
+	else if (strcmp(setting, "shaders") == 0)
 		return GAME_GLSL_NO_SHADERS;
-	else if(strcmp(setting, "shadows") == 0)
+	else if (strcmp(setting, "shadows") == 0)
 		return GAME_GLSL_NO_SHADOWS;
-	else if(strcmp(setting, "ramps") == 0)
+	else if (strcmp(setting, "ramps") == 0)
 		return GAME_GLSL_NO_RAMPS;
-	else if(strcmp(setting, "nodes") == 0)
+	else if (strcmp(setting, "nodes") == 0)
 		return GAME_GLSL_NO_NODES;
-	else if(strcmp(setting, "extra_textures") == 0)
+	else if (strcmp(setting, "extra_textures") == 0)
 		return GAME_GLSL_NO_EXTRA_TEX;
 	else
 		return -1;
 }
 
 static PyObject* gPySetGLSLMaterialSetting(PyObject*,
-											PyObject* args,
-											PyObject*)
+                                           PyObject* args,
+                                           PyObject*)
 {
 	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	char *setting;
@@ -1143,7 +1145,7 @@ static PyObject* gPySetGLSLMaterialSetting(PyObject*,
 	
 	flag = getGLSLSettingFlag(setting);
 	
-	if  (flag==-1) {
+	if (flag == -1) {
 		PyErr_SetString(PyExc_ValueError, "Rasterizer.setGLSLMaterialSetting(string): glsl setting is not known");
 		return NULL;
 	}
@@ -1156,14 +1158,14 @@ static PyObject* gPySetGLSLMaterialSetting(PyObject*,
 		gs->glslflag |= flag;
 
 	/* display lists and GLSL materials need to be remade */
-	if(sceneflag != gs->glslflag) {
+	if (sceneflag != gs->glslflag) {
 		GPU_materials_free();
-		if(gp_KetsjiEngine) {
+		if (gp_KetsjiEngine) {
 			KX_SceneList *scenes = gp_KetsjiEngine->CurrentScenes();
 			KX_SceneList::iterator it;
 
-			for(it=scenes->begin(); it!=scenes->end(); it++)
-				if((*it)->GetBucketManager()) {
+			for (it=scenes->begin(); it!=scenes->end(); it++)
+				if ((*it)->GetBucketManager()) {
 					(*it)->GetBucketManager()->ReleaseDisplayLists();
 					(*it)->GetBucketManager()->ReleaseMaterials();
 				}
@@ -1174,8 +1176,8 @@ static PyObject* gPySetGLSLMaterialSetting(PyObject*,
 }
 
 static PyObject* gPyGetGLSLMaterialSetting(PyObject*, 
-									 PyObject* args, 
-									 PyObject*)
+                                           PyObject* args,
+                                           PyObject*)
 {
 	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	char *setting;
@@ -1186,7 +1188,7 @@ static PyObject* gPyGetGLSLMaterialSetting(PyObject*,
 	
 	flag = getGLSLSettingFlag(setting);
 	
-	if  (flag==-1) {
+	if (flag == -1) {
 		PyErr_SetString(PyExc_ValueError, "Rasterizer.getGLSLMaterialSetting(string): glsl setting is not known");
 		return NULL;
 	}
@@ -1209,11 +1211,11 @@ static PyObject* gPySetMaterialType(PyObject*,
 	if (!PyArg_ParseTuple(args,"i:setMaterialType",&type))
 		return NULL;
 
-	if(type == KX_BLENDER_GLSL_MATERIAL)
+	if (type == KX_BLENDER_GLSL_MATERIAL)
 		gs->matmode= GAME_MAT_GLSL;
-	else if(type == KX_BLENDER_MULTITEX_MATERIAL)
+	else if (type == KX_BLENDER_MULTITEX_MATERIAL)
 		gs->matmode= GAME_MAT_MULTITEX;
-	else if(type == KX_TEXFACE_MATERIAL)
+	else if (type == KX_TEXFACE_MATERIAL)
 		gs->matmode= GAME_MAT_TEXFACE;
 	else {
 		PyErr_SetString(PyExc_ValueError, "Rasterizer.setMaterialType(int): material type is not known");
@@ -1228,9 +1230,9 @@ static PyObject* gPyGetMaterialType(PyObject*)
 	GlobalSettings *gs= gp_KetsjiEngine->GetGlobalSettings();
 	int flag;
 
-	if(gs->matmode == GAME_MAT_GLSL)
+	if (gs->matmode == GAME_MAT_GLSL)
 		flag = KX_BLENDER_GLSL_MATERIAL;
-	else if(gs->matmode == GAME_MAT_MULTITEX)
+	else if (gs->matmode == GAME_MAT_MULTITEX)
 		flag = KX_BLENDER_MULTITEX_MATERIAL;
 	else
 		flag = KX_TEXFACE_MATERIAL;
@@ -1370,7 +1372,7 @@ static PyObject* gPySetDomeWarpData(PyObject*,
 		return NULL;
 	}
 
-	domeText= add_text(filename, "");
+	domeText= BKE_text_add(filename);
 	if(!domeText)
 		printf("error: invalid warpdata text file - %s\n", filename);
 	else
@@ -1520,7 +1522,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	/* Use existing module where possible
 	 * be careful not to init any runtime vars after this */
 	m = PyImport_ImportModule( "GameLogic" );
-	if(m) {
+	if (m) {
 		Py_DECREF(m);
 		return m;
 	}
@@ -1901,7 +1903,7 @@ static void initPySysObjects__append(PyObject *sys_path, const char *filename)
 	
 //	printf("SysPath - '%s', '%s', '%s'\n", expanded, filename, gp_GamePythonPath);
 	
-	if(PySequence_Index(sys_path, item) == -1) {
+	if (PySequence_Index(sys_path, item) == -1) {
 		PyErr_Clear(); /* PySequence_Index sets a ValueError */
 		PyList_Insert(sys_path, 0, item);
 	}
@@ -1960,6 +1962,16 @@ static void restorePySysObjects(void)
 //	PyObject_Print(sys_path, stderr, 0);
 }
 
+void addImportMain(struct Main *maggie)
+{
+	bpy_import_main_extra_add(maggie);
+}
+
+void removeImportMain(struct Main *maggie)
+{
+	bpy_import_main_extra_remove(maggie);
+}
+
 // Copied from bpy_interface.c
 static struct _inittab bge_internal_modules[]= {
 	{(char *)"mathutils", PyInit_mathutils},
@@ -1982,23 +1994,28 @@ PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecur
 	 * somehow it remembers the sys.path - Campbell
 	 */
 	static bool first_time = true;
-	
+	char *py_path_bundle   = BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL);
+
 #if 0 // TODO - py3
 	STR_String pname = progname;
 	Py_SetProgramName(pname.Ptr());
 #endif
-	Py_NoSiteFlag=1;
-	Py_FrozenFlag=1;
+
+	if (py_path_bundle != NULL) {
+		Py_NoSiteFlag = 1;
+	}
+
+	Py_FrozenFlag = 1;
 
 	/* must run before python initializes */
 	PyImport_ExtendInittab(bge_internal_modules);
 
 	/* find local python installation */
-	PyC_SetHomePath(BLI_get_folder(BLENDER_SYSTEM_PYTHON, NULL));
+	PyC_SetHomePath(py_path_bundle);
 
 	Py_Initialize();
 	
-	if(argv && first_time) { /* browser plugins don't currently set this */
+	if (argv && first_time) { /* browser plugins don't currently set this */
 		// Until python support ascii again, we use our own.
 		// PySys_SetArgv(argc, argv);
 		int i;
@@ -2068,8 +2085,6 @@ PyObject* initGamePythonScripting(const STR_String& progname, TPythonSecurityLev
 	STR_String pname = progname;
 	Py_SetProgramName(pname.Ptr());
 #endif
-	Py_NoSiteFlag=1;
-	Py_FrozenFlag=1;
 
 #ifdef WITH_AUDASPACE
 	/* accessing a SoundActuator's sound results in a crash if aud is not initialized... */
@@ -2110,7 +2125,7 @@ void setupGamePython(KX_KetsjiEngine* ketsjiengine, KX_Scene* startscene, Main *
 {
 	PyObject* dictionaryobject;
 
-	if(argv) /* player only */
+	if (argv) /* player only */
 		dictionaryobject= initGamePlayerPythonScripting("Ketsji", psl_Lowest, blenderdata, argc, argv);
 	else
 		dictionaryobject= initGamePythonScripting("Ketsji", psl_Lowest, blenderdata);
@@ -2120,7 +2135,7 @@ void setupGamePython(KX_KetsjiEngine* ketsjiengine, KX_Scene* startscene, Main *
 	*gameLogic = initGameLogic(ketsjiengine, startscene);
 
 	/* is set in initGameLogic so only set here if we want it to persist between scenes */
-	if(pyGlobalDict)
+	if (pyGlobalDict)
 		PyDict_SetItemString(PyModule_GetDict(*gameLogic), "globalDict", pyGlobalDict); // Same as importing the module.
 
 	*gameLogic_keys = PyDict_Keys(PyModule_GetDict(*gameLogic));
@@ -2131,13 +2146,21 @@ void setupGamePython(KX_KetsjiEngine* ketsjiengine, KX_Scene* startscene, Main *
 
 	/* could be done a lot more nicely, but for now a quick way to get bge.* working */
 	PyRun_SimpleString("sys = __import__('sys');"
-	                   "mod = sys.modules['bge'] = type(sys)('bge');"
-	                   "mod.__dict__.update({'logic':__import__('GameLogic'), "
+	                   "bge = type(sys)('bge');"
+	                   "bge.__dict__.update({'logic':__import__('GameLogic'), "
 	                                        "'render':__import__('Rasterizer'), "
 	                                        "'events':__import__('GameKeys'), "
 	                                        "'constraints':__import__('PhysicsConstraints'), "
 	                                        "'types':__import__('GameTypes'), "
 	                                        "'texture':__import__('VideoTexture')});"
+	                   /* so we can do 'import bge.foo as bar' */
+	                   "sys.modules.update({'bge': bge, "
+	                                       "'bge.logic':bge.logic, "
+	                                       "'bge.render':bge.render, "
+	                                       "'bge.events':bge.events, "
+	                                       "'bge.constraints':bge.constraints, "
+	                                       "'bge.types':bge.types, "
+	                                       "'bge.texture':bge.texture})"
 	                   );
 }
 
@@ -2166,7 +2189,7 @@ PyObject* initRasterizer(RAS_IRasterizer* rasty,RAS_ICanvas* canvas)
 	/* Use existing module where possible
 	 * be careful not to init any runtime vars after this */
 	m = PyImport_ImportModule( "Rasterizer" );
-	if(m) {
+	if (m) {
 		Py_DECREF(m);
 		return m;
 	}
@@ -2250,7 +2273,7 @@ static PyObject* gPyEventToCharacter(PyObject*, PyObject* args)
 	if (!PyArg_ParseTuple(args,"ii:EventToCharacter", &event, &shift))
 		return NULL;
 	
-	if(IsPrintable(event)) {
+	if (IsPrintable(event)) {
 		char ch[2] = {'\0', '\0'};
 		ch[0] = ToCharacter(event, (bool)shift);
 		return PyUnicode_FromString(ch);
@@ -2287,7 +2310,7 @@ PyObject* initGameKeys()
 	
 	/* Use existing module where possible */
 	m = PyImport_ImportModule( "GameKeys" );
-	if(m) {
+	if (m) {
 		Py_DECREF(m);
 		return m;
 	}
@@ -2398,15 +2421,15 @@ PyObject* initGameKeys()
 	KX_MACRO_addTypesToDict(d, PADPLUSKEY, SCA_IInputDevice::KX_PADPLUSKEY);
 		
 		
-	KX_MACRO_addTypesToDict(d, F1KEY , SCA_IInputDevice::KX_F1KEY);
-	KX_MACRO_addTypesToDict(d, F2KEY , SCA_IInputDevice::KX_F2KEY);
-	KX_MACRO_addTypesToDict(d, F3KEY , SCA_IInputDevice::KX_F3KEY);
-	KX_MACRO_addTypesToDict(d, F4KEY , SCA_IInputDevice::KX_F4KEY);
-	KX_MACRO_addTypesToDict(d, F5KEY , SCA_IInputDevice::KX_F5KEY);
-	KX_MACRO_addTypesToDict(d, F6KEY , SCA_IInputDevice::KX_F6KEY);
-	KX_MACRO_addTypesToDict(d, F7KEY , SCA_IInputDevice::KX_F7KEY);
-	KX_MACRO_addTypesToDict(d, F8KEY , SCA_IInputDevice::KX_F8KEY);
-	KX_MACRO_addTypesToDict(d, F9KEY , SCA_IInputDevice::KX_F9KEY);
+	KX_MACRO_addTypesToDict(d, F1KEY,  SCA_IInputDevice::KX_F1KEY);
+	KX_MACRO_addTypesToDict(d, F2KEY,  SCA_IInputDevice::KX_F2KEY);
+	KX_MACRO_addTypesToDict(d, F3KEY,  SCA_IInputDevice::KX_F3KEY);
+	KX_MACRO_addTypesToDict(d, F4KEY,  SCA_IInputDevice::KX_F4KEY);
+	KX_MACRO_addTypesToDict(d, F5KEY,  SCA_IInputDevice::KX_F5KEY);
+	KX_MACRO_addTypesToDict(d, F6KEY,  SCA_IInputDevice::KX_F6KEY);
+	KX_MACRO_addTypesToDict(d, F7KEY,  SCA_IInputDevice::KX_F7KEY);
+	KX_MACRO_addTypesToDict(d, F8KEY,  SCA_IInputDevice::KX_F8KEY);
+	KX_MACRO_addTypesToDict(d, F9KEY,  SCA_IInputDevice::KX_F9KEY);
 	KX_MACRO_addTypesToDict(d, F10KEY, SCA_IInputDevice::KX_F10KEY);
 	KX_MACRO_addTypesToDict(d, F11KEY, SCA_IInputDevice::KX_F11KEY);
 	KX_MACRO_addTypesToDict(d, F12KEY, SCA_IInputDevice::KX_F12KEY);
@@ -2418,9 +2441,9 @@ PyObject* initGameKeys()
 	KX_MACRO_addTypesToDict(d, F18KEY, SCA_IInputDevice::KX_F18KEY);
 	KX_MACRO_addTypesToDict(d, F19KEY, SCA_IInputDevice::KX_F19KEY);
 		
-	KX_MACRO_addTypesToDict(d, PAUSEKEY, SCA_IInputDevice::KX_PAUSEKEY);
+	KX_MACRO_addTypesToDict(d, PAUSEKEY,  SCA_IInputDevice::KX_PAUSEKEY);
 	KX_MACRO_addTypesToDict(d, INSERTKEY, SCA_IInputDevice::KX_INSERTKEY);
-	KX_MACRO_addTypesToDict(d, HOMEKEY , SCA_IInputDevice::KX_HOMEKEY);
+	KX_MACRO_addTypesToDict(d, HOMEKEY,   SCA_IInputDevice::KX_HOMEKEY);
 	KX_MACRO_addTypesToDict(d, PAGEUPKEY, SCA_IInputDevice::KX_PAGEUPKEY);
 	KX_MACRO_addTypesToDict(d, PAGEDOWNKEY, SCA_IInputDevice::KX_PAGEDOWNKEY);
 	KX_MACRO_addTypesToDict(d, ENDKEY, SCA_IInputDevice::KX_ENDKEY);

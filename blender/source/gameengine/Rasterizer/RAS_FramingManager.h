@@ -163,9 +163,7 @@ private :
 
 
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:RAS_FrameSettings"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_FrameSettings")
 #endif
 }; 
 
@@ -174,7 +172,7 @@ struct RAS_FrameFrustum
 	float camnear,camfar;
 	float x1,y1;
 	float x2,y2;
-};	
+};
 
 /* must match R_CULLING_... from DNA_scene_types.h */
 enum RAS_CullingMode
@@ -291,7 +289,7 @@ private :
 
 	/**
 	 * Private constructor - this class is not meant
-	 * for instanciation.
+	 * for instantiation.
 	 */
 
 	RAS_FramingManager(
@@ -300,14 +298,11 @@ private :
 	RAS_FramingManager(
 		const RAS_FramingManager &
 	);
-	
+
 
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:RAS_FramingManager"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_FramingManager")
 #endif
-};		
-		
-#endif
+};
 
+#endif

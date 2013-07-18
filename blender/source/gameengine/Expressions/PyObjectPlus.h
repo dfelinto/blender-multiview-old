@@ -166,7 +166,7 @@ public:                                                                       \
 	void *operator new(size_t num_bytes) {                                    \
 		return MEM_mallocN(num_bytes, Type.tp_name);                          \
 	}                                                                         \
-	void operator delete( void *mem ) {                                       \
+	void operator delete(void *mem) {                                         \
 		MEM_freeN(mem);                                                       \
 	}                                                                         \
 
@@ -299,16 +299,16 @@ public:                                                                       \
  * Method table macro (with doc)
  */
 #define KX_PYMETHODTABLE(class_name, method_name) \
-	{#method_name , (PyCFunction) class_name::sPy##method_name, METH_VARARGS, (const char *)class_name::method_name##_doc}
+	{#method_name, (PyCFunction) class_name::sPy##method_name, METH_VARARGS, (const char *)class_name::method_name##_doc}
 
 #define KX_PYMETHODTABLE_O(class_name, method_name) \
-	{#method_name , (PyCFunction) class_name::sPy##method_name, METH_O, (const char *)class_name::method_name##_doc}
+	{#method_name, (PyCFunction) class_name::sPy##method_name, METH_O, (const char *)class_name::method_name##_doc}
 
 #define KX_PYMETHODTABLE_NOARGS(class_name, method_name) \
-	{#method_name , (PyCFunction) class_name::sPy##method_name, METH_NOARGS, (const char *)class_name::method_name##_doc}
+	{#method_name, (PyCFunction) class_name::sPy##method_name, METH_NOARGS, (const char *)class_name::method_name##_doc}
 
 #define KX_PYMETHODTABLE_KEYWORDS(class_name, method_name) \
-	{#method_name , (PyCFunction) class_name::sPy##method_name, METH_VARARGS|METH_KEYWORDS, (const char *)class_name::method_name##_doc}
+	{#method_name, (PyCFunction) class_name::sPy##method_name, METH_VARARGS|METH_KEYWORDS, (const char *)class_name::method_name##_doc}
 
 /**
  * Function implementation macro
@@ -527,28 +527,18 @@ typedef struct KX_PYATTRIBUTE_DEF {
 /*------------------------------
  * PyObjectPlus
 ------------------------------*/
-typedef PyTypeObject * PyParentObject;				// Define the PyParent Object
+typedef PyTypeObject *PyParentObject;  /* Define the PyParent Object */
 
 #else // WITH_PYTHON
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #define Py_Header                                                             \
 public:                                                                       \
-	void *operator new(size_t num_bytes) {                                    \
-		return MEM_mallocN(num_bytes, "GE:PyObjectPlus");                     \
-	}                                                                         \
-	void operator delete( void *mem ) {                                       \
-		MEM_freeN(mem);                                                       \
-	}                                                                         \
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:PyObjectPlus")                              \
+
 
 #define Py_HeaderPtr                                                          \
-public:                                                                       \
-	void *operator new(size_t num_bytes) {                                    \
-		return MEM_mallocN(num_bytes, "GE:PyObjectPlusPtr");                  \
-	}                                                                         \
-	void operator delete( void *mem ) {                                       \
-	MEM_freeN(mem);                                                           \
-	}                                                                         \
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:PyObjectPlusPtr")                           \
 
 #else // WITH_CXX_GUARDEDALLOC
 
@@ -588,7 +578,7 @@ public:
 
 	/* These static functions are referenced by ALL PyObjectPlus_Proxy types
 	 * they take the C++ reference from the PyObjectPlus_Proxy and call
-	 * its own virtual py_repr, py_base_dealloc ,etc. functions.
+	 * its own virtual py_repr, py_base_dealloc, etc. functions.
 	 */
 
 	static PyObject*		py_base_new(PyTypeObject *type, PyObject *args, PyObject *kwds); /* allows subclassing */

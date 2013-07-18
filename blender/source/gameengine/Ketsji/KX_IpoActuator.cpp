@@ -282,13 +282,13 @@ bool KX_IpoActuator::Update(double curtime, bool frame)
 	}
 	case KX_ACT_IPO_LOOPEND:
 	{
-		if (numevents){
-			if (bNegativeEvent && m_bIpoPlaying){
+		if (numevents) {
+			if (bNegativeEvent && m_bIpoPlaying) {
 				m_bNegativeEvent = true;
 			}
 		}
 		
-		if (bNegativeEvent && !m_bIpoPlaying){
+		if (bNegativeEvent && !m_bIpoPlaying) {
 			result = false;
 		} 
 		else
@@ -297,8 +297,8 @@ bool KX_IpoActuator::Update(double curtime, bool frame)
 			{
 				SetLocalTime(curtime);
 			}
-			else{
-				if (!m_bNegativeEvent){
+			else {
+				if (!m_bNegativeEvent) {
 					/* Perform wraparound */
 					SetLocalTime(curtime);
 					if (start_smaller_then_end > 0.f)
@@ -379,7 +379,7 @@ bool KX_IpoActuator::Update(double curtime, bool frame)
 
 void KX_IpoActuator::ResetStartTime()
 {
-	this->m_starttime = -2.0*fabs(this->m_endframe - this->m_startframe) - 1.0;
+	this->m_starttime = -2.0f * fabsf(this->m_endframe - this->m_startframe) - 1.0f;
 }
 
 int KX_IpoActuator::string2mode(const char *modename)

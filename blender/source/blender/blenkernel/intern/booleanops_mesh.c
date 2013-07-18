@@ -1,7 +1,5 @@
 #if 0
-
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,19 +44,19 @@
 CSG_DestroyMeshDescriptor(
 	CSG_MeshDescriptor *mesh
 ) {
-	// Call mesh descriptors destroy function....
+	/* Call mesh descriptors destroy function.... */
 	mesh->m_destroy_func(mesh);
 }
-	
-// Destroy function for blender mesh internals.
+
+/* Destroy function for blender mesh internals. */
 
 static
 	void
 CSG_DestroyBlenderMeshInternals(
 	CSG_MeshDescriptor *mesh
 ) {
-	// Free face and vertex iterators.
-	FreeMeshDescriptors(&(mesh->m_face_iterator),&(mesh->m_vertex_iterator));		
+	/* Free face and vertex iterators. */
+	FreeMeshDescriptors(&(mesh->m_face_iterator),&(mesh->m_vertex_iterator));
 }
 
 
@@ -80,7 +78,7 @@ MakeCSGMeshFromBlenderBase(
 	Mesh *me;
 	if (output == NULL || base == NULL) return 0;
 
-	me = get_mesh(base->object);
+	me = BKE_mesh_from_object(base->object);
 		
 	output->m_descriptor.user_face_vertex_data_size = 0;
 	output->m_descriptor.user_data_size = sizeof(FaceData);
@@ -107,7 +105,7 @@ CSG_LoadBlenderMesh(
 	Mesh *me;
 	if (output == NULL || obj == NULL) return 0;
 
-	me = get_mesh(obj);
+	me = BKE_mesh_from_object(obj);
 		
 	output->m_descriptor.user_face_vertex_data_size = 0;
 	output->m_descriptor.user_data_size = sizeof(FaceData);
@@ -142,18 +140,18 @@ CSG_AddMeshToBlender(
 
 	invert_m4_m4(inv_mat,mesh->base->object->obmat);
 
-	// Create a new blender mesh object - using 'base' as 
-	// a template for the new object.
+	/* Create a new blender mesh object - using 'base' as
+	 * a template for the new object. */
 	ob_new=  AddNewBlenderMesh(mesh->base);
 
 	me_new = ob_new->data;
 
-	// make sure the iterators are reset.
+	/* make sure the iterators are reset. */
 	mesh->m_face_iterator.Reset(mesh->m_face_iterator.it);
 	mesh->m_vertex_iterator.Reset(mesh->m_vertex_iterator.it);
 
-	// iterate through results of operation and insert into new object
-	// see subsurf.c 
+	/* iterate through results of operation and insert into new object
+	 * see subsurf.c */
 
 	ConvertCSGDescriptorsToMeshObject(
 		ob_new,
@@ -197,8 +195,8 @@ CSG_PerformOp(
 	output->base = mesh1->base;
 
 	if (output->m_descriptor.user_face_vertex_data_size) {
-		// Then use the only interp function supported 
-		success = 
+		/* Then use the only interp function supported */
+		success =
 		CSG_PerformBooleanOperation(
 			bool_op,
 			op_type,
@@ -208,7 +206,8 @@ CSG_PerformOp(
 			mesh2->m_vertex_iterator,		
 			InterpFaceVertexData	
 		);
-	} else {
+	}
+	else {
 		success = 
 		CSG_PerformBooleanOperation(
 			bool_op,
@@ -226,8 +225,8 @@ CSG_PerformOp(
 		bool_op = NULL;
 		return 0;
 	}
-		
-	// get the ouput mesh descriptors.
+
+	/* get the ouput mesh descriptors. */
 
 	CSG_OutputFaceDescriptor(bool_op,&(output->m_face_iterator));
 	CSG_OutputVertexDescriptor(bool_op,&(output->m_vertex_iterator));

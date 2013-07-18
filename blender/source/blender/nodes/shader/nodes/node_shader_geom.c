@@ -38,32 +38,32 @@
 
 /* output socket type definition */
 static bNodeSocketTemplate sh_node_geom_out[]= {
-	{	SOCK_VECTOR, 0, "Global"},
-	{	SOCK_VECTOR, 0, "Local"},
-	{	SOCK_VECTOR, 0, "View"},
-	{	SOCK_VECTOR, 0, "Orco"},
-	{	SOCK_VECTOR, 0, "UV"},
-	{	SOCK_VECTOR, 0, "Normal"},
-	{	SOCK_RGBA,   0, "Vertex Color"},
-	{	SOCK_FLOAT,   0, "Vertex Alpha"},
-	{	SOCK_FLOAT,   0, "Front/Back"},
+	{	SOCK_VECTOR, 0, N_("Global")},
+	{	SOCK_VECTOR, 0, N_("Local")},
+	{	SOCK_VECTOR, 0, N_("View")},
+	{	SOCK_VECTOR, 0, N_("Orco")},
+	{	SOCK_VECTOR, 0, N_("UV")},
+	{	SOCK_VECTOR, 0, N_("Normal")},
+	{	SOCK_RGBA,   0, N_("Vertex Color")},
+	{	SOCK_FLOAT,   0, N_("Vertex Alpha")},
+	{	SOCK_FLOAT,   0, N_("Front/Back")},
 	{	-1, 0, ""	}
 };
 
 /* node execute callback */
 static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(in), bNodeStack **out)
 {
-	if(data) {
+	if (data) {
 		ShadeInput *shi= ((ShaderCallData *)data)->shi;
 		NodeGeometry *ngeo= (NodeGeometry*)node->storage;
 		ShadeInputUV *suv= &shi->uv[shi->actuv];
 		static float defaultvcol[4] = {1.0f, 1.0f, 1.0f, 1.0f};
 		int i;
 
-		if(ngeo->uvname[0]) {
+		if (ngeo->uvname[0]) {
 			/* find uv map by name */
-			for(i = 0; i < shi->totuv; i++) {
-				if(strcmp(shi->uv[i].name, ngeo->uvname)==0) {
+			for (i = 0; i < shi->totuv; i++) {
+				if (strcmp(shi->uv[i].name, ngeo->uvname)==0) {
 					suv= &shi->uv[i];
 					break;
 				}
@@ -82,9 +82,9 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 			/* find vertex color layer by name */
 			ShadeInputCol *scol= &shi->col[0];
 
-			if(ngeo->colname[0]) {
-				for(i = 0; i < shi->totcol; i++) {
-					if(strcmp(shi->col[i].name, ngeo->colname)==0) {
+			if (ngeo->colname[0]) {
+				for (i = 0; i < shi->totcol; i++) {
+					if (strcmp(shi->col[i].name, ngeo->colname)==0) {
 						scol= &shi->col[i];
 						break;
 					}
@@ -95,12 +95,12 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 			out[GEOM_OUT_VCOL]->vec[3]= scol->col[3];
 			out[GEOM_OUT_VCOL_ALPHA]->vec[0]= scol->col[3];
 		}
-		else  {
+		else {
 			memcpy(out[GEOM_OUT_VCOL]->vec, defaultvcol, sizeof(defaultvcol));
 			out[GEOM_OUT_VCOL_ALPHA]->vec[0]= 1.0f;
 		}
 		
-		if(shi->osatex) {
+		if (shi->osatex) {
 			out[GEOM_OUT_GLOB]->data= shi->dxgl;
 			out[GEOM_OUT_GLOB]->datatype= NS_OSA_VECTORS;
 			out[GEOM_OUT_LOCAL]->data= shi->dxco;

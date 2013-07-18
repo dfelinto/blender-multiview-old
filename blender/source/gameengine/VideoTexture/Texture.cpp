@@ -26,21 +26,22 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 // implementation
 
-#include <PyObjectPlus.h>
+#include "PyObjectPlus.h"
 #include <structmember.h>
 
-#include <KX_GameObject.h>
-#include <RAS_MeshObject.h>
-#include <DNA_mesh_types.h>
-#include <DNA_meshdata_types.h>
-#include <DNA_image_types.h>
-#include <IMB_imbuf_types.h>
-#include <KX_PolygonMaterial.h>
+#include "KX_GameObject.h"
+#include "KX_Light.h"
+#include "RAS_MeshObject.h"
+#include "DNA_mesh_types.h"
+#include "DNA_meshdata_types.h"
+#include "DNA_image_types.h"
+#include "IMB_imbuf_types.h"
+#include "KX_PolygonMaterial.h"
 
-#include <MEM_guardedalloc.h>
+#include "MEM_guardedalloc.h"
 
-#include <KX_BlenderMaterial.h>
-#include <BL_Texture.h>
+#include "KX_BlenderMaterial.h"
+#include "BL_Texture.h"
 
 #include "KX_KetsjiEngine.h"
 #include "KX_PythonInit.h"
@@ -59,6 +60,7 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 // Blender GameObject type
 BlendType<KX_GameObject> gameObjectType ("KX_GameObject");
+BlendType<KX_LightObject> lightObjectType ("KX_LightObject");
 
 
 // load texture
@@ -105,6 +107,16 @@ RAS_IPolyMaterial * getMaterial (PyObject *obj, short matID)
 	return NULL;
 }
 
+// get pointer to a lamp
+KX_LightObject * getLamp(PyObject *obj)
+{
+	// if object is available
+	if (obj == NULL) return NULL;
+
+	// returns NULL if obj is not a KX_LightObject
+	return lightObjectType.checkType(obj);
+}
+
 
 // get material ID
 short getMaterialID(PyObject * obj, const char *name)
@@ -118,13 +130,12 @@ short getMaterialID(PyObject * obj, const char *name)
 		if (mat == NULL) 
 			break;
 		// name is a material name if it starts with MA and a UV texture name if it starts with IM
-		if (name[0] == 'I' && name[1] == 'M')
-		{
+		if (name[0] == 'I' && name[1] == 'M') {
 			// if texture name matches
 			if (strcmp(mat->GetTextureName().ReadPtr(), name) == 0)
 				return matID;
-		} else 
-		{
+		}
+		else {
 			// if material name matches
 			if (strcmp(mat->GetMaterialName().ReadPtr(), name) == 0)
 				return matID;
@@ -206,6 +217,7 @@ int Texture_init (Texture *self, PyObject *args, PyObject *kwds)
 		{
 			// get pointer to texture image
 			RAS_IPolyMaterial * mat = getMaterial(obj, matID);
+			KX_LightObject * lamp = getLamp(obj);
 			if (mat != NULL)
 			{
 				// is it blender material or polygon material
@@ -227,6 +239,12 @@ int Texture_init (Texture *self, PyObject *args, PyObject *kwds)
 					self->m_useMatTexture = false;
 				}
 			}
+			else if (lamp != NULL)
+			{
+				self->m_imgTexture = lamp->GetTextureImage(texID);
+				self->m_useMatTexture = false;
+			}
+
 			// check if texture is available, if not, initialization failed
 			if (self->m_imgTexture == NULL && self->m_matTexture == NULL)
 				// throw exception if initialization failed

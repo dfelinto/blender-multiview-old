@@ -45,15 +45,40 @@ void libmv_setLoggingVerbosity(int verbosity);
 /* RegionTracker */
 struct libmv_RegionTracker *libmv_pyramidRegionTrackerNew(int max_iterations, int pyramid_level, int half_window_size, double minimum_correlation);
 struct libmv_RegionTracker *libmv_hybridRegionTrackerNew(int max_iterations, int half_window_size, double minimum_correlation);
+struct libmv_RegionTracker *libmv_bruteRegionTrackerNew(int half_window_size, double minimum_correlation);
 int libmv_regionTrackerTrack(struct libmv_RegionTracker *libmv_tracker, const float *ima1, const float *ima2,
 			int width, int height, double  x1, double  y1, double *x2, double *y2);
 void libmv_regionTrackerDestroy(struct libmv_RegionTracker *libmv_tracker);
 
-/* SAD Tracker */
-void libmv_SADSamplePattern(unsigned char *image, int stride,
-			float warp[3][2], unsigned char *pattern, int pattern_size);
-float libmv_SADTrackerTrack(unsigned char *pattern, unsigned char *warped, int pattern_size, unsigned char *image,
-			int stride, int width, int height, float warp[3][2]);
+/* TrackRegion (new planar tracker) */
+struct libmv_trackRegionOptions {
+	int motion_model;
+	int num_iterations;
+	int use_brute;
+	int use_normalization;
+	double minimum_correlation;
+	double sigma;
+	float *image1_mask;
+};
+
+struct libmv_trackRegionResult {
+	int termination;
+	const char *termination_reason;
+	double correlation;
+};
+
+int libmv_trackRegion(const struct libmv_trackRegionOptions *options,
+                      const float *image1, int image1_width, int image1_height,
+                      const float *image2, int image2_width, int image2_height,
+                      const double *x1, const double *y1,
+                      struct libmv_trackRegionResult *result,
+                      double *x2, double *y2);
+
+void libmv_samplePlanarPatch(const float *image, int width, int height,
+                             int channels, const double *xs, const double *ys,
+                             int num_samples_x, int num_samples_y,
+                             const float *mask, float *patch,
+                             double *warped_position_x, double *warped_position_y);
 
 /* Tracks */
 struct libmv_Tracks *libmv_tracksNew(void);
@@ -72,6 +97,9 @@ int libmv_refineParametersAreValid(int parameters);
 
 struct libmv_Reconstruction *libmv_solveReconstruction(struct libmv_Tracks *tracks, int keyframe1, int keyframe2,
 			int refine_intrinsics, double focal_length, double principal_x, double principal_y, double k1, double k2, double k3,
+			reconstruct_progress_update_cb progress_update_callback, void *callback_customdata);
+struct libmv_Reconstruction *libmv_solveModal(struct libmv_Tracks *tracks, double focal_length,
+			double principal_x, double principal_y, double k1, double k2, double k3,
 			reconstruct_progress_update_cb progress_update_callback, void *callback_customdata);
 int libmv_reporojectionPointForTrack(struct libmv_Reconstruction *libmv_reconstruction, int track, double pos[3]);
 double libmv_reporojectionErrorForTrack(struct libmv_Reconstruction *libmv_reconstruction, int track);
@@ -133,6 +161,10 @@ void libmv_applyCameraIntrinsics(double focal_length, double principal_x, double
 			double x, double y, double *x1, double *y1);
 void libmv_InvertIntrinsics(double focal_length, double principal_x, double principal_y, double k1, double k2, double k3,
 			double x, double y, double *x1, double *y1);
+
+/* point clouds */
+void libmv_rigidRegistration(float (*reference_points)[3], float (*points)[3], int total_points,
+                             int use_scale, int use_translation, double M[4][4]);
 
 #ifdef __cplusplus
 }

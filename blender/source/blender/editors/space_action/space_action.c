@@ -60,67 +60,67 @@
 #include "ED_anim_api.h"
 #include "ED_markers.h"
 
-#include "action_intern.h"	// own include
+#include "action_intern.h"  /* own include */
 
 /* ******************** default callbacks for action space ***************** */
 
 static SpaceLink *action_new(const bContext *C)
 {
-	ScrArea *sa= CTX_wm_area(C);
+	ScrArea *sa = CTX_wm_area(C);
 	SpaceAction *saction;
 	ARegion *ar;
 	
-	saction= MEM_callocN(sizeof(SpaceAction), "initaction");
-	saction->spacetype= SPACE_ACTION;
+	saction = MEM_callocN(sizeof(SpaceAction), "initaction");
+	saction->spacetype = SPACE_ACTION;
 	
 	saction->autosnap = SACTSNAP_FRAME;
-	saction->mode= SACTCONT_DOPESHEET;
+	saction->mode = SACTCONT_DOPESHEET;
 	
 	saction->ads.filterflag |= ADS_FILTER_SUMMARY;
 	
 	/* header */
-	ar= MEM_callocN(sizeof(ARegion), "header for action");
+	ar = MEM_callocN(sizeof(ARegion), "header for action");
 	
 	BLI_addtail(&saction->regionbase, ar);
-	ar->regiontype= RGN_TYPE_HEADER;
-	ar->alignment= RGN_ALIGN_BOTTOM;
+	ar->regiontype = RGN_TYPE_HEADER;
+	ar->alignment = RGN_ALIGN_BOTTOM;
 	
 	/* channel list region */
-	ar= MEM_callocN(sizeof(ARegion), "channel area for action");
+	ar = MEM_callocN(sizeof(ARegion), "channel area for action");
 	BLI_addtail(&saction->regionbase, ar);
-	ar->regiontype= RGN_TYPE_CHANNELS;
-	ar->alignment= RGN_ALIGN_LEFT;
+	ar->regiontype = RGN_TYPE_CHANNELS;
+	ar->alignment = RGN_ALIGN_LEFT;
 	
-		/* only need to set scroll settings, as this will use 'listview' v2d configuration */
+	/* only need to set scroll settings, as this will use 'listview' v2d configuration */
 	ar->v2d.scroll = V2D_SCROLL_BOTTOM;
 	ar->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
 	
 	/* main area */
-	ar= MEM_callocN(sizeof(ARegion), "main area for action");
+	ar = MEM_callocN(sizeof(ARegion), "main area for action");
 	
 	BLI_addtail(&saction->regionbase, ar);
-	ar->regiontype= RGN_TYPE_WINDOW;
+	ar->regiontype = RGN_TYPE_WINDOW;
 	
-	ar->v2d.tot.xmin= -10.0f;
-	ar->v2d.tot.ymin= (float)(-sa->winy)/3.0f;
-	ar->v2d.tot.xmax= (float)(sa->winx);
-	ar->v2d.tot.ymax= 0.0f;
+	ar->v2d.tot.xmin = -10.0f;
+	ar->v2d.tot.ymin = (float)(-sa->winy) / 3.0f;
+	ar->v2d.tot.xmax = (float)(sa->winx);
+	ar->v2d.tot.ymax = 0.0f;
 	
 	ar->v2d.cur = ar->v2d.tot;
 	
-	ar->v2d.min[0]= 0.0f;
-	ar->v2d.min[1]= 0.0f;
+	ar->v2d.min[0] = 0.0f;
+	ar->v2d.min[1] = 0.0f;
 	
-	ar->v2d.max[0]= MAXFRAMEF;
-	ar->v2d.max[1]= FLT_MAX;
+	ar->v2d.max[0] = MAXFRAMEF;
+	ar->v2d.max[1] = FLT_MAX;
 
-	ar->v2d.minzoom= 0.01f;
-	ar->v2d.maxzoom= 50;
-	ar->v2d.scroll = (V2D_SCROLL_BOTTOM|V2D_SCROLL_SCALE_HORIZONTAL);
+	ar->v2d.minzoom = 0.01f;
+	ar->v2d.maxzoom = 50;
+	ar->v2d.scroll = (V2D_SCROLL_BOTTOM | V2D_SCROLL_SCALE_HORIZONTAL);
 	ar->v2d.scroll |= (V2D_SCROLL_RIGHT);
-	ar->v2d.keepzoom= V2D_LOCKZOOM_Y;
-	ar->v2d.keepofs= V2D_KEEPOFS_Y;
-	ar->v2d.align= V2D_ALIGN_NO_POS_Y;
+	ar->v2d.keepzoom = V2D_LOCKZOOM_Y;
+	ar->v2d.keepofs = V2D_KEEPOFS_Y;
+	ar->v2d.align = V2D_ALIGN_NO_POS_Y;
 	ar->v2d.flag = V2D_VIEWSYNC_AREA_VERTICAL;
 	
 	return (SpaceLink *)saction;
@@ -129,8 +129,7 @@ static SpaceLink *action_new(const bContext *C)
 /* not spacelink itself */
 static void action_free(SpaceLink *UNUSED(sl))
 {	
-//	SpaceAction *saction= (SpaceAction*) sl;
-	
+//	SpaceAction *saction= (SpaceAction *) sl;
 }
 
 
@@ -143,7 +142,7 @@ static void action_init(struct wmWindowManager *UNUSED(wm), ScrArea *sa)
 
 static SpaceLink *action_duplicate(SpaceLink *sl)
 {
-	SpaceAction *sactionn= MEM_dupallocN(sl);
+	SpaceAction *sactionn = MEM_dupallocN(sl);
 	
 	/* clear or remove stuff from old */
 	
@@ -160,19 +159,19 @@ static void action_main_area_init(wmWindowManager *wm, ARegion *ar)
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_CUSTOM, ar->winx, ar->winy);
 	
 	/* own keymap */
-	keymap= WM_keymap_find(wm->defaultconf, "Dopesheet", SPACE_ACTION, 0);
+	keymap = WM_keymap_find(wm->defaultconf, "Dopesheet", SPACE_ACTION, 0);
 	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
 }
 
 static void action_main_area_draw(const bContext *C, ARegion *ar)
 {
 	/* draw entirely, view changes should be handled here */
-	SpaceAction *saction= CTX_wm_space_action(C);
+	SpaceAction *saction = CTX_wm_space_action(C);
 	bAnimContext ac;
-	View2D *v2d= &ar->v2d;
+	View2D *v2d = &ar->v2d;
 	View2DGrid *grid;
 	View2DScrollers *scrollers;
-	short unit=0, flag=0;
+	short unit = 0, flag = 0;
 	
 	/* clear and setup matrix */
 	UI_ThemeClearColor(TH_BACK);
@@ -181,8 +180,8 @@ static void action_main_area_draw(const bContext *C, ARegion *ar)
 	UI_view2d_view_ortho(v2d);
 	
 	/* time grid */
-	unit= (saction->flag & SACTION_DRAWTIME)? V2D_UNIT_SECONDS : V2D_UNIT_FRAMES;
-	grid= UI_view2d_grid_calc(CTX_data_scene(C), v2d, unit, V2D_GRID_CLAMP, V2D_ARG_DUMMY, V2D_ARG_DUMMY, ar->winx, ar->winy);
+	unit = (saction->flag & SACTION_DRAWTIME) ? V2D_UNIT_SECONDS : V2D_UNIT_FRAMES;
+	grid = UI_view2d_grid_calc(CTX_data_scene(C), v2d, unit, V2D_GRID_CLAMP, V2D_ARG_DUMMY, V2D_ARG_DUMMY, ar->winx, ar->winy);
 	UI_view2d_grid_draw(v2d, grid, V2D_GRIDLINES_ALL);
 	UI_view2d_grid_free(grid);
 	
@@ -192,14 +191,14 @@ static void action_main_area_draw(const bContext *C, ARegion *ar)
 	}
 	
 	/* current frame */
-	if (saction->flag & SACTION_DRAWTIME) 	flag |= DRAWCFRA_UNIT_SECONDS;
-	if ((saction->flag & SACTION_NODRAWCFRANUM)==0)  flag |= DRAWCFRA_SHOW_NUMBOX;
+	if (saction->flag & SACTION_DRAWTIME) flag |= DRAWCFRA_UNIT_SECONDS;
+	if ((saction->flag & SACTION_NODRAWCFRANUM) == 0) flag |= DRAWCFRA_SHOW_NUMBOX;
 	ANIM_draw_cfra(C, v2d, flag);
 	
 	/* markers */
 	UI_view2d_view_orthoSpecial(ar, v2d, 1);
 	
-	flag = (ac.markers && (ac.markers != &ac.scene->markers))? DRAW_MARKERS_LOCAL : 0;
+	flag = (ac.markers && (ac.markers != &ac.scene->markers)) ? DRAW_MARKERS_LOCAL : 0;
 	draw_markers_time(C, flag);
 	
 	/* preview range */
@@ -210,7 +209,7 @@ static void action_main_area_draw(const bContext *C, ARegion *ar)
 	UI_view2d_view_restore(C);
 	
 	/* scrollers */
-	scrollers= UI_view2d_scrollers_calc(C, v2d, unit, V2D_GRID_CLAMP, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
+	scrollers = UI_view2d_scrollers_calc(C, v2d, unit, V2D_GRID_CLAMP, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
 	UI_view2d_scrollers_draw(C, v2d, scrollers);
 	UI_view2d_scrollers_free(scrollers);
 }
@@ -223,7 +222,7 @@ static void action_channel_area_init(wmWindowManager *wm, ARegion *ar)
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_LIST, ar->winx, ar->winy);
 	
 	/* own keymap */
-	keymap= WM_keymap_find(wm->defaultconf, "Animation Channels", 0, 0);
+	keymap = WM_keymap_find(wm->defaultconf, "Animation Channels", 0, 0);
 	WM_event_add_keymap_handler_bb(&ar->handlers, keymap, &ar->v2d.mask, &ar->winrct);
 }
 
@@ -231,7 +230,7 @@ static void action_channel_area_draw(const bContext *C, ARegion *ar)
 {
 	/* draw entirely, view changes should be handled here */
 	bAnimContext ac;
-	View2D *v2d= &ar->v2d;
+	View2D *v2d = &ar->v2d;
 	View2DScrollers *scrollers;
 	
 	/* clear and setup matrix */
@@ -249,7 +248,7 @@ static void action_channel_area_draw(const bContext *C, ARegion *ar)
 	UI_view2d_view_restore(C);
 	
 	/* scrollers */
-	scrollers= UI_view2d_scrollers_calc(C, v2d, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
+	scrollers = UI_view2d_scrollers_calc(C, v2d, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
 	UI_view2d_scrollers_draw(C, v2d, scrollers);
 	UI_view2d_scrollers_free(scrollers);
 }
@@ -269,12 +268,12 @@ static void action_header_area_draw(const bContext *C, ARegion *ar)
 static void action_channel_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
-	switch(wmn->category) {
+	switch (wmn->category) {
 		case NC_ANIMATION:
 			ED_region_tag_redraw(ar);
 			break;
 		case NC_SCENE:
-			switch(wmn->data) {
+			switch (wmn->data) {
 				case ND_OB_ACTIVE:
 				case ND_FRAME:
 					ED_region_tag_redraw(ar);
@@ -282,24 +281,24 @@ static void action_channel_area_listener(ARegion *ar, wmNotifier *wmn)
 			}
 			break;
 		case NC_OBJECT:
-			switch(wmn->data) {
+			switch (wmn->data) {
 				case ND_BONE_ACTIVE:
 				case ND_BONE_SELECT:
 				case ND_KEYS:
 					ED_region_tag_redraw(ar);
 					break;
 				case ND_MODIFIER:
-					if(wmn->action == NA_RENAME)
+					if (wmn->action == NA_RENAME)
 						ED_region_tag_redraw(ar);
 					break;
 			}
 			break;
 		case NC_ID:
-			if(wmn->action == NA_RENAME)
+			if (wmn->action == NA_RENAME)
 				ED_region_tag_redraw(ar);
 			break;
 		default:
-			if(wmn->data==ND_KEYS)
+			if (wmn->data == ND_KEYS)
 				ED_region_tag_redraw(ar);
 	}
 }
@@ -307,12 +306,12 @@ static void action_channel_area_listener(ARegion *ar, wmNotifier *wmn)
 static void action_main_area_listener(ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
-	switch(wmn->category) {
+	switch (wmn->category) {
 		case NC_ANIMATION:
 			ED_region_tag_redraw(ar);
 			break;
 		case NC_SCENE:
-			switch(wmn->data) {
+			switch (wmn->data) {
 				case ND_RENDER_OPTIONS:
 				case ND_OB_ACTIVE:
 				case ND_FRAME:
@@ -322,7 +321,7 @@ static void action_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			}
 			break;
 		case NC_OBJECT:
-			switch(wmn->data) {
+			switch (wmn->data) {
 				case ND_TRANSFORM:
 					/* moving object shouldn't need to redraw action */
 					break;
@@ -334,19 +333,19 @@ static void action_main_area_listener(ARegion *ar, wmNotifier *wmn)
 			}
 			break;
 		case NC_NODE:
-			switch(wmn->action) {
+			switch (wmn->action) {
 				case NA_EDITED:
 					ED_region_tag_redraw(ar);
 					break;
 			}
 			break;
 		case NC_ID:
-			if(wmn->action == NA_RENAME)
+			if (wmn->action == NA_RENAME)
 				ED_region_tag_redraw(ar);
 			break;
 				
 		default:
-			if(wmn->data==ND_KEYS)
+			if (wmn->data == ND_KEYS)
 				ED_region_tag_redraw(ar);
 	}
 }
@@ -354,14 +353,14 @@ static void action_main_area_listener(ARegion *ar, wmNotifier *wmn)
 /* editor level listener */
 static void action_listener(ScrArea *sa, wmNotifier *wmn)
 {
-	SpaceAction *saction= (SpaceAction *)sa->spacedata.first;
+	SpaceAction *saction = (SpaceAction *)sa->spacedata.first;
 	
 	/* context changes */
 	switch (wmn->category) {
 		case NC_SCREEN:
 			if (wmn->data == ND_GPENCIL) {
 				/* only handle this event in GPencil mode for performance considerations */
-				if (saction->mode == SACTCONT_GPENCIL)	
+				if (saction->mode == SACTCONT_GPENCIL)
 					ED_area_tag_redraw(sa);
 			}
 			break;
@@ -379,7 +378,7 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 			break;
 		case NC_SCENE:
 			switch (wmn->data) {	
-				case ND_OB_ACTIVE:	/* selection changed, so force refresh to flush (needs flag set to do syncing) */
+				case ND_OB_ACTIVE:  /* selection changed, so force refresh to flush (needs flag set to do syncing) */
 				case ND_OB_SELECT:
 					saction->flag |= SACTION_TEMP_NEEDCHANSYNC;
 					ED_area_tag_refresh(sa);
@@ -392,7 +391,7 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 			break;
 		case NC_OBJECT:
 			switch (wmn->data) {
-				case ND_BONE_SELECT:	/* selection changed, so force refresh to flush (needs flag set to do syncing) */
+				case ND_BONE_SELECT:    /* selection changed, so force refresh to flush (needs flag set to do syncing) */
 				case ND_BONE_ACTIVE:
 					saction->flag |= SACTION_TEMP_NEEDCHANSYNC;
 					ED_area_tag_refresh(sa);
@@ -403,6 +402,18 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 				default: /* just redrawing the view will do */
 					ED_area_tag_redraw(sa);
 					break;
+			}
+			break;
+		case NC_MASK:
+			if (saction->mode == SACTCONT_MASK) {
+				switch (wmn->data) {
+					case ND_DATA:
+						ED_area_tag_refresh(sa);
+						break;
+					default: /* just redrawing the view will do */
+						ED_area_tag_redraw(sa);
+						break;
+				}
 			}
 			break;
 		case NC_NODE:
@@ -423,6 +434,12 @@ static void action_listener(ScrArea *sa, wmNotifier *wmn)
 					break;
 			}			
 			break;
+		case NC_WINDOW:
+			if (saction->flag & SACTION_TEMP_NEEDCHANSYNC) {
+				/* force redraw/refresh after undo/redo - [#28962] */
+				ED_area_tag_refresh(sa);
+			}
+			break;
 	}
 }
 
@@ -438,7 +455,7 @@ static void action_header_area_listener(ARegion *ar, wmNotifier *wmn)
 			}
 			break;
 		case NC_ID:
-			if(wmn->action == NA_RENAME)
+			if (wmn->action == NA_RENAME)
 				ED_region_tag_redraw(ar);
 			break;
 	}
@@ -446,15 +463,27 @@ static void action_header_area_listener(ARegion *ar, wmNotifier *wmn)
 
 static void action_refresh(const bContext *C, ScrArea *sa)
 {
-	SpaceAction *saction= (SpaceAction *)sa->spacedata.first;
+	SpaceAction *saction = (SpaceAction *)sa->spacedata.first;
 	
 	/* update the state of the animchannels in response to changes from the data they represent 
 	 * NOTE: the temp flag is used to indicate when this needs to be done, and will be cleared once handled
 	 */
 	if (saction->flag & SACTION_TEMP_NEEDCHANSYNC) {
+		ARegion *ar;
+		
+		/* Perform syncing of channel state incl. selection
+		 * Active action setting also occurs here (as part of anim channel filtering in anim_filter.c)
+		 */
 		ANIM_sync_animchannels_to_data(C);
 		saction->flag &= ~SACTION_TEMP_NEEDCHANSYNC;
+		
+		/* Tag everything for redraw
+		 * - Regions (such as header) need to be manually tagged for redraw too
+		 *   or else they don't update [#28962]
+		 */
 		ED_area_tag_redraw(sa);
+		for (ar = sa->regionbase.first; ar; ar = ar->next)
+			ED_region_tag_redraw(ar);
 	}
 	
 	/* region updates? */
@@ -464,52 +493,52 @@ static void action_refresh(const bContext *C, ScrArea *sa)
 /* only called once, from space/spacetypes.c */
 void ED_spacetype_action(void)
 {
-	SpaceType *st= MEM_callocN(sizeof(SpaceType), "spacetype action");
+	SpaceType *st = MEM_callocN(sizeof(SpaceType), "spacetype action");
 	ARegionType *art;
 	
-	st->spaceid= SPACE_ACTION;
+	st->spaceid = SPACE_ACTION;
 	strncpy(st->name, "Action", BKE_ST_MAXNAME);
 	
-	st->new= action_new;
-	st->free= action_free;
-	st->init= action_init;
-	st->duplicate= action_duplicate;
-	st->operatortypes= action_operatortypes;
-	st->keymap= action_keymap;
-	st->listener= action_listener;
-	st->refresh= action_refresh;
+	st->new = action_new;
+	st->free = action_free;
+	st->init = action_init;
+	st->duplicate = action_duplicate;
+	st->operatortypes = action_operatortypes;
+	st->keymap = action_keymap;
+	st->listener = action_listener;
+	st->refresh = action_refresh;
 	
 	/* regions: main window */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype action region");
+	art = MEM_callocN(sizeof(ARegionType), "spacetype action region");
 	art->regionid = RGN_TYPE_WINDOW;
-	art->init= action_main_area_init;
-	art->draw= action_main_area_draw;
-	art->listener= action_main_area_listener;
-	art->keymapflag= ED_KEYMAP_VIEW2D|ED_KEYMAP_MARKERS|ED_KEYMAP_ANIMATION|ED_KEYMAP_FRAMES;
+	art->init = action_main_area_init;
+	art->draw = action_main_area_draw;
+	art->listener = action_main_area_listener;
+	art->keymapflag = ED_KEYMAP_VIEW2D | ED_KEYMAP_MARKERS | ED_KEYMAP_ANIMATION | ED_KEYMAP_FRAMES;
 
 	BLI_addhead(&st->regiontypes, art);
 	
 	/* regions: header */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype action region");
+	art = MEM_callocN(sizeof(ARegionType), "spacetype action region");
 	art->regionid = RGN_TYPE_HEADER;
-	art->prefsizey= HEADERY;
-	art->keymapflag= ED_KEYMAP_UI|ED_KEYMAP_VIEW2D|ED_KEYMAP_FRAMES|ED_KEYMAP_HEADER;
+	art->prefsizey = HEADERY;
+	art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D | ED_KEYMAP_FRAMES | ED_KEYMAP_HEADER;
 	
-	art->init= action_header_area_init;
-	art->draw= action_header_area_draw;
-	art->listener= action_header_area_listener;
+	art->init = action_header_area_init;
+	art->draw = action_header_area_draw;
+	art->listener = action_header_area_listener;
 	
 	BLI_addhead(&st->regiontypes, art);
 	
 	/* regions: channels */
-	art= MEM_callocN(sizeof(ARegionType), "spacetype action region");
+	art = MEM_callocN(sizeof(ARegionType), "spacetype action region");
 	art->regionid = RGN_TYPE_CHANNELS;
-	art->prefsizex= 200;
-	art->keymapflag= ED_KEYMAP_UI|ED_KEYMAP_VIEW2D;
+	art->prefsizex = 200;
+	art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_VIEW2D;
 	
-	art->init= action_channel_area_init;
-	art->draw= action_channel_area_draw;
-	art->listener= action_channel_area_listener;
+	art->init = action_channel_area_init;
+	art->draw = action_channel_area_draw;
+	art->listener = action_channel_area_listener;
 	
 	BLI_addhead(&st->regiontypes, art);
 	

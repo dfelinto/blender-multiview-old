@@ -59,7 +59,7 @@ static bNodeSocketType node_socket_type_float = {
 	/* ui_name */			"Float",
 	/* ui_description */	"Floating Point",
 	/* ui_icon */			0,
-	/* ui_color */			{160,160,160,255},
+	/* ui_color */			{160, 160, 160, 255},
 
 	/* value_structname */	"bNodeSocketValueFloat",
 	/* value_structsize */	sizeof(bNodeSocketValueFloat),
@@ -74,7 +74,7 @@ static bNodeSocketType node_socket_type_vector = {
 	/* ui_name */			"Vector",
 	/* ui_description */	"3-dimensional floating point vector",
 	/* ui_icon */			0,
-	/* ui_color */			{100,100,200,255},
+	/* ui_color */			{100, 100, 200, 255},
 
 	/* value_structname */	"bNodeSocketValueVector",
 	/* value_structsize */	sizeof(bNodeSocketValueVector),
@@ -89,7 +89,7 @@ static bNodeSocketType node_socket_type_rgba = {
 	/* ui_name */			"RGBA",
 	/* ui_description */	"RGBA color",
 	/* ui_icon */			0,
-	/* ui_color */			{200,200,40,255},
+	/* ui_color */			{200, 200, 40, 255},
 
 	/* value_structname */	"bNodeSocketValueRGBA",
 	/* value_structsize */	sizeof(bNodeSocketValueRGBA),
@@ -104,7 +104,7 @@ static bNodeSocketType node_socket_type_int = {
 	/* ui_name */			"Int",
 	/* ui_description */	"Integer",
 	/* ui_icon */			0,
-	/* ui_color */			{17,133,37,255},
+	/* ui_color */			{17, 133, 37, 255},
 
 	/* value_structname */	"bNodeSocketValueInt",
 	/* value_structsize */	sizeof(bNodeSocketValueInt),
@@ -119,7 +119,7 @@ static bNodeSocketType node_socket_type_boolean = {
 	/* ui_name */			"Boolean",
 	/* ui_description */	"Boolean",
 	/* ui_icon */			0,
-	/* ui_color */			{158,139,63,255},
+	/* ui_color */			{158, 139, 63, 255},
 
 	/* value_structname */	"bNodeSocketValueBoolean",
 	/* value_structsize */	sizeof(bNodeSocketValueBoolean),
@@ -134,7 +134,7 @@ static bNodeSocketType node_socket_type_shader = {
 	/* ui_name */			"Shader",
 	/* ui_description */	"Shader",
 	/* ui_icon */			0,
-	/* ui_color */			{100,200,100,255},
+	/* ui_color */			{100, 200, 100, 255},
 
 	/* value_structname */	NULL,
 	/* value_structsize */	0,
@@ -149,7 +149,7 @@ static bNodeSocketType node_socket_type_mesh = {
 	/* ui_name */			"Mesh",
 	/* ui_description */	"Mesh geometry data",
 	/* ui_icon */			0,
-	/* ui_color */			{255,133,7,255},
+	/* ui_color */			{255, 133, 7, 255},
 
 	/* value_structname */	NULL,
 	/* value_structsize */	0,
@@ -160,7 +160,7 @@ static bNodeSocketType node_socket_type_mesh = {
 
 void node_socket_type_init(bNodeSocketType *types[])
 {
-	#define INIT_TYPE(name)		types[node_socket_type_##name.type] = &node_socket_type_##name;
+	#define INIT_TYPE(name)		types[node_socket_type_##name.type] = &node_socket_type_##name
 	
 	INIT_TYPE(float);
 	INIT_TYPE(vector);
@@ -319,7 +319,7 @@ void node_socket_copy_default_value(int type, void *to_default_value, void *from
  * In the interface this could be implemented by a pseudo-script textbox on linked inputs,
  * with quick selection from a predefined list of conversion options. Some Examples:
  * - vector component 'z' (vector->float):						"z"
- * - greyscale color (float->color):							"grey"
+ * - grayscale color (float->color):							"gray"
  * - color luminance (color->float):							"lum"
  * - matrix column 2 length (matrix->vector->float):			"col[1].len"
  * - mesh vertex coordinate 'y' (mesh->vertex->vector->float):	"vertex.co.y"
@@ -485,13 +485,13 @@ static bNodeSocket *verify_socket_template(bNodeTree *ntree, bNode *node, int in
 {
 	bNodeSocket *sock;
 	
-	for(sock= socklist->first; sock; sock= sock->next) {
-		if(!(sock->flag & SOCK_DYNAMIC) && strncmp(sock->name, stemp->name, NODE_MAXSTR)==0)
+	for (sock= socklist->first; sock; sock= sock->next) {
+		if (!(sock->flag & SOCK_DYNAMIC) && strncmp(sock->name, stemp->name, NODE_MAXSTR)==0)
 			break;
 	}
-	if(sock) {
+	if (sock) {
 		sock->type= stemp->type;		/* in future, read this from tydefs! */
-		if(stemp->limit==0) sock->limit= 0xFFF;
+		if (stemp->limit==0) sock->limit= 0xFFF;
 		else sock->limit= stemp->limit;
 		sock->flag |= stemp->flag;
 		
@@ -550,7 +550,7 @@ static void verify_socket_template_list(bNodeTree *ntree, bNode *node, int in_ou
 	bNodeSocketTemplate *stemp;
 	
 	/* no inputs anymore? */
-	if(stemp_first==NULL) {
+	if (stemp_first==NULL) {
 		for (sock = (bNodeSocket*)socklist->first; sock; sock=nextsock) {
 			nextsock = sock->next;
 			if (!(sock->flag & SOCK_DYNAMIC))
@@ -560,7 +560,7 @@ static void verify_socket_template_list(bNodeTree *ntree, bNode *node, int in_ou
 	else {
 		/* step by step compare */
 		stemp= stemp_first;
-		while(stemp->type != -1) {
+		while (stemp->type != -1) {
 			stemp->sock= verify_socket_template(ntree, node, in_out, socklist, stemp);
 			stemp++;
 		}
@@ -578,14 +578,14 @@ static void verify_socket_template_list(bNodeTree *ntree, bNode *node, int in_ou
 			 * so we can add static sockets infront of it.
 			 */
 			sock = socklist->first;
-			while(stemp->type != -1) {
+			while (stemp->type != -1) {
 				/* put static sockets infront of dynamic */
 				BLI_insertlinkbefore(socklist, sock, stemp->sock);
 				stemp++;
 			}
 		}
 		else {
-			while(stemp->type != -1) {
+			while (stemp->type != -1) {
 				BLI_addtail(socklist, stemp->sock);
 				stemp++;
 			}
@@ -600,7 +600,7 @@ void node_verify_socket_templates(bNodeTree *ntree, bNode *node)
 	 * This also prevents group node sockets from being removed, without the need to explicitly
 	 * check the node type here.
 	 */
-	if(ntype && ((ntype->inputs && ntype->inputs[0].type>=0) || (ntype->outputs && ntype->outputs[0].type>=0))) {
+	if (ntype && ((ntype->inputs && ntype->inputs[0].type>=0) || (ntype->outputs && ntype->outputs[0].type>=0))) {
 		verify_socket_template_list(ntree, node, SOCK_IN, &node->inputs, ntype->inputs);
 		verify_socket_template_list(ntree, node, SOCK_OUT, &node->outputs, ntype->outputs);
 	}

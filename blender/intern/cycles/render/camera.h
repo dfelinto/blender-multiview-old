@@ -28,6 +28,7 @@ CCL_NAMESPACE_BEGIN
 
 class Device;
 class DeviceScene;
+class Scene;
 
 /* Camera
  *
@@ -37,8 +38,7 @@ class DeviceScene;
 class Camera {
 public:
 	/* motion blur */
-	float shutteropen;
-	float shutterclose;
+	float shuttertime;
 
 	/* depth of field */
 	float focaldistance;
@@ -50,6 +50,15 @@ public:
 	CameraType type;
 	float fov;
 
+	/* panorama */
+	PanoramaType panorama_type;
+	float fisheye_fov;
+	float fisheye_lens;
+
+	/* sensor */
+	float sensorwidth;
+	float sensorheight;
+
 	/* clipping */
 	float nearclip;
 	float farclip;
@@ -58,11 +67,18 @@ public:
 	int width, height;
 	float left, right, bottom, top;
 
+	/* border */
+	float border_left, border_right, border_bottom, border_top;
+
 	/* transformation */
 	Transform matrix;
 
+	/* motion */
+	MotionTransform motion;
+	bool use_motion;
+
 	/* computed camera parameters */
-    Transform screentoworld;
+	Transform screentoworld;
 	Transform rastertoworld;
 	Transform ndctoworld;
 	Transform rastertocamera;
@@ -82,7 +98,7 @@ public:
 
 	void update();
 
-	void device_update(Device *device, DeviceScene *dscene);
+	void device_update(Device *device, DeviceScene *dscene, Scene *scene);
 	void device_free(Device *device, DeviceScene *dscene);
 
 	bool modified(const Camera& cam);

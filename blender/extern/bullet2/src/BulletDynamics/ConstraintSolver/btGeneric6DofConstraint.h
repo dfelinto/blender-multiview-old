@@ -24,8 +24,8 @@ http://gimpact.sf.net
 */
 
 
-#ifndef GENERIC_6DOF_CONSTRAINT_H
-#define GENERIC_6DOF_CONSTRAINT_H
+#ifndef BT_GENERIC_6DOF_CONSTRAINT_H
+#define BT_GENERIC_6DOF_CONSTRAINT_H
 
 #include "LinearMath/btVector3.h"
 #include "btJacobianEntry.h"
@@ -354,7 +354,7 @@ public:
     
 	//! Calcs global transform of the offsets
 	/*!
-	Calcs the global transform for the joint offset for body A an B, and also calcs the agle differences between the bodies.
+	Calcs the global transform for the joint offset for body A an B, and also calcs the angle differences between the bodies.
 	\sa btGeneric6DofConstraint.getCalculatedTransformA , btGeneric6DofConstraint.getCalculatedTransformB, btGeneric6DofConstraint.calculateAngleInfo
 	*/
     void calculateTransforms(const btTransform& transA,const btTransform& transB);
@@ -611,4 +611,4 @@ SIMD_FORCE_INLINE	const char*	btGeneric6DofConstraint::serialize(void* dataBuffe
 
 
 
-#endif //GENERIC_6DOF_CONSTRAINT_H
+#endif //BT_GENERIC_6DOF_CONSTRAINT_H

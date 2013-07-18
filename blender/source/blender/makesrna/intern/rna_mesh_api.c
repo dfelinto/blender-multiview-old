@@ -36,13 +36,15 @@
 
 #include "BLO_sys_types.h"
 
+#include "BLI_utildefines.h"
+
 #include "BKE_mesh.h"
 #include "ED_mesh.h"
 
 #ifdef RNA_RUNTIME
 const char *rna_Mesh_unit_test_compare(struct Mesh *mesh, bContext *C, struct Mesh *mesh2)
 {
-	const char *ret = mesh_cmp(mesh, mesh2, FLT_EPSILON*60);
+	const char *ret = BKE_mesh_cmp(mesh, mesh2, FLT_EPSILON * 60);
 	
 	if (!ret)
 		ret = "Same";
@@ -65,6 +67,9 @@ void RNA_api_mesh(StructRNA *srna)
 	func = RNA_def_function(srna, "calc_normals", "ED_mesh_calc_normals");
 	RNA_def_function_ui_description(func, "Calculate vertex normals");
 
+	func = RNA_def_function(srna, "calc_tessface", "ED_mesh_calc_tessface");
+	RNA_def_function_ui_description(func, "Calculate face tessellation (supports editmode too)");
+
 	func = RNA_def_function(srna, "update", "ED_mesh_update");
 	RNA_def_boolean(func, "calc_edges", 0, "Calculate Edges", "Force recalculation of edges");
 	RNA_def_boolean(func, "calc_tessface", 0, "Calculate Tessellation", "Force recalculation of tessellation faces");
@@ -79,7 +84,7 @@ void RNA_api_mesh(StructRNA *srna)
 
 	func = RNA_def_function(srna, "validate", "BKE_mesh_validate");
 	RNA_def_function_ui_description(func, "validate geometry, return True when the mesh has had "
-	                                      "invalid geometry corrected/removed");
+	                                "invalid geometry corrected/removed");
 	RNA_def_boolean(func, "verbose", 0, "Verbose", "Output information about the errors found");
 	parm = RNA_def_boolean(func, "result", 0, "Result", "");
 	RNA_def_function_return(func, parm);

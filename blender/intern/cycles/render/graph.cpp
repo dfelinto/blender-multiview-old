@@ -120,9 +120,9 @@ void ShaderNode::attributes(AttributeRequestSet *attributes)
 	foreach(ShaderInput *input, inputs) {
 		if(!input->link) {
 			if(input->default_value == ShaderInput::TEXTURE_GENERATED)
-				attributes->add(Attribute::STD_GENERATED);
+				attributes->add(ATTR_STD_GENERATED);
 			else if(input->default_value == ShaderInput::TEXTURE_UV)
-				attributes->add(Attribute::STD_UV);
+				attributes->add(ATTR_STD_UV);
 		}
 	}
 }
@@ -187,7 +187,10 @@ void ShaderGraph::connect(ShaderOutput *from, ShaderInput *to)
 	if(from->type != to->type) {
 		/* for closures we can't do automatic conversion */
 		if(from->type == SHADER_SOCKET_CLOSURE || to->type == SHADER_SOCKET_CLOSURE) {
-			fprintf(stderr, "ShaderGraph connect: can only connect closure to closure.\n");
+			fprintf(stderr, "ShaderGraph connect: can only connect closure to closure "
+			        "(ShaderNode:%s, ShaderOutput:%s , type:%d -> to ShaderNode:%s, ShaderInput:%s, type:%d).\n",
+			        from->parent->name.c_str(), from->name, (int)from->type,
+			        to->parent->name.c_str(),   to->name,   (int)to->type);
 			return;
 		}
 
@@ -325,6 +328,26 @@ void ShaderGraph::remove_proxy_nodes(vector<bool>& removed)
 			
 			removed[proxy->id] = true;
 		}
+
+		/* remove useless mix closures nodes */
+		MixClosureNode *mix = dynamic_cast<MixClosureNode*>(node);
+
+		if(mix) {
+			if(mix->outputs[0]->links.size() && mix->inputs[1]->link == mix->inputs[2]->link) {
+				ShaderOutput *output = mix->inputs[1]->link;
+				vector<ShaderInput*> inputs = mix->outputs[0]->links;
+
+				foreach(ShaderInput *sock, mix->inputs)
+					if(sock->link)
+						disconnect(sock);
+
+				foreach(ShaderInput *input, inputs) {
+					disconnect(input);
+					if (output)
+						connect(output, input);
+				}
+			}
+		}
 	}
 }
 
@@ -355,8 +378,8 @@ void ShaderGraph::break_cycles(ShaderNode *node, vector<bool>& visited, vector<b
 void ShaderGraph::clean()
 {
 	/* we do two things here: find cycles and break them, and remove unused
-	   nodes that don't feed into the output. how cycles are broken is
-	   undefined, they are invalid input, the important thing is to not crash */
+	 * nodes that don't feed into the output. how cycles are broken is
+	 * undefined, they are invalid input, the important thing is to not crash */
 
 	vector<bool> removed(nodes.size(), false);
 	vector<bool> visited(nodes.size(), false);
@@ -475,7 +498,7 @@ void ShaderGraph::bump_from_displacement()
 	copy_nodes(nodes_displace, nodes_dy);
 
 	/* mark nodes to indicate they are use for bump computation, so
-	   that any texture coordinates are shifted by dx/dy when sampling */
+	 * that any texture coordinates are shifted by dx/dy when sampling */
 	foreach(NodePair& pair, nodes_center)
 		pair.second->bump = SHADER_BUMP_CENTER;
 	foreach(NodePair& pair, nodes_dx)
@@ -496,15 +519,15 @@ void ShaderGraph::bump_from_displacement()
 	connect(out_dy, bump->input("SampleY"));
 
 	/* connect bump output to normal input nodes that aren't set yet. actually
-	   this will only set the normal input to the geometry node that we created
-	   and connected to all other normal inputs already. */
+	 * this will only set the normal input to the geometry node that we created
+	 * and connected to all other normal inputs already. */
 	foreach(ShaderNode *node, nodes)
 		foreach(ShaderInput *input, node->inputs)
 			if(!input->link && input->default_value == ShaderInput::NORMAL)
 				connect(bump->output("Normal"), input);
 	
 	/* finally, add the copied nodes to the graph. we can't do this earlier
-	   because we would create dependency cycles in the above loop */
+	 * because we would create dependency cycles in the above loop */
 	foreach(NodePair& pair, nodes_center)
 		add(pair.second);
 	foreach(NodePair& pair, nodes_dx)

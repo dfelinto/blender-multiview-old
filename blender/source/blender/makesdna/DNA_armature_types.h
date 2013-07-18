@@ -127,23 +127,24 @@ typedef enum eArmature_Flag {
 	ARM_AUTO_IK			= (1<<9),
 	ARM_NO_CUSTOM		= (1<<10), 	/* made option negative, for backwards compat */
 	ARM_COL_CUSTOM		= (1<<11),	/* draw custom colors  */
-	ARM_GHOST_ONLYSEL 	= (1<<12),	/* when ghosting, only show selected bones (this should belong to ghostflag instead) */ // XXX depreceated
-	ARM_DS_EXPAND 		= (1<<13)
+	ARM_GHOST_ONLYSEL 	= (1<<12),	/* when ghosting, only show selected bones (this should belong to ghostflag instead) */ /* XXX depreceated */
+	ARM_DS_EXPAND 		= (1<<13),	/* dopesheet channel is expanded */
+	ARM_HAS_VIZ_DEPS	= (1<<14),	/* other objects are used for visualizing various states (hack for efficient updates) */
 } eArmature_Flag;
 
 /* armature->drawtype */
 typedef enum eArmature_Drawtype {
 	ARM_OCTA = 0,
-	ARM_LINE,
-	ARM_B_BONE,
-	ARM_ENVELOPE,
-	ARM_WIRE
+	ARM_LINE = 1,
+	ARM_B_BONE = 2,
+	ARM_ENVELOPE = 3,
+	ARM_WIRE = 4
 } eArmature_Drawtype;
 
 /* armature->gevertdeformer */
 typedef enum eArmature_VertDeformer {
-	ARM_VDEF_BLENDER,
-	ARM_VDEF_BGE_CPU
+	ARM_VDEF_BLENDER = 0,
+	ARM_VDEF_BGE_CPU = 1
 } eArmature_VertDeformer;
 
 /* armature->deformflag */
@@ -169,8 +170,8 @@ typedef enum eArmature_PathFlag {
 // XXX depreceated... old animation system (armature only viz)
 typedef enum eArmature_GhostType {
 	ARM_GHOST_CUR = 0,
-	ARM_GHOST_RANGE,
-	ARM_GHOST_KEYS
+	ARM_GHOST_RANGE = 1,
+	ARM_GHOST_KEYS = 2
 } eArmature_GhostType;
 
 /* bone->flag */
@@ -182,7 +183,7 @@ typedef enum eBone_Flag {
 	BONE_CONNECTED 				= (1<<4),	/* when bone has a parent, connect head of bone to parent's tail*/
 	/* 32 used to be quatrot, was always set in files, do not reuse unless you clear it always */	
 	BONE_HIDDEN_P				= (1<<6), 	/* hidden Bones when drawing PoseChannels */	
-	BONE_DONE					= (1<<7),	/* For detecting cyclic dependancies */
+	BONE_DONE					= (1<<7),	/* For detecting cyclic dependencies */
 	BONE_DRAW_ACTIVE			= (1<<8), 	/* active is on mouse clicks only - deprecated, ONLY USE FOR DRAWING */
 	BONE_HINGE					= (1<<9),	/* No parent rotation or scale */
 	BONE_HIDDEN_A				= (1<<10), 	/* hidden Bones when drawing Armature Editmode */

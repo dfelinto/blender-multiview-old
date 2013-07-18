@@ -245,7 +245,7 @@ void drawcircball(int mode, const float cent[3], float rad, float tmat[][4]);
 void view3d_validate_backbuf(struct ViewContext *vc);
 struct ImBuf *view3d_read_backbuf(struct ViewContext *vc, short xmin, short ymin, short xmax, short ymax);
 unsigned int view3d_sample_backbuf_rect(struct ViewContext *vc, const int mval[2], int size, unsigned int min, unsigned int max, int *dist, short strict,
-										void *handle, unsigned int (*indextest)(void *handle, unsigned int index));
+                                        void *handle, unsigned int (*indextest)(void *handle, unsigned int index));
 unsigned int view3d_sample_backbuf(struct ViewContext *vc, int x, int y);
 
 /* draws and does a 4x4 sample */
@@ -268,9 +268,7 @@ int view3d_get_view_aligned_coordinate(struct ViewContext *vc, float fp[3], cons
 void view3d_get_transformation(const struct ARegion *ar, struct RegionView3D *rv3d, struct Object *ob, struct bglMats *mats);
 
 /* XXX should move to BLI_math */
-int edge_inside_circle(short centx, short centy, short rad, short x1, short y1, short x2, short y2);
-int lasso_inside(int mcords[][2], short moves, int sx, int sy);
-int lasso_inside_edge(int mcords[][2], short moves, int x0, int y0, int x1, int y1);
+int edge_inside_circle(int centx, int centy, int rad, int x1, int y1, int x2, int y2);
 
 /* get 3d region from context, also if mouse is in header or toolbar */
 struct RegionView3D *ED_view3d_context_rv3d(struct bContext *C);
@@ -284,7 +282,7 @@ int ED_view3d_scene_layer_set(int lay, const int *values, int *active);
 
 int ED_view3d_context_activate(struct bContext *C);
 void ED_view3d_draw_offscreen(struct Scene *scene, struct View3D *v3d, struct ARegion *ar,
-	int winx, int winy, float viewmat[][4], float winmat[][4], int draw_background);
+                              int winx, int winy, float viewmat[][4], float winmat[][4], int do_bgpic);
 
 struct ImBuf *ED_view3d_draw_offscreen_imbuf(struct Scene *scene, struct View3D *v3d, struct ARegion *ar, int sizex, int sizey, unsigned int flag, int draw_background, char err_out[256]);
 struct ImBuf *ED_view3d_draw_offscreen_imbuf_simple(struct Scene *scene, struct Object *camera, int width, int height, unsigned int flag, int drawtype, int draw_background, char err_out[256]);
@@ -306,13 +304,20 @@ void ED_view3d_camera_lock_init(struct View3D *v3d, struct RegionView3D *rv3d);
 /* copy the view to the camera, return TRUE if */
 int ED_view3d_camera_lock_sync(struct View3D *v3d, struct RegionView3D *rv3d);
 
+void ED_view3D_lock_clear(struct View3D *v3d);
+
 struct BGpic *ED_view3D_background_image_new(struct View3D *v3d);
 void ED_view3D_background_image_remove(struct View3D *v3d, struct BGpic *bgpic);
 void ED_view3D_background_image_clear(struct View3D *v3d);
 
+float ED_view3d_grid_scale(struct Scene *scene, struct View3D *v3d, const char **grid_unit);
+
 /* view matrix properties utilities */
+/* unused */
+#if 0
 void ED_view3d_operator_properties_viewmat(struct wmOperatorType *ot);
 void ED_view3d_operator_properties_viewmat_set(struct bContext *C, struct wmOperator *op);
 void ED_view3d_operator_properties_viewmat_get(struct wmOperator *op, int *winx, int *winy, float persmat[4][4]);
+#endif
 
 #endif /* __ED_VIEW3D_H__ */

@@ -37,7 +37,8 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_blenlib.h"
+#include "BLI_string.h"
+#include "BLI_fileops.h"
 
 #include "imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -47,28 +48,28 @@
 #include "jpeglib.h" 
 #include "jerror.h"
 
-#define IS_jpg(x)		(x->ftype & JPG)
-#define IS_stdjpg(x)	((x->ftype & JPG_MSK) == JPG_STD)
-#define IS_vidjpg(x)	((x->ftype & JPG_MSK) == JPG_VID)
-#define IS_jstjpg(x)	((x->ftype & JPG_MSK) == JPG_JST)
-#define IS_maxjpg(x)	((x->ftype & JPG_MSK) == JPG_MAX)
+#define IS_jpg(x)       (x->ftype & JPG)
+#define IS_stdjpg(x)    ((x->ftype & JPG_MSK) == JPG_STD)
+#define IS_vidjpg(x)    ((x->ftype & JPG_MSK) == JPG_VID)
+#define IS_jstjpg(x)    ((x->ftype & JPG_MSK) == JPG_JST)
+#define IS_maxjpg(x)    ((x->ftype & JPG_MSK) == JPG_MAX)
 
 /* the types are from the jpeg lib */
-static void jpeg_error (j_common_ptr cinfo);
+static void jpeg_error(j_common_ptr cinfo);
 static void init_source(j_decompress_ptr cinfo);
 static boolean fill_input_buffer(j_decompress_ptr cinfo);
 static void skip_input_data(j_decompress_ptr cinfo, long num_bytes);
 static void term_source(j_decompress_ptr cinfo);
 static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t size);
-static boolean handle_app1 (j_decompress_ptr cinfo);
-static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int flags);
+static boolean handle_app1(j_decompress_ptr cinfo);
+static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int flags);
 
 
 /*
  * In principle there are 4 jpeg formats.
  *
- * 1. jpeg - standard printing, u & v at quarter of resulution
- * 2. jvid - standaard video, u & v half resolution, frame not interlaced
+ * 1. jpeg - standard printing, u & v at quarter of resolution
+ * 2. jvid - standard video, u & v half resolution, frame not interlaced
  *
  * type 3 is unsupported as of jul 05 2000 Frank.
  *
@@ -82,28 +83,28 @@ static int ibuf_ftype;
 
 int imb_is_a_jpeg(unsigned char *mem)
 {
-	if ((mem[0]== 0xFF) && (mem[1] == 0xD8))return 1;
+	if ((mem[0] == 0xFF) && (mem[1] == 0xD8)) return 1;
 	return 0;
 }
 
-//----------------------------------------------------------
-//	JPG ERROR HANDLING
-//----------------------------------------------------------
+/*----------------------------------------------------------
+ * JPG ERROR HANDLING
+ *---------------------------------------------------------- */
 
 typedef struct my_error_mgr {
-	struct jpeg_error_mgr pub;	/* "public" fields */
+	struct jpeg_error_mgr pub;  /* "public" fields */
 
-	jmp_buf setjmp_buffer;	/* for return to caller */
+	jmp_buf setjmp_buffer;  /* for return to caller */
 } my_error_mgr;
 
-typedef my_error_mgr * my_error_ptr;
+typedef my_error_mgr *my_error_ptr;
 
-static void jpeg_error (j_common_ptr cinfo)
+static void jpeg_error(j_common_ptr cinfo)
 {
 	my_error_ptr err = (my_error_ptr)cinfo->err;
 
 	/* Always display the message */
-	(*cinfo->err->output_message) (cinfo);
+	(*cinfo->err->output_message)(cinfo);
 
 	/* Let the memory manager delete any temp files before we die */
 	jpeg_destroy(cinfo);
@@ -112,24 +113,24 @@ static void jpeg_error (j_common_ptr cinfo)
 	longjmp(err->setjmp_buffer, 1);
 }
 
-//----------------------------------------------------------
-//	INPUT HANDLER FROM MEMORY
-//----------------------------------------------------------
+/*----------------------------------------------------------
+ * INPUT HANDLER FROM MEMORY
+ *---------------------------------------------------------- */
 
 typedef struct {
-	unsigned char	*buffer;
-	int		filled;
+	unsigned char  *buffer;
+	int             filled;
 } buffer_struct;
 
 typedef struct {
-	struct jpeg_source_mgr pub;	/* public fields */
+	struct jpeg_source_mgr pub; /* public fields */
 
-	unsigned char	*buffer;
-	int				size;
-	JOCTET			terminal[2];
+	unsigned char  *buffer;
+	int             size;
+	JOCTET          terminal[2];
 } my_source_mgr;
 
-typedef my_source_mgr * my_src_ptr;
+typedef my_source_mgr *my_src_ptr;
 
 static void init_source(j_decompress_ptr cinfo)
 {
@@ -158,8 +159,8 @@ static void skip_input_data(j_decompress_ptr cinfo, long num_bytes)
 {
 	my_src_ptr src = (my_src_ptr) cinfo->src;
 
-	if(num_bytes > 0) {
-		// prevent skipping over file end
+	if (num_bytes > 0) {
+		/* prevent skipping over file end */
 		size_t skip_size = (size_t)num_bytes <= src->pub.bytes_in_buffer ? num_bytes : src->pub.bytes_in_buffer;
 
 		src->pub.next_input_byte = src->pub.next_input_byte + skip_size;
@@ -179,28 +180,28 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
 
 	if (cinfo->src == NULL) { /* first time for this JPEG object? */
 		cinfo->src = (struct jpeg_source_mgr *)(*cinfo->mem->alloc_small)
-			((j_common_ptr) cinfo, JPOOL_PERMANENT, sizeof(my_source_mgr));
+		                 ((j_common_ptr) cinfo, JPOOL_PERMANENT, sizeof(my_source_mgr));
 	}
 
 	src = (my_src_ptr) cinfo->src;
-	src->pub.init_source		= init_source;
-	src->pub.fill_input_buffer	= fill_input_buffer;
-	src->pub.skip_input_data	= skip_input_data;
-	src->pub.resync_to_restart	= jpeg_resync_to_restart;
-	src->pub.term_source		= term_source;
+	src->pub.init_source        = init_source;
+	src->pub.fill_input_buffer  = fill_input_buffer;
+	src->pub.skip_input_data    = skip_input_data;
+	src->pub.resync_to_restart  = jpeg_resync_to_restart;
+	src->pub.term_source        = term_source;
 
-	src->pub.bytes_in_buffer	= size;
-	src->pub.next_input_byte	= buffer;
+	src->pub.bytes_in_buffer    = size;
+	src->pub.next_input_byte    = buffer;
 
 	src->buffer = buffer;
 	src->size = size;
 }
 
 
-#define MAKESTMT(stuff)		do { stuff } while (0)
+#define MAKESTMT(stuff)     do { stuff } while (0)
 
 #define INPUT_VARS(cinfo)  \
-	struct jpeg_source_mgr * datasrc = (cinfo)->src;  \
+	struct jpeg_source_mgr *datasrc = (cinfo)->src;  \
 	const JOCTET * next_input_byte = datasrc->next_input_byte;  \
 	size_t bytes_in_buffer = datasrc->bytes_in_buffer
 
@@ -223,31 +224,31 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
 		if (! (*datasrc->fill_input_buffer) (cinfo))                          \
 			{ action; }                                                       \
 		INPUT_RELOAD(cinfo);  \
-	}
+	} (void)0
 
 
 /* Read a byte into variable V.
  * If must suspend, take the specified action (typically "return FALSE").
  */
-#define INPUT_BYTE(cinfo,V,action)  \
-	MAKESTMT( MAKE_BYTE_AVAIL(cinfo,action); \
+#define INPUT_BYTE(cinfo, V, action)  \
+	MAKESTMT(MAKE_BYTE_AVAIL(cinfo,action); \
 		  bytes_in_buffer--; \
 		  V = GETJOCTET(*next_input_byte++); )
 
 /* As above, but read two bytes interpreted as an unsigned 16-bit integer.
  * V should be declared unsigned int or perhaps INT32.
  */
-#define INPUT_2BYTES(cinfo,V,action)  \
-	MAKESTMT( MAKE_BYTE_AVAIL(cinfo,action); \
+#define INPUT_2BYTES(cinfo, V, action)  \
+	MAKESTMT(MAKE_BYTE_AVAIL(cinfo,action); \
 		  bytes_in_buffer--; \
 		  V = ((unsigned int) GETJOCTET(*next_input_byte++)) << 8; \
-		  MAKE_BYTE_AVAIL(cinfo,action); \
+		  MAKE_BYTE_AVAIL(cinfo, action); \
 		  bytes_in_buffer--; \
 		  V += GETJOCTET(*next_input_byte++); )
 
 
 static boolean
-handle_app1 (j_decompress_ptr cinfo)
+handle_app1(j_decompress_ptr cinfo)
 {
 	INT32 length; /* initialized by the macro */
 	INT32 i;
@@ -264,20 +265,20 @@ handle_app1 (j_decompress_ptr cinfo)
 		if (strncmp(neogeo, "NeoGeo", 6) == 0) memcpy(&ibuf_ftype, neogeo + 6, 4);
 		ibuf_ftype = BIG_LONG(ibuf_ftype);
 	}
-	INPUT_SYNC(cinfo);		/* do before skip_input_data */
-	if (length > 0) (*cinfo->src->skip_input_data) (cinfo, length);
+	INPUT_SYNC(cinfo);  /* do before skip_input_data */
+	if (length > 0) (*cinfo->src->skip_input_data)(cinfo, length);
 	return TRUE;
 }
 
 
-static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int flags)
+static ImBuf *ibJpegImageFromCinfo(struct jpeg_decompress_struct *cinfo, int flags)
 {
 	JSAMPARRAY row_pointer;
-	JSAMPLE * buffer = NULL;
+	JSAMPLE *buffer = NULL;
 	int row_stride;
 	int x, y, depth, r, g, b, k;
-	struct ImBuf * ibuf = NULL;
-	uchar * rect;
+	struct ImBuf *ibuf = NULL;
+	uchar *rect;
 	jpeg_saved_marker_ptr marker;
 	char *str, *key, *value;
 
@@ -314,23 +315,23 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 		else {
 			row_stride = cinfo->output_width * depth;
 
-			row_pointer = (*cinfo->mem->alloc_sarray) ((j_common_ptr) cinfo, JPOOL_IMAGE, row_stride, 1);
+			row_pointer = (*cinfo->mem->alloc_sarray)((j_common_ptr) cinfo, JPOOL_IMAGE, row_stride, 1);
 			
 			for (y = ibuf->y - 1; y >= 0; y--) {
 				jpeg_read_scanlines(cinfo, row_pointer, 1);
 				rect = (uchar *) (ibuf->rect + y * ibuf->x);
 				buffer = row_pointer[0];
 				
-				switch(depth) {
+				switch (depth) {
 					case 1:
-						for (x=ibuf->x; x >0; x--) {
+						for (x = ibuf->x; x > 0; x--) {
 							rect[3] = 255;
 							rect[0] = rect[1] = rect[2] = *buffer++;
 							rect += 4;
 						}
 						break;
 					case 3:
-						for (x=ibuf->x; x >0; x--) {
+						for (x = ibuf->x; x > 0; x--) {
 							rect[3] = 255;
 							rect[0] = *buffer++;
 							rect[1] = *buffer++;
@@ -339,7 +340,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 						}
 						break;
 					case 4:
-						for (x=ibuf->x; x >0; x--) {
+						for (x = ibuf->x; x > 0; x--) {
 							r = *buffer++;
 							g = *buffer++;
 							b = *buffer++;
@@ -371,9 +372,9 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 				}
 			}
 
-			marker= cinfo->marker_list;
-			while(marker) {
-				if(marker->marker != JPEG_COM)
+			marker = cinfo->marker_list;
+			while (marker) {
+				if (marker->marker != JPEG_COM)
 					goto next_stamp_marker;
 
 				/*
@@ -385,7 +386,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 				 * That is why we need split it to the
 				 * common key/value here.
 				 */
-				if(strncmp((char *) marker->data, "Blender", 7)) {
+				if (strncmp((char *) marker->data, "Blender", 7)) {
 					/*
 					 * Maybe the file have text that
 					 * we don't know "what it's", in that
@@ -400,8 +401,8 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 					goto next_stamp_marker;
 				}
 
-				str = BLI_strdup ((char *) marker->data);
-				key = strchr (str, ':');
+				str = BLI_strdup((char *) marker->data);
+				key = strchr(str, ':');
 				/*
 				 * A little paranoid, but the file maybe
 				 * is broken... and a "extra" check is better
@@ -413,7 +414,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 				}
 
 				key++;
-				value = strchr (key, ':');
+				value = strchr(key, ':');
 				if (!value) {
 					MEM_freeN(str);
 					goto next_stamp_marker;
@@ -425,14 +426,14 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 				ibuf->flags |= IB_metadata;
 				MEM_freeN(str);
 next_stamp_marker:
-				marker= marker->next;
+				marker = marker->next;
 			}
 
 			jpeg_finish_decompress(cinfo);
 		}
 		
 		jpeg_destroy((j_common_ptr) cinfo);
-		if(ibuf) {
+		if (ibuf) {
 			ibuf->ftype = ibuf_ftype;
 			ibuf->profile = IB_PROFILE_SRGB;
 		}
@@ -441,13 +442,13 @@ next_stamp_marker:
 	return(ibuf);
 }
 
-ImBuf * imb_load_jpeg (unsigned char * buffer, size_t size, int flags)
+ImBuf *imb_load_jpeg(unsigned char *buffer, size_t size, int flags)
 {
 	struct jpeg_decompress_struct _cinfo, *cinfo = &_cinfo;
 	struct my_error_mgr jerr;
-	ImBuf * ibuf;
+	ImBuf *ibuf;
 
-	if(!imb_is_a_jpeg(buffer)) return NULL;
+	if (!imb_is_a_jpeg(buffer)) return NULL;
 	
 	cinfo->err = jpeg_std_error(&jerr.pub);
 	jerr.pub.error_exit = jpeg_error;
@@ -470,11 +471,11 @@ ImBuf * imb_load_jpeg (unsigned char * buffer, size_t size, int flags)
 }
 
 
-static void write_jpeg(struct jpeg_compress_struct * cinfo, struct ImBuf * ibuf)
+static void write_jpeg(struct jpeg_compress_struct *cinfo, struct ImBuf *ibuf)
 {
-	JSAMPLE * buffer = NULL;
+	JSAMPLE *buffer = NULL;
 	JSAMPROW row_pointer[1];
-	uchar * rect;
+	uchar *rect;
 	int x, y;
 	char neogeo[128];
 	ImMetaData *iptr;
@@ -486,15 +487,15 @@ static void write_jpeg(struct jpeg_compress_struct * cinfo, struct ImBuf * ibuf)
 	ibuf_ftype = BIG_LONG(ibuf->ftype);
 	
 	memcpy(neogeo + 6, &ibuf_ftype, 4);
-	jpeg_write_marker(cinfo, 0xe1, (JOCTET*) neogeo, 10);
+	jpeg_write_marker(cinfo, 0xe1, (JOCTET *) neogeo, 10);
 
-	if(ibuf->metadata) {
+	if (ibuf->metadata) {
 		/* key + max value + "Blender" */
-		text= MEM_mallocN(530, "stamp info read");
-		iptr= ibuf->metadata;
-		while(iptr) {
-			if (!strcmp (iptr->key, "None")) {
-				jpeg_write_marker(cinfo, JPEG_COM, (JOCTET *) iptr->value, strlen (iptr->value) + 1);
+		text = MEM_mallocN(530, "stamp info read");
+		iptr = ibuf->metadata;
+		while (iptr) {
+			if (!strcmp(iptr->key, "None")) {
+				jpeg_write_marker(cinfo, JPEG_COM, (JOCTET *) iptr->value, strlen(iptr->value) + 1);
 				goto next_stamp_info;
 			}
 
@@ -507,8 +508,8 @@ static void write_jpeg(struct jpeg_compress_struct * cinfo, struct ImBuf * ibuf)
 			 * The first "Blender" is a simple identify to help
 			 * in the read process.
 			 */
-			sprintf (text, "Blender:%s:%s", iptr->key, iptr->value);
-			jpeg_write_marker(cinfo, JPEG_COM, (JOCTET *) text, strlen (text)+1);
+			sprintf(text, "Blender:%s:%s", iptr->key, iptr->value);
+			jpeg_write_marker(cinfo, JPEG_COM, (JOCTET *) text, strlen(text) + 1);
 next_stamp_info:
 			iptr = iptr->next;
 		}
@@ -516,15 +517,15 @@ next_stamp_info:
 	}
 
 	row_pointer[0] =
-		MEM_mallocN(sizeof(JSAMPLE) *
-					 cinfo->input_components *
-					 cinfo->image_width, "jpeg row_pointer");
+	    MEM_mallocN(sizeof(JSAMPLE) *
+	                cinfo->input_components *
+	                cinfo->image_width, "jpeg row_pointer");
 
-	for(y = ibuf->y - 1; y >= 0; y--){
+	for (y = ibuf->y - 1; y >= 0; y--) {
 		rect = (uchar *) (ibuf->rect + y * ibuf->x);
 		buffer = row_pointer[0];
 
-		switch(cinfo->in_color_space){
+		switch (cinfo->in_color_space) {
 			case JCS_RGB:
 				for (x = 0; x < ibuf->x; x++) {
 					*buffer++ = rect[0];
@@ -542,7 +543,7 @@ next_stamp_info:
 			case JCS_UNKNOWN:
 				memcpy(buffer, rect, 4 * ibuf->x);
 				break;
-				/* default was missing... intentional ? */
+			/* default was missing... intentional ? */
 			default:
 				; /* do nothing */
 		}
@@ -555,7 +556,7 @@ next_stamp_info:
 }
 
 
-static int init_jpeg(FILE * outfile, struct jpeg_compress_struct * cinfo, struct ImBuf *ibuf)
+static int init_jpeg(FILE *outfile, struct jpeg_compress_struct *cinfo, struct ImBuf *ibuf)
 {
 	int quality;
 
@@ -577,7 +578,7 @@ static int init_jpeg(FILE * outfile, struct jpeg_compress_struct * cinfo, struct
 
 	if (ibuf->planes == 32) cinfo->in_color_space = JCS_UNKNOWN;
 #endif
-	switch(cinfo->in_color_space){
+	switch (cinfo->in_color_space) {
 		case JCS_RGB:
 			cinfo->input_components = 3;
 			break;
@@ -587,7 +588,7 @@ static int init_jpeg(FILE * outfile, struct jpeg_compress_struct * cinfo, struct
 		case JCS_UNKNOWN:
 			cinfo->input_components = 4;
 			break;
-			/* default was missing... intentional ? */
+		/* default was missing... intentional ? */
 		default:
 			; /* do nothing */
 	}
@@ -604,11 +605,11 @@ static int init_jpeg(FILE * outfile, struct jpeg_compress_struct * cinfo, struct
 
 static int save_stdjpeg(const char *name, struct ImBuf *ibuf)
 {
-	FILE * outfile;
+	FILE *outfile;
 	struct jpeg_compress_struct _cinfo, *cinfo = &_cinfo;
 	struct my_error_mgr jerr;
 
-	if ((outfile = fopen(name, "wb")) == NULL) return 0;
+	if ((outfile = BLI_fopen(name, "wb")) == NULL) return 0;
 	jpeg_default_quality = 75;
 
 	cinfo->err = jpeg_std_error(&jerr.pub);
@@ -638,11 +639,11 @@ static int save_stdjpeg(const char *name, struct ImBuf *ibuf)
 
 static int save_vidjpeg(const char *name, struct ImBuf *ibuf)
 {
-	FILE * outfile;
+	FILE *outfile;
 	struct jpeg_compress_struct _cinfo, *cinfo = &_cinfo;
 	struct my_error_mgr jerr;
 
-	if ((outfile = fopen(name, "wb")) == NULL) return 0;
+	if ((outfile = BLI_fopen(name, "wb")) == NULL) return 0;
 	jpeg_default_quality = 90;
 
 	cinfo->err = jpeg_std_error(&jerr.pub);
@@ -678,7 +679,7 @@ static int save_vidjpeg(const char *name, struct ImBuf *ibuf)
 static int save_jstjpeg(const char *name, struct ImBuf *ibuf)
 {
 	char fieldname[1024];
-	struct ImBuf * tbuf;
+	struct ImBuf *tbuf;
 	int oldy, returnval;
 
 	tbuf = IMB_allocImBuf(ibuf->x, ibuf->y / 2, 24, IB_rect);
@@ -708,11 +709,11 @@ static int save_jstjpeg(const char *name, struct ImBuf *ibuf)
 
 static int save_maxjpeg(const char *name, struct ImBuf *ibuf)
 {
-	FILE * outfile;
+	FILE *outfile;
 	struct jpeg_compress_struct _cinfo, *cinfo = &_cinfo;
 	struct my_error_mgr jerr;
 
-	if ((outfile = fopen(name, "wb")) == NULL) return 0;
+	if ((outfile = BLI_fopen(name, "wb")) == NULL) return 0;
 	jpeg_default_quality = 100;
 
 	cinfo->err = jpeg_std_error(&jerr.pub);

@@ -18,7 +18,7 @@ http://www.gnu.org/copyleft/lesser.txt.
 Contributor(s): Dalai Felinto
 
 This source uses some of the ideas and code from Paul Bourke.
-Developed as part of a Research and Development project for SAT - La Soci�t� des arts technologiques.
+Developed as part of a Research and Development project for SAT - La Société des arts technologiques.
 -----------------------------------------------------------------------------
 */
 
@@ -81,8 +81,9 @@ public:
 	bool	fboSupported;
 
 	//openGL names:
-	GLuint domefacesId[7];		// ID of the images -- room for 7 images, using only 4 for 180� x 360� dome, 6 for panoramic and +1 for warp mesh
-	GLuint dlistId;				// ID of the Display Lists of the images (used as an offset)
+	GLuint domefacesId[7];      /* ID of the images -- room for 7 images, using only 4 for 180deg x 360deg dome,
+	                             * 6 for panoramic and +1 for warp mesh */
+	GLuint dlistId;             /* ID of the Display Lists of the images (used as an offset) */
 	
 	typedef struct {
 		double u[3], v[3];
@@ -163,7 +164,7 @@ protected:
 	int m_numfaces;		// 4 to 6 depending on the kind of dome image
 	int m_numimages;	//numfaces +1 if we have warp mesh
 
-	short m_resolution;	//resolution to tesselate the mesh
+	short m_resolution;	//resolution to tessellate the mesh
 	short m_mode;		// the mode (truncated, warped, panoramic,...)
 	short m_angle;		//the angle of the fisheye
 	float m_radangle;	//the angle of the fisheye in radians
@@ -174,7 +175,7 @@ protected:
 
 	MT_Matrix4x4 m_projmat;
 
-	MT_Matrix3x3 m_locRot [6];// the rotation matrix
+	MT_Matrix3x3 m_locRot[6]; // the rotation matrix
 
 	/// rendered scene
 	KX_Scene * m_scene;
@@ -190,9 +191,7 @@ protected:
 	
 	
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
-	void *operator new(size_t num_bytes) { return MEM_mallocN(num_bytes, "GE:KX_Dome"); }
-	void operator delete( void *mem ) { MEM_freeN(mem); }
+	MEM_CXX_CLASS_ALLOC_FUNCS("GE:KX_Dome")
 #endif
 };
 

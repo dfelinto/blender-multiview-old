@@ -39,8 +39,8 @@ http://www.gnu.org/copyleft/lesser.txt.
 
 #include <string>
 
-#include "Exception.h"
 #include "VideoFFmpeg.h"
+#include "Exception.h"
 
 
 // default framerate
@@ -162,17 +162,17 @@ void VideoFFmpeg::initParams (short width, short height, float rate, bool image)
 }
 
 
-int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AVFormatParameters *formatParams)
+int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AVDictionary **formatParams)
 {
-	AVFormatContext *formatCtx;
+	AVFormatContext *formatCtx = NULL;
 	int				i, videoStream;
 	AVCodec			*codec;
 	AVCodecContext	*codecCtx;
 
-	if(av_open_input_file(&formatCtx, filename, inputFormat, 0, formatParams)!=0)
+	if (avformat_open_input(&formatCtx, filename, inputFormat, formatParams)!=0)
 		return -1;
 
-	if(av_find_stream_info(formatCtx)<0) 
+	if (av_find_stream_info(formatCtx)<0) 
 	{
 		av_close_input_file(formatCtx);
 		return -1;
@@ -180,9 +180,9 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
 
 	/* Find the first video stream */
 	videoStream=-1;
-	for(i=0; i<formatCtx->nb_streams; i++)
+	for (i=0; i<formatCtx->nb_streams; i++)
 	{
-		if(formatCtx->streams[i] &&
+		if (formatCtx->streams[i] &&
 			get_codec_from_stream(formatCtx->streams[i]) && 
 			(get_codec_from_stream(formatCtx->streams[i])->codec_type==AVMEDIA_TYPE_VIDEO))
 		{
@@ -191,7 +191,7 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
 		}
 	}
 
-	if(videoStream==-1) 
+	if (videoStream==-1) 
 	{
 		av_close_input_file(formatCtx);
 		return -1;
@@ -201,20 +201,20 @@ int VideoFFmpeg::openStream(const char *filename, AVInputFormat *inputFormat, AV
 
 	/* Find the decoder for the video stream */
 	codec=avcodec_find_decoder(codecCtx->codec_id);
-	if(codec==NULL) 
+	if (codec==NULL) 
 	{
 		av_close_input_file(formatCtx);
 		return -1;
 	}
 	codecCtx->workaround_bugs = 1;
-	if(avcodec_open(codecCtx, codec)<0) 
+	if (avcodec_open(codecCtx, codec)<0) 
 	{
 		av_close_input_file(formatCtx);
 		return -1;
 	}
 
 #ifdef FFMPEG_OLD_FRAME_RATE
-	if(codecCtx->frame_rate>1000 && codecCtx->frame_rate_base==1)
+	if (codecCtx->frame_rate>1000 && codecCtx->frame_rate_base==1)
 		codecCtx->frame_rate_base=1000;
 	m_baseFrameRate = (double)codecCtx->frame_rate / (double)codecCtx->frame_rate_base;
 #else
@@ -373,7 +373,7 @@ void *VideoFFmpeg::cacheThread(void *data)
 				avcodec_decode_video2(video->m_codecCtx, 
 					video->m_frame, &frameFinished, 
 					&cachePacket->packet);
-				if(frameFinished) 
+				if (frameFinished) 
 				{
 					AVFrame * input = video->m_frame;
 
@@ -545,11 +545,7 @@ void VideoFFmpeg::openFile (char * filename)
 		// but it is really not desirable to seek on http file, so force streaming.
 		// It would be good to find this information from the context but there are no simple indication
 		!strncmp(filename, "http://", 7) ||
-#ifdef FFMPEG_PB_IS_POINTER
-		(m_formatCtx->pb && m_formatCtx->pb->is_streamed)
-#else
-		m_formatCtx->pb.is_streamed
-#endif
+		(m_formatCtx->pb && !m_formatCtx->pb->seekable)
 		)
 	{
 		// the file is in fact a streaming source, treat as cam to prevent seeking
@@ -586,13 +582,12 @@ void VideoFFmpeg::openCam (char * file, short camIdx)
 {
 	// open camera source
 	AVInputFormat		*inputFormat;
-	AVFormatParameters	formatParams;
-	AVRational			frameRate;
-	char				*p, filename[28], rateStr[20];
+	AVDictionary		*formatParams = NULL;
+	char				filename[28], rateStr[20];
+	char                *p;
 
 	do_init_ffmpeg();
 
-	memset(&formatParams, 0, sizeof(formatParams));
 #ifdef WIN32
 	// video capture on windows only through Video For Windows driver
 	inputFormat = av_find_input_format("vfwcap");
@@ -622,7 +617,13 @@ void VideoFFmpeg::openCam (char * file, short camIdx)
 		sprintf(filename, "/dev/dv1394/%d", camIdx);
 	} else 
 	{
-		inputFormat = av_find_input_format("video4linux");
+		const char *formats[] = {"video4linux2,v4l2", "video4linux2", "video4linux"};
+		int i, formatsCount = sizeof(formats) / sizeof(char*);
+		for (i = 0; i < formatsCount; i++) {
+			inputFormat = av_find_input_format(formats[i]);
+			if (inputFormat)
+				break;
+		}
 		sprintf(filename, "/dev/video%d", camIdx);
 	}
 	if (!inputFormat)
@@ -636,20 +637,22 @@ void VideoFFmpeg::openCam (char * file, short camIdx)
 		if ((p = strchr(filename, ':')) != 0)
 			*p = 0;
 	}
-	if (file && (p = strchr(file, ':')) != NULL)
-		formatParams.standard = p+1;
+	if (file && (p = strchr(file, ':')) != NULL) {
+		av_dict_set(&formatParams, "standard", p+1, 0);
+	}
 #endif
 	//frame rate
 	if (m_captRate <= 0.f)
 		m_captRate = defFrameRate;
 	sprintf(rateStr, "%f", m_captRate);
-	av_parse_video_rate(&frameRate, rateStr);
-	// populate format parameters
-	// need to specify the time base = inverse of rate
-	formatParams.time_base.num = frameRate.den;
-	formatParams.time_base.den = frameRate.num;
-	formatParams.width = m_captWidth;
-	formatParams.height = m_captHeight;
+
+	av_dict_set(&formatParams, "framerate", rateStr, 0);
+
+	if (m_captWidth > 0 && m_captHeight > 0) {
+		char video_size[64];
+		BLI_snprintf(video_size, sizeof(video_size), "%dx%d", m_captWidth, m_captHeight);
+		av_dict_set(&formatParams, "video_size", video_size, 0);
+	}
 
 	if (openStream(filename, inputFormat, &formatParams) != 0)
 		return;
@@ -664,6 +667,8 @@ void VideoFFmpeg::openCam (char * file, short camIdx)
 		// no need to thread if the system has a single core
 		m_isThreaded =  true;
 	}
+
+	av_dict_free(&formatParams);
 }
 
 // play video
@@ -793,7 +798,7 @@ void VideoFFmpeg::calcImage (unsigned int texId, double ts)
 		{
 			AVFrame* frame;
 			// get image
-			if((frame = grabFrame(actFrame)) != NULL)
+			if ((frame = grabFrame(actFrame)) != NULL)
 			{
 				if (!m_isFile && !m_cacheStarted) 
 				{
@@ -999,7 +1004,7 @@ AVFrame *VideoFFmpeg::grabFrame(long position)
 	// return the next frame. This is not quite correct, may need more work
 	while(av_read_frame(m_formatCtx, &packet)>=0) 
 	{
-		if(packet.stream_index == m_videoStream) 
+		if (packet.stream_index == m_videoStream) 
 		{
 			avcodec_decode_video2(m_codecCtx, 
 				m_frame, &frameFinished, 

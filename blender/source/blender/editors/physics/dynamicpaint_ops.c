@@ -73,7 +73,7 @@ static int surface_slot_add_exec(bContext *C, wmOperator *UNUSED(op))
 
 	/* set preview for this surface only and set active */
 	canvas->active_sur = 0;
-	for(surface=surface->prev; surface; surface=surface->prev) {
+	for (surface=surface->prev; surface; surface=surface->prev) {
 				surface->flags &= ~MOD_DPAINT_PREVIEW;
 				canvas->active_sur++;
 	}
@@ -85,16 +85,16 @@ static int surface_slot_add_exec(bContext *C, wmOperator *UNUSED(op))
 void DPAINT_OT_surface_slot_add(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Add Surface Slot";
-	ot->idname= "DPAINT_OT_surface_slot_add";
-	ot->description="Add a new Dynamic Paint surface slot";
+	ot->name = "Add Surface Slot";
+	ot->idname = "DPAINT_OT_surface_slot_add";
+	ot->description = "Add a new Dynamic Paint surface slot";
 	
 	/* api callbacks */
-	ot->exec= surface_slot_add_exec;
-	ot->poll= ED_operator_object_active_editable;
+	ot->exec = surface_slot_add_exec;
+	ot->poll = ED_operator_object_active_editable;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
 static int surface_slot_remove_exec(bContext *C, wmOperator *UNUSED(op))
@@ -113,8 +113,8 @@ static int surface_slot_remove_exec(bContext *C, wmOperator *UNUSED(op))
 	surface = canvas->surfaces.first;
 
 	/* find active surface and remove it */
-	for(; surface; surface=surface->next) {
-		if(id == canvas->active_sur) {
+	for (; surface; surface=surface->next) {
+		if (id == canvas->active_sur) {
 				canvas->active_sur -= 1;
 				dynamicPaint_freeSurface(surface);
 				break;
@@ -133,16 +133,16 @@ static int surface_slot_remove_exec(bContext *C, wmOperator *UNUSED(op))
 void DPAINT_OT_surface_slot_remove(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Remove Surface Slot";
-	ot->idname= "DPAINT_OT_surface_slot_remove";
-	ot->description="Remove the selected surface slot";
+	ot->name = "Remove Surface Slot";
+	ot->idname = "DPAINT_OT_surface_slot_remove";
+	ot->description = "Remove the selected surface slot";
 	
 	/* api callbacks */
-	ot->exec= surface_slot_remove_exec;
-	ot->poll= ED_operator_object_active_editable;
+	ot->exec = surface_slot_remove_exec;
+	ot->poll = ED_operator_object_active_editable;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
 static int type_toggle_exec(bContext *C, wmOperator *op)
@@ -181,20 +181,20 @@ void DPAINT_OT_type_toggle(wmOperatorType *ot)
 	PropertyRNA *prop;
 
 	/* identifiers */
-	ot->name= "Toggle Type Active";
-	ot->idname= "DPAINT_OT_type_toggle";
+	ot->name = "Toggle Type Active";
+	ot->idname = "DPAINT_OT_type_toggle";
 	ot->description = "Toggle whether given type is active or not";
 	
 	/* api callbacks */
-	ot->exec= type_toggle_exec;
-	ot->poll= ED_operator_object_active_editable;
+	ot->exec = type_toggle_exec;
+	ot->poll = ED_operator_object_active_editable;
 	
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
 	prop= RNA_def_enum(ot->srna, "type", prop_dynamicpaint_type_items, MOD_DYNAMICPAINT_TYPE_CANVAS, "Type", "");
-	ot->prop= prop;
+	ot->prop = prop;
 }
 
 static int output_toggle_exec(bContext *C, wmOperator *op)
@@ -249,19 +249,19 @@ void DPAINT_OT_output_toggle(wmOperatorType *ot)
 	};
 
 	/* identifiers */
-	ot->name= "Toggle Output Layer";
-	ot->idname= "DPAINT_OT_output_toggle";
+	ot->name = "Toggle Output Layer";
+	ot->idname = "DPAINT_OT_output_toggle";
 	ot->description = "Add or remove Dynamic Paint output data layer";
 	
 	/* api callbacks */
-	ot->exec= output_toggle_exec;
-	ot->poll= ED_operator_object_active_editable;
+	ot->exec = output_toggle_exec;
+	ot->poll = ED_operator_object_active_editable;
 	
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag = OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	ot->prop= RNA_def_enum(ot->srna, "output", prop_output_toggle_types, 0, "Output Toggle", "");
+	ot->prop = RNA_def_enum(ot->srna, "output", prop_output_toggle_types, 0, "Output Toggle", "");
 }
 
 
@@ -285,14 +285,13 @@ static int dynamicPaint_bakeImageSequence(bContext *C, DynamicPaintSurface *surf
 	/* Set frame to start point (also inits modifier data) */
 	frame = surface->start_frame;
 	scene->r.cfra = (int)frame;
-	ED_update_for_newframe(CTX_data_main(C), scene, win->screen, 1);
+	ED_update_for_newframe(CTX_data_main(C), scene, 1);
 
 	/* Init surface	*/
 	if (!dynamicPaint_createUVSurface(surface)) return 0;
 
 	/* Loop through selected frames */
-	for (frame=surface->start_frame; frame<=surface->end_frame; frame++)
-	{
+	for (frame=surface->start_frame; frame<=surface->end_frame; frame++) {
 		float progress = (frame - surface->start_frame) / (float)frames * 100;
 		surface->current_frame = frame;
 
@@ -300,11 +299,11 @@ static int dynamicPaint_bakeImageSequence(bContext *C, DynamicPaintSurface *surf
 		if (blender_test_break()) return 0;
 
 		/* Update progress bar cursor */
-		WM_timecursor(win, (int)progress);
+		WM_cursor_time(win, (int)progress);
 
 		/* calculate a frame */
 		scene->r.cfra = (int)frame;
-		ED_update_for_newframe(CTX_data_main(C), scene, win->screen, 1);
+		ED_update_for_newframe(CTX_data_main(C), scene, 1);
 		if (!dynamicPaint_calculateFrame(surface, scene, cObject, frame)) return 0;
 
 		/*
@@ -370,7 +369,7 @@ static int dynamicPaint_initBake(struct bContext *C, struct wmOperator *op)
 	/* Set state to baking and init surface */
 	canvas->error[0] = '\0';
 	canvas->flags |= MOD_DPAINT_BAKING;
-	G.afbreek= 0;	/* reset blender_test_break*/
+	G.is_break = FALSE;  /* reset blender_test_break*/
 
 	/*  Bake Dynamic Paint	*/
 	status = dynamicPaint_bakeImageSequence(C, surface, ob);
@@ -408,7 +407,7 @@ static int dynamicPaint_initBake(struct bContext *C, struct wmOperator *op)
 static int dynamicpaint_bake_exec(bContext *C, wmOperator *op)
 {
 	/* Bake dynamic paint */
-	if(!dynamicPaint_initBake(C, op)) {
+	if (!dynamicPaint_initBake(C, op)) {
 		return OPERATOR_CANCELLED;}
 
 	return OPERATOR_FINISHED;
@@ -417,11 +416,11 @@ static int dynamicpaint_bake_exec(bContext *C, wmOperator *op)
 void DPAINT_OT_bake(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Dynamic Paint Bake";
-	ot->description= "Bake dynamic paint image sequence surface";
-	ot->idname= "DPAINT_OT_bake";
+	ot->name = "Dynamic Paint Bake";
+	ot->description = "Bake dynamic paint image sequence surface";
+	ot->idname = "DPAINT_OT_bake";
 	
 	/* api callbacks */
-	ot->exec= dynamicpaint_bake_exec;
-	ot->poll= ED_operator_object_active_editable;
+	ot->exec = dynamicpaint_bake_exec;
+	ot->poll = ED_operator_object_active_editable;
 }

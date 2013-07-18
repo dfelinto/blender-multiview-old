@@ -212,7 +212,7 @@ public:
 	{
 		char version[256];
 
-		int major, minor, req_major = 1, req_minor = 1;
+		int major, minor, req_major = 1, req_minor = 0;
 
 		clGetPlatformInfo(cpPlatform, CL_PLATFORM_VERSION, sizeof(version), &version, NULL);
 
@@ -239,7 +239,7 @@ public:
 		}
 
 		/* we don't check CL_DEVICE_VERSION since for e.g. nvidia sm 1.3 cards this is
-			1.0 even if the language features are there, just limited shared memory */
+		 * 1.0 even if the language features are there, just limited shared memory */
 
 		return true;
 	}
@@ -298,11 +298,14 @@ public:
 	{
 		string build_options = " -cl-fast-relaxed-math ";
 		
-		/* full shading only on NVIDIA cards at the moment */
 		if(platform_name == "NVIDIA CUDA")
-			build_options += "-D__KERNEL_SHADING__ -D__MULTI_CLOSURE__ -cl-nv-maxrregcount=24 -cl-nv-verbose ";
-		if(platform_name == "Apple" || platform_name == "AMD Accelerated Parallel Processing")
-			build_options += " -D__CL_NO_FLOAT3__ ";
+			build_options += "-D__KERNEL_SHADING__ -D__KERNEL_OPENCL_NVIDIA__ -cl-nv-maxrregcount=24 -cl-nv-verbose ";
+
+		else if(platform_name == "Apple")
+			build_options += "-D__CL_NO_FLOAT3__ -D__KERNEL_OPENCL_APPLE__ ";
+
+		else if(platform_name == "AMD Accelerated Parallel Processing")
+			build_options += "-D__CL_NO_FLOAT3__ -D__KERNEL_OPENCL_AMD__ ";
 
 		return build_options;
 	}
@@ -338,8 +341,8 @@ public:
 	bool compile_kernel(const string& kernel_path, const string& kernel_md5)
 	{
 		/* we compile kernels consisting of many files. unfortunately opencl
-		   kernel caches do not seem to recognize changes in included files.
-		   so we force recompile on changes by adding the md5 hash of all files */
+		 * kernel caches do not seem to recognize changes in included files.
+		 * so we force recompile on changes by adding the md5 hash of all files */
 		string source = "#include \"kernel.cl\" // " + kernel_md5 + "\n";
 		source = path_source_replace_includes(source, kernel_path);
 
@@ -401,7 +404,7 @@ public:
 		string device_md5 = device_md5_hash();
 
 		/* try to use cache binary */
-		string clbin = string_printf("cycles_kernel_%s_%s.clbin", device_md5.c_str(), kernel_md5.c_str());;
+		string clbin = string_printf("cycles_kernel_%s_%s.clbin", device_md5.c_str(), kernel_md5.c_str());
 		clbin = path_user_get(path_join("cache", clbin));
 
 		if(path_exists(clbin)) {
@@ -674,8 +677,6 @@ public:
 		else
 			tasks.push_back(maintask);
 
-		DeviceTask task;
-
 		foreach(DeviceTask& task, tasks) {
 			if(task.type == DeviceTask::TONEMAP)
 				tonemap(task);
@@ -737,6 +738,7 @@ void device_opencl_info(vector<DeviceInfo>& devices)
 		/* we don't know if it's used for display, but assume it is */
 		info.display_device = true;
 		info.advanced_shading = false;
+		info.pack_images = true;
 
 		devices.push_back(info);
 	}

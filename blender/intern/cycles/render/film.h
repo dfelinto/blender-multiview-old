@@ -36,9 +36,11 @@ public:
 	int components;
 	bool filter;
 	bool exposure;
+	PassType divide_type;
 
 	static void add(PassType type, vector<Pass>& passes);
 	static bool equals(const vector<Pass>& A, const vector<Pass>& B);
+	static bool contains(const vector<Pass>& passes, PassType);
 };
 
 class Film {
@@ -54,6 +56,7 @@ public:
 	void device_free(Device *device, DeviceScene *dscene);
 
 	bool modified(const Film& film);
+	void tag_passes_update(Scene *scene, const vector<Pass>& passes_);
 	void tag_update(Scene *scene);
 };
 

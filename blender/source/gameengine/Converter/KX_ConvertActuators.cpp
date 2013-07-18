@@ -109,7 +109,7 @@
  * KX_BLENDERTRUNC needed to round 'almost' zero values to zero, else velocities etc. are incorrectly set
  */
 
-#define KX_BLENDERTRUNC(x)  (( x < 0.0001 && x > -0.0001 )  ? 0.0 : x)
+#define KX_BLENDERTRUNC(x)  (( x < 0.0001f && x > -0.0001f ) ? 0.0f : x)
 
 void BL_ConvertActuators(const char* maggiename,
 						 struct Object* blenderobject,
@@ -162,7 +162,7 @@ void BL_ConvertActuators(const char* maggiename,
 					KX_BLENDERTRUNC(obact->angularvelocity[1]),
 					KX_BLENDERTRUNC(obact->angularvelocity[2]));
 				short damping = obact->damping;
-				
+
 				/* Blender uses a bit vector internally for the local-flags. In */
 				/* KX, we have four bools. The compiler should be smart enough  */
 				/* to do the right thing. We need to explicitly convert here!   */
@@ -232,7 +232,7 @@ void BL_ConvertActuators(const char* maggiename,
 			}
 		case ACT_SHAPEACTION:
 			{
-				if (blenderobject->type==OB_MESH){
+				if (blenderobject->type==OB_MESH) {
 					bActionActuator* actact = (bActionActuator*) bact->data;
 					STR_String propname = (actact->name ? actact->name : "");
 					STR_String propframe = (actact->frameProp ? actact->frameProp : "");
@@ -396,7 +396,7 @@ void BL_ConvertActuators(const char* maggiename,
 					settings.reference_distance = soundact->sound3D.reference_distance;
 					settings.rolloff_factor = soundact->sound3D.rolloff_factor;
 
-					if(!sound)
+					if (!sound)
 					{
 						std::cout <<	"WARNING: Sound actuator \"" << bact->name <<
 										"\" from object \"" <<  blenderobject->id.name+2 <<
@@ -407,12 +407,12 @@ void BL_ConvertActuators(const char* maggiename,
 						snd_sound = *reinterpret_cast<AUD_Reference<AUD_IFactory>*>(sound->playback_handle);
 
 						// if sound shall be 3D but isn't mono, we have to make it mono!
-						if(is3d)
+						if (is3d)
 						{
 							try
 							{
 								AUD_Reference<AUD_IReader> reader = snd_sound->createReader();
-								if(reader->getSpecs().channels != AUD_CHANNELS_MONO)
+								if (reader->getSpecs().channels != AUD_CHANNELS_MONO)
 								{
 									AUD_DeviceSpecs specs;
 									specs.channels = AUD_CHANNELS_MONO;
@@ -431,7 +431,7 @@ void BL_ConvertActuators(const char* maggiename,
 						new KX_SoundActuator(gameobj,
 						snd_sound,
 						soundact->volume,
-						(float)(exp((soundact->pitch / 12.0) * M_LN2)),
+						(float)(expf((soundact->pitch / 12.0f) * (float)M_LN2)),
 						is3d,
 						settings,
 						soundActuatorType);
@@ -578,8 +578,8 @@ void BL_ConvertActuators(const char* maggiename,
 				/* convert settings... degrees in the ui become radians  */ 
 				/* internally                                            */ 
 				if (conact->type == ACT_CONST_TYPE_ORI) {
-					min = (float)((MT_2_PI * conact->minloc[0])/360.0);
-					max = (float)((MT_2_PI * conact->maxloc[0])/360.0);
+					min = (float)(((float)MT_2_PI * conact->minloc[0]) / 360.0f);
+					max = (float)(((float)MT_2_PI * conact->maxloc[0]) / 360.0f);
 					switch (conact->mode) {
 					case ACT_CONST_DIRPX:
 						locrot = KX_ConstraintActuator::KX_ACT_CONSTRAINT_ORIX;
@@ -860,7 +860,7 @@ void BL_ConvertActuators(const char* maggiename,
 				float paraArg1 = 0.0;
 				float paraArg2 = 0.0;
 				
-				switch  (randAct->distribution) {
+				switch (randAct->distribution) {
 				case ACT_RANDOM_BOOL_CONST:
 					modeArg = SCA_RandomActuator::KX_RANDOMACT_BOOL_CONST;
 					paraArg1 = (float) randAct->int_arg_1;

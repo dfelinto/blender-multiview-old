@@ -50,9 +50,6 @@ struct MTex;
 struct ImBuf;
 struct DerivedMesh;
 
-// RADIO REMOVED, Maybe this will be useful later
-//void    RE_zbufferall_radio(struct RadView *vw, struct RNode **rg_elem, int rg_totelem, struct Render *re);
-
 /* particle.c, effect.c, editmesh_modes.c and brush.c, returns 1 if rgb, 0 otherwise */
 int	externtex(struct MTex *mtex, const float vec[3], float *tin, float *tr, float *tg, float *tb, float *ta, const int thread);
 
@@ -61,7 +58,7 @@ void texture_rgb_blend(float in[3], const float tex[3], const float out[3], floa
 float texture_value_blend(float tex, float out, float fact, float facg, int blendtype);
 
 /* node_composite.c */
-void ibuf_sample(struct ImBuf *ibuf, float fx, float fy, float dx, float dy, float *result);
+void ibuf_sample(struct ImBuf *ibuf, float fx, float fy, float dx, float dy, float result[4]);
 void antialias_tagbuf(int xsize, int ysize, char *rectmove);
 
 /* dynamicpaint.c */

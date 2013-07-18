@@ -37,6 +37,7 @@ struct MTex;
 struct Render;
 struct RenderInfo;
 struct Scene;
+struct ScrArea;
 
 /* render_ops.c */
 
@@ -46,6 +47,7 @@ void ED_operatortypes_render(void);
 
 void ED_render_id_flush_update(struct Main *bmain, struct ID *id);
 void ED_render_engine_changed(struct Main *bmain);
+void ED_render_engine_area_exit(struct ScrArea *sa);
 void ED_render_scene_update(struct Main *bmain, struct Scene *scene, int updated);
 
 /* render_preview.c */
@@ -55,16 +57,16 @@ typedef struct RenderInfo {
 	int pr_rectx;
 	int pr_recty;
 	short curtile, tottile, status;
-	rcti disprect;			/* storage for view3d preview rect */
-	unsigned int* rect;		
-	struct Render *re;		/* persistent render */
+	rcti disprect;          /* storage for view3d preview rect */
+	unsigned int *rect;
+	struct Render *re;      /* persistent render */
 } RenderInfo;
 
 /* ri->status */
-#define PR_DBASE			1
-#define PR_DISPRECT			2
-#define PR_PROJECTED		4
-#define PR_ROTATED			8
+#define PR_DBASE            1
+#define PR_DISPRECT         2
+#define PR_PROJECTED        4
+#define PR_ROTATED          8
 
 /* Render the preview
  *
@@ -74,9 +76,9 @@ typedef struct RenderInfo {
  * - PR_NODE_RENDER: preview is rendered for node editor
  */
 
-#define PR_BUTS_RENDER	0
-#define PR_ICON_RENDER	1
-#define PR_NODE_RENDER	2
+#define PR_BUTS_RENDER  0
+#define PR_ICON_RENDER  1
+#define PR_NODE_RENDER  2
 
 void ED_preview_init_dbase(void);
 void ED_preview_free_dbase(void);

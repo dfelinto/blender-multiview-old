@@ -23,7 +23,7 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-set(INC 
+set(INC
 	.
 	../avi
 	../blenfont
@@ -38,15 +38,12 @@ set(INC
 	../modifiers
 	../nodes
 	../render/extern/include
-	../../../intern/bsp/extern
-	../../../intern/decimation/extern
-	../../../intern/elbeem/extern
 	../../../intern/guardedalloc
 	../../../intern/iksolver/extern
 	../../../intern/memutil
 	../../../intern/mikktspace
 	../../../intern/opennl/extern
-	../../../intern/smoke/extern
+	../../../intern/raskter
 
 	# XXX - BAD LEVEL CALL WM_api.h
 	../windowmanager
@@ -104,6 +101,8 @@ set(SRC
 	intern/lamp.c
 	intern/lattice.c
 	intern/library.c
+	intern/mask_rasterize.c
+	intern/mask.c
 	intern/material.c
 	intern/mball.c
 	intern/mesh.c
@@ -144,7 +143,6 @@ set(SRC
 	intern/unit.c
 	intern/world.c
 	intern/writeavi.c
-	intern/writeffmpeg.c
 	intern/writeframeserver.c
 	
 	BKE_DerivedMesh.h
@@ -162,6 +160,7 @@ set(SRC
 	BKE_bullet.h
 	BKE_bvhutils.h
 	BKE_camera.h
+	BKE_ccg.h
 	BKE_cdderivedmesh.h
 	BKE_cloth.h
 	BKE_collision.h
@@ -191,6 +190,7 @@ set(SRC
 	BKE_lamp.h
 	BKE_lattice.h
 	BKE_library.h
+	BKE_mask.h
 	BKE_main.h
 	BKE_material.h
 	BKE_mball.h
@@ -205,7 +205,6 @@ set(SRC
 	BKE_packedFile.h
 	BKE_paint.h
 	BKE_particle.h
-	BKE_plugin_types.h
 	BKE_pointcache.h
 	BKE_property.h
 	BKE_report.h
@@ -230,7 +229,6 @@ set(SRC
 	BKE_utildefines.h
 	BKE_world.h
 	BKE_writeavi.h
-	BKE_writeffmpeg.h
 	BKE_writeframeserver.h
 	depsgraph_private.h
 	nla_private.h
@@ -256,6 +254,7 @@ endif()
 if(WITH_MOD_CLOTH_ELTOPO)
 	list(APPEND INC
 		../../../extern/eltopo
+		../../../extern/eltopo/eltopo3d
 	)
 	add_definitions(-DWITH_ELTOPO)
 endif()
@@ -299,6 +298,10 @@ if(WITH_CODEC_QUICKTIME)
 endif()
 
 if(WITH_CODEC_FFMPEG)
+	list(APPEND SRC
+		intern/writeffmpeg.c
+		BKE_writeffmpeg.h
+	)
 	list(APPEND INC
 		../../../intern/ffmpeg
 	)
@@ -316,9 +319,6 @@ if(WITH_PYTHON)
 	list(APPEND INC
 		../python
 	)
-	list(APPEND INC_SYS
-		${PYTHON_INCLUDE_DIRS}
-	)
 	add_definitions(-DWITH_PYTHON)
 
 	if(WITH_PYTHON_SECURITY)
@@ -331,15 +331,33 @@ if(WITH_OPENMP)
 endif()
 
 if(WITH_MOD_FLUID)
+	list(APPEND INC
+		../../../intern/elbeem/extern
+	)
 	add_definitions(-DWITH_MOD_FLUID)
 endif()
 
 if(WITH_MOD_SMOKE)
+	list(APPEND INC
+		../../../intern/smoke/extern
+	)
 	add_definitions(-DWITH_SMOKE)
 endif()
 
 if(WITH_MOD_OCEANSIM)
 	add_definitions(-DWITH_OCEANSIM)
+endif()
+
+if(WITH_MOD_DECIMATE)
+	list(APPEND INC
+		../../../intern/decimation/extern
+	)
+endif()
+
+if(WITH_MOD_BOOLEAN)
+	list(APPEND INC
+		../../../intern/bsp/extern
+	)
 endif()
 
 if(WITH_JACK)
