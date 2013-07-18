@@ -633,7 +633,7 @@ Image *BKE_image_load_exists(const char *filepath)
 	for (ima = G.main->image.first; ima; ima = ima->id.next) {
 		if (ima->source != IMA_SRC_VIEWER && ima->source != IMA_SRC_GENERATED) {
 			BLI_strncpy(strtest, ima->name, sizeof(ima->name));
-			BLI_path_abs(strtest, G.main->name);
+			BLI_path_abs(strtest, ID_BLEND_PATH(G.main, &ima->id));
 
 			if (BLI_path_cmp(strtest, str) == 0) {
 				if (ima->anim == NULL || ima->id.us == 0) {
@@ -2725,11 +2725,11 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	re = RE_GetRender(iuser->scene->id.name);
 
 	channels = 4;
-	layer = (iuser) ? iuser->layer : 0;
-	pass = (iuser) ? iuser->pass : 0;
-	actview = (iuser) ? iuser->view : 0;
+	layer = iuser->layer;
+	pass = iuser->pass;
+	actview = iuser->view;
 
-	if (iuser && (iuser->flag & IMA_STEREO3D)) {
+	if (iuser->flag & IMA_STEREO3D) {
 		/* view == 0 shows stereo */
 		if (actview == 0)
 			actview = iuser->eye;
