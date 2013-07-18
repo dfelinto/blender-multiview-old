@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * This file was formerly known as: GEN_StdString.cpp.
  * @date	April, 25, 2001
@@ -45,7 +43,7 @@
 #include <ctype.h>
 #include <string.h>
 #if defined(__sun__) || defined( __sun ) || defined (__sparc) || defined (__sparc__) || defined (_AIX)
-#include <strings.h>
+#  include <strings.h>
 #endif
 #include "STR_String.h"
 
@@ -701,23 +699,19 @@ rcSTR_String STR_String::Concat(const char *data, int len)
 }
 
 
-
-
-
-vector<STR_String>	STR_String::Explode(char c) const
+std::vector<STR_String>	STR_String::Explode(char c) const
 {
-	STR_String				lcv	= *this;
-	vector<STR_String>		uc;
+	STR_String              lcv = *this;
+	std::vector<STR_String> uc;
 
 	while (lcv.Length())
 	{
 		int pos = lcv.Find(c);
-		if (pos < 0)
-		{
+		if (pos < 0) {
 			uc.push_back(lcv);
 			lcv.Clear();
-		} else
-		{
+		}
+		else {
 			uc.push_back(lcv.Left(pos));
 			lcv = lcv.Mid(pos+1);
 		}

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,9 +44,11 @@
 #include "DNA_space_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_view3d_types.h"
 #include "DNA_modifier_types.h"
+#include "DNA_movieclip_types.h"
 
 #include "RNA_access.h"
 
@@ -72,6 +72,8 @@
 #include "BKE_mesh.h"
 #include "BKE_nla.h"
 #include "BKE_context.h"
+#include "BKE_tessmesh.h"
+#include "BKE_tracking.h"
 
 #include "ED_anim_api.h"
 #include "ED_armature.h"
@@ -84,13 +86,13 @@
 #include "ED_space_api.h"
 #include "ED_uvedit.h"
 #include "ED_view3d.h"
-#include "ED_curve.h" /* for ED_curve_editnurbs */
+#include "ED_curve.h" /* for curve_editnurbs */
+#include "ED_clip.h"
 
 //#include "BDR_unwrapper.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
-#include "BLI_editVert.h"
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
@@ -105,8 +107,6 @@
 
 #include "transform.h"
 
-extern ListBase editelems;
-
 /* ************************** Functions *************************** */
 
 void getViewVector(TransInfo *t, float coord[3], float vec[3])
@@ -115,9 +115,9 @@ void getViewVector(TransInfo *t, float coord[3], float vec[3])
 	{
 		float p1[4], p2[4];
 		
-		VECCOPY(p1, coord);
+		copy_v3_v3(p1, coord);
 		p1[3] = 1.0f;
-		VECCOPY(p2, p1);
+		copy_v3_v3(p2, p1);
 		p2[3] = 1.0f;
 		mul_m4_v4(t->viewmat, p2);
 		
@@ -130,7 +130,7 @@ void getViewVector(TransInfo *t, float coord[3], float vec[3])
 		sub_v3_v3v3(vec, p1, p2);
 	}
 	else {
-		VECCOPY(vec, t->viewinv[2]);
+		copy_v3_v3(vec, t->viewinv[2]);
 	}
 	normalize_v3(vec);
 }
@@ -144,7 +144,7 @@ static void clipMirrorModifier(TransInfo *t, Object *ob)
 	int axis = 0;
 	
 	for (; md; md=md->next) {
-		if (md->type==eModifierType_Mirror) {
+		if ((md->type==eModifierType_Mirror) && (md->mode & eModifierMode_Realtime)) {
 			MirrorModifierData *mmd = (MirrorModifierData*) md;
 			
 			if(mmd->flag & MOD_MIR_CLIPPING) {
@@ -170,7 +170,7 @@ static void clipMirrorModifier(TransInfo *t, Object *ob)
 						float obinv[4][4];
 						
 						invert_m4_m4(obinv, mmd->mirror_ob->obmat);
-						mul_m4_m4m4(mtx, ob->obmat, obinv);
+						mult_m4_m4m4(mtx, obinv, ob->obmat);
 						invert_m4_m4(imtx, mtx);
 					}
 					
@@ -196,8 +196,9 @@ static void clipMirrorModifier(TransInfo *t, Object *ob)
 						
 						clip = 0;
 						if(axis & 1) {
-							if(fabs(iloc[0])<=tolerance[0] ||
-							   loc[0]*iloc[0]<0.0f) {
+							if(fabsf(iloc[0])<=tolerance[0] ||
+							   loc[0]*iloc[0]<0.0f)
+							{
 								loc[0]= 0.0f;
 								clip = 1;
 							}
@@ -205,14 +206,16 @@ static void clipMirrorModifier(TransInfo *t, Object *ob)
 						
 						if(axis & 2) {
 							if(fabs(iloc[1])<=tolerance[1] ||
-							   loc[1]*iloc[1]<0.0f) {
+							   loc[1]*iloc[1]<0.0f)
+							{
 								loc[1]= 0.0f;
 								clip = 1;
 							}
 						}
 						if(axis & 4) {
 							if(fabs(iloc[2])<=tolerance[2] ||
-							   loc[2]*iloc[2]<0.0f) {
+							   loc[2]*iloc[2]<0.0f)
+							{
 								loc[2]= 0.0f;
 								clip = 1;
 							}
@@ -232,10 +235,10 @@ static void clipMirrorModifier(TransInfo *t, Object *ob)
 }
 
 /* assumes obedit set to mesh object */
-static void editmesh_apply_to_mirror(TransInfo *t)
+static void editbmesh_apply_to_mirror(TransInfo *t)
 {
 	TransData *td = t->data;
-	EditVert *eve;
+	BMVert *eve;
 	int i;
 	
 	for(i = 0 ; i < t->total; i++, td++) {
@@ -334,7 +337,7 @@ static void recalcData_actedit(TransInfo *t)
 	bAnimListElem *ale;
 	int filter;
 	
-	/* initialise relevant anim-context 'context' data from TransInfo data */
+	/* initialize relevant anim-context 'context' data from TransInfo data */
 		/* NOTE: sync this with the code in ANIM_animdata_get_context() */
 	ac.scene= t->scene;
 	ac.obact= OBACT;
@@ -370,7 +373,6 @@ static void recalcData_actedit(TransInfo *t)
 		BLI_freelistN(&anim_data);
 	}
 }
-
 /* helper for recalcData() - for Graph Editor transforms */
 static void recalcData_graphedit(TransInfo *t)
 {
@@ -385,7 +387,7 @@ static void recalcData_graphedit(TransInfo *t)
 	int dosort = 0;
 	
 	
-	/* initialise relevant anim-context 'context' data from TransInfo data */
+	/* initialize relevant anim-context 'context' data from TransInfo data */
 		/* NOTE: sync this with the code in ANIM_animdata_get_context() */
 	scene= ac.scene= t->scene;
 	ac.obact= OBACT;
@@ -465,7 +467,7 @@ static void recalcData_nla(TransInfo *t)
 		if ((snla->flag & SNLA_NOREALTIMEUPDATES) == 0)
 			ANIM_id_update(t->scene, tdn->id);
 		
-		/* if cancelling transform, just write the values without validating, then move on */
+		/* if canceling transform, just write the values without validating, then move on */
 		if (t->state == TRANS_CANCEL) {
 			/* clear the values by directly overwriting the originals, but also need to restore
 			 * endpoints of neighboring transition-strips
@@ -496,7 +498,7 @@ static void recalcData_nla(TransInfo *t)
 			continue;
 		}
 		
-		/* firstly, check if the proposed transform locations would overlap with any neighbouring strips
+		/* firstly, check if the proposed transform locations would overlap with any neighboring strips
 		 * (barring transitions) which are absolute barriers since they are not being moved
 		 *
 		 * this is done as a iterative procedure (done 5 times max for now)
@@ -508,7 +510,7 @@ static void recalcData_nla(TransInfo *t)
 			if ((pExceeded && nExceeded) || (iter == 4) ) {
 				/* both endpoints exceeded (or iteration ping-pong'd meaning that we need a compromise)
 				 *	- simply crop strip to fit within the bounds of the strips bounding it
-				 *	- if there were no neighbours, clear the transforms (make it default to the strip's current values)
+				 *	- if there were no neighbors, clear the transforms (make it default to the strip's current values)
 				 */
 				if (strip->prev && strip->next) {
 					tdn->h1[0]= strip->prev->end;
@@ -618,6 +620,53 @@ static void recalcData_nla(TransInfo *t)
 	}
 }
 
+/* helper for recalcData() - for Image Editor transforms */
+static void recalcData_image(TransInfo *t)
+{
+	if (t->obedit && t->obedit->type == OB_MESH) {
+		SpaceImage *sima= t->sa->spacedata.first;
+		
+		flushTransUVs(t);
+		if(sima->flag & SI_LIVE_UNWRAP)
+			ED_uvedit_live_unwrap_re_solve();
+		
+		DAG_id_tag_update(t->obedit->data, 0);
+	}
+}
+
+/* helper for recalcData() - for Movie Clip transforms */
+static void recalcData_clip(TransInfo *t)
+{
+	SpaceClip *sc= t->sa->spacedata.first;
+	MovieClip *clip= ED_space_clip(sc);
+	ListBase *tracksbase= BKE_tracking_get_tracks(&clip->tracking);
+	MovieTrackingTrack *track;
+	
+	flushTransTracking(t);
+	
+	track= tracksbase->first;
+	while(track) {
+		if(TRACK_VIEW_SELECTED(sc, track) && (track->flag & TRACK_LOCKED)==0) {
+			if (t->mode == TFM_TRANSLATION) {
+				if(TRACK_AREA_SELECTED(track, TRACK_AREA_PAT))
+					BKE_tracking_clamp_track(track, CLAMP_PAT_POS);
+				if(TRACK_AREA_SELECTED(track, TRACK_AREA_SEARCH))
+					BKE_tracking_clamp_track(track, CLAMP_SEARCH_POS);
+			}
+			else if (t->mode == TFM_RESIZE) {
+				if(TRACK_AREA_SELECTED(track, TRACK_AREA_PAT))
+					BKE_tracking_clamp_track(track, CLAMP_PAT_DIM);
+				if(TRACK_AREA_SELECTED(track, TRACK_AREA_SEARCH))
+					BKE_tracking_clamp_track(track, CLAMP_SEARCH_DIM);
+			}
+		}
+		
+		track= track->next;
+	}
+	
+	DAG_id_tag_update(&clip->id, 0);
+}
+
 /* helper for recalcData() - for 3d-view transforms */
 static void recalcData_view3d(TransInfo *t)
 {
@@ -626,7 +675,7 @@ static void recalcData_view3d(TransInfo *t)
 	if (t->obedit) {
 		if ELEM(t->obedit->type, OB_CURVE, OB_SURF) {
 			Curve *cu= t->obedit->data;
-			ListBase *nurbs= ED_curve_editnurbs(cu);
+			ListBase *nurbs= curve_editnurbs(cu);
 			Nurb *nu= nurbs->first;
 			
 			if(t->state != TRANS_CANCEL) {
@@ -663,7 +712,7 @@ static void recalcData_view3d(TransInfo *t)
 			if(la->editlatt->latt->flag & LT_OUTSIDE) outside_lattice(la->editlatt->latt);
 		}
 		else if (t->obedit->type == OB_MESH) {
-			EditMesh *em = ((Mesh*)t->obedit->data)->edit_mesh;
+			BMEditMesh *em = BMEdit_FromObject(t->obedit);
 			/* mirror modifier clipping? */
 			if(t->state != TRANS_CANCEL) {
 				/* apply clipping after so we never project past the clip plane [#25423] */
@@ -671,11 +720,12 @@ static void recalcData_view3d(TransInfo *t)
 				clipMirrorModifier(t, t->obedit);
 			}
 			if((t->options & CTX_NO_MIRROR) == 0 && (t->flag & T_MIRROR))
-				editmesh_apply_to_mirror(t);
+				editbmesh_apply_to_mirror(t);
 				
 			DAG_id_tag_update(t->obedit->data, 0);  /* sets recalc flags */
 			
-			recalc_editnormals(em);
+			EDBM_RecalcNormals(em);
+			BMEdit_RecalcTessellation(em);
 		}
 		else if(t->obedit->type==OB_ARMATURE) { /* no recalc flag, does pose */
 			bArmature *arm= t->obedit->data;
@@ -689,17 +739,17 @@ static void recalcData_view3d(TransInfo *t)
 			}
 			
 			/* Ensure all bones are correctly adjusted */
-			for (ebo = edbo->first; ebo; ebo = ebo->next){
+			for (ebo = edbo->first; ebo; ebo = ebo->next) {
 				
-				if ((ebo->flag & BONE_CONNECTED) && ebo->parent){
+				if ((ebo->flag & BONE_CONNECTED) && ebo->parent) {
 					/* If this bone has a parent tip that has been moved */
-					if (ebo->parent->flag & BONE_TIPSEL){
-						VECCOPY (ebo->head, ebo->parent->tail);
+					if (ebo->parent->flag & BONE_TIPSEL) {
+						copy_v3_v3 (ebo->head, ebo->parent->tail);
 						if(t->mode==TFM_BONE_ENVELOPE) ebo->rad_head= ebo->parent->rad_tail;
 					}
 					/* If this bone has a parent tip that has NOT been moved */
 					else{
-						VECCOPY (ebo->parent->tail, ebo->head);
+						copy_v3_v3 (ebo->parent->tail, ebo->head);
 						if(t->mode==TFM_BONE_ENVELOPE) ebo->parent->rad_tail= ebo->rad_head;
 					}
 				}
@@ -736,7 +786,7 @@ static void recalcData_view3d(TransInfo *t)
 						float qrot[4];
 						
 						ebo = td->extra;
-						VECCOPY(up_axis, td->axismtx[2]);
+						copy_v3_v3(up_axis, td->axismtx[2]);
 						
 						if (t->mode != TFM_ROTATION)
 						{
@@ -745,8 +795,7 @@ static void recalcData_view3d(TransInfo *t)
 							rotation_between_vecs_to_quat(qrot, td->axismtx[1], vec);
 							mul_qt_v3(qrot, up_axis);
 						}
-						else
-						{
+						else {
 							mul_m3_v3(t->mat, up_axis);
 						}
 						
@@ -759,8 +808,7 @@ static void recalcData_view3d(TransInfo *t)
 				transform_armature_mirror_update(t->obedit);
 			
 		}
-		else
-		{
+		else {
 			if(t->state != TRANS_CANCEL) {
 				applyProject(t);
 			}
@@ -852,18 +900,13 @@ void recalcData(TransInfo *t)
 		recalcData_nla(t);
 	}
 	else if (t->spacetype == SPACE_IMAGE) {
-		if (t->obedit && t->obedit->type == OB_MESH) {
-			SpaceImage *sima= t->sa->spacedata.first;
-			
-			flushTransUVs(t);
-			if(sima->flag & SI_LIVE_UNWRAP)
-				ED_uvedit_live_unwrap_re_solve();
-			
-			DAG_id_tag_update(t->obedit->data, 0);
-		}
+		recalcData_image(t);
 	}
 	else if (t->spacetype == SPACE_VIEW3D) {
 		recalcData_view3d(t);
+	}
+	else if (t->spacetype == SPACE_CLIP) {
+		recalcData_clip(t);
 	}
 }
 
@@ -943,11 +986,10 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 	
 	if (event)
 	{
-		VECCOPY2D(t->imval, event->mval);
+		copy_v2_v2_int(t->imval, event->mval);
 		t->event_type = event->type;
 	}
-	else
-	{
+	else {
 		t->imval[0] = 0;
 		t->imval[1] = 0;
 	}
@@ -1018,7 +1060,7 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		if(v3d->flag & V3D_ALIGN) t->flag |= T_V3D_ALIGN;
 		t->around = v3d->around;
 		
-		if (op && RNA_struct_find_property(op->ptr, "constraint_orientation") && RNA_property_is_set(op->ptr, "constraint_orientation"))
+		if (op && RNA_struct_find_property(op->ptr, "constraint_orientation") && RNA_struct_property_is_set(op->ptr, "constraint_orientation"))
 		{
 			t->current_orientation = RNA_enum_get(op->ptr, "constraint_orientation");
 			
@@ -1027,8 +1069,7 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 				t->current_orientation = V3D_MANIP_GLOBAL;
 			}
 		}
-		else
-		{
+		else {
 			t->current_orientation = v3d->twmode;
 		}
 
@@ -1041,7 +1082,7 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 
 		/* initialize UV transform from */
 		if (op && RNA_struct_find_property(op->ptr, "correct_uv")) {
-			if(RNA_property_is_set(op->ptr, "correct_uv")) {
+			if(RNA_struct_property_is_set(op->ptr, "correct_uv")) {
 				if(RNA_boolean_get(op->ptr, "correct_uv")) {
 					t->settings->uvcalc_flag |= UVCALC_TRANSFORM_CORRECT;
 				}
@@ -1055,27 +1096,23 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		}
 
 	}
-	else if(t->spacetype==SPACE_IMAGE)
-	{
+	else if(t->spacetype==SPACE_IMAGE) {
 		SpaceImage *sima = sa->spacedata.first;
 		// XXX for now, get View2D from the active region
 		t->view = &ar->v2d;
 		t->around = sima->around;
 	}
-	else if(t->spacetype==SPACE_NODE)
-	{
+	else if(t->spacetype==SPACE_NODE) {
 		// XXX for now, get View2D from the active region
 		t->view = &ar->v2d;
 		t->around = V3D_CENTER;
 	}
-	else if(t->spacetype==SPACE_IPO) 
-	{
+	else if(t->spacetype==SPACE_IPO) {
 		SpaceIpo *sipo= sa->spacedata.first;
 		t->view = &ar->v2d;
 		t->around = sipo->around;
 	}
-	else
-	{
+	else {
 		if(ar) {
 			// XXX for now, get View2D  from the active region
 			t->view = &ar->v2d;
@@ -1087,22 +1124,20 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		t->around = V3D_CENTER;
 	}
 	
-	if (op && RNA_property_is_set(op->ptr, "release_confirm"))
+	if (op && RNA_struct_property_is_set(op->ptr, "release_confirm"))
 	{
 		if (RNA_boolean_get(op->ptr, "release_confirm"))
 		{
 			t->flag |= T_RELEASE_CONFIRM;
 		}
 	}
-	else
-	{
-		if (U.flag & USER_RELEASECONFIRM)
-		{
+	else {
+		if (U.flag & USER_RELEASECONFIRM) {
 			t->flag |= T_RELEASE_CONFIRM;
 		}
 	}
 
-	if (op && RNA_struct_find_property(op->ptr, "mirror") && RNA_property_is_set(op->ptr, "mirror"))
+	if (op && RNA_struct_find_property(op->ptr, "mirror") && RNA_struct_property_is_set(op->ptr, "mirror"))
 	{
 		if (RNA_boolean_get(op->ptr, "mirror"))
 		{
@@ -1111,8 +1146,7 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		}
 	}
 	// Need stuff to take it from edit mesh or whatnot here
-	else if (t->spacetype == SPACE_VIEW3D)
-	{
+	else if (t->spacetype == SPACE_VIEW3D) {
 		if (t->obedit && t->obedit->type == OB_MESH && (((Mesh *)t->obedit->data)->editflag & ME_EDIT_MIRROR_X))
 		{
 			t->flag |= T_MIRROR;
@@ -1123,7 +1157,7 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 	/* setting PET flag only if property exist in operator. Otherwise, assume it's not supported */
 	if (op && RNA_struct_find_property(op->ptr, "proportional"))
 	{
-		if (RNA_property_is_set(op->ptr, "proportional"))
+		if (RNA_struct_property_is_set(op->ptr, "proportional"))
 		{
 			switch(RNA_enum_get(op->ptr, "proportional"))
 			{
@@ -1134,34 +1168,29 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 				break;
 			}
 		}
-		else
-		{
+		else {
 			/* use settings from scene only if modal */
-			if (t->flag & T_MODAL)
-			{
-				if ((t->options & CTX_NO_PET) == 0)
-				{
-					if (t->obedit && ts->proportional != PROP_EDIT_OFF)
-					{
+			if (t->flag & T_MODAL) {
+				if ((t->options & CTX_NO_PET) == 0) {
+					if (t->obedit && ts->proportional != PROP_EDIT_OFF) {
 						t->flag |= T_PROP_EDIT;
 
-						if(ts->proportional == PROP_EDIT_CONNECTED)
+						if (ts->proportional == PROP_EDIT_CONNECTED) {
 							t->flag |= T_PROP_CONNECTED;
+						}
 					}
-					else if (t->obedit == NULL && ts->proportional_objects)
-					{
+					else if (t->obedit == NULL && ts->proportional_objects) {
 						t->flag |= T_PROP_EDIT;
 					}
 				}
 			}
 		}
 		
-		if (op && RNA_struct_find_property(op->ptr, "proportional_size") && RNA_property_is_set(op->ptr, "proportional_size"))
+		if (op && RNA_struct_find_property(op->ptr, "proportional_size") && RNA_struct_property_is_set(op->ptr, "proportional_size"))
 		{
 			t->prop_size = RNA_float_get(op->ptr, "proportional_size");
 		}
-		else
-		{
+		else {
 			t->prop_size = ts->proportional_size;
 		}
 		
@@ -1173,12 +1202,11 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 			t->prop_size = 1.0f;
 		}
 		
-		if (op && RNA_struct_find_property(op->ptr, "proportional_edit_falloff") && RNA_property_is_set(op->ptr, "proportional_edit_falloff"))
+		if (op && RNA_struct_find_property(op->ptr, "proportional_edit_falloff") && RNA_struct_property_is_set(op->ptr, "proportional_edit_falloff"))
 		{
 			t->prop_mode = RNA_enum_get(op->ptr, "proportional_edit_falloff");
 		}
-		else
-		{
+		else {
 			t->prop_mode = ts->prop_mode;
 		}
 	}
@@ -1187,6 +1215,12 @@ int initTransInfo (bContext *C, TransInfo *t, wmOperator *op, wmEvent *event)
 		t->options |= CTX_NO_PET;
 	}
 	
+	// Mirror is not supported with PET, turn it off.
+	if (t->flag & T_PROP_EDIT)
+	{
+		t->flag &= ~T_MIRROR;
+	}
+
 	setTransformViewMatrices(t);
 	initNumInput(&t->num);
 	
@@ -1211,7 +1245,7 @@ void postTrans (bContext *C, TransInfo *t)
 		/* Can take over freeing t->data and data2d etc... */
 		t->customFree(t);
 	}
-	else if (t->customData) {
+	else if ((t->customData != NULL) && (t->flag & T_FREE_CUSTOMDATA)) {
 		MEM_freeN(t->customData);
 	}
 
@@ -1259,21 +1293,22 @@ void applyTransObjects(TransInfo *t)
 	TransData *td;
 	
 	for (td = t->data; td < t->data + t->total; td++) {
-		VECCOPY(td->iloc, td->loc);
+		copy_v3_v3(td->iloc, td->loc);
 		if (td->ext->rot) {
-			VECCOPY(td->ext->irot, td->ext->rot);
+			copy_v3_v3(td->ext->irot, td->ext->rot);
 		}
 		if (td->ext->size) {
-			VECCOPY(td->ext->isize, td->ext->size);
+			copy_v3_v3(td->ext->isize, td->ext->size);
 		}
 	}
 	recalcData(t);
 }
 
-static void restoreElement(TransData *td) {
+static void restoreElement(TransData *td)
+{
 	/* TransData for crease has no loc */
 	if (td->loc) {
-		VECCOPY(td->loc, td->iloc);
+		copy_v3_v3(td->loc, td->iloc);
 	}
 	if (td->val) {
 		*td->val = td->ival;
@@ -1281,20 +1316,20 @@ static void restoreElement(TransData *td) {
 
 	if (td->ext && (td->flag&TD_NO_EXT)==0) {
 		if (td->ext->rot) {
-			VECCOPY(td->ext->rot, td->ext->irot);
+			copy_v3_v3(td->ext->rot, td->ext->irot);
 		}
 		if(td->ext->rotAngle) {
 			*td->ext->rotAngle= td->ext->irotAngle;
 		}
 		if(td->ext->rotAxis) {
-			VECCOPY(td->ext->rotAxis, td->ext->irotAxis);
+			copy_v3_v3(td->ext->rotAxis, td->ext->irotAxis);
 		}
 		/* XXX, drotAngle & drotAxis not used yet */
 		if (td->ext->size) {
-			VECCOPY(td->ext->size, td->ext->isize);
+			copy_v3_v3(td->ext->size, td->ext->isize);
 		}
 		if (td->ext->quat) {
-			QUATCOPY(td->ext->quat, td->ext->iquat);
+			copy_qt_qt(td->ext->quat, td->ext->iquat);
 		}
 	}
 	
@@ -1335,7 +1370,7 @@ void calculateCenter2D(TransInfo *t)
 		Object *ob= t->obedit?t->obedit:t->poseobj;
 		float vec[3];
 		
-		VECCOPY(vec, t->center);
+		copy_v3_v3(vec, t->center);
 		mul_m4_v3(ob->obmat, vec);
 		projectIntView(t, vec, t->center2d);
 	}
@@ -1349,7 +1384,7 @@ void calculateCenterCursor(TransInfo *t)
 	float *cursor;
 	
 	cursor = give_cursor(t->scene, t->view);
-	VECCOPY(t->center, cursor);
+	copy_v3_v3(t->center, cursor);
 	
 	/* If edit or pose mode, move cursor in local space */
 	if (t->flag & (T_EDIT|T_POSE)) {
@@ -1413,15 +1448,15 @@ void calculateCenterMedian(TransInfo *t)
 		}
 		else {
 			/*
-			   All the selected elements are at the head of the array
-			   which means we can stop when it finds unselected data
-			*/
+			 * All the selected elements are at the head of the array
+			 * which means we can stop when it finds unselected data
+			 */
 			break;
 		}
 	}
 	if(i)
 		mul_v3_fl(partial, 1.0f / total);
-	VECCOPY(t->center, partial);
+	copy_v3_v3(t->center, partial);
 	
 	calculateCenter2D(t);
 }
@@ -1439,15 +1474,15 @@ void calculateCenterBound(TransInfo *t)
 			}
 			else {
 				/*
-				   All the selected elements are at the head of the array
-				   which means we can stop when it finds unselected data
-				*/
+				 * All the selected elements are at the head of the array
+				 * which means we can stop when it finds unselected data
+				 */
 				break;
 			}
 		}
 		else {
-			VECCOPY(max, t->data[i].center);
-			VECCOPY(min, t->data[i].center);
+			copy_v3_v3(max, t->data[i].center);
+			copy_v3_v3(min, t->data[i].center);
 		}
 	}
 	add_v3_v3v3(t->center, min, max);
@@ -1483,25 +1518,36 @@ void calculateCenter(TransInfo *t)
 		
 		/* EDIT MODE ACTIVE EDITMODE ELEMENT */
 
-		if (t->obedit && t->obedit->type == OB_MESH) {
-			EditSelection ese;
-			EditMesh *em = BKE_mesh_get_editmesh(t->obedit->data);
-			
-			if (EM_get_actSelection(em, &ese)) {
-				EM_editselection_center(t->center, &ese);
-				calculateCenter2D(t);
-				break;
+		if (t->obedit) {
+			if (t->obedit && t->obedit->type == OB_MESH) {
+				BMEditSelection ese;
+				BMEditMesh *em = BMEdit_FromObject(t->obedit);
+
+				if (EDBM_get_actSelection(em, &ese)) {
+					EDBM_editselection_center(em, t->center, &ese);
+					calculateCenter2D(t);
+					break;
+				}
+			}
+			else if (ELEM(t->obedit->type, OB_CURVE, OB_SURF)) {
+				float center[3];
+				Curve *cu= (Curve *)t->obedit->data;
+
+				if (ED_curve_actSelection(cu, center)) {
+					copy_v3_v3(t->center, center);
+					calculateCenter2D(t);
+					break;
+				}
 			}
 		} /* END EDIT MODE ACTIVE ELEMENT */
-		
+
 		calculateCenterMedian(t);
 		if((t->flag & (T_EDIT|T_POSE))==0)
 		{
 			Scene *scene = t->scene;
 			Object *ob= OBACT;
-			if(ob)
-			{
-				VECCOPY(t->center, ob->obmat[3]);
+			if (ob) {
+				copy_v3_v3(t->center, ob->obmat[3]);
 				projectIntView(t, t->center, t->center2d);
 			}
 		}
@@ -1510,27 +1556,23 @@ void calculateCenter(TransInfo *t)
 	}
 	
 	/* setting constraint center */
-	VECCOPY(t->con.center, t->center);
-	if(t->flag & (T_EDIT|T_POSE))
-	{
+	copy_v3_v3(t->con.center, t->center);
+	if (t->flag & (T_EDIT|T_POSE)) {
 		Object *ob= t->obedit?t->obedit:t->poseobj;
 		mul_m4_v3(ob->obmat, t->con.center);
 	}
 	
 	/* for panning from cameraview */
-	if(t->flag & T_OBJECT)
-	{
-		if(t->spacetype==SPACE_VIEW3D && t->ar && t->ar->regiontype == RGN_TYPE_WINDOW)
-		{
+	if (t->flag & T_OBJECT) {
+		if (t->spacetype==SPACE_VIEW3D && t->ar && t->ar->regiontype == RGN_TYPE_WINDOW) {
 			View3D *v3d = t->view;
 			Scene *scene = t->scene;
 			RegionView3D *rv3d = t->ar->regiondata;
 			
-			if(v3d->camera == OBACT && rv3d->persp==RV3D_CAMOB)
-			{
+			if (v3d->camera == OBACT && rv3d->persp==RV3D_CAMOB) {
 				float axis[3];
 				/* persinv is nasty, use viewinv instead, always right */
-				VECCOPY(axis, t->viewinv[2]);
+				copy_v3_v3(axis, t->viewinv[2]);
 				normalize_v3(axis);
 				
 				/* 6.0 = 6 grid units */
@@ -1543,21 +1585,20 @@ void calculateCenter(TransInfo *t)
 				/* rotate only needs correct 2d center, grab needs initgrabz() value */
 				if(t->mode==TFM_TRANSLATION)
 				{
-					VECCOPY(t->center, axis);
-					VECCOPY(t->con.center, t->center);
+					copy_v3_v3(t->center, axis);
+					copy_v3_v3(t->con.center, t->center);
 				}
 			}
 		}
 	}
 	
-	if(t->spacetype==SPACE_VIEW3D)
-	{
+	if (t->spacetype==SPACE_VIEW3D) {
 		/* initgrabz() defines a factor for perspective depth correction, used in window_to_3d_delta() */
 		if(t->flag & (T_EDIT|T_POSE)) {
 			Object *ob= t->obedit?t->obedit:t->poseobj;
 			float vec[3];
 			
-			VECCOPY(vec, t->center);
+			copy_v3_v3(vec, t->center);
 			mul_m4_v3(ob->obmat, vec);
 			initgrabz(t->ar->regiondata, vec[0], vec[1], vec[2]);
 		}
@@ -1579,8 +1620,7 @@ void calculatePropRatio(TransInfo *t)
 			if (td->flag & TD_SELECTED) {
 				td->factor = 1.0f;
 			}
-			else if (t->flag & T_MIRROR && td->loc[0] * t->mirror < -0.00001f)
-			{
+			else if (t->flag & T_MIRROR && td->loc[0] * t->mirror < -0.00001f) {
 				td->flag |= TD_SKIP;
 				td->factor = 0.0f;
 				restoreElement(td);
@@ -1591,9 +1631,9 @@ void calculatePropRatio(TransInfo *t)
 					(connected == 0 &&
 						td->rdist > t->prop_size)) {
 				/*
-				   The elements are sorted according to their dist member in the array,
-				   that means we can stop when it finds one element outside of the propsize.
-				*/
+				 * The elements are sorted according to their dist member in the array,
+				 * that means we can stop when it finds one element outside of the propsize.
+				 */
 				td->flag |= TD_NOACTION;
 				td->factor = 0.0f;
 				restoreElement(td);
@@ -1666,13 +1706,13 @@ void calculatePropRatio(TransInfo *t)
 			strcpy(t->proptext, "(Random)");
 			break;
 		default:
-			strcpy(t->proptext, "");
+			t->proptext[0]= '\0';
 		}
 	}
 	else {
 		for(i = 0 ; i < t->total; i++, td++) {
 			td->factor = 1.0;
 		}
-		strcpy(t->proptext, "");
+		t->proptext[0]= '\0';
 	}
 }

@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,9 +23,6 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * iris.c
- *
- * $Id$
  */
 
 /** \file blender/imbuf/intern/iris.c
@@ -324,7 +320,7 @@ struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
 		if (bpp == 1) {
 			
 			ibuf = IMB_allocImBuf(xsize, ysize, 8 * zsize, IB_rect);
-			if (ibuf->depth > 32) ibuf->depth = 32;
+			if (ibuf->planes > 32) ibuf->planes = 32;
 			base = ibuf->rect;
 			zbase = (unsigned int *)ibuf->zbuf;
 			
@@ -408,7 +404,7 @@ struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
 		if (bpp == 1) {
 			
 			ibuf = IMB_allocImBuf(xsize, ysize, 8 * zsize, IB_rect);
-			if (ibuf->depth > 32) ibuf->depth = 32;
+			if (ibuf->planes > 32) ibuf->planes = 32;
 
 			base = ibuf->rect;
 			zbase = (unsigned int *)ibuf->zbuf;
@@ -515,14 +511,15 @@ struct ImBuf *imb_loadiris(unsigned char *mem, size_t size, int flags)
 		
 	}
 
-	ibuf->ftype = IMAGIC;
-	ibuf->profile = IB_PROFILE_SRGB;
-	
-	test_endian_zbuf(ibuf);
-	
 	if (ibuf) {
-		if (ibuf->rect) 
+		ibuf->ftype = IMAGIC;
+		ibuf->profile = IB_PROFILE_SRGB;
+
+		test_endian_zbuf(ibuf);
+
+		if (ibuf->rect) {
 			IMB_convert_rgba_to_abgr(ibuf);
+		}
 	}
 
 	return(ibuf);
@@ -825,7 +822,7 @@ int imb_saveiris(struct ImBuf * ibuf, const char *name, int flags)
 	short zsize;
 	int ret;
 
-	zsize = (ibuf->depth + 7) >> 3;
+	zsize = (ibuf->planes + 7) >> 3;
 	if (flags & IB_zbuf &&  ibuf->zbuf != NULL) zsize = 8;
 	
 	IMB_convert_rgba_to_abgr(ibuf);

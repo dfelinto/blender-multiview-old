@@ -1,6 +1,6 @@
-********
-Gotcha's
-********
+*******
+Gotchas
+*******
 
 This document attempts to help you work with the Blender API in areas that can be troublesome and avoid practices that are known to give instability.
 
@@ -32,12 +32,12 @@ Which raises the question as to what the correct context might be?
 
 Typically operators check for the active area type, a selection or active object they can operate on, but some operators are more picky about when they run.
 
-In most cases you can figure out what context an operator needs simply be seeing how its used in Blender and thinking about what it does.
+In most cases you can figure out what context an operator needs simply be seeing how it's used in Blender and thinking about what it does.
 
 
 Unfortunately if you're still stuck - the only way to **really** know whats going on is to read the source code for the poll function and see what its checking.
 
-For python operators its not so hard to find the source since its included with with Blender and the source file/line is included in the operator reference docs.
+For python operators it's not so hard to find the source since it's included with Blender and the source file/line is included in the operator reference docs.
 
 Downloading and searching the C code isn't so simple, especially if you're not familiar with the C language but by searching the operator name or description you should be able to find the poll function with no knowledge of C.
 
@@ -74,7 +74,7 @@ Sometimes you want to modify values from python and immediately access the updat
 
 Once changing the objects :class:`bpy.types.Object.location` you may want to access its transformation right after from :class:`bpy.types.Object.matrix_world`, but this doesn't work as you might expect.
 
-Consider the calculations that might go into working out the objects final transformation, this includes:
+Consider the calculations that might go into working out the object's final transformation, this includes:
 
 * animation function curves.
 * drivers and their pythons expressions.
@@ -106,7 +106,7 @@ Modal operators execute on user input or setup their own timers to run frequentl
 
 Transform, Painting, Fly-Mode and File-Select are example of a modal operators.
 
-Writing modal operators takes more effort then a simple ``for`` loop that happens to redraw but is more flexible and integrates better with Blenders design.
+Writing modal operators takes more effort than a simple ``for`` loop that happens to redraw but is more flexible and integrates better with Blenders design.
 
 
 **Ok, Ok! I still want to draw from python**
@@ -118,18 +118,10 @@ If you insist - yes its possible, but scripts that use this hack wont be conside
    bpy.ops.wm.redraw_timer(type='DRAW_WIN_SWAP', iterations=1)
 
 
-Matrix multiplication is wrong
-==============================
-
-Every so often users complain that Blenders matrix math is wrong, the confusion comes from mathutils matrices being column-major to match OpenGL and the rest of Blenders matrix operations and stored matrix data.
-
-This is different to **numpy** which is row-major which matches what you would expect when using conventional matrix math notation.
-
-
 I can't edit the mesh in edit-mode!
 ===================================
 
-Blenders EditMesh is an internal data structure (not saved and not exposed to python), this gives the main annoyance that you need to exit edit-mode to edit the mesh from python.
+Blender's EditMesh is an internal data structure (not saved and not exposed to python), this gives the main annoyance that you need to exit edit-mode to edit the mesh from python.
 
 The reason we have not made much attempt to fix this yet is because we
 will likely move to BMesh mesh API eventually, so any work on the API now will be wasted effort.
@@ -147,7 +139,7 @@ Armature Bones in Blender have three distinct data structures that contain them.
 
 .. note::
 
-	In the following examples ``bpy.context.object`` is assumed to be an armature object.
+   In the following examples ``bpy.context.object`` is assumed to be an armature object.
 
 
 Edit Bones
@@ -163,11 +155,11 @@ This is only possible in edit mode.
 
 This will be empty outside of editmode.
 
-	>>> mybones = bpy.context.selected_editable_bones
+   >>> mybones = bpy.context.selected_editable_bones
 
 Returns an editbone only in edit mode.
 
-	>>> bpy.context.active_bone
+   >>> bpy.context.active_bone
 
 
 Bones (Object Mode)
@@ -179,15 +171,15 @@ Example using :class:`bpy.types.Bone` in object or pose mode:
 
 Returns a bone (not an editbone) outside of edit mode
 
-	>>> bpy.context.active_bone
+   >>> bpy.context.active_bone
 
 This works, as with blender the setting can be edited in any mode
 
-	>>> bpy.context.object.data.bones["Bone"].use_deform = True
+   >>> bpy.context.object.data.bones["Bone"].use_deform = True
 
 Accessible but read-only
 
-	>>> tail = myobj.data.bones["Bone"].tail
+   >>> tail = myobj.data.bones["Bone"].tail
 
 
 Pose Bones
@@ -199,20 +191,20 @@ Examples using :class:`bpy.types.PoseBone` in object or pose mode:
 
 .. code-block:: python
 
-	# Gets the name of the first constraint (if it exists)
-	bpy.context.object.pose.bones["Bone"].constraints[0].name 
+   # Gets the name of the first constraint (if it exists)
+   bpy.context.object.pose.bones["Bone"].constraints[0].name 
 
-	# Gets the last selected pose bone (pose mode only)
-	bpy.context.active_pose_bone
+   # Gets the last selected pose bone (pose mode only)
+   bpy.context.active_pose_bone
 
-
-.. note::
-
-	Notice the pose is accessed from the object rather than the object data, this is why blender can have 2 or more objects sharing the same armature in different poses.
 
 .. note::
 
-	Strictly speaking PoseBone's are not bones, they are just the state of the armature, stored in the :class:`bpy.types.Object` rather than the :class:`bpy.types.Armature`, the real bones are however accessible from the pose bones - :class:`bpy.types.PoseBone.bone`
+   Notice the pose is accessed from the object rather than the object data, this is why blender can have 2 or more objects sharing the same armature in different poses.
+
+.. note::
+
+   Strictly speaking PoseBone's are not bones, they are just the state of the armature, stored in the :class:`bpy.types.Object` rather than the :class:`bpy.types.Armature`, the real bones are however accessible from the pose bones - :class:`bpy.types.PoseBone.bone`
 
 
 Armature Mode Switching
@@ -223,16 +215,116 @@ While writing scripts that deal with armatures you may find you have to switch b
 This is mainly an issue with editmode since pose data can be manipulated without having to be in pose mode, however for operator access you may still need to enter pose mode.
 
 
+Data Names
+==========
+
+
+Naming Limitations
+------------------
+
+A common mistake is to assume newly created data is given the requested name.
+
+This can cause bugs when you add some data (normally imported) and then reference it later by name.
+
+.. code-block:: python
+
+   bpy.data.meshes.new(name=meshid)
+   
+   # normally some code, function calls...
+   bpy.data.meshes[meshid]
+
+
+Or with name assignment...
+
+.. code-block:: python
+
+   obj.name = objname
+   
+   # normally some code, function calls...
+   obj = bpy.data.meshes[objname]
+
+
+Data names may not match the assigned values if they exceed the maximum length, are already used or an empty string.
+
+
+Its better practice not to reference objects by names at all, once created you can store the data in a list, dictionary, on a class etc, there is rarely a reason to have to keep searching for the same data by name.
+
+
+If you do need to use name references, its best to use a dictionary to maintain a mapping between the names of the imported assets and the newly created data, this way you don't run this risk of referencing existing data from the blend file, or worse modifying it.
+
+.. code-block:: python
+
+   # typically declared in the main body of the function.
+   mesh_name_mapping = {}
+   
+   mesh = bpy.data.meshes.new(name=meshid)
+   mesh_name_mapping[meshid] = mesh
+   
+   # normally some code, or function calls...
+   
+   # use own dictionary rather then bpy.data
+   mesh = mesh_name_mapping[meshid]
+
+
+Library Collisions
+------------------
+
+Blender keeps data names unique - :class:`bpy.types.ID.name` so you can't name two objects, meshes, scenes etc the same thing by accident.
+
+However when linking in library data from another blend file naming collisions can occur, so its best to avoid referencing data by name at all.
+
+This can be tricky at times and not even blender handles this correctly in some case (when selecting the modifier object for eg you can't select between multiple objects with the same name), but its still good to try avoid problems in this area.
+
+
+If you need to select between local and library data, there is a feature in ``bpy.data`` members to allow for this.
+
+.. code-block:: python
+
+   # typical name lookup, could be local or library.
+   obj = bpy.data.objects["my_obj"]
+
+   # library object name look up using a pair
+   # where the second argument is the library path matching bpy.types.Library.filepath
+   obj = bpy.data.objects["my_obj", "//my_lib.blend"]
+
+   # local object name look up using a pair
+   # where the second argument excludes library data from being returned.
+   obj = bpy.data.objects["my_obj", None]
+
+   # both the examples above also works for 'get'
+   obj = bpy.data.objects.get(("my_obj", None))
+
+
+Relative File Paths
+===================
+
+Blenders relative file paths are not compatible with standard python modules such as ``sys`` and ``os``.
+
+Built in python functions don't understand blenders ``//`` prefix which denotes the blend file path.
+
+A common case where you would run into this problem is when exporting a material with associated image paths.
+
+>>> bpy.path.abspath(image.filepath)
+
+
+When using blender data from linked libraries there is an unfortunate complication since the path will be relative to the library rather then the open blend file. When the data block may be from an external blend file pass the library argument from the :class:`bpy.types.ID`.
+
+>>> bpy.path.abspath(image.filepath, library=image.library)
+
+
+These returns the absolute path which can be used with native python modules.
+
+
 Unicode Problems
 ================
 
-Python supports many different encpdings so there is nothing stopping you from writing a script in latin1 or iso-8859-15.
+Python supports many different encodings so there is nothing stopping you from writing a script in latin1 or iso-8859-15.
 
 See `pep-0263 <http://www.python.org/dev/peps/pep-0263/>`_
 
-However this complicates things for the python api because blend files themselves dont have an encoding.
+However this complicates things for the python api because blend files themselves don't have an encoding.
 
-To simplify the problem for python integration and script authors we have decieded all strings in blend files **must** be UTF-8 or ASCII compatible.
+To simplify the problem for python integration and script authors we have decided all strings in blend files **must** be UTF-8 or ASCII compatible.
 
 This means assigning strings with different encodings to an object names for instance will raise an error.
 
@@ -269,7 +361,7 @@ Unicode encoding/decoding is a big topic with comprehensive python documentation
 
 * To print paths or to include them in the user interface use ``repr(path)`` first or ``"%r" % path`` with string formatting.
 
-* **Possibly** - use bytes instead of python strings, when reading some input its less trouble to read it as binary data though you will still need to deciede how to treat any strings you want to use with Blender, some importers do this.
+* **Possibly** - use bytes instead of python strings, when reading some input its less trouble to read it as binary data though you will still need to decide how to treat any strings you want to use with Blender, some importers do this.
 
 
 Strange errors using 'threading' module
@@ -331,13 +423,13 @@ This an example of a timer which runs many times a second and moves the default 
 
    my_timer()
 
-Use cases like the one above which leave the thread running once the script finishes may seem to work for a while but end up causing random crashes or errors in Blenders own drawing code.
+Use cases like the one above which leave the thread running once the script finishes may seem to work for a while but end up causing random crashes or errors in Blender's own drawing code.
 
-So far no work has gone into making Blenders python integration thread safe, so until its properly supported, best not make use of this.
+So far, no work has gone into making Blender's python integration thread safe, so until its properly supported, best not make use of this.
 
 .. note::
 
-   Pythons threads only allow co-currency and wont speed up you're scripts on multi-processor systems, the ``subprocess`` and ``multiprocess`` modules can be used with blender and make use of multiple CPU's too.
+   Pythons threads only allow co-currency and won't speed up your scripts on multi-processor systems, the ``subprocess`` and ``multiprocess`` modules can be used with blender and make use of multiple CPU's too.
 
 
 Help! My script crashes Blender
@@ -378,6 +470,41 @@ This example shows how you can tell undo changes the memory locations.
 As suggested above, simply not holding references to data when Blender is used interactively by the user is the only way to ensure the script doesn't become unstable.
 
 
+Edit Mode / Memory Access
+-------------------------
+
+Switching edit-mode ``bpy.ops.object.mode_set(mode='EDIT')`` / ``bpy.ops.object.mode_set(mode='OBJECT')`` will re-allocate objects data, any references to a meshes vertices/faces/uvs, armatures bones, curves points etc cannot be accessed after switching edit-mode.
+
+Only the reference to the data its self can be re-accessed, the following example will crash.
+
+.. code-block:: python
+
+   mesh = bpy.context.active_object.data
+   faces = mesh.faces
+   bpy.ops.object.mode_set(mode='EDIT')
+   bpy.ops.object.mode_set(mode='OBJECT')
+
+   # this will crash
+   print(faces)
+
+
+So after switching edit-mode you need to re-access any object data variables, the following example shows how to avoid the crash above.
+
+.. code-block:: python
+
+   mesh = bpy.context.active_object.data
+   faces = mesh.faces
+   bpy.ops.object.mode_set(mode='EDIT')
+   bpy.ops.object.mode_set(mode='OBJECT')
+
+   # faces have been re-allocated
+   faces = mesh.faces
+   print(faces)
+
+
+These kinds of problems can happen for any functions which re-allocate the object data but are most common when switching edit-mode.
+
+
 Array Re-Allocation
 -------------------
 
@@ -403,3 +530,14 @@ Removing Data
 **Any** data that you remove shouldn't be modified or accessed afterwards, this includes f-curves, drivers, render layers, timeline markers, modifiers, constraints along with objects, scenes, groups, bones.. etc.
 
 This is a problem in the API at the moment that we should eventually solve.
+
+
+sys.exit
+========
+
+Some python modules will call sys.exit() themselves when an error occurs, while not common behavior this is something to watch out for because it may seem as if blender is crashing since sys.exit() will quit blender immediately.
+
+For example, the ``optparse`` module will print an error and exit if the arguments are invalid.
+
+An ugly way of troubleshooting this is to set ``sys.exit = None`` and see what line of python code is quitting, you could of course replace ``sys.exit``/ with your own function but manipulating python in this way is bad practice.
+

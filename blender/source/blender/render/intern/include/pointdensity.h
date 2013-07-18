@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef POINTDENSITY_H
-#define POINTDENSITY_H 
+#ifndef __POINTDENSITY_H__
+#define __POINTDENSITY_H__ 
 
 /**
  * Make point density kd-trees for all point density textures in the scene
@@ -41,9 +40,10 @@
 struct Render;
 struct TexResult;
 
+void cache_pointdensity(struct Render *re, struct Tex *tex);
 void make_pointdensities(struct Render *re);
 void free_pointdensities(struct Render *re);
 int pointdensitytex(struct Tex *tex, float *texvec, struct TexResult *texres);
 
-#endif /* POINTDENSITY_H */
+#endif /* __POINTDENSITY_H__ */
 

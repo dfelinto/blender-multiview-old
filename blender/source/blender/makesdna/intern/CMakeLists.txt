@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -27,7 +26,7 @@
 
 # message(STATUS "Configuring makesdna")
 
-# add_definitions(-DWITH_DNA_GHASH)
+add_definitions(-DWITH_DNA_GHASH)
 
 blender_include_dirs(
 	../../../../intern/guardedalloc

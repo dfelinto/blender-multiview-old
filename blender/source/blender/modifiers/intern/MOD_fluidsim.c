@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_fluidsim.c
  *  \ingroup modifiers
@@ -87,12 +85,12 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
 	DerivedMesh *result = NULL;
 	
 	/* check for alloc failing */
-	if(!fluidmd->fss)
-	{
+	if(!fluidmd->fss) {
 		initData(md);
 		
-		if(!fluidmd->fss)
+		if (!fluidmd->fss) {
 			return dm;
+		}
 	}
 
 	result= fluidsimModifier_do(fluidmd, md->scene, ob, dm, useRenderParams, isFinalCalc);
@@ -107,20 +105,15 @@ static void updateDepgraph(
 	FluidsimModifierData *fluidmd= (FluidsimModifierData*) md;
 	Base *base;
 
-	if(fluidmd && fluidmd->fss)
-	{
-		if(fluidmd->fss->type == OB_FLUIDSIM_DOMAIN)
-		{
-			for(base = scene->base.first; base; base= base->next) 
-			{
+	if(fluidmd && fluidmd->fss) {
+		if(fluidmd->fss->type == OB_FLUIDSIM_DOMAIN) {
+			for(base = scene->base.first; base; base= base->next) {
 				Object *ob1= base->object;
-				if(ob1 != ob)
-				{
+				if(ob1 != ob) {
 					FluidsimModifierData *fluidmdtmp = (FluidsimModifierData *)modifiers_findByType(ob1, eModifierType_Fluidsim);
 					
 					// only put dependancies from NON-DOMAIN fluids in here
-					if(fluidmdtmp && fluidmdtmp->fss && (fluidmdtmp->fss->type!=OB_FLUIDSIM_DOMAIN))
-					{
+					if(fluidmdtmp && fluidmdtmp->fss && (fluidmdtmp->fss->type!=OB_FLUIDSIM_DOMAIN)) {
 						DagNode *curNode = dag_get_node(forest, ob1);
 						dag_add_relation(forest, curNode, obNode, DAG_RL_DATA_DATA|DAG_RL_OB_DATA, "Fluidsim Object");
 					}

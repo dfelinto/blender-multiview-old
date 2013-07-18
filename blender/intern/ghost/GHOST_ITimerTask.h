@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_ITimerTask interface class.
  */
 
-#ifndef _GHOST_ITIMER_TASK_H_
-#define _GHOST_ITIMER_TASK_H_
+#ifndef __GHOST_ITIMERTASK_H__
+#define __GHOST_ITIMERTASK_H__
 
 #include "GHOST_Types.h"
 
@@ -92,5 +91,5 @@ public:
 #endif
 };
 
-#endif // _GHOST_ITIMER_TASK_H_
+#endif // __GHOST_ITIMERTASK_H__
 

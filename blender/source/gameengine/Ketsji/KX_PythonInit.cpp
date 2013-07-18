@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -49,6 +47,12 @@
 #undef _XOPEN_SOURCE
 #endif
 
+#if defined(__sun) || defined(sun) 
+#if defined(_XPG4) 
+#undef _XPG4 
+#endif 
+#endif 
+
 #include <Python.h>
 
 extern "C" {
@@ -87,6 +91,8 @@ extern "C" {
 #include "KX_GameActuator.h"
 #include "KX_ParentActuator.h"
 #include "KX_SCA_DynamicActuator.h"
+#include "KX_SteeringActuator.h"
+#include "KX_NavMeshObject.h"
 
 #include "SCA_IInputDevice.h"
 #include "SCA_PropertySensor.h"
@@ -148,8 +154,8 @@ extern "C" {
 #ifdef WITH_PYTHON
 
 static RAS_ICanvas* gp_Canvas = NULL;
-static char gp_GamePythonPath[FILE_MAXDIR + FILE_MAXFILE] = "";
-static char gp_GamePythonPathOrig[FILE_MAXDIR + FILE_MAXFILE] = ""; // not super happy about this, but we need to remember the first loaded file for the global/dict load save
+static char gp_GamePythonPath[FILE_MAX] = "";
+static char gp_GamePythonPathOrig[FILE_MAX] = ""; // not super happy about this, but we need to remember the first loaded file for the global/dict load save
 
 static SCA_PythonKeyboard* gp_PythonKeyboard = NULL;
 static SCA_PythonMouse* gp_PythonMouse = NULL;
@@ -180,6 +186,13 @@ void	KX_RasterizerDrawDebugLine(const MT_Vector3& from,const MT_Vector3& to,cons
 {
 	if (gp_Rasterizer)
 		gp_Rasterizer->DrawDebugLine(from,to,color);
+}
+
+void	KX_RasterizerDrawDebugCircle(const MT_Vector3& center, const MT_Scalar radius, const MT_Vector3& color,
+									 const MT_Vector3& normal, int nsector)
+{
+	if (gp_Rasterizer)
+		gp_Rasterizer->DrawDebugCircle(center, radius, color, normal, nsector);
 }
 
 #ifdef WITH_PYTHON
@@ -231,13 +244,13 @@ The function also converts the directory separator to the local file system form
 
 static PyObject* gPyExpandPath(PyObject*, PyObject* args)
 {
-	char expanded[FILE_MAXDIR + FILE_MAXFILE];
+	char expanded[FILE_MAX];
 	char* filename;
 	
 	if (!PyArg_ParseTuple(args,"s:ExpandPath",&filename))
 		return NULL;
 
-	BLI_strncpy(expanded, filename, FILE_MAXDIR + FILE_MAXFILE);
+	BLI_strncpy(expanded, filename, FILE_MAX);
 	BLI_path_abs(expanded, gp_GamePythonPath);
 	return PyUnicode_DecodeFSDefault(expanded);
 }
@@ -413,6 +426,20 @@ static PyObject* gPyGetLogicTicRate(PyObject*)
 	return PyFloat_FromDouble(KX_KetsjiEngine::GetTicRate());
 }
 
+static PyObject* gPySetExitKey(PyObject*, PyObject* args)
+{
+	short exitkey;
+	if (!PyArg_ParseTuple(args, "h:setExitKey", &exitkey))
+		return NULL;
+	KX_KetsjiEngine::SetExitKey(exitkey);
+	Py_RETURN_NONE;
+}
+
+static PyObject* gPyGetExitKey(PyObject*)
+{
+	return PyLong_FromSsize_t(KX_KetsjiEngine::GetExitKey());
+}
+
 static PyObject* gPySetMaxLogicFrame(PyObject*, PyObject* args)
 {
 	int frame;
@@ -490,11 +517,11 @@ static PyObject* gPyGetBlendFileList(PyObject*, PyObject* args)
 	list = PyList_New(0);
 	
 	if (searchpath) {
-		BLI_strncpy(cpath, searchpath, FILE_MAXDIR + FILE_MAXFILE);
+		BLI_strncpy(cpath, searchpath, FILE_MAX);
 		BLI_path_abs(cpath, gp_GamePythonPath);
 	} else {
 		/* Get the dir only */
-		BLI_split_dirfile(gp_GamePythonPath, cpath, NULL);
+		BLI_split_dir_part(gp_GamePythonPath, cpath, sizeof(cpath));
 	}
 
 	if((dp  = opendir(cpath)) == NULL) {
@@ -699,7 +726,7 @@ static PyObject *gLibNew(PyObject*, PyObject* args)
 	KX_Scene *kx_scene= gp_KetsjiScene;
 	char *path;
 	char *group;
-	char *name;
+	const char *name;
 	PyObject *names;
 	int idcode;
 
@@ -806,10 +833,12 @@ static struct PyMethodDef game_methods[] = {
 	{"setLogicTicRate", (PyCFunction) gPySetLogicTicRate, METH_VARARGS, (const char *)"Sets the logic tic rate"},
 	{"getPhysicsTicRate", (PyCFunction) gPyGetPhysicsTicRate, METH_NOARGS, (const char *)"Gets the physics tic rate"},
 	{"setPhysicsTicRate", (PyCFunction) gPySetPhysicsTicRate, METH_VARARGS, (const char *)"Sets the physics tic rate"},
+	{"getExitKey", (PyCFunction) gPyGetExitKey, METH_NOARGS, (const char *)"Gets the key used to exit the game engine"},
+	{"setExitKey", (PyCFunction) gPySetExitKey, METH_VARARGS, (const char *)"Sets the key used to exit the game engine"},
 	{"getAverageFrameRate", (PyCFunction) gPyGetAverageFrameRate, METH_NOARGS, (const char *)"Gets the estimated average frame rate"},
 	{"getBlendFileList", (PyCFunction)gPyGetBlendFileList, METH_VARARGS, (const char *)"Gets a list of blend files in the same directory as the current blend file"},
 	{"PrintGLInfo", (PyCFunction)pyPrintExt, METH_NOARGS, (const char *)"Prints GL Extension Info"},
-	{"PrintMemInfo", (PyCFunction)pyPrintStats, METH_NOARGS, (const char *)"Print engine stastics"},
+	{"PrintMemInfo", (PyCFunction)pyPrintStats, METH_NOARGS, (const char *)"Print engine statistics"},
 	
 	/* library functions */
 	{"LibLoad", (PyCFunction)gLibLoad, METH_VARARGS|METH_KEYWORDS, (const char *)""},
@@ -1083,7 +1112,7 @@ static PyObject* gPyDisableMotionBlur(PyObject*)
 	Py_RETURN_NONE;
 }
 
-int getGLSLSettingFlag(char *setting)
+static int getGLSLSettingFlag(const char *setting)
 {
 	if(strcmp(setting, "lights") == 0)
 		return GAME_GLSL_NO_LIGHTS;
@@ -1384,6 +1413,16 @@ static PyObject* gPyDrawLine(PyObject*, PyObject* args)
 	Py_RETURN_NONE;
 }
 
+static PyObject* gPySetWindowSize(PyObject*, PyObject* args)
+{
+	int width, height;
+	if (!PyArg_ParseTuple(args, "ii:resize", &width, &height))
+		return NULL;
+
+	gp_Canvas->ResizeWindow(width, height);
+	Py_RETURN_NONE;
+}
+
 static struct PyMethodDef rasterizer_methods[] = {
   {"getWindowWidth",(PyCFunction) gPyGetWindowWidth,
    METH_VARARGS, "getWindowWidth doc"},
@@ -1439,6 +1478,7 @@ static struct PyMethodDef rasterizer_methods[] = {
   METH_VARARGS, "get the anisotropic filtering level"},
   {"drawLine", (PyCFunction) gPyDrawLine,
    METH_VARARGS, "draw a line on the screen"},
+  {"setWindowSize", (PyCFunction) gPySetWindowSize, METH_VARARGS, ""},
   { NULL, (PyCFunction) NULL, 0, NULL }
 };
 
@@ -1556,15 +1596,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, KX_CONSTRAINTACT_LOCAL, KX_ConstraintActuator::KX_ACT_CONSTRAINT_LOCAL);
 	KX_MACRO_addTypesToDict(d, KX_CONSTRAINTACT_DOROTFH, KX_ConstraintActuator::KX_ACT_CONSTRAINT_DOROTFH);
 
-	/* 4. Ipo actuator, simple part                                            */
-	KX_MACRO_addTypesToDict(d, KX_IPOACT_PLAY,     KX_IpoActuator::KX_ACT_IPO_PLAY);
-	KX_MACRO_addTypesToDict(d, KX_IPOACT_PINGPONG, KX_IpoActuator::KX_ACT_IPO_PINGPONG);
-	KX_MACRO_addTypesToDict(d, KX_IPOACT_FLIPPER,  KX_IpoActuator::KX_ACT_IPO_FLIPPER);
-	KX_MACRO_addTypesToDict(d, KX_IPOACT_LOOPSTOP, KX_IpoActuator::KX_ACT_IPO_LOOPSTOP);
-	KX_MACRO_addTypesToDict(d, KX_IPOACT_LOOPEND,  KX_IpoActuator::KX_ACT_IPO_LOOPEND);
-	KX_MACRO_addTypesToDict(d, KX_IPOACT_FROM_PROP,KX_IpoActuator::KX_ACT_IPO_FROM_PROP);
-
-	/* 5. Random distribution types                                            */
+	/* 4. Random distribution types                                            */
 	KX_MACRO_addTypesToDict(d, KX_RANDOMACT_BOOL_CONST,      SCA_RandomActuator::KX_RANDOMACT_BOOL_CONST);
 	KX_MACRO_addTypesToDict(d, KX_RANDOMACT_BOOL_UNIFORM,    SCA_RandomActuator::KX_RANDOMACT_BOOL_UNIFORM);
 	KX_MACRO_addTypesToDict(d, KX_RANDOMACT_BOOL_BERNOUILLI, SCA_RandomActuator::KX_RANDOMACT_BOOL_BERNOUILLI);
@@ -1576,7 +1608,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, KX_RANDOMACT_FLOAT_NORMAL,    SCA_RandomActuator::KX_RANDOMACT_FLOAT_NORMAL);
 	KX_MACRO_addTypesToDict(d, KX_RANDOMACT_FLOAT_NEGATIVE_EXPONENTIAL, SCA_RandomActuator::KX_RANDOMACT_FLOAT_NEGATIVE_EXPONENTIAL);
 
-	/* 6. Sound actuator                                                      */
+	/* 5. Sound actuator                                                      */
 	KX_MACRO_addTypesToDict(d, KX_SOUNDACT_PLAYSTOP,              KX_SoundActuator::KX_SOUNDACT_PLAYSTOP);
 	KX_MACRO_addTypesToDict(d, KX_SOUNDACT_PLAYEND,               KX_SoundActuator::KX_SOUNDACT_PLAYEND);
 	KX_MACRO_addTypesToDict(d, KX_SOUNDACT_LOOPSTOP,              KX_SoundActuator::KX_SOUNDACT_LOOPSTOP);
@@ -1584,7 +1616,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, KX_SOUNDACT_LOOPBIDIRECTIONAL,     KX_SoundActuator::KX_SOUNDACT_LOOPBIDIRECTIONAL);
 	KX_MACRO_addTypesToDict(d, KX_SOUNDACT_LOOPBIDIRECTIONAL_STOP,     KX_SoundActuator::KX_SOUNDACT_LOOPBIDIRECTIONAL_STOP);
 
-	/* 7. Action actuator													   */
+	/* 6. Action actuator													   */
 	KX_MACRO_addTypesToDict(d, KX_ACTIONACT_PLAY,        ACT_ACTION_PLAY);
 	KX_MACRO_addTypesToDict(d, KX_ACTIONACT_PINGPONG,    ACT_ACTION_PINGPONG);
 	KX_MACRO_addTypesToDict(d, KX_ACTIONACT_FLIPPER,     ACT_ACTION_FLIPPER);
@@ -1592,7 +1624,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, KX_ACTIONACT_LOOPEND,     ACT_ACTION_LOOP_END);
 	KX_MACRO_addTypesToDict(d, KX_ACTIONACT_PROPERTY,    ACT_ACTION_FROM_PROP);
 	
-	/*8. GL_BlendFunc */
+	/* 7. GL_BlendFunc */
 	KX_MACRO_addTypesToDict(d, BL_ZERO, GL_ZERO);
 	KX_MACRO_addTypesToDict(d, BL_ONE, GL_ONE);
 	KX_MACRO_addTypesToDict(d, BL_SRC_COLOR, GL_SRC_COLOR);
@@ -1606,7 +1638,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, BL_SRC_ALPHA_SATURATE, GL_SRC_ALPHA_SATURATE);
 
 
-	/* 9. UniformTypes */
+	/* 8. UniformTypes */
 	KX_MACRO_addTypesToDict(d, SHD_TANGENT, BL_Shader::SHD_TANGENT);
 	KX_MACRO_addTypesToDict(d, MODELVIEWMATRIX, BL_Shader::MODELVIEWMATRIX);
 	KX_MACRO_addTypesToDict(d, MODELVIEWMATRIX_TRANSPOSE, BL_Shader::MODELVIEWMATRIX_TRANSPOSE);
@@ -1623,7 +1655,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, CAM_POS, BL_Shader::CAM_POS);
 	KX_MACRO_addTypesToDict(d, CONSTANT_TIMER, BL_Shader::CONSTANT_TIMER);
 
-	/* 10 state actuator */
+	/* 9. state actuator */
 	KX_MACRO_addTypesToDict(d, KX_STATE1, (1<<0));
 	KX_MACRO_addTypesToDict(d, KX_STATE2, (1<<1));
 	KX_MACRO_addTypesToDict(d, KX_STATE3, (1<<2));
@@ -1794,6 +1826,16 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
 	KX_MACRO_addTypesToDict(d, ROT_MODE_ZXY, ROT_MODE_ZXY);
 	KX_MACRO_addTypesToDict(d, ROT_MODE_ZYX, ROT_MODE_ZYX);
 
+	/* Steering actuator */
+	KX_MACRO_addTypesToDict(d, KX_STEERING_SEEK, KX_SteeringActuator::KX_STEERING_SEEK);
+	KX_MACRO_addTypesToDict(d, KX_STEERING_FLEE, KX_SteeringActuator::KX_STEERING_FLEE);
+	KX_MACRO_addTypesToDict(d, KX_STEERING_PATHFOLLOWING, KX_SteeringActuator::KX_STEERING_PATHFOLLOWING);
+
+	/* KX_NavMeshObject render mode */
+	KX_MACRO_addTypesToDict(d, RM_WALLS, KX_NavMeshObject::RM_WALLS);
+	KX_MACRO_addTypesToDict(d, RM_POLYS, KX_NavMeshObject::RM_POLYS);
+	KX_MACRO_addTypesToDict(d, RM_TRIS, KX_NavMeshObject::RM_TRIS);
+
 	/* BL_Action play modes */
 	KX_MACRO_addTypesToDict(d, KX_ACTION_MODE_PLAY, BL_Action::ACT_MODE_PLAY);
 	KX_MACRO_addTypesToDict(d, KX_ACTION_MODE_LOOP, BL_Action::ACT_MODE_LOOP);
@@ -1817,7 +1859,7 @@ PyObject* initGameLogic(KX_KetsjiEngine *engine, KX_Scene* scene) // quick hack 
  * These exist so the current blend dir "//" can always be used to import modules from.
  * the reason we need a few functions for this is that python is not only used by the game engine
  * so we cant just add to sys.path all the time, it would leave pythons state in a mess.
- * It would also be incorrect since loading blend files for new levels etc would alwasy add to sys.path
+ * It would also be incorrect since loading blend files for new levels etc would always add to sys.path
  * 
  * To play nice with blenders python, the sys.path is backed up and the current blendfile along
  * with all its lib paths are added to the sys path.
@@ -1833,11 +1875,11 @@ static void backupPySysObjects(void)
 	PyObject *sys_mods= PySys_GetObject("modules"); /* should never fail */
 	
 	/* paths */
-	Py_XDECREF(gp_OrigPythonSysPath); /* just incase its set */
+	Py_XDECREF(gp_OrigPythonSysPath); /* just in case its set */
 	gp_OrigPythonSysPath = PyList_GetSlice(sys_path, 0, INT_MAX); /* copy the list */
 	
 	/* modules */
-	Py_XDECREF(gp_OrigPythonSysModules); /* just incase its set */
+	Py_XDECREF(gp_OrigPythonSysModules); /* just in case its set */
 	gp_OrigPythonSysModules = PyDict_Copy(sys_mods); /* copy the list */
 	
 }
@@ -1847,14 +1889,14 @@ static void backupPySysObjects(void)
  *
  * "/home/me/foo.blend" -> "/home/me/scripts"
  */
-static void initPySysObjects__append(PyObject *sys_path, char *filename)
+static void initPySysObjects__append(PyObject *sys_path, const char *filename)
 {
 	PyObject *item;
-	char expanded[FILE_MAXDIR + FILE_MAXFILE];
+	char expanded[FILE_MAX];
 	
-	BLI_split_dirfile(filename, expanded, NULL); /* get the dir part of filename only */
+	BLI_split_dir_part(filename, expanded, sizeof(expanded)); /* get the dir part of filename only */
 	BLI_path_abs(expanded, gp_GamePythonPath); /* filename from lib->filename is (always?) absolute, so this may not be needed but it wont hurt */
-	BLI_cleanup_file(gp_GamePythonPath, expanded); /* Dont use BLI_cleanup_dir because it adds a slash - BREAKS WIN32 ONLY */
+	BLI_cleanup_file(gp_GamePythonPath, expanded); /* Don't use BLI_cleanup_dir because it adds a slash - BREAKS WIN32 ONLY */
 	item= PyUnicode_DecodeFSDefault(expanded);
 	
 //	printf("SysPath - '%s', '%s', '%s'\n", expanded, filename, gp_GamePythonPath);
@@ -1928,7 +1970,7 @@ static struct _inittab bge_internal_modules[]= {
 };
 
 /**
- * Python is not initialised.
+ * Python is not initialized.
  * see bpy_interface.c's BPY_python_start() which shares the same functionality in blender.
  */
 PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecurityLevel level, Main *maggie, int argc, char** argv)
@@ -1936,7 +1978,7 @@ PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecur
 	/* Yet another gotcha in the py api
 	 * Cant run PySys_SetArgv more then once because this adds the
 	 * binary dir to the sys.path each time.
-	 * Id have thaught python being totally restarted would make this ok but
+	 * Id have thought python being totally restarted would make this ok but
 	 * somehow it remembers the sys.path - Campbell
 	 */
 	static bool first_time = true;
@@ -1956,7 +1998,7 @@ PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecur
 
 	Py_Initialize();
 	
-	if(argv && first_time) { /* browser plugins dont currently set this */
+	if(argv && first_time) { /* browser plugins don't currently set this */
 		// Until python support ascii again, we use our own.
 		// PySys_SetArgv(argc, argv);
 		int i;
@@ -1971,11 +2013,19 @@ PyObject* initGamePlayerPythonScripting(const STR_String& progname, TPythonSecur
 
 	bpy_import_init(PyEval_GetBuiltins());
 
-	/* mathutils types are used by the BGE even if we dont import them */
+	/* mathutils types are used by the BGE even if we don't import them */
 	{
 		PyObject *mod= PyImport_ImportModuleLevel((char *)"mathutils", NULL, NULL, NULL, 0);
 		Py_DECREF(mod);
 	}
+
+#ifdef WITH_AUDASPACE
+	/* accessing a SoundActuator's sound results in a crash if aud is not initialized... */
+	{
+		PyObject *mod= PyImport_ImportModuleLevel((char *)"aud", NULL, NULL, NULL, 0);
+		Py_DECREF(mod);
+	}
+#endif
 
 	initPyTypes();
 	
@@ -2020,6 +2070,14 @@ PyObject* initGamePythonScripting(const STR_String& progname, TPythonSecurityLev
 #endif
 	Py_NoSiteFlag=1;
 	Py_FrozenFlag=1;
+
+#ifdef WITH_AUDASPACE
+	/* accessing a SoundActuator's sound results in a crash if aud is not initialized... */
+	{
+		PyObject *mod= PyImport_ImportModuleLevel((char *)"aud", NULL, NULL, NULL, 0);
+		Py_DECREF(mod);
+	}
+#endif
 
 	initPyTypes();
 	
@@ -2072,7 +2130,15 @@ void setupGamePython(KX_KetsjiEngine* ketsjiengine, KX_Scene* startscene, Main *
 	initVideoTexture();
 
 	/* could be done a lot more nicely, but for now a quick way to get bge.* working */
-	PyRun_SimpleString("sys = __import__('sys');mod = sys.modules['bge'] = type(sys)('bge');mod.__dict__.update({'logic':__import__('GameLogic'), 'render':__import__('Rasterizer'), 'events':__import__('GameKeys'), 'constraints':__import__('PhysicsConstraints'), 'types':__import__('GameTypes'), 'texture':__import__('VideoTexture')});");
+	PyRun_SimpleString("sys = __import__('sys');"
+	                   "mod = sys.modules['bge'] = type(sys)('bge');"
+	                   "mod.__dict__.update({'logic':__import__('GameLogic'), "
+	                                        "'render':__import__('Rasterizer'), "
+	                                        "'events':__import__('GameKeys'), "
+	                                        "'constraints':__import__('PhysicsConstraints'), "
+	                                        "'types':__import__('GameTypes'), "
+	                                        "'texture':__import__('VideoTexture')});"
+	                   );
 }
 
 static struct PyModuleDef Rasterizer_module_def = {
@@ -2098,7 +2164,7 @@ PyObject* initRasterizer(RAS_IRasterizer* rasty,RAS_ICanvas* canvas)
 	PyObject* item;
 
 	/* Use existing module where possible
-  * be careful not to init any runtime vars after this */
+	 * be careful not to init any runtime vars after this */
 	m = PyImport_ImportModule( "Rasterizer" );
 	if(m) {
 		Py_DECREF(m);
@@ -2166,7 +2232,7 @@ static PyObject* gPyEventToString(PyObject*, PyObject* value)
 		}
 	}
 	
-	PyErr_Clear(); // incase there was an error clearing
+	PyErr_Clear(); // in case there was an error clearing
 	Py_DECREF(mod);
 	if (!ret)	PyErr_SetString(PyExc_ValueError, "GameKeys.EventToString(int): expected a valid int keyboard event");
 	else		Py_INCREF(ret);
@@ -2447,7 +2513,7 @@ int loadGamePythonConfig(char *marshal_buffer, int marshal_length)
 	return 0;
 }
 
-void pathGamePythonConfig( char *path )
+void pathGamePythonConfig(char *path)
 {
 	int len = strlen(gp_GamePythonPathOrig); // Always use the first loaded blend filename
 	
@@ -2461,7 +2527,7 @@ void pathGamePythonConfig( char *path )
 	}
 }
 
-void setGamePythonPath(char *path)
+void setGamePythonPath(const char *path)
 {
 	BLI_strncpy(gp_GamePythonPath, path, sizeof(gp_GamePythonPath));
 	BLI_cleanup_file(NULL, gp_GamePythonPath); /* not absolutely needed but makes resolving path problems less confusing later */

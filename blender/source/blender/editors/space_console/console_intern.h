@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup spconsole
  */
 
-#ifndef ED_CONSOLE_INTERN_H
-#define ED_CONSOLE_INTERN_H
+#ifndef __CONSOLE_INTERN_H__
+#define __CONSOLE_INTERN_H__
 
 /* internal exports only */
 
@@ -52,9 +50,6 @@ ConsoleLine *console_scrollback_add_str(struct SpaceConsole *sc, char *str, int 
 
 ConsoleLine *console_history_verify(const struct bContext *C);
 
-int console_report_mask(SpaceConsole *sc);
-
-
 void CONSOLE_OT_move(struct wmOperatorType *ot);
 void CONSOLE_OT_delete(struct wmOperatorType *ot);
 void CONSOLE_OT_insert(struct wmOperatorType *ot);
@@ -71,4 +66,4 @@ void CONSOLE_OT_select_set(struct wmOperatorType *ot);
 enum { LINE_BEGIN, LINE_END, PREV_CHAR, NEXT_CHAR, PREV_WORD, NEXT_WORD };
 enum { DEL_ALL, DEL_NEXT_CHAR, DEL_PREV_CHAR, DEL_SELECTION, DEL_NEXT_SEL, DEL_PREV_SEL };
 
-#endif /* ED_CONSOLE_INTERN_H */
+#endif /* __CONSOLE_INTERN_H__ */

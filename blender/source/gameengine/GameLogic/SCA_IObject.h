@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,8 +31,8 @@
  *   SceneGraph
  */
 
-#ifndef SCA_IOBJECT_H
-#define SCA_IOBJECT_H
+#ifndef __SCA_IOBJECT_H__
+#define __SCA_IOBJECT_H__
 
 #include "Value.h"
 #include <vector>
@@ -56,7 +54,7 @@ typedef std::vector<SCA_IObject *>		 SCA_ObjectList;
 class SCA_IObject :	public CValue
 {
 	
-	Py_Header;
+	Py_Header
 	
 protected:
 	friend class KX_StateActuator;
@@ -227,5 +225,5 @@ public:
 
 };
 
-#endif //SCA_IOBJECT_H
+#endif //__SCA_IOBJECT_H__
 

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_IEventConsumer interface class.
  */
 
-#ifndef _GHOST_IEVENT_CONSUMER_H_
-#define _GHOST_IEVENT_CONSUMER_H_
+#ifndef __GHOST_IEVENTCONSUMER_H__
+#define __GHOST_IEVENTCONSUMER_H__
 
 #include "GHOST_IEvent.h"
 

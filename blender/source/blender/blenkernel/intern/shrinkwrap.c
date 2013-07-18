@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,7 +43,6 @@
 #include "DNA_mesh_types.h"
 #include "DNA_scene_types.h"
 
-#include "BLI_editVert.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
@@ -56,6 +53,8 @@
 #include "BKE_deform.h"
 #include "BKE_mesh.h"
 #include "BKE_subsurf.h"
+#include "BKE_mesh.h"
+#include "BKE_tessmesh.h"
 
 /* Util macros */
 #define OUT_OF_MEMORY()	((void)printf("Shrinkwrap: Out of memory\n"))
@@ -87,15 +86,14 @@
 typedef void ( *Shrinkwrap_ForeachVertexCallback) (DerivedMesh *target, float *co, float *normal);
 
 /* get derived mesh */
-//TODO is anyfunction that does this? returning the derivedFinal witouth we caring if its in edit mode or not?
+//TODO is anyfunction that does this? returning the derivedFinal without we caring if its in edit mode or not?
 DerivedMesh *object_get_derived_final(Object *ob)
 {
 	Mesh *me= ob->data;
-	EditMesh *em = BKE_mesh_get_editmesh(me);
+	BMEditMesh *em = me->edit_btmesh;
 
 	if(em) {
 		DerivedMesh *dm = em->derivedFinal;
-		BKE_mesh_end_editmesh(me, em);
 		return dm;
 	}
 
@@ -134,16 +132,6 @@ static void space_transform_invert_normal(const SpaceTransform *data, float *no)
 }
 
 /*
- * Returns the squared distance between two given points
- */
-static float squared_dist(const float *a, const float *b)
-{
-	float tmp[3];
-	VECSUB(tmp, a, b);
-	return INPR(tmp, tmp);
-}
-
-/*
  * Shrinkwrap to the nearest vertex
  *
  * it builds a kdtree of vertexs we can attach to and then
@@ -179,13 +167,11 @@ static void shrinkwrap_calc_nearest_vertex(ShrinkwrapCalcData *calc)
 
 
 		//Convert the vertex to tree coordinates
-		if(calc->vert)
-		{
-			VECCOPY(tmp_co, calc->vert[i].co);
+		if(calc->vert) {
+			copy_v3_v3(tmp_co, calc->vert[i].co);
 		}
-		else
-		{
-			VECCOPY(tmp_co, co);
+		else {
+			copy_v3_v3(tmp_co, co);
 		}
 		space_transform_apply(&calc->local2target, tmp_co);
 
@@ -195,7 +181,7 @@ static void shrinkwrap_calc_nearest_vertex(ShrinkwrapCalcData *calc)
 		//so we can initiate the "nearest.dist" with the expected value to that last hit.
 		//This will lead in prunning of the search tree.
 		if(nearest.index != -1)
-			nearest.dist = squared_dist(tmp_co, nearest.co);
+			nearest.dist = len_squared_v3v3(tmp_co, nearest.co);
 		else
 			nearest.dist = FLT_MAX;
 
@@ -210,7 +196,7 @@ static void shrinkwrap_calc_nearest_vertex(ShrinkwrapCalcData *calc)
 			if(dist > FLT_EPSILON) weight *= (dist - calc->keepDist)/dist;
 
 			//Convert the coordinates back to mesh coordinates
-			VECCOPY(tmp_co, nearest.co);
+			copy_v3_v3(tmp_co, nearest.co);
 			space_transform_invert(&calc->local2target, tmp_co);
 
 			interp_v3_v3v3(co, co, tmp_co, weight);	//linear interpolation
@@ -240,18 +226,17 @@ int normal_projection_project_vertex(char options, const float *vert, const floa
 	//Apply space transform (TODO readjust dist)
 	if(transf)
 	{
-		VECCOPY( tmp_co, vert );
+		copy_v3_v3( tmp_co, vert );
 		space_transform_apply( transf, tmp_co );
 		co = tmp_co;
 
-		VECCOPY( tmp_no, dir );
+		copy_v3_v3( tmp_no, dir );
 		space_transform_apply_normal( transf, tmp_no );
 		no = tmp_no;
 
 		hit_tmp.dist *= mat4_to_scale( ((SpaceTransform*)transf)->local2target );
 	}
-	else
-	{
+	else {
 		co = vert;
 		no = dir;
 	}
@@ -301,7 +286,7 @@ static void shrinkwrap_calc_normal_projection(ShrinkwrapCalcData *calc)
 	BVHTreeRayHit hit;
 	BVHTreeFromMesh treeData= NULL_BVHTreeFromMesh;
 
-	//auxiliar target
+	//auxiliary target
 	DerivedMesh *auxMesh	= NULL;
 	BVHTreeFromMesh auxData	= NULL_BVHTreeFromMesh;
 	SpaceTransform local2aux;
@@ -317,10 +302,9 @@ static void shrinkwrap_calc_normal_projection(ShrinkwrapCalcData *calc)
 	{
 		if(calc->vert == NULL) return;
 	}
-	else
-	{
+	else {
 		//The code supports any axis that is a combination of X,Y,Z
-		//altought currently UI only allows to set the 3 diferent axis
+		//although currently UI only allows to set the 3 different axis
 		if(calc->smd->projAxis & MOD_SHRINKWRAP_PROJECT_OVER_X_AXIS) proj_axis[0] = 1.0f;
 		if(calc->smd->projAxis & MOD_SHRINKWRAP_PROJECT_OVER_Y_AXIS) proj_axis[1] = 1.0f;
 		if(calc->smd->projAxis & MOD_SHRINKWRAP_PROJECT_OVER_Z_AXIS) proj_axis[2] = 1.0f;
@@ -328,7 +312,7 @@ static void shrinkwrap_calc_normal_projection(ShrinkwrapCalcData *calc)
 		normalize_v3(proj_axis);
 
 		//Invalid projection direction
-		if(INPR(proj_axis, proj_axis) < FLT_EPSILON)
+		if(dot_v3v3(proj_axis, proj_axis) < FLT_EPSILON)
 			return; 
 	}
 
@@ -362,22 +346,21 @@ static void shrinkwrap_calc_normal_projection(ShrinkwrapCalcData *calc)
 				/* this coordinated are deformed by vertexCos only for normal projection (to get correct normals) */
 				/* for other cases calc->varts contains undeformed coordinates and vertexCos should be used */
 				if(calc->smd->projAxis == MOD_SHRINKWRAP_PROJECT_OVER_NORMAL) {
-					VECCOPY(tmp_co, calc->vert[i].co);
+					copy_v3_v3(tmp_co, calc->vert[i].co);
 					normal_short_to_float_v3(tmp_no, calc->vert[i].no);
 				} else {
-					VECCOPY(tmp_co, co);
-					VECCOPY(tmp_no, proj_axis);
+					copy_v3_v3(tmp_co, co);
+					copy_v3_v3(tmp_no, proj_axis);
 				}
 			}
-			else
-			{
-				VECCOPY(tmp_co, co);
-				VECCOPY(tmp_no, proj_axis);
+			else {
+				copy_v3_v3(tmp_co, co);
+				copy_v3_v3(tmp_no, proj_axis);
 			}
 
 
 			hit.index = -1;
-			hit.dist = 10000.0f; //TODO: we should use FLT_MAX here, but sweepsphere code isnt prepared for that
+			hit.dist = 10000.0f; //TODO: we should use FLT_MAX here, but sweepsphere code isn't prepared for that
 
 			//Project over positive direction of axis
 			if(use_normal & MOD_SHRINKWRAP_PROJECT_ALLOW_POS_DIR)
@@ -419,7 +402,7 @@ static void shrinkwrap_calc_normal_projection(ShrinkwrapCalcData *calc)
  * Shrinkwrap moving vertexs to the nearest surface point on the target
  *
  * it builds a BVHTree from the target mesh and then performs a
- * NN matchs for each vertex
+ * NN matches for each vertex
  */
 static void shrinkwrap_calc_nearest_surface_point(ShrinkwrapCalcData *calc)
 {
@@ -453,13 +436,11 @@ static void shrinkwrap_calc_nearest_surface_point(ShrinkwrapCalcData *calc)
 		if(weight == 0.0f) continue;
 
 		//Convert the vertex to tree coordinates
-		if(calc->vert)
-		{
-			VECCOPY(tmp_co, calc->vert[i].co);
+		if(calc->vert) {
+			copy_v3_v3(tmp_co, calc->vert[i].co);
 		}
-		else
-		{
-			VECCOPY(tmp_co, co);
+		else {
+			copy_v3_v3(tmp_co, co);
 		}
 		space_transform_apply(&calc->local2target, tmp_co);
 
@@ -469,7 +450,7 @@ static void shrinkwrap_calc_nearest_surface_point(ShrinkwrapCalcData *calc)
 		//so we can initiate the "nearest.dist" with the expected value to that last hit.
 		//This will lead in prunning of the search tree.
 		if(nearest.index != -1)
-			nearest.dist = squared_dist(tmp_co, nearest.co);
+			nearest.dist = len_squared_v3v3(tmp_co, nearest.co);
 		else
 			nearest.dist = FLT_MAX;
 
@@ -481,16 +462,15 @@ static void shrinkwrap_calc_nearest_surface_point(ShrinkwrapCalcData *calc)
 			if(calc->smd->shrinkOpts & MOD_SHRINKWRAP_KEEP_ABOVE_SURFACE)
 			{
 				//Make the vertex stay on the front side of the face
-				VECADDFAC(tmp_co, nearest.co, nearest.no, calc->keepDist);
+				madd_v3_v3v3fl(tmp_co, nearest.co, nearest.no, calc->keepDist);
 			}
-			else
-			{
+			else {
 				//Adjusting the vertex weight, so that after interpolating it keeps a certain distance from the nearest position
 				float dist = sasqrt( nearest.dist );
 				if(dist > FLT_EPSILON)
 					interp_v3_v3v3(tmp_co, tmp_co, nearest.co, (dist - calc->keepDist)/dist);	//linear interpolation
 				else
-					VECCOPY( tmp_co, nearest.co );
+					copy_v3_v3( tmp_co, nearest.co );
 			}
 
 			//Convert the coordinates back to mesh coordinates
@@ -522,12 +502,10 @@ void shrinkwrapModifier_deform(ShrinkwrapModifierData *smd, Object *ob, DerivedM
 
 	//DeformVertex
 	calc.vgroup = defgroup_name_index(calc.ob, calc.smd->vgroup_name);
-	if(dm)
-	{
+	if(dm) {
 		calc.dvert = dm->getVertDataArray(dm, CD_MDEFORMVERT);
 	}
-	else if(calc.ob->type == OB_LATTICE)
-	{
+	else if (calc.ob->type == OB_LATTICE) {
 		calc.dvert = lattice_get_deform_verts(calc.ob);
 	}
 
@@ -582,8 +560,7 @@ void shrinkwrapModifier_deform(ShrinkwrapModifierData *smd, Object *ob, DerivedM
 	}
 
 	//Projecting target defined - lets work!
-	if(calc.target)
-	{
+	if (calc.target) {
 		switch(smd->shrinkType)
 		{
 			case MOD_SHRINKWRAP_NEAREST_SURFACE:

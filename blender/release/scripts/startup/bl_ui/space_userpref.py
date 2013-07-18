@@ -18,11 +18,9 @@
 
 # <pep8 compliant>
 import bpy
-from bpy.types import Header, Menu, Operator, Panel
+from bpy.types import Header, Menu, Panel
 import os
 import addon_utils
-
-from bpy.props import StringProperty, BoolProperty, EnumProperty
 
 
 def ui_items_general(col, context):
@@ -91,8 +89,8 @@ class USERPREF_HT_header(Header):
         layout.operator_context = 'INVOKE_DEFAULT'
 
         if userpref.active_section == 'INPUT':
-            layout.operator("wm.keyconfig_export")
             layout.operator("wm.keyconfig_import")
+            layout.operator("wm.keyconfig_export")
         elif userpref.active_section == 'ADDONS':
             layout.operator("wm.addon_install")
             layout.menu("USERPREF_MT_addons_dev_guides")
@@ -246,6 +244,9 @@ class USERPREF_PT_interface(Panel):
 
         col.prop(view, "show_splash")
 
+        if os.name == 'nt':
+            col.prop(view, "quit_dialog")
+
 
 class USERPREF_PT_edit(Panel):
     bl_space_type = 'USER_PREFERENCES'
@@ -295,7 +296,7 @@ class USERPREF_PT_edit(Panel):
         col.label(text="Grease Pencil:")
         col.prop(edit, "grease_pencil_manhattan_distance", text="Manhattan Distance")
         col.prop(edit, "grease_pencil_euclidean_distance", text="Euclidean Distance")
-        #col.prop(edit, "use_grease_pencil_simplify_stroke", text="Simplify Stroke")
+        #~ col.prop(edit, "use_grease_pencil_simplify_stroke", text="Simplify Stroke")
         col.prop(edit, "grease_pencil_eraser_radius", text="Eraser Radius")
         col.prop(edit, "use_grease_pencil_smooth_stroke", text="Smooth Stroke")
         col.separator()
@@ -318,7 +319,7 @@ class USERPREF_PT_edit(Panel):
 
         sub = col.column()
 
-        # sub.active = edit.use_keyframe_insert_auto # incorrect, timeline can enable
+        #~ sub.active = edit.use_keyframe_insert_auto # incorrect, time-line can enable
         sub.prop(edit, "use_keyframe_insert_available", text="Only Insert Available")
 
         col.separator()
@@ -388,11 +389,7 @@ class USERPREF_PT_system(Panel):
         col.prop(system, "dpi")
         col.prop(system, "frame_server_port")
         col.prop(system, "scrollback", text="Console Scrollback")
-        col.prop(system, "author", text="Author")
-        col.prop(system, "use_scripts_auto_execute")
-        col.prop(system, "use_tabs_as_spaces")
 
-        col.separator()
         col.separator()
         col.separator()
 
@@ -408,28 +405,20 @@ class USERPREF_PT_system(Panel):
 
         col.separator()
         col.separator()
-        col.separator()
 
         col.label(text="Screencast:")
         col.prop(system, "screencast_fps")
         col.prop(system, "screencast_wait_time")
+
         col.separator()
         col.separator()
-        col.separator()
 
-        #column = split.column()
-        #colsplit = column.split(percentage=0.85)
-
-        # No translation in 2.5 yet
-        #col.prop(system, "language")
-        #col.label(text="Translate:")
-        #col.prop(system, "use_translate_tooltips", text="Tooltips")
-        #col.prop(system, "use_translate_buttons", text="Labels")
-        #col.prop(system, "use_translate_toolbox", text="Toolbox")
-
-        #col.separator()
-
-        #col.prop(system, "use_textured_fonts")
+        if hasattr(system, 'compute_device'):
+            col.label(text="Compute Device:")
+            col.row().prop(system, "compute_device_type", expand=True)
+            sub = col.row()
+            sub.active = system.compute_device_type != 'CPU'
+            sub.prop(system, "compute_device", text="")
 
         # 2. Column
         column = split.column()
@@ -439,11 +428,12 @@ class USERPREF_PT_system(Panel):
         col.label(text="OpenGL:")
         col.prop(system, "gl_clip_alpha", slider=True)
         col.prop(system, "use_mipmaps")
+        col.prop(system, "use_16bit_textures")
         col.label(text="Anisotropic Filtering")
         col.prop(system, "anisotropic_filter", text="")
         col.prop(system, "use_vertex_buffer_objects")
-        #Anti-aliasing is disabled as it breaks broder/lasso select
-        #col.prop(system, "use_antialiasing")
+        # Anti-aliasing is disabled as it breaks border/lasso select
+        #~ col.prop(system, "use_antialiasing")
         col.label(text="Window Draw Method:")
         col.prop(system, "window_draw_method", text="")
         col.label(text="Text Draw Options:")
@@ -481,20 +471,35 @@ class USERPREF_PT_system(Panel):
         opengl_lamp_buttons(column, lamp)
 
         column.separator()
-        column.separator()
-        column.separator()
 
         column.label(text="Color Picker Type:")
         column.row().prop(system, "color_picker_type", text="")
 
-        column.separator()
-        column.separator()
         column.separator()
 
         column.prop(system, "use_weight_color_range", text="Custom Weight Paint Range")
         sub = column.column()
         sub.active = system.use_weight_color_range
         sub.template_color_ramp(system, "weight_color_range", expand=True)
+
+        column.separator()
+
+        column.prop(system, "use_international_fonts")
+        if system.use_international_fonts:
+            column.prop(system, "language")
+            row = column.row()
+            row.label(text="Translate:")
+            row.prop(system, "use_translate_interface", text="Interface")
+            row.prop(system, "use_translate_tooltips", text="Tooltips")
+
+
+class USERPREF_MT_interface_theme_presets(Menu):
+    bl_label = "Presets"
+    preset_subdir = "interface_theme"
+    preset_operator = "script.execute_preset"
+    preset_type = 'XML'
+    preset_xml_map = (("user_preferences.themes[0]", "Theme"), )
+    draw = Menu.draw_preset
 
 
 class USERPREF_PT_theme(Panel):
@@ -506,32 +511,40 @@ class USERPREF_PT_theme(Panel):
     @staticmethod
     def _theme_generic(split, themedata):
 
-        row = split.row()
+        col = split.column()
 
-        subsplit = row.split(percentage=0.95)
+        def theme_generic_recurse(data):
+            col.label(data.rna_type.name)
+            row = col.row()
+            subsplit = row.split(percentage=0.95)
 
-        padding1 = subsplit.split(percentage=0.15)
-        padding1.column()
+            padding1 = subsplit.split(percentage=0.15)
+            padding1.column()
 
-        subsplit = row.split(percentage=0.85)
+            subsplit = row.split(percentage=0.85)
 
-        padding2 = subsplit.split(percentage=0.15)
-        padding2.column()
+            padding2 = subsplit.split(percentage=0.15)
+            padding2.column()
 
-        colsub_pair = padding1.column(), padding2.column()
+            colsub_pair = padding1.column(), padding2.column()
 
-        props_type = {}
+            props_type = {}
 
-        for i, prop in enumerate(themedata.rna_type.properties):
-            attr = prop.identifier
-            if attr == "rna_type":
-                continue
+            for i, prop in enumerate(data.rna_type.properties):
+                if prop.identifier == "rna_type":
+                    continue
 
-            props_type.setdefault((prop.type, prop.subtype), []).append(prop.identifier)
+                props_type.setdefault((prop.type, prop.subtype), []).append(prop)
 
-        for props_type, props_ls in sorted(props_type.items()):
-            for i, attr in enumerate(props_ls):
-                colsub_pair[i % 2].row().prop(themedata, attr)
+            for props_type, props_ls in sorted(props_type.items()):
+                if props_type[0] == 'POINTER':
+                    for i, prop in enumerate(props_ls):
+                        theme_generic_recurse(getattr(data, prop.identifier))
+                else:
+                    for i, prop in enumerate(props_ls):
+                        colsub_pair[i % 2].row().prop(data, prop.identifier)
+
+        theme_generic_recurse(themedata)
 
     @classmethod
     def poll(cls, context):
@@ -544,7 +557,18 @@ class USERPREF_PT_theme(Panel):
         theme = context.user_preferences.themes[0]
 
         split_themes = layout.split(percentage=0.2)
-        split_themes.prop(theme, "theme_area", expand=True)
+
+        sub = split_themes.column()
+
+        sub.label(text="Presets:")
+        subrow = sub.row(align=True)
+
+        subrow.menu("USERPREF_MT_interface_theme_presets", text=USERPREF_MT_interface_theme_presets.bl_label)
+        subrow.operator("wm.interface_theme_preset_add", text="", icon='ZOOMIN')
+        subrow.operator("wm.interface_theme_preset_add", text="", icon='ZOOMOUT').remove_active = True
+        sub.separator()
+
+        sub.prop(theme, "theme_area", expand=True)
 
         split = layout.split(percentage=0.4)
 
@@ -644,12 +668,51 @@ class USERPREF_PT_theme(Panel):
             colsub.row().prop(ui, "inner_key_sel")
             colsub.row().prop(ui, "blend")
 
-            ui = theme.user_interface
             col.separator()
             col.separator()
 
-            split = col.split(percentage=0.93)
-            split.prop(ui, "icon_file")
+            ui = theme.user_interface
+            col.label("Icons:")
+
+            row = col.row()
+
+            subsplit = row.split(percentage=0.95)
+
+            padding = subsplit.split(percentage=0.15)
+            colsub = padding.column()
+            colsub = padding.column()
+            colsub.row().prop(ui, "icon_file")
+
+            subsplit = row.split(percentage=0.85)
+
+            padding = subsplit.split(percentage=0.15)
+            colsub = padding.column()
+            colsub = padding.column()
+            colsub.row().prop(ui, "icon_alpha")
+
+            col.separator()
+            col.separator()
+
+            ui = theme.user_interface.panel
+            col.label("Panels:")
+
+            row = col.row()
+
+            subsplit = row.split(percentage=0.95)
+
+            padding = subsplit.split(percentage=0.15)
+            colsub = padding.column()
+            colsub = padding.column()
+            rowsub = colsub.row()
+            rowsub.prop(ui, "show_header")
+            rowsub.label()
+
+            subsplit = row.split(percentage=0.85)
+
+            padding = subsplit.split(percentage=0.15)
+            colsub = padding.column()
+            colsub = padding.column()
+            colsub.row().prop(ui, "header")
 
             layout.separator()
             layout.separator()
@@ -657,7 +720,7 @@ class USERPREF_PT_theme(Panel):
             col = split.column()
 
             for i, ui in enumerate(theme.bone_color_sets):
-                col.label(text="Color Set %d:" % (i + 1))  # i starts from 0
+                col.label(text="Color Set" + " %d:" % (i + 1))  # i starts from 0
 
                 row = col.row()
 
@@ -696,6 +759,7 @@ class USERPREF_PT_file(Panel):
 
         userpref = context.user_preferences
         paths = userpref.filepaths
+        system = userpref.system
 
         split = layout.split(percentage=0.7)
 
@@ -731,6 +795,14 @@ class USERPREF_PT_file(Panel):
         subsplit.prop(paths, "animation_player_preset", text="")
         subsplit.prop(paths, "animation_player", text="")
 
+        col.separator()
+        col.separator()
+
+        colsplit = col.split(percentage=0.95)
+        sub = colsplit.column()
+        sub.label(text="Author:")
+        sub.prop(system, "author", text="")
+
         col = split.column()
         col.label(text="Save & Load:")
         col.prop(paths, "use_relative_paths")
@@ -753,11 +825,18 @@ class USERPREF_PT_file(Panel):
         sub.active = paths.use_auto_save_temporary_files
         sub.prop(paths, "auto_save_time", text="Timer (mins)")
 
-from bl_ui.space_userpref_keymap import InputKeyMapPanel
+        col.separator()
+
+        col.label(text="Scripts:")
+        col.prop(system, "use_scripts_auto_execute")
+        col.prop(system, "use_tabs_as_spaces")
+
+
+from .space_userpref_keymap import InputKeyMapPanel
 
 
 class USERPREF_MT_ndof_settings(Menu):
-    # accessed from the window keybindings in C (only)
+    # accessed from the window key-bindings in C (only)
     bl_label = "3D Mouse Settings"
 
     def draw(self, context):
@@ -772,11 +851,24 @@ class USERPREF_MT_ndof_settings(Menu):
             layout.prop(input_prefs, "ndof_show_guide")
 
             layout.separator()
-            layout.label(text="orbit options")
-            layout.prop(input_prefs, "ndof_orbit_invert_axes")
+            layout.label(text="Orbit options")
+            if input_prefs.view_rotate_method == 'TRACKBALL':
+                layout.prop(input_prefs, "ndof_roll_invert_axis")
+            layout.prop(input_prefs, "ndof_tilt_invert_axis")
+            layout.prop(input_prefs, "ndof_rotate_invert_axis")
+            layout.prop(input_prefs, "ndof_zoom_invert")
 
             layout.separator()
-            layout.label(text="fly options")
+            layout.label(text="Pan options")
+            layout.prop(input_prefs, "ndof_panx_invert_axis")
+            layout.prop(input_prefs, "ndof_pany_invert_axis")
+            layout.prop(input_prefs, "ndof_panz_invert_axis")
+
+            layout.label(text="Zoom options")
+            layout.prop(input_prefs, "ndof_zoom_updown")
+
+            layout.separator()
+            layout.label(text="Fly options")
             layout.prop(input_prefs, "ndof_fly_helicopter", icon='NDOF_FLY')
             layout.prop(input_prefs, "ndof_lock_horizon", icon='NDOF_DOM')
 
@@ -810,6 +902,7 @@ class USERPREF_PT_input(Panel, InputKeyMapPanel):
         sub1.prop(inputs, "use_mouse_emulate_3_button")
         sub.prop(inputs, "use_mouse_continuous")
         sub.prop(inputs, "drag_threshold")
+        sub.prop(inputs, "tweak_threshold")
 
         sub.label(text="Select With:")
         sub.row().prop(inputs, "select_mouse", expand=True)
@@ -874,12 +967,12 @@ class USERPREF_PT_input(Panel, InputKeyMapPanel):
 class USERPREF_MT_addons_dev_guides(Menu):
     bl_label = "Development Guides"
 
-    # menu to open webpages with addons development guides
+    # menu to open web-pages with addons development guides
     def draw(self, context):
         layout = self.layout
-        layout.operator('wm.url_open', text='API Concepts', icon='URL').url = 'http://wiki.blender.org/index.php/Dev:2.5/Py/API/Intro'
-        layout.operator('wm.url_open', text='Addon Guidelines', icon='URL').url = 'http://wiki.blender.org/index.php/Dev:2.5/Py/Scripts/Guidelines/Addons'
-        layout.operator('wm.url_open', text='How to share your addon', icon='URL').url = 'http://wiki.blender.org/index.php/Dev:Py/Sharing'
+        layout.operator("wm.url_open", text="API Concepts", icon='URL').url = "http://wiki.blender.org/index.php/Dev:2.5/Py/API/Intro"
+        layout.operator("wm.url_open", text="Addon Guidelines", icon='URL').url = "http://wiki.blender.org/index.php/Dev:2.5/Py/Scripts/Guidelines/Addons"
+        layout.operator("wm.url_open", text="How to share your addon", icon='URL').url = "http://wiki.blender.org/index.php/Dev:Py/Sharing"
 
 
 class USERPREF_PT_addons(Panel):
@@ -888,16 +981,16 @@ class USERPREF_PT_addons(Panel):
     bl_region_type = 'WINDOW'
     bl_options = {'HIDE_HEADER'}
 
-    _addons_fake_modules = {}
+    _support_icon_mapping = {
+        'OFFICIAL': 'FILE_BLEND',
+        'COMMUNITY': 'POSE_DATA',
+        'TESTING': 'MOD_EXPLODE',
+        }
 
     @classmethod
     def poll(cls, context):
         userpref = context.user_preferences
         return (userpref.active_section == 'ADDONS')
-
-    @staticmethod
-    def module_get(mod_name):
-        return USERPREF_PT_addons._addons_fake_modules[mod_name]
 
     @staticmethod
     def is_user_addon(mod, user_addon_paths):
@@ -929,16 +1022,17 @@ class USERPREF_PT_addons(Panel):
         used_ext = {ext.module for ext in userpref.addons}
 
         # collect the categories that can be filtered on
-        addons = [(mod, addon_utils.module_bl_info(mod)) for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules)]
+        addons = [(mod, addon_utils.module_bl_info(mod)) for mod in addon_utils.modules(addon_utils.addons_fake_modules)]
 
         split = layout.split(percentage=0.2)
         col = split.column()
         col.prop(context.window_manager, "addon_search", text="", icon='VIEWZOOM')
-        col.label(text="Categories")
-        col.prop(context.window_manager, "addon_filter", expand=True)
 
         col.label(text="Supported Level")
         col.prop(context.window_manager, "addon_support", expand=True)
+
+        col.label(text="Categories")
+        col.prop(context.window_manager, "addon_filter", expand=True)
 
         col = split.column()
 
@@ -971,11 +1065,11 @@ class USERPREF_PT_addons(Panel):
             if info["support"] not in support:
                 continue
 
-            # check if add-on should be visible with current filters
-            if (filter == "All") or \
-                    (filter == info["category"]) or \
-                    (filter == "Enabled" and is_enabled) or \
-                    (filter == "Disabled" and not is_enabled):
+            # check if addon should be visible with current filters
+            if ((filter == "All") or
+                (filter == info["category"]) or
+                (filter == "Enabled" and is_enabled) or
+                (filter == "Disabled" and not is_enabled)):
 
                 if search and search not in info["name"].lower():
                     if info["author"]:
@@ -998,35 +1092,30 @@ class USERPREF_PT_addons(Panel):
                     rowsub.label(icon='ERROR')
 
                 # icon showing support level.
-                if info["support"] == 'OFFICIAL':
-                    rowsub.label(icon='FILE_BLEND')
-                elif info["support"] == 'COMMUNITY':
-                    rowsub.label(icon='POSE_DATA')
-                else:
-                    rowsub.label(icon='QUESTION')
+                rowsub.label(icon=self._support_icon_mapping.get(info["support"], 'QUESTION'))
 
                 if is_enabled:
                     row.operator("wm.addon_disable", icon='CHECKBOX_HLT', text="", emboss=False).module = module_name
                 else:
                     row.operator("wm.addon_enable", icon='CHECKBOX_DEHLT', text="", emboss=False).module = module_name
 
-                # Expanded UI (only if additional infos are available)
+                # Expanded UI (only if additional info is available)
                 if info["show_expanded"]:
                     if info["description"]:
                         split = colsub.row().split(percentage=0.15)
-                        split.label(text='Description:')
+                        split.label(text="Description:")
                         split.label(text=info["description"])
                     if info["location"]:
                         split = colsub.row().split(percentage=0.15)
-                        split.label(text='Location:')
+                        split.label(text="Location:")
                         split.label(text=info["location"])
                     if info["author"]:
                         split = colsub.row().split(percentage=0.15)
-                        split.label(text='Author:')
+                        split.label(text="Author:")
                         split.label(text=info["author"])
                     if info["version"]:
                         split = colsub.row().split(percentage=0.15)
-                        split.label(text='Version:')
+                        split.label(text="Version:")
                         split.label(text='.'.join(str(x) for x in info["version"]))
                     if info["warning"]:
                         split = colsub.row().split(percentage=0.15)
@@ -1070,293 +1159,6 @@ class USERPREF_PT_addons(Panel):
 
                 if is_enabled:
                     row.operator("wm.addon_disable", icon='CHECKBOX_HLT', text="", emboss=False).module = module_name
-
-
-class WM_OT_addon_enable(Operator):
-    "Enable an addon"
-    bl_idname = "wm.addon_enable"
-    bl_label = "Enable Add-On"
-
-    module = StringProperty(
-            name="Module",
-            description="Module name of the addon to enable",
-            )
-
-    def execute(self, context):
-        mod = addon_utils.enable(self.module)
-
-        if mod:
-            info = addon_utils.module_bl_info(mod)
-
-            info_ver = info.get("blender", (0, 0, 0))
-
-            if info_ver > bpy.app.version:
-                self.report({'WARNING'}, ("This script was written Blender "
-                                          "version %d.%d.%d and might not "
-                                          "function (correctly).\n"
-                                          "The script is enabled though.") %
-                                         info_ver)
-            return {'FINISHED'}
-        else:
-            return {'CANCELLED'}
-
-
-class WM_OT_addon_disable(Operator):
-    "Disable an addon"
-    bl_idname = "wm.addon_disable"
-    bl_label = "Disable Add-On"
-
-    module = StringProperty(
-            name="Module",
-            description="Module name of the addon to disable",
-            )
-
-    def execute(self, context):
-        addon_utils.disable(self.module)
-        return {'FINISHED'}
-
-
-class WM_OT_addon_install(Operator):
-    "Install an addon"
-    bl_idname = "wm.addon_install"
-    bl_label = "Install Add-On..."
-
-    overwrite = BoolProperty(
-            name="Overwrite",
-            description="Remove existing addons with the same ID",
-            default=True,
-            )
-    target = EnumProperty(
-            name="Target Path",
-            items=(('DEFAULT', "Default", ""),
-                   ('PREFS', "User Prefs", "")),
-            )
-
-    filepath = StringProperty(
-            name="File Path",
-            description="File path to write file to",
-            )
-    filter_folder = BoolProperty(
-            name="Filter folders",
-            default=True,
-            options={'HIDDEN'},
-            )
-    filter_python = BoolProperty(
-            name="Filter python",
-            default=True,
-            options={'HIDDEN'},
-            )
-    filter_glob = StringProperty(
-            default="*.py;*.zip",
-            options={'HIDDEN'},
-            )
-
-    @staticmethod
-    def _module_remove(path_addons, module):
-        module = os.path.splitext(module)[0]
-        for f in os.listdir(path_addons):
-            f_base = os.path.splitext(f)[0]
-            if f_base == module:
-                f_full = os.path.join(path_addons, f)
-
-                if os.path.isdir(f_full):
-                    os.rmdir(f_full)
-                else:
-                    os.remove(f_full)
-
-    def execute(self, context):
-        import traceback
-        import zipfile
-        import shutil
-
-        pyfile = self.filepath
-
-        if self.target == 'DEFAULT':
-            # dont use bpy.utils.script_paths("addons") because we may not be able to write to it.
-            path_addons = bpy.utils.user_resource('SCRIPTS', "addons", create=True)
-        else:
-            path_addons = bpy.context.user_preferences.filepaths.script_directory
-            if path_addons:
-                path_addons = os.path.join(path_addons, "addons")
-
-        if not path_addons:
-            self.report({'ERROR'}, "Failed to get addons path")
-            return {'CANCELLED'}
-
-        # create dir is if missing.
-        if not os.path.exists(path_addons):
-            os.makedirs(path_addons)
-
-        # Check if we are installing from a target path,
-        # doing so causes 2+ addons of same name or when the same from/to
-        # location is used, removal of the file!
-        addon_path = ""
-        pyfile_dir = os.path.dirname(pyfile)
-        for addon_path in addon_utils.paths():
-            if os.path.samefile(pyfile_dir, addon_path):
-                self.report({'ERROR'}, "Source file is in the addon search path: %r" % addon_path)
-                return {'CANCELLED'}
-        del addon_path
-        del pyfile_dir
-        # done checking for exceptional case
-
-        addons_old = {mod.__name__ for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules)}
-
-        #check to see if the file is in compressed format (.zip)
-        if zipfile.is_zipfile(pyfile):
-            try:
-                file_to_extract = zipfile.ZipFile(pyfile, 'r')
-            except:
-                traceback.print_exc()
-                return {'CANCELLED'}
-
-            if self.overwrite:
-                for f in file_to_extract.namelist():
-                    WM_OT_addon_install._module_remove(path_addons, f)
-            else:
-                for f in file_to_extract.namelist():
-                    path_dest = os.path.join(path_addons, os.path.basename(f))
-                    if os.path.exists(path_dest):
-                        self.report({'WARNING'}, "File already installed to %r\n" % path_dest)
-                        return {'CANCELLED'}
-
-            try:  # extract the file to "addons"
-                file_to_extract.extractall(path_addons)
-
-                # zip files can create this dir with metadata, don't need it
-                macosx_dir = os.path.join(path_addons, '__MACOSX')
-                if os.path.isdir(macosx_dir):
-                    shutil.rmtree(macosx_dir)
-
-            except:
-                traceback.print_exc()
-                return {'CANCELLED'}
-
-        else:
-            path_dest = os.path.join(path_addons, os.path.basename(pyfile))
-
-            if self.overwrite:
-                WM_OT_addon_install._module_remove(path_addons, os.path.basename(pyfile))
-            elif os.path.exists(path_dest):
-                self.report({'WARNING'}, "File already installed to %r\n" % path_dest)
-                return {'CANCELLED'}
-
-            #if not compressed file just copy into the addon path
-            try:
-                shutil.copyfile(pyfile, path_dest)
-
-            except:
-                traceback.print_exc()
-                return {'CANCELLED'}
-
-        addons_new = {mod.__name__ for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules)} - addons_old
-        addons_new.discard("modules")
-
-        # disable any addons we may have enabled previously and removed.
-        # this is unlikely but do just incase. bug [#23978]
-        for new_addon in addons_new:
-            addon_utils.disable(new_addon)
-
-        # possible the zip contains multiple addons, we could disallow this
-        # but for now just use the first
-        for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules):
-            if mod.__name__ in addons_new:
-                info = addon_utils.module_bl_info(mod)
-
-                # show the newly installed addon.
-                context.window_manager.addon_filter = 'All'
-                context.window_manager.addon_search = info["name"]
-                break
-
-        # incase a new module path was created to install this addon.
-        bpy.utils.refresh_script_paths()
-
-        # TODO, should not be a warning.
-        # self.report({'WARNING'}, "File installed to '%s'\n" % path_dest)
-        return {'FINISHED'}
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        wm.fileselect_add(self)
-        return {'RUNNING_MODAL'}
-
-
-class WM_OT_addon_remove(Operator):
-    "Disable an addon"
-    bl_idname = "wm.addon_remove"
-    bl_label = "Remove Add-On"
-
-    module = StringProperty(
-            name="Module",
-            description="Module name of the addon to remove",
-            )
-
-    @staticmethod
-    def path_from_addon(module):
-        for mod in addon_utils.modules(USERPREF_PT_addons._addons_fake_modules):
-            if mod.__name__ == module:
-                filepath = mod.__file__
-                if os.path.exists(filepath):
-                    if os.path.splitext(os.path.basename(filepath))[0] == "__init__":
-                        return os.path.dirname(filepath), True
-                    else:
-                        return filepath, False
-        return None, False
-
-    def execute(self, context):
-        path, isdir = WM_OT_addon_remove.path_from_addon(self.module)
-        if path is None:
-            self.report('WARNING', "Addon path %r could not be found" % path)
-            return {'CANCELLED'}
-
-        # incase its enabled
-        addon_utils.disable(self.module)
-
-        import shutil
-        if isdir:
-            shutil.rmtree(path)
-        else:
-            os.remove(path)
-
-        context.area.tag_redraw()
-        return {'FINISHED'}
-
-    # lame confirmation check
-    def draw(self, context):
-        self.layout.label(text="Remove Addon: %r?" % self.module)
-        path, isdir = WM_OT_addon_remove.path_from_addon(self.module)
-        self.layout.label(text="Path: %r" % path)
-
-    def invoke(self, context, event):
-        wm = context.window_manager
-        return wm.invoke_props_dialog(self, width=600)
-
-
-class WM_OT_addon_expand(Operator):
-    "Display more information on this add-on"
-    bl_idname = "wm.addon_expand"
-    bl_label = ""
-
-    module = StringProperty(
-            name="Module",
-            description="Module name of the addon to expand",
-            )
-
-    def execute(self, context):
-        module_name = self.module
-
-        # unlikely to fail, module should have already been imported
-        try:
-            # mod = __import__(module_name)
-            mod = USERPREF_PT_addons.module_get(module_name)
-        except:
-            import traceback
-            traceback.print_exc()
-            return {'CANCELLED'}
-
-        info = addon_utils.module_bl_info(mod)
-        info["show_expanded"] = not info["show_expanded"]
-        return {'FINISHED'}
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

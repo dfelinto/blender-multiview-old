@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,12 +29,10 @@
  */
 
 
-#ifndef ED_SOUND_INTERN_H
-#define ED_SOUND_INTERN_H
+#ifndef __SOUND_INTERN_H__
+#define __SOUND_INTERN_H__
 
 struct wmOperatorType;
 
-void SOUND_OT_open(wmOperatorType *ot);
-
-#endif /* ED_SOUND_INTERN_H */
+#endif /* __SOUND_INTERN_H__ */
 

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -128,9 +127,9 @@ Destruct()
 	// We'll delete m_parent_relation now anyway.
 	
 	delete(m_parent_relation);
-	m_parent_relation = NULL;		
+	m_parent_relation = NULL;
 
- 	if (m_children.begin() != m_children.end())
+	if (m_children.begin() != m_children.end())
 	{
 		NodeList::iterator childit;
 		for (childit = m_children.begin();childit!=m_children.end();++childit)

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,8 +39,8 @@
  * inherited by the child. 
  */
 
-#ifndef __KX_SG_NODERELATIONS_H__
-#define __KX_SG_NODERELATIONS_H__
+#ifndef __KX_SG_NODERELATIONSHIPS_H__
+#define __KX_SG_NODERELATIONSHIPS_H__
 
 #include "SG_Spatial.h"
 #include "SG_ParentRelation.h"

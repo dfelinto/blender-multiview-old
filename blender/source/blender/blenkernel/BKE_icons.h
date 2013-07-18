@@ -1,43 +1,40 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version. 
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-* 
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-* 
-* The Original Code is Copyright (C) 2006-2007 Blender Foundation.
-* All rights reserved.
-* 
-* The Original Code is: all of this file.
-* 
-* Contributor(s): none yet.
-* 
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006-2007 Blender Foundation.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
-#ifndef BKE_ICONS_H
-#define BKE_ICONS_H
+#ifndef __BKE_ICONS_H__
+#define __BKE_ICONS_H__
 
 /** \file BKE_icons.h
  *  \ingroup bke
  */
 
 /*
- Resizable Icons for Blender
-*/
+ * Resizable Icons for Blender
+ */
 
 typedef void (*DrawInfoFreeFP) (void *drawinfo);
 
@@ -85,7 +82,7 @@ void BKE_previewimg_free(struct PreviewImage **prv);
 void BKE_previewimg_free_id(struct ID *id);
 
 /* create a new preview image */
-struct PreviewImage* BKE_previewimg_create(void) ;
+struct PreviewImage* BKE_previewimg_create(void);
 
 /* create a copy of the preview image */
 struct PreviewImage* BKE_previewimg_copy(struct PreviewImage *prv);
@@ -93,4 +90,4 @@ struct PreviewImage* BKE_previewimg_copy(struct PreviewImage *prv);
 /* retrieve existing or create new preview image */
 struct PreviewImage* BKE_previewimg_get(struct ID *id);
 
-#endif /*  BKE_ICONS_H */
+#endif /*  __BKE_ICONS_H__ */

@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 21789 2009-07-22 05:35:12Z kazanbas $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -52,6 +51,7 @@ set(SRC
 	DocumentImporter.cpp
 	EffectExporter.cpp
 	ErrorHandler.cpp
+	ExportSettings.cpp
 	ExtraHandler.cpp
 	ExtraTags.cpp
 	GeometryExporter.cpp
@@ -77,6 +77,7 @@ set(SRC
 	DocumentImporter.h
 	EffectExporter.h
 	ErrorHandler.h
+	ExportSettings.h
 	ExtraHandler.h
 	ExtraTags.h
 	GeometryExporter.h

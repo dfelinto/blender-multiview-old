@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup phys
  */
 
-#ifndef PHY_IPHYSICSCONTROLLER_H
-#define PHY_IPHYSICSCONTROLLER_H
+#ifndef __PHY_IPHYSICSCONTROLLER_H__
+#define __PHY_IPHYSICSCONTROLLER_H__
 
 #include "PHY_IController.h"
 
@@ -111,5 +109,5 @@ public:
 #endif
 };
 
-#endif //PHY_IPHYSICSCONTROLLER_H
+#endif //__PHY_IPHYSICSCONTROLLER_H__
 

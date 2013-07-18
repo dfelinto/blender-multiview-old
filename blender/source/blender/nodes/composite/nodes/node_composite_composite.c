@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -99,15 +97,16 @@ static void node_composit_exec_composite(void *data, bNode *node, bNodeStack **i
 		generate_preview(data, node, in[0]->data);
 }
 
-void register_node_type_cmp_composite(ListBase *lb)
+void register_node_type_cmp_composite(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_COMPOSITE, "Composite", NODE_CLASS_OUTPUT, NODE_PREVIEW);
+	node_type_base(ttype, &ntype, CMP_NODE_COMPOSITE, "Composite", NODE_CLASS_OUTPUT, NODE_PREVIEW);
 	node_type_socket_templates(&ntype, cmp_node_composite_in, NULL);
 	node_type_size(&ntype, 80, 60, 200);
 	node_type_exec(&ntype, node_composit_exec_composite);
+	/* Do not allow muting for this node. */
+	node_type_internal_connect(&ntype, NULL);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-

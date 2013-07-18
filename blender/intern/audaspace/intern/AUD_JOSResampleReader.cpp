@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -118,7 +116,8 @@ void AUD_JOSResampleReader::updateBuffer(int size, double factor, int samplesize
 {\
 	sample_t* buf = m_buffer.getBuffer();\
 \
-	int P, l, end, channel, i;\
+	unsigned int P, l;\
+	int end, channel, i;\
 	double eta, v, f_increment, factor;\
 \
 	m_sums.assureSize(m_channels * sizeof(double));\
@@ -201,7 +200,7 @@ void AUD_JOSResampleReader::updateBuffer(int size, double factor, int samplesize
 				left\
 			}\
 \
-			P = -P;\
+			P = 0 - P;\
 \
 			end = (int_to_fp(m_len) - P) / P_increment - 1;\
 			if(m_cache_valid - m_n - 2 < end)\
@@ -222,7 +221,7 @@ void AUD_JOSResampleReader::updateBuffer(int size, double factor, int samplesize
 \
 			for(channel = 0; channel < m_channels; channel++)\
 			{\
-				*buffer = f_increment / m_L * sums[channel];\
+								*buffer = factor * sums[channel];\
 				buffer++;\
 			}\
 		}\
@@ -230,7 +229,7 @@ void AUD_JOSResampleReader::updateBuffer(int size, double factor, int samplesize
 		m_P += fmod(1.0 / factor, 1.0);\
 		m_n += floor(1.0 / factor);\
 \
-		if(m_P >= 1.0)\
+		while(m_P >= 1.0)\
 		{\
 			m_P -= 1.0;\
 			m_n++;\
@@ -364,9 +363,9 @@ void AUD_JOSResampleReader::read(int& length, bool& eos, sample_t* buffer)
 	double factor = AUD_MIN(target_factor, m_last_factor);
 
 	if(factor >= 1)
-		len = (m_n - m_cache_valid) + int(ceil(length / factor)) + ceil(num_samples);
+		len = (int(m_n) - m_cache_valid) + int(ceil(length / factor)) + ceil(num_samples);
 	else
-		len = (m_n - m_cache_valid) + int(ceil(length / factor) + ceil(num_samples / factor));
+		len = (int(m_n) - m_cache_valid) + int(ceil(length / factor) + ceil(num_samples / factor));
 
 	if(len > 0)
 	{

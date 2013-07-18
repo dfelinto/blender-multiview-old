@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,11 +42,14 @@
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_global.h"
-#include "BKE_screen.h"
-#include "BKE_node.h"
 #include "BKE_main.h"
+#include "BKE_node.h"
+#include "BKE_scene.h"
+#include "BKE_screen.h"
 
 #include "RNA_access.h"
 
@@ -91,7 +92,7 @@ static void do_node_add(bContext *C, bNodeTemplate *ntemp)
 		else node->flag &= ~NODE_TEST;
 	}
 	
-	node= node_add_node(snode, bmain, scene, ntemp, snode->mx, snode->my);
+	/* node= */ node_add_node(snode, bmain, scene, ntemp, snode->mx, snode->my);
 	
 	/* select previous selection before autoconnect */
 	for(node= snode->edittree->nodes.first; node; node= node->next) {
@@ -109,14 +110,22 @@ static void do_node_add(bContext *C, bNodeTemplate *ntemp)
 
 static void do_node_add_static(bContext *C, void *UNUSED(arg), int event)
 {
+	Main *bmain = CTX_data_main(C);
+	Scene *scene = CTX_data_scene(C);
 	bNodeTemplate ntemp;
+	
 	ntemp.type = event;
+	ntemp.main = bmain;
+	ntemp.scene = scene;
+	
 	do_node_add(C, &ntemp);
 }
 
 static void do_node_add_group(bContext *C, void *UNUSED(arg), int event)
 {
 	SpaceNode *snode= CTX_wm_space_node(C);
+	Main *bmain = CTX_data_main(C);
+	Scene *scene = CTX_data_scene(C);
 	bNodeTemplate ntemp;
 	
 	if (event>=0) {
@@ -142,14 +151,24 @@ static void do_node_add_group(bContext *C, void *UNUSED(arg), int event)
 	if (!ntemp.ngroup)
 		return;
 	
+	ntemp.main = bmain;
+	ntemp.scene = scene;
+	
 	do_node_add(C, &ntemp);
 }
 
 #if 0 /* disabled */
 static void do_node_add_dynamic(bContext *C, void *UNUSED(arg), int event)
 {
+	Main *bmain = CTX_data_main(C);
+	Scene *scene = CTX_data_scene(C);
 	bNodeTemplate ntemp;
+	
 	ntemp.type = NODE_DYNAMIC;
+	
+	ntemp.main = bmain;
+	ntemp.scene = scene;
+	
 	do_node_add(C, &ntemp);
 }
 #endif
@@ -168,16 +187,24 @@ static int node_tree_has_type(int treetype, int nodetype)
 static void node_add_menu(bContext *C, uiLayout *layout, void *arg_nodeclass)
 {
 	Main *bmain= CTX_data_main(C);
+	Scene *scene= CTX_data_scene(C);
 	SpaceNode *snode= CTX_wm_space_node(C);
 	bNodeTree *ntree;
 	int nodeclass= GET_INT_FROM_POINTER(arg_nodeclass);
-	int event;
+	int event, compatibility= 0;
 	
 	ntree = snode->nodetree;
 	
 	if(!ntree) {
 		uiItemS(layout);
 		return;
+	}
+
+	if(ntree->type == NTREE_SHADER) {
+		if(scene_use_new_shading_nodes(scene))
+			compatibility= NODE_NEW_SHADING;
+		else
+			compatibility= NODE_OLD_SHADING;
 	}
 	
 	if (nodeclass==NODE_CLASS_GROUP) {
@@ -187,11 +214,11 @@ static void node_add_menu(bContext *C, uiLayout *layout, void *arg_nodeclass)
 		
 		/* XXX hack: negative numbers used for empty group types */
 		if (node_tree_has_type(ntree->type, NODE_GROUP))
-			uiItemV(layout, "New Group", 0, -NODE_GROUP);
+			uiItemV(layout, IFACE_("New Group"), 0, -NODE_GROUP);
 		if (node_tree_has_type(ntree->type, NODE_FORLOOP))
-			uiItemV(layout, "New For Loop", 0, -NODE_FORLOOP);
+			uiItemV(layout, IFACE_("New For Loop"), 0, -NODE_FORLOOP);
 		if (node_tree_has_type(ntree->type, NODE_WHILELOOP))
-			uiItemV(layout, "New While Loop", 0, -NODE_WHILELOOP);
+			uiItemV(layout, IFACE_("New While Loop"), 0, -NODE_WHILELOOP);
 		uiItemS(layout);
 		
 		for(ngroup=bmain->nodetree.first, event=0; ngroup; ngroup= ngroup->id.next, ++event) {
@@ -210,53 +237,31 @@ static void node_add_menu(bContext *C, uiLayout *layout, void *arg_nodeclass)
 		uiLayoutSetFunc(layout, do_node_add_static, NULL);
 		
 		for (ntype=ntreeGetType(ntree->type)->node_types.first; ntype; ntype=ntype->next) {
-			if(ntype->nclass==nodeclass && ntype->name)
-				uiItemV(layout, ntype->name, 0, ntype->type);
+			if (ntype->nclass==nodeclass && ntype->name)
+				if (!compatibility || (ntype->compatibility & compatibility))
+					uiItemV(layout, IFACE_(ntype->name), 0, ntype->type);
 		}
 	}
 }
 
+static void node_menu_add_foreach_cb(void *calldata, int nclass, const char *name)
+{
+	uiLayout *layout= calldata;
+	uiItemMenuF(layout, IFACE_(name), 0, node_add_menu, SET_INT_IN_POINTER(nclass));
+}
+
 static void node_menu_add(const bContext *C, Menu *menu)
 {
+	Scene *scene= CTX_data_scene(C);
 	SpaceNode *snode= CTX_wm_space_node(C);
 	uiLayout *layout= menu->layout;
+	bNodeTreeType *ntreetype= ntreeGetType(snode->treetype);
 
 	if(!snode->nodetree)
 		uiLayoutSetActive(layout, 0);
-
-	if(snode->treetype==NTREE_SHADER) {
-		uiItemMenuF(layout, "Input", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_INPUT));
-		uiItemMenuF(layout, "Output", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OUTPUT));
-		uiItemMenuF(layout, "Color", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_COLOR));
-		uiItemMenuF(layout, "Vector", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_VECTOR));
-		uiItemMenuF(layout, "Convertor", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_CONVERTOR));
-		uiItemMenuF(layout, "Group", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_GROUP));
-		uiItemMenuF(layout, "Dynamic", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_DYNAMIC));
-		uiItemMenuF(layout, "Layout", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_LAYOUT));
-	}
-	else if(snode->treetype==NTREE_COMPOSIT) {
-		uiItemMenuF(layout, "Input", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_INPUT));
-		uiItemMenuF(layout, "Output", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OUTPUT));
-		uiItemMenuF(layout, "Color", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_COLOR));
-		uiItemMenuF(layout, "Vector", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_VECTOR));
-		uiItemMenuF(layout, "Filter", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_FILTER));
-		uiItemMenuF(layout, "Convertor", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_CONVERTOR));
-		uiItemMenuF(layout, "Matte", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_MATTE));
-		uiItemMenuF(layout, "Distort", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_DISTORT));
-		uiItemMenuF(layout, "Group", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_GROUP));
-		uiItemMenuF(layout, "Layout", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_LAYOUT));
-	}
-	else if(snode->treetype==NTREE_TEXTURE) {
-		uiItemMenuF(layout, "Input", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_INPUT));
-		uiItemMenuF(layout, "Output", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OUTPUT));
-		uiItemMenuF(layout, "Color", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_OP_COLOR));
-		uiItemMenuF(layout, "Patterns", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_PATTERN));
-		uiItemMenuF(layout, "Textures", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_TEXTURE));
-		uiItemMenuF(layout, "Convertor", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_CONVERTOR));
-		uiItemMenuF(layout, "Distort", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_DISTORT));
-		uiItemMenuF(layout, "Group", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_GROUP));
-		uiItemMenuF(layout, "Layout", 0, node_add_menu, SET_INT_IN_POINTER(NODE_CLASS_LAYOUT));
-	}
+	
+	if(ntreetype && ntreetype->foreach_nodeclass)
+		ntreetype->foreach_nodeclass(scene, layout, node_menu_add_foreach_cb);
 }
 
 void node_menus_register(void)

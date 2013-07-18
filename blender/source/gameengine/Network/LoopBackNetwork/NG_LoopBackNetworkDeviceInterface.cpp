@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -35,6 +33,8 @@
 
 #include "NG_LoopBackNetworkDeviceInterface.h"
 #include "NG_NetworkMessage.h"
+
+using namespace std;
 
 // temporary debugging printf's
 #ifdef NAN_NET_DEBUG

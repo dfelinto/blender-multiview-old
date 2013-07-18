@@ -21,7 +21,7 @@ import bpy
 from bpy.types import Panel
 from rna_prop_ui import PropertyPanel
 
-from bl_ui.properties_physics_common import (
+from .properties_physics_common import (
     point_cache_ui,
     effector_weights_ui,
     basic_force_field_settings_ui,
@@ -76,7 +76,7 @@ class ParticleButtonsPanel():
 class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
     bl_label = ""
     bl_options = {'HIDE_HEADER'}
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
+    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     @classmethod
     def poll(cls, context):
@@ -85,6 +85,10 @@ class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
+
+        if context.scene.render.engine == "BLENDER_GAME":
+            layout.label("Not available in the Game Engine")
+            return
 
         ob = context.object
         psys = context.particle_system
@@ -108,7 +112,7 @@ class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
             layout.template_ID(context.space_data, "pin_id")
 
             if part.is_fluid:
-                layout.label(text="Settings used for fluid.")
+                layout.label(text="Settings used for fluid")
                 return
 
             layout.prop(part, "type", text="Type")
@@ -145,7 +149,7 @@ class PARTICLE_PT_context_particles(ParticleButtonsPanel, Panel):
             #row.label(text="Render")
 
             if part.is_fluid:
-                layout.label(text=str(part.count) + " fluid particles for this frame.")
+                layout.label(text="{} fluid particles for this frame".format(str(part.count)))
                 return
 
             row = col.row()
@@ -262,10 +266,6 @@ class PARTICLE_PT_hair_dynamics(ParticleButtonsPanel, Panel):
         return psys.settings.type == 'HAIR' and (engine in cls.COMPAT_ENGINES)
 
     def draw_header(self, context):
-        #cloth = context.cloth.collision_settings
-
-        #self.layout.active = cloth_panel_enabled(context.cloth)
-        #self.layout.prop(cloth, "use_collision", text="")
         psys = context.particle_system
         self.layout.prop(psys, "use_hair_dynamics", text="")
 
@@ -380,6 +380,7 @@ class PARTICLE_PT_velocity(ParticleButtonsPanel, Panel):
 
 class PARTICLE_PT_rotation(ParticleButtonsPanel, Panel):
     bl_label = "Rotation"
+    bl_options = {'DEFAULT_CLOSED'}
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
     @classmethod
@@ -394,6 +395,15 @@ class PARTICLE_PT_rotation(ParticleButtonsPanel, Panel):
         else:
             return False
 
+    def draw_header(self, context):
+        psys = context.particle_system
+        if psys:
+            part = psys.settings
+        else:
+            part = context.space_data.pin_id
+
+        self.layout.prop(part, "use_rotations", text="")
+
     def draw(self, context):
         layout = self.layout
 
@@ -403,11 +413,14 @@ class PARTICLE_PT_rotation(ParticleButtonsPanel, Panel):
         else:
             part = context.space_data.pin_id
 
-        layout.enabled = particle_panel_enabled(context, psys)
+        layout.enabled = particle_panel_enabled(context, psys) and part.use_rotations
 
-        row = layout.row()
-        row.label(text="Initial Rotation:")
-        row.prop(part, "use_dynamic_rotation")
+        layout.prop(part, "use_dynamic_rotation")
+
+        if part.use_dynamic_rotation:
+            layout.label(text="Initial Rotation Axis:")
+        else:
+            layout.label(text="Rotation Axis:")
 
         split = layout.split()
 
@@ -419,12 +432,17 @@ class PARTICLE_PT_rotation(ParticleButtonsPanel, Panel):
         col.prop(part, "phase_factor", slider=True)
         col.prop(part, "phase_factor_random", text="Random", slider=True)
 
-        col = layout.column()
-        col.label(text="Angular Velocity:")
-        col.row().prop(part, "angular_velocity_mode", expand=True)
-
-        if part.angular_velocity_mode != 'NONE':
-            col.prop(part, "angular_velocity_factor", text="")
+        if part.type != 'HAIR':
+            col = layout.column()
+            if part.use_dynamic_rotation:
+                col.label(text="Initial Angular Velocity:")
+            else:
+                col.label(text="Angular Velocity:")
+            sub = col.row(align=True)
+            sub.prop(part, "angular_velocity_mode", text="")
+            subsub = sub.column()
+            subsub.active = part.angular_velocity_mode != 'NONE'
+            subsub.prop(part, "angular_velocity_factor", text="")
 
 
 class PARTICLE_PT_physics(ParticleButtonsPanel, Panel):
@@ -476,7 +494,12 @@ class PARTICLE_PT_physics(ParticleButtonsPanel, Panel):
             col.label(text="Integration:")
             col.prop(part, "integrator", text="")
             col.prop(part, "timestep")
-            col.prop(part, "subframes")
+            sub = col.row()
+            if part.adaptive_subframes:
+                sub.prop(part, "courant_target", text="Threshold")
+            else:
+                sub.prop(part, "subframes")
+            sub.prop(part, "adaptive_subframes", text="")
 
             row = layout.row()
             row.prop(part, "use_size_deflect")
@@ -491,7 +514,7 @@ class PARTICLE_PT_physics(ParticleButtonsPanel, Panel):
                 col.label(text="Fluid properties:")
                 col.prop(fluid, "stiffness", text="Stiffness")
                 col.prop(fluid, "linear_viscosity", text="Viscosity")
-                col.prop(fluid, "buoyancy", text="Buoancy", slider=True)
+                col.prop(fluid, "buoyancy", text="Buoyancy", slider=True)
 
                 col = split.column()
                 col.label(text="Advanced:")
@@ -721,7 +744,7 @@ class PARTICLE_PT_boidbrain(ParticleButtonsPanel, Panel):
                 row.prop(rule, "use_predict")
                 row.prop(rule, "fear_factor")
             elif rule.type == 'FOLLOW_PATH':
-                row.label(text="Not yet functional.")
+                row.label(text="Not yet functional")
             elif rule.type == 'AVOID_COLLISION':
                 row.prop(rule, "use_avoid")
                 row.prop(rule, "use_avoid_collision")
@@ -827,7 +850,9 @@ class PARTICLE_PT_render(ParticleButtonsPanel, Panel):
 
         elif part.render_type == 'OBJECT':
             col.prop(part, "dupli_object")
-            col.prop(part, "use_global_dupli")
+            sub = col.row()
+            sub.prop(part, "use_global_dupli")
+            sub.prop(part, "use_rotation_dupli")
         elif part.render_type == 'GROUP':
             col.prop(part, "dupli_group")
             split = layout.split()
@@ -836,13 +861,14 @@ class PARTICLE_PT_render(ParticleButtonsPanel, Panel):
             col.prop(part, "use_whole_group")
             sub = col.column()
             sub.active = (part.use_whole_group is False)
+            sub.prop(part, "use_group_pick_random")
             sub.prop(part, "use_group_count")
 
             col = split.column()
             sub = col.column()
             sub.active = (part.use_whole_group is False)
             sub.prop(part, "use_global_dupli")
-            sub.prop(part, "use_group_pick_random")
+            sub.prop(part, "use_rotation_dupli")
 
             if part.use_group_count and not part.use_whole_group:
                 row = layout.row()
@@ -895,7 +921,7 @@ class PARTICLE_PT_render(ParticleButtonsPanel, Panel):
                 col.prop_search(psys, "billboard_time_index_uv", ob.data, "uv_textures")
 
             split = layout.split(percentage=0.33)
-            split.label(text="Split uv's:")
+            split.label(text="Split UVs:")
             split.prop(part, "billboard_uv_split", text="Number of splits")
 
             if psys:
@@ -983,7 +1009,7 @@ class PARTICLE_PT_draw(ParticleButtonsPanel, Panel):
         col.label(text="Color:")
         col.prop(part, "draw_color", text="")
         sub = col.row()
-        sub.active = part.draw_color in ('VELOCITY', 'ACCELERATION')
+        sub.active = (part.draw_color in {'VELOCITY', 'ACCELERATION'})
         sub.prop(part, "color_maximum", text="Max")
 
         if (path):
@@ -1050,7 +1076,7 @@ class PARTICLE_PT_children(ParticleButtonsPanel, Panel):
             sub = col.column(align=True)
             sub.label(text="Parting not")
             sub.label(text="available with")
-            sub.label(text="virtual parents.")
+            sub.label(text="virtual parents")
         else:
             sub = col.column(align=True)
             sub.prop(part, "child_parting_factor", text="Parting", slider=True)
@@ -1146,7 +1172,7 @@ class PARTICLE_PT_force_fields(ParticleButtonsPanel, Panel):
 
 
 class PARTICLE_PT_vertexgroups(ParticleButtonsPanel, Panel):
-    bl_label = "Vertexgroups"
+    bl_label = "Vertex Groups"
     bl_options = {'DEFAULT_CLOSED'}
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 

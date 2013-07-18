@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -30,6 +29,7 @@ set(INC
 	../Ketsji
 	../SceneGraph
 	../../blender/makesdna
+	../../blender/blenkernel
 	../../../intern/container
 	../../../intern/guardedalloc
 	../../../intern/moto/include

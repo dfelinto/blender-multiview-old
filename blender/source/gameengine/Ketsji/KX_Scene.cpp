@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -87,6 +85,7 @@
 #include "BL_ModifierDeformer.h"
 #include "BL_ShapeDeformer.h"
 #include "BL_DeformableGameObject.h"
+#include "KX_ObstacleSimulation.h"
 
 #ifdef USE_BULLET
 #include "KX_SoftBodyDeformer.h"
@@ -214,6 +213,19 @@ KX_Scene::KX_Scene(class SCA_IInputDevice* keyboarddevice,
 
 	m_bucketmanager=new RAS_BucketManager();
 	
+	bool showObstacleSimulation = scene->gm.flag & GAME_SHOW_OBSTACLE_SIMULATION;
+	switch (scene->gm.obstacleSimulation)
+	{
+	case OBSTSIMULATION_TOI_rays:
+		m_obstacleSimulation = new KX_ObstacleSimulationTOI_rays((MT_Scalar)scene->gm.levelHeight, showObstacleSimulation);
+		break;
+	case OBSTSIMULATION_TOI_cells:
+		m_obstacleSimulation = new KX_ObstacleSimulationTOI_cells((MT_Scalar)scene->gm.levelHeight, showObstacleSimulation);
+		break;
+	default:
+		m_obstacleSimulation = NULL;
+	}
+	
 #ifdef WITH_PYTHON
 	m_attr_dict = PyDict_New(); /* new ref */
 	m_draw_call_pre = NULL;
@@ -235,6 +247,9 @@ KX_Scene::~KX_Scene()
 		KX_GameObject* parentobj = (KX_GameObject*) GetRootParentList()->GetValue(0);
 		this->RemoveObject(parentobj);
 	}
+
+	if (m_obstacleSimulation)
+		delete m_obstacleSimulation;
 
 	if(m_objectlist)
 		m_objectlist->Release();
@@ -347,7 +362,7 @@ void KX_Scene::SetFramingType(RAS_FrameSettings & frame_settings)
 /**
  * Return a const reference to the framing 
  * type set by the above call.
- * The contents are not guarenteed to be sensible
+ * The contents are not guaranteed to be sensible
  * if you don't call the above function.
  */
 const RAS_FrameSettings& KX_Scene::GetFramingType() const 
@@ -1017,6 +1032,8 @@ int KX_Scene::NewRemoveObject(class CValue* gameobj)
 		ret = newobj->Release();
 	if (m_euthanasyobjects->RemoveValue(newobj))
 		ret = newobj->Release();
+	if (m_animatedlist->RemoveValue(newobj))
+		ret = newobj->Release();
 		
 	if (newobj == m_active_camera)
 	{
@@ -1031,7 +1048,7 @@ int KX_Scene::NewRemoveObject(class CValue* gameobj)
 	// in case this is a font
 	m_fonts.remove((KX_FontObject*)newobj);
 
-	/* currently does nothing, keep incase we need to Unregister something */
+	/* currently does nothing, keep in case we need to Unregister something */
 #if 0
 	if (m_sceneConverter)
 		m_sceneConverter->UnregisterGameObject(newobj);
@@ -1230,9 +1247,10 @@ KX_Camera* KX_Scene::FindCamera(KX_Camera* cam)
 {
 	list<KX_Camera*>::iterator it = m_cameras.begin();
 
-	while ( (it != m_cameras.end()) 
-			&& ((*it) != cam) ) {
-	  it++;
+	while ( (it != m_cameras.end())
+	        && ((*it) != cam) )
+	{
+		it++;
 	}
 
 	return ((it == m_cameras.end()) ? NULL : (*it));
@@ -1243,9 +1261,10 @@ KX_Camera* KX_Scene::FindCamera(STR_String& name)
 {
 	list<KX_Camera*>::iterator it = m_cameras.begin();
 
-	while ( (it != m_cameras.end()) 
-			&& ((*it)->GetName() != name) ) {
-	  it++;
+	while ( (it != m_cameras.end())
+	        && ((*it)->GetName() != name) )
+	{
+		it++;
 	}
 
 	return ((it == m_cameras.end()) ? NULL : (*it));
@@ -1508,6 +1527,7 @@ void KX_Scene::LogicBeginFrame(double curtime)
 
 void KX_Scene::AddAnimatedObject(CValue* gameobj)
 {
+	gameobj->AddRef();
 	m_animatedlist->Add(gameobj);
 }
 
@@ -1520,7 +1540,7 @@ void KX_Scene::UpdateAnimations(double curtime)
 {
 	// Update any animations
 	for (int i=0; i<m_animatedlist->GetCount(); ++i)
-		((KX_GameObject*)GetObjectList()->GetValue(i))->UpdateActionManager(curtime);
+		((KX_GameObject*)m_animatedlist->GetValue(i))->UpdateActionManager(curtime);
 }
 
 void KX_Scene::LogicUpdateFrame(double curtime, bool frame)
@@ -1545,13 +1565,17 @@ void KX_Scene::LogicEndFrame()
 		obj->Release();
 		RemoveObject(obj);
 	}
+
+	//prepare obstacle simulation for new frame
+	if (m_obstacleSimulation)
+		m_obstacleSimulation->UpdateObstacles();
 }
 
 
 
 /**
-  * UpdateParents: SceneGraph transformation update.
-  */
+ * UpdateParents: SceneGraph transformation update.
+ */
 void KX_Scene::UpdateParents(double curtime)
 {
 	// we use the SG dynamic list
@@ -1865,7 +1889,7 @@ bool KX_Scene::MergeScene(KX_Scene *other)
 	other->GetLightList()->ReleaseAndRemoveAll();
 
 #ifdef USE_BULLET
-	if(env) /* bullet scene? - dummy scenes dont need touching */
+	if(env) /* bullet scene? - dummy scenes don't need touching */
 		env->MergeEnvironment(env_other);
 #endif
 	
@@ -1886,7 +1910,7 @@ bool KX_Scene::MergeScene(KX_Scene *other)
 			if(evtmgr_other) /* unlikely but possible one scene has a joystick and not the other */
 				evtmgr_other->Replace_LogicManager(logicmgr);
 
-			/* when merging objects sensors are moved across into the new manager, dont need to do this here */
+			/* when merging objects sensors are moved across into the new manager, don't need to do this here */
 		}
 
 		/* grab any timer properties from the other scene */
@@ -1977,6 +2001,8 @@ PyMethodDef KX_Scene::Methods[] = {
 	KX_PYMETHODTABLE(KX_Scene, replace),
 	KX_PYMETHODTABLE(KX_Scene, suspend),
 	KX_PYMETHODTABLE(KX_Scene, resume),
+	KX_PYMETHODTABLE(KX_Scene, drawObstacleSimulation),
+
 	
 	/* dict style access */
 	KX_PYMETHODTABLE(KX_Scene, get),
@@ -2093,7 +2119,7 @@ PySequenceMethods KX_Scene::Sequence = {
 PyObject* KX_Scene::pyattr_get_name(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_Scene* self= static_cast<KX_Scene*>(self_v);
-	return PyUnicode_FromString(self->GetName().ReadPtr());
+	return PyUnicode_From_STR_String(self->GetName());
 }
 
 PyObject* KX_Scene::pyattr_get_objects(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
@@ -2245,7 +2271,7 @@ KX_PYMETHODDEF_DOC(KX_Scene, addObject,
 	SCA_IObject* replica = AddReplicaObject((SCA_IObject*)ob, other, time);
 	
 	// release here because AddReplicaObject AddRef's
-	// the object is added to the scene so we dont want python to own a reference
+	// the object is added to the scene so we don't want python to own a reference
 	replica->Release();
 	return replica->GetProxy();
 }
@@ -2298,6 +2324,16 @@ KX_PYMETHODDEF_DOC(KX_Scene, resume,
 {
 	Resume();
 	
+	Py_RETURN_NONE;
+}
+
+KX_PYMETHODDEF_DOC(KX_Scene, drawObstacleSimulation,
+				   "drawObstacleSimulation()\n"
+				   "Draw debug visualization of obstacle simulation.\n")
+{
+	if (GetObstacleSimulation())
+		GetObstacleSimulation()->DrawObstacles();
+
 	Py_RETURN_NONE;
 }
 

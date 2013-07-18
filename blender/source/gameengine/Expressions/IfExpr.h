@@ -1,6 +1,5 @@
 /*
  * IfExpr.h: interface for the CIfExpr class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -20,7 +19,7 @@
 #if !defined(AFX_IFEXPR_H__1F691841_C5C7_11D1_A863_0000B4542BD8__INCLUDED_)
 #define AFX_IFEXPR_H__1F691841_C5C7_11D1_A863_0000B4542BD8__INCLUDED_
 
-#if _MSC_VER >= 1000
+#if defined(_MSC_VER) && _MSC_VER >= 1000
 #pragma once
 #endif // _MSC_VER >= 1000
 

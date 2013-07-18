@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -153,8 +152,8 @@ CollapseEdge(
 
 		// assign new vertex position
 
-		 v0.pos = new_vertex;
-		 v1.pos = new_vertex;
+		v0.pos = new_vertex;
+		v1.pos = new_vertex;
 
 		// sum the quadrics of v0 and v1
 		q0 = sum;

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_DisplayManagerCocoa class.
  */
 
-#ifndef _GHOST_DISPLAY_MANAGER_COCOA_H_
-#define _GHOST_DISPLAY_MANAGER_COCOA_H_
+#ifndef __GHOST_DISPLAYMANAGERCOCOA_H__
+#define __GHOST_DISPLAYMANAGERCOCOA_H__
 
 #ifndef __APPLE__
 #error Apple only!
@@ -103,5 +102,5 @@ protected:
 };
 
 
-#endif // _GHOST_DISPLAY_MANAGER_COCOA_H_
+#endif // __GHOST_DISPLAYMANAGERCOCOA_H__
 

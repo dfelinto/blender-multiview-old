@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,6 +58,8 @@
 #include "ED_screen.h"
 #include "ED_screen_types.h"
 #include "ED_fileselect.h"
+#include "ED_clip.h"
+#include "ED_render.h"
 
 #include "UI_interface.h"
 
@@ -524,8 +524,8 @@ int area_getorientation(ScrArea *sa, ScrArea *sb)
 }
 
 /* Helper function to join 2 areas, it has a return value, 0=failed 1=success
-* 	used by the split, join operators
-*/
+ * 	used by the split, join operators
+ */
 int screen_area_join(bContext *C, bScreen* scr, ScrArea *sa1, ScrArea *sa2) 
 {
 	int dir;
@@ -649,7 +649,7 @@ static void screen_test_scale(bScreen *sc, int winsizex, int winsizey)
 		
 		/* make sure it fits! */
 		for(sv= sc->vertbase.first; sv; sv= sv->next) {
-			/* FIXME, this resizing logic is no good when resizing the window + redrawing [#24428]
+			/* FIXME, this re-sizing logic is no good when re-sizing the window + redrawing [#24428]
 			 * need some way to store these as floats internally and re-apply from there. */
 			tempf= ((float)sv->vec.x)*facx;
 			sv->vec.x= (short)(tempf+0.5f);
@@ -704,7 +704,7 @@ static void screen_test_scale(bScreen *sc, int winsizex, int winsizey)
 #define SCR_BACK 0.55
 #define SCR_ROUND 12
 
-/* draw vertical shape visualising future joining (left as well
+/* draw vertical shape visualizing future joining (left as well
  * right direction of future joining) */
 static void draw_horizontal_join_shape(ScrArea *sa, char dir)
 {
@@ -777,7 +777,7 @@ static void draw_horizontal_join_shape(ScrArea *sa, char dir)
 	glRectf(points[6].x, points[6].y, points[9].x, points[9].y);
 }
 
-/* draw vertical shape visualising future joining (up/down direction) */
+/* draw vertical shape visualizing future joining (up/down direction) */
 static void draw_vertical_join_shape(ScrArea *sa, char dir)
 {
 	vec2f points[10];
@@ -1401,8 +1401,8 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 	
 		
 	/* screen can only be in use by one window at a time, so as
-	   long as we are able to find a screen that is unused, we
-	   can safely assume ours is not in use anywhere an delete it */
+	 * long as we are able to find a screen that is unused, we
+	 * can safely assume ours is not in use anywhere an delete it */
 
 	for(newsc= sc->id.prev; newsc; newsc=newsc->id.prev)
 		if(!ed_screen_used(wm, newsc))
@@ -1424,15 +1424,19 @@ void ED_screen_delete(bContext *C, bScreen *sc)
 }
 
 /* only call outside of area/region loops */
-void ED_screen_set_scene(bContext *C, Scene *scene)
+void ED_screen_set_scene(bContext *C, bScreen *screen, Scene *scene)
 {
+	Main *bmain= CTX_data_main(C);
 	bScreen *sc;
-	bScreen *curscreen= CTX_wm_screen(C);
+
+	if(screen == NULL)
+		return;
 	
-	ED_object_exit_editmode(C, EM_FREEDATA|EM_DO_UNDO);
+	if(ed_screen_used(CTX_wm_manager(C), screen))
+		ED_object_exit_editmode(C, EM_FREEDATA|EM_DO_UNDO);
 
 	for(sc= CTX_data_main(C)->screen.first; sc; sc= sc->id.next) {
-		if((U.flag & USER_SCENEGLOBAL) || sc==curscreen) {
+		if((U.flag & USER_SCENEGLOBAL) || sc==screen) {
 			
 			if(scene != sc->scene) {
 				/* all areas endlocalview */
@@ -1451,7 +1455,7 @@ void ED_screen_set_scene(bContext *C, Scene *scene)
 	
 	/* are there cameras in the views that are not in the scene? */
 	for(sc= CTX_data_main(C)->screen.first; sc; sc= sc->id.next) {
-		if( (U.flag & USER_SCENEGLOBAL) || sc==curscreen) {
+		if( (U.flag & USER_SCENEGLOBAL) || sc==screen) {
 			ScrArea *sa= sc->areabase.first;
 			while(sa) {
 				SpaceLink *sl= sa->spacedata.first;
@@ -1485,9 +1489,10 @@ void ED_screen_set_scene(bContext *C, Scene *scene)
 	}
 	
 	CTX_data_scene_set(C, scene);
-	set_scene_bg(CTX_data_main(C), scene);
+	set_scene_bg(bmain, scene);
 	
-	ED_update_for_newframe(CTX_data_main(C), scene, curscreen, 1);
+	ED_render_engine_changed(bmain);
+	ED_update_for_newframe(bmain, scene, screen, 1);
 	
 	/* complete redraw */
 	WM_event_add_notifier(C, NC_WINDOW, NULL);
@@ -1507,7 +1512,7 @@ void ED_screen_delete_scene(bContext *C, Scene *scene)
 	else
 		return;
 
-	ED_screen_set_scene(C, newscene);
+	ED_screen_set_scene(C, CTX_wm_screen(C), newscene);
 
 	unlink_scene(bmain, scene, newscene);
 }
@@ -1598,8 +1603,8 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 
 	if(sa) {
 		/* ensure we don't have a button active anymore, can crash when
-		   switching screens with tooltip open because region and tooltip
-		   are no longer in the same screen */
+		 * switching screens with tooltip open because region and tooltip
+		 * are no longer in the same screen */
 		for(ar=sa->regionbase.first; ar; ar=ar->next)
 			uiFreeBlocks(C, &ar->uiblocks);
 		
@@ -1649,10 +1654,11 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		oldscreen= win->screen;
 
 		/* nothing wrong with having only 1 area, as far as I can see...
-		// is there only 1 area?
+		 * is there only 1 area? */
+#if 0
 		if(oldscreen->areabase.first==oldscreen->areabase.last)
 			return NULL;
-		*/
+#endif
 
 		oldscreen->full = SCREENFULL;
 		BLI_snprintf(newname, sizeof(newname), "%s-%s", oldscreen->id.name+2, "full");
@@ -1668,7 +1674,7 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		ED_area_newspace(C, newa, SPACE_INFO);
 
 		/* use random area when we have no active one, e.g. when the
-		   mouse is outside of the window and we open a file browser */
+		 * mouse is outside of the window and we open a file browser */
 		if(!sa)
 			sa= oldscreen->areabase.first;
 
@@ -1686,8 +1692,6 @@ ScrArea *ED_screen_full_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 
 	/* XXX bad code: setscreen() ends with first area active. fullscreen render assumes this too */
 	CTX_wm_area_set(C, sc->areabase.first);
-
-	/* XXX retopo_force_update(); */
 
 	return sc->areabase.first;
 }
@@ -1738,7 +1742,14 @@ void ED_screen_animation_timer(bContext *C, int redraws, int refresh, int sync, 
 		screen->animtimer= WM_event_add_timer(wm, win, TIMER0, (1.0/FPS));
 		
 		sad->ar= CTX_wm_region(C);
-		sad->sfra = scene->r.cfra;
+		/* if startframe is larger than current frame, we put currentframe on startframe.
+		 * note: first frame then is not drawn! (ton) */
+		if(scene->r.sfra > scene->r.cfra) {
+			sad->sfra= scene->r.cfra;
+			scene->r.cfra= scene->r.sfra;
+		}
+		else
+			sad->sfra = scene->r.cfra;
 		sad->redraws= redraws;
 		sad->refresh= refresh;
 		sad->flag |= (enable < 0)? ANIMPLAY_FLAG_REVERSE: 0;
@@ -1808,8 +1819,10 @@ void ED_update_for_newframe(Main *bmain, Scene *scene, bScreen *screen, int UNUS
 	//extern void audiostream_scrub(unsigned int frame);	/* seqaudio.c */
 	
 	/* update animated image textures for gpu, etc,
-	 * call before scene_update_for_newframe so modifiers with textuers dont lag 1 frame */
+	 * call before scene_update_for_newframe so modifiers with textuers don't lag 1 frame */
 	ED_image_update_frame(bmain, scene->r.cfra);
+
+	ED_clip_update_frame(bmain, scene->r.cfra);
 
 	/* this function applies the changes too */
 	/* XXX future: do all windows */
@@ -1832,8 +1845,8 @@ void ED_update_for_newframe(Main *bmain, Scene *scene, bScreen *screen, int UNUS
 	{
 		Tex *tex;
 		for(tex= bmain->tex.first; tex; tex= tex->id.next)
-			if( tex->use_nodes && tex->nodetree ) {
-				ntreeTexTagAnimated( tex->nodetree );
+			if (tex->use_nodes && tex->nodetree) {
+				ntreeTexTagAnimated(tex->nodetree);
 			}
 	}
 	

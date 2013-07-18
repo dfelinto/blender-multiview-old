@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  * */
 
-#ifndef BLI_MATH_MATRIX_H
-#define BLI_MATH_MATRIX_H
+#ifndef __BLI_MATH_MATRIX_H__
+#define __BLI_MATH_MATRIX_H__
 
 /** \file BLI_math_matrix.h
  *  \ingroup bli
@@ -70,10 +68,12 @@ void sub_m3_m3m3(float R[3][3], float A[3][3], float B[3][3]);
 void sub_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
 
 void mul_m3_m3m3(float R[3][3], float A[3][3], float B[3][3]);
-void mul_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
 void mul_m4_m3m4(float R[4][4], float A[3][3], float B[4][4]);
 void mul_m4_m4m3(float R[4][4], float A[4][4], float B[3][3]);
-void mul_m3_m3m4(float R[3][3], float A[3][3], float B[4][4]);
+/* note: the A,B arguments are reversed compared to previous mul_m4_m4m4
+ * function, for consistency with above functions & math notation. */
+void mult_m4_m4m4(float R[4][4], float A[4][4], float B[4][4]);
+void mult_m3_m3m4(float R[3][3], float A[4][4], float B[3][3]);
 
 void mul_serie_m3(float R[3][3],
 	float M1[3][3], float M2[3][3], float M3[3][3], float M4[3][3],
@@ -83,7 +83,7 @@ void mul_serie_m4(float R[4][4],
 	float M5[4][4], float M6[4][4], float M7[4][4], float M8[4][4]);
 
 void mul_m4_v3(float M[4][4], float r[3]);
-void mul_v3_m4v3(float r[3], float M[4][4], float v[3]);
+void mul_v3_m4v3(float r[3], float M[4][4], const float v[3]);
 void mul_mat3_m4_v3(float M[4][4], float r[3]);
 void mul_m4_v4(float M[4][4], float r[4]);
 void mul_v4_m4v4(float r[4], float M[4][4], float v[4]);
@@ -102,6 +102,11 @@ int invert_m3(float R[3][3]);
 int invert_m3_m3(float R[3][3], float A[3][3]);
 int invert_m4(float R[4][4]);
 int invert_m4_m4(float R[4][4], float A[4][4]);
+
+/* double ariphmetics */
+void mul_m4_v4d(float M[4][4], double r[4]);
+void mul_v4d_m4v4d(double r[4], float M[4][4], double v[4]);
+
 
 /****************************** Linear Algebra *******************************/
 
@@ -179,5 +184,5 @@ void print_m4(const char *str, float M[3][4]);
 }
 #endif
 
-#endif /* BLI_MATH_MATRIX_H */
+#endif /* __BLI_MATH_MATRIX_H__ */
 

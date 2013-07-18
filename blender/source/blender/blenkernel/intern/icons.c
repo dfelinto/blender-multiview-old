@@ -1,32 +1,30 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version. 
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-* 
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-* 
-* The Original Code is Copyright (C) 2006-2007 Blender Foundation.
-* All rights reserved.
-* 
-* The Original Code is: all of this file.
-* 
-* Contributor(s): none yet.
-* 
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006-2007 Blender Foundation.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/blenkernel/intern/icons.c
  *  \ingroup bke
@@ -68,8 +66,7 @@ static void icon_free(void *val)
 {
 	Icon* icon = val;
 
-	if (icon)
-	{
+	if (icon) {
 		if (icon->drawinfo_free) {		
 			icon->drawinfo_free(icon->drawinfo);
 		}
@@ -81,7 +78,7 @@ static void icon_free(void *val)
 }
 
 /* create an id for a new icon and make sure that ids from deleted icons get reused
-   after the integer number range is used up */
+ * after the integer number range is used up */
 static int get_next_free_id(void)
 {
 	int startId = gFirstIconId;
@@ -94,7 +91,7 @@ static int get_next_free_id(void)
 	while (BLI_ghash_lookup(gIcons, SET_INT_IN_POINTER(startId)) && startId>=gFirstIconId) 
 		startId++;
 
-	/* if we found a suitable one that isnt used yet, return it */
+	/* if we found a suitable one that isn't used yet, return it */
 	if (startId>=gFirstIconId)
 		return startId;
 
@@ -238,8 +235,7 @@ void BKE_icon_changed(int id)
 
 	icon = BLI_ghash_lookup(gIcons, SET_INT_IN_POINTER(id));
 	
-	if (icon)
-	{
+	if (icon) {
 		PreviewImage *prv = BKE_previewimg_get((ID*)icon->obj);
 
 		/* all previews changed */
@@ -265,7 +261,7 @@ int BKE_icon_getid(struct ID* id)
 
 	id->icon_id = get_next_free_id();
 
-	if (!id->icon_id){
+	if (!id->icon_id) {
 		printf("BKE_icon_getid: Internal error - not enough IDs\n");
 		return 0;
 	}
@@ -304,8 +300,7 @@ void BKE_icon_set(int icon_id, struct Icon* icon)
 
 	old_icon = BLI_ghash_lookup(gIcons, SET_INT_IN_POINTER(icon_id));
 
-	if (old_icon)
-	{
+	if (old_icon) {
 		printf("BKE_icon_set: Internal error, icon already set: %d\n", icon_id);
 		return;
 	}

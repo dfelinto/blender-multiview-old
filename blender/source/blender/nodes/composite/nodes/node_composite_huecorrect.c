@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,7 +34,7 @@
 
 static bNodeSocketTemplate cmp_node_huecorrect_in[]= {
 	{	SOCK_FLOAT, 1, "Fac",	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
-	{	SOCK_RGBA, 1, "Image",	0.0f, 0.0f, 0.0f, 1.0f},
+	{	SOCK_RGBA, 1, "Image",	1.0f, 1.0f, 1.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 
@@ -63,7 +61,7 @@ static void do_huecorrect(bNode *node, float *out, float *in)
 	f = curvemapping_evaluateF(node->storage, 2, hsv[0]);
 	hsv[2] *= (f * 2.f);
 	
-	hsv[0] = hsv[0] - floor(hsv[0]); /* mod 1.0 */
+	hsv[0] = hsv[0] - floorf(hsv[0]); /* mod 1.0 */
 	CLAMP(hsv[1], 0.f, 1.f);
 	
 	/* convert back to rgb */
@@ -91,7 +89,7 @@ static void do_huecorrect_fac(bNode *node, float *out, float *in, float *fac)
 	f = curvemapping_evaluateF(node->storage, 2, hsv[0]);
 	hsv[2] *= (f * 2.f);
 	
-	hsv[0] = hsv[0] - floor(hsv[0]);  /* mod 1.0 */
+	hsv[0] = hsv[0] - floorf(hsv[0]);  /* mod 1.0 */
 	CLAMP(hsv[1], 0.f, 1.f);
 	
 	/* convert back to rgb */
@@ -153,18 +151,16 @@ static void node_composit_init_huecorrect(bNodeTree *UNUSED(ntree), bNode* node,
 	cumapping->cur = 1;
 }
 
-void register_node_type_cmp_huecorrect(ListBase *lb)
+void register_node_type_cmp_huecorrect(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_HUECORRECT, "Hue Correct", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_HUECORRECT, "Hue Correct", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_huecorrect_in, cmp_node_huecorrect_out);
 	node_type_size(&ntype, 320, 140, 400);
 	node_type_init(&ntype, node_composit_init_huecorrect);
 	node_type_storage(&ntype, "CurveMapping", node_free_curves, node_copy_curves);
 	node_type_exec(&ntype, node_composit_exec_huecorrect);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-

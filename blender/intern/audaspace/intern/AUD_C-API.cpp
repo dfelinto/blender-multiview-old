@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -139,8 +137,21 @@ int AUD_init(AUD_DeviceType device, AUD_DeviceSpecs specs, int buffersize)
 #endif
 #ifdef WITH_JACK
 		case AUD_JACK_DEVICE:
-			dev = new AUD_JackDevice("Blender", specs, buffersize);
-			break;
+#ifdef __APPLE__
+			struct stat st;
+			if(stat("/Library/Frameworks/Jackmp.framework", &st) != 0)
+			{
+				printf("Warning: Jack Framework not installed\n");
+				// No break, fall through to default, to return false
+			}
+			else
+			{
+#endif
+				dev = new AUD_JackDevice("Blender", specs, buffersize);
+				break;
+#ifdef __APPLE__
+			}
+#endif
 #endif
 		default:
 			return false;
@@ -826,42 +837,51 @@ float* AUD_readSoundBuffer(const char* filename, float low, float high,
 
 	AUD_Reference<AUD_IFactory> file = new AUD_FileFactory(filename);
 
-	AUD_Reference<AUD_IReader> reader = file->createReader();
-	AUD_SampleRate rate = reader->getSpecs().rate;
-
-	sound = new AUD_ChannelMapperFactory(file, specs);
-
-	if(high < rate)
-		sound = new AUD_LowpassFactory(sound, high);
-	if(low > 0)
-		sound = new AUD_HighpassFactory(sound, low);
-
-	sound = new AUD_EnvelopeFactory(sound, attack, release, threshold, 0.1f);
-	sound = new AUD_LinearResampleFactory(sound, specs);
-
-	if(square)
-		sound = new AUD_SquareFactory(sound, sthreshold);
-
-	if(accumulate)
-		sound = new AUD_AccumulatorFactory(sound, additive);
-	else if(additive)
-		sound = new AUD_SumFactory(sound);
-
-	reader = sound->createReader();
-
-	if(reader.isNull())
-		return NULL;
-
-	int len;
 	int position = 0;
-	bool eos;
-	do
+
+	try
 	{
-		len = samplerate;
-		buffer.resize((position + len) * sizeof(float), true);
-		reader->read(len, eos, buffer.getBuffer() + position);
-		position += len;
-	} while(!eos);
+		AUD_Reference<AUD_IReader> reader = file->createReader();
+
+		AUD_SampleRate rate = reader->getSpecs().rate;
+
+		sound = new AUD_ChannelMapperFactory(file, specs);
+
+		if(high < rate)
+			sound = new AUD_LowpassFactory(sound, high);
+		if(low > 0)
+			sound = new AUD_HighpassFactory(sound, low);
+
+		sound = new AUD_EnvelopeFactory(sound, attack, release, threshold, 0.1f);
+		sound = new AUD_LinearResampleFactory(sound, specs);
+
+		if(square)
+			sound = new AUD_SquareFactory(sound, sthreshold);
+
+		if(accumulate)
+			sound = new AUD_AccumulatorFactory(sound, additive);
+		else if(additive)
+			sound = new AUD_SumFactory(sound);
+
+		reader = sound->createReader();
+
+		if(reader.isNull())
+			return NULL;
+
+		int len;
+		bool eos;
+		do
+		{
+			len = samplerate;
+			buffer.resize((position + len) * sizeof(float), true);
+			reader->read(len, eos, buffer.getBuffer() + position);
+			position += len;
+		} while(!eos);
+	}
+	catch(AUD_Exception&)
+	{
+		return NULL;
+	}
 
 	float* result = (float*)malloc(position * sizeof(float));
 	memcpy(result, buffer.getBuffer(), position * sizeof(float));
@@ -1094,8 +1114,10 @@ int AUD_readSound(AUD_Sound* sound, sample_t* buffer, int length, int samples_pe
 	specs.specs = reader->getSpecs();
 	int len;
 	float samplejump = specs.rate / samples_per_second;
-	float min, max, power;
+	float min, max, power, overallmax;
 	bool eos;
+
+	overallmax = 0;
 
 	for(int i = 0; i < length; i++)
 	{
@@ -1121,10 +1143,23 @@ int AUD_readSound(AUD_Sound* sound, sample_t* buffer, int length, int samples_pe
 		buffer[i * 3 + 1] = max;
 		buffer[i * 3 + 2] = sqrt(power) / len;
 
+		if(overallmax < max)
+			overallmax = max;
+		if(overallmax < -min)
+			overallmax = -min;
+
 		if(eos)
 		{
 			length = i;
 			break;
+		}
+	}
+
+	if(overallmax > 1.0f)
+	{
+		for(int i = 0; i < length * 3; i++)
+		{
+			buffer[i] /= overallmax;
 		}
 	}
 

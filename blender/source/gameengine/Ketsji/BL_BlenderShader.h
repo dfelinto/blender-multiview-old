@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __BL_GPUSHADER_H__
-#define __BL_GPUSHADER_H__
+#ifndef __BL_BLENDERSHADER_H__
+#define __BL_BLENDERSHADER_H__
 
 #include "GPU_material.h"
 
@@ -63,7 +61,7 @@ private:
 	struct Scene	*mBlenderScene;
 	struct Material	*mMat;
 	int				mLightLayer;
-	int				mBlendMode;
+	int				mAlphaBlend;
 	GPUMaterial     *mGPUMat;
 
 	bool			VerifyShader() 
@@ -86,7 +84,7 @@ public:
 	void SetAttribs(class RAS_IRasterizer* ras, const BL_Material *mat);
 	void Update(const class RAS_MeshSlot & ms, class RAS_IRasterizer* rasty);
 	void ReloadMaterial();
-	int GetBlendMode();
+	int GetAlphaBlend();
 
 	void SetScene(KX_Scene *scene)
 	{
@@ -105,4 +103,4 @@ public:
 #endif
 };
 
-#endif//__BL_GPUSHADER_H__
+#endif//__BL_BLENDERSHADER_H__

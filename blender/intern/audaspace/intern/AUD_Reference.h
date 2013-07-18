@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -28,8 +26,8 @@
  *  \ingroup audaspaceintern
  */
 
-#ifndef AUD_REFERENCE
-#define AUD_REFERENCE
+#ifndef __AUD_REFERENCE_H__
+#define __AUD_REFERENCE_H__
 
 #include <map>
 #include <cstddef>
@@ -246,4 +244,4 @@ inline bool operator!=(const AUD_Reference<T>& a, const AUD_Reference<U>& b)
 	return a.getOriginal() != b.getOriginal();
 }
 
-#endif // AUD_REFERENCE
+#endif // __AUD_REFERENCE_H__

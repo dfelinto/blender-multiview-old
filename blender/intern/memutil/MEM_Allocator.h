@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  */
 
 
-#ifndef MEM_ALLOCATOR_H
-#define MEM_ALLOCATOR_H
+#ifndef __MEM_ALLOCATOR_H__
+#define __MEM_ALLOCATOR_H__
 
 #include <stddef.h>
 #include "guardedalloc/MEM_guardedalloc.h"
@@ -90,4 +89,4 @@ struct MEM_Allocator
 	}
 };
 
-#endif // MEM_ALLOCATOR_H
+#endif // __MEM_ALLOCATOR_H__

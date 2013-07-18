@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -73,7 +72,8 @@
 
 #include "STR_HashedString.h"
 
-static BL_InterpolatorList *GetAdtList(struct bAction *for_act, KX_BlenderSceneConverter *converter) {
+static BL_InterpolatorList *GetAdtList(struct bAction *for_act, KX_BlenderSceneConverter *converter)
+{
 	BL_InterpolatorList *adtList= converter->FindInterpolatorList(for_act);
 
 	if (!adtList) {		
@@ -102,7 +102,7 @@ SG_Controller *BL_CreateIPO(struct bAction *action, KX_GameObject* gameobj, KX_B
 		rotmode = "rotation_axis_angle";
 		drotmode = "delta_rotation_axis_angle";
 		break;
-	case ROT_MODE_QUAT:
+	case ROT_MODE_QUAT: /* XXX, this isn't working, currently only eulers are supported [#28853] */
 		rotmode = "rotation_quaternion";
 		drotmode = "delta_rotation_quaternion";
 		break;

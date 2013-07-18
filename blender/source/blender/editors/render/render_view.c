@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,6 +58,7 @@
 
 /* returns biggest area that is not uv/image editor. Note that it uses buttons */
 /* window as the last possible alternative.									   */
+/* would use BKE_screen_find_big_area(...) but this is too specific            */
 static ScrArea *biggest_non_image_area(bContext *C)
 {
 	bScreen *sc= CTX_wm_screen(C);
@@ -84,22 +83,6 @@ static ScrArea *biggest_non_image_area(bContext *C)
 		}
 	}
 
-	return big;
-}
-
-static ScrArea *biggest_area(bContext *C)
-{
-	bScreen *sc= CTX_wm_screen(C);
-	ScrArea *sa, *big= NULL;
-	int size, maxsize= 0;
-
-	for(sa= sc->areabase.first; sa; sa= sa->next) {
-		size= sa->winx*sa->winy;
-		if(size > maxsize) {
-			maxsize= size;
-			big= sa;
-		}
-	}
 	return big;
 }
 
@@ -208,7 +191,7 @@ void render_view_open(bContext *C, int mx, int my)
 			}
 			else {
 				/* use any area of decent size */
-				sa= biggest_area(C);
+				sa= BKE_screen_find_big_area(CTX_wm_screen(C), -1, 0);
 				if(sa->spacetype!=SPACE_IMAGE) {
 					// XXX newspace(sa, SPACE_IMAGE);
 					sima= sa->spacedata.first;
@@ -326,7 +309,7 @@ static int render_view_show_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent 
 					}
 					else if(sima->next) {
 						/* workaround for case of double prevspace, render window
-						   with a file browser on top of it (same as in ED_area_prevspace) */
+						 * with a file browser on top of it (same as in ED_area_prevspace) */
 						if(sima->next->spacetype == SPACE_FILE && sima->next->next)
 							ED_area_newspace(C, sa, sima->next->next->spacetype);
 						else

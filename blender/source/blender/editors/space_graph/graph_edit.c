@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -54,6 +52,8 @@
 #include "RNA_access.h"
 #include "RNA_define.h"
 #include "RNA_enum_types.h"
+
+#include "BLF_translation.h"
 
 #include "BKE_fcurve.h"
 #include "BKE_nla.h"
@@ -729,11 +729,10 @@ static int graphkeys_paste_exec(bContext *C, wmOperator *op)
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
 	
-	if(ac.reports==NULL) {
-		ac.reports= op->reports;
-	}
+	/* ac.reports by default will be the global reports list, which won't show warnings */
+	ac.reports= op->reports;
 
-	/* paste keyframes */
+	/* paste keyframes - non-zero return means an error occurred while trying to paste */
 	if (paste_graph_keys(&ac, offset_mode, merge_mode)) {
 		return OPERATOR_CANCELLED;
 	}
@@ -763,7 +762,7 @@ void GRAPH_OT_paste (wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	RNA_def_enum(ot->srna, "offset", keyframe_paste_offset_items, KEYFRAME_PASTE_OFFSET_CFRA_START, "Offset", "Paste time offset of keys");
-	RNA_def_enum(ot->srna, "merge", keyframe_paste_merge_items, KEYFRAME_PASTE_MERGE_MIX, "Type", "Method of merking pasted keys and existing");
+	RNA_def_enum(ot->srna, "merge", keyframe_paste_merge_items, KEYFRAME_PASTE_MERGE_MIX, "Type", "Method of merging pasted keys and existing");
 }
 
 /* ******************** Duplicate Keyframes Operator ************************* */
@@ -1049,6 +1048,8 @@ void GRAPH_OT_bake (wmOperatorType *ot)
 	// todo: add props for start/end frames
 }
 
+#ifdef WITH_AUDASPACE
+
 /* ******************** Sound Bake F-Curve Operator *********************** */
 /* This operator bakes the given sound to the selected F-Curves */
 
@@ -1081,7 +1082,6 @@ static float fcurve_samplingcb_sound (FCurve *UNUSED(fcu), void *data, float eva
 
 /* ------------------- */
 
-#ifdef WITH_AUDASPACE
 static int graphkeys_sound_bake_exec(bContext *C, wmOperator *op)
 {
 	bAnimContext ac;
@@ -1190,7 +1190,7 @@ void GRAPH_OT_sound_bake (wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|SOUNDFILE|MOVIEFILE, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH, FILE_DEFAULTDISPLAY);
 	RNA_def_float(ot->srna, "low", 0.0f, 0.0, 100000.0, "Lowest frequency", "", 0.1, 1000.00);
 	RNA_def_float(ot->srna, "high", 100000.0, 0.0, 100000.0, "Highest frequency", "", 0.1, 1000.00);
 	RNA_def_float(ot->srna, "attack", 0.005, 0.0, 2.0, "Attack time", "", 0.01, 0.1);
@@ -1584,7 +1584,7 @@ static int graphkeys_euler_filter_exec (bContext *C, wmOperator *op)
 			continue;
 		}
 		
-		/* optimisation: assume that xyz curves will always be stored consecutively,
+		/* optimization: assume that xyz curves will always be stored consecutively,
 		 * so if the paths or the ID's don't match up, then a curve needs to be added 
 		 * to a new group
 		 */
@@ -1677,13 +1677,13 @@ static int graphkeys_euler_filter_exec (bContext *C, wmOperator *op)
 	/* updates + finishing warnings */
 	if (failed == groups) {
 		BKE_report(op->reports, RPT_ERROR, 
-			"No Euler Rotations could be corrected. Ensure each rotation has keys for all components, and that F-Curves for these are in consecutive XYZ order and selected.");
+			"No Euler Rotations could be corrected, ensure each rotation has keys for all components, and that F-Curves for these are in consecutive XYZ order and selected");
 		return OPERATOR_CANCELLED;
 	}
 	else {
 		if (failed) {
 			BKE_report(op->reports, RPT_ERROR,
-				"Some Euler Rotations couldn't be corrected due to missing/unselected/out-of-order F-Curves. Ensure each rotation has keys for all components, and that F-Curves for these are in consecutive XYZ order and selected.");
+				"Some Euler Rotations couldn't be corrected due to missing/unselected/out-of-order F-Curves, ensure each rotation has keys for all components, and that F-Curves for these are in consecutive XYZ order and selected");
 		}
 		
 		/* validate keyframes after editing */
@@ -2071,11 +2071,12 @@ void GRAPH_OT_smooth (wmOperatorType *ot)
 /* present a special customised popup menu for this, with some filtering */
 static int graph_fmodifier_add_invoke (bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {
+	wmOperatorType *ot = WM_operatortype_find("GRAPH_OT_fmodifier_add", 1);
 	uiPopupMenu *pup;
 	uiLayout *layout;
 	int i;
 	
-	pup= uiPupMenuBegin(C, "Add F-Curve Modifier", ICON_NONE);
+	pup= uiPupMenuBegin(C, IFACE_("Add F-Curve Modifier"), ICON_NONE);
 	layout= uiPupMenuLayout(pup);
 	
 	/* start from 1 to skip the 'Invalid' modifier type */
@@ -2088,7 +2089,8 @@ static int graph_fmodifier_add_invoke (bContext *C, wmOperator *op, wmEvent *UNU
 			continue;
 		
 		/* create operator menu item with relevant properties filled in */
-		props_ptr= uiItemFullO(layout, "GRAPH_OT_fmodifier_add", fmi->name, ICON_NONE, NULL, WM_OP_EXEC_REGION_WIN, UI_ITEM_O_RETURN_PROPS);
+		props_ptr= uiItemFullO_ptr(layout, ot, IFACE_(fmi->name), ICON_NONE,
+		                           NULL, WM_OP_EXEC_REGION_WIN, UI_ITEM_O_RETURN_PROPS);
 			/* the only thing that gets set from the menu is the type of F-Modifier to add */
 		RNA_enum_set(&props_ptr, "type", i);
 			/* the following properties are just repeats of existing ones... */
@@ -2134,7 +2136,7 @@ static int graph_fmodifier_add_exec(bContext *C, wmOperator *op)
 		if (fcm)
 			set_active_fmodifier(&fcu->modifiers, fcm);
 		else {
-			BKE_report(op->reports, RPT_ERROR, "Modifier couldn't be added. See console for details.");
+			BKE_report(op->reports, RPT_ERROR, "Modifier couldn't be added, see console for details");
 			break;
 		}
 	}
@@ -2167,7 +2169,7 @@ void GRAPH_OT_fmodifier_add (wmOperatorType *ot)
 	
 	/* id-props */
 	ot->prop= RNA_def_enum(ot->srna, "type", fmodifier_type_items, 0, "Type", "");
-	RNA_def_boolean(ot->srna, "only_active", 1, "Only Active", "Only add F-Modifier to active F-Curve.");
+	RNA_def_boolean(ot->srna, "only_active", 1, "Only Active", "Only add F-Modifier to active F-Curve");
 }
 
 /* ******************** Copy F-Modifiers Operator *********************** */
@@ -2213,7 +2215,7 @@ void GRAPH_OT_fmodifier_copy (wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Copy F-Modifiers";
 	ot->idname= "GRAPH_OT_fmodifier_copy";
-	ot->description= "Copy the F-Modifier(s) of the active F-Curve.";
+	ot->description= "Copy the F-Modifier(s) of the active F-Curve";
 	
 	/* api callbacks */
 	ot->exec= graph_fmodifier_copy_exec;

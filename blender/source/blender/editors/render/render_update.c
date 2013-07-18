@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,6 +41,7 @@
 #include "DNA_view3d_types.h"
 #include "DNA_world_types.h"
 
+#include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -58,10 +57,93 @@
 
 #include "GPU_material.h"
 
+#include "RE_engine.h"
+
 #include "ED_node.h"
 #include "ED_render.h"
 
 #include "render_intern.h"	// own include
+
+/***************************** Render Engines ********************************/
+
+void ED_render_scene_update(Main *bmain, Scene *scene, int updated)
+{
+	/* viewport rendering update on data changes, happens after depsgraph
+	 * updates if there was any change. context is set to the 3d view */
+	bContext *C;
+	bScreen *sc;
+	ScrArea *sa;
+	ARegion *ar;
+
+	/* don't do this render engine update if we're updating the scene from
+	 * other threads doing e.g. rendering or baking jobs */
+	if(!BLI_thread_is_main())
+		return;
+
+	C= CTX_create();
+	CTX_data_main_set(C, bmain);
+	CTX_data_scene_set(C, scene);
+
+	CTX_wm_manager_set(C, bmain->wm.first);
+
+	for(sc=bmain->screen.first; sc; sc=sc->id.next) {
+		for(sa=sc->areabase.first; sa; sa=sa->next) {
+			if(sa->spacetype != SPACE_VIEW3D)
+				continue;
+
+			for(ar=sa->regionbase.first; ar; ar=ar->next) {
+				RegionView3D *rv3d;
+				RenderEngine *engine;
+
+				if(ar->regiontype != RGN_TYPE_WINDOW)
+					continue;
+
+				rv3d= ar->regiondata;
+				engine= rv3d->render_engine;
+
+				if(engine && (updated || (engine->flag & RE_ENGINE_DO_UPDATE))) {
+					CTX_wm_screen_set(C, sc);
+					CTX_wm_area_set(C, sa);
+					CTX_wm_region_set(C, ar);
+
+					engine->flag &= ~RE_ENGINE_DO_UPDATE;
+					engine->type->view_update(engine, C);
+				}
+			}
+		}
+	}
+
+	CTX_free(C);
+}
+
+void ED_render_engine_changed(Main *bmain)
+{
+	/* on changing the render engine type, clear all running render engines */
+	bScreen *sc;
+	ScrArea *sa;
+	ARegion *ar;
+
+	for(sc=bmain->screen.first; sc; sc=sc->id.next) {
+		for(sa=sc->areabase.first; sa; sa=sa->next) {
+			if(sa->spacetype != SPACE_VIEW3D)
+				continue;
+
+			for(ar=sa->regionbase.first; ar; ar=ar->next) {
+				RegionView3D *rv3d;
+
+				if(ar->regiontype != RGN_TYPE_WINDOW)
+					continue;
+				
+				rv3d= ar->regiondata;
+
+				if(rv3d->render_engine) {
+					RE_engine_free(rv3d->render_engine);
+					rv3d->render_engine= NULL;
+				}
+			}
+		}
+	}
+}
 
 /***************************** Updates ***********************************
  * ED_render_id_flush_update gets called from DAG_id_tag_update, to do *
@@ -91,6 +173,10 @@ static int nodes_use_tex(bNodeTree *ntree, Tex *tex)
 			if(node->id == (ID*)tex) {
 				return 1;
 			}
+			else if(GS(node->id->name) == ID_MA) {
+				if(mtex_use_tex(((Material*)node->id)->mtex, MAX_MTEX, tex))
+					return 1;
+			}
 			else if(node->type==NODE_GROUP) {
 				if(nodes_use_tex((bNodeTree *)node->id, tex))
 					return 1;
@@ -101,14 +187,46 @@ static int nodes_use_tex(bNodeTree *ntree, Tex *tex)
 	return 0;
 }
 
-static void material_changed(Main *UNUSED(bmain), Material *ma)
+static int nodes_use_material(bNodeTree *ntree, Material *ma)
 {
+	bNode *node;
+
+	for(node=ntree->nodes.first; node; node= node->next) {
+		if(node->id) {
+			if(node->id == (ID*)ma) {
+				return 1;
+			}
+			else if(node->type==NODE_GROUP) {
+				if(nodes_use_material((bNodeTree *)node->id, ma))
+					return 1;
+			}
+		}
+	}
+
+	return 0;
+}
+
+static void material_changed(Main *bmain, Material *ma)
+{
+	Material *parent;
+
 	/* icons */
 	BKE_icon_changed(BKE_icon_getid(&ma->id));
 
 	/* glsl */
 	if(ma->gpumaterial.first)
 		GPU_material_free(ma);
+
+	/* find node materials using this */
+	for(parent=bmain->mat.first; parent; parent=parent->id.next) {
+		if(parent->use_nodes && parent->nodetree && nodes_use_material(parent->nodetree, ma));
+		else continue;
+
+		BKE_icon_changed(BKE_icon_getid(&parent->id));
+
+		if(parent->gpumaterial.first)
+			GPU_material_free(parent);
+	}
 }
 
 static void texture_changed(Main *bmain, Tex *tex)
@@ -137,6 +255,7 @@ static void texture_changed(Main *bmain, Tex *tex)
 	/* find lamps */
 	for(la=bmain->lamp.first; la; la=la->id.next) {
 		if(mtex_use_tex(la->mtex, MAX_MTEX, tex));
+		else if(la->nodetree && nodes_use_tex(la->nodetree, tex));
 		else continue;
 
 		BKE_icon_changed(BKE_icon_getid(&la->id));
@@ -145,6 +264,7 @@ static void texture_changed(Main *bmain, Tex *tex)
 	/* find worlds */
 	for(wo=bmain->world.first; wo; wo=wo->id.next) {
 		if(mtex_use_tex(wo->mtex, MAX_MTEX, tex));
+		else if(wo->nodetree && nodes_use_tex(wo->nodetree, tex));
 		else continue;
 
 		BKE_icon_changed(BKE_icon_getid(&wo->id));
@@ -222,9 +342,6 @@ static void scene_changed(Main *bmain, Scene *UNUSED(scene))
 
 void ED_render_id_flush_update(Main *bmain, ID *id)
 {
-	if(!id)
-		return;
-
 	switch(GS(id->name)) {
 		case ID_MA:
 			material_changed(bmain, (Material*)id);

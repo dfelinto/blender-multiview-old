@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -66,7 +65,7 @@
 
 static int is_vd_res_ok(VoxelData *vd)
 {
-	/* arbitrary large value so corrupt headers dont break */
+	/* arbitrary large value so corrupt headers don't break */
 	const int min= 1, max= 100000;
 	return	(vd->resol[0] >= min && vd->resol[0] <= max) &&
 			(vd->resol[1] >= min && vd->resol[1] <= max) &&
@@ -156,7 +155,7 @@ static void load_frame_image_sequence(VoxelData *vd, Tex *tex)
 	ima->source = IMA_SRC_SEQUENCE;
 	iuser.framenr = 1 + iuser.offset;
 
-	/* find the first valid ibuf and use it to initialise the resolution of the data set */
+	/* find the first valid ibuf and use it to initialize the resolution of the data set */
 	/* need to do this in advance so we know how much memory to allocate */
 	ibuf= BKE_image_get_ibuf(ima, &iuser);
 	while (!ibuf && (iuser.framenr < iuser.frames)) {
@@ -229,8 +228,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 	ob= vd->object;
 	
 	/* draw code for smoke */
-	if( (md = (ModifierData *)modifiers_findByType(ob, eModifierType_Smoke)) )
-	{
+	if ((md = (ModifierData *)modifiers_findByType(ob, eModifierType_Smoke))) {
 		SmokeModifierData *smd = (SmokeModifierData *)md;
 
 		
@@ -242,7 +240,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 				size_t i;
 				float *heat;
 
-				VECCOPY(vd->resol, smd->domain->res);
+				copy_v3_v3_int(vd->resol, smd->domain->res);
 				totRes= vd_resol_size(vd);
 
 				// scaling heat values from -2.0-2.0 to 0.0-1.0
@@ -263,7 +261,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 				size_t i;
 				float *xvel, *yvel, *zvel;
 
-				VECCOPY(vd->resol, smd->domain->res);
+				copy_v3_v3_int(vd->resol, smd->domain->res);
 				totRes= vd_resol_size(vd);
 
 				// scaling heat values from -2.0-2.0 to 0.0-1.0
@@ -287,7 +285,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 					smoke_turbulence_get_res(smd->domain->wt, vd->resol);
 					density = smoke_turbulence_get_density(smd->domain->wt);
 				} else {
-					VECCOPY(vd->resol, smd->domain->res);
+					copy_v3_v3_int(vd->resol, smd->domain->res);
 					density = smoke_get_density(smd->domain->fluid);
 				}
 
@@ -310,7 +308,7 @@ static void init_frame_smoke(VoxelData *vd, float cfra)
 #endif
 }
 
-static void cache_voxeldata(struct Render *re, Tex *tex)
+void cache_voxeldata(Tex *tex, int scene_frame)
 {	
 	VoxelData *vd = tex->vd;
 	FILE *fp;
@@ -318,7 +316,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 	char path[sizeof(vd->source_path)];
 	
 	/* only re-cache if dataset needs updating */
-	if ((vd->flag & TEX_VD_STILL) || (vd->cachedframe == re->r.cfra))
+	if ((vd->flag & TEX_VD_STILL) || (vd->cachedframe == scene_frame))
 		if (vd->ok) return;
 	
 	/* clear out old cache, ready for new */
@@ -330,7 +328,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 	if (vd->flag & TEX_VD_STILL)
 		curframe = vd->still_frame;
 	else
-		curframe = re->r.cfra;
+		curframe = scene_frame;
 	
 	BLI_strncpy(path, vd->source_path, sizeof(path));
 	
@@ -339,7 +337,7 @@ static void cache_voxeldata(struct Render *re, Tex *tex)
 			load_frame_image_sequence(vd, tex);
 			return;
 		case TEX_VD_SMOKE:
-			init_frame_smoke(vd, re->r.cfra);
+			init_frame_smoke(vd, scene_frame);
 			return;
 		case TEX_VD_BLENDERVOXEL:
 			BLI_path_abs(path, G.main->name);
@@ -374,7 +372,7 @@ void make_voxeldata(struct Render *re)
 	/* XXX: should be doing only textures used in this render */
 	for (tex= re->main->tex.first; tex; tex= tex->id.next) {
 		if(tex->id.us && tex->type==TEX_VOXELDATA) {
-			cache_voxeldata(re, tex);
+			cache_voxeldata(tex, re->r.cfra);
 		}
 	}
 	
@@ -383,13 +381,13 @@ void make_voxeldata(struct Render *re)
 	
 }
 
-int voxeldatatex(struct Tex *tex, float *texvec, struct TexResult *texres)
+int voxeldatatex(struct Tex *tex, const float texvec[3], struct TexResult *texres)
 {	 
 	int retval = TEX_INT;
 	VoxelData *vd = tex->vd;	
 	float co[3], offset[3] = {0.5, 0.5, 0.5};
 
-	if ((!vd) || (vd->dataset==NULL)) {
+	if (vd->dataset==NULL) {
 		texres->tin = 0.0f;
 		return 0;
 	}

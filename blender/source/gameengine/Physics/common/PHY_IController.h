@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup phys
  */
 
-#ifndef PHY_ICONTROLLER_H
-#define PHY_ICONTROLLER_H
+#ifndef __PHY_ICONTROLLER_H__
+#define __PHY_ICONTROLLER_H__
 
 #include "PHY_DynamicTypes.h"
 
@@ -64,5 +62,5 @@ public:
 #endif
 };
 
-#endif //PHY_ICONTROLLER_H
+#endif //__PHY_ICONTROLLER_H__
 

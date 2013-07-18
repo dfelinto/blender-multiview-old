@@ -97,7 +97,7 @@ static void outliner_height(SpaceOops *soops, ListBase *lb, int *h)
 	TreeElement *te= lb->first;
 	while(te) {
 		TreeStoreElem *tselem= TREESTORE(te);
-		if((tselem->flag & TSE_CLOSED)==0) 
+		if(TSELEM_OPEN(tselem,soops))
 			outliner_height(soops, &te->subtree, h);
 		(*h) += UI_UNIT_Y;
 		te= te->next;
@@ -112,7 +112,7 @@ static void outliner_width(SpaceOops *soops, ListBase *lb, int *w)
 //		TreeStoreElem *tselem= TREESTORE(te);
 		
 		// XXX fixme... te->xend is not set yet
-		if(tselem->flag & TSE_CLOSED) {
+		if(!TSELEM_OPEN(tselem,soops)) {
 			if (te->xend > *w)
 				*w = te->xend;
 		}
@@ -127,15 +127,17 @@ static void outliner_rna_width(SpaceOops *soops, ListBase *lb, int *w, int start
 	TreeElement *te= lb->first;
 	while(te) {
 		TreeStoreElem *tselem= TREESTORE(te);
-			// XXX fixme... (currently, we're using a fixed length of 100)!
-		/*if(te->xend) {
+		// XXX fixme... (currently, we're using a fixed length of 100)!
+#if 0
+		if(te->xend) {
 			if(te->xend > *w)
 				*w = te->xend;
-		}*/
+		}
+#endif
 		if(startx+100 > *w)
 			*w = startx+100;
 
-		if((tselem->flag & TSE_CLOSED)==0)
+		if(TSELEM_OPEN(tselem,soops))
 			outliner_rna_width(soops, &te->subtree, w, startx+UI_UNIT_X);
 		te= te->next;
 	}
@@ -310,11 +312,15 @@ static void namebutton_cb(bContext *C, void *tsep, char *oldname)
 			}					
 			/* Check the library target exists */
 			if (te->idcode == ID_LI) {
-				char expanded[FILE_MAXDIR + FILE_MAXFILE];
-				BLI_strncpy(expanded, ((Library *)tselem->id)->name, FILE_MAXDIR + FILE_MAXFILE);
+				Library *lib= (Library *)tselem->id;
+				char expanded[FILE_MAX];
+
+				BKE_library_filepath_set(lib, lib->name);
+
+				BLI_strncpy(expanded, lib->name, sizeof(expanded));
 				BLI_path_abs(expanded, G.main->name);
 				if (!BLI_exists(expanded)) {
-					BKE_report(CTX_wm_reports(C), RPT_ERROR, "This path does not exist, correct this before saving");
+					BKE_reportf(CTX_wm_reports(C), RPT_ERROR, "Library path '%s' does not exist, correct this before saving", expanded);
 				}
 			}
 		}
@@ -437,15 +443,15 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 				uiBlockSetEmboss(block, UI_EMBOSSN);
 				
 				restrict_bool= group_restrict_flag(gr, OB_RESTRICT_VIEW);
-				bt = uiDefIconBut(block, BUT, 0, restrict_bool ? ICON_RESTRICT_VIEW_ON : ICON_RESTRICT_VIEW_OFF, (int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_VIEWX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, NULL, 0, 0, 0, 0, "Restrict/Allow visibility in the 3D View");
+				bt = uiDefIconBut(block, ICONTOG, 0, restrict_bool ? ICON_RESTRICT_VIEW_ON : ICON_RESTRICT_VIEW_OFF, (int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_VIEWX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, NULL, 0, 0, 0, 0, "Restrict/Allow visibility in the 3D View");
 				uiButSetFunc(bt, restrictbutton_gr_restrict_view, scene, gr);
 
 				restrict_bool= group_restrict_flag(gr, OB_RESTRICT_SELECT);
-				bt = uiDefIconBut(block, BUT, 0, restrict_bool ? ICON_RESTRICT_SELECT_ON : ICON_RESTRICT_SELECT_OFF, (int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_SELECTX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, NULL, 0, 0, 0, 0, "Restrict/Allow selection in the 3D View");
+				bt = uiDefIconBut(block, ICONTOG, 0, restrict_bool ? ICON_RESTRICT_SELECT_ON : ICON_RESTRICT_SELECT_OFF, (int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_SELECTX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, NULL, 0, 0, 0, 0, "Restrict/Allow selection in the 3D View");
 				uiButSetFunc(bt, restrictbutton_gr_restrict_select, scene, gr);
 	
 				restrict_bool= group_restrict_flag(gr, OB_RESTRICT_RENDER);
-				bt = uiDefIconBut(block, BUT, 0, restrict_bool ? ICON_RESTRICT_RENDER_ON : ICON_RESTRICT_RENDER_OFF, (int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_RENDERX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, NULL, 0, 0, 0, 0, "Restrict/Allow renderability");
+				bt = uiDefIconBut(block, ICONTOG, 0, restrict_bool ? ICON_RESTRICT_RENDER_ON : ICON_RESTRICT_RENDER_OFF, (int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_RENDERX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, NULL, 0, 0, 0, 0, "Restrict/Allow renderability");
 				uiButSetFunc(bt, restrictbutton_gr_restrict_render, scene, gr);
 
 				uiBlockSetEmboss(block, UI_EMBOSS);
@@ -479,7 +485,7 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 				
 				uiBlockSetEmboss(block, UI_EMBOSS);
 			}
-			else if(tselem->type==TSE_MODIFIER)  {
+			else if(tselem->type==TSE_MODIFIER) {
 				ModifierData *md= (ModifierData *)te->directdata;
 				ob = (Object *)tselem->id;
 				
@@ -492,7 +498,7 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 						(int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_RENDERX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, &(md->mode), 0, 0, 0, 0, "Restrict/Allow renderability");
 				uiButSetFunc(bt, restrictbutton_modifier_cb, scene, ob);
 			}
-			else if(tselem->type==TSE_POSE_CHANNEL)  {
+			else if(tselem->type==TSE_POSE_CHANNEL) {
 				bPoseChannel *pchan= (bPoseChannel *)te->directdata;
 				Bone *bone = pchan->bone;
 				
@@ -505,7 +511,7 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 						(int)ar->v2d.cur.xmax-OL_TOG_RESTRICT_SELECTX, (int)te->ys, UI_UNIT_X-1, UI_UNIT_Y-1, &(bone->flag), 0, 0, 0, 0, "Restrict/Allow selection in the 3D View");
 				uiButSetFunc(bt, restrictbutton_bone_cb, NULL, NULL);
 			}
-			else if(tselem->type==TSE_EBONE)  {
+			else if(tselem->type==TSE_EBONE) {
 				EditBone *ebone= (EditBone *)te->directdata;
 				
 				uiBlockSetEmboss(block, UI_EMBOSSN);
@@ -519,7 +525,7 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 			}
 		}
 		
-		if((tselem->flag & TSE_CLOSED)==0) outliner_draw_restrictbuts(block, scene, ar, soops, &te->subtree);
+		if(TSELEM_OPEN(tselem,soops)) outliner_draw_restrictbuts(block, scene, ar, soops, &te->subtree);
 	}
 }
 
@@ -560,7 +566,7 @@ static void outliner_draw_rnabuts(uiBlock *block, Scene *scene, ARegion *ar, Spa
 				ptr= &te->rnaptr;
 				prop= te->directdata;
 				
-				if(!(RNA_property_type(prop) == PROP_POINTER && (tselem->flag & TSE_CLOSED)==0))
+				if(!(RNA_property_type(prop) == PROP_POINTER && (TSELEM_OPEN(tselem,soops))) )
 					uiDefAutoButR(block, ptr, prop, -1, "", ICON_NONE, sizex, (int)te->ys, OL_RNA_COL_SIZEX, UI_UNIT_Y-1);
 			}
 			else if(tselem->type == TSE_RNA_ARRAY_ELEM) {
@@ -571,7 +577,7 @@ static void outliner_draw_rnabuts(uiBlock *block, Scene *scene, ARegion *ar, Spa
 			}
 		}
 		
-		if((tselem->flag & TSE_CLOSED)==0) outliner_draw_rnabuts(block, scene, ar, soops, sizex, &te->subtree);
+		if(TSELEM_OPEN(tselem,soops)) outliner_draw_rnabuts(block, scene, ar, soops, sizex, &te->subtree);
 	}
 }
 
@@ -624,7 +630,7 @@ static uiBlock *operator_search_menu(bContext *C, ARegion *ar, void *arg_kmi)
 	/* fake button, it holds space for search items */
 	uiDefBut(block, LABEL, 0, "", 10, 15, 150, uiSearchBoxhHeight(), NULL, 0, 0, 0, 0, NULL);
 	
-	but= uiDefSearchBut(block, search, 0, ICON_VIEWZOOM, 256, 10, 0, 150, UI_UNIT_Y, 0, 0, "");
+	but= uiDefSearchBut(block, search, 0, ICON_VIEWZOOM, sizeof(search), 10, 0, 150, UI_UNIT_Y, 0, 0, "");
 	uiButSetSearchFunc(but, operator_search_cb, arg_kmi, operator_call_cb, ot);
 	
 	uiBoundsBlock(block, 6);
@@ -828,7 +834,7 @@ static void outliner_draw_keymapbuts(uiBlock *block, ARegion *ar, SpaceOops *soo
 			}
 		}
 		
-		if((tselem->flag & TSE_CLOSED)==0) outliner_draw_keymapbuts(block, ar, soops, &te->subtree);
+		if(TSELEM_OPEN(tselem,soops)) outliner_draw_keymapbuts(block, ar, soops, &te->subtree);
 	}
 }
 
@@ -871,7 +877,7 @@ static void outliner_buttons(const bContext *C, uiBlock *block, ARegion *ar, Spa
 			}
 		}
 		
-		if((tselem->flag & TSE_CLOSED)==0) outliner_buttons(C, block, ar, soops, &te->subtree);
+		if(TSELEM_OPEN(tselem,soops)) outliner_buttons(C, block, ar, soops, &te->subtree);
 	}
 }
 
@@ -888,10 +894,12 @@ struct DrawIconArg {
 
 static void tselem_draw_icon_uibut(struct DrawIconArg *arg, int icon)
 {
-	/* restrict collumn clip... it has been coded by simply overdrawing, doesnt work for buttons */
-	if(arg->x >= arg->xmax) 
-		UI_icon_draw(arg->x, arg->y, icon);
-	else {
+	/* restrict column clip... it has been coded by simply overdrawing, doesnt work for buttons */
+	if(arg->x >= arg->xmax) {
+		glEnable(GL_BLEND);
+		UI_icon_draw_aspect(arg->x, arg->y, icon, 1.0f, arg->alpha);
+		glDisable(GL_BLEND);
+	} else {
 		/* XXX investigate: button placement of icons is way different than UI_icon_draw? */
 		float ufac= UI_UNIT_X/20.0f;
 		uiBut *but= uiDefIconBut(arg->block, LABEL, 0, icon, arg->x-3.0f*ufac, arg->y, UI_UNIT_X-4.0f*ufac, UI_UNIT_Y-4.0f*ufac, NULL, 0.0, 0.0, 1.0, arg->alpha, (arg->id && arg->id->lib) ? arg->id->lib->name : "");
@@ -1008,6 +1016,18 @@ static void tselem_draw_icon(uiBlock *block, int xmax, float x, float y, TreeSto
 						UI_icon_draw(x, y, ICON_MOD_SOLIDIFY); break;
 					case eModifierType_Screw:
 						UI_icon_draw(x, y, ICON_MOD_SCREW); break;
+					case eModifierType_Remesh:
+						UI_icon_draw(x, y, ICON_MOD_REMESH); break;
+					case eModifierType_WeightVGEdit:
+					case eModifierType_WeightVGMix:
+					case eModifierType_WeightVGProximity:
+						UI_icon_draw(x, y, ICON_MOD_VERTEX_WEIGHT); break;
+					case eModifierType_DynamicPaint:
+						UI_icon_draw(x, y, ICON_MOD_DYNAMICPAINT); break;
+					case eModifierType_Ocean:
+						UI_icon_draw(x, y, ICON_MOD_OCEAN); break;
+					case eModifierType_Warp:
+						UI_icon_draw(x, y, ICON_MOD_WARP); break;
 					default:
 						UI_icon_draw(x, y, ICON_DOT); break;
 				}
@@ -1182,7 +1202,7 @@ static void outliner_draw_iconrow(bContext *C, uiBlock *block, Scene *scene, Spa
 			if(active) {
 				float ufac= UI_UNIT_X/20.0f;
 
-				uiSetRoundBox(15);
+				uiSetRoundBox(UI_CNR_ALL);
 				glColor4ub(255, 255, 255, 100);
 				uiRoundBox( (float)*offsx-0.5f*ufac, (float)ys-1.0f*ufac, (float)*offsx+UI_UNIT_Y-3.0f*ufac, (float)ys+UI_UNIT_Y-3.0f*ufac, UI_UNIT_Y/2.0f-2.0f*ufac);
 				glEnable(GL_BLEND); /* roundbox disables */
@@ -1197,7 +1217,7 @@ static void outliner_draw_iconrow(bContext *C, uiBlock *block, Scene *scene, Spa
 			(*offsx) += UI_UNIT_X;
 		}
 		
-		/* this tree element always has same amount of branches, so dont draw */
+		/* this tree element always has same amount of branches, so don't draw */
 		if(tselem->type!=TSE_R_LAYER)
 			outliner_draw_iconrow(C, block, scene, soops, &te->subtree, level+1, xmax, offsx, ys);
 	}
@@ -1231,11 +1251,25 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 	if(*starty+2*UI_UNIT_Y >= ar->v2d.cur.ymin && *starty<= ar->v2d.cur.ymax) {
 		int xmax= ar->v2d.cur.xmax;
 		
-		/* icons can be ui buts, we dont want it to overlap with restrict */
+		/* icons can be ui buts, we don't want it to overlap with restrict */
 		if((soops->flag & SO_HIDE_RESTRICTCOLS)==0)
 			xmax-= OL_TOGW+UI_UNIT_X;
 		
 		glEnable(GL_BLEND);
+
+		/* start by highlighting search matches 
+		 *	we don't expand items when searching in the datablocks but we 
+		 *	still want to highlight any filter matches. 
+		 */
+		if ( (SEARCHING_OUTLINER(soops) || (soops->outlinevis==SO_DATABLOCKS && soops->search_string[0]!=0)) && 
+			 (tselem->flag & TSE_SEARCHMATCH)) 
+		{
+			char col[4];
+			UI_GetThemeColorType4ubv(TH_MATCH, SPACE_OUTLINER, col);
+			col[3]=100;
+			glColor4ubv((GLubyte *)col);
+			glRecti(startx, *starty+1, ar->v2d.cur.xmax, *starty+UI_UNIT_Y-1);
+		}
 
 		/* colors for active/selected data */
 		if(tselem->type==0) {
@@ -1301,7 +1335,7 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 		
 		/* active circle */
 		if(active) {
-			uiSetRoundBox(15);
+			uiSetRoundBox(UI_CNR_ALL);
 			uiRoundBox( (float)startx+UI_UNIT_Y-1.5f*ufac, (float)*starty+2.0f*ufac, (float)startx+2.0f*UI_UNIT_Y-4.0f*ufac, (float)*starty+UI_UNIT_Y-1.0f*ufac, UI_UNIT_Y/2.0f-2.0f*ufac);
 			glEnable(GL_BLEND);	/* roundbox disables it */
 			
@@ -1317,10 +1351,10 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 				icon_x = startx+5*ufac;
 			
 				// icons a bit higher
-			if(tselem->flag & TSE_CLOSED) 
-				UI_icon_draw((float)icon_x, (float)*starty+2*ufac, ICON_DISCLOSURE_TRI_RIGHT);
-			else
+			if(TSELEM_OPEN(tselem,soops)) 
 				UI_icon_draw((float)icon_x, (float)*starty+2*ufac, ICON_DISCLOSURE_TRI_DOWN);
+			else
+				UI_icon_draw((float)icon_x, (float)*starty+2*ufac, ICON_DISCLOSURE_TRI_RIGHT);
 		}
 		offsx+= UI_UNIT_X;
 		
@@ -1356,10 +1390,10 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 		offsx+= (int)(UI_UNIT_X + UI_GetStringWidth(te->name));
 		
 		/* closed item, we draw the icons, not when it's a scene, or master-server list though */
-		if(tselem->flag & TSE_CLOSED) {
+		if(!TSELEM_OPEN(tselem,soops)) {
 			if(te->subtree.first) {
 				if(tselem->type==0 && te->idcode==ID_SCE);
-				else if(tselem->type!=TSE_R_LAYER) { /* this tree element always has same amount of branches, so dont draw */
+				else if(tselem->type!=TSE_R_LAYER) { /* this tree element always has same amount of branches, so don't draw */
 					int tempx= startx+offsx;
 					
 					// divider
@@ -1382,7 +1416,7 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 	te->ys= (float)*starty;
 	te->xend= startx+offsx;
 		
-	if((tselem->flag & TSE_CLOSED)==0) {
+	if(TSELEM_OPEN(tselem,soops)) {
 		*starty-= UI_UNIT_Y;
 		
 		for(ten= te->subtree.first; ten; ten= ten->next)
@@ -1415,7 +1449,7 @@ static void outliner_draw_hierarchy(SpaceOops *soops, ListBase *lb, int startx, 
 			
 		*starty-= UI_UNIT_Y;
 		
-		if((tselem->flag & TSE_CLOSED)==0)
+		if(TSELEM_OPEN(tselem,soops))
 			outliner_draw_hierarchy(soops, &te->subtree, startx+UI_UNIT_X, starty);
 	}
 	
@@ -1439,12 +1473,12 @@ static void outliner_draw_struct_marks(ARegion *ar, SpaceOops *soops, ListBase *
 		tselem= TREESTORE(te);
 		
 		/* selection status */
-		if((tselem->flag & TSE_CLOSED)==0)
+		if(TSELEM_OPEN(tselem,soops))
 			if(tselem->type == TSE_RNA_STRUCT)
 				glRecti(0, *starty+1, (int)ar->v2d.cur.xmax+V2D_SCROLL_WIDTH, *starty+UI_UNIT_Y-1);
 
 		*starty-= UI_UNIT_Y;
-		if((tselem->flag & TSE_CLOSED)==0) {
+		if(TSELEM_OPEN(tselem,soops)) {
 			outliner_draw_struct_marks(ar, soops, &te->subtree, starty);
 			if(tselem->type == TSE_RNA_STRUCT)
 				fdrawline(0, (float)*starty+UI_UNIT_Y, ar->v2d.cur.xmax+V2D_SCROLL_WIDTH, (float)*starty+UI_UNIT_Y);
@@ -1465,7 +1499,7 @@ static void outliner_draw_selection(ARegion *ar, SpaceOops *soops, ListBase *lb,
 			glRecti(0, *starty+1, (int)ar->v2d.cur.xmax, *starty+UI_UNIT_Y-1);
 		}
 		*starty-= UI_UNIT_Y;
-		if((tselem->flag & TSE_CLOSED)==0) outliner_draw_selection(ar, soops, &te->subtree, starty);
+		if(TSELEM_OPEN(tselem,soops)) outliner_draw_selection(ar, soops, &te->subtree, starty);
 	}
 }
 
@@ -1487,8 +1521,8 @@ static void outliner_draw_tree(bContext *C, uiBlock *block, Scene *scene, ARegio
 	}
 	
 	/* always draw selection fill before hierarchy */
-	UI_GetThemeColor3fv(TH_BACK, col);
-	glColor3f(col[0]+0.06f, col[1]+0.08f, col[2]+0.10f);
+	UI_GetThemeColor3fv(TH_SELECT_HIGHLIGHT, col);
+	glColor3fv(col);
 	starty= (int)ar->v2d.tot.ymax-UI_UNIT_Y-OL_Y_OFFSET;
 	outliner_draw_selection(ar, soops, &soops->tree, &starty);
 	
@@ -1623,7 +1657,7 @@ void draw_outliner(const bContext *C)
 
 	/* draw outliner stuff (background, hierachy lines and names) */
 	outliner_back(ar);
-	block= uiBeginBlock(C, ar, "outliner buttons", UI_EMBOSS);
+	block= uiBeginBlock(C, ar, __func__, UI_EMBOSS);
 	outliner_draw_tree((bContext *)C, block, scene, ar, soops);
 	
 	if(ELEM(soops->outlinevis, SO_DATABLOCKS, SO_USERDEF)) {

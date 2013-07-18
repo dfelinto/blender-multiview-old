@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,14 +32,13 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * This file was formerly known as: GEN_StdString.h.
  * @date	April, 25, 2001
  */
 
-#ifndef _STR_String_H_
-#define _STR_String_H_
+#ifndef __STR_STRING_H__
+#define __STR_STRING_H__
 
 #ifndef STR_NO_ASSERTD
 #undef  assertd
@@ -52,8 +50,6 @@
 
 #include <cstring>
 #include <cstdlib>
-
-using namespace std;
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #include "MEM_guardedalloc.h"
@@ -95,11 +91,13 @@ public:
 	STR_String&			Format(const char *fmt, ...);				// Set formatted text to string
 	STR_String&			FormatAdd(const char *fmt, ...);			// Add formatted text to string
 	inline void			Clear()										{ Len = pData[0] = 0; }
-	inline const STR_String	& Reverse()									
-        { 
-            for (int i1=0, i2=Len-1; i1<i2; i1++, i2--) 
-                swap(pData[i1], pData[i2]); return *this; 
-        }
+	inline const STR_String	& Reverse()
+	{
+		for (int i1 = 0, i2 = Len - 1; i1 < i2; i1++, i2--) {
+			std::swap(pData[i1], pData[i2]);
+		}
+		return *this;
+	}
 
 	// Properties
 	bool				IsUpper() const;
@@ -135,7 +133,7 @@ public:
 	int				FindOneOf(const char *set, int pos = 0) const;
 	int				RFindOneOf(const char *set, int pos = 0) const;
 
-	vector<STR_String>	Explode(char c) const;
+	std::vector<STR_String> Explode(char c) const;
 
 	// Formatting
 	STR_String&			Upper();
@@ -219,5 +217,5 @@ inline  STR_String operator+(rcSTR_String    lhs, const char *rhs)	{ return STR_
 inline  STR_String operator+(const char  *lhs, rcSTR_String   rhs)	{ return STR_String(lhs, strlen(lhs), rhs.ReadPtr(), rhs.Length()); }
 
 
-#endif //_STR_String_H_
+#endif //__STR_STRING_H__
 

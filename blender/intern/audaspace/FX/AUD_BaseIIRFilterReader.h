@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_BASEIIRFILTERREADER
-#define AUD_BASEIIRFILTERREADER
+#ifndef __AUD_BASEIIRFILTERREADER_H__
+#define __AUD_BASEIIRFILTERREADER_H__
 
 #include "AUD_EffectReader.h"
 #include "AUD_Buffer.h"
@@ -134,4 +132,4 @@ public:
 	virtual void sampleRateChanged(AUD_SampleRate rate);
 };
 
-#endif //AUD_BASEIIRFILTERREADER
+#endif //__AUD_BASEIIRFILTERREADER_H__

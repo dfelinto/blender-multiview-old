@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,6 +22,13 @@
 
 /** \file blender/python/intern/bpy_library.c
  *  \ingroup pythonintern
+ *
+ * This file exposed blend file library appending/linking to python, typically
+ * this would be done via RNA api but in this case a hand written python api
+ * allows us to use pythons context manager (__enter__ and __exit__).
+ *
+ * Everything here is exposed via bpy.data.libraries.load(...) which returns
+ * a context manager.
  */
 
 /* nifty feature. swap out strings for RNA data */
@@ -57,8 +62,8 @@
 #endif
 
 typedef struct {
-	PyObject_HEAD /* required python macro   */
-	/* collection iterator spesific parts */
+	PyObject_HEAD /* required python macro */
+	/* collection iterator specific parts */
 	char relpath[FILE_MAX];
 	char abspath[FILE_MAX]; /* absolute path */
 	BlendHandle *blo_handle;
@@ -71,10 +76,10 @@ static PyObject *bpy_lib_enter(BPy_Library *self, PyObject *args);
 static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *args);
 static PyObject *bpy_lib_dir(BPy_Library *self);
 
-static PyMethodDef bpy_lib_methods[]= {
+static PyMethodDef bpy_lib_methods[] = {
 	{"__enter__", (PyCFunction)bpy_lib_enter, METH_NOARGS},
-	{"__exit__", (PyCFunction)bpy_lib_exit, METH_VARARGS},
-	{"__dir__", (PyCFunction)bpy_lib_dir, METH_NOARGS},
+	{"__exit__",  (PyCFunction)bpy_lib_exit,  METH_VARARGS},
+	{"__dir__",   (PyCFunction)bpy_lib_dir,   METH_NOARGS},
 	{NULL}           /* sentinel */
 };
 
@@ -85,7 +90,7 @@ static void bpy_lib_dealloc(BPy_Library *self)
 }
 
 
-static PyTypeObject bpy_lib_Type= {
+static PyTypeObject bpy_lib_Type = {
 	PyVarObject_HEAD_INIT(NULL, 0)
 	"bpy_lib",		/* tp_name */
 	sizeof(BPy_Library),			/* tp_basicsize */
@@ -179,25 +184,25 @@ PyDoc_STRVAR(bpy_lib_load_doc,
 );
 static PyObject *bpy_lib_load(PyObject *UNUSED(self), PyObject *args, PyObject *kwds)
 {
-	static const char *kwlist[]= {"filepath", "link", "relative", NULL};
+	static const char *kwlist[] = {"filepath", "link", "relative", NULL};
 	BPy_Library *ret;
-	const char* filename= NULL;
-	int is_rel= 0, is_link= 0;
+	const char *filename = NULL;
+	int is_rel = 0, is_link = 0;
 
-	if(!PyArg_ParseTupleAndKeywords(args, kwds, "s|ii:load", (char **)kwlist, &filename, &is_link, &is_rel))
+	if (!PyArg_ParseTupleAndKeywords(args, kwds, "s|ii:load", (char **)kwlist, &filename, &is_link, &is_rel))
 		return NULL;
 
-	ret= PyObject_New(BPy_Library, &bpy_lib_Type);
+	ret = PyObject_New(BPy_Library, &bpy_lib_Type);
 
 	BLI_strncpy(ret->relpath, filename, sizeof(ret->relpath));
 	BLI_strncpy(ret->abspath, filename, sizeof(ret->abspath));
 	BLI_path_abs(ret->abspath, G.main->name);
 
-	ret->blo_handle= NULL;
-	ret->flag=	(is_link ? FILE_LINK : 0) |
-				(is_rel ? FILE_RELPATH : 0);
+	ret->blo_handle = NULL;
+	ret->flag = ((is_link ? FILE_LINK : 0) |
+	             (is_rel ? FILE_RELPATH : 0));
 
-	ret->dict= PyDict_New();
+	ret->dict = PyDict_New();
 
 	return (PyObject *)ret;
 }
@@ -208,19 +213,19 @@ static PyObject *_bpy_names(BPy_Library *self, int blocktype)
 	LinkNode *l, *names;
 	int totnames;
 
-	names= BLO_blendhandle_get_datablock_names(self->blo_handle, blocktype, &totnames);
+	names = BLO_blendhandle_get_datablock_names(self->blo_handle, blocktype, &totnames);
 
-	if(names) {
-		int counter= 0;
-		list= PyList_New(totnames);
-		for(l= names; l; l= l->next) {
+	if (names) {
+		int counter = 0;
+		list = PyList_New(totnames);
+		for (l = names; l; l = l->next) {
 			PyList_SET_ITEM(list, counter, PyUnicode_FromString((char *)l->link));
 			counter++;
 		}
 		BLI_linklist_free(names, free);	/* free linklist *and* each node's data */
 	}
 	else {
-		list= PyList_New(0);
+		list = PyList_New(0);
 	}
 
 	return list;
@@ -230,15 +235,15 @@ static PyObject *bpy_lib_enter(BPy_Library *self, PyObject *UNUSED(args))
 {
 	PyObject *ret;
 	BPy_Library *self_from;
-	PyObject *from_dict= PyDict_New();
+	PyObject *from_dict = PyDict_New();
 	ReportList reports;
 
 	BKE_reports_init(&reports, RPT_STORE);
 
-	self->blo_handle= BLO_blendhandle_from_file(self->abspath, &reports);
+	self->blo_handle = BLO_blendhandle_from_file(self->abspath, &reports);
 
-	if(self->blo_handle == NULL) {
-		if(BPy_reports_to_error(&reports, PyExc_IOError, TRUE) != -1) {
+	if (self->blo_handle == NULL) {
+		if (BPy_reports_to_error(&reports, PyExc_IOError, TRUE) != -1) {
 			PyErr_Format(PyExc_IOError,
 			             "load: %s failed to open blend file",
 			             self->abspath);
@@ -246,11 +251,11 @@ static PyObject *bpy_lib_enter(BPy_Library *self, PyObject *UNUSED(args))
 		return NULL;
 	}
 	else {
-		int i= 0, code;
-		while((code= BKE_idcode_iter_step(&i))) {
-			if(BKE_idcode_is_linkable(code)) {
-				const char *name_plural= BKE_idcode_to_name_plural(code);
-				PyObject *str= PyUnicode_FromString(name_plural);
+		int i = 0, code;
+		while ((code = BKE_idcode_iter_step(&i))) {
+			if (BKE_idcode_is_linkable(code)) {
+				const char *name_plural = BKE_idcode_to_name_plural(code);
+				PyObject *str = PyUnicode_FromString(name_plural);
 				PyDict_SetItem(self->dict, str, PyList_New(0));
 				PyDict_SetItem(from_dict, str, _bpy_names(self, code));
 				Py_DECREF(str);
@@ -259,16 +264,16 @@ static PyObject *bpy_lib_enter(BPy_Library *self, PyObject *UNUSED(args))
 	}
 
 	/* create a dummy */
-	self_from= PyObject_New(BPy_Library, &bpy_lib_Type);
-	BLI_strncpy(self_from->relpath, self->relpath, sizeof(BPy_Library));
-	BLI_strncpy(self_from->abspath, self->abspath, sizeof(BPy_Library));
+	self_from = PyObject_New(BPy_Library, &bpy_lib_Type);
+	BLI_strncpy(self_from->relpath, self->relpath, sizeof(self_from->relpath));
+	BLI_strncpy(self_from->abspath, self->abspath, sizeof(self_from->abspath));
 
-	self_from->blo_handle= NULL;
-	self_from->flag= 0;
-	self_from->dict= from_dict; /* owns the dict */
+	self_from->blo_handle = NULL;
+	self_from->flag = 0;
+	self_from->dict = from_dict; /* owns the dict */
 
 	/* return pair */
-	ret= PyTuple_New(2);
+	ret = PyTuple_New(2);
 
 	PyTuple_SET_ITEM(ret, 0, (PyObject *)self_from);
 
@@ -285,7 +290,7 @@ static void bpy_lib_exit_warn_idname(BPy_Library *self, const char *name_plural,
 	PyObject *exc, *val, *tb;
 	PyErr_Fetch(&exc, &val, &tb);
 	if (PyErr_WarnFormat(PyExc_UserWarning, 1,
-						 "load: '%s' does not contain %s[\"%s\"]",
+	                     "load: '%s' does not contain %s[\"%s\"]",
 	                     self->abspath, name_plural, idname)) {
 		/* Spurious errors can appear at shutdown */
 		if (PyErr_ExceptionMatches(PyExc_Warning)) {
@@ -300,7 +305,7 @@ static void bpy_lib_exit_warn_type(BPy_Library *self, PyObject *item)
 	PyObject *exc, *val, *tb;
 	PyErr_Fetch(&exc, &val, &tb);
 	if (PyErr_WarnFormat(PyExc_UserWarning, 1,
-						 "load: '%s' expected a string type, not a %.200s",
+	                     "load: '%s' expected a string type, not a %.200s",
 	                     self->abspath, Py_TYPE(item)->tp_name)) {
 		/* Spurious errors can appear at shutdown */
 		if (PyErr_ExceptionMatches(PyExc_Warning)) {
@@ -312,42 +317,43 @@ static void bpy_lib_exit_warn_type(BPy_Library *self, PyObject *item)
 
 static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 {
-	Main *mainl= NULL;
-	int err= 0;
+	Main *bmain = CTX_data_main(BPy_GetContext());
+	Main *mainl = NULL;
+	int err = 0;
 
 	flag_all_listbases_ids(LIB_PRE_EXISTING, 1);
 
 	/* here appending/linking starts */
-	mainl= BLO_library_append_begin(CTX_data_main(BPy_GetContext()), &(self->blo_handle), self->relpath);
+	mainl = BLO_library_append_begin(bmain, &(self->blo_handle), self->relpath);
 
 	{
-		int i= 0, code;
-		while((code= BKE_idcode_iter_step(&i))) {
-			if(BKE_idcode_is_linkable(code)) {
-				const char *name_plural= BKE_idcode_to_name_plural(code);
-				PyObject *ls= PyDict_GetItemString(self->dict, name_plural);
+		int i = 0, code;
+		while ((code = BKE_idcode_iter_step(&i))) {
+			if (BKE_idcode_is_linkable(code)) {
+				const char *name_plural = BKE_idcode_to_name_plural(code);
+				PyObject *ls = PyDict_GetItemString(self->dict, name_plural);
 				// printf("lib: %s\n", name_plural);
-				if(ls && PyList_Check(ls)) {
+				if (ls && PyList_Check(ls)) {
 					/* loop */
-					Py_ssize_t size= PyList_GET_SIZE(ls);
+					Py_ssize_t size = PyList_GET_SIZE(ls);
 					Py_ssize_t i;
 					PyObject *item;
 					const char *item_str;
 
-					for(i= 0; i < size; i++) {
-						item= PyList_GET_ITEM(ls, i);
-						item_str= _PyUnicode_AsString(item);
+					for (i = 0; i < size; i++) {
+						item = PyList_GET_ITEM(ls, i);
+						item_str = _PyUnicode_AsString(item);
 
 						// printf("  %s\n", item_str);
 
-						if(item_str) {
-							ID *id= BLO_library_append_named_part(mainl, &(self->blo_handle), item_str, code);
-							if(id) {
+						if (item_str) {
+							ID *id = BLO_library_append_named_part(mainl, &(self->blo_handle), item_str, code);
+							if (id) {
 #ifdef USE_RNA_DATABLOCKS
 								PointerRNA id_ptr;
 								RNA_id_pointer_create(id, &id_ptr);
 								Py_DECREF(item);
-								item= pyrna_struct_CreatePyObject(&id_ptr);
+								item = pyrna_struct_CreatePyObject(&id_ptr);
 #endif
 							}
 							else {
@@ -355,7 +361,7 @@ static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 								/* just warn for now */
 								/* err = -1; */
 #ifdef USE_RNA_DATABLOCKS
-								item= Py_None;
+								item = Py_None;
 								Py_INCREF(item);
 #endif
 							}
@@ -368,7 +374,7 @@ static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 							PyErr_Clear();
 
 #ifdef USE_RNA_DATABLOCKS
-							item= Py_None;
+							item = Py_None;
 							Py_INCREF(item);
 #endif
 						}
@@ -382,27 +388,26 @@ static PyObject *bpy_lib_exit(BPy_Library *self, PyObject *UNUSED(args))
 		}
 	}
 
-	if(err == -1) {
+	if (err == -1) {
 		/* exception raised above, XXX, this leaks some memory */
 		BLO_blendhandle_close(self->blo_handle);
-		self->blo_handle= NULL;
+		self->blo_handle = NULL;
 		flag_all_listbases_ids(LIB_PRE_EXISTING, 0);
 		return NULL;
 	}
 	else {
+		Library *lib = mainl->curlib; /* newly added lib, assign before append end */
 		BLO_library_append_end(NULL, mainl, &(self->blo_handle), 0, self->flag);
 		BLO_blendhandle_close(self->blo_handle);
-		self->blo_handle= NULL;
+		self->blo_handle = NULL;
 
 		{	/* copied from wm_operator.c */
 			/* mark all library linked objects to be updated */
 			recalc_all_library_objects(G.main);
 
 			/* append, rather than linking */
-			if((self->flag & FILE_LINK)==0) {
-				Library *lib= BLI_findstring(&G.main->library, self->abspath, offsetof(Library, name));
-				if(lib)	all_local(lib, 1);
-				else	BLI_assert(!"cant find name of just added library!");
+			if ((self->flag & FILE_LINK) == 0) {
+				BKE_library_make_local(bmain, lib, 1);
 			}
 		}
 
@@ -420,13 +425,16 @@ static PyObject *bpy_lib_dir(BPy_Library *self)
 
 int bpy_lib_init(PyObject *mod_par)
 {
-	static PyMethodDef load_meth= {"load", (PyCFunction)bpy_lib_load, METH_STATIC|METH_VARARGS|METH_KEYWORDS, bpy_lib_load_doc};
+	static PyMethodDef load_meth = {"load", (PyCFunction)bpy_lib_load,
+	                               METH_STATIC|METH_VARARGS|METH_KEYWORDS,
+	                               bpy_lib_load_doc};
+
 	PyModule_AddObject(mod_par, "_library_load", PyCFunction_New(&load_meth, NULL));
 
-	/* some compilers dont like accessing this directly, delay assignment */
-	bpy_lib_Type.tp_getattro= PyObject_GenericGetAttr;
+	/* some compilers don't like accessing this directly, delay assignment */
+	bpy_lib_Type.tp_getattro = PyObject_GenericGetAttr;
 
-	if(PyType_Ready(&bpy_lib_Type) < 0)
+	if (PyType_Ready(&bpy_lib_Type) < 0)
 		return -1;
 
 	return 0;

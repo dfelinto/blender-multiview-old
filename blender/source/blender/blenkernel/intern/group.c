@@ -1,5 +1,4 @@
 /* 
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -109,23 +108,28 @@ void unlink_group(Group *group)
 	}
 	
 	for(ob= bmain->object.first; ob; ob= ob->id.next) {
-		bActionStrip *strip;
 		
 		if(ob->dup_group==group) {
 			ob->dup_group= NULL;
-		
-			/* duplicator strips use a group object, we remove it */
-			for(strip= ob->nlastrips.first; strip; strip= strip->next) {
-				if(strip->object)
-					strip->object= NULL;
+#if 0		/* XXX OLD ANIMSYS, NLASTRIPS ARE NO LONGER USED */
+			{
+				bActionStrip *strip;
+				/* duplicator strips use a group object, we remove it */
+				for(strip= ob->nlastrips.first; strip; strip= strip->next) {
+					if(strip->object)
+						strip->object= NULL;
+				}
 			}
+#endif
 		}
 		
-		for(psys=ob->particlesystem.first; psys; psys=psys->next){
+		for(psys=ob->particlesystem.first; psys; psys=psys->next) {
 			if(psys->part->dup_group==group)
 				psys->part->dup_group= NULL;
+#if 0		/* not used anymore, only keps for readfile.c, no need to account for this */
 			if(psys->part->eff_group==group)
 				psys->part->eff_group= NULL;
+#endif
 		}
 	}
 	
@@ -274,12 +278,14 @@ void group_tag_recalc(Group *group)
 	}
 }
 
-int group_is_animated(Object *parent, Group *group)
+int group_is_animated(Object *UNUSED(parent), Group *group)
 {
 	GroupObject *go;
 
-	if(give_timeoffset(parent) != 0.0f || parent->nlastrips.first)
+#if 0 /* XXX OLD ANIMSYS, NLASTRIPS ARE NO LONGER USED */
+	if(parent->nlastrips.first)
 		return 1;
+#endif
 
 	for(go= group->gobject.first; go; go= go->next)
 		if(go->ob && go->ob->proxy)
@@ -331,25 +337,24 @@ static void group_replaces_nla(Object *parent, Object *target, char mode)
 #endif
 
 /* puts all group members in local timing system, after this call
-you can draw everything, leaves tags in objects to signal it needs further updating */
+ * you can draw everything, leaves tags in objects to signal it needs further updating */
 
 /* note: does not work for derivedmesh and render... it recreates all again in convertblender.c */
 void group_handle_recalc_and_update(Scene *scene, Object *UNUSED(parent), Group *group)
 {
 	GroupObject *go;
 	
-#if 0 /* warning, isnt clearing the recalc flag on the object which causes it to run all the time,
+#if 0 /* warning, isn't clearing the recalc flag on the object which causes it to run all the time,
 	   * not just on frame change.
-	   * This isnt working because the animation data is only re-evalyated on frame change so commenting for now
+	   * This isn't working because the animation data is only re-evalyated on frame change so commenting for now
 	   * but when its enabled at some point it will need to be changed so as not to update so much - campbell */
 
 	/* if animated group... */
-	if(give_timeoffset(parent) != 0.0f || parent->nlastrips.first) {
+	if(parent->nlastrips.first) {
 		int cfrao;
 		
 		/* switch to local time */
 		cfrao= scene->r.cfra;
-		scene->r.cfra -= (int)floor(give_timeoffset(parent) + 0.5f);
 		
 		/* we need a DAG per group... */
 		for(go= group->gobject.first; go; go= go->next) {
@@ -382,6 +387,7 @@ void group_handle_recalc_and_update(Scene *scene, Object *UNUSED(parent), Group 
 	}
 }
 
+#if 0
 Object *group_get_member_with_action(Group *group, bAction *act)
 {
 	GroupObject *go;
@@ -433,3 +439,4 @@ void group_relink_nla_objects(Object *ob)
 	}
 }
 
+#endif

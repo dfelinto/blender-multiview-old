@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +31,6 @@
 
 
 #include <stddef.h>
-#include "BLI_storage.h" /* _LARGEFILE_SOURCE */
 
 #include "MEM_guardedalloc.h"
 
@@ -88,14 +85,14 @@ void initElbeemMesh(struct Scene *scene, struct Object *ob,
 	//dm = mesh_create_derived_no_deform(ob,NULL);
 
 	mvert = dm->getVertArray(dm);
-	mface = dm->getFaceArray(dm);
+	mface = dm->getTessFaceArray(dm);
 	totvert = dm->getNumVerts(dm);
-	totface = dm->getNumFaces(dm);
+	totface = dm->getNumTessFaces(dm);
 
 	*numVertices = totvert;
 	verts = MEM_callocN( totvert*3*sizeof(float), "elbeemmesh_vertices");
 	for(i=0; i<totvert; i++) {
-		VECCOPY( &verts[i*3], mvert[i].co);
+		copy_v3_v3(&verts[i*3], mvert[i].co);
 		if(useGlobalCoords) { mul_m4_v3(ob->obmat, &verts[i*3]); }
 	}
 	*vertices = verts;

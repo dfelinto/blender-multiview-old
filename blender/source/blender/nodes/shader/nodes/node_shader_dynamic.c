@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -63,7 +61,8 @@ static void node_dynamic_exec_cb(void *data, bNode *node, bNodeStack **in, bNode
 static void node_dynamic_free_storage_cb(bNode *node);
 
 #ifdef WITH_PYTHON
-static PyObject *init_dynamicdict(void) {
+static PyObject *init_dynamicdict(void)
+{
 	PyObject *newscriptdict, *item;
 	PyGILState_STATE gilstate = PyGILState_Ensure();
 
@@ -331,7 +330,8 @@ static void node_dynamic_reset_loaded(bNode *node)
 	node->typeinfo = node_dynamic_find_typeinfo(&node_all_shaders, NULL);
 }
 
-int nodeDynamicUnlinkText(ID *txtid) {
+int nodeDynamicUnlinkText(ID *txtid)
+{
 	Material *ma;
 	bNode *nd;
 
@@ -654,8 +654,9 @@ static void node_dynamic_setup(bNode *node)
  *  0: for loaded empty nodes
  *  NODE_DYNAMIC_MENU: for the default Dynamic node type
  *  > NODE_DYNAMIC_MENU: for the new types defined by scripts
-*/
-static void node_dynamic_init_cb(bNode *node) {
+ */
+static void node_dynamic_init_cb(bNode *node)
+{
 	int type = node->custom2;
 
 	node->custom2 = 0;
@@ -702,7 +703,8 @@ static void node_dynamic_copy_cb(bNode *orig_node, bNode *new_node)
 
 /* node_dynamic_exec_cb: the execution callback called per pixel
  * during rendering. */
-static void node_dynamic_exec_cb(void *data, bNode *node, bNodeStack **in, bNodeStack **out) {
+static void node_dynamic_exec_cb(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
+{
 #ifndef WITH_PYTHON
 	return;
 #else
@@ -716,8 +718,10 @@ static void node_dynamic_exec_cb(void *data, bNode *node, bNodeStack **in, bNode
 	if (!node->id)
 		return;
 
-	/*if (G.scene->r.threads > 1)
-		return;*/
+#if 0
+	if (G.scene->r.threads > 1)
+		return;
+#endif
 
 	if (BTST2(node->custom1, NODE_DYNAMIC_NEW, NODE_DYNAMIC_REPARSE)) {
 		node_dynamic_setup(node);
@@ -763,30 +767,30 @@ static void node_dynamic_exec_cb(void *data, bNode *node, bNodeStack **in, bNode
 #endif
 }
 
-void register_node_type_sh_dynamic(ListBase *lb)
+void register_node_type_sh_dynamic(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 	
-	node_type_base(&ntype, NODE_DYNAMIC, "Dynamic", NODE_CLASS_OP_DYNAMIC, NODE_OPTIONS, NULL, NULL);
+	node_type_base(ttype, &ntype, NODE_DYNAMIC, "Dynamic", NODE_CLASS_OP_DYNAMIC, NODE_OPTIONS, NULL, NULL);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING);
 	node_type_size(&ntype, 150, 60, 300);
 	node_type_init(&ntype, node_dynamic_init_cb);
 	node_type_storage(&ntype, "NodeScriptDict", node_dynamic_free_storage_cb, node_dynamic_copy_cb);
 	node_type_exec(&ntype, node_dynamic_exec_cb);
 	
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
 
 #else
 
-void register_node_type_sh_dynamic(ListBase *lb)
+void register_node_type_sh_dynamic(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 	
-	node_type_base(&ntype, NODE_DYNAMIC, "Dynamic", NODE_CLASS_OP_DYNAMIC, 0);
+	node_type_base(ttype, &ntype, NODE_DYNAMIC, "Dynamic", NODE_CLASS_OP_DYNAMIC, 0);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING);
 	
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
 
 #endif
-
-

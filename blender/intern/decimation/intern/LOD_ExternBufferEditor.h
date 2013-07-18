@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,12 +32,11 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  */
 
-#ifndef NAN_INCLUDED_LOD_ExternBufferEditor_h
-#define NAN_INCLUDED_LOD_ExternBufferEditor_h
+#ifndef __LOD_EXTERNBUFFEREDITOR_H__
+#define __LOD_EXTERNBUFFEREDITOR_H__
 
 #include "LOD_MeshPrimitives.h"
 #include <vector>

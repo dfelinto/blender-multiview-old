@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,8 +42,13 @@
 #include "GHOST_EventButton.h"
 #include "GHOST_EventWheel.h"
 #include "GHOST_DisplayManagerX11.h"
+#include "GHOST_EventDragnDrop.h"
 #ifdef WITH_INPUT_NDOF
 #include "GHOST_NDOFManagerX11.h"
+#endif
+
+#ifdef WITH_XDND
+#include "GHOST_DropTargetX11.h"
 #endif
 
 #include "GHOST_Debug.h"
@@ -55,16 +59,6 @@
 
 #ifdef WITH_XF86KEYSYM
 #include <X11/XF86keysym.h>
-#endif
-
-#ifdef __sgi
-
-#if defined(_SGI_EXTRA_PREDEFINES) && !defined(NO_FAST_ATOMS)
-#include <X11/SGIFastAtom.h>
-#else
-#define XSGIFastInternAtom(dpy,string,fast_name,how) XInternAtom(dpy,string,how)
-#endif
-
 #endif
 
 // For timing
@@ -98,16 +92,14 @@ GHOST_SystemX11(
 		std::cerr << "Unable to open a display" << std::endl;
 		abort(); //was return before, but this would just mean it will crash later
 	}
-	
-#ifdef __sgi
-	m_delete_window_atom 
-	  = XSGIFastInternAtom(m_display,
-			       "WM_DELETE_WINDOW", 
-			       SGI_XA_WM_DELETE_WINDOW, False);
-#else
+
+	/* Open a connection to the X input manager */
+#if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
+	m_xim = XOpenIM(m_display, NULL, (char *)GHOST_X11_RES_NAME, (char *)GHOST_X11_RES_CLASS);
+#endif
+
 	m_delete_window_atom 
 	  = XInternAtom(m_display, "WM_DELETE_WINDOW", True);
-#endif
 
 	m_wm_protocols= XInternAtom(m_display, "WM_PROTOCOLS", False);
 	m_wm_take_focus= XInternAtom(m_display, "WM_TAKE_FOCUS", False);
@@ -158,6 +150,10 @@ GHOST_SystemX11(
 GHOST_SystemX11::
 ~GHOST_SystemX11()
 {
+#if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
+	XCloseIM(m_xim);
+#endif
+
 	XCloseDisplay(m_display);
 }
 
@@ -305,7 +301,8 @@ findGhostWindow(
 	
 }
 
-static void SleepTillEvent(Display *display, GHOST_TInt64 maxSleep) {
+static void SleepTillEvent(Display *display, GHOST_TInt64 maxSleep)
+{
 	int fd = ConnectionNumber(display);
 	fd_set fds;
 	
@@ -313,14 +310,15 @@ static void SleepTillEvent(Display *display, GHOST_TInt64 maxSleep) {
 	FD_SET(fd, &fds);
 
 	if (maxSleep == -1) {
-	    select(fd + 1, &fds, NULL, NULL, NULL);
-	} else {
+		select(fd + 1, &fds, NULL, NULL, NULL);
+	}
+	else {
 		timeval tv;
 
 		tv.tv_sec = maxSleep/1000;
 		tv.tv_usec = (maxSleep - tv.tv_sec*1000)*1000;
 	
-	    select(fd + 1, &fds, NULL, NULL, &tv);
+		select(fd + 1, &fds, NULL, NULL, &tv);
 	}
 }
 
@@ -429,6 +427,18 @@ processEvents(
 	return anyProcessed;
 }
 
+
+#ifdef WITH_X11_XINPUT
+/* set currently using tablet mode (stylus or eraser) depending on device ID */
+static void setTabletMode(GHOST_WindowX11 * window, XID deviceid)
+{
+	if(deviceid == window->GetXTablet().StylusID)
+		window->GetXTablet().CommonData.Active= GHOST_kTabletModeStylus;
+	else if(deviceid == window->GetXTablet().EraserID)
+		window->GetXTablet().CommonData.Active= GHOST_kTabletModeEraser;
+}
+#endif /* WITH_X11_XINPUT */
+
 	void
 GHOST_SystemX11::processEvent(XEvent *xe)
 {
@@ -517,9 +527,9 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 		case KeyRelease:
 		{
 			XKeyEvent *xke = &(xe->xkey);
-		
 			KeySym key_sym = XLookupKeysym(xke,0);
 			char ascii;
+			char utf8_buf[6]; /* 6 is enough for a utf8 char */
 			
 			GHOST_TKey gkey = convertXKey(key_sym);
 			GHOST_TEventType type = (xke->type == KeyPress) ? 
@@ -529,13 +539,55 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 				ascii = '\0';
 			}
 			
+#if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
+			/* getting unicode on key-up events gives XLookupNone status */
+			if (xke->type == KeyPress) {
+				Status status;
+				int len;
+
+				/* use utf8 because its not locale depentant, from xorg docs */
+				if (!(len= Xutf8LookupString(window->getX11_XIC(), xke, utf8_buf, sizeof(utf8_buf), &key_sym, &status))) {
+					utf8_buf[0]= '\0';
+				}
+
+				if ((status == XLookupChars || status == XLookupBoth)) {
+					if ((unsigned char)utf8_buf[0] >= 32) { /* not an ascii control character */
+						/* do nothing for now, this is valid utf8 */
+					}
+					else {
+						utf8_buf[0]= '\0';
+					}
+				}
+				else if (status == XLookupKeySym) {
+					/* this key doesn't have a text representation, it is a command
+					   key of some sort */;
+				}
+				else {
+					printf("Bad keycode lookup. Keysym 0x%x Status: %s\n",
+							  (unsigned int) key_sym,
+							  (status == XBufferOverflow ? "BufferOverflow" :
+							   status == XLookupNone ? "XLookupNone" :
+							   status == XLookupKeySym ? "XLookupKeySym" :
+							   "Unknown status"));
+
+					printf("'%.*s' %p %p\n", len, utf8_buf, window->getX11_XIC(), m_xim);
+				}
+			}
+			else {
+				utf8_buf[0]= '\0';
+			}
+#else
+			utf8_buf[0]= '\0';
+#endif
+
 			g_event = new
 			GHOST_EventKey(
 				getMilliSeconds(),
 				type,
 				window,
 				gkey,
-				ascii
+				ascii,
+			    utf8_buf
 			);
 			
 		break;
@@ -630,7 +682,6 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 		{
 			XClientMessageEvent & xcme = xe->xclient;
 
-#ifndef __sgi			
 			if (((Atom)xcme.data.l[0]) == m_delete_window_atom) {
 				g_event = new 
 				GHOST_Event(	
@@ -638,10 +689,8 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 					GHOST_kEventWindowClose,
 					window
 				);
-			} else 
-#endif
-
-			if (((Atom)xcme.data.l[0]) == m_wm_take_focus) {
+			}
+			else if (((Atom)xcme.data.l[0]) == m_wm_take_focus) {
 				XWindowAttributes attr;
 				Window fwin;
 				int revert_to;
@@ -665,8 +714,16 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 					}
 				}
 			} else {
+#ifdef WITH_XDND
+				/* try to handle drag event (if there's no such events, GHOST_HandleClientMessage will return zero) */
+				if (window->getDropTarget()->GHOST_HandleClientMessage(xe) == false) {
+					/* Unknown client message, ignore */
+				}
+#else
 				/* Unknown client message, ignore */
+#endif
 			}
+
 			break;
 		}
 		
@@ -735,10 +792,11 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 		case SelectionRequest:
 		{
 			XEvent nxe;
-			Atom target, string, compound_text, c_string;
+			Atom target, utf8_string, string, compound_text, c_string;
 			XSelectionRequestEvent *xse = &xe->xselectionrequest;
 			
 			target = XInternAtom(m_display, "TARGETS", False);
+			utf8_string = XInternAtom(m_display, "UTF8_STRING", False);
 			string = XInternAtom(m_display, "STRING", False);
 			compound_text = XInternAtom(m_display, "COMPOUND_TEXT", False);
 			c_string = XInternAtom(m_display, "C_STRING", False);
@@ -757,19 +815,23 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 			nxe.xselection.time = xse->time;
 			
 			/*Check to see if the requestor is asking for String*/
-			if(xse->target == string || xse->target == compound_text || xse->target == c_string) {
+			if(xse->target == utf8_string || xse->target == string || xse->target == compound_text || xse->target == c_string) {
 				if (xse->selection == XInternAtom(m_display, "PRIMARY", False)) {
-					XChangeProperty(m_display, xse->requestor, xse->property, xse->target, 8, PropModeReplace, (unsigned char*)txt_select_buffer, strlen(txt_select_buffer));
+					XChangeProperty(m_display, xse->requestor, xse->property, xse->target, 8, PropModeReplace,
+					                (unsigned char*)txt_select_buffer, strlen(txt_select_buffer));
 				} else if (xse->selection == XInternAtom(m_display, "CLIPBOARD", False)) {
-					XChangeProperty(m_display, xse->requestor, xse->property, xse->target, 8, PropModeReplace, (unsigned char*)txt_cut_buffer, strlen(txt_cut_buffer));
+					XChangeProperty(m_display, xse->requestor, xse->property, xse->target, 8, PropModeReplace,
+					                (unsigned char*)txt_cut_buffer, strlen(txt_cut_buffer));
 				}
 			} else if (xse->target == target) {
-				Atom alist[4];
+				Atom alist[5];
 				alist[0] = target;
-				alist[1] = string;
-				alist[2] = compound_text;
-				alist[3] = c_string;
-				XChangeProperty(m_display, xse->requestor, xse->property, xse->target, 32, PropModeReplace, (unsigned char*)alist, 4);
+				alist[1] = utf8_string;
+				alist[2] = string;
+				alist[3] = compound_text;
+				alist[4] = c_string;
+				XChangeProperty(m_display, xse->requestor, xse->property, xse->target, 32, PropModeReplace,
+				                (unsigned char*)alist, 5);
 				XFlush(m_display);
 			} else  {
 				//Change property to None because we do not support anything but STRING
@@ -787,6 +849,12 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 			if(xe->type == window->GetXTablet().MotionEvent) 
 			{
 				XDeviceMotionEvent* data = (XDeviceMotionEvent*)xe;
+
+				/* stroke might begin without leading ProxyIn event,
+				 * this happens when window is opened when stylus is already hovering
+				 * around tablet surface */
+				setTabletMode(window, data->deviceid);
+
 				window->GetXTablet().CommonData.Pressure= 
 					data->axis_data[2]/((float)window->GetXTablet().PressureLevels);
 			
@@ -800,10 +868,8 @@ GHOST_SystemX11::processEvent(XEvent *xe)
 			else if(xe->type == window->GetXTablet().ProxInEvent) 
 			{
 				XProximityNotifyEvent* data = (XProximityNotifyEvent*)xe;
-				if(data->deviceid == window->GetXTablet().StylusID)
-					window->GetXTablet().CommonData.Active= GHOST_kTabletModeStylus;
-				else if(data->deviceid == window->GetXTablet().EraserID)
-					window->GetXTablet().CommonData.Active= GHOST_kTabletModeEraser;
+
+				setTabletMode(window, data->deviceid);
 			}
 			else if(xe->type == window->GetXTablet().ProxOutEvent)
 				window->GetXTablet().CommonData.Active= GHOST_kTabletModeNone;
@@ -1038,18 +1104,18 @@ convertXKey(KeySym key)
 			GXMAP(type,XK_bracketright,	GHOST_kKeyRightBracket);
 			GXMAP(type,XK_Pause,		GHOST_kKeyPause);
 			
-			GXMAP(type,XK_Shift_L,  	GHOST_kKeyLeftShift);
-			GXMAP(type,XK_Shift_R,  	GHOST_kKeyRightShift);
+			GXMAP(type,XK_Shift_L,		GHOST_kKeyLeftShift);
+			GXMAP(type,XK_Shift_R,		GHOST_kKeyRightShift);
 			GXMAP(type,XK_Control_L,	GHOST_kKeyLeftControl);
 			GXMAP(type,XK_Control_R,	GHOST_kKeyRightControl);
-			GXMAP(type,XK_Alt_L,	 	GHOST_kKeyLeftAlt);
-			GXMAP(type,XK_Alt_R,	 	GHOST_kKeyRightAlt);
+			GXMAP(type,XK_Alt_L,		GHOST_kKeyLeftAlt);
+			GXMAP(type,XK_Alt_R,		GHOST_kKeyRightAlt);
 			GXMAP(type,XK_Super_L,		GHOST_kKeyOS);
 			GXMAP(type,XK_Super_R,		GHOST_kKeyOS);
 
-			GXMAP(type,XK_Insert,	 	GHOST_kKeyInsert);
-			GXMAP(type,XK_Delete,	 	GHOST_kKeyDelete);
-			GXMAP(type,XK_Home,	 		GHOST_kKeyHome);
+			GXMAP(type,XK_Insert,		GHOST_kKeyInsert);
+			GXMAP(type,XK_Delete,		GHOST_kKeyDelete);
+			GXMAP(type,XK_Home,			GHOST_kKeyHome);
 			GXMAP(type,XK_End,			GHOST_kKeyEnd);
 			GXMAP(type,XK_Page_Up,		GHOST_kKeyUpPage);
 			GXMAP(type,XK_Page_Down, 	GHOST_kKeyDownPage);
@@ -1065,27 +1131,27 @@ convertXKey(KeySym key)
 			
 				/* keypad events */
 				
-			GXMAP(type,XK_KP_0,	 		GHOST_kKeyNumpad0);
-			GXMAP(type,XK_KP_1,	 		GHOST_kKeyNumpad1);
-			GXMAP(type,XK_KP_2,	 		GHOST_kKeyNumpad2);
-			GXMAP(type,XK_KP_3,	 		GHOST_kKeyNumpad3);
-			GXMAP(type,XK_KP_4,	 		GHOST_kKeyNumpad4);
-			GXMAP(type,XK_KP_5,	 		GHOST_kKeyNumpad5);
-			GXMAP(type,XK_KP_6,	 		GHOST_kKeyNumpad6);
-			GXMAP(type,XK_KP_7,	 		GHOST_kKeyNumpad7);
-			GXMAP(type,XK_KP_8,	 		GHOST_kKeyNumpad8);
-			GXMAP(type,XK_KP_9,	 		GHOST_kKeyNumpad9);
+			GXMAP(type,XK_KP_0,			GHOST_kKeyNumpad0);
+			GXMAP(type,XK_KP_1,			GHOST_kKeyNumpad1);
+			GXMAP(type,XK_KP_2,			GHOST_kKeyNumpad2);
+			GXMAP(type,XK_KP_3,			GHOST_kKeyNumpad3);
+			GXMAP(type,XK_KP_4,			GHOST_kKeyNumpad4);
+			GXMAP(type,XK_KP_5,			GHOST_kKeyNumpad5);
+			GXMAP(type,XK_KP_6,			GHOST_kKeyNumpad6);
+			GXMAP(type,XK_KP_7,			GHOST_kKeyNumpad7);
+			GXMAP(type,XK_KP_8,			GHOST_kKeyNumpad8);
+			GXMAP(type,XK_KP_9,			GHOST_kKeyNumpad9);
 			GXMAP(type,XK_KP_Decimal,	GHOST_kKeyNumpadPeriod);
 
 			GXMAP(type,XK_KP_Insert, 	GHOST_kKeyNumpad0);
-			GXMAP(type,XK_KP_End,	 	GHOST_kKeyNumpad1);
-			GXMAP(type,XK_KP_Down,	 	GHOST_kKeyNumpad2);
+			GXMAP(type,XK_KP_End,		GHOST_kKeyNumpad1);
+			GXMAP(type,XK_KP_Down,		GHOST_kKeyNumpad2);
 			GXMAP(type,XK_KP_Page_Down,	GHOST_kKeyNumpad3);
-			GXMAP(type,XK_KP_Left,	 	GHOST_kKeyNumpad4);
-			GXMAP(type,XK_KP_Begin, 	GHOST_kKeyNumpad5);
+			GXMAP(type,XK_KP_Left,		GHOST_kKeyNumpad4);
+			GXMAP(type,XK_KP_Begin,		GHOST_kKeyNumpad5);
 			GXMAP(type,XK_KP_Right,		GHOST_kKeyNumpad6);
-			GXMAP(type,XK_KP_Home,	 	GHOST_kKeyNumpad7);
-			GXMAP(type,XK_KP_Up,	 	GHOST_kKeyNumpad8);
+			GXMAP(type,XK_KP_Home,		GHOST_kKeyNumpad7);
+			GXMAP(type,XK_KP_Up,		GHOST_kKeyNumpad8);
 			GXMAP(type,XK_KP_Page_Up,	GHOST_kKeyNumpad9);
 			GXMAP(type,XK_KP_Delete,	GHOST_kKeyNumpadPeriod);
 
@@ -1307,7 +1373,7 @@ void GHOST_SystemX11::getClipboard_xcout(XEvent evt,
 GHOST_TUns8 *GHOST_SystemX11::getClipboard(bool selection) const
 {
 	Atom sseln;
-	Atom target= m_string;
+	Atom target= m_utf8_string;
 	Window owner;
 
 	// from xclip.c doOut() v0.11
@@ -1425,3 +1491,19 @@ void GHOST_SystemX11::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 			fprintf(stderr, "failed to own primary\n");
 	}
 }
+
+#ifdef WITH_XDND
+GHOST_TSuccess GHOST_SystemX11::pushDragDropEvent(GHOST_TEventType eventType, 
+													GHOST_TDragnDropTypes draggedObjectType,
+													GHOST_IWindow* window,
+													int mouseX, int mouseY,
+													void* data)
+{
+	GHOST_SystemX11* system = ((GHOST_SystemX11*)getSystem());
+	return system->pushEvent(new GHOST_EventDragnDrop(system->getMilliSeconds(),
+													  eventType,
+													  draggedObjectType,
+													  window,mouseX,mouseY,data)
+			);
+}
+#endif

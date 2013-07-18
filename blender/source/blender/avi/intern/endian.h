@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * This is external code.
  *
@@ -35,8 +34,8 @@
  */
 
 
-#ifndef AVI_ENDIAN_H
-#define AVI_ENDIAN_H
+#ifndef __ENDIAN_H__
+#define __ENDIAN_H__
 
 #include <stdio.h>
 #include "AVI_avi.h"

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,6 +41,8 @@
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
@@ -84,19 +84,19 @@ static void region_draw_emboss(ARegion *ar, rcti *scirct)
 	glBlendFunc( GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA );
 	
 	/* right  */
-	glColor4ub(0,0,0, 50);
+	glColor4ub(0,0,0, 30);
 	sdrawline(rect.xmax, rect.ymin, rect.xmax, rect.ymax);
 	
 	/* bottom  */
-	glColor4ub(0,0,0, 80);
+	glColor4ub(0,0,0, 30);
 	sdrawline(rect.xmin, rect.ymin, rect.xmax, rect.ymin);
 	
 	/* top  */
-	glColor4ub(255,255,255, 60);
+	glColor4ub(255,255,255, 30);
 	sdrawline(rect.xmin, rect.ymax, rect.xmax, rect.ymax);
 
 	/* left  */
-	glColor4ub(255,255,255, 50);
+	glColor4ub(255,255,255, 30);
 	sdrawline(rect.xmin, rect.ymin, rect.xmin, rect.ymax);
 	
 	glDisable( GL_BLEND );
@@ -169,8 +169,14 @@ void ED_area_overdraw_flush(ScrArea *sa, ARegion *ar)
 
 static void area_draw_azone(short x1, short y1, short x2, short y2)
 {
-	int dx= floor(0.3f*(x2-x1));
-	int dy= floor(0.3f*(y2-y1));
+	int dx = x2 - x1;
+	int dy = y2 - y1;
+
+	dx= copysign(ceil(0.3f*fabs(dx)), dx);
+	dy= copysign(ceil(0.3f*fabs(dy)), dy);
+
+	glEnable(GL_BLEND);
+	glEnable(GL_LINE_SMOOTH);
 	
 	glColor4ub(255, 255, 255, 180);
 	fdrawline(x1, y2, x2, y1);
@@ -185,8 +191,10 @@ static void area_draw_azone(short x1, short y1, short x2, short y2)
 	fdrawline(x1, y2-dy+1, x2-dx+1, y1);
 	glColor4ub(0, 0, 0, 150);
 	fdrawline(x1, y2-2*dy+1, x2-2*dx+1, y1);
-}
 
+	glDisable(GL_LINE_SMOOTH);
+	glDisable(GL_BLEND);
+}
 
 static void region_draw_azone_icon(AZone *az)
 {
@@ -222,6 +230,49 @@ static void region_draw_azone_icon(AZone *az)
 	sdrawline(midx-2, midy, midx+3, midy);
 }
 
+static void draw_azone_plus(float x1, float y1, float x2, float y2)
+{
+	float width = 2.0f;
+	float pad = 4.0f;
+	
+	glRectf((x1 + x2 - width)*0.5f, y1 + pad, (x1 + x2 + width)*0.5f, y2 - pad);
+	glRectf(x1 + pad, (y1 + y2 - width)*0.5f, (x1 + x2 - width)*0.5f, (y1 + y2 + width)*0.5f);
+	glRectf((x1 + x2 + width)*0.5f, (y1 + y2 - width)*0.5f, x2 - pad, (y1 + y2 + width)*0.5f);
+}
+
+static void region_draw_azone_tab_plus(AZone *az)
+{
+	extern void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3); /* xxx temp */
+	
+	glEnable(GL_BLEND);
+	
+	/* add code to draw region hidden as 'too small' */
+	switch(az->edge) {
+		case AE_TOP_TO_BOTTOMRIGHT:
+			uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT);
+			break;
+		case AE_BOTTOM_TO_TOPLEFT:
+			uiSetRoundBox(UI_CNR_BOTTOM_RIGHT | UI_CNR_BOTTOM_LEFT);
+			break;
+		case AE_LEFT_TO_TOPRIGHT:
+			uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT);
+			break;
+		case AE_RIGHT_TO_TOPLEFT:
+			uiSetRoundBox(UI_CNR_TOP_RIGHT | UI_CNR_BOTTOM_RIGHT);
+			break;
+	}
+
+	glColor4f(0.05f, 0.05f, 0.05f, 0.4f);
+	uiRoundBox((float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2, 4.0f);
+
+	glEnable(GL_BLEND);
+
+	glColor4f(0.8f, 0.8f, 0.8f, 0.4f);
+	draw_azone_plus((float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2);
+
+	glDisable(GL_BLEND);
+}
+
 static void region_draw_azone_tab(AZone *az)
 {
 	float col[3];
@@ -233,28 +284,28 @@ static void region_draw_azone_tab(AZone *az)
 	/* add code to draw region hidden as 'too small' */
 	switch(az->edge) {
 		case AE_TOP_TO_BOTTOMRIGHT:
-			uiSetRoundBox(3 + 16);
+			uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT | UI_RB_ALPHA);
 			
 			uiDrawBoxShade(GL_POLYGON, (float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2, 4.0f, -0.3f, 0.05f);
 			glColor4ub(0, 0, 0, 255);
 			uiRoundRect((float)az->x1, 0.3f+(float)az->y1, (float)az->x2, 0.3f+(float)az->y2, 4.0f);
 			break;
 		case AE_BOTTOM_TO_TOPLEFT:
-			uiSetRoundBox(12 + 16);
+			uiSetRoundBox(UI_CNR_BOTTOM_RIGHT | UI_CNR_BOTTOM_LEFT | UI_RB_ALPHA);
 			
 			uiDrawBoxShade(GL_POLYGON, (float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2, 4.0f, -0.3f, 0.05f);
 			glColor4ub(0, 0, 0, 255);
 			uiRoundRect((float)az->x1, 0.3f+(float)az->y1, (float)az->x2, 0.3f+(float)az->y2, 4.0f);
 			break;
 		case AE_LEFT_TO_TOPRIGHT:
-			uiSetRoundBox(9 + 16);
+			uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_BOTTOM_LEFT | UI_RB_ALPHA);
 			
 			uiDrawBoxShade(GL_POLYGON, (float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2, 4.0f, -0.3f, 0.05f);
 			glColor4ub(0, 0, 0, 255);
 			uiRoundRect((float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2, 4.0f);
 			break;
 		case AE_RIGHT_TO_TOPLEFT:
-			uiSetRoundBox(6 + 16);
+			uiSetRoundBox(UI_CNR_TOP_RIGHT | UI_CNR_BOTTOM_RIGHT | UI_RB_ALPHA);
 			
 			uiDrawBoxShade(GL_POLYGON, (float)az->x1, (float)az->y1, (float)az->x2, (float)az->y2, 4.0f, -0.3f, 0.05f);
 			glColor4ub(0, 0, 0, 255);
@@ -320,13 +371,14 @@ void ED_area_overdraw(bContext *C)
 					if(az->ar) {
 						/* only display tab or icons when the region is hidden */
 						if (az->ar->flag & (RGN_FLAG_HIDDEN|RGN_FLAG_TOO_SMALL)) {
-					
-							if(G.rt==2)
+							if(G.rt==3)
+								region_draw_azone_icon(az);
+							else if(G.rt==2)
 								region_draw_azone_tria(az);
 							else if(G.rt==1)
 								region_draw_azone_tab(az);
 							else
-								region_draw_azone_icon(az);
+								region_draw_azone_tab_plus(az);
 						}
 					}
 				}
@@ -423,30 +475,30 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 		glClear(GL_COLOR_BUFFER_BIT);
 		
 		UI_ThemeColor(TH_TEXT);
-		BLF_draw_default(20, 8, 0.0f, ar->headerstr, 65535); /* XXX, use real length */
+		BLF_draw_default(20, 8, 0.0f, ar->headerstr, BLF_DRAW_STR_DUMMY_MAX);
 	}
 	else if(at->draw) {
 		at->draw(C, ar);
 	}
 
-	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_PIXEL);
-	
-	uiFreeInactiveBlocks(C, &ar->uiblocks);
-	
-	if(sa)
-		region_draw_emboss(ar, &winrct);
-	
 	/* XXX test: add convention to end regions always in pixel space, for drawing of borders/gestures etc */
 	ED_region_pixelspace(ar);
-	
+
+	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_PIXEL);
+
 	ar->do_draw= 0;
 	memset(&ar->drawrct, 0, sizeof(ar->drawrct));
+	
+	uiFreeInactiveBlocks(C, &ar->uiblocks);
+
+	if(sa)
+		region_draw_emboss(ar, &winrct);
 }
 
 /* **********************************
-   maybe silly, but let's try for now
-   to keep these tags protected
-   ********************************** */
+ * maybe silly, but let's try for now
+ * to keep these tags protected
+ * ********************************** */
 
 void ED_region_tag_redraw(ARegion *ar)
 {
@@ -550,19 +602,19 @@ static void area_azone_initialize(ScrArea *sa)
 	az= (AZone *)MEM_callocN(sizeof(AZone), "actionzone");
 	BLI_addtail(&(sa->actionzones), az);
 	az->type= AZONE_AREA;
-	az->x1= sa->totrct.xmin;
-	az->y1= sa->totrct.ymin;
-	az->x2= sa->totrct.xmin + AZONESPOT;
-	az->y2= sa->totrct.ymin + AZONESPOT;
+	az->x1= sa->totrct.xmin - 1;
+	az->y1= sa->totrct.ymin - 1;
+	az->x2= sa->totrct.xmin + (AZONESPOT-1);
+	az->y2= sa->totrct.ymin + (AZONESPOT-1);
 	BLI_init_rcti(&az->rect, az->x1, az->x2, az->y1, az->y2);
 	
 	az= (AZone *)MEM_callocN(sizeof(AZone), "actionzone");
 	BLI_addtail(&(sa->actionzones), az);
 	az->type= AZONE_AREA;
-	az->x1= sa->totrct.xmax+1;
-	az->y1= sa->totrct.ymax+1;
-	az->x2= sa->totrct.xmax-AZONESPOT;
-	az->y2= sa->totrct.ymax-AZONESPOT;
+	az->x1= sa->totrct.xmax + 1;
+	az->y1= sa->totrct.ymax + 1;
+	az->x2= sa->totrct.xmax - (AZONESPOT-1);
+	az->y2= sa->totrct.ymax - (AZONESPOT-1);
 	BLI_init_rcti(&az->rect, az->x1, az->x2, az->y1, az->y2);
 }
 
@@ -606,8 +658,8 @@ static void region_azone_icon(ScrArea *sa, AZone *az, ARegion *ar)
 	int tot=0;
 	
 	/* count how many actionzones with along same edge are available.
-	   This allows for adding more action zones in the future without
-	   having to worry about correct offset */
+	 * This allows for adding more action zones in the future without
+	 * having to worry about correct offset */
 	for(azt= sa->actionzones.first; azt; azt= azt->next) {
 		if(azt->edge == az->edge) tot++;
 	}
@@ -658,6 +710,51 @@ static void region_azone_icon(ScrArea *sa, AZone *az, ARegion *ar)
 		}
 	}
 }
+
+#define AZONEPAD_TAB_PLUSW	14
+#define AZONEPAD_TAB_PLUSH	14
+
+/* region already made zero sized, in shape of edge */
+static void region_azone_tab_plus(ScrArea *sa, AZone *az, ARegion *ar)
+{
+	AZone *azt;
+	int tot= 0, add;
+	
+	for(azt= sa->actionzones.first; azt; azt= azt->next) {
+		if(azt->edge == az->edge) tot++;
+	}
+	
+	switch(az->edge) {
+		case AE_TOP_TO_BOTTOMRIGHT:
+			if(ar->winrct.ymax == sa->totrct.ymin) add= 1; else add= 0;
+			az->x1= ar->winrct.xmax - 2.5*AZONEPAD_TAB_PLUSW;
+			az->y1= ar->winrct.ymax - add;
+			az->x2= ar->winrct.xmax - 1.5*AZONEPAD_TAB_PLUSW;
+			az->y2= ar->winrct.ymax - add + AZONEPAD_TAB_PLUSH;
+			break;
+		case AE_BOTTOM_TO_TOPLEFT:
+			az->x1= ar->winrct.xmax - 2.5*AZONEPAD_TAB_PLUSW;
+			az->y1= ar->winrct.ymin - AZONEPAD_TAB_PLUSH;
+			az->x2= ar->winrct.xmax - 1.5*AZONEPAD_TAB_PLUSW;
+			az->y2= ar->winrct.ymin;
+			break;
+		case AE_LEFT_TO_TOPRIGHT:
+			az->x1= ar->winrct.xmin - AZONEPAD_TAB_PLUSH;
+			az->y1= ar->winrct.ymax - 2.5*AZONEPAD_TAB_PLUSW;
+			az->x2= ar->winrct.xmin;
+			az->y2= ar->winrct.ymax - 1.5*AZONEPAD_TAB_PLUSW;
+			break;
+		case AE_RIGHT_TO_TOPLEFT:
+			az->x1= ar->winrct.xmax - 1;
+			az->y1= ar->winrct.ymax - 2.5*AZONEPAD_TAB_PLUSW;
+			az->x2= ar->winrct.xmax - 1 + AZONEPAD_TAB_PLUSH;
+			az->y2= ar->winrct.ymax - 1.5*AZONEPAD_TAB_PLUSW;
+			break;
+	}
+	/* rect needed for mouse pointer test */
+	BLI_init_rcti(&az->rect, az->x1, az->x2, az->y1, az->y2);
+}	
+
 
 #define AZONEPAD_TABW	18
 #define AZONEPAD_TABH	7
@@ -760,12 +857,14 @@ static void region_azone_initialize(ScrArea *sa, ARegion *ar, AZEdge edge)
 	az->edge= edge;
 	
 	if (ar->flag & (RGN_FLAG_HIDDEN|RGN_FLAG_TOO_SMALL)) {
-		if(G.rt==2)
+		if(G.rt==3)
+			region_azone_icon(sa, az, ar);
+		else if(G.rt==2)
 			region_azone_tria(sa, az, ar);
 		else if(G.rt==1)
 			region_azone_tab(sa, az, ar);
 		else
-			region_azone_icon(sa, az, ar);
+			region_azone_tab_plus(sa, az, ar);
 	} else {
 		region_azone_edge(az, ar);
 	}
@@ -829,6 +928,9 @@ static void region_rect_recursive(ScrArea *sa, ARegion *ar, rcti *remainder, int
 	prefsizex= ar->sizex?ar->sizex:ar->type->prefsizex;
 	if(ar->regiontype==RGN_TYPE_HEADER)
 		prefsizey= ar->type->prefsizey;
+	else if(ar->regiontype==RGN_TYPE_UI && sa->spacetype == SPACE_FILE) {
+		prefsizey= UI_UNIT_Y * 2 + (UI_UNIT_Y/2);
+	}
 	else
 		prefsizey= ar->sizey?ar->sizey:ar->type->prefsizey;
 	
@@ -1330,7 +1432,7 @@ void ED_area_prevspace(bContext *C, ScrArea *sa)
 
 	if(sl->next) {
 		/* workaround for case of double prevspace, render window
-		   with a file browser on top of it */
+		 * with a file browser on top of it */
 		if(sl->next->spacetype == SPACE_FILE && sl->next->next)
 			ED_area_newspace(C, sa, sl->next->next->spacetype);
 		else
@@ -1347,7 +1449,7 @@ void ED_area_prevspace(bContext *C, ScrArea *sa)
 
 static const char *editortype_pup(void)
 {
-	return(
+	const char *types= N_(
 		   "Editor type:%t"
 		   "|3D View %x1"
 
@@ -1363,6 +1465,7 @@ static const char *editortype_pup(void)
 		   "|UV/Image Editor %x6"
 		   
 		   "|Video Sequence Editor %x8"
+		   "|Movie Clip Editor %x20"
 		   "|Text Editor %x9" 
 		   "|Node Editor %x16"
 		   "|Logic Editor %x17"
@@ -1373,15 +1476,17 @@ static const char *editortype_pup(void)
 		   "|Outliner %x3"
 		   "|User Preferences %x19"
 		   "|Info%x7"
-		    		   
+
 		   "|%l"
-		   
+
 		   "|File Browser %x5"
 		   
 		   "|%l"
 		   
 		   "|Python Console %x18"
 		   );
+
+	return IFACE_(types);
 }
 
 static void spacefunc(struct bContext *C, void *UNUSED(arg1), void *UNUSED(arg2))
@@ -1403,8 +1508,7 @@ int ED_area_header_switchbutton(const bContext *C, uiBlock *block, int yco)
 	but= uiDefIconTextButC(block, ICONTEXTROW, 0, ICON_VIEW3D, 
 						   editortype_pup(), xco, yco, UI_UNIT_X+10, UI_UNIT_Y, 
 						   &(sa->butspacetype), 1.0, SPACEICONMAX, 0, 0, 
-						   "Displays current editor type. "
-						   "Click for menu of available types");
+						   TIP_("Displays current editor type. Click for menu of available types"));
 	uiButSetFunc(but, spacefunc, NULL, NULL);
 	uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 	
@@ -1449,13 +1553,13 @@ int ED_area_header_standardbuttons(const bContext *C, uiBlock *block, int yco)
 void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *context, int contextnr)
 {
 	ScrArea *sa= CTX_wm_area(C);
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	uiBlock *block;
 	PanelType *pt;
 	Panel *panel;
 	View2D *v2d= &ar->v2d;
 	View2DScrollers *scrollers;
-	int xco, yco, x, y, miny=0, w, em, header, triangle, open, newcontext= 0;
+	int x, y, xco, yco, w, em, triangle, open, newcontext= 0;
 
 	if(contextnr >= 0)
 		newcontext= UI_view2d_tab_set(v2d, contextnr);
@@ -1468,9 +1572,6 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 		w= UI_PANEL_WIDTH;
 		em= (ar->type->prefsizex)? UI_UNIT_Y/2: UI_UNIT_Y;
 	}
-
-	x= 0;
-	y= -style->panelouter;
 
 	/* create panels */
 	uiBeginPanels(C, ar);
@@ -1490,16 +1591,12 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 			panel= uiBeginPanel(sa, ar, block, pt, &open);
 
 			/* bad fixed values */
-			header= (pt->flag & PNL_NO_HEADER)? 0: UI_UNIT_Y;
 			triangle= (int)(UI_UNIT_Y * 1.1f);
 
-			if(vertical)
-				y -= header;
-
-			if(pt->draw_header && header && (open || vertical)) {
+			if(pt->draw_header && !(pt->flag & PNL_NO_HEADER) && (open || vertical)) {
 				/* for enabled buttons */
 				panel->layout= uiBlockLayout(block, UI_LAYOUT_HORIZONTAL, UI_LAYOUT_HEADER,
-					triangle, header+style->panelspace, header, 1, style);
+					triangle, UI_UNIT_Y+style->panelspace+2, UI_UNIT_Y, 1, style);
 
 				pt->draw_header(C, panel);
 
@@ -1537,30 +1634,11 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 			}
 
 			uiEndBlock(C, block);
-
-			if(vertical) {
-				if(pt->flag & PNL_NO_HEADER)
-					y += yco;
-				else
-					y += yco-style->panelouter;
-			}
-			else {
-				x += w;
-				miny= MIN2(y, yco-style->panelouter-header);
-			}
 		}
 	}
 
-	if(vertical)
-		x += w;
-	else
-		y= miny;
-	
-	/* in case there are no panels */
-	if(x == 0 || y == 0) {
-		x= UI_PANEL_WIDTH;
-		y= UI_PANEL_WIDTH;
-	}
+	/* align panels and return size */
+	uiEndPanels(C, ar, &x, &y);
 
 	/* clear */
 	UI_ThemeClearColor((ar->type->regionid == RGN_TYPE_PREVIEW)?TH_PREVIEW_BACK:TH_BACK);
@@ -1581,7 +1659,7 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 			y= -y;
 	}
 	else {
-		/* for now, allow scrolling in both directions (since layouts are optimised for vertical,
+		/* for now, allow scrolling in both directions (since layouts are optimized for vertical,
 		 * they often don't fit in horizontal layout)
 		 */
 		v2d->keepofs &= ~(V2D_LOCKOFS_X|V2D_LOCKOFS_Y|V2D_KEEPOFS_X|V2D_KEEPOFS_Y);
@@ -1602,9 +1680,9 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 	/* set the view */
 	UI_view2d_view_ortho(v2d);
 
-	/* this does the actual drawing! */
-	uiEndPanels(C, ar);
-	
+	/* draw panels */
+	uiDrawPanels(C, ar);
+
 	/* restore view matrix */
 	UI_view2d_view_restore(C);
 	
@@ -1625,7 +1703,7 @@ void ED_region_panels_init(wmWindowManager *wm, ARegion *ar)
 	ar->v2d.scroll &= ~V2D_SCROLL_VERTICAL_HIDE;
 	ar->v2d.keepzoom |= V2D_KEEPZOOM;
 
-		// correctly initialised User-Prefs?
+		// correctly initialized User-Prefs?
 	if(!(ar->v2d.align & V2D_ALIGN_NO_POS_Y))
 		ar->v2d.flag &= ~V2D_IS_INITIALISED;
 	
@@ -1637,7 +1715,7 @@ void ED_region_panels_init(wmWindowManager *wm, ARegion *ar)
 
 void ED_region_header(const bContext *C, ARegion *ar)
 {
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	uiBlock *block;
 	uiLayout *layout;
 	HeaderType *ht;
@@ -1697,4 +1775,39 @@ void ED_region_header_init(ARegion *ar)
 int ED_area_headersize(void)
 {
 	return UI_UNIT_Y+6;
+}
+
+void ED_region_info_draw(ARegion *ar, const char *text, int block, float alpha)
+{
+	const int header_height = 18;
+	uiStyle *style= UI_GetStyle();
+	int fontid= style->widget.uifont_id;
+	rcti rect;
+
+	BLF_size(fontid, 11.0f, 72);
+
+	/* background box */
+	rect= ar->winrct;
+	rect.xmin= 0;
+	rect.ymin= ar->winrct.ymax - ar->winrct.ymin - header_height;
+
+	if(block) {
+		rect.xmax= ar->winrct.xmax - ar->winrct.xmin;
+	}
+	else {
+		rect.xmax= rect.xmin + BLF_width(fontid, text) + 24;
+	}
+
+	rect.ymax= ar->winrct.ymax - ar->winrct.ymin;
+
+	glEnable(GL_BLEND);
+	glBlendFunc(GL_SRC_ALPHA,GL_ONE_MINUS_SRC_ALPHA);
+	glColor4f(0.0f, 0.0f, 0.0f, alpha);
+	glRecti(rect.xmin, rect.ymin, rect.xmax+1, rect.ymax+1);
+	glDisable(GL_BLEND);
+
+	/* text */
+	UI_ThemeColor(TH_TEXT_HI);
+	BLF_position(fontid, 12, rect.ymin + 5, 0.0f);
+	BLF_draw(fontid, text, BLF_DRAW_STR_DUMMY_MAX);
 }

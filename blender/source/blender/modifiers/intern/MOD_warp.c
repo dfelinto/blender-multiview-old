@@ -1,27 +1,29 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* Contributor(s): Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Contributor(s): Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
+
+/** \file blender/modifiers/intern/MOD_warp.c
+ *  \ingroup modifiers
+ */
 
 #include <string.h>
 
@@ -29,6 +31,7 @@
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_modifier.h"
@@ -69,13 +72,13 @@ static void copyData(ModifierData *md, ModifierData *target)
 	twmd->strength = wmd->strength;
 	twmd->falloff_radius = wmd->falloff_radius;
 	twmd->falloff_type = wmd->falloff_type;
-	strncpy(twmd->defgrp_name, wmd->defgrp_name, sizeof(twmd->defgrp_name));
+	BLI_strncpy(twmd->defgrp_name, wmd->defgrp_name, sizeof(twmd->defgrp_name));
 	twmd->curfalloff = curvemapping_copy(wmd->curfalloff);
 
 	/* map info */
 	twmd->texture = wmd->texture;
 	twmd->map_object = wmd->map_object;
-	strncpy(twmd->uvlayer_name, wmd->uvlayer_name, sizeof(twmd->uvlayer_name));
+	BLI_strncpy(twmd->uvlayer_name, wmd->uvlayer_name, sizeof(twmd->uvlayer_name));
 	twmd->texmapping= wmd->texmapping;
 }
 
@@ -194,11 +197,11 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 
 	invert_m4_m4(obinv, ob->obmat);
 
-	mul_m4_m4m4(mat_from, wmd->object_from->obmat, obinv);
-	mul_m4_m4m4(mat_to, wmd->object_to->obmat, obinv);
+	mult_m4_m4m4(mat_from, obinv, wmd->object_from->obmat);
+	mult_m4_m4m4(mat_to, obinv, wmd->object_to->obmat);
 
 	invert_m4_m4(tmat, mat_from); // swap?
-	mul_m4_m4m4(mat_final, mat_to, tmat);
+	mult_m4_m4m4(mat_final, tmat, mat_to);
 
 	invert_m4_m4(mat_from_inv, mat_from);
 
@@ -232,8 +235,8 @@ static void warpModifier_do(WarpModifierData *wmd, Object *ob,
 				dv = &dvert[i];
 
 				if(dv) {
-					weight = defvert_find_weight(dv, defgrp_index) * wmd->strength;
-					if(weight <= 0.0f)
+					weight = defvert_find_weight(dv, defgrp_index) * strength;
+					if(weight <= 0.0f) /* Should never occure... */
 						continue;
 				}
 			}
@@ -327,7 +330,7 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData,
 	}
 }
 
-static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editData,
+static void deformVertsEM(ModifierData *md, Object *ob, struct BMEditMesh *editData,
                           DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = derivedData;
@@ -335,7 +338,7 @@ static void deformVertsEM(ModifierData *md, Object *ob, struct EditMesh *editDat
 
 	if(use_dm) {
 		if(!derivedData)
-			dm = CDDM_from_editmesh(editData, ob->data);
+			dm = CDDM_from_BMEditMesh(editData, ob->data, FALSE, FALSE);
 	}
 
 	deformVerts(md, ob, dm, vertexCos, numVerts, 0, 0);

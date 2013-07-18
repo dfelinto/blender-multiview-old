@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -274,7 +273,7 @@ TargetVertex(
 		result[4] = c0[1];
 		result[5] = c0[2];
 
-		return ;
+		return;
 	}
 };
 

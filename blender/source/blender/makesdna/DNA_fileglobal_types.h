@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,18 +24,19 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_FILEGLOBAL_TYPES_H
-#define DNA_FILEGLOBAL_TYPES_H
 
 /** \file DNA_fileglobal_types.h
  *  \ingroup DNA
  */
 
+#ifndef __DNA_FILEGLOBAL_TYPES_H__
+#define __DNA_FILEGLOBAL_TYPES_H__
+
 struct bScreen;
 struct Scene;
 
 /**
- * FileGlobal stores a part of the current user-unterface settings at
+ * FileGlobal stores a part of the current user-interface settings at
  * the moment of saving, and the file-specific settings.
  */
 typedef struct FileGlobal {
@@ -52,7 +51,7 @@ typedef struct FileGlobal {
 	int revision;		/* svn revision from buildinfo */
 	int pad;
 	/* file path where this was saved, for recover */
-	char filename[240]; /* 240 = FILE_MAX */
+	char filename[1024]; /* 1024 = FILE_MAX */
 } FileGlobal;
 
 

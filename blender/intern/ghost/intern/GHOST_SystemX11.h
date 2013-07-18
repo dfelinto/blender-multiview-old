@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,14 +30,20 @@
  * Declaration of GHOST_SystemX11 class.
  */
 
-#ifndef _GHOST_SYSTEM_X11_H_
-#define _GHOST_SYSTEM_X11_H_
+#ifndef __GHOST_SYSTEMX11_H__
+#define __GHOST_SYSTEMX11_H__
 
 #include <X11/Xlib.h>
 #include <GL/glx.h>
 
 #include "GHOST_System.h"
 #include "../GHOST_Types.h"
+
+#if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
+#  define GHOST_X11_RES_NAME  "Blender" /* res_name */
+#  define GHOST_X11_RES_CLASS "Blender" /* res_class */
+#endif
+
 
 class GHOST_WindowX11;
 
@@ -169,7 +174,7 @@ public:
 		GHOST_TSuccess 
 	getModifierKeys(
 		GHOST_ModifierKeys& keys
-	) const ;
+	) const;
 
 	/**
 	 * Returns the state of the mouse buttons (ouside the message queue).
@@ -203,10 +208,18 @@ public:
 		return m_display;
 	}	
 
+#if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
+		XIM
+	getX11_XIM(
+	) {
+		return m_xim;
+	}
+#endif
+
 	/* Helped function for get data from the clipboard. */
 	void getClipboard_xcout(XEvent evt, Atom sel, Atom target,
-			 unsigned char **txt, unsigned long *len,
-			 unsigned int *context) const;
+	                        unsigned char **txt, unsigned long *len,
+	                        unsigned int *context) const;
 
 	/**
 	 * Returns unsinged char from CUT_BUFFER0
@@ -221,6 +234,20 @@ public:
 	 * @param selection	Set the selection into the clipboard, X11 only feature
 	 */
 	void putClipboard(GHOST_TInt8 *buffer, bool selection) const;
+
+#if WITH_XDND
+	/**
+	 * Creates a drag'n'drop event and pushes it immediately onto the event queue. 
+	 * Called by GHOST_DropTargetX11 class.
+	 * @param eventType The type of drag'n'drop event
+	 * @param draggedObjectType The type object concerned (currently array of file names, string, ?bitmap)
+	 * @param mouseX x mouse coordinate (in window coordinates)
+	 * @param mouseY y mouse coordinate
+	 * @param window The window on which the event occurred
+	 * @return Indication whether the event was handled. 
+	 */
+	static GHOST_TSuccess pushDragDropEvent(GHOST_TEventType eventType, GHOST_TDragnDropTypes draggedObjectType,GHOST_IWindow* window, int mouseX, int mouseY, void* data);
+#endif
 
 	/**
 	 * @see GHOST_ISystem
@@ -258,6 +285,9 @@ public:
 private :
 
 	Display * m_display;
+#if defined(WITH_X11_XINPUT) && defined(X_HAVE_UTF8_STRING)
+	XIM m_xim;
+#endif
 
 	/// The vector of windows that need to be updated.
 	std::vector<GHOST_WindowX11 *> m_dirty_windows;
@@ -280,12 +310,12 @@ private :
 		GHOST_WindowX11 * 
 	findGhostWindow(
 		Window xwind
-	) const ;
+	) const;
 
 		void
 	processEvent(
 		XEvent *xe
- 	);
+	);
 
 		Time
 	lastEventTime(
@@ -294,7 +324,7 @@ private :
 
 		bool
 	generateWindowExposeEvents(
- 	);
+	);
 };
 
 #endif

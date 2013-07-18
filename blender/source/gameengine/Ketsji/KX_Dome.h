@@ -1,4 +1,4 @@
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 
 This program is free software; you can redistribute it and/or modify it under
@@ -26,8 +26,8 @@ Developed as part of a Research and Development project for SAT - La Soci�t�
  *  \ingroup ketsji
  */
 
-#if !defined KX_DOME_H
-#define KX_DOME_H
+#ifndef __KX_DOME_H__
+#define __KX_DOME_H__
 
 #include "KX_Scene.h"
 #include "KX_Camera.h"
@@ -57,22 +57,21 @@ class KX_Dome
 {
 public:
 	/// constructor
-	KX_Dome (
-	RAS_ICanvas* m_canvas,
-    /// rasterizer
-    RAS_IRasterizer* m_rasterizer,
-    /// render tools
-    RAS_IRenderTools* m_rendertools,
-    /// engine
-    KX_KetsjiEngine* m_engine,
+	KX_Dome (RAS_ICanvas* m_canvas,
+	         /// rasterizer
+	         RAS_IRasterizer* m_rasterizer,
+	         /// render tools
+	         RAS_IRenderTools* m_rendertools,
+	         /// engine
+	         KX_KetsjiEngine* m_engine,
 
-	short res,
-	short mode,
-	short angle,
-	float resbuf,
-	short tilt,
-	struct Text* warptext
-	);
+	         short res,
+	         short mode,
+	         short angle,
+	         float resbuf,
+	         short tilt,
+	         struct Text* warptext
+	         );
 
 	/// destructor
 	virtual ~KX_Dome (void);
@@ -113,7 +112,7 @@ public:
 	int nfacestop, nfacesbottom, nfacesleft, nfacesright, nfacesfront, nfacesback;
 	int nfacesleftback, nfacesrightback;
 
-	int GetNumberRenders(){return m_numfaces;};
+	int GetNumberRenders() { return m_numfaces; }
 
 	void RenderDome(void);
 	void RenderDomeFrame(KX_Scene* scene, KX_Camera* cam, int i);
@@ -180,14 +179,14 @@ protected:
 	/// rendered scene
 	KX_Scene * m_scene;
 
-    /// canvas
-    RAS_ICanvas* m_canvas;
-    /// rasterizer
-    RAS_IRasterizer* m_rasterizer;
-    /// render tools
-    RAS_IRenderTools* m_rendertools;
-    /// engine
-    KX_KetsjiEngine* m_engine;
+	/// canvas
+	RAS_ICanvas* m_canvas;
+	/// rasterizer
+	RAS_IRasterizer* m_rasterizer;
+	/// render tools
+	RAS_IRenderTools* m_rendertools;
+	/// engine
+	KX_KetsjiEngine* m_engine;
 	
 	
 #ifdef WITH_CXX_GUARDEDALLOC
@@ -197,5 +196,4 @@ public:
 #endif
 };
 
-#endif
-
+#endif /* __KX_DOME_H__ */

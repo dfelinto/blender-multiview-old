@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,6 +34,8 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
+
+#include "BLF_translation.h"
 
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
@@ -144,7 +144,7 @@ static void file_panel_bookmarks(const bContext *C, Panel *pa)
 
 	if(sfile) {
 		row= uiLayoutRow(pa->layout, 0);
-		uiItemO(row, "Add", ICON_ZOOMIN, "file.bookmark_add");
+		uiItemO(row, IFACE_("Add"), ICON_ZOOMIN, "file.bookmark_add");
 		uiItemL(row, NULL, ICON_NONE);
 
 		file_panel_category(C, pa, FS_CATEGORY_BOOKMARKS, &sfile->bookmarknr, ICON_BOOKMARKS, 1, 0);
@@ -177,7 +177,7 @@ static void file_panel_operator_header(const bContext *C, Panel *pa)
 	BLI_strncpy(pa->drawname, op->type->name, sizeof(pa->drawname));
 }
 
-static int file_panel_check_prop(PropertyRNA *prop)
+static int file_panel_check_prop(PointerRNA *UNUSED(ptr), PropertyRNA *prop)
 {
 	const char *prop_id= RNA_property_identifier(prop);
 	return !(	strcmp(prop_id, "filepath") == 0 ||
@@ -205,25 +205,25 @@ void file_panels_register(ARegionType *art)
 
 	pt= MEM_callocN(sizeof(PanelType), "spacetype file system directories");
 	strcpy(pt->idname, "FILE_PT_system");
-	strcpy(pt->label, "System");
+	strcpy(pt->label, N_("System"));
 	pt->draw= file_panel_system;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt= MEM_callocN(sizeof(PanelType), "spacetype file bookmarks");
 	strcpy(pt->idname, "FILE_PT_bookmarks");
-	strcpy(pt->label, "Bookmarks");
+	strcpy(pt->label, N_("Bookmarks"));
 	pt->draw= file_panel_bookmarks;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt= MEM_callocN(sizeof(PanelType), "spacetype file recent directories");
 	strcpy(pt->idname, "FILE_PT_recent");
-	strcpy(pt->label, "Recent");
+	strcpy(pt->label, N_("Recent"));
 	pt->draw= file_panel_recent;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt= MEM_callocN(sizeof(PanelType), "spacetype file operator properties");
 	strcpy(pt->idname, "FILE_PT_operator");
-	strcpy(pt->label, "Operator");
+	strcpy(pt->label, N_("Operator"));
 	pt->poll= file_panel_operator_poll;
 	pt->draw_header= file_panel_operator_header;
 	pt->draw= file_panel_operator;

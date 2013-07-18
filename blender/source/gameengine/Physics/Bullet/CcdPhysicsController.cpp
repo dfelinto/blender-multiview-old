@@ -231,6 +231,8 @@ bool CcdPhysicsController::CreateSoftbody()
 			if (trimeshshape->getMeshInterface()->getNumSubParts()==1)
 			{
 				unsigned char* vertexBase;
+				btScalar* scaledVertexBase;
+				btVector3 localScaling;
 				PHY_ScalarType vertexType;
 				int numverts;
 				int vertexstride;
@@ -238,8 +240,16 @@ bool CcdPhysicsController::CreateSoftbody()
 				int indexstride;
 				PHY_ScalarType indexType;
 				trimeshshape->getMeshInterface()->getLockedVertexIndexBase(&vertexBase,numverts,vertexType,vertexstride,&indexbase,indexstride,numtris,indexType);
-				
-				psb = btSoftBodyHelpers::CreateFromTriMesh(worldInfo,(const btScalar*)vertexBase,(const int*)indexbase,numtris,false);
+				localScaling = scaledtrimeshshape->getLocalScaling();
+				scaledVertexBase = new btScalar[numverts*3];
+				for (int i=0; i<numverts*3; i+=3)
+				{
+					scaledVertexBase[i] = ((const btScalar*)vertexBase)[i] * localScaling.getX();
+					scaledVertexBase[i+1] = ((const btScalar*)vertexBase)[i+1] * localScaling.getY();
+					scaledVertexBase[i+2] = ((const btScalar*)vertexBase)[i+2] * localScaling.getZ();
+				}
+				psb = btSoftBodyHelpers::CreateFromTriMesh(worldInfo,scaledVertexBase,(const int*)indexbase,numtris,false);
+				delete [] scaledVertexBase;
 			}
 		} else
 		{
@@ -767,7 +777,7 @@ void	CcdPhysicsController::SetPhysicsEnvironment(class PHY_IPhysicsEnvironment *
 	if (m_cci.m_physicsEnv != physicsEnv) 
 	{
 		// since the environment is changing, we must also move the controler to the
-		// new environement. Note that we don't handle sensor explicitely: this
+		// new environment. Note that we don't handle sensor explicitly: this
 		// function can be called on sensor but only when they are not registered
 		if (m_cci.m_physicsEnv->removeCcdPhysicsController(this))
 		{
@@ -1421,14 +1431,15 @@ bool CcdShapeConstructionInfo::SetMesh(RAS_MeshObject* meshobj, DerivedMesh* dm,
 	if (!dm) {
 		free_dm = true;
 		dm = CDDM_from_mesh(meshobj->GetMesh(), NULL);
+		DM_ensure_tessface(dm);
 	}
 
 	MVert *mvert = dm->getVertArray(dm);
-	MFace *mface = dm->getFaceArray(dm);
-	numpolys = dm->getNumFaces(dm);
+	MFace *mface = dm->getTessFaceArray(dm);
+	numpolys = dm->getNumTessFaces(dm);
 	numverts = dm->getNumVerts(dm);
-	int* index = (int*)dm->getFaceDataArray(dm, CD_ORIGINDEX);
-	MTFace *tface = (MTFace *)dm->getFaceDataArray(dm, CD_MTFACE);
+	int* index = (int*)dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
+	MTFace *tface = (MTFace *)dm->getTessFaceDataArray(dm, CD_MTFACE);
 
 	m_shapeType = (polytope) ? PHY_SHAPE_POLYTOPE : PHY_SHAPE_MESH;
 
@@ -1555,7 +1566,7 @@ bool CcdShapeConstructionInfo::SetMesh(RAS_MeshObject* meshobj, DerivedMesh* dm,
 				MVert *v2= &mvert[mf->v2];
 				MVert *v3= &mvert[mf->v3];
 
-				// the face indicies
+				// the face indices
 				tri_pt[0]= vert_remap_array[mf->v1];
 				tri_pt[1]= vert_remap_array[mf->v2];
 				tri_pt[2]= vert_remap_array[mf->v3];
@@ -1724,10 +1735,10 @@ bool CcdShapeConstructionInfo::UpdateMesh(class KX_GameObject* gameobj, class RA
 		 * */
 
 		MVert *mvert = dm->getVertArray(dm);
-		MFace *mface = dm->getFaceArray(dm);
-		numpolys = dm->getNumFaces(dm);
+		MFace *mface = dm->getTessFaceArray(dm);
+		numpolys = dm->getNumTessFaces(dm);
 		numverts = dm->getNumVerts(dm);
-		int* index = (int*)dm->getFaceDataArray(dm, CD_ORIGINDEX);
+		int* index = (int*)dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
 
 		MFace *mf;
 		MVert *mv;
@@ -1736,7 +1747,7 @@ bool CcdShapeConstructionInfo::UpdateMesh(class KX_GameObject* gameobj, class RA
 
 		if(CustomData_has_layer(&dm->faceData, CD_MTFACE))
 		{
-			MTFace *tface = (MTFace *)dm->getFaceDataArray(dm, CD_MTFACE);
+			MTFace *tface = (MTFace *)dm->getTessFaceDataArray(dm, CD_MTFACE);
 			MTFace *tf;
 
 			vector<bool> vert_tag_array(numverts, false);
@@ -1913,7 +1924,7 @@ bool CcdShapeConstructionInfo::UpdateMesh(class KX_GameObject* gameobj, class RA
 		m_triFaceArray.resize(tot_bt_tris*3);
 		int *tri_pt= &m_triFaceArray[0];
 
-		/* cant be used for anything useful in this case, since we dont rely on the original mesh
+		/* cant be used for anything useful in this case, since we don't rely on the original mesh
 		 * will just be an array like pythons range(tot_bt_tris) */
 		m_polygonIndexArray.resize(tot_bt_tris);
 
@@ -1975,7 +1986,7 @@ bool CcdShapeConstructionInfo::UpdateMesh(class KX_GameObject* gameobj, class RA
 	/* force recreation of the m_unscaledShape.
 	 * If this has multiple users we cant delete */
 	if(m_unscaledShape) {
-		// dont free now so it can re-allocate under the same location and not break pointers.
+		// don't free now so it can re-allocate under the same location and not break pointers.
 		// DeleteBulletShape(m_unscaledShape); 
 		m_forceReInstance= true;
 	}
@@ -2130,8 +2141,8 @@ btCollisionShape* CcdShapeConstructionInfo::CreateBulletShape(btScalar margin, b
 		{
 			compoundShape = new btCompoundShape();
 			for (std::vector<CcdShapeConstructionInfo*>::iterator sit = m_shapeArray.begin();
-				 sit != m_shapeArray.end();
-				 sit++)
+			     sit != m_shapeArray.end();
+			     sit++)
 			{
 				collisionShape = (*sit)->CreateBulletShape(margin, useGimpact, useBvh);
 				if (collisionShape)
@@ -2156,8 +2167,8 @@ void CcdShapeConstructionInfo::AddShape(CcdShapeConstructionInfo* shapeInfo)
 CcdShapeConstructionInfo::~CcdShapeConstructionInfo()
 {
 	for (std::vector<CcdShapeConstructionInfo*>::iterator sit = m_shapeArray.begin();
-		 sit != m_shapeArray.end();
-		 sit++)
+	     sit != m_shapeArray.end();
+	     sit++)
 	{
 		(*sit)->Release();
 	}

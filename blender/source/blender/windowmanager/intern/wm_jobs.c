@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,29 +58,29 @@
 /* ********************** Threaded Jobs Manager ****************************** */
 
 /*
-Add new job
-- register in WM
-- configure callbacks
-
-Start or re-run job
-- if job running
-  - signal job to end
-  - add timer notifier to verify when it has ended, to start it
-- else
-  - start job
-  - add timer notifier to handle progress
-
-Stop job
-  - signal job to end
-	on end, job will tag itself as sleeping
-
-Remove job
-- signal job to end
-	on end, job will remove itself
-
-When job is done:
-- it puts timer to sleep (or removes?)
-
+ * Add new job
+ * - register in WM
+ * - configure callbacks
+ *
+ * Start or re-run job
+ * - if job running
+ *   - signal job to end
+ *   - add timer notifier to verify when it has ended, to start it
+ * - else
+ *   - start job
+ *   - add timer notifier to handle progress
+ *
+ * Stop job
+ *   - signal job to end
+ * 	on end, job will tag itself as sleeping
+ *
+ * Remove job
+ * - signal job to end
+ * 	on end, job will remove itself
+ *
+ * When job is done:
+ * - it puts timer to sleep (or removes?)
+ *
  */
  
 struct wmJob {
@@ -152,7 +150,7 @@ static wmJob *wm_job_find(wmWindowManager *wm, void *owner, const char *name)
 
 /* returns current or adds new job, but doesnt run it */
 /* every owner only gets a single job, adding a new one will stop running stop and 
-   when stopped it starts the new one */
+ * when stopped it starts the new one */
 wmJob *WM_jobs_get(wmWindowManager *wm, wmWindow *win, void *owner, const char *name, int flag)
 {
 	wmJob *steve= wm_job_find(wm, owner, name);
@@ -260,7 +258,7 @@ static void *do_job_thread(void *job_v)
 	return NULL;
 }
 
-/* dont allow same startjob to be executed twice */
+/* don't allow same startjob to be executed twice */
 static void wm_jobs_test_suspend_stop(wmWindowManager *wm, wmJob *test)
 {
 	wmJob *steve;
@@ -493,6 +491,13 @@ void wm_jobs_timer(const bContext *C, wmWindowManager *wm, wmTimer *wt)
 				WM_jobs_start(wm, steve);
 			}
 		}
+		else if(steve->threads.first && !steve->ready) {
+			if(steve->flag & WM_JOB_PROGRESS) {
+				/* accumulate global progress for running jobs */
+				jobs_progress++;
+				total_progress += steve->progress;
+			}
+		}
 	}
 	
 	/* on file load 'winactive' can be NULL, possibly it should not happen but for now do a NULL check - campbell */
@@ -507,3 +512,13 @@ void wm_jobs_timer(const bContext *C, wmWindowManager *wm, wmTimer *wt)
 	}
 }
 
+int WM_jobs_has_running(wmWindowManager *wm)
+{
+	wmJob *steve;
+
+	for(steve= wm->jobs.first; steve; steve= steve->next)
+		if(steve->running)
+			return 1;
+
+	return 0;
+}

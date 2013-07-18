@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -64,7 +62,8 @@ double round(double x);
 
 /* from python 3.1 floatobject.c
  * ndigits must be between 0 and 21 */
-double double_round(double x, int ndigits) {
+double double_round(double x, int ndigits)
+{
 	double pow1, pow2, y, z;
 	if (ndigits >= 0) {
 		pow1 = pow(10.0, (double)ndigits);

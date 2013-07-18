@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_DELAYFACTORY
-#define AUD_DELAYFACTORY
+#ifndef __AUD_DELAYFACTORY_H__
+#define __AUD_DELAYFACTORY_H__
 
 #include "AUD_EffectFactory.h"
 
@@ -65,4 +63,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_DELAYFACTORY
+#endif //__AUD_DELAYFACTORY_H__

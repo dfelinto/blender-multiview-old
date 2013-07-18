@@ -1,4 +1,3 @@
-// $Id$
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -31,8 +30,8 @@
  * Please look here for revision history.
  */
 
-#ifndef __KX_SCA_AddObjectActuator
-#define __KX_SCA_AddObjectActuator
+#ifndef __KX_SCA_ADDOBJECTACTUATOR_H__
+#define __KX_SCA_ADDOBJECTACTUATOR_H__
 
 /* Actuator tree */
 #include "SCA_IActuator.h"
@@ -46,7 +45,7 @@ class SCA_IScene;
 
 class KX_SCA_AddObjectActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	/// Time field: lifetime of the new object
 	int	m_timeProp;
@@ -94,7 +93,7 @@ public:
 
 		CValue* 
 	GetReplica(
-	) ;
+	);
 
 	virtual void 
 	ProcessReplica();
@@ -115,7 +114,7 @@ public:
 
 		SCA_IObject*	
 	GetLastCreatedObject(
-	) const ;
+	) const;
 
 	void	InstantAddObject();
 

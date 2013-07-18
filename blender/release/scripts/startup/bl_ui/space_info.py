@@ -18,7 +18,7 @@
 
 # <pep8 compliant>
 import bpy
-from bpy.types import Header, Menu, Operator
+from bpy.types import Header, Menu
 
 
 class INFO_HT_header(Header):
@@ -109,43 +109,43 @@ class INFO_MT_file(Menu):
         layout.operator("wm.read_homefile", text="New", icon='NEW')
         layout.operator_context = 'INVOKE_AREA'
         layout.operator("wm.open_mainfile", text="Open...", icon='FILE_FOLDER')
-        layout.menu("INFO_MT_file_open_recent")
+        layout.menu("INFO_MT_file_open_recent", icon='OPEN_RECENT')
         layout.operator("wm.recover_last_session", icon='RECOVER_LAST')
-        layout.operator("wm.recover_auto_save", text="Recover Auto Save...")
+        layout.operator("wm.recover_auto_save", text="Recover Auto Save...", icon='RECOVER_AUTO')
 
         layout.separator()
 
         layout.operator_context = 'INVOKE_AREA'
         layout.operator("wm.save_mainfile", text="Save", icon='FILE_TICK').check_existing = False
         layout.operator_context = 'INVOKE_AREA'
-        layout.operator("wm.save_as_mainfile", text="Save As...")
+        layout.operator("wm.save_as_mainfile", text="Save As...", icon='SAVE_AS')
         layout.operator_context = 'INVOKE_AREA'
-        layout.operator("wm.save_as_mainfile", text="Save Copy...").copy = True
+        layout.operator("wm.save_as_mainfile", text="Save Copy...", icon='SAVE_COPY').copy = True
 
         layout.separator()
 
         layout.operator("screen.userpref_show", text="User Preferences...", icon='PREFERENCES')
 
         layout.operator_context = 'EXEC_AREA'
-        layout.operator("wm.save_homefile")
-        layout.operator("wm.read_factory_settings")
+        layout.operator("wm.save_homefile", icon='SAVE_PREFS')
+        layout.operator("wm.read_factory_settings", icon='LOAD_FACTORY')
 
         layout.separator()
 
         layout.operator_context = 'INVOKE_AREA'
-        layout.operator("wm.link_append", text="Link")
-        props = layout.operator("wm.link_append", text="Append")
+        layout.operator("wm.link_append", text="Link", icon='LINK_BLEND')
+        props = layout.operator("wm.link_append", text="Append", icon='APPEND_BLEND')
         props.link = False
         props.instance_groups = False
 
         layout.separator()
 
-        layout.menu("INFO_MT_file_import")
-        layout.menu("INFO_MT_file_export")
+        layout.menu("INFO_MT_file_import", icon='IMPORT')
+        layout.menu("INFO_MT_file_export", icon='EXPORT')
 
         layout.separator()
 
-        layout.menu("INFO_MT_file_external_data")
+        layout.menu("INFO_MT_file_external_data", icon='EXTERNAL_DATA')
 
         layout.separator()
 
@@ -273,7 +273,9 @@ class INFO_MT_add(Menu):
     def draw(self, context):
         layout = self.layout
 
-        layout.operator_context = 'EXEC_SCREEN'
+        # note, don't use 'EXEC_SCREEN' or operators wont get the 'v3d' context.
+
+        layout.operator_context = 'EXEC_AREA'
 
         #layout.operator_menu_enum("object.mesh_add", "type", text="Mesh", icon='OUTLINER_OB_MESH')
         layout.menu("INFO_MT_mesh_add", icon='OUTLINER_OB_MESH')
@@ -296,7 +298,7 @@ class INFO_MT_add(Menu):
         layout.separator()
 
         layout.operator("object.camera_add", text="Camera", icon='OUTLINER_OB_CAMERA')
-        layout.operator_context = 'EXEC_SCREEN'
+        layout.operator_context = 'EXEC_AREA'
         layout.operator_menu_enum("object.lamp_add", "type", text="Lamp", icon='OUTLINER_OB_LAMP')
         layout.separator()
 
@@ -359,8 +361,8 @@ class INFO_MT_help(Menu):
 
         layout = self.layout
 
-        layout.operator("wm.url_open", text="Manual", icon='HELP').url = 'http://wiki.blender.org/index.php/Doc:Manual'
-        layout.operator("wm.url_open", text="Release Log", icon='URL').url = 'http://www.blender.org/development/release-logs/blender-259/'
+        layout.operator("wm.url_open", text="Manual", icon='HELP').url = 'http://wiki.blender.org/index.php/Doc:2.6/Manual'
+        layout.operator("wm.url_open", text="Release Log", icon='URL').url = 'http://www.blender.org/development/release-logs/blender-262/'
 
         layout.separator()
 
@@ -373,43 +375,16 @@ class INFO_MT_help(Menu):
         layout.separator()
 
         layout.operator("wm.url_open", text="Python API Reference", icon='URL').url = bpy.types.WM_OT_doc_view._prefix
-        layout.operator("help.operator_cheat_sheet", icon='TEXT')
+        layout.operator("wm.operator_cheat_sheet", icon='TEXT')
         layout.operator("wm.sysinfo", icon='TEXT')
         layout.separator()
         if sys.platform[:3] == "win":
             layout.operator("wm.console_toggle", icon='CONSOLE')
             layout.separator()
         layout.operator("anim.update_data_paths", text="FCurve/Driver Version fix", icon='HELP')
+        layout.operator("logic.texface_convert", text="TexFace to Material Convert", icon='GAME')
         layout.separator()
         layout.operator("wm.splash", icon='BLENDER')
-
-
-# Help operators
-
-
-class HELP_OT_operator_cheat_sheet(Operator):
-    bl_idname = "help.operator_cheat_sheet"
-    bl_label = "Operator Cheat Sheet"
-
-    def execute(self, context):
-        op_strings = []
-        tot = 0
-        for op_module_name in dir(bpy.ops):
-            op_module = getattr(bpy.ops, op_module_name)
-            for op_submodule_name in dir(op_module):
-                op = getattr(op_module, op_submodule_name)
-                text = repr(op)
-                if text.split("\n")[-1].startswith('bpy.ops.'):
-                    op_strings.append(text)
-                    tot += 1
-
-            op_strings.append('')
-
-        textblock = bpy.data.texts.new("OperatorList.txt")
-        textblock.write('# %d Operators\n\n' % tot)
-        textblock.write('\n'.join(op_strings))
-        self.report({'INFO'}, "See OperatorList.txt textblock")
-        return {'FINISHED'}
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

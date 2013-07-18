@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_ICONTROLLER
-#define __KX_ICONTROLLER
+#ifndef __SCA_ICONTROLLER_H__
+#define __SCA_ICONTROLLER_H__
 
 #include "SCA_ILogicBrick.h"
 #include "PyObjectPlus.h"
@@ -44,7 +42,7 @@
  */
 class SCA_IController : public SCA_ILogicBrick
 {
-	Py_Header;
+	Py_Header
 protected:
 	std::vector<class SCA_ISensor*>		m_linkedsensors;
 	std::vector<class SCA_IActuator*>	m_linkedactuators;

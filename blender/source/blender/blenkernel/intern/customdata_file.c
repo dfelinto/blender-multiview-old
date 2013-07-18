@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -111,13 +109,15 @@ static int cdf_endian(void)
 		return CDF_ENDIAN_BIG;
 }
 
-/*static int cdf_data_type_size(int datatype)
+#if 0
+static int cdf_data_type_size(int datatype)
 {
 	if(datatype == CDF_DATA_FLOAT)
 		return sizeof(float);
 	
 	return 0;
-}*/
+}
+#endif
 
 CDataFile *cdf_create(int type)
 {
@@ -275,7 +275,7 @@ static int cdf_write_header(CDataFile *cdf)
 	return 1;
 }
 
-int cdf_read_open(CDataFile *cdf, char *filename)
+int cdf_read_open(CDataFile *cdf, const char *filename)
 {
 	FILE *f;
 
@@ -343,7 +343,7 @@ void cdf_read_close(CDataFile *cdf)
 	}
 }
 
-int cdf_write_open(CDataFile *cdf, char *filename)
+int cdf_write_open(CDataFile *cdf, const char *filename)
 {
 	CDataFileHeader *header;
 	CDataFileImageHeader *image;
@@ -407,14 +407,14 @@ void cdf_write_close(CDataFile *cdf)
 	}
 }
 
-void cdf_remove(char *filename)
+void cdf_remove(const char *filename)
 {
 	BLI_delete(filename, 0, 0);
 }
 
 /********************************** Layers ***********************************/
 
-CDataFileLayer *cdf_layer_find(CDataFile *cdf, int type, char *name)
+CDataFileLayer *cdf_layer_find(CDataFile *cdf, int type, const char *name)
 {
 	CDataFileLayer *layer;
 	int a;
@@ -429,7 +429,7 @@ CDataFileLayer *cdf_layer_find(CDataFile *cdf, int type, char *name)
 	return NULL;
 }
 
-CDataFileLayer *cdf_layer_add(CDataFile *cdf, int type, char *name, size_t datasize)
+CDataFileLayer *cdf_layer_add(CDataFile *cdf, int type, const char *name, size_t datasize)
 {
 	CDataFileLayer *newlayer, *layer;
 

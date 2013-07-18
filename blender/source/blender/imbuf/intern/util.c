@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +25,6 @@
  * ***** END GPL LICENSE BLOCK *****
  * util.c
  *
- * $Id$
  */
 
 /** \file blender/imbuf/intern/util.c
@@ -201,12 +199,14 @@ int IMB_ispic(const char *filename)
 
 
 
-static int isavi (const char *name) {
+static int isavi (const char *name)
+{
 	return AVI_is_avi (name);
 }
 
 #ifdef WITH_QUICKTIME
-static int isqtime (const char *name) {
+static int isqtime (const char *name)
+{
 	return anim_is_quicktime (name);
 }
 #endif
@@ -215,12 +215,10 @@ static int isqtime (const char *name) {
 
 void silence_log_ffmpeg(int quiet)
 {
-	if (quiet)
-	{
+	if (quiet) {
 		av_log_set_level(AV_LOG_QUIET);
 	}
-	else
-	{
+	else {
 		av_log_set_level(AV_LOG_DEBUG);
 	}
 }
@@ -242,7 +240,8 @@ void do_init_ffmpeg(void)
 	}
 }
 
-static int isffmpeg (const char *filename) {
+static int isffmpeg (const char *filename)
+{
 	AVFormatContext *pFormatCtx;
 	unsigned int i;
 	int videoStream;
@@ -325,7 +324,8 @@ static int isredcode(const char * filename)
 
 #endif
 
-int imb_get_anim_type(const char * name) {
+int imb_get_anim_type(const char * name)
+{
 	int type;
 	struct stat st;
 
@@ -366,7 +366,8 @@ int imb_get_anim_type(const char * name) {
 	return(0);
 }
  
-int IMB_isanim(const char *filename) {
+int IMB_isanim(const char *filename)
+{
 	int type;
 	
 	if(U.uiflag & USER_FILTERFILEEXTS) {

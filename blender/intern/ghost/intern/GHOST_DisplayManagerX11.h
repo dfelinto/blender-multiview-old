@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_DisplayManagerX11 class.
  */
 
-#ifndef _GHOST_DISPLAY_MANAGER_X11_H_
-#define _GHOST_DISPLAY_MANAGER_X11_H_
+#ifndef __GHOST_DISPLAYMANAGERX11_H__
+#define __GHOST_DISPLAYMANAGERX11_H__
 
 #include "GHOST_DisplayManager.h"
 

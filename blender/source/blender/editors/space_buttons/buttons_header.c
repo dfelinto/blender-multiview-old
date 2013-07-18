@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,6 +35,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
 
 #include "BKE_context.h"
 
@@ -109,7 +108,7 @@ void buttons_header_buttons(const bContext *C, ARegion *ar)
 
 	buttons_context_compute(C, sbuts);
 	
-	block= uiBeginBlock(C, ar, "header buttons", UI_EMBOSS);
+	block= uiBeginBlock(C, ar, __func__, UI_EMBOSS);
 	uiBlockSetHandleFunc(block, do_buttons_buttons, NULL);
 	
 	xco= ED_area_header_switchbutton(C, block, yco);
@@ -124,24 +123,23 @@ void buttons_header_buttons(const bContext *C, ARegion *ar)
 
 #define BUTTON_HEADER_CTX(_ctx, _icon, _tip) \
 	if(sbuts->pathflag & (1<<_ctx)) { \
-		but= uiDefIconButS(block, ROW, B_CONTEXT_SWITCH, _icon, xco+=BUT_UNIT_X, yco, BUT_UNIT_X, UI_UNIT_Y, &(sbuts->mainb), 0.0, (float)_ctx, 0, 0, _tip); \
+		but= uiDefIconButS(block, ROW, B_CONTEXT_SWITCH, _icon, xco+=BUT_UNIT_X, yco, BUT_UNIT_X, UI_UNIT_Y, &(sbuts->mainb), 0.0, (float)_ctx, 0, 0, TIP_(_tip)); \
 		uiButClearFlag(but, UI_BUT_UNDO); \
 	} \
 
-
-	BUTTON_HEADER_CTX(BCONTEXT_RENDER, ICON_SCENE, "Render")
-	BUTTON_HEADER_CTX(BCONTEXT_SCENE, ICON_SCENE_DATA, "Scene");
-	BUTTON_HEADER_CTX(BCONTEXT_WORLD, ICON_WORLD, "World");
-	BUTTON_HEADER_CTX(BCONTEXT_OBJECT, ICON_OBJECT_DATA, "Object");
-	BUTTON_HEADER_CTX(BCONTEXT_CONSTRAINT, ICON_CONSTRAINT, "Object Constraints");
-	BUTTON_HEADER_CTX(BCONTEXT_MODIFIER, ICON_MODIFIER, "Object Modifiers");
-	BUTTON_HEADER_CTX(BCONTEXT_DATA, sbuts->dataicon, "Object Data");
-	BUTTON_HEADER_CTX(BCONTEXT_BONE, ICON_BONE_DATA, "Bone");
-	BUTTON_HEADER_CTX(BCONTEXT_BONE_CONSTRAINT, ICON_CONSTRAINT_BONE, "Bone Constraints");
-	BUTTON_HEADER_CTX(BCONTEXT_MATERIAL, ICON_MATERIAL, "Material");
-	BUTTON_HEADER_CTX(BCONTEXT_TEXTURE, ICON_TEXTURE, "Textures");
-	BUTTON_HEADER_CTX(BCONTEXT_PARTICLE, ICON_PARTICLES, "Particles");
-	BUTTON_HEADER_CTX(BCONTEXT_PHYSICS, ICON_PHYSICS, "Physics");
+	BUTTON_HEADER_CTX(BCONTEXT_RENDER, ICON_SCENE, N_("Render"))
+	BUTTON_HEADER_CTX(BCONTEXT_SCENE, ICON_SCENE_DATA, N_("Scene"));
+	BUTTON_HEADER_CTX(BCONTEXT_WORLD, ICON_WORLD, N_("World"));
+	BUTTON_HEADER_CTX(BCONTEXT_OBJECT, ICON_OBJECT_DATA, N_("Object"));
+	BUTTON_HEADER_CTX(BCONTEXT_CONSTRAINT, ICON_CONSTRAINT, N_("Object Constraints"));
+	BUTTON_HEADER_CTX(BCONTEXT_MODIFIER, ICON_MODIFIER, N_("Object Modifiers"));
+	BUTTON_HEADER_CTX(BCONTEXT_DATA, sbuts->dataicon, N_("Object Data"));
+	BUTTON_HEADER_CTX(BCONTEXT_BONE, ICON_BONE_DATA, N_("Bone"));
+	BUTTON_HEADER_CTX(BCONTEXT_BONE_CONSTRAINT, ICON_CONSTRAINT_BONE, N_("Bone Constraints"));
+	BUTTON_HEADER_CTX(BCONTEXT_MATERIAL, ICON_MATERIAL, N_("Material"));
+	BUTTON_HEADER_CTX(BCONTEXT_TEXTURE, ICON_TEXTURE, N_("Textures"));
+	BUTTON_HEADER_CTX(BCONTEXT_PARTICLE, ICON_PARTICLES, N_("Particles"));
+	BUTTON_HEADER_CTX(BCONTEXT_PHYSICS, ICON_PHYSICS, N_("Physics"));
 
 #undef BUTTON_HEADER_CTX
 

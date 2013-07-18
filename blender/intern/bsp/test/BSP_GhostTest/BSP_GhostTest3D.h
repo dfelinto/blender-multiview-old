@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BSP_GhostTest_h
-#define BSP_GhostTest_h
+#ifndef __BSP_GHOSTTEST3D_H__
+#define __BSP_GHOSTTEST3D_H__
 
 #include "GHOST_IEventConsumer.h"
 #include "MT_Vector3.h"

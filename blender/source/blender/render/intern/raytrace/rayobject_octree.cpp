@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,7 +29,7 @@
 
 
 /* IMPORTANT NOTE: this code must be independent of any other render code
-   to use it outside the renderer! */
+ * to use it outside the renderer! */
 
 #include <math.h>
 #include <string.h>
@@ -98,12 +96,13 @@ static void RE_rayobject_octree_bb(RayObject *o, float *min, float *max);
 /*
  * This function is not expected to be called by current code state.
  */
-static float RE_rayobject_octree_cost(RayObject *o)
+static float RE_rayobject_octree_cost(RayObject *UNUSED(o))
 {
 	return 1.0;
 }
 
-static void RE_rayobject_octree_hint_bb(RayObject *o, RayHint *hint, float *min, float *max)
+static void RE_rayobject_octree_hint_bb(RayObject *UNUSED(o), RayHint *UNUSED(hint),
+                                        float *UNUSED(min), float *UNUSED(max))
 {
 	return;
 }
@@ -264,7 +263,7 @@ static int face_in_node(RayFace *face, short x, short y, short z, float rtf[][3]
 	return 0;
 }
 
-static void ocwrite(Octree *oc, RayFace *face, int quad, short x, short y, short z, float rtf[][3])
+static void ocwrite(Octree *oc, RayFace *face, int quad, short x, short y, short z, float rtf[4][3])
 {
 	Branch *br;
 	Node *no;
@@ -516,15 +515,15 @@ static void octree_fill_rayface(Octree *oc, RayFace *face)
 		copy_v3_v3(co4, face->v4);
 
 	for(c=0;c<3;c++) {
-		rtf[0][c]= (co1[c]-oc->min[c])*ocfac[c] ;
-		rts[0][c]= (short)rtf[0][c];
-		rtf[1][c]= (co2[c]-oc->min[c])*ocfac[c] ;
-		rts[1][c]= (short)rtf[1][c];
-		rtf[2][c]= (co3[c]-oc->min[c])*ocfac[c] ;
-		rts[2][c]= (short)rtf[2][c];
+		rtf[0][c] = (co1[c] - oc->min[c]) * ocfac[c];
+		rts[0][c] = (short)rtf[0][c];
+		rtf[1][c] = (co2[c] - oc->min[c]) * ocfac[c];
+		rts[1][c] = (short)rtf[1][c];
+		rtf[2][c] = (co3[c] - oc->min[c]) * ocfac[c];
+		rts[2][c] = (short)rtf[2][c];
 		if(RE_rayface_isQuad(face)) {
-			rtf[3][c]= (co4[c]-oc->min[c])*ocfac[c] ;
-			rts[3][c]= (short)rtf[3][c];
+			rtf[3][c] = (co4[c] - oc->min[c]) * ocfac[c];
+			rts[3][c] = (short)rtf[3][c];
 		}
 	}
 	
@@ -673,7 +672,7 @@ static void RE_rayobject_octree_bb(RayObject *tree, float *min, float *max)
 }
 
 /* check all faces in this node */
-static int testnode(Octree *oc, Isect *is, Node *no, OcVal ocval)
+static int testnode(Octree *UNUSED(oc), Isect *is, Node *no, OcVal ocval)
 {
 	short nr=0;
 
@@ -806,9 +805,9 @@ static int cliptest(float p, float q, float *u1, float *u2)
 }
 
 /* extensive coherence checks/storage cancels out the benefit of it, and gives errors... we
-   need better methods, sample code commented out below (ton) */
+ * need better methods, sample code commented out below (ton) */
  
-/*
+#if 0
 
 in top: static int coh_nodes[16*16*16][6];
 in makeoctree: memset(coh_nodes, 0, sizeof(coh_nodes));
@@ -833,7 +832,7 @@ static int do_coherence_test(int ocx1, int ocx2, int ocy1, int ocy2, int ocz1, i
 	return 0;
 }
 
-*/
+#endif
 
 /* return 1: found valid intersection */
 /* starts with is->orig.face */
@@ -980,14 +979,14 @@ static int RE_rayobject_octree_intersect(RayObject *tree, Isect *is)
 		}
 		
 		xo=ocx1; yo=ocy1; zo=ocz1;
-		labdao= ddalabda= MIN3(labdax,labday,labdaz);
+		ddalabda= MIN3(labdax,labday,labdaz);
 		
 		vec2[0]= ox1;
 		vec2[1]= oy1;
 		vec2[2]= oz1;
 		
 		/* this loop has been constructed to make sure the first and last node of ray
-		   are always included, even when ddalabda==1.0f or larger */
+		 * are always included, even when ddalabda==1.0f or larger */
 
 		while(TRUE) {
 
@@ -1014,7 +1013,7 @@ static int RE_rayobject_octree_intersect(RayObject *tree, Isect *is)
 			labdao= ddalabda;
 			
 			/* traversing ocree nodes need careful detection of smallest values, with proper
-			   exceptions for equal labdas */
+			 * exceptions for equal labdas */
 			eqval= (labdax==labday);
 			if(labday==labdaz) eqval += 2;
 			if(labdax==labdaz) eqval += 4;

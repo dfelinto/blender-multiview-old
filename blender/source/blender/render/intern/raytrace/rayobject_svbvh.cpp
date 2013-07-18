@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -148,12 +146,12 @@ int intersect(SVBVHTree *obj, Isect* isec)
 }
 
 template<class Tree>
-void bvh_hint_bb(Tree *tree, LCTSHint *hint, float *min, float *max)
+void bvh_hint_bb(Tree *tree, LCTSHint *hint, float *UNUSED(min), float *UNUSED(max))
 {
 	//TODO renable hint support
 	{
-	 	hint->size = 0;
-	 	hint->stack[hint->size++] = (RayObject*)tree->root;
+		hint->size = 0;
+		hint->stack[hint->size++] = (RayObject*)tree->root;
 	}
 }
 /* the cast to pointer function is needed to workarround gcc bug: http://gcc.gnu.org/bugzilla/show_bug.cgi?id=11407 */

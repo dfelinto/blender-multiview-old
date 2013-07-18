@@ -25,14 +25,16 @@
  * ***** END GPL LICENSE BLOCK *****
  */ 
 
-#ifndef BKE_PAINT_H
-#define BKE_PAINT_H
+#ifndef __BKE_PAINT_H__
+#define __BKE_PAINT_H__
 
 /** \file BKE_paint.h
  *  \ingroup bke
  */
 
 struct Brush;
+struct MDisps;
+struct MeshElemMap;
 struct MFace;
 struct MultireModifierData;
 struct MVert;
@@ -59,6 +61,12 @@ void paint_brush_set(struct Paint *paint, struct Brush *br);
  * Texture paint could be removed since selected faces are not used
  * however hiding faces is useful */
 int paint_facesel_test(struct Object *ob);
+int paint_vertsel_test(struct Object *ob);
+
+/* partial visibility */
+int paint_is_face_hidden(const struct MFace *f, const struct MVert *mvert);
+int paint_is_grid_face_hidden(const unsigned int *grid_hidden,
+							  int gridsize, int x, int y);
 
 /* Session data (mode-specific) */
 
@@ -66,13 +74,14 @@ typedef struct SculptSession {
 	/* Mesh data (not copied) can come either directly from a Mesh, or from a MultiresDM */
 	struct MultiresModifierData *multires; /* Special handling for multires meshes */
 	struct MVert *mvert;
-	struct MFace *mface;
-	int totvert, totface;
+	struct MPoly *mpoly;
+	struct MLoop *mloop;
+	int totvert, totpoly;
 	float *face_normals;
 	struct KeyBlock *kb;
 	
 	/* Mesh connectivity */
-	struct ListBase *fmap;
+	const struct MeshElemMap *pmap;
 
 	/* PBVH acceleration structure */
 	struct PBVH *pbvh;
@@ -81,7 +90,7 @@ typedef struct SculptSession {
 	int modifiers_active; /* object is deformed with some modifiers */
 	float (*orig_cos)[3]; /* coords of undeformed mesh */
 	float (*deform_cos)[3]; /* coords of deformed mesh but without stroke displacement */
-	float (*deform_imats)[3][3]; /* crazyspace deformation matricies */
+	float (*deform_imats)[3][3]; /* crazyspace deformation matrices */
 
 	/* Partial redraw */
 	int partial_redraw;
@@ -90,12 +99,13 @@ typedef struct SculptSession {
 	unsigned int texcache_side, *texcache, texcache_actual;
 
 	/* Layer brush persistence between strokes */
-	 float (*layer_co)[3]; /* Copy of the mesh vertices' locations */
+	float (*layer_co)[3]; /* Copy of the mesh vertices' locations */
 
 	struct SculptStroke *stroke;
 	struct StrokeCache *cache;
 } SculptSession;
 
 void free_sculptsession(struct Object *ob);
+void free_sculptsession_deformMats(struct SculptSession *ss);
 
 #endif

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -78,10 +77,10 @@ void KX_PolygonMaterial::Initialize(
 		int tile,
 		int tilexrep,
 		int tileyrep,
-		int mode,
-		int transp,
+		int alphablend,
 		bool alpha,
 		bool zsort,
+		bool light,
 		int lightlayer,
 		struct MTFace* tface,
 		unsigned int* mcol)
@@ -93,10 +92,12 @@ void KX_PolygonMaterial::Initialize(
 							tile,
 							tilexrep,
 							tileyrep,
-							mode,
-							transp,
+							alphablend,
 							alpha,
-							zsort);
+							zsort,
+							light,
+							(texname && texname != ""?true:false), /* if we have a texture we have image */
+							ma?&ma->game:NULL);
 	m_tface = tface;
 	m_mcol = mcol;
 	m_material = ma;
@@ -168,7 +169,7 @@ void KX_PolygonMaterial::DefaultActivate(RAS_IRasterizer* rasty, TCachingInfo& c
 	if (GetCachingInfo() != cachingInfo)
 	{
 		if (!cachingInfo)
-			GPU_set_tpage(NULL, 0);
+			GPU_set_tpage(NULL, 0, 0);
 
 		cachingInfo = GetCachingInfo();
 
@@ -176,15 +177,15 @@ void KX_PolygonMaterial::DefaultActivate(RAS_IRasterizer* rasty, TCachingInfo& c
 		{
 			Image *ima = (Image*)m_tface->tpage;
 			GPU_update_image_time(ima, rasty->GetTime());
-			GPU_set_tpage(m_tface, 1);
+			GPU_set_tpage(m_tface, 1, m_alphablend);
 		}
 		else
-			GPU_set_tpage(NULL, 0);
+			GPU_set_tpage(NULL, 0, 0);
 		
-		if(m_drawingmode & RAS_IRasterizer::KX_TWOSIDE)
-			rasty->SetCullFace(false);
-		else
+		if(m_drawingmode & RAS_IRasterizer::KX_BACKCULL)
 			rasty->SetCullFace(true);
+		else
+			rasty->SetCullFace(false);
 
 		if ((m_drawingmode & RAS_IRasterizer::KX_LINES) ||
 		        (rasty->GetDrawingMode() <= RAS_IRasterizer::KX_WIREFRAME))
@@ -318,7 +319,7 @@ KX_PYMETHODDEF_DOC(KX_PolygonMaterial, setTexture, "setTexture(tface)")
 	if (PyArg_ParseTuple(args, "O!:setTexture", &PyCapsule_Type, &pytface))
 	{
 		MTFace *tface = (MTFace*) PyCapsule_GetPointer(pytface, KX_POLYGONMATERIAL_CAPSULE_ID);
-		GPU_set_tpage(tface, 1);
+		GPU_set_tpage(tface, 1, m_alphablend);
 		Py_RETURN_NONE;
 	}
 	
@@ -345,13 +346,13 @@ KX_PYMETHODDEF_DOC(KX_PolygonMaterial, activate, "activate(rasty, cachingInfo)")
 PyObject* KX_PolygonMaterial::pyattr_get_texture(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_PolygonMaterial* self= static_cast<KX_PolygonMaterial*>(self_v);
-	return PyUnicode_FromString(self->m_texturename.ReadPtr());
+	return PyUnicode_From_STR_String(self->m_texturename);
 }
 
 PyObject* KX_PolygonMaterial::pyattr_get_material(void *self_v, const KX_PYATTRIBUTE_DEF *attrdef)
 {
 	KX_PolygonMaterial* self= static_cast<KX_PolygonMaterial*>(self_v);
-	return PyUnicode_FromString(self->m_materialname.ReadPtr());
+	return PyUnicode_From_STR_String(self->m_materialname);
 }
 
 /* this does not seem useful */

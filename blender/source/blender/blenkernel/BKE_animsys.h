@@ -23,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BKE_ANIM_SYS_H
-#define BKE_ANIM_SYS_H
+#ifndef __BKE_ANIMSYS_H__
+#define __BKE_ANIMSYS_H__
 
 /** \file BKE_animsys.h
  *  \ingroup bke
@@ -81,7 +81,7 @@ void BKE_relink_animdata(struct AnimData *adt);
 /* KeyingSets API */
 
 /* Used to create a new 'custom' KeyingSet for the user, that will be automatically added to the stack */
-struct KeyingSet *BKE_keyingset_add(struct ListBase *list, const char name[], short flag, short keyingflag);
+struct KeyingSet *BKE_keyingset_add(struct ListBase *list, const char idname[], const char name[], short flag, short keyingflag);
 
 /* Add a path to a KeyingSet */
 struct KS_Path *BKE_keyingset_add_path(struct KeyingSet *ks, struct ID *id, const char group_name[], const char rna_path[], int array_index, short flag, short groupmode);
@@ -105,10 +105,10 @@ void BKE_keyingsets_free(struct ListBase *list);
 /* Path Fixing API */
 
 /* Fix all the paths for the given ID+AnimData */
-void BKE_animdata_fix_paths_rename(struct ID *owner_id, struct AnimData *adt, const char *prefix, char *oldName, char *newName, int oldSubscript, int newSubscript, int verify_paths);
+void BKE_animdata_fix_paths_rename(struct ID *owner_id, struct AnimData *adt, const char *prefix, const char *oldName, const char *newName, int oldSubscript, int newSubscript, int verify_paths);
 
 /* Fix all the paths for the entire database... */
-void BKE_all_animdata_fix_paths_rename(char *prefix, char *oldName, char *newName);
+void BKE_all_animdata_fix_paths_rename(const char *prefix, const char *oldName, const char *newName);
 
 /* -------------------------------------- */
 
@@ -144,7 +144,7 @@ void BKE_animsys_evaluate_animdata(struct Scene *scene, struct ID *id, struct An
 void BKE_animsys_evaluate_all_animation(struct Main *main, struct Scene *scene, float ctime);
 
 
-/* ------------ Specialised API --------------- */
+/* ------------ Specialized API --------------- */
 /* There are a few special tools which require these following functions. They are NOT to be used
  * for standard animation evaluation UNDER ANY CIRCUMSTANCES! 
  *
@@ -160,4 +160,4 @@ void animsys_evaluate_action_group(struct PointerRNA *ptr, struct bAction *act, 
 
 /* ************************************* */
 
-#endif /* BKE_ANIM_SYS_H*/
+#endif /* __BKE_ANIMSYS_H__*/

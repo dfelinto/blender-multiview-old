@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -92,7 +90,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 	Material *ma;
 	StrandBuffer *strandbuf;
 	float *simplify;
-	float p[4][3], data[4], cross[3], crosslen, w, dx, dy, t;
+	float p[4][3], data[4], cross[3], w, dx, dy, t;
 	int type;
 
 	strandbuf= sseg->buffer;
@@ -100,10 +98,10 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 	t= spoint->t;
 	type= (strandbuf->flag & R_STRAND_BSPLINE)? KEY_BSPLINE: KEY_CARDINAL;
 
-	VECCOPY(p[0], sseg->v[0]->co);
-	VECCOPY(p[1], sseg->v[1]->co);
-	VECCOPY(p[2], sseg->v[2]->co);
-	VECCOPY(p[3], sseg->v[3]->co);
+	copy_v3_v3(p[0], sseg->v[0]->co);
+	copy_v3_v3(p[1], sseg->v[1]->co);
+	copy_v3_v3(p[2], sseg->v[2]->co);
+	copy_v3_v3(p[3], sseg->v[3]->co);
 
 	if(sseg->obi->flag & R_TRANSFORMED) {
 		mul_m4_v3(sseg->obi->mat, p[0]);
@@ -113,7 +111,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 	}
 
 	if(t == 0.0f) {
-		VECCOPY(spoint->co, p[1]);
+		copy_v3_v3(spoint->co, p[1]);
 		spoint->strandco= sseg->v[1]->strandco;
 
 		spoint->dtstrandco= (sseg->v[2]->strandco - sseg->v[0]->strandco);
@@ -121,7 +119,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 			spoint->dtstrandco *= 0.5f;
 	}
 	else if(t == 1.0f) {
-		VECCOPY(spoint->co, p[2]);
+		copy_v3_v3(spoint->co, p[2]);
 		spoint->strandco= sseg->v[2]->strandco;
 
 		spoint->dtstrandco= (sseg->v[3]->strandco - sseg->v[1]->strandco);
@@ -141,12 +139,9 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 	spoint->dtco[1]= data[0]*p[0][1] + data[1]*p[1][1] + data[2]*p[2][1] + data[3]*p[3][1];
 	spoint->dtco[2]= data[0]*p[0][2] + data[1]*p[1][2] + data[2]*p[2][2] + data[3]*p[3][2];
 
-	VECCOPY(spoint->tan, spoint->dtco);
-	normalize_v3(spoint->tan);
-
-	VECCOPY(spoint->nor, spoint->co);
-	VECMUL(spoint->nor, -1.0f);
-	normalize_v3(spoint->nor);
+	normalize_v3_v3(spoint->tan, spoint->dtco);
+	normalize_v3_v3(spoint->nor, spoint->co);
+	negate_v3(spoint->nor);
 
 	spoint->width= strand_eval_width(ma, spoint->strandco);
 	
@@ -164,7 +159,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 
 	if(w > 0.0f) {
 		if(strandbuf->flag & R_STRAND_B_UNITS) {
-			crosslen= len_v3(cross);
+			const float crosslen= len_v3(cross);
 			w= 2.0f*crosslen*strandbuf->minwidth/w;
 
 			if(spoint->width < w) {
@@ -185,7 +180,7 @@ void strand_eval_point(StrandSegment *sseg, StrandPoint *spoint)
 	sub_v3_v3v3(spoint->co1, spoint->co, cross);
 	add_v3_v3v3(spoint->co2, spoint->co, cross);
 
-	VECCOPY(spoint->dsco, cross);
+	copy_v3_v3(spoint->dsco, cross);
 }
 
 /* *************** */
@@ -619,10 +614,10 @@ static void do_scanconvert_strand(Render *UNUSED(re), StrandPart *spart, ZSpan *
 {
 	float jco1[3], jco2[3], jco3[3], jco4[3], jx, jy;
 
-	VECCOPY(jco1, co1);
-	VECCOPY(jco2, co2);
-	VECCOPY(jco3, co3);
-	VECCOPY(jco4, co4);
+	copy_v3_v3(jco1, co1);
+	copy_v3_v3(jco2, co2);
+	copy_v3_v3(jco3, co3);
+	copy_v3_v3(jco4, co4);
 
 	if(spart->jit) {
 		jx= -spart->jit[sample][0];
@@ -685,7 +680,7 @@ static void strand_render(Render *re, StrandSegment *sseg, float winmat[][4], St
 			zbufclip4(re, &zspan[a], obi, index, p1->hoco2, p1->hoco1, p2->hoco1, p2->hoco2, p1->clip2, p1->clip1, p2->clip1, p2->clip2);
 #endif
 			/* only render a line for now, which makes the shadow map more
-			   similiar across frames, and so reduces flicker */
+			 * similar across frames, and so reduces flicker */
 			zbufsinglewire(&zspan[a], obi, index, hoco1, hoco2);
 		}
 	}
@@ -838,7 +833,6 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 
 	memarena= BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, "strand sort arena");
 	firstseg= NULL;
-	sortseg= sortsegments;
 	totsegment= 0;
 
 	/* for all object instances */
@@ -853,7 +847,7 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 
 		/* compute matrix and try clipping whole object */
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(obwinmat, obi->mat, winmat);
+			mult_m4_m4m4(obwinmat, winmat, obi->mat);
 		else
 			copy_m4_m4(obwinmat, winmat);
 
@@ -980,7 +974,7 @@ StrandSurface *cache_strand_surface(Render *re, ObjectRen *obr, DerivedMesh *dm,
 	int a, totvert, totface;
 
 	totvert= dm->getNumVerts(dm);
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 
 	for(mesh=re->strandsurface.first; mesh; mesh=mesh->next)
 		if(mesh->obr.ob == obr->ob && mesh->obr.par == obr->par
@@ -1010,11 +1004,11 @@ StrandSurface *cache_strand_surface(Render *re, ObjectRen *obr, DerivedMesh *dm,
 
 	mvert= dm->getVertArray(dm);
 	for(a=0; a<mesh->totvert; a++, mvert++) {
-		VECCOPY(co[a], mvert->co);
+		copy_v3_v3(co[a], mvert->co);
 		mul_m4_v3(mat, co[a]);
 	}
 
-	mface= dm->getFaceArray(dm);
+	mface= dm->getTessFaceArray(dm);
 	for(a=0; a<mesh->totface; a++, mface++) {
 		mesh->face[a][0]= mface->v1;
 		mesh->face[a][1]= mface->v2;
@@ -1049,7 +1043,7 @@ void strand_minmax(StrandRen *strand, float *min, float *max, float width)
 	int a;
 
 	for(a=0, svert=strand->vert; a<strand->totvert; a++, svert++) {
-		VECCOPY(vec, svert->co);
+		copy_v3_v3(vec, svert->co);
 		DO_MINMAX(vec, min, max);
 		
 		if(width!=0.0f) {

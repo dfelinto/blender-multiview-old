@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_fluidsim_util.c
  *  \ingroup modifiers
@@ -64,13 +62,14 @@
 // headers for fluidsim bobj meshes
 #include "LBM_fluidsim.h"
 
+
 void fluidsim_init(FluidsimModifierData *fluidmd)
 {
-#ifndef DISABLE_ELBEEM
+#ifdef WITH_MOD_FLUID
 	if(fluidmd)
 	{
 		FluidsimSettings *fss = MEM_callocN(sizeof(FluidsimSettings), "fluidsimsettings");
-		
+
 		fluidmd->fss = fss;
 		
 		if(!fss)
@@ -96,6 +95,7 @@ void fluidsim_init(FluidsimModifierData *fluidmd)
 
 		fss->animStart = 0.0; 
 		fss->animEnd = 4.0;
+		fss->animRate = 1.0;
 		fss->gstar = 0.005; // used as normgstar
 		fss->maxRefine = -1;
 		// maxRefine is set according to resolutionxyz during bake
@@ -103,9 +103,7 @@ void fluidsim_init(FluidsimModifierData *fluidmd)
 		// fluid/inflow settings
 		// fss->iniVel --> automatically set to 0
 
-		/*  elubie: changed this to default to the same dir as the render output
-		to prevent saving to C:\ on Windows */
-		BLI_strncpy(fss->surfdataPath, btempdir, FILE_MAX);
+		modifier_path_init(fss->surfdataPath, sizeof(fss->surfdataPath), "cache_fluid");
 
 		// first init of bounding box
 		// no bounding box needed
@@ -133,11 +131,11 @@ void fluidsim_init(FluidsimModifierData *fluidmd)
 		fss->cpsQuality = 10.0; // 1.0 / 10.0 => means 0.1 width
 		
 		/*
-		BAD TODO: this is done in buttons_object.c in the moment 
-		Mesh *mesh = ob->data;
-		// calculate bounding box
-		fluid_get_bb(mesh->mvert, mesh->totvert, ob->obmat, fss->bbStart, fss->bbSize);	
-		*/
+		 * BAD TODO: this is done in buttons_object.c in the moment
+		 * Mesh *mesh = ob->data;
+		 * // calculate bounding box
+		 * fluid_get_bb(mesh->mvert, mesh->totvert, ob->obmat, fss->bbStart, fss->bbSize);
+		 */
 		
 		fss->meshVelocities = NULL;
 		
@@ -154,36 +152,34 @@ void fluidsim_init(FluidsimModifierData *fluidmd)
 
 void fluidsim_free(FluidsimModifierData *fluidmd)
 {
-#ifndef DISABLE_ELBEEM
-	if(fluidmd)
-	{
-		if(fluidmd->fss->meshVelocities)
-		{
+	if (fluidmd && fluidmd->fss) {
+		if (fluidmd->fss->meshVelocities) {
 			MEM_freeN(fluidmd->fss->meshVelocities);
 			fluidmd->fss->meshVelocities = NULL;
 		}
 		MEM_freeN(fluidmd->fss);
 	}
-#else
-	(void)fluidmd; /* unused */
-#endif
 	
 	return;
 }
 
-#ifndef DISABLE_ELBEEM
+#ifdef WITH_MOD_FLUID
 /* read .bobj.gz file into a fluidsimDerivedMesh struct */
-static DerivedMesh *fluidsim_read_obj(const char *filename)
+static DerivedMesh *fluidsim_read_obj(const char *filename, const MPoly *mp_example)
 {
 	int wri = 0,i;
 	int gotBytes;
 	gzFile gzf;
 	int numverts = 0, numfaces = 0;
 	DerivedMesh *dm = NULL;
-	MFace *mf;
+	MPoly *mp;
+	MLoop *ml;
 	MVert *mv;
 	short *normals, *no_s;
 	float no[3];
+
+	const short mp_mat_nr = mp_example->mat_nr;
+	const char  mp_flag =   mp_example->flag;
 
 	// ------------------------------------------------
 	// get numverts + numfaces first
@@ -214,7 +210,7 @@ static DerivedMesh *fluidsim_read_obj(const char *filename)
 		gotBytes = gzread(gzf, &wri, sizeof(wri));
 	numfaces = wri;
 
-	gzclose( gzf );
+	gzclose(gzf);
 	// ------------------------------------------------
 
 	if(!numfaces || !numverts || !gotBytes)
@@ -226,11 +222,11 @@ static DerivedMesh *fluidsim_read_obj(const char *filename)
 		return NULL;
 	}
 
-	dm = CDDM_new(numverts, 0, numfaces);
+	dm = CDDM_new(numverts, 0, 0, numfaces * 3, numfaces);
 
 	if(!dm)
 	{
-		gzclose( gzf );
+		gzclose(gzf);
 		return NULL;
 	}
 
@@ -249,7 +245,7 @@ static DerivedMesh *fluidsim_read_obj(const char *filename)
 	{
 		if(dm)
 			dm->release(dm);
-		gzclose( gzf );
+		gzclose(gzf);
 		return NULL;
 	}
 
@@ -258,7 +254,7 @@ static DerivedMesh *fluidsim_read_obj(const char *filename)
 	{
 		if(dm)
 			dm->release(dm);
-		gzclose( gzf );
+		gzclose(gzf);
 		return NULL;
 	}
 
@@ -276,38 +272,34 @@ static DerivedMesh *fluidsim_read_obj(const char *filename)
 		printf("Fluidsim: error in reading data from file.\n");
 		if(dm)
 			dm->release(dm);
-		gzclose( gzf );
+		gzclose(gzf);
 		MEM_freeN(normals);
 		return NULL;
 	}
 
 	// read triangles from file
-	mf = CDDM_get_faces(dm);
-	for(i=numfaces; i>0; i--, mf++)
+	mp = CDDM_get_polys(dm);
+	ml = CDDM_get_loops(dm);
+	for(i=0; i < numfaces; i++, mp++, ml += 3)
 	{
 		int face[3];
 
 		gotBytes = gzread(gzf, face, sizeof(int) * 3);
 
-		// check if 3rd vertex has index 0 (not allowed in blender)
-		if(face[2])
-		{
-			mf->v1 = face[0];
-			mf->v2 = face[1];
-			mf->v3 = face[2];
-		}
-		else
-		{
-			mf->v1 = face[1];
-			mf->v2 = face[2];
-			mf->v3 = face[0];
-		}
-		mf->v4 = 0;
+		/* initialize from existing face */
+		mp->mat_nr = mp_mat_nr;
+		mp->flag =   mp_flag;
 
-		test_index_face(mf, NULL, 0, 3);
+		mp->loopstart = i * 3;
+		mp->totloop = 3;
+
+		ml[0].v = face[0];
+		ml[1].v = face[1];
+		ml[2].v = face[2];
+
 	}
 
-	gzclose( gzf );
+	gzclose(gzf);
 
 	CDDM_calc_edges(dm);
 
@@ -315,7 +307,6 @@ static DerivedMesh *fluidsim_read_obj(const char *filename)
 	MEM_freeN(normals);
 
 	// CDDM_calc_normals(result);
-
 	return dm;
 }
 
@@ -446,16 +437,15 @@ static void fluidsim_read_vel_cache(FluidsimModifierData *fluidmd, DerivedMesh *
 	gzclose(gzf);
 }
 
-static DerivedMesh *fluidsim_read_cache(DerivedMesh *orgdm, FluidsimModifierData *fluidmd, int framenr, int useRenderParams)
+static DerivedMesh *fluidsim_read_cache(Object *ob, DerivedMesh *orgdm, FluidsimModifierData *fluidmd, int framenr, int useRenderParams)
 {
 	int displaymode = 0;
 	int curFrame = framenr - 1 /*scene->r.sfra*/; /* start with 0 at start frame */
-	char targetDir[FILE_MAXFILE+FILE_MAXDIR], targetFile[FILE_MAXFILE+FILE_MAXDIR];
+	char targetFile[FILE_MAX];
 	FluidsimSettings *fss = fluidmd->fss;
 	DerivedMesh *dm = NULL;
-	MFace *mface;
-	int numfaces;
-	int mat_nr, flag, i;
+	MPoly *mpoly;
+	MPoly mp_example = {0};
 
 	if(!useRenderParams) {
 		displaymode = fss->guiDisplayMode;
@@ -463,29 +453,35 @@ static DerivedMesh *fluidsim_read_cache(DerivedMesh *orgdm, FluidsimModifierData
 		displaymode = fss->renderDisplayMode;
 	}
 
-	BLI_strncpy(targetDir, fss->surfdataPath, sizeof(targetDir));
-
-	// use preview or final mesh?
-	if(displaymode==1)
-	{
-		// just display original object
+	switch (displaymode) {
+	case 1:
+		/* just display original object */
 		return NULL;
-	}
-	else if(displaymode==2)
-	{
-		strcat(targetDir,"fluidsurface_preview_####");
-	}
-	else
-	{ // 3
-		strcat(targetDir,"fluidsurface_final_####");
+	case 2:
+		/* use preview mesh */
+		BLI_join_dirfile(targetFile, sizeof(targetFile), fss->surfdataPath, OB_FLUIDSIM_SURF_PREVIEW_OBJ_FNAME);
+		break;
+	default: /* 3 */
+		/* 3. use final mesh */
+		BLI_join_dirfile(targetFile, sizeof(targetFile), fss->surfdataPath, OB_FLUIDSIM_SURF_FINAL_OBJ_FNAME);
+		break;
 	}
 
-	BLI_path_abs(targetDir, G.main->name);
-	BLI_path_frame(targetDir, curFrame, 0); // fixed #frame-no
+	/* offset baked frame */
+	curFrame += fss->frameOffset;
 
-	BLI_snprintf(targetFile, sizeof(targetFile), "%s.bobj.gz", targetDir);
+	BLI_path_abs(targetFile, modifier_path_relbase(ob));
+	BLI_path_frame(targetFile, curFrame, 0); // fixed #frame-no
 
-	dm = fluidsim_read_obj(targetFile);
+	// assign material + flags to new dm
+	// if there's no faces in original dm, keep materials and flags unchanged
+	mpoly = orgdm->getPolyArray(orgdm);
+	if (mpoly) {
+		mp_example = *mpoly;
+	}
+	/* else leave NULL'd */
+
+	dm = fluidsim_read_obj(targetFile, &mp_example);
 
 	if(!dm)
 	{
@@ -506,28 +502,13 @@ static DerivedMesh *fluidsim_read_cache(DerivedMesh *orgdm, FluidsimModifierData
 		return NULL;
 	}
 
-	// assign material + flags to new dm
-	mface = orgdm->getFaceArray(orgdm);
-	mat_nr = mface[0].mat_nr;
-	flag = mface[0].flag;
-
-	mface = dm->getFaceArray(dm);
-	numfaces = dm->getNumFaces(dm);
-	for(i=0; i<numfaces; i++)
-	{
-		mface[i].mat_nr = mat_nr;
-		mface[i].flag = flag;
-	}
-
 	// load vertex velocities, if they exist...
 	// TODO? use generate flag as loading flag as well?
 	// warning, needs original .bobj.gz mesh loading filename
-	if(displaymode==3)
-	{
+	if (displaymode==3) {
 		fluidsim_read_vel_cache(fluidmd, dm, targetFile);
 	}
-	else
-	{
+	else {
 		if(fss->meshVelocities)
 			MEM_freeN(fss->meshVelocities);
 
@@ -536,14 +517,14 @@ static DerivedMesh *fluidsim_read_cache(DerivedMesh *orgdm, FluidsimModifierData
 
 	return dm;
 }
-#endif // DISABLE_ELBEEM
+#endif // WITH_MOD_FLUID
 
 DerivedMesh *fluidsimModifier_do(FluidsimModifierData *fluidmd, Scene *scene,
-						Object *UNUSED(ob),
+						Object *ob,
 						DerivedMesh *dm,
 						int useRenderParams, int UNUSED(isFinalCalc))
 {
-#ifndef DISABLE_ELBEEM
+#ifdef WITH_MOD_FLUID
 	DerivedMesh *result = NULL;
 	int framenr;
 	FluidsimSettings *fss = NULL;
@@ -564,15 +545,14 @@ DerivedMesh *fluidsimModifier_do(FluidsimModifierData *fluidmd, Scene *scene,
 	// clmd->sim_parms->timescale= timescale;
 
 	// support reversing of baked fluid frames here
-	if((fss->flag & OB_FLUIDSIM_REVERSE) && (fss->lastgoodframe >= 0))
-	{
+	if ((fss->flag & OB_FLUIDSIM_REVERSE) && (fss->lastgoodframe >= 0)) {
 		framenr = fss->lastgoodframe - framenr + 1;
 		CLAMP(framenr, 1, fss->lastgoodframe);
 	}
 	
 	/* try to read from cache */
 	/* if the frame is there, fine, otherwise don't do anything */
-	if((result = fluidsim_read_cache(dm, fluidmd, framenr, useRenderParams)))
+	if((result = fluidsim_read_cache(ob, dm, fluidmd, framenr, useRenderParams)))
 		return result;
 	
 	return dm;
@@ -580,6 +560,7 @@ DerivedMesh *fluidsimModifier_do(FluidsimModifierData *fluidmd, Scene *scene,
 	/* unused */
 	(void)fluidmd;
 	(void)scene;
+	(void)ob;
 	(void)dm;
 	(void)useRenderParams;
 	return NULL;

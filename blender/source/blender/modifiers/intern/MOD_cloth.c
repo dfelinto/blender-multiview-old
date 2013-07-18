@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_cloth.c
  *  \ingroup modifiers
@@ -69,51 +67,51 @@ static void initData(ModifierData *md)
 	cloth_init (clmd);
 }
 
-static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
-						DerivedMesh *dm,
-						int UNUSED(useRenderParams),
-						int UNUSED(isFinalCalc))
+static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, float (*vertexCos)[3],
+			int UNUSED(numVerts), int UNUSED(useRenderParams), int UNUSED(isFinalCalc))
 {
+	DerivedMesh *dm;
 	ClothModifierData *clmd = (ClothModifierData*) md;
 	DerivedMesh *result=NULL;
 	
 	/* check for alloc failing */
-	if(!clmd->sim_parms || !clmd->coll_parms)
-	{
+	if (!clmd->sim_parms || !clmd->coll_parms) {
 		initData(md);
-		
+
 		if(!clmd->sim_parms || !clmd->coll_parms)
-			return dm;
+			return;
 	}
 
-	result = clothModifier_do(clmd, md->scene, ob, dm);
+	dm = get_dm(ob, NULL, derivedData, NULL, 0);
+	if(dm == derivedData)
+		dm = CDDM_copy(dm);
 
-	if(result)
-	{
-		CDDM_calc_normals(result);
-		return result;
+	CDDM_apply_vert_coords(dm, vertexCos);
+
+	DM_ensure_tessface(dm); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
+
+	clothModifier_do(clmd, md->scene, ob, dm, vertexCos);
+
+	if(result) {
+		result->getVertCos(result, vertexCos);
+		result->release(result);
 	}
-	return dm;
+
+	dm->release(dm);
 }
 
-static void updateDepgraph(
-					 ModifierData *md, DagForest *forest, Scene *scene, Object *ob,
-	  DagNode *obNode)
+static void updateDepgraph(ModifierData *md, DagForest *forest, Scene *scene, Object *ob, DagNode *obNode)
 {
 	ClothModifierData *clmd = (ClothModifierData*) md;
 	
 	Base *base;
 	
-	if(clmd)
-	{
-		for(base = scene->base.first; base; base= base->next) 
-		{
+	if(clmd) {
+		for(base = scene->base.first; base; base= base->next) {
 			Object *ob1= base->object;
-			if(ob1 != ob)
-			{
+			if (ob1 != ob) {
 				CollisionModifierData *coll_clmd = (CollisionModifierData *)modifiers_findByType(ob1, eModifierType_Collision);
-				if(coll_clmd)
-				{
+				if (coll_clmd) {
 					DagNode *curNode = dag_get_node(forest, ob1);
 					dag_add_relation(forest, curNode, obNode, DAG_RL_DATA_DATA|DAG_RL_OB_DATA, "Cloth Collision");
 				}
@@ -170,8 +168,7 @@ static void freeData(ModifierData *md)
 {
 	ClothModifierData *clmd = (ClothModifierData*) md;
 	
-	if (clmd) 
-	{
+	if (clmd) {
 		if(G.rt > 0)
 			printf("clothModifier_freeData\n");
 		
@@ -208,17 +205,17 @@ ModifierTypeInfo modifierType_Cloth = {
 	/* name */              "Cloth",
 	/* structName */        "ClothModifierData",
 	/* structSize */        sizeof(ClothModifierData),
-	/* type */              eModifierTypeType_Nonconstructive,
+	/* type */              eModifierTypeType_OnlyDeform,
 	/* flags */             eModifierTypeFlag_AcceptsMesh
 							| eModifierTypeFlag_UsesPointCache
 							| eModifierTypeFlag_Single,
 
 	/* copyData */          copyData,
-	/* deformVerts */       NULL,
+	/* deformVerts */       deformVerts,
 	/* deformMatrices */    NULL,
 	/* deformVertsEM */     NULL,
 	/* deformMatricesEM */  NULL,
-	/* applyModifier */     applyModifier,
+	/* applyModifier */     NULL,
 	/* applyModifierEM */   NULL,
 	/* initData */          initData,
 	/* requiredDataMask */  requiredDataMask,

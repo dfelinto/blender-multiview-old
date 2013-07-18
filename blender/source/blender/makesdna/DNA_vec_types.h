@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,13 +26,14 @@
  * 
  */
 
-#ifndef DNA_VEC_TYPES_H
-#define DNA_VEC_TYPES_H
 /** \file DNA_vec_types.h
  *  \ingroup DNA
  *  \since dec-2000
  *  \author nzc
  */
+
+#ifndef __DNA_VEC_TYPES_H__
+#define __DNA_VEC_TYPES_H__
 
 /* types */
 
@@ -61,11 +60,11 @@ typedef struct vec2d {
 typedef struct vec3i {
 	int x, y, z;
 } vec3i;
-
+*/
 typedef struct vec3f {
 	float x, y, z;
 } vec3f;
-
+/*
 typedef struct vec3d {
 	double x, y, z;
 } vec3d;

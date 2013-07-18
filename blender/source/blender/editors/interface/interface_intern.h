@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  */
 
 
-#ifndef INTERFACE_H
-#define INTERFACE_H
+#ifndef __INTERFACE_INTERN_H__
+#define __INTERFACE_INTERN_H__
 
 #include "UI_resources.h"
 #include "RNA_types.h"
@@ -81,6 +79,7 @@ typedef enum {
 	UI_WTYPE_MENU_RADIO,
 	UI_WTYPE_MENU_ICON_RADIO,
 	UI_WTYPE_MENU_POINTER_LINK,
+	UI_WTYPE_MENU_NODE_LINK,
 	
 	UI_WTYPE_PULLDOWN,
 	UI_WTYPE_MENU_ITEM,
@@ -98,11 +97,6 @@ typedef enum {
 	
 } uiWidgetTypeEnum;
 
-
-
-#define UI_MAX_DRAW_STR	400
-#define UI_MAX_NAME_STR	128
-
 /* panel limits */
 #define UI_PANEL_MINX	100
 #define UI_PANEL_MINY	70
@@ -118,7 +112,7 @@ typedef enum {
 
 /* internal panel drawing defines */
 #define PNL_GRID	(UI_UNIT_Y / 5)	/* 4 default */
-#define PNL_HEADER  UI_UNIT_Y		/* 20 default */
+#define PNL_HEADER  (UI_UNIT_Y + 4)	/* 24 default */
 
 /* panel->flag */
 #define PNL_SELECT	1
@@ -136,19 +130,10 @@ typedef enum {
 /* for scope resize zone */
 #define SCOPE_RESIZE_PAD	9
 
-typedef struct {
-	short xim, yim;
-	unsigned int *rect;
-	short xofs, yofs;
-} uiIconImage;
-
-
 typedef struct uiLinkLine {				/* only for draw/edit */
 	struct uiLinkLine *next, *prev;
-
+	struct uiBut *from, *to;
 	short flag, pad;
-	
-	struct uiBut *from, *to;	
 } uiLinkLine;
 
 typedef struct {
@@ -164,10 +149,10 @@ typedef struct {
 
 struct uiBut {
 	struct uiBut *next, *prev;
-	short type, pointype, bit, bitnr, retval, strwidth, ofs, pos, selsta, selend;
-	short alignnr;
 	int flag;
-	
+	short type, pointype, bit, bitnr, retval, strwidth, ofs, pos, selsta, selend, alignnr;
+	short pad1;
+
 	char *str;
 	char strdata[UI_MAX_NAME_STR];
 	char drawstr[UI_MAX_DRAW_STR];
@@ -178,7 +163,7 @@ struct uiBut {
 	float hardmin, hardmax, softmin, softmax;
 	float a1, a2;
 	float aspect;
-	char col[4];
+	unsigned char col[4];
 
 	uiButHandleFunc func;
 	void *func_arg1;
@@ -191,10 +176,10 @@ struct uiBut {
 	struct bContextStore *context;
 
 	/* not ysed yet, was used in 2.4x for ui_draw_pulldown_round & friends */
-	/*
+#if 0
 	void (*embossfunc)(int , int , float, float, float, float, float, int);
 	void (*sliderfunc)(int , float, float, float, float, float, float, int);
-	*/
+#endif
 
 	uiButCompleteFunc autocomplete_func;
 	void *autofunc_arg;
@@ -282,7 +267,7 @@ struct uiBlock {
 	float minx, miny, maxx, maxy;
 	float aspect;
 
-	short alignnr;
+	int puphash;				// popup menu hash for memory
 
 	uiButHandleFunc func;
 	void *func_arg1;
@@ -306,9 +291,12 @@ struct uiBlock {
 	void *drawextra_arg2;
 
 	int flag;
+	short alignnr;
+
 	char direction;
 	char dt; /* drawtype: UI_EMBOSS, UI_EMBOSSN ... etc, copied to buttons */
-	short auto_open;
+	char auto_open;
+	char _pad[7];
 	double auto_open_last;
 
 	const char *lockstr;
@@ -327,14 +315,14 @@ struct uiBlock {
 
 	uiPopupBlockHandle *handle;	// handle
 
-	int puphash;				// popup menu hash for memory
-	
+	struct wmOperator *ui_operator;// use so presets can find the operator,
+								// across menus and from nested popups which fail for operator context.
+
 	void *evil_C;				// XXX hack for dynamic operator enums
 
+	struct UnitSettings *unit;	// unit system, used a lot for numeric buttons so include here rather then fetching through the scene every time.
 	float _hsv[3];				// XXX, only access via ui_block_hsv_get()
 	char color_profile;			// color profile for correcting linear colors for display
-	struct UnitSettings *unit;	// unit system, used a lot for numeric buttons so include here rather then fetching through the scene every time.
-
 };
 
 typedef struct uiSafetyRct {
@@ -346,10 +334,6 @@ typedef struct uiSafetyRct {
 /* interface.c */
 
 extern void ui_delete_linkline(uiLinkLine *line, uiBut *but);
-
-extern int ui_translate_buttons(void);
-extern int ui_translate_menus(void);
-extern int ui_translate_tooltips(void);
 
 void ui_fontscale(short *points, float aspect);
 
@@ -363,15 +347,16 @@ extern void ui_window_to_region(const ARegion *ar, int *x, int *y);
 extern double ui_get_but_val(uiBut *but);
 extern void ui_set_but_val(uiBut *but, double value);
 extern void ui_set_but_hsv(uiBut *but);
-extern void ui_get_but_vectorf(uiBut *but, float *vec);
-extern void ui_set_but_vectorf(uiBut *but, float *vec);
+extern void ui_get_but_vectorf(uiBut *but, float vec[3]);
+extern void ui_set_but_vectorf(uiBut *but, const float vec[3]);
 
 extern void ui_hsvcircle_vals_from_pos(float *valrad, float *valdist, rcti *rect, float mx, float my);
 
-extern void ui_get_but_string(uiBut *but, char *str, int maxlen);
-extern void ui_convert_to_unit_alt_name(uiBut *but, char *str, int maxlen);
+extern void ui_get_but_string(uiBut *but, char *str, size_t maxlen);
+extern void ui_convert_to_unit_alt_name(uiBut *but, char *str, size_t maxlen);
 extern int ui_set_but_string(struct bContext *C, uiBut *but, const char *str);
 extern int ui_get_but_string_max_length(uiBut *but);
+extern int ui_set_but_string_eval_num(struct bContext *C, uiBut *but, const char *str, double *value);
 
 extern void ui_set_but_default(struct bContext *C, short all);
 
@@ -381,6 +366,7 @@ extern void ui_check_but(uiBut *but);
 extern int  ui_is_but_float(uiBut *but);
 extern int  ui_is_but_unit(uiBut *but);
 extern int  ui_is_but_rna_valid(uiBut *but);
+extern int  ui_is_but_utf8(uiBut *but);
 
 extern void ui_bounds_block(uiBlock *block);
 extern void ui_block_translate(uiBlock *block, int x, int y);
@@ -404,9 +390,9 @@ struct uiPopupBlockHandle {
 
 	/* for operator popups */
 	struct wmOperatorType *optype;
-	int opcontext;
 	ScrArea *ctx_area;
 	ARegion *ctx_region;
+	int opcontext;
 	
 	/* return values */
 	int butretval;
@@ -459,7 +445,7 @@ extern void ui_draw_aligned_panel(struct uiStyle *style, uiBlock *block, rcti *r
 /* interface_draw.c */
 extern void ui_dropshadow(rctf *rct, float radius, float aspect, int select);
 
-void ui_draw_gradient(rcti *rect, float *hsv, int type, float alpha);
+void ui_draw_gradient(rcti *rect, const float hsv[3], int type, float alpha);
 
 void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_WAVEFORM(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
@@ -468,6 +454,7 @@ void ui_draw_but_COLORBAND(uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_NORMAL(uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_CURVE(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 void ui_draw_but_IMAGE(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
+void ui_draw_but_TRACKPREVIEW(ARegion *ar, uiBut *but, struct uiWidgetColors *wcol, rcti *rect);
 
 /* interface_handlers.c */
 extern void ui_button_activate_do(struct bContext *C, struct ARegion *ar, uiBut *but);
@@ -476,6 +463,7 @@ extern int ui_button_is_active(struct ARegion *ar);
 
 /* interface_widgets.c */
 void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3);
+void ui_draw_anti_roundbox(int mode, float minx, float miny, float maxx, float maxy, float rad);
 void ui_draw_menu_back(struct uiStyle *style, uiBlock *block, rcti *rect);
 void ui_draw_search_back(struct uiStyle *style, uiBlock *block, rcti *rect);
 int ui_link_bezier_points(rcti *rect, float coord_array[][2], int resol);
@@ -510,6 +498,7 @@ void ui_resources_free(void);
 void ui_layout_add_but(uiLayout *layout, uiBut *but);
 int ui_but_can_align(uiBut *but);
 void ui_but_add_search(uiBut *but, PointerRNA *ptr, PropertyRNA *prop, PointerRNA *searchptr, PropertyRNA *searchprop);
+void ui_but_add_shortcut(uiBut *but, const char *key_str, const short do_strip);
 
 /* interface_anim.c */
 void ui_but_anim_flag(uiBut *but, float cfra);
@@ -521,7 +510,7 @@ void ui_but_anim_copy_driver(struct bContext *C);
 void ui_but_anim_paste_driver(struct bContext *C);
 void ui_but_anim_add_keyingset(struct bContext *C);
 void ui_but_anim_remove_keyingset(struct bContext *C);
-int ui_but_anim_expression_get(uiBut *but, char *str, int maxlen);
+int ui_but_anim_expression_get(uiBut *but, char *str, size_t maxlen);
 int ui_but_anim_expression_set(uiBut *but, const char *str);
 int ui_but_anim_expression_create(uiBut *but, const char *str);
 void ui_but_anim_autokey(struct bContext *C, uiBut *but, struct Scene *scene, float cfra);

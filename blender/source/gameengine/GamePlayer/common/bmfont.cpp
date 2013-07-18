@@ -3,7 +3,6 @@
  *
  * 04-10-2000 frank
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -172,7 +171,7 @@ void readBitmapFontVersion0(ImBuf * ibuf, unsigned char * rect, int step)
 		ibuf->userdata = bmfont;
 		ibuf->userflags |= IB_BITMAPFONT;
 
-		if (ibuf->depth < 32) {
+		if (ibuf->planes < 32) {
 			// we're going to fake alpha here:
 			calcAlpha(ibuf);
 		}

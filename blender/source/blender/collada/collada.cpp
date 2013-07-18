@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,6 +28,7 @@
 /* COLLADABU_ASSERT, may be able to remove later */
 #include "COLLADABUPlatform.h"
 
+#include "ExportSettings.h"
 #include "DocumentExporter.h"
 #include "DocumentImporter.h"
 
@@ -39,9 +38,8 @@ extern "C"
 #include "BKE_context.h"
 
 /* make dummy file */
-#include "BLI_storage.h"
-#include "BLI_path_util.h"
 #include "BLI_fileops.h"
+#include "BLI_path_util.h"
 
 	int collada_import(bContext *C, const char *filepath)
 	{
@@ -51,20 +49,25 @@ extern "C"
 		return 0;
 	}
 
-	int collada_export(Scene *sce, const char *filepath, int selected)
+	int collada_export(Scene *sce, const char *filepath, int selected, int second_life)
 	{
-		DocumentExporter exp;
+		ExportSettings export_settings;
+		
+		export_settings.selected = selected != 0;
+		export_settings.second_life = second_life != 0;
+		export_settings.filepath = (char *)filepath;
 
 		/* annoying, collada crashes if file cant be created! [#27162] */
-		if(!BLI_exist(filepath)) {
+		if(!BLI_exists(filepath)) {
 			BLI_make_existing_file(filepath); /* makes the dir if its not there */
-			if(BLI_touch(filepath) == 0) {
+			if(BLI_file_touch(filepath) == 0) {
 				return 0;
 			}
 		}
 		/* end! */
 
-		exp.exportCurrentScene(sce, filepath, selected);
+		DocumentExporter exporter(&export_settings);
+		exporter.exportCurrentScene(sce);
 
 		return 1;
 	}

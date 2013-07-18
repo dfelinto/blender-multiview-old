@@ -1,6 +1,4 @@
 /*
-* $Id$
-*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-* Start up of the Blender Player on GHOST.
-*/
+ * Start up of the Blender Player on GHOST.
+ */
 
 /** \file gameengine/GamePlayer/ghost/GPG_ghost.cpp
  *  \ingroup player
@@ -76,11 +74,9 @@ extern "C"
 	
 	int GHOST_HACK_getFirstFile(char buf[]);
 	
-extern char bprogname[];	/* holds a copy of argv[0], from creator.c */
-extern char btempdir[];		/* use this to store a valid temp directory */
-
 // For BLF
 #include "BLF_api.h"
+#include "BLF_translation.h"
 extern int datatoc_bfont_ttf_size;
 extern char datatoc_bfont_ttf[];
 
@@ -114,8 +110,6 @@ extern char datatoc_bfont_ttf[];
 
 const int kMinWindowWidth = 100;
 const int kMinWindowHeight = 100;
-
-char bprogname[FILE_MAX];
 
 static void mem_error_cb(const char *errorStr)
 {
@@ -182,8 +176,8 @@ static BOOL scr_saver_init(int argc, char **argv)
 void usage(const char* program, bool isBlenderPlayer)
 {
 	const char * consoleoption;
-	const char * filename = "";
-	const char * pathname = "";
+	const char * example_filename = "";
+	const char * example_pathname = "";
 
 #ifdef _WIN32
 	consoleoption = "-c ";
@@ -192,16 +186,16 @@ void usage(const char* program, bool isBlenderPlayer)
 #endif
 
 	if (isBlenderPlayer) {
-		filename = "filename.blend";
+		example_filename = "filename.blend";
 #ifdef _WIN32
-		pathname = "c:\\";
+		example_pathname = "c:\\";
 #else
-		pathname = "//home//user//";
+		example_pathname = "/home/user/";
 #endif
 	}
 	
 	printf("usage:   %s [-w [w h l t]] [-f [fw fh fb ff]] %s[-g gamengineoptions] "
-		"[-s stereomode] [-m aasamples] %s\n", program, consoleoption, filename);
+		"[-s stereomode] [-m aasamples] %s\n", program, consoleoption, example_filename);
 	printf("  -h: Prints this command summary\n\n");
 	printf("  -w: display in a window\n");
 	printf("       --Optional parameters--\n"); 
@@ -256,9 +250,9 @@ void usage(const char* program, bool isBlenderPlayer)
 	printf("\n");
 	printf("  - : all arguments after this are ignored, allowing python to access them from sys.argv\n");
 	printf("\n");
-	printf("example: %s -w 320 200 10 10 -g noaudio%s%s\n", program, pathname, filename);
-	printf("example: %s -g show_framerate = 0 %s%s\n", program, pathname, filename);
-	printf("example: %s -i 232421 -m 16 %s%s\n\n", program, pathname, filename);
+	printf("example: %s -w 320 200 10 10 -g noaudio%s%s\n", program, example_pathname, example_filename);
+	printf("example: %s -g show_framerate = 0 %s%s\n", program, example_pathname, example_filename);
+	printf("example: %s -i 232421 -m 16 %s%s\n\n", program, example_pathname, example_filename);
 }
 
 static void get_filename(int argc, char **argv, char *filename)
@@ -276,12 +270,12 @@ static void get_filename(int argc, char **argv, char *filename)
 
 	if (argc > 1) {
 		if (BLI_exists(argv[argc-1])) {
-			BLI_strncpy(filename, argv[argc-1], FILE_MAXDIR + FILE_MAXFILE);
+			BLI_strncpy(filename, argv[argc-1], FILE_MAX);
 		}
 		if (::strncmp(argv[argc-1], "-psn_", 5)==0) {
 			static char firstfilebuf[512];
 			if (GHOST_HACK_getFirstFile(firstfilebuf)) {
-				BLI_strncpy(filename, firstfilebuf, FILE_MAXDIR + FILE_MAXFILE);
+				BLI_strncpy(filename, firstfilebuf, FILE_MAX);
 			}
 		}                        
 	}
@@ -295,7 +289,7 @@ static void get_filename(int argc, char **argv, char *filename)
 		//::printf("looking for file: %s\n", filename);
 		
 		if (BLI_exists(gamefile))
-			BLI_strncpy(filename, gamefile, FILE_MAXDIR + FILE_MAXFILE);
+			BLI_strncpy(filename, gamefile, FILE_MAX);
 
 		delete [] gamefile;
 	}
@@ -304,11 +298,11 @@ static void get_filename(int argc, char **argv, char *filename)
 	filename[0] = '\0';
 
 	if(argc > 1)
-		BLI_strncpy(filename, argv[argc-1], FILE_MAXDIR + FILE_MAXFILE);
+		BLI_strncpy(filename, argv[argc-1], FILE_MAX);
 #endif // !_APPLE
 }
 
-static BlendFileData *load_game_data(char *progname, char *filename = NULL, char *relativename = NULL)
+static BlendFileData *load_game_data(const char *progname, char *filename = NULL, char *relativename = NULL)
 {
 	ReportList reports;
 	BlendFileData *bfd = NULL;
@@ -320,7 +314,7 @@ static BlendFileData *load_game_data(char *progname, char *filename = NULL, char
 		bfd= BLO_read_runtime(progname, &reports);
 		if (bfd) {
 			bfd->type= BLENFILETYPE_RUNTIME;
-			strcpy(bfd->main->name, progname);
+			BLI_strncpy(bfd->main->name, progname, sizeof(bfd->main->name));
 		}
 	} else {
 		bfd= BLO_read_from_file(progname, &reports);
@@ -371,6 +365,7 @@ int main(int argc, char** argv)
 	GHOST_TEmbedderWindowID parentWindow = 0;
 	bool isBlenderPlayer = false;
 	int validArguments=0;
+	bool samplesParFound = false;
 	GHOST_TUns16 aasamples = 0;
 	
 #ifdef __linux__
@@ -378,7 +373,8 @@ int main(int argc, char** argv)
 	signal (SIGFPE, SIG_IGN);
 #endif /* __alpha__ */
 #endif /* __linux__ */
-	BLI_where_am_i(bprogname, sizeof(bprogname), argv[0]);
+	BLI_init_program_path(argv[0]);
+	BLI_init_temporary_dir(NULL);
 #ifdef __APPLE__
 	// Can't use Carbon right now because of double defined type ID (In Carbon.h and DNA_ID.h, sigh)
 	/*
@@ -404,13 +400,14 @@ int main(int argc, char** argv)
 	// We don't use threads directly in the BGE, but we need to call this so things like
 	// freeing up GPU_Textures works correctly.
 	BLI_threadapi_init();
-	
+
 	RNA_init();
 
 	init_nodesystem();
 	
 	initglobals();
 
+	U.gameflags |= USER_DISABLE_VBO;
 	// We load our own G.main, so free the one that initglobals() gives us
 	free_main(G.main);
 	G.main = NULL;
@@ -420,6 +417,9 @@ int main(int argc, char** argv)
 	// Setup builtin font for BLF (mostly copied from creator.c, wm_init_exit.c and interface_style.c)
 	BLF_init(11, U.dpi);
 	BLF_lang_init();
+	BLF_lang_encoding("");
+	BLF_lang_set("");
+
 	BLF_load_mem("default", (unsigned char*)datatoc_bfont_ttf, datatoc_bfont_ttf_size);
 
 	// Parse command line options
@@ -437,7 +437,7 @@ int main(int argc, char** argv)
 			break;
 		case SCREEN_SAVER_MODE_PASSWORD:
 			/* This is W95 only, which we currently do not support.
-			   Fall-back to normal screen saver behaviour in that case... */
+			   Fall-back to normal screen saver behavior in that case... */
 		case SCREEN_SAVER_MODE_SAVER:
 			fullScreen = true;
 			fullScreenParFound = true;
@@ -583,8 +583,14 @@ int main(int argc, char** argv)
 				break;
 			case 'm':
 				i++;
+				samplesParFound = true;
 				if ((i+1) <= validArguments )
-				aasamples = atoi(argv[i++]);
+					aasamples = atoi(argv[i++]);
+				else
+				{
+					error = true;
+					printf("error: No argument supplied for -m");
+				}
 				break;
 			case 'c':
 				i++;
@@ -738,8 +744,8 @@ int main(int argc, char** argv)
 				STR_String exitstring = "";
 				GPG_Application app(system);
 				bool firstTimeRunning = true;
-				char filename[FILE_MAXDIR + FILE_MAXFILE];
-				char pathname[FILE_MAXDIR + FILE_MAXFILE];
+				char filename[FILE_MAX];
+				char pathname[FILE_MAX];
 				char *titlename;
 
 				get_filename(argc_py_clamped, argv, filename);
@@ -759,10 +765,10 @@ int main(int argc, char** argv)
 					// if we got an exitcode 3 (KX_EXIT_REQUEST_START_OTHER_GAME) load a different file
 					if (exitcode == KX_EXIT_REQUEST_START_OTHER_GAME)
 					{
-						char basedpath[240];
+						char basedpath[FILE_MAX];
 						
 						// base the actuator filename relative to the last file
-						strcpy(basedpath, exitstring.Ptr());
+						BLI_strncpy(basedpath, exitstring.Ptr(), sizeof(basedpath));
 						BLI_path_abs(basedpath, pathname);
 						
 						bfd = load_game_data(basedpath);
@@ -780,7 +786,7 @@ int main(int argc, char** argv)
 					}
 					else
 					{
-						bfd = load_game_data(bprogname, filename[0]? filename: NULL);
+						bfd = load_game_data(BLI_program_path(), filename[0]? filename: NULL);
 					}
 					
 					//::printf("game data loaded from %s\n", filename);
@@ -822,7 +828,7 @@ int main(int argc, char** argv)
 						if ((!fullScreenParFound) && (!windowParFound))
 						{
 							// Only use file settings when command line did not override
-							if (scene->gm.fullscreen) {
+							if ((scene->gm.playerflag & GAME_PLAYER_FULLSCREEN)) {
 								//printf("fullscreen option found in Blender file\n");
 								fullScreen = true;
 								fullScreenWidth= scene->gm.xplay;
@@ -850,6 +856,9 @@ int main(int argc, char** argv)
 						}
 						else
 							gs.stereoflag = STEREO_ENABLED;
+
+						if (!samplesParFound)
+							aasamples = scene->gm.aasamples;
 
 						if (stereoFlag == STEREO_DOME){
 							stereomode = RAS_IRasterizer::RAS_STEREO_DOME;
@@ -896,7 +905,7 @@ int main(int argc, char** argv)
 #endif
 								{
 									app.startFullScreen(fullScreenWidth, fullScreenHeight, fullScreenBpp, fullScreenFrequency,
-										stereoWindow, stereomode, aasamples, scene->gm.use_desktop);
+										stereoWindow, stereomode, aasamples, (scene->gm.playerflag & GAME_PLAYER_DESKTOP_RESOLUTION));
 								}
 							}
 							else
@@ -996,6 +1005,11 @@ int main(int argc, char** argv)
 	// Cleanup
 	RNA_exit();
 	BLF_exit();
+
+#ifdef WITH_INTERNATIONAL
+	BLF_free_unifont();
+#endif
+
 	IMB_exit();
 	free_nodesystem();
 

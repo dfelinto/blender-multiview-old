@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -23,11 +22,6 @@
 # Contributor(s): Jacques Beaurain.
 #
 # ***** END GPL LICENSE BLOCK *****
-
-if(WITH_CODEC_FFMPEG)
-	# FFMPEG gives warnigns which are hard to avoid across multiple versions.
-	remove_strict_flags()
-endif()
 
 set(INC 
 	.
@@ -58,13 +52,11 @@ set(SRC
 	intern/indexer.c
 	intern/indexer_dv.c
 	intern/iris.c
-	intern/jp2.c
 	intern/jpeg.c
-	intern/md5.c
 	intern/metadata.c
 	intern/module.c
+	intern/moviecache.c
 	intern/png.c
-	intern/radiance_hdr.c
 	intern/readimage.c
 	intern/rectop.c
 	intern/rotate.c
@@ -72,12 +64,12 @@ set(SRC
 	intern/targa.c
 	intern/thumbs.c
 	intern/thumbs_blend.c
-	intern/tiff.c
 	intern/util.c
 	intern/writeimage.c
 
 	IMB_imbuf.h
 	IMB_imbuf_types.h
+	IMB_moviecache.h
 	IMB_thumbs.h
 	intern/IMB_allocimbuf.h
 	intern/IMB_anim.h
@@ -103,7 +95,6 @@ set(SRC
 	intern/dds/Stream.h
 	intern/dds/dds_api.h
 	intern/imbuf.h
-	intern/md5.h
 	intern/openexr/openexr_api.h
 	intern/openexr/openexr_multi.h
 	
@@ -113,12 +104,20 @@ set(SRC
 
 if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
+else()
+	list(APPEND SRC
+		intern/openexr/openexr_stub.cpp
+	)
 endif()
 
 if(WITH_IMAGE_TIFF)
 	list(APPEND INC_SYS
 		${TIFF_INCLUDE_DIR}
 	)
+	list(APPEND SRC
+		intern/tiff.c
+	)
+
 	add_definitions(-DWITH_TIFF)
 endif()
 
@@ -126,6 +125,10 @@ if(WITH_IMAGE_OPENJPEG)
 	list(APPEND INC_SYS
 		${OPENJPEG_INCLUDE_DIRS}
 	)
+	list(APPEND SRC
+		intern/jp2.c
+	)
+
 	add_definitions(-DWITH_OPENJPEG)
 endif()
 
@@ -154,6 +157,12 @@ if(WITH_CODEC_FFMPEG)
 		${FFMPEG_INCLUDE_DIRS}
 	)
 	add_definitions(-DWITH_FFMPEG)
+
+	remove_strict_flags_file(
+		intern/indexer.c
+		intern/util.c
+		intern/anim_movie.c
+	)
 endif()
 
 if(WITH_IMAGE_DDS)
@@ -165,6 +174,9 @@ if(WITH_IMAGE_CINEON)
 endif()
 
 if(WITH_IMAGE_HDR)
+	list(APPEND SRC
+		intern/radiance_hdr.c
+	)
 	add_definitions(-DWITH_HDR)
 endif()
 

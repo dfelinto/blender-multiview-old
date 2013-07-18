@@ -35,6 +35,10 @@ class MESH_MT_vertex_group_specials(Menu):
         layout.operator("object.vertex_group_copy_to_selected", icon='LINK_AREA')
         layout.operator("object.vertex_group_mirror", icon='ARROW_LEFTRIGHT')
         layout.operator("object.vertex_group_remove", icon='X', text="Delete All").all = True
+        layout.separator()
+        layout.operator("object.vertex_group_lock", icon='LOCKED', text="Lock All").action = 'SELECT'
+        layout.operator("object.vertex_group_lock", icon='UNLOCKED', text="UnLock All").action = 'DESELECT'
+        layout.operator("object.vertex_group_lock", icon='LOCKED', text="Lock Invert All").action = 'INVERT'
 
 
 class MESH_MT_shape_key_specials(Menu):
@@ -47,8 +51,7 @@ class MESH_MT_shape_key_specials(Menu):
         layout.operator("object.shape_key_transfer", icon='COPY_ID')  # icon is not ideal
         layout.operator("object.join_shapes", icon='COPY_ID')  # icon is not ideal
         layout.operator("object.shape_key_mirror", icon='ARROW_LEFTRIGHT')
-        op = layout.operator("object.shape_key_add", icon='ZOOMIN', text="New Shape From Mix")
-        op.from_mix = True
+        layout.operator("object.shape_key_add", icon='ZOOMIN', text="New Shape From Mix").from_mix = True
 
 
 class MeshButtonsPanel():
@@ -155,7 +158,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
             row = layout.row()
             row.prop(group, "name")
 
-        if ob.mode == 'EDIT' and len(ob.vertex_groups) > 0:
+        if ob.vertex_groups and (ob.mode == 'EDIT' or (ob.mode == 'WEIGHT_PAINT' and ob.type == 'MESH' and ob.data.use_paint_mask_vertex)):
             row = layout.row()
 
             sub = row.row(align=True)
@@ -203,8 +206,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
         col = row.column()
 
         sub = col.column(align=True)
-        op = sub.operator("object.shape_key_add", icon='ZOOMIN', text="")
-        op.from_mix = False
+        sub.operator("object.shape_key_add", icon='ZOOMIN', text="").from_mix = False
         sub.operator("object.shape_key_remove", icon='ZOOMOUT', text="")
         sub.menu("MESH_MT_shape_key_specials", icon='DOWNARROW_HLT', text="")
 
@@ -224,10 +226,10 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
             row.alignment = 'RIGHT'
 
             sub = row.row(align=True)
+            sub.label()  # XXX, for alignment only
             subsub = sub.row(align=True)
             subsub.active = enable_edit_value
             subsub.prop(ob, "show_only_shape_key", text="")
-            subsub.prop(kb, "mute", text="")
             sub.prop(ob, "use_shape_key_edit_mode", text="")
 
             sub = row.row()
@@ -263,7 +265,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 
 
 class DATA_PT_uv_texture(MeshButtonsPanel, Panel):
-    bl_label = "UV Texture"
+    bl_label = "UV Maps"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
 
     def draw(self, context):
@@ -283,53 +285,6 @@ class DATA_PT_uv_texture(MeshButtonsPanel, Panel):
         lay = me.uv_textures.active
         if lay:
             layout.prop(lay, "name")
-
-
-class DATA_PT_texface(MeshButtonsPanel, Panel):
-    bl_label = "Texture Face"
-    COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}
-
-    @classmethod
-    def poll(cls, context):
-        obj = context.object
-        return (context.mode == 'EDIT_MESH') and obj and obj.type == 'MESH'
-
-    def draw(self, context):
-        layout = self.layout
-        col = layout.column()
-
-        me = context.mesh
-
-        tf = me.faces.active_tface
-
-        if tf:
-            if context.scene.render.engine != 'BLENDER_GAME':
-                col.label(text="Options only supported in Game Engine")
-
-            split = layout.split()
-            col = split.column()
-
-            col.prop(tf, "use_image")
-            col.prop(tf, "use_light")
-            col.prop(tf, "hide")
-            col.prop(tf, "use_collision")
-
-            col.prop(tf, "use_blend_shared")
-            col.prop(tf, "use_twoside")
-            col.prop(tf, "use_object_color")
-
-            col = split.column()
-
-            col.prop(tf, "use_halo")
-            col.prop(tf, "use_billboard")
-            col.prop(tf, "use_shadow_cast")
-            col.prop(tf, "use_bitmap_text")
-            col.prop(tf, "use_alpha_sort")
-
-            col = layout.column()
-            col.prop(tf, "blend_type")
-        else:
-            col.label(text="No UV Texture")
 
 
 class DATA_PT_vertex_colors(MeshButtonsPanel, Panel):

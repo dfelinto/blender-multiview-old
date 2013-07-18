@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,9 +24,9 @@
  *  \ingroup pythonintern
  */
 
-#ifndef BPY_APP_H
-#define BPY_APP_H
+#ifndef __BPY_APP_H__
+#define __BPY_APP_H__
 
 PyObject *BPY_app_struct(void);
 
-#endif // BPY_APP_H
+#endif // __BPY_APP_H__

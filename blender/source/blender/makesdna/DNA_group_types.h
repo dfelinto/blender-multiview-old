@@ -1,7 +1,6 @@
 /*
  * blenlib/DNA_group_types.h (mar-2001 nzc)
  *	
- * $Id$ 
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,12 +27,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_GROUP_TYPES_H
-#define DNA_GROUP_TYPES_H
 
 /** \file DNA_group_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_GROUP_TYPES_H__
+#define __DNA_GROUP_TYPES_H__
 
 #include "DNA_listBase.h"
 #include "DNA_ID.h"

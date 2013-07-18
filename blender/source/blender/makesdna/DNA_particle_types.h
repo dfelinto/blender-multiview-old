@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,13 +25,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DNA_PARTICLE_TYPES_H
-#define DNA_PARTICLE_TYPES_H
-
 /** \file DNA_particle_types.h
  *  \ingroup DNA
  */
 
+#ifndef __DNA_PARTICLE_TYPES_H__
+#define __DNA_PARTICLE_TYPES_H__
+
+#include "DNA_defs.h"
 #include "DNA_ID.h"
 #include "DNA_boid_types.h"
 
@@ -66,7 +65,7 @@ typedef struct BoidParticle {
 typedef struct ParticleSpring {
 	float rest_length;
 	unsigned int particle_index[2], delete_flag;
-}ParticleSpring;
+} ParticleSpring;
 
 /* Child particles are created around or between parent particles */
 typedef struct ChildParticle {
@@ -179,10 +178,12 @@ typedef struct ParticleSettings {
 	float simplify_rate, simplify_transition;
 	float simplify_viewport;
 
-	/* general values */
+	/* time and emission */
 	float sta, end, lifetime, randlife;
-	float timetweak, jitfac, eff_hair, grid_rand;
+	float timetweak, courant_target;
+	float jitfac, eff_hair, grid_rand, ps_offset[1];
 	int totpart, userjit, grid_res, effector_amount;
+	short time_flag, time_pad[3];
 
 	/* initial velocity factors */
 	float normfac, obfac, randfac, partfac, tanfac, tanphase, reactfac;
@@ -225,15 +226,18 @@ typedef struct ParticleSettings {
 
 	struct Group *dup_group;
 	struct ListBase dupliweights;
-	struct Group *eff_group;		// deprecated
+	struct Group *eff_group  DNA_DEPRECATED;		// deprecated
 	struct Object *dup_ob;
 	struct Object *bb_ob;
-	struct Ipo *ipo;				// xxx depreceated... old animation system
+	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct PartDeflect *pd;
 	struct PartDeflect *pd2;
 } ParticleSettings;
 
-typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in copy_particlesystem */
+typedef struct ParticleSystem
+{	/* note1: make sure all (runtime) are NULL's in 'copy_particlesystem' XXX, this function is no more! - need to invstigate */
+	/* note2: make sure any uses of this struct in DNA are accounted for in 'copy_object_particlesystems' */
+
 	struct ParticleSystem *next, *prev;
 
 	ParticleSettings *part;					/* particle settings */
@@ -257,7 +261,7 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 
 	struct ListBase targets;				/* used for keyed and boid physics */
 
-	char name[32];							/* particle system name */
+	char name[64];							/* particle system name, MAX_NAME */
 	
 	float imat[4][4];	/* used for duplicators */
 	float cfra, tree_frame, bvhtree_frame;
@@ -265,7 +269,7 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 	int flag, totpart, totunexist, totchild, totcached, totchildcache;
 	short recalc, target_psys, totkeyed, bakespace;
 
-	char bb_uvname[3][32];					/* billboard uv name */
+	char bb_uvname[3][64];					/* billboard uv name, MAX_CUSTOMDATA_LAYER_NAME */
 
 	/* if you change these remember to update array lengths to PSYS_TOT_VG! */
 	short vgroup[12], vg_neg, rt3;			/* vertex groups, 0==disable, 1==starting index */
@@ -288,7 +292,10 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 	struct ParticleDrawData *pdd;
 
 	float *frand;							/* array of 1024 random floats for fast lookups */
-}ParticleSystem;
+
+	float dt_frac;							/* current time step, as a fraction of a frame */
+	float _pad;								/* spare capacity */
+} ParticleSystem;
 
 /* part->type */
 /* hair is allways baked static in object/geometry space */
@@ -314,7 +321,7 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 #define PART_TRAND			128	
 #define PART_EDISTR			256	/* particle/face from face areas */
 
-//#define PART_STICKY			512	/*collided particles can stick to collider*/
+#define PART_ROTATIONS		512	/* calculate particle rotations (and store them in pointcache) */
 #define PART_DIE_ON_COL		(1<<12)
 #define PART_SIZE_DEFL		(1<<13) /* swept sphere deflections */
 #define PART_ROT_DYN		(1<<14)	/* dynamic rotation */
@@ -381,7 +388,8 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 #define PART_DRAW_HEALTH	16
 #define PART_ABS_PATH_TIME  32
 #define PART_DRAW_COUNT_GR	64
-#define PART_DRAW_BB_LOCK	128
+#define PART_DRAW_BB_LOCK	128	/* used with billboards */
+#define PART_DRAW_ROTATE_OB 128 /* used with dupliobjects/groups */
 #define PART_DRAW_PARENT	256
 #define PART_DRAW_NUM		512
 #define PART_DRAW_RAND_GR	1024
@@ -401,6 +409,9 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 /* part->simplify_flag */
 #define PART_SIMPLIFY_ENABLE	1
 #define PART_SIMPLIFY_VIEWPORT	2
+
+/* part->time_flag */
+#define PART_TIME_AUTOSF	1 /* Automatic subframes */
 
 /* part->bb_align */
 #define PART_BB_X		0
@@ -487,7 +498,8 @@ typedef struct ParticleSystem{				/* note, make sure all (runtime) are NULL's in
 #define PSYS_KEYED			1024
 #define PSYS_EDITED			2048
 //#define PSYS_PROTECT_CACHE	4096 /* deprecated */
-#define PSYS_DISABLED		8192
+#define PSYS_DISABLED			8192
+#define PSYS_OB_ANIM_RESTORE	16384 /* runtime flag */
 
 /* pars->flag */
 #define PARS_UNEXIST		1

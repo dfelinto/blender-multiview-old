@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_collision.c
  *  \ingroup modifiers
@@ -168,16 +166,17 @@ static void deformVerts(ModifierData *md, Object *ob,
 
 				collmd->numverts = numverts;
 				
-				collmd->mfaces = dm->dupFaceArray(dm);
-				collmd->numfaces = dm->getNumFaces(dm);
+				DM_ensure_tessface(dm); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
+
+				collmd->mfaces = dm->dupTessFaceArray(dm);
+				collmd->numfaces = dm->getNumTessFaces(dm);
 				
 				// create bounding box hierarchy
 				collmd->bvhtree = bvhtree_build_from_mvert(collmd->mfaces, collmd->numfaces, collmd->x, numverts, ob->pd->pdef_sboft);
 				
 				collmd->time_x = collmd->time_xnew = current_time;
 			}
-			else if(numverts == collmd->numverts)
-			{
+			else if(numverts == collmd->numverts) {
 				// put positions to old positions
 				tempVert = collmd->x;
 				collmd->x = collmd->xnew;
@@ -186,8 +185,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 				
 				memcpy(collmd->xnew, dm->getVertArray(dm), numverts*sizeof(MVert));
 				
-				for ( i = 0; i < numverts; i++ )
-				{
+				for (i = 0; i < numverts; i++) {
 					// we save global positions
 					mul_m4_v3( ob->obmat, collmd->xnew[i].co );
 				}
@@ -196,10 +194,8 @@ static void deformVerts(ModifierData *md, Object *ob,
 				memcpy(collmd->current_x, collmd->x, numverts*sizeof(MVert));
 				
 				/* check if GUI setting has changed for bvh */
-				if(collmd->bvhtree) 
-				{
-					if(ob->pd->pdef_sboft != BLI_bvhtree_getepsilon(collmd->bvhtree))
-					{
+				if(collmd->bvhtree) {
+					if(ob->pd->pdef_sboft != BLI_bvhtree_getepsilon(collmd->bvhtree)) {
 						BLI_bvhtree_free(collmd->bvhtree);
 						collmd->bvhtree = bvhtree_build_from_mvert(collmd->mfaces, collmd->numfaces, collmd->current_x, numverts, ob->pd->pdef_sboft);
 					}
@@ -207,32 +203,26 @@ static void deformVerts(ModifierData *md, Object *ob,
 				}
 				
 				/* happens on file load (ONLY when i decomment changes in readfile.c) */
-				if(!collmd->bvhtree)
-				{
+				if (!collmd->bvhtree) {
 					collmd->bvhtree = bvhtree_build_from_mvert(collmd->mfaces, collmd->numfaces, collmd->current_x, numverts, ob->pd->pdef_sboft);
 				}
-				else
-				{
+				else {
 					// recalc static bounding boxes
 					bvhtree_update_from_mvert ( collmd->bvhtree, collmd->mfaces, collmd->numfaces, collmd->current_x, collmd->current_xnew, collmd->numverts, 1 );
 				}
 				
 				collmd->time_xnew = current_time;
 			}
-			else if(numverts != collmd->numverts)
-			{
+			else if(numverts != collmd->numverts) {
 				freeData((ModifierData *)collmd);
 			}
 			
 		}
-		else if(current_time < collmd->time_xnew)
-		{	
+		else if(current_time < collmd->time_xnew) {
 			freeData((ModifierData *)collmd);
 		}
-		else
-		{
-			if(numverts != collmd->numverts)
-			{
+		else {
+			if (numverts != collmd->numverts) {
 				freeData((ModifierData *)collmd);
 			}
 		}

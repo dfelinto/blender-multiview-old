@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,9 +31,9 @@
  */
 
 
-#ifndef NAN_INCLUDED_IK_QJacobianSolver_h
+#ifndef __IK_QJACOBIANSOLVER_H__
 
-#define NAN_INCLUDED_IK_QJacobianSolver_h
+#define __IK_QJACOBIANSOLVER_H__
 
 /**
  * @author Laurence Bourn

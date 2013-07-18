@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -65,7 +63,7 @@ void TransformReader::get_node_mat(float mat[][4], COLLADAFW::Node *node, std::m
 			}
 
 		copy_m4_m4(copy, mat);
-		mul_m4_m4m4(mat, cur, copy);
+		mult_m4_m4m4(mat, copy, cur);
 
 		if (animation_map) {
 			// AnimationList that drives this Transformation
@@ -82,8 +80,8 @@ void TransformReader::dae_rotate_to_mat4(COLLADAFW::Transformation *tm, float m[
 {
 	COLLADAFW::Rotate *ro = (COLLADAFW::Rotate*)tm;
 	COLLADABU::Math::Vector3& axis = ro->getRotationAxis();
-	float angle = (float)(ro->getRotationAngle() * M_PI / 180.0f);
-	float ax[] = {axis[0], axis[1], axis[2]};
+	const float angle = (float)DEG2RAD(ro->getRotationAngle());
+	const float ax[] = {axis[0], axis[1], axis[2]};
 	// float quat[4];
 	// axis_angle_to_quat(quat, axis, angle);
 	// quat_to_mat4(m, quat);

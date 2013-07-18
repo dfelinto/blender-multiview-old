@@ -1,6 +1,4 @@
 /*
-* $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -48,6 +46,7 @@
 #include "DNA_armature_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_lattice_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meta_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_scene_types.h"
@@ -57,13 +56,14 @@
 
 #include "BKE_action.h"
 #include "BKE_context.h"
+#include "BKE_curve.h"
 #include "BKE_global.h"
 #include "BKE_mesh.h"
 #include "BKE_particle.h"
 #include "BKE_pointcache.h"
+#include "BKE_tessmesh.h"
 
 #include "BLI_math.h"
-#include "BLI_editVert.h"
 #include "BLI_utildefines.h"
 
 #include "BIF_gl.h"
@@ -72,10 +72,10 @@
 #include "WM_types.h"
 
 #include "ED_armature.h"
+#include "ED_curve.h"
 #include "ED_mesh.h"
 #include "ED_particle.h"
 #include "ED_view3d.h"
-#include "ED_curve.h" /* for ED_curve_editnurbs */
 
 #include "UI_resources.h"
 
@@ -202,8 +202,7 @@ static int test_rotmode_euler(short rotmode)
 int gimbal_axis(Object *ob, float gmat[][3])
 {
 	if (ob) {
-		if(ob->mode & OB_MODE_POSE)
-		{
+		if (ob->mode & OB_MODE_POSE) {
 			bPoseChannel *pchan= get_active_posechannel(ob);
 
 			if(pchan) {
@@ -222,8 +221,7 @@ int gimbal_axis(Object *ob, float gmat[][3])
 				/* apply bone transformation */
 				mul_m3_m3m3(tmat, pchan->bone->bone_mat, mat);
 
-				if (pchan->parent)
-				{
+				if (pchan->parent) {
 					float parent_mat[3][3];
 
 					copy_m3_m4(parent_mat, pchan->parent->pose_mat);
@@ -233,8 +231,7 @@ int gimbal_axis(Object *ob, float gmat[][3])
 					copy_m3_m4(obmat, ob->obmat);
 					mul_m3_m3m3(gmat, obmat, mat);
 				}
-				else
-				{
+				else {
 					/* needed if object transformation isn't identity */
 					copy_m3_m4(obmat, ob->obmat);
 					mul_m3_m3m3(gmat, obmat, tmat);
@@ -255,8 +252,7 @@ int gimbal_axis(Object *ob, float gmat[][3])
 				return 0;
 			}
 
-			if (ob->parent)
-			{
+			if (ob->parent) {
 				float parent_mat[3][3];
 				copy_m3_m4(parent_mat, ob->parent->obmat);
 				normalize_m3(parent_mat);
@@ -299,82 +295,73 @@ int calc_manipulator_stats(const bContext *C)
 		if((ob->lay & v3d->lay)==0) return 0;
 
 		if(obedit->type==OB_MESH) {
-			EditMesh *em = BKE_mesh_get_editmesh(obedit->data);
-			EditVert *eve;
-			EditSelection ese;
+			BMEditMesh *em = BMEdit_FromObject(obedit);
+			BMEditSelection ese;
 			float vec[3]= {0,0,0};
 
 			/* USE LAST SELECTE WITH ACTIVE */
-			if (v3d->around==V3D_ACTIVE && EM_get_actSelection(em, &ese)) {
-				EM_editselection_center(vec, &ese);
+			if (v3d->around==V3D_ACTIVE && EDBM_get_actSelection(em, &ese)) {
+				EDBM_editselection_center(em, vec, &ese);
 				calc_tw_center(scene, vec);
 				totsel= 1;
-			} else {
+			}
+			else {
+				BMesh *bm = em->bm;
+				BMVert *eve;
+
+				BMIter iter;
+
 				/* do vertices/edges/faces for center depending on selection
-				   mode. note we can't use just vertex selection flag because
-				   it is not flush down on changes */
+				 * mode. note we can't use just vertex selection flag because
+				 * it is not flush down on changes */
 				if(ts->selectmode & SCE_SELECT_VERTEX) {
-					for(eve= em->verts.first; eve; eve= eve->next) {
-						if(eve->f & SELECT) {
-							totsel++;
-							calc_tw_center(scene, eve->co);
+					BM_ITER(eve, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+						if(!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+							if(BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+								totsel++;
+								calc_tw_center(scene, eve->co);
+							}
 						}
 					}
 				}
 				else if(ts->selectmode & SCE_SELECT_EDGE) {
-					EditEdge *eed;
-
-					for(eve= em->verts.first; eve; eve= eve->next) eve->f1= 0;
-					for(eed= em->edges.first; eed; eed= eed->next) {
-						if(eed->h==0 && (eed->f & SELECT)) {
-							if(!eed->v1->f1) {
-								eed->v1->f1= 1;
-								totsel++;
-								calc_tw_center(scene, eed->v1->co);
-							}
-							if(!eed->v2->f1) {
-								eed->v2->f1= 1;
-								totsel++;
-								calc_tw_center(scene, eed->v2->co);
+					BMIter itersub;
+					BMEdge *eed;
+					BM_ITER(eve, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+						if(!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+							/* check the vertex has a selected edge, only add it once */
+							BM_ITER(eed, &itersub, bm, BM_EDGES_OF_VERT, eve) {
+								if(BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+									totsel++;
+									calc_tw_center(scene, eve->co);
+									break;
+								}
 							}
 						}
 					}
 				}
 				else {
-					EditFace *efa;
-
-					for(eve= em->verts.first; eve; eve= eve->next) eve->f1= 0;
-					for(efa= em->faces.first; efa; efa= efa->next) {
-						if(efa->h==0 && (efa->f & SELECT)) {
-							if(!efa->v1->f1) {
-								efa->v1->f1= 1;
-								totsel++;
-								calc_tw_center(scene, efa->v1->co);
-							}
-							if(!efa->v2->f1) {
-								efa->v2->f1= 1;
-								totsel++;
-								calc_tw_center(scene, efa->v2->co);
-							}
-							if(!efa->v3->f1) {
-								efa->v3->f1= 1;
-								totsel++;
-								calc_tw_center(scene, efa->v3->co);
-							}
-							if(efa->v4 && !efa->v4->f1) {
-								efa->v4->f1= 1;
-								totsel++;
-								calc_tw_center(scene, efa->v4->co);
+					BMIter itersub;
+					BMFace *efa;
+					BM_ITER(eve, &iter, bm, BM_VERTS_OF_MESH, NULL) {
+						if(!BM_elem_flag_test(eve, BM_ELEM_HIDDEN)) {
+							/* check the vertex has a selected face, only add it once */
+							BM_ITER(efa, &itersub, bm, BM_FACES_OF_VERT, eve) {
+								if(BM_elem_flag_test(efa, BM_ELEM_SELECT)) {
+									totsel++;
+									calc_tw_center(scene, eve->co);
+									break;
+								}
 							}
 						}
 					}
 				}
 			}
 		} /* end editmesh */
-		else if (obedit->type==OB_ARMATURE){
+		else if (obedit->type==OB_ARMATURE) {
 			bArmature *arm= obedit->data;
 			EditBone *ebo;
-			for (ebo= arm->edbo->first; ebo; ebo=ebo->next){
+			for (ebo= arm->edbo->first; ebo; ebo=ebo->next) {
 				if(EBONE_VISIBLE(arm, ebo)) {
 					if (ebo->flag & BONE_TIPSEL) {
 						calc_tw_center(scene, ebo->tail);
@@ -392,67 +379,75 @@ int calc_manipulator_stats(const bContext *C)
 		}
 		else if ELEM(obedit->type, OB_CURVE, OB_SURF) {
 			Curve *cu= obedit->data;
-			Nurb *nu;
-			BezTriple *bezt;
-			BPoint *bp;
-			ListBase *nurbs= ED_curve_editnurbs(cu);
+			float center[3];
 
-			nu= nurbs->first;
-			while(nu) {
-				if(nu->type == CU_BEZIER) {
-					bezt= nu->bezt;
-					a= nu->pntsu;
-					while(a--) {
-						/* exceptions
-						 * if handles are hidden then only check the center points.
-						 * If the center knot is selected then only use this as the center point.
-						 */
-						if (cu->drawflag & CU_HIDE_HANDLES) {
-							if (bezt->f2 & SELECT) {
+			if (v3d->around==V3D_ACTIVE && ED_curve_actSelection(cu, center)) {
+			calc_tw_center(scene, center);
+				totsel++;
+			}
+			else {
+				Nurb *nu;
+				BezTriple *bezt;
+				BPoint *bp;
+				ListBase *nurbs= curve_editnurbs(cu);
+
+				nu= nurbs->first;
+				while(nu) {
+					if(nu->type == CU_BEZIER) {
+						bezt= nu->bezt;
+						a= nu->pntsu;
+						while(a--) {
+							/* exceptions
+							 * if handles are hidden then only check the center points.
+							 * If the center knot is selected then only use this as the center point.
+							 */
+							if (cu->drawflag & CU_HIDE_HANDLES) {
+								if (bezt->f2 & SELECT) {
+									calc_tw_center(scene, bezt->vec[1]);
+									totsel++;
+								}
+							}
+							else if (bezt->f2 & SELECT) {
 								calc_tw_center(scene, bezt->vec[1]);
 								totsel++;
 							}
+							else {
+								if(bezt->f1) {
+									calc_tw_center(scene, bezt->vec[0]);
+									totsel++;
+								}
+								if(bezt->f3) {
+									calc_tw_center(scene, bezt->vec[2]);
+									totsel++;
+								}
+							}
+							bezt++;
 						}
-						else if (bezt->f2 & SELECT) {
-							calc_tw_center(scene, bezt->vec[1]);
-							totsel++;
-						}
-						else {
-							if(bezt->f1) {
-								calc_tw_center(scene, bezt->vec[0]);
+					}
+					else {
+						bp= nu->bp;
+						a= nu->pntsu*nu->pntsv;
+						while(a--) {
+							if(bp->f1 & SELECT) {
+								calc_tw_center(scene, bp->vec);
 								totsel++;
 							}
-							if(bezt->f3) {
-								calc_tw_center(scene, bezt->vec[2]);
-								totsel++;
-							}
+							bp++;
 						}
-						bezt++;
 					}
+					nu= nu->next;
 				}
-				else {
-					bp= nu->bp;
-					a= nu->pntsu*nu->pntsv;
-					while(a--) {
-						if(bp->f1 & SELECT) {
-							calc_tw_center(scene, bp->vec);
-							totsel++;
-						}
-						bp++;
-					}
-				}
-				nu= nu->next;
 			}
 		}
 		else if(obedit->type==OB_MBALL) {
 			MetaBall *mb = (MetaBall*)obedit->data;
-			MetaElem *ml, *ml_sel=NULL;
+			MetaElem *ml /* , *ml_sel=NULL */ /* UNUSED */;
 
 			ml= mb->editelems->first;
 			while(ml) {
 				if(ml->flag & SELECT) {
 					calc_tw_center(scene, &ml->x);
-					ml_sel = ml;
+					/* ml_sel = ml; */ /* UNUSED */
 					totsel++;
 				}
 				ml= ml->next;
@@ -654,14 +649,14 @@ static float screen_aligned(RegionView3D *rv3d, float mat[][4])
 }
 
 
-/* radring = radius of donut rings
-   radhole = radius hole
-   start = starting segment (based on nrings)
-   end   = end segment
-   nsides = amount of points in ring
-   nrigns = amount of rings
-*/
-static void partial_donut(float radring, float radhole, int start, int end, int nsides, int nrings)
+/* radring = radius of doughnut rings
+ * radhole = radius hole
+ * start = starting segment (based on nrings)
+ * end   = end segment
+ * nsides = amount of points in ring
+ * nrigns = amount of rings
+ */
+static void partial_doughnut(float radring, float radhole, int start, int end, int nsides, int nrings)
 {
 	float theta, phi, theta1;
 	float cos_theta, sin_theta;
@@ -750,10 +745,10 @@ static char axisBlendAngle(float angle)
 }
 
 /* three colors can be set;
-   grey for ghosting
-   moving: in transform theme color
-   else the red/green/blue
-*/
+ * grey for ghosting
+ * moving: in transform theme color
+ * else the red/green/blue
+ */
 static void manipulator_setcolor(View3D *v3d, char axis, int colcode, unsigned char alpha)
 {
 	unsigned char col[4]= {0};
@@ -884,7 +879,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 
 	if(arcs) {
 		/* clipplane makes nice handles, calc here because of multmatrix but with translate! */
-		VECCOPY(plane, rv3d->viewinv[2]);
+		copy_v3db_v3fl(plane, rv3d->viewinv[2]);
 		plane[3]= -0.02f*size; // clip just a bit more
 		glClipPlane(GL_CLIP_PLANE0, plane);
 	}
@@ -1025,7 +1020,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 			preOrthoFront(ortho, rv3d->twmat, 2);
 			if(G.f & G_PICKSEL) glLoadName(MAN_ROT_Z);
 			manipulator_setcolor(v3d, 'Z', colcode, 255);
-			partial_donut(cusize/4.0f, 1.0f, 0, 48, 8, 48);
+			partial_doughnut(cusize/4.0f, 1.0f, 0, 48, 8, 48);
 			postOrtho(ortho);
 		}
 		/* X circle */
@@ -1034,7 +1029,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 			if(G.f & G_PICKSEL) glLoadName(MAN_ROT_X);
 			glRotatef(90.0, 0.0, 1.0, 0.0);
 			manipulator_setcolor(v3d, 'X', colcode, 255);
-			partial_donut(cusize/4.0f, 1.0f, 0, 48, 8, 48);
+			partial_doughnut(cusize/4.0f, 1.0f, 0, 48, 8, 48);
 			glRotatef(-90.0, 0.0, 1.0, 0.0);
 			postOrtho(ortho);
 		}
@@ -1044,7 +1039,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 			if(G.f & G_PICKSEL) glLoadName(MAN_ROT_Y);
 			glRotatef(-90.0, 1.0, 0.0, 0.0);
 			manipulator_setcolor(v3d, 'Y', colcode, 255);
-			partial_donut(cusize/4.0f, 1.0f, 0, 48, 8, 48);
+			partial_doughnut(cusize/4.0f, 1.0f, 0, 48, 8, 48);
 			glRotatef(90.0, 1.0, 0.0, 0.0);
 			postOrtho(ortho);
 		}
@@ -1061,7 +1056,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 			if(G.f & G_PICKSEL) glLoadName(MAN_ROT_Z);
 			manipulator_setcolor(v3d, 'Z', colcode, 255);
 
-			partial_donut(0.7f*cusize, 1.0f, 31, 33, 8, 64);
+			partial_doughnut(0.7f*cusize, 1.0f, 31, 33, 8, 64);
 
 			glPopMatrix();
 			postOrtho(ortho);
@@ -1076,7 +1071,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 
 			glRotatef(90.0, 1.0, 0.0, 0.0);
 			glRotatef(90.0, 0.0, 0.0, 1.0);
-			partial_donut(0.7f*cusize, 1.0f, 31, 33, 8, 64);
+			partial_doughnut(0.7f*cusize, 1.0f, 31, 33, 8, 64);
 
 			glPopMatrix();
 			postOrtho(ortho);
@@ -1091,7 +1086,7 @@ static void draw_manipulator_rotate(View3D *v3d, RegionView3D *rv3d, int moving,
 
 			glRotatef(-90.0, 0.0, 1.0, 0.0);
 			glRotatef(90.0, 0.0, 0.0, 1.0);
-			partial_donut(0.7f*cusize, 1.0f, 31, 33, 8, 64);
+			partial_doughnut(0.7f*cusize, 1.0f, 31, 33, 8, 64);
 
 			glPopMatrix();
 			postOrtho(ortho);
@@ -1498,15 +1493,15 @@ void BIF_draw_manipulator(const bContext *C)
 			if(v3d->around==V3D_ACTIVE && scene->obedit==NULL) {
 				Object *ob= OBACT;
 				if(ob && !(ob->mode & OB_MODE_POSE))
-					VECCOPY(rv3d->twmat[3], ob->obmat[3]);
+					copy_v3_v3(rv3d->twmat[3], ob->obmat[3]);
 			}
 			break;
 		case V3D_LOCAL:
 		case V3D_CENTROID:
-			VECCOPY(rv3d->twmat[3], scene->twcent);
+			copy_v3_v3(rv3d->twmat[3], scene->twcent);
 			break;
 		case V3D_CURSOR:
-			VECCOPY(rv3d->twmat[3], give_cursor(scene, v3d));
+			copy_v3_v3(rv3d->twmat[3], give_cursor(scene, v3d));
 			break;
 		}
 
@@ -1557,7 +1552,7 @@ static int manipulator_selectbuf(ScrArea *sa, ARegion *ar, const int mval[2], fl
 	rect.ymax= mval[1]+hotspot;
 
 	setwinmatrixview3d(ar, v3d, &rect);
-	mul_m4_m4m4(rv3d->persmat, rv3d->viewmat, rv3d->winmat);
+	mult_m4_m4m4(rv3d->persmat, rv3d->winmat, rv3d->viewmat);
 
 	glSelectBuffer( 64, buffer);
 	glRenderMode(GL_SELECT);
@@ -1579,7 +1574,7 @@ static int manipulator_selectbuf(ScrArea *sa, ARegion *ar, const int mval[2], fl
 
 	G.f &= ~G_PICKSEL;
 	setwinmatrixview3d(ar, v3d, NULL);
-	mul_m4_m4m4(rv3d->persmat, rv3d->viewmat, rv3d->winmat);
+	mult_m4_m4m4(rv3d->persmat, rv3d->winmat, rv3d->viewmat);
 
 	if(hits==1) return buffer[3];
 	else if(hits>1) {

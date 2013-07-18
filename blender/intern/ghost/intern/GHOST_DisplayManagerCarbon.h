@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_DisplayManagerCarbon class.
  */
 
-#ifndef _GHOST_DISPLAY_MANAGER_CARBON_H_
-#define _GHOST_DISPLAY_MANAGER_CARBON_H_
+#ifndef __GHOST_DISPLAYMANAGERCARBON_H__
+#define __GHOST_DISPLAYMANAGERCARBON_H__
 
 #ifndef __APPLE__
 #error Apple only!
@@ -113,5 +112,5 @@ protected:
 };
 
 
-#endif // _GHOST_DISPLAY_MANAGER_CARBON_H_
+#endif // __GHOST_DISPLAYMANAGERCARBON_H__
 

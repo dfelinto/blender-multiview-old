@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -105,8 +103,8 @@ static void unique_name(bNode *node)
 			} else {
 				suffix = 0;
 				new_len = len + 4;
-				if(new_len > 31)
-					new_len = 31;
+				if(new_len > (sizeof(tno->name) - 1))
+					new_len = (sizeof(tno->name) - 1);
 			}
 			
 			new_name = MEM_mallocN(new_len + 1, "new_name");
@@ -159,16 +157,19 @@ static void copy(bNode *orig, bNode *new)
 	assign_index(new);
 }
 
-void register_node_type_tex_output(ListBase *lb)
+void register_node_type_tex_output(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 	
-	node_type_base(&ntype, TEX_NODE_OUTPUT, "Output", NODE_CLASS_OUTPUT, NODE_PREVIEW|NODE_OPTIONS);
+	node_type_base(ttype, &ntype, TEX_NODE_OUTPUT, "Output", NODE_CLASS_OUTPUT, NODE_PREVIEW|NODE_OPTIONS);
 	node_type_socket_templates(&ntype, inputs, NULL);
 	node_type_size(&ntype, 150, 60, 200);
 	node_type_init(&ntype, init);
 	node_type_storage(&ntype, "TexNodeOutput", node_free_standard_storage, copy);
 	node_type_exec(&ntype, exec);
 	
-	nodeRegisterType(lb, &ntype);
+	/* Do not allow muting output. */
+	node_type_internal_connect(&ntype, NULL);
+	
+	nodeRegisterType(ttype, &ntype);
 }

@@ -47,8 +47,9 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
         layout.prop(game, "physics_type")
         layout.separator()
 
-        #if game.physics_type == 'DYNAMIC':
-        if game.physics_type in {'DYNAMIC', 'RIGID_BODY'}:
+        physics_type = game.physics_type
+
+        if physics_type in {'DYNAMIC', 'RIGID_BODY'}:
             split = layout.split()
 
             col = split.column()
@@ -108,7 +109,7 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
             col.prop(game, "lock_rotation_y", text="Y")
             col.prop(game, "lock_rotation_z", text="Z")
 
-        elif game.physics_type == 'SOFT_BODY':
+        elif physics_type == 'SOFT_BODY':
             col = layout.column()
             col.prop(game, "use_actor")
             col.prop(game, "use_ghost")
@@ -143,7 +144,7 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
             sub.active = (soft.use_cluster_rigid_to_softbody or soft.use_cluster_soft_to_softbody)
             sub.prop(soft, "cluster_iterations", text="Iterations")
 
-        elif game.physics_type == 'STATIC':
+        elif physics_type == 'STATIC':
             col = layout.column()
             col.prop(game, "use_actor")
             col.prop(game, "use_ghost")
@@ -164,8 +165,17 @@ class PHYSICS_PT_game_physics(PhysicsButtonsPanel, Panel):
             subsub.active = game.use_anisotropic_friction
             subsub.prop(game, "friction_coefficients", text="", slider=True)
 
-        elif game.physics_type in {'SENSOR', 'INVISIBLE', 'NO_COLLISION', 'OCCLUDE'}:
+        elif physics_type in {'SENSOR', 'INVISIBLE', 'NO_COLLISION', 'OCCLUDE'}:
             layout.prop(ob, "hide_render", text="Invisible")
+
+        elif physics_type == 'NAVMESH':
+            layout.operator("mesh.navmesh_face_copy")
+            layout.operator("mesh.navmesh_face_add")
+
+            layout.separator()
+
+            layout.operator("mesh.navmesh_reset")
+            layout.operator("mesh.navmesh_clear")
 
 
 class PHYSICS_PT_game_collision_bounds(PhysicsButtonsPanel, Panel):
@@ -196,6 +206,33 @@ class PHYSICS_PT_game_collision_bounds(PhysicsButtonsPanel, Panel):
         row.prop(game, "use_collision_compound", text="Compound")
 
 
+class PHYSICS_PT_game_obstacles(PhysicsButtonsPanel, Panel):
+    bl_label = "Create Obstacle"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        game = context.object.game
+        rd = context.scene.render
+        return (game.physics_type in {'DYNAMIC', 'RIGID_BODY', 'SENSOR', 'SOFT_BODY', 'STATIC'}) and (rd.engine in cls.COMPAT_ENGINES)
+
+    def draw_header(self, context):
+        game = context.active_object.game
+
+        self.layout.prop(game, "use_obstacle_create", text="")
+
+    def draw(self, context):
+        layout = self.layout
+
+        game = context.active_object.game
+
+        layout.active = game.use_obstacle_create
+
+        row = layout.row()
+        row.prop(game, "obstacle_radius", text="Radius")
+        row.label()
+
+
 class RenderButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
@@ -207,16 +244,23 @@ class RenderButtonsPanel():
         return (rd.engine in cls.COMPAT_ENGINES)
 
 
-class RENDER_PT_game(RenderButtonsPanel, Panel):
-    bl_label = "Game"
+class RENDER_PT_embedded(RenderButtonsPanel, Panel):
+    bl_label = "Embedded Player"
     COMPAT_ENGINES = {'BLENDER_GAME'}
 
     def draw(self, context):
         layout = self.layout
 
+        rd = context.scene.render
+
         row = layout.row()
         row.operator("view3d.game_start", text="Start")
         row.label()
+        row = layout.row()
+        row.label(text="Resolution:")
+        row = layout.row(align=True)
+        row.prop(rd, "resolution_x", slider=False, text="X")
+        row.prop(rd, "resolution_y", slider=False, text="Y")
 
 
 class RENDER_PT_game_player(RenderButtonsPanel, Panel):
@@ -228,14 +272,15 @@ class RENDER_PT_game_player(RenderButtonsPanel, Panel):
 
         gs = context.scene.game_settings
 
-        split = layout.split()
+        row = layout.row()
+        row.operator("wm.blenderplayer_start", text="Start")
+        row.label()
 
-        col = split.column()
-        col.label(text="Resolution:")
-        sub = col.column(align=True)
-        sub.prop(gs, "resolution_x", slider=False, text="X")
-        sub.prop(gs, "resolution_y", slider=False, text="Y")
-
+        row = layout.row()
+        row.label(text="Resolution:")
+        row = layout.row(align=True)
+        row.prop(gs, "resolution_x", slider=False, text="X")
+        row.prop(gs, "resolution_y", slider=False, text="Y")
         row = layout.row()
         col = row.column()
         col.prop(gs, "show_fullscreen")
@@ -243,18 +288,12 @@ class RENDER_PT_game_player(RenderButtonsPanel, Panel):
         col.prop(gs, "use_desktop")
         col.active = gs.show_fullscreen
 
-        col = split.column()
-        col.label(text="Quality:")
-        sub = col.column(align=True)
-        sub.prop(gs, "depth", text="Bit Depth", slider=False)
-        sub.prop(gs, "frequency", text="FPS", slider=False)
-
-        # framing:
         col = layout.column()
-        col.label(text="Framing:")
-        col.row().prop(gs, "frame_type", expand=True)
-        if gs.frame_type == 'LETTERBOX':
-            col.prop(gs, "frame_color", text="")
+        col.label(text="Quality:")
+        col.prop(gs, "samples")
+        col = layout.column(align=True)
+        col.prop(gs, "depth", text="Bit Depth", slider=False)
+        col.prop(gs, "frequency", text="Refresh Rate", slider=False)
 
 
 class RENDER_PT_game_stereo(RenderButtonsPanel, Panel):
@@ -285,16 +324,14 @@ class RENDER_PT_game_stereo(RenderButtonsPanel, Panel):
 
             split = layout.split()
 
-            if dome_type == 'FISHEYE' or \
-               dome_type == 'TRUNCATED_REAR' or \
-               dome_type == 'TRUNCATED_FRONT':
-
+            if dome_type in {'FISHEYE', 'TRUNCATED_REAR', 'TRUNCATED_FRONT'}:
                 col = split.column()
+
                 col.prop(gs, "dome_buffer_resolution", text="Resolution", slider=True)
                 col.prop(gs, "dome_angle", slider=True)
 
                 col = split.column()
-                col.prop(gs, "dome_tesselation", text="Tesselation")
+                col.prop(gs, "dome_tessellation", text="Tessellation")
                 col.prop(gs, "dome_tilt")
 
             elif dome_type == 'PANORAM_SPH':
@@ -302,10 +339,11 @@ class RENDER_PT_game_stereo(RenderButtonsPanel, Panel):
 
                 col.prop(gs, "dome_buffer_resolution", text="Resolution", slider=True)
                 col = split.column()
-                col.prop(gs, "dome_tesselation", text="Tesselation")
+                col.prop(gs, "dome_tessellation", text="Tessellation")
 
             else:  # cube map
                 col = split.column()
+
                 col.prop(gs, "dome_buffer_resolution", text="Resolution", slider=True)
 
                 col = split.column()
@@ -339,20 +377,24 @@ class RENDER_PT_game_shading(RenderButtonsPanel, Panel):
             col.prop(gs, "use_glsl_extra_textures", text="Extra Textures")
 
 
-class RENDER_PT_game_performance(RenderButtonsPanel, Panel):
-    bl_label = "Performance"
+class RENDER_PT_game_system(RenderButtonsPanel, Panel):
+    bl_label = "System"
     COMPAT_ENGINES = {'BLENDER_GAME'}
 
     def draw(self, context):
         layout = self.layout
 
         gs = context.scene.game_settings
-        col = layout.column()
-        row = col.row()
+        row = layout.row()
         row.prop(gs, "use_frame_rate")
+        row.prop(gs, "restrict_animation_updates")
+
+        row = layout.row()
         row.prop(gs, "use_display_lists")
-        
-        col.prop(gs, "restrict_animation_updates")
+
+        row = layout.row()
+        row.label("Exit Key")
+        row.prop(gs, "exit_key", text="", event=True)
 
 
 class RENDER_PT_game_display(RenderButtonsPanel, Panel):
@@ -362,6 +404,9 @@ class RENDER_PT_game_display(RenderButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
+        row = layout.row()
+        row.prop(context.scene.render, "fps", text="Animation Frame Rate", slider=False)
+
         gs = context.scene.game_settings
         flow = layout.column_flow()
         flow.prop(gs, "show_debug_properties", text="Debug Properties")
@@ -369,6 +414,92 @@ class RENDER_PT_game_display(RenderButtonsPanel, Panel):
         flow.prop(gs, "show_physics_visualization", text="Physics Visualization")
         flow.prop(gs, "use_deprecation_warnings")
         flow.prop(gs, "show_mouse", text="Mouse Cursor")
+
+        col = layout.column()
+        col.label(text="Framing:")
+        col.row().prop(gs, "frame_type", expand=True)
+        if gs.frame_type == 'LETTERBOX':
+            col.prop(gs, "frame_color", text="")
+
+
+class SceneButtonsPanel():
+    bl_space_type = 'PROPERTIES'
+    bl_region_type = 'WINDOW'
+    bl_context = "scene"
+
+
+class SCENE_PT_game_navmesh(SceneButtonsPanel, Panel):
+    bl_label = "Navigation mesh"
+    bl_options = {'DEFAULT_CLOSED'}
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene and scene.render.engine in cls.COMPAT_ENGINES)
+
+    def draw(self, context):
+        layout = self.layout
+
+        rd = context.scene.game_settings.recast_data
+
+        layout.operator("mesh.navmesh_make", text='Build navigation mesh')
+
+        col = layout.column()
+        col.label(text="Rasterization:")
+        row = col.row()
+        row.prop(rd, "cell_size")
+        row.prop(rd, "cell_height")
+
+        col = layout.column()
+        col.label(text="Agent:")
+        split = col.split()
+
+        col = split.column()
+        col.prop(rd, "agent_height", text="Height")
+        col.prop(rd, "agent_radius", text="Radius")
+
+        col = split.column()
+        col.prop(rd, "slope_max")
+        col.prop(rd, "climb_max")
+
+        col = layout.column()
+        col.label(text="Region:")
+        row = col.row()
+        row.prop(rd, "region_min_size")
+        row.prop(rd, "region_merge_size")
+
+        col = layout.column()
+        col.label(text="Polygonization:")
+        split = col.split()
+
+        col = split.column()
+        col.prop(rd, "edge_max_len")
+        col.prop(rd, "edge_max_error")
+
+        split.prop(rd, "verts_per_poly")
+
+        col = layout.column()
+        col.label(text="Detail Mesh:")
+        row = col.row()
+        row.prop(rd, "sample_dist")
+        row.prop(rd, "sample_max_error")
+
+
+class RENDER_PT_game_sound(RenderButtonsPanel, Panel):
+    bl_label = "Sound"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    def draw(self, context):
+        layout = self.layout
+
+        scene = context.scene
+
+        layout.prop(scene, "audio_distance_model")
+
+        col = layout.column(align=True)
+        col.prop(scene, "audio_doppler_speed", text="Speed")
+        col.prop(scene, "audio_doppler_factor")
 
 
 class WorldButtonsPanel():
@@ -440,10 +571,14 @@ class WORLD_PT_game_mist(WorldButtonsPanel, Panel):
         world = context.world
 
         layout.active = world.mist_settings.use_mist
-
         row = layout.row()
+        row.prop(world.mist_settings, "falloff")
+
+        row = layout.row(align=True)
         row.prop(world.mist_settings, "start")
         row.prop(world.mist_settings, "depth")
+        row = layout.row()
+        row.prop(world.mist_settings, "intensity", text="Minimum Intensity")
 
 
 class WORLD_PT_game_physics(WorldButtonsPanel, Panel):
@@ -493,6 +628,26 @@ class WORLD_PT_game_physics(WorldButtonsPanel, Panel):
             col = split.column()
             col.label(text="Logic Steps:")
             col.prop(gs, "logic_step_max", text="Max")
+
+
+class WORLD_PT_game_physics_obstacles(WorldButtonsPanel, Panel):
+    bl_label = "Obstacle simulation"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    @classmethod
+    def poll(cls, context):
+        scene = context.scene
+        return (scene.world and scene.render.engine in cls.COMPAT_ENGINES)
+
+    def draw(self, context):
+        layout = self.layout
+
+        gs = context.scene.game_settings
+
+        layout.prop(gs, "obstacle_simulation", text="Type")
+        if gs.obstacle_simulation != 'NONE':
+            layout.prop(gs, "level_height")
+            layout.prop(gs, "show_obstacle_simulation")
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

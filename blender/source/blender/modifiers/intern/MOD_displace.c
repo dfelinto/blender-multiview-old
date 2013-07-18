@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_displace.c
  *  \ingroup modifiers
@@ -40,6 +38,7 @@
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 
 #include "BKE_cdderivedmesh.h"
@@ -75,11 +74,11 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tdmd->texture = dmd->texture;
 	tdmd->strength = dmd->strength;
 	tdmd->direction = dmd->direction;
-	strncpy(tdmd->defgrp_name, dmd->defgrp_name, 32);
+	BLI_strncpy(tdmd->defgrp_name, dmd->defgrp_name, sizeof(tdmd->defgrp_name));
 	tdmd->midlevel = dmd->midlevel;
 	tdmd->texmapping = dmd->texmapping;
 	tdmd->map_object = dmd->map_object;
-	strncpy(tdmd->uvlayer_name, dmd->uvlayer_name, 32);
+	BLI_strncpy(tdmd->uvlayer_name, dmd->uvlayer_name, sizeof(tdmd->uvlayer_name));
 }
 
 static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
@@ -100,12 +99,10 @@ static int dependsOnTime(ModifierData *md)
 {
 	DisplaceModifierData *dmd = (DisplaceModifierData *)md;
 
-	if(dmd->texture)
-	{
+	if(dmd->texture) {
 		return BKE_texture_dependsOnTime(dmd->texture);
 	}
-	else
-	{
+	else {
 		return 0;
 	}
 }
@@ -158,13 +155,13 @@ static void updateDepgraph(ModifierData *md, DagForest *forest,
 		DagNode *curNode = dag_get_node(forest, dmd->map_object);
 
 		dag_add_relation(forest, curNode, obNode,
-				 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
+		                 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
 	}
 	
 
 	if(dmd->texmapping == MOD_DISP_MAP_GLOBAL)
 		dag_add_relation(forest, obNode, obNode,
-						 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
+		                 DAG_RL_DATA_DATA | DAG_RL_OB_DATA, "Displace Modifier");
 	
 }
 
@@ -245,20 +242,20 @@ static void deformVerts(ModifierData *md, Object *ob,
 	DerivedMesh *dm= get_cddm(ob, NULL, derivedData, vertexCos);
 
 	displaceModifier_do((DisplaceModifierData *)md, ob, dm,
-				 vertexCos, numVerts);
+	                    vertexCos, numVerts);
 
 	if(dm != derivedData)
 		dm->release(dm);
 }
 
 static void deformVertsEM(
-					   ModifierData *md, Object *ob, struct EditMesh *editData,
+					   ModifierData *md, Object *ob, struct BMEditMesh *editData,
 	DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm= get_cddm(ob, editData, derivedData, vertexCos);
 
 	displaceModifier_do((DisplaceModifierData *)md, ob, dm,
-				 vertexCos, numVerts);
+	                    vertexCos, numVerts);
 
 	if(dm != derivedData)
 		dm->release(dm);

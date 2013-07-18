@@ -1,5 +1,4 @@
-/**
- * $Id$
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -452,7 +451,8 @@ static bool g_hasFirstFile = false;
 static char g_firstFileBuf[512];
 
 //TODO:Need to investigate this. Function called too early in creator.c to have g_hasFirstFile == true
-extern "C" int GHOST_HACK_getFirstFile(char buf[FIRSTFILEBUFLG]) { 
+extern "C" int GHOST_HACK_getFirstFile(char buf[FIRSTFILEBUFLG])
+{
 	if (g_hasFirstFile) {
 		strncpy(buf, g_firstFileBuf, FIRSTFILEBUFLG - 1);
 		buf[FIRSTFILEBUFLG - 1] = '\0';
@@ -876,24 +876,25 @@ bool GHOST_SystemCocoa::processEvents(bool waitForEvent)
 	/*do {
 		GHOST_TimerManager* timerMgr = getTimerManager();
 		
-		 if (waitForEvent) {
-		 GHOST_TUns64 next = timerMgr->nextFireTime();
-		 double timeOut;
-		 
-		 if (next == GHOST_kFireTimeNever) {
-		 timeOut = kEventDurationForever;
-		 } else {
-		 timeOut = (double)(next - getMilliSeconds())/1000.0;
-		 if (timeOut < 0.0)
-		 timeOut = 0.0;
-		 }
-		 
-		 ::ReceiveNextEvent(0, NULL, timeOut, false, &event);
-		 }
-		 
-		 if (timerMgr->fireTimers(getMilliSeconds())) {
-		 anyProcessed = true;
-		 }*/
+		if (waitForEvent) {
+		GHOST_TUns64 next = timerMgr->nextFireTime();
+		double timeOut;
+
+		if (next == GHOST_kFireTimeNever) {
+		timeOut = kEventDurationForever;
+		} else {
+		timeOut = (double)(next - getMilliSeconds())/1000.0;
+		if (timeOut < 0.0)
+		timeOut = 0.0;
+		}
+
+		::ReceiveNextEvent(0, NULL, timeOut, false, &event);
+		}
+
+		if (timerMgr->fireTimers(getMilliSeconds())) {
+		anyProcessed = true;
+		}
+		*/
 		
 		do {
 			NSAutoreleasePool* pool = [[NSAutoreleasePool alloc] init];
@@ -1611,7 +1612,7 @@ GHOST_TSuccess GHOST_SystemCocoa::handleMouseEvent(void *eventPtr)
 				GHOST_TInt32 x, y;
 				window->clientToScreenIntern(mousePos.x, mousePos.y, x, y);
 				pushEvent(new GHOST_EventTrackpad([event timestamp]*1000, window, GHOST_kTrackpadEventMagnify, x, y,
-												  [event magnification]*250.0 + 0.1, 0));
+												  [event magnification]*125.0 + 0.1, 0));
 			}
 			break;
 
@@ -1654,8 +1655,12 @@ GHOST_TSuccess GHOST_SystemCocoa::handleKeyEvent(void *eventPtr)
 		//printf("\nW failure for event 0x%x",[event type]);
 		return GHOST_kFailure;
 	}
+
+	char utf8_buf[6]= {'\0'};
+	ascii = 0;
 	
 	switch ([event type]) {
+
 		case NSKeyDown:
 		case NSKeyUp:
 			charsIgnoringModifiers = [event charactersIgnoringModifiers];
@@ -1667,28 +1672,34 @@ GHOST_TSuccess GHOST_SystemCocoa::handleKeyEvent(void *eventPtr)
 				keyCode = convertKey([event keyCode],0,
 									 [event type] == NSKeyDown?kUCKeyActionDown:kUCKeyActionUp);
 
-				
+			/* handling both unicode or ascii */
 			characters = [event characters];
-			if ([characters length]>0) { //Check for dead keys
-				//Convert characters to iso latin 1 encoding
-				convertedCharacters = [characters dataUsingEncoding:NSISOLatin1StringEncoding];
-				if ([convertedCharacters length]>0)
-					ascii =((char*)[convertedCharacters bytes])[0];
-				else
-					ascii = 0; //Character not available in iso latin 1 encoding
+			if ([characters length]>0) {
+				convertedCharacters = [characters dataUsingEncoding:NSUTF8StringEncoding];
+				
+				for (int x = 0; x < [convertedCharacters length]; x++) {
+					utf8_buf[x] = ((char*)[convertedCharacters bytes])[x];
+				}
+
+				/* ascii is a subset of unicode */
+				if ([convertedCharacters length] == 1) {
+					ascii = utf8_buf[0];
+				}
 			}
-			else
-				ascii= 0;
-			
+
+			/* arrow keys should not have utf8 */
+			if ((keyCode > 266) && (keyCode < 271))
+				utf8_buf[0] = '\0';
+
 			if ((keyCode == GHOST_kKeyQ) && (m_modifierMask & NSCommandKeyMask))
 				break; //Cmd-Q is directly handled by Cocoa
 
 			if ([event type] == NSKeyDown) {
-				pushEvent( new GHOST_EventKey([event timestamp]*1000, GHOST_kEventKeyDown, window, keyCode, ascii) );
-				//printf("\nKey down rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u ascii=%i %c",[event keyCode],[charsIgnoringModifiers length]>0?[charsIgnoringModifiers characterAtIndex:0]:' ',keyCode,ascii,ascii);
+				pushEvent( new GHOST_EventKey([event timestamp]*1000, GHOST_kEventKeyDown, window, keyCode, ascii, utf8_buf) );
+				//printf("Key down rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u ascii=%i %c utf8=%s\n",[event keyCode],[charsIgnoringModifiers length]>0?[charsIgnoringModifiers characterAtIndex:0]:' ',keyCode,ascii,ascii, utf8_buf);
 			} else {
-				pushEvent( new GHOST_EventKey([event timestamp]*1000, GHOST_kEventKeyUp, window, keyCode, ascii) );
-				//printf("\nKey up rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u ascii=%i %c",[event keyCode],[charsIgnoringModifiers length]>0?[charsIgnoringModifiers characterAtIndex:0]:' ',keyCode,ascii,ascii);
+				pushEvent( new GHOST_EventKey([event timestamp]*1000, GHOST_kEventKeyUp, window, keyCode, 0, '\0') );
+				//printf("Key up rawCode=0x%x charsIgnoringModifiers=%c keyCode=%u ascii=%i %c utf8=%s\n",[event keyCode],[charsIgnoringModifiers length]>0?[charsIgnoringModifiers characterAtIndex:0]:' ',keyCode,ascii,ascii, utf8_buf);
 			}
 			break;
 	
@@ -1755,7 +1766,7 @@ GHOST_TUns8* GHOST_SystemCocoa::getClipboard(bool selection) const
 		return NULL;
 	}
 	
-	pastedTextSize = [textPasted lengthOfBytesUsingEncoding:NSISOLatin1StringEncoding];
+	pastedTextSize = [textPasted lengthOfBytesUsingEncoding:NSUTF8StringEncoding];
 	
 	temp_buff = (GHOST_TUns8*) malloc(pastedTextSize+1); 
 
@@ -1764,7 +1775,7 @@ GHOST_TUns8* GHOST_SystemCocoa::getClipboard(bool selection) const
 		return NULL;
 	}
 	
-	strncpy((char*)temp_buff, [textPasted cStringUsingEncoding:NSISOLatin1StringEncoding], pastedTextSize);
+	strncpy((char*)temp_buff, [textPasted cStringUsingEncoding:NSUTF8StringEncoding], pastedTextSize);
 	
 	temp_buff[pastedTextSize] = '\0';
 	
@@ -1796,7 +1807,7 @@ void GHOST_SystemCocoa::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 	
 	[pasteBoard declareTypes:supportedTypes owner:nil];
 	
-	textToCopy = [NSString stringWithCString:buffer encoding:NSISOLatin1StringEncoding];
+	textToCopy = [NSString stringWithCString:buffer encoding:NSUTF8StringEncoding];
 	
 	[pasteBoard setString:textToCopy forType:NSStringPboardType];
 	

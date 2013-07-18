@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,9 +23,6 @@
 /** \file blender/imbuf/intern/jp2.c
  *  \ingroup imbuf
  */
-
-
-#ifdef WITH_OPENJPEG
 
 #include "MEM_guardedalloc.h"
 
@@ -72,23 +68,26 @@ int imb_is_a_jp2(unsigned char *buf)
 
 
 /**
-sample error callback expecting a FILE* client object
-*/
-static void error_callback(const char *msg, void *client_data) {
+ * sample error callback expecting a FILE* client object
+ */
+static void error_callback(const char *msg, void *client_data)
+{
 	FILE *stream = (FILE*)client_data;
 	fprintf(stream, "[ERROR] %s", msg);
 }
 /**
-sample warning callback expecting a FILE* client object
-*/
-static void warning_callback(const char *msg, void *client_data) {
+ * sample warning callback expecting a FILE* client object
+ */
+static void warning_callback(const char *msg, void *client_data)
+{
 	FILE *stream = (FILE*)client_data;
 	fprintf(stream, "[WARNING] %s", msg);
 }
 /**
-sample debug callback expecting no client object
-*/
-static void info_callback(const char *msg, void *client_data) {
+ * sample debug callback expecting no client object
+ */
+static void info_callback(const char *msg, void *client_data)
+{
 	(void)client_data;
 	fprintf(stdout, "[INFO] %s", msg);
 }
@@ -97,7 +96,7 @@ static void info_callback(const char *msg, void *client_data) {
 
 struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 {
-	struct ImBuf *ibuf = 0;
+	struct ImBuf *ibuf = NULL;
 	int use_float = 0; /* for precision higher then 8 use float */
 	
 	long signed_offsets[4]= {0, 0, 0, 0};
@@ -105,7 +104,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 
 	int index;
 	
-	int w, h, depth;
+	int w, h, planes;
 	
 	opj_dparameters_t parameters;	/* decompression parameters */
 	
@@ -117,7 +116,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 	opj_dinfo_t* dinfo = NULL;	/* handle to a decompressor */
 	opj_cio_t *cio = NULL;
 
-	if (check_jp2(mem) == 0) return(0);
+	if (check_jp2(mem) == 0) return(NULL);
 
 	/* configure the event callbacks (not required) */
 	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
@@ -147,7 +146,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 	/* decode the stream and fill the image structure */
 	image = opj_decode(dinfo, cio);
 	
-	if(!image) {
+	if (!image) {
 		fprintf(stderr, "ERROR -> j2k_to_image: failed to decode image!\n");
 		opj_destroy_decompress(dinfo);
 		opj_cio_close(cio);
@@ -158,8 +157,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 	opj_cio_close(cio);
 
 
-	if((image->numcomps * image->x1 * image->y1) == 0)
-	{
+	if((image->numcomps * image->x1 * image->y1) == 0) {
 		fprintf(stderr,"\nError: invalid raw image parameters\n");
 		return NULL;
 	}
@@ -170,10 +168,10 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 	switch (image->numcomps) {
 	case 1: /* Greyscale */
 	case 3: /* Color */
-		depth= 24; 
+		planes= 24;
 		break;
 	default: /* 2 or 4 - Greyscale or Color + alpha */
-		depth= 32; /* greyscale + alpha */
+		planes= 32; /* greyscale + alpha */
 		break;
 	}
 	
@@ -194,7 +192,7 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 		float_divs[i]= (1<<image->comps[i].prec)-1;
 	}
 	
-	ibuf= IMB_allocImBuf(w, h, depth, use_float ? IB_rectfloat : IB_rect);
+	ibuf= IMB_allocImBuf(w, h, planes, use_float ? IB_rectfloat : IB_rect);
 	
 	if (ibuf==NULL) {
 		if(dinfo)
@@ -294,11 +292,11 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 
 
 /*
-2048x1080 (2K) at 24 fps or 48 fps, or 4096x2160 (4K) at 24 fps; 3x12 bits per pixel, XYZ color space
-
-	* In 2K, for Scope (2.39:1) presentation 2048x858 pixels of the imager is used
-	* In 2K, for Flat (1.85:1) presentation 1998x1080 pixels of the imager is used
-*/
+ * 2048x1080 (2K) at 24 fps or 48 fps, or 4096x2160 (4K) at 24 fps; 3x12 bits per pixel, XYZ color space
+ *
+ * - In 2K, for Scope (2.39:1) presentation 2048x858 pixels of the imager is used
+ * - In 2K, for Flat (1.85:1) presentation 1998x1080 pixels of the imager is used
+ */
 
 /* ****************************** COPIED FROM image_to_j2k.c */
 
@@ -309,7 +307,8 @@ struct ImBuf *imb_jp2_decode(unsigned char *mem, size_t size, int flags)
 #define COMP_48_CS 520833		/*Maximum size per color component for 2K @ 48fps*/
 
 
-static int initialise_4K_poc(opj_poc_t *POC, int numres){
+static int initialise_4K_poc(opj_poc_t *POC, int numres)
+{
 	POC[0].tile  = 1; 
 	POC[0].resno0  = 0; 
 	POC[0].compno0 = 0;
@@ -327,8 +326,9 @@ static int initialise_4K_poc(opj_poc_t *POC, int numres){
 	return 2;
 }
 
-static void cinema_parameters(opj_cparameters_t *parameters){
-	parameters->tile_size_on = false;
+static void cinema_parameters(opj_cparameters_t *parameters)
+{
+	parameters->tile_size_on = FALSE;
 	parameters->cp_tdx=1;
 	parameters->cp_tdy=1;
 	
@@ -360,7 +360,8 @@ static void cinema_parameters(opj_cparameters_t *parameters){
 
 }
 
-static void cinema_setup_encoder(opj_cparameters_t *parameters,opj_image_t *image, img_fol_t *img_fol){
+static void cinema_setup_encoder(opj_cparameters_t *parameters,opj_image_t *image, img_fol_t *img_fol)
+{
 	int i;
 	float temp_rate;
 
@@ -401,7 +402,7 @@ static void cinema_setup_encoder(opj_cparameters_t *parameters,opj_image_t *imag
 	case CINEMA2K_24:
 	case CINEMA4K_24:
 		for(i=0 ; i<parameters->tcp_numlayers ; i++){
-			temp_rate = 0 ;
+			temp_rate = 0;
 			if (img_fol->rates[i]== 0){
 				parameters->tcp_rates[0]= ((float) (image->numcomps * image->comps[0].w * image->comps[0].h * image->comps[0].prec))/ 
 					(CINEMA_24_CS * 8 * image->comps[0].dx * image->comps[0].dy);
@@ -421,7 +422,7 @@ static void cinema_setup_encoder(opj_cparameters_t *parameters,opj_image_t *imag
 		
 	case CINEMA2K_48:
 		for(i=0 ; i<parameters->tcp_numlayers ; i++){
-			temp_rate = 0 ;
+			temp_rate = 0;
 			if (img_fol->rates[i]== 0){
 				parameters->tcp_rates[0]= ((float) (image->numcomps * image->comps[0].w * image->comps[0].h * image->comps[0].prec))/ 
 					(CINEMA_48_CS * 8 * image->comps[0].dx * image->comps[0].dy);
@@ -446,8 +447,8 @@ static void cinema_setup_encoder(opj_cparameters_t *parameters,opj_image_t *imag
 }
 
 
-static opj_image_t* ibuftoimage(ImBuf *ibuf, opj_cparameters_t *parameters) {
-	
+static opj_image_t* ibuftoimage(ImBuf *ibuf, opj_cparameters_t *parameters)
+{
 	unsigned char *rect;
 	float *rect_float;
 	
@@ -498,7 +499,7 @@ static opj_image_t* ibuftoimage(ImBuf *ibuf, opj_cparameters_t *parameters) {
 		
 		/* 32bit images == alpha channel */
 		/* grayscale not supported yet */
-		numcomps= (ibuf->depth==32) ? 4 : 3;
+		numcomps= (ibuf->planes==32) ? 4 : 3;
 	}
 	
 	w= ibuf->x;
@@ -666,8 +667,8 @@ static opj_image_t* ibuftoimage(ImBuf *ibuf, opj_cparameters_t *parameters) {
 
 
 /* Found write info at http://users.ece.gatech.edu/~slabaugh/personal/c/bitmapUnix.c */
-int imb_savejp2(struct ImBuf *ibuf, const char *name, int flags) {
-	
+int imb_savejp2(struct ImBuf *ibuf, const char *name, int flags)
+{
 	int quality = ibuf->ftype & 0xff;
 	
 	int bSuccess;
@@ -678,9 +679,9 @@ int imb_savejp2(struct ImBuf *ibuf, const char *name, int flags) {
 	(void)flags; /* unused */
 	
 	/*
-	configure the event callbacks (not required)
-	setting of each callback is optionnal
-	*/
+	 * configure the event callbacks (not required)
+	 * setting of each callback is optionnal
+	 */
 	memset(&event_mgr, 0, sizeof(opj_event_mgr_t));
 	event_mgr.error_handler = error_callback;
 	event_mgr.warning_handler = warning_callback;
@@ -691,7 +692,7 @@ int imb_savejp2(struct ImBuf *ibuf, const char *name, int flags) {
 	
 	/* compression ratio */
 	/* invert range, from 10-100, 100-1
-	* where jpeg see's 1 and highest quality (lossless) and 100 is very low quality*/
+	 * where jpeg see's 1 and highest quality (lossless) and 100 is very low quality*/
 	parameters.tcp_rates[0]= ((100-quality)/90.0f*99.0f) + 1;
 
 	
@@ -751,5 +752,3 @@ int imb_savejp2(struct ImBuf *ibuf, const char *name, int flags) {
 	
 	return 1;
 }
-
-#endif /* WITH_OPENJPEG */

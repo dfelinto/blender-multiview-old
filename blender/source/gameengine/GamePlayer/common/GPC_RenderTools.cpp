@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -293,8 +291,31 @@ void GPC_RenderTools::RenderText3D(	int fontid,
 									double* mat,
 									float aspect)
 {
+	if(GLEW_ARB_multitexture) {
+		for(int i=0; i<MAXTEX; i++) {
+			glActiveTextureARB(GL_TEXTURE0_ARB+i);
+
+			if(GLEW_ARB_texture_cube_map)
+				if(glIsEnabled(GL_TEXTURE_CUBE_MAP_ARB))
+					glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+
+			if(glIsEnabled(GL_TEXTURE_2D))
+				glDisable(GL_TEXTURE_2D);
+		}
+
+		glActiveTextureARB(GL_TEXTURE0_ARB);
+	}
+	else {
+		if(GLEW_ARB_texture_cube_map)
+			if(glIsEnabled(GL_TEXTURE_CUBE_MAP_ARB))
+				glDisable(GL_TEXTURE_CUBE_MAP_ARB);
+
+		if(glIsEnabled(GL_TEXTURE_2D))
+			glDisable(GL_TEXTURE_2D);
+	}
+
 	/* the actual drawing */
-	glColor3fv(color);
+	glColor4fv(color);
  
 	/* multiply the text matrix by the object matrix */
 	BLF_enable(fontid, BLF_MATRIX|BLF_ASPECT);
@@ -307,7 +328,7 @@ void GPC_RenderTools::RenderText3D(	int fontid,
 
 	BLF_size(fontid, size, dpi);
 	BLF_position(fontid, 0, 0, 0);
-	BLF_draw(fontid, (char *)text, strlen(text));
+	BLF_draw(fontid, text, 65535);
 
 	BLF_disable(fontid, BLF_MATRIX|BLF_ASPECT);
 	glEnable(GL_DEPTH_TEST);
@@ -352,11 +373,11 @@ void GPC_RenderTools::RenderText2D(RAS_TEXT_RENDER_MODE mode,
 	if (mode == RAS_IRenderTools::RAS_TEXT_PADDED)
 	{
 		glColor3ub(0, 0, 0);
-		BLF_draw_default(xco+1, height-yco-1, 0.f, text, strlen(text));
+		BLF_draw_default(xco+1, height-yco-1, 0.f, text, 65536);
 	}
 
 	glColor3ub(255, 255, 255);
-	BLF_draw_default(xco, height-yco, 0.f, text, strlen(text));
+	BLF_draw_default(xco, height-yco, 0.f, text, 65536);
 
 	// Restore view settings
 	glMatrixMode(GL_PROJECTION);

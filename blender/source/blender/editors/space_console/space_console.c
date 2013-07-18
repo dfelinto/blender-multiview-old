@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -138,7 +136,16 @@ static void console_main_area_init(wmWindowManager *wm, ARegion *ar)
 	wmKeyMap *keymap;
 	ListBase *lb;
 
+	const float prev_y_min= ar->v2d.cur.ymin; /* so re-sizing keeps the cursor visible */
+
 	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_CUSTOM, ar->winx, ar->winy);
+
+	/* always keep the bottom part of the view aligned, less annoying */
+	if(prev_y_min != ar->v2d.cur.ymin) {
+		const float cur_y_range= ar->v2d.cur.ymax - ar->v2d.cur.ymin;
+		ar->v2d.cur.ymin= prev_y_min;
+		ar->v2d.cur.ymax= prev_y_min + cur_y_range;
+	}
 
 	/* own keymap */
 	keymap= WM_keymap_find(wm->defaultconf, "Console", SPACE_CONSOLE, 0);
@@ -185,7 +192,7 @@ static int path_drop_poll(bContext *UNUSED(C), wmDrag *drag, wmEvent *UNUSED(eve
 
 static void path_drop_copy(wmDrag *drag, wmDropBox *drop)
 {
-	char pathname[FILE_MAXDIR+FILE_MAXFILE+2];
+	char pathname[FILE_MAX+2];
 	BLI_snprintf(pathname, sizeof(pathname), "\"%s\"", drag->path);
 	RNA_string_set(drop->ptr, "text", pathname);
 }
@@ -269,27 +276,28 @@ static void console_keymap(struct wmKeyConfig *keyconf)
 	
 	kmi = WM_keymap_add_item(keymap, "WM_OT_context_cycle_int", WHEELUPMOUSE, KM_PRESS, KM_CTRL, 0);
 	RNA_string_set(kmi->ptr, "data_path", "space_data.font_size");
-	RNA_boolean_set(kmi->ptr, "reverse", 0);
+	RNA_boolean_set(kmi->ptr, "reverse", FALSE);
 	
 	kmi = WM_keymap_add_item(keymap, "WM_OT_context_cycle_int", WHEELDOWNMOUSE, KM_PRESS, KM_CTRL, 0);
 	RNA_string_set(kmi->ptr, "data_path", "space_data.font_size");
-	RNA_boolean_set(kmi->ptr, "reverse", 1);
+	RNA_boolean_set(kmi->ptr, "reverse", TRUE);
 
 	kmi = WM_keymap_add_item(keymap, "WM_OT_context_cycle_int", PADPLUSKEY, KM_PRESS, KM_CTRL, 0);
 	RNA_string_set(kmi->ptr, "data_path", "space_data.font_size");
-	RNA_boolean_set(kmi->ptr, "reverse", 0);
+	RNA_boolean_set(kmi->ptr, "reverse", FALSE);
 	
 	kmi = WM_keymap_add_item(keymap, "WM_OT_context_cycle_int", PADMINUS, KM_PRESS, KM_CTRL, 0);
 	RNA_string_set(kmi->ptr, "data_path", "space_data.font_size");
-	RNA_boolean_set(kmi->ptr, "reverse", 1);
+	RNA_boolean_set(kmi->ptr, "reverse", TRUE);
 
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_move", LEFTARROWKEY, KM_PRESS, 0, 0)->ptr, "type", PREV_CHAR);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_move", RIGHTARROWKEY, KM_PRESS, 0, 0)->ptr, "type", NEXT_CHAR);
 	
-	RNA_boolean_set(WM_keymap_add_item(keymap, "CONSOLE_OT_history_cycle", UPARROWKEY, KM_PRESS, 0, 0)->ptr, "reverse", 1);
+	kmi = WM_keymap_add_item(keymap, "CONSOLE_OT_history_cycle", UPARROWKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "reverse", TRUE);
 	WM_keymap_add_item(keymap, "CONSOLE_OT_history_cycle", DOWNARROWKEY, KM_PRESS, 0, 0);
 	
-	/*
+#if 0
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_move", LEFTARROWKEY, KM_PRESS, KM_CTRL, 0)->ptr, "type", PREV_WORD);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_move", RIGHTARROWKEY, KM_PRESS, KM_CTRL, 0)->ptr, "type", NEXT_WORD);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_move", UPARROWKEY, KM_PRESS, 0, 0)->ptr, "type", PREV_LINE);
@@ -303,7 +311,7 @@ static void console_keymap(struct wmKeyConfig *keyconf)
 	//RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", BACKSPACEKEY, KM_PRESS, 0, 0)->ptr, "type", DEL_PREV_CHAR);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", DELKEY, KM_PRESS, KM_CTRL, 0)->ptr, "type", DEL_NEXT_WORD);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", BACKSPACEKEY, KM_PRESS, KM_CTRL, 0)->ptr, "type", DEL_PREV_WORD);
-	*/
+#endif
 	
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", DELKEY, KM_PRESS, 0, 0)->ptr, "type", DEL_NEXT_CHAR);
 	RNA_enum_set(WM_keymap_add_item(keymap, "CONSOLE_OT_delete", BACKSPACEKEY, KM_PRESS, 0, 0)->ptr, "type", DEL_PREV_CHAR);

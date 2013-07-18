@@ -1,6 +1,5 @@
 
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,9 +32,9 @@
  */
 
 
-#ifndef NAN_INCLUDED_IK_QJacobian_h
+#ifndef __IK_QJACOBIAN_H__
 
-#define NAN_INCLUDED_IK_QJacobian_h
+#define __IK_QJACOBIAN_H__
 
 #include "TNT/cmat.h"
 #include <vector>

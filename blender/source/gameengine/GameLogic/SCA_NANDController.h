@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,14 +29,14 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_NANDCONTROLLER
-#define __KX_NANDCONTROLLER
+#ifndef __SCA_NANDCONTROLLER_H__
+#define __SCA_NANDCONTROLLER_H__
 
 #include "SCA_IController.h"
 
 class SCA_NANDController : public SCA_IController
 {
-	Py_Header;
+	Py_Header
 	//virtual void Trigger(class SCA_LogicManager* logicmgr);
 public:
 	SCA_NANDController(SCA_IObject* gameobj);
@@ -51,5 +49,5 @@ public:
 	/* --------------------------------------------------------------------- */
 };
 
-#endif //__KX_NANDCONTROLLER
+#endif //__SCA_NANDCONTROLLER_H__
 

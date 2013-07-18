@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,6 +35,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_listbase.h"
+#include "BLI_math.h"
 #include "BLI_utildefines.h"
 
 #include "DNA_curve_types.h"
@@ -134,7 +133,7 @@ void load_editLatt(Object *obedit)
 
 		bp= editlt->def;
 		while(tot--) {
-			VECCOPY(fp, bp->vec);
+			copy_v3_v3(fp, bp->vec);
 			fp+= 3;
 			bp++;
 		}
@@ -188,7 +187,7 @@ void ED_setflagsLatt(Object *obedit, int flag)
 	}
 }
 
-static int select_all_exec(bContext *C, wmOperator *op)
+static int lattice_select_all_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit= CTX_data_edit_object(C);
 	Lattice *lt= obedit->data;
@@ -241,12 +240,12 @@ static int select_all_exec(bContext *C, wmOperator *op)
 void LATTICE_OT_select_all(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Select or Deselect All";
+	ot->name= "(De)select All";
 	ot->description= "Change selection of all UVW control points";
 	ot->idname= "LATTICE_OT_select_all";
 	
 	/* api callbacks */
-	ot->exec= select_all_exec;
+	ot->exec= lattice_select_all_exec;
 	ot->poll= ED_operator_editlattice;
 	
 	/* flags */
@@ -367,7 +366,7 @@ typedef struct UndoLattice {
 	int pntsu, pntsv, pntsw;
 } UndoLattice;
 
-static void undoLatt_to_editLatt(void *data, void *edata)
+static void undoLatt_to_editLatt(void *data, void *edata, void *UNUSED(obdata))
 {
 	UndoLattice *ult= (UndoLattice*)data;
 	EditLatt *editlatt= (EditLatt *)edata;
@@ -376,7 +375,7 @@ static void undoLatt_to_editLatt(void *data, void *edata)
 	memcpy(editlatt->latt->def, ult->def, a*sizeof(BPoint));
 }
 
-static void *editLatt_to_undoLatt(void *edata)
+static void *editLatt_to_undoLatt(void *edata, void *UNUSED(obdata))
 {
 	UndoLattice *ult= MEM_callocN(sizeof(UndoLattice), "UndoLattice");
 	EditLatt *editlatt= (EditLatt *)edata;

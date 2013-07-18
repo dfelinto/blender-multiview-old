@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * Undo system for painting and sculpting.
  * 
@@ -34,6 +33,7 @@
 
 #include "BLI_listbase.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 #include "DNA_userdef_types.h"
 
@@ -106,7 +106,7 @@ static void undo_stack_push_begin(UndoStack *stack, const char *name, UndoRestor
 	BLI_addtail(&stack->elems, uel);
 
 	/* name can be a dynamic string */
-	strncpy(uel->name, name, MAXUNDONAME-1);
+	BLI_strncpy(uel->name, name, sizeof(uel->name));
 	
 	/* limit amount to the maximum amount*/
 	nr= 0;

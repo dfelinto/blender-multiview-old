@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +27,6 @@
 
 /**
 
-* $Id$
 * Copyright (C) 2001 NaN Technologies B.V.
 */
 #if defined(WIN32) || defined(__APPLE__)
@@ -204,7 +202,7 @@ Operate(
 }
 
 
-	void 
+	void
 BSP_GhostTestApp3D::
 UpdateFrame(
 ){
@@ -212,9 +210,9 @@ if (m_window) {
 
 	GHOST_Rect v_rect;
 	m_window->getClientBounds(v_rect);
-	
+
 	glViewport(0,0,v_rect.getWidth(),v_rect.getHeight());
-	
+
 }
 }
 

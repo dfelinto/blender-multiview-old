@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,9 +23,6 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * jpeg.c
- *
- * $Id$
  */
 
 /** \file blender/imbuf/intern/jpeg.c
@@ -70,22 +66,22 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 
 /*
  * In principle there are 4 jpeg formats.
- * 
+ *
  * 1. jpeg - standard printing, u & v at quarter of resulution
  * 2. jvid - standaard video, u & v half resolution, frame not interlaced
-
-type 3 is unsupported as of jul 05 2000 Frank.
-
+ *
+ * type 3 is unsupported as of jul 05 2000 Frank.
+ *
  * 3. jstr - as 2, but written in 2 separate fields
-
+ *
  * 4. jmax - no scaling in the components
  */
 
 static int jpeg_default_quality;
 static int ibuf_ftype;
 
-int imb_is_a_jpeg(unsigned char *mem) {
-
+int imb_is_a_jpeg(unsigned char *mem)
+{
 	if ((mem[0]== 0xFF) && (mem[1] == 0xD8))return 1;
 	return 0;
 }
@@ -146,8 +142,8 @@ static boolean fill_input_buffer(j_decompress_ptr cinfo)
 	my_src_ptr src = (my_src_ptr) cinfo->src;
 
 	/* Since we have given all we have got already
-	* we simply fake an end of file
-	*/
+	 * we simply fake an end of file
+	 */
 
 	src->pub.next_input_byte = src->terminal;
 	src->pub.bytes_in_buffer = 2;
@@ -181,8 +177,7 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
 {
 	my_src_ptr src;
 
-	if (cinfo->src == NULL)
-	{	/* first time for this JPEG object? */
+	if (cinfo->src == NULL) { /* first time for this JPEG object? */
 		cinfo->src = (struct jpeg_source_mgr *)(*cinfo->mem->alloc_small)
 			((j_common_ptr) cinfo, JPOOL_PERMANENT, sizeof(my_source_mgr));
 	}
@@ -191,7 +186,7 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
 	src->pub.init_source		= init_source;
 	src->pub.fill_input_buffer	= fill_input_buffer;
 	src->pub.skip_input_data	= skip_input_data;
-	src->pub.resync_to_restart	= jpeg_resync_to_restart; 
+	src->pub.resync_to_restart	= jpeg_resync_to_restart;
 	src->pub.term_source		= term_source;
 
 	src->pub.bytes_in_buffer	= size;
@@ -223,14 +218,13 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
  * Note we do *not* do INPUT_SYNC before calling fill_input_buffer,
  * but we must reload the local copies after a successful fill.
  */
-#define MAKE_BYTE_AVAIL(cinfo,action)  \
-	if (bytes_in_buffer == 0) {  \
-	  if (! (*datasrc->fill_input_buffer) (cinfo))  \
-	    { action; }  \
-	  INPUT_RELOAD(cinfo);  \
+#define MAKE_BYTE_AVAIL(cinfo, action)                                        \
+	if (bytes_in_buffer == 0) {                                               \
+		if (! (*datasrc->fill_input_buffer) (cinfo))                          \
+			{ action; }                                                       \
+		INPUT_RELOAD(cinfo);  \
 	}
 
-	
 
 /* Read a byte into variable V.
  * If must suspend, take the specified action (typically "return FALSE").
@@ -255,12 +249,12 @@ static void memory_source(j_decompress_ptr cinfo, unsigned char *buffer, size_t 
 static boolean
 handle_app1 (j_decompress_ptr cinfo)
 {
-	INT32 length, i;
+	INT32 length; /* initialized by the macro */
+	INT32 i;
 	char neogeo[128];
 	
 	INPUT_VARS(cinfo);
-	
-	length = 0;
+
 	INPUT_2BYTES(cinfo, length, return FALSE);
 	length -= 2;
 	
@@ -334,7 +328,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 							rect[0] = rect[1] = rect[2] = *buffer++;
 							rect += 4;
 						}
-							break;
+						break;
 					case 3:
 						for (x=ibuf->x; x >0; x--) {
 							rect[3] = 255;
@@ -343,7 +337,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 							rect[2] = *buffer++;
 							rect += 4;
 						}
-							break;
+						break;
 					case 4:
 						for (x=ibuf->x; x >0; x--) {
 							r = *buffer++;
@@ -366,7 +360,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 							if (b & 0xffffff00) {
 								if (b < 0) b = 0;
 								else b = 255;
-							}							
+							}
 							
 							rect[3] = 255 - k;
 							rect[2] = b;
@@ -411,7 +405,7 @@ static ImBuf * ibJpegImageFromCinfo(struct jpeg_decompress_struct * cinfo, int f
 				/*
 				 * A little paranoid, but the file maybe
 				 * is broken... and a "extra" check is better
-				 * that a segfaul ;)
+				 * then segfault ;)
 				 */
 				if (!key) {
 					MEM_freeN(str);
@@ -531,26 +525,26 @@ next_stamp_info:
 		buffer = row_pointer[0];
 
 		switch(cinfo->in_color_space){
-		case JCS_RGB:
-			for (x = 0; x < ibuf->x; x++) {
-				*buffer++ = rect[0];
-				*buffer++ = rect[1];
-				*buffer++ = rect[2];
-				rect += 4;
-			}
-			break;
-		case JCS_GRAYSCALE:
-			for (x = 0; x < ibuf->x; x++) {
-				*buffer++ = rect[0];
-				rect += 4;
-			}
-			break;
-		case JCS_UNKNOWN:
-			memcpy(buffer, rect, 4 * ibuf->x);
-			break;
-			/* default was missing... intentional ? */
-		default:
-			; /* do nothing */
+			case JCS_RGB:
+				for (x = 0; x < ibuf->x; x++) {
+					*buffer++ = rect[0];
+					*buffer++ = rect[1];
+					*buffer++ = rect[2];
+					rect += 4;
+				}
+				break;
+			case JCS_GRAYSCALE:
+				for (x = 0; x < ibuf->x; x++) {
+					*buffer++ = rect[0];
+					rect += 4;
+				}
+				break;
+			case JCS_UNKNOWN:
+				memcpy(buffer, rect, 4 * ibuf->x);
+				break;
+				/* default was missing... intentional ? */
+			default:
+				; /* do nothing */
 		}
 
 		jpeg_write_scanlines(cinfo, row_pointer, 1);
@@ -576,22 +570,26 @@ static int init_jpeg(FILE * outfile, struct jpeg_compress_struct * cinfo, struct
 	cinfo->image_height = ibuf->y;
 
 	cinfo->in_color_space = JCS_RGB;
-	if (ibuf->depth == 8) cinfo->in_color_space = JCS_GRAYSCALE;
-	if (ibuf->depth == 32) cinfo->in_color_space = JCS_UNKNOWN;
-	
+	if (ibuf->planes == 8) cinfo->in_color_space = JCS_GRAYSCALE;
+#if 0
+	/* just write RGBA as RGB,
+	 * unsupported feature only confuses other s/w */
+
+	if (ibuf->planes == 32) cinfo->in_color_space = JCS_UNKNOWN;
+#endif
 	switch(cinfo->in_color_space){
-	case JCS_RGB:
-		cinfo->input_components = 3;
-		break;
-	case JCS_GRAYSCALE:
-		cinfo->input_components = 1;
-		break;
-	case JCS_UNKNOWN:
-		cinfo->input_components = 4;
-		break;
-		/* default was missing... intentional ? */
-	default:
-		; /* do nothing */
+		case JCS_RGB:
+			cinfo->input_components = 3;
+			break;
+		case JCS_GRAYSCALE:
+			cinfo->input_components = 1;
+			break;
+		case JCS_UNKNOWN:
+			cinfo->input_components = 4;
+			break;
+			/* default was missing... intentional ? */
+		default:
+			; /* do nothing */
 	}
 	jpeg_set_defaults(cinfo);
 	
@@ -694,8 +692,8 @@ static int save_jstjpeg(const char *name, struct ImBuf *ibuf)
 	IMB_rectcpy(tbuf, ibuf, 0, 0, 0, 0, ibuf->x, ibuf->y);
 	sprintf(fieldname, "%s.jf0", name);
 
-	returnval = save_vidjpeg(fieldname, tbuf) ;
-		if (returnval == 1) {
+	returnval = save_vidjpeg(fieldname, tbuf);
+	if (returnval == 1) {
 		IMB_rectcpy(tbuf, ibuf, 0, 0, tbuf->x, 0, ibuf->x, ibuf->y);
 		sprintf(fieldname, "%s.jf1", name);
 		returnval = save_vidjpeg(fieldname, tbuf);

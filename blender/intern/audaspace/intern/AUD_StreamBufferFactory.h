@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_STREAMBUFFERFACTORY
-#define AUD_STREAMBUFFERFACTORY
+#ifndef __AUD_STREAMBUFFERFACTORY_H__
+#define __AUD_STREAMBUFFERFACTORY_H__
 
 #include "AUD_IFactory.h"
 #include "AUD_Reference.h"
@@ -69,4 +67,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_STREAMBUFFERFACTORY
+#endif //__AUD_STREAMBUFFERFACTORY_H__

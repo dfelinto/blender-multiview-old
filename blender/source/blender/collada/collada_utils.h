@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup collada
  */
 
-#ifndef __BC_UTILS_H__
-#define __BC_UTILS_H__
+#ifndef __COLLADA_UTILS_H__
+#define __COLLADA_UTILS_H__
 
 #include "COLLADAFWMeshPrimitive.h"
 #include "COLLADAFWGeometry.h"

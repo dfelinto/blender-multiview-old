@@ -1,15 +1,10 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -43,6 +38,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_bitmap.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "BLI_ghash.h"
@@ -51,6 +47,8 @@
 #include "DNA_meshdata_types.h"
 
 #include "BKE_DerivedMesh.h"
+#include "BKE_paint.h"
+#include "BKE_subsurf.h"
 
 #include "DNA_userdef_types.h"
 
@@ -240,7 +238,7 @@ GPUBuffer *GPU_buffer_alloc(int size)
 		   size */
 		glGenBuffersARB(1, &buf->id);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, buf->id);
-		glBufferDataARB(GL_ARRAY_BUFFER_ARB, size, 0, GL_STATIC_DRAW_ARB);
+		glBufferDataARB(GL_ARRAY_BUFFER_ARB, size, NULL, GL_STATIC_DRAW_ARB);
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, 0);
 	}
 	else {
@@ -262,7 +260,7 @@ GPUBuffer *GPU_buffer_alloc(int size)
 }
 
 /* release a GPUBuffer; does not free the actual buffer or its data,
-   but rather moves it to the pool of recently-free'd buffers for
+   but rather moves it to the pool of recently-freed buffers for
    possible re-use*/
 void GPU_buffer_free(GPUBuffer *buffer)
 {
@@ -400,8 +398,8 @@ GPUDrawObject *GPU_drawobject_new( DerivedMesh *dm )
 	int points_per_mat[MAX_MATERIALS];
 	int i, curmat, curpoint, totface;
 
-	mface = dm->getFaceArray(dm);
-	totface= dm->getNumFaces(dm);
+	mface = dm->getTessFaceArray(dm);
+	totface= dm->getNumTessFaces(dm);
 
 	/* get the number of points used by each material, treating
 	   each quad as two triangles */
@@ -470,11 +468,11 @@ void GPU_drawobject_free(DerivedMesh *dm)
 }
 
 typedef void (*GPUBufferCopyFunc)(DerivedMesh *dm, float *varray, int *index,
-				  int *mat_orig_to_new, void *user_data);
+                                  int *mat_orig_to_new, void *user_data);
 
 static GPUBuffer *gpu_buffer_setup(DerivedMesh *dm, GPUDrawObject *object,
-				   int vector_size, int size, GLenum target,
-				   void *user, GPUBufferCopyFunc copy_f)
+                                   int vector_size, int size, GLenum target,
+                                   void *user, GPUBufferCopyFunc copy_f)
 {
 	GPUBufferPool *pool;
 	GPUBuffer *buffer;
@@ -493,7 +491,7 @@ static GPUBuffer *gpu_buffer_setup(DerivedMesh *dm, GPUDrawObject *object,
 
 	/* nothing to do for legacy mode */
 	if(dm->drawObject->legacy)
-		return 0;
+		return NULL;
 
 	cur_index_per_mat = MEM_mallocN(sizeof(int)*object->totmaterial,
 					"GPU_buffer_setup.cur_index_per_mat");
@@ -513,7 +511,7 @@ static GPUBuffer *gpu_buffer_setup(DerivedMesh *dm, GPUDrawObject *object,
 			/* bind the buffer and discard previous data,
 			   avoids stalling gpu */
 			glBindBufferARB(target, buffer->id);
-			glBufferDataARB(target, buffer->size, 0, GL_STATIC_DRAW_ARB);
+			glBufferDataARB(target, buffer->size, NULL, GL_STATIC_DRAW_ARB);
 
 			/* attempt to map the buffer */
 			if(!(varray = glMapBufferARB(target, GL_WRITE_ONLY_ARB))) {
@@ -548,8 +546,8 @@ static GPUBuffer *gpu_buffer_setup(DerivedMesh *dm, GPUDrawObject *object,
 			while(uploaded == GL_FALSE) {
 				(*copy_f)(dm, varray, cur_index_per_mat, mat_orig_to_new, user);
 				/* glUnmapBuffer returns GL_FALSE if
-				   the data store is corrupted; retry
-				   in that case */
+				 * the data store is corrupted; retry
+				 * in that case */
 				uploaded = glUnmapBufferARB(target);
 			}
 		}
@@ -578,9 +576,9 @@ static void GPU_buffer_copy_vertex(DerivedMesh *dm, float *varray, int *index, i
 	int i, j, start, totface;
 
 	mvert = dm->getVertArray(dm);
-	f = dm->getFaceArray(dm);
+	f = dm->getTessFaceArray(dm);
 
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 	for(i = 0; i < totface; i++, f++) {
 		start = index[mat_orig_to_new[f->mat_nr]];
 
@@ -615,11 +613,11 @@ static void GPU_buffer_copy_normal(DerivedMesh *dm, float *varray, int *index, i
 	int start;
 	float f_no[3];
 
-	float *nors= dm->getFaceDataArray(dm, CD_NORMAL);
+	float *nors= dm->getTessFaceDataArray(dm, CD_NORMAL);
 	MVert *mvert = dm->getVertArray(dm);
-	MFace *f = dm->getFaceArray(dm);
+	MFace *f = dm->getTessFaceArray(dm);
 
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 	for(i = 0; i < totface; i++, f++) {
 		const int smoothnormal = (f->flag & ME_SMOOTH);
 
@@ -629,7 +627,7 @@ static void GPU_buffer_copy_normal(DerivedMesh *dm, float *varray, int *index, i
 		if(smoothnormal) {
 			/* copy vertex normal */
 			normal_short_to_float_v3(&varray[start], mvert[f->v1].no);
- 			normal_short_to_float_v3(&varray[start+3], mvert[f->v2].no);
+			normal_short_to_float_v3(&varray[start+3], mvert[f->v2].no);
 			normal_short_to_float_v3(&varray[start+6], mvert[f->v3].no);
 
 			if(f->v4) {
@@ -678,11 +676,11 @@ static void GPU_buffer_copy_uv(DerivedMesh *dm, float *varray, int *index, int *
 	MTFace *mtface;
 	MFace *f;
 
-	if(!(mtface = DM_get_face_data_layer(dm, CD_MTFACE)))
+	if(!(mtface = DM_get_tessface_data_layer(dm, CD_MTFACE)))
 		return;
-	f = dm->getFaceArray(dm);
+	f = dm->getTessFaceArray(dm);
 		
-	totface = dm->getNumFaces(dm);
+	totface = dm->getNumTessFaces(dm);
 	for(i = 0; i < totface; i++, f++) {
 		start = index[mat_orig_to_new[f->mat_nr]];
 
@@ -706,25 +704,25 @@ static void GPU_buffer_copy_uv(DerivedMesh *dm, float *varray, int *index, int *
 static void GPU_buffer_copy_color3(DerivedMesh *dm, float *varray_, int *index, int *mat_orig_to_new, void *user)
 {
 	int i, totface;
-	unsigned char *varray = (unsigned char *)varray_;
-	unsigned char *mcol = (unsigned char *)user;
-	MFace *f = dm->getFaceArray(dm);
+	char *varray = (char *)varray_;
+	char *mcol = (char *)user;
+	MFace *f = dm->getTessFaceArray(dm);
 
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 	for(i=0; i < totface; i++, f++) {
 		int start = index[mat_orig_to_new[f->mat_nr]];
 
 		/* v1 v2 v3 */
-		VECCOPY(&varray[start], &mcol[i*12]);
-		VECCOPY(&varray[start+3], &mcol[i*12+3]);
-		VECCOPY(&varray[start+6], &mcol[i*12+6]);
+		copy_v3_v3_char(&varray[start], &mcol[i*12]);
+		copy_v3_v3_char(&varray[start+3], &mcol[i*12+3]);
+		copy_v3_v3_char(&varray[start+6], &mcol[i*12+6]);
 		index[mat_orig_to_new[f->mat_nr]] += 9;
 
 		if(f->v4) {
 			/* v3 v4 v1 */
-			VECCOPY(&varray[start+9], &mcol[i*12+6]);
-			VECCOPY(&varray[start+12], &mcol[i*12+9]);
-			VECCOPY(&varray[start+15], &mcol[i*12]);
+			copy_v3_v3_char(&varray[start+9], &mcol[i*12+6]);
+			copy_v3_v3_char(&varray[start+12], &mcol[i*12+9]);
+			copy_v3_v3_char(&varray[start+15], &mcol[i*12]);
 			index[mat_orig_to_new[f->mat_nr]] += 9;
 		}
 	}
@@ -743,9 +741,9 @@ static void GPU_buffer_copy_mcol(DerivedMesh *dm, float *varray_, int *index, in
 	int i, totface;
 	unsigned char *varray = (unsigned char *)varray_;
 	unsigned char *mcol = (unsigned char *)user;
-	MFace *f = dm->getFaceArray(dm);
+	MFace *f = dm->getTessFaceArray(dm);
 
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 	for(i=0; i < totface; i++, f++) {
 		int start = index[mat_orig_to_new[f->mat_nr]];
 
@@ -782,15 +780,15 @@ static void GPU_buffer_copy_edge(DerivedMesh *dm, float *varray_, int *UNUSED(in
 
 static void GPU_buffer_copy_uvedge(DerivedMesh *dm, float *varray, int *UNUSED(index), int *UNUSED(mat_orig_to_new), void *UNUSED(user))
 {
-	MTFace *tf = DM_get_face_data_layer(dm, CD_MTFACE);
+	MTFace *tf = DM_get_tessface_data_layer(dm, CD_MTFACE);
 	int i, j=0;
 
 	if(!tf)
 		return;
 
-	for(i = 0; i < dm->numFaceData; i++, tf++) {
+	for(i = 0; i < dm->numTessFaceData; i++, tf++) {
 		MFace mf;
-		dm->getFace(dm,i,&mf);
+		dm->getTessFace(dm,i,&mf);
 
 		copy_v2_v2(&varray[j],tf->uv[0]);
 		copy_v2_v2(&varray[j+2],tf->uv[1]);
@@ -821,13 +819,13 @@ static MCol *gpu_buffer_color_type(DerivedMesh *dm)
 	int type;
 
 	type = CD_ID_MCOL;
-	c = DM_get_face_data_layer(dm, type);
+	c = DM_get_tessface_data_layer(dm, type);
 	if(!c) {
 		type = CD_WEIGHT_MCOL;
-		c = DM_get_face_data_layer(dm, type);
+		c = DM_get_tessface_data_layer(dm, type);
 		if(!c) {
 			type = CD_MCOL;
-			c = DM_get_face_data_layer(dm, type);
+			c = DM_get_tessface_data_layer(dm, type);
 		}
 	}
 
@@ -921,13 +919,13 @@ static GPUBuffer *gpu_buffer_setup_type(DerivedMesh *dm, GPUBufferType type)
 			return NULL;
 	}
 	else if(type == GPU_BUFFER_UV) {
-		if(!DM_get_face_data_layer(dm, CD_MTFACE))
+		if(!DM_get_tessface_data_layer(dm, CD_MTFACE))
 			return NULL;
 	}
 
 	buf = gpu_buffer_setup(dm, dm->drawObject, ts->vector_size,
-			       gpu_buffer_size_from_type(dm, type),
-			       ts->gl_buffer_type, user_data, ts->copy);
+	                       gpu_buffer_size_from_type(dm, type),
+	                       ts->gl_buffer_type, user_data, ts->copy);
 
 	return buf;
 }
@@ -1058,7 +1056,8 @@ void GPU_uvedge_setup(DerivedMesh *dm)
 	GLStates |= GPU_BUFFER_VERTEX_STATE;
 }
 
-static int GPU_typesize(int type) {
+static int GPU_typesize(int type)
+{
 	switch(type) {
 	case GL_FLOAT:
 		return sizeof(float);
@@ -1075,7 +1074,8 @@ static int GPU_typesize(int type) {
 	}
 }
 
-int GPU_attrib_element_size(GPUAttrib data[], int numdata) {
+int GPU_attrib_element_size(GPUAttrib data[], int numdata)
+{
 	int i, elementsize = 0;
 
 	for(i = 0; i < numdata; i++) {
@@ -1086,7 +1086,8 @@ int GPU_attrib_element_size(GPUAttrib data[], int numdata) {
 	return elementsize;
 }
 
-void GPU_interleaved_attrib_setup(GPUBuffer *buffer, GPUAttrib data[], int numdata) {
+void GPU_interleaved_attrib_setup(GPUBuffer *buffer, GPUAttrib data[], int numdata)
+{
 	int i;
 	int elementsize;
 	intptr_t offset = 0;
@@ -1143,8 +1144,8 @@ void GPU_buffer_unbind(void)
 		}
 	}
 	GLStates &= !(GPU_BUFFER_VERTEX_STATE | GPU_BUFFER_NORMAL_STATE |
-		      GPU_BUFFER_TEXCOORD_STATE | GPU_BUFFER_COLOR_STATE |
-		      GPU_BUFFER_ELEMENT_STATE);
+	              GPU_BUFFER_TEXCOORD_STATE | GPU_BUFFER_COLOR_STATE |
+	              GPU_BUFFER_ELEMENT_STATE);
 
 	for(i = 0; i < MAX_GPU_ATTRIB_DATA; i++) {
 		if(attribData[i].index != -1) {
@@ -1170,18 +1171,6 @@ void GPU_color3_upload(DerivedMesh *dm, unsigned char *data)
 	dm->drawObject->colors = gpu_buffer_setup(dm, dm->drawObject, 3,
 						  sizeof(char)*3*dm->drawObject->tot_triangle_point,
 						  GL_ARRAY_BUFFER_ARB, data, GPU_buffer_copy_color3);
-}
-
-/* this is used only in cdDM_drawFacesColored, which I think is no
-   longer used, so can probably remove this --nicholas */
-void GPU_color4_upload(DerivedMesh *UNUSED(dm), unsigned char *UNUSED(data))
-{
-	/*if(dm->drawObject == 0)
-		dm->drawObject = GPU_drawobject_new(dm);
-	GPU_buffer_free(dm->drawObject->colors);
-	dm->drawObject->colors = gpu_buffer_setup(dm, dm->drawObject, 3,
-						  sizeof(char)*3*dm->drawObject->tot_triangle_point,
-						  GL_ARRAY_BUFFER_ARB, data, GPU_buffer_copy_color4);*/
 }
 
 void GPU_color_switch(int mode)
@@ -1278,7 +1267,7 @@ typedef struct {
 	short no[3];
 } VertexBufferFormat;
 
-typedef struct {
+struct GPU_Buffers {
 	/* opengl buffer handles */
 	GLuint vert_buf, index_buf;
 	GLenum index_type;
@@ -1291,17 +1280,19 @@ typedef struct {
 
 	/* grid pointers */
 	DMGridData **grids;
+	const DMFlagMat *grid_flag_mats;
+	const BLI_bitmap *grid_hidden;
 	int *grid_indices;
 	int totgrid;
 	int gridsize;
+	int has_hidden;
 
 	unsigned int tot_tri, tot_quad;
-} GPU_Buffers;
+};
 
-void GPU_update_mesh_buffers(void *buffers_v, MVert *mvert,
+void GPU_update_mesh_buffers(GPU_Buffers *buffers, MVert *mvert,
 			int *vert_indices, int totvert)
 {
-	GPU_Buffers *buffers = buffers_v;
 	VertexBufferFormat *vert_data;
 	int i;
 
@@ -1309,8 +1300,8 @@ void GPU_update_mesh_buffers(void *buffers_v, MVert *mvert,
 		/* Build VBO */
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, buffers->vert_buf);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-				 sizeof(VertexBufferFormat) * totvert,
-				 NULL, GL_STATIC_DRAW_ARB);
+		                sizeof(VertexBufferFormat) * totvert,
+		                NULL, GL_STATIC_DRAW_ARB);
 		vert_data = glMapBufferARB(GL_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 
 		if(vert_data) {
@@ -1335,10 +1326,10 @@ void GPU_update_mesh_buffers(void *buffers_v, MVert *mvert,
 	buffers->mvert = mvert;
 }
 
-void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
-			int *face_indices, int totface,
-			int *vert_indices, int tot_uniq_verts,
-			int totvert)
+GPU_Buffers *GPU_build_mesh_buffers(int (*face_vert_indices)[4],
+									MFace *mface, MVert *mvert,
+									int *face_indices,
+									int totface)
 {
 	GPU_Buffers *buffers;
 	unsigned short *tri_data;
@@ -1347,9 +1338,12 @@ void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 	buffers = MEM_callocN(sizeof(GPU_Buffers), "GPU_Buffers");
 	buffers->index_type = GL_UNSIGNED_SHORT;
 
-	/* Count the number of triangles */
-	for(i = 0, tottri = 0; i < totface; ++i)
-		tottri += mface[face_indices[i]].v4 ? 2 : 1;
+	/* Count the number of visible triangles */
+	for(i = 0, tottri = 0; i < totface; ++i) {
+		const MFace *f = &mface[face_indices[i]];
+		if(!paint_is_face_hidden(f, mvert))
+			tottri += f->v4 ? 2 : 1;
+	}
 	
 	if(GLEW_ARB_vertex_buffer_object && !(U.gameflags & USER_DISABLE_VBO))
 		glGenBuffersARB(1, &buffers->index_buf);
@@ -1358,38 +1352,31 @@ void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 		/* Generate index buffer object */
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, buffers->index_buf);
 		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-				 sizeof(unsigned short) * tottri * 3, NULL, GL_STATIC_DRAW_ARB);
+		                sizeof(unsigned short) * tottri * 3, NULL, GL_STATIC_DRAW_ARB);
 
 		/* Fill the triangle buffer */
 		tri_data = glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 		if(tri_data) {
 			for(i = 0; i < totface; ++i) {
-				MFace *f = mface + face_indices[i];
+				const MFace *f = mface + face_indices[i];
 				int v[3];
 
-				v[0]= f->v1;
-				v[1]= f->v2;
-				v[2]= f->v3;
+				/* Skip hidden faces */
+				if(paint_is_face_hidden(f, mvert))
+					continue;
+
+				v[0]= 0;
+				v[1]= 1;
+				v[2]= 2;
 
 				for(j = 0; j < (f->v4 ? 2 : 1); ++j) {
 					for(k = 0; k < 3; ++k) {
-						void *value, *key = SET_INT_IN_POINTER(v[k]);
-						int vbo_index;
-
-						value = BLI_ghash_lookup(map, key);
-						vbo_index = GET_INT_FROM_POINTER(value);
-
-						if(vbo_index < 0) {
-							vbo_index = -vbo_index +
-								tot_uniq_verts - 1;
-						}
-
-						*tri_data = vbo_index;
+						*tri_data = face_vert_indices[i][v[k]];
 						++tri_data;
 					}
-					v[0] = f->v4;
-					v[1] = f->v1;
-					v[2] = f->v3;
+					v[0] = 3;
+					v[1] = 0;
+					v[2] = 2;
 				}
 			}
 			glUnmapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB);
@@ -1404,7 +1391,6 @@ void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 
 	if(buffers->index_buf)
 		glGenBuffersARB(1, &buffers->vert_buf);
-	GPU_update_mesh_buffers(buffers, mvert, vert_indices, totvert);
 
 	buffers->tot_tri = tottri;
 
@@ -1415,10 +1401,9 @@ void *GPU_build_mesh_buffers(GHash *map, MVert *mvert, MFace *mface,
 	return buffers;
 }
 
-void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
-	int *grid_indices, int totgrid, int gridsize, int smooth)
+void GPU_update_grid_buffers(GPU_Buffers *buffers, DMGridData **grids,
+	const DMFlagMat *grid_flag_mats, int *grid_indices, int totgrid, int gridsize)
 {
-	GPU_Buffers *buffers = buffers_v;
 	DMGridData *vert_data;
 	int i, j, k, totvert;
 
@@ -1426,10 +1411,12 @@ void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
 
 	/* Build VBO */
 	if(buffers->vert_buf) {
+		int smooth = grid_flag_mats[grid_indices[0]].flag & ME_SMOOTH;
+
 		glBindBufferARB(GL_ARRAY_BUFFER_ARB, buffers->vert_buf);
 		glBufferDataARB(GL_ARRAY_BUFFER_ARB,
-				 sizeof(DMGridData) * totvert,
-				 NULL, GL_STATIC_DRAW_ARB);
+		                sizeof(DMGridData) * totvert,
+		                NULL, GL_STATIC_DRAW_ARB);
 		vert_data = glMapBufferARB(GL_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
 		if(vert_data) {
 			for(i = 0; i < totgrid; ++i) {
@@ -1442,11 +1429,14 @@ void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
 					   that is what opengl will use */
 					for(j = 0; j < gridsize-1; ++j) {
 						for(k = 0; k < gridsize-1; ++k) {
-							normal_quad_v3(vert_data[(j+1)*gridsize + (k+1)].no,
-								vert_data[(j+1)*gridsize + k].co,
-								vert_data[(j+1)*gridsize + k+1].co,
-								vert_data[j*gridsize + k+1].co,
-								vert_data[j*gridsize + k].co);
+							float fno[3];
+							normal_quad_v3(fno,
+								grid[(j+1)*gridsize + k].co,
+								grid[(j+1)*gridsize + k+1].co,
+								grid[j*gridsize + k+1].co,
+								grid[j*gridsize + k].co);
+
+							copy_v3_v3(vert_data[(j+1)*gridsize + (k+1)].no, fno);
 						}
 					}
 				}
@@ -1466,103 +1456,337 @@ void GPU_update_grid_buffers(void *buffers_v, DMGridData **grids,
 	buffers->grid_indices = grid_indices;
 	buffers->totgrid = totgrid;
 	buffers->gridsize = gridsize;
+	buffers->grid_flag_mats = grid_flag_mats;
 
-	//printf("node updated %p\n", buffers_v);
+	//printf("node updated %p\n", buffers);
 }
 
-void *GPU_build_grid_buffers(DMGridData **UNUSED(grids), int *UNUSED(grid_indices),
-				int totgrid, int gridsize)
+/* Returns the number of visible quads in the nodes' grids. */
+static int gpu_count_grid_quads(BLI_bitmap *grid_hidden,
+								int *grid_indices, int totgrid,
+								int gridsize)
 {
-	GPU_Buffers *buffers;
-	int i, j, k, totquad, offset= 0;
+	int gridarea = (gridsize-1) * (gridsize-1);
+	int i, x, y, totquad;
 
-	buffers = MEM_callocN(sizeof(GPU_Buffers), "GPU_Buffers");
+	/* grid hidden layer is present, so have to check each grid for
+	   visiblity */
 
-	/* Count the number of quads */
-	totquad= (gridsize-1)*(gridsize-1)*totgrid;
+	for(i = 0, totquad = 0; i < totgrid; i++) {
+		const BLI_bitmap gh = grid_hidden[grid_indices[i]];
 
-	/* Generate index buffer object */
-	if(GLEW_ARB_vertex_buffer_object && !(U.gameflags & USER_DISABLE_VBO))
-		glGenBuffersARB(1, &buffers->index_buf);
-
-	if(buffers->index_buf) {
-		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, buffers->index_buf);
-
-		if(totquad < USHRT_MAX) {
-			unsigned short *quad_data;
-
-			buffers->index_type = GL_UNSIGNED_SHORT;
-			glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					 sizeof(unsigned short) * totquad * 4, NULL, GL_STATIC_DRAW_ARB);
-
-			/* Fill the quad buffer */
-			quad_data = glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
-			if(quad_data) {
-				for(i = 0; i < totgrid; ++i) {
-					for(j = 0; j < gridsize-1; ++j) {
-						for(k = 0; k < gridsize-1; ++k) {
-							*(quad_data++)= offset + j*gridsize + k+1;
-							*(quad_data++)= offset + j*gridsize + k;
-							*(quad_data++)= offset + (j+1)*gridsize + k;
-							*(quad_data++)= offset + (j+1)*gridsize + k+1;
-						}
-					}
-
-					offset += gridsize*gridsize;
+		if(gh) {
+			/* grid hidden are present, have to check each element */
+			for(y = 0; y < gridsize-1; y++) {
+				for(x = 0; x < gridsize-1; x++) {
+					if(!paint_is_grid_face_hidden(gh, gridsize, x, y))
+						totquad++;
 				}
-				glUnmapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB);
-			}
-			else {
-				glDeleteBuffersARB(1, &buffers->index_buf);
-				buffers->index_buf = 0;
 			}
 		}
+		else
+			totquad += gridarea;
+	}
+
+	return totquad;
+}
+
+/* Build the element array buffer of grid indices using either
+   unsigned shorts or unsigned ints. */
+#define FILL_QUAD_BUFFER(type_, tot_quad_, buffer_)						\
+	{                                                                   \
+		type_ *quad_data;                                               \
+		int offset = 0;                                                 \
+        int i, j, k;                                                    \
+                                                                        \
+		glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,                    \
+						sizeof(type_) * (tot_quad_) * 4, NULL,			\
+						GL_STATIC_DRAW_ARB);                            \
+                                                                        \
+		/* Fill the quad buffer */                                      \
+		quad_data = glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB,         \
+								   GL_WRITE_ONLY_ARB);                  \
+		if(quad_data) {                                                 \
+			for(i = 0; i < totgrid; ++i) {								\
+				BLI_bitmap gh = NULL;									\
+				if(grid_hidden)											\
+					gh = grid_hidden[(grid_indices)[i]];				\
+																		\
+				for(j = 0; j < gridsize-1; ++j) {                       \
+					for(k = 0; k < gridsize-1; ++k) {                   \
+						/* Skip hidden grid face */						\
+						if(gh &&										\
+						   paint_is_grid_face_hidden(gh,				\
+													 gridsize, k, j))	\
+							continue;									\
+																		\
+						*(quad_data++)= offset + j*gridsize + k+1;      \
+						*(quad_data++)= offset + j*gridsize + k;        \
+						*(quad_data++)= offset + (j+1)*gridsize + k;    \
+						*(quad_data++)= offset + (j+1)*gridsize + k+1;  \
+					}                                                   \
+				}                                                       \
+																		\
+				offset += gridsize*gridsize;                            \
+			}                                                           \
+			glUnmapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB);              \
+		}                                                               \
+		else {                                                          \
+			glDeleteBuffersARB(1, &(buffer_));							\
+			(buffer_) = 0;												\
+		}                                                               \
+	}
+/* end FILL_QUAD_BUFFER */
+
+static GLuint gpu_get_grid_buffer(int gridsize, GLenum *index_type, unsigned *totquad)
+{
+	static int prev_gridsize = -1;
+	static GLenum prev_index_type = 0;
+	static GLuint buffer = 0;
+	static unsigned prev_totquad;
+
+	/* used in the FILL_QUAD_BUFFER macro */
+	const BLI_bitmap *grid_hidden = NULL;
+	int *grid_indices = NULL;
+	int totgrid = 1;
+
+	/* VBO is disabled; delete the previous buffer (if it exists) and
+	   return an invalid handle */
+	if(!GLEW_ARB_vertex_buffer_object || (U.gameflags & USER_DISABLE_VBO)) {
+		if(buffer)
+			glDeleteBuffersARB(1, &buffer);
+		return 0;
+	}
+
+	/* VBO is already built */
+	if(buffer && prev_gridsize == gridsize) {
+		*index_type = prev_index_type;
+		*totquad = prev_totquad;
+		return buffer;
+	}
+
+	/* Build new VBO */
+	glGenBuffersARB(1, &buffer);
+	if(buffer) {
+		*totquad= (gridsize-1)*(gridsize-1);
+
+		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, buffer);
+
+		if(gridsize * gridsize < USHRT_MAX) {
+			*index_type = GL_UNSIGNED_SHORT;
+			FILL_QUAD_BUFFER(unsigned short, *totquad, buffer);
+		}
 		else {
-			unsigned int *quad_data;
-
-			buffers->index_type = GL_UNSIGNED_INT;
-			glBufferDataARB(GL_ELEMENT_ARRAY_BUFFER_ARB,
-					 sizeof(unsigned int) * totquad * 4, NULL, GL_STATIC_DRAW_ARB);
-
-			/* Fill the quad buffer */
-			quad_data = glMapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, GL_WRITE_ONLY_ARB);
-
-			if(quad_data) {
-				for(i = 0; i < totgrid; ++i) {
-					for(j = 0; j < gridsize-1; ++j) {
-						for(k = 0; k < gridsize-1; ++k) {
-							*(quad_data++)= offset + j*gridsize + k+1;
-							*(quad_data++)= offset + j*gridsize + k;
-							*(quad_data++)= offset + (j+1)*gridsize + k;
-							*(quad_data++)= offset + (j+1)*gridsize + k+1;
-						}
-					}
-
-					offset += gridsize*gridsize;
-				}
-				glUnmapBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB);
-			}
-			else {
-				glDeleteBuffersARB(1, &buffers->index_buf);
-				buffers->index_buf = 0;
-			}
+			*index_type = GL_UNSIGNED_INT;
+			FILL_QUAD_BUFFER(unsigned int, *totquad, buffer);
 		}
 
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
 	}
 
-	/* Build VBO */
+	prev_gridsize = gridsize;
+	prev_index_type = *index_type;
+	prev_totquad = *totquad;
+	return buffer;
+}
+
+GPU_Buffers *GPU_build_grid_buffers(int *grid_indices, int totgrid,
+									BLI_bitmap *grid_hidden, int gridsize)
+{
+	GPU_Buffers *buffers;
+	int totquad;
+	int fully_visible_totquad = (gridsize-1) * (gridsize-1) * totgrid;
+
+	buffers = MEM_callocN(sizeof(GPU_Buffers), "GPU_Buffers");
+	buffers->grid_hidden = grid_hidden;
+	buffers->gridsize = gridsize;
+	buffers->totgrid = totgrid;
+
+	/* Count the number of quads */
+	totquad= gpu_count_grid_quads(grid_hidden, grid_indices, totgrid, gridsize);
+
+	if(totquad == fully_visible_totquad) {
+		buffers->index_buf = gpu_get_grid_buffer(gridsize, &buffers->index_type, &buffers->tot_quad);
+		buffers->has_hidden = 0;
+	}
+	else if(GLEW_ARB_vertex_buffer_object && !(U.gameflags & USER_DISABLE_VBO)) {
+		/* Build new VBO */
+		glGenBuffersARB(1, &buffers->index_buf);
+		if(buffers->index_buf) {
+			buffers->tot_quad= totquad;
+
+			glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, buffers->index_buf);
+
+			if(totgrid * gridsize * gridsize < USHRT_MAX) {
+				buffers->index_type = GL_UNSIGNED_SHORT;
+				FILL_QUAD_BUFFER(unsigned short, totquad, buffers->index_buf);
+			}
+			else {
+				buffers->index_type = GL_UNSIGNED_INT;
+				FILL_QUAD_BUFFER(unsigned int, totquad, buffers->index_buf);
+			}
+
+			glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, 0);
+		}
+
+		buffers->has_hidden = 1;
+	}
+
+	/* Build coord/normal VBO */
 	if(buffers->index_buf)
 		glGenBuffersARB(1, &buffers->vert_buf);
-
-	buffers->tot_quad = totquad;
 
 	return buffers;
 }
 
-void GPU_draw_buffers(void *buffers_v)
+#undef FILL_QUAD_BUFFER
+
+static void gpu_draw_buffers_legacy_mesh(GPU_Buffers *buffers, int smooth)
 {
-	GPU_Buffers *buffers = buffers_v;
+	const MVert *mvert = buffers->mvert;
+	int i, j;
+
+	for(i = 0; i < buffers->totface; ++i) {
+		MFace *f = buffers->mface + buffers->face_indices[i];
+		int S = f->v4 ? 4 : 3;
+		unsigned int *fv = &f->v1;
+
+		if(paint_is_face_hidden(f, buffers->mvert))
+			continue;
+
+		glBegin((f->v4)? GL_QUADS: GL_TRIANGLES);
+
+		if(smooth) {
+			for(j = 0; j < S; j++) {
+				glNormal3sv(mvert[fv[j]].no);
+				glVertex3fv(mvert[fv[j]].co);
+			}
+		}
+		else {
+			float fno[3];
+
+			/* calculate face normal */
+			if(f->v4) {
+				normal_quad_v3(fno, mvert[fv[0]].co, mvert[fv[1]].co,
+							   mvert[fv[2]].co, mvert[fv[3]].co);
+			}
+			else
+				normal_tri_v3(fno, mvert[fv[0]].co, mvert[fv[1]].co, mvert[fv[2]].co);
+			glNormal3fv(fno);
+			
+			for(j = 0; j < S; j++)
+				glVertex3fv(mvert[fv[j]].co);
+		}
+		
+		glEnd();
+	}
+}
+
+static void gpu_draw_buffers_legacy_grids(GPU_Buffers *buffers, int smooth)
+{
+	int i, j, x, y, gridsize = buffers->gridsize;
+
+	for(i = 0; i < buffers->totgrid; ++i) {
+		int g = buffers->grid_indices[i];
+		const DMGridData *grid = buffers->grids[g];
+		BLI_bitmap gh = buffers->grid_hidden[g];
+
+		/* TODO: could use strips with hiding as well */
+
+		if(gh) {
+			glBegin(GL_QUADS);
+			
+			for(y = 0; y < gridsize-1; y++) {
+				for(x = 0; x < gridsize-1; x++) {
+					const DMGridData *e[4] = {
+						&grid[y*gridsize + x],
+						&grid[(y+1)*gridsize + x],
+						&grid[(y+1)*gridsize + x+1],
+						&grid[y*gridsize + x+1]
+					};
+
+					/* skip face if any of its corners are hidden */
+					if(paint_is_grid_face_hidden(gh, gridsize, x, y))
+						continue;
+
+					if(smooth) {
+						for(j = 0; j < 4; j++) {
+							glNormal3fv(e[j]->no);
+							glVertex3fv(e[j]->co);
+						}
+					}
+					else {
+						float fno[3];
+						normal_quad_v3(fno, e[0]->co, e[1]->co, e[2]->co, e[3]->co);
+						glNormal3fv(fno);
+
+						for(j = 0; j < 4; j++)
+							glVertex3fv(e[j]->co);
+					}
+				}
+			}
+
+			glEnd();
+		}
+		else if(smooth) {
+			for(y = 0; y < gridsize-1; y++) {
+				glBegin(GL_QUAD_STRIP);
+				for(x = 0; x < gridsize; x++) {
+					const DMGridData *a = &grid[y*gridsize + x];
+					const DMGridData *b = &grid[(y+1)*gridsize + x];
+
+					glNormal3fv(a->no);
+					glVertex3fv(a->co);
+					glNormal3fv(b->no);
+					glVertex3fv(b->co);
+				}
+				glEnd();
+			}
+		}
+		else {
+			for(y = 0; y < gridsize-1; y++) {
+				glBegin(GL_QUAD_STRIP);
+				for(x = 0; x < gridsize; x++) {
+					const DMGridData *a = &grid[y*gridsize + x];
+					const DMGridData *b = &grid[(y+1)*gridsize + x];
+
+					if(x > 0) {
+						const DMGridData *c = &grid[y*gridsize + x-1];
+						const DMGridData *d = &grid[(y+1)*gridsize + x-1];
+						float fno[3];
+						normal_quad_v3(fno, d->co, b->co, a->co, c->co);
+						glNormal3fv(fno);
+					}
+
+					glVertex3fv(a->co);
+					glVertex3fv(b->co);
+				}
+				glEnd();
+			}
+		}
+	}
+}
+
+void GPU_draw_buffers(GPU_Buffers *buffers, DMSetMaterial setMaterial)
+{
+	int smooth = 0;
+
+	if(buffers->totface) {
+		const MFace *f = &buffers->mface[buffers->face_indices[0]];
+		if(!setMaterial(f->mat_nr+1, NULL))
+			return;
+
+		smooth = f->flag & ME_SMOOTH;
+		glShadeModel(smooth ? GL_SMOOTH: GL_FLAT);
+	}
+	else if(buffers->totgrid) {
+		const DMFlagMat *f = &buffers->grid_flag_mats[buffers->grid_indices[0]];
+		if(!setMaterial(f->mat_nr+1, NULL))
+			return;
+
+		smooth = f->flag & ME_SMOOTH;
+		glShadeModel(smooth ? GL_SMOOTH: GL_FLAT);
+	}
 
 	if(buffers->vert_buf && buffers->index_buf) {
 		glEnableClientState(GL_VERTEX_ARRAY);
@@ -1572,10 +1796,16 @@ void GPU_draw_buffers(void *buffers_v)
 		glBindBufferARB(GL_ELEMENT_ARRAY_BUFFER_ARB, buffers->index_buf);
 
 		if(buffers->tot_quad) {
-			glVertexPointer(3, GL_FLOAT, sizeof(DMGridData), (void*)offsetof(DMGridData, co));
-			glNormalPointer(GL_FLOAT, sizeof(DMGridData), (void*)offsetof(DMGridData, no));
+			unsigned offset = 0;
+			int i, last = buffers->has_hidden ? 1 : buffers->totgrid;
+			for(i = 0; i < last; i++) {
+				glVertexPointer(3, GL_FLOAT, sizeof(DMGridData), offset + (char*)offsetof(DMGridData, co));
+				glNormalPointer(GL_FLOAT, sizeof(DMGridData), offset + (char*)offsetof(DMGridData, no));
+				
+				glDrawElements(GL_QUADS, buffers->tot_quad * 4, buffers->index_type, 0);
 
-			glDrawElements(GL_QUADS, buffers->tot_quad * 4, buffers->index_type, 0);
+				offset += buffers->gridsize * buffers->gridsize * sizeof(DMGridData);
+			}
 		}
 		else {
 			glVertexPointer(3, GL_FLOAT, sizeof(VertexBufferFormat), (void*)offsetof(VertexBufferFormat, co));
@@ -1590,61 +1820,23 @@ void GPU_draw_buffers(void *buffers_v)
 		glDisableClientState(GL_VERTEX_ARRAY);
 		glDisableClientState(GL_NORMAL_ARRAY);
 	}
+	/* fallbacks if we are out of memory or VBO is disabled */
 	else if(buffers->totface) {
-		/* fallback if we are out of memory */
-		int i;
-
-		for(i = 0; i < buffers->totface; ++i) {
-			MFace *f = buffers->mface + buffers->face_indices[i];
-
-			glBegin((f->v4)? GL_QUADS: GL_TRIANGLES);
-			glNormal3sv(buffers->mvert[f->v1].no);
-			glVertex3fv(buffers->mvert[f->v1].co);
-			glNormal3sv(buffers->mvert[f->v2].no);
-			glVertex3fv(buffers->mvert[f->v2].co);
-			glNormal3sv(buffers->mvert[f->v3].no);
-			glVertex3fv(buffers->mvert[f->v3].co);
-			if(f->v4) {
-				glNormal3sv(buffers->mvert[f->v4].no);
-				glVertex3fv(buffers->mvert[f->v4].co);
-			}
-			glEnd();
-		}
+		gpu_draw_buffers_legacy_mesh(buffers, smooth);
 	}
 	else if(buffers->totgrid) {
-		int i, x, y, gridsize = buffers->gridsize;
-
-		for(i = 0; i < buffers->totgrid; ++i) {
-			DMGridData *grid = buffers->grids[buffers->grid_indices[i]];
-
-			for(y = 0; y < gridsize-1; y++) {
-				glBegin(GL_QUAD_STRIP);
-				for(x = 0; x < gridsize; x++) {
-					DMGridData *a = &grid[y*gridsize + x];
-					DMGridData *b = &grid[(y+1)*gridsize + x];
-
-					glNormal3fv(a->no);
-					glVertex3fv(a->co);
-					glNormal3fv(b->no);
-					glVertex3fv(b->co);
-				}
-				glEnd();
-			}
-		}
+		gpu_draw_buffers_legacy_grids(buffers, smooth);
 	}
 }
 
-void GPU_free_buffers(void *buffers_v)
+void GPU_free_buffers(GPU_Buffers *buffers)
 {
-	if(buffers_v) {
-		GPU_Buffers *buffers = buffers_v;
-		
+	if(buffers) {
 		if(buffers->vert_buf)
 			glDeleteBuffersARB(1, &buffers->vert_buf);
-		if(buffers->index_buf)
+		if(buffers->index_buf && (buffers->tot_tri || buffers->has_hidden))
 			glDeleteBuffersARB(1, &buffers->index_buf);
 
 		MEM_freeN(buffers);
 	}
 }
-

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -126,7 +124,7 @@ static const EnumPropertyItem unpack_all_method_items[] = {
 	{PF_USE_ORIGINAL, "USE_ORIGINAL", 0, "Use files in original location (create when necessary)", ""},
 	{PF_WRITE_ORIGINAL, "WRITE_ORIGINAL", 0, "Write files to original location (overwrite existing files)", ""},
 	{PF_KEEP, "KEEP", 0, "Disable AutoPack, keep all packed files", ""},
-	{PF_ASK, "ASK", 0, "Ask for each file", ""},
+	/* {PF_ASK, "ASK", 0, "Ask for each file", ""}, */
 	{0, NULL, 0, NULL, NULL}};
 
 static int unpack_all_exec(bContext *C, wmOperator *op)
@@ -145,21 +143,21 @@ static int unpack_all_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event)
 	Main *bmain= CTX_data_main(C);
 	uiPopupMenu *pup;
 	uiLayout *layout;
-	char title[128];
+	char title[64];
 	int count = 0;
 	
 	count = countPackedFiles(bmain);
 	
 	if(!count) {
-		BKE_report(op->reports, RPT_WARNING, "No packed files. Autopack disabled.");
+		BKE_report(op->reports, RPT_WARNING, "No packed files. Autopack disabled");
 		G.fileflags &= ~G_AUTOPACK;
 		return OPERATOR_CANCELLED;
 	}
 
 	if(count == 1)
-		sprintf(title, "Unpack 1 file");
+		strcpy(title, "Unpack 1 file");
 	else
-		sprintf(title, "Unpack %d files", count);
+		BLI_snprintf(title, sizeof(title), "Unpack %d files", count);
 	
 	pup= uiPupMenuBegin(C, title, ICON_NONE);
 	layout= uiPupMenuLayout(pup);
@@ -186,7 +184,7 @@ void FILE_OT_unpack_all(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "method", unpack_all_method_items, PF_USE_LOCAL, "Method", "How to unpack.");
+	RNA_def_enum(ot->srna, "method", unpack_all_method_items, PF_USE_LOCAL, "Method", "How to unpack");
 }
 
 /********************* make paths relative operator *********************/
@@ -196,7 +194,7 @@ static int make_paths_relative_exec(bContext *C, wmOperator *op)
 	Main *bmain= CTX_data_main(C);
 
 	if(!G.relbase_valid) {
-		BKE_report(op->reports, RPT_WARNING, "Can't set relative paths with an unsaved blend file.");
+		BKE_report(op->reports, RPT_WARNING, "Can't set relative paths with an unsaved blend file");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -228,7 +226,7 @@ static int make_paths_absolute_exec(bContext *C, wmOperator *op)
 	Main *bmain= CTX_data_main(C);
 
 	if(!G.relbase_valid) {
-		BKE_report(op->reports, RPT_WARNING, "Can't set absolute paths with an unsaved blend file.");
+		BKE_report(op->reports, RPT_WARNING, "Can't set absolute paths with an unsaved blend file");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -255,10 +253,12 @@ void FILE_OT_make_paths_absolute(wmOperatorType *ot)
 
 /********************* report missing files operator *********************/
 
-static int report_missing_files_exec(bContext *UNUSED(C), wmOperator *op)
+static int report_missing_files_exec(bContext *C, wmOperator *op)
 {
+	Main *bmain= CTX_data_main(C);
+
 	/* run the missing file check */
-	checkMissingFiles(G.main, op->reports);
+	checkMissingFiles(bmain, op->reports);
 	
 	return OPERATOR_FINISHED;
 }
@@ -278,13 +278,12 @@ void FILE_OT_report_missing_files(wmOperatorType *ot)
 
 /********************* find missing files operator *********************/
 
-static int find_missing_files_exec(bContext *UNUSED(C), wmOperator *op)
+static int find_missing_files_exec(bContext *C, wmOperator *op)
 {
-	char *path;
-	
-	path= RNA_string_get_alloc(op->ptr, "filepath", NULL, 0);
-	findMissingFiles(G.main, path);
-	MEM_freeN(path);
+	Main *bmain= CTX_data_main(C);
+	const char *searchpath= RNA_string_get_alloc(op->ptr, "filepath", NULL, 0);
+	findMissingFiles(bmain, searchpath, op->reports);
+	MEM_freeN((void *)searchpath);
 
 	return OPERATOR_FINISHED;
 }
@@ -310,7 +309,7 @@ void FILE_OT_find_missing_files(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	WM_operator_properties_filesel(ot, 0, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH);
+	WM_operator_properties_filesel(ot, 0, FILE_SPECIAL, FILE_OPENFILE, WM_FILESEL_FILEPATH, FILE_DEFAULTDISPLAY);
 }
 
 /********************* report box operator *********************/
@@ -363,7 +362,7 @@ static int update_reports_display_invoke(bContext *C, wmOperator *UNUSED(op), wm
 	}
 
 	if (rti->widthfac == 0.0f) {
-		/* initialise colors based on report type */
+		/* initialize colors based on report type */
 		if(report->type & RPT_ERROR_ALL) {
 			rti->col[0] = 1.0;
 			rti->col[1] = 0.2;

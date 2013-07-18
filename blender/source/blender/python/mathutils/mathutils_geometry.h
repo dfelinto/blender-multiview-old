@@ -1,5 +1,4 @@
 /* 
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,19 +24,19 @@
  * Contributor(s): Joseph Gilbert
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
-/** \file blender/python/generic/mathutils_geometry.h
- *  \ingroup pygen
+/** \file blender/python/mathutils/mathutils_geometry.h
+ *  \ingroup pymathutils
  */
 
 /*Include this file for access to vector, quat, matrix, euler, etc...*/
 
-#ifndef MATHUTILS_GEOMETRY_H
-#define MATHUTILS_GEOMETRY_H
+#ifndef __MATHUTILS_GEOMETRY_H__
+#define __MATHUTILS_GEOMETRY_H__
 
 #include "mathutils.h"
 
 PyMODINIT_FUNC PyInit_mathutils_geometry(void);
 
-#endif /* MATHUTILS_GEOMETRY_H */
+#endif /* __MATHUTILS_GEOMETRY_H__ */

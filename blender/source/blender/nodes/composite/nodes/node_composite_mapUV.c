@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,7 +35,7 @@
 /* **************** Map UV  ******************** */
 
 static bNodeSocketTemplate cmp_node_mapuv_in[]= {
-	{	SOCK_RGBA, 1, "Image",			0.8f, 0.8f, 0.8f, 1.0f},
+	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
 	{	SOCK_VECTOR, 1, "UV",			1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_NONE},
 	{	-1, 0, ""	}
 };
@@ -75,40 +73,40 @@ static void do_mapuv(CompBuf *stackbuf, CompBuf *cbuf, CompBuf *uvbuf, float thr
 					/* adaptive sampling, red (U) channel */
 					
 					/* prevent alpha zero UVs to be used */
-					uv_l= uv[-1]!=0.0f? fabs(uv[0]-uv[-3]) : 0.0f;
-					uv_r= uv[ 5]!=0.0f? fabs(uv[0]-uv[ 3]) : 0.0f;
+					uv_l= uv[-1]!=0.0f? fabsf(uv[0]-uv[-3]) : 0.0f;
+					uv_r= uv[ 5]!=0.0f? fabsf(uv[0]-uv[ 3]) : 0.0f;
 					
 					//dx= 0.5f*(fabs(uv[0]-uv[-3]) + fabs(uv[0]-uv[3]));
 					dx= 0.5f*(uv_l + uv_r);
 					
-					uv_l= uvprev[-1]!=0.0f? fabs(uv[0]-uvprev[-3]) : 0.0f;
-					uv_r= uvnext[-1]!=0.0f? fabs(uv[0]-uvnext[-3]) : 0.0f;
+					uv_l= uvprev[-1]!=0.0f? fabsf(uv[0]-uvprev[-3]) : 0.0f;
+					uv_r= uvnext[-1]!=0.0f? fabsf(uv[0]-uvnext[-3]) : 0.0f;
 					
 					//dx+= 0.25f*(fabs(uv[0]-uvprev[-3]) + fabs(uv[0]-uvnext[-3]));
 					dx+= 0.25f*(uv_l + uv_r);
 						
-					uv_l= uvprev[ 5]!=0.0f? fabs(uv[0]-uvprev[+3]) : 0.0f;
-					uv_r= uvnext[ 5]!=0.0f? fabs(uv[0]-uvnext[+3]) : 0.0f;
+					uv_l= uvprev[ 5]!=0.0f? fabsf(uv[0]-uvprev[+3]) : 0.0f;
+					uv_r= uvnext[ 5]!=0.0f? fabsf(uv[0]-uvnext[+3]) : 0.0f;
 					
 					//dx+= 0.25f*(fabs(uv[0]-uvprev[+3]) + fabs(uv[0]-uvnext[+3]));
 					dx+= 0.25f*(uv_l + uv_r);
 					
 					/* adaptive sampling, green (V) channel */
 					
-					uv_l= uv[-row+2]!=0.0f? fabs(uv[1]-uv[-row+1]) : 0.0f;
-					uv_r= uv[ row+2]!=0.0f? fabs(uv[1]-uv[ row+1]) : 0.0f;
+					uv_l= uv[-row+2]!=0.0f? fabsf(uv[1]-uv[-row+1]) : 0.0f;
+					uv_r= uv[ row+2]!=0.0f? fabsf(uv[1]-uv[ row+1]) : 0.0f;
 					
 					//dy= 0.5f*(fabs(uv[1]-uv[-row+1]) + fabs(uv[1]-uv[row+1]));
 					dy= 0.5f*(uv_l + uv_r);
 					
-					uv_l= uvprev[-1]!=0.0f? fabs(uv[1]-uvprev[+1-3]) : 0.0f;
-					uv_r= uvnext[-1]!=0.0f? fabs(uv[1]-uvnext[+1-3]) : 0.0f;
+					uv_l= uvprev[-1]!=0.0f? fabsf(uv[1]-uvprev[+1-3]) : 0.0f;
+					uv_r= uvnext[-1]!=0.0f? fabsf(uv[1]-uvnext[+1-3]) : 0.0f;
 					
 					//dy+= 0.25f*(fabs(uv[1]-uvprev[+1-3]) + fabs(uv[1]-uvnext[+1-3]));
 					dy+= 0.25f*(uv_l + uv_r);
 					
-					uv_l= uvprev[ 5]!=0.0f? fabs(uv[1]-uvprev[+1+3]) : 0.0f;
-					uv_r= uvnext[ 5]!=0.0f? fabs(uv[1]-uvnext[+1+3]) : 0.0f;
+					uv_l= uvprev[ 5]!=0.0f? fabsf(uv[1]-uvprev[+1+3]) : 0.0f;
+					uv_r= uvnext[ 5]!=0.0f? fabsf(uv[1]-uvnext[+1+3]) : 0.0f;
 					
 					//dy+= 0.25f*(fabs(uv[1]-uvprev[+1+3]) + fabs(uv[1]-uvnext[+1+3]));
 					dy+= 0.25f*(uv_l + uv_r);
@@ -164,17 +162,14 @@ static void node_composit_exec_mapuv(void *UNUSED(data), bNode *node, bNodeStack
 	}
 }
 
-void register_node_type_cmp_mapuv(ListBase *lb)
+void register_node_type_cmp_mapuv(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_MAP_UV, "Map UV", NODE_CLASS_DISTORT, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_MAP_UV, "Map UV", NODE_CLASS_DISTORT, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_mapuv_in, cmp_node_mapuv_out);
 	node_type_size(&ntype, 140, 100, 320);
 	node_type_exec(&ntype, node_composit_exec_mapuv);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-

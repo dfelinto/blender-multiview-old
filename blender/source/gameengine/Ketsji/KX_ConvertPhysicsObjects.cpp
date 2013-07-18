@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -346,7 +344,7 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 	ci.m_linearDamping = 1.f - shapeprops->m_lin_drag;
 	ci.m_angularDamping = 1.f - shapeprops->m_ang_drag;
 	//need a bit of damping, else system doesn't behave well
-	ci.m_inertiaFactor = shapeprops->m_inertia/0.4f;//defaults to 0.4, don't want to change behaviour
+	ci.m_inertiaFactor = shapeprops->m_inertia/0.4f;//defaults to 0.4, don't want to change behavior
 	
 	ci.m_do_anisotropic = shapeprops->m_do_anisotropic;
 	ci.m_anisotropicFriction.setValue(shapeprops->m_friction_scaling[0],shapeprops->m_friction_scaling[1],shapeprops->m_friction_scaling[2]);
@@ -355,7 +353,7 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 //////////
 	//do Fh, do Rot Fh
 	ci.m_do_fh = shapeprops->m_do_fh;
-	ci.m_do_rot_fh = shapeprops->m_do_rot_fh ;
+	ci.m_do_rot_fh = shapeprops->m_do_rot_fh;
 	ci.m_fh_damping = smmaterial->m_fh_damping;
 	ci.m_fh_distance = smmaterial->m_fh_distance;
 	ci.m_fh_normal = smmaterial->m_fh_normal;
@@ -466,7 +464,7 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 	
 	if (objprop->m_dyna && !objprop->m_angular_rigidbody)
 	{
-		/*
+#if 0
 		//setting the inertia could achieve similar results to constraint the up
 		//but it is prone to instability, so use special 'Angular' constraint
 		btVector3 inertia = physicscontroller->GetRigidBody()->getInvInertiaDiagLocal();
@@ -475,7 +473,7 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 
 		physicscontroller->GetRigidBody()->setInvInertiaDiagLocal(inertia);
 		physicscontroller->GetRigidBody()->updateInertiaTensor();
-		*/
+#endif
 
 		//env->createConstraint(physicscontroller,0,PHY_ANGULAR_CONSTRAINT,0,0,0,0,0,1);
 	
@@ -545,7 +543,7 @@ bool KX_ReInstanceBulletShapeFromMesh(KX_GameObject *gameobj, KX_GameObject *fro
 	CcdShapeConstructionInfo	*shapeInfo;
 
 	/* if this is the child of a compound shape this can happen
-	 * dont support compound shapes for now */
+	 * don't support compound shapes for now */
 	if(spc==NULL)
 		return false;
 	

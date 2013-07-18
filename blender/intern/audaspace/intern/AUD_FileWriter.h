@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_FILEWRITER
-#define AUD_FILEWRITER
+#ifndef __AUD_FILEWRITER_H__
+#define __AUD_FILEWRITER_H__
 
 #include <string>
 
@@ -72,4 +70,4 @@ public:
 	static void writeReader(AUD_Reference<AUD_IReader> reader, AUD_Reference<AUD_IWriter> writer, unsigned int length, unsigned int buffersize);
 };
 
-#endif //AUD_FILEWRITER
+#endif //__AUD_FILEWRITER_H__

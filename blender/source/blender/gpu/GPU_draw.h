@@ -1,23 +1,18 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
- * This shader is free software; you can redistribute it and/or
+ * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
- * This shader is distributed in the hope that it will be useful,
+ * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
  * You should have received a copy of the GNU General Public License
- * along with this shader; if not, write to the Free Software Foundation,
+ * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * The Original Code is Copyright (C) 2005 Blender Foundation.
@@ -34,8 +29,8 @@
  *  \ingroup gpu
  */
 
-#ifndef GPU_GAME_H
-#define GPU_GAME_H
+#ifndef __GPU_DRAW_H__
+#define __GPU_DRAW_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,21 +69,21 @@ void GPU_state_print(void);
  * - after drawing, the material must be disabled again */
 
 void GPU_begin_object_materials(struct View3D *v3d, struct RegionView3D *rv3d, 
-	struct Scene *scene, struct Object *ob, int glsl, int *do_alpha_pass);
+	struct Scene *scene, struct Object *ob, int glsl, int *do_alpha_after);
 void GPU_end_object_materials(void);
 
 int GPU_enable_material(int nr, void *attribs);
 void GPU_disable_material(void);
 
-void GPU_set_material_blend_mode(int blendmode);
-int GPU_get_material_blend_mode(void);
+void GPU_set_material_alpha_blend(int alphablend);
+int GPU_get_material_alpha_blend(void);
 
 /* TexFace drawing
  * - this is mutually exclusive with material drawing, a mesh should
  *   be drawn using one or the other
  * - passing NULL clears the state again */
 
-int GPU_set_tpage(struct MTFace *tface, int mipmap);
+int GPU_set_tpage(struct MTFace *tface, int mipmap, int transp);
 
 /* Lights
  * - returns how many lights were enabled

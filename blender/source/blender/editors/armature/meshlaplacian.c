@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,17 +41,20 @@
 #include "DNA_meshdata_types.h"
 #include "DNA_scene_types.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
 #include "BLI_memarena.h"
-#include "BLI_utildefines.h"
+#include "BLI_string.h"
+
+#include "BLF_translation.h"
 
 #include "BKE_DerivedMesh.h"
 #include "BKE_modifier.h"
+#include "BKE_mesh.h"
 
 
 #ifdef RIGID_DEFORM
-#include "BLI_editVert.h"
 #include "BLI_polardecomp.h"
 #endif
 
@@ -130,12 +131,12 @@ struct LaplacianSystem {
 /* Laplacian matrix construction */
 
 /* Computation of these weights for the laplacian is based on:
-   "Discrete Differential-Geometry Operators for Triangulated 2-Manifolds",
-   Meyer et al, 2002. Section 3.5, formula (8).
-   
-   We do it a bit different by going over faces instead of going over each
-   vertex and adjacent faces, since we don't store this adjacency. Also, the
-   formulas are tweaked a bit to work for non-manifold meshes. */
+ * "Discrete Differential-Geometry Operators for Triangulated 2-Manifolds",
+ * Meyer et al, 2002. Section 3.5, formula (8).
+ * 
+ * We do it a bit different by going over faces instead of going over each
+ * vertex and adjacent faces, since we don't store this adjacency. Also, the
+ * formulas are tweaked a bit to work for non-manifold meshes. */
 
 static void laplacian_increase_edge_count(EdgeHash *edgehash, int v1, int v2)
 {
@@ -182,9 +183,9 @@ static void laplacian_triangle_area(LaplacianSystem *sys, int i1, int i2, int i3
 	t2= cotan_weight(v2, v3, v1);
 	t3= cotan_weight(v3, v1, v2);
 
-	if(RAD2DEGF(angle_v3v3v3(v2, v1, v3)) > 90) obtuse= 1;
-	else if(RAD2DEGF(angle_v3v3v3(v1, v2, v3)) > 90) obtuse= 2;
-	else if(RAD2DEGF(angle_v3v3v3(v1, v3, v2)) > 90) obtuse= 3;
+	if     (angle_v3v3v3(v2, v1, v3) > DEG2RADF(90.0f)) obtuse= 1;
+	else if(angle_v3v3v3(v1, v2, v3) > DEG2RADF(90.0f)) obtuse= 2;
+	else if(angle_v3v3v3(v1, v3, v2) > DEG2RADF(90.0f)) obtuse= 3;
 
 	if (obtuse > 0) {
 		area= area_tri_v3(v1, v2, v3);
@@ -218,7 +219,7 @@ static void laplacian_triangle_weights(LaplacianSystem *sys, int f, int i1, int 
 	v3= sys->verts[i3];
 
 	/* instead of *0.5 we divided by the number of faces of the edge, it still
-	   needs to be verified that this is indeed the correct thing to do! */
+	 * needs to be verified that this is indeed the correct thing to do! */
 	t1= cotan_weight(v1, v2, v3)/laplacian_edge_count(sys->edgehash, i2, i3);
 	t2= cotan_weight(v2, v3, v1)/laplacian_edge_count(sys->edgehash, i3, i1);
 	t3= cotan_weight(v3, v1, v2)/laplacian_edge_count(sys->edgehash, i1, i2);
@@ -392,7 +393,7 @@ float laplacian_system_get_solution(int v)
 
 /************************* Heat Bone Weighting ******************************/
 /* From "Automatic Rigging and Animation of 3D Characters"
-		 Ilya Baran and Jovan Popovic, SIGGRAPH 2007 */
+ * Ilya Baran and Jovan Popovic, SIGGRAPH 2007 */
 
 #define C_WEIGHT			1.0f
 #define WEIGHT_LIMIT_START	0.05f
@@ -518,7 +519,7 @@ static float heat_source_distance(LaplacianSystem *sys, int vertex, int source)
 	dist= normalize_v3(d);
 
 	/* if the vertex normal does not point along the bone, increase distance */
-	cosine= INPR(d, sys->heat.vnors[vertex]);
+	cosine= dot_v3v3(d, sys->heat.vnors[vertex]);
 
 	return dist/(0.5f*(cosine + 1.001f));
 }
@@ -652,32 +653,54 @@ static float heat_limit_weight(float weight)
 void heat_bone_weighting(Object *ob, Mesh *me, float (*verts)[3], int numsource, bDeformGroup **dgrouplist, bDeformGroup **dgroupflip, float (*root)[3], float (*tip)[3], int *selected, const char **err_str)
 {
 	LaplacianSystem *sys;
-	MFace *mface;
+	MPoly *mp;
+	MLoop *ml;
+	MFace *mf;
 	float solution, weight;
 	int *vertsflipped = NULL, *mask= NULL;
-	int a, totface, j, bbone, firstsegment, lastsegment;
+	int a, tottri, j, bbone, firstsegment, lastsegment;
+
+	MVert *mvert = me->mvert;
+	int use_vert_sel= FALSE;
+	int use_face_sel= FALSE;
 
 	*err_str= NULL;
 
 	/* count triangles and create mask */
-	if(me->editflag & ME_EDIT_PAINT_MASK)
+	if(     (use_face_sel= (me->editflag & ME_EDIT_PAINT_MASK) != 0) ||
+	        (use_vert_sel= ((me->editflag & ME_EDIT_VERT_SEL) != 0)))
+	{
 		mask= MEM_callocN(sizeof(int)*me->totvert, "heat_bone_weighting mask");
+	}
 
-	for(totface=0, a=0, mface=me->mface; a<me->totface; a++, mface++) {
-		totface++;
-		if(mface->v4) totface++;
-
-		if(mask && (mface->flag & ME_FACE_SEL)) {
-			mask[mface->v1]= 1;
-			mask[mface->v2]= 1;
-			mask[mface->v3]= 1;
-			if(mface->v4)
-				mask[mface->v4]= 1;
+	for(a = 0, mp=me->mpoly; a < me->totpoly; mp++, a++) {
+		/*  (added selectedVerts content for vertex mask, they used to just equal 1) */
+		if(use_vert_sel) {
+			for (j = 0, ml = me->mloop + mp->loopstart; j < mp->totloop; j++, ml++) {
+				if (use_vert_sel) {
+					mask[ml->v] = (mvert[ml->v].flag & SELECT) != 0;
+				}
+			}
+		}
+		else if (use_face_sel) {
+			if (mp->flag & ME_FACE_SEL) {
+				for (j = 0, ml = me->mloop + mp->loopstart; j < mp->totloop; j++, ml++) {
+					mask[ml->v] = 1;
+				}
+			}
 		}
 	}
 
+	/* bone heat needs triangulated faces */
+	BKE_mesh_tessface_ensure(me);
+
+	for(tottri = 0, a = 0, mf = me->mface; a < me->totface; mf++, a++) {
+		tottri++;
+		if(mf->v4) tottri++;
+	}
+
 	/* create laplacian */
-	sys = laplacian_system_construct_begin(me->totvert, totface, 1);
+	sys = laplacian_system_construct_begin(me->totvert, tottri, 1);
 
 	sys->heat.mface= me->mface;
 	sys->heat.totface= me->totface;
@@ -697,7 +720,7 @@ void heat_bone_weighting(Object *ob, Mesh *me, float (*verts)[3], int numsource,
 		for(a=0; a<me->totvert; a++)
 			vertsflipped[a] = mesh_get_x_mirror_vert(ob, a);
 	}
-
+	
 	/* compute weights per bone */
 	for(j=0; j<numsource; j++) {
 		if(!selected[j])
@@ -806,13 +829,13 @@ void heat_bone_weighting(Object *ob, Mesh *me, float (*verts)[3], int numsource,
 #ifdef RIGID_DEFORM
 /********************** As-Rigid-As-Possible Deformation ******************/
 /* From "As-Rigid-As-Possible Surface Modeling",
-		Olga Sorkine and Marc Alexa, ESGP 2007. */
+ * Olga Sorkine and Marc Alexa, ESGP 2007. */
 
 /* investigate:
-   - transpose R in orthogonal
-   - flipped normals and per face adding
-   - move cancelling to transform, make origco pointer
-*/
+ * - transpose R in orthogonal
+ * - flipped normals and per face adding
+ * - move canceling to transform, make origco pointer
+ */
 
 static LaplacianSystem *RigidDeformSystem = NULL;
 
@@ -936,7 +959,7 @@ void rigid_deform_iteration()
 		}
 		else {
 			if(!sys->rigid.thrownerror) {
-				error("RigidDeform: failed to find solution.");
+				error("RigidDeform: failed to find solution");
 				sys->rigid.thrownerror= 1;
 			}
 			break;
@@ -1031,8 +1054,8 @@ void rigid_deform_end(int cancel)
 
 /************************** Harmonic Coordinates ****************************/
 /* From "Harmonic Coordinates for Character Articulation",
-	Pushkar Joshi, Mark Meyer, Tony DeRose, Brian Green and Tom Sanocki,
-	SIGGRAPH 2007. */
+ * Pushkar Joshi, Mark Meyer, Tony DeRose, Brian Green and Tom Sanocki,
+ * SIGGRAPH 2007. */
 
 #define EPSILON 0.0001f
 
@@ -1120,7 +1143,7 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	cross_v3_v3v3(pvec, dir, edge2);
 
 	/* if determinant is near zero, ray lies in plane of triangle */
-	det = INPR(edge1, pvec);
+	det = dot_v3v3(edge1, pvec);
 
 	if (det == 0.0f)
 		return 0;
@@ -1130,7 +1153,7 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	sub_v3_v3v3(tvec, orig, vert0);
 
 	/* calculate U parameter and test bounds */
-	u = INPR(tvec, pvec) * inv_det;
+	u = dot_v3v3(tvec, pvec) * inv_det;
 	if (u < -EPSILON || u > 1.0f+EPSILON)
 		return 0;
 
@@ -1138,7 +1161,7 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	cross_v3_v3v3(qvec, tvec, edge1);
 
 	/* calculate V parameter and test bounds */
-	v = INPR(dir, qvec) * inv_det;
+	v = dot_v3v3(dir, qvec) * inv_det;
 	if (v < -EPSILON || u + v > 1.0f+EPSILON)
 		return 0;
 
@@ -1153,10 +1176,10 @@ static int meshdeform_tri_intersect(float orig[3], float end[3], float vert0[3],
 	/* check if it is within the length of the line segment */
 	sub_v3_v3v3(isectdir, isectco, orig);
 
-	if(INPR(dir, isectdir) < -EPSILON)
+	if(dot_v3v3(dir, isectdir) < -EPSILON)
 		return 0;
 	
-	if(INPR(dir, dir) + EPSILON < INPR(isectdir, isectdir))
+	if(dot_v3v3(dir, dir) + EPSILON < dot_v3v3(isectdir, isectdir))
 		return 0;
 
 	return 1;
@@ -1170,8 +1193,8 @@ static int meshdeform_intersect(MeshDeformBind *mdb, MeshDeformIsect *isec)
 
 	isec->labda= 1e10;
 
-	mface= mdb->cagedm->getFaceArray(mdb->cagedm);
-	totface= mdb->cagedm->getNumFaces(mdb->cagedm);
+	mface= mdb->cagedm->getTessFaceArray(mdb->cagedm);
+	totface= mdb->cagedm->getNumTessFaces(mdb->cagedm);
 
 	add_v3_v3v3(end, isec->start, isec->vec);
 
@@ -1202,7 +1225,7 @@ static int meshdeform_intersect(MeshDeformBind *mdb, MeshDeformIsect *isec)
 			if(len < isec->labda) {
 				isec->labda= len;
 				isec->face = mface;
-				isec->isect= (INPR(isec->vec, nor) <= 0.0f);
+				isec->isect= (dot_v3v3(isec->vec, nor) <= 0.0f);
 				is= 1;
 			}
 		}
@@ -1224,8 +1247,8 @@ static MDefBoundIsect *meshdeform_ray_tree_intersect(MeshDeformBind *mdb, float 
 	memset(&isec, 0, sizeof(isec));
 	isec.labda= 1e10f;
 
-	VECADD(isec.start, co1, epsilon);
-	VECADD(end, co2, epsilon);
+	add_v3_v3v3(isec.start, co1, epsilon);
+	add_v3_v3v3(end, co2, epsilon);
 	sub_v3_v3v3(isec.vec, end, isec.start);
 
 	if(meshdeform_intersect(mdb, &isec)) {
@@ -1473,7 +1496,7 @@ static float meshdeform_boundary_total_weight(MeshDeformBind *mdb, int x, int y,
 
 	a= meshdeform_index(mdb, x, y, z, 0);
 
-	/* count weight for neighbour cells */
+	/* count weight for neighbor cells */
 	for(i=1; i<=6; i++) {
 		if(meshdeform_index(mdb, x, y, z, i) == -1)
 			continue;
@@ -1591,12 +1614,12 @@ static void meshdeform_matrix_add_exterior_phi(MeshDeformBind *mdb, int x, int y
 		mdb->phi[acenter]= phi/totweight;
 }
 
-static void meshdeform_matrix_solve(MeshDeformBind *mdb)
+static void meshdeform_matrix_solve(MeshDeformModifierData *mmd, MeshDeformBind *mdb)
 {
 	NLContext *context;
 	float vec[3], gridvec[3];
 	int a, b, x, y, z, totvar;
-	char message[1024];
+	char message[256];
 
 	/* setup variable indices */
 	mdb->varidx= MEM_callocN(sizeof(int)*mdb->size3, "MeshDeformDSvaridx");
@@ -1693,11 +1716,12 @@ static void meshdeform_matrix_solve(MeshDeformBind *mdb)
 			}
 		}
 		else {
-			error("Mesh Deform: failed to find solution.");
+			modifier_setError(&mmd->modifier, TIP_("Failed to find bind solution (increase precision?)."));
+			error("Mesh Deform: failed to find bind solution.");
 			break;
 		}
 
-		sprintf(message, "Mesh deform solve %d / %d       |||", a+1, mdb->totcagevert);
+		BLI_snprintf(message, sizeof(message), "Mesh deform solve %d / %d       |||", a+1, mdb->totcagevert);
 		progress_bar((float)(a+1)/(float)(mdb->totcagevert), message);
 	}
 
@@ -1802,7 +1826,7 @@ static void harmonic_coordinates_bind(Scene *UNUSED(scene), MeshDeformModifierDa
 				meshdeform_check_semibound(mdb, x, y, z);
 
 	/* solve */
-	meshdeform_matrix_solve(mdb);
+	meshdeform_matrix_solve(mmd, mdb);
 
 	/* assign results */
 	if(mmd->flag & MOD_MDEF_DYNAMIC_BIND) {
@@ -1860,9 +1884,9 @@ static void harmonic_coordinates_bind(Scene *UNUSED(scene), MeshDeformModifierDa
 static void heat_weighting_bind(Scene *scene, DerivedMesh *dm, MeshDeformModifierData *mmd, MeshDeformBind *mdb)
 {
 	LaplacianSystem *sys;
-	MFace *mface= dm->getFaceArray(dm), *mf;
+	MFace *mface= dm->getTessFaceArray(dm), *mf;
 	int totvert= dm->getNumVerts(dm);
-	int totface= dm->getNumFaces(dm);
+	int totface= dm->getNumTessFaces(dm);
 	float solution, weight;
 	int a, tottri, j, thrownerror = 0;
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,10 +29,10 @@
  *  \ingroup player
  */
 
-#ifndef __GPC_RAWLOADDOTBLENDARRAY_H
-#define __GPC_RAWLOADDOTBLENDARRAY_H
+#ifndef __GPC_RAWLOADDOTBLENDARRAY_H__
+#define __GPC_RAWLOADDOTBLENDARRAY_H__
 
 void GetRawLoadingAnimation(unsigned char **data, int *dataSize);
 
-#endif  // __GPC_RAWLOADDOTBLENDARRAY_H
+#endif  // __GPC_RAWLOADDOTBLENDARRAY_H__
 

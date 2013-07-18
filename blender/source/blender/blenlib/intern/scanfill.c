@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,14 +30,19 @@
  *  \ingroup bli
  */
 
+#include <stdio.h>
+#include <math.h>
+#include <stdlib.h>
+#include <string.h>
 
 #include "MEM_guardedalloc.h"
 
 #include "BLI_callbacks.h"
-#include "BLI_editVert.h"
 #include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_scanfill.h"
+#include "BLI_utildefines.h"
+#include "BLI_threads.h"
 
 /* callbacks for errors and interrupts and some goo */
 static void (*BLI_localErrorCallBack)(const char*) = NULL;
@@ -82,30 +85,30 @@ typedef struct PolyFill {
 	short f,nr;
 } PolyFill;
 
-typedef struct ScFillVert {
-	EditVert *v1;
-	EditEdge *first,*last;
-} ScFillVert;
+typedef struct ScanFillVertLink {
+	ScanFillVert *v1;
+	ScanFillEdge *first, *last;
+} ScanFillVertLink;
 
 
 /* local funcs */
 
 #define COMPLIMIT	0.00003
 
-static ScFillVert *scdata;
+static ScanFillVertLink *scdata;
 
 ListBase fillvertbase = {NULL, NULL};
 ListBase filledgebase = {NULL, NULL};
 ListBase fillfacebase = {NULL, NULL};
 
-static short cox, coy;
+static int cox, coy;
 
 /* ****  FUBCTIONS FOR QSORT *************************** */
 
 
 static int vergscdata(const void *a1, const void *a2)
 {
-	const ScFillVert *x1=a1,*x2=a2;
+	const ScanFillVertLink *x1=a1,*x2=a2;
 	
 	if( x1->v1->co[coy] < x2->v1->co[coy] ) return 1;
 	else if( x1->v1->co[coy] > x2->v1->co[coy]) return -1;
@@ -136,66 +139,88 @@ struct mem_elements {
 
 
 /* simple optimization for allocating thousands of small memory blocks
-   only to be used within loops, and not by one function at a time
-   free in the end, with argument '-1'
-*/
+ * only to be used within loops, and not by one function at a time
+ * free in the end, with argument '-1'
+ */
+#define MEM_ELEM_BLOCKSIZE 16384
+static struct mem_elements *  melem__cur= NULL;
+static int                    melem__offs= 0; /* the current free address */
+static ListBase               melem__lb= {NULL, NULL};
 
-static void *new_mem_element(int size)
+static void *mem_element_new(int size)
 {
-	int blocksize= 16384;
-	static int offs= 0;		/* the current free address */
-	static struct mem_elements *cur= 0;
-	static ListBase lb= {0, 0};
-	void *adr;
+	BLI_assert(!(size>10000 || size==0)); /* this is invalid use! */
+
+	size = (size + 3 ) & ~3; 	/* allocate in units of 4 */
 	
-	if(size>10000 || size==0) {
-		printf("incorrect use of new_mem_element\n");
+	if(melem__cur && (size + melem__offs < MEM_ELEM_BLOCKSIZE)) {
+		void *adr= (void *) (melem__cur->data+melem__offs);
+		 melem__offs+= size;
+		return adr;
 	}
-	else if(size== -1) {
-		cur= lb.first;
-		while(cur) {
-			MEM_freeN(cur->data);
-			cur= cur->next;
+	else {
+		melem__cur= MEM_callocN( sizeof(struct mem_elements), "newmem");
+		melem__cur->data= MEM_callocN(MEM_ELEM_BLOCKSIZE, "newmem");
+		BLI_addtail(&melem__lb, melem__cur);
+
+		melem__offs= size;
+		return melem__cur->data;
+	}
+}
+static void mem_element_reset(int keep_first)
+{
+	struct mem_elements *first;
+
+	if((first= melem__lb.first)) { /* can be false if first fill fails */
+		if (keep_first) {
+			BLI_remlink(&melem__lb, first);
 		}
-		BLI_freelistN(&lb);
-		
-		return NULL;	
-	}
-	
-	size= 4*( (size+3)/4 );
-	
-	if(cur) {
-		if(size+offs < blocksize) {
-			adr= (void *) (cur->data+offs);
-			 offs+= size;
-			return adr;
+
+		melem__cur= melem__lb.first;
+		while(melem__cur) {
+			MEM_freeN(melem__cur->data);
+			melem__cur= melem__cur->next;
+		}
+		BLI_freelistN(&melem__lb);
+
+		/*reset the block we're keeping*/
+		if (keep_first) {
+			BLI_addtail(&melem__lb, first);
+			memset(first->data, 0, MEM_ELEM_BLOCKSIZE);
+		}
+		else {
+			first = NULL;
+
 		}
 	}
-	
-	cur= MEM_callocN( sizeof(struct mem_elements), "newmem");
-	cur->data= MEM_callocN(blocksize, "newmem");
-	BLI_addtail(&lb, cur);
-	
-	offs= size;
-	return cur->data;
+
+	melem__cur= first;
+	melem__offs= 0;
 }
 
 void BLI_end_edgefill(void)
 {
-	new_mem_element(-1);
+	mem_element_reset(TRUE);
 	
 	fillvertbase.first= fillvertbase.last= 0;
 	filledgebase.first= filledgebase.last= 0;
 	fillfacebase.first= fillfacebase.last= 0;
+	
+	BLI_unlock_thread(LOCK_SCANFILL);	
+}
+
+void BLI_scanfill_free(void)
+{
+	mem_element_reset(FALSE);
 }
 
 /* ****  FILL ROUTINES *************************** */
 
-EditVert *BLI_addfillvert(float *vec)
+ScanFillVert *BLI_addfillvert(const float vec[3])
 {
-	EditVert *eve;
+	ScanFillVert *eve;
 	
-	eve= new_mem_element(sizeof(EditVert));
+	eve= mem_element_new(sizeof(ScanFillVert));
 	BLI_addtail(&fillvertbase, eve);
 	
 	eve->co[0] = vec[0];
@@ -205,11 +230,11 @@ EditVert *BLI_addfillvert(float *vec)
 	return eve;	
 }
 
-EditEdge *BLI_addfilledge(EditVert *v1, EditVert *v2)
+ScanFillEdge *BLI_addfilledge(ScanFillVert *v1, ScanFillVert *v2)
 {
-	EditEdge *newed;
+	ScanFillEdge *newed;
 
-	newed= new_mem_element(sizeof(EditEdge));
+	newed= mem_element_new(sizeof(ScanFillEdge));
 	BLI_addtail(&filledgebase, newed);
 	
 	newed->v1= v1;
@@ -218,19 +243,17 @@ EditEdge *BLI_addfilledge(EditVert *v1, EditVert *v2)
 	return newed;
 }
 
-static void addfillface(EditVert *v1, EditVert *v2, EditVert *v3, short mat_nr)
+static void addfillface(ScanFillVert *v1, ScanFillVert *v2, ScanFillVert *v3)
 {
 	/* does not make edges */
-	EditFace *evl;
+	ScanFillFace *evl;
 
-	evl= new_mem_element(sizeof(EditFace));
+	evl= mem_element_new(sizeof(ScanFillFace));
 	BLI_addtail(&fillfacebase, evl);
 	
 	evl->v1= v1;
 	evl->v2= v2;
 	evl->v3= v3;
-	evl->f= 2;
-	evl->mat_nr= mat_nr;
 }
 
 static int boundisect(PolyFill *pf2, PolyFill *pf1)
@@ -259,18 +282,18 @@ static int boundisect(PolyFill *pf2, PolyFill *pf1)
 
 static void mergepolysSimp(PolyFill *pf1, PolyFill *pf2)	/* add pf2 to pf1 */
 {
-	EditVert *eve;
-	EditEdge *eed;
+	ScanFillVert *eve;
+	ScanFillEdge *eed;
 
 	/* replace old poly numbers */
 	eve= fillvertbase.first;
 	while(eve) {
-		if(eve->xs== pf2->nr) eve->xs= pf1->nr;
+		if(eve->poly_nr == pf2->nr) eve->poly_nr = pf1->nr;
 		eve= eve->next;
 	}
 	eed= filledgebase.first;
 	while(eed) {
-		if(eed->f1== pf2->nr) eed->f1= pf1->nr;
+		if (eed->poly_nr == pf2->nr) eed->poly_nr = pf1->nr;
 		eed= eed->next;
 	}
 
@@ -280,7 +303,7 @@ static void mergepolysSimp(PolyFill *pf1, PolyFill *pf2)	/* add pf2 to pf1 */
 	pf1->f= (pf1->f | pf2->f);
 }
 
-static short testedgeside(float *v1, float *v2, float *v3)
+static short testedgeside(const float v1[3], const float v2[3], const float v3[3])
 /* is v3 to the right of v1-v2 ? With exception: v3==v1 || v3==v2 */
 {
 	float inp;
@@ -296,10 +319,10 @@ static short testedgeside(float *v1, float *v2, float *v3)
 	return 1;
 }
 
-static short addedgetoscanvert(ScFillVert *sc, EditEdge *eed)
+static short addedgetoscanvert(ScanFillVertLink *sc, ScanFillEdge *eed)
 {
 	/* find first edge to the right of eed, and insert eed before that */
-	EditEdge *ed;
+	ScanFillEdge *ed;
 	float fac,fac1,x,y;
 
 	if(sc->first==0) {
@@ -340,12 +363,12 @@ static short addedgetoscanvert(ScFillVert *sc, EditEdge *eed)
 }
 
 
-static ScFillVert *addedgetoscanlist(EditEdge *eed, int len)
+static ScanFillVertLink *addedgetoscanlist(ScanFillEdge *eed, int len)
 {
-	/* inserts edge at correct location in ScFillVert list */
+	/* inserts edge at correct location in ScanFillVertLink list */
 	/* returns sc when edge already exists */
-	ScFillVert *sc,scsearch;
-	EditVert *eve;
+	ScanFillVertLink *sc,scsearch;
+	ScanFillVert *eve;
 
 	/* which vert is left-top? */
 	if(eed->v1->co[coy] == eed->v2->co[coy]) {
@@ -362,8 +385,8 @@ static ScFillVert *addedgetoscanlist(EditEdge *eed, int len)
 	}
 	/* find location in list */
 	scsearch.v1= eed->v1;
-	sc= (ScFillVert *)bsearch(&scsearch,scdata,len,
-		sizeof(ScFillVert), vergscdata);
+	sc= (ScanFillVertLink *)bsearch(&scsearch,scdata,len,
+		sizeof(ScanFillVertLink), vergscdata);
 
 	if(sc==0) printf("Error in search edge: %p\n", (void *)eed);
 	else if(addedgetoscanvert(sc,eed)==0) return sc;
@@ -371,7 +394,7 @@ static ScFillVert *addedgetoscanlist(EditEdge *eed, int len)
 	return 0;
 }
 
-static short boundinsideEV(EditEdge *eed, EditVert *eve)
+static short boundinsideEV(ScanFillEdge *eed, ScanFillVert *eve)
 /* is eve inside boundbox eed */
 {
 	float minx,maxx,miny,maxy;
@@ -400,10 +423,10 @@ static short boundinsideEV(EditEdge *eed, EditVert *eve)
 static void testvertexnearedge(void)
 {
 	/* only vertices with ->h==1 are being tested for
-		being close to an edge, if true insert */
+	 * being close to an edge, if true insert */
 
-	EditVert *eve;
-	EditEdge *eed,*ed1;
+	ScanFillVert *eve;
+	ScanFillEdge *eed,*ed1;
 	float dist,vec1[2],vec2[2],vec3[2];
 
 	eve= fillvertbase.first;
@@ -423,7 +446,7 @@ static void testvertexnearedge(void)
 			}
 			eed= filledgebase.first;
 			while(eed) {
-				if(eve!=eed->v1 && eve!=eed->v2 && eve->xs==eed->f1) {
+				if (eve != eed->v1 && eve != eed->v2 && eve->poly_nr == eed->poly_nr) {
 					if(compare_v3v3(eve->co,eed->v1->co, COMPLIMIT)) {
 						ed1->v2= eed->v1;
 						eed->v1->h++;
@@ -448,8 +471,8 @@ static void testvertexnearedge(void)
 								ed1= BLI_addfilledge(eed->v1, eve);
 								
 								/* printf("fill: vertex near edge %x\n",eve); */
-								ed1->f= ed1->h= 0;
-								ed1->f1= eed->f1;
+								ed1->f= 0;
+								ed1->poly_nr = eed->poly_nr;
 								eed->v1= eve;
 								eve->h= 3;
 								break;
@@ -467,8 +490,8 @@ static void testvertexnearedge(void)
 static void splitlist(ListBase *tempve, ListBase *temped, short nr)
 {
 	/* everything is in templist, write only poly nr to fillist */
-	EditVert *eve,*nextve;
-	EditEdge *eed,*nexted;
+	ScanFillVert *eve,*nextve;
+	ScanFillEdge *eed,*nexted;
 
 	BLI_movelisttolist(tempve,&fillvertbase);
 	BLI_movelisttolist(temped,&filledgebase);
@@ -476,7 +499,7 @@ static void splitlist(ListBase *tempve, ListBase *temped, short nr)
 	eve= tempve->first;
 	while(eve) {
 		nextve= eve->next;
-		if(eve->xs==nr) {
+		if (eve->poly_nr == nr) {
 			BLI_remlink(tempve,eve);
 			BLI_addtail(&fillvertbase,eve);
 		}
@@ -485,7 +508,7 @@ static void splitlist(ListBase *tempve, ListBase *temped, short nr)
 	eed= temped->first;
 	while(eed) {
 		nexted= eed->next;
-		if(eed->f1==nr) {
+		if(eed->poly_nr==nr) {
 			BLI_remlink(temped,eed);
 			BLI_addtail(&filledgebase,eed);
 		}
@@ -494,18 +517,19 @@ static void splitlist(ListBase *tempve, ListBase *temped, short nr)
 }
 
 
-static int scanfill(PolyFill *pf, short mat_nr)
+static int scanfill(PolyFill *pf)
 {
-	ScFillVert *sc = NULL, *sc1;
-	EditVert *eve,*v1,*v2,*v3;
-	EditEdge *eed,*nexted,*ed1,*ed2,*ed3;
+	ScanFillVertLink *sc = NULL, *sc1;
+	ScanFillVert *eve,*v1,*v2,*v3;
+	ScanFillEdge *eed,*nexted,*ed1,*ed2,*ed3;
 	float miny = 0.0;
-	int a,b,verts, maxface, totface;	
+	int a,b,verts, maxface, totface;
 	short nr, test, twoconnected=0;
 
 	nr= pf->nr;
 
-	/* PRINTS
+	/* PRINTS */
+#if 0
 	verts= pf->verts;
 	eve= fillvertbase.first;
 	while(eve) {
@@ -516,7 +540,8 @@ static int scanfill(PolyFill *pf, short mat_nr)
 	while(eed) {
 		printf("edge: %x  verts: %x %x\n",eed,eed->v1,eed->v2);
 		eed= eed->next;
-	} */
+	}
+#endif
 
 	/* STEP 0: remove zero sized edges */
 	eed= filledgebase.first;
@@ -536,7 +561,7 @@ static int scanfill(PolyFill *pf, short mat_nr)
 				}
 				else {
 					eed->v2->f= 255;
-					eed->v2->tmp.v = eed->v1->tmp.v;
+					eed->v2->tmp.v = eed->v1;
 				}
 			}
 		}
@@ -544,14 +569,14 @@ static int scanfill(PolyFill *pf, short mat_nr)
 	}
 
 	/* STEP 1: make using FillVert and FillEdge lists a sorted
-		ScFillVert list
-	*/
-	sc= scdata= (ScFillVert *)MEM_callocN(pf->verts*sizeof(ScFillVert),"Scanfill1");
+	 * ScanFillVertLink list
+	 */
+	sc= scdata= (ScanFillVertLink *)MEM_callocN(pf->verts*sizeof(ScanFillVertLink),"Scanfill1");
 	eve= fillvertbase.first;
 	verts= 0;
 	while(eve) {
-		if(eve->xs==nr) {
-			if(eve->f!= 255) {
+		if (eve->poly_nr == nr) {
+			if (eve->f != 255) {
 				verts++;
 				eve->f= 0;	/* flag for connectedges later on */
 				sc->v1= eve;
@@ -561,30 +586,32 @@ static int scanfill(PolyFill *pf, short mat_nr)
 		eve= eve->next;
 	}
 
-	qsort(scdata, verts, sizeof(ScFillVert), vergscdata);
+	qsort(scdata, verts, sizeof(ScanFillVertLink), vergscdata);
 
 	eed= filledgebase.first;
 	while(eed) {
 		nexted= eed->next;
-		eed->f= 0;
 		BLI_remlink(&filledgebase,eed);
-/* commented all of this out, this I have no idea for what it is for, probably from ancient past */
-/* it does crash blender, since it uses mixed original and new vertices (ton) */
-//		if(eed->v1->f==255) {
-//			v1= eed->v1;
-//			while((eed->v1->f == 255) && (eed->v1->tmp.v != v1)) 
-//				eed->v1 = eed->v1->tmp.v;
-//		}
-//		if(eed->v2->f==255) {
-//			v2= eed->v2;
-//			while((eed->v2->f == 255) && (eed->v2->tmp.v != v2))
-//				eed->v2 = eed->v2->tmp.v;
-//		}
+		/* This code is for handling zero-length edges that get
+		 * collapsed in step 0. It was removed for some time to
+		 * fix trunk bug #4544, so if that comes back, this code
+		 * may need some work, or there will have to be a better
+		 * fix to #4544. */
+		if(eed->v1->f==255) {
+			v1= eed->v1;
+			while((eed->v1->f == 255) && (eed->v1->tmp.v != v1)) 
+				eed->v1 = eed->v1->tmp.v;
+		}
+		if(eed->v2->f==255) {
+			v2= eed->v2;
+			while((eed->v2->f == 255) && (eed->v2->tmp.v != v2))
+				eed->v2 = eed->v2->tmp.v;
+		}
 		if(eed->v1!=eed->v2) addedgetoscanlist(eed,verts);
 
 		eed= nexted;
 	}
-	/*
+#if 0
 	sc= scdata;
 	for(a=0;a<verts;a++) {
 		printf("\nscvert: %x\n",sc->v1);
@@ -594,7 +621,8 @@ static int scanfill(PolyFill *pf, short mat_nr)
 			eed= eed->next;
 		}
 		sc++;
-	}*/
+	}
+#endif
 
 
 	/* STEP 2: FILL LOOP */
@@ -682,15 +710,15 @@ static int scanfill(PolyFill *pf, short mat_nr)
 				else {
 					/* new triangle */
 					/* printf("add face %x %x %x\n",v1,v2,v3); */
-					addfillface(v1, v2, v3, mat_nr);
+					addfillface(v1, v2, v3);
 					totface++;
 					BLI_remlink((ListBase *)&(sc->first),ed1);
 					BLI_addtail(&filledgebase,ed1);
 					ed1->v2->f= 0;
 					ed1->v1->h--; 
 					ed1->v2->h--;
-					/* ed2 can be removed when it's an old one */
-					if(ed2->f==0 && twoconnected) {
+					/* ed2 can be removed when it's a boundary edge */
+					if((ed2->f == 0 && twoconnected) || (ed2->f == FILLBOUNDARY)) {
 						BLI_remlink((ListBase *)&(sc->first),ed2);
 						BLI_addtail(&filledgebase,ed2);
 						ed2->v2->f= 0;
@@ -708,19 +736,20 @@ static int scanfill(PolyFill *pf, short mat_nr)
 					/* printf("add new edge %x %x\n",v1,v3); */
 					sc1= addedgetoscanlist(ed3, verts);
 					
-					if(sc1) {	/* ed3 already exists: remove */
+					if(sc1) {	/* ed3 already exists: remove if a boundary */
 						/* printf("Edge exists\n"); */
 						ed3->v1->h--; 
 						ed3->v2->h--;
 
-						if(twoconnected) ed3= sc1->first;
-						else ed3= 0;
+						ed3= sc1->first;
 						while(ed3) {
 							if( (ed3->v1==v1 && ed3->v2==v3) || (ed3->v1==v3 && ed3->v2==v1) ) {
-								BLI_remlink((ListBase *)&(sc1->first),ed3);
-								BLI_addtail(&filledgebase,ed3);
-								ed3->v1->h--; 
-								ed3->v2->h--;
+								if (twoconnected || ed3->f==FILLBOUNDARY) {
+									BLI_remlink((ListBase *)&(sc1->first),ed3);
+									BLI_addtail(&filledgebase,ed3);
+									ed3->v1->h--; 
+									ed3->v2->h--;
+								}
 								break;
 							}
 							ed3= ed3->next;
@@ -752,39 +781,76 @@ static int scanfill(PolyFill *pf, short mat_nr)
 }
 
 
+int BLI_begin_edgefill(void)
+{
+	BLI_lock_thread(LOCK_SCANFILL);
+
+	return 1;
+}
 
 int BLI_edgefill(short mat_nr)
 {
 	/*
-	  - fill works with its own lists, so create that first (no faces!)
-	  - for vertices, put in ->tmp.v the old pointer
-	  - struct elements xs en ys are not used here: don't hide stuff in it
-	  - edge flag ->f becomes 2 when it's a new edge
-	  - mode: & 1 is check for crossings, then create edges (TO DO )
-	  - returns number of triangle faces added.
-	*/
+	 * - fill works with its own lists, so create that first (no faces!)
+	 * - for vertices, put in ->tmp.v the old pointer
+	 * - struct elements xs en ys are not used here: don't hide stuff in it
+	 * - edge flag ->f becomes 2 when it's a new edge
+	 * - mode: & 1 is check for crossings, then create edges (TO DO )
+	 * - returns number of triangle faces added.
+	 */
 	ListBase tempve, temped;
-	EditVert *eve;
-	EditEdge *eed,*nexted;
+	ScanFillVert *eve;
+	ScanFillEdge *eed,*nexted;
 	PolyFill *pflist,*pf;
-	float *minp, *maxp, *v1, *v2, norm[3], len;
+	float limit, *minp, *maxp, *v1, *v2, norm[3], len;
 	short a,c,poly=0,ok=0,toggle=0;
 	int totfaces= 0; /* total faces added */
 
 	/* reset variables */
 	eve= fillvertbase.first;
+	a = 0;
 	while(eve) {
 		eve->f= 0;
-		eve->xs= 0;
+		eve->poly_nr= 0;
 		eve->h= 0;
 		eve= eve->next;
+		a += 1;
+	}
+
+	if (a == 3 && (mat_nr & 2)) {
+		eve = fillvertbase.first;
+
+		addfillface(eve, eve->next, eve->next->next);
+		return 1;
+	} else if (a == 4 && (mat_nr & 2)) {
+		float vec1[3], vec2[3];
+
+		eve = fillvertbase.first;
+		/* no need to check 'eve->next->next->next' is valid, already counted */
+		if (1) { //BMESH_TODO) {
+			/*use shortest diagonal for quad*/
+			sub_v3_v3v3(vec1, eve->co, eve->next->next->co);
+			sub_v3_v3v3(vec2, eve->next->co, eve->next->next->next->co);
+			
+			if (dot_v3v3(vec1, vec1) < dot_v3v3(vec2, vec2)) {
+				addfillface(eve, eve->next, eve->next->next);
+				addfillface(eve->next->next, eve->next->next->next, eve);
+			} else{
+				addfillface(eve->next, eve->next->next, eve->next->next->next);
+				addfillface(eve->next->next->next, eve, eve->next);
+			}
+		} else {
+				addfillface(eve, eve->next, eve->next->next);
+				addfillface(eve->next->next, eve->next->next->next, eve);
+		}
+		return 2;
 	}
 
 	/* first test vertices if they are in edges */
 	/* including resetting of flags */
 	eed= filledgebase.first;
 	while(eed) {
-		eed->f= eed->f1= eed->h= 0;
+		eed->poly_nr= 0;
 		eed->v1->f= 1;
 		eed->v2->f= 1;
 
@@ -812,9 +878,17 @@ int BLI_edgefill(short mat_nr)
 	v1= eve->co;
 	v2= 0;
 	eve= fillvertbase.first;
+	limit = a < 5 ? FLT_EPSILON*200 : M_PI/24.0;
 	while(eve) {
 		if(v2) {
 			if( compare_v3v3(v2, eve->co, COMPLIMIT)==0) {
+				float inner = angle_v3v3v3(v1, v2, eve->co);
+				
+				if (fabsf(inner-M_PI) < limit || fabsf(inner) < limit) {
+					eve = eve->next;
+					continue;
+				}
+
 				len= normal_tri_v3( norm,v1, v2, eve->co);
 				if(len != 0.0f) break;
 			}
@@ -827,29 +901,17 @@ int BLI_edgefill(short mat_nr)
 
 	if(len==0.0f) return 0;	/* no fill possible */
 
-	norm[0]= fabs(norm[0]);
-	norm[1]= fabs(norm[1]);
-	norm[2]= fabs(norm[2]);
-	
-	if(norm[2]>=norm[0] && norm[2]>=norm[1]) {
-		cox= 0; coy= 1;
-	}
-	else if(norm[1]>=norm[0] && norm[1]>=norm[2]) {
-		cox= 0; coy= 2;
-	}
-	else {
-		cox= 1; coy= 2;
-	}
+	axis_dominant_v3(&cox, &coy, norm);
 
 	/* STEP 1: COUNT POLYS */
 	eve= fillvertbase.first;
 	while(eve) {
 		/* get first vertex with no poly number */
-		if(eve->xs==0) {
+		if (eve->poly_nr==0) {
 			poly++;
 			/* now a sortof select connected */
 			ok= 1;
-			eve->xs= poly;
+			eve->poly_nr = poly;
 			
 			while(ok) {
 				
@@ -859,19 +921,19 @@ int BLI_edgefill(short mat_nr)
 				else eed= filledgebase.last;
 
 				while(eed) {
-					if(eed->v1->xs==0 && eed->v2->xs==poly) {
-						eed->v1->xs= poly;
-						eed->f1= poly;
+					if (eed->v1->poly_nr == 0 && eed->v2->poly_nr == poly) {
+						eed->v1->poly_nr = poly;
+						eed->poly_nr= poly;
 						ok= 1;
 					}
-					else if(eed->v2->xs==0 && eed->v1->xs==poly) {
-						eed->v2->xs= poly;
-						eed->f1= poly;
+					else if (eed->v2->poly_nr == 0 && eed->v1->poly_nr == poly) {
+						eed->v2->poly_nr = poly;
+						eed->poly_nr= poly;
 						ok= 1;
 					}
-					else if(eed->f1==0) {
-						if(eed->v1->xs==poly && eed->v2->xs==poly) {
-							eed->f1= poly;
+					else if (eed->poly_nr == 0) {
+						if (eed->v1->poly_nr == poly && eed->v2->poly_nr == poly) {
+							eed->poly_nr= poly;
 							ok= 1;
 						}
 					}
@@ -931,14 +993,14 @@ int BLI_edgefill(short mat_nr)
 
 
 	/* CURRENT STATUS:
-	- eve->f      :1= availalble in edges
-	- eve->xs     :polynumber
-	- eve->h      :amount of edges connected to vertex
-	- eve->tmp.v  :store! original vertex number
-
-	- eed->f  :
-	- eed->f1 :poly number
-	*/
+	 * - eve->f       :1= availalble in edges
+	 * - eve->xs      :polynumber
+	 * - eve->h       :amount of edges connected to vertex
+	 * - eve->tmp.v   :store! original vertex number
+	 * 
+	 * - eed->f       :1= boundary edge (optionally set by caller)
+	 * - eed->poly_nr :poly number
+	 */
 
 
 	/* STEP 3: MAKE POLYFILL STRUCT */
@@ -952,21 +1014,21 @@ int BLI_edgefill(short mat_nr)
 	}
 	eed= filledgebase.first;
 	while(eed) {
-		pflist[eed->f1-1].edges++;
+		pflist[eed->poly_nr-1].edges++;
 		eed= eed->next;
 	}
 
 	eve= fillvertbase.first;
 	while(eve) {
-		pflist[eve->xs-1].verts++;
-		minp= pflist[eve->xs-1].min;
-		maxp= pflist[eve->xs-1].max;
+		pflist[eve->poly_nr-1].verts++;
+		minp= pflist[eve->poly_nr-1].min;
+		maxp= pflist[eve->poly_nr-1].max;
 
 		minp[cox]= (minp[cox])<(eve->co[cox]) ? (minp[cox]) : (eve->co[cox]);
 		minp[coy]= (minp[coy])<(eve->co[coy]) ? (minp[coy]) : (eve->co[coy]);
 		maxp[cox]= (maxp[cox])>(eve->co[cox]) ? (maxp[cox]) : (eve->co[cox]);
 		maxp[coy]= (maxp[coy])>(eve->co[coy]) ? (maxp[coy]) : (eve->co[coy]);
-		if(eve->h>2) pflist[eve->xs-1].f= 1;
+		if(eve->h > 2) pflist[eve->poly_nr-1].f = 1;
 
 		eve= eve->next;
 	}
@@ -981,13 +1043,15 @@ int BLI_edgefill(short mat_nr)
 
 		/* so, sort first */
 		qsort(pflist, poly, sizeof(PolyFill), vergpoly);
-		
-		/*pf= pflist;
+
+#if 0
+		pf= pflist;
 		for(a=1;a<=poly;a++) {
 			printf("poly:%d edges:%d verts:%d flag: %d\n",a,pf->edges,pf->verts,pf->f);
 			PRINT2(f, f, pf->min[0], pf->min[1]);
 			pf++;
-		}*/
+		}
+#endif
 	
 		polycache= pc= MEM_callocN(sizeof(short)*poly, "polycache");
 		pf= pflist;
@@ -1012,13 +1076,15 @@ int BLI_edgefill(short mat_nr)
 		}
 		MEM_freeN(polycache);
 	}
-	
-	/* printf("after merge\n");
+
+#if 0
+	printf("after merge\n");
 	pf= pflist;
 	for(a=1;a<=poly;a++) {
 		printf("poly:%d edges:%d verts:%d flag: %d\n",a,pf->edges,pf->verts,pf->f);
 		pf++;
-	} */
+	}
+#endif
 
 	/* STEP 5: MAKE TRIANGLES */
 
@@ -1033,7 +1099,7 @@ int BLI_edgefill(short mat_nr)
 	for(a=0;a<poly;a++) {
 		if(pf->edges>1) {
 			splitlist(&tempve,&temped,pf->nr);
-			totfaces += scanfill(pf, mat_nr);
+			totfaces += scanfill(pf);
 		}
 		pf++;
 	}

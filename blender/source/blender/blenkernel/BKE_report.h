@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BKE_REPORT_H
-#define BKE_REPORT_H
+#ifndef __BKE_REPORT_H__
+#define __BKE_REPORT_H__
 
 /** \file BKE_report.h
  *  \ingroup bke
@@ -68,6 +66,8 @@ char *BKE_reports_string(ReportList *reports, ReportType level);
 void BKE_reports_print(ReportList *reports, ReportType level);
 
 Report *BKE_reports_last_displayable(ReportList *reports);
+
+int BKE_reports_contain(ReportList *reports, ReportType level);
 	
 #ifdef __cplusplus
 }

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef KX_CAMERAIPOSGCONTROLLER_H
-#define KX_CAMERAIPOSGCONTROLLER_H
+#ifndef __KX_CAMERAIPOSGCONTROLLER_H__
+#define __KX_CAMERAIPOSGCONTROLLER_H__
 
 #include "SG_Controller.h"
 #include "SG_Spatial.h"
@@ -98,5 +96,5 @@ public:
 #endif
 };
 
-#endif // KX_CAMERAIPOSGCONTROLLER_H
+#endif // __KX_CAMERAIPOSGCONTROLLER_H__
 

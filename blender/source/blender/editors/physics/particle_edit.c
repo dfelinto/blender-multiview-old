@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -193,7 +191,7 @@ ParticleEditSettings *PE_settings(Scene *scene)
 	return scene->toolsettings ? &scene->toolsettings->particle : NULL;
 }
 
-/* always gets atleast the first particlesystem even if PSYS_CURRENT flag is not set
+/* always gets at least the first particlesystem even if PSYS_CURRENT flag is not set
  *
  * note: this function runs on poll, therefor it can runs many times a second
  * keep it fast! */
@@ -254,15 +252,21 @@ static PTCacheEdit *pe_get_current(Scene *scene, Object *ob, int create)
 				break;
 			}
 		}
-		else if(pset->edittype == PE_TYPE_SOFTBODY && pid->type == PTCACHE_TYPE_SOFTBODY) {
-			if(create && pid->cache->flag & PTCACHE_BAKED && !pid->cache->edit)
+		else if (pset->edittype == PE_TYPE_SOFTBODY && pid->type == PTCACHE_TYPE_SOFTBODY) {
+			if (create && pid->cache->flag & PTCACHE_BAKED && !pid->cache->edit) {
+				pset->flag |= PE_FADE_TIME;
+				// NICE TO HAVE but doesn't work: pset->brushtype = PE_BRUSH_COMB;
 				PE_create_particle_edit(scene, ob, pid->cache, NULL);
+			}
 			edit = pid->cache->edit;
 			break;
 		}
-		else if(pset->edittype == PE_TYPE_CLOTH && pid->type == PTCACHE_TYPE_CLOTH) {
-			if(create && pid->cache->flag & PTCACHE_BAKED && !pid->cache->edit)
+		else if (pset->edittype == PE_TYPE_CLOTH && pid->type == PTCACHE_TYPE_CLOTH) {
+			if (create && pid->cache->flag & PTCACHE_BAKED && !pid->cache->edit) {
+				pset->flag |= PE_FADE_TIME;
+				// NICE TO HAVE but doesn't work: pset->brushtype = PE_BRUSH_COMB;
 				PE_create_particle_edit(scene, ob, pid->cache, NULL);
+			}
 			edit = pid->cache->edit;
 			break;
 		}
@@ -392,7 +396,7 @@ static void PE_set_view3d_data(bContext *C, PEData *data)
 
 /*************************** selection utilities *******************************/
 
-static int key_test_depth(PEData *data, float co[3])
+static int key_test_depth(PEData *data, const float co[3])
 {
 	View3D *v3d= data->vc.v3d;
 	double ux, uy, uz;
@@ -409,7 +413,7 @@ static int key_test_depth(PEData *data, float co[3])
 		return 0;
 
 	gluProject(co[0],co[1],co[2], data->mats.modelview, data->mats.projection,
-		(GLint *)data->mats.viewport, &ux, &uy, &uz);
+	           (GLint *)data->mats.viewport, &ux, &uy, &uz);
 
 	x=wco[0];
 	y=wco[1];
@@ -436,7 +440,7 @@ static int key_test_depth(PEData *data, float co[3])
 		return 1;
 }
 
-static int key_inside_circle(PEData *data, float rad, float co[3], float *distance)
+static int key_inside_circle(PEData *data, float rad, const float co[3], float *distance)
 {
 	float dx, dy, dist;
 	int sco[2];
@@ -463,7 +467,7 @@ static int key_inside_circle(PEData *data, float rad, float co[3], float *distan
 	return 0;
 }
 
-static int key_inside_rect(PEData *data, float co[3])
+static int key_inside_rect(PEData *data, const float co[3])
 {
 	int sco[2];
 
@@ -479,7 +483,7 @@ static int key_inside_rect(PEData *data, float co[3])
 	return 0;
 }
 
-static int key_inside_test(PEData *data, float co[3])
+static int key_inside_test(PEData *data, const float co[3])
 {
 	if(data->mval)
 		return key_inside_circle(data, data->rad, co, NULL);
@@ -721,7 +725,7 @@ static void PE_update_mirror_cache(Object *ob, ParticleSystem *psys)
 	LOOP_PARTICLES {
 		key = pa->hair;
 		psys_mat_hair_to_orco(ob, psmd->dm, psys->part->from, pa, mat);
-		VECCOPY(co, key->co);
+		copy_v3_v3(co, key->co);
 		mul_m4_v3(mat, co);
 		BLI_kdtree_insert(tree, p, co, NULL);
 	}
@@ -735,7 +739,7 @@ static void PE_update_mirror_cache(Object *ob, ParticleSystem *psys)
 	LOOP_PARTICLES {
 		key = pa->hair;
 		psys_mat_hair_to_orco(ob, psmd->dm, psys->part->from, pa, mat);
-		VECCOPY(co, key->co);
+		copy_v3_v3(co, key->co);
 		mul_m4_v3(mat, co);
 		co[0]= -co[0];
 
@@ -820,7 +824,7 @@ static void PE_mirror_particle(Object *ob, DerivedMesh *dm, ParticleSystem *psys
 	key= point->keys;
 	mkey= mpoint->keys;
 	for(k=0; k<pa->totkey; k++, hkey++, mhkey++, key++, mkey++) {
-		VECCOPY(mhkey->co, hkey->co);
+		copy_v3_v3(mhkey->co, hkey->co);
 		mul_m4_v3(mat, mhkey->co);
 		mhkey->co[0]= -mhkey->co[0];
 		mul_m4_v3(immat, mhkey->co);
@@ -920,7 +924,7 @@ static void pe_deflect_emitter(Scene *scene, Object *ob, PTCacheEdit *edit)
 				sub_v3_v3v3(dvec, key->co, vec);
 
 				dot=dot_v3v3(dvec,nor);
-				VECCOPY(dvec,nor);
+				copy_v3_v3(dvec,nor);
 
 				if(dot>0.0f) {
 					if(dot<dist_1st) {
@@ -946,7 +950,7 @@ static void pe_deflect_emitter(Scene *scene, Object *ob, PTCacheEdit *edit)
 		}
 	}
 }
-/* force set distances between neighbouring keys */
+/* force set distances between neighboring keys */
 static void PE_apply_lengths(Scene *scene, PTCacheEdit *edit)
 {
 	
@@ -971,7 +975,7 @@ static void PE_apply_lengths(Scene *scene, PTCacheEdit *edit)
 		}
 	}
 }
-/* try to find a nice solution to keep distances between neighbouring keys */
+/* try to find a nice solution to keep distances between neighboring keys */
 static void pe_iterate_lengths(Scene *scene, PTCacheEdit *edit)
 {
 	ParticleEditSettings *pset=PE_settings(scene);
@@ -1021,7 +1025,7 @@ static void pe_iterate_lengths(Scene *scene, PTCacheEdit *edit)
 					add_v3_v3((key-1)->co, dv1);
 				}
 
-				VECADD(dv1,dv0,dv2);
+				add_v3_v3v3(dv1, dv0, dv2);
 			}
 		}
 	}
@@ -1058,7 +1062,7 @@ static void recalc_emitter_field(Object *ob, ParticleSystem *psys)
 
 	BLI_kdtree_free(edit->emitter_field);
 
-	totface=dm->getNumFaces(dm);
+	totface=dm->getNumTessFaces(dm);
 	/*totvert=dm->getNumVerts(dm);*/ /*UNSUED*/
 
 	edit->emitter_cosnos=MEM_callocN(totface*6*sizeof(float),"emitter cosnos");
@@ -1069,24 +1073,24 @@ static void recalc_emitter_field(Object *ob, ParticleSystem *psys)
 	nor=vec+3;
 
 	for(i=0; i<totface; i++, vec+=6, nor+=6) {
-		MFace *mface=dm->getFaceData(dm,i,CD_MFACE);
+		MFace *mface=dm->getTessFaceData(dm,i,CD_MFACE);
 		MVert *mvert;
 
 		mvert=dm->getVertData(dm,mface->v1,CD_MVERT);
-		VECCOPY(vec,mvert->co);
+		copy_v3_v3(vec,mvert->co);
 		VECCOPY(nor,mvert->no);
 
 		mvert=dm->getVertData(dm,mface->v2,CD_MVERT);
-		VECADD(vec,vec,mvert->co);
+		add_v3_v3v3(vec,vec,mvert->co);
 		VECADD(nor,nor,mvert->no);
 
 		mvert=dm->getVertData(dm,mface->v3,CD_MVERT);
-		VECADD(vec,vec,mvert->co);
+		add_v3_v3v3(vec,vec,mvert->co);
 		VECADD(nor,nor,mvert->no);
 
 		if(mface->v4) {
 			mvert=dm->getVertData(dm,mface->v4,CD_MVERT);
-			VECADD(vec,vec,mvert->co);
+			add_v3_v3v3(vec,vec,mvert->co);
 			VECADD(nor,nor,mvert->no);
 			
 			mul_v3_fl(vec,0.25);
@@ -1146,7 +1150,7 @@ static void update_world_cos(Object *ob, PTCacheEdit *edit)
 			psys_mat_hair_to_global(ob, psmd->dm, psys->part->from, psys->particles+p, hairmat);
 
 		LOOP_KEYS {
-			VECCOPY(key->world_co,key->co);
+			copy_v3_v3(key->world_co,key->co);
 			if(!(psys->flag & PSYS_GLOBAL_HAIR))
 				mul_m4_v3(hairmat, key->world_co);
 		}
@@ -1172,13 +1176,13 @@ static void update_velocities(PTCacheEdit *edit)
 				if(dfra <= 0.0f)
 					continue;
 
-				VECSUB(key->vel, (key+1)->co, key->co);
+				sub_v3_v3v3(key->vel, (key+1)->co, key->co);
 
 				if(point->totkey>2) {
-					VECSUB(vec1, (key+1)->co, (key+2)->co);
+					sub_v3_v3v3(vec1, (key+1)->co, (key+2)->co);
 					project_v3_v3v3(vec2, vec1, key->vel);
-					VECSUB(vec2, vec1, vec2);
-					VECADDFAC(key->vel, key->vel, vec2, 0.5f);
+					sub_v3_v3v3(vec2, vec1, vec2);
+					madd_v3_v3fl(key->vel, vec2, 0.5f);
 				}
 			}
 			else if(k==point->totkey-1) {
@@ -1187,13 +1191,13 @@ static void update_velocities(PTCacheEdit *edit)
 				if(dfra <= 0.0f)
 					continue;
 
-				VECSUB(key->vel, key->co, (key-1)->co);
+				sub_v3_v3v3(key->vel, key->co, (key-1)->co);
 
 				if(point->totkey>2) {
-					VECSUB(vec1, (key-2)->co, (key-1)->co);
+					sub_v3_v3v3(vec1, (key-2)->co, (key-1)->co);
 					project_v3_v3v3(vec2, vec1, key->vel);
-					VECSUB(vec2, vec1, vec2);
-					VECADDFAC(key->vel, key->vel, vec2, 0.5f);
+					sub_v3_v3v3(vec2, vec1, vec2);
+					madd_v3_v3fl(key->vel, vec2, 0.5f);
 				}
 			}
 			else {
@@ -1202,7 +1206,7 @@ static void update_velocities(PTCacheEdit *edit)
 				if(dfra <= 0.0f)
 					continue;
 
-				VECSUB(key->vel, (key+1)->co, (key-1)->co);
+				sub_v3_v3v3(key->vel, (key+1)->co, (key-1)->co);
 			}
 			mul_v3_fl(key->vel, frs_sec/dfra);
 		}
@@ -1212,7 +1216,7 @@ static void update_velocities(PTCacheEdit *edit)
 void PE_update_object(Scene *scene, Object *ob, int useflag)
 {
 	/* use this to do partial particle updates, not usable when adding or
-	   removing, then a full redo is necessary and calling this may crash */
+	 * removing, then a full redo is necessary and calling this may crash */
 	ParticleEditSettings *pset= PE_settings(scene);
 	PTCacheEdit *edit = PE_get_current(scene, ob);
 	POINT_P;
@@ -1298,7 +1302,7 @@ static void toggle_key_select(PEData *data, int point_index, int key_index)
 
 /************************ de select all operator ************************/
 
-static int select_all_exec(bContext *C, wmOperator *op)
+static int pe_select_all_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene= CTX_data_scene(C);
 	Object *ob= CTX_data_active_object(C);
@@ -1356,11 +1360,11 @@ static int select_all_exec(bContext *C, wmOperator *op)
 void PARTICLE_OT_select_all(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Selection of all particles";
+	ot->name= "(De)select All";
 	ot->idname= "PARTICLE_OT_select_all";
 	
 	/* api callbacks */
-	ot->exec= select_all_exec;
+	ot->exec= pe_select_all_exec;
 	ot->poll= PE_poll;
 
 	/* flags */
@@ -1526,7 +1530,7 @@ void PARTICLE_OT_select_linked(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_boolean(ot->srna, "deselect", 0, "Deselect", "Deselect linked keys rather than selecting them.");
+	RNA_def_boolean(ot->srna, "deselect", 0, "Deselect", "Deselect linked keys rather than selecting them");
 	RNA_def_int_vector(ot->srna, "location", 2, NULL, 0, INT_MAX, "Location", "", 0, 16384);
 }
 
@@ -1625,7 +1629,7 @@ int PE_lasso_select(bContext *C, int mcords[][2], short moves, short extend, sho
 
 		if(pset->selectmode==SCE_SELECT_POINT) {
 			LOOP_KEYS {
-				VECCOPY(co, key->co);
+				copy_v3_v3(co, key->co);
 				mul_m4_v3(mat, co);
 				project_int(ar, co, vertco);
 				if((vertco[0] != IS_CLIPPED) && lasso_inside(mcords,moves,vertco[0],vertco[1]) && key_test_depth(&data, co)) {
@@ -1643,7 +1647,7 @@ int PE_lasso_select(bContext *C, int mcords[][2], short moves, short extend, sho
 		else if(pset->selectmode==SCE_SELECT_END) {
 			key= point->keys + point->totkey - 1;
 
-			VECCOPY(co, key->co);
+			copy_v3_v3(co, key->co);
 			mul_m4_v3(mat, co);
 			project_int(ar, co,vertco);
 			if((vertco[0] != IS_CLIPPED) && lasso_inside(mcords,moves,vertco[0],vertco[1]) && key_test_depth(&data, co)) {
@@ -1713,7 +1717,7 @@ void PARTICLE_OT_hide(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* props */
-	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected.");
+	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected");
 }
 
 /*************************** reveal operator **************************/
@@ -1874,43 +1878,6 @@ void PARTICLE_OT_select_more(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 }
 
-static int select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	PEData data;
-	PTCacheEdit *edit;
-	POINT_P; KEY_K;
-
-	PE_set_data(C, &data);
-
-	edit= PE_get_current(data.scene, data.ob);
-
-	LOOP_VISIBLE_POINTS {
-		LOOP_KEYS {
-			key->flag ^= PEK_SELECT;
-			point->flag |= PEP_EDIT_RECALC; /* redraw selection only */
-		}
-	}
-
-	PE_update_selection(data.scene, data.ob, 1);
-	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE|NA_SELECTED, data.ob);
-
-	return OPERATOR_FINISHED;
-}
-
-void PARTICLE_OT_select_inverse(wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name= "Select Inverse";
-	ot->idname= "PARTICLE_OT_select_inverse";
-
-	/* api callbacks */
-	ot->exec= select_inverse_exec;
-	ot->poll= PE_poll;
-
-	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-}
-
 /************************ rekey operator ************************/
 
 static void rekey_particle(PEData *data, int pa_index)
@@ -1936,8 +1903,8 @@ static void rekey_particle(PEData *data, int pa_index)
 
 	okey = pa->hair;
 	/* root and tip stay the same */
-	VECCOPY(key->co, okey->co);
-	VECCOPY((key + data->totrekey - 1)->co, (okey + pa->totkey - 1)->co);
+	copy_v3_v3(key->co, okey->co);
+	copy_v3_v3((key + data->totrekey - 1)->co, (okey + pa->totkey - 1)->co);
 
 	sta= key->time= okey->time;
 	end= (key + data->totrekey - 1)->time= (okey + pa->totkey - 1)->time;
@@ -1947,7 +1914,7 @@ static void rekey_particle(PEData *data, int pa_index)
 	for(k=1,key++; k<data->totrekey-1; k++,key++) {
 		state.time= (float)k / (float)(data->totrekey-1);
 		psys_get_particle_on_path(&sim, pa_index, &state, 0);
-		VECCOPY(key->co, state.co);
+		copy_v3_v3(key->co, state.co);
 		key->time= sta + k * dval;
 	}
 
@@ -2040,7 +2007,7 @@ static void rekey_particle_to_time(Scene *scene, Object *ob, int pa_index, float
 	for(k=1, key++; k < pa->totkey; k++, key++) {
 		state.time= path_time * (float)k / (float)(pa->totkey-1);
 		psys_get_particle_on_path(&sim, pa_index, &state, 0);
-		VECCOPY(key->co, state.co);
+		copy_v3_v3(key->co, state.co);
 	}
 
 	/* replace hair keys */
@@ -2190,7 +2157,7 @@ static void remove_tagged_keys(Object *ob, ParticleSystem *psys)
 				}
 
 				if(hkey < pa->hair + pa->totkey) {
-					VECCOPY(nhkey->co, hkey->co);
+					copy_v3_v3(nhkey->co, hkey->co);
 					nhkey->editflag = hkey->editflag;
 					nhkey->time= hkey->time;
 					nhkey->weight= hkey->weight;
@@ -2201,7 +2168,7 @@ static void remove_tagged_keys(Object *ob, ParticleSystem *psys)
 					nkey->flag = key->flag;
 					nkey->ftime = key->ftime;
 					nkey->length = key->length;
-					VECCOPY(nkey->world_co, key->world_co);
+					copy_v3_v3(nkey->world_co, key->world_co);
 				}
 				nkey++;
 				nhkey++;
@@ -2227,7 +2194,7 @@ static void remove_tagged_keys(Object *ob, ParticleSystem *psys)
 
 /************************ subdivide opertor *********************/
 
-/* works like normal edit mode subdivide, inserts keys between neighbouring selected keys */
+/* works like normal edit mode subdivide, inserts keys between neighboring selected keys */
 static void subdivide_particle(PEData *data, int pa_index)
 {
 	PTCacheEdit *edit= data->edit;
@@ -2277,7 +2244,7 @@ static void subdivide_particle(PEData *data, int pa_index)
 			nkey->time= (key->time + (key+1)->time)*0.5f;
 			state.time= (endtime != 0.0f)? nkey->time/endtime: 0.0f;
 			psys_get_particle_on_path(&sim, pa_index, &state, 0);
-			VECCOPY(nkey->co, state.co);
+			copy_v3_v3(nkey->co, state.co);
 
 			nekey->co= nkey->co;
 			nekey->time= &nkey->time;
@@ -2367,7 +2334,7 @@ static int remove_doubles_exec(bContext *C, wmOperator *op)
 		/* insert particles into kd tree */
 		LOOP_SELECTED_POINTS {
 			psys_mat_hair_to_object(ob, psmd->dm, psys->part->from, psys->particles+p, mat);
-			VECCOPY(co, point->keys->co);
+			copy_v3_v3(co, point->keys->co);
 			mul_m4_v3(mat, co);
 			BLI_kdtree_insert(tree, p, co, NULL);
 		}
@@ -2377,7 +2344,7 @@ static int remove_doubles_exec(bContext *C, wmOperator *op)
 		/* tag particles to be removed */
 		LOOP_SELECTED_POINTS {
 			psys_mat_hair_to_object(ob, psmd->dm, psys->part->from, psys->particles+p, mat);
-			VECCOPY(co, point->keys->co);
+			copy_v3_v3(co, point->keys->co);
 			mul_m4_v3(mat, co);
 
 			totn= BLI_kdtree_find_n_nearest(tree,10,co,NULL,nearest);
@@ -2403,7 +2370,7 @@ static int remove_doubles_exec(bContext *C, wmOperator *op)
 	if(totremoved == 0)
 		return OPERATOR_CANCELLED;
 
-	BKE_reportf(op->reports, RPT_INFO, "Remove %d double particles.", totremoved);
+	BKE_reportf(op->reports, RPT_INFO, "Remove %d double particles", totremoved);
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE|NA_EDITED, ob);
@@ -2579,7 +2546,7 @@ void PARTICLE_OT_delete(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	ot->prop= RNA_def_enum(ot->srna, "type", delete_type_items, DEL_PARTICLE, "Type", "Delete a full particle or only keys.");
+	ot->prop= RNA_def_enum(ot->srna, "type", delete_type_items, DEL_PARTICLE, "Type", "Delete a full particle or only keys");
 }
 
 /*************************** mirror operator **************************/
@@ -2594,7 +2561,7 @@ static void PE_mirror_x(Scene *scene, Object *ob, int tagged)
 	PTCacheEditPoint *newpoint, *new_points;
 	POINT_P; KEY_K;
 	HairKey *hkey;
-	int *mirrorfaces;
+	int *mirrorfaces = NULL;
 	int rotation, totpart, newtotpart;
 
 	if(psys->flag & PSYS_GLOBAL_HAIR)
@@ -2749,10 +2716,10 @@ static void brush_comb(PEData *data, float UNUSED(mat[][4]), float imat[][4], in
 
 	fac= (float)pow((double)(1.0f - data->dist / data->rad), (double)data->combfac);
 
-	VECCOPY(cvec,data->dvec);
+	copy_v3_v3(cvec,data->dvec);
 	mul_mat3_m4_v3(imat,cvec);
 	mul_v3_fl(cvec, fac);
-	VECADD(key->co, key->co, cvec);
+	add_v3_v3(key->co, cvec);
 
 	(data->edit->points + point_index)->flag |= PEP_EDIT_RECALC;
 }
@@ -2863,13 +2830,13 @@ static void brush_length(PEData *data, int point_index)
 
 	LOOP_KEYS {
 		if(k==0) {
-			VECCOPY(pvec,key->co);
+			copy_v3_v3(pvec,key->co);
 		}
 		else {
-			VECSUB(dvec,key->co,pvec);
-			VECCOPY(pvec,key->co);
+			sub_v3_v3v3(dvec,key->co,pvec);
+			copy_v3_v3(pvec,key->co);
 			mul_v3_fl(dvec,data->growfac);
-			VECADD(key->co,(key-1)->co,dvec);
+			add_v3_v3v3(key->co,(key-1)->co,dvec);
 		}
 	}
 
@@ -2906,14 +2873,14 @@ static void brush_puff(PEData *data, int point_index)
 	LOOP_KEYS {
 		if(k==0) {
 			/* find root coordinate and normal on emitter */
-			VECCOPY(co, key->co);
+			copy_v3_v3(co, key->co);
 			mul_m4_v3(mat, co);
 			mul_v3_m4v3(kco, data->ob->imat, co); /* use 'kco' as the object space version of worldspace 'co', ob->imat is set before calling */
 
 			point_index= BLI_kdtree_find_nearest(edit->emitter_field, kco, NULL, NULL);
 			if(point_index == -1) return;
 
-			VECCOPY(rootco, co);
+			copy_v3_v3(rootco, co);
 			copy_v3_v3(nor, &edit->emitter_cosnos[point_index*6+3]);
 			mul_mat3_m4_v3(data->ob->obmat, nor); /* normal into worldspace */
 
@@ -2928,19 +2895,19 @@ static void brush_puff(PEData *data, int point_index)
 		else {
 			/* compute position as if hair was standing up straight.
 			 * */
-			VECCOPY(lastco, co);
-			VECCOPY(co, key->co);
+			copy_v3_v3(lastco, co);
+			copy_v3_v3(co, key->co);
 			mul_m4_v3(mat, co);
 			length += len_v3v3(lastco, co);
 			if((data->select==0 || (key->flag & PEK_SELECT)) && !(key->flag & PEK_HIDE)) {
-				VECADDFAC(kco, rootco, nor, length);
+				madd_v3_v3v3fl(kco, rootco, nor, length);
 
 				/* blend between the current and straight position */
-				VECSUB(dco, kco, co);
-				VECADDFAC(co, co, dco, fac);
+				sub_v3_v3v3(dco, kco, co);
+				madd_v3_v3fl(co, dco, fac);
 
 				/* re-use dco to compare before and after translation and add to the offset  */
-				VECCOPY(dco, key->co);
+				copy_v3_v3(dco, key->co);
 
 				mul_v3_m4v3(key->co, imat, co);
 
@@ -2967,10 +2934,10 @@ static void brush_puff(PEData *data, int point_index)
 						/* Move the unselected point on a vector based on the
 						 * hair direction and the offset */
 						float c1[3], c2[3];
-						VECSUB(dco, lastco, co);
+						sub_v3_v3v3(dco, lastco, co);
 						mul_mat3_m4_v3(imat, dco); /* into particle space */
 
-						/* move the point allong a vector perpendicular to the
+						/* move the point along a vector perpendicular to the
 						 * hairs direction, reduces odd kinks, */
 						cross_v3_v3v3(c1, ofs, dco);
 						cross_v3_v3v3(c2, c1, dco);
@@ -2981,7 +2948,7 @@ static void brush_puff(PEData *data, int point_index)
 						/* Move the unselected point on a vector based on the
 						 * the normal of the closest geometry */
 						float oco[3], onor[3];
-						VECCOPY(oco, key->co);
+						copy_v3_v3(oco, key->co);
 						mul_m4_v3(mat, oco);
 						mul_v3_m4v3(kco, data->ob->imat, oco); /* use 'kco' as the object space version of worldspace 'co', ob->imat is set before calling */
 
@@ -3030,7 +2997,7 @@ static void brush_smooth_get(PEData *data, float mat[][4], float UNUSED(imat[][4
 
 		sub_v3_v3v3(dvec,key->co,(key-1)->co);
 		mul_mat3_m4_v3(mat,dvec);
-		VECADD(data->vec,data->vec,dvec);
+		add_v3_v3(data->vec, dvec);
 		data->tot++;
 	}
 }
@@ -3040,60 +3007,66 @@ static void brush_smooth_do(PEData *data, float UNUSED(mat[][4]), float imat[][4
 	float vec[3], dvec[3];
 	
 	if(key_index) {
-		VECCOPY(vec,data->vec);
+		copy_v3_v3(vec, data->vec);
 		mul_mat3_m4_v3(imat,vec);
 
 		sub_v3_v3v3(dvec,key->co,(key-1)->co);
 
-		VECSUB(dvec,vec,dvec);
+		sub_v3_v3v3(dvec,vec,dvec);
 		mul_v3_fl(dvec,data->smoothfac);
 		
-		VECADD(key->co,key->co,dvec);
+		add_v3_v3(key->co, dvec);
 	}
 
 	(data->edit->points + point_index)->flag |= PEP_EDIT_RECALC;
 }
 
 /* convert from triangle barycentric weights to quad mean value weights */
-static void intersect_dm_quad_weights(float *v1, float *v2, float *v3, float *v4, float *w)
+static void intersect_dm_quad_weights(const float v1[3], const float v2[3], const float v3[3], const float v4[3], float w[4])
 {
 	float co[3], vert[4][3];
 
-	VECCOPY(vert[0], v1);
-	VECCOPY(vert[1], v2);
-	VECCOPY(vert[2], v3);
-	VECCOPY(vert[3], v4);
+	copy_v3_v3(vert[0], v1);
+	copy_v3_v3(vert[1], v2);
+	copy_v3_v3(vert[2], v3);
+	copy_v3_v3(vert[3], v4);
 
 	co[0]= v1[0]*w[0] + v2[0]*w[1] + v3[0]*w[2] + v4[0]*w[3];
 	co[1]= v1[1]*w[0] + v2[1]*w[1] + v3[1]*w[2] + v4[1]*w[3];
 	co[2]= v1[2]*w[0] + v2[2]*w[1] + v3[2]*w[2] + v4[2]*w[3];
 
-	interp_weights_poly_v3( w,vert, 4, co);
+	interp_weights_poly_v3(w, vert, 4, co);
 }
 
 /* check intersection with a derivedmesh */
-static int particle_intersect_dm(Scene *scene, Object *ob, DerivedMesh *dm, float *vert_cos, float *co1, float* co2, float *min_d, int *min_face, float *min_w,
-						  float *face_minmax, float *pa_minmax, float radius, float *ipoint)
+static int particle_intersect_dm(Scene *scene, Object *ob, DerivedMesh *dm,
+                                 float *vert_cos,
+                                 const float co1[3], const float co2[3],
+                                 float *min_d, int *min_face, float *min_w,
+                                 float *face_minmax, float *pa_minmax,
+                                 float radius, float *ipoint)
 {
-	MFace *mface=0;
-	MVert *mvert=0;
+	MFace *mface= NULL;
+	MVert *mvert= NULL;
 	int i, totface, intersect=0;
 	float cur_d, cur_uv[2], v1[3], v2[3], v3[3], v4[3], min[3], max[3], p_min[3],p_max[3];
 	float cur_ipoint[3];
 	
-	if(dm==0){
+	if(dm == NULL){
 		psys_disable_all(ob);
 
 		dm=mesh_get_derived_final(scene, ob, 0);
-		if(dm==0)
+		if(dm == NULL)
 			dm=mesh_get_derived_deform(scene, ob, 0);
 
 		psys_enable_all(ob);
 
-		if(dm==0)
+		if(dm == NULL)
 			return 0;
 	}
 
+	/* BMESH_ONLY, deform dm may not have tessface */
+	DM_ensure_tessface(dm);
 	
 
 	if(pa_minmax==0){
@@ -3102,29 +3075,29 @@ static int particle_intersect_dm(Scene *scene, Object *ob, DerivedMesh *dm, floa
 		DO_MINMAX(co2,p_min,p_max);
 	}
 	else{
-		VECCOPY(p_min,pa_minmax);
-		VECCOPY(p_max,pa_minmax+3);
+		copy_v3_v3(p_min,pa_minmax);
+		copy_v3_v3(p_max,pa_minmax+3);
 	}
 
-	totface=dm->getNumFaces(dm);
-	mface=dm->getFaceDataArray(dm,CD_MFACE);
+	totface=dm->getNumTessFaces(dm);
+	mface=dm->getTessFaceDataArray(dm,CD_MFACE);
 	mvert=dm->getVertDataArray(dm,CD_MVERT);
 	
 	/* lets intersect the faces */
 	for(i=0; i<totface; i++,mface++){
 		if(vert_cos){
-			VECCOPY(v1,vert_cos+3*mface->v1);
-			VECCOPY(v2,vert_cos+3*mface->v2);
-			VECCOPY(v3,vert_cos+3*mface->v3);
+			copy_v3_v3(v1,vert_cos+3*mface->v1);
+			copy_v3_v3(v2,vert_cos+3*mface->v2);
+			copy_v3_v3(v3,vert_cos+3*mface->v3);
 			if(mface->v4)
-				VECCOPY(v4,vert_cos+3*mface->v4)
+				copy_v3_v3(v4,vert_cos+3*mface->v4);
 		}
 		else{
-			VECCOPY(v1,mvert[mface->v1].co);
-			VECCOPY(v2,mvert[mface->v2].co);
-			VECCOPY(v3,mvert[mface->v3].co);
+			copy_v3_v3(v1,mvert[mface->v1].co);
+			copy_v3_v3(v2,mvert[mface->v2].co);
+			copy_v3_v3(v3,mvert[mface->v3].co);
 			if(mface->v4)
-				VECCOPY(v4,mvert[mface->v4].co)
+				copy_v3_v3(v4,mvert[mface->v4].co);
 		}
 
 		if(face_minmax==0){
@@ -3138,8 +3111,8 @@ static int particle_intersect_dm(Scene *scene, Object *ob, DerivedMesh *dm, floa
 				continue;
 		}
 		else{
-			VECCOPY(min, face_minmax+6*i);
-			VECCOPY(max, face_minmax+6*i+3);
+			copy_v3_v3(min, face_minmax+6*i);
+			copy_v3_v3(max, face_minmax+6*i+3);
 			if(isect_aabb_aabb_v3(min,max,p_min,p_max)==0)
 				continue;
 		}
@@ -3148,7 +3121,7 @@ static int particle_intersect_dm(Scene *scene, Object *ob, DerivedMesh *dm, floa
 			if(isect_sweeping_sphere_tri_v3(co1, co2, radius, v2, v3, v1, &cur_d, cur_ipoint)){
 				if(cur_d<*min_d){
 					*min_d=cur_d;
-					VECCOPY(ipoint,cur_ipoint);
+					copy_v3_v3(ipoint,cur_ipoint);
 					*min_face=i;
 					intersect=1;
 				}
@@ -3157,7 +3130,7 @@ static int particle_intersect_dm(Scene *scene, Object *ob, DerivedMesh *dm, floa
 				if(isect_sweeping_sphere_tri_v3(co1, co2, radius, v4, v1, v3, &cur_d, cur_ipoint)){
 					if(cur_d<*min_d){
 						*min_d=cur_d;
-						VECCOPY(ipoint,cur_ipoint);
+						copy_v3_v3(ipoint,cur_ipoint);
 						*min_face=i;
 						intersect=1;
 					}
@@ -3365,27 +3338,27 @@ static int brush_add(PEData *data, short number)
 						key3[1].time= key3[0].time;
 						psys_get_particle_on_path(&sim, ptn[1].index, &key3[1], 0);
 						mul_v3_fl(key3[1].co, weight[1]);
-						VECADD(key3[0].co, key3[0].co, key3[1].co);
+						add_v3_v3(key3[0].co, key3[1].co);
 
 						if(maxw>2) {						
 							key3[2].time= key3[0].time;
 							psys_get_particle_on_path(&sim, ptn[2].index, &key3[2], 0);
 							mul_v3_fl(key3[2].co, weight[2]);
-							VECADD(key3[0].co, key3[0].co, key3[2].co);
+							add_v3_v3(key3[0].co, key3[2].co);
 						}
 					}
 
 					if(k==0)
-						VECSUB(co1, pa->state.co, key3[0].co);
+						sub_v3_v3v3(co1, pa->state.co, key3[0].co);
 
-					VECADD(thkey->co, key3[0].co, co1);
+					add_v3_v3v3(thkey->co, key3[0].co, co1);
 
 					thkey->time= key3[0].time;
 				}
 			}
 			else {
 				for(k=0, hkey=pa->hair; k<pset->totaddkey; k++, hkey++) {
-					VECADDFAC(hkey->co, pa->state.co, pa->state.vel, k * framestep * timestep);
+					madd_v3_v3v3fl(hkey->co, pa->state.co, pa->state.vel, k * framestep * timestep);
 					hkey->time += k * framestep;
 					hkey->weight = 1.f - (float)k/(float)(pset->totaddkey-1);
 				}
@@ -3499,7 +3472,7 @@ static void brush_edit_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
 		view3d_operator_needs_opengl(C);
 		selected= (short)count_selected_keys(scene, edit);
 
-		dmax = MAX2(fabs(dx), fabs(dy));
+		dmax = maxf(fabsf(dx), fabsf(dy));
 		tot_steps = dmax/(0.2f * brush->size) + 1;
 
 		dx /= (float)tot_steps;
@@ -3657,8 +3630,14 @@ static void brush_edit_apply(bContext *C, wmOperator *op, PointerRNA *itemptr)
 				PE_update_object(scene, ob, 1);
 		}
 
-		WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE|NA_EDITED, ob);
-		
+		if (edit->psys) {
+			WM_event_add_notifier(C, NC_OBJECT|ND_PARTICLE|NA_EDITED, ob);
+		}
+		else {
+			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+			WM_event_add_notifier(C, NC_OBJECT|ND_MODIFIER, ob);
+		}
+
 		bedit->lastmouse[0]= mouse[0];
 		bedit->lastmouse[1]= mouse[1];
 		bedit->first= 0;
@@ -3700,7 +3679,7 @@ static void brush_edit_apply_event(bContext *C, wmOperator *op, wmEvent *event)
 	RNA_collection_add(op->ptr, "stroke", &itemptr);
 
 	RNA_float_set_array(&itemptr, "mouse", mouse);
-	RNA_boolean_set(&itemptr, "pen_flip", event->shift != 0); // XXX hardcoded
+	RNA_boolean_set(&itemptr, "pen_flip", event->shift != FALSE); // XXX hardcoded
 
 	/* apply */
 	brush_edit_apply(C, op, &itemptr);
@@ -3918,7 +3897,7 @@ void PE_undo_push(Scene *scene, const char *str)
 
 	/* make new */
 	edit->curundo= undo= MEM_callocN(sizeof(PTCacheUndo), "particle undo file");
-	strncpy(undo->name, str, 64-1);
+	BLI_strncpy(undo->name, str, sizeof(undo->name));
 	BLI_addtail(&edit->undo, undo);
 	
 	/* and limit amount to the maximum */
@@ -4025,7 +4004,7 @@ void PE_undo_number(Scene *scene, int nr)
 
 /* get name of undo item, return null if no item with this index */
 /* if active pointer, set it to 1 if true */
-char *PE_undo_get_name(Scene *scene, int nr, int *active)
+const char *PE_undo_get_name(Scene *scene, int nr, int *active)
 {
 	PTCacheEdit *edit= PE_get_current(scene, OBACT);
 	PTCacheUndo *undo;
@@ -4045,7 +4024,7 @@ char *PE_undo_get_name(Scene *scene, int nr, int *active)
 
 /************************ utilities ******************************/
 
-int PE_minmax(Scene *scene, float *min, float *max)
+int PE_minmax(Scene *scene, float min[3], float max[3])
 {
 	Object *ob= OBACT;
 	PTCacheEdit *edit= PE_get_current(scene, ob);
@@ -4067,7 +4046,7 @@ int PE_minmax(Scene *scene, float *min, float *max)
 			psys_mat_hair_to_global(ob, psmd->dm, psys->part->from, psys->particles+p, mat);
 
 		LOOP_SELECTED_KEYS {
-			VECCOPY(co, key->co);
+			copy_v3_v3(co, key->co);
 			mul_m4_v3(mat, co);
 			DO_MINMAX(co, min, max);		
 			ok= 1;

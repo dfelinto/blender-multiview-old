@@ -1,6 +1,5 @@
 /*
  * VectorValue.h: interface for the CVectorValue class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -17,8 +16,8 @@
  *  \ingroup expressions
  */
 
-#if !defined _VECTORVALUE_H
-#define _VECTORVALUE_H
+#ifndef __VECTORVALUE_H__
+#define __VECTORVALUE_H__
 
 #include "Value.h"
 
@@ -60,7 +59,7 @@ public:
 	virtual CValue* GetReplica();
 	virtual const STR_String & GetText();
 
-/*
+#if 0
 	void			SnapPoint(float num,int snap)
 	{
 		if (num > 0) num += ((float)snap / 2);
@@ -79,8 +78,8 @@ public:
 			SnapPoint(m_vec[KX_Z],snapvec[KX_Z]);
 			
 	}
-*/
-	
+#endif
+
 protected:
 	double				m_vec[3];
 	double				m_transformedvec[3];
@@ -93,5 +92,5 @@ public:
 #endif
 };
 
-#endif // !defined _VECTORVALUE_H
+#endif // !defined __VECTORVALUE_H__
 

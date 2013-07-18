@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,13 +24,15 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_MATERIAL_TYPES_H
-#define DNA_MATERIAL_TYPES_H
 
 /** \file DNA_material_types.h
  *  \ingroup DNA
  */
 
+#ifndef __DNA_MATERIAL_TYPES_H__
+#define __DNA_MATERIAL_TYPES_H__
+
+#include "DNA_defs.h"
 #include "DNA_ID.h"
 #include "DNA_listBase.h"
 
@@ -74,6 +74,14 @@ typedef struct VolumeSettings {
 	float ms_spread;
 } VolumeSettings;
 
+/* Game Engine Options (old Texface mode, transp and flag) */
+typedef struct GameSettings {
+	int flag;
+	int alpha_blend;
+	int face_orientation;
+	int pad1;
+} GameSettings;
+
 typedef struct Material {
 	ID id;
 	struct AnimData *adt;	/* animation data (must be immediately after id for utilities to use it) */ 
@@ -90,6 +98,7 @@ typedef struct Material {
 	/* end synced with render_types.h */
 	
 	struct VolumeSettings vol;
+	struct GameSettings game;
 
 	float fresnel_mir, fresnel_mir_i;
 	float fresnel_tra, fresnel_tra_i;
@@ -112,7 +121,7 @@ typedef struct Material {
 	float hasize, flaresize, subsize, flareboost;
 	float strand_sta, strand_end, strand_ease, strand_surfnor;
 	float strand_min, strand_widthfade;
-	char strand_uvname[32];
+	char strand_uvname[64];	/* MAX_CUSTOMDATA_LAYER_NAME */
 	
 	float sbias;			/* shadow bias to prevent terminator prob */
 	float lbias;			/* factor to multiply lampbias with (0.0 = no mult) */
@@ -127,7 +136,7 @@ typedef struct Material {
 	short diff_shader, spec_shader;
 	float roughness, refrac;
 	/* XXX param[4] needs review and improvement (shader system as whole anyway)
-	   This is nasty reused variable for different goals and not easy to RNAify nicely. -jesterKing */
+	 * This is nasty reused variable for different goals and not easy to RNAify nicely. -jesterKing */
 	float param[4];		/* size, smooth, size, smooth, for toonshader, 0 (fac) and 1 (fresnel) also for fresnel shader */
 	float rms;
 	float darkness;
@@ -143,7 +152,7 @@ typedef struct Material {
 
 	struct MTex *mtex[18];		/* MAX_MTEX */
 	struct bNodeTree *nodetree;	
-	struct Ipo *ipo;		// XXX depreceated... old animation system
+	struct Ipo *ipo  DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
 	struct Group *group;	/* light group */
 	struct PreviewImage * preview;
 
@@ -159,19 +168,46 @@ typedef struct Material {
 	float sss_front, sss_back;
 	short sss_flag, sss_preset;
 
-	int mapto_textured;	/* render-time cache to optimise texture lookups */
-	short shadowonly_flag;		/* "shadowsonly" type */
-        short index;    /* custom index for render passes */
+	int mapto_textured;	/* render-time cache to optimize texture lookups */
+	short shadowonly_flag;  /* "shadowsonly" type */
+	short index;            /* custom index for render passes */
 
 	ListBase gpumaterial;		/* runtime */
 } Material;
+
+
+/* **************** GAME PROPERTIES ********************* */
+// Blend Transparency Options - alpha_blend /* match GPU_material::GPUBlendMode */
+#define GEMAT_SOLID		0 /* GPU_BLEND_SOLID */
+#define GEMAT_ADD		1 /* GPU_BLEND_ADD */
+#define	GEMAT_ALPHA		2 /* GPU_BLEND_ALPHA */
+#define GEMAT_CLIP		4 /* GPU_BLEND_CLIP */
+#define	GEMAT_ALPHA_SORT	8 /* GPU_BLEND_ALPHA_SORT */
+
+// Game Options - flag
+#define GEMAT_BACKCULL 		16 /* KX_BACKCULL */
+#define GEMAT_SHADED		32 /* KX_LIGHT */
+#define GEMAT_TEXT		64 /* RAS_RENDER_3DPOLYGON_TEXT */
+#define	GEMAT_NOPHYSICS		128
+#define GEMAT_INVISIBLE 	256
+
+// Face Orientation Options - face_orientation
+#define GEMAT_NORMAL		0
+#define GEMAT_HALO		512  /* BILLBOARD_SCREENALIGNED  */
+#define GEMAT_BILLBOARD		1024 /* BILLBOARD_AXISALIGNED */
+#define GEMAT_SHADOW		2048 /* SHADOW */
+
+// Use Textures - not defined directly in the UI
+#define GEMAT_TEX		4096 /* KX_TEX */
+
 
 /* **************** MATERIAL ********************* */
 
 /* maximum number of materials per material array.
  * (on object, mesh, lamp, etc.). limited by
- * short mat_nr in verts, faces. */
-#define MAXMAT			32767
+ * short mat_nr in verts, faces.
+ * -1 because for active material we store the index + 1 */
+#define MAXMAT			(32767-1)
 
 /* material_type */
 #define MA_TYPE_SURFACE	0

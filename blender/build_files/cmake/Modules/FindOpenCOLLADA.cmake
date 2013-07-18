@@ -49,12 +49,15 @@ SET(_opencollada_FIND_COMPONENTS
   OpenCOLLADAFramework
   OpenCOLLADABaseUtils
   GeneratedSaxParser
-  UTF
   MathMLSolver
-  pcre
-  ftoa
+)
+
+# Fedora openCOLLADA package links these statically
+# note that order is important here ot it wont link
+SET(_opencollada_FIND_STATIC_COMPONENTS
   buffer
-  xml2
+  ftoa
+  UTF
 )
 
 SET(_opencollada_SEARCH_DIRS
@@ -102,6 +105,25 @@ FOREACH(COMPONENT ${_opencollada_FIND_COMPONENTS})
     )
   MARK_AS_ADVANCED(OPENCOLLADA_${UPPERCOMPONENT}_LIBRARY)
   LIST(APPEND _opencollada_LIBRARIES "${OPENCOLLADA_${UPPERCOMPONENT}_LIBRARY}")
+ENDFOREACH()
+
+FOREACH(COMPONENT ${_opencollada_FIND_STATIC_COMPONENTS})
+  STRING(TOUPPER ${COMPONENT} UPPERCOMPONENT)
+
+  FIND_LIBRARY(OPENCOLLADA_${UPPERCOMPONENT}_LIBRARY
+    NAMES
+      ${COMPONENT}
+    HINTS
+      ${_opencollada_SEARCH_DIRS}
+    PATH_SUFFIXES
+      lib64 lib
+      # Ubuntu ppa needs this.
+      lib64/opencollada lib/opencollada
+    )
+  MARK_AS_ADVANCED(OPENCOLLADA_${UPPERCOMPONENT}_LIBRARY)
+  IF(OPENCOLLADA_${UPPERCOMPONENT}_LIBRARY)
+    LIST(APPEND _opencollada_LIBRARIES "${OPENCOLLADA_${UPPERCOMPONENT}_LIBRARY}")
+  ENDIF()
 ENDFOREACH()
 
 

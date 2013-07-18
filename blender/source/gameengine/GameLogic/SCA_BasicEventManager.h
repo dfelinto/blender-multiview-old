@@ -1,7 +1,6 @@
 /*
  * Manager for sensor that only need to call Update
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,8 +32,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __SCA_BASICEVENTMGR
-#define __SCA_BASICEVENTMGR
+#ifndef __SCA_BASICEVENTMANAGER_H__
+#define __SCA_BASICEVENTMANAGER_H__
 
 #include "SCA_EventManager.h"
 #include <vector>
@@ -57,5 +56,5 @@ public:
 #endif
 };
 
-#endif //__SCA_BASICEVENTMGR
+#endif //__SCA_BASICEVENTMANAGER_H__
 

@@ -1,6 +1,5 @@
 /*
  * EmptyValue.h: interface for the CEmptyValue class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -17,8 +16,8 @@
  *  \ingroup expressions
  */
 
-#if !defined _EMPTYVALUE_H
-#define _EMPTYVALUE_H
+#ifndef __EMPTYVALUE_H__
+#define __EMPTYVALUE_H__
 
 #include "Value.h"
 
@@ -48,5 +47,5 @@ public:
 #endif
 };
 
-#endif // !defined _EMPTYVALUE_H
+#endif // !defined __EMPTYVALUE_H__
 

@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_wave.c
  *  \ingroup modifiers
@@ -42,6 +40,7 @@
 #include "DNA_object_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 
 #include "BKE_DerivedMesh.h"
@@ -74,7 +73,7 @@ static void initData(ModifierData *md)
 	wmd->lifetime= 0.0f;
 	wmd->damp= 10.0f;
 	wmd->falloff= 0.0f;
-	wmd->texmapping = MOD_WAV_MAP_LOCAL;
+	wmd->texmapping = MOD_DISP_MAP_LOCAL;
 	wmd->defgrp_name[0] = 0;
 }
 
@@ -98,7 +97,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	twmd->texture = wmd->texture;
 	twmd->map_object = wmd->map_object;
 	twmd->texmapping = wmd->texmapping;
-	strncpy(twmd->defgrp_name, wmd->defgrp_name, 32);
+	BLI_strncpy(twmd->defgrp_name, wmd->defgrp_name, sizeof(twmd->defgrp_name));
 }
 
 static int dependsOnTime(ModifierData *UNUSED(md))
@@ -161,7 +160,7 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 
 
 	/* ask for UV coordinates if we need them */
-	if(wmd->texture && wmd->texmapping == MOD_WAV_MAP_UV)
+	if(wmd->texture && wmd->texmapping == MOD_DISP_MAP_UV)
 		dataMask |= CD_MASK_MTFACE;
 
 	/* ask for vertexgroups if we need them */
@@ -169,91 +168,6 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 		dataMask |= CD_MASK_MDEFORMVERT;
 
 	return dataMask;
-}
-
-static void wavemod_get_texture_coords(WaveModifierData *wmd, Object *ob,
-					   DerivedMesh *dm,
-	   float (*co)[3], float (*texco)[3],
-		   int numVerts)
-{
-	int i;
-	int texmapping = wmd->texmapping;
-
-	if(texmapping == MOD_WAV_MAP_OBJECT) {
-		if(wmd->map_object)
-			invert_m4_m4(wmd->map_object->imat, wmd->map_object->obmat);
-		else /* if there is no map object, default to local */
-			texmapping = MOD_WAV_MAP_LOCAL;
-	}
-
-	/* UVs need special handling, since they come from faces */
-	if(texmapping == MOD_WAV_MAP_UV) {
-		if(CustomData_has_layer(&dm->faceData, CD_MTFACE)) {
-			MFace *mface = dm->getFaceArray(dm);
-			MFace *mf;
-			char *done = MEM_callocN(sizeof(*done) * numVerts,
-					"get_texture_coords done");
-			int numFaces = dm->getNumFaces(dm);
-			char uvname[32];
-			MTFace *tf;
-
-			validate_layer_name(&dm->faceData, CD_MTFACE, wmd->uvlayer_name, uvname);
-			tf = CustomData_get_layer_named(&dm->faceData, CD_MTFACE, uvname);
-
-			/* verts are given the UV from the first face that uses them */
-			for(i = 0, mf = mface; i < numFaces; ++i, ++mf, ++tf) {
-				if(!done[mf->v1]) {
-					texco[mf->v1][0] = tf->uv[0][0];
-					texco[mf->v1][1] = tf->uv[0][1];
-					texco[mf->v1][2] = 0;
-					done[mf->v1] = 1;
-				}
-				if(!done[mf->v2]) {
-					texco[mf->v2][0] = tf->uv[1][0];
-					texco[mf->v2][1] = tf->uv[1][1];
-					texco[mf->v2][2] = 0;
-					done[mf->v2] = 1;
-				}
-				if(!done[mf->v3]) {
-					texco[mf->v3][0] = tf->uv[2][0];
-					texco[mf->v3][1] = tf->uv[2][1];
-					texco[mf->v3][2] = 0;
-					done[mf->v3] = 1;
-				}
-				if(!done[mf->v4]) {
-					texco[mf->v4][0] = tf->uv[3][0];
-					texco[mf->v4][1] = tf->uv[3][1];
-					texco[mf->v4][2] = 0;
-					done[mf->v4] = 1;
-				}
-			}
-
-			/* remap UVs from [0, 1] to [-1, 1] */
-			for(i = 0; i < numVerts; ++i) {
-				texco[i][0] = texco[i][0] * 2 - 1;
-				texco[i][1] = texco[i][1] * 2 - 1;
-			}
-
-			MEM_freeN(done);
-			return;
-		} else /* if there are no UVs, default to local */
-			texmapping = MOD_WAV_MAP_LOCAL;
-	}
-
-	for(i = 0; i < numVerts; ++i, ++co, ++texco) {
-		switch(texmapping) {
-			case MOD_WAV_MAP_LOCAL:
-				copy_v3_v3(*texco, *co);
-				break;
-			case MOD_WAV_MAP_GLOBAL:
-				mul_v3_m4v3(*texco, ob->obmat, *co);
-				break;
-			case MOD_WAV_MAP_OBJECT:
-				mul_v3_m4v3(*texco, ob->obmat, *co);
-				mul_m4_v3(wmd->map_object->imat, *texco);
-				break;
-		}
-	}
 }
 
 static void waveModifier_do(WaveModifierData *md, 
@@ -280,7 +194,7 @@ static void waveModifier_do(WaveModifierData *md,
 		float mat[4][4];
 		/* get the control object's location in local coordinates */
 		invert_m4_m4(ob->imat, ob->obmat);
-		mul_m4_m4m4(mat, wmd->objectcenter->obmat, ob->imat);
+		mult_m4_m4m4(mat, ob->imat, wmd->objectcenter->obmat);
 
 		wmd->startx = mat[3][0];
 		wmd->starty = mat[3][1];
@@ -306,7 +220,7 @@ static void waveModifier_do(WaveModifierData *md,
 	if(wmd->texture) {
 		tex_co = MEM_mallocN(sizeof(*tex_co) * numVerts,
 					 "waveModifier_do tex_co");
-		wavemod_get_texture_coords(wmd, ob, dm, vertexCos, tex_co, numVerts);
+		get_texture_coords((MappingInfoModifierData *)wmd, ob, dm, vertexCos, tex_co, numVerts);
 	}
 
 	if(lifefac != 0.0f) {
@@ -431,7 +345,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 }
 
 static void deformVertsEM(
-					   ModifierData *md, Object *ob, struct EditMesh *editData,
+					   ModifierData *md, Object *ob, struct BMEditMesh *editData,
 	   DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm= derivedData;

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,8 +22,8 @@
  */
 
 
-#ifndef _GHOST_NDOFMANAGERWIN32_H_
-#define _GHOST_NDOFMANAGERWIN32_H_
+#ifndef __GHOST_NDOFMANAGERWIN32_H__
+#define __GHOST_NDOFMANAGERWIN32_H__
 
 #ifdef WITH_INPUT_NDOF
 

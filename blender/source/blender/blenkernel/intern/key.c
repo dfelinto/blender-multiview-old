@@ -1,9 +1,4 @@
-
-/*  key.c      
- *  
- * 
- * $Id$
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,13 +37,13 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_editVert.h"
 #include "BLI_math_vector.h"
 #include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
 #include "DNA_key_types.h"
 #include "DNA_lattice_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -61,9 +56,11 @@
 #include "BKE_key.h"
 #include "BKE_lattice.h"
 #include "BKE_library.h"
+#include "BKE_tessmesh.h"
 #include "BKE_main.h"
 #include "BKE_object.h"
 #include "BKE_deform.h"
+#include "BKE_scene.h"
 
 
 #include "RNA_access.h"
@@ -85,6 +82,20 @@ void free_key(Key *key)
 	KeyBlock *kb;
 	
 	BKE_free_animdata((ID *)key);
+	
+	while( (kb= key->block.first) ) {
+		
+		if(kb->data) MEM_freeN(kb->data);
+		
+		BLI_remlink(&key->block, kb);
+		MEM_freeN(kb);
+	}
+	
+}
+
+void free_key_nolib(Key *key)
+{
+	KeyBlock *kb;
 	
 	while( (kb= key->block.first) ) {
 		
@@ -118,6 +129,8 @@ Key *add_key(ID *id)	/* common function */
 	
 	key->type= KEY_NORMAL;
 	key->from= id;
+
+	key->uidgen = 1;
 	
 	// XXX the code here uses some defines which will soon be depreceated...
 	if( GS(id->name)==ID_ME) {
@@ -158,8 +171,36 @@ Key *copy_key(Key *key)
 	
 	if(key==NULL) return NULL;
 	
-	keyn= copy_libblock(key);
+	keyn= copy_libblock(&key->id);
 	
+	BLI_duplicatelist(&keyn->block, &key->block);
+	
+	kb= key->block.first;
+	kbn= keyn->block.first;
+	while(kbn) {
+		
+		if(kbn->data) kbn->data= MEM_dupallocN(kbn->data);
+		if(kb==key->refkey) keyn->refkey= kbn;
+		
+		kbn= kbn->next;
+		kb= kb->next;
+	}
+	
+	return keyn;
+}
+
+
+Key *copy_key_nolib(Key *key)
+{
+	Key *keyn;
+	KeyBlock *kbn, *kb;
+	
+	if(key==0) return 0;
+	
+	keyn= MEM_dupallocN(key);
+
+	keyn->adt = NULL;
+
 	BLI_duplicatelist(&keyn->block, &key->block);
 	
 	kb= key->block.first;
@@ -180,13 +221,13 @@ void make_local_key(Key *key)
 {
 
 	/* - only lib users: do nothing
-	* - only local users: set flag
-	* - mixed: make copy
-	*/
+	 * - only local users: set flag
+	 * - mixed: make copy
+	 */
 	if(key==NULL) return;
 	
 	key->id.lib= NULL;
-	new_id(NULL, (ID *)key, NULL);
+	new_id(NULL, &key->id, NULL);
 }
 
 /* Sort shape keys and Ipo curves after a change.  This assumes that at most
@@ -224,7 +265,7 @@ void sort_keys(Key *key)
 		if(key->ipo && key->ipo->curve.first != key->ipo->curve.last ) {
 			for(icu= key->ipo->curve.first; icu; icu= icu->next) {
 				/* if we find the curve, remove it and reinsert in the 
-				 right place */
+				 * right place */
 				if(icu->adrcode==kb->adrcode) {
 					IpoCurve *icu2;
 					BLI_remlink(&key->ipo->curve, icu);
@@ -381,7 +422,7 @@ static int setkeys(float fac, ListBase *lb, KeyBlock *k[], float *t, int cycl)
 			if(k1->next==NULL) k[0]=k1;
 			k1=k1->next;
 		}
-		k1= k[1];
+		/* k1= k[1]; */ /* UNUSED */
 		t[0]= k[0]->pos;
 		t[1]+= dpos;
 		t[2]= k[2]->pos + dpos;
@@ -496,21 +537,24 @@ static char *key_block_get_data(Key *key, KeyBlock *actkb, KeyBlock *kb, char **
 {
 	if(kb == actkb) {
 		/* this hack makes it possible to edit shape keys in
-		   edit mode with shape keys blending applied */
+		 * edit mode with shape keys blending applied */
 		if(GS(key->from->name) == ID_ME) {
 			Mesh *me;
-			EditVert *eve;
+			BMVert *eve;
+			BMIter iter;
 			float (*co)[3];
 			int a;
 
 			me= (Mesh*)key->from;
 
-			if(me->edit_mesh && me->edit_mesh->totvert == kb->totelem) {
+			if(me->edit_btmesh && me->edit_btmesh->bm->totvert == kb->totelem) {
 				a= 0;
-				co= MEM_callocN(sizeof(float)*3*me->edit_mesh->totvert, "key_block_get_data");
+				co= MEM_callocN(sizeof(float)*3*me->edit_btmesh->bm->totvert, "key_block_get_data");
 
-				for(eve=me->edit_mesh->verts.first; eve; eve=eve->next, a++)
-					VECCOPY(co[a], eve->co);
+				BM_ITER(eve, &iter, me->edit_btmesh->bm, BM_VERTS_OF_MESH, NULL) {
+					copy_v3_v3(co[a], eve->co);
+					a++;
+				}
 
 				*freedata= (char*)co;
 				return (char*)co;
@@ -807,7 +851,7 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 	int a, ofs[32], *ofsp;
 	int flagdo= 15, flagflo=0, elemsize, poinsize=0;
 	char *k1, *k2, *k3, *k4, *freek1, *freek2, *freek3, *freek4;
-	char *cp, elemstr[8];;
+	char *cp, elemstr[8];
 
 	/* currently always 0, in future key_pointer_size may assign */
 	ofs[1]= 0;
@@ -1004,8 +1048,9 @@ static void do_key(const int start, int end, const int tot, char *poin, Key *key
 static float *get_weights_array(Object *ob, char *vgroup)
 {
 	MDeformVert *dvert= NULL;
-	EditMesh *em= NULL;
-	EditVert *eve;
+	BMEditMesh *em= NULL;
+	BMIter iter;
+	BMVert *eve;
 	int totvert= 0, defgrp_index= 0;
 	
 	/* no vgroup string set? */
@@ -1017,8 +1062,8 @@ static float *get_weights_array(Object *ob, char *vgroup)
 		dvert= me->dvert;
 		totvert= me->totvert;
 
-		if(me->edit_mesh && me->edit_mesh->totvert == totvert)
-			em= me->edit_mesh;
+		if(me->edit_btmesh && me->edit_btmesh->bm->totvert == totvert)
+			em= me->edit_btmesh;
 	}
 	else if(ob->type==OB_LATTICE) {
 		Lattice *lt= ob->data;
@@ -1037,8 +1082,9 @@ static float *get_weights_array(Object *ob, char *vgroup)
 		weights= MEM_callocN(totvert*sizeof(float), "weights");
 
 		if(em) {
-			for(i=0, eve=em->verts.first; eve; eve=eve->next, i++) {
-				dvert= CustomData_em_get(&em->vdata, eve->data, CD_MDEFORMVERT);
+			eve = BM_iter_new(&iter, em->bm, BM_VERTS_OF_MESH, NULL);
+			for (i=0; eve; eve=BM_iter_step(&iter), i++) {
+				dvert= CustomData_bmesh_get(&em->bm->vdata, eve->head.data, CD_MDEFORMVERT);
 
 				if(dvert) {
 					weights[i]= defvert_find_weight(dvert, defgrp_index);
@@ -1077,7 +1123,7 @@ static void do_mesh_key(Scene *scene, Object *ob, Key *key, char *out, const int
 		
 		for(a=0; a<tot; a+=step, cfra+= delta) {
 			
-			ctime= bsystem_time(scene, NULL, cfra, 0.0); // xxx  ugly cruft!
+			ctime= BKE_curframe(scene);
 #if 0 // XXX old animation system
 			if(calc_ipo_spec(key->ipo, KEY_SPEED, &ctime)==0) {
 				ctime /= 100.0;
@@ -1111,7 +1157,7 @@ static void do_mesh_key(Scene *scene, Object *ob, Key *key, char *out, const int
 			}
 		}
 		else {
-			ctime= bsystem_time(scene, ob, (float)scene->r.cfra, 0.0f); // xxx old cruft
+			ctime= BKE_curframe(scene);
 			
 #if 0 // XXX old animation system
 			if(calc_ipo_spec(key->ipo, KEY_SPEED, &ctime)==0) {
@@ -1209,7 +1255,7 @@ static void do_curve_key(Scene *scene, Object *ob, Key *key, char *out, const in
 			while (a < estep) {
 				if (remain <= 0) {
 					cfra+= delta;
-					ctime= bsystem_time(scene, NULL, cfra, 0.0f); // XXX old cruft
+					ctime= BKE_curframe(scene);
 
 					ctime /= 100.0f;
 					CLAMP(ctime, 0.0f, 1.0f); // XXX for compat, we use this, but this clamping was confusing
@@ -1236,7 +1282,7 @@ static void do_curve_key(Scene *scene, Object *ob, Key *key, char *out, const in
 	}
 	else {
 		
-		ctime= bsystem_time(scene, NULL, (float)scene->r.cfra, 0.0);
+		ctime= BKE_curframe(scene);
 		
 		if(key->type==KEY_RELATIVE) {
 			do_rel_cu_key(cu, cu->key, actkb, ctime, out, tot);
@@ -1272,7 +1318,7 @@ static void do_latt_key(Scene *scene, Object *ob, Key *key, char *out, const int
 		
 		for(a=0; a<tot; a++, cfra+= delta) {
 			
-			ctime= bsystem_time(scene, NULL, cfra, 0.0); // XXX old cruft
+			ctime= BKE_curframe(scene);
 #if 0 // XXX old animation system
 			if(calc_ipo_spec(key->ipo, KEY_SPEED, &ctime)==0) {
 				ctime /= 100.0;
@@ -1283,9 +1329,9 @@ static void do_latt_key(Scene *scene, Object *ob, Key *key, char *out, const int
 			flag= setkeys(ctime, &key->block, k, t, 0);
 
 			if(flag==0)
-				do_key(a, a+1, tot, (char *)out, key, actkb, k, t, KEY_MODE_DUMMY);
+				do_key(a, a+1, tot, out, key, actkb, k, t, KEY_MODE_DUMMY);
 			else
-				cp_key(a, a+1, tot, (char *)out, key, actkb, k[2], NULL, KEY_MODE_DUMMY);
+				cp_key(a, a+1, tot, out, key, actkb, k[2], NULL, KEY_MODE_DUMMY);
 		}		
 	}
 	else {
@@ -1295,7 +1341,7 @@ static void do_latt_key(Scene *scene, Object *ob, Key *key, char *out, const int
 			for(kb= key->block.first; kb; kb= kb->next)
 				kb->weights= get_weights_array(ob, kb->vgroup);
 			
-			do_rel_key(0, tot, tot, (char *)out, key, actkb, KEY_MODE_DUMMY);
+			do_rel_key(0, tot, tot, out, key, actkb, KEY_MODE_DUMMY);
 			
 			for(kb= key->block.first; kb; kb= kb->next) {
 				if(kb->weights) MEM_freeN(kb->weights);
@@ -1303,7 +1349,7 @@ static void do_latt_key(Scene *scene, Object *ob, Key *key, char *out, const int
 			}
 		}
 		else {
-			ctime= bsystem_time(scene, NULL, (float)scene->r.cfra, 0.0);
+			ctime= BKE_curframe(scene);
 
 #if 0 // XXX old animation system
 			if(calc_ipo_spec(key->ipo, KEY_SPEED, &ctime)==0) {
@@ -1386,10 +1432,10 @@ float *do_ob_key(Scene *scene, Object *ob)
 			ob->shapenr= 1;
 		}
 		
-		if(ELEM(ob->type, OB_MESH, OB_LATTICE)) {
+		if (OB_TYPE_SUPPORT_VGROUP(ob->type)) {
 			float *weights= get_weights_array(ob, kb->vgroup);
 
-			cp_key(0, tot, tot, (char*)out, key, actkb, kb, weights, 0);
+			cp_key(0, tot, tot, out, key, actkb, kb, weights, 0);
 
 			if(weights) MEM_freeN(weights);
 		}
@@ -1445,17 +1491,18 @@ KeyBlock *add_keyblock(Key *key, const char *name)
 	
 	tot= BLI_countlist(&key->block);
 	if(name) {
-		strncpy(kb->name, name, sizeof(kb->name));
+		BLI_strncpy(kb->name, name, sizeof(kb->name));
 	} else {
-		if(tot==1) strcpy(kb->name, "Basis");
-		else sprintf(kb->name, "Key %d", tot-1);
+		if(tot==1) BLI_strncpy(kb->name, "Basis", sizeof(kb->name));
+		else BLI_snprintf(kb->name, sizeof(kb->name), "Key %d", tot-1);
 	}
 
 	BLI_uniquename(&key->block, kb, "Key", '.', offsetof(KeyBlock, name), sizeof(kb->name));
 
 	// XXX this is old anim system stuff? (i.e. the 'index' of the shapekey)
 	kb->adrcode= tot-1;
-	
+	kb->uid = key->uidgen++;
+
 	key->totkey++;
 	if(key->totkey==1) key->refkey= kb;
 	
@@ -1467,7 +1514,7 @@ KeyBlock *add_keyblock(Key *key, const char *name)
 		kb->pos= curpos + 0.1f;
 	else {
 #if 0 // XXX old animation system
-		curpos= bsystem_time(scene, 0, (float)CFRA, 0.0);
+		curpos= BKE_curframe(scene);
 		if(calc_ipo_spec(key->ipo, KEY_SPEED, &curpos)==0) {
 			curpos /= 100.0;
 		}
@@ -1532,7 +1579,7 @@ KeyBlock *key_get_named_keyblock(Key *key, const char name[])
 }
 
 /* Get RNA-Path for 'value' setting of the given ShapeKey 
- * NOTE: the user needs to free the returned string once they're finishe with it
+ * NOTE: the user needs to free the returned string once they're finish with it
  */
 char *key_get_curValue_rnaPath(Key *key, KeyBlock *kb)
 {
@@ -1573,7 +1620,7 @@ void latt_to_key(Lattice *lt, KeyBlock *kb)
 	bp= lt->def;
 	fp= kb->data;
 	for(a=0; a<kb->totelem; a++, fp+=3, bp++) {
-		VECCOPY(fp, bp->vec);
+		copy_v3_v3(fp, bp->vec);
 	}
 }
 
@@ -1590,7 +1637,7 @@ void key_to_latt(KeyBlock *kb, Lattice *lt)
 	tot= MIN2(kb->totelem, tot);
 
 	for(a=0; a<tot; a++, fp+=3, bp++) {
-		VECCOPY(bp->vec, fp);
+		copy_v3_v3(bp->vec, fp);
 	}
 }
 
@@ -1620,11 +1667,11 @@ void curve_to_key(Curve *cu, KeyBlock *kb, ListBase *nurb)
 			bezt= nu->bezt;
 			a= nu->pntsu;
 			while(a--) {
-				VECCOPY(fp, bezt->vec[0]);
+				copy_v3_v3(fp, bezt->vec[0]);
 				fp+= 3;
-				VECCOPY(fp, bezt->vec[1]);
+				copy_v3_v3(fp, bezt->vec[1]);
 				fp+= 3;
-				VECCOPY(fp, bezt->vec[2]);
+				copy_v3_v3(fp, bezt->vec[2]);
 				fp+= 3;
 				fp[0]= bezt->alfa;
 				fp+= 3;	/* alphas */
@@ -1635,7 +1682,7 @@ void curve_to_key(Curve *cu, KeyBlock *kb, ListBase *nurb)
 			bp= nu->bp;
 			a= nu->pntsu*nu->pntsv;
 			while(a--) {
-				VECCOPY(fp, bp->vec);
+				copy_v3_v3(fp, bp->vec);
 				fp[3]= bp->alfa;
 
 				fp+= 4;
@@ -1667,11 +1714,11 @@ void key_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *nurb)
 			bezt= nu->bezt;
 			a= nu->pntsu;
 			while(a-- && tot>0) {
-				VECCOPY(bezt->vec[0], fp);
+				copy_v3_v3(bezt->vec[0], fp);
 				fp+= 3;
-				VECCOPY(bezt->vec[1], fp);
+				copy_v3_v3(bezt->vec[1], fp);
 				fp+= 3;
-				VECCOPY(bezt->vec[2], fp);
+				copy_v3_v3(bezt->vec[2], fp);
 				fp+= 3;
 				bezt->alfa= fp[0];
 				fp+= 3;	/* alphas */
@@ -1684,7 +1731,7 @@ void key_to_curve(KeyBlock *kb, Curve *UNUSED(cu), ListBase *nurb)
 			bp= nu->bp;
 			a= nu->pntsu*nu->pntsv;
 			while(a-- && tot>0) {
-				VECCOPY(bp->vec, fp);
+				copy_v3_v3(bp->vec, fp);
 				bp->alfa= fp[3];
 
 				fp+= 4;
@@ -1713,7 +1760,7 @@ void mesh_to_key(Mesh *me, KeyBlock *kb)
 	mvert= me->mvert;
 	fp= kb->data;
 	for(a=0; a<kb->totelem; a++, fp+=3, mvert++) {
-		VECCOPY(fp, mvert->co);
+		copy_v3_v3(fp, mvert->co);
 
 	}
 }
@@ -1730,7 +1777,7 @@ void key_to_mesh(KeyBlock *kb, Mesh *me)
 	tot= MIN2(kb->totelem, me->totvert);
 
 	for(a=0; a<tot; a++, fp+=3, mvert++) {
-		VECCOPY(mvert->co, fp);
+		copy_v3_v3(mvert->co, fp);
 	}
 }
 

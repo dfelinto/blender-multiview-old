@@ -5,7 +5,7 @@ BF_NUMJOBS = 2
 # Python configuration
 BF_PYTHON_VERSION = '3.2'
 BF_PYTHON_ABI_FLAGS = 'mu'
-BF_PYTHON = '/opt/python3.2'
+BF_PYTHON = '/opt/python3'
 
 WITH_BF_STATICPYTHON = True
 
@@ -28,7 +28,7 @@ BF_FFMPEG_LIB_STATIC = '${BF_FFMPEG_LIBPATH}/libavformat.a ${BF_FFMPEG_LIBPATH}/
 
 # Don't depend on system's libstdc++
 WITH_BF_STATICCXX = True
-BF_CXX_LIB_STATIC = '/usr/lib/gcc/x86_64-linux-gnu/4.3.2/libstdc++.a'
+BF_CXX_LIB_STATIC = '/usr/lib/gcc/x86_64-linux-gnu/4.3.4/libstdc++.a'
 
 WITH_BF_OPENAL = True
 WITH_BF_STATICOPENAL = True
@@ -48,11 +48,11 @@ WITH_BF_JPEG = True
 BF_JPEG_LIB = 'libjpeg'
 BF_JPEG_LIBPATH = '/home/sources/staticlibs/lib64'
 
+WITH_BF_STATICLIBSAMPLERATE = True
+
 WITH_BF_PNG = True
 BF_PNG_LIB = 'libpng'
 BF_PNG_LIBPATH = '/home/sources/staticlibs/lib64'
-
-WITH_BF_STATICLIBSAMPLERATE = True
 
 WITH_BF_ZLIB = True
 WITH_BF_STATICZLIB = True
@@ -82,8 +82,18 @@ WITH_BF_STATIC3DMOUSE = True
 BF_3DMOUSE = '/home/sources/staticlibs/spnav'
 BF_3DMOUSE_LIBPATH = '${BF_3DMOUSE}/lib64'
 
+# JACK
+WITH_BF_JACK = True
+
+# Motion Tracking
+WITH_BF_LIBMV = False
+
+# Ocean Simulation
+WITH_BF_FFTW3 = True
+WITH_BF_STATICFFTW3 = True
+WITH_BF_OCEANSIM = True
+
 # Compilation and optimization
 BF_DEBUG = False
-REL_CFLAGS = ['-O2']
-REL_CCFLAGS = ['-O2']
+REL_CCFLAGS = ['-O2', '-msse', '-msse2']  # C & C++
 PLATFORM_LINKFLAGS = ['-L/home/sources/staticlibs/lib64']

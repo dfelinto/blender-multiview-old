@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,13 +34,14 @@
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_key_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
+#include "DNA_meta_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_group_types.h"
 
 #include "BLI_math.h"
-#include "BLI_editVert.h"
 #include "BLI_listbase.h"
 #include "BLI_utildefines.h"
 
@@ -50,9 +49,11 @@
 #include "BKE_curve.h"
 #include "BKE_depsgraph.h"
 #include "BKE_main.h"
+#include "BKE_mball.h"
 #include "BKE_mesh.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
+#include "BKE_tessmesh.h"
 #include "BKE_multires.h"
 #include "BKE_armature.h"
 
@@ -117,7 +118,7 @@ static void object_clear_rot(Object *ob)
 				if ((ob->protectflag & OB_LOCK_ROTZ) == 0)
 					ob->quat[3]= ob->dquat[3]= 0.0f;
 					
-				// TODO: does this quat need normalising now?
+				// TODO: does this quat need normalizing now?
 			}
 			else {
 				/* the flag may have been set for the other modes, so just ignore the extra flag... */
@@ -135,7 +136,7 @@ static void object_clear_rot(Object *ob)
 			float eul[3], oldeul[3], quat1[4] = {0};
 			
 			if (ob->rotmode == ROT_MODE_QUAT) {
-				QUATCOPY(quat1, ob->quat);
+				copy_qt_qt(quat1, ob->quat);
 				quat_to_eul(oldeul, ob->quat);
 			}
 			else if (ob->rotmode == ROT_MODE_AXISANGLE) {
@@ -190,15 +191,15 @@ static void object_clear_scale(Object *ob)
 {
 	/* clear scale factors which are not locked */
 	if ((ob->protectflag & OB_LOCK_SCALEX)==0) {
-		ob->dsize[0]= 0.0f;
+		ob->dscale[0]= 1.0f;
 		ob->size[0]= 1.0f;
 	}
 	if ((ob->protectflag & OB_LOCK_SCALEY)==0) {
-		ob->dsize[1]= 0.0f;
+		ob->dscale[1]= 1.0f;
 		ob->size[1]= 1.0f;
 	}
 	if ((ob->protectflag & OB_LOCK_SCALEZ)==0) {
-		ob->dsize[2]= 0.0f;
+		ob->dscale[2]= 1.0f;
 		ob->size[2]= 1.0f;
 	}
 }
@@ -230,21 +231,9 @@ static int object_clear_transform_generic_exec(bContext *C, wmOperator *op,
 		if (!(ob->mode & OB_MODE_WEIGHT_PAINT)) {
 			/* run provided clearing function */
 			clear_func(ob);
-			
-			/* auto keyframing */
-			if (autokeyframe_cfra_can_key(scene, &ob->id)) {
-				ListBase dsources = {NULL, NULL};
-				
-				/* now insert the keyframe(s) using the Keying Set
-				 *	1) add datasource override for the Object
-				 *	2) insert keyframes
-				 *	3) free the extra info 
-				 */
-				ANIM_relative_keyingset_add_source(&dsources, &ob->id, NULL, NULL); 
-				ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
-				BLI_freelistN(&dsources);
-			}
-			
+
+			ED_autokeyframe_object(C, scene, ob, ks);
+
 			/* tag for updates */
 			DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 		}
@@ -264,7 +253,7 @@ static int object_clear_transform_generic_exec(bContext *C, wmOperator *op,
 
 static int object_location_clear_exec(bContext *C, wmOperator *op)
 {
-	return object_clear_transform_generic_exec(C, op, object_clear_loc, "Location");
+	return object_clear_transform_generic_exec(C, op, object_clear_loc, ANIM_KS_LOCATION_ID);
 }
 
 void OBJECT_OT_location_clear(wmOperatorType *ot)
@@ -284,7 +273,7 @@ void OBJECT_OT_location_clear(wmOperatorType *ot)
 
 static int object_rotation_clear_exec(bContext *C, wmOperator *op)
 {
-	return object_clear_transform_generic_exec(C, op, object_clear_rot, "Rotation");
+	return object_clear_transform_generic_exec(C, op, object_clear_rot, ANIM_KS_ROTATION_ID);
 }
 
 void OBJECT_OT_rotation_clear(wmOperatorType *ot)
@@ -304,7 +293,7 @@ void OBJECT_OT_rotation_clear(wmOperatorType *ot)
 
 static int object_scale_clear_exec(bContext *C, wmOperator *op)
 {
-	return object_clear_transform_generic_exec(C, op, object_clear_scale, "Scaling");
+	return object_clear_transform_generic_exec(C, op, object_clear_scale, ANIM_KS_SCALING_ID);
 }
 
 void OBJECT_OT_scale_clear(wmOperatorType *ot)
@@ -399,13 +388,13 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 
 		if(ob->type==OB_MESH) {
 			if(ID_REAL_USERS(ob->data) > 1) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user mesh, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user mesh, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 		}
 		else if(ob->type==OB_ARMATURE) {
 			if(ID_REAL_USERS(ob->data) > 1) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user armature, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user armature, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 		}
@@ -413,18 +402,18 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 			Curve *cu;
 
 			if(ID_REAL_USERS(ob->data) > 1) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user curve, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a multi user curve, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 
 			cu= ob->data;
 
 			if(!(cu->flag & CU_3D) && (apply_rot || apply_loc)) {
-				BKE_report(reports, RPT_ERROR, "Neither rotation nor location could be applied to a 2d curve, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Neither rotation nor location could be applied to a 2d curve, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 			if(cu->key) {
-				BKE_report(reports, RPT_ERROR, "Can't apply to a curve with vertex keys, doing nothing.");
+				BKE_report(reports, RPT_ERROR, "Can't apply to a curve with vertex keys, doing nothing");
 				return OPERATOR_CANCELLED;
 			}
 		}
@@ -493,7 +482,7 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 			}
 			
 			/* update normals */
-			mesh_calc_normals(me->mvert, me->totvert, me->mface, me->totface, NULL);
+			mesh_calc_normals_mapping(me->mvert, me->totvert, me->mloop, me->mpoly, me->totloop, me->totpoly, NULL, NULL, 0, NULL, NULL);
 		}
 		else if (ob->type==OB_ARMATURE) {
 			ED_armature_apply_transform(ob, mat);
@@ -656,10 +645,10 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 	else {
-		/* get the view settings if 'around' isnt set and the view is available */
+		/* get the view settings if 'around' isn't set and the view is available */
 		View3D *v3d= CTX_wm_view3d(C);
 		copy_v3_v3(cursor, give_cursor(scene, v3d));
-		if(v3d && !RNA_property_is_set(op->ptr, "around"))
+		if(v3d && !RNA_struct_property_is_set(op->ptr, "center"))
 			around= v3d->around;
 	}
 
@@ -670,37 +659,37 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 
 		if(obedit->type==OB_MESH) {
 			Mesh *me= obedit->data;
-			EditMesh *em = BKE_mesh_get_editmesh(me);
-			EditVert *eve;
-
-			if(around==V3D_CENTROID) {
-				int total= 0;
-				for(eve= em->verts.first; eve; eve= eve->next) {
-					total++;
-					add_v3_v3(cent, eve->co);
-				}
-				if(total) {
-					mul_v3_fl(cent, 1.0f/(float)total);
+			BMEditMesh *em = me->edit_btmesh;
+			BMVert *eve;
+			BMIter iter;
+			int total = 0;
+			
+			if(centermode == ORIGIN_TO_CURSOR) {
+				copy_v3_v3(cent, cursor);
+				invert_m4_m4(obedit->imat, obedit->obmat);
+				mul_m4_v3(obedit->imat, cent);
+			} else {
+				BM_ITER(eve, &iter, em->bm, BM_VERTS_OF_MESH, NULL) {
+					if(around==V3D_CENTROID) {
+						total++;
+						add_v3_v3(cent, eve->co);
+						mul_v3_fl(cent, 1.0f/(float)total);
+					}
+					else {
+						DO_MINMAX(eve->co, min, max);
+						mid_v3_v3v3(cent, min, max);
+					}
 				}
 			}
-			else {
-				for(eve= em->verts.first; eve; eve= eve->next) {
-					DO_MINMAX(eve->co, min, max);
-				}
-				mid_v3_v3v3(cent, min, max);
+			
+			BM_ITER(eve, &iter, em->bm, BM_VERTS_OF_MESH, NULL) {
+				sub_v3_v3(eve->co, cent);
 			}
 
-			if(!is_zero_v3(cent)) {
-				for(eve= em->verts.first; eve; eve= eve->next) {
-					sub_v3_v3(eve->co, cent);
-				}
-
-				recalc_editnormals(em);
-				tot_change++;
-				DAG_id_tag_update(&obedit->id, OB_RECALC_DATA);
-			}
-			BKE_mesh_end_editmesh(me, em);
-		}
+			EDBM_RecalcNormals(em);
+			tot_change++;
+			DAG_id_tag_update(&obedit->id, OB_RECALC_DATA);
+	    }
 	}
 
 	/* reset flags */
@@ -826,8 +815,10 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 				bArmature *arm = ob->data;
 
 				if(ID_REAL_USERS(arm) > 1) {
-					/*BKE_report(op->reports, RPT_ERROR, "Can't apply to a multi user armature");
-					return;*/
+#if 0
+					BKE_report(op->reports, RPT_ERROR, "Can't apply to a multi user armature");
+					return;
+#endif
 					tot_multiuser_arm_error++;
 				}
 				else {
@@ -847,6 +838,27 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 
 					if(obedit)
 						break;
+				}
+			}
+			else if (ob->type == OB_MBALL) {
+				MetaBall *mb = ob->data;
+
+				if(centermode == ORIGIN_TO_CURSOR) { /* done */ }
+				else if(around==V3D_CENTROID) { BKE_metaball_center_median(mb, cent); }
+				else { BKE_metaball_center_bounds(mb, cent);	}
+
+				negate_v3_v3(cent_neg, cent);
+				BKE_metaball_translate(mb, cent_neg);
+
+				tot_change++;
+				mb->id.flag |= LIB_DOIT;
+				do_inverse_offset= TRUE;
+
+				if(obedit) {
+					if (centermode == GEOMETRY_TO_ORIGIN) {
+						DAG_id_tag_update(&obedit->id, OB_RECALC_DATA);
+					}
+					break;
 				}
 			}
 

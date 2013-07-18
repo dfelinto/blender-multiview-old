@@ -1,15 +1,10 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -57,6 +52,7 @@
 //#include "BIF_toolbox.h"
 //#include "BIF_graphics.h"
 
+#include "BKE_mesh.h"
 
 //#include "blendef.h"
 
@@ -251,7 +247,7 @@ static ReebNode * addNode(ReebGraph *rg, EditVert *eve)
 	node->degree = 0;
 	node->weight = weight;
 	node->index = rg->totnodes;
-	VECCOPY(node->p, eve->co);	
+	copy_v3_v3(node->p, eve->co);
 	
 	BLI_addtail(&rg->nodes, node);
 	rg->totnodes++;
@@ -491,11 +487,11 @@ void repositionNodes(ReebGraph *rg)
 		{
 			float p[3];
 			
-			VECCOPY(p, ((ReebArc*)arc)->buckets[0].p);
+			copy_v3_v3(p, ((ReebArc*)arc)->buckets[0].p);
 			mul_v3_fl(p, 1.0f / arc->head->degree);
 			add_v3_v3(arc->head->p, p);
 			
-			VECCOPY(p, ((ReebArc*)arc)->buckets[((ReebArc*)arc)->bcount - 1].p);
+			copy_v3_v3(p, ((ReebArc*)arc)->buckets[((ReebArc*)arc)->bcount - 1].p);
 			mul_v3_fl(p, 1.0f / arc->tail->degree);
 			add_v3_v3(arc->tail->p, p);
 		}
@@ -547,12 +543,12 @@ static void verifyBucketsArc(ReebGraph *UNUSED(rg), ReebArc *arc)
 			}
 		}
 		
-		if (ceil(head->weight) != arc->buckets[0].val)
+		if (ceilf(head->weight) != arc->buckets[0].val)
 		{
 			printArc(arc);
 			printf("alloc error in first bucket: %f should be %f \n", arc->buckets[0].val, ceil(head->weight));
 		}
-		if (floor(tail->weight) != arc->buckets[arc->bcount - 1].val)
+		if (floorf(tail->weight) != arc->buckets[arc->bcount - 1].val)
 		{
 			printArc(arc);
 			printf("alloc error in last bucket: %f should be %f \n", arc->buckets[arc->bcount - 1].val, floor(tail->weight));
@@ -651,7 +647,7 @@ static void mergeBuckets(EmbedBucket *bDst, EmbedBucket *bSrc)
 	else if (bSrc->nv > 0)
 	{
 		bDst->nv = bSrc->nv;
-		VECCOPY(bDst->p, bSrc->p);
+		copy_v3_v3(bDst->p, bSrc->p);
 	}
 }
 
@@ -967,7 +963,7 @@ void REEB_RadialSymmetry(BNode* root_node, RadialArc* ring, int count)
 	float axis[3];
 	int i;
 	
-	VECCOPY(axis, root_node->symmetry_axis);
+	copy_v3_v3(axis, root_node->symmetry_axis);
 	
 	/* first pass, merge incrementally */
 	for (i = 0; i < count - 1; i++)
@@ -1050,7 +1046,7 @@ void REEB_RadialSymmetry(BNode* root_node, RadialArc* ring, int count)
 		arc2 = (ReebArc*)ring[j].arc;
 
 		/* copy first node than mirror */
-		VECCOPY(node2->p, node1->p);
+		copy_v3_v3(node2->p, node1->p);
 		BLI_mirrorAlongAxis(node2->p, root_node->p, normal);
 		
 		/* Copy buckets
@@ -1085,7 +1081,7 @@ void REEB_RadialSymmetry(BNode* root_node, RadialArc* ring, int count)
 			{
 				/* copy and mirror back to bucket2 */			
 				bucket2->nv = bucket1->nv;
-				VECCOPY(bucket2->p, bucket1->p);
+				copy_v3_v3(bucket2->p, bucket1->p);
 				BLI_mirrorAlongAxis(bucket2->p, node->p, normal);
 			}
 		}
@@ -1100,10 +1096,10 @@ void REEB_AxialSymmetry(BNode* root_node, BNode* node1, BNode* node2, struct BAr
 	arc1 = (ReebArc*)barc1;
 	arc2 = (ReebArc*)barc2;
 
-	VECCOPY(nor, root_node->symmetry_axis);
+	copy_v3_v3(nor, root_node->symmetry_axis);
 	
 	/* mirror node2 along axis */
-	VECCOPY(p, node2->p);
+	copy_v3_v3(p, node2->p);
 	BLI_mirrorAlongAxis(p, root_node->p, nor);
 
 	/* average with node1 */
@@ -1111,7 +1107,7 @@ void REEB_AxialSymmetry(BNode* root_node, BNode* node1, BNode* node2, struct BAr
 	mul_v3_fl(node1->p, 0.5f);
 	
 	/* mirror back on node2 */
-	VECCOPY(node2->p, node1->p);
+	copy_v3_v3(node2->p, node1->p);
 	BLI_mirrorAlongAxis(node2->p, root_node->p, nor);
 	
 	/* Merge buckets
@@ -1153,7 +1149,7 @@ void REEB_AxialSymmetry(BNode* root_node, BNode* node1, BNode* node2, struct BAr
 
 			/* copy and mirror back to bucket2 */			
 			bucket2->nv = bucket1->nv;
-			VECCOPY(bucket2->p, bucket1->p);
+			copy_v3_v3(bucket2->p, bucket1->p);
 			BLI_mirrorAlongAxis(bucket2->p, root_node->p, nor);
 		}
 	}
@@ -1179,7 +1175,7 @@ void postprocessGraph(ReebGraph *rg, char mode)
 		fac2 = 0.5f;
 		break;
 	case SKGEN_SHARPEN:
-		fac1 = fac2 = -0.25f;
+		fac1 = fac3 = -0.25f;
 		fac2 = 1.5f;
 		break;
 	default:
@@ -1353,11 +1349,11 @@ static int joinSubgraphsEnds(ReebGraph *rg, float threshold, int nb_subgraphs)
 		
 		if (end_node && start_node)
 		{
-			ReebArc *start_arc, *end_arc;
+			ReebArc *start_arc /* , *end_arc */ /* UNUSED */;
 			int merging = 0;
 			
 			start_arc = start_node->arcs[0];
-			end_arc = end_node->arcs[0];
+			/* end_arc = end_node->arcs[0]; */ /* UNUSED */
 			
 			if (start_arc->tail == start_node)
 			{
@@ -1802,7 +1798,7 @@ int filterSmartReebGraph(ReebGraph *UNUSED(rg), float UNUSED(threshold))
 						vec0 = previous->p;
 					}
 					
-					VECCOPY(midpoint, vec1);
+					copy_v3_v3(midpoint, vec1);
 					
 					distance = len_v3v3(midpoint, efa->cent);
 					
@@ -2040,10 +2036,9 @@ void REEB_exportGraph(ReebGraph *rg, int count)
 	
 	if (count == -1)
 	{
-		sprintf(filename, "test.txt");
+		strcpy(filename, "test.txt");
 	}
-	else
-	{
+	else {
 		sprintf(filename, "test%05i.txt", count);
 	}
 	f = fopen(filename, "w");
@@ -3383,9 +3378,12 @@ static int iteratorStopped(void *arg)
 
 ReebGraph *BIF_ReebGraphMultiFromEditMesh(bContext *C)
 {
+	(void)C;
+	return NULL;
+#if 0
 	Scene *scene = CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
-	EditMesh *em =( (Mesh*)obedit->data)->edit_mesh;
+	EditMesh *em = BKE_mesh_get_editmesh(((Mesh*)obedit->data));
 	EdgeIndex indexed_edges;
 	VertexData *data;
 	ReebGraph *rg = NULL;
@@ -3481,7 +3479,13 @@ ReebGraph *BIF_ReebGraphMultiFromEditMesh(bContext *C)
 	
 	MEM_freeN(data);
 
+	/* no need to load the editmesh back into the object, just
+	 * free it (avoids ngon conversion issues too going back the other way) */
+	free_editMesh(em);
+	MEM_freeN(em);
+	
 	return rg;
+#endif
 }
 
 #if 0
@@ -3594,13 +3598,13 @@ void REEB_draw()
 	
 	if (GLOBAL_RG->link_up && G.scene->toolsettings->skgen_options & SKGEN_DISP_ORIG)
 	{
-		for (rg = GLOBAL_RG; rg->link_up; rg = rg->link_up) ;
+		for (rg = GLOBAL_RG; rg->link_up; rg = rg->link_up);
 	}
 	else
 	{
 		i = G.scene->toolsettings->skgen_multi_level;
 		
-		for (rg = GLOBAL_RG; rg->multi_level != i && rg->link_up; rg = rg->link_up) ;
+		for (rg = GLOBAL_RG; rg->multi_level != i && rg->link_up; rg = rg->link_up);
 	}
 	
 	glPointSize(BIF_GetThemeValuef(TH_VERTEX_SIZE));
@@ -3686,7 +3690,7 @@ void REEB_draw()
 		
 		if (G.scene->toolsettings->skgen_options & SKGEN_DISP_INDEX)
 		{
-			interp_v3_v3v3(vec, arc->head->p, arc->tail->p, 0.5f);
+			mid_v3_v3v3(vec, arc->head->p, arc->tail->p);
 			s += sprintf(s, "%i (%i-%i-%i) ", i, arc->symmetry_level, arc->symmetry_flag, arc->symmetry_group);
 		
 			if (G.scene->toolsettings->skgen_options & SKGEN_DISP_WEIGHT)

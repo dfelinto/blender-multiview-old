@@ -25,7 +25,7 @@ from bpy.props import IntProperty
 
 
 class SequencerCrossfadeSounds(Operator):
-    '''Do crossfading volume animation of two selected sound strips.'''
+    '''Do cross-fading volume animation of two selected sound strips'''
 
     bl_idname = "sequencer.crossfade_sounds"
     bl_label = "Crossfade sounds"
@@ -51,7 +51,7 @@ class SequencerCrossfadeSounds(Operator):
                     seq2 = None
                     break
         if seq2 is None:
-            self.report({'ERROR'}, "Select 2 sound strips.")
+            self.report({'ERROR'}, "Select 2 sound strips")
             return {'CANCELLED'}
         if seq1.frame_final_start > seq2.frame_final_start:
             s = seq1
@@ -60,23 +60,23 @@ class SequencerCrossfadeSounds(Operator):
         if seq1.frame_final_end > seq2.frame_final_start:
             tempcfra = context.scene.frame_current
             context.scene.frame_current = seq2.frame_final_start
-            seq1.keyframe_insert('volume')
+            seq1.keyframe_insert("volume")
             context.scene.frame_current = seq1.frame_final_end
             seq1.volume = 0
-            seq1.keyframe_insert('volume')
-            seq2.keyframe_insert('volume')
+            seq1.keyframe_insert("volume")
+            seq2.keyframe_insert("volume")
             context.scene.frame_current = seq2.frame_final_start
             seq2.volume = 0
-            seq2.keyframe_insert('volume')
+            seq2.keyframe_insert("volume")
             context.scene.frame_current = tempcfra
             return {'FINISHED'}
         else:
-            self.report({'ERROR'}, "The selected strips don't overlap.")
+            self.report({'ERROR'}, "The selected strips don't overlap")
             return {'CANCELLED'}
 
 
 class SequencerCutMulticam(Operator):
-    '''Cut multicam strip and select camera.'''
+    '''Cut multi-cam strip and select camera'''
 
     bl_idname = "sequencer.cut_multicam"
     bl_label = "Cut multicam"
@@ -118,7 +118,7 @@ class SequencerCutMulticam(Operator):
 
 
 class SequencerDeinterlaceSelectedMovies(Operator):
-    '''Deinterlace all selected movie sources.'''
+    '''Deinterlace all selected movie sources'''
 
     bl_idname = "sequencer.deinterlace_selected_movies"
     bl_label = "Deinterlace Movies"

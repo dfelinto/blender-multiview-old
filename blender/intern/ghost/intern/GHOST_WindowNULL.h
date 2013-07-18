@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * Declaration of GHOST_WindowNULL class.
  */
 
-#ifndef _GHOST_WINDOWNULL_H_
-#define _GHOST_WINDOWNULL_H_
+#ifndef __GHOST_WINDOWNULL_H__
+#define __GHOST_WINDOWNULL_H__
 
 #include "GHOST_Window.h"
 
@@ -93,4 +92,4 @@ private :
 };
 
 
-#endif // _GHOST_WINDOWNULL_H_
+#endif // __GHOST_WINDOWNULL_H__

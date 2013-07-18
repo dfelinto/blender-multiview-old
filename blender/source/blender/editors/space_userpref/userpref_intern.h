@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,10 +28,10 @@
  *  \ingroup spuserpref
  */
 
-#ifndef ED_USERPREF_INTERN_H
-#define ED_USERPREF_INTERN_H
+#ifndef __USERPREF_INTERN_H__
+#define __USERPREF_INTERN_H__
 
 /* internal exports only */
 
-#endif /* ED_USERPREF_INTERN_H */
+#endif /* __USERPREF_INTERN_H__ */
 

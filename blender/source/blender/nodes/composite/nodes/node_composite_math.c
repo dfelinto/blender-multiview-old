@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -105,10 +103,10 @@ static void do_math(bNode *node, float *out, float *in, float *in2)
 			} else {
 				float y_mod_1 = fmod(in2[0], 1);
 				/* if input value is not nearly an integer, fall back to zero, nicer than straight rounding */
-				if (y_mod_1 > 0.999 || y_mod_1 < 0.001) {
-					out[0]= pow(in[0], floor(in2[0] + 0.5));
+				if (y_mod_1 > 0.999f || y_mod_1 < 0.001f) {
+					out[0]= powf(in[0], floorf(in2[0] + 0.5f));
 				} else {
-					out[0] = 0.0;
+					out[0] = 0.0f;
 				}
 			}
 		}
@@ -196,19 +194,15 @@ static void node_composit_exec_math(void *UNUSED(data), bNode *node, bNodeStack 
 	out[0]->data= stackbuf;
 }
 
-void register_node_type_cmp_math(ListBase *lb)
+void register_node_type_cmp_math(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_MATH, "Math", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_MATH, "Math", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_math_in, cmp_node_math_out);
 	node_type_size(&ntype, 120, 110, 160);
 	node_type_label(&ntype, node_math_label);
 	node_type_exec(&ntype, node_composit_exec_math);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-
-

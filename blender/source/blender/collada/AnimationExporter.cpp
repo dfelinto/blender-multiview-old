@@ -1,26 +1,24 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* Contributor(s): Chingiz Dyussenov, Arystanbek Dyussenov, Jan Diederich, Tod Liverseed.
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * Contributor(s): Chingiz Dyussenov, Arystanbek Dyussenov, Jan Diederich, Tod Liverseed.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 #include "GeometryExporter.h"
 #include "AnimationExporter.h"
@@ -57,8 +55,8 @@ void AnimationExporter::exportAnimations(Scene *sce)
 void AnimationExporter::operator() (Object *ob) 
 {
 	FCurve *fcu;
-	char * transformName ;
-	bool isMatAnim = false;
+	char *transformName;
+	/* bool isMatAnim = false; */ /* UNUSED */
 
 	//Export transform animations
 	if(ob->adt && ob->adt->action)
@@ -125,7 +123,7 @@ void AnimationExporter::operator() (Object *ob)
 		if (!ma) continue;
 		if(ma->adt && ma->adt->action)
 		{
-			isMatAnim = true;
+			/* isMatAnim = true; */
 			fcu = (FCurve*)ma->adt->action->curves.first;
 			while (fcu) {
 				transformName = extract_transform_name( fcu->rna_path );
@@ -256,7 +254,7 @@ void AnimationExporter::dae_animation(Object* ob, FCurve *fcu, char* transformNa
 	std::string input_id = create_source_from_fcurve(COLLADASW::InputSemantic::INPUT, fcu, anim_id, axis_name);
 
 	// create output source
-	std::string output_id ;
+	std::string output_id;
 
 	//quat rotations are skipped for now, because of complications with determining axis.
 	if(quatRotation) 
@@ -304,7 +302,7 @@ void AnimationExporter::dae_animation(Object* ob, FCurve *fcu, char* transformNa
 
 	addSampler(sampler);
 
-	std::string target ;
+	std::string target;
 
 	if ( !is_param )
 		target = translate_id(ob_name)
@@ -577,7 +575,7 @@ void AnimationExporter::get_source_values(BezTriple *bezt, COLLADASW::InputSeman
 		case COLLADASW::InputSemantic::OUTPUT:
 			*length = 1;
 			if (rotation) {
-				values[0] = (bezt->vec[1][1]) * 180.0f/M_PI;
+				values[0] = RAD2DEGF(bezt->vec[1][1]);
 			}
 			else {
 				values[0] = bezt->vec[1][1];
@@ -593,7 +591,7 @@ void AnimationExporter::get_source_values(BezTriple *bezt, COLLADASW::InputSeman
 				values[1] = 0; 	
 			}
 			else if (rotation) {
-				values[1] = (bezt->vec[0][1]) * 180.0f/M_PI;
+				values[1] = RAD2DEGF(bezt->vec[0][1]);
 			} else {
 				values[1] = bezt->vec[0][1];
 			}
@@ -608,7 +606,7 @@ void AnimationExporter::get_source_values(BezTriple *bezt, COLLADASW::InputSeman
 				values[1] = 0;	
 			}
 			else if (rotation) {
-				values[1] = (bezt->vec[2][1]) * 180.0f/M_PI;
+				values[1] = RAD2DEGF(bezt->vec[2][1]);
 			} else {
 				values[1] = bezt->vec[2][1];
 			}
@@ -688,7 +686,7 @@ std::string AnimationExporter::create_source_from_array(COLLADASW::InputSemantic
 		//	val = convert_time(val);
 		//else
 		if (is_rot)
-			val *= 180.0f / M_PI;
+			val = RAD2DEGF(val);
 		source.appendValues(val);
 	}
 
@@ -761,7 +759,7 @@ std::string AnimationExporter::create_4x4_source(std::vector<float> &frames , Ob
 	for (it = frames.begin(); it != frames.end(); it++) {
 		float mat[4][4], ipar[4][4];
 
-		float ctime = bsystem_time(scene, ob_arm, *it, 0.0f);
+		float ctime = BKE_frame_to_ctime(scene, *it);
 
 		BKE_animsys_evaluate_animdata(scene , &ob_arm->id, ob_arm->adt, ctime, ADT_RECALC_ANIM);
 		where_is_pose_bone(scene, ob_arm, pchan, ctime, 1);
@@ -769,11 +767,32 @@ std::string AnimationExporter::create_4x4_source(std::vector<float> &frames , Ob
 		// compute bone local mat
 		if (bone->parent) {
 			invert_m4_m4(ipar, parchan->pose_mat);
-			mul_m4_m4m4(mat, pchan->pose_mat, ipar);
+			mult_m4_m4m4(mat, ipar, pchan->pose_mat);
 		}
 		else
 			copy_m4_m4(mat, pchan->pose_mat);
 		UnitConverter converter;
+
+		// SECOND_LIFE_COMPATIBILITY
+		// AFAIK animation to second life is via BVH, but no
+		// reason to not have the collada-animation be correct
+		if(export_settings->second_life)
+		{
+			float temp[4][4];
+			copy_m4_m4(temp, bone->arm_mat);
+			temp[3][0] = temp[3][1] = temp[3][2] = 0.0f;
+			invert_m4(temp);
+
+			mult_m4_m4m4(mat, mat, temp);
+
+			if(bone->parent)
+			{
+				copy_m4_m4(temp, bone->parent->arm_mat);
+				temp[3][0] = temp[3][1] = temp[3][2] = 0.0f;
+
+				mult_m4_m4m4(mat, temp, mat);
+			}
+		}
 
 		float outmat[4][4];
 		converter.mat4_to_dae(outmat,mat);
@@ -1198,7 +1217,7 @@ void AnimationExporter::sample_and_write_bone_animation(Object *ob_arm, Bone *bo
 	bPoseChannel *pchan = get_pose_channel(ob_arm->pose, bone->name);
 	if (!pchan)
 		return;
-	//Fill frame array with key frame values framed at @param:transform_type
+	//Fill frame array with key frame values framed at \param:transform_type
 	switch (transform_type) {
 		case 0:
 			find_rotation_frames(ob_arm, fra, prefix, pchan->rotmode);
@@ -1267,7 +1286,7 @@ void AnimationExporter::sample_animation(float *v, std::vector<float> &frames, i
 	for (it = frames.begin(); it != frames.end(); it++) {
 		float mat[4][4], ipar[4][4];
 
-		float ctime = bsystem_time(scene, ob_arm, *it, 0.0f);
+		float ctime = BKE_frame_to_ctime(scene, *it);
 
 
 		BKE_animsys_evaluate_animdata(scene , &ob_arm->id, ob_arm->adt, ctime, ADT_RECALC_ANIM);
@@ -1276,7 +1295,7 @@ void AnimationExporter::sample_animation(float *v, std::vector<float> &frames, i
 		// compute bone local mat
 		if (bone->parent) {
 			invert_m4_m4(ipar, parchan->pose_mat);
-			mul_m4_m4m4(mat, pchan->pose_mat, ipar);
+			mult_m4_m4m4(mat, ipar, pchan->pose_mat);
 		}
 		else
 			copy_m4_m4(mat, pchan->pose_mat);

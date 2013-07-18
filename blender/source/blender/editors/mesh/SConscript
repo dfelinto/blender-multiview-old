@@ -3,10 +3,13 @@ Import ('env')
 
 sources = env.Glob('*.c')
 
+defs = []
+
 incs = '../include ../../blenlib ../../blenkernel ../../makesdna ../../imbuf'
 incs += ' ../../windowmanager #/intern/guardedalloc #/extern/glew/include'
 incs += ' ../../gpu ../../blenloader'
 incs += ' ../../makesrna ../../render/extern/include  #/intern/elbeem/extern'
+incs += ' ../../bmesh ../uvedit '
 
 if env['OURPLATFORM'] == 'linux':
     cflags='-pthread'
@@ -15,4 +18,10 @@ if env['OURPLATFORM'] == 'linux':
 if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc'):
     incs += ' ' + env['BF_PTHREADS_INC']
 
-env.BlenderLib ( 'bf_editors_mesh', sources, Split(incs), [], libtype=['core'], priority=[45] )
+if env['WITH_BF_GAMEENGINE']:
+    incs += ' #/extern/recastnavigation'
+    defs.append('WITH_GAMEENGINE')
+else:
+    sources.remove('mesh_navmesh.c')
+
+env.BlenderLib ( 'bf_editors_mesh', sources, Split(incs), defs, libtype=['core'], priority=[45] )

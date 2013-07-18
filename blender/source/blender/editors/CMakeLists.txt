@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 12931 2007-12-17 18:20:48Z theeth $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -36,6 +35,7 @@ if(WITH_BLENDER)
 	add_subdirectory(space_action)
 	add_subdirectory(space_api)
 	add_subdirectory(space_buttons)
+	add_subdirectory(space_clip)
 	add_subdirectory(space_console)
 	add_subdirectory(space_file)
 	add_subdirectory(space_graph)
@@ -47,7 +47,6 @@ if(WITH_BLENDER)
 	add_subdirectory(space_outliner)
 	add_subdirectory(space_script)
 	add_subdirectory(space_sequencer)
-	add_subdirectory(space_sound)
 	add_subdirectory(space_text)
 	add_subdirectory(space_time)
 	add_subdirectory(space_userpref)

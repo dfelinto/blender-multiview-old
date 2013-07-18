@@ -1,6 +1,4 @@
 /*
-* $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -58,12 +56,11 @@ typedef struct ShadeSample {
 
 	/* also the node shader callback */
 void shade_material_loop(struct ShadeInput *shi, struct ShadeResult *shr);
-void shade_volume_loop(struct ShadeInput *shi, struct ShadeResult *shr);
 
 void shade_input_set_triangle_i(struct ShadeInput *shi, struct ObjectInstanceRen *obi, struct VlakRen *vlr, short i1, short i2, short i3);
 void shade_input_set_triangle(struct ShadeInput *shi, volatile int obi, volatile int facenr, int normal_flip);
 void shade_input_copy_triangle(struct ShadeInput *shi, struct ShadeInput *from);
-void shade_input_calc_viewco(struct ShadeInput *shi, float x, float y, float z, float *view, float *dxyview, float *co, float *dxco, float *dyco);
+void shade_input_calc_viewco(struct ShadeInput *shi, float x, float y, float z, float view[3], float *dxyview, float *co, float *dxco, float *dyco);
 void shade_input_set_viewco(struct ShadeInput *shi, float x, float y, float sx, float sy, float z);
 void shade_input_set_uv(struct ShadeInput *shi);
 void shade_input_set_normals(struct ShadeInput *shi);
@@ -96,8 +93,8 @@ void ambient_occlusion(struct ShadeInput *shi);
 void environment_lighting_apply(struct ShadeInput *shi, struct ShadeResult *shr);
 
 ListBase *get_lights(struct ShadeInput *shi);
-float lamp_get_visibility(struct LampRen *lar, float *co, float *lv, float *dist);
-void lamp_get_shadow(struct LampRen *lar, ShadeInput *shi, float inp, float *shadfac, int do_real);
+float lamp_get_visibility(struct LampRen *lar, const float co[3], float lv[3], float *dist);
+void lamp_get_shadow(struct LampRen *lar, ShadeInput *shi, float inp, float shadfac[4], int do_real);
 
 float	fresnel_fac(float *view, float *vn, float fresnel, float fac);
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  * */
 
-#ifndef BLI_MATH_ROTATION_H
-#define BLI_MATH_ROTATION_H
+#ifndef __BLI_MATH_ROTATION_H__
+#define __BLI_MATH_ROTATION_H__
 
 /** \file BLI_math_rotation.h
  *  \ingroup bli
@@ -101,6 +99,8 @@ void axis_angle_to_mat4(float R[4][4], const float axis[3], const float angle);
 void quat_to_axis_angle(float axis[3], float *angle, const float q[4]);
 void mat3_to_axis_angle(float axis[3], float *angle, float M[3][3]);
 void mat4_to_axis_angle(float axis[3], float *angle, float M[4][4]);
+
+void single_axis_angle_to_mat3(float R[3][3], const char axis, const float angle);
 
 /****************************** Vector/Rotation ******************************/
 /* old axis angle code                                                       */
@@ -179,8 +179,8 @@ void dquat_to_mat4(float R[4][4], DualQuat *dq);
 void quat_apply_track(float quat[4], short axis, short upflag);
 void vec_apply_track(float vec[3], short axis);
 
-float lens_to_angle(float lens);
-float angle_to_lens(float angle);
+float focallength_to_fov(float focal_length, float sensor);
+float fov_to_focallength(float fov, float sensor);
 
 float angle_wrap_rad(float angle);
 float angle_wrap_deg(float angle);
@@ -189,5 +189,5 @@ float angle_wrap_deg(float angle);
 }
 #endif
 
-#endif /* BLI_MATH_ROTATION_H */
+#endif /* __BLI_MATH_ROTATION_H__ */
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_PITCHFACTORY
-#define AUD_PITCHFACTORY
+#ifndef __AUD_PITCHFACTORY_H__
+#define __AUD_PITCHFACTORY_H__
 
 #include "AUD_EffectFactory.h"
 
@@ -60,4 +58,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_PITCHFACTORY
+#endif //__AUD_PITCHFACTORY_H__

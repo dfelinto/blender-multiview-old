@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -65,7 +63,7 @@ static void fill_bins(bNode* node, CompBuf* in, int* bins)
 			/* get the pixel */
 			qd_getPixel(in, x, y, value);
 
-			if(value[3] > 0.0) { /* don't count transparent pixels */
+			if(value[3] > 0.0f) { /* don't count transparent pixels */
 				switch(node->custom1) {
 					case 1: { /* all colors */
 						rgb_tobw(value[0],value[1],value[2], &value[0]);
@@ -122,7 +120,7 @@ static float brightness_mean(bNode* node, CompBuf* in)
 			/* get the pixel */
 			qd_getPixel(in, x, y, value);
 
-			if(value[3] > 0.0) { /* don't count transparent pixels */
+			if(value[3] > 0.0f) { /* don't count transparent pixels */
 				numPixels++;
 				switch(node->custom1)
 				{
@@ -174,7 +172,7 @@ static float brightness_standard_deviation(bNode* node, CompBuf* in, float mean)
 			/* get the pixel */
 			qd_getPixel(in, x, y, value);
 
-			if(value[3] > 0.0) { /* don't count transparent pixels */
+			if(value[3] > 0.0f) { /* don't count transparent pixels */
 				numPixels++;
 				switch(node->custom1)
 				{
@@ -235,7 +233,7 @@ static void draw_histogram(bNode *node, CompBuf *out, int* bins)
 		for(y=0;y<out->y; y++) {
 
 			/* get normalized value (0..255) */
-			value=((float)bins[x]/(float)max)*255.0; 
+			value=((float)bins[x]/(float)max)*255.0f;
 
 			if(y < (int)value) { /*if the y value is below the height of the bar for this line then draw with the color */
 				switch (node->custom1) {
@@ -322,18 +320,16 @@ static void node_composit_init_view_levels(bNodeTree *UNUSED(ntree), bNode* node
 	node->custom1=1; /*All channels*/
 }
 
-void register_node_type_cmp_view_levels(ListBase *lb)
+void register_node_type_cmp_view_levels(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_VIEW_LEVELS, "Levels", NODE_CLASS_OUTPUT, NODE_OPTIONS|NODE_PREVIEW);
+	node_type_base(ttype, &ntype, CMP_NODE_VIEW_LEVELS, "Levels", NODE_CLASS_OUTPUT, NODE_OPTIONS|NODE_PREVIEW);
 	node_type_socket_templates(&ntype, cmp_node_view_levels_in, cmp_node_view_levels_out);
 	node_type_size(&ntype, 140, 100, 320);
 	node_type_init(&ntype, node_composit_init_view_levels);
 	node_type_storage(&ntype, "ImageUser", NULL, NULL);
 	node_type_exec(&ntype, node_composit_exec_view_levels);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-

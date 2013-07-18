@@ -2,7 +2,6 @@
  *
  * Functions for struct-dna, the genetic file dot c!
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -43,6 +42,7 @@
 #include "MEM_guardedalloc.h" // for MEM_freeN MEM_mallocN MEM_callocN
 
 #ifdef WITH_DNA_GHASH
+#  include "BLI_utildefines.h"
 #  include "BLI_ghash.h"
 #endif
 
@@ -51,90 +51,90 @@
 
 
 /* gcc 4.1 on mingw was complaining that __int64 was already defined
-actually is saw the line below as typedef long long long long... 
-Anyhow, since its already defined, its safe to do an ifndef here- Campbell */
+ * actually is saw the line below as typedef long long long long...
+ * Anyhow, since its already defined, its safe to do an ifndef here- Campbell */
 #ifdef FREE_WINDOWS
-#ifndef __int64
+#  ifndef __int64
 typedef long long __int64;
-#endif
+#  endif
 #endif
 
 /*
  * - please note: no builtin security to detect input of double structs
  * - if you want a struct not to be in DNA file: add two hash marks above it (#<enter>#<enter>)
-
-Structure DNA data is added to each blender file and to each executable, this to detect
-in .blend files new veriables in structs, changed array sizes, etc. It's also used for
-converting endian and pointer size (32-64 bits)
-As an extra, Python uses a call to detect run-time the contents of a blender struct.
-
-Create a structDNA: only needed when one of the input include (.h) files change.
-File Syntax:
-	SDNA (4 bytes) (magic number)
-	NAME (4 bytes)
-	<nr> (4 bytes) amount of names (int)
-	<string> 
-	<string>
-	...
-	...
-	TYPE (4 bytes)
-	<nr> amount of types (int)
-	<string>
-	<string>
-	...
-	...
-	TLEN (4 bytes)
-	<len> (short) the lengths of types
-	<len>
-	...
-	...
-	STRC (4 bytes)
-	<nr> amount of structs (int)
-	<typenr><nr_of_elems> <typenr><namenr> <typenr><namenr> ...
-	
-!!Remember to read/write integer and short aligned!!
-
- While writing a file, the names of a struct is indicated with a type number,
- to be found with: type= findstruct_nr(SDNA *, char *)
- The value of 'type' corresponds with the the index within the structs array
-
- For the moment: the complete DNA file is included in a .blend file. For
- the future we can think of smarter methods, like only included the used
- structs. Only needed to keep a file short though...
-
-ALLOWED AND TESTED CHANGES IN STRUCTS:
- - type change (a char to float will be divided by 255)
- - location within a struct (everthing can be randomly mixed up)
- - struct within struct (within struct etc), this is recursive
- - adding new elements, will be default initialized zero
- - remving elements
- - change of array sizes
- - change of a pointer type: when the name doesn't change the contents is copied
-
-NOT YET:
- - array (vec[3]) to float struct (vec3f)
-
-DONE:
- - endian compatibility
- - pointer conversion (32-64 bits)
-
-IMPORTANT:
- - do not use #defines in structs for array lengths, this cannot be read by the dna functions
- - do not use uint, but unsigned int instead, ushort and ulong are allowed
- - only use a long in Blender if you want this to be the size of a pointer. so it is
-   32 bits or 64 bits, dependant at the cpu architecture
- - chars are always unsigned
- - aligment of variables has to be done in such a way, that any system does
-   not create 'padding' (gaps) in structures. So make sure that:
-   - short: 2 aligned
-   - int: 4 aligned
-   - float: 4 aligned
-   - double: 8 aligned
-   - long: 8 aligned
-   - struct: 8 aligned
- - the sdna functions have several error prints builtin, always check blender running from a console.
- 
-*/
+ *
+ * Structure DNA data is added to each blender file and to each executable, this to detect
+ * in .blend files new veriables in structs, changed array sizes, etc. It's also used for
+ * converting endian and pointer size (32-64 bits)
+ * As an extra, Python uses a call to detect run-time the contents of a blender struct.
+ *
+ * Create a structDNA: only needed when one of the input include (.h) files change.
+ * File Syntax:
+ *     SDNA (4 bytes) (magic number)
+ *     NAME (4 bytes)
+ *     <nr> (4 bytes) amount of names (int)
+ *     <string>
+ *     <string>
+ *     ...
+ *     ...
+ *     TYPE (4 bytes)
+ *     <nr> amount of types (int)
+ *     <string>
+ *     <string>
+ *     ...
+ *     ...
+ *     TLEN (4 bytes)
+ *     <len> (short) the lengths of types
+ *     <len>
+ *     ...
+ *     ...
+ *     STRC (4 bytes)
+ *     <nr> amount of structs (int)
+ *     <typenr><nr_of_elems> <typenr><namenr> <typenr><namenr> ...
+ *
+ * !!Remember to read/write integer and short aligned!!
+ *
+ *  While writing a file, the names of a struct is indicated with a type number,
+ *  to be found with: type= findstruct_nr(SDNA *, char *)
+ *  The value of 'type' corresponds with the the index within the structs array
+ *
+ *  For the moment: the complete DNA file is included in a .blend file. For
+ *  the future we can think of smarter methods, like only included the used
+ *  structs. Only needed to keep a file short though...
+ *
+ * ALLOWED AND TESTED CHANGES IN STRUCTS:
+ *  - type change (a char to float will be divided by 255)
+ *  - location within a struct (everthing can be randomly mixed up)
+ *  - struct within struct (within struct etc), this is recursive
+ *  - adding new elements, will be default initialized zero
+ *  - remving elements
+ *  - change of array sizes
+ *  - change of a pointer type: when the name doesn't change the contents is copied
+ *
+ * NOT YET:
+ *  - array (vec[3]) to float struct (vec3f)
+ *
+ * DONE:
+ *  - endian compatibility
+ *  - pointer conversion (32-64 bits)
+ *
+ * IMPORTANT:
+ *  - do not use #defines in structs for array lengths, this cannot be read by the dna functions
+ *  - do not use uint, but unsigned int instead, ushort and ulong are allowed
+ *  - only use a long in Blender if you want this to be the size of a pointer. so it is
+ *    32 bits or 64 bits, dependent at the cpu architecture
+ *  - chars are always unsigned
+ *  - aligment of variables has to be done in such a way, that any system does
+ *    not create 'padding' (gaps) in structures. So make sure that:
+ *    - short: 2 aligned
+ *    - int: 4 aligned
+ *    - float: 4 aligned
+ *    - double: 8 aligned
+ *    - long: 8 aligned
+ *    - struct: 8 aligned
+ *  - the sdna functions have several error prints builtin, always check blender running from a console.
+ *
+ */
 
 /* local */
 static int le_int(int temp);
@@ -351,8 +351,8 @@ static void init_structDNA(SDNA *sdna, int do_endian_swap)
 			sdna->names[nr]= cp;
 
 			/* "float gravity [3]" was parsed wrong giving both "gravity" and
-			   "[3]"  members. we rename "[3]", and later set the type of
-			   "gravity" to "void" so the offsets work out correct */
+			 * "[3]"  members. we rename "[3]", and later set the type of
+			 * "gravity" to "void" so the offsets work out correct */
 			if(*cp == '[' && strcmp(cp, "[3]")==0) {
 				if(nr && strcmp(sdna->names[nr-1], "Cvi") == 0) {
 					sdna->names[nr]= "gravity[3]";
@@ -390,7 +390,7 @@ static void init_structDNA(SDNA *sdna, int do_endian_swap)
 		while(nr<sdna->nr_types) {
 			sdna->types[nr]= cp;
 			
-			/* this is a patch, to change struct names without a confict with SDNA */
+			/* this is a patch, to change struct names without a conflict with SDNA */
 			/* be careful to use it, in this case for a system-struct (opengl/X) */
 			
 			if( *cp == 'b') {
@@ -492,7 +492,7 @@ static void init_structDNA(SDNA *sdna, int do_endian_swap)
 			for(nr=0; nr<sdna->nr_structs; nr++) {
 				sp= sdna->structs[nr];
 				if(strcmp(sdna->types[sp[0]], "ClothSimSettings") == 0)
-					sp[10]= 9;
+					sp[10]= SDNA_TYPE_VOID;
 			}
 		}
 
@@ -644,104 +644,104 @@ char *DNA_struct_get_compareflags(SDNA *sdna, SDNA *newsdna)
 		if(compflags[a]==2) recurs_test_compflags(sdna, compflags, a);
 	}
 	
-/*
+#if 0
 	for(a=0; a<sdna->nr_structs; a++) {
 		if(compflags[a]==2) {
 			spold= sdna->structs[a];
 			printf("changed: %s\n", sdna->types[ spold[0] ]);
 		}
 	}
-*/
+#endif
 
 	return compflags;
 }
 
-static void cast_elem(char *ctype, char *otype, const char *name, char *curdata, char *olddata)
+static eSDNA_Type sdna_type_nr(const char *dna_type)
+{
+	if     ((strcmp(dna_type, "char")==0) || (strcmp(dna_type, "const char")==0))         return SDNA_TYPE_CHAR;
+	else if((strcmp(dna_type, "uchar")==0) || (strcmp(dna_type, "unsigned char")==0))     return SDNA_TYPE_UCHAR;
+	else if( strcmp(dna_type, "short")==0)                                                return SDNA_TYPE_SHORT;
+	else if((strcmp(dna_type, "ushort")==0)||(strcmp(dna_type, "unsigned short")==0))     return SDNA_TYPE_USHORT;
+	else if( strcmp(dna_type, "int")==0)                                                  return SDNA_TYPE_INT;
+	else if( strcmp(dna_type, "long")==0)                                                 return SDNA_TYPE_LONG;
+	else if((strcmp(dna_type, "ulong")==0)||(strcmp(dna_type, "unsigned long")==0))       return SDNA_TYPE_ULONG;
+	else if( strcmp(dna_type, "float")==0)                                                return SDNA_TYPE_FLOAT;
+	else if( strcmp(dna_type, "double")==0)                                               return SDNA_TYPE_DOUBLE;
+	else if( strcmp(dna_type, "int64_t")==0)                                              return SDNA_TYPE_INT64;
+	else if( strcmp(dna_type, "uint64_t")==0)                                             return SDNA_TYPE_UINT64;
+	else                                                                                  return -1; /* invalid! */
+}
+
+static void cast_elem(const char *ctype, const char *otype, const char *name, char *curdata, char *olddata)
 {
 	double val = 0.0;
-	int arrlen, curlen=1, oldlen=1, ctypenr, otypenr;
-	
+	int arrlen, curlen=1, oldlen=1;
+
+	eSDNA_Type ctypenr, otypenr;
+
 	arrlen= DNA_elem_array_size(name, strlen(name));
-	
-	/* define otypenr */
-	if(strcmp(otype, "char")==0 || (strcmp(otype, "const char")==0)) otypenr= 0; 
-	else if((strcmp(otype, "uchar")==0) || (strcmp(otype, "unsigned char")==0)) otypenr= 1;
-	else if(strcmp(otype, "short")==0) otypenr= 2; 
-	else if((strcmp(otype, "ushort")==0)||(strcmp(otype, "unsigned short")==0)) otypenr= 3;
-	else if(strcmp(otype, "int")==0) otypenr= 4;
-	else if(strcmp(otype, "long")==0) otypenr= 5;
-	else if((strcmp(otype, "ulong")==0)||(strcmp(otype, "unsigned long")==0)) otypenr= 6;
-	else if(strcmp(otype, "float")==0) otypenr= 7;
-	else if(strcmp(otype, "double")==0) otypenr= 8;
-	else return;
-	
-	/* define ctypenr */
-	if(strcmp(ctype, "char")==0) ctypenr= 0; 
-	else if(strcmp(ctype, "const char")==0) ctypenr= 0; 
-	else if((strcmp(ctype, "uchar")==0)||(strcmp(ctype, "unsigned char")==0)) ctypenr= 1;
-	else if(strcmp(ctype, "short")==0) ctypenr= 2; 
-	else if((strcmp(ctype, "ushort")==0)||(strcmp(ctype, "unsigned short")==0)) ctypenr= 3;
-	else if(strcmp(ctype, "int")==0) ctypenr= 4;
-	else if(strcmp(ctype, "long")==0) ctypenr= 5;
-	else if((strcmp(ctype, "ulong")==0)||(strcmp(ctype, "unsigned long")==0)) ctypenr= 6;
-	else if(strcmp(ctype, "float")==0) ctypenr= 7;
-	else if(strcmp(ctype, "double")==0) ctypenr= 8;
-	else return;
+
+	if ( (otypenr= sdna_type_nr(otype)) == -1 ||
+	     (ctypenr= sdna_type_nr(ctype)) == -1 )
+	{
+		return;
+	}
 
 	/* define lengths */
-	if(otypenr < 2) oldlen= 1;
-	else if(otypenr < 4) oldlen= 2;
-	else if(otypenr < 8) oldlen= 4;
-	else oldlen= 8;
+	oldlen= DNA_elem_type_size(otypenr);
+	curlen= DNA_elem_type_size(ctypenr);
 
-	if(ctypenr < 2) curlen= 1;
-	else if(ctypenr < 4) curlen= 2;
-	else if(ctypenr < 8) curlen= 4;
-	else curlen= 8;
-	
 	while(arrlen>0) {
 		switch(otypenr) {
-		case 0:
+		case SDNA_TYPE_CHAR:
 			val= *olddata; break;
-		case 1:
+		case SDNA_TYPE_UCHAR:
 			val= *( (unsigned char *)olddata); break;
-		case 2:
+		case SDNA_TYPE_SHORT:
 			val= *( (short *)olddata); break;
-		case 3:
+		case SDNA_TYPE_USHORT:
 			val= *( (unsigned short *)olddata); break;
-		case 4:
+		case SDNA_TYPE_INT:
 			val= *( (int *)olddata); break;
-		case 5:
+		case SDNA_TYPE_LONG:
 			val= *( (int *)olddata); break;
-		case 6:
+		case SDNA_TYPE_ULONG:
 			val= *( (unsigned int *)olddata); break;
-		case 7:
+		case SDNA_TYPE_FLOAT:
 			val= *( (float *)olddata); break;
-		case 8:
+		case SDNA_TYPE_DOUBLE:
 			val= *( (double *)olddata); break;
+		case SDNA_TYPE_INT64:
+			val= *( (int64_t *)olddata); break;
+		case SDNA_TYPE_UINT64:
+			val= *( (uint64_t *)olddata); break;
 		}
 		
 		switch(ctypenr) {
-		case 0:
+		case SDNA_TYPE_CHAR:
 			*curdata= val; break;
-		case 1:
+		case SDNA_TYPE_UCHAR:
 			*( (unsigned char *)curdata)= val; break;
-		case 2:
+		case SDNA_TYPE_SHORT:
 			*( (short *)curdata)= val; break;
-		case 3:
+		case SDNA_TYPE_USHORT:
 			*( (unsigned short *)curdata)= val; break;
-		case 4:
+		case SDNA_TYPE_INT:
 			*( (int *)curdata)= val; break;
-		case 5:
+		case SDNA_TYPE_LONG:
 			*( (int *)curdata)= val; break;
-		case 6:
+		case SDNA_TYPE_ULONG:
 			*( (unsigned int *)curdata)= val; break;
-		case 7:
+		case SDNA_TYPE_FLOAT:
 			if(otypenr<2) val/= 255;
 			*( (float *)curdata)= val; break;
-		case 8:
+		case SDNA_TYPE_DOUBLE:
 			if(otypenr<2) val/= 255;
 			*( (double *)curdata)= val; break;
+		case SDNA_TYPE_INT64:
+			*( (int64_t *)curdata)= val; break;
+		case SDNA_TYPE_UINT64:
+			*( (uint64_t *)curdata)= val; break;
 		}
 
 		olddata+= oldlen;
@@ -805,7 +805,6 @@ static int elem_strcmp(const char *name, const char *oname)
 		if(name[a]==0) break;
 		a++;
 	}
-	if(name[a] != oname[a]) return 1;
 	return 0;
 }
 
@@ -840,17 +839,18 @@ static char *find_elem(SDNA *sdna, const char *type, const char *name, short *ol
 	return NULL;
 }
 
-static void reconstruct_elem(SDNA *newsdna, SDNA *oldsdna, char *type, const char *name, char *curdata, short *old, char *olddata)
+static void reconstruct_elem(SDNA *newsdna, SDNA *oldsdna,
+                             char *type, const char *name, char *curdata, short *old, char *olddata)
 {
 	/* rules: test for NAME:
-			- name equal:
-				- cast type
-			- name partially equal (array differs)
-				- type equal: memcpy
-				- types casten
-	   (nzc 2-4-2001 I want the 'unsigned' bit to be parsed as well. Where
-	   can I force this?)
-	*/	
+	 * 		- name equal:
+	 * 			- cast type
+	 * 		- name partially equal (array differs)
+	 * 			- type equal: memcpy
+	 * 			- types casten
+	 * (nzc 2-4-2001 I want the 'unsigned' bit to be parsed as well. Where
+	 * can I force this?)
+	 */
 	int a, elemcount, len, array, oldsize, cursize, mul;
 	char *otype;
 	const char *oname, *cp;
@@ -914,7 +914,8 @@ static void reconstruct_elem(SDNA *newsdna, SDNA *oldsdna, char *type, const cha
 	}
 }
 
-static void reconstruct_struct(SDNA *newsdna, SDNA *oldsdna, char *compflags, int oldSDNAnr, char *data, int curSDNAnr, char *cur)
+static void reconstruct_struct(SDNA *newsdna, SDNA *oldsdna,
+                               char *compflags, int oldSDNAnr, char *data, int curSDNAnr, char *cur)
 {
 	/* Recursive!
 	 * Per element from cur_struct, read data from old_struct.
@@ -1056,7 +1057,9 @@ void DNA_struct_switch_endian(SDNA *oldsdna, int oldSDNAnr, char *data)
 			}
 			else {
 				
-				if( spc[0]==2 || spc[0]==3 ) {	/* short-ushort */
+				if ( spc[0]==SDNA_TYPE_SHORT ||
+				     spc[0]==SDNA_TYPE_USHORT )
+				{
 					
 					/* exception: variable called blocktype/ipowin: derived from ID_  */
 					skip= 0;
@@ -1078,7 +1081,11 @@ void DNA_struct_switch_endian(SDNA *oldsdna, int oldSDNAnr, char *data)
 						}
 					}
 				}
-				else if(spc[0]>3 && spc[0]<8) { /* int-long-ulong-float */
+				else if ( (spc[0]==SDNA_TYPE_INT    ||
+				           spc[0]==SDNA_TYPE_LONG   ||
+				           spc[0]==SDNA_TYPE_ULONG  ||
+				           spc[0]==SDNA_TYPE_FLOAT))
+				{
 
 					mul= DNA_elem_array_size(name, strlen(name));
 					cpo= cur;
@@ -1090,6 +1097,20 @@ void DNA_struct_switch_endian(SDNA *oldsdna, int oldSDNAnr, char *data)
 						cpo[1]= cpo[2];
 						cpo[2]= cval;
 						cpo+= 4;
+					}
+				}
+				else if ( (spc[0]==SDNA_TYPE_INT64) ||
+				          (spc[0]==SDNA_TYPE_UINT64))
+				{
+					mul= DNA_elem_array_size(name, strlen(name));
+					cpo= cur;
+					while(mul--) {
+						cval= cpo[0]; cpo[0]= cpo[7]; cpo[7]= cval;
+						cval= cpo[1]; cpo[1]= cpo[6]; cpo[6]= cval;
+						cval= cpo[2]; cpo[2]= cpo[5]; cpo[5]= cval;
+						cval= cpo[3]; cpo[3]= cpo[4]; cpo[4]= cval;
+
+						cpo+= 8;
 					}
 				}
 			}
@@ -1140,3 +1161,27 @@ int DNA_elem_offset(SDNA *sdna, const char *stype, const char *vartype, const ch
 	return (int)((intptr_t)cp);
 }
 
+int DNA_elem_type_size(const eSDNA_Type elem_nr)
+{
+	/* should containt all enum types */
+	switch (elem_nr) {
+		case SDNA_TYPE_CHAR:
+		case SDNA_TYPE_UCHAR:
+			return 1;
+		case SDNA_TYPE_SHORT:
+		case SDNA_TYPE_USHORT:
+			return 2;
+		case SDNA_TYPE_INT:
+		case SDNA_TYPE_LONG:
+		case SDNA_TYPE_ULONG:
+		case SDNA_TYPE_FLOAT:
+			return 4;
+		case SDNA_TYPE_DOUBLE:
+		case SDNA_TYPE_INT64:
+		case SDNA_TYPE_UINT64:
+			return 8;
+	}
+
+	/* weak */
+	return 8;
+}

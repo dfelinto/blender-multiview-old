@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -441,7 +440,7 @@ GHOST_SystemSDL::processEvent(SDL_Event *sdl_event)
 				}
 			}
 
-			g_event= new GHOST_EventKey(getMilliSeconds(), type, window, gkey, sym);
+			g_event= new GHOST_EventKey(getMilliSeconds(), type, window, gkey, sym, NULL);
 		}
 		break;
 	}
@@ -482,8 +481,8 @@ GHOST_SystemSDL::setCursorPosition(GHOST_TInt32 x,
 bool
 GHOST_SystemSDL::generateWindowExposeEvents()
 {
-	vector<GHOST_WindowSDL *>::iterator w_start= m_dirty_windows.begin();
-	vector<GHOST_WindowSDL *>::const_iterator w_end= m_dirty_windows.end();
+	std::vector<GHOST_WindowSDL *>::iterator w_start= m_dirty_windows.begin();
+	std::vector<GHOST_WindowSDL *>::const_iterator w_end= m_dirty_windows.end();
 	bool anyProcessed= false;
 
 	for (;w_start != w_end; ++w_start) {
@@ -564,10 +563,10 @@ GHOST_SystemSDL::findGhostWindow(SDL_Window *sdl_win)
 	// We should always check the window manager's list of windows
 	// and only process events on these windows.
 
-	vector<GHOST_IWindow *> & win_vec= m_windowManager->getWindows();
+	std::vector<GHOST_IWindow *> & win_vec= m_windowManager->getWindows();
 
-	vector<GHOST_IWindow *>::iterator win_it= win_vec.begin();
-	vector<GHOST_IWindow *>::const_iterator win_end= win_vec.end();
+	std::vector<GHOST_IWindow *>::iterator win_it= win_vec.begin();
+	std::vector<GHOST_IWindow *>::const_iterator win_end= win_vec.end();
 
 	for (; win_it != win_end; ++win_it) {
 		GHOST_WindowSDL * window= static_cast<GHOST_WindowSDL *>(*win_it);

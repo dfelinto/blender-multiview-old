@@ -77,7 +77,7 @@ class QuickFur(Operator):
                         if obj.type == 'MESH']
 
         if not mesh_objects:
-            self.report({'ERROR'}, "Select at least one mesh object.")
+            self.report({'ERROR'}, "Select at least one mesh object")
             return {'CANCELLED'}
 
         mat = bpy.data.materials.new("Fur Material")
@@ -105,8 +105,7 @@ class QuickFur(Operator):
             psys.settings.child_type = 'INTERPOLATED'
 
             obj.data.materials.append(mat)
-            obj.particle_systems[-1].settings.material = \
-                    len(obj.data.materials)
+            psys.settings.material = len(obj.data.materials)
 
         return {'FINISHED'}
 
@@ -157,7 +156,7 @@ class QuickExplode(Operator):
 
     fade = BoolProperty(
             name="Fade",
-            description="Fade the pieces over time.",
+            description="Fade the pieces over time",
             default=True,
             )
 
@@ -307,7 +306,7 @@ class QuickSmoke(Operator):
 
     show_flows = BoolProperty(
             name="Render Smoke Objects",
-            description="Keep the smoke objects visible during rendering.",
+            description="Keep the smoke objects visible during rendering",
             default=False,
             )
 
@@ -319,7 +318,7 @@ class QuickSmoke(Operator):
         max_co = -min_co
 
         if not mesh_objects:
-            self.report({'ERROR'}, "Select at least one mesh object.")
+            self.report({'ERROR'}, "Select at least one mesh object")
             return {'CANCELLED'}
 
         for obj in mesh_objects:
@@ -428,7 +427,7 @@ class QuickFluid(Operator):
             )
     show_flows = BoolProperty(
             name="Render Fluid Objects",
-            description="Keep the fluid objects visible during rendering.",
+            description="Keep the fluid objects visible during rendering",
             default=False,
             )
     start_baking = BoolProperty(
@@ -446,7 +445,7 @@ class QuickFluid(Operator):
         max_co = Vector((-100000, -100000, -100000))
 
         if not mesh_objects:
-            self.report({'ERROR'}, "Select at least one mesh object.")
+            self.report({'ERROR'}, "Select at least one mesh object")
             return {'CANCELLED'}
 
         for obj in mesh_objects:
@@ -462,10 +461,10 @@ class QuickFluid(Operator):
 
             if self.style == 'INFLOW':
                 mod.settings.type = 'INFLOW'
-                mod.settings.inflow_velocity = self.initial_velocity.copy()
+                mod.settings.inflow_velocity = self.initial_velocity
             else:
                 mod.settings.type = 'FLUID'
-                mod.settings.initial_velocity = self.initial_velocity.copy()
+                mod.settings.initial_velocity = self.initial_velocity
 
             obj.hide_render = not self.show_flows
             if not self.show_flows:

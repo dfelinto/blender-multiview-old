@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgerastogl
  */
 
-#ifndef __RAS_OPENGLRASTERIZER
-#define __RAS_OPENGLRASTERIZER
+#ifndef __RAS_OPENGLRASTERIZER_H__
+#define __RAS_OPENGLRASTERIZER_H__
 
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786)
@@ -49,10 +47,15 @@ using namespace std;
 #define RAS_MAX_TEXCO	8	// match in BL_Material
 #define RAS_MAX_ATTRIB	16	// match in BL_BlenderShader
 
-struct	OglDebugLine
+struct	OglDebugShape
 {
-	MT_Vector3	m_from;
-	MT_Vector3	m_to;
+	enum SHAPE_TYPE{
+		LINE, CIRCLE
+	};
+	SHAPE_TYPE  m_type;
+	MT_Vector3	m_pos;
+	MT_Vector3	m_param;
+	MT_Vector3	m_param2;
 	MT_Vector3	m_color;
 };
 
@@ -109,7 +112,7 @@ protected:
 	TexCoGen		m_attrib[RAS_MAX_ATTRIB];
 	int				m_texco_num;
 	int				m_attrib_num;
-	//int				m_last_blendmode;
+	//int				m_last_alphablend;
 	bool			m_last_frontface;
 
 	/** Stores the caching information for the last material activated. */
@@ -148,7 +151,7 @@ public:
 
 	virtual void	SetAnaglyphColor(const int anaglyph_mode);
 	virtual void	SetStereoMode(const StereoMode stereomode);
-    virtual RAS_IRasterizer::StereoMode GetStereoMode();
+	virtual RAS_IRasterizer::StereoMode GetStereoMode();
 	virtual bool	Stereo();
 	virtual bool	InterlacedStereo();
 	virtual void	SetEye(const StereoEye eye);
@@ -260,18 +263,32 @@ public:
 
 	virtual void	SetPolygonOffset(float mult, float add);
 
-	virtual	void	FlushDebugLines();
+	virtual	void	FlushDebugShapes();
 
-	virtual	void	DrawDebugLine(const MT_Vector3& from,const MT_Vector3& to,const MT_Vector3& color)
+	virtual	void DrawDebugLine(const MT_Vector3& from,const MT_Vector3& to,const MT_Vector3& color)
 	{
-		OglDebugLine line;
-		line.m_from = from;
-		line.m_to = to;
+		OglDebugShape line;
+		line.m_type = OglDebugShape::LINE;
+		line.m_pos= from;
+		line.m_param = to;
 		line.m_color = color;
-		m_debugLines.push_back(line);
+		m_debugShapes.push_back(line);
 	}
 
-	std::vector <OglDebugLine>	m_debugLines;
+	virtual	void DrawDebugCircle(const MT_Vector3& center, const MT_Scalar radius, const MT_Vector3& color,
+									const MT_Vector3& normal, int nsector)
+	{
+		OglDebugShape line;
+		line.m_type = OglDebugShape::CIRCLE;
+		line.m_pos= center;
+		line.m_param = normal;
+		line.m_color = color;	
+		line.m_param2.x() = radius;
+		line.m_param2.y() = (float) nsector;
+		m_debugShapes.push_back(line);
+	}
+
+	std::vector <OglDebugShape>	m_debugShapes;
 
 	virtual void SetTexCoordNum(int num);
 	virtual void SetAttribNum(int num);
@@ -285,8 +302,8 @@ public:
 	
 	virtual void	EnableMotionBlur(float motionblurvalue);
 	virtual void	DisableMotionBlur();
-	virtual float	GetMotionBlurValue(){return m_motionblurvalue;};
-	virtual int		GetMotionBlurState(){return m_motionblur;};
+	virtual float	GetMotionBlurValue() { return m_motionblurvalue; }
+	virtual int		GetMotionBlurState() { return m_motionblur; }
 	virtual void	SetMotionBlurState(int newstate)
 	{
 		if(newstate<0) 
@@ -297,7 +314,7 @@ public:
 			m_motionblur = newstate;
 	};
 
-	virtual void	SetBlendingMode(int blendmode);
+	virtual void	SetAlphaBlend(int alphablend);
 	virtual void	SetFrontFace(bool ccw);
 	
 	virtual void	SetAnisotropicFiltering(short level);
@@ -311,6 +328,6 @@ public:
 #endif
 };
 
-#endif //__RAS_OPENGLRASTERIZER
+#endif //__RAS_OPENGLRASTERIZER_H__
 
 

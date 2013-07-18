@@ -1,8 +1,4 @@
-/**
- * $Id$
- *
- * qtkit_export.m
- *
+/*
  * Code to create QuickTime Movies with Blender
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
@@ -110,34 +106,42 @@ static struct QuicktimeExport *qtexport;
 /* Video codec */
 static QuicktimeCodecTypeDesc qtVideoCodecList[] = {
 	{kRawCodecType, 1, "Uncompressed"},
-	{kJPEGCodecType, 2, "JPEG"},
-	{kMotionJPEGACodecType, 3, "M-JPEG A"},
-	{kMotionJPEGBCodecType, 4, "M-JPEG B"},
-	{kDVCPALCodecType, 5, "DV PAL"},
-	{kDVCNTSCCodecType, 6, "DV/DVCPRO NTSC"},
-	{kDVCPROHD720pCodecType, 7, "DVCPRO HD 720p"},
-	{kDVCPROHD1080i50CodecType, 8, "DVCPRO HD 1080i50"},
-	{kDVCPROHD1080i60CodecType, 9, "DVCPRO HD 1080i60"},
-	{kMPEG4VisualCodecType, 10, "MPEG4"},
-	{kH263CodecType, 11, "H.263"},
-	{kH264CodecType, 12, "H.264"},
-	{kAnimationCodecType, 13, "Animation"},
+	{k422YpCbCr8CodecType, 2, "Uncompressed 8-bit 4:2:2"},
+	{k422YpCbCr10CodecType, 3, "Uncompressed 10-bit 4:2:2"},
+	{kComponentVideoCodecType, 4, "Component Video"},
+	{kPixletCodecType, 5, "Pixlet"},
+	{kPNGCodecType, 6, "PNG"},
+	{kJPEGCodecType, 7, "JPEG"},
+	{kMotionJPEGACodecType, 8, "M-JPEG A"},
+	{kMotionJPEGBCodecType, 9, "M-JPEG B"},
+	{kDVCPALCodecType, 10, "DV PAL"},
+	{kDVCNTSCCodecType, 11, "DV/DVCPRO NTSC"},
+	{kDVCPROHD720pCodecType, 12, "DVCPRO HD 720p"},
+	{kDVCPROHD1080i50CodecType, 13, "DVCPRO HD 1080i50"},
+	{kDVCPROHD1080i60CodecType, 14, "DVCPRO HD 1080i60"},
+	{kMPEG4VisualCodecType, 15, "MPEG4"},
+	{kH263CodecType, 16, "H.263"},
+	{kH264CodecType, 17, "H.264"},
+	{kAnimationCodecType, 18, "Animation"},
 	{0,0,NULL}};
 
-static int qtVideoCodecCount = 13;
+static int qtVideoCodecCount = 18;
 
-int quicktime_get_num_videocodecs() {
+int quicktime_get_num_videocodecs()
+{
 	return qtVideoCodecCount;
 }
 
-QuicktimeCodecTypeDesc* quicktime_get_videocodecType_desc(int indexValue) {
+QuicktimeCodecTypeDesc* quicktime_get_videocodecType_desc(int indexValue)
+{
 	if ((indexValue>=0) && (indexValue < qtVideoCodecCount))
 		return &qtVideoCodecList[indexValue];
 	else
 		return NULL;
 }
 
-int quicktime_rnatmpvalue_from_videocodectype(int codecType) {
+int quicktime_rnatmpvalue_from_videocodectype(int codecType)
+{
 	int i;
 	for (i=0;i<qtVideoCodecCount;i++) {
 		if (qtVideoCodecList[i].codecType == codecType)
@@ -147,7 +151,8 @@ int quicktime_rnatmpvalue_from_videocodectype(int codecType) {
 	return 0;
 }
 
-int quicktime_videocodecType_from_rnatmpvalue(int rnatmpvalue) {
+int quicktime_videocodecType_from_rnatmpvalue(int rnatmpvalue)
+{
 	int i;
 	for (i=0;i<qtVideoCodecCount;i++) {
 		if (qtVideoCodecList[i].rnatmpvalue == rnatmpvalue)
@@ -167,18 +172,21 @@ static QuicktimeCodecTypeDesc qtAudioCodecList[] = {
 
 static int qtAudioCodecCount = 4;
 
-int quicktime_get_num_audiocodecs() {
+int quicktime_get_num_audiocodecs()
+{
 	return qtAudioCodecCount;
 }
 
-QuicktimeCodecTypeDesc* quicktime_get_audiocodecType_desc(int indexValue) {
+QuicktimeCodecTypeDesc* quicktime_get_audiocodecType_desc(int indexValue)
+{
 	if ((indexValue>=0) && (indexValue < qtAudioCodecCount))
 		return &qtAudioCodecList[indexValue];
 	else
 		return NULL;
 }
 
-int quicktime_rnatmpvalue_from_audiocodectype(int codecType) {
+int quicktime_rnatmpvalue_from_audiocodectype(int codecType)
+{
 	int i;
 	for (i=0;i<qtAudioCodecCount;i++) {
 		if (qtAudioCodecList[i].codecType == codecType)
@@ -188,7 +196,8 @@ int quicktime_rnatmpvalue_from_audiocodectype(int codecType) {
 	return 0;
 }
 
-int quicktime_audiocodecType_from_rnatmpvalue(int rnatmpvalue) {
+int quicktime_audiocodecType_from_rnatmpvalue(int rnatmpvalue)
+{
 	int i;
 	for (i=0;i<qtAudioCodecCount;i++) {
 		if (qtAudioCodecList[i].rnatmpvalue == rnatmpvalue)
@@ -199,7 +208,8 @@ int quicktime_audiocodecType_from_rnatmpvalue(int rnatmpvalue) {
 }
 
 
-static NSString *stringWithCodecType(int codecType) {
+static NSString *stringWithCodecType(int codecType)
+{
 	char str[5];
 	
 	*((int*)str) = EndianU32_NtoB(codecType);
@@ -208,7 +218,8 @@ static NSString *stringWithCodecType(int codecType) {
 	return [NSString stringWithCString:str encoding:NSASCIIStringEncoding];
 }
 
-void makeqtstring (RenderData *rd, char *string) {
+void makeqtstring (RenderData *rd, char *string)
+{
 	char txt[64];
 
 	strcpy(string, rd->pic);
@@ -217,12 +228,13 @@ void makeqtstring (RenderData *rd, char *string) {
 	BLI_make_existing_file(string);
 
 	if (BLI_strcasecmp(string + strlen(string) - 4, ".mov")) {
-		sprintf(txt, "%04d_%04d.mov", (rd->sfra) , (rd->efra) );
+		sprintf(txt, "%04d-%04d.mov", (rd->sfra) , (rd->efra) );
 		strcat(string, txt);
 	}
 }
 
-void filepath_qt(char *string, RenderData *rd) {
+void filepath_qt(char *string, RenderData *rd)
+{
 	if (string==NULL) return;
 	
 	strcpy(string, rd->pic);
@@ -231,7 +243,7 @@ void filepath_qt(char *string, RenderData *rd) {
 	BLI_make_existing_file(string);
 	
 	if (!BLI_testextensie(string, ".mov")) {
-		/* if we dont have any #'s to insert numbers into, use 4 numbers by default */
+		/* if we don't have any #'s to insert numbers into, use 4 numbers by default */
 		if (strchr(string, '#')==NULL)
 			strcat(string, "####"); /* 4 numbers */
 
@@ -585,8 +597,7 @@ int start_qt(struct Scene *scene, struct RenderData *rd, int rectx, int recty, R
 	return success;
 }
 
-
-int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int recty, ReportList *reports)
+int append_qt(struct RenderData *rd, int start_frame, int frame, int *pixels, int rectx, int recty, ReportList *reports)
 {
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	NSBitmapImageRep *blBitmapFormatImage;
@@ -594,7 +605,6 @@ int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int rect
 	OSStatus err = noErr;
 	unsigned char *from_Ptr,*to_Ptr;
 	int y,from_i,to_i;
-	
 	
 	/* Create bitmap image rep in blender format (32bit RGBA) */
 	blBitmapFormatImage = [[NSBitmapImageRep alloc] initWithBitmapDataPlanes:NULL
@@ -662,7 +672,7 @@ int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int rect
 			}
 			else {
 				//Error getting audio packets
-				BKE_reportf(reports, RPT_ERROR, "Unable to get further audio packets from frame %i, error = 0x%x",qtexport->audioTotalExportedFrames,err);
+				BKE_reportf(reports, RPT_ERROR, "Unable to get further audio packets from frame %i, error = 0x%x",(int)qtexport->audioTotalExportedFrames,err);
 				break;
 			}
 
@@ -778,12 +788,13 @@ void end_qt(void)
 }
 
 
-void free_qtcomponentdata(void) {
+void free_qtcomponentdata(void)
+{
 }
 
-void quicktime_verify_image_type(RenderData *rd)
+void quicktime_verify_image_type(RenderData *rd, ImageFormatData *imf)
 {
-	if (rd->imtype == R_QUICKTIME) {
+	if (imf->imtype == R_IMF_IMTYPE_QUICKTIME) {
 		if ((rd->qtcodecsettings.codecType<= 0) ||
 			(rd->qtcodecsettings.codecSpatialQuality <0) ||
 			(rd->qtcodecsettings.codecSpatialQuality > 100)) {

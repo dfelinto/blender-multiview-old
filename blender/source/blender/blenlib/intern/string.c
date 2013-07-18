@@ -1,10 +1,4 @@
-/* util.c
- *
- * various string, file, list operations.
- *
- *
- * $Id$
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -47,14 +41,16 @@
 #include "BLI_dynstr.h"
 #include "BLI_string.h"
 
-char *BLI_strdupn(const char *str, const size_t len) {
+char *BLI_strdupn(const char *str, const size_t len)
+{
 	char *n= MEM_mallocN(len+1, "strdup");
 	memcpy(n, str, len);
 	n[len]= '\0';
 	
 	return n;
 }
-char *BLI_strdup(const char *str) {
+char *BLI_strdup(const char *str)
+{
 	return BLI_strdupn(str, strlen(str));
 }
 
@@ -71,7 +67,8 @@ char *BLI_strdupcat(const char *str1, const char *str2)
 	return n;
 }
 
-char *BLI_strncpy(char *dst, const char *src, const size_t maxncpy) {
+char *BLI_strncpy(char *dst, const char *src, const size_t maxncpy)
+{
 	size_t srclen= strlen(src);
 	size_t cpylen= (srclen>(maxncpy-1))?(maxncpy-1):srclen;
 	
@@ -91,7 +88,8 @@ size_t BLI_snprintf(char *buffer, size_t count, const char *format, ...)
 	
 	if (n != -1 && n < count) {
 		buffer[n] = '\0';
-	} else {
+	}
+	else {
 		buffer[count-1] = '\0';
 	}
 	
@@ -186,8 +184,8 @@ char *BLI_getQuotedStr (const char *str, const char *prefix)
 	return BLI_strdupn(startMatch, (size_t)(endMatch-startMatch));
 }
 
-/* Replaces all occurances of oldText with newText in str, returning a new string that doesn't 
- * contain the 'replaced' occurances.
+/* Replaces all occurrences of oldText with newText in str, returning a new string that doesn't 
+ * contain the 'replaced' occurrences.
  */
 // A rather wasteful string-replacement utility, though this shall do for now...
 // Feel free to replace this with an even safe + nicer alternative 
@@ -233,7 +231,7 @@ char *BLI_replacestr(char *str, const char *oldText, const char *newText)
 		str += lenOld;
 	}
 	
-	/* finish off and return a new string that has had all occurances of */
+	/* finish off and return a new string that has had all occurrences of */
 	if (ds) {
 		char *newStr;
 		
@@ -284,7 +282,8 @@ char *BLI_strcasestr(const char *s, const char *find)
 }
 
 
-int BLI_strcasecmp(const char *s1, const char *s2) {
+int BLI_strcasecmp(const char *s1, const char *s2)
+{
 	int i;
 
 	for (i=0; ; i++) {
@@ -303,7 +302,8 @@ int BLI_strcasecmp(const char *s1, const char *s2) {
 	return 0;
 }
 
-int BLI_strncasecmp(const char *s1, const char *s2, size_t len) {
+int BLI_strncasecmp(const char *s1, const char *s2, size_t len)
+{
 	int i;
 
 	for (i=0; i<len; i++) {
@@ -326,11 +326,11 @@ int BLI_strncasecmp(const char *s1, const char *s2, size_t len) {
 int BLI_natstrcmp(const char *s1, const char *s2)
 {
 	int d1= 0, d2= 0;
-	
+
 	/* if both chars are numeric, to a strtol().
-	   then increase string deltas as long they are 
-	   numeric, else do a tolower and char compare */
-	
+	 * then increase string deltas as long they are 
+	 * numeric, else do a tolower and char compare */
+
 	while(1) {
 		char c1 = tolower(s1[d1]);
 		char c2 = tolower(s2[d2]);
@@ -397,116 +397,6 @@ size_t BLI_strnlen(const char *str, size_t maxlen)
 {
 	const char *end = memchr(str, '\0', maxlen);
 	return end ? (size_t) (end - str) : maxlen;
-}
-
-/* from libswish3, originally called u8_isvalid(),
- * modified to return the index of the bad character (byte index not utf).
- * http://svn.swish-e.org/libswish3/trunk/src/libswish3/utf8.c r3044 - campbell */
-
-/* based on the valid_utf8 routine from the PCRE library by Philip Hazel
-
-   length is in bytes, since without knowing whether the string is valid
-   it's hard to know how many characters there are! */
-
-static const char trailingBytesForUTF8[256] = {
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-	1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,
-	2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,2,3,3,3,3,3,3,3,3,4,4,4,4,5,5,5,5
-};
-
-int BLI_utf8_invalid_byte(const char *str, int length)
-{
-	const unsigned char *p, *pend = (unsigned char*)str + length;
-	unsigned char c;
-	int ab;
-
-	for (p = (unsigned char*)str; p < pend; p++) {
-		c = *p;
-		if (c < 128)
-			continue;
-		if ((c & 0xc0) != 0xc0)
-			goto utf8_error;
-		ab = trailingBytesForUTF8[c];
-		if (length < ab)
-			goto utf8_error;
-		length -= ab;
-
-		p++;
-		/* Check top bits in the second byte */
-		if ((*p & 0xc0) != 0x80)
-			goto utf8_error;
-
-		/* Check for overlong sequences for each different length */
-		switch (ab) {
-			/* Check for xx00 000x */
-		case 1:
-			if ((c & 0x3e) == 0) goto utf8_error;
-			continue;   /* We know there aren't any more bytes to check */
-
-			/* Check for 1110 0000, xx0x xxxx */
-		case 2:
-			if (c == 0xe0 && (*p & 0x20) == 0) goto utf8_error;
-			break;
-
-			/* Check for 1111 0000, xx00 xxxx */
-		case 3:
-			if (c == 0xf0 && (*p & 0x30) == 0) goto utf8_error;
-			break;
-
-			/* Check for 1111 1000, xx00 0xxx */
-		case 4:
-			if (c == 0xf8 && (*p & 0x38) == 0) goto utf8_error;
-			break;
-
-			/* Check for leading 0xfe or 0xff,
-			   and then for 1111 1100, xx00 00xx */
-		case 5:
-			if (c == 0xfe || c == 0xff ||
-				(c == 0xfc && (*p & 0x3c) == 0)) goto utf8_error;
-			break;
-		}
-
-		/* Check for valid bytes after the 2nd, if any; all must start 10 */
-		while (--ab > 0) {
-			if ((*(p+1) & 0xc0) != 0x80) goto utf8_error;
-			p++; /* do this after so we get usable offset - campbell */
-		}
-	}
-
-	return -1;
-
-utf8_error:
-
-	return (int)((char *)p - (char *)str) - 1;
-}
-
-int BLI_utf8_invalid_strip(char *str, int length)
-{
-	int bad_char, tot= 0;
-
-	while((bad_char= BLI_utf8_invalid_byte(str, length)) != -1) {
-		str += bad_char;
-		length -= bad_char;
-
-		if(length == 0) {
-			/* last character bad, strip it */
-			*str= '\0';
-			tot++;
-			break;
-		}
-		else {
-			/* strip, keep looking */
-			memmove(str, str + 1, length);
-			tot++;
-		}
-	}
-
-	return tot;
 }
 
 void BLI_ascii_strtolower(char *str, int len)

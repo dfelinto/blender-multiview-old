@@ -1,5 +1,4 @@
 /* 
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,7 +23,7 @@
  * Contributor(s): Willian P. Germano, Campbell Barton
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file blender/python/generic/bpy_internal_import.h
  *  \ingroup pygen
@@ -33,8 +32,8 @@
 
 /* Note, the BGE needs to use this too, keep it minimal */
 
-#ifndef BPY_INTERNAL_IMPORT_H
-#define BPY_INTERNAL_IMPORT_H
+#ifndef __BPY_INTERNAL_IMPORT_H__
+#define __BPY_INTERNAL_IMPORT_H__
 
 /* python redefines :/ */
 #ifdef _POSIX_C_SOURCE
@@ -50,7 +49,7 @@ struct Text;
 void bpy_import_init(PyObject *builtins);
 
 PyObject*	bpy_text_import(struct Text *text);
-PyObject*	bpy_text_import_name(char *name, int *found);
+PyObject*	bpy_text_import_name(const char *name, int *found);
 PyObject*	bpy_text_reimport(PyObject *module, int *found);
 /* void		bpy_text_clear_modules(int clear_all);*/ /* Clear user modules */ 
 
@@ -63,4 +62,4 @@ extern PyMethodDef bpy_reload_meth;
 struct Main *bpy_import_main_get(void);
 void bpy_import_main_set(struct Main *maggie);
 
-#endif				/* BPY_INTERNAL_IMPORT_H */
+#endif				/* __BPY_INTERNAL_IMPORT_H__ */

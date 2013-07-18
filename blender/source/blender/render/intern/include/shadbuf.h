@@ -1,7 +1,6 @@
 /*
  * shadbuf_ext.h
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,8 +33,8 @@
  */
 
 
-#ifndef SHADBUF_EXT_H
-#define SHADBUF_EXT_H
+#ifndef __SHADBUF_H__
+#define __SHADBUF_H__
 
 #include "render_types.h"
 
@@ -43,7 +42,7 @@ struct ObjectRen;
 
 /**
  * Calculates shadowbuffers for a vector of shadow-giving lamps
- * @param lar The vector of lamps
+ * \param lar The vector of lamps
  */
 void makeshadowbuf(struct Render *re, LampRen *lar);
 void freeshadowbuf(struct LampRen *lar);
@@ -53,19 +52,19 @@ void threaded_makeshadowbufs(struct Render *re);
 /**
  * Determines the shadow factor for a face and lamp. There is some
  * communication with global variables here.
- * @returns The shadow factors: 1.0 for no shadow, 0.0 for complete
- *          shadow.
- * @param shb The shadowbuffer to find the shadow factor in.
- * @param inp The inproduct between viewvector and ?
+ * \return The shadow factors: 1.0 for no shadow, 0.0 for complete
+ *         shadow.
+ * \param shb The shadowbuffer to find the shadow factor in.
+ * \param inp The inproduct between viewvector and ?
  *
  */
-float testshadowbuf(struct Render *re, struct ShadBuf *shb, float *rco, float *dxco, float *dyco, float inp, float mat_bias);	
+float testshadowbuf(struct Render *re, struct ShadBuf *shb, const float rco[3], const float dxco[3], const float dyco[3], float inp, float mat_bias);
 
 /**
  * Determines the shadow factor for lamp <lar>, between <p1>
  * and <p2>. (Which CS?)
  */
-float shadow_halo(LampRen *lar, float *p1, float *p2);
+float shadow_halo(LampRen *lar, const float p1[3], const float p2[3]);
 
 /**
  * Irregular shadowbuffer
@@ -115,5 +114,5 @@ typedef struct ISBData {
 	int minx, miny, rectx, recty;	/* copy from part disprect */
 } ISBData;
 
-#endif /* SHADBUF_EXT_H */
+#endif /* __SHADBUF_H__ */
 

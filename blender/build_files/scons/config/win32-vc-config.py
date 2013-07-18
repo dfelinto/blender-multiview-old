@@ -29,11 +29,6 @@ BF_ICONV_INC = '${BF_ICONV}/include'
 BF_ICONV_LIB = 'iconv'
 BF_ICONV_LIBPATH = '${BF_ICONV}/lib'
 
-BF_LIBSAMPLERATE = LIBDIR + '/samplerate'
-BF_LIBSAMPLERATE_INC = '${BF_LIBSAMPLERATE}/include'
-BF_LIBSAMPLERATE_LIB = 'libsamplerate'
-BF_LIBSAMPLERATE_LIBPATH = '${BF_LIBSAMPLERATE}/lib'
-
 WITH_BF_JACK = False
 BF_JACK = LIBDIR + '/jack'
 BF_JACK_INC = '${BF_JACK}/include ${BF_FFMPEG}/include/msvc'
@@ -62,7 +57,7 @@ WITH_BF_STATICOPENEXR = False
 BF_OPENEXR = LIBDIR + '/openexr'
 BF_OPENEXR_INC = '${BF_OPENEXR}/include ${BF_OPENEXR}/include/IlmImf ${BF_OPENEXR}/include/Iex ${BF_OPENEXR}/include/Imath '
 BF_OPENEXR_LIB = ' Iex Half IlmImf Imath IlmThread '
-BF_OPENEXR_LIBPATH = '${BF_OPENEXR}/lib_vs2008'
+BF_OPENEXR_LIBPATH = '${BF_OPENEXR}/lib'
 # Warning, this static lib configuration is untested! users of this OS please confirm.
 BF_OPENEXR_LIB_STATIC = '${BF_OPENEXR}/lib/libHalf.a ${BF_OPENEXR}/lib/libIlmImf.a ${BF_OPENEXR}/lib/libIex.a ${BF_OPENEXR}/lib/libImath.a ${BF_OPENEXR}/lib/libIlmThread.a'
 
@@ -77,7 +72,7 @@ BF_JPEG_LIBPATH = '${BF_JPEG}/lib'
 WITH_BF_PNG = True
 BF_PNG = LIBDIR + '/png'
 BF_PNG_INC = '${BF_PNG}/include'
-BF_PNG_LIB = 'libpng_st'
+BF_PNG_LIB = 'libpng'
 BF_PNG_LIBPATH = '${BF_PNG}/lib'
 
 WITH_BF_TIFF = True
@@ -101,6 +96,7 @@ BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
 
 WITH_BF_GAMEENGINE = True
 WITH_BF_PLAYER = True
+WITH_BF_OCEANSIM = True
 
 WITH_BF_BULLET = True
 BF_BULLET = '#extern/bullet2/src'
@@ -152,6 +148,28 @@ BF_OPENCOLLADA_LIBPATH = '${BF_OPENCOLLADA}/lib'
 
 WITH_BF_3DMOUSE = True
 
+WITH_BF_OPENMP = True
+
+#Cycles
+WITH_BF_CYCLES = True 
+
+WITH_BF_OIIO = True
+BF_OIIO = '${LIBDIR}/openimageio'
+BF_OIIO_INC = '${BF_OIIO}/include'
+BF_OIIO_LIB = 'OpenImageIO'
+BF_OIIO_LIBPATH = '${BF_OIIO}/lib'
+
+WITH_BF_BOOST = True
+BF_BOOST = '${LIBDIR}/boost'
+BF_BOOST_INC = '${BF_BOOST}/include'
+BF_BOOST_LIB = 'libboost_date_time-vc90-mt-s-1_47 libboost_filesystem-vc90-mt-s-1_47 libboost_regex-vc90-mt-s-1_47 libboost_system-vc90-mt-s-1_47 libboost_thread-vc90-mt-s-1_47'
+BF_BOOST_LIBPATH = '${BF_BOOST}/lib'
+
+#CUDA
+WITH_BF_CYCLES_CUDA_BINARIES = False
+#BF_CYCLES_CUDA_NVCC = "" # Path to the nvidia compiler
+BF_CYCLES_CUDA_BINARIES_ARCH = ['sm_13', 'sm_20', 'sm_21']
+
 #Ray trace optimization
 WITH_BF_RAYOPTIMIZATION = True
 BF_RAYOPTIMIZATION_SSE_FLAGS = ['/arch:SSE']
@@ -167,16 +185,16 @@ BF_OPENGL_LIB_STATIC = [ '${BF_OPENGL}/lib/libGL.a', '${BF_OPENGL}/lib/libGLU.a'
 CC = 'cl.exe'
 CXX = 'cl.exe'
 
-CCFLAGS = ['/nologo', '/Ob1', '/J', '/W0', '/Gd', '/wd4018', '/wd4244', '/wd4305', '/wd4800', '/wd4065', '/wd4267', '/we4013']
+CCFLAGS = ['/nologo', '/Ob1', '/J', '/W1', '/Gd', '/wd4018', '/wd4244', '/wd4305', '/wd4800', '/wd4065', '/wd4267', '/we4013']
 CXXFLAGS = ['/EHsc']
 BGE_CXXFLAGS = ['/O2', '/EHsc', '/GR', '/fp:fast', '/arch:SSE']
 
 BF_DEBUG_CCFLAGS = ['/Zi', '/FR${TARGET}.sbr']
 
 CPPFLAGS = ['-DWIN32','-D_CONSOLE', '-D_LIB', '-D_CRT_SECURE_NO_DEPRECATE']
-REL_CFLAGS = ['-O2', '-DNDEBUG']
+REL_CFLAGS = []
+REL_CXXFLAGS = []
 REL_CCFLAGS = ['-O2', '-DNDEBUG']
-REL_CXXFLAGS = ['-O2', '-DNDEBUG']
 
 C_WARN = []
 CC_WARN = []

@@ -1,7 +1,4 @@
-/*  image.c
- * 
- * $Id$
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -63,10 +60,14 @@
 #include "DNA_camera_types.h"
 #include "DNA_sequence_types.h"
 #include "DNA_userdef_types.h"
+#include "DNA_brush_types.h"
+#include "DNA_mesh_types.h"
+#include "DNA_meshdata_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
+#include "BLI_bpath.h"
 
 #include "BKE_bmfont.h"
 #include "BKE_global.h"
@@ -284,6 +285,10 @@ static void image_assign_ibuf(Image *ima, ImBuf *ibuf, int index, int frame)
 				break;
 
 		ibuf->index= index;
+		if(ima->flag & IMA_CM_PREDIVIDE)
+			ibuf->flags |= IB_cm_predivide;
+		else
+			ibuf->flags &= ~IB_cm_predivide;
 
 		/* this function accepts link==NULL */
 		BLI_insertlinkbefore(&ima->ibufs, link, ibuf);
@@ -314,6 +319,174 @@ Image *copy_image(Image *ima)
 	nima->aspy= ima->aspy;
 
 	return nima;
+}
+
+static void extern_local_image(Image *UNUSED(ima))
+{
+	/* Nothing to do: images don't link to other IDs. This function exists to
+	 * match id_make_local pattern. */
+}
+
+void make_local_image(struct Image *ima)
+{
+	Main *bmain= G.main;
+	Tex *tex;
+	Brush *brush;
+	Mesh *me;
+	int is_local= FALSE, is_lib= FALSE;
+
+	/* - only lib users: do nothing
+	 * - only local users: set flag
+	 * - mixed: make copy
+	 */
+
+	if(ima->id.lib==NULL) return;
+
+	/* Can't take short cut here: must check meshes at least because of bogus
+	 * texface ID refs. - z0r */
+#if 0
+	if(ima->id.us==1) {
+		id_clear_lib_data(bmain, &ima->id);
+		extern_local_image(ima);
+		return;
+	}
+#endif
+
+	for(tex= bmain->tex.first; tex; tex= tex->id.next) {
+		if(tex->ima == ima) {
+			if(tex->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
+		}
+	}
+	for(brush= bmain->brush.first; brush; brush= brush->id.next) {
+		if(brush->clone.image == ima) {
+			if(brush->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
+		}
+	}
+	for(me= bmain->mesh.first; me; me= me->id.next) {
+		if(me->mtface) {
+			MTFace *tface;
+			int a, i;
+
+			for(i=0; i<me->fdata.totlayer; i++) {
+				if(me->fdata.layers[i].type == CD_MTFACE) {
+					tface= (MTFace*)me->fdata.layers[i].data;
+
+					for(a=0; a<me->totface; a++, tface++) {
+						if(tface->tpage == ima) {
+							if(me->id.lib) is_lib= TRUE;
+							else is_local= TRUE;
+						}
+					}
+				}
+			}
+		}
+
+		if(me->mtpoly) {
+			MTexPoly *mtpoly;
+			int a, i;
+
+			for(i=0; i<me->pdata.totlayer; i++) {
+				if(me->pdata.layers[i].type == CD_MTEXPOLY) {
+					mtpoly= (MTexPoly*)me->pdata.layers[i].data;
+
+					for(a=0; a<me->totpoly; a++, mtpoly++) {
+						if(mtpoly->tpage == ima) {
+							if(me->id.lib) is_lib= TRUE;
+							else is_local= TRUE;
+						}
+					}
+				}
+			}
+		}
+
+	}
+
+	if(is_local && is_lib == FALSE) {
+		id_clear_lib_data(bmain, &ima->id);
+		extern_local_image(ima);
+	}
+	else if(is_local && is_lib) {
+		Image *ima_new= copy_image(ima);
+
+		ima_new->id.us= 0;
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, ima->id.lib, &ima_new->id);
+
+		tex= bmain->tex.first;
+		while(tex) {
+			if(tex->id.lib==NULL) {
+				if(tex->ima==ima) {
+					tex->ima = ima_new;
+					ima_new->id.us++;
+					ima->id.us--;
+				}
+			}
+			tex= tex->id.next;
+		}
+		brush= bmain->brush.first;
+		while(brush) {
+			if(brush->id.lib==NULL) {
+				if(brush->clone.image==ima) {
+					brush->clone.image = ima_new;
+					ima_new->id.us++;
+					ima->id.us--;
+				}
+			}
+			brush= brush->id.next;
+		}
+		/* Transfer references in texfaces. Texfaces don't add to image ID
+		 * user count *unless* there are no other users. See
+		 * readfile.c:lib_link_mtface. */
+		me= bmain->mesh.first;
+		while(me) {
+			if(me->mtface) {
+				MTFace *tface;
+				int a, i;
+
+				for(i=0; i<me->fdata.totlayer; i++) {
+					if(me->fdata.layers[i].type == CD_MTFACE) {
+						tface= (MTFace*)me->fdata.layers[i].data;
+
+						for(a=0; a<me->totface; a++, tface++) {	
+							if(tface->tpage == ima) {
+								tface->tpage = ima_new;
+								if(ima_new->id.us == 0) {
+									tface->tpage->id.us= 1;
+								}
+								id_lib_extern((ID*)ima_new);
+							}
+						}
+					}
+				}
+			}
+
+			if(me->mtpoly) {
+				MTexPoly *mtpoly;
+				int a, i;
+
+				for(i=0; i<me->pdata.totlayer; i++) {
+					if(me->pdata.layers[i].type == CD_MTEXPOLY) {
+						mtpoly= (MTexPoly*)me->pdata.layers[i].data;
+
+						for(a=0; a<me->totpoly; a++, mtpoly++) {
+							if(mtpoly->tpage == ima) {
+								mtpoly->tpage = ima_new;
+								if(ima_new->id.us == 0) {
+									mtpoly->tpage->id.us= 1;
+								}
+								id_lib_extern((ID*)ima_new);
+							}
+						}
+					}
+				}
+			}
+
+			me= me->id.next;
+		}
+	}
 }
 
 void BKE_image_merge(Image *dest, Image *source)
@@ -358,13 +531,13 @@ Image *BKE_add_image_file(const char *name)
 			BLI_strncpy(strtest, ima->name, sizeof(ima->name));
 			BLI_path_abs(strtest, G.main->name);
 			
-			if( strcmp(strtest, str)==0 ) {
+			if (BLI_path_cmp(strtest, str)==0) {
 				if(ima->anim==NULL || ima->id.us==0) {
 					BLI_strncpy(ima->name, name, sizeof(ima->name));	/* for stringcode */
 					ima->id.us++;										/* officially should not, it doesn't link here! */
 					if(ima->ok==0)
 						ima->ok= IMA_OK;
-			/* RETURN! */
+					/* RETURN! */
 					return ima;
 				}
 			}
@@ -428,13 +601,13 @@ Image *BKE_add_image_size(unsigned int width, unsigned int height, const char *n
 	if (ima) {
 		ImBuf *ibuf;
 		
-		BLI_strncpy(ima->name, name, FILE_MAX);
+		/* BLI_strncpy(ima->name, name, FILE_MAX); */ /* don't do this, this writes in ain invalid filepath! */
 		ima->gen_x= width;
 		ima->gen_y= height;
 		ima->gen_type= uvtestgrid;
 		ima->gen_flag |= (floatbuf ? IMA_GEN_FLOAT : 0);
 		
-		ibuf= add_ibuf_size(width, height, name, depth, floatbuf, uvtestgrid, color);
+		ibuf= add_ibuf_size(width, height, ima->name, depth, floatbuf, uvtestgrid, color);
 		image_assign_ibuf(ima, ibuf, IMA_NO_INDEX, 0);
 		
 		ima->ok= IMA_OK_LOADED;
@@ -473,7 +646,7 @@ void BKE_image_memorypack(Image *ima)
 	}
 	
 	ibuf->ftype= PNG;
-	ibuf->depth= 32;
+	ibuf->planes= R_IMF_PLANES_RGBA;
 	
 	IMB_saveiff(ibuf, ibuf->name, IB_rect | IB_mem);
 	if(ibuf->encodedbuffer==NULL) {
@@ -524,9 +697,9 @@ void free_old_images(void)
 	int ctime = (int)PIL_check_seconds_timer();
 	
 	/* 
-	   Run garbage collector once for every collecting period of time 
-	   if textimeout is 0, that's the option to NOT run the collector
-	*/
+	 * Run garbage collector once for every collecting period of time 
+	 * if textimeout is 0, that's the option to NOT run the collector
+	 */
 	if (U.textimeout == 0 || ctime % U.texcollectrate || ctime == lasttime)
 		return;
 
@@ -539,10 +712,8 @@ void free_old_images(void)
 	ima= G.main->image.first;
 	while(ima) {
 		if((ima->flag & IMA_NOCOLLECT)==0 && ctime - ima->lastused > U.textimeout) {
-			/*
-			   If it's in GL memory, deallocate and set time tag to current time
-			   This gives textures a "second chance" to be used before dying.
-			*/
+			/* If it's in GL memory, deallocate and set time tag to current time
+			 * This gives textures a "second chance" to be used before dying. */
 			if(ima->bindcode || ima->repbind) {
 				GPU_free_image(ima);
 				ima->lastused = ctime;
@@ -592,7 +763,7 @@ void BKE_image_print_memlist(void)
 	for(ima= G.main->image.first; ima; ima= ima->id.next)
 		totsize += image_mem_size(ima);
 
-	printf("\ntotal image memory len: %.3lf MB\n", (double)totsize/(double)(1024*1024));
+	printf("\ntotal image memory len: %.3f MB\n", (double)totsize/(double)(1024*1024));
 
 	for(ima= G.main->image.first; ima; ima= ima->id.next) {
 		size= image_mem_size(ima);
@@ -624,11 +795,12 @@ void BKE_image_free_all_textures(void)
 				if(ibuf->userflags & IB_BITMAPDIRTY)
 					break;
 				
-				/* if(ibuf->mipmap[0]) 
+#if 0
+				if(ibuf->mipmap[0]) 
 					totsize+= 1.33*ibuf->x*ibuf->y*4;
 				else
-					totsize+= ibuf->x*ibuf->y*4;*/
-				
+					totsize+= ibuf->x*ibuf->y*4;
+#endif
 			}
 			if(ibuf==NULL)
 				image_free_buffers(ima);
@@ -672,175 +844,303 @@ void BKE_image_all_free_anim_ibufs(int cfra)
 
 /* *********** READ AND WRITE ************** */
 
-int BKE_imtype_to_ftype(int imtype)
+int BKE_imtype_to_ftype(const char imtype)
 {
-	if(imtype==R_TARGA)
+	if(imtype==R_IMF_IMTYPE_TARGA)
 		return TGA;
-	else if(imtype==R_RAWTGA)
+	else if(imtype==R_IMF_IMTYPE_RAWTGA)
 		return RAWTGA;
-	else if(imtype== R_IRIS) 
+	else if(imtype== R_IMF_IMTYPE_IRIS) 
 		return IMAGIC;
 #ifdef WITH_HDR
-	else if (imtype==R_RADHDR)
+	else if (imtype==R_IMF_IMTYPE_RADHDR)
 		return RADHDR;
 #endif
-	else if (imtype==R_PNG)
+	else if (imtype==R_IMF_IMTYPE_PNG)
 		return PNG;
 #ifdef WITH_DDS
-	else if (imtype==R_DDS)
+	else if (imtype==R_IMF_IMTYPE_DDS)
 		return DDS;
 #endif
-	else if (imtype==R_BMP)
+	else if (imtype==R_IMF_IMTYPE_BMP)
 		return BMP;
 #ifdef WITH_TIFF
-	else if (imtype==R_TIFF)
+	else if (imtype==R_IMF_IMTYPE_TIFF)
 		return TIF;
 #endif
-	else if (imtype==R_OPENEXR || imtype==R_MULTILAYER)
+	else if (imtype==R_IMF_IMTYPE_OPENEXR || imtype==R_IMF_IMTYPE_MULTILAYER)
 		return OPENEXR;
 #ifdef WITH_CINEON
-	else if (imtype==R_CINEON)
+	else if (imtype==R_IMF_IMTYPE_CINEON)
 		return CINEON;
-	else if (imtype==R_DPX)
+	else if (imtype==R_IMF_IMTYPE_DPX)
 		return DPX;
 #endif
 #ifdef WITH_OPENJPEG
-	else if(imtype==R_JP2)
+	else if(imtype==R_IMF_IMTYPE_JP2)
 		return JP2;
 #endif
 	else
 		return JPG|90;
 }
 
-int BKE_ftype_to_imtype(int ftype)
+char BKE_ftype_to_imtype(const int ftype)
 {
 	if(ftype==0)
-		return TGA;
+		return R_IMF_IMTYPE_TARGA;
 	else if(ftype == IMAGIC) 
-		return R_IRIS;
+		return R_IMF_IMTYPE_IRIS;
 #ifdef WITH_HDR
 	else if (ftype & RADHDR)
-		return R_RADHDR;
+		return R_IMF_IMTYPE_RADHDR;
 #endif
 	else if (ftype & PNG)
-		return R_PNG;
+		return R_IMF_IMTYPE_PNG;
 #ifdef WITH_DDS
 	else if (ftype & DDS)
-		return R_DDS;
+		return R_IMF_IMTYPE_DDS;
 #endif
 	else if (ftype & BMP)
-		return R_BMP;
+		return R_IMF_IMTYPE_BMP;
 #ifdef WITH_TIFF
 	else if (ftype & TIF)
-		return R_TIFF;
+		return R_IMF_IMTYPE_TIFF;
 #endif
 	else if (ftype & OPENEXR)
-		return R_OPENEXR;
+		return R_IMF_IMTYPE_OPENEXR;
 #ifdef WITH_CINEON
 	else if (ftype & CINEON)
-		return R_CINEON;
+		return R_IMF_IMTYPE_CINEON;
 	else if (ftype & DPX)
-		return R_DPX;
+		return R_IMF_IMTYPE_DPX;
 #endif
 	else if (ftype & TGA)
-		return R_TARGA;
+		return R_IMF_IMTYPE_TARGA;
 	else if(ftype & RAWTGA)
-		return R_RAWTGA;
+		return R_IMF_IMTYPE_RAWTGA;
 #ifdef WITH_OPENJPEG
 	else if(ftype & JP2)
-		return R_JP2;
+		return R_IMF_IMTYPE_JP2;
 #endif
 	else
-		return R_JPEG90;
+		return R_IMF_IMTYPE_JPEG90;
 }
 
 
-int BKE_imtype_is_movie(int imtype)
+int BKE_imtype_is_movie(const char imtype)
 {
 	switch(imtype) {
-	case R_AVIRAW:
-	case R_AVIJPEG:
-	case R_AVICODEC:
-	case R_QUICKTIME:
-	case R_FFMPEG:
-	case R_H264:
-	case R_THEORA:
-	case R_XVID:
-	case R_FRAMESERVER:
+	case R_IMF_IMTYPE_AVIRAW:
+	case R_IMF_IMTYPE_AVIJPEG:
+	case R_IMF_IMTYPE_AVICODEC:
+	case R_IMF_IMTYPE_QUICKTIME:
+	case R_IMF_IMTYPE_FFMPEG:
+	case R_IMF_IMTYPE_H264:
+	case R_IMF_IMTYPE_THEORA:
+	case R_IMF_IMTYPE_XVID:
+	case R_IMF_IMTYPE_FRAMESERVER:
 			return 1;
 	}
 	return 0;
 }
 
-int BKE_add_image_extension(char *string, int imtype)
+int BKE_imtype_supports_zbuf(const char imtype)
+{
+	switch(imtype) {
+	case R_IMF_IMTYPE_IRIZ:
+	case R_IMF_IMTYPE_OPENEXR: /* but not R_IMF_IMTYPE_MULTILAYER */
+			return 1;
+	}
+	return 0;
+}
+
+int BKE_imtype_supports_compress(const char imtype)
+{
+	switch(imtype) {
+	case R_IMF_IMTYPE_PNG:
+			return 1;
+	}
+	return 0;
+}
+
+int BKE_imtype_supports_quality(const char imtype)
+{
+	switch(imtype) {
+	case R_IMF_IMTYPE_JPEG90:
+	case R_IMF_IMTYPE_JP2:
+	case R_IMF_IMTYPE_AVIJPEG:
+			return 1;
+	}
+	return 0;
+}
+
+char BKE_imtype_valid_channels(const char imtype)
+{
+	char chan_flag= IMA_CHAN_FLAG_RGB; /* assume all support rgb */
+
+	/* alpha */
+	switch(imtype) {
+	case R_IMF_IMTYPE_TARGA:
+	case R_IMF_IMTYPE_IRIS:
+	case R_IMF_IMTYPE_PNG:
+	/* case R_IMF_IMTYPE_BMP: */ /* read but not write */
+	case R_IMF_IMTYPE_RADHDR:
+	case R_IMF_IMTYPE_TIFF:
+	case R_IMF_IMTYPE_OPENEXR:
+	case R_IMF_IMTYPE_MULTILAYER:
+	case R_IMF_IMTYPE_DDS:
+	case R_IMF_IMTYPE_JP2:
+	case R_IMF_IMTYPE_QUICKTIME:
+			chan_flag |= IMA_CHAN_FLAG_ALPHA;
+	}
+
+	/* bw */
+	switch(imtype) {
+	case R_IMF_IMTYPE_PNG:
+	case R_IMF_IMTYPE_JPEG90:
+	case R_IMF_IMTYPE_TARGA:
+	case R_IMF_IMTYPE_RAWTGA:
+	case R_IMF_IMTYPE_TIFF:
+	case R_IMF_IMTYPE_IRIS:
+			chan_flag |= IMA_CHAN_FLAG_BW;
+	}
+
+	return chan_flag;
+}
+
+char BKE_imtype_valid_depths(const char imtype)
+{
+	switch (imtype) {
+	case R_IMF_IMTYPE_RADHDR:
+		return R_IMF_CHAN_DEPTH_32;
+	case R_IMF_IMTYPE_TIFF:
+		return R_IMF_CHAN_DEPTH_8 | R_IMF_CHAN_DEPTH_16;
+	case R_IMF_IMTYPE_OPENEXR:
+		return R_IMF_CHAN_DEPTH_16 | R_IMF_CHAN_DEPTH_32;
+	case R_IMF_IMTYPE_MULTILAYER:
+		return R_IMF_CHAN_DEPTH_32;
+	/* eeh, cineone does some strange 10bits per channel */
+	case R_IMF_IMTYPE_DPX:
+	case R_IMF_IMTYPE_CINEON:
+		return R_IMF_CHAN_DEPTH_12;
+	case R_IMF_IMTYPE_JP2:
+		return R_IMF_CHAN_DEPTH_8 | R_IMF_CHAN_DEPTH_12 | R_IMF_CHAN_DEPTH_16;
+	/* most formats are 8bit only */
+	default:
+		return R_IMF_CHAN_DEPTH_8;
+	}
+}
+
+
+/* string is from command line --render-format arg, keep in sync with
+ * creator.c help info */
+char BKE_imtype_from_arg(const char *imtype_arg)
+{
+	if      (!strcmp(imtype_arg,"TGA")) return R_IMF_IMTYPE_TARGA;
+	else if (!strcmp(imtype_arg,"IRIS")) return R_IMF_IMTYPE_IRIS;
+#ifdef WITH_DDS
+	else if (!strcmp(imtype_arg,"DDS")) return R_IMF_IMTYPE_DDS;
+#endif
+	else if (!strcmp(imtype_arg,"JPEG")) return R_IMF_IMTYPE_JPEG90;
+	else if (!strcmp(imtype_arg,"IRIZ")) return R_IMF_IMTYPE_IRIZ;
+	else if (!strcmp(imtype_arg,"RAWTGA")) return R_IMF_IMTYPE_RAWTGA;
+	else if (!strcmp(imtype_arg,"AVIRAW")) return R_IMF_IMTYPE_AVIRAW;
+	else if (!strcmp(imtype_arg,"AVIJPEG")) return R_IMF_IMTYPE_AVIJPEG;
+	else if (!strcmp(imtype_arg,"PNG")) return R_IMF_IMTYPE_PNG;
+	else if (!strcmp(imtype_arg,"AVICODEC")) return R_IMF_IMTYPE_AVICODEC;
+	else if (!strcmp(imtype_arg,"QUICKTIME")) return R_IMF_IMTYPE_QUICKTIME;
+	else if (!strcmp(imtype_arg,"BMP")) return R_IMF_IMTYPE_BMP;
+#ifdef WITH_HDR
+	else if (!strcmp(imtype_arg,"HDR")) return R_IMF_IMTYPE_RADHDR;
+#endif
+#ifdef WITH_TIFF
+	else if (!strcmp(imtype_arg,"TIFF")) return R_IMF_IMTYPE_TIFF;
+#endif
+#ifdef WITH_OPENEXR
+	else if (!strcmp(imtype_arg,"EXR")) return R_IMF_IMTYPE_OPENEXR;
+	else if (!strcmp(imtype_arg,"MULTILAYER")) return R_IMF_IMTYPE_MULTILAYER;
+#endif
+	else if (!strcmp(imtype_arg,"MPEG")) return R_IMF_IMTYPE_FFMPEG;
+	else if (!strcmp(imtype_arg,"FRAMESERVER")) return R_IMF_IMTYPE_FRAMESERVER;
+#ifdef WITH_CINEON
+	else if (!strcmp(imtype_arg,"CINEON")) return R_IMF_IMTYPE_CINEON;
+	else if (!strcmp(imtype_arg,"DPX")) return R_IMF_IMTYPE_DPX;
+#endif
+#ifdef WITH_OPENJPEG
+	else if (!strcmp(imtype_arg,"JP2")) return R_IMF_IMTYPE_JP2;
+#endif
+	else return R_IMF_IMTYPE_INVALID;
+}
+
+int BKE_add_image_extension(char *string, const char imtype)
 {
 	const char *extension= NULL;
 	
-	if(imtype== R_IRIS) {
+	if(imtype== R_IMF_IMTYPE_IRIS) {
 		if(!BLI_testextensie(string, ".rgb"))
 			extension= ".rgb";
 	}
-	else if(imtype==R_IRIZ) {
+	else if(imtype==R_IMF_IMTYPE_IRIZ) {
 		if(!BLI_testextensie(string, ".rgb"))
 			extension= ".rgb";
 	}
 #ifdef WITH_HDR
-	else if(imtype==R_RADHDR) {
+	else if(imtype==R_IMF_IMTYPE_RADHDR) {
 		if(!BLI_testextensie(string, ".hdr"))
 			extension= ".hdr";
 	}
 #endif
-	else if (ELEM5(imtype, R_PNG, R_FFMPEG, R_H264, R_THEORA, R_XVID)) {
+	else if (ELEM5(imtype, R_IMF_IMTYPE_PNG, R_IMF_IMTYPE_FFMPEG, R_IMF_IMTYPE_H264, R_IMF_IMTYPE_THEORA, R_IMF_IMTYPE_XVID)) {
 		if(!BLI_testextensie(string, ".png"))
 			extension= ".png";
 	}
 #ifdef WITH_DDS
-	else if(imtype==R_DDS) {
+	else if(imtype==R_IMF_IMTYPE_DDS) {
 		if(!BLI_testextensie(string, ".dds"))
 			extension= ".dds";
 	}
 #endif
-	else if(imtype==R_RAWTGA) {
+	else if(imtype==R_IMF_IMTYPE_RAWTGA) {
 		if(!BLI_testextensie(string, ".tga"))
 			extension= ".tga";
 	}
-	else if(imtype==R_BMP) {
+	else if(imtype==R_IMF_IMTYPE_BMP) {
 		if(!BLI_testextensie(string, ".bmp"))
 			extension= ".bmp";
 	}
 #ifdef WITH_TIFF
-	else if(imtype==R_TIFF) {
+	else if(imtype==R_IMF_IMTYPE_TIFF) {
 		if(!BLI_testextensie(string, ".tif") && 
 			!BLI_testextensie(string, ".tiff")) extension= ".tif";
 	}
 #endif
 #ifdef WITH_OPENEXR
-	else if( ELEM(imtype, R_OPENEXR, R_MULTILAYER)) {
+	else if( ELEM(imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
 		if(!BLI_testextensie(string, ".exr"))
 			extension= ".exr";
 	}
 #endif
 #ifdef WITH_CINEON
-	else if(imtype==R_CINEON){
+	else if(imtype==R_IMF_IMTYPE_CINEON) {
 		if (!BLI_testextensie(string, ".cin"))
 			extension= ".cin";
 	}
-	else if(imtype==R_DPX){
+	else if(imtype==R_IMF_IMTYPE_DPX) {
 		if (!BLI_testextensie(string, ".dpx"))
 			extension= ".dpx";
 	}
 #endif
-	else if(imtype==R_TARGA) {
+	else if(imtype==R_IMF_IMTYPE_TARGA) {
 		if(!BLI_testextensie(string, ".tga"))
 			extension= ".tga";
 	}
 #ifdef WITH_OPENJPEG
-	else if(imtype==R_JP2) {
+	else if(imtype==R_IMF_IMTYPE_JP2) {
 		if(!BLI_testextensie(string, ".jp2"))
 			extension= ".jp2";
 	}
 #endif
-	else { //   R_AVICODEC, R_AVIRAW, R_AVIJPEG, R_JPEG90, R_QUICKTIME etc
+	else { //   R_IMF_IMTYPE_AVICODEC, R_IMF_IMTYPE_AVIRAW, R_IMF_IMTYPE_AVIJPEG, R_IMF_IMTYPE_JPEG90, R_IMF_IMTYPE_QUICKTIME etc
 		if(!( BLI_testextensie(string, ".jpg") || BLI_testextensie(string, ".jpeg")))
 			extension= ".jpg";
 	}
@@ -851,9 +1151,9 @@ int BKE_add_image_extension(char *string, int imtype)
 		if(BLI_testextensie_array(string, imb_ext_image)
 				  || (G.have_quicktime && BLI_testextensie_array(string, imb_ext_image_qt))) {
 			return BLI_replace_extension(string, FILE_MAX, extension);
-		} else {
-			strcat(string, extension);
-			return TRUE;
+		}
+		else {
+			return BLI_ensure_extension(string, FILE_MAX, extension);
 		}
 		
 	}
@@ -907,9 +1207,9 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 	
 	if (scene->r.stamp & R_STAMP_MARKER) {
 		char *name = scene_find_last_marker_name(scene, CFRA);
-	
-		if (name)	strcpy(text, name);
-		else 		strcpy(text, "<none>");
+
+		if (name)	BLI_strncpy(text, name, sizeof(text));
+		else 		BLI_strncpy(text, "<none>", sizeof(text));
 
 		BLI_snprintf(stamp_data->marker, sizeof(stamp_data->marker), do_prefix ? "Marker %s":"%s", text);
 	} else {
@@ -943,14 +1243,14 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 	}
 	
 	if (scene->r.stamp & R_STAMP_FRAME) {
-		char format[32];
+		char fmtstr[32];
 		int digits= 1;
 		
 		if(scene->r.efra>9)
 			digits= 1 + (int) log10(scene->r.efra);
 
-		BLI_snprintf(format, sizeof(format), do_prefix ? "Frame %%0%di":"%%0%di", digits);
-		BLI_snprintf (stamp_data->frame, sizeof(stamp_data->frame), format, scene->r.cfra);
+		BLI_snprintf(fmtstr, sizeof(fmtstr), do_prefix ? "Frame %%0%di":"%%0%di", digits);
+		BLI_snprintf (stamp_data->frame, sizeof(stamp_data->frame), fmtstr, scene->r.cfra);
 	} else {
 		stamp_data->frame[0] = '\0';
 	}
@@ -965,7 +1265,7 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 		if (camera && camera->type == OB_CAMERA) {
 			BLI_snprintf(text, sizeof(text), "%.2f", ((Camera *)camera->data)->lens);
 		}
-		else 		strcpy(text, "<none>");
+		else 		BLI_strncpy(text, "<none>", sizeof(text));
 
 		BLI_snprintf(stamp_data->cameralens, sizeof(stamp_data->cameralens), do_prefix ? "Lens %s":"%s", text);
 	} else {
@@ -981,8 +1281,8 @@ static void stampdata(Scene *scene, Object *camera, StampData *stamp_data, int d
 	if (scene->r.stamp & R_STAMP_SEQSTRIP) {
 		Sequence *seq= seq_foreground_frame_get(scene, scene->r.cfra);
 	
-		if (seq) strcpy(text, seq->name+2);
-		else 		strcpy(text, "<none>");
+		if (seq)	BLI_strncpy(text, seq->name+2, sizeof(text));
+		else 		BLI_strncpy(text, "<none>", sizeof(text));
 
 		BLI_snprintf(stamp_data->strip, sizeof(stamp_data->strip), do_prefix ? "Strip %s":"%s", text);
 	} else {
@@ -1243,98 +1543,99 @@ int BKE_alphatest_ibuf(ImBuf *ibuf)
 	return FALSE;
 }
 
-int BKE_write_ibuf(ImBuf *ibuf, const char *name, int imtype, int subimtype, int quality)
+/* note: imf->planes is ignored here, its assumed the image channels
+ * are already set */
+int BKE_write_ibuf(ImBuf *ibuf, const char *name, ImageFormatData *imf)
 {
-	int ok;
-	(void)subimtype; /* quies unused warnings */
+	char imtype= imf->imtype;
+	char compress= imf->compress;
+	char quality= imf->quality;
 
-	if(imtype == -1) {
-		/* use whatever existing image type is set by 'ibuf' */
-	}
-	else if(imtype== R_IRIS) {
+	int ok;
+
+	if(imtype== R_IMF_IMTYPE_IRIS) {
 		ibuf->ftype= IMAGIC;
 	}
 #ifdef WITH_HDR
-	else if (imtype==R_RADHDR) {
+	else if (imtype==R_IMF_IMTYPE_RADHDR) {
 		ibuf->ftype= RADHDR;
 	}
 #endif
-	else if (ELEM5(imtype, R_PNG, R_FFMPEG, R_H264, R_THEORA, R_XVID)) {
+	else if (ELEM5(imtype, R_IMF_IMTYPE_PNG, R_IMF_IMTYPE_FFMPEG, R_IMF_IMTYPE_H264, R_IMF_IMTYPE_THEORA, R_IMF_IMTYPE_XVID)) {
 		ibuf->ftype= PNG;
 
-		if(imtype==R_PNG)
-			ibuf->ftype |= quality;  /* quality is actually compression 0-100 --> 0-9 */
+		if(imtype==R_IMF_IMTYPE_PNG)
+			ibuf->ftype |= compress;
 
 	}
 #ifdef WITH_DDS
-	else if (imtype==R_DDS) {
+	else if (imtype==R_IMF_IMTYPE_DDS) {
 		ibuf->ftype= DDS;
 	}
 #endif
-	else if (imtype==R_BMP) {
+	else if (imtype==R_IMF_IMTYPE_BMP) {
 		ibuf->ftype= BMP;
 	}
 #ifdef WITH_TIFF
-	else if (imtype==R_TIFF) {
+	else if (imtype==R_IMF_IMTYPE_TIFF) {
 		ibuf->ftype= TIF;
 
-		if(subimtype & R_TIFF_16BIT)
+		if(imf->depth == R_IMF_CHAN_DEPTH_16)
 			ibuf->ftype |= TIF_16BIT;
 	}
 #endif
 #ifdef WITH_OPENEXR
-	else if (imtype==R_OPENEXR || imtype==R_MULTILAYER) {
+	else if (imtype==R_IMF_IMTYPE_OPENEXR || imtype==R_IMF_IMTYPE_MULTILAYER) {
 		ibuf->ftype= OPENEXR;
-		if(subimtype & R_OPENEXR_HALF)
+		if(imf->depth == R_IMF_CHAN_DEPTH_16)
 			ibuf->ftype |= OPENEXR_HALF;
-		ibuf->ftype |= (quality & OPENEXR_COMPRESS);
+		ibuf->ftype |= (imf->exr_codec & OPENEXR_COMPRESS);
 		
-		if(!(subimtype & R_OPENEXR_ZBUF))
+		if(!(imf->flag & R_IMF_FLAG_ZBUF))
 			ibuf->zbuf_float = NULL;	/* signal for exr saving */
 		
 	}
 #endif
 #ifdef WITH_CINEON
-	else if (imtype==R_CINEON) {
+	else if (imtype==R_IMF_IMTYPE_CINEON) {
 		ibuf->ftype = CINEON;
 	}
-	else if (imtype==R_DPX) {
+	else if (imtype==R_IMF_IMTYPE_DPX) {
 		ibuf->ftype = DPX;
 	}
 #endif
-	else if (imtype==R_TARGA) {
+	else if (imtype==R_IMF_IMTYPE_TARGA) {
 		ibuf->ftype= TGA;
 	}
-	else if(imtype==R_RAWTGA) {
+	else if(imtype==R_IMF_IMTYPE_RAWTGA) {
 		ibuf->ftype= RAWTGA;
 	}
 #ifdef WITH_OPENJPEG
-	else if(imtype==R_JP2) {
+	else if(imtype==R_IMF_IMTYPE_JP2) {
 		if(quality < 10) quality= 90;
 		ibuf->ftype= JP2|quality;
 		
-		if (subimtype & R_JPEG2K_16BIT) {
+		if (imf->depth == R_IMF_CHAN_DEPTH_16) {
 			ibuf->ftype |= JP2_16BIT;
-		} else if (subimtype & R_JPEG2K_12BIT) {
+		} else if (imf->depth == R_IMF_CHAN_DEPTH_12) {
 			ibuf->ftype |= JP2_12BIT;
 		}
 		
-		if (subimtype & R_JPEG2K_YCC) {
+		if (imf->jp2_flag & R_IMF_JP2_FLAG_YCC) {
 			ibuf->ftype |= JP2_YCC;
 		}
-		
-		if (subimtype & R_JPEG2K_CINE_PRESET) {
+
+		if (imf->jp2_flag & R_IMF_JP2_FLAG_CINE_PRESET) {
 			ibuf->ftype |= JP2_CINE;
-			if (subimtype & R_JPEG2K_CINE_48FPS)
+			if (imf->jp2_flag & R_IMF_JP2_FLAG_CINE_48)
 				ibuf->ftype |= JP2_CINE_48FPS;
 		}
 	}
 #endif
 	else {
-		/* R_JPEG90, etc. default we save jpegs */
+		/* R_IMF_IMTYPE_JPEG90, etc. default we save jpegs */
 		if(quality < 10) quality= 90;
 		ibuf->ftype= JPG|quality;
-		if(ibuf->depth==32) ibuf->depth= 24;	/* unsupported feature only confuses other s/w */
 	}
 	
 	BLI_make_existing_file(name);
@@ -1347,20 +1648,43 @@ int BKE_write_ibuf(ImBuf *ibuf, const char *name, int imtype, int subimtype, int
 	return(ok);
 }
 
-int BKE_write_ibuf_stamp(Scene *scene, struct Object *camera, ImBuf *ibuf, const char *name, int imtype, int subimtype, int quality)
+/* same as BKE_write_ibuf() but crappy workaround not to perminantly modify
+ * _some_, values in the imbuf */
+int BKE_write_ibuf_as(ImBuf *ibuf, const char *name, ImageFormatData *imf,
+                      const short save_copy)
+{
+	ImBuf ibuf_back= *ibuf;
+	int ok;
+
+	/* all data is rgba anyway,
+	 * this just controls how to save for some formats */
+	ibuf->planes= imf->planes;
+
+	ok= BKE_write_ibuf(ibuf, name, imf);
+
+	if (save_copy) {
+		/* note that we are not restoring _all_ settings */
+		ibuf->planes= ibuf_back.planes;
+		ibuf->ftype=  ibuf_back.ftype;
+	}
+
+	return ok;
+}
+
+int BKE_write_ibuf_stamp(Scene *scene, struct Object *camera, ImBuf *ibuf, const char *name, struct ImageFormatData *imf)
 {
 	if(scene && scene->r.stamp & R_STAMP_ALL)
 		BKE_stamp_info(scene, camera, ibuf);
 
-	return BKE_write_ibuf(ibuf, name, imtype, subimtype, quality);
+	return BKE_write_ibuf(ibuf, name, imf);
 }
 
 
-void BKE_makepicstring(char *string, const char *base, int frame, int imtype, const short use_ext, const short use_frames)
+void BKE_makepicstring(char *string, const char *base, const char *relbase, int frame, const char imtype, const short use_ext, const short use_frames)
 {
 	if (string==NULL) return;
 	BLI_strncpy(string, base, FILE_MAX - 10);	/* weak assumption */
-	BLI_path_abs(string, G.main->name);
+	BLI_path_abs(string, relbase);
 
 	if(use_frames)
 		BLI_path_frame(string, frame, 4);
@@ -1371,7 +1695,7 @@ void BKE_makepicstring(char *string, const char *base, int frame, int imtype, co
 }
 
 /* used by sequencer too */
-struct anim *openanim(char *name, int flags, int streamindex)
+struct anim *openanim(const char *name, int flags, int streamindex)
 {
 	struct anim *anim;
 	struct ImBuf *ibuf;
@@ -1397,22 +1721,21 @@ struct anim *openanim(char *name, int flags, int streamindex)
 
 
 /* Notes about Image storage 
-- packedfile
-  -> written in .blend
-- filename
-  -> written in .blend
-- movie
-  -> comes from packedfile or filename
-- renderresult
-  -> comes from packedfile or filename
-- listbase
-  -> ibufs from exrhandle
-- flipbook array
-  -> ibufs come from movie, temporary renderresult or sequence
-- ibuf
-  -> comes from packedfile or filename or generated
-
-*/
+ * - packedfile
+ *   -> written in .blend
+ * - filename
+ *   -> written in .blend
+ * - movie
+ *   -> comes from packedfile or filename
+ * - renderresult
+ *   -> comes from packedfile or filename
+ * - listbase
+ *   -> ibufs from exrhandle
+ * - flipbook array
+ *   -> ibufs come from movie, temporary renderresult or sequence
+ * - ibuf
+ *   -> comes from packedfile or filename or generated
+ */
 
 
 /* forces existence of 1 Image for renderout or nodes, returns Image */
@@ -1480,7 +1803,7 @@ void BKE_image_signal(Image *ima, ImageUser *iuser, int signal)
 		/* try to repack file */
 		if(ima->packedfile) {
 			PackedFile *pf;
-			pf = newPackedFile(NULL, ima->name);
+			pf = newPackedFile(NULL, ima->name, ID_BLEND_PATH(G.main, &ima->id));
 			if (pf) {
 				freePackedFile(ima->packedfile);
 				ima->packedfile = pf;
@@ -1509,13 +1832,13 @@ void BKE_image_signal(Image *ima, ImageUser *iuser, int signal)
 		break;
 	}
 	
-	/* dont use notifiers because they are not 100% sure to succseed
+	/* don't use notifiers because they are not 100% sure to succeeded
 	 * this also makes sure all scenes are accounted for. */
 	{
 		Scene *scene;
 		for(scene= G.main->scene.first; scene; scene= scene->id.next) {
 			if(scene->nodetree) {
-				NodeTagIDChanged(scene->nodetree, &ima->id);
+				nodeUpdateID(scene->nodetree, &ima->id);
 			}
 		}
 	}
@@ -1585,7 +1908,7 @@ void BKE_image_release_renderresult(Scene *scene, Image *ima)
 void BKE_image_backup_render(Scene *scene, Image *ima)
 {
 	/* called right before rendering, ima->renders contains render
-	   result pointers for everything but the current render */
+	 * result pointers for everything but the current render */
 	Render *re= RE_GetRender(scene->id.name);
 	int slot= ima->render_slot, last= ima->last_render_slot;
 
@@ -1653,10 +1976,7 @@ static ImBuf *image_load_sequence_file(Image *ima, ImageUser *iuser, int frame)
 	BLI_stringdec(name, head, tail, &numlen);
 	BLI_stringenc(name, head, tail, numlen, frame);
 
-	if(ima->id.lib)
-		BLI_path_abs(name, ima->id.lib->filepath);
-	else
-		BLI_path_abs(name, G.main->name);
+	BLI_path_abs(name, ID_BLEND_PATH(G.main, &ima->id));
 	
 	flag= IB_rect|IB_multilayer;
 	if(ima->flag & IMA_DO_PREMUL)
@@ -1768,11 +2088,8 @@ static ImBuf *image_load_movie_file(Image *ima, ImageUser *iuser, int frame)
 		char str[FILE_MAX];
 		
 		BLI_strncpy(str, ima->name, FILE_MAX);
-		if(ima->id.lib)
-			BLI_path_abs(str, ima->id.lib->filepath);
-		else
-			BLI_path_abs(str, G.main->name);
-		
+		BLI_path_abs(str, ID_BLEND_PATH(G.main, &ima->id));
+
 		/* FIXME: make several stream accessible in image editor, too*/
 		ima->anim = openanim(str, IB_rect, 0);
 		
@@ -1825,7 +2142,7 @@ static ImBuf *image_load_image_file(Image *ima, ImageUser *iuser, int cfra)
 		flag = IB_rect|IB_multilayer;
 		if(ima->flag & IMA_DO_PREMUL) flag |= IB_premul;
 		
-		ibuf = IMB_ibImageFromMemory((unsigned char*)ima->packedfile->data, ima->packedfile->size, flag);
+		ibuf = IMB_ibImageFromMemory((unsigned char*)ima->packedfile->data, ima->packedfile->size, flag, "<packed data>");
 	} 
 	else {
 		flag= IB_rect|IB_multilayer|IB_metadata;
@@ -1834,10 +2151,7 @@ static ImBuf *image_load_image_file(Image *ima, ImageUser *iuser, int cfra)
 			
 		/* get the right string */
 		BLI_strncpy(str, ima->name, sizeof(str));
-		if(ima->id.lib)
-			BLI_path_abs(str, ima->id.lib->filepath);
-		else
-			BLI_path_abs(str, G.main->name);
+		BLI_path_abs(str, ID_BLEND_PATH(G.main, &ima->id));
 		
 		/* read ibuf */
 		ibuf = IMB_loadiffname(str, flag);
@@ -1860,7 +2174,7 @@ static ImBuf *image_load_image_file(Image *ima, ImageUser *iuser, int cfra)
 			
 			/* make packed file for autopack */
 			if ((ima->packedfile == NULL) && (G.fileflags & G_AUTOPACK))
-				ima->packedfile = newPackedFile(NULL, str);
+				ima->packedfile = newPackedFile(NULL, str, ID_BLEND_PATH(G.main, &ima->id));
 		}
 	}
 	else
@@ -1913,7 +2227,7 @@ static ImBuf *image_get_ibuf_multilayer(Image *ima, ImageUser *iuser)
 
 
 /* showing RGBA result itself (from compo/sequence) or
-   like exr, using layers etc */
+ * like exr, using layers etc */
 /* always returns a single ibuf, also during render progress */
 static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_r)
 {
@@ -2004,7 +2318,10 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	ibuf->x= rres.rectx;
 	ibuf->y= rres.recty;
 	
-	if(ibuf->rect_float!=rectf || rect) /* ensure correct redraw */
+	/* free rect buffer if float buffer changes, so it can be recreated with
+	 * the updated result, and also in case we got byte buffer from sequencer,
+	 * so we don't keep reference to freed buffer */
+	if(ibuf->rect_float!=rectf || rect || !rectf)
 		imb_freerectImBuf(ibuf);
 
 	if(rect)
@@ -2031,8 +2348,16 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 
 	/* since its possible to access the buffer from the image directly, set the profile [#25073] */
 	ibuf->profile= (iuser->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT) ? IB_PROFILE_LINEAR_RGB : IB_PROFILE_NONE;
-
 	ibuf->dither= dither;
+
+	if(iuser->scene->r.color_mgt_flag & R_COLOR_MANAGEMENT_PREDIVIDE) {
+		ibuf->flags |= IB_cm_predivide;
+		ima->flag |= IMA_CM_PREDIVIDE;
+	}
+	else {
+		ibuf->flags &= ~IB_cm_predivide;
+		ima->flag &= ~IMA_CM_PREDIVIDE;
+	}
 
 	ima->ok= IMA_OK_LOADED;
 
@@ -2186,7 +2511,7 @@ ImBuf *BKE_image_acquire_ibuf(Image *ima, ImageUser *iuser, void **lock_r)
 			else if(ima->source == IMA_SRC_VIEWER) {
 				if(ima->type==IMA_TYPE_R_RESULT) {
 					/* always verify entirely, and potentially
-					   returns pointer to release later */
+					 * returns pointer to release later */
 					ibuf= image_get_render_result(ima, iuser, lock_r);
 				}
 				else if(ima->type==IMA_TYPE_COMPOSITE) {
@@ -2290,3 +2615,20 @@ void BKE_image_user_calc_frame(ImageUser *iuser, int cfra, int fieldnr)
 	iuser->framenr= framenr;
 	if(iuser->ok==0) iuser->ok= 1;
 }
+
+int BKE_image_has_alpha(struct Image *image)
+{
+	ImBuf *ibuf;
+	void *lock;
+	int planes;
+	
+	ibuf= BKE_image_acquire_ibuf(image, NULL, &lock);
+	planes = (ibuf?ibuf->planes:0);
+	BKE_image_release_ibuf(image, lock);
+
+	if (planes == 32)
+		return 1;
+	else
+		return 0;
+}
+

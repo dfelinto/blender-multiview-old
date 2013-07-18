@@ -1,7 +1,6 @@
 /*
  * A general argument parsing module
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,12 +34,13 @@
 
 
 #include <ctype.h> /* for tolower */
+#include <string.h>
 
 #include "MEM_guardedalloc.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_listbase.h"
 #include "BLI_string.h"
-#include "BLI_utildefines.h"
 #include "BLI_args.h"
 #include "BLI_ghash.h"
 
@@ -76,7 +76,8 @@ struct bArgs {
 	int	  *passes;
 };
 
-static unsigned int case_strhash(const void *ptr) {
+static unsigned int case_strhash(const void *ptr)
+{
 	const char *s= ptr;
 	unsigned int i= 0;
 	unsigned char c;
@@ -236,8 +237,7 @@ void BLI_argsPrintArgDoc(struct bArgs *ba, const char *arg)
 {
 	bArgument *a = lookUp(ba, arg, -1, -1);
 
-	if (a)
-	{
+	if (a) {
 		bArgDoc *d = a->doc;
 
 		internalDocPrint(d);
@@ -250,10 +250,8 @@ void BLI_argsPrintOtherDoc(struct bArgs *ba)
 {
 	bArgDoc *d;
 
-	for( d = ba->docs.first; d; d = d->next)
-	{
-		if (d->done == 0)
-		{
+	for (d = ba->docs.first; d; d = d->next) {
+		if (d->done == 0) {
 			internalDocPrint(d);
 		}
 	}
@@ -289,7 +287,8 @@ void BLI_argsParse(struct bArgs *ba, int pass, BA_ArgCallback default_cb, void *
 						ba->passes[i + j] = pass;
 					}
 					i += retval;
-				} else if (retval == -1){
+				}
+				else if (retval == -1) {
 					if (a) {
 						if (a->key->pass != -1)
 							ba->passes[i] = pass;

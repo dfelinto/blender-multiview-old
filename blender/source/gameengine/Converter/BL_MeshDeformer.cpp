@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -112,7 +110,7 @@ void BL_MeshDeformer::Relink(CTR_Map<class CTR_HashedPtr, void*>*map)
 }
 
 /**
- * @warning This function is expensive!
+ * \warning This function is expensive!
  */
 void BL_MeshDeformer::RecalcNormals()
 {

@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BSP_TMesh_h
-#define BSP_TMesh_h
+#ifndef __BSP_TMESH_H__
+#define __BSP_TMESH_H__
 
 #include "MT_Point3.h"
 #include "MT_Vector3.h"
@@ -85,9 +84,9 @@ public :
 			f.m_verts[1] = verts[i-1];
 			f.m_verts[2] = verts[i];
 
- 			m_faces.push_back(f);
+			m_faces.push_back(f);
 
-			BuildNormal(m_faces.back());		
+			BuildNormal(m_faces.back());
 		}
 	}
 

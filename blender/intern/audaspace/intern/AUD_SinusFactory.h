@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SINUSFACTORY
-#define AUD_SINUSFACTORY
+#ifndef __AUD_SINUSFACTORY_H__
+#define __AUD_SINUSFACTORY_H__
 
 #include "AUD_IFactory.h"
 
@@ -71,4 +69,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_SINUSFACTORY
+#endif //__AUD_SINUSFACTORY_H__

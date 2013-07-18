@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __KX_TOUCHEVENTMANAGER
-#define __KX_TOUCHEVENTMANAGER
+#ifndef __KX_TOUCHEVENTMANAGER_H__
+#define __KX_TOUCHEVENTMANAGER_H__
 
 
 #include "SCA_EventManager.h"
@@ -89,5 +87,5 @@ public:
 #endif
 };
 
-#endif //__KX_TOUCHEVENTMANAGER
+#endif //__KX_TOUCHEVENTMANAGER_H__
 

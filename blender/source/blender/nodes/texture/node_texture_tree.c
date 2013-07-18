@@ -1,6 +1,4 @@
-/**
- * $Id$ 
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -41,6 +39,8 @@
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
@@ -60,6 +60,34 @@ static void foreach_nodetree(Main *main, void *calldata, bNodeTreeCallback func)
 	for(tx= main->tex.first; tx; tx= tx->id.next) {
 		if(tx->nodetree) {
 			func(calldata, &tx->id, tx->nodetree);
+		}
+	}
+}
+
+static void foreach_nodeclass(Scene *UNUSED(scene), void *calldata, bNodeClassCallback func)
+{
+	func(calldata, NODE_CLASS_INPUT, IFACE_("Input"));
+	func(calldata, NODE_CLASS_OUTPUT, IFACE_("Output"));
+	func(calldata, NODE_CLASS_OP_COLOR, IFACE_("Color"));
+	func(calldata, NODE_CLASS_PATTERN, IFACE_("Patterns"));
+	func(calldata, NODE_CLASS_TEXTURE, IFACE_("Textures"));
+	func(calldata, NODE_CLASS_CONVERTOR, IFACE_("Convertor"));
+	func(calldata, NODE_CLASS_DISTORT, IFACE_("Distort"));
+	func(calldata, NODE_CLASS_GROUP, IFACE_("Group"));
+	func(calldata, NODE_CLASS_LAYOUT, IFACE_("Layout"));
+}
+
+static void localize(bNodeTree *localtree, bNodeTree *UNUSED(ntree))
+{
+	bNode *node, *node_next;
+	
+	/* replace muted nodes by internal links */
+	for (node= localtree->nodes.first; node; node= node_next) {
+		node_next = node->next;
+		
+		if (node->flag & NODE_MUTED) {
+			nodeInternalRelink(localtree, node);
+			nodeFreeNode(localtree, node);
 		}
 	}
 }
@@ -93,11 +121,14 @@ bNodeTreeType ntreeType_Texture = {
 	/* free_cache */			NULL,
 	/* free_node_cache */		NULL,
 	/* foreach_nodetree */	foreach_nodetree,
-	/* localize */			NULL,
+	/* foreach_nodeclass */	foreach_nodeclass,
+	/* localize */			localize,
 	/* local_sync */		local_sync,
 	/* local_merge */		NULL,
 	/* update */			NULL,
-	/* update_node */		NULL
+	/* update_node */		NULL,
+	/* validate_link */		NULL,
+	/* internal_connect */	node_internal_connect_default
 };
 
 int ntreeTexTagAnimated(bNodeTree *ntree)
@@ -108,7 +139,7 @@ int ntreeTexTagAnimated(bNodeTree *ntree)
 	
 	for(node= ntree->nodes.first; node; node= node->next) {
 		if(node->type==TEX_NODE_CURVE_TIME) {
-			NodeTagChanged(ntree, node);
+			nodeUpdate(ntree, node);
 			return 1;
 		}
 		else if(node->type==NODE_GROUP) {
@@ -234,8 +265,15 @@ int ntreeTexExecTree(
 	data.mtex= mtex;
 	data.shi= shi;
 	
-	if (!exec)
-		exec = ntreeTexBeginExecTree(nodes, 1);
+	/* ensure execdata is only initialized once */
+	if (!exec) {
+		BLI_lock_thread(LOCK_NODES);
+		if(!nodes->execdata)
+			ntreeTexBeginExecTree(nodes, 1);
+		BLI_unlock_thread(LOCK_NODES);
+
+		exec= nodes->execdata;
+	}
 	
 	nts= ntreeGetThreadStack(exec, thread);
 	ntreeExecThreadNodes(exec, nts, &data, thread);

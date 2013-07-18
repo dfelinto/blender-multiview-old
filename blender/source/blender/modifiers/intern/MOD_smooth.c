@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_smooth.c
  *  \ingroup modifiers
@@ -39,13 +37,13 @@
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
+
+#include "MEM_guardedalloc.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_particle.h"
 #include "BKE_deform.h"
-
-
-#include "MEM_guardedalloc.h"
 
 #include "MOD_modifiertypes.h"
 #include "MOD_util.h"
@@ -69,7 +67,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tsmd->fac = smd->fac;
 	tsmd->repeat = smd->repeat;
 	tsmd->flag = smd->flag;
-	strncpy(tsmd->defgrp_name, smd->defgrp_name, 32);
+	BLI_strncpy(tsmd->defgrp_name, smd->defgrp_name, sizeof(tsmd->defgrp_name));
 }
 
 static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
@@ -126,7 +124,7 @@ static void smoothModifier_do(
 	modifier_get_vgroup(ob, dm, smd->defgrp_name, &dvert, &defgrp_index);
 
 	/* NOTICE: this can be optimized a little bit by moving the
-	* if (dvert) out of the loop, if needed */
+	 * if (dvert) out of the loop, if needed */
 	for (j = 0; j < smd->repeat; j++) {
 		for (i = 0; i < numDMEdges; i++) {
 			float fvec[3];
@@ -155,24 +153,19 @@ static void smoothModifier_do(
 		}
 
 		if (dvert) {
-			for (i = 0; i < numVerts; i++) {
-				MDeformWeight *dw = NULL;
+			MDeformVert *dv= dvert;
+			for (i = 0; i < numVerts; i++, dv++) {
 				float f, fm, facw, *fp, *v;
-				int k;
 				short flag = smd->flag;
 
 				v = vertexCos[i];
 				fp = &ftmp[i*3];
 
-				for (k = 0; k < dvert[i].totweight; ++k) {
-					if(dvert[i].dw[k].def_nr == defgrp_index) {
-						dw = &dvert[i].dw[k];
-						break;
-					}
-				}
-				if (!dw) continue;
 
-				f = fac * dw->weight;
+				f= defvert_find_weight(dv, defgrp_index);
+				if (f <= 0.0f) continue;
+
+				f *= fac;
 				fm = 1.0f - f;
 
 				/* fp is the sum of uctmp[i] verts, so must be averaged */
@@ -226,20 +219,20 @@ static void deformVerts(
 	DerivedMesh *dm= get_dm(ob, NULL, derivedData, NULL, 0);
 
 	smoothModifier_do((SmoothModifierData *)md, ob, dm,
-			   vertexCos, numVerts);
+	                  vertexCos, numVerts);
 
 	if(dm != derivedData)
 		dm->release(dm);
 }
 
 static void deformVertsEM(
-					 ModifierData *md, Object *ob, struct EditMesh *editData,
+					 ModifierData *md, Object *ob, struct BMEditMesh *editData,
 	  DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm= get_dm(ob, editData, derivedData, NULL, 0);
 
 	smoothModifier_do((SmoothModifierData *)md, ob, dm,
-			   vertexCos, numVerts);
+	                  vertexCos, numVerts);
 
 	if(dm != derivedData)
 		dm->release(dm);

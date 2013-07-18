@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,9 +40,9 @@
 #include "IMB_filetype.h"
 
 /* some code copied from article on microsoft.com, copied
-  here for enhanced BMP support in the future
-  http://www.microsoft.com/msj/defaultframe.asp?page=/msj/0197/mfcp1/mfcp1.htm&nav=/msj/0197/newnav.htm
-*/
+ * here for enhanced BMP support in the future
+ * http://www.microsoft.com/msj/defaultframe.asp?page=/msj/0197/mfcp1/mfcp1.htm&nav=/msj/0197/newnav.htm
+ */
 
 typedef struct BMPINFOHEADER{
 	unsigned int	biSize;
@@ -101,8 +99,8 @@ static int checkbmp(unsigned char *mem)
 	return(ret_val);
 }
 
-int imb_is_a_bmp(unsigned char *buf) {
-	
+int imb_is_a_bmp(unsigned char *buf)
+{
 	return checkbmp(buf);
 }
 
@@ -131,10 +129,13 @@ struct ImBuf *imb_bmp_decode(unsigned char *mem, size_t size, int flags)
 	y = LITTLE_LONG(bmi.biHeight);
 	depth = LITTLE_SHORT(bmi.biBitCount);
 
-	/* printf("skip: %d, x: %d y: %d, depth: %d (%x)\n", skip, x, y, 
-		depth, bmi.biBitCount); */
-	/* printf("skip: %d, x: %d y: %d, depth: %d (%x)\n", skip, x, y, 
-		depth, bmi.biBitCount); */
+#if 0
+	printf("skip: %d, x: %d y: %d, depth: %d (%x)\n", skip, x, y,
+	       depth, bmi.biBitCount);
+	printf("skip: %d, x: %d y: %d, depth: %d (%x)\n", skip, x, y,
+	       depth, bmi.biBitCount);
+#endif
+
 	if (flags & IB_test) {
 		ibuf = IMB_allocImBuf(x, y, depth, 0);
 	} else {
@@ -187,21 +188,23 @@ struct ImBuf *imb_bmp_decode(unsigned char *mem, size_t size, int flags)
 }
 
 /* Couple of helper functions for writing our data */
-static int putIntLSB(unsigned int ui,FILE *ofile) { 
+static int putIntLSB(unsigned int ui,FILE *ofile)
+{
 	putc((ui>>0)&0xFF,ofile); 
 	putc((ui>>8)&0xFF,ofile); 
 	putc((ui>>16)&0xFF,ofile); 
 	return putc((ui>>24)&0xFF,ofile); 
 }
 
-static int putShortLSB(unsigned short us,FILE *ofile) { 
+static int putShortLSB(unsigned short us,FILE *ofile)
+{
 	putc((us>>0)&0xFF,ofile); 
 	return putc((us>>8)&0xFF,ofile); 
 } 
 
 /* Found write info at http://users.ece.gatech.edu/~slabaugh/personal/c/bitmapUnix.c */
-int imb_savebmp(struct ImBuf *ibuf, const char *name, int flags) {
-
+int imb_savebmp(struct ImBuf *ibuf, const char *name, int flags)
+{
 	BMPINFOHEADER infoheader;
 	int bytesize, extrabytes, x, y, t, ptr;
 	uchar *data;

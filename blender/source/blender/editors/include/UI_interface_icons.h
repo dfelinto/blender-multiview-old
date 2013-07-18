@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup editorui
  */
 
-#ifndef UI_INTERFACE_ICONS_H
-#define UI_INTERFACE_ICONS_H
+#ifndef __UI_INTERFACE_ICONS_H__
+#define __UI_INTERFACE_ICONS_H__
 
 struct Image;
 struct ImBuf;
@@ -43,21 +41,21 @@ struct Material;
 
 typedef struct IconFile {
 	struct IconFile *next, *prev;
-	char filename[80];	// FILE_MAXFILE size
+	char filename[256];	// FILE_MAXFILE size
 	int index;
 } IconFile;
 
 #define ICON_DEFAULT_HEIGHT 16
 #define ICON_DEFAULT_WIDTH	16
 
-#define ICON_DEFAULT_HEIGHT_SCALE	(UI_UNIT_Y * 0.8f)
-#define ICON_DEFAULT_WIDTH_SCALE	(UI_UNIT_X * 0.8f)
+#define ICON_DEFAULT_HEIGHT_SCALE ((int)(UI_UNIT_Y * 0.8f))
+#define ICON_DEFAULT_WIDTH_SCALE  ((int)(UI_UNIT_X * 0.8f))
 
 #define PREVIEW_DEFAULT_HEIGHT 96
 
 /*
- Resizable Icons for Blender
-*/
+ * Resizable Icons for Blender
+ */
 void UI_icons_init(int first_dyn_id);
 int UI_icon_get_width(int icon_id);
 int UI_icon_get_height(int icon_id);
@@ -77,4 +75,4 @@ struct ListBase *UI_iconfile_list(void);
 int UI_iconfile_get_index(const char *filename);
 
 
-#endif /*  UI_INTERFACE_ICONS_H */
+#endif /*  __UI_INTERFACE_ICONS_H__ */

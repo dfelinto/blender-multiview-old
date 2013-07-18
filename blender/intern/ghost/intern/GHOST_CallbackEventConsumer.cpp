@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	October 25, 2001
@@ -44,7 +42,7 @@
 #include "GHOST_CallbackEventConsumer.h"
 
 GHOST_CallbackEventConsumer::GHOST_CallbackEventConsumer(GHOST_EventCallbackProcPtr eventCallback,
-														GHOST_TUserDataPtr userData)
+                                                         GHOST_TUserDataPtr userData)
 {
 	m_eventCallback = eventCallback;
 	m_userData = userData;

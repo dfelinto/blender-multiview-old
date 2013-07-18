@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_LOD_TaggedSetOps_h
-#define NAN_INCLUDED_LOD_TaggedSetOps_h
+#ifndef __CTR_TAGGEDSETOPS_H__
+#define __CTR_TAGGEDSETOPS_H__
 
 #include "MEM_NonCopyable.h"
 #include <vector>

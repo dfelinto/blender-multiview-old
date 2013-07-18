@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,8 +31,8 @@
  *
  */
 
-#ifndef __KX_KEYBOARDMANAGER
-#define __KX_KEYBOARDMANAGER
+#ifndef __SCA_KEYBOARDMANAGER_H__
+#define __SCA_KEYBOARDMANAGER_H__
 
 
 #include "SCA_EventManager.h"
@@ -67,5 +65,5 @@ public:
 #endif
 };
 
-#endif //__KX_KEYBOARDMANAGER
+#endif //__SCA_KEYBOARDMANAGER_H__
 

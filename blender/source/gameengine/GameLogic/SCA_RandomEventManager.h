@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief Manager for random events
  */
 
-#ifndef __KX_RANDOMEVENTMGR
-#define __KX_RANDOMEVENTMGR
+#ifndef __SCA_RANDOMEVENTMANAGER_H__
+#define __SCA_RANDOMEVENTMANAGER_H__
 
 #include "SCA_EventManager.h"
 #include <vector>
@@ -55,5 +53,5 @@ public:
 #endif
 };
 
-#endif //__KX_RANDOMEVENTMGR
+#endif //__SCA_RANDOMEVENTMANAGER_H__
 

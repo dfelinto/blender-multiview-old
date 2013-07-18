@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_IWindow interface class.
  */
 
-#ifndef _GHOST_IWINDOW_H_
-#define _GHOST_IWINDOW_H_
+#ifndef __GHOST_IWINDOW_H__
+#define __GHOST_IWINDOW_H__
 
 #include "STR_String.h"
 #include "GHOST_Rect.h"
@@ -304,7 +303,7 @@ public:
 	 * @param	grab The new grab state of the cursor.
 	 * @return	Indication of success.
 	 */
-	virtual GHOST_TSuccess setCursorGrab(GHOST_TGrabCursorMode mode, GHOST_Rect *bounds) { return GHOST_kSuccess; };
+	virtual GHOST_TSuccess setCursorGrab(GHOST_TGrabCursorMode mode, GHOST_Rect *bounds) { return GHOST_kSuccess; }
 
 #ifdef WITH_CXX_GUARDEDALLOC
 public:
@@ -313,5 +312,5 @@ public:
 #endif
 };
 
-#endif // _GHOST_IWINDOW_H_
+#endif // __GHOST_IWINDOW_H__
 

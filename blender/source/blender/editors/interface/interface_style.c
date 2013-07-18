@@ -1,5 +1,5 @@
 /*
-* ***** BEGIN GPL LICENSE BLOCK *****
+ * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
@@ -42,11 +42,13 @@
 #include "BLI_listbase.h"
 #include "BLI_rect.h"
 #include "BLI_string.h"
+#include "BLI_utildefines.h"
 
 #include "BKE_global.h"
 
 
 #include "BLF_api.h"
+#include "BLF_translation.h"
 
 #include "UI_interface.h"
 
@@ -58,25 +60,24 @@
 /* style + theme + layout-engine = UI */
 
 /* 
- This is a complete set of layout rules, the 'state' of the Layout 
- Engine. Multiple styles are possible, defined via C or Python. Styles 
- get a name, and will typically get activated per region type, like 
- "Header", or "Listview" or "Toolbar". Properties of Style definitions 
- are:
- 
- - default collumn properties, internal spacing, aligning, min/max width
- - button alignment rules (for groups)
- - label placement rules
- - internal labeling or external labeling default
- - default minimum widths for buttons/labels (in amount of characters)
- - font types, styles and relative sizes for Panel titles, labels, etc.
-
-*/
+ * This is a complete set of layout rules, the 'state' of the Layout 
+ * Engine. Multiple styles are possible, defined via C or Python. Styles 
+ * get a name, and will typically get activated per region type, like 
+ * "Header", or "Listview" or "Toolbar". Properties of Style definitions 
+ * are:
+ *
+ * - default column properties, internal spacing, aligning, min/max width
+ * - button alignment rules (for groups)
+ * - label placement rules
+ * - internal labeling or external labeling default
+ * - default minimum widths for buttons/labels (in amount of characters)
+ * - font types, styles and relative sizes for Panel titles, labels, etc.
+ */
 
 
 /* ********************************************** */
 
-static uiStyle *ui_style_new(ListBase *styles, const char *name)
+static uiStyle *ui_style_new(ListBase *styles, const char *name, short uifont_id)
 {
 	uiStyle *style= MEM_callocN(sizeof(uiStyle), "new style");
 	
@@ -85,7 +86,7 @@ static uiStyle *ui_style_new(ListBase *styles, const char *name)
 	
 	style->panelzoom= 1.0; /* unused */
 
-	style->paneltitle.uifont_id= UIFONT_DEFAULT;
+	style->paneltitle.uifont_id= uifont_id;
 	style->paneltitle.points= 12;
 	style->paneltitle.kerning= 1;
 	style->paneltitle.shadow= 1;
@@ -94,7 +95,7 @@ static uiStyle *ui_style_new(ListBase *styles, const char *name)
 	style->paneltitle.shadowalpha= 0.15f;
 	style->paneltitle.shadowcolor= 1.0f;
 	
-	style->grouplabel.uifont_id= UIFONT_DEFAULT;
+	style->grouplabel.uifont_id= uifont_id;
 	style->grouplabel.points= 12;
 	style->grouplabel.kerning= 1;
 	style->grouplabel.shadow= 3;
@@ -102,7 +103,7 @@ static uiStyle *ui_style_new(ListBase *styles, const char *name)
 	style->grouplabel.shady= -1;
 	style->grouplabel.shadowalpha= 0.25f;
 	
-	style->widgetlabel.uifont_id= UIFONT_DEFAULT;
+	style->widgetlabel.uifont_id= uifont_id;
 	style->widgetlabel.points= 11;
 	style->widgetlabel.kerning= 1;
 	style->widgetlabel.shadow= 3;
@@ -111,7 +112,7 @@ static uiStyle *ui_style_new(ListBase *styles, const char *name)
 	style->widgetlabel.shadowalpha= 0.15f;
 	style->widgetlabel.shadowcolor= 1.0f;
 	
-	style->widget.uifont_id= UIFONT_DEFAULT;
+	style->widget.uifont_id= uifont_id;
 	style->widget.points= 11;
 	style->widget.kerning= 1;
 	style->widget.shadowalpha= 0.25f;
@@ -178,7 +179,7 @@ void uiStyleFontDrawExt(uiFontStyle *fs, rcti *rect, const char *str,
 	if (fs->kerning == 1)
 		BLF_enable(fs->uifont_id, BLF_KERNING_DEFAULT);
 
-	BLF_draw(fs->uifont_id, str, 65535); /* XXX, use real length */
+	BLF_draw(fs->uifont_id, str, BLF_DRAW_STR_DUMMY_MAX);
 	BLF_disable(fs->uifont_id, BLF_CLIPPING);
 	if (fs->shadow)
 		BLF_disable(fs->uifont_id, BLF_SHADOW);
@@ -241,7 +242,7 @@ void uiStyleFontDrawRotated(uiFontStyle *fs, rcti *rect, const char *str)
 	if (fs->kerning == 1)
 		BLF_enable(fs->uifont_id, BLF_KERNING_DEFAULT);
 
-	BLF_draw(fs->uifont_id, str, 65535); /* XXX, use real length */
+	BLF_draw(fs->uifont_id, str, BLF_DRAW_STR_DUMMY_MAX);
 	BLF_disable(fs->uifont_id, BLF_ROTATION);
 	BLF_disable(fs->uifont_id, BLF_CLIPPING);
 	if (fs->shadow)
@@ -251,11 +252,19 @@ void uiStyleFontDrawRotated(uiFontStyle *fs, rcti *rect, const char *str)
 }
 
 /* ************** helpers ************************ */
+/* XXX: read a style configure */
+uiStyle* UI_GetStyle(void)
+{
+	uiStyle *style = NULL;
+	/* offset is two struct uiStyle pointers */
+	/* style = BLI_findstring( &U.uistyles, "Unifont Style", sizeof(style)*2 ) */;
+	return (style != NULL) ? style : U.uistyles.first;
+}
 
 /* temporarily, does widget font */
 int UI_GetStringWidth(const char *str)
 {
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	uiFontStyle *fstyle= &style->widget;
 	int width;
 	
@@ -274,14 +283,14 @@ int UI_GetStringWidth(const char *str)
 /* temporarily, does widget font */
 void UI_DrawString(float x, float y, const char *str)
 {
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	
 	if (style->widget.kerning == 1)
 		BLF_enable(style->widget.uifont_id, BLF_KERNING_DEFAULT);
 
 	uiStyleFontSet(&style->widget);
 	BLF_position(style->widget.uifont_id, x, y, 0.0f);
-	BLF_draw(style->widget.uifont_id, str, 65535); /* XXX, use real length */
+	BLF_draw(style->widget.uifont_id, str, BLF_DRAW_STR_DUMMY_MAX);
 
 	if (style->widget.kerning == 1)
 		BLF_disable(style->widget.uifont_id, BLF_KERNING_DEFAULT);
@@ -306,14 +315,39 @@ void uiStyleInit(void)
 		font= MEM_callocN(sizeof(uiFont), "ui font");
 		BLI_addtail(&U.uifonts, font);
 		
-		strcpy(font->filename, "default");
+		BLI_strncpy(font->filename, "default", sizeof(font->filename));
 		font->uifont_id= UIFONT_DEFAULT;
 	}
 	
 	for(font= U.uifonts.first; font; font= font->next) {
 		
 		if(font->uifont_id==UIFONT_DEFAULT) {
+#ifdef WITH_INTERNATIONAL
+			int font_size= datatoc_bfont_ttf_size;
+			unsigned char *font_ttf= (unsigned char*)datatoc_bfont_ttf;
+			static int last_font_size = 0;
+
+			/* use unicode font for translation */
+			if(U.transopts & USER_DOTRANSLATE) {
+				font_ttf= BLF_get_unifont(&font_size);
+
+				if(!font_ttf) {
+					/* fall back if not found */
+					font_size= datatoc_bfont_ttf_size;
+					font_ttf= (unsigned char*)datatoc_bfont_ttf;
+				}
+			}
+
+			/* relload only if needed */
+			if(last_font_size != font_size) {
+				BLF_unload("default");
+				last_font_size = font_size;
+			}
+
+			font->blf_id= BLF_load_mem("default", font_ttf, font_size);
+#else
 			font->blf_id= BLF_load_mem("default", (unsigned char*)datatoc_bfont_ttf, datatoc_bfont_ttf_size);
+#endif
 		}		
 		else {
 			font->blf_id= BLF_load(font->filename);
@@ -323,7 +357,7 @@ void uiStyleInit(void)
 
 		if (font->blf_id == -1) {
 			if (G.f & G_DEBUG)
-				printf("uiStyleInit error, no fonts available\n");
+				printf("%s: error, no fonts available\n", __func__);
 		}
 		else {
 			/* ? just for speed to initialize?
@@ -337,7 +371,7 @@ void uiStyleInit(void)
 	}
 	
 	if(style==NULL) {
-		ui_style_new(&U.uistyles, "Default Style");
+		ui_style_new(&U.uistyles, "Default Style", UIFONT_DEFAULT );
 	}
 	
 	// XXX, this should be moved into a style, but for now best only load the monospaced font once.

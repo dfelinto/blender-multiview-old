@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_IWRITER
-#define AUD_IWRITER
+#ifndef __AUD_IWRITER_H__
+#define __AUD_IWRITER_H__
 
 #include "AUD_Space.h"
 
@@ -66,4 +64,4 @@ public:
 	virtual void write(unsigned int length, sample_t* buffer)=0;
 };
 
-#endif //AUD_IWRITER
+#endif //__AUD_IWRITER_H__

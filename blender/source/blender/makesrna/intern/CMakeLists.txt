@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id: CMakeLists.txt 17433 2008-11-12 21:16:53Z blendix $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -47,6 +46,7 @@ set(DEFSRC
 	rna_context.c
 	rna_controller.c
 	rna_curve.c
+	rna_dynamicpaint.c
 	rna_fcurve.c
 	rna_fluidsim.c
 	rna_gpencil.c
@@ -60,6 +60,7 @@ set(DEFSRC
 	rna_mesh.c
 	rna_meta.c
 	rna_modifier.c
+	rna_movieclip.c
 	rna_nla.c
 	rna_nodetree.c
 	rna_object.c
@@ -83,6 +84,7 @@ set(DEFSRC
 	rna_text.c
 	rna_texture.c
 	rna_timeline.c
+	rna_tracking.c
 	rna_ui.c
 	rna_userdef.c
 	rna_vfont.c
@@ -95,6 +97,7 @@ set(APISRC
 	rna_actuator_api.c
 	rna_animation_api.c
 	rna_armature_api.c
+	rna_camera_api.c
 	rna_controller_api.c
 	rna_fcurve_api.c
 	rna_image_api.c
@@ -140,6 +143,9 @@ set(INC_SYS
 
 )
 
+if(WITH_CYCLES)
+	add_definitions(-DWITH_CYCLES)
+endif()
 
 if(WITH_PYTHON)
 	add_definitions(-DWITH_PYTHON)
@@ -195,12 +201,16 @@ if(WITH_CODEC_FFMPEG)
 	add_definitions(-DWITH_FFMPEG)
 endif()
 
-if(NOT WITH_MOD_FLUID)
-	add_definitions(-DDISABLE_ELBEEM)
+if(WITH_MOD_FLUID)
+	add_definitions(-DWITH_MOD_FLUID)
 endif()
 
 if(WITH_FFTW3)
 	add_definitions(-DWITH_FFTW3)
+endif()
+
+if(WITH_MOD_OCEANSIM)
+	add_definitions(-DWITH_OCEANSIM)
 endif()
 
 if(WITH_SDL)
@@ -219,6 +229,10 @@ if(WITH_OPENCOLLADA)
 	add_definitions(-DWITH_COLLADA)
 endif()
 
+if(WITH_INTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
+endif()
+
 # Build makesrna executable
 blender_include_dirs(
 	.
@@ -226,6 +240,7 @@ blender_include_dirs(
 	../../blenkernel
 	../../blenloader
 	../../blenlib
+	../../bmesh
 	../../blenfont
 	../../gpu
 	../../imbuf
@@ -235,6 +250,7 @@ blender_include_dirs(
 	../../editors/include
 	../../render/extern/include
 	../../../../intern/audaspace/intern
+	../../../../intern/cycles/blender
 	../../../../intern/guardedalloc
 	../../../../intern/memutil
 )
@@ -264,6 +280,7 @@ set(SRC
 	rna_internal.h
 	rna_internal_types.h
 	rna_nodetree_types.h
+	rna_mesh_utils.h
 )
 
 blender_add_lib(bf_rna "${SRC}" "${INC}" "${INC_SYS}")

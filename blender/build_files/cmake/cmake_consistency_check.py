@@ -1,6 +1,5 @@
 #!/usr/bin/env python
 
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -22,6 +21,12 @@
 # ***** END GPL LICENSE BLOCK *****
 
 # <pep8 compliant>
+
+import sys
+if not sys.version.startswith("3"):
+    print("\nPython3.x needed, found %s.\nAborting!\n" %
+          sys.version.partition(" ")[0])
+    sys.exit(1)
 
 from cmake_consistency_check_config import IGNORE, UTF8_CHECK, SOURCE_DIR
 
@@ -75,7 +80,7 @@ def is_c_header(filename):
 
 def is_c(filename):
     ext = splitext(filename)[1]
-    return (ext in (".c", ".cpp", ".cxx", ".m", ".mm", ".rc"))
+    return (ext in (".c", ".cpp", ".cxx", ".m", ".mm", ".rc", ".cc", ".inl"))
 
 
 def is_c_any(filename):
@@ -94,6 +99,9 @@ def cmake_get_src(f):
     # print(f)
 
     def is_definition(l, f, i, name):
+        if l.startswith("unset("):
+            return False
+
         if ('set(%s' % name) in l or ('set(' in l and l.endswith(name)):
             if len(l.split()) > 1:
                 raise Exception("strict formatting not kept 'set(%s*' %s:%d" % (name, f, i))
@@ -172,6 +180,12 @@ def cmake_get_src(f):
                             elif new_file.endswith(".list"):
                                 pass
                             elif new_file.endswith(".def"):
+                                pass
+                            elif new_file.endswith(".cl"):  # opencl
+                                pass
+                            elif new_file.endswith(".cu"):  # cuda
+                                pass
+                            elif new_file.endswith(".osl"):  # open shading language
                                 pass
                             else:
                                 raise Exception("unknown file type - not c or h %s -> %s" % (f, new_file))

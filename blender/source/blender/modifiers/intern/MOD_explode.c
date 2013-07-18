@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_explode.c
  *  \ingroup modifiers
@@ -110,8 +108,8 @@ static void createFacepa(ExplodeModifierData *emd,
 	int i,p,v1,v2,v3,v4=0;
 
 	mvert = dm->getVertArray(dm);
-	mface = dm->getFaceArray(dm);
-	totface= dm->getNumFaces(dm);
+	mface = dm->getTessFaceArray(dm);
+	totface= dm->getNumTessFaces(dm);
 	totvert= dm->getNumVerts(dm);
 	totpart= psmd->psys->totpart;
 
@@ -185,7 +183,7 @@ static void createFacepa(ExplodeModifierData *emd,
 	BLI_kdtree_free(tree);
 }
 
-static int edgecut_get(EdgeHash *edgehash, int v1, int v2)
+static int edgecut_get(EdgeHash *edgehash, unsigned int v1, unsigned int v2)
 {
 	return GET_INT_FROM_POINTER(BLI_edgehash_lookup(edgehash, v1, v2));
 }
@@ -200,8 +198,8 @@ static const short add_faces[24] = {
 
 static MFace *get_dface(DerivedMesh *dm, DerivedMesh *split, int cur, int i, MFace *mf)
 {
-	MFace *df = CDDM_get_face(split, cur);
-	DM_copy_face_data(dm, split, i, cur, 1);
+	MFace *df = CDDM_get_tessface(split, cur);
+	DM_copy_tessface_data(dm, split, i, cur, 1);
 	*df = *mf;
 	return df;
 }
@@ -543,22 +541,26 @@ static void remap_uvs_23(DerivedMesh *dm, DerivedMesh *split, int numlayer, int 
 	}
 }
 
-static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm){
+static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm)
+{
 	DerivedMesh *splitdm;
 	MFace *mf=NULL,*df1=NULL;
-	MFace *mface=dm->getFaceArray(dm);
+	MFace *mface=dm->getTessFaceArray(dm);
 	MVert *dupve, *mv;
 	EdgeHash *edgehash;
 	EdgeHashIterator *ehi;
 	int totvert=dm->getNumVerts(dm);
-	int totface=dm->getNumFaces(dm);
+	int totface=dm->getNumTessFaces(dm);
 
 	int *facesplit = MEM_callocN(sizeof(int)*totface,"explode_facesplit");
 	int *vertpa = MEM_callocN(sizeof(int)*totvert,"explode_vertpa2");
 	int *facepa = emd->facepa;
 	int *fs, totesplit=0,totfsplit=0,curdupface=0;
-	int i,j,v1,v2,v3,v4,esplit, v[4], uv[4];
+	int i, v1, v2, v3, v4, esplit,
+	    v[4]  = {0, 0, 0, 0}, /* To quite gcc barking... */
+	    uv[4] = {0, 0, 0, 0}; /* To quite gcc barking... */
 	int numlayer;
+	unsigned int ed_v1, ed_v2;
 
 	edgehash= BLI_edgehash_new();
 
@@ -627,7 +629,7 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm){
 	for(i=0,fs=facesplit; i<totface; i++,fs++)
 		totfsplit += add_faces[*fs];
 	
-	splitdm= CDDM_from_template(dm, totesplit, 0, totface+totfsplit);
+	splitdm= CDDM_from_template(dm, totesplit, 0, totface+totfsplit, 0, 0);
 	numlayer = CustomData_number_of_layers(&splitdm->faceData, CD_MTFACE);
 
 	/* copy new faces & verts (is it really this painful with custom data??) */
@@ -642,23 +644,28 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm){
 	}
 
 	/* override original facepa (original pointer is saved in caller function) */
-	facepa= MEM_callocN(sizeof(int)*(totface+totfsplit),"explode_facepa");
+
+	/* BMESH_TODO, (totfsplit * 2) over allocation is used since the quads are
+	 * later interpreted as tri's, for this to work right I think we probably
+	 * have to stop using tessface - campbell */
+
+	facepa= MEM_callocN(sizeof(int)*(totface+(totfsplit * 2)),"explode_facepa");
 	//memcpy(facepa,emd->facepa,totface*sizeof(int));
 	emd->facepa=facepa;
 
 	/* create new verts */
 	ehi= BLI_edgehashIterator_new(edgehash);
 	for(; !BLI_edgehashIterator_isDone(ehi); BLI_edgehashIterator_step(ehi)) {
-		BLI_edgehashIterator_getKey(ehi, &i, &j);
+		BLI_edgehashIterator_getKey(ehi, &ed_v1, &ed_v2);
 		esplit= GET_INT_FROM_POINTER(BLI_edgehashIterator_getValue(ehi));
-		mv=CDDM_get_vert(splitdm,j);
+		mv=CDDM_get_vert(splitdm, ed_v2);
 		dupve=CDDM_get_vert(splitdm,esplit);
 
-		DM_copy_vert_data(splitdm,splitdm,j,esplit,1);
+		DM_copy_vert_data(splitdm,splitdm, ed_v2, esplit,1);
 
 		*dupve=*mv;
 
-		mv=CDDM_get_vert(splitdm,i);
+		mv=CDDM_get_vert(splitdm, ed_v1);
 
 		add_v3_v3(dupve->co, mv->co);
 		mul_v3_fl(dupve->co, 0.5f);
@@ -669,7 +676,7 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm){
 	curdupface=0;//=totface;
 	//curdupin=totesplit;
 	for(i=0,fs=facesplit; i<totface; i++,fs++){
-		mf = dm->getFaceData(dm, i, CD_MFACE);
+		mf = dm->getTessFaceData(dm, i, CD_MFACE);
 
 		switch(*fs) {
 		case 3:
@@ -759,7 +766,7 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm){
 	}
 
 	for(i=0; i<curdupface; i++) {
-		mf = CDDM_get_face(splitdm, i);
+		mf = CDDM_get_tessface(splitdm, i);
 		test_index_face(mf, &splitdm->faceData, i, (mf->flag & ME_FACE_SEL ? 4 : 3));
 	}
 
@@ -767,8 +774,9 @@ static DerivedMesh * cutEdges(ExplodeModifierData *emd, DerivedMesh *dm){
 	MEM_freeN(facesplit);
 	MEM_freeN(vertpa);
 
-	return splitdm;
+	CDDM_tessfaces_to_faces(splitdm); /*builds ngon faces from tess (mface) faces*/
 
+	return splitdm;
 }
 static DerivedMesh * explodeMesh(ExplodeModifierData *emd, 
 		ParticleSystemModifierData *psmd, Scene *scene, Object *ob, 
@@ -787,13 +795,14 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	float cfra;
 	/* float timestep; */
 	int *facepa=emd->facepa;
-	int totdup=0,totvert=0,totface=0,totpart=0;
-	int i, j, v, mindex=0;
+	int totdup=0,totvert=0,totface=0,totpart=0,delface=0;
+	int i, v, u;
+	unsigned int ed_v1, ed_v2, mindex=0;
 	MTFace *mtface = NULL, *mtf;
 
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 	totvert= dm->getNumVerts(dm);
-	mface= dm->getFaceArray(dm);
+	mface= dm->getTessFaceArray(dm);
 	totpart= psmd->psys->totpart;
 
 	sim.scene= scene;
@@ -803,15 +812,24 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 
 	/* timestep= psys_get_timestep(&sim); */
 
-	//if(part->flag & PART_GLOB_TIME)
-		cfra= BKE_curframe(scene);
-	//else
-	//	cfra=bsystem_time(scene, ob,(float)scene->r.cfra,0.0);
+	cfra= BKE_curframe(scene);
 
 	/* hash table for vertice <-> particle relations */
 	vertpahash= BLI_edgehash_new();
 
 	for (i=0; i<totface; i++) {
+		if (facepa[i] != totpart) {
+			pa = pars + facepa[i];
+
+			if ((pa->alive == PARS_UNBORN && (emd->flag & eExplodeFlag_Unborn) == 0) ||
+			    (pa->alive == PARS_ALIVE && (emd->flag & eExplodeFlag_Alive) == 0) ||
+			    (pa->alive == PARS_DEAD && (emd->flag & eExplodeFlag_Dead) == 0))
+			{
+				delface++;
+				continue;
+			}
+		}
+
 		/* do mindex + totvert to ensure the vertex index to be the first
 		 * with BLI_edgehashIterator_getKey */
 		if(facepa[i]==totpart || cfra < (pars+facepa[i])->time)
@@ -838,7 +856,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	BLI_edgehashIterator_free(ehi);
 
 	/* the final duplicated vertices */
-	explode= CDDM_from_template(dm, totdup, 0,totface);
+	explode= CDDM_from_template(dm, totdup, 0,totface-delface, 0, 0);
 	mtface = CustomData_get_layer_named(&explode->faceData, CD_MTFACE, emd->uvname);
 	/*dupvert= CDDM_get_verts(explode);*/
 
@@ -854,24 +872,24 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 		MVert *dest;
 
 		/* get particle + vertex from hash */
-		BLI_edgehashIterator_getKey(ehi, &j, &i);
-		i -= totvert;
+		BLI_edgehashIterator_getKey(ehi, &ed_v1, &ed_v2);
+		ed_v2 -= totvert;
 		v= GET_INT_FROM_POINTER(BLI_edgehashIterator_getValue(ehi));
 
-		dm->getVert(dm, j, &source);
+		dm->getVert(dm, ed_v1, &source);
 		dest = CDDM_get_vert(explode,v);
 
-		DM_copy_vert_data(dm,explode,j,v,1);
+		DM_copy_vert_data(dm, explode, ed_v1, v, 1);
 		*dest = source;
 
-		if(i!=totpart) {
+		if(ed_v2 != totpart) {
 			/* get particle */
-			pa= pars+i;
+			pa= pars + ed_v2;
 
 			psys_get_birth_coordinates(&sim, pa, &birth, 0, 0);
 
 			state.time=cfra;
-			psys_get_particle_state(&sim, i, &state, 1);
+			psys_get_particle_state(&sim, ed_v2, &state, 1);
 
 			vertco=CDDM_get_vert(explode,v)->co;
 			mul_m4_v3(ob->obmat,vertco);
@@ -893,12 +911,11 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 	BLI_edgehashIterator_free(ehi);
 
 	/*map new vertices to faces*/
-	for (i=0; i<totface; i++) {
+	for (i=0,u=0; i<totface; i++) {
 		MFace source;
 		int orig_v4;
 
-		if(facepa[i]!=totpart)
-		{
+		if (facepa[i]!=totpart) {
 			pa=pars+facepa[i];
 
 			if(pa->alive==PARS_UNBORN && (emd->flag&eExplodeFlag_Unborn)==0) continue;
@@ -906,8 +923,8 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 			if(pa->alive==PARS_DEAD && (emd->flag&eExplodeFlag_Dead)==0) continue;
 		}
 
-		dm->getFace(dm,i,&source);
-		mf=CDDM_get_face(explode,i);
+		dm->getTessFace(dm,i,&source);
+		mf=CDDM_get_tessface(explode,u);
 		
 		orig_v4 = source.v4;
 
@@ -922,7 +939,7 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 		if(source.v4)
 			source.v4 = edgecut_get(vertpahash, source.v4, mindex);
 
-		DM_copy_face_data(dm,explode,i,i,1);
+		DM_copy_tessface_data(dm,explode,i,u,1);
 
 		*mf = source;
 
@@ -932,20 +949,22 @@ static DerivedMesh * explodeMesh(ExplodeModifierData *emd,
 			/* Clamp to this range to avoid flipping to the other side of the coordinates. */
 			CLAMP(age, 0.001f, 0.999f);
 
-			mtf = mtface + i;
+			mtf = mtface + u;
 
 			mtf->uv[0][0] = mtf->uv[1][0] = mtf->uv[2][0] = mtf->uv[3][0] = age;
 			mtf->uv[0][1] = mtf->uv[1][1] = mtf->uv[2][1] = mtf->uv[3][1] = 0.5f;
 		}
 
-		test_index_face(mf, &explode->faceData, i, (orig_v4 ? 4 : 3));
+		test_index_face(mf, &explode->faceData, u, (orig_v4 ? 4 : 3));
+		u++;
 	}
 
 	/* cleanup */
 	BLI_edgehash_free(vertpahash, NULL);
 
 	/* finalization */
-	CDDM_calc_edges(explode);
+	CDDM_calc_edges_tessface(explode);
+	CDDM_tessfaces_to_faces(explode);
 	CDDM_calc_normals(explode);
 
 	if(psmd->psys->lattice){
@@ -976,6 +995,8 @@ static DerivedMesh * applyModifier(ModifierData *md, Object *ob,
 	ExplodeModifierData *emd= (ExplodeModifierData*) md;
 	ParticleSystemModifierData *psmd=findPrecedingParticlesystem(ob,md);
 
+	DM_ensure_tessface(dm); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
+
 	if(psmd){
 		ParticleSystem * psys=psmd->psys;
 
@@ -987,7 +1008,7 @@ static DerivedMesh * applyModifier(ModifierData *md, Object *ob,
 		if(emd->facepa == NULL
 				 || psmd->flag&eParticleSystemFlag_Pars
 				 || emd->flag&eExplodeFlag_CalcFaces
-				 || MEM_allocN_len(emd->facepa)/sizeof(int) != dm->getNumFaces(dm))
+				 || MEM_allocN_len(emd->facepa)/sizeof(int) != dm->getNumTessFaces(dm))
 		{
 			if(psmd->flag & eParticleSystemFlag_Pars)
 				psmd->flag &= ~eParticleSystemFlag_Pars;

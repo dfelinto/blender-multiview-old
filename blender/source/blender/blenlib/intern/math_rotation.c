@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,7 +53,7 @@ void unit_qt(float q[4])
 	q[1]= q[2]= q[3]= 0.0f;
 }
 
-void copy_qt_qt(float *q1, const float *q2)
+void copy_qt_qt(float q1[4], const float q2[4])
 {
 	q1[0]= q2[0];
 	q1[1]= q2[1];
@@ -82,7 +80,7 @@ void mul_qt_qtqt(float *q, const float *q1, const float *q2)
 }
 
 /* Assumes a unit quaternion */
-void mul_qt_v3(const float *q, float *v)
+void mul_qt_v3(const float q[4], float v[3])
 {
 	float t0, t1, t2;
 
@@ -100,7 +98,7 @@ void mul_qt_v3(const float *q, float *v)
 	v[1]=t2;
 }
 
-void conjugate_qt(float *q)
+void conjugate_qt(float q[4])
 {
 	q[1] = -q[1];
 	q[2] = -q[2];
@@ -213,7 +211,7 @@ void quat_to_mat4(float m[][4], const float q[4])
 	double q0, q1, q2, q3, qda,qdb,qdc,qaa,qab,qac,qbb,qbc,qcc;
 
 #ifdef DEBUG
-	if(!((q0=dot_qtqt(q, q))==0.0f || (fabs(q0-1.0) < QUAT_EPSILON))) {
+	if(!((q0=dot_qtqt(q, q))==0.0f || (fabsf(q0-1.0) < QUAT_EPSILON))) {
 		fprintf(stderr, "Warning! quat_to_mat4() called with non-normalized: size %.8f *** report a bug ***\n", (float)q0);
 	}
 #endif
@@ -259,7 +257,7 @@ void mat3_to_quat(float *q, float wmat[][3])
 
 	/* work on a copy */
 	copy_m3_m3(mat, wmat);
-	normalize_m3(mat);			/* this is needed AND a NormalQuat in the end */
+	normalize_m3(mat);  /* this is needed AND a 'normalize_qt' in the end */
 	
 	tr= 0.25* (double)(1.0f+mat[0][0]+mat[1][1]+mat[2][2]);
 	
@@ -273,31 +271,31 @@ void mat3_to_quat(float *q, float wmat[][3])
 	}
 	else {
 		if(mat[0][0] > mat[1][1] && mat[0][0] > mat[2][2]) {
-			s= 2.0*sqrtf(1.0f + mat[0][0] - mat[1][1] - mat[2][2]);
+			s= 2.0f*sqrtf(1.0f + mat[0][0] - mat[1][1] - mat[2][2]);
 			q[1]= (float)(0.25*s);
 
 			s= 1.0/s;
-			q[0]= (float)((mat[2][1] - mat[1][2])*s);
-			q[2]= (float)((mat[1][0] + mat[0][1])*s);
-			q[3]= (float)((mat[2][0] + mat[0][2])*s);
+			q[0]= (float)((double)(mat[2][1] - mat[1][2])*s);
+			q[2]= (float)((double)(mat[1][0] + mat[0][1])*s);
+			q[3]= (float)((double)(mat[2][0] + mat[0][2])*s);
 		}
 		else if(mat[1][1] > mat[2][2]) {
-			s= 2.0*sqrtf(1.0f + mat[1][1] - mat[0][0] - mat[2][2]);
+			s= 2.0f*sqrtf(1.0f + mat[1][1] - mat[0][0] - mat[2][2]);
 			q[2]= (float)(0.25*s);
 
 			s= 1.0/s;
-			q[0]= (float)((mat[2][0] - mat[0][2])*s);
-			q[1]= (float)((mat[1][0] + mat[0][1])*s);
-			q[3]= (float)((mat[2][1] + mat[1][2])*s);
+			q[0]= (float)((double)(mat[2][0] - mat[0][2])*s);
+			q[1]= (float)((double)(mat[1][0] + mat[0][1])*s);
+			q[3]= (float)((double)(mat[2][1] + mat[1][2])*s);
 		}
 		else {
-			s= 2.0*sqrtf(1.0 + mat[2][2] - mat[0][0] - mat[1][1]);
+			s= 2.0f*sqrtf(1.0f + mat[2][2] - mat[0][0] - mat[1][1]);
 			q[3]= (float)(0.25*s);
 
 			s= 1.0/s;
-			q[0]= (float)((mat[1][0] - mat[0][1])*s);
-			q[1]= (float)((mat[2][0] + mat[0][2])*s);
-			q[2]= (float)((mat[2][1] + mat[1][2])*s);
+			q[0]= (float)((double)(mat[1][0] - mat[0][1])*s);
+			q[1]= (float)((double)(mat[2][0] + mat[0][2])*s);
+			q[2]= (float)((double)(mat[2][1] + mat[1][2])*s);
 		}
 	}
 
@@ -509,7 +507,7 @@ void QuatInterpolW(float *result, float *quat1, float *quat2, float t)
 {
 	float omega, cosom, sinom, sc1, sc2;
 
-	cosom = quat1[0]*quat2[0] + quat1[1]*quat2[1] + quat1[2]*quat2[2] + quat1[3]*quat2[3] ;
+	cosom = quat1[0] * quat2[0] + quat1[1] * quat2[1] + quat1[2] * quat2[2] + quat1[3] * quat2[3];
 	
 	/* rotate around shortest angle */
 	if ((1.0f + cosom) > 0.0001f) {
@@ -550,8 +548,8 @@ void interp_qt_qtqt(float result[4], const float quat1[4], const float quat2[4],
 {
 	float quat[4], omega, cosom, sinom, sc1, sc2;
 
-	cosom = quat1[0]*quat2[0] + quat1[1]*quat2[1] + quat1[2]*quat2[2] + quat1[3]*quat2[3] ;
-	
+	cosom = quat1[0] * quat2[0] + quat1[1] * quat2[1] + quat1[2] * quat2[2] + quat1[3] * quat2[3];
+
 	/* rotate around shortest angle */
 	if (cosom < 0.0f) {
 		cosom = -cosom;
@@ -708,12 +706,12 @@ void eulO_to_axis_angle(float axis[3], float *angle, const float eul[3], const s
 	quat_to_axis_angle(axis, angle,q);
 }
 
-/* axis angle to 3x3 matrix - safer version (normalisation of axis performed) */
+/* axis angle to 3x3 matrix - safer version (normalization of axis performed) */
 void axis_angle_to_mat3(float mat[3][3], const float axis[3], const float angle)
 {
 	float nor[3], nsi[3], co, si, ico;
 	
-	/* normalise the axis first (to remove unwanted scaling) */
+	/* normalize the axis first (to remove unwanted scaling) */
 	if(normalize_v3_v3(nor, axis) == 0.0f) {
 		unit_m3(mat);
 		return;
@@ -739,7 +737,7 @@ void axis_angle_to_mat3(float mat[3][3], const float axis[3], const float angle)
 	mat[2][2] = ((nor[2] * nor[2]) * ico) + co;
 }
 
-/* axis angle to 4x4 matrix - safer version (normalisation of axis performed) */
+/* axis angle to 4x4 matrix - safer version (normalization of axis performed) */
 void axis_angle_to_mat4(float mat[4][4], const float axis[3], const float angle)
 {
 	float tmat[3][3];
@@ -769,6 +767,52 @@ void mat4_to_axis_angle(float axis[3], float *angle,float mat[4][4])
 	// TODO: it would be nicer to go straight there...
 	mat4_to_quat(q,mat);
 	quat_to_axis_angle(axis, angle,q);
+}
+
+
+
+void single_axis_angle_to_mat3(float mat[3][3], const char axis, const float angle)
+{
+	const float angle_cos= cosf(angle);
+	const float angle_sin= sinf(angle);
+
+	switch(axis) {
+	case 'X': /* rotation around X */
+		mat[0][0] =  1.0f;
+		mat[0][1] =  0.0f;
+		mat[0][2] =  0.0f;
+		mat[1][0] =  0.0f;
+		mat[1][1] =  angle_cos;
+		mat[1][2] =  angle_sin;
+		mat[2][0] =  0.0f;
+		mat[2][1] = -angle_sin;
+		mat[2][2] =  angle_cos;
+		break;
+	case 'Y': /* rotation around Y */
+		mat[0][0] =  angle_cos;
+		mat[0][1] =  0.0f;
+		mat[0][2] = -angle_sin;
+		mat[1][0] =  0.0f;
+		mat[1][1] =  1.0f;
+		mat[1][2] =  0.0f;
+		mat[2][0] =  angle_sin;
+		mat[2][1] =  0.0f;
+		mat[2][2] =  angle_cos;
+		break;
+	case 'Z': /* rotation around Z */
+		mat[0][0] =  angle_cos;
+		mat[0][1] =  angle_sin;
+		mat[0][2] =  0.0f;
+		mat[1][0] = -angle_sin;
+		mat[1][1] =  angle_cos;
+		mat[1][2] =  0.0f;
+		mat[2][0] =  0.0f;
+		mat[2][1] =  0.0f;
+		mat[2][2] =  1.0f;
+		break;
+	default:
+		assert(0);
+	}
 }
 
 /****************************** Vector/Rotation ******************************/
@@ -1033,7 +1077,7 @@ void compatible_eul(float eul[3], const float oldrot[3])
 	}
 	
 	/* the method below was there from ancient days... but why! probably because the code sucks :)
-		*/
+	 */
 #if 0	
 	/* calc again */
 	dx= eul[0] - oldrot[0];
@@ -1090,10 +1134,10 @@ void mat3_to_compatible_eul(float eul[3], const float oldrot[3], float mat[][3])
 
 /* Euler Rotation Order Code:
  * was adapted from  
-		  ANSI C code from the article
-		"Euler Angle Conversion"
-		by Ken Shoemake, shoemake@graphics.cis.upenn.edu
-		in "Graphics Gems IV", Academic Press, 1994
+ *      ANSI C code from the article
+ *      "Euler Angle Conversion"
+ *      by Ken Shoemake, shoemake@graphics.cis.upenn.edu
+ *      in "Graphics Gems IV", Academic Press, 1994
  * for use in Blender
  */
 
@@ -1278,8 +1322,8 @@ void mat3_to_compatible_eulO(float eul[3], float oldrot[3], short order,float ma
 	compatible_eul(eul1, oldrot);
 	compatible_eul(eul2, oldrot);
 	
-	d1= (float)fabs(eul1[0]-oldrot[0]) + (float)fabs(eul1[1]-oldrot[1]) + (float)fabs(eul1[2]-oldrot[2]);
-	d2= (float)fabs(eul2[0]-oldrot[0]) + (float)fabs(eul2[1]-oldrot[1]) + (float)fabs(eul2[2]-oldrot[2]);
+	d1= fabsf(eul1[0]-oldrot[0]) + fabsf(eul1[1]-oldrot[1]) + fabsf(eul1[2]-oldrot[2]);
+	d2= fabsf(eul2[0]-oldrot[0]) + fabsf(eul2[1]-oldrot[1]) + fabsf(eul2[2]-oldrot[2]);
 	
 	/* return best, which is just the one with lowest difference */
 	if (d1 > d2)
@@ -1349,37 +1393,37 @@ void eulO_to_gimbal_axis(float gmat[][3], const float eul[3], const short order)
 
 /******************************* Dual Quaternions ****************************/
 
-/*
-   Conversion routines between (regular quaternion, translation) and
-   dual quaternion.
-
-   Version 1.0.0, February 7th, 2007
-
-   Copyright (C) 2006-2007 University of Dublin, Trinity College, All Rights 
-   Reserved
-
-   This software is provided 'as-is', without any express or implied
-   warranty.  In no event will the author(s) be held liable for any damages
-   arising from the use of this software.
-
-   Permission is granted to anyone to use this software for any purpose,
-   including commercial applications, and to alter it and redistribute it
-   freely, subject to the following restrictions:
-
-   1. The origin of this software must not be misrepresented; you must not
-	  claim that you wrote the original software. If you use this software
-	  in a product, an acknowledgment in the product documentation would be
-	  appreciated but is not required.
-   2. Altered source versions must be plainly marked as such, and must not be
-	  misrepresented as being the original software.
-   3. This notice may not be removed or altered from any source distribution.
-
-   Author: Ladislav Kavan, kavanl@cs.tcd.ie
-
-   Changes for Blender:
-   - renaming, style changes and optimizations
-   - added support for scaling
-*/
+/**
+ * Conversion routines between (regular quaternion, translation) and
+ * dual quaternion.
+ *
+ * Version 1.0.0, February 7th, 2007
+ *
+ * Copyright (C) 2006-2007 University of Dublin, Trinity College, All Rights 
+ * Reserved
+ *
+ * This software is provided 'as-is', without any express or implied
+ * warranty.  In no event will the author(s) be held liable for any damages
+ * arising from the use of this software.
+ *
+ * Permission is granted to anyone to use this software for any purpose,
+ * including commercial applications, and to alter it and redistribute it
+ * freely, subject to the following restrictions:
+ *
+ * 1. The origin of this software must not be misrepresented; you must not
+ *    claim that you wrote the original software. If you use this software
+ *    in a product, an acknowledgment in the product documentation would be
+ *    appreciated but is not required.
+ * 2. Altered source versions must be plainly marked as such, and must not be
+ *    misrepresented as being the original software.
+ * 3. This notice may not be removed or altered from any source distribution.
+ *
+ * \author Ladislav Kavan, kavanl@cs.tcd.ie
+ *
+ * Changes for Blender:
+ * - renaming, style changes and optimization's
+ * - added support for scaling
+ */
 
 void mat4_to_dquat(DualQuat *dq,float basemat[][4], float mat[][4])
 {
@@ -1388,8 +1432,8 @@ void mat4_to_dquat(DualQuat *dq,float basemat[][4], float mat[][4])
 	float R[4][4], S[4][4];
 
 	/* split scaling and rotation, there is probably a faster way to do
-	   this, it's done like this now to correctly get negative scaling */
-	mul_m4_m4m4(baseRS, basemat, mat);
+	 * this, it's done like this now to correctly get negative scaling */
+	mult_m4_m4m4(baseRS, mat, basemat);
 	mat4_to_size(scale,baseRS);
 
 	copy_v3_v3(dscale, scale);
@@ -1408,10 +1452,10 @@ void mat4_to_dquat(DualQuat *dq,float basemat[][4], float mat[][4])
 		copy_v3_v3(baseR[3], baseRS[3]);
 
 		invert_m4_m4(baseinv, basemat);
-		mul_m4_m4m4(R, baseinv, baseR);
+		mult_m4_m4m4(R, baseR, baseinv);
 
 		invert_m4_m4(baseRinv, baseR);
-		mul_m4_m4m4(S, baseRS, baseRinv);
+		mult_m4_m4m4(S, baseRinv, baseRS);
 
 		/* set scaling part */
 		mul_serie_m4(dq->scale, basemat, S, baseinv, NULL, NULL, NULL, NULL, NULL);
@@ -1644,14 +1688,14 @@ void vec_apply_track(float vec[3], short axis)
 }
 
 /* lens/angle conversion (radians) */
-float lens_to_angle(float lens)
+float focallength_to_fov(float focal_length, float sensor)
 {
-	return 2.0f * atanf(16.0f/lens);
+	return 2.0f * atanf((sensor/2.0f) / focal_length);
 }
 
-float angle_to_lens(float angle)
+float fov_to_focallength(float hfov, float sensor)
 {
-	return 16.0f / tanf(angle * 0.5f);
+	return (sensor/2.0f) / tanf(hfov * 0.5f);
 }
 
 /* 'mod_inline(-3,4)= 1', 'fmod(-3,4)= -3' */

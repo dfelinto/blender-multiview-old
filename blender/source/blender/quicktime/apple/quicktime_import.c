@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * quicktime_import.c
  *
@@ -42,6 +41,7 @@
 #include "BLO_sys_types.h"
 #include "BKE_global.h"
 #include "BLI_dynstr.h"
+#include "BLI_path_util.h"
 
 #ifdef __APPLE__
 #include <QuickTime/Movies.h>
@@ -191,7 +191,7 @@ int anim_is_quicktime (const char *name)
 #endif
 	OSErr						err = noErr;
 			
-	// dont let quicktime movie import handle these
+	// don't let quicktime movie import handle these
 	if( BLI_testextensie(name, ".swf") ||
 		BLI_testextensie(name, ".txt") ||
 		BLI_testextensie(name, ".mpg") ||
@@ -250,7 +250,8 @@ int anim_is_quicktime (const char *name)
 }
 
 
-void free_anim_quicktime (struct anim *anim) {
+void free_anim_quicktime (struct anim *anim)
+{
 	if (anim == NULL) return;
 	if (anim->qtime == NULL) return;
 
@@ -382,8 +383,9 @@ ImBuf * qtime_fetchibuf (struct anim *anim, int position)
 		//add alpha to ibuf
 		boxsize = anim->x * anim->y * 4;
 		crect = (unsigned char *) rect;
-		for( index = 0; index < boxsize; index+=4, crect+=4 )
-			 crect[3] = 0xFF;
+		for( index = 0; index < boxsize; index+=4, crect+=4 ) {
+			crect[3] = 0xFF;
+		}
 	}
 #endif
 
@@ -523,8 +525,8 @@ int startquicktime (struct anim *anim)
 		anim->qtime->have_gw = TRUE;
 
 		SetMovieGWorld(anim->qtime->movie,
-				 anim->qtime->offscreenGWorld,
-				 GetGWorldDevice(anim->qtime->offscreenGWorld));
+		               anim->qtime->offscreenGWorld,
+		               GetGWorldDevice(anim->qtime->offscreenGWorld));
 		SetMoviePlayHints(anim->qtime->movie, hintsHighQuality, hintsHighQuality);
 		
 		// sets Media and Track!
@@ -577,7 +579,7 @@ int imb_is_a_quicktime (char *name)
 
 	if(QTIME_DEBUG) printf("qt: checking as image %s\n", name);
 
-	// dont let quicktime image import handle these
+	// don't let quicktime image import handle these
 	if( BLI_testextensie(name, ".swf") ||
 		BLI_testextensie(name, ".txt") ||
 		BLI_testextensie(name, ".mpg") ||
@@ -781,7 +783,7 @@ bail:
 
 		if( depth < 32 && (**desc).cType != kGIFCodecType) {
 			for(i = 0; i < box; i++, arect+=4)
-				 arect[3] = 0xFF;
+				arect[3] = 0xFF;
 		}
 #endif
 
@@ -800,25 +802,25 @@ bail:
 #if 0
 
 struct ImageDescription {
-	 long         idSize;
-	 CodecType    cType;
-	 long         resvd1;
-	 short        resvd2;
-	 short        dataRefIndex;
-	 short        version;
-	 short        revisionLevel;
-	 long         vendor;
-	 CodecQ       temporalQuality;
-	 CodecQ       spatialQuality;
-	 short        width;
-	 short        height;
-	 Fixed        hRes;
-	 Fixed        vRes;
-	 long         dataSize;
-	 short        frameCount;
-	 Str31        name;
-	 short        depth;
-	 short        clutID;
+	long         idSize;
+	CodecType    cType;
+	long         resvd1;
+	short        resvd2;
+	short        dataRefIndex;
+	short        version;
+	short        revisionLevel;
+	long         vendor;
+	CodecQ       temporalQuality;
+	CodecQ       spatialQuality;
+	short        width;
+	short        height;
+	Fixed        hRes;
+	Fixed        vRes;
+	long         dataSize;
+	short        frameCount;
+	Str31        name;
+	short        depth;
+	short        clutID;
 };
 
 #endif // 0

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -510,7 +508,7 @@ static void graph_refresh(const bContext *C, ScrArea *sa)
 	}
 	
 	/* region updates? */
-	// XXX resizing y-extents of tot should go here?
+	// XXX re-sizing y-extents of tot should go here?
 	
 	/* update the state of the animchannels in response to changes from the data they represent 
 	 * NOTE: the temp flag is used to indicate when this needs to be done, and will be cleared once handled

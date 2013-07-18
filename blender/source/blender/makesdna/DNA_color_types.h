@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,12 +24,13 @@
  *
  * ***** END GPL/BL DUAL LICENSE BLOCK *****
  */
-#ifndef DNA_COLOR_TYPES_H
-#define DNA_COLOR_TYPES_H
 
 /** \file DNA_color_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_COLOR_TYPES_H__
+#define __DNA_COLOR_TYPES_H__
 
 #include "DNA_vec_types.h"
 

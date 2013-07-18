@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,7 +28,7 @@
 #include <map>
 #include <vector>
 
-/** \brief Class for saving <extra> tags for a specific UniqueId.
+/** \brief Class for saving \<extra\> tags for a specific UniqueId.
  */
 class ExtraTags
 {

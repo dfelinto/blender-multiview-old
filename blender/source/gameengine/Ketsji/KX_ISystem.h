@@ -1,6 +1,4 @@
 /*
-* $Id$
-*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,15 +23,15 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file KX_ISystem.h
  *  \ingroup ketsji
  *  \brief Abstract system
  */
 
-#ifndef __KX_ISYSTEM
-#define __KX_ISYSTEM
+#ifndef __KX_ISYSTEM_H__
+#define __KX_ISYSTEM_H__
 
 #include <vector>
 using namespace std;

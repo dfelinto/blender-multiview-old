@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_MeshExceptions_h
-#define NAN_INCLUDED_MeshExceptions_h
+#ifndef __LOD_MESHEXCEPTION_H__
+#define __LOD_MESHEXCEPTION_H__
 
 class LOD_MeshException {
 

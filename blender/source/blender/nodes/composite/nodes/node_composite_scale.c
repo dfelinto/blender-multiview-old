@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,10 +34,8 @@
 
 /* **************** Scale  ******************** */
 
-#define CMP_SCALE_MAX	12000
-
 static bNodeSocketTemplate cmp_node_scale_in[]= {
-	{	SOCK_RGBA, 1, "Image",			0.8f, 0.8f, 0.8f, 1.0f},
+	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
 	{	SOCK_FLOAT, 1, "X",				1.0f, 0.0f, 0.0f, 0.0f, 0.0001f, CMP_SCALE_MAX, PROP_FACTOR},
 	{	SOCK_FLOAT, 1, "Y",				1.0f, 0.0f, 0.0f, 0.0f, 0.0001f, CMP_SCALE_MAX, PROP_FACTOR},
 	{	-1, 0, ""	}
@@ -112,23 +108,35 @@ static void node_composit_exec_scale(void *data, bNode *node, bNodeStack **in, b
 		if(cbuf!=in[0]->data)
 			free_compbuf(cbuf);
 	}
+	else if (node->custom1==CMP_SCALE_ABSOLUTE) {
+		CompBuf *stackbuf;
+		int a, x, y;
+		float *fp;
+
+		x = MAX2((int)in[1]->vec[0], 1);
+		y = MAX2((int)in[2]->vec[0], 1);
+
+		stackbuf = alloc_compbuf(x, y, CB_RGBA, 1);
+		fp = stackbuf->rect;
+
+		a = stackbuf->x * stackbuf->y;
+		while(a--) {
+			copy_v4_v4(fp, in[0]->vec);
+			fp += 4;
+		}
+
+		out[0]->data= stackbuf;
+	}
 }
 
-void register_node_type_cmp_scale(ListBase *lb)
+void register_node_type_cmp_scale(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_SCALE, "Scale", NODE_CLASS_DISTORT, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_SCALE, "Scale", NODE_CLASS_DISTORT, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_scale_in, cmp_node_scale_out);
 	node_type_size(&ntype, 140, 100, 320);
 	node_type_exec(&ntype, node_composit_exec_scale);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-
-
-
-
-

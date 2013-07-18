@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,6 +43,7 @@
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
+#include "BKE_screen.h"
 #include "BKE_global.h"
 #include "BKE_text.h" /* for UI_OT_reports_to_text */
 #include "BKE_report.h"
@@ -61,6 +60,10 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+/* only for UI_OT_editsource */
+#include "ED_screen.h"
+#include "BKE_main.h"
+#include "BLI_ghash.h"
 
 
 /* ********************************************************** */
@@ -100,7 +103,8 @@ static int eyedropper_cancel(bContext *C, wmOperator *op)
 static void eyedropper_sample(bContext *C, Eyedropper *eye, int mx, int my)
 {
 	if(RNA_property_type(eye->prop) == PROP_FLOAT) {
-		const int color_manage = CTX_data_scene(C)->r.color_mgt_flag & R_COLOR_MANAGEMENT;
+		Scene *scene = CTX_data_scene(C);
+		const int color_manage = scene->r.color_mgt_flag & R_COLOR_MANAGEMENT;
 		float col[4];
 	
 		RNA_property_float_get_array(&eye->ptr, eye->prop, col);
@@ -295,10 +299,28 @@ static int reset_default_button_exec(bContext *C, wmOperator *op)
 		if(RNA_property_reset(&ptr, prop, (all)? -1: index)) {
 			/* perform updates required for this property */
 			RNA_property_update(C, &ptr, prop);
+
+			/* as if we pressed the button */
+			uiContextActivePropertyHandle(C);
+
 			success= 1;
 		}
 	}
-	
+
+	/* Since we don't want to undo _all_ edits to settings, eg window
+	 * edits on the screen or on operator settings.
+	 * it might be better to move undo's inline - campbell */
+	if(success) {
+		ID *id= ptr.id.data;
+		if(id && ID_CHECK_UNDO(id)) {
+			/* do nothing, go ahead with undo */
+		}
+		else {
+			return OPERATOR_CANCELLED;
+		}
+	}
+	/* end hack */
+
 	return (success)? OPERATOR_FINISHED: OPERATOR_CANCELLED;
 }
 
@@ -314,10 +336,10 @@ static void UI_OT_reset_default_button(wmOperatorType *ot)
 	ot->exec= reset_default_button_exec;
 
 	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+	ot->flag= OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array.");
+	RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
 /* Copy To Selected Operator ------------------------ */
@@ -409,7 +431,7 @@ static void UI_OT_copy_to_selected_button(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
 	/* properties */
-	RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array.");
+	RNA_def_boolean(ot->srna, "all", 1, "All", "Reset to default values all elements of the array");
 }
 
 /* Reports to Textblock Operator ------------------------ */
@@ -437,11 +459,16 @@ static int reports_to_text_exec(bContext *C, wmOperator *UNUSED(op))
 	 *	- otherwise, up to info (which is what users normally see)
 	 */
 	str = BKE_reports_string(reports, (G.f & G_DEBUG)? RPT_DEBUG : RPT_INFO);
-	
-	write_text(txt, str);
-	MEM_freeN(str);
-	
-	return OPERATOR_FINISHED;
+
+	if (str) {
+		write_text(txt, str);
+		MEM_freeN(str);
+
+		return OPERATOR_FINISHED;
+	}
+	else {
+		return OPERATOR_CANCELLED;
+	}
 }
 
 static void UI_OT_reports_to_textblock(wmOperatorType *ot)
@@ -456,6 +483,226 @@ static void UI_OT_reports_to_textblock(wmOperatorType *ot)
 	ot->exec= reports_to_text_exec;
 }
 
+#ifdef WITH_PYTHON
+
+/* ------------------------------------------------------------------------- */
+/* EditSource Utility funcs and operator,
+ * note, this includes utility functions and button matching checks */
+
+struct uiEditSourceStore {
+	uiBut but_orig;
+	GHash *hash;
+} uiEditSourceStore;
+
+struct uiEditSourceButStore {
+	char py_dbg_fn[FILE_MAX];
+	int py_dbg_ln;
+} uiEditSourceButStore;
+
+/* should only ever be set while the edit source operator is running */
+static struct uiEditSourceStore *ui_editsource_info= NULL;
+
+int  UI_editsource_enable_check(void)
+{
+	return (ui_editsource_info != NULL);
+}
+
+static void ui_editsource_active_but_set(uiBut *but)
+{
+	BLI_assert(ui_editsource_info == NULL);
+
+	ui_editsource_info= MEM_callocN(sizeof(uiEditSourceStore), __func__);
+	memcpy(&ui_editsource_info->but_orig, but, sizeof(uiBut));
+
+	ui_editsource_info->hash = BLI_ghash_new(BLI_ghashutil_ptrhash,
+	                                         BLI_ghashutil_ptrcmp,
+	                                         __func__);
+}
+
+static void ui_editsource_active_but_clear(void)
+{
+	BLI_ghash_free(ui_editsource_info->hash, NULL, (GHashValFreeFP)MEM_freeN);
+	MEM_freeN(ui_editsource_info);
+	ui_editsource_info= NULL;
+}
+
+static int ui_editsource_uibut_match(uiBut *but_a, uiBut *but_b)
+{
+#if 0
+	printf("matching buttons: '%s' == '%s'\n",
+	       but_a->drawstr, but_b->drawstr);
+#endif
+
+	/* this just needs to be a 'good-enough' comparison so we can know beyond
+	 * reasonable doubt that these buttons are the same between redraws.
+	 * if this fails it only means edit-source fails - campbell */
+	if(     (but_a->x1 == but_b->x1) &&
+	        (but_a->x2 == but_b->x2) &&
+	        (but_a->y1 == but_b->y1) &&
+	        (but_a->y2 == but_b->y2) &&
+	        (but_a->type == but_b->type) &&
+	        (but_a->rnaprop == but_b->rnaprop) &&
+	        (but_a->optype == but_b->optype) &&
+	        (but_a->unit_type == but_b->unit_type) &&
+	        strncmp(but_a->drawstr, but_b->drawstr, UI_MAX_DRAW_STR) == 0
+	) {
+		return TRUE;
+	}
+	else {
+		return FALSE;
+	}
+}
+
+void UI_editsource_active_but_test(uiBut *but)
+{
+	extern void PyC_FileAndNum_Safe(const char **filename, int *lineno);
+
+	struct uiEditSourceButStore *but_store= MEM_callocN(sizeof(uiEditSourceButStore), __func__);
+
+	const char *fn;
+	int lineno= -1;
+
+#if 0
+	printf("comparing buttons: '%s' == '%s'\n",
+	       but->drawstr, ui_editsource_info->but_orig.drawstr);
+#endif
+
+	PyC_FileAndNum_Safe(&fn, &lineno);
+
+	if (lineno != -1) {
+		BLI_strncpy(but_store->py_dbg_fn, fn,
+					sizeof(but_store->py_dbg_fn));
+		but_store->py_dbg_ln= lineno;
+	}
+	else {
+		but_store->py_dbg_fn[0]= '\0';
+		but_store->py_dbg_ln= -1;
+	}
+
+	BLI_ghash_insert(ui_editsource_info->hash, but, but_store);
+}
+
+/* editsource operator component */
+
+static int editsource_text_edit(bContext *C, wmOperator *op,
+                                char filepath[FILE_MAX], int line)
+{
+	struct Main *bmain= CTX_data_main(C);
+	Text *text;
+
+	for (text=bmain->text.first; text; text=text->id.next) {
+		if (text->name && BLI_path_cmp(text->name, filepath) == 0) {
+			break;
+		}
+	}
+
+	if (text == NULL) {
+		text= add_text(filepath, bmain->name);
+	}
+
+	if (text == NULL) {
+		BKE_reportf(op->reports, RPT_WARNING,
+		            "file: '%s' can't be opened", filepath);
+		return OPERATOR_CANCELLED;
+	}
+	else {
+		/* naughty!, find text area to set, not good behavior
+		 * but since this is a dev tool lets allow it - campbell */
+		ScrArea *sa= BKE_screen_find_big_area(CTX_wm_screen(C), SPACE_TEXT, 0);
+		if(sa) {
+			SpaceText *st= sa->spacedata.first;
+			st->text= text;
+		}
+		else {
+			BKE_reportf(op->reports, RPT_INFO,
+			            "See '%s' in the text editor", text->id.name + 2);
+		}
+
+		txt_move_toline(text, line - 1, FALSE);
+		WM_event_add_notifier(C, NC_TEXT|ND_CURSOR, text);
+	}
+
+	return OPERATOR_FINISHED;
+}
+
+static int editsource_exec(bContext *C, wmOperator *op)
+{
+	uiBut *but= uiContextActiveButton(C);
+
+	if (but) {
+		GHashIterator ghi;
+		struct uiEditSourceButStore *but_store= NULL;
+
+		ARegion *ar= CTX_wm_region(C);
+		int ret;
+
+		/* needed else the active button does not get tested */
+		uiFreeActiveButtons(C, CTX_wm_screen(C));
+
+		// printf("%s: begin\n", __func__);
+
+		/* take care not to return before calling ui_editsource_active_but_clear */
+		ui_editsource_active_but_set(but);
+
+		/* redraw and get active button python info */
+		ED_region_do_draw(C, ar);
+
+		for(BLI_ghashIterator_init(&ghi, ui_editsource_info->hash);
+		    !BLI_ghashIterator_isDone(&ghi);
+		    BLI_ghashIterator_step(&ghi))
+		{
+			uiBut *but= BLI_ghashIterator_getKey(&ghi);
+			if (but && ui_editsource_uibut_match(&ui_editsource_info->but_orig, but)) {
+				but_store= BLI_ghashIterator_getValue(&ghi);
+				break;
+			}
+
+		}
+
+		if (but_store) {
+			if (but_store->py_dbg_ln != -1) {
+				ret= editsource_text_edit(C, op,
+				                          but_store->py_dbg_fn,
+				                          but_store->py_dbg_ln);
+			}
+			else {
+				BKE_report(op->reports, RPT_ERROR,
+						   "Active button isn't from a script, cant edit source.");
+				ret= OPERATOR_CANCELLED;
+			}
+		}
+		else {
+			BKE_report(op->reports, RPT_ERROR,
+					   "Active button match can't be found.");
+			ret= OPERATOR_CANCELLED;
+		}
+
+
+		ui_editsource_active_but_clear();
+
+		// printf("%s: end\n", __func__);
+
+		return ret;
+	}
+	else {
+		BKE_report(op->reports, RPT_ERROR, "Active button not found");
+		return OPERATOR_CANCELLED;
+	}
+}
+
+static void UI_OT_editsource(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "Reports to Text Block";
+	ot->idname= "UI_OT_editsource";
+	ot->description= "Edit source code for a button";
+
+	/* callbacks */
+	ot->exec= editsource_exec;
+}
+
+#endif /* WITH_PYTHON */
+
 /* ********************************************************* */
 /* Registration */
 
@@ -467,5 +714,9 @@ void UI_buttons_operatortypes(void)
 	WM_operatortype_append(UI_OT_reset_default_button);
 	WM_operatortype_append(UI_OT_copy_to_selected_button);
 	WM_operatortype_append(UI_OT_reports_to_textblock); // XXX: temp?
+
+#ifdef WITH_PYTHON
+	WM_operatortype_append(UI_OT_editsource);
+#endif
 }
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SILENCEREADER
-#define AUD_SILENCEREADER
+#ifndef __AUD_SILENCEREADER_H__
+#define __AUD_SILENCEREADER_H__
 
 #include "AUD_IReader.h"
 #include "AUD_Buffer.h"
@@ -65,4 +63,4 @@ public:
 	virtual void read(int& length, bool& eos, sample_t* buffer);
 };
 
-#endif //AUD_SILENCEREADER
+#endif //__AUD_SILENCEREADER_H__

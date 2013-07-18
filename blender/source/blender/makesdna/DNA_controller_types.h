@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_CONTROLLER_TYPES_H
-#define DNA_CONTROLLER_TYPES_H
 
 /** \file DNA_controller_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_CONTROLLER_TYPES_H__
+#define __DNA_CONTROLLER_TYPES_H__
 
 struct bActuator;
 struct Text;
@@ -55,7 +54,7 @@ typedef struct bController {
 	short type, flag, inputs, totlinks;
 	short otype, totslinks, pad2, pad3;
 	
-	char name[32];
+	char name[64];
 	void *data;
 	
 	struct bActuator **links;

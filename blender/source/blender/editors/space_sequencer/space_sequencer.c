@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +38,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_path_util.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -108,7 +105,6 @@ static SpaceLink *sequencer_new(const bContext *C)
 	
 	sseq= MEM_callocN(sizeof(SpaceSeq), "initsequencer");
 	sseq->spacetype= SPACE_SEQ;
-	sseq->zoom= 4;
 	sseq->chanshown = 0;
 	sseq->view = SEQ_VIEW_SEQUENCE;
 	sseq->mainb = SEQ_DRAW_IMG_IMBUF;
@@ -223,11 +219,11 @@ static void sequencer_refresh(const bContext *C, ScrArea *sa)
 				WM_event_remove_handlers((bContext*)C, &ar_preview->handlers);
 				view_changed= 1;
 			}
-			if (ar_main && ar_main->alignment != RGN_ALIGN_TOP) {
+			if (ar_main && ar_main->alignment != RGN_ALIGN_NONE) {
 				ar_main->alignment= RGN_ALIGN_NONE;
 				view_changed= 1;
 			}
-			if (ar_preview && ar_preview->alignment != RGN_ALIGN_TOP) {
+			if (ar_preview && ar_preview->alignment != RGN_ALIGN_NONE) {
 				ar_preview->alignment= RGN_ALIGN_NONE;
 				view_changed= 1;
 			}
@@ -245,11 +241,11 @@ static void sequencer_refresh(const bContext *C, ScrArea *sa)
 				ar_preview->v2d.cur = ar_preview->v2d.tot;
 				view_changed= 1;
 			}
-			if (ar_main && ar_main->alignment != RGN_ALIGN_TOP) {
+			if (ar_main && ar_main->alignment != RGN_ALIGN_NONE) {
 				ar_main->alignment= RGN_ALIGN_NONE;
 				view_changed= 1;
 			}
-			if (ar_preview && ar_preview->alignment != RGN_ALIGN_TOP) {
+			if (ar_preview && ar_preview->alignment != RGN_ALIGN_NONE) {
 				ar_preview->alignment= RGN_ALIGN_NONE;
 				view_changed= 1;
 			}
@@ -266,7 +262,7 @@ static void sequencer_refresh(const bContext *C, ScrArea *sa)
 				ar_preview->v2d.cur = ar_preview->v2d.tot;
 				view_changed= 1;
 			}
-			if (ar_main && ar_main->alignment != RGN_ALIGN_TOP) {
+			if (ar_main && ar_main->alignment != RGN_ALIGN_NONE) {
 				ar_main->alignment= RGN_ALIGN_NONE;
 				view_changed= 1;
 			}
@@ -362,7 +358,7 @@ static void sequencer_drop_copy(wmDrag *drag, wmDropBox *drop)
 		PointerRNA itemptr;
 		char dir[FILE_MAX], file[FILE_MAX];
 
-		BLI_split_dirfile(drag->path, dir, file);
+		BLI_split_dirfile(drag->path, dir, file, sizeof(dir), sizeof(file));
 		
 		RNA_string_set(drop->ptr, "directory", dir);
 
@@ -576,8 +572,8 @@ void ED_spacetype_sequencer(void)
 	BLI_addhead(&st->regiontypes, art);
 	
 	/* Keep as python only for now
-	sequencer_buttons_register(art);
-	*/
+	 * sequencer_buttons_register(art);
+	 */
 
 	/* regions: header */
 	art= MEM_callocN(sizeof(ARegionType), "spacetype sequencer region");
@@ -595,7 +591,7 @@ void ED_spacetype_sequencer(void)
 
 	/* set the sequencer callback when not in background mode */
 	if(G.background==0) {
-		sequencer_view3d_cb= ED_view3d_draw_offscreen_imbuf_simple;
+		sequencer_view3d_cb = ED_view3d_draw_offscreen_imbuf_simple;
 	}
 }
 

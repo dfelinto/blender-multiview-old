@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup collada
  */
 
-#ifndef __BC_TRANSFORMREADER_H__
-#define __BC_TRANSFORMREADER_H__
+#ifndef __TRANSFORMREADER_H__
+#define __TRANSFORMREADER_H__
 
 #include "COLLADAFWNode.h"
 #include "COLLADAFWTransformation.h"

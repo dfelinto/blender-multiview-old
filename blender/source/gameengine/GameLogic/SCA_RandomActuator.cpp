@@ -1,7 +1,6 @@
 /*
  * Set random/camera stuff
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -267,7 +266,8 @@ bool SCA_RandomActuator::Update()
 	return false;
 }
 
-void SCA_RandomActuator::enforceConstraints() {
+void SCA_RandomActuator::enforceConstraints()
+{
 	/* The constraints that are checked here are the ones fundamental to     */
 	/* the various distributions. Limitations of the algorithms are checked  */
 	/* elsewhere (or they should be... ).                                    */
@@ -361,7 +361,7 @@ PyAttributeDef SCA_RandomActuator::Attributes[] = {
 	KX_PYATTRIBUTE_FLOAT_RO("para1",SCA_RandomActuator,m_parameter1),
 	KX_PYATTRIBUTE_FLOAT_RO("para2",SCA_RandomActuator,m_parameter2),
 	KX_PYATTRIBUTE_ENUM_RO("distribution",SCA_RandomActuator,m_distribution),
-	KX_PYATTRIBUTE_STRING_RW_CHECK("propName",0,100,false,SCA_RandomActuator,m_propname,CheckProperty),
+	KX_PYATTRIBUTE_STRING_RW_CHECK("propName",0,MAX_PROP_NAME,false,SCA_RandomActuator,m_propname,CheckProperty),
 	KX_PYATTRIBUTE_RW_FUNCTION("seed",SCA_RandomActuator,pyattr_get_seed,pyattr_set_seed),
 	{ NULL }	//Sentinel
 };	
@@ -404,7 +404,7 @@ KX_PYMETHODDEF_DOC_VARARGS(SCA_RandomActuator, setBoolConst,
 /* 12. setBoolUniform, */
 KX_PYMETHODDEF_DOC_NOARGS(SCA_RandomActuator, setBoolUniform,
 "setBoolUniform()\n"
-"\tSet this generator to produce true and false, each with 50%% chance of occuring\n") 
+"\tSet this generator to produce true and false, each with 50%% chance of occurring\n") 
 {
 	/* no args */
 	m_distribution = KX_RANDOMACT_BOOL_UNIFORM;

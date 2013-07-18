@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BKE_CONTEXT_H
-#define BKE_CONTEXT_H
+#ifndef __BKE_CONTEXT_H__
+#define __BKE_CONTEXT_H__
 
 /** \file BKE_context.h
  *  \ingroup bke
@@ -41,7 +39,6 @@ extern "C" {
 
 struct ARegion;
 struct bScreen;
-struct EditMesh;
 struct ListBase;
 struct Main;
 struct Object;
@@ -63,6 +60,7 @@ struct wmWindow;
 struct wmWindowManager;
 struct SpaceText;
 struct SpaceImage;
+struct SpaceClip;
 struct ID;
 
 /* Structs */
@@ -160,6 +158,7 @@ struct SpaceIpo *CTX_wm_space_graph(const bContext *C);
 struct SpaceAction *CTX_wm_space_action(const bContext *C);
 struct SpaceInfo *CTX_wm_space_info(const bContext *C);
 struct SpaceUserPref *CTX_wm_space_userpref(const bContext *C);
+struct SpaceClip *CTX_wm_space_clip(const bContext *C);
 
 void CTX_wm_manager_set(bContext *C, struct wmWindowManager *wm);
 void CTX_wm_window_set(bContext *C, struct wmWindow *win);
@@ -171,10 +170,10 @@ const char *CTX_wm_operator_poll_msg_get(struct bContext *C);
 void CTX_wm_operator_poll_msg_set(struct bContext *C, const char *msg);
 
 /* Data Context
-
-   - listbases consist of CollectionPointerLink items and must be
-	 freed with BLI_freelistN!
-   - the dir listbase consits of LinkData items */
+ *
+ * - listbases consist of CollectionPointerLink items and must be
+ *   freed with BLI_freelistN!
+ * - the dir listbase consits of LinkData items */
 
 /* data type, needed so we can tell between a NULL pointer and an empty list */
 enum {
@@ -202,20 +201,22 @@ short CTX_data_type_get(struct bContextDataResult *result);
 int CTX_data_equals(const char *member, const char *str);
 int CTX_data_dir(const char *member);
 
-/*void CTX_data_pointer_set(bContextDataResult *result, void *data);
-void CTX_data_list_add(bContextDataResult *result, void *data);*/
+#if 0
+void CTX_data_pointer_set(bContextDataResult *result, void *data);
+void CTX_data_list_add(bContextDataResult *result, void *data);
+#endif
 
-#define CTX_DATA_BEGIN(C, Type, instance, member) \
-	{ \
-		ListBase ctx_data_list; \
-		CollectionPointerLink *ctx_link; \
-		CTX_data_##member(C, &ctx_data_list); \
-		for(ctx_link=ctx_data_list.first; ctx_link; ctx_link=ctx_link->next) { \
+#define CTX_DATA_BEGIN(C, Type, instance, member)                             \
+	{                                                                         \
+		ListBase ctx_data_list;                                               \
+		CollectionPointerLink *ctx_link;                                      \
+		CTX_data_##member(C, &ctx_data_list);                                 \
+		for(ctx_link=ctx_data_list.first; ctx_link; ctx_link=ctx_link->next) {\
 			Type instance= ctx_link->ptr.data;
 
-#define CTX_DATA_END \
-		} \
-		BLI_freelistN(&ctx_data_list); \
+#define CTX_DATA_END                                                          \
+		}                                                                     \
+		BLI_freelistN(&ctx_data_list);                                        \
 	}
 
 int ctx_data_list_count(const bContext *C, int (*func)(const bContext*, ListBase*));
@@ -254,6 +255,7 @@ struct Object *CTX_data_edit_object(const bContext *C);
 struct Image *CTX_data_edit_image(const bContext *C);
 
 struct Text *CTX_data_edit_text(const bContext *C);
+struct MovieClip *CTX_data_edit_movieclip(const bContext *C);
 
 int CTX_data_selected_nodes(const bContext *C, ListBase *list);
 

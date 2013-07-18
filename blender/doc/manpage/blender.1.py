@@ -22,6 +22,7 @@
 
 import subprocess
 import os
+import sys
 
 import time
 import datetime
@@ -43,12 +44,17 @@ def man_format(data):
 
     return data
 
+# allow passing blender as argument
+if sys.argv[-1].endswith(os.sep + "blender"):
+    blender_bin = sys.argv[-1]
+else:
+    blender_bin = os.path.join(os.path.dirname(__file__), "../../blender.bin")
 
-blender_bin = os.path.join(os.path.dirname(__file__), "../../blender.bin")
+cmd = [blender_bin, "--help"]
+print("  executing:", " ".join(cmd))
+blender_help = subprocess.Popen(cmd, stdout=subprocess.PIPE).communicate()[0].decode(encoding="utf-8")
 
-blender_help = subprocess.Popen([blender_bin, "--help"], stdout=subprocess.PIPE).communicate()[0].decode()
-
-blender_version = subprocess.Popen([blender_bin, "--version"], stdout=subprocess.PIPE).communicate()[0].decode().strip()
+blender_version = subprocess.Popen([blender_bin, "--version"], stdout=subprocess.PIPE).communicate()[0].decode(encoding="utf-8").strip()
 blender_version = blender_version.split("Build")[0]
 
 date_string = datetime.date.fromtimestamp(time.time()).strftime("%B %d, %Y")

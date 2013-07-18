@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  */
 
 
-#ifndef _GHOST_SYSTEM_PATHS_CARBON_H_
-#define _GHOST_SYSTEM_PATHS_CARBON_H_
+#ifndef __GHOST_SYSTEMPATHSCARBON_H__
+#define __GHOST_SYSTEMPATHSCARBON_H__
 
 #ifndef __APPLE__
 #error Apple OSX only!
@@ -50,16 +48,16 @@
  */
 class GHOST_SystemPathsCarbon : public GHOST_SystemPaths {
 public:
-    /**
-     * Constructor.
-     */
-    GHOST_SystemPathsCarbon();
-    
-    /** 
-     * Destructor.
-     */
-    ~GHOST_SystemPathsCarbon();
-    
+	/**
+	 * Constructor.
+	 */
+	GHOST_SystemPathsCarbon();
+
+	/**
+	 * Destructor.
+	 */
+	~GHOST_SystemPathsCarbon();
+
 	/**
 	 * Determine the base dir in which shared resources are located. It will first try to use
 	 * "unpack and run" path, then look for properly installed path, not including versioning.
@@ -78,15 +76,12 @@ public:
 	  * Determine the directory of the current binary
 	  * @return Unsigned char string pointing to the binary dir
 	  */
-	 virtual const GHOST_TUns8* getBinaryDir() const;
+	virtual const GHOST_TUns8* getBinaryDir() const;
 
 	/**
 	  * Add the file to the operating system most recently used files
 	  */
-	 void addToSystemRecentFiles(const char* filename) const;
+	void addToSystemRecentFiles(const char* filename) const;
 };
 
-#endif // _GHOST_SYSTEM_CARBON_H_
-
-
-
+#endif // __GHOST_SYSTEMPATHSCARBON_H__

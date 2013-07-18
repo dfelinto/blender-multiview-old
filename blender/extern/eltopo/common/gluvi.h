@@ -4,10 +4,12 @@
 //#include <iostream>
 //#include <vector>
 
+#ifdef USE_GUI
 #ifdef __APPLE__
 #include <GLUT/glut.h> // why does Apple have to put glut.h here...
 #else
 #include <GL/glut.h> // ...when everyone else puts it here?
+#endif
 #endif
 
 //#include "vec.h"
@@ -187,8 +189,10 @@ extern void (*userDragFunc)(int x, int y);
 void ppm_screenshot(const char *filename_format, ...);
 void sgi_screenshot(const char *filename_format, ...);
 void set_generic_lights(void);
+#ifdef USE_GUI
 void set_generic_material(float r, float g, float b, GLenum face=GL_FRONT_AND_BACK);
 void set_matte_material(float r, float g, float b, GLenum face=GL_FRONT_AND_BACK);
+#endif
 //@@@@@@@ USEFUL FUNCTIONALITY:
 void draw_3d_arrow(const float base[3], const float point[3], float arrow_head_length=0);
 //void draw_2d_arrow(const Vec2f base, const Vec2f point, float arrow_head_length);

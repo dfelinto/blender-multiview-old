@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * Ketsji Logic Extenstion: Network Event Manager generic implementation
+ * Ketsji Logic Extension: Network Event Manager generic implementation
  */
 
 /** \file gameengine/Ketsji/KXNetwork/KX_NetworkEventManager.cpp

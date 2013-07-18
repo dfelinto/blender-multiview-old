@@ -1,4 +1,4 @@
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 This source file is part of blendTex library
 
@@ -24,8 +24,8 @@ http://www.gnu.org/copyleft/lesser.txt.
  *  \ingroup bgevideotex
  */
  
-#if !defined FILTERCOLOR_H
-#define FILTERCOLOR_H
+#ifndef __FILTERCOLOR_H__
+#define __FILTERCOLOR_H__
 
 #include "Common.h"
 

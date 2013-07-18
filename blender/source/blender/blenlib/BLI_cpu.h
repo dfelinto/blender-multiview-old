@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -20,8 +18,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BLI_CPU_H
-#define BLI_CPU_H 
+#ifndef __BLI_CPU_H__
+#define __BLI_CPU_H__ 
 
 /** \file BLI_cpu.h
  *  \ingroup bli

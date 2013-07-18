@@ -1,8 +1,4 @@
-/** \file blender/imbuf/intern/openexr/openexr_api.cpp
- *  \ingroup openexr
- */
 /*
-*
  * ***** BEGIN GPLLICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,6 +23,10 @@
  * Contributor(s): Austin Benesh, Ton Roosendaal (float, half, speedup, cleanup...).
  *
  * ***** END GPL LICENSE BLOCK *****
+ */
+
+/** \file blender/imbuf/intern/openexr/openexr_api.cpp
+ *  \ingroup openexr
  */
 
 #include <stdlib.h>
@@ -98,7 +98,7 @@ class Mem_IStream: public IStream
 public:
 	
 	Mem_IStream (unsigned char *exrbuf, size_t exrsize):
-    IStream("dummy"), _exrpos (0), _exrsize(exrsize)  { _exrbuf = exrbuf; }
+	    IStream("dummy"), _exrpos (0), _exrsize(exrsize) { _exrbuf = exrbuf; }
 	
 	virtual bool	read (char c[], int n);
 	virtual Int64	tellg ();
@@ -107,8 +107,8 @@ public:
 	//virtual ~Mem_IStream() {}; // unused
 	
 private:
-		
-		Int64 _exrpos;
+
+	Int64 _exrpos;
 	Int64 _exrsize;
 	unsigned char *_exrbuf;
 };
@@ -116,11 +116,11 @@ private:
 bool Mem_IStream::read (char c[], int n)
 {
 	if (n + _exrpos <= _exrsize)
-    {
+	{
 		memcpy(c, (void *)(&_exrbuf[_exrpos]), n);
 		_exrpos += n;
 		return true;
-    }
+	}
 	else
 		return false;
 }
@@ -208,7 +208,7 @@ static int imb_save_openexr_half(struct ImBuf *ibuf, const char *name, int flags
 		header.channels().insert ("R", Channel (HALF));
 		header.channels().insert ("G", Channel (HALF));
 		header.channels().insert ("B", Channel (HALF));
-		if (ibuf->depth==32 && channels >= 4)
+		if (ibuf->planes==32 && channels >= 4)
 			header.channels().insert ("A", Channel (HALF));
 		if (write_zbuf)		// z we do as float always
 			header.channels().insert ("Z", Channel (FLOAT));
@@ -226,7 +226,7 @@ static int imb_save_openexr_half(struct ImBuf *ibuf, const char *name, int flags
 		frameBuffer.insert ("R", Slice (HALF,  (char *) &pixels[0].r, xstride, ystride));	
 		frameBuffer.insert ("G", Slice (HALF,  (char *) &pixels[0].g, xstride, ystride));
 		frameBuffer.insert ("B", Slice (HALF,  (char *) &pixels[0].b, xstride, ystride));
-		if (ibuf->depth==32 && channels >= 4)
+		if (ibuf->planes==32 && channels >= 4)
 			frameBuffer.insert ("A", Slice (HALF, (char *) &pixels[0].a, xstride, ystride));
 		if (write_zbuf)
 			frameBuffer.insert ("Z", Slice (FLOAT, (char *)(ibuf->zbuf_float + (height-1)*width),
@@ -234,34 +234,17 @@ static int imb_save_openexr_half(struct ImBuf *ibuf, const char *name, int flags
 		if(ibuf->rect_float) {
 			float *from;
 
-			if(ibuf->profile == IB_PROFILE_LINEAR_RGB) {
-				for (int i = ibuf->y-1; i >= 0; i--)
-				{
-					from= ibuf->rect_float + channels*i*width;
+			for (int i = ibuf->y-1; i >= 0; i--)
+			{
+				from= ibuf->rect_float + channels*i*width;
 
-					for (int j = ibuf->x; j > 0; j--)
-					{
-						to->r = from[0];
-						to->g = from[1];
-						to->b = from[2];
-						to->a = (channels >= 4)? from[3]: 1.0f;
-						to++; from += 4;
-					}
-				}
-			}
-			else {
-				for (int i = ibuf->y-1; i >= 0; i--)
+				for (int j = ibuf->x; j > 0; j--)
 				{
-					from= ibuf->rect_float + channels*i*width;
-
-					for (int j = ibuf->x; j > 0; j--)
-					{
-						to->r = srgb_to_linearrgb(from[0]);
-						to->g = srgb_to_linearrgb(from[1]);
-						to->b = srgb_to_linearrgb(from[2]);
-						to->a = (channels >= 4)? from[3]: 1.0f;
-						to++; from += 4;
-					}
+					to->r = from[0];
+					to->g = from[1];
+					to->b = from[2];
+					to->a = (channels >= 4)? from[3]: 1.0f;
+					to++; from += 4;
 				}
 			}
 		}
@@ -308,7 +291,7 @@ static int imb_save_openexr_half(struct ImBuf *ibuf, const char *name, int flags
 		delete [] pixels;
 	}
 	catch (const std::exception &exc)
-	{      
+	{
 		printf("OpenEXR-save: ERROR: %s\n", exc.what());
 		if (ibuf) IMB_freeImBuf(ibuf);
 		
@@ -335,7 +318,7 @@ static int imb_save_openexr_float(struct ImBuf *ibuf, const char *name, int flag
 		header.channels().insert ("R", Channel (FLOAT));
 		header.channels().insert ("G", Channel (FLOAT));
 		header.channels().insert ("B", Channel (FLOAT));
-		if (ibuf->depth==32 && channels >= 4)
+		if (ibuf->planes==32 && channels >= 4)
 			header.channels().insert ("A", Channel (FLOAT));
 		if (write_zbuf)
 			header.channels().insert ("Z", Channel (FLOAT));
@@ -350,12 +333,12 @@ static int imb_save_openexr_float(struct ImBuf *ibuf, const char *name, int flag
 		rect[0]= ibuf->rect_float + channels*(height-1)*width;
 		rect[1]= rect[0]+1;
 		rect[2]= rect[0]+2;
-		rect[3]= (channels >= 4)? rect[0]+3:rect[0]; /* red as alpha, is this needed since alpha isnt written? */
+		rect[3]= (channels >= 4)? rect[0]+3:rect[0]; /* red as alpha, is this needed since alpha isn't written? */
 
 		frameBuffer.insert ("R", Slice (FLOAT,  (char *)rect[0], xstride, ystride));
 		frameBuffer.insert ("G", Slice (FLOAT,  (char *)rect[1], xstride, ystride));
 		frameBuffer.insert ("B", Slice (FLOAT,  (char *)rect[2], xstride, ystride));
-		if (ibuf->depth==32 && channels >= 4)
+		if (ibuf->planes==32 && channels >= 4)
 			frameBuffer.insert ("A", Slice (FLOAT,  (char *)rect[3], xstride, ystride));
 		if (write_zbuf)
 			frameBuffer.insert ("Z", Slice (FLOAT, (char *) (ibuf->zbuf_float + (height-1)*width),
@@ -365,7 +348,7 @@ static int imb_save_openexr_float(struct ImBuf *ibuf, const char *name, int flag
 		delete file;
 	}
 	catch (const std::exception &exc)
-	{      
+	{
 		printf("OpenEXR-save: ERROR: %s\n", exc.what());
 		if (ibuf) IMB_freeImBuf(ibuf);
 		
@@ -401,11 +384,11 @@ int imb_save_openexr(struct ImBuf *ibuf, const char *name, int flags)
 /* ********************* Nicer API, MultiLayer and with Tile file support ************************************ */
 
 /* naming rules:
-   - parse name from right to left
-   - last character is channel ID, 1 char like 'A' 'R' 'G' 'B' 'X' 'Y' 'Z' 'W' 'U' 'V'
-   - separated with a dot; the Pass name (like "Depth", "Color", "Diffuse" or "Combined")
-   - separated with a dot: the Layer name (like "Lamp1" or "Walls" or "Characters")
-*/
+ * - parse name from right to left
+ * - last character is channel ID, 1 char like 'A' 'R' 'G' 'B' 'X' 'Y' 'Z' 'W' 'U' 'V'
+ * - separated with a dot; the Pass name (like "Depth", "Color", "Diffuse" or "Combined")
+ * - separated with a dot: the Layer name (like "Lamp1" or "Walls" or "Characters")
+ */
 
 static ListBase exrhandles= {NULL, NULL};
 
@@ -505,7 +488,7 @@ int IMB_exr_begin_write(void *handle, const char *filename, int width, int heigh
 	
 	header.insert ("BlenderMultiChannel", StringAttribute ("Blender V2.55.1 and newer"));
 
-	/* avoid crash/abort when we dont have permission to write here */
+	/* avoid crash/abort when we don't have permission to write here */
 	try {
 		data->ofile = new OutputFile(filename, header);
 	}
@@ -546,7 +529,7 @@ int IMB_exr_begin_read(void *handle, const char *filename, int *width, int *heig
 {
 	ExrHandle *data= (ExrHandle *)handle;
 	
-	if(BLI_exists(filename) && BLI_filepathsize(filename)>32) {	/* 32 is arbitrary, but zero length files crashes exr */
+	if(BLI_exists(filename) && BLI_file_size(filename)>32) {	/* 32 is arbitrary, but zero length files crashes exr */
 		data->ifile = new InputFile(filename);
 		if(data->ifile) {
 			Box2i dw = data->ifile->header().dataWindow();

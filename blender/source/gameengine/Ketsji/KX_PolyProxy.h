@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,7 +38,7 @@
 
 class KX_PolyProxy	: public CValue
 {
-	Py_Header;
+	Py_Header
 protected:
 	class RAS_Polygon*		m_polygon;
 	class RAS_MeshObject*	m_mesh;
@@ -49,7 +47,7 @@ public:
 	virtual ~KX_PolyProxy();
 
 	// stuff for cvalue related things
-	CValue*		Calc(VALUE_OPERATOR op, CValue *val) ;
+	CValue*		Calc(VALUE_OPERATOR op, CValue *val);
 	CValue*		CalcFinal(VALUE_DATA_TYPE dtype, VALUE_OPERATOR op, CValue *val);
 	const STR_String &	GetText();
 	double		GetNumber();

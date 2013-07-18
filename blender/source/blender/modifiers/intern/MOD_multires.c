@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_multires.c
  *  \ingroup modifiers
@@ -37,13 +35,15 @@
 
 #include <stddef.h>
 
+#include "DNA_mesh_types.h"
+#include "DNA_object_types.h"
+
 #include "BKE_cdderivedmesh.h"
+#include "BKE_mesh.h"
 #include "BKE_multires.h"
 #include "BKE_modifier.h"
 #include "BKE_paint.h"
-#include "BKE_particle.h"
-
-#include "DNA_mesh_types.h"
+#include "BKE_subsurf.h"
 
 #include "MOD_util.h"
 
@@ -73,33 +73,47 @@ static void copyData(ModifierData *md, ModifierData *target)
 static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *dm,
 						   int useRenderParams, int isFinalCalc)
 {
-	SculptSession *ss= ob->sculpt;
-	int sculpting= (ob->mode & OB_MODE_SCULPT) && ss;
 	MultiresModifierData *mmd = (MultiresModifierData*)md;
 	DerivedMesh *result;
 	Mesh *me= (Mesh*)ob->data;
 
 	if(mmd->totlvl) {
-		if(!CustomData_get_layer(&me->fdata, CD_MDISPS)) {
+		if(!CustomData_get_layer(&me->ldata, CD_MDISPS)) {
 			/* multires always needs a displacement layer */
-			CustomData_add_layer(&me->fdata, CD_MDISPS, CD_CALLOC, NULL, me->totface);
+			CustomData_add_layer(&me->ldata, CD_MDISPS, CD_CALLOC, NULL, me->totloop);
 		}
 	}
 
-	result = multires_dm_create_from_derived(mmd, 0, dm, ob, useRenderParams, isFinalCalc);
+	result = multires_dm_create_from_derived(mmd, 0, dm, ob, useRenderParams);
 
 	if(result == dm)
 		return dm;
 
 	if(useRenderParams || !isFinalCalc) {
-		DerivedMesh *cddm= CDDM_copy(result);
+		DerivedMesh *cddm;
+		
+		cddm= CDDM_copy(result);
+
+		/* copy hidden flag to vertices */
+		if(!useRenderParams) {
+			struct MDisps *mdisps;
+			mdisps = CustomData_get_layer(&me->ldata, CD_MDISPS);
+			if(mdisps) {
+				subsurf_copy_grid_hidden(result, me->mpoly,
+										 cddm->getVertArray(cddm),
+										 mdisps);
+
+				mesh_flush_hidden_from_verts(cddm->getVertArray(cddm),
+											 cddm->getLoopArray(cddm),
+											 cddm->getEdgeArray(cddm),
+											 cddm->getNumEdges(cddm),
+											 cddm->getPolyArray(cddm),
+											 cddm->getNumPolys(cddm));
+			}
+		}
+
 		result->release(result);
 		result= cddm;
-	}
-	else if(sculpting) {
-		/* would be created on the fly too, just nicer this
-		   way on first stroke after e.g. switching levels */
-		ss->pbvh= result->getPBVH(ob, result);
 	}
 
 	return result;

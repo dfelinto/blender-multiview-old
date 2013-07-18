@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgesg
  */
  
-#ifndef __SG_DLIST
-#define __SG_DLIST
+#ifndef __SG_DLIST_H__
+#define __SG_DLIST_H__
 
 #include <stdlib.h>
 
@@ -245,12 +243,12 @@ public:
 		}
 	}
 	virtual ~SG_DListHead() {}
-    T* Remove()
-    {
+	T* Remove()
+	{
 		return static_cast<T*>(SG_DList::Remove());
-    }
+	}
 
 };
 
-#endif //__SG_DLIST
+#endif //__SG_DLIST_H__
 

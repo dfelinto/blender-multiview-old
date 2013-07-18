@@ -146,7 +146,7 @@ static int actkeys_deselectall_exec(bContext *C, wmOperator *op)
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
 		
-	/* 'standard' behaviour - check if selected, then apply relevant selection */
+	/* 'standard' behavior - check if selected, then apply relevant selection */
 	if (RNA_boolean_get(op->ptr, "invert"))
 		deselect_action_keys(&ac, 0, SELECT_INVERT);
 	else
@@ -269,11 +269,16 @@ static int actkeys_borderselect_exec(bContext *C, wmOperator *op)
 	bAnimContext ac;
 	rcti rect;
 	short mode=0, selectmode=0;
-	int gesture_mode;
+	int gesture_mode, extend;
 	
 	/* get editor data */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
+
+	/* clear all selection if not extending selection */
+	extend= RNA_boolean_get(op->ptr, "extend");
+	if (!extend)
+		deselect_action_keys(&ac, 1, SELECT_SUBTRACT);
 	
 	/* get settings from operator */
 	rect.xmin= RNA_int_get(op->ptr, "xmin");
@@ -291,7 +296,7 @@ static int actkeys_borderselect_exec(bContext *C, wmOperator *op)
 	if (RNA_boolean_get(op->ptr, "axis_range")) {
 		/* mode depends on which axis of the range is larger to determine which axis to use 
 		 *	- checking this in region-space is fine, as it's fundamentally still going to be a different rect size
-		 *	- the frame-range select option is favoured over the channel one (x over y), as frame-range one is often
+		 *	- the frame-range select option is favored over the channel one (x over y), as frame-range one is often
 		 *	  used for tweaking timing when "blocking", while channels is not that useful...
 		 */
 		if ((rect.xmax - rect.xmin) >= (rect.ymax - rect.ymin))
@@ -330,7 +335,7 @@ void ACTION_OT_select_border(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* rna */
-	WM_operator_properties_gesture_border(ot, FALSE);
+	WM_operator_properties_gesture_border(ot, TRUE);
 	
 	ot->prop= RNA_def_boolean(ot->srna, "axis_range", 0, "Axis Range", "");
 }
@@ -355,6 +360,8 @@ static EnumPropertyItem prop_column_select_types[] = {
 /* ------------------- */ 
 
 /* Selects all visible keyframes between the specified markers */
+/* TODO, this is almost an _exact_ duplicate of a function of the same name in graph_select.c
+ * should de-duplicate - campbell */
 static void markers_selectkeys_between (bAnimContext *ac)
 {
 	ListBase anim_data = {NULL, NULL};
@@ -415,7 +422,7 @@ static void columnselect_action_keys (bAnimContext *ac, short mode)
 	KeyframeEditFunc select_cb, ok_cb;
 	KeyframeEditData ked= {{NULL}};
 	
-	/* initialise keyframe editing data */
+	/* initialize keyframe editing data */
 	
 	/* build list of columns */
 	switch (mode) {
@@ -580,7 +587,7 @@ void ACTION_OT_select_linked (wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "Select Linked";
 	ot->idname= "ACTION_OT_select_linked";
-	ot->description = "Select keyframes occurring the same F-Curves as selected ones";
+	ot->description = "Select keyframes occurring in the same F-Curves as selected ones";
 	
 	/* api callbacks */
 	ot->exec= actkeys_select_linked_exec;
@@ -728,8 +735,9 @@ static void actkeys_select_leftright (bAnimContext *ac, short leftright, short s
 	if (select_mode==SELECT_REPLACE) {
 		select_mode= SELECT_ADD;
 		
-		/* deselect all other channels and keyframes */
-		ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+		/* - deselect all other keyframes, so that just the newly selected remain
+		 * - channels aren't deselected, since we don't re-select any as a consequence
+		 */
 		deselect_action_keys(ac, 0, SELECT_SUBTRACT);
 	}
 	
@@ -917,8 +925,6 @@ static void actkeys_mselect_column(bAnimContext *ac, short select_mode, float se
 	
 	KeyframeEditFunc select_cb, ok_cb;
 	KeyframeEditData ked= {{NULL}};
-	
-	/* initialise keyframe editing data */
 	
 	/* set up BezTriple edit callbacks */
 	select_cb= ANIM_editkeyframes_select(select_mode);
@@ -1139,7 +1145,7 @@ static void mouse_action_keys (bAnimContext *ac, const int mval[2], short select
 static int actkeys_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	bAnimContext ac;
-	ARegion *ar;
+	/* ARegion *ar; */ /* UNUSED */
 	short selectmode, column;
 	
 	/* get editor data */
@@ -1147,7 +1153,7 @@ static int actkeys_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *even
 		return OPERATOR_CANCELLED;
 		
 	/* get useful pointers from animation context data */
-	ar= ac.ar;
+	/* ar= ac.ar; */ /* UNUSED */
 
 	/* select mode is either replace (deselect all, then add) or add/extend */
 	if (RNA_boolean_get(op->ptr, "extend"))

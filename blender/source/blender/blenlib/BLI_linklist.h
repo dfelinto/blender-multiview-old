@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
  
-#ifndef BLI_LINKLIST_H
-#define BLI_LINKLIST_H
+#ifndef __BLI_LINKLIST_H__
+#define __BLI_LINKLIST_H__
 
 /** \file BLI_linklist.h
  *  \ingroup bli

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * Declaration of GHOST_SystemSDL class.
  */
 
-#ifndef _GHOST_SYSTEM_SDL_H_
-#define _GHOST_SYSTEM_SDL_H_
+#ifndef __GHOST_SYSTEMSDL_H__
+#define __GHOST_SYSTEMSDL_H__
 
 #include "GHOST_System.h"
 #include "../GHOST_Types.h"
@@ -110,7 +109,7 @@ private:
 	             const GHOST_TEmbedderWindowID parentWindow
 	             );
 
-	/* SDL spesific */
+	/* SDL specific */
 	GHOST_WindowSDL * findGhostWindow(SDL_Window *sdl_win);
 
 	bool

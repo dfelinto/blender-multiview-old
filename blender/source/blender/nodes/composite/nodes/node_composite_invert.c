@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,7 +34,7 @@
 /* **************** INVERT ******************** */
 static bNodeSocketTemplate cmp_node_invert_in[]= { 
 	{ SOCK_FLOAT, 1, "Fac", 1.0f, 0.0f, 0.0f, 0.0f, 0.0f, 1.0f, PROP_FACTOR}, 
-	{ SOCK_RGBA, 1, "Color", 0.0f, 0.0f, 0.0f, 1.0f}, 
+	{ SOCK_RGBA, 1, "Color", 1.0f, 1.0f, 1.0f, 1.0f}, 
 	{ -1, 0, "" } 
 };
 
@@ -52,7 +50,7 @@ static void do_invert(bNode *node, float *out, float *in)
 		out[1] = 1.0f - in[1];
 		out[2] = 1.0f - in[2];
 	} else
-		VECCOPY(out, in);
+		copy_v3_v3(out, in);
 		
 	if(node->custom1 & CMP_CHAN_A)
 		out[3] = 1.0f - in[3];
@@ -67,7 +65,7 @@ static void do_invert_fac(bNode *node, float *out, float *in, float *fac)
 	do_invert(node, col, in);
 
 	/* blend inverted result against original input with fac */
-	facm = 1.0 - fac[0];
+	facm = 1.0f - fac[0];
 
 	if(node->custom1 & CMP_CHAN_RGB) {
 		col[0] = fac[0]*col[0] + (facm*in[0]);
@@ -77,7 +75,7 @@ static void do_invert_fac(bNode *node, float *out, float *in, float *fac)
 	if(node->custom1 & CMP_CHAN_A)
 		col[3] = fac[0]*col[3] + (facm*in[3]);
 	
-	QUATCOPY(out, col);
+	copy_v4_v4(out, col);
 }
 
 static void node_composit_exec_invert(void *UNUSED(data), bNode *node, bNodeStack **in, bNodeStack **out)
@@ -120,16 +118,15 @@ static void node_composit_init_invert(bNodeTree *UNUSED(ntree), bNode* node, bNo
 }
 
 /* custom1 = mix type */
-void register_node_type_cmp_invert(ListBase *lb)
+void register_node_type_cmp_invert(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_INVERT, "Invert", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_INVERT, "Invert", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_invert_in, cmp_node_invert_out);
 	node_type_size(&ntype, 120, 120, 140);
 	node_type_init(&ntype, node_composit_init_invert);
 	node_type_exec(&ntype, node_composit_exec_invert);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-

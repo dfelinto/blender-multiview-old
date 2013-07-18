@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +27,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * Simple test file for the GHOST library.
  * The OpenGL gear code is taken from the Qt sample code which,
@@ -691,7 +689,7 @@ int main(int /*argc*/, char** /*argv*/)
 		//DWORD keyValue;
 //		lresult = regkey.Open(HKEY_LOCAL_MACHINE, "SOFTWARE\\NVIDIA Corporation\\Global\\Stereo3D\\StereoEnable");
 		lresult = regkey.Open(HKEY_LOCAL_MACHINE, "SOFTWARE\\NVIDIA Corporation\\Global\\Stereo3D\\StereoEnable",
-			 KEY_ALL_ACCESS );
+		                      KEY_ALL_ACCESS);
 
 		if(lresult == ERROR_SUCCESS)
 			printf("Succesfully opened key\n");

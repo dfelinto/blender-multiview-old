@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,12 +34,16 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
+#include "ExportSettings.h"
+
 class CamerasExporter: COLLADASW::LibraryCameras
 {
 public:
-	CamerasExporter(COLLADASW::StreamWriter *sw);
-	void exportCameras(Scene *sce, bool export_selected);
+	CamerasExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings);
+	void exportCameras(Scene *sce);
 	void operator()(Object *ob, Scene *sce);
+private:
+	const ExportSettings *export_settings;
 };
 
 #endif

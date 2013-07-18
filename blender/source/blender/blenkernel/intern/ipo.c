@@ -1,4 +1,4 @@
-/* 
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +43,8 @@
 #include <string.h>
 #include <stddef.h>
 
-#include "MEM_guardedalloc.h"
+/* since we have versioning code here */
+#define DNA_DEPRECATED_ALLOW
 
 #include "DNA_anim_types.h"
 #include "DNA_constraint_types.h"
@@ -73,6 +74,7 @@
 #include "BKE_nla.h"
 #include "BKE_sequencer.h"
 
+#include "MEM_guardedalloc.h"
 
 /* *************************************************** */
 /* Old-Data Freeing Tools */
@@ -317,7 +319,7 @@ static const char *constraint_adrcodes_to_paths (int adrcode, int *array_index)
 
 /* ShapeKey types 
  * NOTE: as we don't have access to the keyblock where the data comes from (for now), 
- *	 	we'll just use numerical indices for now... 
+ *       we'll just use numerical indices for now...
  */
 static char *shapekey_adrcodes_to_paths (int adrcode, int *UNUSED(array_index))
 {
@@ -326,9 +328,9 @@ static char *shapekey_adrcodes_to_paths (int adrcode, int *UNUSED(array_index))
 	/* block will be attached to ID_KE block, and setting that we alter is the 'value' (which sets keyblock.curval) */
 	// XXX adrcode 0 was dummy 'speed' curve 
 	if (adrcode == 0) 
-		sprintf(buf, "speed");
+		strcpy(buf, "speed");
 	else
-		sprintf(buf, "key_blocks[%d].value", adrcode);
+		BLI_snprintf(buf, sizeof(buf), "key_blocks[%d].value", adrcode);
 	return buf;
 }
 
@@ -661,8 +663,10 @@ static const char *sound_adrcodes_to_paths (int adrcode, int *array_index)
 		case SND_PITCH:
 			return "pitch";
 	/* XXX Joshua -- I had wrapped panning in rna, but someone commented out, calling it "unused" */
-	/*	case SND_PANNING:
-			return "panning"; */
+#if 0
+		case SND_PANNING:
+			return "panning";
+#endif
 		case SND_ATTEN:
 			return "attenuation";
 	}
@@ -703,14 +707,7 @@ static const char *world_adrcodes_to_paths (int adrcode, int *array_index)
 			return "mist.start";
 		case WO_MISTHI:
 			return "mist.height";
-		
-	/*	Star Color is unused -- recommend removal */
-	/*	case WO_STAR_R:
-			*array_index= 0; return "stars.color";
-		case WO_STAR_G:
-			*array_index= 1; return "stars.color";
-		case WO_STAR_B:
-			*array_index= 2; return "stars.color"; */
+
 		case WO_STAR_R:
 		case WO_STAR_G:
 		case WO_STAR_B:
@@ -767,11 +764,12 @@ static const char *particle_adrcodes_to_paths (int adrcode, int *array_index)
 			return "settings.billboard_tilt";
 		
 		/* PartDeflect needs to be sorted out properly in rna_object_force;
-		   If anyone else works on this, but is unfamiliar, these particular
-			settings reference the particles of the system themselves
-			being used as forces -- it will use the same rna structure
-			as the similar object forces				*/
-		/*case PART_PD_FSTR:
+		 * If anyone else works on this, but is unfamiliar, these particular
+		 * settings reference the particles of the system themselves
+		 * being used as forces -- it will use the same rna structure
+		 * as the similar object forces */
+#if 0
+		case PART_PD_FSTR:
 			if (part->pd) poin= &(part->pd->f_strength);
 			break;
 		case PART_PD_FFALL:
@@ -788,11 +786,12 @@ static const char *particle_adrcodes_to_paths (int adrcode, int *array_index)
 			break;
 		case PART_PD2_FMAXD:
 			if (part->pd2) poin= &(part->pd2->maxdist);
-			break;*/
+			break;
+#endif
 
-		}
-		
-	return NULL;	
+	}
+
+	return NULL;
 }
 
 /* ------- */
@@ -914,15 +913,18 @@ static char *get_rna_access (int blocktype, int adrcode, char actname[], char co
 		if (array_index)
 			*array_index= dummy_index;
 	}
-	
+
+	/* 'buf' _must_ be initialized in this block */
 	/* append preceding bits to path */
+	/* note, strings are not escapted and they should be! */
 	if ((actname && actname[0]) && (constname && constname[0])) {
 		/* Constraint in Pose-Channel */
-		sprintf(buf, "pose.bones[\"%s\"].constraints[\"%s\"]", actname, constname);
+		BLI_snprintf(buf, sizeof(buf), "pose.bones[\"%s\"].constraints[\"%s\"]", actname, constname);
 	}
 	else if (actname && actname[0]) {
 		if ((blocktype == ID_OB) && strcmp(actname, "Object")==0) {
 			/* Actionified "Object" IPO's... no extra path stuff needed */
+			buf[0]= '\0'; /* empty string */
 		}
 		else if ((blocktype == ID_KE) && strcmp(actname, "Shape")==0) {
 			/* Actionified "Shape" IPO's - these are forced onto object level via the action container there... */
@@ -930,19 +932,21 @@ static char *get_rna_access (int blocktype, int adrcode, char actname[], char co
 		}
 		else {
 			/* Pose-Channel */
-			sprintf(buf, "pose.bones[\"%s\"]", actname);
+			BLI_snprintf(buf, sizeof(buf), "pose.bones[\"%s\"]", actname);
 		}
 	}
 	else if (constname && constname[0]) {
 		/* Constraint in Object */
-		sprintf(buf, "constraints[\"%s\"]", constname);
+		BLI_snprintf(buf, sizeof(buf), "constraints[\"%s\"]", constname);
 	}
 	else if (seq) {
 		/* Sequence names in Scene */
-		sprintf(buf, "sequence_editor.sequences_all[\"%s\"]", seq->name+2);
+		BLI_snprintf(buf, sizeof(buf), "sequence_editor.sequences_all[\"%s\"]", seq->name+2);
 	}
-	else
-		strcpy(buf, ""); /* empty string */
+	else {
+		buf[0]= '\0'; /* empty string */
+	}
+
 	BLI_dynstr_append(path, buf);
 	
 	/* need to add dot before property if there was anything precceding this */
@@ -954,7 +958,7 @@ static char *get_rna_access (int blocktype, int adrcode, char actname[], char co
 	
 	/* if there was no array index pointer provided, add it to the path */
 	if (array_index == NULL) {
-		sprintf(buf, "[\"%d\"]", dummy_index);
+		BLI_snprintf(buf, sizeof(buf), "[\"%d\"]", dummy_index);
 		BLI_dynstr_append(path, buf);
 	}
 	
@@ -1032,12 +1036,14 @@ static ChannelDriver *idriver_to_cdriver (IpoDriver *idriver)
 					/* first bone target */
 				dtar= &dvar->targets[0];
 				dtar->id= (ID *)idriver->ob;
+				dtar->idtype= ID_OB;
 				if (idriver->name[0])
 					BLI_strncpy(dtar->pchan_name, idriver->name, sizeof(dtar->pchan_name));
 				
 					/* second bone target (name was stored in same var as the first one) */
 				dtar= &dvar->targets[1];
 				dtar->id= (ID *)idriver->ob;
+				dtar->idtype= ID_OB;
 				if (idriver->name[0]) // xxx... for safety
 					BLI_strncpy(dtar->pchan_name, idriver->name+DRIVER_NAME_OFFS, sizeof(dtar->pchan_name));
 			}
@@ -1049,6 +1055,7 @@ static ChannelDriver *idriver_to_cdriver (IpoDriver *idriver)
 				/* only requires a single target */
 				dtar= &dvar->targets[0];
 				dtar->id= (ID *)idriver->ob;
+				dtar->idtype= ID_OB;
 				if (idriver->name[0])
 					BLI_strncpy(dtar->pchan_name, idriver->name, sizeof(dtar->pchan_name));
 				dtar->transChan= adrcode_to_dtar_transchan(idriver->adrcode);
@@ -1063,6 +1070,7 @@ static ChannelDriver *idriver_to_cdriver (IpoDriver *idriver)
 				/* only requires single target */
 			dtar= &dvar->targets[0];
 			dtar->id= (ID *)idriver->ob;
+			dtar->idtype= ID_OB;
 			dtar->transChan= adrcode_to_dtar_transchan(idriver->adrcode);
 		}
 	}
@@ -1103,7 +1111,7 @@ static void fcurve_add_to_list (ListBase *groups, ListBase *list, FCurve *fcu, c
 				agrp->flag = AGRP_SELECTED;
 				if (muteipo) agrp->flag |= AGRP_MUTED;
 				
-				strncpy(agrp->name, grpname, sizeof(agrp->name));
+				BLI_strncpy(agrp->name, grpname, sizeof(agrp->name));
 				
 				BLI_addtail(&tmp_act.groups, agrp);
 				BLI_uniquename(&tmp_act.groups, agrp, "Group", '.', offsetof(bActionGroup, name), sizeof(agrp->name));
@@ -1111,7 +1119,7 @@ static void fcurve_add_to_list (ListBase *groups, ListBase *list, FCurve *fcu, c
 		}
 		
 		/* add F-Curve to group */
-		/* WARNING: this func should only need to look at the stuff we initialised, if not, things may crash */
+		/* WARNING: this func should only need to look at the stuff we initialized, if not, things may crash */
 		action_groups_add_channel(&tmp_act, agrp, fcu);
 		
 		if (agrp->flag & AGRP_MUTED) /* flush down */
@@ -1169,7 +1177,7 @@ static void icu_to_fcurves (ID *id, ListBase *groups, ListBase *list, IpoCurve *
 		case IPO_CYCLX: /* cyclic extrapolation + offset */
 		{
 			/* Add a new FModifier (Cyclic) instead of setting extend value 
-			 * as that's the new equivilant of that option. 
+			 * as that's the new equivalent of that option.
 			 */
 			FModifier *fcm= add_fmodifier(&fcu->modifiers, FMODIFIER_TYPE_CYCLES);
 			FMod_Cycles *data= (FMod_Cycles *)fcm->data;
@@ -1910,9 +1918,9 @@ void do_versions_ipos_to_animato(Main *main)
 				}
 				
 				/* patch adrcode, so that we can map
-				   to different DNA variables later 
-				   (semi-hack (tm) )
-				*/
+				 * to different DNA variables later 
+				 * (semi-hack (tm) )
+				 */
 				switch (seq->type) {
 					case SEQ_IMAGE:
 					case SEQ_META:

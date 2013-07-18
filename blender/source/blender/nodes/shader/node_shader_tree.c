@@ -1,6 +1,4 @@
-/**
- * $Id$
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,17 +32,23 @@
 
 #include <string.h>
 
+#include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
 #include "DNA_node_types.h"
+#include "DNA_scene_types.h"
+#include "DNA_world_types.h"
 
 #include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
+#include "BKE_scene.h"
 #include "BKE_utildefines.h"
 
 #include "GPU_material.h"
@@ -58,9 +62,50 @@
 static void foreach_nodetree(Main *main, void *calldata, bNodeTreeCallback func)
 {
 	Material *ma;
-	for(ma= main->mat.first; ma; ma= ma->id.next) {
-		if(ma->nodetree) {
+	Lamp *la;
+	World *wo;
+
+	for(ma= main->mat.first; ma; ma= ma->id.next)
+		if(ma->nodetree)
 			func(calldata, &ma->id, ma->nodetree);
+
+	for(la= main->lamp.first; la; la= la->id.next)
+		if(la->nodetree)
+			func(calldata, &la->id, la->nodetree);
+
+	for(wo= main->world.first; wo; wo= wo->id.next)
+		if(wo->nodetree)
+			func(calldata, &wo->id, wo->nodetree);
+}
+
+static void foreach_nodeclass(Scene *scene, void *calldata, bNodeClassCallback func)
+{
+	func(calldata, NODE_CLASS_INPUT, IFACE_("Input"));
+	func(calldata, NODE_CLASS_OUTPUT, IFACE_("Output"));
+
+	if(scene_use_new_shading_nodes(scene)) {
+		func(calldata, NODE_CLASS_SHADER, IFACE_("Shader"));
+		func(calldata, NODE_CLASS_TEXTURE, IFACE_("Texture"));
+	}
+
+	func(calldata, NODE_CLASS_OP_COLOR, IFACE_("Color"));
+	func(calldata, NODE_CLASS_OP_VECTOR, IFACE_("Vector"));
+	func(calldata, NODE_CLASS_CONVERTOR, IFACE_("Convertor"));
+	func(calldata, NODE_CLASS_GROUP, IFACE_("Group"));
+	func(calldata, NODE_CLASS_LAYOUT, IFACE_("Layout"));
+}
+
+static void localize(bNodeTree *localtree, bNodeTree *UNUSED(ntree))
+{
+	bNode *node, *node_next;
+	
+	/* replace muted nodes by internal links */
+	for (node= localtree->nodes.first; node; node= node_next) {
+		node_next = node->next;
+		
+		if (node->flag & NODE_MUTED) {
+			nodeInternalRelink(localtree, node);
+			nodeFreeNode(localtree, node);
 		}
 	}
 }
@@ -85,6 +130,11 @@ static void local_sync(bNodeTree *localtree, bNodeTree *ntree)
 	}
 }
 
+static void update(bNodeTree *ntree)
+{
+	ntreeSetOutput(ntree);
+}
+
 bNodeTreeType ntreeType_Shader = {
 	/* type */				NTREE_SHADER,
 	/* id_name */			"NTShader Nodetree",
@@ -94,11 +144,14 @@ bNodeTreeType ntreeType_Shader = {
 	/* free_cache */		NULL,
 	/* free_node_cache */	NULL,
 	/* foreach_nodetree */	foreach_nodetree,
-	/* localize */			NULL,
+	/* foreach_nodeclass */	foreach_nodeclass,
+	/* localize */			localize,
 	/* local_sync */		local_sync,
 	/* local_merge */		NULL,
-	/* update */			NULL,
-	/* update_node */		NULL
+	/* update */			update,
+	/* update_node */		NULL,
+	/* validate_link */		NULL,
+	/* internal_connect */	node_internal_connect_default
 };
 
 /* GPU material from shader nodes */
@@ -107,8 +160,7 @@ void ntreeGPUMaterialNodes(bNodeTree *ntree, GPUMaterial *mat)
 {
 	bNodeTreeExec *exec;
 
-	if(!ntree->execdata)
-		exec = ntreeShaderBeginExecTree(ntree, 1);
+	exec = ntreeShaderBeginExecTree(ntree, 1);
 
 	ntreeExecGPUNodes(exec, mat, 1);
 
@@ -196,11 +248,12 @@ void ntreeShaderEndExecTree(bNodeTreeExec *exec, int use_tree_data)
 void ntreeShaderExecTree(bNodeTree *ntree, ShadeInput *shi, ShadeResult *shr)
 {
 	ShaderCallData scd;
-	/*
-	@note: preserve material from ShadeInput for material id, nodetree execs change it
-	fix for bug "[#28012] Mat ID messy with shader nodes"
-	*/
-	Material *mat = shi->mat;	bNodeThreadStack *nts = NULL;
+	/**
+	 * \note: preserve material from ShadeInput for material id, nodetree execs change it
+	 * fix for bug "[#28012] Mat ID messy with shader nodes"
+	 */
+	Material *mat = shi->mat;
+	bNodeThreadStack *nts = NULL;
 	bNodeTreeExec *exec = ntree->execdata;
 	
 	/* convert caller data to struct */
@@ -210,14 +263,21 @@ void ntreeShaderExecTree(bNodeTree *ntree, ShadeInput *shi, ShadeResult *shr)
 	/* each material node has own local shaderesult, with optional copying */
 	memset(shr, 0, sizeof(ShadeResult));
 	
-	if (!exec)
-		exec = ntree->execdata = ntreeShaderBeginExecTree(exec->nodetree, 1);
+	/* ensure execdata is only initialized once */
+	if (!exec) {
+		BLI_lock_thread(LOCK_NODES);
+		if(!ntree->execdata)
+			ntree->execdata = ntreeShaderBeginExecTree(ntree, 1);
+		BLI_unlock_thread(LOCK_NODES);
+
+		exec = ntree->execdata;
+	}
 	
 	nts= ntreeGetThreadStack(exec, shi->thread);
 	ntreeExecThreadNodes(exec, nts, &scd, shi->thread);
 	ntreeReleaseThreadStack(nts);
 	
-	// @note: set material back to preserved material
+	// \note: set material back to preserved material
 	shi->mat = mat;
 	/* better not allow negative for now */
 	if(shr->combined[0]<0.0f) shr->combined[0]= 0.0f;

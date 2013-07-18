@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup avi
  */
 
-#ifndef AVI_INTERN_H
-#define AVI_INTERN_H
+#ifndef __AVI_INTERN_H__
+#define __AVI_INTERN_H__
 
 #include <stdio.h> /* for FILE */
 

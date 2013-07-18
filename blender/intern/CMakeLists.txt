@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -37,6 +36,10 @@ if(WITH_AUDASPACE)
 	add_subdirectory(audaspace)
 endif()
 
+if(WITH_MOD_REMESH)
+	add_subdirectory(dualcon)
+endif()
+
 if(WITH_MOD_FLUID)
 	add_subdirectory(elbeem)
 endif()
@@ -58,3 +61,8 @@ endif()
 if(WITH_IK_ITASC)
 	add_subdirectory(itasc)
 endif()
+
+if(WITH_CYCLES)
+	add_subdirectory(cycles)
+endif()
+

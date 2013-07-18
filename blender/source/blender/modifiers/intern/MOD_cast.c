@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_cast.c
  *  \ingroup modifiers
@@ -40,6 +38,7 @@
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 
 #include "BKE_deform.h"
@@ -77,7 +76,7 @@ static void copyData(ModifierData *md, ModifierData *target)
 	tcmd->flag = cmd->flag;
 	tcmd->type = cmd->type;
 	tcmd->object = cmd->object;
-	strncpy(tcmd->defgrp_name, cmd->defgrp_name, 32);
+	BLI_strncpy(tcmd->defgrp_name, cmd->defgrp_name, sizeof(tcmd->defgrp_name));
 }
 
 static int isDisabled(ModifierData *md, int UNUSED(useRenderParams))
@@ -155,12 +154,12 @@ static void sphere_do(
 	ctrl_ob = cmd->object;
 
 	/* spherify's center is {0, 0, 0} (the ob's own center in its local
-	* space), by default, but if the user defined a control object,
-	* we use its location, transformed to ob's local space */
+	 * space), by default, but if the user defined a control object,
+	 * we use its location, transformed to ob's local space */
 	if (ctrl_ob) {
 		if(flag & MOD_CAST_USE_OB_TRANSFORM) {
 			invert_m4_m4(ctrl_ob->imat, ctrl_ob->obmat);
-			mul_m4_m4m4(mat, ob->obmat, ctrl_ob->imat);
+			mult_m4_m4m4(mat, ctrl_ob->imat, ob->obmat);
 			invert_m4_m4(imat, mat);
 		}
 
@@ -172,11 +171,11 @@ static void sphere_do(
 
 	/* 1) (flag was checked in the "if (ctrl_ob)" block above) */
 	/* 2) cmd->radius > 0.0f: only the vertices within this radius from
-	* the center of the effect should be deformed */
+	 * the center of the effect should be deformed */
 	if (cmd->radius > FLT_EPSILON) has_radius = 1;
 
 	/* 3) if we were given a vertex group name,
-	* only those vertices should be affected */
+	 * only those vertices should be affected */
 	modifier_get_vgroup(ob, dm, cmd->defgrp_name, &dvert, &defgrp_index);
 
 	if(flag & MOD_CAST_SIZE_FROM_RADIUS) {
@@ -196,16 +195,16 @@ static void sphere_do(
 	}
 
 	/* ready to apply the effect, one vertex at a time;
-	* tiny optimization: the code is separated (with parts repeated)
+	 * tiny optimization: the code is separated (with parts repeated)
 	 * in two possible cases:
-	* with or w/o a vgroup. With lots of if's in the code below,
-	* further optimizations are possible, if needed */
+	 * with or w/o a vgroup. With lots of if's in the code below,
+	 * further optimization's are possible, if needed */
 	if (dvert) { /* with a vgroup */
+		MDeformVert *dv= dvert;
 		float fac_orig = fac;
-		for (i = 0; i < numVerts; i++) {
-			MDeformWeight *dw = NULL;
-			int j;
+		for (i = 0; i < numVerts; i++, dv++) {
 			float tmp_co[3];
+			float weight;
 
 			copy_v3_v3(tmp_co, vertexCos[i]);
 			if(ctrl_ob) {
@@ -225,15 +224,10 @@ static void sphere_do(
 				if (len_v3(vec) > cmd->radius) continue;
 			}
 
-			for (j = 0; j < dvert[i].totweight; ++j) {
-				if(dvert[i].dw[j].def_nr == defgrp_index) {
-					dw = &dvert[i].dw[j];
-					break;
-				}
-			}
-			if (!dw) continue;
+			weight= defvert_find_weight(dv, defgrp_index);
+			if (weight <= 0.0f) continue;
 
-			fac = fac_orig * dw->weight;
+			fac = fac_orig * weight;
 			facm = 1.0f - fac;
 
 			normalize_v3(vec);
@@ -327,17 +321,17 @@ static void cuboid_do(
 
 	/* 1) (flag was checked in the "if (ctrl_ob)" block above) */
 	/* 2) cmd->radius > 0.0f: only the vertices within this radius from
-	* the center of the effect should be deformed */
+	 * the center of the effect should be deformed */
 	if (cmd->radius > FLT_EPSILON) has_radius = 1;
 
 	/* 3) if we were given a vertex group name,
-	* only those vertices should be affected */
+	 * only those vertices should be affected */
 	modifier_get_vgroup(ob, dm, cmd->defgrp_name, &dvert, &defgrp_index);
 
 	if (ctrl_ob) {
 		if(flag & MOD_CAST_USE_OB_TRANSFORM) {
 			invert_m4_m4(ctrl_ob->imat, ctrl_ob->obmat);
-			mul_m4_m4m4(mat, ob->obmat, ctrl_ob->imat);
+			mult_m4_m4m4(mat, ctrl_ob->imat, ob->obmat);
 			invert_m4_m4(imat, mat);
 		}
 
@@ -358,12 +352,12 @@ static void cuboid_do(
 	} else {
 		/* get bound box */
 		/* We can't use the object's bound box because other modifiers
-		* may have changed the vertex data. */
+		 * may have changed the vertex data. */
 		INIT_MINMAX(min, max);
 
 		/* Cast's center is the ob's own center in its local space,
-		* by default, but if the user defined a control object, we use
-		* its location, transformed to ob's local space. */
+		 * by default, but if the user defined a control object, we use
+		 * its location, transformed to ob's local space. */
 		if (ctrl_ob) {
 			float vec[3];
 
@@ -399,10 +393,10 @@ static void cuboid_do(
 	bb[4][2] = bb[5][2] = bb[6][2] = bb[7][2] = max[2];
 
 	/* ready to apply the effect, one vertex at a time;
-	* tiny optimization: the code is separated (with parts repeated)
+	 * tiny optimization: the code is separated (with parts repeated)
 	 * in two possible cases:
-	* with or w/o a vgroup. With lots of if's in the code below,
-	* further optimizations are possible, if needed */
+	 * with or w/o a vgroup. With lots of if's in the code below,
+	 * further optimization's are possible, if needed */
 	if (dvert) { /* with a vgroup */
 		float fac_orig = fac;
 		for (i = 0; i < numVerts; i++) {
@@ -440,10 +434,10 @@ static void cuboid_do(
 			/* The algo used to project the vertices to their
 			 * bounding box (bb) is pretty simple:
 			 * for each vertex v:
-			* 1) find in which octant v is in;
-			* 2) find which outer "wall" of that octant is closer to v;
-			* 3) calculate factor (var fbb) to project v to that wall;
-			* 4) project. */
+			 * 1) find in which octant v is in;
+			 * 2) find which outer "wall" of that octant is closer to v;
+			 * 3) calculate factor (var fbb) to project v to that wall;
+			 * 4) project. */
 
 			/* find in which octant this vertex is in */
 			octant = 0;
@@ -477,7 +471,7 @@ static void cuboid_do(
 				continue;
 
 			/* finally, this is the factor we wanted, to project the vertex
-			* to its bounding box (bb) */
+			 * to its bounding box (bb) */
 			fbb = apex[coord] / tmp_co[coord];
 
 			/* calculate the new vertex position */
@@ -591,7 +585,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 }
 
 static void deformVertsEM(
-					   ModifierData *md, Object *ob, struct EditMesh *editData,
+					   ModifierData *md, Object *ob, struct BMEditMesh *editData,
 	   DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
 	DerivedMesh *dm = get_dm(ob, editData, derivedData, NULL, 0);

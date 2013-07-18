@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __KX_PHYSICSENGINEENUMS
-#define __KX_PHYSICSENGINEENUMS
+#ifndef __KX_PHYSICSENGINEENUMS_H__
+#define __KX_PHYSICSENGINEENUMS_H__
 
 enum	e_PhysicsEngine
 {
@@ -45,5 +43,5 @@ enum	e_PhysicsEngine
 		UseBullet	=	5,
 };
 
-#endif //__KX_PHYSICSENGINEENUMS
+#endif //__KX_PHYSICSENGINEENUMS_H__
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgenet
  *  \brief NetworkSceneManagement generic class
  */
-#ifndef __NG_NETWORKSCENE_H
-#define __NG_NETWORKSCENE_H
+#ifndef __NG_NETWORKSCENE_H__
+#define __NG_NETWORKSCENE_H__
 
 #include "CTR_Map.h"
 #include "STR_HashedString.h"
@@ -46,6 +44,8 @@
 #ifdef SendMessage
 	#undef SendMessage
 #endif
+
+using namespace std;
 
 class NG_NetworkDeviceInterface;
 
@@ -105,7 +105,7 @@ protected:
 
 	/**
 	 * Releases messages for the given message map.
-	 * @param map	Message map with messages.
+	 * \param map	Message map with messages.
 	 */
 	void ClearMessageMap(TMessageMap& map);	
 
@@ -117,5 +117,5 @@ public:
 #endif
 };
 
-#endif //__NG_NETWORKSCENE_H
+#endif //__NG_NETWORKSCENE_H__
 

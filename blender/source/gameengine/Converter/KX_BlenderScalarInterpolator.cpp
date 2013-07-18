@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,12 +41,14 @@ extern "C" {
 #include "BKE_fcurve.h"
 }
 
-float BL_ScalarInterpolator::GetValue(float currentTime) const {
+float BL_ScalarInterpolator::GetValue(float currentTime) const
+{
 	// XXX 2.4x IPO_GetFloatValue(m_blender_adt, m_channel, currentTime);
 	return evaluate_fcurve(m_fcu, currentTime);
 }
 
-BL_InterpolatorList::BL_InterpolatorList(bAction *action) {
+BL_InterpolatorList::BL_InterpolatorList(bAction *action)
+{
 	if(action==NULL)
 		return;
 	
@@ -60,14 +61,16 @@ BL_InterpolatorList::BL_InterpolatorList(bAction *action) {
 	}
 }
 
-BL_InterpolatorList::~BL_InterpolatorList() {
+BL_InterpolatorList::~BL_InterpolatorList()
+{
 	BL_InterpolatorList::iterator i;
 	for (i = begin(); !(i == end()); ++i) {
 		delete *i;
 	}
 }
 
-KX_IScalarInterpolator *BL_InterpolatorList::GetScalarInterpolator(const char *rna_path, int array_index) {
+KX_IScalarInterpolator *BL_InterpolatorList::GetScalarInterpolator(const char *rna_path, int array_index)
+{
 	for(BL_InterpolatorList::iterator i = begin(); (i != end()) ; i++ )
 	{
 		FCurve *fcu= (static_cast<BL_ScalarInterpolator *>(*i))->GetFCurve();

@@ -1,6 +1,4 @@
-/* 
- * $Id$
- * 
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -72,14 +70,17 @@
 #include "DNA_windowmanager_types.h"
 #include "DNA_world_types.h"
 #include "DNA_gpencil_types.h"
+#include "DNA_movieclip_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
-
+#include "BLI_bpath.h"
 
 #include "BKE_animsys.h"
+#include "BKE_camera.h"
 #include "BKE_context.h"
+#include "BKE_lamp.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_global.h"
@@ -110,6 +111,8 @@
 #include "BKE_gpencil.h"
 #include "BKE_fcurve.h"
 #include "BKE_speaker.h"
+#include "BKE_utildefines.h"
+#include "BKE_movieclip.h"
 
 #include "RNA_access.h"
 
@@ -120,13 +123,28 @@
 #define MAX_IDPUP		60	/* was 24 */
 
 /* GS reads the memory pointed at in a specific ordering. 
-   only use this definition, makes little and big endian systems
-   work fine, in conjunction with MAKE_ID */
+ * only use this definition, makes little and big endian systems
+ * work fine, in conjunction with MAKE_ID */
 
 /* from blendef: */
 #define GS(a)	(*((short *)(a)))
 
 /* ************* general ************************ */
+
+
+/* this has to be called from each make_local_* func, we could call
+ * from id_make_local() but then the make local functions would not be self
+ * contained.
+ * also note that the id _must_ have a library - campbell */
+void BKE_id_lib_local_paths(Main *bmain, Library *lib, ID *id)
+{
+	char *bpath_user_data[2]= {bmain->name, lib->filepath};
+
+	bpath_traverse_id(bmain, id,
+					  bpath_relocate_visitor,
+					  BPATH_TRAVERSE_SKIP_MULTIFILE,
+					  bpath_user_data);
+}
 
 void id_lib_extern(ID *id)
 {
@@ -196,7 +214,8 @@ int id_make_local(ID *id, int test)
 			if(!test) make_local_texture((Tex*)id);
 			return 1;
 		case ID_IM:
-			return 0; /* not implemented */
+			if(!test) make_local_image((Image*)id);
+			return 1;
 		case ID_LT:
 			if(!test) {
 				make_local_lattice((Lattice*)id);
@@ -390,8 +409,8 @@ int id_single_user(bContext *C, ID *id, PointerRNA *ptr, PropertyRNA *prop)
 				/* copy animation actions too */
 				BKE_copy_animdata_id_action(id);
 				/* us is 1 by convention, but RNA_property_pointer_set
-				   will also incremement it, so set it to zero */
-				newid->us= 0;
+				 * will also increment it, so set it to zero */
+				newid->us = 0;
 				
 				/* assign copy */
 				RNA_id_pointer_create(newid, &idptr);
@@ -467,6 +486,8 @@ ListBase *which_libbase(Main *mainlib, short type)
 			return &(mainlib->wm);
 		case ID_GD:
 			return &(mainlib->gpencil);
+		case ID_MC:
+			return &(mainlib->movieclip);
 	}
 	return NULL;
 }
@@ -548,6 +569,7 @@ int set_listbasepointers(Main *main, ListBase **lb)
 	lb[a++]= &(main->scene);
 	lb[a++]= &(main->library);
 	lb[a++]= &(main->wm);
+	lb[a++]= &(main->movieclip);
 	
 	lb[a]= NULL;
 
@@ -555,14 +577,14 @@ int set_listbasepointers(Main *main, ListBase **lb)
 }
 
 /* *********** ALLOC AND FREE *****************
-  
-free_libblock(ListBase *lb, ID *id )
-	provide a list-basis and datablock, but only ID is read
-
-void *alloc_libblock(ListBase *lb, type, name)
-	inserts in list and returns a new ID
-
- ***************************** */
+ *
+ * free_libblock(ListBase *lb, ID *id )
+ * provide a list-basis and datablock, but only ID is read
+ *
+ * void *alloc_libblock(ListBase *lb, type, name)
+ * inserts in list and returns a new ID
+ *
+ * **************************** */
 
 static ID *alloc_libblock_notest(short type)
 {
@@ -649,12 +671,15 @@ static ID *alloc_libblock_notest(short type)
 			break;
 		case ID_PA:
 			id = MEM_callocN(sizeof(ParticleSettings), "ParticleSettings");
-			  break;
+			break;
 		case ID_WM:
 			id = MEM_callocN(sizeof(wmWindowManager), "Window manager");
-			  break;
+			break;
 		case ID_GD:
 			id = MEM_callocN(sizeof(bGPdata), "Grease Pencil");
+			break;
+		case ID_MC:
+			id = MEM_callocN(sizeof(MovieClip), "Movie Clip");
 			break;
 	}
 	return id;
@@ -700,14 +725,11 @@ void copy_libblock_data(ID *id, const ID *id_from, const short do_action)
 }
 
 /* used everywhere in blenkernel */
-void *copy_libblock(void *rt)
+void *copy_libblock(ID *id)
 {
-	ID *idn, *id;
+	ID *idn;
 	ListBase *lb;
-	char *cp, *cpn;
 	size_t idn_len;
-	
-	id= rt;
 
 	lb= which_libbase(G.main, GS(id->name));
 	idn= alloc_libblock(lb, GS(id->name), id->name+2);
@@ -716,8 +738,9 @@ void *copy_libblock(void *rt)
 
 	idn_len= MEM_allocN_len(idn);
 	if((int)idn_len - (int)sizeof(ID) > 0) { /* signed to allow neg result */
-		cp= (char *)id;
-		cpn= (char *)idn;
+		const char *cp= (const char *)id;
+		char *cpn= (char *)idn;
+
 		memcpy(cpn+sizeof(ID), cp+sizeof(ID), idn_len - sizeof(ID));
 	}
 	
@@ -785,7 +808,7 @@ void free_libblock(ListBase *lb, void *idv)
 			free_object((Object *)id);
 			break;
 		case ID_ME:
-			free_mesh((Mesh *)id);
+			free_mesh((Mesh *)id, 1);
 			break;
 		case ID_CU:
 			free_curve((Curve *)id);
@@ -862,6 +885,9 @@ void free_libblock(ListBase *lb, void *idv)
 			break;
 		case ID_GD:
 			free_gpencil_data((bGPdata *)id);
+			break;
+		case ID_MC:
+			free_movieclip((MovieClip *)id);
 			break;
 	}
 
@@ -941,9 +967,9 @@ static void get_flags_for_id(ID *id, char *buf)
 		isnode= ((Tex *)id)->use_nodes;
 	
 	if (id->us<0)
-		sprintf(buf, "-1W ");
+		strcpy(buf, "-1W ");
 	else if (!id->lib && !isfake && id->us && !isnode)
-		sprintf(buf, "     ");
+		strcpy(buf, "     ");
 	else if(isnode)
 		sprintf(buf, "%c%cN%c ", id->lib?'L':' ', isfake?'F':' ', (id->us==0)?'O':' ');
 	else
@@ -965,7 +991,7 @@ static void IDnames_to_dyn_pupstring(DynStr *pupds, ListBase *lb, ID *link, shor
 		ID *id;
 		
 		for (i=0, id= lb->first; id; id= id->next, i++) {
-			char buf[32];
+			char numstr[32];
 			
 			if (nr && id==link) *nr= i+1;
 
@@ -976,12 +1002,12 @@ static void IDnames_to_dyn_pupstring(DynStr *pupds, ListBase *lb, ID *link, shor
 					if ( ((Image *)id)->source==IMA_SRC_VIEWER )
 						continue;
 			
-			get_flags_for_id(id, buf);
+			get_flags_for_id(id, numstr);
 				
-			BLI_dynstr_append(pupds, buf);
+			BLI_dynstr_append(pupds, numstr);
 			BLI_dynstr_append(pupds, id->name+2);
-			BLI_snprintf(buf, sizeof(buf), "%%x%d", i+1);
-			BLI_dynstr_append(pupds, buf);
+			BLI_snprintf(numstr, sizeof(numstr), "%%x%d", i+1);
+			BLI_dynstr_append(pupds, numstr);
 			
 			/* icon */
 			switch(GS(id->name))
@@ -991,8 +1017,8 @@ static void IDnames_to_dyn_pupstring(DynStr *pupds, ListBase *lb, ID *link, shor
 			case ID_IM: /* fall through */
 			case ID_WO: /* fall through */
 			case ID_LA: /* fall through */
-				BLI_snprintf(buf, sizeof(buf), "%%i%d", BKE_icon_getid(id) );
-				BLI_dynstr_append(pupds, buf);
+				BLI_snprintf(numstr, sizeof(numstr), "%%i%d", BKE_icon_getid(id) );
+				BLI_dynstr_append(pupds, numstr);
 				break;
 			default:
 				break;
@@ -1110,10 +1136,12 @@ static int check_for_dupid(ListBase *lb, ID *id, char *name)
 {
 	ID *idtest;
 	int nr= 0, nrtest, a, left_len;
-	char left[32], leftest[32], in_use[32];
+	char in_use[64]; /* use as a boolean array, unrelated to name length */
+
+	char left[MAX_ID_NAME + 8], leftest[MAX_ID_NAME + 8];
 
 	/* make sure input name is terminated properly */
-	/* if( strlen(name) > 21 ) name[21]= 0; */
+	/* if( strlen(name) > MAX_ID_NAME-3 ) name[MAX_ID_NAME-3]= 0; */
 	/* removed since this is only ever called from one place - campbell */
 
 	while (1) {
@@ -1125,20 +1153,20 @@ static int check_for_dupid(ListBase *lb, ID *id, char *name)
 		if( idtest == NULL ) return 0;
 
 		/* we have a dup; need to make a new name */
-		/* quick check so we can reuse one of first 32 ids if vacant */
+		/* quick check so we can reuse one of first 64 ids if vacant */
 		memset(in_use, 0, sizeof(in_use));
 
 		/* get name portion, number portion ("name.number") */
 		left_len= BLI_split_name_num(left, &nr, name, '.');
 
 		/* if new name will be too long, truncate it */
-		if(nr > 999 && left_len > 16) {
-			left[16]= 0;
-			left_len= 16;
+		if(nr > 999 && left_len > (MAX_ID_NAME - 8)) {
+			left[MAX_ID_NAME - 8]= 0;
+			left_len= MAX_ID_NAME - 8;
 		}
-		else if(left_len > 17) {
-			left[17]= 0;
-			left_len= 17;
+		else if(left_len > (MAX_ID_NAME - 7)) {
+			left[MAX_ID_NAME - 7]= 0;
+			left_len= MAX_ID_NAME - 7;
 		}
 
 		for(idtest= lb->first; idtest; idtest= idtest->next) {
@@ -1167,7 +1195,7 @@ static int check_for_dupid(ListBase *lb, ID *id, char *name)
 		/* If the original name has no numeric suffix, 
 		 * rather than just chopping and adding numbers, 
 		 * shave off the end chars until we have a unique name.
-		 * Check the null terminators match as well so we dont get Cube.000 -> Cube.00 */
+		 * Check the null terminators match as well so we don't get Cube.000 -> Cube.00 */
 		if (nr==0 && name[left_len]== '\0') {
 			int len = left_len-1;
 			idtest= is_dupid(lb, id, name);
@@ -1180,11 +1208,11 @@ static int check_for_dupid(ListBase *lb, ID *id, char *name)
 			/* otherwise just continue and use a number suffix */
 		}
 		
-		if(nr > 999 && left_len > 16) {
+		if(nr > 999 && left_len > (MAX_ID_NAME - 8)) {
 			/* this would overflow name buffer */
-			left[16] = 0;
-			/* left_len = 16; */ /* for now this isnt used again */
-			memcpy(name, left, sizeof(char) * 17);
+			left[MAX_ID_NAME - 8] = 0;
+			/* left_len = MAX_ID_NAME - 8; */ /* for now this isn't used again */
+			memcpy(name, left, sizeof(char) * (MAX_ID_NAME - 7));
 			continue;
 		}
 		/* this format specifier is from hell... */
@@ -1219,7 +1247,7 @@ int new_id(ListBase *lb, ID *id, const char *tname)
 
 	strncpy(name, tname, sizeof(name)-1);
 
-	/* if result > 21, strncpy don't put the final '\0' to name.
+	/* if result > MAX_ID_NAME-3, strncpy don't put the final '\0' to name.
 	 * easier to assign each time then to check if its needed */
 	name[sizeof(name)-1]= 0;
 
@@ -1229,7 +1257,7 @@ int new_id(ListBase *lb, ID *id, const char *tname)
 	}
 	else {
 		/* disallow non utf8 chars,
-		 * the interface checks for this but new ID's based on file names dont */
+		 * the interface checks for this but new ID's based on file names don't */
 		BLI_utf8_invalid_strip(name, strlen(name));
 	}
 
@@ -1240,12 +1268,25 @@ int new_id(ListBase *lb, ID *id, const char *tname)
 	 * however all data in blender should be sorted, not just duplicate names
 	 * sorting should not hurt, but noting just incause it alters the way other
 	 * functions work, so sort every time */
-	/* if( result )
-		sort_alpha_id(lb, id);*/
-	
+#if 0
+	if( result )
+		sort_alpha_id(lb, id);
+#endif
+
 	sort_alpha_id(lb, id);
 	
 	return result;
+}
+
+/* Pull an ID out of a library (make it local). Only call this for IDs that
+ * don't have other library users. */
+void id_clear_lib_data(Main *bmain, ID *id)
+{
+	BKE_id_lib_local_paths(bmain, id->lib, id);
+
+	id->lib= NULL;
+	id->flag= LIB_LOCAL;
+	new_id(which_libbase(bmain, GS(id->name)), id, NULL);
 }
 
 /* next to indirect usage in read/writefile also in editobject.c scene.c */
@@ -1266,16 +1307,6 @@ void clear_id_newpoins(void)
 	}
 }
 
-/* only for library fixes */
-static void image_fix_relative_path(Image *ima)
-{
-	if(ima->id.lib==NULL) return;
-	if(strncmp(ima->name, "//", 2)==0) {
-		BLI_path_abs(ima->name, ima->id.lib->filepath);
-		BLI_path_rel(ima->name, G.main->name);
-	}
-}
-
 #define LIBTAG(a)	if(a && a->id.lib) {a->id.flag &=~LIB_INDIRECT; a->id.flag |= LIB_EXTERN;}
 
 static void lib_indirect_test_id(ID *id, Library *lib)
@@ -1292,19 +1323,23 @@ static void lib_indirect_test_id(ID *id, Library *lib)
 	
 	if(GS(id->name)==ID_OB) {		
 		Object *ob= (Object *)id;
-		bActionStrip *strip;
 		Mesh *me;
 
 		int a;
-	
+
+#if 0	/* XXX OLD ANIMSYS, NLASTRIPS ARE NO LONGER USED */
 		// XXX old animation system! --------------------------------------
-		for (strip=ob->nlastrips.first; strip; strip=strip->next){
-			LIBTAG(strip->object); 
-			LIBTAG(strip->act);
-			LIBTAG(strip->ipo);
+		{
+			bActionStrip *strip;
+			for (strip=ob->nlastrips.first; strip; strip=strip->next) {
+				LIBTAG(strip->object);
+				LIBTAG(strip->act);
+				LIBTAG(strip->ipo);
+			}
 		}
 		// XXX: new animation system needs something like this?
-	
+#endif
+
 		for(a=0; a<ob->totcol; a++) {
 			LIBTAG(ob->mat[a]);
 		}
@@ -1350,14 +1385,15 @@ void tag_main(struct Main *mainvar, const short tag)
 	}
 }
 
-/* if lib!=NULL, only all from lib local */
-void all_local(Library *lib, int untagged_only)
+/* if lib!=NULL, only all from lib local
+ * bmain is almost certainly G.main */
+void BKE_library_make_local(Main *bmain, Library *lib, int untagged_only)
 {
 	ListBase *lbarray[MAX_LIBARRAY], tempbase={NULL, NULL};
 	ID *id, *idn;
 	int a;
 
-	a= set_listbasepointers(G.main, lbarray);
+	a= set_listbasepointers(bmain, lbarray);
 	while(a--) {
 		id= lbarray[a]->first;
 		
@@ -1366,7 +1402,7 @@ void all_local(Library *lib, int untagged_only)
 			idn= id->next;		/* id is possibly being inserted again */
 			
 			/* The check on the second line (LIB_PRE_EXISTING) is done so its
-			 * possible to tag data you dont want to be made local, used for
+			 * possible to tag data you don't want to be made local, used for
 			 * appending data, so any libdata already linked wont become local
 			 * (very nasty to discover all your links are lost after appending)  
 			 * */
@@ -1374,16 +1410,15 @@ void all_local(Library *lib, int untagged_only)
 			  (untagged_only==0 || !(id->flag & LIB_PRE_EXISTING)))
 			{
 				if(lib==NULL || id->lib==lib) {
-					id->flag &= ~(LIB_EXTERN|LIB_INDIRECT|LIB_NEW);
-
 					if(id->lib) {
-						/* relative file patch */
-						if(GS(id->name)==ID_IM)
-							image_fix_relative_path((Image *)id);
-						
-						id->lib= NULL;
-						new_id(lbarray[a], id, NULL);	/* new_id only does it with double names */
+						id_clear_lib_data(bmain, id); /* sets 'id->flag' */
+
+						/* why sort alphabetically here but not in
+						 * id_clear_lib_data() ? - campbell */
 						sort_alpha_id(lbarray[a], id);
+					}
+					else {
+						id->flag &= ~(LIB_EXTERN|LIB_INDIRECT|LIB_NEW);
 					}
 				}
 			}
@@ -1399,7 +1434,7 @@ void all_local(Library *lib, int untagged_only)
 	}
 
 	/* patch 3: make sure library data isn't indirect falsely... */
-	a= set_listbasepointers(G.main, lbarray);
+	a= set_listbasepointers(bmain, lbarray);
 	while(a--) {
 		for(id= lbarray[a]->first; id; id=id->next)
 			lib_indirect_test_id(id, lib);
@@ -1462,4 +1497,27 @@ void name_uiprefix_id(char *name, ID *id)
 	name[2] = ' ';
 
 	strcpy(name+3, id->name+2);
+}
+
+void BKE_library_filepath_set(Library *lib, const char *filepath)
+{
+	/* in some cases this is used to update the absolute path from the
+	 * relative */
+	if (lib->name != filepath) {
+		BLI_strncpy(lib->name, filepath, sizeof(lib->name));
+	}
+
+	BLI_strncpy(lib->filepath, filepath, sizeof(lib->filepath));
+
+	/* not essential but set filepath is an absolute copy of value which
+	 * is more useful if its kept in sync */
+	if (strncmp(lib->filepath, "//", 2) == 0) {
+		/* note that the file may be unsaved, in this case, setting the
+		 * filepath on an indirectly linked path is not allowed from the
+		 * outliner, and its not really supported but allow from here for now
+		 * since making local could cause this to be directly linked - campbell
+		 */
+		const char *basepath= lib->parent ? lib->parent->filepath : G.main->name;
+		BLI_path_abs(lib->filepath, basepath);
+	}
 }

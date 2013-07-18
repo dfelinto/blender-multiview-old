@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __KX_WORLDINFO_H
-#define __KX_WORLDINFO_H
+#ifndef __KX_WORLDINFO_H__
+#define __KX_WORLDINFO_H__
 
 #include "MT_Scalar.h"
 
@@ -78,5 +76,5 @@ public:
 #endif
 };
 
-#endif //__KX_WORLDINFO_H
+#endif //__KX_WORLDINFO_H__
 

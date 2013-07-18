@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef KX_POSITIONINTERPOLATOR
-#define KX_POSITIONINTERPOLATOR
+#ifndef __KX_POSITIONINTERPOLATOR_H__
+#define __KX_POSITIONINTERPOLATOR_H__
 
 #include "KX_IInterpolator.h"
 

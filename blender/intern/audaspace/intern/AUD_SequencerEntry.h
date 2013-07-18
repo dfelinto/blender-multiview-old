@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SEQUENCERENTRY
-#define AUD_SEQUENCERENTRY
+#ifndef __AUD_SEQUENCERENTRY_H__
+#define __AUD_SEQUENCERENTRY_H__
 
 #include "AUD_Reference.h"
 #include "AUD_AnimateableProperty.h"
@@ -317,4 +315,4 @@ public:
 	void setConeVolumeOuter(float volume);
 };
 
-#endif //AUD_SEQUENCERENTRY
+#endif //__AUD_SEQUENCERENTRY_H__

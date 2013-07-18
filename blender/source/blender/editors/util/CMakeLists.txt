@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 12931 2007-12-17 18:20:48Z theeth $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -24,6 +23,7 @@ set(INC
 	../../blenkernel
 	../../blenlib
 	../../blenloader
+	../../bmesh
 	../../makesdna
 	../../makesrna
 	../../windowmanager
@@ -47,6 +47,7 @@ set(SRC
 	../include/BIF_glutil.h
 	../include/ED_anim_api.h
 	../include/ED_armature.h
+	../include/ED_clip.h
 	../include/ED_curve.h
 	../include/ED_datafiles.h
 	../include/ED_fileselect.h

@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -66,26 +65,34 @@ set(SRC
 	intern/math_base.c
 	intern/math_base_inline.c
 	intern/math_color.c
+	intern/math_color_inline.c
 	intern/math_geom.c
 	intern/math_geom_inline.c
 	intern/math_matrix.c
 	intern/math_rotation.c
 	intern/math_vector.c
 	intern/math_vector_inline.c
+	intern/md5.c
 	intern/noise.c
 	intern/path_util.c
 	intern/pbvh.c
 	intern/rand.c
 	intern/rct.c
 	intern/scanfill.c
+	intern/smallhash.c
 	intern/storage.c
 	intern/string.c
+	intern/string_cursor_utf8.c
+	intern/string_utf8.c
 	intern/threads.c
 	intern/time.c
 	intern/uvproject.c
 	intern/voxel.c
 	intern/winstuff.c
 
+	BLI_array.h
+	BLI_bitmap.h
+	BLI_smallhash.h
 	BLI_args.h
 	BLI_blenlib.h
 	BLI_boxpack2d.h
@@ -98,6 +105,7 @@ set(SRC
 	BLI_edgehash.h
 	BLI_editVert.h
 	BLI_fileops.h
+	BLI_fileops_types.h
 	BLI_fnmatch.h
 	BLI_ghash.h
 	BLI_graph.h
@@ -116,6 +124,7 @@ set(SRC
 	BLI_math_matrix.h
 	BLI_math_rotation.h
 	BLI_math_vector.h
+	BLI_md5.h
 	BLI_memarena.h
 	BLI_mempool.h
 	BLI_noise.h
@@ -124,9 +133,9 @@ set(SRC
 	BLI_rand.h
 	BLI_rect.h
 	BLI_scanfill.h
-	BLI_storage.h
-	BLI_storage_types.h
 	BLI_string.h
+	BLI_string_cursor_utf8.h
+	BLI_string_utf8.h
 	BLI_threads.h
 	BLI_utildefines.h
 	BLI_uvproject.h
@@ -134,7 +143,6 @@ set(SRC
 	BLI_voxel.h
 	BLI_winstuff.h
 	PIL_time.h
-	intern/dynamiclist.h
 )
 
 if(WITH_BINRELOC)
@@ -146,6 +154,10 @@ endif()
 
 if(WITH_OPENMP)
 	add_definitions(-DPARALLEL=1)
+endif()
+
+if(WITH_XDG_USER_DIRS)
+	add_definitions(-DWITH_XDG_USER_DIRS)
 endif()
 
 blender_add_lib(bf_blenlib "${SRC}" "${INC}" "${INC_SYS}")

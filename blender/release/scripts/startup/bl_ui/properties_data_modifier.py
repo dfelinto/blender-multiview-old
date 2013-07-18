@@ -25,6 +25,7 @@ class ModifierButtonsPanel():
     bl_space_type = 'PROPERTIES'
     bl_region_type = 'WINDOW'
     bl_context = "modifier"
+    bl_options = {'HIDE_HEADER'}
 
 
 class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
@@ -122,6 +123,14 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         split.prop(md, "width")
         split.prop(md, "use_only_vertices")
 
+        # -- new modifier only, this may be reverted in favor of 2.62 mod.
+        '''
+        split = layout.split()
+        split.prop(md, "use_even_offset")
+        split.prop(md, "use_distance_offset")
+        '''
+        # -- end
+
         layout.label(text="Limit Method:")
         layout.row().prop(md, "limit_method", expand=True)
         if md.limit_method == 'ANGLE':
@@ -203,7 +212,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
     def DECIMATE(self, layout, ob, md):
         layout.prop(md, "ratio")
-        layout.label(text="Face Count: %s" % str(md.face_count))
+        layout.label(text="Face Count" + ": %d" % md.face_count)
 
     def DISPLACE(self, layout, ob, md):
         split = layout.split()
@@ -229,6 +238,9 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         row = layout.row()
         row.prop(md, "mid_level")
         row.prop(md, "strength")
+
+    def DYNAMIC_PAINT(self, layout, ob, md):
+        layout.label(text="Settings can be found inside the Physics context")
 
     def EDGE_SPLIT(self, layout, ob, md):
         split = layout.split()
@@ -411,6 +423,80 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
             row.operator("object.multires_external_save", text="Save External...")
             row.label()
 
+    def OCEAN(self, layout, ob, md):
+        if not md.is_build_enabled:
+            layout.label("Built without OceanSim modifier")
+            return
+
+        layout.prop(md, "geometry_mode")
+
+        if md.geometry_mode == 'GENERATE':
+            row = layout.row()
+            row.prop(md, "repeat_x")
+            row.prop(md, "repeat_y")
+
+        layout.separator()
+
+        flow = layout.column_flow()
+        flow.prop(md, "time")
+        flow.prop(md, "resolution")
+        flow.prop(md, "spatial_size")
+        flow.prop(md, "depth")
+
+        layout.label("Waves:")
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(md, "choppiness")
+        col.prop(md, "wave_scale", text="Scale")
+        col.prop(md, "wave_scale_min")
+        col.prop(md, "wind_velocity")
+
+        col = split.column()
+        col.prop(md, "wave_alignment", text="Alignment")
+        sub = col.column()
+        sub.active = md.wave_alignment > 0
+        sub.prop(md, "wave_direction", text="Direction")
+        sub.prop(md, "damping")
+
+        layout.separator()
+
+        layout.prop(md, "use_normals")
+
+        split = layout.split()
+
+        col = split.column()
+        col.prop(md, "use_foam")
+        sub = col.row()
+        sub.active = md.use_foam
+        sub.prop(md, "foam_coverage", text="Coverage")
+
+        col = split.column()
+        col.active = md.use_foam
+        col.label("Foam Data Layer Name:")
+        col.prop(md, "foam_layer_name", text="")
+
+        layout.separator()
+
+        if md.is_cached:
+            layout.operator("object.ocean_bake", text="Free Bake").free = True
+        else:
+            layout.operator("object.ocean_bake")
+
+        split = layout.split()
+        split.enabled = not md.is_cached
+
+        col = split.column(align=True)
+        col.prop(md, "frame_start", text="Start")
+        col.prop(md, "frame_end", text="End")
+
+        col = split.column(align=True)
+        col.label(text="Cache path:")
+        col.prop(md, "filepath", text="")
+
+        #col.prop(md, "bake_foam_fade")
+
     def PARTICLE_INSTANCE(self, layout, ob, md):
         layout.prop(md, "object")
         layout.prop(md, "particle_system_index", text="Particle System")
@@ -510,11 +596,10 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
             layout.prop(md, "use_keep_above_surface")
 
     def SIMPLE_DEFORM(self, layout, ob, md):
-        split = layout.split()
 
-        col = split.column()
-        col.label(text="Mode:")
-        col.prop(md, "deform_method", text="")
+        layout.row().prop(md, "deform_method", expand=True)
+
+        split = layout.split()
 
         col = split.column()
         col.label(text="Vertex Group:")
@@ -533,7 +618,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         col.label(text="Deform:")
         col.prop(md, "factor")
         col.prop(md, "limits", slider=True)
-        if md.deform_method in {'TAPER', 'STRETCH'}:
+        if md.deform_method in {'TAPER', 'STRETCH', 'TWIST'}:
             col.prop(md, "lock_x")
             col.prop(md, "lock_y")
 
@@ -608,32 +693,31 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         layout.label(text="Settings can be found inside the Physics context")
 
     def UV_PROJECT(self, layout, ob, md):
-        if ob.type == 'MESH':
-            split = layout.split()
+        split = layout.split()
 
-            col = split.column()
-            col.label(text="Image:")
-            col.prop(md, "image", text="")
+        col = split.column()
+        col.label(text="Image:")
+        col.prop(md, "image", text="")
 
-            col = split.column()
-            col.label(text="UV Layer:")
-            col.prop_search(md, "uv_layer", ob.data, "uv_textures", text="")
+        col = split.column()
+        col.label(text="UV Map:")
+        col.prop_search(md, "uv_layer", ob.data, "uv_textures", text="")
 
-            split = layout.split()
-            col = split.column()
-            col.prop(md, "use_image_override")
-            col.prop(md, "projector_count", text="Projectors")
-            for proj in md.projectors:
-                col.prop(proj, "object", text="")
+        split = layout.split()
+        col = split.column()
+        col.prop(md, "use_image_override")
+        col.prop(md, "projector_count", text="Projectors")
+        for proj in md.projectors:
+            col.prop(proj, "object", text="")
 
-            col = split.column()
-            sub = col.column(align=True)
-            sub.prop(md, "aspect_x", text="Aspect X")
-            sub.prop(md, "aspect_y", text="Aspect Y")
+        col = split.column()
+        sub = col.column(align=True)
+        sub.prop(md, "aspect_x", text="Aspect X")
+        sub.prop(md, "aspect_y", text="Aspect Y")
 
-            sub = col.column(align=True)
-            sub.prop(md, "scale_x", text="Scale X")
-            sub.prop(md, "scale_y", text="Scale Y")
+        sub = col.column(align=True)
+        sub.prop(md, "scale_x", text="Scale X")
+        sub.prop(md, "scale_y", text="Scale Y")
 
     def WARP(self, layout, ob, md):
         use_falloff = (md.falloff_type != 'NONE')
@@ -666,7 +750,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         split = layout.split()
         col = split.column()
         col.label(text="Texture:")
-        col.prop(md, "texture", text="")
+        col.template_ID(md, "texture", new="texture.new")
 
         col = split.column()
         col.label(text="Texture Coordinates:")
@@ -737,28 +821,45 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         col.prop(md, "width", slider=True)
         col.prop(md, "narrowness", slider=True)
 
-    @staticmethod
-    def weight_vg_mask(layout, ob, md):
-        layout.label(text="Influence/Mask Options:")
-        split = layout.split()
-        col1 = split.column()
-        col2 = split.column()
+    def REMESH(self, layout, ob, md):
+        layout.prop(md, "mode")
 
-        col1.label(text="Global Influence:")
-        col2.prop(md, "mask_constant", text="")
+        row = layout.row()
+        row.prop(md, "octree_depth")
+        row.prop(md, "scale")
+
+        if md.mode == 'SHARP':
+            layout.prop(md, "sharpness")
+
+        layout.prop(md, "remove_disconnected_pieces")
+        row = layout.row()
+        row.active = md.remove_disconnected_pieces
+        row.prop(md, "threshold")
+
+    @staticmethod
+    def vertex_weight_mask(layout, ob, md):
+        layout.label(text="Influence/Mask Options:")
+
+        split = layout.split(percentage=0.4)
+        split.label(text="Global Influence:")
+        split.prop(md, "mask_constant", text="")
 
         if not md.mask_texture:
-            col1.label(text="Vertex Group Mask:")
-            col2.prop_search(md, "mask_vertex_group", ob, "vertex_groups", text="")
+            split = layout.split(percentage=0.4)
+            split.label(text="Vertex Group Mask:")
+            split.prop_search(md, "mask_vertex_group", ob, "vertex_groups", text="")
 
         if not md.mask_vertex_group:
-            col1.label(text="Texture Mask:")
-            col2.template_ID(md, "mask_texture", new="texture.new")
+            split = layout.split(percentage=0.4)
+            split.label(text="Texture Mask:")
+            split.template_ID(md, "mask_texture", new="texture.new")
             if md.mask_texture:
                 split = layout.split()
+
                 col = split.column()
                 col.label(text="Texture Coordinates:")
                 col.prop(md, "mask_tex_mapping", text="")
+
                 col = split.column()
                 col.label(text="Use Channel:")
                 col.prop(md, "mask_tex_use_channel", text="")
@@ -769,88 +870,85 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
                     layout.prop_search(md, "mask_tex_uv_layer", ob.data, "uv_textures")
 
     def VERTEX_WEIGHT_EDIT(self, layout, ob, md):
-        if ob.type == 'MESH':
-            split = layout.split()
-            col = split.column()
-            col.label(text="Vertex Group:")
-            col.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
+        split = layout.split()
+        col = split.column()
+        col.label(text="Vertex Group:")
+        col.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
 
-            col = split.column()
-            col.label(text="Default Weight:")
-            col.prop(md, "default_weight", text="")
+        col = split.column()
+        col.label(text="Default Weight:")
+        col.prop(md, "default_weight", text="")
 
-            layout.prop(md, "falloff_type")
-            if md.falloff_type == 'CURVE':
-                col = layout.column()
-                col.template_curve_mapping(md, "map_curve")
+        layout.prop(md, "falloff_type")
+        if md.falloff_type == 'CURVE':
+            col = layout.column()
+            col.template_curve_mapping(md, "map_curve")
 
-            split = layout.split(percentage=0.4)
-            split.prop(md, "use_add")
-            row = split.row()
-            row.active = md.use_add
-            row.prop(md, "add_threshold")
+        split = layout.split(percentage=0.4)
+        split.prop(md, "use_add")
+        row = split.row()
+        row.active = md.use_add
+        row.prop(md, "add_threshold")
 
-            split = layout.split(percentage=0.4)
-            split.prop(md, "use_remove")
-            row = split.row()
-            row.active = md.use_remove
-            row.prop(md, "remove_threshold")
+        split = layout.split(percentage=0.4)
+        split.prop(md, "use_remove")
+        row = split.row()
+        row.active = md.use_remove
+        row.prop(md, "remove_threshold")
 
-            # Common mask options…
-            layout.separator()
-            self.weight_vg_mask(layout, ob, md)
+        # Common mask options
+        layout.separator()
+        self.vertex_weight_mask(layout, ob, md)
 
     def VERTEX_WEIGHT_MIX(self, layout, ob, md):
-        if ob.type == 'MESH':
-            split = layout.split()
-            col = split.column()
-            col.label(text="Vertex Group A:")
-            col.prop_search(md, "vertex_group_a", ob, "vertex_groups", text="")
-            col.label(text="Default Weight A:")
-            col.prop(md, "default_weight_a", text="")
+        split = layout.split()
 
-            col.label(text="Mix Mode:")
-            col.prop(md, "mix_mode", text="")
+        col = split.column()
+        col.label(text="Vertex Group A:")
+        col.prop_search(md, "vertex_group_a", ob, "vertex_groups", text="")
+        col.label(text="Default Weight A:")
+        col.prop(md, "default_weight_a", text="")
 
-            col = split.column()
-            col.label(text="Vertex Group B:")
-            col.prop_search(md, "vertex_group_b", ob, "vertex_groups", text="")
-            col.label(text="Default Weight B:")
-            col.prop(md, "default_weight_b", text="")
+        col.label(text="Mix Mode:")
+        col.prop(md, "mix_mode", text="")
 
-            col.label(text="Mix Set:")
-            col.prop(md, "mix_set", text="")
+        col = split.column()
+        col.label(text="Vertex Group B:")
+        col.prop_search(md, "vertex_group_b", ob, "vertex_groups", text="")
+        col.label(text="Default Weight B:")
+        col.prop(md, "default_weight_b", text="")
 
-            # Common mask options…
-            layout.separator()
-            self.weight_vg_mask(layout, ob, md)
+        col.label(text="Mix Set:")
+        col.prop(md, "mix_set", text="")
+
+        # Common mask options
+        layout.separator()
+        self.vertex_weight_mask(layout, ob, md)
 
     def VERTEX_WEIGHT_PROXIMITY(self, layout, ob, md):
-        if ob.type == 'MESH':
-            split = layout.split()
-            col = split.column()
-            col.label(text="Vertex Group:")
-            col.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
+        split = layout.split()
 
-            col = split.column()
-            col.label(text="Target Object:")
-            col.prop(md, "target", text="")
+        col = split.column()
+        col.label(text="Vertex Group:")
+        col.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
 
-            row = layout.row()
-            row.prop(md, "proximity_mode", expand=True)
-            if md.proximity_mode == 'GEOMETRY':
-                row = layout.row()
-                row.prop(md, "proximity_geometry", expand=True)
+        col = split.column()
+        col.label(text="Target Object:")
+        col.prop(md, "target", text="")
 
-            row = layout.split()
-            row.prop(md, "min_dist")
-            row.prop(md, "max_dist")
+        layout.row().prop(md, "proximity_mode", expand=True)
+        if md.proximity_mode == 'GEOMETRY':
+            layout.row().prop(md, "proximity_geometry", expand=True)
 
-            layout.prop(md, "falloff_type")
+        row = layout.row()
+        row.prop(md, "min_dist")
+        row.prop(md, "max_dist")
 
-            # Common mask options…
-            layout.separator()
-            self.weight_vg_mask(layout, ob, md)
+        layout.prop(md, "falloff_type")
+
+        # Common mask options
+        layout.separator()
+        self.vertex_weight_mask(layout, ob, md)
 
 if __name__ == "__main__":  # only for live edit.
     bpy.utils.register_module(__name__)

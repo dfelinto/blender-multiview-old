@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup render
  */
 
-#ifndef RE_RAYOBJECT_RTBUILD_H
-#define RE_RAYOBJECT_RTBUILD_H
+#ifndef __RAYOBJECT_RTBUILD_H__
+#define __RAYOBJECT_RTBUILD_H__
 
 #ifdef __cplusplus
 extern "C" {

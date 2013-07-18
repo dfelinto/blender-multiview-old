@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,8 +25,8 @@
  */
 
 
-#ifndef RNA_INTERNAL_TYPES_H
-#define RNA_INTERNAL_TYPES_H
+#ifndef __RNA_INTERNAL_TYPES_H__
+#define __RNA_INTERNAL_TYPES_H__
 
 #include "DNA_listBase.h"
 
@@ -90,7 +88,8 @@ typedef int (*PropStringLengthFunc)(struct PointerRNA *ptr);
 typedef void (*PropStringSetFunc)(struct PointerRNA *ptr, const char *value);
 typedef int (*PropEnumGetFunc)(struct PointerRNA *ptr);
 typedef void (*PropEnumSetFunc)(struct PointerRNA *ptr, int value);
-typedef EnumPropertyItem *(*PropEnumItemFunc)(struct bContext *C, struct PointerRNA *ptr, struct PropertyRNA *prop, int *free);
+typedef EnumPropertyItem *(*PropEnumItemFunc)(struct bContext *C, struct PointerRNA *ptr,
+                                              struct PropertyRNA *prop, int *free);
 typedef PointerRNA (*PropPointerGetFunc)(struct PointerRNA *ptr);
 typedef StructRNA* (*PropPointerTypeFunc)(struct PointerRNA *ptr);
 typedef void (*PropPointerSetFunc)(struct PointerRNA *ptr, const PointerRNA value);
@@ -102,6 +101,7 @@ typedef PointerRNA (*PropCollectionGetFunc)(struct CollectionPropertyIterator *i
 typedef int (*PropCollectionLengthFunc)(struct PointerRNA *ptr);
 typedef int (*PropCollectionLookupIntFunc)(struct PointerRNA *ptr, int key, struct PointerRNA *r_ptr);
 typedef int (*PropCollectionLookupStringFunc)(struct PointerRNA *ptr, const char *key, struct PointerRNA *r_ptr);
+typedef int (*PropCollectionAssignIntFunc)(struct PointerRNA *ptr, int key, const struct PointerRNA *assign_ptr);
 
 /* Container - generic abstracted container of RNA properties */
 typedef struct ContainerRNA {
@@ -148,6 +148,8 @@ struct PropertyRNA {
 	const char *description;
 	/* icon ID */
 	int icon;
+	/* context for translation */
+	const char *translation_context;
 
 	/* property type as it appears to the outside */
 	PropertyType type;
@@ -186,7 +188,7 @@ struct PropertyRNA {
 
 /* Property Types */
 
-typedef struct BooleanPropertyRNA {
+typedef struct BoolPropertyRNA {
 	PropertyRNA property;
 
 	PropBooleanGetFunc get;
@@ -197,7 +199,7 @@ typedef struct BooleanPropertyRNA {
 
 	int defaultvalue;
 	const int *defaultarray;
-} BooleanPropertyRNA;
+} BoolPropertyRNA;
 
 typedef struct IntPropertyRNA {
 	PropertyRNA property;
@@ -285,6 +287,7 @@ typedef struct CollectionPropertyRNA {
 	PropCollectionLengthFunc length;				/* optional */
 	PropCollectionLookupIntFunc lookupint;			/* optional */
 	PropCollectionLookupStringFunc lookupstring;	/* optional */
+	PropCollectionAssignIntFunc assignint;			/* optional */
 
 	struct StructRNA *item_type;			/* the type of this item */
 } CollectionPropertyRNA;
@@ -310,6 +313,8 @@ struct StructRNA {
 	const char *name;
 	/* single line description, displayed in the tooltip for example */
 	const char *description;
+	/* context for translation */
+	const char *translation_context;
 	/* icon ID */
 	int icon;
 	
@@ -329,21 +334,21 @@ struct StructRNA {
 	struct StructRNA *nested;
 
 	/* function to give the more specific type */
-	StructRefineFunc refine; 
+	StructRefineFunc refine;
 
 	/* function to find path to this struct in an ID */
-	StructPathFunc path; 
+	StructPathFunc path;
 
 	/* function to register/unregister subclasses */
-	StructRegisterFunc reg; 
-	StructUnregisterFunc unreg; 
+	StructRegisterFunc reg;
+	StructUnregisterFunc unreg;
 	StructInstanceFunc instance;
 
 	/* callback to get id properties */
 	IDPropertiesFunc idproperties;
 
 	/* functions of this struct */
-	ListBase functions; 
+	ListBase functions;
 };
 
 /* Blender RNA
@@ -356,4 +361,4 @@ struct BlenderRNA {
 
 #define CONTAINER_RNA_ID(cont) (*(const char **)(((ContainerRNA *)(cont))+1))
 
-#endif /* RNA_INTERNAL_TYPES_H */
+#endif /* __RNA_INTERNAL_TYPES_H__ */

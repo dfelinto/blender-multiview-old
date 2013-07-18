@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,15 +31,15 @@
 #include "COLLADABUUtils.h"
 #include "collada_internal.h"
 
-MaterialsExporter::MaterialsExporter(COLLADASW::StreamWriter *sw): COLLADASW::LibraryMaterials(sw){}
+MaterialsExporter::MaterialsExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings): COLLADASW::LibraryMaterials(sw), export_settings(export_settings) {}
 
-void MaterialsExporter::exportMaterials(Scene *sce, bool export_selected)
+void MaterialsExporter::exportMaterials(Scene *sce)
 {
 	if(hasMaterials(sce)) {
 		openLibrary();
 
 		MaterialFunctor mf;
-		mf.forEachMaterialInScene<MaterialsExporter>(sce, *this, export_selected);
+		mf.forEachMaterialInScene<MaterialsExporter>(sce, *this, this->export_settings->selected);
 
 		closeLibrary();
 	}

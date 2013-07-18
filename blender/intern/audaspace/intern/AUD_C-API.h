@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -28,8 +26,8 @@
  *  \ingroup audaspace
  */
  
-#ifndef AUD_CAPI
-#define AUD_CAPI
+#ifndef __AUD_C_API_H__
+#define __AUD_C_API_H__
 
 #ifdef WITH_PYTHON
 #include "Python.h"
@@ -456,7 +454,7 @@ extern float* AUD_readSoundBuffer(const char* filename, float low, float high,
 /**
  * Pauses a playing sound after a specific amount of time.
  * \param handle The handle to the sound.
- * \param time The time in seconds.
+ * \param seconds The time in seconds.
  * \return The silence handle.
  */
 extern AUD_Handle* AUD_pauseAfter(AUD_Handle* handle, float seconds);
@@ -757,4 +755,4 @@ AUD_Reference<AUD_IDevice> AUD_getDevice();
 AUD_I3DDevice* AUD_get3DDevice();
 #endif
 
-#endif //AUD_CAPI
+#endif //__AUD_C_API_H__

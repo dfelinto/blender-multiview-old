@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SNDFILEWRITER
-#define AUD_SNDFILEWRITER
+#ifndef __AUD_SNDFILEWRITER_H__
+#define __AUD_SNDFILEWRITER_H__
 
 #include "AUD_IWriter.h"
 
@@ -85,4 +83,4 @@ public:
 	virtual void write(unsigned int length, sample_t* buffer);
 };
 
-#endif //AUD_SNDFILEWRITER
+#endif //__AUD_SNDFILEWRITER_H__

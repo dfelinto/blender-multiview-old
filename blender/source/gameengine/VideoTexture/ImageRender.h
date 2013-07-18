@@ -1,4 +1,4 @@
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -24,8 +24,8 @@ http://www.gnu.org/copyleft/lesser.txt.
  *  \ingroup bgevideotex
  */
  
-#if !defined IMAGERENDER_H
-#define IMAGERENDER_H
+#ifndef __IMAGERENDER_H__
+#define __IMAGERENDER_H__
 
 
 #include "Common.h"
@@ -52,42 +52,42 @@ public:
 	virtual ~ImageRender (void);
 
 	/// get background color
-    int getBackground (int idx) { return (idx < 0 || idx > 3) ? 0 : int(m_background[idx]*255.f); }
+	int getBackground (int idx) { return (idx < 0 || idx > 3) ? 0 : int(m_background[idx]*255.f); }
 	/// set background color
 	void setBackground (int red, int green, int blue, int alpha);
 
 	/// clipping distance
 	float getClip (void) { return m_clip; }
 	/// set whole buffer use
-    void setClip (float clip) { m_clip = clip; }
+	void setClip (float clip) { m_clip = clip; }
 
 protected:
-    /// true if ready to render
-    bool m_render;
+	/// true if ready to render
+	bool m_render;
 	/// rendered scene
 	KX_Scene * m_scene;
 	/// camera for render
 	KX_Camera * m_camera;
-    /// do we own the camera?
-    bool m_owncamera;
-    /// for mirror operation
-    KX_GameObject * m_observer;
-    KX_GameObject * m_mirror;
+	/// do we own the camera?
+	bool m_owncamera;
+	/// for mirror operation
+	KX_GameObject * m_observer;
+	KX_GameObject * m_mirror;
 	float m_clip;						// clipping distance
-    float m_mirrorHalfWidth;            // mirror width in mirror space
-    float m_mirrorHalfHeight;           // mirror height in mirror space
-    MT_Point3 m_mirrorPos;              // mirror center position in local space
-    MT_Vector3 m_mirrorZ;               // mirror Z axis in local space
-    MT_Vector3 m_mirrorY;               // mirror Y axis in local space
-    MT_Vector3 m_mirrorX;               // mirror X axis in local space
-    /// canvas
-    RAS_ICanvas* m_canvas;
-    /// rasterizer
-    RAS_IRasterizer* m_rasterizer;
-    /// render tools
-    RAS_IRenderTools* m_rendertools;
-    /// engine
-    KX_KetsjiEngine* m_engine;
+	float m_mirrorHalfWidth;            // mirror width in mirror space
+	float m_mirrorHalfHeight;           // mirror height in mirror space
+	MT_Point3 m_mirrorPos;              // mirror center position in local space
+	MT_Vector3 m_mirrorZ;               // mirror Z axis in local space
+	MT_Vector3 m_mirrorY;               // mirror Y axis in local space
+	MT_Vector3 m_mirrorX;               // mirror X axis in local space
+	/// canvas
+	RAS_ICanvas* m_canvas;
+	/// rasterizer
+	RAS_IRasterizer* m_rasterizer;
+	/// render tools
+	RAS_IRenderTools* m_rendertools;
+	/// engine
+	KX_KetsjiEngine* m_engine;
 
 	/// background color
 	float  m_background[4];

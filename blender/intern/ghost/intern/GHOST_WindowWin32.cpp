@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 10, 2001
@@ -255,7 +253,7 @@ GHOST_WindowWin32::GHOST_WindowWin32(
 			title,						// pointer to window name
 			WS_POPUP | WS_MAXIMIZE,		// window style
 			left,						// horizontal position of window
- 			top,						// vertical position of window
+			top,						// vertical position of window
 			width,						// window width
 			height,						// window height
 			HWND_DESKTOP,				// handle to parent or owner window
@@ -633,7 +631,7 @@ GHOST_TSuccess GHOST_WindowWin32::setState(GHOST_TWindowState state)
 		break;
 	}
 	SetWindowPos(m_hWnd, 0, 0, 0, 0, 0, SWP_NOMOVE | SWP_NOSIZE | SWP_NOZORDER | SWP_FRAMECHANGED); /*Clears window cache for SetWindowLongPtr */
- 	return ::SetWindowPlacement(m_hWnd, &wp) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
+	return ::SetWindowPlacement(m_hWnd, &wp) == TRUE ? GHOST_kSuccess : GHOST_kFailure;
 }
 
 
@@ -1048,9 +1046,9 @@ GHOST_TSuccess GHOST_WindowWin32::setWindowCursorGrab(GHOST_TGrabCursorMode mode
 			/* use to generate a mouse move event, otherwise the last event
 			 * blender gets can be outside the screen causing menus not to show
 			 * properly unless the user moves the mouse */
-			 GHOST_TInt32 pos[2];
-			 m_system->getCursorPosition(pos[0], pos[1]);
-			 m_system->setCursorPosition(pos[0], pos[1]);
+			GHOST_TInt32 pos[2];
+			m_system->getCursorPosition(pos[0], pos[1]);
+			m_system->setCursorPosition(pos[0], pos[1]);
 		}
 
 		/* Almost works without but important otherwise the mouse GHOST location can be incorrect on exit */
@@ -1198,10 +1196,11 @@ static GHOST_TUns16 uns16ReverseBits(GHOST_TUns16 shrt)
 	return shrt;
 }
 GHOST_TSuccess GHOST_WindowWin32::setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2],
-					GHOST_TUns8 mask[16][2], int hotX, int hotY)
+                                                             GHOST_TUns8 mask[16][2],
+                                                             int hotX, int hotY)
 {
 	return setWindowCustomCursorShape((GHOST_TUns8*)bitmap, (GHOST_TUns8*)mask,
-									16, 16, hotX, hotY, 0, 1);
+	                                  16, 16, hotX, hotY, 0, 1);
 }
 
 GHOST_TSuccess GHOST_WindowWin32::setWindowCustomCursorShape(GHOST_TUns8 *bitmap,
@@ -1270,7 +1269,8 @@ GHOST_TSuccess GHOST_WindowWin32::endProgressBar()
 /*  Ron Fosner's code for weighting pixel formats and forcing software.
 	See http://www.opengl.org/resources/faq/technical/weight.cpp */
 
-static int WeightPixelFormat(PIXELFORMATDESCRIPTOR& pfd) {
+static int WeightPixelFormat(PIXELFORMATDESCRIPTOR& pfd)
+{
 	int weight = 0;
 
 	/* assume desktop color depth is 32 bits per pixel */
@@ -1303,7 +1303,8 @@ static int WeightPixelFormat(PIXELFORMATDESCRIPTOR& pfd) {
 
 /* A modification of Ron Fosner's replacement for ChoosePixelFormat */
 /* returns 0 on error, else returns the pixel format number to be used */
-static int EnumPixelFormats(HDC hdc) {
+static int EnumPixelFormats(HDC hdc)
+{
 	int iPixelFormat;
 	int i, n, w, weight = 0;
 	PIXELFORMATDESCRIPTOR pfd;

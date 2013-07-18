@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,11 +27,11 @@
  */
 
 
-#ifndef AUD_RESAMPLEFACTORY
-#define AUD_RESAMPLEFACTORY
+#ifndef __AUD_RESAMPLEFACTORY_H__
+#define __AUD_RESAMPLEFACTORY_H__
 
 #include "AUD_MixerFactory.h"
 
 typedef AUD_MixerFactory AUD_ResampleFactory;
 
-#endif //AUD_RESAMPLEFACTORY
+#endif //__AUD_RESAMPLEFACTORY_H__

@@ -1,5 +1,4 @@
 /* 
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -25,40 +24,44 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file BKE_utildefines.h
  *  \ingroup bke
- *  \brief blender format spesific macros
+ *  \brief blender format specific macros
  *  \note generic defines should go in BLI_utildefines.h
  */
 
 
-#ifndef BKE_UTILDEFINES_H
-#define BKE_UTILDEFINES_H
+#ifndef __BKE_UTILDEFINES_H__
+#define __BKE_UTILDEFINES_H__
+
+#ifdef __cplusplus
+extern "C" {
+#endif
 
 /* these values need to be hardcoded in structs, dna does not recognize defines */
 /* also defined in DNA_space_types.h */
 #ifndef FILE_MAXDIR
-#define FILE_MAXDIR			160
-#define FILE_MAXFILE		80
-#define FILE_MAX			240
+#define FILE_MAXDIR			768
+#define FILE_MAXFILE		256
+#define FILE_MAX			1024
 #endif
 
 /* this weirdo pops up in two places ... */
 #if !defined(WIN32)
-#ifndef O_BINARY
-#define O_BINARY 0
-#endif
+#  ifndef O_BINARY
+#    define O_BINARY 0
+#  endif
 #endif
 
 /* INTEGER CODES */
-#if defined(__sgi) || defined (__sparc) || defined (__sparc__) || defined (__PPC__) || defined (__ppc__) || defined (__hppa__) || defined (__BIG_ENDIAN__)
-	/* Big Endian */
-#define MAKE_ID(a,b,c,d) ( (int)(a)<<24 | (int)(b)<<16 | (c)<<8 | (d) )
+#ifdef __BIG_ENDIAN__
+   /* Big Endian */
+#  define MAKE_ID(a,b,c,d) ( (int)(a)<<24 | (int)(b)<<16 | (c)<<8 | (d) )
 #else
-	/* Little Endian */
-#define MAKE_ID(a,b,c,d) ( (int)(d)<<24 | (int)(c)<<16 | (b)<<8 | (a) )
+   /* Little Endian */
+#  define MAKE_ID(a,b,c,d) ( (int)(d)<<24 | (int)(c)<<16 | (b)<<8 | (a) )
 #endif
 
 #define ID_NEW(a)		if( (a) && (a)->id.newid ) (a)= (void *)(a)->id.newid
@@ -74,14 +77,16 @@
 #define ENDB MAKE_ID('E','N','D','B')
 
 /* Bit operations */
-#define BTST(a,b)	( ( (a) & 1<<(b) )!=0 )   
-#define BNTST(a,b)	( ( (a) & 1<<(b) )==0 )
-#define BTST2(a,b,c)	( BTST( (a), (b) ) || BTST( (a), (c) ) )
-#define BSET(a,b)	( (a) | 1<<(b) )
-#define BCLR(a,b)	( (a) & ~(1<<(b)) )
+#define BTST(a,b)	 ( ( (a) & 1<<(b) )!=0 )
+#define BNTST(a,b)	 ( ( (a) & 1<<(b) )==0 )
+#define BTST2(a,b,c) ( BTST( (a), (b) ) || BTST( (a), (c) ) )
+#define BSET(a,b)	 ( (a) | 1<<(b) )
+#define BCLR(a,b)	 ( (a) & ~(1<<(b)) )
 /* bit-row */
 #define BROW(min, max)	(((max)>=31? 0xFFFFFFFF: (1<<(max+1))-1) - ((min)? ((1<<(min))-1):0) )
 
-#define BMEMSET(mem, val, size) {unsigned int _i; char *_c = (char*) mem; for (_i=0; _i<size; _i++) *_c++ = val;}
+#ifdef __cplusplus
+}
+#endif
 
-#endif // BKE_UTILDEFINES_H
+#endif // __BKE_UTILDEFINES_H__

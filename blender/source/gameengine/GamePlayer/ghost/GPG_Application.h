@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -105,6 +103,7 @@ protected:
 	 * Shuts the game engine down.
 	 */
 	void exitEngine(void);
+	short					m_exitkey;
 
 	/* The game data */
 	STR_String				m_startSceneName;

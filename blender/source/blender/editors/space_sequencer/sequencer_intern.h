@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,8 +28,8 @@
  *  \ingroup spseq
  */
 
-#ifndef ED_SEQUENCER_INTERN_H
-#define ED_SEQUENCER_INTERN_H
+#ifndef __SEQUENCER_INTERN_H__
+#define __SEQUENCER_INTERN_H__
 
 #include "RNA_access.h"
 #include "DNA_sequence_types.h"
@@ -65,7 +63,6 @@ struct Sequence *find_nearest_seq(struct Scene *scene, struct View2D *v2d, int *
 struct Sequence *find_neighboring_sequence(struct Scene *scene, struct Sequence *test, int lr, int sel);
 void deselect_all_seq(struct Scene *scene);
 void recurs_sel_seq(struct Sequence *seqm);
-int event_to_efftype(int event);
 int seq_effect_find_selected(struct Scene *scene, struct Sequence *activeseq, int type, struct Sequence **selseq1, struct Sequence **selseq2, struct Sequence **selseq3, const char **error_str);
 
 /* operator helpers */
@@ -124,7 +121,7 @@ void SEQUENCER_OT_rebuild_proxy(struct wmOperatorType *ot);
 void SEQUENCER_OT_view_all_preview(struct wmOperatorType *ot);
 
 /* sequencer_select.c */
-void SEQUENCER_OT_select_all_toggle(struct wmOperatorType *ot);
+void SEQUENCER_OT_select_all(struct wmOperatorType *ot);
 void SEQUENCER_OT_select(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_more(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_less(struct wmOperatorType *ot);
@@ -134,7 +131,7 @@ void SEQUENCER_OT_select_handles(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_active_side(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_border(struct wmOperatorType *ot);
 void SEQUENCER_OT_select_inverse(struct wmOperatorType *ot);
-
+void SEQUENCER_OT_select_grouped(struct wmOperatorType *ot);
 
 /* sequencer_select.c */
 void SEQUENCER_OT_scene_strip_add(struct wmOperatorType *ot);
@@ -178,5 +175,5 @@ struct ImBuf *make_histogram_view_from_ibuf(struct ImBuf * ibuf);
 void SEQUENCER_OT_properties(struct wmOperatorType *ot);
 void sequencer_buttons_register(struct ARegionType *art);
 
-#endif /* ED_SEQUENCER_INTERN_H */
+#endif /* __SEQUENCER_INTERN_H__ */
 

@@ -48,11 +48,11 @@
 #include "MEM_guardedalloc.h"
 
 #include "BKE_animsys.h"	/* <------ should this be here?, needed for sequencer update */
+#include "BKE_camera.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
-#include "BKE_object.h"
 #include "BKE_pointcache.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
@@ -61,56 +61,55 @@
 #include "BKE_writeavi.h"	/* <------ should be replaced once with generic movie module */
 
 #include "BLI_math.h"
-#include "BLI_blenlib.h"
+#include "BLI_listbase.h"
+#include "BLI_string.h"
+#include "BLI_path_util.h"
+#include "BLI_fileops.h"
 #include "BLI_rand.h"
-#include "BLI_threads.h"
 #include "BLI_callbacks.h"
-#include "BLI_utildefines.h"
 
 #include "PIL_time.h"
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
-#include "intern/openexr/openexr_multi.h"
-
+#include "RE_engine.h"
 #include "RE_pipeline.h"
 
 /* internal */
+#include "render_result.h"
 #include "render_types.h"
 #include "renderpipeline.h"
 #include "renderdatabase.h"
 #include "rendercore.h"
-#include "envmap.h"
 #include "initrender.h"
 #include "shadbuf.h"
 #include "pixelblending.h"
 #include "zbuf.h"
 
-
 /* render flow
-
-1) Initialize state
-- state data, tables
-- movie/image file init
-- everything that doesn't change during animation
-
-2) Initialize data
-- camera, world, matrices
-- make render verts, faces, halos, strands
-- everything can change per frame/field
-
-3) Render Processor
-- multiple layers
-- tiles, rect, baking
-- layers/tiles optionally to disk or directly in Render Result
-
-4) Composite Render Result
-- also read external files etc
-
-5) Image Files
-- save file or append in movie
-
-*/
+ *
+ * 1) Initialize state
+ * - state data, tables
+ * - movie/image file init
+ * - everything that doesn't change during animation
+ *
+ * 2) Initialize data
+ * - camera, world, matrices
+ * - make render verts, faces, halos, strands
+ * - everything can change per frame/field
+ *
+ * 3) Render Processor
+ * - multiple layers
+ * - tiles, rect, baking
+ * - layers/tiles optionally to disk or directly in Render Result
+ *
+ * 4) Composite Render Result
+ * - also read external files etc
+ *
+ * 5) Image Files
+ * - save file or append in movie
+ *
+ */
 
 
 /* ********* globals ******** */
@@ -128,7 +127,7 @@ Render R;
 
 /* ********* alloc and free ******** */
 
-static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, const char *name_override);
+static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override);
 
 static volatile int g_break= 0;
 static int thread_break(void *UNUSED(arg))
@@ -157,7 +156,7 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
 	megs_peak_memory = (peak_memory)/(1024.0*1024.0);
 
 	fprintf(stdout, "Fra:%d Mem:%.2fM (%.2fM, peak %.2fM) ", rs->cfra,
-				   megs_used_memory, mmap_used_memory, megs_peak_memory);
+	        megs_used_memory, mmap_used_memory, megs_peak_memory);
 
 	if(rs->curfield)
 		fprintf(stdout, "Field %d ", rs->curfield);
@@ -182,345 +181,7 @@ static void stats_background(void *UNUSED(arg), RenderStats *rs)
 
 void RE_FreeRenderResult(RenderResult *res)
 {
-	if(res==NULL) return;
-
-	while(res->layers.first) {
-		RenderLayer *rl= res->layers.first;
-		
-		if(rl->rectf) MEM_freeN(rl->rectf);
-		/* acolrect and scolrect are optionally allocated in shade_tile, only free here since it can be used for drawing */
-		if(rl->acolrect) MEM_freeN(rl->acolrect);
-		if(rl->scolrect) MEM_freeN(rl->scolrect);
-		
-		while(rl->passes.first) {
-			RenderPass *rpass= rl->passes.first;
-			if(rpass->rect) MEM_freeN(rpass->rect);
-			BLI_remlink(&rl->passes, rpass);
-			MEM_freeN(rpass);
-		}
-		BLI_remlink(&res->layers, rl);
-		MEM_freeN(rl);
-	}
-	
-	if(res->rect32)
-		MEM_freeN(res->rect32);
-	if(res->rectz)
-		MEM_freeN(res->rectz);
-	if(res->rectf)
-		MEM_freeN(res->rectf);
-	if(res->text)
-		MEM_freeN(res->text);
-	
-	MEM_freeN(res);
-}
-
-/* version that's compatible with fullsample buffers */
-static void free_render_result(ListBase *lb, RenderResult *rr)
-{
-	RenderResult *rrnext;
-	
-	for(; rr; rr= rrnext) {
-		rrnext= rr->next;
-		
-		if(lb && lb->first)
-			BLI_remlink(lb, rr);
-		
-		RE_FreeRenderResult(rr);
-	}
-}
-
-
-/* all layers except the active one get temporally pushed away */
-static void push_render_result(Render *re)
-{
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-
-	/* officially pushed result should be NULL... error can happen with do_seq */
-	RE_FreeRenderResult(re->pushedresult);
-	
-	re->pushedresult= re->result;
-	re->result= NULL;
-
-	BLI_rw_mutex_unlock(&re->resultmutex);
-}
-
-/* if scemode is R_SINGLE_LAYER, at end of rendering, merge the both render results */
-static void pop_render_result(Render *re)
-{
-	if(re->result==NULL) {
-		printf("pop render result error; no current result!\n");
-		return;
-	}
-
-	if(re->pushedresult) {
-		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-
-		if(re->pushedresult->rectx==re->result->rectx && re->pushedresult->recty==re->result->recty) {
-			/* find which layer in pushedresult should be replaced */
-			SceneRenderLayer *srl;
-			RenderLayer *rlpush;
-			RenderLayer *rl= re->result->layers.first;
-			int nr;
-			
-			/* render result should be empty after this */
-			BLI_remlink(&re->result->layers, rl);
-			
-			/* reconstruct render result layers */
-			for(nr=0, srl= re->scene->r.layers.first; srl; srl= srl->next, nr++) {
-				if(nr==re->r.actlay)
-					BLI_addtail(&re->result->layers, rl);
-				else {
-					rlpush= RE_GetRenderLayer(re->pushedresult, srl->name);
-					if(rlpush) {
-						BLI_remlink(&re->pushedresult->layers, rlpush);
-						BLI_addtail(&re->result->layers, rlpush);
-					}
-				}
-			}
-		}
-		
-		RE_FreeRenderResult(re->pushedresult);
-		re->pushedresult= NULL;
-
-		BLI_rw_mutex_unlock(&re->resultmutex);
-	}
-}
-
-/* NOTE: OpenEXR only supports 32 chars for layer+pass names
-   In blender we now use max 10 chars for pass, max 20 for layer */
-static const char *get_pass_name(int passtype, int channel)
-{
-	
-	if(passtype == SCE_PASS_COMBINED) {
-		if(channel==-1) return "Combined";
-		if(channel==0) return "Combined.R";
-		if(channel==1) return "Combined.G";
-		if(channel==2) return "Combined.B";
-		return "Combined.A";
-	}
-	if(passtype == SCE_PASS_Z) {
-		if(channel==-1) return "Depth";
-		return "Depth.Z";
-	}
-	if(passtype == SCE_PASS_VECTOR) {
-		if(channel==-1) return "Vector";
-		if(channel==0) return "Vector.X";
-		if(channel==1) return "Vector.Y";
-		if(channel==2) return "Vector.Z";
-		return "Vector.W";
-	}
-	if(passtype == SCE_PASS_NORMAL) {
-		if(channel==-1) return "Normal";
-		if(channel==0) return "Normal.X";
-		if(channel==1) return "Normal.Y";
-		return "Normal.Z";
-	}
-	if(passtype == SCE_PASS_UV) {
-		if(channel==-1) return "UV";
-		if(channel==0) return "UV.U";
-		if(channel==1) return "UV.V";
-		return "UV.A";
-	}
-	if(passtype == SCE_PASS_RGBA) {
-		if(channel==-1) return "Color";
-		if(channel==0) return "Color.R";
-		if(channel==1) return "Color.G";
-		if(channel==2) return "Color.B";
-		return "Color.A";
-	}
-	if(passtype == SCE_PASS_EMIT) {
-		if(channel==-1) return "Emit";
-		if(channel==0) return "Emit.R";
-		if(channel==1) return "Emit.G";
-		return "Emit.B";
-	}
-	if(passtype == SCE_PASS_DIFFUSE) {
-		if(channel==-1) return "Diffuse";
-		if(channel==0) return "Diffuse.R";
-		if(channel==1) return "Diffuse.G";
-		return "Diffuse.B";
-	}
-	if(passtype == SCE_PASS_SPEC) {
-		if(channel==-1) return "Spec";
-		if(channel==0) return "Spec.R";
-		if(channel==1) return "Spec.G";
-		return "Spec.B";
-	}
-	if(passtype == SCE_PASS_SHADOW) {
-		if(channel==-1) return "Shadow";
-		if(channel==0) return "Shadow.R";
-		if(channel==1) return "Shadow.G";
-		return "Shadow.B";
-	}
-	if(passtype == SCE_PASS_AO) {
-		if(channel==-1) return "AO";
-		if(channel==0) return "AO.R";
-		if(channel==1) return "AO.G";
-		return "AO.B";
-	}
-	if(passtype == SCE_PASS_ENVIRONMENT) {
-		if(channel==-1) return "Env";
-		if(channel==0) return "Env.R";
-		if(channel==1) return "Env.G";
-		return "Env.B";
-	}
-	if(passtype == SCE_PASS_INDIRECT) {
-		if(channel==-1) return "Indirect";
-		if(channel==0) return "Indirect.R";
-		if(channel==1) return "Indirect.G";
-		return "Indirect.B";
-	}
-	if(passtype == SCE_PASS_REFLECT) {
-		if(channel==-1) return "Reflect";
-		if(channel==0) return "Reflect.R";
-		if(channel==1) return "Reflect.G";
-		return "Reflect.B";
-	}
-	if(passtype == SCE_PASS_REFRACT) {
-		if(channel==-1) return "Refract";
-		if(channel==0) return "Refract.R";
-		if(channel==1) return "Refract.G";
-		return "Refract.B";
-	}
-	if(passtype == SCE_PASS_INDEXOB) {
-		if(channel==-1) return "IndexOB";
-		return "IndexOB.X";
-	}
-	if(passtype == SCE_PASS_INDEXMA) {
-		if(channel==-1) return "IndexMA";
-		return "IndexMA.X";
-	}
-	if(passtype == SCE_PASS_MIST) {
-		if(channel==-1) return "Mist";
-		return "Mist.Z";
-	}
-	if(passtype == SCE_PASS_RAYHITS)
-	{
-		if(channel==-1) return "Rayhits";
-		if(channel==0) return "Rayhits.R";
-		if(channel==1) return "Rayhits.G";
-		return "Rayhits.B";
-	}
-	return "Unknown";
-}
-
-static int passtype_from_name(char *str)
-{
-	
-	if(strcmp(str, "Combined")==0)
-		return SCE_PASS_COMBINED;
-
-	if(strcmp(str, "Depth")==0)
-		return SCE_PASS_Z;
-
-	if(strcmp(str, "Vector")==0)
-		return SCE_PASS_VECTOR;
-
-	if(strcmp(str, "Normal")==0)
-		return SCE_PASS_NORMAL;
-
-	if(strcmp(str, "UV")==0)
-		return SCE_PASS_UV;
-
-	if(strcmp(str, "Color")==0)
-		return SCE_PASS_RGBA;
-
-	if(strcmp(str, "Emit")==0)
-		return SCE_PASS_EMIT;
-
-	if(strcmp(str, "Diffuse")==0)
-		return SCE_PASS_DIFFUSE;
-
-	if(strcmp(str, "Spec")==0)
-		return SCE_PASS_SPEC;
-
-	if(strcmp(str, "Shadow")==0)
-		return SCE_PASS_SHADOW;
-	
-	if(strcmp(str, "AO")==0)
-		return SCE_PASS_AO;
-
-	if(strcmp(str, "Env")==0)
-		return SCE_PASS_ENVIRONMENT;
-
-	if(strcmp(str, "Indirect")==0)
-		return SCE_PASS_INDIRECT;
-
-	if(strcmp(str, "Reflect")==0)
-		return SCE_PASS_REFLECT;
-
-	if(strcmp(str, "Refract")==0)
-		return SCE_PASS_REFRACT;
-
-	if(strcmp(str, "IndexOB")==0)
-		return SCE_PASS_INDEXOB;
-
-	if(strcmp(str, "IndexMA")==0)
-		return SCE_PASS_INDEXMA;
-
-	if(strcmp(str, "Mist")==0)
-		return SCE_PASS_MIST;
-	
-	if(strcmp(str, "RayHits")==0)
-		return SCE_PASS_RAYHITS;
-	return 0;
-}
-
-static void scene_unique_exr_name(Scene *scene, char *str, int sample)
-{
-	char di[FILE_MAX], name[FILE_MAXFILE+MAX_ID_NAME+100], fi[FILE_MAXFILE];
-	
-	BLI_strncpy(di, G.main->name, FILE_MAX);
-	BLI_splitdirstring(di, fi);
-	
-	if(sample==0)
-		BLI_snprintf(name, sizeof(name), "%s_%s.exr", fi, scene->id.name+2);
-	else
-		BLI_snprintf(name, sizeof(name), "%s_%s%d.exr", fi, scene->id.name+2, sample);
-
-	BLI_make_file_string("/", str, btempdir, name);
-}
-
-static void render_unique_exr_name(Render *re, char *str, int sample)
-{
-	scene_unique_exr_name(re->scene, str, sample);
-}
-
-static void render_layer_add_pass(RenderResult *rr, RenderLayer *rl, int channels, int passtype)
-{
-	const char *typestr= get_pass_name(passtype, 0);
-	RenderPass *rpass= MEM_callocN(sizeof(RenderPass), typestr);
-	int rectsize= rr->rectx*rr->recty*channels;
-	
-	BLI_addtail(&rl->passes, rpass);
-	rpass->passtype= passtype;
-	rpass->channels= channels;
-	rpass->rectx= rl->rectx;
-	rpass->recty= rl->recty;
-	
-	if(rr->exrhandle) {
-		int a;
-		for(a=0; a<channels; a++)
-			IMB_exr_add_channel(rr->exrhandle, rl->name, get_pass_name(passtype, a), 0, 0, NULL);
-	}
-	else {
-		float *rect;
-		int x;
-		
-		rpass->rect= MEM_mapallocN(sizeof(float)*rectsize, typestr);
-		
-		if(passtype==SCE_PASS_VECTOR) {
-			/* initialize to max speed */
-			rect= rpass->rect;
-			for(x= rectsize-1; x>=0; x--)
-				rect[x]= PASS_VECTOR_MAX;
-		}
-		else if(passtype==SCE_PASS_Z) {
-			rect= rpass->rect;
-			for(x= rectsize-1; x>=0; x--)
-				rect[x]= 10e10;
-		}
-	}
+	render_result_free(res);
 }
 
 float *RE_RenderLayerGetPass(RenderLayer *rl, int passtype)
@@ -545,141 +206,19 @@ RenderLayer *RE_GetRenderLayer(RenderResult *rr, const char *name)
 	return NULL;
 }
 
-#define RR_USEMEM	0
-/* called by main render as well for parts */
-/* will read info from Render *re to define layers */
-/* called in threads */
-/* re->winx,winy is coordinate space of entire image, partrct the part within */
-static RenderResult *new_render_result(Render *re, rcti *partrct, int crop, int savebuffers)
+RenderResult *RE_MultilayerConvert(void *exrhandle, int rectx, int recty)
 {
-	RenderResult *rr;
-	RenderLayer *rl;
-	SceneRenderLayer *srl;
-	int rectx, recty, nr;
-	
-	rectx= partrct->xmax - partrct->xmin;
-	recty= partrct->ymax - partrct->ymin;
-	
-	if(rectx<=0 || recty<=0)
-		return NULL;
-	
-	rr= MEM_callocN(sizeof(RenderResult), "new render result");
-	rr->rectx= rectx;
-	rr->recty= recty;
-	rr->renrect.xmin= 0; rr->renrect.xmax= rectx-2*crop;
-	/* crop is one or two extra pixels rendered for filtering, is used for merging and display too */
-	rr->crop= crop;
-	
-	/* tilerect is relative coordinates within render disprect. do not subtract crop yet */
-	rr->tilerect.xmin= partrct->xmin - re->disprect.xmin;
-	rr->tilerect.xmax= partrct->xmax - re->disprect.xmax;
-	rr->tilerect.ymin= partrct->ymin - re->disprect.ymin;
-	rr->tilerect.ymax= partrct->ymax - re->disprect.ymax;
-	
-	if(savebuffers) {
-		rr->exrhandle= IMB_exr_get_handle();
-	}
-	
-	/* check renderdata for amount of layers */
-	for(nr=0, srl= re->r.layers.first; srl; srl= srl->next, nr++) {
-		
-		if((re->r.scemode & R_SINGLE_LAYER) && nr!=re->r.actlay)
-			continue;
-		if(srl->layflag & SCE_LAY_DISABLE)
-			continue;
-		
-		rl= MEM_callocN(sizeof(RenderLayer), "new render layer");
-		BLI_addtail(&rr->layers, rl);
-		
-		BLI_strncpy(rl->name, srl->name, sizeof(rl->name));
-		rl->lay= srl->lay;
-		rl->lay_zmask= srl->lay_zmask;
-		rl->layflag= srl->layflag;
-		rl->passflag= srl->passflag; // for debugging: srl->passflag|SCE_PASS_RAYHITS;
-		rl->pass_xor= srl->pass_xor;
-		rl->light_override= srl->light_override;
-		rl->mat_override= srl->mat_override;
-		rl->rectx= rectx;
-		rl->recty= recty;
-		
-		if(rr->exrhandle) {
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
-		}
-		else
-			rl->rectf= MEM_mapallocN(rectx*recty*sizeof(float)*4, "Combined rgba");
-		
-		if(srl->passflag  & SCE_PASS_Z)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_Z);
-		if(srl->passflag  & SCE_PASS_VECTOR)
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_VECTOR);
-		if(srl->passflag  & SCE_PASS_NORMAL)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_NORMAL);
-		if(srl->passflag  & SCE_PASS_UV) 
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_UV);
-		if(srl->passflag  & SCE_PASS_RGBA)
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_RGBA);
-		if(srl->passflag  & SCE_PASS_EMIT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_EMIT);
-		if(srl->passflag  & SCE_PASS_DIFFUSE)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_DIFFUSE);
-		if(srl->passflag  & SCE_PASS_SPEC)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_SPEC);
-		if(srl->passflag  & SCE_PASS_AO)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_AO);
-		if(srl->passflag  & SCE_PASS_ENVIRONMENT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_ENVIRONMENT);
-		if(srl->passflag  & SCE_PASS_INDIRECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_INDIRECT);
-		if(srl->passflag  & SCE_PASS_SHADOW)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_SHADOW);
-		if(srl->passflag  & SCE_PASS_REFLECT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_REFLECT);
-		if(srl->passflag  & SCE_PASS_REFRACT)
-			render_layer_add_pass(rr, rl, 3, SCE_PASS_REFRACT);
-		if(srl->passflag  & SCE_PASS_INDEXOB)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_INDEXOB);
-		if(srl->passflag  & SCE_PASS_INDEXMA)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_INDEXMA);
-		if(srl->passflag  & SCE_PASS_MIST)
-			render_layer_add_pass(rr, rl, 1, SCE_PASS_MIST);
-		if(rl->passflag & SCE_PASS_RAYHITS)
-			render_layer_add_pass(rr, rl, 4, SCE_PASS_RAYHITS);
-		
-	}
-	/* sss, previewrender and envmap don't do layers, so we make a default one */
-	if(rr->layers.first==NULL) {
-		rl= MEM_callocN(sizeof(RenderLayer), "new render layer");
-		BLI_addtail(&rr->layers, rl);
-		
-		rl->rectx= rectx;
-		rl->recty= recty;
+	return render_result_new_from_exr(exrhandle, rectx, recty);
+}
 
-		/* duplicate code... */
-		if(rr->exrhandle) {
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.R", 0, 0, NULL);
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.G", 0, 0, NULL);
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.B", 0, 0, NULL);
-			IMB_exr_add_channel(rr->exrhandle, rl->name, "Combined.A", 0, 0, NULL);
-		}
-		else
-			rl->rectf= MEM_mapallocN(rectx*recty*sizeof(float)*4, "Combined rgba");
-		
-		/* note, this has to be in sync with scene.c */
-		rl->lay= (1<<20) -1;
-		rl->layflag= 0x7FFF;	/* solid ztra halo strand */
-		rl->passflag= SCE_PASS_COMBINED;
-		
-		re->r.actlay= 0;
-	}
+RenderLayer *render_get_active_layer(Render *re, RenderResult *rr)
+{
+	RenderLayer *rl= BLI_findlink(&rr->layers, re->r.actlay);
 	
-	/* border render; calculate offset for use in compositor. compo is centralized coords */
-	rr->xof= re->disprect.xmin + (re->disprect.xmax - re->disprect.xmin)/2 - re->winx/2;
-	rr->yof= re->disprect.ymin + (re->disprect.ymax - re->disprect.ymin)/2 - re->winy/2;
-	
-	return rr;
+	if(rl) 
+		return rl;
+	else 
+		return rr->layers.first;
 }
 
 static int render_scene_needs_vector(Render *re)
@@ -692,344 +231,6 @@ static int render_scene_needs_vector(Render *re)
 				return 1;
 
 	return 0;
-}
-
-static void do_merge_tile(RenderResult *rr, RenderResult *rrpart, float *target, float *tile, int pixsize)
-{
-	int y, ofs, copylen, tilex, tiley;
-	
-	copylen= tilex= rrpart->rectx;
-	tiley= rrpart->recty;
-	
-	if(rrpart->crop) {	/* filters add pixel extra */
-		tile+= pixsize*(rrpart->crop + rrpart->crop*tilex);
-		
-		copylen= tilex - 2*rrpart->crop;
-		tiley -= 2*rrpart->crop;
-		
-		ofs= (rrpart->tilerect.ymin + rrpart->crop)*rr->rectx + (rrpart->tilerect.xmin+rrpart->crop);
-		target+= pixsize*ofs;
-	}
-	else {
-		ofs= (rrpart->tilerect.ymin*rr->rectx + rrpart->tilerect.xmin);
-		target+= pixsize*ofs;
-	}
-
-	copylen *= sizeof(float)*pixsize;
-	tilex *= pixsize;
-	ofs= pixsize*rr->rectx;
-
-	for(y=0; y<tiley; y++) {
-		memcpy(target, tile, copylen);
-		target+= ofs;
-		tile+= tilex;
-	}
-}
-
-/* used when rendering to a full buffer, or when reading the exr part-layer-pass file */
-/* no test happens here if it fits... we also assume layers are in sync */
-/* is used within threads */
-static void merge_render_result(RenderResult *rr, RenderResult *rrpart)
-{
-	RenderLayer *rl, *rlp;
-	RenderPass *rpass, *rpassp;
-	
-	for(rl= rr->layers.first, rlp= rrpart->layers.first; rl && rlp; rl= rl->next, rlp= rlp->next) {
-		
-		/* combined */
-		if(rl->rectf && rlp->rectf)
-			do_merge_tile(rr, rrpart, rl->rectf, rlp->rectf, 4);
-		
-		/* passes are allocated in sync */
-		for(rpass= rl->passes.first, rpassp= rlp->passes.first; rpass && rpassp; rpass= rpass->next, rpassp= rpassp->next) {
-			do_merge_tile(rr, rrpart, rpass->rect, rpassp->rect, rpass->channels);
-		}
-	}
-}
-
-
-static void save_render_result_tile(RenderResult *rr, RenderResult *rrpart)
-{
-	RenderLayer *rlp;
-	RenderPass *rpassp;
-	int offs, partx, party;
-	
-	BLI_lock_thread(LOCK_IMAGE);
-	
-	for(rlp= rrpart->layers.first; rlp; rlp= rlp->next) {
-		
-		if(rrpart->crop) {	/* filters add pixel extra */
-			offs= (rrpart->crop + rrpart->crop*rrpart->rectx);
-		}
-		else {
-			offs= 0;
-		}
-		
-		/* combined */
-		if(rlp->rectf) {
-			int a, xstride= 4;
-			for(a=0; a<xstride; a++)
-				IMB_exr_set_channel(rr->exrhandle, rlp->name, get_pass_name(SCE_PASS_COMBINED, a), 
-								xstride, xstride*rrpart->rectx, rlp->rectf+a + xstride*offs);
-		}
-		
-		/* passes are allocated in sync */
-		for(rpassp= rlp->passes.first; rpassp; rpassp= rpassp->next) {
-			int a, xstride= rpassp->channels;
-			for(a=0; a<xstride; a++)
-				IMB_exr_set_channel(rr->exrhandle, rlp->name, get_pass_name(rpassp->passtype, a), 
-									xstride, xstride*rrpart->rectx, rpassp->rect+a + xstride*offs);
-		}
-		
-	}
-
-	party= rrpart->tilerect.ymin + rrpart->crop;
-	partx= rrpart->tilerect.xmin + rrpart->crop;
-	IMB_exrtile_write_channels(rr->exrhandle, partx, party, 0);
-
-	BLI_unlock_thread(LOCK_IMAGE);
-
-}
-
-static void save_empty_result_tiles(Render *re)
-{
-	RenderPart *pa;
-	RenderResult *rr;
-	
-	for(rr= re->result; rr; rr= rr->next) {
-		IMB_exrtile_clear_channels(rr->exrhandle);
-		
-		for(pa= re->parts.first; pa; pa= pa->next) {
-			if(pa->ready==0) {
-				int party= pa->disprect.ymin - re->disprect.ymin + pa->crop;
-				int partx= pa->disprect.xmin - re->disprect.xmin + pa->crop;
-				IMB_exrtile_write_channels(rr->exrhandle, partx, party, 0);
-			}
-		}
-	}
-}
-
-
-/* for passes read from files, these have names stored */
-static char *make_pass_name(RenderPass *rpass, int chan)
-{
-	static char name[16];
-	int len;
-	
-	BLI_strncpy(name, rpass->name, EXR_PASS_MAXNAME);
-	len= strlen(name);
-	name[len]= '.';
-	name[len+1]= rpass->chan_id[chan];
-	name[len+2]= 0;
-
-	return name;
-}
-
-/* filename already made absolute */
-/* called from within UI, saves both rendered result as a file-read result */
-int RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *filename, int compress)
-{
-	RenderLayer *rl;
-	RenderPass *rpass;
-	void *exrhandle= IMB_exr_get_handle();
-	int success;
-
-	BLI_make_existing_file(filename);
-	
-	/* composite result */
-	if(rr->rectf) {
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.R", 4, 4*rr->rectx, rr->rectf);
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.G", 4, 4*rr->rectx, rr->rectf+1);
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.B", 4, 4*rr->rectx, rr->rectf+2);
-		IMB_exr_add_channel(exrhandle, "Composite", "Combined.A", 4, 4*rr->rectx, rr->rectf+3);
-	}
-	
-	/* add layers/passes and assign channels */
-	for(rl= rr->layers.first; rl; rl= rl->next) {
-		
-		/* combined */
-		if(rl->rectf) {
-			int a, xstride= 4;
-			for(a=0; a<xstride; a++)
-				IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, a), 
-									xstride, xstride*rr->rectx, rl->rectf+a);
-		}
-		
-		/* passes are allocated in sync */
-		for(rpass= rl->passes.first; rpass; rpass= rpass->next) {
-			int a, xstride= rpass->channels;
-			for(a=0; a<xstride; a++) {
-				if(rpass->passtype)
-					IMB_exr_add_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a), 
-										xstride, xstride*rr->rectx, rpass->rect+a);
-				else
-					IMB_exr_add_channel(exrhandle, rl->name, make_pass_name(rpass, a), 
-										xstride, xstride*rr->rectx, rpass->rect+a);
-			}
-		}
-	}
-
-	/* when the filename has no permissions, this can fail */
-	if(IMB_exr_begin_write(exrhandle, filename, rr->rectx, rr->recty, compress)) {
-		IMB_exr_write_channels(exrhandle);
-		success= TRUE;
-	}
-	else {
-		/* TODO, get the error from openexr's exception */
-		BKE_report(reports, RPT_ERROR, "Error Writing Render Result, see console");
-		success= FALSE;
-	}
-	IMB_exr_close(exrhandle);
-
-	return success;
-}
-
-/* callbacks for RE_MultilayerConvert */
-static void *ml_addlayer_cb(void *base, char *str)
-{
-	RenderResult *rr= base;
-	RenderLayer *rl;
-	
-	rl= MEM_callocN(sizeof(RenderLayer), "new render layer");
-	BLI_addtail(&rr->layers, rl);
-	
-	BLI_strncpy(rl->name, str, EXR_LAY_MAXNAME);
-	return rl;
-}
-static void ml_addpass_cb(void *UNUSED(base), void *lay, char *str, float *rect, int totchan, char *chan_id)
-{
-	RenderLayer *rl= lay;	
-	RenderPass *rpass= MEM_callocN(sizeof(RenderPass), "loaded pass");
-	int a;
-	
-	BLI_addtail(&rl->passes, rpass);
-	rpass->channels= totchan;
-
-	rpass->passtype= passtype_from_name(str);
-	if(rpass->passtype==0) printf("unknown pass %s\n", str);
-	rl->passflag |= rpass->passtype;
-	
-	BLI_strncpy(rpass->name, str, EXR_PASS_MAXNAME);
-	/* channel id chars */
-	for(a=0; a<totchan; a++)
-		rpass->chan_id[a]= chan_id[a];
-	
-	rpass->rect= rect;
-}
-
-/* from imbuf, if a handle was returned we convert this to render result */
-RenderResult *RE_MultilayerConvert(void *exrhandle, int rectx, int recty)
-{
-	RenderResult *rr= MEM_callocN(sizeof(RenderResult), "loaded render result");
-	RenderLayer *rl;
-	RenderPass *rpass;
-	
-	rr->rectx= rectx;
-	rr->recty= recty;
-	
-	IMB_exr_multilayer_convert(exrhandle, rr, ml_addlayer_cb, ml_addpass_cb);
-
-	for(rl=rr->layers.first; rl; rl=rl->next) {
-		rl->rectx= rectx;
-		rl->recty= recty;
-
-		for(rpass=rl->passes.first; rpass; rpass=rpass->next) {
-			rpass->rectx= rectx;
-			rpass->recty= recty;
-		}
-	}
-	
-	return rr;
-}
-
-/* called in end of render, to add names to passes... for UI only */
-static void renderresult_add_names(RenderResult *rr)
-{
-	RenderLayer *rl;
-	RenderPass *rpass;
-	
-	for(rl= rr->layers.first; rl; rl= rl->next)
-		for(rpass= rl->passes.first; rpass; rpass= rpass->next)
-			BLI_strncpy(rpass->name, get_pass_name(rpass->passtype, -1), sizeof(rpass->name));
-}
-
-/* called for reading temp files, and for external engines */
-static int read_render_result_from_file(const char *filename, RenderResult *rr)
-{
-	RenderLayer *rl;
-	RenderPass *rpass;
-	void *exrhandle= IMB_exr_get_handle();
-	int rectx, recty;
-
-	if(IMB_exr_begin_read(exrhandle, filename, &rectx, &recty)==0) {
-		printf("failed being read %s\n", filename);
-		IMB_exr_close(exrhandle);
-		return 0;
-	}
-
-	if(rr == NULL || rectx!=rr->rectx || recty!=rr->recty) {
-		if(rr)
-			printf("error in reading render result: dimensions don't match\n");
-		else
-			printf("error in reading render result: NULL result pointer\n");
-		IMB_exr_close(exrhandle);
-		return 0;
-	}
-	else {
-		for(rl= rr->layers.first; rl; rl= rl->next) {
-			
-			/* combined */
-			if(rl->rectf) {
-				int a, xstride= 4;
-				for(a=0; a<xstride; a++)
-					IMB_exr_set_channel(exrhandle, rl->name, get_pass_name(SCE_PASS_COMBINED, a), 
-										xstride, xstride*rectx, rl->rectf+a);
-			}
-			
-			/* passes are allocated in sync */
-			for(rpass= rl->passes.first; rpass; rpass= rpass->next) {
-				int a, xstride= rpass->channels;
-				for(a=0; a<xstride; a++)
-					IMB_exr_set_channel(exrhandle, rl->name, get_pass_name(rpass->passtype, a), 
-										xstride, xstride*rectx, rpass->rect+a);
-			}
-			
-		}
-		IMB_exr_read_channels(exrhandle);
-		renderresult_add_names(rr);
-	}
-	
-	IMB_exr_close(exrhandle);
-
-	return 1;
-}
-
-/* only for temp buffer files, makes exact copy of render result */
-static int read_render_result(Render *re, int sample)
-{
-	char str[FILE_MAX];
-	int success;
-
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-
-	RE_FreeRenderResult(re->result);
-	re->result= new_render_result(re, &re->disprect, 0, RR_USEMEM);
-
-	render_unique_exr_name(re, str, sample);
-	printf("read exr tmp file: %s\n", str);
-
-	if(read_render_result_from_file(str, re->result)) {
-		success= TRUE;
-	}
-	else {
-		printf("cannot read: %s\n", str);
-		success= FALSE;
-
-	}
-
-	BLI_rw_mutex_unlock(&re->resultmutex);
-
-	return success;
 }
 
 /* *************************************************** */
@@ -1090,17 +291,6 @@ Scene *RE_GetScene(Render *re)
 	return NULL;
 }
 
-RenderLayer *render_get_active_layer(Render *re, RenderResult *rr)
-{
-	RenderLayer *rl= BLI_findlink(&rr->layers, re->r.actlay);
-	
-	if(rl) 
-		return rl;
-	else 
-		return rr->layers.first;
-}
-
-
 /* fill provided result struct with what's currently active or done */
 void RE_AcquireResultImage(Render *re, RenderResult *rr)
 {
@@ -1147,38 +337,7 @@ void RE_ResultGet32(Render *re, unsigned int *rect)
 	RenderResult rres;
 	
 	RE_AcquireResultImage(re, &rres);
-
-	if(rres.rect32) 
-		memcpy(rect, rres.rect32, sizeof(int)*rres.rectx*rres.recty);
-	else if(rres.rectf) {
-		float *fp= rres.rectf;
-		int tot= rres.rectx*rres.recty;
-		char *cp= (char *)rect;
-		
-		if (re->r.color_mgt_flag & R_COLOR_MANAGEMENT) {
-			/* Finally convert back to sRGB rendered image */ 
-			for(;tot>0; tot--, cp+=4, fp+=4) {
-				cp[0] = FTOCHAR(linearrgb_to_srgb(fp[0]));
-				cp[1] = FTOCHAR(linearrgb_to_srgb(fp[1]));
-				cp[2] = FTOCHAR(linearrgb_to_srgb(fp[2]));
-				cp[3] = FTOCHAR(fp[3]);
-			}
-		}
-		else {
-			/* Color management is off : no conversion necessary */
-			for(;tot>0; tot--, cp+=4, fp+=4) {
-				cp[0] = FTOCHAR(fp[0]);
-				cp[1] = FTOCHAR(fp[1]);
-				cp[2] = FTOCHAR(fp[2]);
-				cp[3] = FTOCHAR(fp[3]);
-			}
-		}
-
-	}
-	else
-		/* else fill with black */
-		memset(rect, 0, sizeof(int)*re->rectx*re->recty);
-
+	render_result_rect_get_pixels(&rres, &re->r, rect, re->rectx, re->recty);
 	RE_ReleaseResultImage(re);
 }
 
@@ -1198,7 +357,7 @@ Render *RE_NewRender(const char *name)
 		/* new render data struct */
 		re= MEM_callocN(sizeof(Render), "new render");
 		BLI_addtail(&RenderGlobal.renderlist, re);
-		strncpy(re->name, name, RE_MAXNAME);
+		BLI_strncpy(re->name, name, RE_MAXNAME);
 		BLI_rw_mutex_init(&re->resultmutex);
 	}
 	
@@ -1211,7 +370,7 @@ Render *RE_NewRender(const char *name)
 }
 
 /* called for new renders and when finishing rendering so
- * we calways have valid callbacks on a render */
+ * we always have valid callbacks on a render */
 void RE_InitRenderCB(Render *re)
 {
 	/* set default empty callbacks */
@@ -1236,8 +395,8 @@ void RE_FreeRender(Render *re)
 	free_renderdata_tables(re);
 	free_sample_tables(re);
 	
-	RE_FreeRenderResult(re->result);
-	RE_FreeRenderResult(re->pushedresult);
+	render_result_free(re->result);
+	render_result_free(re->pushedresult);
 	
 	BLI_remlink(&RenderGlobal.renderlist, re);
 	MEM_freeN(re);
@@ -1278,7 +437,7 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 		re->recty= winy;
 	}
 	
-	if(re->rectx < 2 || re->recty < 2 || (BKE_imtype_is_movie(rd->imtype) &&
+	if(re->rectx < 2 || re->recty < 2 || (BKE_imtype_is_movie(rd->im_format.imtype) &&
 										  (re->rectx < 16 || re->recty < 16) )) {
 		BKE_report(re->reports, RPT_ERROR, "Image too small");
 		re->ok= 0;
@@ -1293,8 +452,7 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 		re->r.scemode |= R_EXR_TILE_FILE;	/* enable automatic */
 
 	/* Until use_border is made compatible with save_buffers/full_sample, render without the later instead of not rendering at all.*/
-	if(re->r.mode & R_BORDER) 
-	{
+	if (re->r.mode & R_BORDER) {
 		re->r.scemode &= ~(R_EXR_TILE_FILE|R_FULL_SAMPLE);
 	}
 
@@ -1337,14 +495,14 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 	if(re->r.scemode & R_PREVIEWBUTS) {
 		if(re->result && re->result->rectx==re->rectx && re->result->recty==re->recty);
 		else {
-			RE_FreeRenderResult(re->result);
+			render_result_free(re->result);
 			re->result= NULL;
 		}
 	}
 	else {
 		
 		/* make empty render result, so display callbacks can initialize */
-		RE_FreeRenderResult(re->result);
+		render_result_free(re->result);
 		re->result= MEM_callocN(sizeof(RenderResult), "new render result");
 		re->result->rectx= re->rectx;
 		re->result->recty= re->recty;
@@ -1358,22 +516,6 @@ void RE_InitState(Render *re, Render *source, RenderData *rd, SceneRenderLayer *
 	re->mblur_offs = re->field_offs = 0.f;
 	
 	RE_init_threadcount(re);
-}
-
-/* part of external api, not called for regular render pipeline */
-void RE_SetDispRect (struct Render *re, rcti *disprect)
-{
-	re->disprect= *disprect;
-	re->rectx= disprect->xmax-disprect->xmin;
-	re->recty= disprect->ymax-disprect->ymin;
-	
-	/* initialize render result */
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-
-	RE_FreeRenderResult(re->result);
-	re->result= new_render_result(re, &re->disprect, 0, RR_USEMEM);
-
-	BLI_rw_mutex_unlock(&re->resultmutex);
 }
 
 void RE_SetWindow(Render *re, rctf *viewplane, float clipsta, float clipend)
@@ -1452,10 +594,12 @@ void RE_test_break_cb(Render *re, void *handle, int (*f)(void *handle))
 
 /* object is considered fully prepared on correct time etc */
 /* includes lights */
+#if 0
 void RE_AddObject(Render *UNUSED(re), Object *UNUSED(ob))
 {
 	
 }
+#endif
 
 /* *************************************** */
 
@@ -1468,24 +612,6 @@ static int render_display_draw_enabled(Render *re)
 		return 1;
 }
 
-/* allocate osa new results for samples */
-static RenderResult *new_full_sample_buffers(Render *re, ListBase *lb, rcti *partrct, int crop)
-{
-	int a;
-	
-	if(re->osa==0)
-		return new_render_result(re, partrct, crop, RR_USEMEM);
-	
-	for(a=0; a<re->osa; a++) {
-		RenderResult *rr= new_render_result(re, partrct, crop, RR_USEMEM);
-		BLI_addtail(lb, rr);
-		rr->sample_nr= a;
-	}
-	
-	return lb->first;
-}
-
-
 /* the main thread call, renders an entire part */
 static void *do_part_thread(void *pa_v)
 {
@@ -1495,9 +621,9 @@ static void *do_part_thread(void *pa_v)
 	if(R.test_break(R.tbh)==0) {
 		
 		if(!R.sss_points && (R.r.scemode & R_FULL_SAMPLE))
-			pa->result= new_full_sample_buffers(&R, &pa->fullresult, &pa->disprect, pa->crop);
+			pa->result= render_result_new_full_sample(&R, &pa->fullresult, &pa->disprect, pa->crop, RR_USE_MEM);
 		else
-			pa->result= new_render_result(&R, &pa->disprect, pa->crop, RR_USEMEM);
+			pa->result= render_result_new(&R, &pa->disprect, pa->crop, RR_USE_MEM);
 
 		if(R.sss_points)
 			zbufshade_sss_tile(pa);
@@ -1508,16 +634,12 @@ static void *do_part_thread(void *pa_v)
 		
 		/* merge too on break! */
 		if(R.result->exrhandle) {
-			RenderResult *rr, *rrpart;
-			
-			for(rr= R.result, rrpart= pa->result; rr && rrpart; rr= rr->next, rrpart= rrpart->next)
-				save_render_result_tile(rr, rrpart);
-			
+			render_result_exr_file_merge(R.result, pa->result);
 		}
 		else if(render_display_draw_enabled(&R)) {
 			/* on break, don't merge in result for preview renders, looks nicer */
 			if(R.test_break(R.tbh) && (R.r.scemode & R_PREVIEWBUTS));
-			else merge_render_result(R.result, pa->result);
+			else render_result_merge(R.result, pa->result);
 		}
 	}
 	
@@ -1641,20 +763,6 @@ static void print_part_stats(Render *re, RenderPart *pa)
 	re->i.infostr= NULL;
 }
 
-/* make osa new results for samples */
-static RenderResult *new_full_sample_buffers_exr(Render *re)
-{
-	int a;
-	
-	for(a=0; a<re->osa; a++) {
-		RenderResult *rr= new_render_result(re, &re->disprect, 0, 1);
-		BLI_addtail(&re->fullresult, rr);
-		rr->sample_nr= a;
-	}
-	
-	return re->fullresult.first;
-}
-
 static void threaded_tile_processor(Render *re)
 {
 	ListBase threads;
@@ -1666,14 +774,15 @@ static void threaded_tile_processor(Render *re)
 
 	/* first step; free the entire render result, make new, and/or prepare exr buffer saving */
 	if(re->result==NULL || !(re->r.scemode & R_PREVIEWBUTS)) {
-		RE_FreeRenderResult(re->result);
+		render_result_free(re->result);
 	
 		if(re->sss_points && render_display_draw_enabled(re))
-			re->result= new_render_result(re, &re->disprect, 0, 0);
+			re->result= render_result_new(re, &re->disprect, 0, RR_USE_MEM);
 		else if(re->r.scemode & R_FULL_SAMPLE)
-			re->result= new_full_sample_buffers_exr(re);
+			re->result= render_result_new_full_sample(re, &re->fullresult, &re->disprect, 0, RR_USE_EXR);
 		else
-			re->result= new_render_result(re, &re->disprect, 0, re->r.scemode & (R_EXR_TILE_FILE|R_FULL_SAMPLE));
+			re->result= render_result_new(re, &re->disprect, 0,
+				(re->r.scemode & R_EXR_TILE_FILE)? RR_USE_EXR: RR_USE_MEM);
 	}
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
@@ -1685,17 +794,8 @@ static void threaded_tile_processor(Render *re)
 	
 	initparts(re);
 
-	if(re->result->exrhandle) {
-		RenderResult *rr;
-		char str[FILE_MAX];
-		
-		for(rr= re->result; rr; rr= rr->next) {
-			render_unique_exr_name(re, str, rr->sample_nr);
-		
-			printf("write exr tmp file, %dx%d, %s\n", rr->rectx, rr->recty, str);
-			IMB_exrtile_begin_write(rr->exrhandle, str, 0, rr->rectx, rr->recty, re->partx, re->party);
-		}
-	}
+	if(re->result->exrhandle)
+		render_result_exr_file_begin(re);
 	
 	BLI_init_threads(&threads, do_part_thread, re->r.threads);
 	
@@ -1749,7 +849,7 @@ static void threaded_tile_processor(Render *re)
 						re->display_draw(re->ddh, pa->result, NULL);
 					print_part_stats(re, pa);
 					
-					free_render_result(&pa->fullresult, pa->result);
+					render_result_free_list(&pa->fullresult, pa->result);
 					pa->result= NULL;
 					re->i.partsdone++;
 					re->progress(re->prh, re->i.partsdone / (float)re->i.totpart);
@@ -1775,22 +875,9 @@ static void threaded_tile_processor(Render *re)
 	}
 	
 	if(re->result->exrhandle) {
-		RenderResult *rr;
-
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-		save_empty_result_tiles(re);
-		
-		for(rr= re->result; rr; rr= rr->next) {
-			IMB_exr_close(rr->exrhandle);
-			rr->exrhandle= NULL;
-		}
-		
-		free_render_result(&re->fullresult, re->result);
-		re->result= NULL;
-
+		render_result_exr_file_end(re);
 		BLI_rw_mutex_unlock(&re->resultmutex);
-		
-		read_render_result(re, 0);
 	}
 	
 	/* unset threadsafety */
@@ -1809,12 +896,10 @@ void RE_TileProcessor(Render *re)
 
 /* ************  This part uses API, for rendering Blender scenes ********** */
 
-static int external_render_3d(Render *re, int do_all);
-
 static void do_render_3d(Render *re)
 {
 	/* try external */
-	if(external_render_3d(re, 0))
+	if(RE_engine_render(re, 0))
 		return;
 
 	/* internal */
@@ -1830,7 +915,7 @@ static void do_render_3d(Render *re)
 	if(render_scene_needs_vector(re))
 		RE_Database_FromScene_Vectors(re, re->main, re->scene, re->lay);
 	else
-	   RE_Database_FromScene(re, re->main, re->scene, re->lay, 1);
+		RE_Database_FromScene(re, re->main, re->scene, re->lay, 1);
 	
 	/* clear UI drawing locks */
 	if(re->draw_lock)
@@ -1942,7 +1027,7 @@ static void do_render_blur_3d(Render *re)
 	int blur= re->r.mblur_samples;
 	
 	/* create accumulation render result */
-	rres= new_render_result(re, &re->disprect, 0, RR_USEMEM);
+	rres= render_result_new(re, &re->disprect, 0, RR_USE_MEM);
 	
 	/* do the blur steps */
 	while(blur--) {
@@ -1960,7 +1045,7 @@ static void do_render_blur_3d(Render *re)
 	
 	/* swap results */
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	RE_FreeRenderResult(re->result);
+	render_result_free(re->result);
 	re->result= rres;
 	BLI_rw_mutex_unlock(&re->resultmutex);
 	
@@ -2067,7 +1152,7 @@ static void do_render_fields_3d(Render *re)
 	re->disprect.ymax *= 2;
 
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	re->result= new_render_result(re, &re->disprect, 0, RR_USEMEM);
+	re->result= render_result_new(re, &re->disprect, 0, RR_USE_MEM);
 
 	if(rr2) {
 		if(re->r.mode & R_ODDFIELD)
@@ -2075,10 +1160,10 @@ static void do_render_fields_3d(Render *re)
 		else
 			merge_renderresult_fields(re->result, rr1, rr2);
 		
-		RE_FreeRenderResult(rr2);
+		render_result_free(rr2);
 	}
 
-	RE_FreeRenderResult(rr1);
+	render_result_free(rr1);
 	
 	re->i.curfield= 0;	/* stats */
 	
@@ -2130,10 +1215,10 @@ static void do_render_fields_blur_3d(Render *re)
 				re->rectx= re->winx;
 				re->recty= re->winy;
 				
-				rres= new_render_result(re, &re->disprect, 0, RR_USEMEM);
+				rres= render_result_new(re, &re->disprect, 0, RR_USE_MEM);
 				
-				merge_render_result(rres, re->result);
-				RE_FreeRenderResult(re->result);
+				render_result_merge(rres, re->result);
+				render_result_free(re->result);
 				re->result= rres;
 				
 				/* weak... the display callback wants an active renderlayer pointer... */
@@ -2155,8 +1240,8 @@ static void do_render_fields_blur_3d(Render *re)
 
 
 /* within context of current Render *re, render another scene.
-   it uses current render image size and disprect, but doesn't execute composite
-*/
+ * it uses current render image size and disprect, but doesn't execute composite
+ */
 static void render_scene(Render *re, Scene *sce, int cfra)
 {
 	Render *resc= RE_NewRender(sce->id.name);
@@ -2259,7 +1344,7 @@ static void ntree_render_scenes(Render *re)
 					restore_scene= (scene != re->scene);
 					node->id->flag &= ~LIB_DOIT;
 					
-					NodeTagChanged(re->scene->nodetree, node);
+					nodeUpdate(re->scene->nodetree, node);
 				}
 			}
 		}
@@ -2316,8 +1401,11 @@ static void do_merge_fullsample(Render *re, bNodeTree *ntree)
 		for(re1= RenderGlobal.renderlist.first; re1; re1= re1->next) {
 			if(re1->scene->id.flag & LIB_DOIT) {
 				if(re1->r.scemode & R_FULL_SAMPLE) {
-					if(sample)
-						read_render_result(re1, sample);
+					if(sample) {
+						BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+						render_result_exr_file_read(re1, sample);
+						BLI_rw_mutex_unlock(&re->resultmutex);
+					}
 					ntreeCompositTagRender(re1->scene); /* ensure node gets exec to put buffers on stack */
 				}
 			}
@@ -2446,8 +1534,8 @@ static void do_render_composite_fields_blur_3d(Render *re)
 		/* ensure new result gets added, like for regular renders */
 		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 		
-		RE_FreeRenderResult(re->result);
-		re->result= new_render_result(re, &re->disprect, 0, RR_USEMEM);
+		render_result_free(re->result);
+		re->result= render_result_new(re, &re->disprect, 0, RR_USE_MEM);
 
 		BLI_rw_mutex_unlock(&re->resultmutex);
 		
@@ -2456,8 +1544,11 @@ static void do_render_composite_fields_blur_3d(Render *re)
 	}
 	
 	/* swap render result */
-	if(re->r.scemode & R_SINGLE_LAYER)
-		pop_render_result(re);
+	if(re->r.scemode & R_SINGLE_LAYER) {
+		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+		render_result_single_layer_end(re);
+		BLI_rw_mutex_unlock(&re->resultmutex);
+	}
 	
 	if(!re->test_break(re->tbh)) {
 		
@@ -2466,7 +1557,7 @@ static void do_render_composite_fields_blur_3d(Render *re)
 			ntreeCompositTagAnimated(ntree);
 		}
 		
-		if(ntree && re->r.scemode & R_DOCOMP) {
+		if(ntree && re->scene->use_nodes && re->r.scemode & R_DOCOMP) {
 			/* checks if there are render-result nodes that need scene */
 			if((re->r.scemode & R_SINGLE_LAYER)==0)
 				ntree_render_scenes(re);
@@ -2517,14 +1608,14 @@ static void renderresult_stampinfo(Render *re)
 	RE_ReleaseResultImage(re);
 }
 
-static int seq_render_active(Render *re)
+int RE_seq_render_active(Scene *scene, RenderData *rd)
 {
 	Editing *ed;
 	Sequence *seq;
 
-	ed = re->scene->ed;
+	ed = scene->ed;
 	
-	if (!(re->r.scemode & R_DOSEQ) || !ed || !ed->seqbase.first)
+	if (!(rd->scemode & R_DOSEQ) || !ed || !ed->seqbase.first)
 		return 0;
 	
 	for (seq= ed->seqbase.first; seq; seq= seq->next) {
@@ -2546,15 +1637,23 @@ static void do_render_seq(Render * re)
 	re->i.cfra= cfra;
 
 	if(recurs_depth==0) {
-		/* otherwise sequencer animation isnt updated */
+		/* otherwise sequencer animation isn't updated */
 		BKE_animsys_evaluate_all_animation(re->main, re->scene, (float)cfra); // XXX, was BKE_curframe(re->scene)
 	}
 
 	recurs_depth++;
 
-	context = seq_new_render_data(re->main, re->scene,
-				      re->result->rectx, re->result->recty, 
-				      100);
+	if((re->r.mode & R_BORDER) && (re->r.mode & R_CROP)==0) {
+		/* if border rendering is used and cropping is disabled, final buffer should
+		 * be as large as the whole frame */
+		context = seq_new_render_data(re->main, re->scene,
+					      re->winx, re->winy,
+					      100);
+	} else {
+		context = seq_new_render_data(re->main, re->scene,
+					      re->result->rectx, re->result->recty,
+					      100);
+	}
 
 	ibuf = give_ibuf_seq(context, cfra, 0);
 
@@ -2565,73 +1664,31 @@ static void do_render_seq(Render * re)
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 
 	if(ibuf) {
-		if(ibuf->rect_float) {
-			if (!rr->rectf)
-				rr->rectf= MEM_mallocN(4*sizeof(float)*rr->rectx*rr->recty, "render_seq rectf");
-			
-			/* color management: when off ensure rectf is non-lin, since thats what the internal
-			 * render engine delivers */
-			if(re->r.color_mgt_flag & R_COLOR_MANAGEMENT) {
-				if(ibuf->profile == IB_PROFILE_LINEAR_RGB)
-					memcpy(rr->rectf, ibuf->rect_float, 4*sizeof(float)*rr->rectx*rr->recty);
-				else
-					srgb_to_linearrgb_rgba_rgba_buf(rr->rectf, ibuf->rect_float, rr->rectx*rr->recty);
-					
-			}
-			else {
-				if(ibuf->profile != IB_PROFILE_LINEAR_RGB)
-					memcpy(rr->rectf, ibuf->rect_float, 4*sizeof(float)*rr->rectx*rr->recty);
-				else
-					linearrgb_to_srgb_rgba_rgba_buf(rr->rectf, ibuf->rect_float, rr->rectx*rr->recty);
-			}
-			
-			/* TSK! Since sequence render doesn't free the *rr render result, the old rect32
-			   can hang around when sequence render has rendered a 32 bits one before */
-			if(rr->rect32) {
-				MEM_freeN(rr->rect32);
-				rr->rect32= NULL;
-			}
-		}
-		else if(ibuf->rect) {
-			if (!rr->rect32)
-				rr->rect32= MEM_mallocN(sizeof(int)*rr->rectx*rr->recty, "render_seq rect");
-
-			memcpy(rr->rect32, ibuf->rect, 4*rr->rectx*rr->recty);
-
-			/* if (ibuf->zbuf) { */
-			/* 	if (R.rectz) freeN(R.rectz); */
-			/* 	R.rectz = BLI_dupallocN(ibuf->zbuf); */
-			/* } */
-
-			/* Same things as above, old rectf can hang around from previous render. */
-			if(rr->rectf) {
-				MEM_freeN(rr->rectf);
-				rr->rectf= NULL;
-			}
-		}
+		/* copy ibuf into combined pixel rect */
+		render_result_rect_from_ibuf(rr, &re->r, ibuf);
 		
 		if (recurs_depth == 0) { /* with nested scenes, only free on toplevel... */
 			Editing * ed = re->scene->ed;
-			if (ed) {
+			if (ed)
 				free_imbuf_seq(re->scene, &ed->seqbase, TRUE, TRUE);
-			}
 		}
 		IMB_freeImBuf(ibuf);
 	}
 	else {
 		/* render result is delivered empty in most cases, nevertheless we handle all cases */
-		if (rr->rectf)
-			memset(rr->rectf, 0, 4*sizeof(float)*rr->rectx*rr->recty);
-		else if (rr->rect32)
-			memset(rr->rect32, 0, 4*rr->rectx*rr->recty);
-		else
-			rr->rect32= MEM_callocN(sizeof(int)*rr->rectx*rr->recty, "render_seq rect");
+		render_result_rect_fill_zero(rr);
 	}
 
 	BLI_rw_mutex_unlock(&re->resultmutex);
 
 	/* just in case this flag went missing at some point */
 	re->r.scemode |= R_DOSEQ;
+
+	/* set overall progress of sequence rendering */
+	if(re->r.efra!=re->r.sfra)
+		re->progress(re->prh, (float)(cfra-re->r.sfra) / (re->r.efra-re->r.sfra));
+	else
+		re->progress(re->prh, 1.0f);
 }
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -2646,10 +1703,10 @@ static void do_render_all_options(Render *re)
 	/* ensure no images are in memory from previous animated sequences */
 	BKE_image_all_free_anim_ibufs(re->r.cfra);
 
-	if(external_render_3d(re, 1)) {
+	if(RE_engine_render(re, 1)) {
 		/* in this case external render overrides all */
 	}
-	else if(seq_render_active(re)) {
+	else if(RE_seq_render_active(re->scene, &re->r)) {
 		/* note: do_render_seq() frees rect32 when sequencer returns float images */
 		if(!re->test_break(re->tbh)) 
 			do_render_seq(re);
@@ -2660,11 +1717,6 @@ static void do_render_all_options(Render *re)
 	else {
 		do_render_composite_fields_blur_3d(re);
 	}
-	
-	/* for UI only */
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	renderresult_add_names(re->result);
-	BLI_rw_mutex_unlock(&re->resultmutex);
 	
 	re->i.lastframetime= PIL_check_seconds_timer()- re->i.starttime;
 	
@@ -2691,7 +1743,7 @@ static int check_valid_camera(Scene *scene, Object *camera_override)
 			check_comp= 0;
 
 			while(seq) {
-				if(seq->type == SEQ_SCENE) {
+				if(seq->type == SEQ_SCENE && seq->scene) {
 					if(!seq->scene_camera) {
 						if(!seq->scene->camera && !scene_find_camera(seq->scene)) {
 							if(seq->scene == scene) {
@@ -2749,9 +1801,9 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 	if(scene->r.scemode & (R_EXR_TILE_FILE|R_FULL_SAMPLE)) {
 		char str[FILE_MAX];
 		
-		scene_unique_exr_name(scene, str, 0);
+		render_result_exr_file_path(scene, 0, str);
 		
-		if (BLI_is_writable(str)==0) {
+		if (BLI_file_is_writable(str)==0) {
 			BKE_report(reports, RPT_ERROR, "Can not save render buffers, check the temp default path");
 			return 0;
 		}
@@ -2825,12 +1877,6 @@ int RE_is_rendering_allowed(Scene *scene, Object *camera_override, ReportList *r
 		BKE_report(reports, RPT_ERROR, "All RenderLayers are disabled");
 		return 0;
 	}
-	
-	/* renderer */
-	if(!ELEM(scene->r.renderer, R_INTERN, R_YAFRAY)) {
-		BKE_report(reports, RPT_ERROR, "Unknown render engine set");
-		return 0;
-	}
 
 	return 1;
 }
@@ -2842,6 +1888,12 @@ static void validate_render_settings(Render *re)
 		if(re->r.osa==0)
 			re->r.scemode &= ~R_FULL_SAMPLE;
 	} else re->r.scemode &= ~R_FULL_SAMPLE;	/* clear to be sure */
+
+	if(RE_engine_is_external(re)) {
+		/* not supported yet */
+		re->r.scemode &= ~(R_EXR_TILE_FILE|R_FULL_SAMPLE);
+		re->r.mode &= ~(R_FIELDS|R_MBLUR);
+	}
 }
 
 static void update_physics_cache(Render *re, Scene *scene, int UNUSED(anim_init))
@@ -2868,7 +1920,7 @@ static int render_initialize_from_main(Render *re, Main *bmain, Scene *scene, Sc
 	rcti disprect;
 	
 	/* r.xsch and r.ysch has the actual view window size
-		r.border is the clipping rect */
+	 * r.border is the clipping rect */
 	
 	/* calculate actual render result and display size */
 	winx= (scene->r.size*scene->r.xsch)/100;
@@ -2906,14 +1958,17 @@ static int render_initialize_from_main(Render *re, Main *bmain, Scene *scene, Sc
 	 * Disabled completely for now,
 	 * can be later set as render profile option
 	 * and default for background render.
-	*/
+	 */
 	if(0) {
 		/* make sure dynamics are up to date */
 		update_physics_cache(re, scene, anim_init);
 	}
 	
-	if(srl || scene->r.scemode & R_SINGLE_LAYER)
-		push_render_result(re);
+	if(srl || scene->r.scemode & R_SINGLE_LAYER) {
+		BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+		render_result_single_layer_begin(re);
+		BLI_rw_mutex_unlock(&re->resultmutex);
+	}
 	
 	RE_InitState(re, NULL, &scene->r, srl, winx, winy, &disprect);
 	if(!re->ok)  /* if an error was printed, abort */
@@ -2951,27 +2006,29 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 		do_render_all_options(re);
 
 		if(write_still && !G.afbreek) {
-			if(BKE_imtype_is_movie(scene->r.imtype)) {
-				/* operator checks this but incase its called from elsewhere */
+			if(BKE_imtype_is_movie(scene->r.im_format.imtype)) {
+				/* operator checks this but in case its called from elsewhere */
 				printf("Error: cant write single images with a movie format!\n");
 			}
 			else {
 				char name[FILE_MAX];
-				BKE_makepicstring(name, scene->r.pic, scene->r.cfra, scene->r.imtype, scene->r.scemode & R_EXTENSION, FALSE);
-	
+				BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, scene->r.im_format.imtype, scene->r.scemode & R_EXTENSION, FALSE);
+
 				/* reports only used for Movie */
-				do_write_image_or_movie(re, scene, NULL, name);
+				do_write_image_or_movie(re, bmain, scene, NULL, name);
 			}
 		}
 
 		BLI_exec_cb(re->main, (ID *)scene, BLI_CB_EVT_RENDER_POST); /* keep after file save */
 	}
 
+	BLI_exec_cb(re->main, (ID *)scene, G.afbreek ? BLI_CB_EVT_RENDER_CANCEL : BLI_CB_EVT_RENDER_COMPLETE);
+
 	/* UGLY WARNING */
 	G.rendering= 0;
 }
 
-static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, const char *name_override)
+static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovieHandle *mh, const char *name_override)
 {
 	char name[FILE_MAX];
 	RenderResult rres;
@@ -2981,17 +2038,20 @@ static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, c
 	RE_AcquireResultImage(re, &rres);
 
 	/* write movie or image */
-	if(BKE_imtype_is_movie(scene->r.imtype)) {
+	if(BKE_imtype_is_movie(scene->r.im_format.imtype)) {
 		int dofree = 0;
+		unsigned int *rect32 = (unsigned int *)rres.rect32;
 		/* note; the way it gets 32 bits rects is weak... */
-		if(rres.rect32==NULL) {
-			rres.rect32= MEM_mapallocN(sizeof(int)*rres.rectx*rres.recty, "temp 32 bits rect");
+		if(rres.rect32 == NULL) {
+			rect32 = MEM_mapallocN(sizeof(int)*rres.rectx*rres.recty, "temp 32 bits rect");
+			RE_ResultGet32(re, rect32);
 			dofree = 1;
 		}
-		RE_ResultGet32(re, (unsigned int *)rres.rect32);
-		ok= mh->append_movie(&re->r, scene->r.cfra, rres.rect32, rres.rectx, rres.recty, re->reports);
+
+		ok= mh->append_movie(&re->r, scene->r.sfra, scene->r.cfra, (int *)rect32,
+		                     rres.rectx, rres.recty, re->reports);
 		if(dofree) {
-			MEM_freeN(rres.rect32);
+			MEM_freeN(rect32);
 		}
 		printf("Append frame %d", scene->r.cfra);
 	} 
@@ -2999,47 +2059,18 @@ static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, c
 		if(name_override)
 			BLI_strncpy(name, name_override, sizeof(name));
 		else
-			BKE_makepicstring(name, scene->r.pic, scene->r.cfra, scene->r.imtype, scene->r.scemode & R_EXTENSION, TRUE);
+			BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, scene->r.im_format.imtype, scene->r.scemode & R_EXTENSION, TRUE);
 		
-		if(re->r.imtype==R_MULTILAYER) {
+		if(re->r.im_format.imtype==R_IMF_IMTYPE_MULTILAYER) {
 			if(re->result) {
-				RE_WriteRenderResult(re->reports, re->result, name, scene->r.quality);
+				RE_WriteRenderResult(re->reports, re->result, name, scene->r.im_format.exr_codec);
 				printf("Saved: %s", name);
 			}
 		}
 		else {
-			ImBuf *ibuf= IMB_allocImBuf(rres.rectx, rres.recty, scene->r.planes, 0);
-			
-			/* if not exists, BKE_write_ibuf makes one */
-			ibuf->rect= (unsigned int *)rres.rect32;    
-			ibuf->rect_float= rres.rectf;
-			ibuf->zbuf_float= rres.rectz;
-			
-			/* float factor for random dither, imbuf takes care of it */
-			ibuf->dither= scene->r.dither_intensity;
-			
-			/* prepare to gamma correct to sRGB color space */
-			if (scene->r.color_mgt_flag & R_COLOR_MANAGEMENT) {
-				/* sequence editor can generate 8bpc render buffers */
-				if (ibuf->rect) {
-					ibuf->profile = IB_PROFILE_SRGB;
-					if (ELEM(scene->r.imtype, R_OPENEXR, R_RADHDR))
-						IMB_float_from_rect(ibuf);
-				} else {				
-					ibuf->profile = IB_PROFILE_LINEAR_RGB;
-				}
-			}
+			ImBuf *ibuf= render_result_rect_to_ibuf(&rres, &scene->r);
 
-			/* color -> greyscale */
-			/* editing directly would alter the render view */
-			if(scene->r.planes == 8) {
-				ImBuf *ibuf_bw= IMB_dupImBuf(ibuf);
-				IMB_color_to_bw(ibuf_bw);
-				IMB_freeImBuf(ibuf);
-				ibuf= ibuf_bw;
-			}
-
-			ok= BKE_write_ibuf_stamp(scene, camera, ibuf, name, scene->r.imtype, scene->r.subimtype, scene->r.quality);
+			ok= BKE_write_ibuf_stamp(scene, camera, ibuf, name, &scene->r.im_format);
 			
 			if(ok==0) {
 				printf("Render error: cannot save %s\n", name);
@@ -3047,12 +2078,15 @@ static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, c
 			else printf("Saved: %s", name);
 			
 			/* optional preview images for exr */
-			if(ok && scene->r.imtype==R_OPENEXR && (scene->r.subimtype & R_PREVIEW_JPG)) {
+			if(ok && scene->r.im_format.imtype==R_IMF_IMTYPE_OPENEXR && (scene->r.im_format.flag & R_IMF_FLAG_PREVIEW_JPG)) {
+				ImageFormatData imf= scene->r.im_format;
+				imf.imtype= R_IMF_IMTYPE_JPEG90;
+
 				if(BLI_testextensie(name, ".exr")) 
 					name[strlen(name)-4]= 0;
-				BKE_add_image_extension(name, R_JPEG90);
-				ibuf->depth= 24; 
-				BKE_write_ibuf_stamp(scene, camera, ibuf, name, R_JPEG90, scene->r.subimtype, scene->r.quality);
+				BKE_add_image_extension(name, R_IMF_IMTYPE_JPEG90);
+				ibuf->planes= 24;
+				BKE_write_ibuf_stamp(scene, camera, ibuf, name, &imf);
 				printf("\nSaved: %s", name);
 			}
 			
@@ -3064,7 +2098,11 @@ static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, c
 	RE_ReleaseResultImage(re);
 
 	BLI_timestr(re->i.lastframetime, name);
-	printf(" Time: %s\n", name);
+	printf(" Time: %s", name);
+
+	BLI_exec_cb(G.main, NULL, BLI_CB_EVT_RENDER_STATS);
+
+	fputc('\n', stdout);
 	fflush(stdout); /* needed for renderd !! (not anymore... (ton)) */
 
 	return ok;
@@ -3073,9 +2111,9 @@ static int do_write_image_or_movie(Render *re, Scene *scene, bMovieHandle *mh, c
 /* saves images to disk */
 void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_override, unsigned int lay, int sfra, int efra, int tfra)
 {
-	bMovieHandle *mh= BKE_get_movie_handle(scene->r.imtype);
+	bMovieHandle *mh= BKE_get_movie_handle(scene->r.im_format.imtype);
 	int cfrao= scene->r.cfra;
-	int nfra;
+	int nfra, totrendered= 0, totskipped= 0;
 	
 	/* do not fully call for each frame, it initializes & pops output window */
 	if(!render_initialize_from_main(re, bmain, scene, NULL, camera_override, lay, 0, 1))
@@ -3085,7 +2123,9 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	/* is also set by caller renderwin.c */
 	G.rendering= 1;
 
-	if(BKE_imtype_is_movie(scene->r.imtype))
+	re->flag |= R_ANIMATION;
+
+	if(BKE_imtype_is_movie(scene->r.im_format.imtype))
 		if(!mh->start_movie(scene, &re->r, re->rectx, re->recty, re->reports))
 			G.afbreek= 1;
 
@@ -3098,9 +2138,10 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 				BLI_exec_cb(re->main, (ID *)scene, BLI_CB_EVT_RENDER_PRE);
 
 				do_render_all_options(re);
+				totrendered++;
 
 				if(re->test_break(re->tbh) == 0) {
-					if(!do_write_image_or_movie(re, scene, mh, NULL))
+					if(!do_write_image_or_movie(re, bmain, scene, mh, NULL))
 						G.afbreek= 1;
 				}
 
@@ -3140,17 +2181,18 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 				nfra+= tfra;
 
 			/* Touch/NoOverwrite options are only valid for image's */
-			if(BKE_imtype_is_movie(scene->r.imtype) == 0) {
+			if(BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
 				if(scene->r.mode & (R_NO_OVERWRITE | R_TOUCH))
-					BKE_makepicstring(name, scene->r.pic, scene->r.cfra, scene->r.imtype, scene->r.scemode & R_EXTENSION, TRUE);
+					BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, scene->r.im_format.imtype, scene->r.scemode & R_EXTENSION, TRUE);
 
-				if(scene->r.mode & R_NO_OVERWRITE && BLI_exist(name)) {
+				if(scene->r.mode & R_NO_OVERWRITE && BLI_exists(name)) {
 					printf("skipping existing frame \"%s\"\n", name);
+					totskipped++;
 					continue;
 				}
-				if(scene->r.mode & R_TOUCH && !BLI_exist(name)) {
+				if(scene->r.mode & R_TOUCH && !BLI_exists(name)) {
 					BLI_make_existing_file(name); /* makes the dir if its not there */
-					BLI_touch(name);
+					BLI_file_touch(name);
 				}
 			}
 
@@ -3161,10 +2203,11 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 
 			
 			do_render_all_options(re);
+			totrendered++;
 			
 			if(re->test_break(re->tbh) == 0) {
 				if(!G.afbreek)
-					if(!do_write_image_or_movie(re, scene, mh, NULL))
+					if(!do_write_image_or_movie(re, bmain, scene, mh, NULL))
 						G.afbreek= 1;
 			}
 			else
@@ -3172,8 +2215,8 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 		
 			if(G.afbreek==1) {
 				/* remove touched file */
-				if(BKE_imtype_is_movie(scene->r.imtype) == 0) {
-					if (scene->r.mode & R_TOUCH && BLI_exist(name) && BLI_filepathsize(name) == 0) {
+				if(BKE_imtype_is_movie(scene->r.im_format.imtype) == 0) {
+					if (scene->r.mode & R_TOUCH && BLI_exists(name) && BLI_file_size(name) == 0) {
 						BLI_delete(name, 0, 0);
 					}
 				}
@@ -3188,10 +2231,17 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 	}
 	
 	/* end movie */
-	if(BKE_imtype_is_movie(scene->r.imtype))
+	if(BKE_imtype_is_movie(scene->r.im_format.imtype))
 		mh->end_movie();
+	
+	if(totskipped && totrendered == 0)
+		BKE_report(re->reports, RPT_INFO, "No frames rendered, skipped to not overwrite");
 
 	scene->r.cfra= cfrao;
+
+	re->flag &= ~R_ANIMATION;
+
+	BLI_exec_cb(re->main, (ID *)scene, G.afbreek ? BLI_CB_EVT_RENDER_CANCEL : BLI_CB_EVT_RENDER_COMPLETE);
 
 	/* UGLY WARNING */
 	G.rendering= 0;
@@ -3223,7 +2273,7 @@ void RE_PreviewRender(Render *re, Main *bmain, Scene *sce)
 int RE_ReadRenderResult(Scene *scene, Scene *scenode)
 {
 	Render *re;
-	int winx, winy;
+	int winx, winy, success;
 	rcti disprect;
 	
 	/* calculate actual render result and display size */
@@ -3254,7 +2304,11 @@ int RE_ReadRenderResult(Scene *scene, Scene *scenode)
 	RE_InitState(re, NULL, &scene->r, NULL, winx, winy, &disprect);
 	re->scene= scene;
 	
-	return read_render_result(re, 0);
+	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
+	success= render_result_exr_file_read(re, 0);
+	BLI_rw_mutex_unlock(&re->resultmutex);
+
+	return success;
 }
 
 void RE_set_max_threads(int threads)
@@ -3277,108 +2331,8 @@ void RE_init_threadcount(Render *re)
 	}
 }
 
-/************************** External Engines ***************************/
-
-RenderResult *RE_engine_begin_result(RenderEngine *engine, int x, int y, int w, int h)
-{
-	Render *re= engine->re;
-	RenderResult *result;
-	rcti disprect;
-
-	/* ensure the coordinates are within the right limits */
-	CLAMP(x, 0, re->result->rectx);
-	CLAMP(y, 0, re->result->recty);
-	CLAMP(w, 0, re->result->rectx);
-	CLAMP(h, 0, re->result->recty);
-
-	if(x + w > re->result->rectx)
-		w= re->result->rectx - x;
-	if(y + h > re->result->recty)
-		h= re->result->recty - y;
-
-	/* allocate a render result */
-	disprect.xmin= x;
-	disprect.xmax= x+w;
-	disprect.ymin= y;
-	disprect.ymax= y+h;
-
-	if(0) { // XXX (re->r.scemode & R_FULL_SAMPLE)) {
-		result= new_full_sample_buffers(re, &engine->fullresult, &disprect, 0);
-	}
-	else {
-		result= new_render_result(re, &disprect, 0, RR_USEMEM);
-		BLI_addtail(&engine->fullresult, result);
-	}
-
-	return result;
-}
-
-void RE_engine_update_result(RenderEngine *engine, RenderResult *result)
-{
-	Render *re= engine->re;
-
-	if(result && render_display_draw_enabled(re)) {
-		result->renlay= result->layers.first; // weak
-		re->display_draw(re->ddh, result, NULL);
-	}
-}
-
-void RE_engine_end_result(RenderEngine *engine, RenderResult *result)
-{
-	Render *re= engine->re;
-
-	if(!result)
-		return;
-
-	/* merge */
-	if(re->result->exrhandle) {
-		RenderResult *rr, *rrpart;
-		
-		// XXX crashes, exr expects very particular part sizes
-		for(rr= re->result, rrpart= result; rr && rrpart; rr= rr->next, rrpart= rrpart->next)
-			save_render_result_tile(rr, rrpart);
-	}
-	else if(render_display_draw_enabled(re)) {
-		/* on break, don't merge in result for preview renders, looks nicer */
-		if(re->test_break(re->tbh) && (re->r.scemode & R_PREVIEWBUTS));
-		else merge_render_result(re->result, result);
-	}
-
-	/* draw */
-	if(!re->test_break(re->tbh) && render_display_draw_enabled(re)) {
-		result->renlay= result->layers.first; // weak
-		re->display_draw(re->ddh, result, NULL);
-	}
-
-	/* free */
-	free_render_result(&engine->fullresult, result);
-}
-
-int RE_engine_test_break(RenderEngine *engine)
-{
-	Render *re= engine->re;
-
-	return re->test_break(re->tbh);
-}
-
-void RE_engine_update_stats(RenderEngine *engine, const char *stats, const char *info)
-{
-	Render *re= engine->re;
-
-	re->i.statstr= stats;
-	re->i.infostr= info;
-	re->stats_draw(re->sdh, &re->i);
-	re->i.infostr= NULL;
-	re->i.statstr= NULL;
-}
-
-void RE_engine_report(RenderEngine *engine, int type, const char *msg)
-{
-	BKE_report(engine->re->reports, type, msg);
-}
-
 /* loads in image into a result, size must match
- * x/y offsets are only used on a partial copy when dimensions dont match */
+ * x/y offsets are only used on a partial copy when dimensions don't match */
 void RE_layer_load_from_file(RenderLayer *layer, ReportList *reports, const char *filename, int x, int y)
 {
 	ImBuf *ibuf = IMB_loadiffname(filename, IB_rect);
@@ -3421,74 +2375,17 @@ void RE_layer_load_from_file(RenderLayer *layer, ReportList *reports, const char
 
 void RE_result_load_from_file(RenderResult *result, ReportList *reports, const char *filename)
 {
-	if(!read_render_result_from_file(filename, result)) {
+	if(!render_result_exr_file_read_path(result, filename)) {
 		BKE_reportf(reports, RPT_ERROR, "RE_result_rect_from_file: failed to load '%s'\n", filename);
 		return;
 	}
 }
 
-static int external_render_3d(Render *re, int do_all)
-{
-	RenderEngineType *type= BLI_findstring(&R_engines, re->r.engine, offsetof(RenderEngineType, idname));
-	RenderEngine engine;
-
-	if(!(type && type->render))
-		return 0;
-	if((re->r.scemode & R_PREVIEWBUTS) && !(type->flag & RE_DO_PREVIEW))
-		return 0;
-	if(do_all && !(type->flag & RE_DO_ALL))
-		return 0;
-	if(!do_all && (type->flag & RE_DO_ALL))
-		return 0;
-
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	if(re->result==NULL || !(re->r.scemode & R_PREVIEWBUTS)) {
-		RE_FreeRenderResult(re->result);
-	
-		if(0) // XXX re->r.scemode & R_FULL_SAMPLE)
-			re->result= new_full_sample_buffers_exr(re);
-		else
-			re->result= new_render_result(re, &re->disprect, 0, 0); // XXX re->r.scemode & (R_EXR_TILE_FILE|R_FULL_SAMPLE));
-	}
-	BLI_rw_mutex_unlock(&re->resultmutex);
-	
-	if(re->result==NULL)
-		return 1;
-
-	/* external */
-	memset(&engine, 0, sizeof(engine));
-	engine.type= type;
-	engine.re= re;
-
-	type->render(&engine, re->scene);
-
-	free_render_result(&engine.fullresult, engine.fullresult.first);
-
-	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
-	if(re->result->exrhandle) {
-		RenderResult *rr;
-
-		save_empty_result_tiles(re);
-		
-		for(rr= re->result; rr; rr= rr->next) {
-			IMB_exr_close(rr->exrhandle);
-			rr->exrhandle= NULL;
-		}
-		
-		free_render_result(&re->fullresult, re->result);
-		re->result= NULL;
-		
-		read_render_result(re, 0);
-	}
-	BLI_rw_mutex_unlock(&re->resultmutex);
-
-	return 1;
-}
-
 const float default_envmap_layout[] = { 0,0, 1,0, 2,0, 0,1, 1,1, 2,1 };
 
-int RE_WriteEnvmapResult(struct ReportList *reports, Scene *scene, EnvMap *env, const char *relpath, int imtype, float layout[12])
+int RE_WriteEnvmapResult(struct ReportList *reports, Scene *scene, EnvMap *env, const char *relpath, const char imtype, float layout[12])
 {
+	ImageFormatData imf;
 	ImBuf *ibuf=NULL;
 	int ok;
 	int dx;
@@ -3499,6 +2396,9 @@ int RE_WriteEnvmapResult(struct ReportList *reports, Scene *scene, EnvMap *env, 
 		BKE_report(reports, RPT_ERROR, "There is no generated environment map available to save");
 		return 0;
 	}
+
+	imf= scene->r.im_format;
+	imf.imtype= imtype;
 
 	dx= env->cube[1]->x;
 
@@ -3530,7 +2430,7 @@ int RE_WriteEnvmapResult(struct ReportList *reports, Scene *scene, EnvMap *env, 
 	BLI_strncpy(filepath, relpath, sizeof(filepath));
 	BLI_path_abs(filepath, G.main->name);
 
-	ok= BKE_write_ibuf(ibuf, filepath, imtype, scene->r.subimtype, scene->r.quality);
+	ok= BKE_write_ibuf(ibuf, filepath, &imf);
 
 	IMB_freeImBuf(ibuf);
 
@@ -3542,3 +2442,4 @@ int RE_WriteEnvmapResult(struct ReportList *reports, Scene *scene, EnvMap *env, 
 		return FALSE;
 	}
 }
+

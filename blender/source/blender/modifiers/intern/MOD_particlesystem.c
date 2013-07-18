@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_particlesystem.c
  *  \ingroup modifiers
@@ -113,8 +111,8 @@ static CustomDataMask requiredDataMask(Object *UNUSED(ob), ModifierData *md)
 	}
 	
 	/* particles only need this if they are after a non deform modifier, and
-	* the modifier stack will only create them in that case. */
-	dataMask |= CD_MASK_ORIGSPACE|CD_MASK_ORIGINDEX;
+	 * the modifier stack will only create them in that case. */
+	dataMask |= CD_MASK_ORIGSPACE_MLOOP|CD_MASK_ORIGINDEX;
 
 	dataMask |= CD_MASK_ORCO;
 	
@@ -181,13 +179,13 @@ static void deformVerts(ModifierData *md, Object *ob,
 	/* report change in mesh structure */
 	if(psmd->dm->getNumVerts(psmd->dm)!=psmd->totdmvert ||
 		  psmd->dm->getNumEdges(psmd->dm)!=psmd->totdmedge ||
-		  psmd->dm->getNumFaces(psmd->dm)!=psmd->totdmface){
+		  psmd->dm->getNumTessFaces(psmd->dm)!=psmd->totdmface){
 
 		psys->recalc |= PSYS_RECALC_RESET;
 
 		psmd->totdmvert= psmd->dm->getNumVerts(psmd->dm);
 		psmd->totdmedge= psmd->dm->getNumEdges(psmd->dm);
-		psmd->totdmface= psmd->dm->getNumFaces(psmd->dm);
+		psmd->totdmface= psmd->dm->getNumTessFaces(psmd->dm);
 	}
 
 	if(psys) {

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BKE_FCURVE_H
-#define BKE_FCURVE_H
+#ifndef __BKE_FCURVE_H__
+#define __BKE_FCURVE_H__
 
 /** \file BKE_fcurve.h
  *  \ingroup bke
@@ -137,7 +135,7 @@ typedef struct FModifierTypeInfo {
 	void (*evaluate_modifier)(struct FCurve *fcu, struct FModifier *fcm, float *cvalue, float evaltime);
 } FModifierTypeInfo;
 
-/* Values which describe the behaviour of a FModifier Type */
+/* Values which describe the behavior of a FModifier Type */
 typedef enum eFMI_Action_Types {
 		/* modifier only modifies values outside of data range */
 	FMI_TYPE_EXTRAPOLATION = 0,
@@ -215,10 +213,12 @@ struct FCurve *rna_get_fcurve(struct PointerRNA *ptr, struct PropertyRNA *prop, 
 int binarysearch_bezt_index(struct BezTriple array[], float frame, int arraylen, short *replace);
 
 /* get the time extents for F-Curve */
-void calc_fcurve_range(struct FCurve *fcu, float *min, float *max, const short selOnly);
+void calc_fcurve_range(struct FCurve *fcu, float *min, float *max,
+                       const short do_sel_only, const short do_min_length);
 
 /* get the bounding-box extents for F-Curve */
-void calc_fcurve_bounds(struct FCurve *fcu, float *xmin, float *xmax, float *ymin, float *ymax, const short selOnly);
+void calc_fcurve_bounds(struct FCurve *fcu, float *xmin, float *xmax, float *ymin, float *ymax,
+                        const short do_sel_only);
 
 /* .............. */
 
@@ -231,7 +231,7 @@ short fcurve_is_keyframable(struct FCurve *fcu);
 /* -------- Curve Sanity --------  */
 
 void calchandles_fcurve(struct FCurve *fcu);
-void testhandles_fcurve(struct FCurve *fcu);
+void testhandles_fcurve(struct FCurve *fcu, const short use_handle);
 void sort_time_fcurve(struct FCurve *fcu);
 short test_time_fcurve(struct FCurve *fcu);
 
@@ -270,4 +270,4 @@ void fcurve_store_samples(struct FCurve *fcu, void *data, int start, int end, Fc
 }
 #endif
 
-#endif /* BKE_FCURVE_H*/
+#endif /* __BKE_FCURVE_H__*/

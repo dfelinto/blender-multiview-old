@@ -1,6 +1,5 @@
 /*
  * IntValue.h: interface for the CIntValue class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -17,8 +16,8 @@
  *  \ingroup expressions
  */
 
-#if !defined _INTVALUE_H
-#define _INTVALUE_H
+#ifndef __INTVALUE_H__
+#define __INTVALUE_H__
 
 
 #include "Value.h"
@@ -37,8 +36,8 @@ public:
 	CIntValue();
 	CIntValue(cInt innie);
 	CIntValue(cInt innie,
-			  const char *name,
-			  AllocationTYPE alloctype=CValue::HEAPVALUE);
+	          const char *name,
+	          AllocationTYPE alloctype=CValue::HEAPVALUE);
 	
 	virtual	CValue* Calc(VALUE_OPERATOR op,
 						 CValue *val);
@@ -72,5 +71,5 @@ public:
 #endif
 };
 
-#endif // !defined _INTVALUE_H
+#endif // !defined __INTVALUE_H__
 

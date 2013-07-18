@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -52,6 +50,8 @@
 #include "DNA_meshdata_types.h"
 #include "BKE_armature.h"
 #include "BKE_action.h"
+#include "BKE_global.h"
+#include "BKE_main.h"
 #include "BKE_key.h"
 #include "BKE_ipo.h"
 #include "MT_Point3.h"
@@ -99,10 +99,13 @@ BL_ShapeDeformer::BL_ShapeDeformer(BL_DeformableGameObject *gameobj,
 
 BL_ShapeDeformer::~BL_ShapeDeformer()
 {
-	if (m_key && m_bmesh->key)
+	if (m_key && m_bmesh->key && m_key != m_bmesh->key)
 	{
 		free_key(m_bmesh->key);
+		BLI_remlink_safe(&G.main->key, m_bmesh->key);
+		MEM_freeN(m_bmesh->key);
 		m_bmesh->key = m_key;
+		m_key = NULL;
 	}
 };
 

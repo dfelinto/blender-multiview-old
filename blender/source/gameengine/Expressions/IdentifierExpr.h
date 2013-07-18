@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup expressions
  */
 
-#ifndef __IDENTIFIER_EXPR
-#define __IDENTIFIER_EXPR
+#ifndef __IDENTIFIEREXPR_H__
+#define __IDENTIFIEREXPR_H__
 
 #include "Expression.h"
 
@@ -60,5 +58,5 @@ public:
 #endif
 };
 
-#endif //__IDENTIFIER_EXPR
+#endif //__IDENTIFIEREXPR_H__
 

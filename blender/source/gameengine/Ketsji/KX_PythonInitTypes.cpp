@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -68,6 +66,7 @@
 #include "KX_SCA_ReplaceMeshActuator.h"
 #include "KX_SceneActuator.h"
 #include "KX_StateActuator.h"
+#include "KX_SteeringActuator.h"
 #include "KX_TrackToActuator.h"
 #include "KX_VehicleWrapper.h"
 #include "KX_VertexProxy.h"
@@ -99,6 +98,7 @@
 #include "SCA_PythonController.h"
 #include "SCA_RandomActuator.h"
 #include "SCA_IController.h"
+#include "KX_NavMeshObject.h"
 
 static void PyType_Attr_Set(PyGetSetDef *attr_getset, PyAttributeDef *attr)
 {
@@ -168,9 +168,9 @@ void initPyTypes(void)
 {
 	
 /*
-	initPyObjectPlusType(BL_ActionActuator::Parents);
-	.....
-*/
+ * initPyObjectPlusType(BL_ActionActuator::Parents);
+ * .....
+ */
 
 	/* For now just do PyType_Ready */
 	PyObject *mod= PyModule_New("GameTypes");
@@ -217,9 +217,11 @@ void initPyTypes(void)
 		PyType_Ready_Attr(dict, KX_SCA_EndObjectActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_SCA_ReplaceMeshActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_Scene, init_getset);
+		PyType_Ready_Attr(dict, KX_NavMeshObject, init_getset);
 		PyType_Ready_Attr(dict, KX_SceneActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_SoundActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_StateActuator, init_getset);
+		PyType_Ready_Attr(dict, KX_SteeringActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_TouchSensor, init_getset);
 		PyType_Ready_Attr(dict, KX_TrackToActuator, init_getset);
 		PyType_Ready_Attr(dict, KX_VehicleWrapper, init_getset);

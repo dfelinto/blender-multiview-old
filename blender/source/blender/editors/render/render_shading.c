@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,12 +26,12 @@
  *  \ingroup edrend
  */
 
-
 #include <stdlib.h>
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_mesh_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
@@ -46,12 +44,11 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_editVert.h"
-#include "BLI_listbase.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_animsys.h"
 #include "BKE_context.h"
+#include "BKE_curve.h"
 #include "BKE_depsgraph.h"
 #include "BKE_font.h"
 #include "BKE_global.h"
@@ -65,6 +62,7 @@
 #include "BKE_scene.h"
 #include "BKE_texture.h"
 #include "BKE_world.h"
+#include "BKE_tessmesh.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -76,8 +74,10 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "ED_object.h"
 #include "ED_curve.h"
 #include "ED_mesh.h"
+#include "ED_node.h"
 #include "ED_render.h"
 #include "ED_screen.h"
 
@@ -93,7 +93,7 @@
 
 static int material_slot_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
@@ -122,14 +122,14 @@ void OBJECT_OT_material_slot_add(wmOperatorType *ot)
 
 static int material_slot_remove_exec(bContext *C, wmOperator *op)
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
 
 	/* Removing material slots in edit mode screws things up, see bug #21822.*/
 	if(ob == CTX_data_edit_object(C)) {
-		BKE_report(op->reports, RPT_ERROR, "Unable to remove material slot in edit mode.");
+		BKE_report(op->reports, RPT_ERROR, "Unable to remove material slot in edit mode");
 		return OPERATOR_CANCELLED;
 	}
 
@@ -158,25 +158,27 @@ void OBJECT_OT_material_slot_remove(wmOperatorType *ot)
 
 static int material_slot_assign_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
 
 	if(ob && ob->actcol>0) {
 		if(ob->type == OB_MESH) {
-			EditMesh *em= ((Mesh*)ob->data)->edit_mesh;
-			EditFace *efa;
+			BMEditMesh *em = BMEdit_FromObject(ob);
+			BMFace *efa;
+			BMIter iter;
 
 			if(em) {
-				for(efa= em->faces.first; efa; efa=efa->next)
-					if(efa->f & SELECT)
+				BM_ITER(efa, &iter, em->bm, BM_FACES_OF_MESH, NULL) {
+					if(BM_elem_flag_test(efa, BM_ELEM_SELECT))
 						efa->mat_nr= ob->actcol-1;
+				}
 			}
 		}
 		else if(ELEM(ob->type, OB_CURVE, OB_SURF)) {
 			Nurb *nu;
-			ListBase *nurbs= ED_curve_editnurbs((Curve*)ob->data);
+			ListBase *nurbs= curve_editnurbs((Curve*)ob->data);
 
 			if(nurbs) {
 				for(nu= nurbs->first; nu; nu= nu->next)
@@ -218,23 +220,20 @@ void OBJECT_OT_material_slot_assign(wmOperatorType *ot)
 
 static int material_slot_de_select(bContext *C, int select)
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob = ED_object_context(C);
 
 	if(!ob)
 		return OPERATOR_CANCELLED;
 
 	if(ob->type == OB_MESH) {
-		EditMesh *em= ((Mesh*)ob->data)->edit_mesh;
+		BMEditMesh *em = BMEdit_FromObject(ob);
 
 		if(em) {
-			if(select)
-				EM_select_by_material(em, ob->actcol-1);
-			else
-				EM_deselect_by_material(em, ob->actcol-1);
+			EDBM_deselect_by_material(em, ob->actcol-1, select);
 		}
 	}
 	else if ELEM(ob->type, OB_CURVE, OB_SURF) {
-		ListBase *nurbs= ED_curve_editnurbs((Curve*)ob->data);
+		ListBase *nurbs= curve_editnurbs((Curve*)ob->data);
 		Nurb *nu;
 		BPoint *bp;
 		BezTriple *bezt;
@@ -324,7 +323,7 @@ void OBJECT_OT_material_slot_deselect(wmOperatorType *ot)
 
 static int material_slot_copy_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 	Material ***matar;
 
 	if(!ob || !(matar= give_matarar(ob)))
@@ -365,15 +364,23 @@ void OBJECT_OT_material_slot_copy(wmOperatorType *ot)
 
 static int new_material_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	Scene *scene= CTX_data_scene(C);
 	Material *ma= CTX_data_pointer_get_type(C, "material", &RNA_Material).data;
 	PointerRNA ptr, idptr;
 	PropertyRNA *prop;
 
 	/* add or copy material */
-	if(ma)
+	if(ma) {
 		ma= copy_material(ma);
-	else
+	}
+	else {
 		ma= add_material("Material");
+
+		if(scene_use_new_shading_nodes(scene)) {
+			ED_node_shader_default(scene, &ma->id);
+			ma->use_nodes= 1;
+		}
+	}
 
 	/* hook into UI */
 	uiIDContextProperty(C, &ptr, &prop);
@@ -457,15 +464,23 @@ void TEXTURE_OT_new(wmOperatorType *ot)
 
 static int new_world_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	Scene *scene= CTX_data_scene(C);
 	World *wo= CTX_data_pointer_get_type(C, "world", &RNA_World).data;
 	PointerRNA ptr, idptr;
 	PropertyRNA *prop;
 
 	/* add or copy world */
-	if(wo)
+	if(wo) {
 		wo= copy_world(wo);
-	else
+	}
+	else {
 		wo= add_world("World");
+
+		if(scene_use_new_shading_nodes(scene)) {
+			ED_node_shader_default(scene, &wo->id);
+			wo->use_nodes= 1;
+		}
+	}
 
 	/* hook into UI */
 	uiIDContextProperty(C, &ptr, &prop);
@@ -505,7 +520,7 @@ static int render_layer_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
 
-	scene_add_render_layer(scene);
+	scene_add_render_layer(scene, NULL);
 	scene->r.actlay= BLI_countlist(&scene->r.layers) - 1;
 
 	WM_event_add_notifier(C, NC_SCENE|ND_RENDER_OPTIONS, scene);
@@ -529,30 +544,11 @@ void SCENE_OT_render_layer_add(wmOperatorType *ot)
 
 static int render_layer_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Scene *scene= CTX_data_scene(C);
-	SceneRenderLayer *rl;
-	int act= scene->r.actlay;
+	Scene *scene = CTX_data_scene(C);
+	SceneRenderLayer *rl = BLI_findlink(&scene->r.layers, scene->r.actlay);
 
-	if(BLI_countlist(&scene->r.layers) <= 1)
+	if(!scene_remove_render_layer(CTX_data_main(C), scene, rl))
 		return OPERATOR_CANCELLED;
-	
-	rl= BLI_findlink(&scene->r.layers, scene->r.actlay);
-	BLI_remlink(&scene->r.layers, rl);
-	MEM_freeN(rl);
-
-	scene->r.actlay= 0;
-	
-	if(scene->nodetree) {
-		bNode *node;
-		for(node= scene->nodetree->nodes.first; node; node= node->next) {
-			if(node->type==CMP_NODE_R_LAYERS && node->id==NULL) {
-				if(node->custom1==act)
-					node->custom1= 0;
-				else if(node->custom1>act)
-					node->custom1--;
-			}
-		}
-	}
 
 	WM_event_add_notifier(C, NC_SCENE|ND_RENDER_OPTIONS, scene);
 	
@@ -663,7 +659,7 @@ void TEXTURE_OT_slot_move(wmOperatorType *ot)
 
 /********************** environment map operators *********************/
 
-static int save_envmap(wmOperator *op, Scene *scene, EnvMap *env, char *path, int imtype)
+static int save_envmap(wmOperator *op, Scene *scene, EnvMap *env, char *path, const char imtype)
 {
 	float layout[12];
 	if ( RNA_struct_find_property(op->ptr, "layout") )
@@ -685,12 +681,12 @@ static int envmap_save_exec(bContext *C, wmOperator *op)
 	Tex *tex= CTX_data_pointer_get_type(C, "texture", &RNA_Texture).data;
 	Scene *scene = CTX_data_scene(C);
 	//int imtype = RNA_enum_get(op->ptr, "file_type");
-	int imtype = scene->r.imtype;
+	char imtype = scene->r.im_format.imtype;
 	char path[FILE_MAX];
 	
 	RNA_string_get(op->ptr, "filepath", path);
 	
-	if(scene->r.scemode & R_EXTENSION)  {
+	if(scene->r.scemode & R_EXTENSION) {
 		BKE_add_image_extension(path, imtype);
 	}
 	
@@ -709,13 +705,10 @@ static int envmap_save_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event
 {
 	//Scene *scene= CTX_data_scene(C);
 	
-	if(!RNA_property_is_set(op->ptr, "relative_path"))
-		RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
-	
-	if(RNA_property_is_set(op->ptr, "filepath"))
+	if(RNA_struct_property_is_set(op->ptr, "filepath"))
 		return envmap_save_exec(C, op);
 
-	//RNA_enum_set(op->ptr, "file_type", scene->r.imtype);
+	//RNA_enum_set(op->ptr, "file_type", scene->r.im_format.imtype);
 	RNA_string_set(op->ptr, "filepath", G.main->name);
 	WM_event_add_fileselect(C, op);
 	
@@ -753,10 +746,10 @@ void TEXTURE_OT_envmap_save(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER; /* no undo since this doesnt modify the env-map */
 	
 	/* properties */
-	prop= RNA_def_float_array(ot->srna, "layout", 12, default_envmap_layout, 0.0f, 0.0f, "File layout", "Flat array describing the X,Y position of each cube face in the output image, where 1 is the size of a face. Order is [+Z -Z +Y -X -Y +X]. Use -1 to skip a face.", 0.0f, 0.0f);
+	prop= RNA_def_float_array(ot->srna, "layout", 12, default_envmap_layout, 0.0f, 0.0f, "File layout", "Flat array describing the X,Y position of each cube face in the output image, where 1 is the size of a face - order is [+Z -Z +Y -X -Y +X] (use -1 to skip a face)", 0.0f, 0.0f);
 	RNA_def_property_flag(prop, PROP_HIDDEN);
 
-	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|IMAGEFILE|MOVIEFILE, FILE_SPECIAL, FILE_SAVE, WM_FILESEL_FILEPATH, FILE_DEFAULTDISPLAY);
 }
 
 static int envmap_clear_exec(bContext *C, wmOperator *UNUSED(op))

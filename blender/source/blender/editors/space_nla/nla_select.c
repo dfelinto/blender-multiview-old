@@ -171,7 +171,7 @@ static int nlaedit_deselectall_exec(bContext *C, wmOperator *op)
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
 		
-	/* 'standard' behaviour - check if selected, then apply relevant selection */
+	/* 'standard' behavior - check if selected, then apply relevant selection */
 	if (RNA_boolean_get(op->ptr, "invert"))
 		deselect_nla_strips(&ac, DESELECT_STRIPS_NOTEST, SELECT_INVERT);
 	else
@@ -186,9 +186,9 @@ static int nlaedit_deselectall_exec(bContext *C, wmOperator *op)
 void NLA_OT_select_all_toggle (wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Select or Deselect All";
+	ot->name= "(De)select All";
 	ot->idname= "NLA_OT_select_all_toggle";
-	ot->description= "(De)Select all NLA-Strips";
+	ot->description= "Select or deselect all NLA-Strips";
 	
 	/* api callbacks */
 	ot->exec= nlaedit_deselectall_exec;
@@ -226,7 +226,7 @@ static void borderselect_nla_strips (bAnimContext *ac, rcti rect, short mode, sh
 	SpaceNla *snla = (SpaceNla *)ac->sl;
 	View2D *v2d= &ac->ar->v2d;
 	rctf rectf;
-	float ymin=(float)(-NLACHANNEL_HEIGHT(snla)), ymax=0;
+	float ymin /* =(float)(-NLACHANNEL_HEIGHT(snla)) */ /* UNUSED */, ymax=0;
 	
 	/* convert border-region to view coordinates */
 	UI_view2d_region_to_view(v2d, rect.xmin, rect.ymin+2, &rectf.xmin, &rectf.ymin);
@@ -282,11 +282,17 @@ static int nlaedit_borderselect_exec(bContext *C, wmOperator *op)
 	bAnimContext ac;
 	rcti rect;
 	short mode=0, selectmode=0;
+	int extend;
 	
 	/* get editor data */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
-	
+
+	/* clear all selection if not extending selection */
+	extend= RNA_boolean_get(op->ptr, "extend");
+	if (!extend)
+		deselect_nla_strips(&ac, DESELECT_STRIPS_TEST, SELECT_SUBTRACT);
+
 	/* get settings from operator */
 	rect.xmin= RNA_int_get(op->ptr, "xmin");
 	rect.ymin= RNA_int_get(op->ptr, "ymin");
@@ -302,7 +308,7 @@ static int nlaedit_borderselect_exec(bContext *C, wmOperator *op)
 	if (RNA_boolean_get(op->ptr, "axis_range")) {
 		/* mode depends on which axis of the range is larger to determine which axis to use 
 		 *	- checking this in region-space is fine, as it's fundamentally still going to be a different rect size
-		 *	- the frame-range select option is favoured over the channel one (x over y), as frame-range one is often
+		 *	- the frame-range select option is favored over the channel one (x over y), as frame-range one is often
 		 *	  used for tweaking timing when "blocking", while channels is not that useful...
 		 */
 		if ((rect.xmax - rect.xmin) >= (rect.ymax - rect.ymin))
@@ -341,7 +347,7 @@ void NLA_OT_select_border(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* rna */
-	WM_operator_properties_gesture_border(ot, 0);
+	WM_operator_properties_gesture_border(ot, 1);
 	
 	RNA_def_boolean(ot->srna, "axis_range", 0, "Axis Range", "");
 }
@@ -376,8 +382,9 @@ static void nlaedit_select_leftright (bContext *C, bAnimContext *ac, short leftr
 	if (select_mode==SELECT_REPLACE) {
 		select_mode= SELECT_ADD;
 		
-		/* deselect all other channels and keyframes */
-		ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+		/* - deselect all other keyframes, so that just the newly selected remain
+		 * - channels aren't deselected, since we don't re-select any as a consequence
+		 */
 		deselect_nla_strips(ac, 0, SELECT_SUBTRACT);
 	}
 	
@@ -479,7 +486,7 @@ void NLA_OT_select_leftright (wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Select Left/Right";
 	ot->idname= "NLA_OT_select_leftright";
-	ot->description= "Select strips to the left or the right of the current frame ";
+	ot->description= "Select strips to the left or the right of the current frame";
 	
 	/* api callbacks  */
 	ot->invoke= nlaedit_select_leftright_invoke;
@@ -606,8 +613,8 @@ static void mouse_nla_strips (bContext *C, bAnimContext *ac, const int mval[2], 
 static int nlaedit_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
 	bAnimContext ac;
-	Scene *scene;
-	ARegion *ar;
+	/* Scene *scene; */ /* UNUSED */
+	/* ARegion *ar; */ /* UNUSED */
 	// View2D *v2d; /*UNUSED*/
 	short selectmode;
 
@@ -616,8 +623,8 @@ static int nlaedit_clickselect_invoke(bContext *C, wmOperator *op, wmEvent *even
 		return OPERATOR_CANCELLED;
 		
 	/* get useful pointers from animation context data */
-	scene= ac.scene;
-	ar= ac.ar;
+	/* scene= ac.scene; */ /* UNUSED */
+	/* ar= ac.ar; */ /* UNUSED */
 	// v2d= &ar->v2d;
 
 	/* select mode is either replace (deselect all, then add) or add/extend */

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -47,12 +45,13 @@
 #include "render_types.h"
 
 /* RayFace
+ *
+ * note we force always inline here, because compiler refuses to otherwise
+ * because function is too long. Since this is code that is called billions
+ * of times we really do want to inline. */
 
-   note we force always inline here, because compiler refuses to otherwise
-   because function is too long. Since this is code that is called billions
-   of times we really do want to inline. */
-
-MALWAYS_INLINE RayObject* rayface_from_coords(RayFace *rayface, void *ob, void *face, float *v1, float *v2, float *v3, float *v4)
+MALWAYS_INLINE RayObject* rayface_from_coords(RayFace *rayface, void *ob, void *face,
+                                              float *v1, float *v2, float *v3, float *v4)
 {
 	rayface->ob = ob;
 	rayface->face = face;
@@ -120,7 +119,7 @@ MALWAYS_INLINE int vlr_check_intersect(Isect *is, ObjectInstanceRen *obi, VlakRe
 		return (is->lay & obi->lay);
 }
 
-MALWAYS_INLINE int vlr_check_intersect_solid(Isect *is, ObjectInstanceRen* obi, VlakRen *vlr)
+MALWAYS_INLINE int vlr_check_intersect_solid(Isect *UNUSED(is), ObjectInstanceRen* UNUSED(obi), VlakRen *vlr)
 {
 	/* solid material types only */
 	if (vlr->mat->material_type == MA_TYPE_SURFACE)
@@ -129,7 +128,7 @@ MALWAYS_INLINE int vlr_check_intersect_solid(Isect *is, ObjectInstanceRen* obi, 
 		return 0;
 }
 
-MALWAYS_INLINE int vlr_check_bake(Isect *is, ObjectInstanceRen* obi, VlakRen *vlr)
+MALWAYS_INLINE int vlr_check_bake(Isect *is, ObjectInstanceRen* obi, VlakRen *UNUSED(vlr))
 {
 	return (obi->obr->ob != is->userdata);
 }
@@ -283,8 +282,8 @@ MALWAYS_INLINE int isec_tri_quad_neighbour(float start[3], float dir[3], RayFace
 	return 0;
 }
 
-/* RayFace intersection with checks and neighbour verifaction included,
-   Isect is modified if the face is hit. */
+/* RayFace intersection with checks and neighbor verifaction included,
+ * Isect is modified if the face is hit. */
 
 MALWAYS_INLINE int intersect_rayface(RayObject *hit_obj, RayFace *face, Isect *is)
 {
@@ -322,7 +321,7 @@ MALWAYS_INLINE int intersect_rayface(RayObject *hit_obj, RayFace *face, Isect *i
 	if(ok) {
 	
 		/* when a shadow ray leaves a face, it can be little outside the edges
-		   of it, causing intersection to be detected in its neighbour face */
+		 * of it, causing intersection to be detected in its neighbor face */
 		if(is->skip & RE_SKIP_VLR_NEIGHBOUR)
 		{
 			if(dist < 0.1f && is->orig.ob == face->ob)
@@ -331,8 +330,8 @@ MALWAYS_INLINE int intersect_rayface(RayObject *hit_obj, RayFace *face, Isect *i
 				VlakRen * b = (VlakRen*)face->face;
 
 				/* so there's a shared edge or vertex, let's intersect ray with
-				   face itself, if that's true we can safely return 1, otherwise
-				   we assume the intersection is invalid, 0 */
+				 * face itself, if that's true we can safely return 1, otherwise
+				 * we assume the intersection is invalid, 0 */
 				if(a->v1==b->v1 || a->v2==b->v1 || a->v3==b->v1 || a->v4==b->v1
 				|| a->v1==b->v2 || a->v2==b->v2 || a->v3==b->v2 || a->v4==b->v2
 				|| a->v1==b->v3 || a->v2==b->v3 || a->v3==b->v3 || a->v4==b->v3
@@ -441,7 +440,7 @@ int RE_rayobject_intersect(RayObject *r, Isect *i)
 	}
 	else {
 		assert(0);
-    	return 0;
+		return 0;
 	}
 }
 

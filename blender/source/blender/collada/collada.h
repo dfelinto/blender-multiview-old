@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup collada
  */
 
-#ifndef BLENDER_COLLADA_H
-#define BLENDER_COLLADA_H
+#ifndef __COLLADA_H__
+#define __COLLADA_H__
 
 struct bContext;
 struct Scene;
@@ -39,7 +37,7 @@ extern "C" {
 	 * both return 1 on success, 0 on error
 	 */
 	int collada_import(bContext *C, const char *filepath);
-	int collada_export(Scene *sce, const char *filepath, int selected);
+	int collada_export(Scene *sce, const char *filepath, int selected, int second_life);
 #ifdef __cplusplus
 }
 #endif

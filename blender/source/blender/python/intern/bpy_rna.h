@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup pythonintern
  */
 
-#ifndef BPY_RNA_H
-#define BPY_RNA_H
+#ifndef __BPY_RNA_H__
+#define __BPY_RNA_H__
 
 /* --- bpy build options --- */
 #ifdef WITH_PYTHON_SAFETY
@@ -43,9 +41,6 @@
 
 /* support for inter references, currently only needed for corner case */
 #define USE_PYRNA_STRUCT_REFERENCE
-
-/* use real collection iterators rather than faking with a list */
-#define USE_PYRNA_ITER
 
 #else /* WITH_PYTHON_SAFETY */
 
@@ -67,6 +62,11 @@
  * so prefer the leak to the memory bloat for now. */
 // #define PYRNA_FREE_SUPPORT
 
+/* use real collection iterators rather than faking with a list
+ * this is needed so enums can be iterated over without crashing,
+ * since finishing the iteration frees temp allocated enums */
+#define USE_PYRNA_ITER
+
 /* --- end bpy build options --- */
 
 struct ID;
@@ -83,14 +83,14 @@ extern PyTypeObject pyrna_func_Type;
 #define BPy_PropertyRNA_Check(v)		(PyObject_TypeCheck(v, &pyrna_prop_Type))
 #define BPy_PropertyRNA_CheckExact(v)	(Py_TYPE(v) == &pyrna_prop_Type)
 
-#define PYRNA_STRUCT_CHECK_OBJ(obj) if(pyrna_struct_validity_check(obj) == -1) { return NULL; }
-#define PYRNA_STRUCT_CHECK_INT(obj) if(pyrna_struct_validity_check(obj) == -1) { return -1; }
+#define PYRNA_STRUCT_CHECK_OBJ(obj) if (UNLIKELY(pyrna_struct_validity_check(obj) == -1)) { return NULL; } (void)0
+#define PYRNA_STRUCT_CHECK_INT(obj) if (UNLIKELY(pyrna_struct_validity_check(obj) == -1)) { return -1;   } (void)0
 
-#define PYRNA_PROP_CHECK_OBJ(obj) if(pyrna_prop_validity_check(obj) == -1) { return NULL; }
-#define PYRNA_PROP_CHECK_INT(obj) if(pyrna_prop_validity_check(obj) == -1) { return -1; }
+#define PYRNA_PROP_CHECK_OBJ(obj) if (UNLIKELY(pyrna_prop_validity_check(obj) == -1)) { return NULL; } (void)0
+#define PYRNA_PROP_CHECK_INT(obj) if (UNLIKELY(pyrna_prop_validity_check(obj) == -1)) { return -1;   } (void)0
 
-#define PYRNA_STRUCT_IS_VALID(pysrna) (((BPy_StructRNA *)(pysrna))->ptr.type != NULL)
-#define PYRNA_PROP_IS_VALID(pysrna) (((BPy_PropertyRNA *)(pysrna))->ptr.type != NULL)
+#define PYRNA_STRUCT_IS_VALID(pysrna) (LIKELY(((BPy_StructRNA *)(pysrna))->ptr.type != NULL))
+#define PYRNA_PROP_IS_VALID(pysrna)   (LIKELY(((BPy_PropertyRNA *)(pysrna))->ptr.type != NULL))
 
 /* 'in_weakreflist' MUST be aligned */
 
@@ -147,7 +147,7 @@ typedef struct {
 	PyObject *in_weakreflist;
 #endif
 
-	/* collection iterator spesific parts */
+	/* collection iterator specific parts */
 	CollectionPropertyIterator iter;
 } BPy_PropertyCollectionIterRNA;
 

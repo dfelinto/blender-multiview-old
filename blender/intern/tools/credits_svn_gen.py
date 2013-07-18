@@ -48,6 +48,7 @@ in blender.org's typo3.
 # -----------------------------------------------------------------------------
 # Generic Class and parsing code, could be useful for all sorts of cases
 
+
 class SvnCommit(object):
     """Just data store really"""
     __slots__ = ("revision",
@@ -87,7 +88,6 @@ class SvnCommit(object):
 
 
 def parse_commits(filepath):
-    import xml.dom.minidom
     from xml.dom.minidom import parse
 
     svn_xml = parse(filepath)
@@ -110,7 +110,7 @@ def parse_commits(filepath):
 
 #svn_log = "/dsk/data/src/blender/svn_log_verbose.xml"
 svn_log = "/dsk/data/src/blender/svn_log_verbose.xml"
-tracker_csv = "/l/tracker_report-2011-09-02.csv"
+tracker_csv = "/l/tracker_report-2011-10-17.csv"
 
 # TODO, there are for sure more companies then are currently listed.
 # 1 liners for in wiki syntax
@@ -118,6 +118,7 @@ contrib_companies = [
     "<b>Unity Technologies</b> - FBX Exporter",
     "<b>BioSkill GmbH</b> - H3D compatibility for X3D Exporter, "
     "OBJ Nurbs Import/Export",
+    "<b>AutoCRC</b> - Improvements to fluid particles",
 ]
 
 # ignore commits containing these messages
@@ -156,94 +157,106 @@ author_name_mapping = {
     "broken": "Matt Ebb",
     "campbellbarton": "Campbell Barton",
     "cessen": "Nathan Vegdahl",
+    "cmccad": "Casey Corn",
     "damien78": "Damien Plisson",
     "desoto": "Chris Burt",
     "dfelinto": "Dalai Felinto",
     "dingto": "Thomas Dinges",
     "djcapelis": "D.J. Capelis",
+    "domino": "Domino Marama",
     "dougal2": "Doug Hammond",
+    "eeshlo": "Alfredo de Greef",
     "elubie": "Andrea Weikert",
+    "ender79": "Andrew Wiggin",  # an alias, not real name.
     "erwin": "Erwin Coumans",
+    "frank": "Frank van Beek",
     "genscher": "Daniel Genrich",
     "goofster": "Roel Spruit",
     "gsrb3d": "gsr b3d",
+    "guignot": "Jacques Guignot",
     "guitargeek": "Johnny Matthews",
+    "h_xnan": "Hans Lambermont",
+    "halley": "Ed Halley",
     "hans": "Hans Lambermont",
     "harkyman": "Roland Hess",
     "hos": "Chris Want",
     "ianwill": "Willian Padovani Germano",
     "imbusy": "Lukas Steiblys",
     "intrr": "Alexander Ewering",
+    "jaguarandi": "Andre Susano Pinto",
+    "jandro": "Alejandro Conty Estevez",
     "jbakker": "Jeroen Bakker",
+    "jbinto": "Jacques Beuarain",
     "jensverwiebe": "Jens Verwiebe",
     "jesterking": "Nathan Letwory",
     "jhk": "Janne Karhu",
     "jiri": "Jiri Hnidek",
     "joeedh": "Joseph Eagar",
     "jwilkins": "Jason Wilkins",
+    "kakbarnf": "Robin Allen",
     "kazanbas": "Arystanbek Dyussenov",
     "kester": "Kester Maddock",
     "khughes": "Ken Hughes",
     "kwk": "Konrad Kleine",
+    "larstiq": "Wouter van Heyst",
     "letterrip": "Tom Musgrove",
     "lmg": "M.G. Kishalmi",
+    "loczar": "Francis Laurence",  # not 100% sure on this.
+    "lonetech": "Yann Vernier",
     "lukastoenne": "Lukas Toenne",
     "lukep": "Jean-Luc Peurière",
     "lusque": "Ervin Weber",
+    "maarten": "Maarten Gribnau",
     "mal_cando": "Mal Duffin",
+    "mein": "Kent Mein",
     "merwin": "Mike Erwin",
     "mfoxdogg": "Michael Fox",
+    "mfreixas": "Marc Freixas",
+    "michel": "Michel Selten",
+    "migius": "Remigiusz Fiedler",
+    "mikasaari": "Mika Saari",
     "mindrones": "Luca Bonavita",
     "mmikkelsen": "Morten Mikkelsen",
     "moguri": "Mitchell Stokes",
+    "mont29": "Bastien Montagne",
+    "n_t": "Nils Thuerey",
     "nazgul": "Sergey Sharybin",
     "nexyon": "Joerg Mueller",
     "nicholasbishop": "Nicholas Bishop",
-    "n_t": "Nils Thuerey",
+    "phaethon": "Frederick Lee",
+    "phase": "Rob Haarsma",
+    "phlo": "Florian Eggenberger",
     "pidhash": "Joilnen Leite",
     "psy-fi": "Antony Riakiotakis",
+    "rwenzlaff": "Robert Wenzlaff",
+    "sateh": "Stefan Arentz",
     "schlaile": "Peter Schlaile",
     "scourage": "Robert Holcomb",
     "sgefant": "Stefan Gartner",
-    "sirdude": "sirdude",
+    "sirdude": "Kent Mein",
     "smerch": "Alex Sytnik",
     "snailrose": "Charlie Carley",
     "stiv": "Stephen Swaney",
+    "trumanblending": "Andrew Hale",
     "theeth": "Martin Poirier",
+    "themyers": "Ricki Myers",
     "ton": "Ton Roosendaal",
     "vekoon": "Elia Sarti",
     "xat": "Xavier Thomas",
+    "xiaoxiangquan": "Xiao Xiangquan",
     "zaghaghi": "Hamed Zaghaghi",
     "zanqdo": "Daniel Salazar",
+    "z0r": "Alex Fraser",
     "zuster": "Daniel Dunbar",
-
+    "jason_hays22": "Jason Hays",
+    "miikah": "Miika Hamalainen",
+    "howardt": "Howard Trickey",
+    "kanttori": "Juha Mäki-Kanto",
+    "xglasyliax": "Peter Larabell",
+    "lockal": "Sv. Lockal",
+    "kupoman": "Daniel Stokes",
     # TODO, find remaining names
-    "cmccad": "",
-    "eeshlo": "",
-    "frank": "",
-    "guignot": "",
-    "h_xnan": "",
-    "halley": "",
-    "jaguarandi": "",
-    "jandro": "",
-    "jbinto": "",
-    "kakbarnf": "",
-    "larstiq": "",
-    "loczar": "",
-    "lonetech": "",
-    "maarten": "",
-    "mein": "",
-    "mfreixas": "",
-    "michel": "",
-    "migius": "",
-    "mikasaari": "",
     "nlin": "",
-    "phaethon": "",
-    "phase": "",
-    "phlo": "",
-    "rwenzlaff": "",
-    "sateh": "",
-    "themyers": "",
     }
 
 # lame, fill in empty key/values
@@ -251,6 +264,7 @@ empty = []
 for key, value in author_name_mapping.items():
     if not value:
         empty.append(key)
+e = None
 for e in empty:
     author_name_mapping[e] = e.title()
 del empty, e
@@ -267,7 +281,10 @@ def build_patch_name_map(filepath):
     """
     patches = {}
     import csv
-    tracker = csv.reader(open(filepath, 'r'), delimiter=';', quotechar='|')
+    tracker = csv.reader(open(filepath, 'r', encoding='utf-8'),
+                         delimiter=';',
+                         quotechar='|')
+
     for i, row in enumerate(tracker):
         if i == 0:
             id_index = row.index("artifact_id")
@@ -301,7 +318,7 @@ def patch_numbers_from_log(msg):
         if      (w[0].isdigit() or
                 (len(w) > 2 and w[0] == "[" and w[1] == "#") or
                 (len(w) > 1 and w[0] == "#")):
-            
+
             try:
                 num = int(w.strip("[]#"))
             except ValueError:
@@ -319,11 +336,13 @@ def patch_find_author(commit, patch_map):
         if p in patch_map:
             patch = patch_map[p]
 
-            print(author_name_mapping[commit.author],
-                  "committing patch for",
+            '''
+            print("%r committing patch for %r %d" % (
+                  author_name_mapping[commit.author],
                   patch["author"],
                   commit.revision,
-                  )
+                  ))
+            '''
 
             return p, patch["author"]
 
@@ -365,32 +384,39 @@ def is_credit_commit_valid(commit):
     for action, path in commit.paths:
         if is_path_valid(path):
             tot_valid += 1
-    
+
     if tot_valid == 0:
         return False
-    
+
     # couldnt prove invalid, must be valid
     return True
 
 
 def main():
     patch_map = build_patch_name_map(tracker_csv)
-    
+
     commits = parse_commits(svn_log)
 
     credits = {key: Credit() for key in author_name_mapping}
-    S = set()
+
     for commit in commits:
         if is_credit_commit_valid(commit):
             patch_id, patch_author = patch_find_author(commit, patch_map)
-            
+
             if patch_author is None:
                 # will error out if we miss adding new devs
-                credit = credits[commit.author]
+                credit = credits.get(commit.author)
+                if credit is None:
+                    print("warning: '%s' is not in 'author_name_mapping' !" %
+                          commit.author)
+
+                    # will be discarded
+                    credit = Credit()
+
             else:
                 # so we dont use again
                 del patch_map[patch_id]
-                
+
                 unix_name = author_name_mapping_reverse.get(patch_author)
                 if unix_name is None:  # not someone who contributed before
                     author_name_mapping_reverse[patch_author] = patch_author
@@ -408,7 +434,7 @@ def main():
 
     # write out the wiki page
     # sort by name
-    file = open("credits.html", 'w')
+    file = open("credits.html", 'w', encoding="utf-8")
 
     file.write("<h3>Individual Contributors</h3>\n\n")
 
@@ -422,7 +448,12 @@ def main():
         if not credit.commits:
             continue
 
-        author_real = author_name_mapping[author]
+        author_real = author_name_mapping.get(author)
+
+        if author_real is None:
+            print("warning: '%s' is not in 'author_name_mapping' dict!")
+            author_real = author
+
         if author_real == author:
             name_string = "<b>%s</b>" % author
         else:

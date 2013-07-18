@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief Property sensor
  */
 
-#ifndef __KX_ARMATURESENSOR
-#define __KX_ARMATURESENSOR
+#ifndef __KX_ARMATURESENSOR_H__
+#define __KX_ARMATURESENSOR_H__
 
 struct bConstraint;
 
@@ -42,7 +40,7 @@ struct bConstraint;
 
 class KX_ArmatureSensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	//class CExpression*	m_rightexpr;
 
 protected:

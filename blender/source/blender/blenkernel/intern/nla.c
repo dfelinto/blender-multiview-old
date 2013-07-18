@@ -40,6 +40,9 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_path_util.h"
+#include "BLI_listbase.h"
+#include "BLI_string.h"
 #include "BLI_ghash.h"
 
 #include "DNA_anim_types.h"
@@ -283,7 +286,7 @@ NlaStrip *add_nlastrip (bAction *act)
 	 *	- selected flag to highlight this to the user
 	 *	- auto-blends to ensure that blend in/out values are automatically 
 	 *	  determined by overlaps of strips
-	 *	- (XXX) synchronisation of strip-length in accordance with changes to action-length
+	 *	- (XXX) synchronization of strip-length in accordance with changes to action-length
 	 *	  is not done though, since this should only really happens in editmode for strips now
 	 *	  though this decision is still subject to further review...
 	 */
@@ -349,11 +352,10 @@ NlaStrip *add_nla_soundstrip (Scene *scene, Speaker *speaker)
 	 * otherwise default to length of 10 frames
 	 */
 #ifdef WITH_AUDASPACE
-	if (speaker->sound) 
-	{
+	if (speaker->sound) {
 		AUD_SoundInfo info = AUD_getInfo(speaker->sound->playback_handle);
 		
-		strip->end = ceil(info.length * FPS);
+		strip->end = (float)ceil((double)info.length * FPS);
 	}
 	else 
 #endif
@@ -397,7 +399,7 @@ static float nlastrip_get_frame_actionclip (NlaStrip *strip, float cframe, short
 	
 	/* scaling */
 	if (IS_EQF(strip->scale, 0.0f)) strip->scale= 1.0f;
-	scale = (float)fabs(strip->scale); /* scale must be positive - we've got a special flag for reversing */
+	scale = fabsf(strip->scale); /* scale must be positive - we've got a special flag for reversing */
 	
 	/* length of referenced action */
 	actlength = strip->actend - strip->actstart;
@@ -775,7 +777,7 @@ short BKE_nlameta_add_strip (NlaStrip *mstrip, NlaStrip *strip)
 		return 0;
 		
 	/* check if this would need to be added to the ends of the meta,
-	 * and subsequently, if the neighbouring strips allow us enough room
+	 * and subsequently, if the neighboring strips allow us enough room
 	 */
 	if (strip->start < mstrip->start) {
 		/* check if strip to the left (if it exists) ends before the 
@@ -838,7 +840,7 @@ void BKE_nlameta_flush_transforms (NlaStrip *mstrip)
 	oEnd= ((NlaStrip *)mstrip->strips.last)->end;
 	offset= mstrip->start - oStart;
 	
-	/* optimisation:
+	/* optimization:
 	 * don't flush if nothing changed yet
 	 *	TODO: maybe we need a flag to say always flush?
 	 */
@@ -1015,7 +1017,7 @@ short BKE_nlatrack_get_bounds (NlaTrack *nlt, float bounds[2])
 {
 	NlaStrip *strip;
 	
-	/* initialise bounds */
+	/* initialize bounds */
 	if (bounds)
 		bounds[0] = bounds[1] = 0.0f;
 	else
@@ -1070,7 +1072,7 @@ void BKE_nlastrip_set_active (AnimData *adt, NlaStrip *strip)
 	
 	/* loop over tracks, deactivating*/
 	for (nlt= adt->nla_tracks.first; nlt; nlt= nlt->next) {
-		for (nls= nlt->strips.first; nls; nls= nls->next)  {
+		for (nls= nlt->strips.first; nls; nls= nls->next) {
 			if (nls != strip)
 				nls->flag &= ~NLASTRIP_FLAG_ACTIVE;
 			else
@@ -1084,7 +1086,7 @@ void BKE_nlastrip_set_active (AnimData *adt, NlaStrip *strip)
 short BKE_nlastrip_within_bounds (NlaStrip *strip, float min, float max)
 {
 	const float stripLen= (strip) ? strip->end - strip->start : 0.0f;
-	const float boundsLen= (float)fabs(max - min);
+	const float boundsLen= fabsf(max - min);
 	
 	/* sanity checks */
 	if ((strip == NULL) || IS_EQF(stripLen, 0.0f) || IS_EQF(boundsLen, 0.0f))
@@ -1232,7 +1234,7 @@ void BKE_nlastrip_validate_fcurves (NlaStrip *strip)
 			/* store path - make copy, and store that */
 			fcu->rna_path= BLI_strdupn("influence", 9);
 			
-			// TODO: insert a few keyframes to ensure default behaviour?
+			// TODO: insert a few keyframes to ensure default behavior?
 		}
 	}
 	
@@ -1253,7 +1255,7 @@ void BKE_nlastrip_validate_fcurves (NlaStrip *strip)
 			/* store path - make copy, and store that */
 			fcu->rna_path= BLI_strdupn("strip_time", 10);
 			
-			// TODO: insert a few keyframes to ensure default behaviour?
+			// TODO: insert a few keyframes to ensure default behavior?
 		}
 	}
 }
@@ -1284,16 +1286,16 @@ void BKE_nlastrip_validate_name (AnimData *adt, NlaStrip *strip)
 	if (strip->name[0]==0) {
 		switch (strip->type) {
 			case NLASTRIP_TYPE_CLIP: /* act-clip */
-				sprintf(strip->name, "%s", (strip->act)?(strip->act->id.name+2):("<No Action>"));
+				BLI_strncpy(strip->name, (strip->act)?(strip->act->id.name+2):("<No Action>"), sizeof(strip->name));
 				break;
 			case NLASTRIP_TYPE_TRANSITION: /* transition */
-				sprintf(strip->name, "Transition");
+				BLI_strncpy(strip->name, "Transition", sizeof(strip->name));
 				break;
 			case NLASTRIP_TYPE_META: /* meta */
-				sprintf(strip->name, "Meta");
+				BLI_strncpy(strip->name, "Meta", sizeof(strip->name));
 				break;
 			default:
-				sprintf(strip->name, "NLA Strip");
+				BLI_strncpy(strip->name, "NLA Strip", sizeof(strip->name));
 				break;
 		}
 	}
@@ -1392,8 +1394,7 @@ static void BKE_nlastrip_validate_autoblends (NlaTrack *nlt, NlaStrip *nls)
 	 *	  is directly followed/preceeded by another strip, forming an 
 	 *	  'island' of continuous strips
 	 */
-	if ( (ps || ns) && ((nls->prev == NULL) || IS_EQF(nls->prev->end, nls->start)==0) )
-	{
+	if ((ps || ns) && ((nls->prev == NULL) || IS_EQF(nls->prev->end, nls->start)==0)) {
 		/* start overlaps - pick the largest overlap */
 		if ( ((ps && ns) && (*ps > *ns)) || (ps) )
 			nls->blendin= *ps - nls->start;
@@ -1403,8 +1404,7 @@ static void BKE_nlastrip_validate_autoblends (NlaTrack *nlt, NlaStrip *nls)
 	else /* no overlap allowed/needed */
 		nls->blendin= 0.0f;
 		
-	if ( (pe || ne) && ((nls->next == NULL) || IS_EQF(nls->next->start, nls->end)==0) )
-	{
+	if ((pe || ne) && ((nls->next == NULL) || IS_EQF(nls->next->start, nls->end)==0)) {
 		/* end overlaps - pick the largest overlap */
 		if ( ((pe && ne) && (*pe > *ne)) || (pe) )
 			nls->blendout= nls->end - *pe;
@@ -1445,9 +1445,17 @@ void BKE_nla_validate_state (AnimData *adt)
 			 */
 			// TODO: 1 solution is to tie this in with auto-blending...
 			if (strip->extendmode != NLASTRIP_EXTEND_NOTHING) {
+				/* 1) First strip must be set to extend hold, otherwise, stuff before acts dodgy
+				 * 2) Only overwrite extend mode if *not* changing it will most probably result in 
+				 * occlusion problems, which will occur iff
+				 *	- blendmode = REPLACE
+				 *	- all channels the same (this is fiddly to test, so is currently assumed)
+				 *
+				 * Should fix problems such as [#29869]
+				 */
 				if (strip == fstrip)
 					strip->extendmode= NLASTRIP_EXTEND_HOLD;
-				else
+				else if (strip->blendmode == NLASTRIP_MODE_REPLACE)
 					strip->extendmode= NLASTRIP_EXTEND_HOLD_FORWARD;
 			}
 		}
@@ -1539,6 +1547,34 @@ short BKE_nla_tweakmode_enter (AnimData *adt)
 			break;
 		}	
 	}
+	
+	/* There are situations where we may have multiple strips selected and we want to enter tweakmode on all 
+	 * of those at once. Usually in those cases, it will usually just be a single strip per AnimData. 
+	 * In such cases, compromise and take the last selected track and/or last selected strip [#28468] 
+	 */
+	if (activeTrack == NULL) {
+		/* try last selected track for active strip */
+		for (nlt = adt->nla_tracks.last; nlt; nlt = nlt->prev) {
+			if (nlt->flag & NLATRACK_SELECTED) {
+				/* assume this is the active track */
+				activeTrack= nlt;
+				
+				/* try to find active strip */
+				activeStrip= BKE_nlastrip_find_active(nlt);
+				break;
+			}
+		}	
+	}
+	if ((activeTrack) && (activeStrip == NULL)) {
+		/* no active strip in active or last selected track; compromise for first selected (assuming only single)... */
+		for (strip = activeTrack->strips.first; strip; strip= strip->next) {
+			if (strip->flag & (NLASTRIP_FLAG_SELECT|NLASTRIP_FLAG_ACTIVE)) {
+				activeStrip = strip;
+				break;
+			}
+		}
+	}
+	
 	if ELEM3(NULL, activeTrack, activeStrip, activeStrip->act) {
 		if (G.f & G_DEBUG) {
 			printf("NLA tweakmode enter - neither active requirement found \n");

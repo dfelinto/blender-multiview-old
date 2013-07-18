@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -90,16 +88,22 @@ extern "C" {
 
 #include "ArmatureExporter.h"
 
+#include "ExportSettings.h"
+
 class SceneExporter: COLLADASW::LibraryVisualScenes, protected TransformWriter, protected InstanceWriter
 {
-	ArmatureExporter *arm_exporter;
 public:
-	SceneExporter(COLLADASW::StreamWriter *sw, ArmatureExporter *arm);
-	void exportScene(Scene *sce, bool export_selected);
+	SceneExporter(COLLADASW::StreamWriter *sw, ArmatureExporter *arm, const ExportSettings *export_settings);
+	void exportScene(Scene *sce);
 
 private:
-	void exportHierarchy(Scene *sce, bool export_selected);
+	// required for writeNodes() for bone-parented objects
+	friend class ArmatureExporter;
+	void exportHierarchy(Scene *sce);
 	void writeNodes(Object *ob, Scene *sce);
+	
+	ArmatureExporter *arm_exporter;
+	const ExportSettings *export_settings;
 };
 
 #endif

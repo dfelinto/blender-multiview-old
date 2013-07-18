@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -102,7 +100,7 @@ bool KX_MouseFocusSensor::Evaluate()
 //  	cout << "evaluate focus mouse sensor "<<endl;
 	m_reset = false;
 	if (m_focusmode) {
-		/* Focus behaviour required. Test mouse-on. The rest is
+		/* Focus behavior required. Test mouse-on. The rest is
 		 * equivalent to handling a key. */
 		obHasFocus = ParentObjectHasFocus();
 		
@@ -125,7 +123,7 @@ bool KX_MouseFocusSensor::Evaluate()
 			result = true;
 		}
 	} else {
-		/* No focus behaviour required: revert to the basic mode. This
+		/* No focus behavior required: revert to the basic mode. This
 		 * mode is never used, because the converter never makes this
 		 * sensor for a mouse-key event. It is here for
 		 * completeness. */
@@ -144,11 +142,11 @@ bool KX_MouseFocusSensor::RayHit(KX_ClientObjectInfo* client_info, KX_RayCast* r
 	KX_GameObject* hitKXObj = client_info->m_gameobject;
 	
 	/* Is this me? In the ray test, there are a lot of extra checks
-	* for aliasing artefacts from self-hits. That doesn't happen
-	* here, so a simple test suffices. Or does the camera also get
-	* self-hits? (No, and the raysensor shouldn't do it either, since
-	* self-hits are excluded by setting the correct ignore-object.)
-	* Hitspots now become valid. */
+	 * for aliasing artefacts from self-hits. That doesn't happen
+	 * here, so a simple test suffices. Or does the camera also get
+	 * self-hits? (No, and the raysensor shouldn't do it either, since
+	 * self-hits are excluded by setting the correct ignore-object.)
+	 * Hitspots now become valid. */
 	KX_GameObject* thisObj = (KX_GameObject*) GetParent();
 	if ((m_focusmode == 2) || hitKXObj == thisObj)
 	{
@@ -240,29 +238,23 @@ bool KX_MouseFocusSensor::ParentObjectHasFocusCamera(KX_Camera *cam)
 	
 	
 	/*	build the from and to point in normalized device coordinates 
-	 *	Looks like normailized device coordinates are [-1,1] in x [-1,1] in y
-	 *	[0,-1] in z 
+	 *	Normalized device coordinates are [-1,1] in x, y, z
 	 *	
 	 *	The actual z coordinates used don't have to be exact just infront and 
 	 *	behind of the near and far clip planes.
 	 */ 
 	frompoint.setValue(	(2 * (m_x-x_lb) / width) - 1.0,
 						1.0 - (2 * (m_y_inv - y_lb) / height),
-						/*cam->GetCameraData()->m_perspective ? 0.0:cdata->m_clipstart,*/ /* real clipstart is scaled in ortho for some reason, zero is ok */
-						0.0, /* nearclip, see above comments */
+						-1.0,
 						1.0 );
 	
 	topoint.setValue(	(2 * (m_x-x_lb) / width) - 1.0,
 						1.0 - (2 * (m_y_inv-y_lb) / height),
-						cam->GetCameraData()->m_perspective ? 1.0:cam->GetCameraData()->m_clipend, /* farclip, see above comments */
+						1.0,
 						1.0 );
-
-	/* camera to world  */
-	MT_Transform wcs_camcs_tranform = cam->GetWorldToCamera();
-	MT_Transform cams_wcs_transform;
-	cams_wcs_transform.invert(wcs_camcs_tranform);
 	
-	MT_Matrix4x4 camcs_wcs_matrix = MT_Matrix4x4(cams_wcs_transform);
+	/* camera to world  */
+	MT_Matrix4x4 camcs_wcs_matrix = MT_Matrix4x4(cam->GetCameraToWorld());
 
 	/* badly defined, the first time round.... I wonder why... I might
 	 * want to guard against floating point errors here.*/
@@ -272,6 +264,8 @@ bool KX_MouseFocusSensor::ParentObjectHasFocusCamera(KX_Camera *cam)
 	/* shoot-points: clip to cam to wcs . win to clip was already done.*/
 	frompoint = clip_camcs_matrix * frompoint;
 	topoint   = clip_camcs_matrix * topoint;
+	/* clipstart = - (frompoint[2] / frompoint[3])
+	 * clipend = - (topoint[2] / topoint[3]) */
 	frompoint = camcs_wcs_matrix * frompoint;
 	topoint   = camcs_wcs_matrix * topoint;
 	

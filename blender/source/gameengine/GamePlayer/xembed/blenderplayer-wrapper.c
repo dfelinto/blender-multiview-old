@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -50,8 +48,8 @@ pid_t blenderplayer_id = 0;
 
 
 
-void print_id(){
-
+void print_id()
+{
 	uid_t ruid, euid, suid;
 
 	getresuid(&ruid, &euid, &suid);
@@ -63,7 +61,8 @@ void print_id(){
 	This function is used to catch SIGTERM signal (raised by web plugin when the plugin should shut down
 	and raise a SIGKILL signal to the blenderplayer in order to kill it.
 */
-void sigterm_handler(int signum) {
+void sigterm_handler(int signum)
+{
 	printf("Signal!!!\n");
 	if (blenderplayer_id != 0) {
 		kill(blenderplayer_id, SIGKILL);
@@ -79,8 +78,8 @@ void sigterm_handler(int signum) {
 	argv[2] should be an window handle id
 
 */
-int  main(int argc, char *argv[]) {
-
+int main(int argc, char *argv[])
+{
 	uid_t privid = geteuid();
 	uid_t caller_id = getuid();
 

@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -33,6 +32,7 @@ set(INC
 	../nodes
 	../render/extern/include
 	../../../intern/guardedalloc
+	../imbuf
 )
 
 set(INC_SYS

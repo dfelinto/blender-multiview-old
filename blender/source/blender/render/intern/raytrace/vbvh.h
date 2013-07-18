@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,7 +53,7 @@ struct VBVHNode
  * Push nodes (used on dfs)
  */
 template<class Node>
-inline static void bvh_node_push_childs(Node *node, Isect *isec, Node **stack, int &stack_pos)
+inline static void bvh_node_push_childs(Node *node, Isect *UNUSED(isec), Node **stack, int &stack_pos)
 {
 	Node *child = node->child;
 
@@ -67,14 +65,17 @@ inline static void bvh_node_push_childs(Node *node, Isect *isec, Node **stack, i
 	{
 		while(child)
 		{
-			//Skips BB tests on primitives
-/*
-			if(is_leaf(child->child))
+			/* Skips BB tests on primitives */
+#if 0
+			if(is_leaf(child->child)) {
 				stack[stack_pos++] = child->child;
+			}
 			else
-*/
+#endif
+			{
 				stack[stack_pos++] = child;
-				
+			}
+
 			child = child->sibling;
 		}
 	}
@@ -166,8 +167,8 @@ struct BuildBinaryVBVH
 		{
 			Node *node = create_node();
 			INIT_MINMAX(node->bb, node->bb+3);
-			rtbuild_merge_bb(builder, node->bb, node->bb+3);		
-			node->child = (Node*) rtbuild_get_primitive( builder, 0 );
+			rtbuild_merge_bb(builder, node->bb, node->bb+3);
+			node->child = (Node *) rtbuild_get_primitive(builder, 0);
 			return node;
 		}
 		else
@@ -199,7 +200,7 @@ struct BuildBinaryVBVH
 	}
 };
 
-/*
+#if 0
 template<class Tree,class OldNode>
 struct Reorganize_VBVH
 {
@@ -244,4 +245,4 @@ struct Reorganize_VBVH
 		return node;
 	}	
 };
-*/
+#endif

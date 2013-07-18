@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,8 +26,8 @@
  * 
  */
 
-#ifndef BLO_RUNTIME_H
-#define BLO_RUNTIME_H
+#ifndef __BLO_RUNTIME_H__
+#define __BLO_RUNTIME_H__
 
 /** \file BLO_runtime.h
  *  \ingroup blenloader
@@ -42,12 +40,12 @@ extern "C" {
 struct BlendFileData;
 struct ReportList;
 
-int BLO_is_a_runtime(char *file);
-struct BlendFileData *BLO_read_runtime(char *file, struct ReportList *reports);
+int BLO_is_a_runtime(const char *file);
+struct BlendFileData *BLO_read_runtime(const char *file, struct ReportList *reports);
 
 #ifdef __cplusplus
 }
 #endif
 
-#endif /* BLO_RUNTIME_H */
+#endif /* __BLO_RUNTIME_H__ */
 

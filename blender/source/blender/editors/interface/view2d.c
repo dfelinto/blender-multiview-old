@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -159,27 +157,28 @@ static void view2d_masks(View2D *v2d)
 
 /* Refresh and Validation */
 
-/* Initialise all relevant View2D data (including view rects if first time) and/or refresh mask sizes after view resize
+/* Initialize all relevant View2D data (including view rects if first time) and/or refresh mask sizes after view resize
  *	- for some of these presets, it is expected that the region will have defined some
  * 	  additional settings necessary for the customisation of the 2D viewport to its requirements
  *	- this function should only be called from region init() callbacks, where it is expected that
- *	  this is called before UI_view2d_size_update(), as this one checks that the rects are properly initialised. 
+ *	  this is called before UI_view2d_size_update(), as this one checks that the rects are properly initialized. 
  */
 void UI_view2d_region_reinit(View2D *v2d, short type, int winx, int winy)
 {
 	short tot_changed= 0, init= 0;
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 
-	/* initialise data if there is a need for such */
+	/* initialize data if there is a need for such */
 	if ((v2d->flag & V2D_IS_INITIALISED) == 0) {
-		/* set initialised flag so that View2D doesn't get reinitialised next time again */
+		/* set initialized flag so that View2D doesn't get reinitialised next time again */
 		v2d->flag |= V2D_IS_INITIALISED;
 
 		init= 1;
 		
 		/* see eView2D_CommonViewTypes in UI_view2d.h for available view presets */
 		switch (type) {
-			/* 'standard view' - optimum setup for 'standard' view behaviour, that should be used new views as basis for their
+			/* 'standard view' - optimum setup for 'standard' view behavior,
+			 *  that should be used new views as basis for their
 			 * 	own unique View2D settings, which should be used instead of this in most cases...
 			 */
 			case V2D_COMMONVIEW_STANDARD:
@@ -420,8 +419,8 @@ void UI_view2d_curRect_validate_resize(View2D *v2d, int resize)
 	
 	/* check if we should restore aspect ratio (if view size changed) */
 	if (v2d->keepzoom & V2D_KEEPASPECT) {
-		short do_x=0, do_y=0, do_cur, do_win;
-		float curRatio, winRatio;
+		short do_x=0, do_y=0, do_cur /* , do_win */ /* UNUSED */;
+		float /* curRatio, */ /* UNUSED */ winRatio;
 		
 		/* when a window edge changes, the aspect ratio can't be used to
 		 * find which is the best new 'cur' rect. thats why it stores 'old' 
@@ -429,7 +428,7 @@ void UI_view2d_curRect_validate_resize(View2D *v2d, int resize)
 		if (winx != v2d->oldwinx) do_x= 1;
 		if (winy != v2d->oldwiny) do_y= 1;
 		
-		curRatio= height / width;
+		/* curRatio= height / width; */ /* UNUSED */
 		winRatio= winy / winx;
 		
 		/* both sizes change (area/region maximised)  */
@@ -443,7 +442,7 @@ void UI_view2d_curRect_validate_resize(View2D *v2d, int resize)
 			else do_x= 1;
 		}
 		do_cur= do_x;
-		do_win= do_y;
+		/* do_win= do_y; */ /* UNUSED */
 		
 		if (do_cur) {
 			if ((v2d->keeptot == V2D_KEEPTOT_STRICT) && (winx != v2d->oldwinx)) {
@@ -589,7 +588,7 @@ void UI_view2d_curRect_validate_resize(View2D *v2d, int resize)
 			 * 
 			 * So, resolution is to just shift view by the gap between the extremities.
 			 * We favour moving the 'minimum' across, as that's origin for most things
-			 * (XXX - in the past, max was favoured... if there are bugs, swap!)
+			 * (XXX - in the past, max was favored... if there are bugs, swap!)
 			 */
 			if ((cur->xmin < tot->xmin) && (cur->xmax > tot->xmax)) {
 				/* outside boundaries on both sides, so take middle-point of tot, and place in balanced way */
@@ -981,8 +980,8 @@ void UI_view2d_view_ortho(View2D *v2d)
 	rctf curmasked;
 	float xofs, yofs;
 	
-	/* pixel offsets (-0.375f) are needed to get 1:1 correspondance with pixels for smooth UI drawing, 
-	 * but only applied where requsted
+	/* pixel offsets (-0.375f) are needed to get 1:1 correspondence with pixels for smooth UI drawing, 
+	 * but only applied where requested
 	 */
 	/* XXX brecht: instead of zero at least use a tiny offset, otherwise
 	 * pixel rounding is effectively random due to float inaccuracy */
@@ -1020,8 +1019,8 @@ void UI_view2d_view_orthoSpecial(ARegion *ar, View2D *v2d, short xaxis)
 	rctf curmasked;
 	float xofs, yofs;
 	
-	/* pixel offsets (-0.375f) are needed to get 1:1 correspondance with pixels for smooth UI drawing, 
-	 * but only applied where requsted
+	/* pixel offsets (-0.375f) are needed to get 1:1 correspondence with pixels for smooth UI drawing, 
+	 * but only applied where requested
 	 */
 	/* XXX temp (ton) */
 	xofs= 0.0f; // (v2d->flag & V2D_PIXELOFS_X) ? 0.375f : 0.0f;
@@ -1106,7 +1105,7 @@ static void step_to_grid(float *step, int *power, int unit)
 	}
 }
 
-/* Intialise settings necessary for drawing gridlines in a 2d-view 
+/* Initialize settings necessary for drawing gridlines in a 2d-view
  *	- Currently, will return pointer to View2DGrid struct that needs to 
  *	  be freed with UI_view2d_grid_free()
  *	- Is used for scrollbar drawing too (for units drawing)
@@ -1201,7 +1200,7 @@ void UI_view2d_grid_draw(View2D *v2d, View2DGrid *grid, int flag)
 	
 	/* vertical lines */
 	if (flag & V2D_VERTICAL_LINES) {
-		/* initialise initial settings */
+		/* initialize initial settings */
 		vec1[0]= vec2[0]= grid->startx;
 		vec1[1]= grid->starty;
 		vec2[1]= v2d->cur.ymax;
@@ -1340,8 +1339,9 @@ void UI_view2d_grid_size(View2DGrid *grid, float *r_dx, float *r_dy)
 void UI_view2d_grid_free(View2DGrid *grid)
 {
 	/* only free if there's a grid */
-	if (grid)
+	if (grid) {
 		MEM_freeN(grid);
+	}
 }
 
 /* *********************************************************************** */
@@ -1508,7 +1508,7 @@ View2DScrollers *UI_view2d_scrollers_calc(const bContext *C, View2D *v2d, short 
 static void scroll_printstr(Scene *scene, float x, float y, float val, int power, short unit, char dir)
 {
 	int len;
-	char str[32];
+	char timecode_str[32];
 	
 	/* adjust the scale unit to work ok */
 	if (dir == 'v') {
@@ -1523,10 +1523,10 @@ static void scroll_printstr(Scene *scene, float x, float y, float val, int power
 	}
 	
 	/* get string to print */
-	ANIM_timecode_string_from_frame(str, scene, power, (unit == V2D_UNIT_SECONDS), val);
+	ANIM_timecode_string_from_frame(timecode_str, scene, power, (unit == V2D_UNIT_SECONDS), val);
 	
 	/* get length of string, and adjust printing location to fit it into the horizontal scrollbar */
-	len= strlen(str);
+	len= strlen(timecode_str);
 	if (dir == 'h') {
 		/* seconds/timecode display has slightly longer strings... */
 		if (unit == V2D_UNIT_SECONDS)
@@ -1537,12 +1537,12 @@ static void scroll_printstr(Scene *scene, float x, float y, float val, int power
 	
 	/* Add degree sympbol to end of string for vertical scrollbar? */
 	if ((dir == 'v') && (unit == V2D_UNIT_DEGREES)) {
-		str[len]= 186;
-		str[len+1]= 0;
+		timecode_str[len]= 186;
+		timecode_str[len+1]= 0;
 	}
 	
 	/* draw it */
-	BLF_draw_default_ascii(x, y, 0.0f, str, sizeof(str)-1);
+	BLF_draw_default_ascii(x, y, 0.0f, timecode_str, sizeof(timecode_str));
 }
 
 /* Draw scrollbars in the given 2d-region */
@@ -1560,7 +1560,7 @@ void UI_view2d_scrollers_draw(const bContext *C, View2D *v2d, View2DScrollers *v
 	if (scroll & V2D_SCROLL_HORIZONTAL) {
 		/* only draw scrollbar when it doesn't fill the entire space */
 		if(vs->horfull==0) {
-			bTheme *btheme= U.themes.first;
+			bTheme *btheme= UI_GetTheme();
 			uiWidgetColors wcol= btheme->tui.wcol_scroll;
 			rcti slider;
 			int state;
@@ -1671,7 +1671,7 @@ void UI_view2d_scrollers_draw(const bContext *C, View2D *v2d, View2DScrollers *v
 	if (scroll & V2D_SCROLL_VERTICAL) {
 		/* only draw scrollbar when it doesn't fill the entire space */
 		if(vs->vertfull==0) {
-			bTheme *btheme= U.themes.first;
+			bTheme *btheme= UI_GetTheme();
 			uiWidgetColors wcol= btheme->tui.wcol_scroll;
 			rcti slider;
 			int state;
@@ -1755,7 +1755,9 @@ void UI_view2d_scrollers_draw(const bContext *C, View2D *v2d, View2DScrollers *v
 void UI_view2d_scrollers_free(View2DScrollers *scrollers)
 {
 	/* need to free grid as well... */
-	if (scrollers->grid) MEM_freeN(scrollers->grid);
+	if (scrollers->grid) {
+		MEM_freeN(scrollers->grid);
+	}
 	MEM_freeN(scrollers);
 }
 
@@ -1868,22 +1870,22 @@ void UI_view2d_listview_visible_cells(View2D *v2d, short columnwidth, short rowh
  *	- x,y 			= coordinates to convert
  *	- viewx,viewy		= resultant coordinates
  */
-void UI_view2d_region_to_view(View2D *v2d, int x, int y, float *viewx, float *viewy)
+void UI_view2d_region_to_view(View2D *v2d, int x, int y, float *r_viewx, float *r_viewy)
 {
 	float div, ofs;
 
-	if (viewx) {
+	if (r_viewx) {
 		div= (float)(v2d->mask.xmax - v2d->mask.xmin);
 		ofs= (float)v2d->mask.xmin;
 		
-		*viewx= v2d->cur.xmin + (v2d->cur.xmax-v2d->cur.xmin) * ((float)x - ofs) / div;
+		*r_viewx= v2d->cur.xmin + (v2d->cur.xmax-v2d->cur.xmin) * ((float)x - ofs) / div;
 	}
 
-	if (viewy) {
+	if (r_viewy) {
 		div= (float)(v2d->mask.ymax - v2d->mask.ymin);
 		ofs= (float)v2d->mask.ymin;
 		
-		*viewy= v2d->cur.ymin + (v2d->cur.ymax - v2d->cur.ymin) * ((float)y - ofs) / div;
+		*r_viewy= v2d->cur.ymin + (v2d->cur.ymax - v2d->cur.ymin) * ((float)y - ofs) / div;
 	}
 }
 
@@ -2094,11 +2096,11 @@ void UI_view2d_text_cache_draw(ARegion *ar)
 		}
 
 		if(v2s->rect.xmin >= v2s->rect.xmax)
-			BLF_draw_default((float)v2s->mval[0]+xofs, (float)v2s->mval[1]+yofs, 0.0, str, 65535);
+			BLF_draw_default((float)v2s->mval[0]+xofs, (float)v2s->mval[1]+yofs, 0.0, str, BLF_DRAW_STR_DUMMY_MAX);
 		else {
 			BLF_clipping_default(v2s->rect.xmin-4, v2s->rect.ymin-4, v2s->rect.xmax+4, v2s->rect.ymax+4);
 			BLF_enable_default(BLF_CLIPPING);
-			BLF_draw_default(v2s->rect.xmin+xofs, v2s->rect.ymin+yofs, 0.0f, str, 65535);
+			BLF_draw_default(v2s->rect.xmin+xofs, v2s->rect.ymin+yofs, 0.0f, str, BLF_DRAW_STR_DUMMY_MAX);
 			BLF_disable_default(BLF_CLIPPING);
 		}
 	}

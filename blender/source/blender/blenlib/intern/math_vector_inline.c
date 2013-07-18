@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
 
 #include "BLI_math.h"
 
-#ifndef BLI_MATH_VECTOR_INLINE_H
-#define BLI_MATH_VECTOR_INLINE_H
+#ifndef __MATH_VECTOR_INLINE_C__
+#define __MATH_VECTOR_INLINE_C__
 
 /********************************** Init *************************************/
 
@@ -79,6 +77,138 @@ MINLINE void copy_v4_v4(float r[4], const float a[4])
 	r[3]= a[3];
 }
 
+MINLINE void copy_v2_fl(float r[2], float f)
+{
+	r[0]= f;
+	r[1]= f;
+}
+
+MINLINE void copy_v3_fl(float r[3], float f)
+{
+	r[0]= f;
+	r[1]= f;
+	r[2]= f;
+}
+
+MINLINE void copy_v4_fl(float r[4], float f)
+{
+	r[0]= f;
+	r[1]= f;
+	r[2]= f;
+	r[3]= f;
+}
+
+/* short */
+MINLINE void copy_v2_v2_char(char r[2], const char a[2])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+}
+
+MINLINE void copy_v3_v3_char(char r[3], const char a[3])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+}
+
+MINLINE void copy_v4_v4_char(char r[4], const char a[4])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+	r[3]= a[3];
+}
+
+/* short */
+MINLINE void copy_v2_v2_short(short r[2], const short a[2])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+}
+
+MINLINE void copy_v3_v3_short(short r[3], const short a[3])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+}
+
+MINLINE void copy_v4_v4_short(short r[4], const short a[4])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+	r[3]= a[3];
+}
+
+/* int */
+MINLINE void copy_v2_v2_int(int r[2], const int a[2])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+}
+
+MINLINE void copy_v3_v3_int(int r[3], const int a[3])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+}
+
+MINLINE void copy_v4_v4_int(int r[4], const int a[4])
+{
+	r[0]= a[0];
+	r[1]= a[1];
+	r[2]= a[2];
+	r[3]= a[3];
+}
+
+/* double -> float */
+MINLINE void copy_v2fl_v2db(float r[2], const double a[2])
+{
+	r[0] = (float)a[0];
+	r[1] = (float)a[1];
+}
+
+MINLINE void copy_v3fl_v3db(float r[3], const double a[3])
+{
+	r[0] = (float)a[0];
+	r[1] = (float)a[1];
+	r[2] = (float)a[2];
+}
+
+MINLINE void copy_v4fl_v4db(float r[4], const double a[4])
+{
+	r[0] = (float)a[0];
+	r[1] = (float)a[1];
+	r[2] = (float)a[2];
+	r[3] = (float)a[3];
+}
+
+/* float -> double */
+MINLINE void copy_v2db_v2fl(double r[2], const float a[2])
+{
+	r[0] = (double)a[0];
+	r[1] = (double)a[1];
+}
+
+MINLINE void copy_v3db_v3fl(double r[3], const float a[3])
+{
+	r[0] = (double)a[0];
+	r[1] = (double)a[1];
+	r[2] = (double)a[2];
+}
+
+MINLINE void copy_v4db_v4fl(double r[4], const float a[4])
+{
+	r[0] = (double)a[0];
+	r[1] = (double)a[1];
+	r[2] = (double)a[2];
+	r[3] = (double)a[3];
+}
+
+
 MINLINE void swap_v2_v2(float a[2], float b[2])
 {
 	SWAP(float, a[0], b[0]);
@@ -117,19 +247,19 @@ MINLINE void add_v4_fl(float r[4], float f)
 	r[3] += f;
 }
 
-MINLINE void add_v2_v2(float *r, const float *a)
+MINLINE void add_v2_v2(float r[2], const float a[2])
 {
 	r[0] += a[0];
 	r[1] += a[1];
 }
 
-MINLINE void add_v2_v2v2(float *r, const float *a, const float *b)
+MINLINE void add_v2_v2v2(float r[2], const float a[2], const float b[2])
 {
 	r[0]= a[0] + b[0];
 	r[1]= a[1] + b[1];
 }
 
-MINLINE void add_v3_v3(float *r, const float *a)
+MINLINE void add_v3_v3(float r[3], const float a[3])
 {
 	r[0] += a[0];
 	r[1] += a[1];
@@ -288,6 +418,18 @@ MINLINE void mul_v3_v3v3(float r[3], const float v1[3], const float v2[3])
 	r[2] = v1[2] * v2[2];
 }
 
+MINLINE void negate_v2(float r[3])
+{
+	r[0]= -r[0];
+	r[1]= -r[1];
+}
+
+MINLINE void negate_v2_v2(float r[2], const float a[2])
+{
+	r[0]= -a[0];
+	r[1]= -a[1];
+}
+
 MINLINE void negate_v3(float r[3])
 {
 	r[0]= -r[0];
@@ -353,6 +495,11 @@ MINLINE void star_m3_v3(float rmat[][3], float a[3])
 
 /*********************************** Length **********************************/
 
+MINLINE float len_squared_v2(const float v[2])
+{
+	return v[0]*v[0] + v[1]*v[1];
+}
+
 MINLINE float len_v2(const float v[2])
 {
 	return (float)sqrtf(v[0]*v[0] + v[1]*v[1]);
@@ -372,7 +519,7 @@ MINLINE float len_v3(const float a[3])
 	return sqrtf(dot_v3v3(a, a));
 }
 
-MINLINE float len_squared_v2v2(const float a[3], const float b[3])
+MINLINE float len_squared_v2v2(const float a[2], const float b[2])
 {
 	float d[2];
 
@@ -421,7 +568,7 @@ MINLINE float normalize_v3_v3(float r[3], const float a[3])
 	float d= dot_v3v3(a, a);
 
 	/* a larger value causes normalize errors in a
-	   scaled down models with camera xtreme close */
+	 * scaled down models with camera xtreme close */
 	if(d > 1.0e-35f) {
 		d= sqrtf(d);
 		mul_v3_v3fl(r, a, 1.0f/d);
@@ -429,6 +576,29 @@ MINLINE float normalize_v3_v3(float r[3], const float a[3])
 	else {
 		zero_v3(r);
 		d= 0.0f;
+	}
+
+	return d;
+}
+
+MINLINE double normalize_v3_d(double n[3])
+{
+	double d= n[0]*n[0] + n[1]*n[1] + n[2]*n[2];
+
+	/* a larger value causes normalize errors in a
+	 * scaled down models with camera xtreme close */
+	if(d > 1.0e-35) {
+		double mul;
+
+		d= sqrt(d);
+		mul = 1.0 / d;
+
+		n[0] *= mul;
+		n[1] *= mul;
+		n[2] *= mul;
+	} else {
+		n[0] = n[1] = n[2] = 0;
+		d= 0.0;
 	}
 
 	return d;
@@ -454,6 +624,12 @@ MINLINE void normal_float_to_short_v3(short out[3], const float in[3])
 }
 
 /********************************* Comparison ********************************/
+
+
+MINLINE int is_zero_v2(const float v[3])
+{
+	return (v[0] == 0 && v[1] == 0);
+}
 
 MINLINE int is_zero_v3(const float v[3])
 {
@@ -523,5 +699,4 @@ MINLINE float line_point_side_v2(const float l1[2], const float l2[2], const flo
 			((l2[0]-pt[0]) * (l1[1]-pt[1]));
 }
 
-#endif /* BLI_MATH_VECTOR_INLINE_H */
-
+#endif /* __MATH_VECTOR_INLINE_C__ */

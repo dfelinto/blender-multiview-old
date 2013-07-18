@@ -1,7 +1,4 @@
-/** \file gameengine/VideoTexture/blendVideoTex.cpp
- *  \ingroup bgevideotex
- */
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -23,6 +20,10 @@ http://www.gnu.org/copyleft/lesser.txt.
 -----------------------------------------------------------------------------
 */
 
+/** \file gameengine/VideoTexture/blendVideoTex.cpp
+ *  \ingroup bgevideotex
+ */
+
 #include <PyObjectPlus.h>
 
 #include <RAS_GLExtensionManager.h>
@@ -37,6 +38,7 @@ http://www.gnu.org/copyleft/lesser.txt.
 //#include "TexPlayerGL.h"
 
 #include "ImageBase.h"
+#include "VideoBase.h"
 #include "FilterBase.h"
 #include "Texture.h"
 
@@ -90,7 +92,7 @@ static PyObject * imageToArray (PyObject * self, PyObject *args)
 	// parameter is Image object
 	PyObject * pyImg;
 	char *mode = NULL;
-	if (!PyArg_ParseTuple(args, "O|s:imageToArray", &pyImg, &mode) || !pyImageTypes.in(pyImg->ob_type))
+	if (!PyArg_ParseTuple(args, "O|s:imageToArray", &pyImg, &mode) || !pyImageTypes.in(Py_TYPE(pyImg)))
 	{
 		// if object is incorect, report error
 		PyErr_SetString(PyExc_TypeError, "VideoTexture.imageToArray(image): The value must be a image source object");
@@ -112,7 +114,7 @@ static PyMethodDef moduleMethods[] =
 	{NULL}  /* Sentinel */
 };
 
-#if WITH_FFMPEG
+#ifdef WITH_FFMPEG
 extern PyTypeObject VideoFFmpegType;
 extern PyTypeObject ImageFFmpegType;
 #endif
@@ -134,7 +136,7 @@ extern PyTypeObject ImageViewportType;
 
 static void registerAllTypes(void)
 {
-#if WITH_FFMPEG
+#ifdef WITH_FFMPEG
 	pyImageTypes.add(&VideoFFmpegType, "VideoFFmpeg");
 	pyImageTypes.add(&ImageFFmpegType, "ImageFFmpeg");
 #endif
@@ -207,6 +209,11 @@ PyObject* initVideoTexture(void)
 
 	Py_INCREF(&TextureType);
 	PyModule_AddObject(m, (char*)"Texture", (PyObject*)&TextureType);
+	PyModule_AddIntConstant(m, (char*)"SOURCE_ERROR", SourceError);
+	PyModule_AddIntConstant(m, (char*)"SOURCE_EMPTY", SourceEmpty);
+	PyModule_AddIntConstant(m, (char*)"SOURCE_READY", SourceReady);
+	PyModule_AddIntConstant(m, (char*)"SOURCE_PLAYING", SourcePlaying);
+	PyModule_AddIntConstant(m, (char*)"SOURCE_STOPPED", SourceStopped);
 	
 	// init last error description
 	Exception::m_lastError = "";

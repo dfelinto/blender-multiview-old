@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +41,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_editVert.h"
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
@@ -124,13 +121,13 @@ static void image_info(Scene *scene, ImageUser *iuser, Image *ima, ImBuf *ibuf, 
 			if(ibuf->channels!=4) {
 				ofs+= sprintf(str+ofs, "%d float channel(s)", ibuf->channels);
 			}
-			else if(ibuf->depth==32)
+			else if(ibuf->planes == R_IMF_PLANES_RGBA)
 				ofs+= sprintf(str+ofs, " RGBA float");
 			else
 				ofs+= sprintf(str+ofs, " RGB float");
 		}
 		else {
-			if(ibuf->depth==32)
+			if(ibuf->planes == R_IMF_PLANES_RGBA)
 				ofs+= sprintf(str+ofs, " RGBA byte");
 			else
 				ofs+= sprintf(str+ofs, " RGB byte");
@@ -215,10 +212,10 @@ static void image_panel_curves(const bContext *C, Panel *pa)
 
 #if 0
 /* 0: disable preview 
-   otherwise refresh preview
- 
-   XXX if you put this back, also check XXX in image_main_area_draw() */
-*/
+ * otherwise refresh preview
+ *
+ * XXX if you put this back, also check XXX in image_main_area_draw() */
+ */
 void image_preview_event(int event)
 {
 	int exec= 0;
@@ -337,7 +334,7 @@ static void image_panel_preview(ScrArea *sa, short cntrl)	// IMAGE_HANDLER_PREVI
 		return;
 	}
 	
-	block= uiBeginBlock(C, ar, "image_panel_preview", UI_EMBOSS);
+	block= uiBeginBlock(C, ar, __func__, UI_EMBOSS);
 	uiPanelControl(UI_PNL_SOLID | UI_PNL_CLOSE | UI_PNL_SCALE | cntrl);
 	uiSetPanelHandler(IMAGE_HANDLER_PREVIEW);  // for close and esc
 	
@@ -383,6 +380,10 @@ static char *layer_menu(RenderResult *rr, short *UNUSED(curlay))
 	/* compo result */
 	if(rr->rectf) {
 		a+= sprintf(str+a, "|Composite %%x0");
+		nr= 1;
+	}
+	else if(rr->rect32) {
+		a+= sprintf(str+a, "|Sequence %%x0");
 		nr= 1;
 	}
 	for(rl= rr->layers.first; rl; rl= rl->next, nr++) {
@@ -445,7 +446,10 @@ static void image_multi_inclay_cb(bContext *C, void *rr_v, void *iuser_v)
 {
 	RenderResult *rr= rr_v;
 	ImageUser *iuser= iuser_v;
-	int tot= BLI_countlist(&rr->layers) + (rr->rectf?1:0);  /* fake compo result layer */
+	int tot= BLI_countlist(&rr->layers);
+
+	if(rr->rectf || rr->rect32)
+		tot++; /* fake compo/sequencer layer */
 
 	if(iuser->layer<tot-1) {
 		iuser->layer++;
@@ -470,7 +474,11 @@ static void image_multi_incpass_cb(bContext *C, void *rr_v, void *iuser_v)
 	RenderLayer *rl= BLI_findlink(&rr->layers, iuser->layer);
 
 	if(rl) {
-		int tot= BLI_countlist(&rl->passes) + (rl->rectf?1:0);	/* builtin render result has no combined pass in list */
+		int tot= BLI_countlist(&rl->passes);
+
+		if(rr->rectf || rr->rect32)
+			tot++; /* fake compo/sequencer layer */
+
 		if(iuser->pass<tot-1) {
 			iuser->pass++;
 			BKE_image_multilayer_index(rr, iuser); 
@@ -488,38 +496,6 @@ static void image_multi_decpass_cb(bContext *C, void *rr_v, void *iuser_v)
 		WM_event_add_notifier(C, NC_IMAGE|ND_DRAW, NULL);
 	}
 }
-
-#if 0
-static void image_pack_cb(bContext *C, void *ima_v, void *iuser_v) 
-{
-	if(ima_v) {
-		Image *ima= ima_v;
-		if(ima->source!=IMA_SRC_SEQUENCE && ima->source!=IMA_SRC_MOVIE) {
-			if (ima->packedfile) {
-				if (G.fileflags & G_AUTOPACK) {
-					if (okee("Disable AutoPack ?")) {
-						G.fileflags &= ~G_AUTOPACK;
-					}
-				}
-				
-				if ((G.fileflags & G_AUTOPACK) == 0) {
-					unpackImage(NULL, ima, PF_ASK); /* XXX report errors */
-					ED_undo_push(C, "Unpack image");
-				}
-			} 
-			else {
-				ImBuf *ibuf= BKE_image_get_ibuf(ima, iuser_v);
-				if (ibuf && (ibuf->userflags & IB_BITMAPDIRTY)) {
-					// XXX error("Can't pack painted image. Save image or use Repack as PNG.");
-				} else {
-					ima->packedfile = newPackedFile(NULL, ima->name); /* XXX report errors */
-					ED_undo_push(C, "Pack image");
-				}
-			}
-		}
-	}
-}
-#endif
 
 #if 0
 static void image_freecache_cb(bContext *C, void *ima_v, void *unused) 
@@ -543,7 +519,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	uiBlock *block= uiLayoutGetBlock(layout);
 	uiBut *but;
 	RenderLayer *rl= NULL;
-	int wmenu1, wmenu2, wmenu3;
+	int wmenu1, wmenu2, wmenu3, layer;
 	char *strp;
 
 	uiLayoutRow(layout, 1);
@@ -566,8 +542,12 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		but= uiDefButS(block, MENU, 0, strp,					0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0,0,0,0, "Select Layer");
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
 		MEM_freeN(strp);
+
+		layer = iuser->layer;
+		if(rr->rectf || rr->rect32)
+			layer--; /* fake compo/sequencer layer */
 		
-		rl= BLI_findlink(&rr->layers, iuser->layer - (rr->rectf?1:0)); /* fake compo layer, return NULL is meant to be */
+		rl= BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
 		strp= pass_menu(rl, &iuser->pass);
 		but= uiDefButS(block, MENU, 0, strp,					0, 0, wmenu3, UI_UNIT_Y, &iuser->pass, 0,0,0,0, "Select Pass");
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
@@ -587,7 +567,7 @@ static void uiblock_layer_pass_arrow_buttons(uiLayout *layout, RenderResult *rr,
 	if(rr==NULL || iuser==NULL)
 		return;
 	if(rr->layers.first==NULL) {
-		uiItemL(row, "No Layers in Render Result.", ICON_NONE);
+		uiItemL(row, "No Layers in Render Result", ICON_NONE);
 		return;
 	}
 
@@ -622,12 +602,12 @@ static void rna_update_cb(bContext *C, void *arg_cb, void *UNUSED(arg))
 	RNAUpdateCb *cb= (RNAUpdateCb*)arg_cb;
 
 	/* ideally this would be done by RNA itself, but there we have
-	   no image user available, so we just update this flag here */
+	 * no image user available, so we just update this flag here */
 	cb->iuser->ok= 1;
 
 	/* we call update here on the pointer property, this way the
-	   owner of the image pointer can still define it's own update
-	   and notifier */
+	 * owner of the image pointer can still define it's own update
+	 * and notifier */
 	RNA_property_update(C, &cb->ptr, cb->prop);
 }
 
@@ -651,12 +631,14 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 
 	prop= RNA_struct_find_property(ptr, propname);
 	if(!prop) {
-		printf("uiTemplateImage: property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		printf("%s: property not found: %s.%s\n",
+		       __func__, RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
 	if(RNA_property_type(prop) != PROP_POINTER) {
-		printf("uiTemplateImage: expected pointer property for %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		printf("%s: expected pointer property for %s.%s\n",
+		       __func__, RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
@@ -675,8 +657,6 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 
 	if(!compact)
 		uiTemplateID(layout, C, ptr, propname, "IMAGE_OT_new", "IMAGE_OT_open", NULL);
-
-	// XXX missing: reload, pack
 
 	if(ima) {
 		uiBlockSetNFunc(block, rna_update_cb, MEM_dupallocN(cb), NULL);
@@ -701,11 +681,11 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 					uiButSetFunc(but, image_freecache_cb, ima, NULL);
 					
 					if(iuser->frames)
-						sprintf(str, "(%d) Frames:", iuser->framenr);
+						BLI_snprintf(str, sizeof(str), "(%d) Frames:", iuser->framenr);
 					else strcpy(str, "Frames:");
 					uiBlockBeginAlign(block);
-					uiDefButI(block, NUM, imagechanged, str,		10, 90,150, 20, &iuser->frames, 0.0, MAXFRAMEF, 0, 0, "Sets the number of images of a movie to use");
-					uiDefButI(block, NUM, imagechanged, "StartFr:",	160,90,150,20, &iuser->sfra, 1.0, MAXFRAMEF, 0, 0, "Sets the global starting frame of the movie");
+					uiDefButI(block, NUM, imagechanged, str,		10, 90,150, 20, &iuser->frames, 0.0, MAXFRAMEF, 0, 0, "Number of images of a movie to use");
+					uiDefButI(block, NUM, imagechanged, "StartFr:",	160,90,150,20, &iuser->sfra, 1.0, MAXFRAMEF, 0, 0, "Global starting frame of the movie");
 				}
 #endif
 			}
@@ -769,7 +749,9 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 					uiLayoutSetActive(row, RNA_boolean_get(&imaptr, "use_fields"));
 					uiItemR(row, &imaptr, "field_order", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
 					
-					uiItemR(split, &imaptr, "use_premultiply", 0, NULL, ICON_NONE);
+					row= uiLayoutRow(layout, 0);
+					uiItemR(row, &imaptr, "use_premultiply", 0, NULL, ICON_NONE);
+					uiItemR(row, &imaptr, "use_color_unpremultiply", 0, NULL, ICON_NONE);
 				}
 			}
 
@@ -780,11 +762,11 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 
 				col= uiLayoutColumn(split, 0);
 				 
-				sprintf(str, "(%d) Frames", iuser->framenr);
+				BLI_snprintf(str, sizeof(str), "(%d) Frames", iuser->framenr);
 				uiItemR(col, userptr, "frame_duration", 0, str, ICON_NONE);
 				if(ima->anim) {
 					block= uiLayoutGetBlock(col);
-					but= uiDefBut(block, BUT, 0, "Match Movie Length", 0, 0, UI_UNIT_X*2, UI_UNIT_Y, NULL, 0, 0, 0, 0, "Set the number of frames to match the movie or sequence.");
+					but= uiDefBut(block, BUT, 0, "Match Movie Length", 0, 0, UI_UNIT_X*2, UI_UNIT_Y, NULL, 0, 0, 0, 0, "Set the number of frames to match the movie or sequence");
 					uiButSetFunc(but, set_frames_cb, ima, iuser);
 				}
 
@@ -815,6 +797,78 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 	}
 
 	MEM_freeN(cb);
+}
+
+void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr)
+{
+	ImageFormatData *imf= imfptr->data;
+	ID *id= imfptr->id.data;
+	const int depth_ok= BKE_imtype_valid_depths(imf->imtype);
+	/* some settings depend on this being a scene thats rendered */
+	const short is_render_out= (id && GS(id->name) == ID_SCE);
+
+	uiLayout *col, *row, *split, *sub;
+
+	col= uiLayoutColumn(layout, 0);
+
+	split= uiLayoutSplit(col, 0.5f, 0);
+	
+	uiItemR(split, imfptr, "file_format", 0, "", ICON_NONE);
+	sub= uiLayoutRow(split, 0);
+	uiItemR(sub, imfptr, "color_mode", UI_ITEM_R_EXPAND, "Color", ICON_NONE);
+
+	/* only display depth setting if multiple depths can be used */
+	if((ELEM6(depth_ok,
+	          R_IMF_CHAN_DEPTH_1,
+	          R_IMF_CHAN_DEPTH_8,
+	          R_IMF_CHAN_DEPTH_12,
+	          R_IMF_CHAN_DEPTH_16,
+	          R_IMF_CHAN_DEPTH_24,
+	          R_IMF_CHAN_DEPTH_32)) == 0)
+	{
+		row= uiLayoutRow(col, 0);
+		uiItemR(row, imfptr, "color_depth", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
+	}
+
+	if (BKE_imtype_supports_quality(imf->imtype)) {
+		uiItemR(col, imfptr, "quality", 0, NULL, ICON_NONE);
+	}
+
+	if (BKE_imtype_supports_compress(imf->imtype)) {
+		uiItemR(col, imfptr, "compression", 0, NULL, ICON_NONE);
+	}
+
+	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
+		uiItemR(col, imfptr, "exr_codec", 0, NULL, ICON_NONE);
+	}
+	
+	row= uiLayoutRow(col, 0);
+	if (BKE_imtype_supports_zbuf(imf->imtype)) {
+		uiItemR(row, imfptr, "use_zbuffer", 0, NULL, ICON_NONE);
+	}
+
+	if (is_render_out && (imf->imtype == R_IMF_IMTYPE_OPENEXR)) {
+		uiItemR(row, imfptr, "use_preview", 0, NULL, ICON_NONE);
+	}
+
+	if (imf->imtype == R_IMF_IMTYPE_JP2) {
+		row= uiLayoutRow(col, 0);
+		uiItemR(row, imfptr, "use_jpeg2k_cinema_preset", 0, NULL, ICON_NONE);
+		uiItemR(row, imfptr, "use_jpeg2k_cinema_48", 0, NULL, ICON_NONE);
+		
+		uiItemR(col, imfptr, "use_jpeg2k_ycc", 0, NULL, ICON_NONE);
+	}
+
+	if (imf->imtype == R_IMF_IMTYPE_CINEON) {
+#if 1
+		uiItemL(col, "Hard coded Non-Linear, Gamma:1.0", ICON_NONE);
+#else
+		uiItemR(col, imfptr, "use_cineon_log", 0, NULL, ICON_NONE);
+		uiItemR(col, imfptr, "cineon_black", 0, NULL, ICON_NONE);
+		uiItemR(col, imfptr, "cineon_white", 0, NULL, ICON_NONE);
+		uiItemR(col, imfptr, "cineon_gamma", 0, NULL, ICON_NONE);
+#endif
+	}
 }
 
 void uiTemplateImageLayers(uiLayout *layout, bContext *C, Image *ima, ImageUser *iuser)

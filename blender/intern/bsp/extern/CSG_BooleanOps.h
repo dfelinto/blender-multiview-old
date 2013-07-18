@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef CSG_BOOLEANOPS_H
-#define CSG_BOOLEANOPS_H
+#ifndef __CSG_BOOLEANOPS_H__
+#define __CSG_BOOLEANOPS_H__
 
 
 /**

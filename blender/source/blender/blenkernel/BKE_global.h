@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef BKE_GLOBAL_H
-#define BKE_GLOBAL_H
+#ifndef __BKE_GLOBAL_H__
+#define __BKE_GLOBAL_H__
 
 /** \file BKE_global.h
  *  \ingroup bke
@@ -55,12 +53,12 @@ typedef struct Global {
 	struct Main *main;
 	
 	/* strings: lastsaved */
-	char ima[256], lib[256];
+	char ima[1024], lib[1024]; /* 1024 = FILE_MAX */
 
 	/* flag: if != 0 G.main->name contains valid relative base path */
 	int relbase_valid;
 
-	/* strings of recent opend files */
+	/* strings of recent opened files */
 	struct ListBase recent_files;
         
 	short afbreek, moving, file_loaded;
@@ -143,6 +141,7 @@ typedef struct Global {
 #define G_FILE_RECOVER			 (1 << 23)
 #define G_FILE_RELATIVE_REMAP	 (1 << 24)
 #define G_FILE_HISTORY			 (1 << 25)
+#define G_FILE_MESH_COMPAT		 (1 << 26)				/* BMesh option to save as older mesh format */
 
 /* G.windowstate */
 #define G_WINDOWSTATE_USERDEF		0
@@ -151,9 +150,18 @@ typedef struct Global {
 
 /* ENDIAN_ORDER: indicates what endianness the platform where the file was
  * written had. */
+#if !defined( __BIG_ENDIAN__ ) && !defined( __LITTLE_ENDIAN__ )
+#  error Either __BIG_ENDIAN__ or __LITTLE_ENDIAN__ must be defined.
+#endif
+
 #define L_ENDIAN	1
 #define B_ENDIAN	0
-extern short ENDIAN_ORDER;
+
+#ifdef __BIG_ENDIAN__
+#  define ENDIAN_ORDER B_ENDIAN
+#else
+#  define ENDIAN_ORDER L_ENDIAN
+#endif
 
 /* G.moving, signals drawing in (3d) window to denote transform */
 #define G_TRANSFORM_OBJ			1

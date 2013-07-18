@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_ISCENE_H
-#define __KX_ISCENE_H
+#ifndef __SCA_ISCENE_H__
+#define __SCA_ISCENE_H__
 
 #include <vector>
 
@@ -70,7 +68,7 @@ public:
 	void			AddDebugProperty(class CValue* debugprop,
 									 const STR_String &name);
 	void			RemoveAllDebugProperties();
-	virtual void	Update2DFilter(vector<STR_String>& propNames, void* gameObj, 
+	virtual void	Update2DFilter(std::vector<STR_String>& propNames, void* gameObj, 
 									RAS_2DFilterManager::RAS_2DFILTER_MODE filtermode, 
 									int pass, STR_String& text) {}
 
@@ -82,5 +80,5 @@ public:
 #endif
 };
 
-#endif //__KX_ISCENE_H
+#endif //__SCA_ISCENE_H__
 

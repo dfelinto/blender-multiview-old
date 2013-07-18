@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -270,7 +268,7 @@ static void TRANSFORM_OT_delete_orientation(struct wmOperatorType *ot)
 
 static int create_orientation_exec(bContext *C, wmOperator *op)
 {
-	char name[36];
+	char name[MAX_NAME];
 	int use = RNA_boolean_get(op->ptr, "use");
 	int overwrite = RNA_boolean_get(op->ptr, "overwrite");
 	
@@ -303,7 +301,7 @@ static void TRANSFORM_OT_create_orientation(struct wmOperatorType *ot)
 	ot->poll   = ED_operator_areaactive;
 	ot->flag   = OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	RNA_def_string(ot->srna, "name", "", 35, "Name", "Text to insert at the cursor position.");
+	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Text to insert at the cursor position");
 	RNA_def_boolean(ot->srna, "use", 0, "Use after creation", "Select orientation after its creation");
 	RNA_def_boolean(ot->srna, "overwrite", 0, "Overwrite previous", "Overwrite previously created orientation with same name");
 }
@@ -431,7 +429,7 @@ static int transform_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		return OPERATOR_CANCELLED;
 	}
 
-	if(RNA_property_is_set(op->ptr, "value")) {
+	if(RNA_struct_property_is_set(op->ptr, "value")) {
 		return transform_exec(C, op);
 	}
 	else {
@@ -476,7 +474,7 @@ void Transform_Properties(struct wmOperatorType *ot, int flags)
 	if (flags & P_PROPORTIONAL)
 	{
 		RNA_def_enum(ot->srna, "proportional", proportional_editing_items, 0, "Proportional Editing", "");
-		RNA_def_enum(ot->srna, "proportional_edit_falloff", proportional_falloff_items, 0, "Proportional Editing Falloff", "Falloff type for proportional editing mode.");
+		RNA_def_enum(ot->srna, "proportional_edit_falloff", proportional_falloff_items, 0, "Proportional Editing Falloff", "Falloff type for proportional editing mode");
 		RNA_def_float(ot->srna, "proportional_size", 1, 0.00001f, FLT_MAX, "Proportional Size", "", 0.001, 100);
 	}
 
@@ -571,7 +569,7 @@ void TRANSFORM_OT_trackball(struct wmOperatorType *ot)
 	ot->cancel  = transform_cancel;
 	ot->poll   = ED_operator_screenactive;
 
-	RNA_def_float_vector(ot->srna, "value", 2, VecOne, -FLT_MAX, FLT_MAX, "angle", "", -FLT_MAX, FLT_MAX);
+	RNA_def_float_vector(ot->srna, "value", 2, VecOne, -FLT_MAX, FLT_MAX, "Angle", "", -FLT_MAX, FLT_MAX);
 
 	Transform_Properties(ot, P_PROPORTIONAL|P_MIRROR|P_SNAP);
 }
@@ -600,9 +598,9 @@ void TRANSFORM_OT_tilt(struct wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name   = "Tilt";
-	/*optionals - 
-		"Tilt selected vertices."
-		"Specify an extra axis rotation for selected vertices of 3d curve." */
+	/* optionals - 
+	 * "Tilt selected vertices"
+	 * "Specify an extra axis rotation for selected vertices of 3d curve" */
 	ot->description= "Tilt selected control vertices of 3d curve"; 
 	ot->idname = OP_TILT;
 	ot->flag = OPTYPE_REGISTER|OPTYPE_UNDO|OPTYPE_BLOCKING;
@@ -612,7 +610,7 @@ void TRANSFORM_OT_tilt(struct wmOperatorType *ot)
 	ot->exec   = transform_exec;
 	ot->modal  = transform_modal;
 	ot->cancel  = transform_cancel;
-	ot->poll   = ED_operator_editcurve;
+	ot->poll   = ED_operator_editcurve_3d;
 
 	RNA_def_float_rotation(ot->srna, "value", 1, NULL, -FLT_MAX, FLT_MAX, "Angle", "", -M_PI*2, M_PI*2);
 
@@ -634,7 +632,7 @@ void TRANSFORM_OT_warp(struct wmOperatorType *ot)
 	ot->cancel  = transform_cancel;
 	ot->poll   = ED_operator_screenactive;
 
-	RNA_def_float_rotation(ot->srna, "value", 1, NULL, -FLT_MAX, FLT_MAX, "Angle", "", 0, 1);
+	RNA_def_float_rotation(ot->srna, "value", 1, NULL, -FLT_MAX, FLT_MAX, "Angle", "", -M_PI*2, M_PI*2);
 
 	Transform_Properties(ot, P_PROPORTIONAL|P_MIRROR|P_SNAP);
 	// XXX Warp axis?
@@ -795,7 +793,7 @@ void TRANSFORM_OT_seq_slide(struct wmOperatorType *ot)
 	ot->cancel  = transform_cancel;
 	ot->poll   = ED_operator_sequencer_active;
 
-	RNA_def_float_vector(ot->srna, "value", 2, VecOne, -FLT_MAX, FLT_MAX, "angle", "", -FLT_MAX, FLT_MAX);
+	RNA_def_float_vector(ot->srna, "value", 2, VecOne, -FLT_MAX, FLT_MAX, "Angle", "", -FLT_MAX, FLT_MAX);
 
 	Transform_Properties(ot, P_SNAP);
 }
@@ -845,7 +843,7 @@ void transform_operatortypes(void)
 
 void transform_keymap_for_space(wmKeyConfig *keyconf, wmKeyMap *keymap, int spaceid)
 {
-	wmKeyMapItem *km;
+	wmKeyMapItem *kmi;
 	wmKeyMap *modalmap;
 	
 	/* transform.c, only adds modal map once, checks if it's there */
@@ -881,83 +879,90 @@ void transform_keymap_for_space(wmKeyConfig *keyconf, wmKeyMap *keymap, int spac
 
 			WM_keymap_add_item(keymap, "TRANSFORM_OT_select_orientation", SPACEKEY, KM_PRESS, KM_ALT, 0);
 
-			km = WM_keymap_add_item(keymap, "TRANSFORM_OT_create_orientation", SPACEKEY, KM_PRESS, KM_CTRL|KM_ALT, 0);
-			RNA_boolean_set(km->ptr, "use", 1);
+			kmi = WM_keymap_add_item(keymap, "TRANSFORM_OT_create_orientation", SPACEKEY, KM_PRESS, KM_CTRL|KM_ALT, 0);
+			RNA_boolean_set(kmi->ptr, "use", TRUE);
 
 			WM_keymap_add_item(keymap, OP_MIRROR, MKEY, KM_PRESS, KM_CTRL, 0);
 
-			km = WM_keymap_add_item(keymap, "WM_OT_context_toggle", TABKEY, KM_PRESS, KM_SHIFT, 0);
-			RNA_string_set(km->ptr, "data_path", "tool_settings.use_snap");
+			kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle", TABKEY, KM_PRESS, KM_SHIFT, 0);
+			RNA_string_set(kmi->ptr, "data_path", "tool_settings.use_snap");
 
 			WM_keymap_add_item(keymap, "TRANSFORM_OT_snap_type", TABKEY, KM_PRESS, KM_SHIFT|KM_CTRL, 0);
 
-			km = WM_keymap_add_item(keymap, OP_TRANSLATION, TKEY, KM_PRESS, KM_SHIFT, 0);
-			RNA_boolean_set(km->ptr, "texture_space", 1);
+			kmi = WM_keymap_add_item(keymap, OP_TRANSLATION, TKEY, KM_PRESS, KM_SHIFT, 0);
+			RNA_boolean_set(kmi->ptr, "texture_space", TRUE);
 
-			km = WM_keymap_add_item(keymap, OP_RESIZE, TKEY, KM_PRESS, KM_SHIFT|KM_ALT, 0);
-			RNA_boolean_set(km->ptr, "texture_space", 1);
+			kmi = WM_keymap_add_item(keymap, OP_RESIZE, TKEY, KM_PRESS, KM_SHIFT|KM_ALT, 0);
+			RNA_boolean_set(kmi->ptr, "texture_space", TRUE);
 
 			break;
 		case SPACE_ACTION:
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", GKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_TRANSLATE);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", GKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_TRANSLATE);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EVT_TWEAK_S, KM_ANY, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_TRANSLATE);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EVT_TWEAK_S, KM_ANY, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_TRANSLATE);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_EXTEND);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_EXTEND);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", SKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_SCALE);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", SKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_SCALE);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", TKEY, KM_PRESS, KM_SHIFT, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_SLIDE);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", TKEY, KM_PRESS, KM_SHIFT, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_SLIDE);
 			break;
 		case SPACE_IPO:
 			WM_keymap_add_item(keymap, OP_TRANSLATION, GKEY, KM_PRESS, 0, 0);
 			
 			WM_keymap_add_item(keymap, OP_TRANSLATION, EVT_TWEAK_S, KM_ANY, 0, 0);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_EXTEND);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_EXTEND);
 			
 			WM_keymap_add_item(keymap, OP_ROTATION, RKEY, KM_PRESS, 0, 0);
 			
 			WM_keymap_add_item(keymap, OP_RESIZE, SKEY, KM_PRESS, 0, 0);
 			break;
 		case SPACE_NLA:
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", GKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TRANSLATION);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", GKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TRANSLATION);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EVT_TWEAK_S, KM_ANY, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TRANSLATION);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EVT_TWEAK_S, KM_ANY, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TRANSLATION);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_EXTEND);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_EXTEND);
 			
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", SKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_SCALE);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", SKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_SCALE);
 			break;
 		case SPACE_NODE:
 			WM_keymap_add_item(keymap, OP_TRANSLATION, GKEY, KM_PRESS, 0, 0);
 
-			km= WM_keymap_add_item(keymap, OP_TRANSLATION, EVT_TWEAK_A, KM_ANY, 0, 0);
-			RNA_boolean_set(km->ptr, "release_confirm", 1);
-			km= WM_keymap_add_item(keymap, OP_TRANSLATION, EVT_TWEAK_S, KM_ANY, 0, 0);
-			RNA_boolean_set(km->ptr, "release_confirm", 1);
+			kmi= WM_keymap_add_item(keymap, OP_TRANSLATION, EVT_TWEAK_A, KM_ANY, 0, 0);
+			RNA_boolean_set(kmi->ptr, "release_confirm", TRUE);
+			kmi= WM_keymap_add_item(keymap, OP_TRANSLATION, EVT_TWEAK_S, KM_ANY, 0, 0);
+			RNA_boolean_set(kmi->ptr, "release_confirm", TRUE);
 
 			WM_keymap_add_item(keymap, OP_ROTATION, RKEY, KM_PRESS, 0, 0);
 
 			WM_keymap_add_item(keymap, OP_RESIZE, SKEY, KM_PRESS, 0, 0);
+
+			/* detach and translate */
+			WM_keymap_add_item(keymap, "NODE_OT_move_detach_links", DKEY, KM_PRESS, KM_ALT, 0);
+
+			/* XXX release_confirm is set in the macro operator definition */
+			WM_keymap_add_item(keymap, "NODE_OT_move_detach_links", EVT_TWEAK_A, KM_ANY, KM_ALT, 0);
+			WM_keymap_add_item(keymap, "NODE_OT_move_detach_links", EVT_TWEAK_S, KM_ANY, KM_ALT, 0);
 			break;
 		case SPACE_SEQ:
 			WM_keymap_add_item(keymap, OP_SEQ_SLIDE, GKEY, KM_PRESS, 0, 0);
 
 			WM_keymap_add_item(keymap, OP_SEQ_SLIDE, EVT_TWEAK_S, KM_ANY, 0, 0);
 
-			km= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
-			RNA_enum_set(km->ptr, "mode", TFM_TIME_EXTEND);
+			kmi= WM_keymap_add_item(keymap, "TRANSFORM_OT_transform", EKEY, KM_PRESS, 0, 0);
+			RNA_enum_set(kmi->ptr, "mode", TFM_TIME_EXTEND);
 			break;
 		case SPACE_IMAGE:
 			WM_keymap_add_item(keymap, OP_TRANSLATION, GKEY, KM_PRESS, 0, 0);
@@ -972,8 +977,13 @@ void transform_keymap_for_space(wmKeyConfig *keyconf, wmKeyMap *keymap, int spac
 
 			WM_keymap_add_item(keymap, "TRANSFORM_OT_mirror", MKEY, KM_PRESS, KM_CTRL, 0);
 
-			km = WM_keymap_add_item(keymap, "WM_OT_context_toggle", TABKEY, KM_PRESS, KM_SHIFT, 0);
-			RNA_string_set(km->ptr, "data_path", "tool_settings.use_snap");
+			kmi = WM_keymap_add_item(keymap, "WM_OT_context_toggle", TABKEY, KM_PRESS, KM_SHIFT, 0);
+			RNA_string_set(kmi->ptr, "data_path", "tool_settings.use_snap");
+			break;
+		case SPACE_CLIP:
+			WM_keymap_add_item(keymap, OP_TRANSLATION, GKEY, KM_PRESS, 0, 0);
+			WM_keymap_add_item(keymap, OP_TRANSLATION, EVT_TWEAK_S, KM_ANY, 0, 0);
+			WM_keymap_add_item(keymap, OP_RESIZE, SKEY, KM_PRESS, 0, 0);
 			break;
 		default:
 			break;

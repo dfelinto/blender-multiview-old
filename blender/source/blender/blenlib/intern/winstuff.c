@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -49,15 +47,15 @@
 #define WIN32_SKIP_HKEY_PROTECTION		// need to use HKEY
 #include "BLI_winstuff.h"
 
- /* FILE_MAXDIR + FILE_MAXFILE */
+ /* FILE_MAX */
 
-int BLI_getInstallationDir( char * str ) {
+int BLI_getInstallationDir( char * str )
+{
 	char dir[FILE_MAXDIR];
-	char file[FILE_MAXFILE];
 	int a;
 	
-	GetModuleFileName(NULL,str,FILE_MAXDIR+FILE_MAXFILE);
-	BLI_split_dirfile(str,dir,file); /* shouldn't be relative */
+	GetModuleFileName(NULL,str,FILE_MAX);
+	BLI_split_dir_part(str, dir, sizeof(dir)); /* shouldn't be relative */
 	a = strlen(dir);
 	if(dir[a-1] == '\\') dir[a-1]=0;
 	
@@ -76,7 +74,8 @@ void RegisterBlendExtension_Fail(HKEY root)
 	TerminateProcess(GetCurrentProcess(),1);
 }
 
-void RegisterBlendExtension(void) {
+void RegisterBlendExtension(void)
+{
 	LONG lresult;
 	HKEY hkey = 0;
 	HKEY root = 0;
@@ -97,8 +96,7 @@ void RegisterBlendExtension(void) {
 
 	// root is HKLM by default
 	lresult = RegOpenKeyEx(HKEY_LOCAL_MACHINE, "Software\\Classes", 0, KEY_ALL_ACCESS, &root);
-	if (lresult != ERROR_SUCCESS)
-	{
+	if (lresult != ERROR_SUCCESS) {
 		// try HKCU on failure
 		usr_mode = TRUE;
 		lresult = RegOpenKeyEx(HKEY_CURRENT_USER, "Software\\Classes", 0, KEY_ALL_ACCESS, &root);
@@ -109,7 +107,7 @@ void RegisterBlendExtension(void) {
 	lresult = RegCreateKeyEx(root, "blendfile", 0,
 		NULL, REG_OPTION_NON_VOLATILE, KEY_ALL_ACCESS, NULL, &hkey, &dwd);
 	if (lresult == ERROR_SUCCESS) {
-		sprintf(buffer,"%s","Blender File");
+		strcpy(buffer,"Blender File");
 		lresult = RegSetValueEx(hkey, NULL, 0, REG_SZ, (BYTE*)buffer, strlen(buffer) + 1);
 		RegCloseKey(hkey);
 	}
@@ -162,15 +160,15 @@ void RegisterBlendExtension(void) {
 
 	RegCloseKey(root);
 	printf("success (%s)\n",usr_mode ? "user" : "system");
-	if (!G.background)
-	{
+	if (!G.background) {
 		sprintf(MBox,"File extension registered for %s.",usr_mode ? "the current user. To register for all users, run as an administrator" : "all users");
 		MessageBox(0,MBox,"Blender",MB_OK|MB_ICONINFORMATION);
 	}
 	TerminateProcess(GetCurrentProcess(),0);
 }
 
-DIR *opendir (const char *path) {
+DIR *opendir (const char *path)
+{
 	if (GetFileAttributes(path) & FILE_ATTRIBUTE_DIRECTORY) {
 		DIR *newd= MEM_mallocN(sizeof(DIR), "opendir");
 
@@ -188,7 +186,8 @@ DIR *opendir (const char *path) {
 	}
 }
 
-struct dirent *readdir(DIR *dp) {
+struct dirent *readdir(DIR *dp)
+{
 	if (dp->direntry.d_name) {
 		MEM_freeN(dp->direntry.d_name);
 		dp->direntry.d_name= NULL;
@@ -211,7 +210,8 @@ struct dirent *readdir(DIR *dp) {
 	}
 }
 
-int closedir (DIR *dp) {
+int closedir (DIR *dp)
+{
 	if (dp->direntry.d_name) MEM_freeN(dp->direntry.d_name);
 	if (dp->handle!=INVALID_HANDLE_VALUE) FindClose(dp->handle);
 
@@ -220,12 +220,13 @@ int closedir (DIR *dp) {
 	return 0;
 }
 
-void get_default_root(char* root) {
+void get_default_root(char* root)
+{
 	char str[MAX_PATH+1];
 	
 	/* the default drive to resolve a directory without a specified drive 
-	   should be the Windows installation drive, since this was what the OS
-	   assumes. */
+	 * should be the Windows installation drive, since this was what the OS
+	 * assumes. */
 	if (GetWindowsDirectory(str,MAX_PATH+1)) {
 		root[0] = str[0];
 		root[1] = ':';
@@ -233,7 +234,7 @@ void get_default_root(char* root) {
 		root[3] = '\0';
 	} else {		
 		/* if GetWindowsDirectory fails, something has probably gone wrong, 
-		   we are trying the blender install dir though */
+		 * we are trying the blender install dir though */
 		if (GetModuleFileName(NULL,str,MAX_PATH+1)) {
 			printf("Error! Could not get the Windows Directory - Defaulting to Blender installation Dir!");
 			root[0] = str[0];
@@ -301,7 +302,7 @@ char* dirname(char *path)
 {
 	char *p;
 	if( path == NULL || *path == '\0' )
-	return ".";
+		return ".";
 	p = path + strlen(path) - 1;
 	while( *p == '/' ) {
 		if( p == path )
@@ -309,11 +310,11 @@ char* dirname(char *path)
 		*p-- = '\0';
 	}
 	while( p >= path && *p != '/' )
-	p--;
+		p--;
 	return
-	p < path ? "." :
-	p == path ? "/" :
-	(*p = '\0', path);
+		p < path ? "." :
+		p == path ? "/" :
+		(*p = '\0', path);
 }
 /* End of copied part */
 

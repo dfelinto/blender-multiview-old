@@ -25,11 +25,6 @@ BF_CXX = '/usr/local'
 WITH_BF_STATICCXX = False
 BF_CXX_LIB_STATIC = '${BF_CXX}/lib/libstdc++.a'
 
-BF_LIBSAMPLERATE = '/usr/local'
-BF_LIBSAMPLERATE_INC = '${BF_LIBSAMPLERATE}/include'
-BF_LIBSAMPLERATE_LIB = 'samplerate'
-BF_LIBSAMPLERATE_LIBPATH = '${BF_LIBSAMPLERATE}/lib'
-
 WITH_BF_JACK = True
 BF_JACK = '/usr/local'
 BF_JACK_INC = '${BF_JACK}/include/jack'
@@ -89,6 +84,7 @@ BF_GETTEXT_LIBPATH = '${BF_GETTEXT}/lib'
 
 WITH_BF_GAMEENGINE = False
 WITH_BF_PLAYER = True
+WITH_BF_OCEANSIM = True
 
 WITH_BF_BULLET = True
 BF_BULLET = '#extern/bullet2/src'
@@ -121,7 +117,7 @@ BF_FFMPEG_INC = '${BF_FFMPEG}/include'
 BF_FFMPEG_LIBPATH='${BF_FFMPEG}/lib'
 
 # enable ogg, vorbis and theora in ffmpeg
-WITH_BF_OGG = True  # -DWITH_OGG 
+WITH_BF_OGG = True
 BF_OGG = '/usr/local'
 BF_OGG_INC = '${BF_OGG}/include'
 BF_OGG_LIB = 'ogg vorbis vorbisenc theoraenc theoradec'
@@ -168,6 +164,8 @@ BF_EXPAT = '/usr/local'
 BF_EXPAT_LIB = 'expat'
 BF_EXPAT_LIBPATH = '${BF_EXPAT}/lib'
 
+WITH_GHOST_XDND = False
+
 WITH_BF_OPENMP = True
 
 #Ray trace optimization
@@ -177,11 +175,12 @@ BF_RAYOPTIMIZATION_SSE_FLAGS = ['-msse','-pthread']
 CCFLAGS = ['-pipe','-fPIC','-funsigned-char','-fno-strict-aliasing','-D_LARGEFILE_SOURCE','-D_FILE_OFFSET_BITS=64','-D_LARGEFILE64_SOURCE']
 
 CPPFLAGS = []
-CXXFLAGS = ['-pipe','-fPIC','-funsigned-char','-fno-strict-aliasing','-D_LARGEFILE_SOURCE','-D_FILE_OFFSET_BITS=64','-D_LARGEFILE64_SOURCE']
+CXXFLAGS = []
 if WITH_BF_FFMPEG:
-  # libavutil needs UINT64_C()
-  CXXFLAGS += ['-D__STDC_CONSTANT_MACROS', ]
-REL_CFLAGS = ['-DNDEBUG', '-O2']
+    # libavutil needs UINT64_C()
+    CXXFLAGS += ['-D__STDC_CONSTANT_MACROS', ]
+REL_CFLAGS = []
+REL_CXXFLAGS = []
 REL_CCFLAGS = ['-DNDEBUG', '-O2']
 ##BF_DEPEND = True
 ##

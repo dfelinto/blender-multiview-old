@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,6 +41,7 @@
 #include "DNA_modifier_types.h"
 #include "DNA_property_types.h"
 #include "DNA_scene_types.h"
+#include "DNA_armature_types.h"
 
 #include "BLI_math.h"
 #include "BLI_listbase.h"
@@ -121,6 +120,20 @@ void ED_base_object_activate(bContext *C, Base *base)
 
 /********************** Selection Operators **********************/
 
+static int objects_selectable_poll(bContext *C)
+{
+	/* we don't check for linked scenes here, selection is
+	 * still allowed then for inspection of scene */
+	Object *obact= CTX_data_active_object(C);
+
+	if(CTX_data_edit_object(C))
+		return 0;
+	if(obact && obact->mode)
+		return 0;
+	
+	return 1;
+}
+
 /************************ Select by Type *************************/
 
 static int object_select_by_type_exec(bContext *C, wmOperator *op)
@@ -159,13 +172,13 @@ void OBJECT_OT_select_by_type(wmOperatorType *ot)
 	/* api callbacks */
 	ot->invoke= WM_menu_invoke;
 	ot->exec= object_select_by_type_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop= RNA_def_enum(ot->srna, "type", object_type_items, 1, "Type", "");
 }
 
@@ -284,8 +297,8 @@ static int object_select_linked_exec(bContext *C, wmOperator *op)
 		}
 		else if(nr==5) {
 			if(base->object->dup_group==ob->dup_group) {
-				 base->flag |= SELECT;
-				 changed = 1;
+				base->flag |= SELECT;
+				changed = 1;
 			}
 		}
 		else if(nr==6) {
@@ -341,13 +354,13 @@ void OBJECT_OT_select_linked(wmOperatorType *ot)
 	/* api callbacks */
 	ot->invoke= WM_menu_invoke;
 	ot->exec= object_select_linked_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_select_linked_types, 0, "Type", "");
 }
 
@@ -479,7 +492,7 @@ static short select_grouped_object_hooks(bContext *C, Object *ob)
 	return changed;
 }
 
-/* Select objects woth the same parent as the active (siblings),
+/* Select objects with the same parent as the active (siblings),
  * parent can be NULL also */
 static short select_grouped_siblings(bContext *C, Object *ob)
 {
@@ -667,13 +680,13 @@ void OBJECT_OT_select_grouped(wmOperatorType *ot)
 	/* api callbacks */
 	ot->invoke= WM_menu_invoke;
 	ot->exec= object_select_grouped_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_select_grouped_types, 0, "Type", "");
 }
 
@@ -716,49 +729,14 @@ void OBJECT_OT_select_by_layer(wmOperatorType *ot)
 	/* api callbacks */
 	/*ot->invoke = XXX - need a int grid popup*/
 	ot->exec= object_select_by_layer_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
 	RNA_def_int(ot->srna, "layers", 1, 1, 20, "Layer", "", 1, 20);
-}
-
-/************************** Select Inverse *************************/
-
-static int object_select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
-{
-	CTX_DATA_BEGIN(C, Base*, base, visible_bases) {
-		if (base->flag & SELECT)
-			ED_base_object_select(base, BA_DESELECT);
-		else
-			ED_base_object_select(base, BA_SELECT);
-	}
-	CTX_DATA_END;
-	
-	/* undo? */
-	WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, CTX_data_scene(C));
-	
-	return OPERATOR_FINISHED;
-}
-
-void OBJECT_OT_select_inverse(wmOperatorType *ot)
-{
-	
-	/* identifiers */
-	ot->name= "Select Inverse";
-	ot->description = "Invert selection of all visible objects";
-	ot->idname= "OBJECT_OT_select_inverse";
-	
-	/* api callbacks */
-	ot->exec= object_select_inverse_exec;
-	ot->poll= ED_operator_objectmode;
-	
-	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-	
 }
 
 /**************************** (De)select All ****************************/
@@ -809,13 +787,13 @@ void OBJECT_OT_select_all(wmOperatorType *ot)
 {
 	
 	/* identifiers */
-	ot->name= "Select or Deselect All";
+	ot->name= "(De)select All";
 	ot->description = "Change selection of all visible objects in scene";
 	ot->idname= "OBJECT_OT_select_all";
 	
 	/* api callbacks */
 	ot->exec= object_select_all_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
@@ -828,7 +806,7 @@ void OBJECT_OT_select_all(wmOperatorType *ot)
 static int object_select_same_group_exec(bContext *C, wmOperator *op)
 {
 	Group *group;
-	char group_name[32];
+	char group_name[MAX_ID_NAME];
 
 	/* passthrough if no objects are visible */
 	if (CTX_DATA_COUNT(C, visible_bases) == 0) return OPERATOR_PASS_THROUGH;
@@ -864,12 +842,12 @@ void OBJECT_OT_select_same_group(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= object_select_same_group_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	RNA_def_string(ot->srna, "group", "", 32, "Group", "Name of the group to select.");
+	RNA_def_string(ot->srna, "group", "", MAX_ID_NAME, "Group", "Name of the group to select");
 }
 
 /**************************** Select Mirror ****************************/
@@ -881,7 +859,7 @@ static int object_select_mirror_exec(bContext *C, wmOperator *op)
 	extend= RNA_boolean_get(op->ptr, "extend");
 	
 	CTX_DATA_BEGIN(C, Base*, primbase, selected_bases) {
-		char tmpname[32];
+		char tmpname[MAXBONENAME];
 
 		flip_side_name(tmpname, primbase->object->id.name+2, TRUE);
 		
@@ -917,71 +895,14 @@ void OBJECT_OT_select_mirror(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->exec= object_select_mirror_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
-	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first");
 }
 
-
-static int object_select_name_exec(bContext *C, wmOperator *op)
-{
-	char *name= RNA_string_get_alloc(op->ptr, "name", NULL, 0);
-	short extend= RNA_boolean_get(op->ptr, "extend");
-	short changed = 0;
-
-	if(!extend) {
-		CTX_DATA_BEGIN(C, Base*, base, selectable_bases) {
-			if(base->flag & SELECT) {
-				ED_base_object_select(base, BA_DESELECT);
-				changed= 1;
-			}
-		}
-		CTX_DATA_END;
-	}
-
-	CTX_DATA_BEGIN(C, Base*, base, selectable_bases) {
-		/* this is a bit dodjy, there should only be ONE object with this name, but library objects can mess this up */
-		if(strcmp(name, base->object->id.name+2)==0) {
-			ED_base_object_activate(C, base);
-			ED_base_object_select(base, BA_SELECT);
-			changed= 1;
-		}
-	}
-	CTX_DATA_END;
-
-	MEM_freeN(name);
-
-	/* undo? */
-	if(changed) {
-		WM_event_add_notifier(C, NC_SCENE|ND_OB_SELECT, CTX_data_scene(C));
-		return OPERATOR_FINISHED;
-	}
-	else {
-		return OPERATOR_CANCELLED;
-	}
-}
-
-void OBJECT_OT_select_name(wmOperatorType *ot)
-{
-
-	/* identifiers */
-	ot->name= "Select Name";
-	ot->description = "Select an object with this name";
-	ot->idname= "OBJECT_OT_select_name";
-
-	/* api callbacks */
-	ot->exec= object_select_name_exec;
-	ot->poll= ED_operator_objectmode;
-
-	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-
-	RNA_def_string(ot->srna, "name", "", 0, "Name", "Object name to select.");
-	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first.");
-}
 
 /**************************** Select Random ****************************/
 
@@ -1022,14 +943,14 @@ void OBJECT_OT_select_random(wmOperatorType *ot)
 	/* api callbacks */
 	/*ot->invoke= object_select_random_invoke XXX - need a number popup ;*/
 	ot->exec = object_select_random_exec;
-	ot->poll= ED_operator_objectmode;
+	ot->poll= objects_selectable_poll;
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
 	RNA_def_float_percentage(ot->srna, "percent", 50.f, 0.0f, 100.0f, "Percent", "Percentage of objects to select randomly", 0.f, 100.0f);
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend Selection", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend Selection", "Extend selection instead of deselecting everything first");
 }
 
 

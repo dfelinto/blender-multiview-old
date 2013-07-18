@@ -109,7 +109,7 @@ bool SCA_JoystickSensor::Evaluate()
 	bool result = false;
 	bool reset = m_reset && m_level;
 	
-	if(js==NULL) /* no joystick - dont do anything */
+	if(js==NULL) /* no joystick - don't do anything */
 		return false;
 	
 	m_reset = false;
@@ -129,7 +129,7 @@ bool SCA_JoystickSensor::Evaluate()
 				with expect a zero index.
 			*/
 			
-			if (!js->IsTrigAxis() && !reset) /* No events from SDL? - dont bother */
+			if (!js->IsTrigAxis() && !reset) /* No events from SDL? - don't bother */
 				return false;
 			
 			js->cSetPrecision(m_precision);
@@ -159,8 +159,8 @@ bool SCA_JoystickSensor::Evaluate()
 		}
 	case KX_JOYSENSORMODE_AXIS_SINGLE:
 		{
-			/* Like KX_JOYSENSORMODE_AXIS but dont pair up axis */
-			if (!js->IsTrigAxis() && !reset) /* No events from SDL? - dont bother */
+			/* Like KX_JOYSENSORMODE_AXIS but don't pair up axis */
+			if (!js->IsTrigAxis() && !reset) /* No events from SDL? - don't bother */
 				return false;
 			
 			/* No need for 'm_bAllEvents' check here since were only checking 1 axis */
@@ -182,7 +182,7 @@ bool SCA_JoystickSensor::Evaluate()
 		/* what is what!
 			m_button = the actual button in question
 			*/
-			if (!js->IsTrigButton() && !reset) /* No events from SDL? - dont bother */
+			if (!js->IsTrigButton() && !reset) /* No events from SDL? - don't bother */
 				return false;
 			
 			if(( m_bAllEvents && js->aAnyButtonPressIsPositive()) || (!m_bAllEvents && js->aButtonPressIsPositive(m_button))) {
@@ -203,7 +203,7 @@ bool SCA_JoystickSensor::Evaluate()
 			direction= m_hatf -- max 12
 			*/
 			
-			if (!js->IsTrigHat() && !reset) /* No events from SDL? - dont bother */
+			if (!js->IsTrigHat() && !reset) /* No events from SDL? - don't bother */
 				return false;
 			
 			if((m_bAllEvents && js->GetHat(m_hat-1)) || js->aHatIsPositive(m_hat-1, m_hatf)) {
@@ -303,7 +303,8 @@ PyAttributeDef SCA_JoystickSensor::Attributes[] = {
 const char SCA_JoystickSensor::GetButtonActiveList_doc[] = 
 "getButtonActiveList\n"
 "\tReturns a list containing the indices of the button currently pressed.\n";
-PyObject* SCA_JoystickSensor::PyGetButtonActiveList( ) {
+PyObject* SCA_JoystickSensor::PyGetButtonActiveList( )
+{
 	SCA_Joystick *joy = ((SCA_JoystickManager *)m_eventmgr)->GetJoystickDevice(m_joyindex);
 	PyObject *ls = PyList_New(0);
 	PyObject *value;
@@ -325,7 +326,8 @@ PyObject* SCA_JoystickSensor::PyGetButtonActiveList( ) {
 const char SCA_JoystickSensor::GetButtonStatus_doc[] = 
 "getButtonStatus(buttonIndex)\n"
 "\tReturns a bool of the current pressed state of the specified button.\n";
-PyObject* SCA_JoystickSensor::PyGetButtonStatus( PyObject* args ) {
+PyObject* SCA_JoystickSensor::PyGetButtonStatus( PyObject* args )
+{
 	SCA_Joystick *joy = ((SCA_JoystickManager *)m_eventmgr)->GetJoystickDevice(m_joyindex);
 	int index;
 	

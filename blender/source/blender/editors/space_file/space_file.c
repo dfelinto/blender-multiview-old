@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,7 +44,6 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_rand.h"
-#include "BLI_storage_types.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_context.h"
@@ -154,7 +151,7 @@ static void file_init(struct wmWindowManager *UNUSED(wm), ScrArea *sa)
 	SpaceFile *sfile= (SpaceFile*)sa->spacedata.first;
 	//printf("file_init\n");
 
-	if(sfile->layout) sfile->layout->dirty= 1;
+	if(sfile->layout) sfile->layout->dirty= TRUE;
 }
 
 
@@ -199,8 +196,8 @@ static void file_refresh(const bContext *C, ScrArea *UNUSED(sa))
 	filelist_hidedot(sfile->files, params->flag & FILE_HIDE_DOT);
 	filelist_setfilter(sfile->files, params->flag & FILE_FILTER ? params->filter : 0);	
 	filelist_setfilter_types(sfile->files, params->filter_glob);
-	if (filelist_empty(sfile->files))
-	{
+
+	if (filelist_empty(sfile->files)) {
 		thumbnails_stop(sfile->files, C);
 		filelist_readdir(sfile->files);
 		if(params->sort!=FILE_SORT_NONE) {
@@ -224,7 +221,7 @@ static void file_refresh(const bContext *C, ScrArea *UNUSED(sa))
 				}
 			} else {
 				/* stop any running thumbnail jobs if we're not 
-				 displaying them - speedup for NFS */
+				 * displaying them - speedup for NFS */
 				thumbnails_stop(sfile->files, C);
 			}
 			filelist_filter(sfile->files);
@@ -242,7 +239,7 @@ static void file_refresh(const bContext *C, ScrArea *UNUSED(sa))
 		BLI_strncpy(sfile->params->renameedit, sfile->params->renamefile, sizeof(sfile->params->renameedit));
 		params->renamefile[0] = '\0';
 	}
-	if (sfile->layout) sfile->layout->dirty= 1;
+	if (sfile->layout) sfile->layout->dirty= TRUE;
 
 }
 
@@ -413,13 +410,13 @@ static void file_keymap(struct wmKeyConfig *keyconf)
 	/* keys for main area */
 	keymap= WM_keymap_find(keyconf, "File Browser Main", SPACE_FILE, 0);
 	kmi= WM_keymap_add_item(keymap, "FILE_OT_execute", LEFTMOUSE, KM_DBL_CLICK, 0, 0);
-	RNA_boolean_set(kmi->ptr, "need_active", 1);
+	RNA_boolean_set(kmi->ptr, "need_active", TRUE);
 	WM_keymap_add_item(keymap, "FILE_OT_select", LEFTMOUSE, KM_CLICK, 0, 0);
 	kmi = WM_keymap_add_item(keymap, "FILE_OT_select", LEFTMOUSE, KM_CLICK, KM_SHIFT, 0);
-	RNA_boolean_set(kmi->ptr, "extend", 1);
+	RNA_boolean_set(kmi->ptr, "extend", TRUE);
 	kmi = WM_keymap_add_item(keymap, "FILE_OT_select", LEFTMOUSE, KM_CLICK, KM_ALT, 0);
-	RNA_boolean_set(kmi->ptr, "extend", 1);
-	RNA_boolean_set(kmi->ptr, "fill", 1);
+	RNA_boolean_set(kmi->ptr, "extend", TRUE);
+	RNA_boolean_set(kmi->ptr, "fill", TRUE);
 	WM_keymap_add_item(keymap, "FILE_OT_select_all_toggle", AKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "FILE_OT_refresh", PADPERIOD, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "FILE_OT_select_border", BKEY, KM_PRESS, 0, 0);
@@ -520,8 +517,13 @@ static void file_ui_area_draw(const bContext *C, ARegion *ar)
 	glClearColor(col[0], col[1], col[2], 0.0);
 	glClear(GL_COLOR_BUFFER_BIT);
 
+	/* scrolling here is just annoying, disable it */
+	ar->v2d.cur.ymax= ar->v2d.cur.ymax - ar->v2d.cur.ymin;
+	ar->v2d.cur.ymin= 0;
+
 	/* set view2d view matrix for scrolling (without scrollers) */
 	UI_view2d_view_ortho(&ar->v2d);
+
 
 	file_draw_buttons(C, ar);
 

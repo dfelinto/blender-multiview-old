@@ -1,10 +1,4 @@
-/* blenkernel/script.c
- *
- *
- * $Id$
- *
- * Function(s) related to struct script management.
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,12 +33,11 @@
 
 #include "MEM_guardedalloc.h"
 
-/*
-
+#if 0
 #ifdef WITH_PYTHON
 #include "BPY_extern.h" // Blender Python library
 #endif
-*/
+#endif
 
 /* XXX this function and so also the file should not be needed anymore,
  * since we have to force clearing all Python related data before freeing

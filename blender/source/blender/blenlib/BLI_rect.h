@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,10 +24,10 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  *
-*/
+ */
 
-#ifndef BLI_RECT_H
-#define BLI_RECT_H
+#ifndef __BLI_RECT_H__
+#define __BLI_RECT_H__
 
 /** \file BLI_rect.h
  *  \ingroup bli
@@ -48,7 +46,7 @@ extern "C" {
  * rect is one with a zero (or negative)
  * width or height.
  *
- * @return True if @a rect is empty.
+ * \return True if \a rect is empty.
  */
 int  BLI_rcti_is_empty(struct rcti *rect);
 int  BLI_rctf_is_empty(struct rctf *rect);

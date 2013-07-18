@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgerast
  */
 
-#ifndef __RAS_TEXVERT
-#define __RAS_TEXVERT
+#ifndef __RAS_TEXVERT_H__
+#define __RAS_TEXVERT_H__
 
 
 #include "MT_Point3.h"
@@ -151,5 +149,5 @@ public:
 #endif
 };
 
-#endif //__RAS_TEXVERT
+#endif //__RAS_TEXVERT_H__
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -29,12 +27,12 @@
  *  \ingroup editors
  */
 
-#ifndef ED_TEXT_H
-#define ED_TEXT_H
+#ifndef __ED_TEXT_H__
+#define __ED_TEXT_H__
 
 struct bContext;
 
 void ED_text_undo_step(struct bContext *C, int step);
 
-#endif /* ED_TEXT_H */
+#endif /* __ED_TEXT_H__ */
 

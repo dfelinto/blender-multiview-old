@@ -1,6 +1,4 @@
 /*
-* $Id$
-*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,18 +23,14 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file gameengine/Converter/BL_ShapeActionActuator.cpp
  *  \ingroup bgeconv
  */
 
 
-#if defined (__sgi)
-#include <math.h>
-#else
 #include <cmath>
-#endif
 
 #include "SCA_LogicManager.h"
 #include "BL_ShapeActionActuator.h"
@@ -183,8 +177,9 @@ void BL_ShapeActionActuator::BlendShape(Key* key, float srcweight)
 	dstweight = 1.0F - srcweight;
 
 	for (it=m_blendshape.begin(), kb = (KeyBlock*)key->block.first; 
-		 kb && it != m_blendshape.end(); 
-		 kb = (KeyBlock*)kb->next, it++) {
+	     kb && it != m_blendshape.end();
+	     kb = (KeyBlock*)kb->next, it++)
+	{
 		kb->curval = kb->curval * dstweight + (*it) * srcweight;
 	}
 }
@@ -226,7 +221,7 @@ bool BL_ShapeActionActuator::Update(double curtime, bool frame)
 	
 	priority = m_priority;
 	
-	/* Determine pre-incrementation behaviour and set appropriate flags */
+	/* Determine pre-incrementation behavior and set appropriate flags */
 	switch (m_playtype){
 	case ACT_ACTION_MOTION:
 		if (bNegativeEvent){
@@ -524,8 +519,8 @@ PyAttributeDef BL_ShapeActionActuator::Attributes[] = {
 	KX_PYATTRIBUTE_RW_FUNCTION("action", BL_ShapeActionActuator, pyattr_get_action, pyattr_set_action),
 	KX_PYATTRIBUTE_SHORT_RW("priority", 0, 100, false, BL_ShapeActionActuator, m_priority),
 	KX_PYATTRIBUTE_FLOAT_RW_CHECK("frame", 0, MAXFRAMEF, BL_ShapeActionActuator, m_localtime, CheckFrame),
-	KX_PYATTRIBUTE_STRING_RW("propName", 0, 31, false, BL_ShapeActionActuator, m_propname),
-	KX_PYATTRIBUTE_STRING_RW("framePropName", 0, 31, false, BL_ShapeActionActuator, m_framepropname),
+	KX_PYATTRIBUTE_STRING_RW("propName", 0, MAX_PROP_NAME, false, BL_ShapeActionActuator, m_propname),
+	KX_PYATTRIBUTE_STRING_RW("framePropName", 0, MAX_PROP_NAME, false, BL_ShapeActionActuator, m_framepropname),
 	KX_PYATTRIBUTE_FLOAT_RW_CHECK("blendTime", 0, MAXFRAMEF, BL_ShapeActionActuator, m_blendframe, CheckBlendTime),
 	KX_PYATTRIBUTE_SHORT_RW_CHECK("mode",0,100,false,BL_ShapeActionActuator,m_playtype,CheckType),
 	{ NULL }	//Sentinel

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,8 +34,8 @@
 
 /* ******************* channel Difference Matte ********************************* */
 static bNodeSocketTemplate cmp_node_diff_matte_in[]={
-	{SOCK_RGBA,1,"Image 1", 0.8f, 0.8f, 0.8f, 1.0f},
-	{SOCK_RGBA,1,"Image 2", 0.8f, 0.8f, 0.8f, 1.0f},
+	{SOCK_RGBA,1,"Image 1", 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA,1,"Image 2", 1.0f, 1.0f, 1.0f, 1.0f},
 	{-1,0,""}
 };
 
@@ -55,14 +53,14 @@ static void do_diff_matte(bNode *node, float *outColor, float *inColor1, float *
 	float difference;
 	float alpha;
 
-	difference= fabs(inColor2[0]-inColor1[0])+
-			   fabs(inColor2[1]-inColor1[1])+
-			   fabs(inColor2[2]-inColor1[2]);
+	difference= fabs(inColor2[0]-inColor1[0]) +
+	        fabs(inColor2[1]-inColor1[1]) +
+	        fabs(inColor2[2]-inColor1[2]);
 
 	/*average together the distances*/
-	difference=difference/3.0;
+	difference=difference/3.0f;
 
-	VECCOPY(outColor, inColor1);
+	copy_v3_v3(outColor, inColor1);
 
 	/*make 100% transparent*/
 	if(difference < tolerence) {
@@ -88,10 +86,10 @@ static void do_diff_matte(bNode *node, float *outColor, float *inColor1, float *
 
 static void node_composit_exec_diff_matte(void *data, bNode *node, bNodeStack **in, bNodeStack **out)
 {
-	CompBuf *outbuf=0;
-	CompBuf *imbuf1=0;
-	CompBuf *imbuf2=0;
-	NodeChroma *c;
+	CompBuf *outbuf= NULL;
+	CompBuf *imbuf1= NULL;
+	CompBuf *imbuf2= NULL;
+	/* NodeChroma *c; */ /* UNUSED */
 
 	/*is anything connected?*/
 	if(out[0]->hasoutput==0 && out[1]->hasoutput==0) return;
@@ -107,7 +105,7 @@ static void node_composit_exec_diff_matte(void *data, bNode *node, bNodeStack **
 		imbuf2=typecheck_compbuf(in[1]->data, CB_RGBA);
 	}
 
-	c=node->storage;
+	/* c=node->storage; */ /* UNUSED */
 	outbuf=dupalloc_compbuf(imbuf1);
 
 	/* note, processor gets a keyvals array passed on as buffer constant */
@@ -133,19 +131,16 @@ static void node_composit_init_diff_matte(bNodeTree *UNUSED(ntree), bNode* node,
 	c->t2= 0.1f;
 }
 
-void register_node_type_cmp_diff_matte(ListBase *lb)
+void register_node_type_cmp_diff_matte(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_DIFF_MATTE, "Difference Key", NODE_CLASS_MATTE, NODE_PREVIEW|NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_DIFF_MATTE, "Difference Key", NODE_CLASS_MATTE, NODE_PREVIEW|NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_diff_matte_in, cmp_node_diff_matte_out);
 	node_type_size(&ntype, 200, 80, 250);
 	node_type_init(&ntype, node_composit_init_diff_matte);
 	node_type_storage(&ntype, "NodeChroma", node_free_standard_storage, node_copy_standard_storage);
 	node_type_exec(&ntype, node_composit_exec_diff_matte);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-

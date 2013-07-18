@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_FFMPEGREADER
-#define AUD_FFMPEGREADER
+#ifndef __AUD_FFMPEGREADER_H__
+#define __AUD_FFMPEGREADER_H__
 
 #include "AUD_ConverterFunctions.h"
 #include "AUD_IReader.h"
@@ -163,4 +161,4 @@ public:
 	virtual void read(int& length, bool& eos, sample_t* buffer);
 };
 
-#endif //AUD_FFMPEGREADER
+#endif //__AUD_FFMPEGREADER_H__

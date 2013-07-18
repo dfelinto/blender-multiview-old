@@ -29,12 +29,12 @@
  *  \ingroup gamelogic
  */
 
-#ifndef _SCA_JOYSTICK_H_
-#define _SCA_JOYSTICK_H_
+#ifndef __SCA_JOYSTICK_H__
+#define __SCA_JOYSTICK_H__
 
 #include "SCA_JoystickDefines.h"
-#ifndef DISABLE_SDL
-#include "SDL.h"
+#ifdef WITH_SDL
+#  include "SDL.h"
 #endif
 
 /**
@@ -52,7 +52,7 @@ class SCA_Joystick
 	static int m_refCount;
 
 	class PrivateData;
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	PrivateData		*m_private;
 #endif
 	int				m_joyindex;
@@ -74,7 +74,7 @@ class SCA_Joystick
 
 	/**
 	 * max # of buttons avail
-	*/
+	 */
 	
 	int 			m_axismax;
 	int 			m_buttonmax;
@@ -89,7 +89,7 @@ class SCA_Joystick
 	bool			m_istrig_button;
 	bool			m_istrig_hat;
 
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	/**
 	 * event callbacks
 	 */
@@ -102,7 +102,7 @@ class SCA_Joystick
 	void OnBallMotion(SDL_Event *sdl_event){}
 #endif
 		
-#endif
+#endif /* WITH_SDL */
 	/**
 	 * Open the joystick
 	 */
@@ -114,7 +114,7 @@ class SCA_Joystick
 	void DestroyJoystickDevice(void);
 
 	/**
-	 * fills the axis mnember values 
+	 * fills the axis member values
 	 */
 	void pFillButtons(void);
 
@@ -134,8 +134,8 @@ class SCA_Joystick
 	
 public:
 
-	static SCA_Joystick *GetInstance( short int joyindex );
-	static void HandleEvents( void );
+	static SCA_Joystick *GetInstance(short int joyindex);
+	static void HandleEvents(void);
 	void ReleaseInstance();
 	
 
@@ -193,9 +193,6 @@ public:
 	 */
 	int Connected(void);
 };
-#ifndef	DISABLE_SDL
-void Joystick_HandleEvents( void );
-#endif
 
 #endif
 

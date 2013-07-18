@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup player
  */
 
-#ifndef __GPC_RAWLOGOARRAYS_H
-#define __GPC_RAWLOGOARRAYS_H
+#ifndef __GPC_RAWLOGOARRAYS_H__
+#define __GPC_RAWLOGOARRAYS_H__
 
 void GetRawBlenderLogo(unsigned char **data, int *width, int *height);
 void GetRawBlender3DLogo(unsigned char **data, int *width, int *height);
@@ -40,5 +38,5 @@ void GetRawBlender3DLogo(unsigned char **data, int *width, int *height);
 void GetRawNaNLogo(unsigned char **data, int *width, int *height);
 #endif
 
-#endif  // __GPC_RAWLOGOARRAYS_H
+#endif  // __GPC_RAWLOGOARRAYS_H__
 

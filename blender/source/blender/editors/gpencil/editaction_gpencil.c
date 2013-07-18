@@ -259,7 +259,7 @@ void duplicate_gplayer_frames (bGPDlayer *gpl)
 /* Copy and Paste Tools */
 /* - The copy/paste buffer currently stores a set of GP_Layers, with temporary
  *	GP_Frames with the necessary strokes
- * - Unless there is only one element in the buffer, names are also tested to check for compatability.
+ * - Unless there is only one element in the buffer, names are also tested to check for compatibility.
  * - All pasted frames are offset by the same amount. This is calculated as the difference in the times of
  *	the current frame and the 'first keyframe' (i.e. the earliest one in all channels).
  * - The earliest frame is calculated per copy operation.
@@ -311,7 +311,7 @@ void copy_gpdata ()
 		gpln= MEM_callocN(sizeof(bGPDlayer), "GPCopyPasteLayer");
 		
 		gpln->frames.first= gpln->frames.last= NULL;
-		strcpy(gpln->info, gpls->info);
+		BLI_strncpy(gpln->info, gpls->info, sizeof(gpln->info));
 		
 		BLI_addtail(&gpcopybuf, gpln);
 		
@@ -422,6 +422,7 @@ void paste_gpdata (Scene *scene)
 								
 							case SPACE_NODE: /* Nodes Editor: either screen-aligned or view-aligned */
 							case SPACE_IMAGE: /* Image Editor: either screen-aligned or view\image-aligned */
+							case SPACE_CLIP: /* Image Editor: either screen-aligned or view\image-aligned */
 								if ((gps->flag == 0) || (gps->flag & GP_STROKE_2DSPACE))
 									stroke_ok= 1;
 								break;
@@ -560,7 +561,7 @@ static short mirror_gpf_xaxis (bGPDframe *gpf, Scene *scene)
 static short mirror_gpf_marker (bGPDframe *gpf, Scene *scene)
 {
 	static TimeMarker *marker;
-	static short initialised = 0;
+	static short initialized = 0;
 	int diff;
 	
 	/* In order for this mirror function to work without
@@ -579,17 +580,17 @@ static short mirror_gpf_marker (bGPDframe *gpf, Scene *scene)
 		}
 	}
 	else {
-		/* initialisation time */
-		if (initialised) {
+		/* initialization time */
+		if (initialized) {
 			/* reset everything for safety */
 			marker = NULL;
-			initialised = 0;
+			initialized = 0;
 		}
 		else {
 			/* try to find a marker */
 			marker= ED_markers_get_first_selected(&scene->markers);
 			if(marker) {
-				initialised= 1;
+				initialized= 1;
 			}
 		}
 	}

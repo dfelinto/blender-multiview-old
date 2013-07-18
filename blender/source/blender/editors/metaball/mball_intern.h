@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  */
 
 
-#ifndef ED_MBALL_INTERN_H
-#define ED_MBALL_INTERN_H
+#ifndef __MBALL_INTERN_H__
+#define __MBALL_INTERN_H__
 
 #include "DNA_object_types.h"
 
@@ -45,7 +43,6 @@ void MBALL_OT_delete_metaelems(struct wmOperatorType *ot);
 void MBALL_OT_duplicate_metaelems(struct wmOperatorType *ot);
 
 void MBALL_OT_select_all(struct wmOperatorType *ot);
-void MBALL_OT_select_inverse_metaelems(struct wmOperatorType *ot);
 void MBALL_OT_select_random_metaelems(struct wmOperatorType *ot);
 
 #endif

@@ -1,5 +1,4 @@
 /* 
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -32,8 +31,8 @@
  */
 
 
-#ifndef OCCLUSION_H
-#define OCCLUSION_H
+#ifndef __OCCLUSION_H__
+#define __OCCLUSION_H__
 
 struct Render;
 struct ShadeInput;

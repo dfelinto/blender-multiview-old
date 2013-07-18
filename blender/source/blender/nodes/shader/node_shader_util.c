@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -57,12 +55,12 @@ void nodestack_get_vec(float *in, short type_in, bNodeStack *ns)
 			in[2]= from[0];
 		}
 		else {
-			VECCOPY(in, from);
+			copy_v3_v3(in, from);
 		}
 	}
 	else { /* type_in==SOCK_RGBA */
 		if(ns->sockettype==SOCK_RGBA) {
-			QUATCOPY(in, from);
+			copy_v4_v4(in, from);
 		}
 		else if(ns->sockettype==SOCK_FLOAT) {
 			in[0]= from[0];
@@ -71,14 +69,12 @@ void nodestack_get_vec(float *in, short type_in, bNodeStack *ns)
 			in[3]= 1.0f;
 		}
 		else {
-			VECCOPY(in, from);
+			copy_v3_v3(in, from);
 			in[3]= 1.0f;
 		}
 	}
 }
 
-
-/* ******************* execute and parse ************ */
 
 /* go over all used Geometry and Texture nodes, and return a texco flag */
 /* no group inside needed, this function is called for groups too */
@@ -88,8 +84,6 @@ void ntreeShaderGetTexcoMode(bNodeTree *ntree, int r_mode, short *texco, int *mo
 	bNodeSocket *sock;
 	int a;
 	
-	ntreeSocketUseFlags(ntree);
-
 	for(node= ntree->nodes.first; node; node= node->next) {
 		if(node->type==SH_NODE_TEXTURE) {
 			if((r_mode & R_OSA) && node->id) {
@@ -119,6 +113,8 @@ void ntreeShaderGetTexcoMode(bNodeTree *ntree, int r_mode, short *texco, int *mo
 							*texco |= TEXCO_NORM|NEED_UV; break;
 						case GEOM_OUT_VCOL:
 							*texco |= NEED_UV; *mode |= MA_VERTEXCOL; break;
+						case GEOM_OUT_VCOL_ALPHA:
+							*texco |= NEED_UV; *mode |= MA_VERTEXCOL; break;
 					}
 				}
 			}
@@ -136,19 +132,19 @@ void nodeShaderSynchronizeID(bNode *node, int copyto)
 		Material *ma= (Material *)node->id;
 		int a;
 		
-		/* hrmf, case in loop isnt super fast, but we dont edit 100s of material at same time either! */
+		/* hrmf, case in loop isn't super fast, but we don't edit 100s of material at same time either! */
 		for(a=0, sock= node->inputs.first; sock; sock= sock->next, a++) {
-			if(!(sock->flag & SOCK_HIDDEN)) {
+			if(!nodeSocketIsHidden(sock)) {
 				if(copyto) {
 					switch(a) {
 						case MAT_IN_COLOR:
-							VECCOPY(&ma->r, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
+							copy_v3_v3(&ma->r, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
 						case MAT_IN_SPEC:
-							VECCOPY(&ma->specr, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
+							copy_v3_v3(&ma->specr, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
 						case MAT_IN_REFL:
 							ma->ref= ((bNodeSocketValueFloat*)sock->default_value)->value; break;
 						case MAT_IN_MIR:
-							VECCOPY(&ma->mirr, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
+							copy_v3_v3(&ma->mirr, ((bNodeSocketValueRGBA*)sock->default_value)->value); break;
 						case MAT_IN_AMB:
 							ma->amb= ((bNodeSocketValueFloat*)sock->default_value)->value; break;
 						case MAT_IN_EMIT:
@@ -166,13 +162,13 @@ void nodeShaderSynchronizeID(bNode *node, int copyto)
 				else {
 					switch(a) {
 						case MAT_IN_COLOR:
-							VECCOPY(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->r); break;
+							copy_v3_v3(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->r); break;
 						case MAT_IN_SPEC:
-							VECCOPY(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->specr); break;
+							copy_v3_v3(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->specr); break;
 						case MAT_IN_REFL:
 							((bNodeSocketValueFloat*)sock->default_value)->value= ma->ref; break;
 						case MAT_IN_MIR:
-							VECCOPY(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->mirr); break;
+							copy_v3_v3(((bNodeSocketValueRGBA*)sock->default_value)->value, &ma->mirr); break;
 						case MAT_IN_AMB:
 							((bNodeSocketValueFloat*)sock->default_value)->value= ma->amb; break;
 						case MAT_IN_EMIT:
@@ -198,7 +194,7 @@ void node_gpu_stack_from_data(struct GPUNodeStack *gs, int type, bNodeStack *ns)
 {
 	memset(gs, 0, sizeof(*gs));
 	
-	QUATCOPY(gs->vec, ns->vec);
+	copy_v4_v4(gs->vec, ns->vec);
 	gs->link= ns->data;
 	
 	if (type == SOCK_FLOAT)
@@ -207,12 +203,18 @@ void node_gpu_stack_from_data(struct GPUNodeStack *gs, int type, bNodeStack *ns)
 		gs->type= GPU_VEC3;
 	else if (type == SOCK_RGBA)
 		gs->type= GPU_VEC4;
+	else if (type == SOCK_SHADER)
+		gs->type= GPU_VEC4;
 	else
 		gs->type= GPU_NONE;
 	
 	gs->name = "";
 	gs->hasinput= ns->hasinput && ns->data;
-	gs->hasoutput= ns->hasoutput && ns->data;
+	/* XXX Commented out the ns->data check here, as it seems it's not alwas set,
+	 *     even though there *is* a valid connection/output... But that might need
+	 *     further investigation.
+	 */
+	gs->hasoutput= ns->hasoutput /*&& ns->data*/;
 	gs->sockettype= ns->sockettype;
 }
 
@@ -240,6 +242,29 @@ static void data_from_gpu_stack_list(ListBase *sockets, bNodeStack **ns, GPUNode
 
 	for (sock=sockets->first, i=0; sock; sock=sock->next, i++)
 		node_data_from_gpu_stack(ns[i], &gs[i]);
+}
+
+bNode *nodeGetActiveTexture(bNodeTree *ntree)
+{
+	/* this is the node we texture paint and draw in textured draw */
+	bNode *node;
+
+	if(!ntree)
+		return NULL;
+
+	/* check for group edit */
+	for(node= ntree->nodes.first; node; node= node->next)
+		if(node->flag & NODE_GROUP_EDIT)
+			break;
+
+	if(node)
+		ntree= (bNodeTree*)node->id;
+
+	for(node= ntree->nodes.first; node; node= node->next)
+		if(node->flag & NODE_ACTIVE_TEXTURE)
+			return node;
+	
+	return NULL;
 }
 
 void ntreeExecGPUNodes(bNodeTreeExec *exec, GPUMaterial *mat, int do_outputs)
@@ -285,3 +310,22 @@ void ntreeExecGPUNodes(bNodeTreeExec *exec, GPUMaterial *mat, int do_outputs)
 		}
 	}
 }
+
+void node_shader_gpu_tex_mapping(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *UNUSED(out))
+{
+	NodeTexBase *base= node->storage;
+	TexMapping *texmap= &base->tex_mapping;
+	float domin= (texmap->flag & TEXMAP_CLIP_MIN) != 0;
+	float domax= (texmap->flag & TEXMAP_CLIP_MAX) != 0;
+
+	if(domin || domax || !(texmap->flag & TEXMAP_UNIT_MATRIX)) {
+		GPUNodeLink *tmat = GPU_uniform((float*)texmap->mat);
+		GPUNodeLink *tmin = GPU_uniform(texmap->min);
+		GPUNodeLink *tmax = GPU_uniform(texmap->max);
+		GPUNodeLink *tdomin = GPU_uniform(&domin);
+		GPUNodeLink *tdomax = GPU_uniform(&domax);
+
+		GPU_link(mat, "mapping", in[0].link, tmat, tmin, tmax, tdomin, tdomax, &in[0].link);
+	}
+}
+

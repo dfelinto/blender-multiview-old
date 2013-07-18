@@ -107,7 +107,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	ParticleSimulationData sim= {NULL};
 	ParticleData *pa=NULL;
 	float cfra = BKE_curframe(re->scene);
-	int i, childexists;
+	int i /*, childexists*/ /* UNUSED */;
 	int total_particles, offset=0;
 	int data_used = point_data_used(pd);
 	float partco[3];
@@ -116,7 +116,7 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	/* init everything */
 	if (!psys || !ob || !pd) return;
 
-	mul_m4_m4m4(obview, re->viewinv, ob->obmat);
+	mult_m4_m4m4(obview, ob->obmat, re->viewinv);
 	
 	/* Just to create a valid rendering context for particles */
 	psys_render_set(ob, psys, re->viewmat, re->winmat, re->winx, re->winy, 0);
@@ -143,15 +143,17 @@ static void pointdensity_cache_psys(Render *re, PointDensity *pd, Object *ob, Pa
 	pd->totpoints = total_particles;
 	if (data_used & POINT_DATA_VEL) offset = pd->totpoints*3;
 	
+#if 0 /* UNUSED */
 	if (psys->totchild > 0 && !(psys->part->draw & PART_DRAW_PARENT))
 		childexists = 1;
-	
+#endif
+
 	for (i=0, pa=psys->particles; i < total_particles; i++, pa++) {
 
 		state.time = cfra;
 		if(psys_get_particle_state(&sim, i, &state, 0)) {
 			
-			VECCOPY(partco, state.co);
+			copy_v3_v3(partco, state.co);
 			
 			if (pd->psys_cache_space == TEX_PD_OBJECTSPACE)
 				mul_m4_v3(ob->imat, partco);
@@ -215,7 +217,7 @@ static void pointdensity_cache_object(Render *re, PointDensity *pd, Object *ob)
 	for(i=0; i < pd->totpoints; i++, mvert++) {
 		float co[3];
 		
-		VECCOPY(co, mvert->co);
+		copy_v3_v3(co, mvert->co);
 
 		switch(pd->ob_cache_space) {
 			case TEX_PD_OBJECTSPACE:
@@ -237,7 +239,7 @@ static void pointdensity_cache_object(Render *re, PointDensity *pd, Object *ob)
 	dm->release(dm);
 
 }
-static void cache_pointdensity(Render *re, Tex *tex)
+void cache_pointdensity(Render *re, Tex *tex)
 {
 	PointDensity *pd = tex->pd;
 	
@@ -344,9 +346,9 @@ static void accum_density(void *userdata, int index, float squared_dist)
 	float density = 0.0f;
 	
 	if (pdr->point_data_used & POINT_DATA_VEL) {
-		pdr->vec[0] += pdr->point_data[index*3 + 0]; //* density;
-		pdr->vec[1] += pdr->point_data[index*3 + 1]; //* density;
-		pdr->vec[2] += pdr->point_data[index*3 + 2]; //* density;
+		pdr->vec[0] += pdr->point_data[index*3 + 0]; // * density;
+		pdr->vec[1] += pdr->point_data[index*3 + 1]; // * density;
+		pdr->vec[2] += pdr->point_data[index*3 + 2]; // * density;
 	}
 	if (pdr->point_data_used & POINT_DATA_LIFE) {
 		*pdr->age += pdr->point_data[pdr->offset + index]; // * density;
@@ -421,7 +423,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 		(pd->flag&TEX_PD_FALLOFF_CURVE ? pd->falloff_curve : NULL), pd->falloff_speed_scale*0.001f);
 	noise_fac = pd->noise_fac * 0.5f;	/* better default */
 	
-	VECCOPY(co, texvec);
+	copy_v3_v3(co, texvec);
 	
 	if (point_data_used(pd)) {
 		/* does a BVH lookup to find accumulated density and additional point data *
@@ -478,7 +480,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			if (pd->coba) {
 				if (do_colorband(pd->coba, age, col)) {
 					texres->talpha= 1;
-					VECCOPY(&texres->tr, col);
+					copy_v3_v3(&texres->tr, col);
 					texres->tin *= col[3];
 					texres->ta = texres->tin;
 				}
@@ -491,7 +493,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 			if (pd->coba) {
 				if (do_colorband(pd->coba, speed, col)) {
 					texres->talpha= 1;	
-					VECCOPY(&texres->tr, col);
+					copy_v3_v3(&texres->tr, col);
 					texres->tin *= col[3];
 					texres->ta = texres->tin;
 				}
@@ -501,7 +503,7 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 		case TEX_PD_COLOR_PARTVEL:
 			texres->talpha= 1;
 			mul_v3_fl(vec, pd->speed_scale);
-			VECCOPY(&texres->tr, vec);
+			copy_v3_v3(&texres->tr, vec);
 			texres->ta = texres->tin;
 			break;
 		case TEX_PD_COLOR_CONSTANT:
@@ -513,9 +515,9 @@ int pointdensitytex(Tex *tex, float *texvec, TexResult *texres)
 	
 	return retval;
 	
-	/*
+#if 0
 	if (texres->nor!=NULL) {
 		texres->nor[0] = texres->nor[1] = texres->nor[2] = 0.0f;
 	}
-	*/
+#endif
 }

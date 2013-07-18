@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,13 +24,13 @@
  *
  */
 
-/** \file blender/modifiers/intern/MOD_util.h
+/** \file blender/modifiers/intern/MOD_weightvg_util.h
  *  \ingroup modifiers
  */
 
 
-#ifndef MOD_WEIGHTVG_UTIL_H
-#define MOD_WEIGHTVG_UTIL_H
+#ifndef __MOD_WEIGHTVG_UTIL_H__
+#define __MOD_WEIGHTVG_UTIL_H__
 
 /* so modifier types match their defines */
 #include "MOD_modifiertypes.h"
@@ -44,7 +42,7 @@ struct Tex;
 
 /*
  * XXX I'd like to make modified weights visible in WeightPaint mode,
- *     but couldn't figure a way to do this…
+ *     but couldn't figure a way to do this...
  *     Maybe this will need changes in mesh_calc_modifiers (DerivedMesh.c)?
  *     Or the WeightPaint mode code itself?
  */
@@ -53,14 +51,14 @@ struct Tex;
  * Util functions.                    *
  **************************************/
 
-/* We cannot divide by zero (what a surprise…).
+/* We cannot divide by zero (what a surprise...).
  * So if -MOD_WEIGHTVGROUP_DIVMODE_ZEROFLOOR < weightf < MOD_WEIGHTVGROUP_DIVMODE_ZEROFLOOR,
  * we clamp weightf to this value (or its negative version).
  * Also used to avoid null power factor.
  */
 #define MOD_WVG_ZEROFLOOR		1.0e-32f
 
-/* Maps new_w weights in place, using either one of the predifined functions, or a custom curve.
+/* Maps new_w weights in place, using either one of the predefined functions, or a custom curve.
  * Return values are in new_w.
  * If indices is not NULL, it must be a table of same length as org_w and new_w, mapping to the real
  * vertex index (in case the weight tables do not cover the whole vertices...).
@@ -72,19 +70,19 @@ void weightvg_do_map(int num, float *new_w, short mode, struct CurveMapping *cma
  * Return values are in org_w.
  * If indices is not NULL, it must be a table of same length as org_w and new_w, mapping to the real
  * vertex index (in case the weight tables do not cover the whole vertices...).
- * XXX The standard “factor” value is assumed in [0.0, 1.0] range. Else, weird results might appear.
+ * XXX The standard "factor" value is assumed in [0.0, 1.0] range. Else, weird results might appear.
  */
 void weightvg_do_mask(int num, const int *indices, float *org_w, const float *new_w, Object *ob,
-                      DerivedMesh *dm, float fact, const char defgrp_name[32], Tex *texture,
+                      DerivedMesh *dm, float fact, const char defgrp_name[MAX_VGROUP_NAME], Tex *texture,
                       int tex_use_channel, int tex_mapping, Object *tex_map_object,
                       const char *tex_uvlayer_name);
 
-/* Applies weights to given vgroup (defgroup), and optionnaly add/remove vertices from the group.
+/* Applies weights to given vgroup (defgroup), and optionally add/remove vertices from the group.
  * If indices is not NULL, it must be a table of same length as weights, mapping to the real
  * vertex index (in case the weight table does not cover the whole vertices...).
  */
-void weightvg_update_vg(MDeformVert *dvert, int defgrp_idx, int num,
+void weightvg_update_vg(MDeformVert *dvert, int defgrp_idx, MDeformWeight **dws, int num,
                         const int *indices, const float *weights, int do_add,
                         float add_thresh, int do_rem, float rem_thresh);
 
-#endif /* MOD_WEIGHTVG_UTIL_H */
+#endif /* __MOD_WEIGHTVG_UTIL_H__ */

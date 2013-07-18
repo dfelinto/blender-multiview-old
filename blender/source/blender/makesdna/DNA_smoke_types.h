@@ -1,37 +1,36 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2006 by NaN Holding BV.
-* All rights reserved.
-*
-* The Original Code is: all of this file.
-*
-* Contributor(s): Daniel Genrich (Genscher)
-*
-* ***** END GPL LICENSE BLOCK *****
-*/
-#ifndef DNA_SMOKE_TYPES_H
-#define DNA_SMOKE_TYPES_H
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2006 by NaN Holding BV.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): Daniel Genrich (Genscher)
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
 
 /** \file DNA_smoke_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_SMOKE_TYPES_H__
+#define __DNA_SMOKE_TYPES_H__
 
 /* flags */
 #define MOD_SMOKE_HIGHRES (1<<1) /* enable high resolution */
@@ -110,8 +109,7 @@ typedef struct SmokeDomainSettings {
 
 /* flags */
 #define MOD_SMOKE_FLOW_ABSOLUTE (1<<1) /*old style emission*/
-#define MOD_SMOKE_FLOW_INITVELOCITY (1<<2) /* passes particles speed to
-										 the smoke*/
+#define MOD_SMOKE_FLOW_INITVELOCITY (1<<2) /* passes particles speed to the smoke */
 
 
 typedef struct SmokeFlowSettings {
@@ -129,17 +127,17 @@ typedef struct SmokeFlowSettings {
 	int flags; /* absolute emission etc*/
 } SmokeFlowSettings;
 
-/*
-	struct BVHTreeFromMesh *bvh;
-	float mat[4][4];
-	float mat_old[4][4];
-	*/
+
+// struct BVHTreeFromMesh *bvh;
+// float mat[4][4];
+// float mat_old[4][4];
 
 /* collision objects (filled with smoke) */
 typedef struct SmokeCollSettings {
 	struct SmokeModifierData *smd; /* for fast RNA access */
 	struct BVHTree *bvhtree; /* bounding volume hierarchy for this cloth object */
-	struct DerivedMesh *dm;
+
+//	struct DerivedMesh *dm; // UNUSED, ifdef'd in code for now.
 	float *points;
 	float *points_old;
 	float *vel;

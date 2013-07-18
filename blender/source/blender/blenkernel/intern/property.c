@@ -1,9 +1,4 @@
-
-/*  property.c   june 2000
- * 
- *  ton roosendaal
- * $Id$
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +20,7 @@
  *
  * The Original Code is: all of this file.
  *
- * Contributor(s): none yet.
+ * Contributor(s): ton roosendaal
  *
  * ***** END GPL LICENSE BLOCK *****
  */
@@ -84,7 +79,7 @@ bProperty *copy_property(bProperty *prop)
 void copy_properties(ListBase *lbn, ListBase *lbo)
 {
 	bProperty *prop, *propn;
-	free_properties( lbn ); /* incase we are copying to an object with props */
+	free_properties(lbn); /* in case we are copying to an object with props */
 	prop= lbo->first;
 	while(prop) {
 		propn= copy_property(prop);
@@ -169,19 +164,19 @@ void unique_property(bProperty *first, bProperty *prop, int force)
 			int i= 0;
 
 			/* strip numbers */
-			strcpy(base_name, prop->name);
+			BLI_strncpy(base_name, prop->name, sizeof(base_name));
 			for(i= strlen(base_name)-1; (i>=0 && isdigit(base_name[i])); i--) {
 				base_name[i]= '\0';
 			}
 			i= 0;
 
 			do { /* ensure we have enough chars for the new number in the name */
-				sprintf(num, "%d", i++);
+				BLI_snprintf(num, sizeof(num), "%d", i++);
 				BLI_strncpy(new_name, base_name, sizeof(prop->name) - strlen(num));
 				strcat(new_name, num);
 			} while(get_property__internal(first, prop, new_name));
 
-			strcpy(prop->name, new_name);
+			BLI_strncpy(prop->name, new_name, sizeof(prop->name));
 		}
 	}
 }
@@ -205,7 +200,7 @@ void set_ob_property(Object *ob, bProperty *propc)
 /* negative: prop is smaller
  * positive: prop is larger
  */
-int compare_property(bProperty *prop, char *str)
+int compare_property(bProperty *prop, const char *str)
 {
 //	extern int Gdfra;		/* sector.c */
 	float fvalue, ftest;
@@ -242,7 +237,7 @@ int compare_property(bProperty *prop, char *str)
 	return 0;
 }
 
-void set_property(bProperty *prop, char *str)
+void set_property(bProperty *prop, const char *str)
 {
 //	extern int Gdfra;		/* sector.c */
 
@@ -260,13 +255,13 @@ void set_property(bProperty *prop, char *str)
 		*((float *)&prop->data)= (float)atof(str);
 		break;
 	case GPROP_STRING:
-		strcpy(prop->poin, str);
+		strcpy(prop->poin, str); /* TODO - check size? */
 		break;
 	}
 	
 }
 
-void add_property(bProperty *prop, char *str)
+void add_property(bProperty *prop, const char *str)
 {
 //	extern int Gdfra;		/* sector.c */
 

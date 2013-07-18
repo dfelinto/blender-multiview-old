@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,7 +35,7 @@
 
 /* **************** SEPARATE YCCA ******************** */
 static bNodeSocketTemplate cmp_node_sepycca_in[]= {
-	{  SOCK_RGBA, 1, "Image",        0.8f, 0.8f, 0.8f, 1.0f},
+	{  SOCK_RGBA, 1, "Image",        1.0f, 1.0f, 1.0f, 1.0f},
 	{  -1, 0, ""   }
 };
 static bNodeSocketTemplate cmp_node_sepycca_out[]= {
@@ -55,9 +53,9 @@ static void do_sepycca_601(bNode *UNUSED(node), float *out, float *in)
 	rgb_to_ycc(in[0], in[1], in[2], &y, &cb, &cr, BLI_YCC_ITU_BT601);
 	
 	/*divided by 255 to normalize for viewing in */
-	out[0]= y/255.0;
-	out[1]= cb/255.0;
-	out[2]= cr/255.0;
+	out[0]=  y/255.0f;
+	out[1]= cb/255.0f;
+	out[2]= cr/255.0f;
 	out[3]= in[3];
 }
 
@@ -68,9 +66,9 @@ static void do_sepycca_709(bNode *UNUSED(node), float *out, float *in)
 	rgb_to_ycc(in[0], in[1], in[2], &y, &cb, &cr, BLI_YCC_ITU_BT709);
 	
 	/*divided by 255 to normalize for viewing in */
-	out[0]= y/255.0;
-	out[1]= cb/255.0;
-	out[2]= cr/255.0;
+	out[0]=  y/255.0f;
+	out[1]= cb/255.0f;
+	out[2]= cr/255.0f;
 	out[3]= in[3];
 }
 
@@ -81,9 +79,9 @@ static void do_sepycca_jfif(bNode *UNUSED(node), float *out, float *in)
 	rgb_to_ycc(in[0], in[1], in[2], &y, &cb, &cr, BLI_YCC_JFIF_0_255);
 	
 	/*divided by 255 to normalize for viewing in */
-	out[0]= y/255.0;
-	out[1]= cb/255.0;
-	out[2]= cr/255.0;
+	out[0]=  y/255.0f;
+	out[1]= cb/255.0f;
+	out[2]= cr/255.0f;
 	out[3]= in[3];
 }
 
@@ -108,9 +106,9 @@ static void node_composit_exec_sepycca(void *UNUSED(data), bNode *node, bNodeSta
 		}
 	
 		/*divided by 255 to normalize for viewing in */
-		out[0]->vec[0] = y/255.0;
-		out[1]->vec[0] = cb/255.0;
-		out[2]->vec[0] = cr/255.0;
+		out[0]->vec[0] =  y/255.0f;
+		out[1]->vec[0] = cb/255.0f;
+		out[2]->vec[0] = cr/255.0f;
 		out[3]->vec[0] = in[0]->vec[3];
 	}
 	else if ((out[0]->hasoutput) || (out[1]->hasoutput) || (out[2]->hasoutput) || (out[3]->hasoutput)) {
@@ -150,16 +148,16 @@ static void node_composit_exec_sepycca(void *UNUSED(data), bNode *node, bNodeSta
 	}
 }
 
-void register_node_type_cmp_sepycca(ListBase *lb)
+void register_node_type_cmp_sepycca(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_SEPYCCA, "Separate YCbCrA", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_SEPYCCA, "Separate YCbCrA", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_sepycca_in, cmp_node_sepycca_out);
 	node_type_size(&ntype, 80, 40, 140);
 	node_type_exec(&ntype, node_composit_exec_sepycca);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
 
 
@@ -297,17 +295,14 @@ static void node_composit_exec_combycca(void *UNUSED(data), bNode *node, bNodeSt
 	}	
 }
 
-void register_node_type_cmp_combycca(ListBase *lb)
+void register_node_type_cmp_combycca(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_COMBYCCA, "Combine YCbCrA", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_COMBYCCA, "Combine YCbCrA", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_combycca_in, cmp_node_combycca_out);
 	node_type_size(&ntype, 80, 40, 140);
 	node_type_exec(&ntype, node_composit_exec_combycca);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-

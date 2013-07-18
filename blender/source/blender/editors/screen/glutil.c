@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -75,10 +73,11 @@ GLubyte stipple_halftone[128] = {
 
 
 /*  repeat this pattern
-	X000X000
-	00000000
-	00X000X0
-	00000000 */
+ *
+ *     X000X000
+ *     00000000
+ *     00X000X0
+ *     00000000 */
 
 
 GLubyte stipple_quarttone[128] = { 
@@ -150,8 +149,10 @@ void fdrawbezier(float vec[4][3])
 	glMap1f(GL_MAP1_VERTEX_3, 0.0, 1.0, 3, 4, vec[0]);
 	glBegin(GL_LINE_STRIP);
 	while (spline_step < 1.000001f) {
-		/*if(do_shaded)
-			UI_ThemeColorBlend(th_col1, th_col2, spline_step);*/
+#if 0
+		if(do_shaded)
+			UI_ThemeColorBlend(th_col1, th_col2, spline_step);
+#endif
 		glEvalCoord1f(spline_step);
 		spline_step += dist;
 	}
@@ -203,14 +204,12 @@ void sdrawline(short x1, short y1, short x2, short y2)
 }
 
 /*
-
-	x1,y2
-	|  \
-	|   \
-	|    \
-	x1,y1-- x2,y1
-
-*/
+ *     x1,y2
+ *     |  \
+ *     |   \
+ *     |    \
+ *     x1,y1-- x2,y1
+ */
 
 static void sdrawtripoints(short x1, short y1, short x2, short y2)
 {
@@ -279,18 +278,7 @@ void setlinestyle(int nr)
 void set_inverted_drawing(int enable) 
 {
 	glLogicOp(enable?GL_INVERT:GL_COPY);
-
-	/* Use GL_BLEND_EQUATION_EXT on sgi (if we have it),
-	 * apparently GL_COLOR_LOGIC_OP doesn't work on O2?
-	 * Is this an sgi bug or our bug?
-	 */
-#if defined(__sgi) && defined(GL_BLEND_EQUATION_EXT)
-	glBlendEquationEXT(enable?GL_LOGIC_OP:GL_FUNC_ADD_EXT);
-	glToggle(GL_BLEND, enable);
-#else
 	glToggle(GL_COLOR_LOGIC_OP, enable);
-#endif
-
 	glToggle(GL_DITHER, !enable);
 }
 
@@ -375,7 +363,8 @@ void fdrawXORcirc(float xofs, float yofs, float rad)
 	set_inverted_drawing(0);
 }
 
-void glutil_draw_filled_arc(float start, float angle, float radius, int nsegments) {
+void glutil_draw_filled_arc(float start, float angle, float radius, int nsegments)
+{
 	int i;
 	
 	glBegin(GL_TRIANGLE_FAN);
@@ -389,7 +378,8 @@ void glutil_draw_filled_arc(float start, float angle, float radius, int nsegment
 	glEnd();
 }
 
-void glutil_draw_lined_arc(float start, float angle, float radius, int nsegments) {
+void glutil_draw_lined_arc(float start, float angle, float radius, int nsegments)
+{
 	int i;
 	
 	glBegin(GL_LINE_STRIP);
@@ -421,7 +411,7 @@ void glaRasterPosSafe2f(float x, float y, float known_good_x, float known_good_y
 	GLubyte dummy= 0;
 
 		/* As long as known good coordinates are correct
-		 * this is guarenteed to generate an ok raster
+		 * this is guaranteed to generate an ok raster
 		 * position (ignoring potential (real) overflow
 		 * issues).
 		 */
@@ -568,27 +558,6 @@ void glaDrawPixelsTexScaled(float x, float y, int img_w, int img_h, int format, 
 void glaDrawPixelsTex(float x, float y, int img_w, int img_h, int format, void *rect)
 {
 	glaDrawPixelsTexScaled(x, y, img_w, img_h, format, rect, 1.0f, 1.0f);
-}
-
-/* row_w is unused but kept for completeness */
-void glaDrawPixelsSafe_to32(float fx, float fy, int img_w, int img_h, int UNUSED(row_w), float *rectf, int do_gamma_correct)
-{
-	unsigned char *rect32;
-	
-	/* copy imgw-imgh to a temporal 32 bits rect */
-	if(img_w<1 || img_h<1) return;
-	
-	rect32= MEM_mallocN(img_w*img_h*sizeof(int), "temp 32 bits");
-	
-	if (do_gamma_correct) {
-		floatbuf_to_srgb_byte(rectf, rect32, 0, img_w, 0, img_h, img_w);
-	} else {
-		floatbuf_to_byte(rectf, rect32, 0, img_w, 0, img_h, img_w);
-	 }
-	
-	glaDrawPixelsSafe(fx, fy, img_w, img_h, img_w, GL_RGBA, GL_UNSIGNED_BYTE, rect32);
-
-	MEM_freeN(rect32);
 }
 
 void glaDrawPixelsSafe(float x, float y, int img_w, int img_h, int row_w, int format, int type, void *rect)
@@ -808,7 +777,8 @@ void bglBegin(int mode)
 	}
 }
 
-int bglPointHack(void) {
+int bglPointHack(void)
+{
 	float value[4];
 	int pointhack_px;
 	glGetFloatv(GL_POINT_SIZE_RANGE, value);
@@ -821,7 +791,7 @@ int bglPointHack(void) {
 	return 0;
 }
 
-void bglVertex3fv(float *vec)
+void bglVertex3fv(const float vec[3])
 {
 	switch(curmode) {
 	case GL_POINTS:
@@ -847,7 +817,7 @@ void bglVertex3f(float x, float y, float z)
 	}
 }
 
-void bglVertex2fv(float *vec)
+void bglVertex2fv(const float vec[2])
 {
 	switch(curmode) {
 	case GL_POINTS:
@@ -878,7 +848,7 @@ void bgl_get_mats(bglMats *mats)
 	glGetIntegerv(GL_VIEWPORT, (GLint *)mats->viewport);
 	
 	/* Very strange code here - it seems that certain bad values in the
-	   modelview matrix can cause gluUnProject to give bad results. */
+	 * modelview matrix can cause gluUnProject to give bad results. */
 	if(mats->modelview[0] < badvalue &&
 	   mats->modelview[0] > -badvalue)
 		mats->modelview[0]= 0;

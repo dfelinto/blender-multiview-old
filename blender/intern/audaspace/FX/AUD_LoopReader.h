@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_LOOPREADER
-#define AUD_LOOPREADER
+#ifndef __AUD_LOOPREADER_H__
+#define __AUD_LOOPREADER_H__
 
 #include "AUD_EffectReader.h"
 #include "AUD_Buffer.h"
@@ -71,4 +69,4 @@ public:
 	virtual void read(int& length, bool& eos, sample_t* buffer);
 };
 
-#endif //AUD_LOOPREADER
+#endif //__AUD_LOOPREADER_H__

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
- * Regulates the top-level logic behaviour for one scene.
+ * Regulates the top-level logic behavior for one scene.
  */
 
 /** \file gameengine/GameLogic/SCA_LogicManager.cpp

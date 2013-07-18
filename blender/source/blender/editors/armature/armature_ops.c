@@ -114,7 +114,6 @@ void ED_operatortypes_armature(void)
 	WM_operatortype_append(POSE_OT_paste);
 	
 	WM_operatortype_append(POSE_OT_select_all);
-	WM_operatortype_append(POSE_OT_select_inverse);
 
 	WM_operatortype_append(POSE_OT_select_parent);
 	WM_operatortype_append(POSE_OT_select_hierarchy);
@@ -173,6 +172,7 @@ void ED_operatormacros_armature(void)
 	
 	ot= WM_operatortype_append_macro("ARMATURE_OT_duplicate_move", "Duplicate", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
+		ot->description= "Make copies of the selected bones within the same armature and move them";
 		WM_operatortype_macro_define(ot, "ARMATURE_OT_duplicate");
 		otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
 		RNA_enum_set(otmacro->ptr, "proportional", 0);
@@ -180,8 +180,9 @@ void ED_operatormacros_armature(void)
 
 	ot= WM_operatortype_append_macro("ARMATURE_OT_extrude_move", "Extrude", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
+		ot->description= "Create new bones from the selected joints and move them";
 		otmacro=WM_operatortype_macro_define(ot, "ARMATURE_OT_extrude");
-		RNA_boolean_set(otmacro->ptr, "forked", 0);
+		RNA_boolean_set(otmacro->ptr, "forked", FALSE);
 		otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
 		RNA_enum_set(otmacro->ptr, "proportional", 0);
 	}
@@ -190,8 +191,9 @@ void ED_operatormacros_armature(void)
 	// that would require fixing a properties bug 19733
 	ot= WM_operatortype_append_macro("ARMATURE_OT_extrude_forked", "Extrude Forked", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
+		ot->description= "Create new bones from the selected joints and move them";
 		otmacro=WM_operatortype_macro_define(ot, "ARMATURE_OT_extrude");
-		RNA_boolean_set(otmacro->ptr, "forked", 1);
+		RNA_boolean_set(otmacro->ptr, "forked", TRUE);
 		otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
 		RNA_enum_set(otmacro->ptr, "proportional", 0);
 	}
@@ -218,15 +220,17 @@ void ED_keymap_armature(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "SKETCH_OT_gesture", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "SKETCH_OT_draw_stroke", LEFTMOUSE, KM_PRESS, 0, 0);
 	kmi = WM_keymap_add_item(keymap, "SKETCH_OT_draw_stroke", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);
-	RNA_boolean_set(kmi->ptr, "snap", 1);
+	RNA_boolean_set(kmi->ptr, "snap", TRUE);
 	WM_keymap_add_item(keymap, "SKETCH_OT_draw_preview", MOUSEMOVE, KM_ANY, 0, 0);
 	kmi = WM_keymap_add_item(keymap, "SKETCH_OT_draw_preview", MOUSEMOVE, KM_ANY, KM_CTRL, 0);
-	RNA_boolean_set(kmi->ptr, "snap", 1);
+	RNA_boolean_set(kmi->ptr, "snap", TRUE);
 
 	/* only set in editmode armature, by space_view3d listener */
-	WM_keymap_add_item(keymap, "ARMATURE_OT_hide", HKEY, KM_PRESS, 0, 0);
+	kmi = WM_keymap_add_item(keymap, "ARMATURE_OT_hide", HKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "unselected", FALSE);
 	kmi= WM_keymap_add_item(keymap, "ARMATURE_OT_hide", HKEY, KM_PRESS, KM_SHIFT, 0);
-		RNA_boolean_set(kmi->ptr, "unselected", 1);
+	RNA_boolean_set(kmi->ptr, "unselected", TRUE);
+
 	WM_keymap_add_item(keymap, "ARMATURE_OT_reveal", HKEY, KM_PRESS, KM_ALT, 0);
 	WM_keymap_add_item(keymap, "ARMATURE_OT_align", AKEY, KM_PRESS, KM_CTRL|KM_ALT, 0);
 	WM_keymap_add_item(keymap, "ARMATURE_OT_calculate_roll", NKEY, KM_PRESS, KM_CTRL, 0);
@@ -238,20 +242,24 @@ void ED_keymap_armature(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "ARMATURE_OT_parent_set", PKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "ARMATURE_OT_parent_clear", PKEY, KM_PRESS, KM_ALT, 0);
 	
-	WM_keymap_add_item(keymap, "ARMATURE_OT_select_all", AKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "ARMATURE_OT_select_inverse", IKEY, KM_PRESS, KM_CTRL, 0);
+	kmi = WM_keymap_add_item(keymap, "ARMATURE_OT_select_all", AKEY, KM_PRESS, 0, 0);
+		RNA_enum_set(kmi->ptr, "action", SEL_TOGGLE);
+	kmi = WM_keymap_add_item(keymap, "ARMATURE_OT_select_all", IKEY, KM_PRESS, KM_CTRL, 0);
+		RNA_enum_set(kmi->ptr, "action", SEL_INVERT);
 	
 	kmi= WM_keymap_add_item(keymap, "ARMATURE_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, 0, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_PARENT);
+		RNA_boolean_set(kmi->ptr, "extend", FALSE);
 	kmi= WM_keymap_add_item(keymap, "ARMATURE_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_PARENT);
-		RNA_boolean_set(kmi->ptr, "extend", 1);
+		RNA_boolean_set(kmi->ptr, "extend", TRUE);
 	
 	kmi= WM_keymap_add_item(keymap, "ARMATURE_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, 0, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_CHILD);
+		RNA_boolean_set(kmi->ptr, "extend", FALSE);
 	kmi= WM_keymap_add_item(keymap, "ARMATURE_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_CHILD);
-		RNA_boolean_set(kmi->ptr, "extend", 1);
+		RNA_boolean_set(kmi->ptr, "extend", TRUE);
 
 	WM_keymap_add_item(keymap, "ARMATURE_OT_select_linked", LKEY, KM_PRESS, 0, 0);
 	
@@ -293,13 +301,15 @@ void ED_keymap_armature(wmKeyConfig *keyconf)
 	keymap->poll= ED_operator_posemode;
 	
 	/* set parent and add object are object-based operators, but we make them
-	   available here because it's useful to do in pose mode too */
+	 * available here because it's useful to do in pose mode too */
 	WM_keymap_add_item(keymap, "OBJECT_OT_parent_set", PKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_menu(keymap, "INFO_MT_add", AKEY, KM_PRESS, KM_SHIFT, 0);
 	
-	WM_keymap_add_item(keymap, "POSE_OT_hide", HKEY, KM_PRESS, 0, 0);
-	kmi= WM_keymap_add_item(keymap, "POSE_OT_hide", HKEY, KM_PRESS, KM_SHIFT, 0);
-		RNA_boolean_set(kmi->ptr, "unselected", 1);
+	kmi = WM_keymap_add_item(keymap, "POSE_OT_hide", HKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "unselected", FALSE);
+	kmi = WM_keymap_add_item(keymap, "POSE_OT_hide", HKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "unselected", TRUE);
+
 	WM_keymap_add_item(keymap, "POSE_OT_reveal", HKEY, KM_PRESS, KM_ALT, 0);
 	
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_pose_apply", AKEY, KM_PRESS, KM_CTRL, 0);
@@ -314,26 +324,32 @@ void ED_keymap_armature(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "POSE_OT_rotation_mode_set", RKEY, KM_PRESS, KM_CTRL, 0);
 	
 	WM_keymap_add_item(keymap, "POSE_OT_copy", CKEY, KM_PRESS, KM_CTRL, 0);
-	WM_keymap_add_item(keymap, "POSE_OT_paste", VKEY, KM_PRESS, KM_CTRL, 0);
+	kmi = WM_keymap_add_item(keymap, "POSE_OT_paste", VKEY, KM_PRESS, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "flipped", FALSE);
+
 	kmi= WM_keymap_add_item(keymap, "POSE_OT_paste", VKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0);
-		RNA_boolean_set(kmi->ptr, "flipped", 1);
+	RNA_boolean_set(kmi->ptr, "flipped", TRUE);
 	
-	WM_keymap_add_item(keymap, "POSE_OT_select_all", AKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "POSE_OT_select_inverse", IKEY, KM_PRESS, KM_CTRL, 0);
+	kmi = WM_keymap_add_item(keymap, "POSE_OT_select_all", AKEY, KM_PRESS, 0, 0);
+		RNA_enum_set(kmi->ptr, "action", SEL_TOGGLE);
+	kmi = WM_keymap_add_item(keymap, "POSE_OT_select_all", IKEY, KM_PRESS, KM_CTRL, 0);
+		RNA_enum_set(kmi->ptr, "action", SEL_INVERT);
 
 	WM_keymap_add_item(keymap, "POSE_OT_select_parent", PKEY, KM_PRESS, KM_SHIFT, 0);
 
 	kmi= WM_keymap_add_item(keymap, "POSE_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, 0, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_PARENT);
+		RNA_boolean_set(kmi->ptr, "extend", FALSE);
 	kmi= WM_keymap_add_item(keymap, "POSE_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_PARENT);
-		RNA_boolean_set(kmi->ptr, "extend", 1);
+		RNA_boolean_set(kmi->ptr, "extend", TRUE);
 	
 	kmi= WM_keymap_add_item(keymap, "POSE_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, 0, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_CHILD);
+		RNA_boolean_set(kmi->ptr, "extend", FALSE);
 	kmi= WM_keymap_add_item(keymap, "POSE_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
 		RNA_enum_set(kmi->ptr, "direction", BONE_SELECT_CHILD);
-		RNA_boolean_set(kmi->ptr, "extend", 1);
+		RNA_boolean_set(kmi->ptr, "extend", TRUE);
 
 	WM_keymap_add_item(keymap, "POSE_OT_select_linked", LKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "POSE_OT_select_grouped", GKEY, KM_PRESS, KM_SHIFT, 0);

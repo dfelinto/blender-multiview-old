@@ -1,4 +1,3 @@
-// $Id$
 //
 // ***** BEGIN GPL LICENSE BLOCK *****
 //
@@ -33,8 +32,8 @@
  *  Please look here for revision history.
  */
 
-#ifndef __KX_SCA_REPLACEMESHACTUATOR
-#define __KX_SCA_REPLACEMESHACTUATOR
+#ifndef __KX_SCA_REPLACEMESHACTUATOR_H__
+#define __KX_SCA_REPLACEMESHACTUATOR_H__
 
 #include "SCA_IActuator.h"
 #include "SCA_PropertyActuator.h"
@@ -45,7 +44,7 @@
 
 class KX_SCA_ReplaceMeshActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	// mesh reference (mesh to replace)
 	RAS_MeshObject* m_mesh;

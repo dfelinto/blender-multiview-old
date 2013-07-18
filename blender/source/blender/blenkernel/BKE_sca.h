@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef BKE_SCA_H
-#define BKE_SCA_H
+#ifndef __BKE_SCA_H__
+#define __BKE_SCA_H__
 
 /** \file BKE_sca.h
  *  \ingroup bke

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_EVENTMANAGER
-#define __KX_EVENTMANAGER
+#ifndef __SCA_EVENTMANAGER_H__
+#define __SCA_EVENTMANAGER_H__
 
 #include <vector>
 #include <set>

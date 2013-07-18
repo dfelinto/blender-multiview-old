@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_SystemWin32 class.
  */
 
-#ifndef _GHOST_SYSTEM_WIN32_H_
-#define _GHOST_SYSTEM_WIN32_H_
+#ifndef __GHOST_SYSTEMWIN32_H__
+#define __GHOST_SYSTEMWIN32_H__
 
 #ifndef WIN32
 #error WIN32 only!
@@ -201,7 +200,13 @@ public:
 	 * @return Indication whether the event was handled. 
 	 */
 	static GHOST_TSuccess pushDragDropEvent(GHOST_TEventType eventType, GHOST_TDragnDropTypes draggedObjectType,GHOST_IWindow* window, int mouseX, int mouseY, void* data);
-	 
+	
+/**
+ * Confirms quitting he program when there is just one window left open
+ * in the application
+ */
+	virtual int confirmQuit(GHOST_IWindow * window) const;
+
 protected:
 	/**
 	 * Initializes the system.
@@ -396,4 +401,4 @@ inline void GHOST_SystemWin32::handleKeyboardChange(void)
 		}
 	}
 }
-#endif // _GHOST_SYSTEM_WIN32_H_
+#endif // __GHOST_SYSTEMWIN32_H__

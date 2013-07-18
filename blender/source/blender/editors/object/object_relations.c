@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,6 +35,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_anim_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_constraint_types.h"
 #include "DNA_group_types.h"
 #include "DNA_lamp_types.h"
@@ -50,7 +49,6 @@
 #include "DNA_object_types.h"
 
 #include "BLI_math.h"
-#include "BLI_editVert.h"
 #include "BLI_listbase.h"
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
@@ -58,13 +56,16 @@
 #include "BKE_action.h"
 #include "BKE_animsys.h"
 #include "BKE_armature.h"
+#include "BKE_camera.h"
 #include "BKE_context.h"
 #include "BKE_constraint.h"
 #include "BKE_curve.h"
 #include "BKE_depsgraph.h"
+#include "BKE_DerivedMesh.h"
 #include "BKE_displist.h"
 #include "BKE_global.h"
 #include "BKE_fcurve.h"
+#include "BKE_lamp.h"
 #include "BKE_lattice.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
@@ -78,6 +79,7 @@
 #include "BKE_scene.h"
 #include "BKE_speaker.h"
 #include "BKE_texture.h"
+#include "BKE_tessmesh.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -93,6 +95,7 @@
 #include "ED_curve.h"
 #include "ED_keyframing.h"
 #include "ED_object.h"
+#include "ED_mesh.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
 
@@ -110,7 +113,8 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
 	Object *obedit= CTX_data_edit_object(C);
-	EditVert *eve;
+	BMVert *eve;
+	BMIter iter;
 	Curve *cu;
 	Nurb *nu;
 	BezTriple *bezt;
@@ -122,11 +126,19 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 	
 	if(obedit->type==OB_MESH) {
 		Mesh *me= obedit->data;
-		EditMesh *em = BKE_mesh_get_editmesh(me);
+		BMEditMesh *em;
 
-		eve= em->verts.first;
-		while(eve) {
-			if(eve->f & 1) {
+		EDBM_LoadEditBMesh(scene, obedit);
+		EDBM_MakeEditBMesh(scene->toolsettings, scene, obedit);
+
+		em= me->edit_btmesh;
+
+		/* derivedMesh might be needed for solving parenting,
+		 * so re-create it here */
+		makeDerivedMesh(scene, obedit, em, CD_MASK_BAREMESH, 0);
+
+		BM_ITER(eve, &iter, em->bm, BM_VERTS_OF_MESH, NULL) {
+			if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
 				if(v1==0) v1= nr;
 				else if(v2==0) v2= nr;
 				else if(v3==0) v3= nr;
@@ -134,13 +146,10 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 				else break;
 			}
 			nr++;
-			eve= eve->next;
 		}
-
-		BKE_mesh_end_editmesh(me, em);
 	}
 	else if(ELEM(obedit->type, OB_SURF, OB_CURVE)) {
-		ListBase *editnurb= curve_get_editcurve(obedit);
+		ListBase *editnurb= object_editcurve_get(obedit);
 		
 		cu= obedit->data;
 
@@ -289,7 +298,7 @@ static int make_proxy_invoke (bContext *C, wmOperator *op, wmEvent *evt)
 		uiLayout *layout= uiPupMenuLayout(pup);
 		
 		/* create operator menu item with relevant properties filled in */
-		uiItemFullO(layout, op->idname, op->type->name, ICON_NONE, NULL, WM_OP_EXEC_REGION_WIN, UI_ITEM_O_RETURN_PROPS);
+		uiItemFullO_ptr(layout, op->type, op->type->name, ICON_NONE, NULL, WM_OP_EXEC_REGION_WIN, UI_ITEM_O_RETURN_PROPS);
 		
 		/* present the menu and be done... */
 		uiPupMenuEnd(C, pup);
@@ -310,13 +319,11 @@ static int make_proxy_exec (bContext *C, wmOperator *op)
 	GroupObject *go;
 	Scene *scene= CTX_data_scene(C);
 
-	if (gob->dup_group != NULL)
-	{
-		go= BLI_findlink(&gob->dup_group->gobject, RNA_enum_get(op->ptr, "type"));
+	if (gob->dup_group != NULL) {
+		go= BLI_findlink(&gob->dup_group->gobject, RNA_enum_get(op->ptr, "object"));
 		ob= go->ob;
 	}
-	else
-	{
+	else {
 		ob= gob;
 		gob = NULL;
 	}
@@ -324,15 +331,13 @@ static int make_proxy_exec (bContext *C, wmOperator *op)
 	if (ob) {
 		Object *newob;
 		Base *newbase, *oldbase= BASACT;
-		char name[32];
+		char name[MAX_ID_NAME+4];
 		
 		/* Add new object for the proxy */
 		newob= add_object(scene, OB_EMPTY);
-		if (gob)
-			strcpy(name, gob->id.name+2);
-		else
-			strcpy(name, ob->id.name+2);
-		strcat(name, "_proxy");
+
+		BLI_snprintf(name, sizeof(name), "%s_proxy", ((ID *)(gob ? gob : ob))->name+2);
+
 		rename_id(&newob->id, name);
 		
 		/* set layers OK */
@@ -404,51 +409,54 @@ void OBJECT_OT_proxy_make (wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_string(ot->srna, "object", "", MAX_ID_NAME-2, "Proxy Object", "Name of lib-linked/grouped object to make a proxy for.");
-	prop= RNA_def_enum(ot->srna, "type", DummyRNA_DEFAULT_items, 0, "Type", "Group object"); /* XXX, relies on hard coded ID at the moment */
+	prop= RNA_def_enum(ot->srna, "object", DummyRNA_DEFAULT_items, 0, "Proxy Object", "Name of lib-linked/grouped object to make a proxy for"); /* XXX, relies on hard coded ID at the moment */
 	RNA_def_enum_funcs(prop, proxy_group_object_itemf);
 	ot->prop= prop;
 }
 
 /********************** Clear Parent Operator ******************* */
 
-static EnumPropertyItem prop_clear_parent_types[] = {
+EnumPropertyItem prop_clear_parent_types[] = {
 	{0, "CLEAR", 0, "Clear Parent", ""},
 	{1, "CLEAR_KEEP_TRANSFORM", 0, "Clear and Keep Transformation", ""},
 	{2, "CLEAR_INVERSE", 0, "Clear Parent Inverse", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
-/* note, poll should check for editable scene */
-static int parent_clear_exec(bContext *C, wmOperator *op)
+void ED_object_parent_clear(bContext *C, int type)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
-	int type= RNA_enum_get(op->ptr, "type");
-	
-	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
 
+	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) 
+	{
 		if(ob->parent == NULL)
 			continue;
 		
 		if(type == 0) {
 			ob->parent= NULL;
-		}			
+		}
 		else if(type == 1) {
 			ob->parent= NULL;
 			object_apply_mat4(ob, ob->obmat, TRUE, FALSE);
 		}
 		else if(type == 2)
 			unit_m4(ob->parentinv);
-
+		
 		ob->recalc |= OB_RECALC_OB|OB_RECALC_DATA|OB_RECALC_TIME;
 	}
 	CTX_DATA_END;
-	
+
 	DAG_scene_sort(bmain, scene);
 	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, NULL);
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARENT, NULL);
+}
+
+/* note, poll should check for editable scene */
+static int parent_clear_exec(bContext *C, wmOperator *op)
+{
+	ED_object_parent_clear(C, RNA_enum_get(op->ptr, "type"));
 
 	return OPERATOR_FINISHED;
 }
@@ -474,20 +482,25 @@ void OBJECT_OT_parent_clear(wmOperatorType *ot)
 
 /* ******************** Make Parent Operator *********************** */
 
-#define PAR_OBJECT				0
-#define PAR_ARMATURE			1
-#define PAR_ARMATURE_NAME		2
-#define PAR_ARMATURE_ENVELOPE	3
-#define PAR_ARMATURE_AUTO		4
-#define PAR_BONE				5
-#define PAR_CURVE				6
-#define PAR_FOLLOW				7
-#define PAR_PATH_CONST			8
-#define PAR_LATTICE				9
-#define PAR_VERTEX				10
-#define PAR_TRIA				11
+void ED_object_parent(Object *ob, Object *par, int type, const char *substr)
+{
+	if (!par || BKE_object_parent_loop_check(par, ob)) {
+		ob->parent= NULL;
+		ob->partype= PAROBJECT;
+		ob->parsubstr[0]= 0;
+		return;
+	}
 
-static EnumPropertyItem prop_make_parent_types[] = {
+	/* this could use some more checks */
+
+	ob->parent= par;
+	ob->partype &= ~PARTYPE;
+	ob->partype |= type;
+	BLI_strncpy(ob->parsubstr, substr, sizeof(ob->parsubstr));
+}
+
+/* Operator Property */
+EnumPropertyItem prop_make_parent_types[] = {
 	{PAR_OBJECT, "OBJECT", 0, "Object", ""},
 	{PAR_ARMATURE, "ARMATURE", 0, "Armature Deform", ""},
 	{PAR_ARMATURE_NAME, "ARMATURE_NAME", 0, "   With Empty Groups", ""},
@@ -503,40 +516,9 @@ static EnumPropertyItem prop_make_parent_types[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-static int test_parent_loop(Object *par, Object *ob)
+int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object *ob, Object *par, int partype)
 {
-	/* test if 'ob' is a parent somewhere in par's parents */
-	
-	if(par == NULL) return 0;
-	if(ob == par) return 1;
-	
-	return test_parent_loop(par->parent, ob);
-}
-
-void ED_object_parent(Object *ob, Object *par, int type, const char *substr)
-{
-	if(!par || test_parent_loop(par, ob)) {
-		ob->parent= NULL;
-		ob->partype= PAROBJECT;
-		ob->parsubstr[0]= 0;
-		return;
-	}
-
-	/* this could use some more checks */
-
-	ob->parent= par;
-	ob->partype &= ~PARTYPE;
-	ob->partype |= type;
-	BLI_strncpy(ob->parsubstr, substr, sizeof(ob->parsubstr));
-}
-
-static int parent_set_exec(bContext *C, wmOperator *op)
-{
-	Main *bmain= CTX_data_main(C);
-	Scene *scene= CTX_data_scene(C);
-	Object *par= ED_object_active_context(C);
 	bPoseChannel *pchan= NULL;
-	int partype= RNA_enum_get(op->ptr, "type");
 	int pararm= ELEM4(partype, PAR_ARMATURE, PAR_ARMATURE_NAME, PAR_ARMATURE_ENVELOPE, PAR_ARMATURE_AUTO);
 	
 	par->recalc |= OB_RECALC_OB;
@@ -544,7 +526,7 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 	/* preconditions */
 	if(partype==PAR_FOLLOW || partype==PAR_PATH_CONST) {
 		if(par->type!=OB_CURVE)
-			return OPERATOR_CANCELLED;
+			return 0;
 		else {
 			Curve *cu= par->data;
 			
@@ -560,7 +542,7 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 				bAction *act = verify_adt_action(&cu->id, 1);
 				FCurve *fcu = verify_fcurve(act, NULL, "eval_time", 0, 1);
 				
-				/* setup dummy 'generator' modifier here to get 1-1 correspondance still working */
+				/* setup dummy 'generator' modifier here to get 1-1 correspondence still working */
 				if (!fcu->bezt && !fcu->fpt && !fcu->modifiers.first)
 					add_fmodifier(&fcu->modifiers, FMODIFIER_TYPE_GENERATOR);
 			}
@@ -574,125 +556,144 @@ static int parent_set_exec(bContext *C, wmOperator *op)
 		pchan= get_active_posechannel(par);
 		
 		if(pchan==NULL) {
-			BKE_report(op->reports, RPT_ERROR, "No active Bone");
-			return OPERATOR_CANCELLED;
+			BKE_report(reports, RPT_ERROR, "No active Bone");
+			return 0;
 		}
 	}
 	
-	/* context iterator */
-	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
-		
-		if(ob!=par) {
+	if (ob!=par) {
+		if (BKE_object_parent_loop_check(par, ob)) {
+			BKE_report(reports, RPT_ERROR, "Loop in parents");
+			return 0;
+		}
+		else {
+			Object workob;
 			
-			if( test_parent_loop(par, ob) ) {
-				BKE_report(op->reports, RPT_ERROR, "Loop in parents");
+			/* apply transformation of previous parenting */
+			/* object_apply_mat4(ob, ob->obmat); */ /* removed because of bug [#23577] */
+			
+			/* set the parent (except for follow-path constraint option) */
+			if (partype != PAR_PATH_CONST) {
+				ob->parent= par;
+			}
+			
+			/* handle types */
+			if (pchan)
+				BLI_strncpy(ob->parsubstr, pchan->name, sizeof(ob->parsubstr));
+			else
+				ob->parsubstr[0]= 0;
+				
+			if (partype == PAR_PATH_CONST) {
+				/* don't do anything here, since this is not technically "parenting" */
+			}
+			else if (ELEM(partype, PAR_CURVE, PAR_LATTICE) || (pararm)) {
+				/* partype is now set to PAROBJECT so that invisible 'virtual' modifiers don't need to be created
+				 * NOTE: the old (2.4x) method was to set ob->partype = PARSKEL, creating the virtual modifiers
+				 */
+				ob->partype= PAROBJECT;	/* note, dna define, not operator property */
+				//ob->partype= PARSKEL; /* note, dna define, not operator property */
+				
+				/* BUT, to keep the deforms, we need a modifier, and then we need to set the object that it uses */
+				// XXX currently this should only happen for meshes, curves, surfaces, and lattices - this stuff isn't available for metas yet
+				if (ELEM5(ob->type, OB_MESH, OB_CURVE, OB_SURF, OB_FONT, OB_LATTICE)) {
+					ModifierData *md;
+					
+					switch (partype) {
+					case PAR_CURVE: /* curve deform */
+						md= ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Curve);
+						((CurveModifierData *)md)->object= par;
+						break;
+					case PAR_LATTICE: /* lattice deform */
+						md= ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Lattice);
+						((LatticeModifierData *)md)->object= par;
+						break;
+					default: /* armature deform */
+						md= ED_object_modifier_add(reports, bmain, scene, ob, NULL, eModifierType_Armature);
+						((ArmatureModifierData *)md)->object= par;
+						break;
+					}
+				}
+			}
+			else if (partype == PAR_BONE)
+				ob->partype= PARBONE; /* note, dna define, not operator property */
+			else
+				ob->partype= PAROBJECT;	/* note, dna define, not operator property */
+			
+			/* constraint */
+			if(partype == PAR_PATH_CONST) {
+				bConstraint *con;
+				bFollowPathConstraint *data;
+				float cmat[4][4], vec[3];
+				
+				con = add_ob_constraint(ob, "AutoPath", CONSTRAINT_TYPE_FOLLOWPATH);
+				
+				data = con->data;
+				data->tar = par;
+				
+				get_constraint_target_matrix(scene, con, 0, CONSTRAINT_OBTYPE_OBJECT, NULL, cmat, scene->r.cfra);
+				sub_v3_v3v3(vec, ob->obmat[3], cmat[3]);
+				
+				ob->loc[0] = vec[0];
+				ob->loc[1] = vec[1];
+				ob->loc[2] = vec[2];
+			}
+			else if(pararm && ob->type==OB_MESH && par->type == OB_ARMATURE) {
+				if(partype == PAR_ARMATURE_NAME)
+					create_vgroups_from_armature(reports, scene, ob, par, ARM_GROUPS_NAME, 0);
+				else if(partype == PAR_ARMATURE_ENVELOPE)
+					create_vgroups_from_armature(reports, scene, ob, par, ARM_GROUPS_ENVELOPE, 0);
+				else if(partype == PAR_ARMATURE_AUTO) {
+					WM_cursor_wait(1);
+					create_vgroups_from_armature(reports, scene, ob, par, ARM_GROUPS_AUTO, 0);
+					WM_cursor_wait(0);
+				}
+				/* get corrected inverse */
+				ob->partype= PAROBJECT;
+				what_does_parent(scene, ob, &workob);
+				
+				invert_m4_m4(ob->parentinv, workob.obmat);
 			}
 			else {
-				Object workob;
-				
-				/* apply transformation of previous parenting */
-				/* object_apply_mat4(ob, ob->obmat); */ /* removed because of bug [#23577] */
-
-				/* set the parent (except for follow-path constraint option) */
-				if(partype != PAR_PATH_CONST)
-					ob->parent= par;
-				
-				/* handle types */
-				if (pchan)
-					strcpy(ob->parsubstr, pchan->name);
-				else
-					ob->parsubstr[0]= 0;
-					
-				if(partype == PAR_PATH_CONST)
-					; /* don't do anything here, since this is not technically "parenting" */
-				else if( ELEM(partype, PAR_CURVE, PAR_LATTICE) || pararm )
-				{
-					/* partype is now set to PAROBJECT so that invisible 'virtual' modifiers don't need to be created
-					 * NOTE: the old (2.4x) method was to set ob->partype = PARSKEL, creating the virtual modifiers
-					 */
-					ob->partype= PAROBJECT;	/* note, dna define, not operator property */
-					//ob->partype= PARSKEL; /* note, dna define, not operator property */
-					
-					/* BUT, to keep the deforms, we need a modifier, and then we need to set the object that it uses */
-					// XXX currently this should only happen for meshes, curves, surfaces, and lattices - this stuff isn't available for metas yet
-					if (ELEM5(ob->type, OB_MESH, OB_CURVE, OB_SURF, OB_FONT, OB_LATTICE)) 
-					{
-						ModifierData *md;
-
-						switch (partype) {
-						case PAR_CURVE: /* curve deform */
-							md= ED_object_modifier_add(op->reports, bmain, scene, ob, NULL, eModifierType_Curve);
-							((CurveModifierData *)md)->object= par;
-							break;
-						case PAR_LATTICE: /* lattice deform */
-							md= ED_object_modifier_add(op->reports, bmain, scene, ob, NULL, eModifierType_Lattice);
-							((LatticeModifierData *)md)->object= par;
-							break;
-						default: /* armature deform */
-							md= ED_object_modifier_add(op->reports, bmain, scene, ob, NULL, eModifierType_Armature);
-							((ArmatureModifierData *)md)->object= par;
-							break;
-						}
-					}
-				}
-				else if (partype == PAR_BONE)
-					ob->partype= PARBONE; /* note, dna define, not operator property */
-				else
-					ob->partype= PAROBJECT;	/* note, dna define, not operator property */
-				
-				/* constraint */
-				if(partype == PAR_PATH_CONST) {
-					bConstraint *con;
-					bFollowPathConstraint *data;
-					float cmat[4][4], vec[3];
-					
-					con = add_ob_constraint(ob, "AutoPath", CONSTRAINT_TYPE_FOLLOWPATH);
-					
-					data = con->data;
-					data->tar = par;
-					
-					get_constraint_target_matrix(scene, con, 0, CONSTRAINT_OBTYPE_OBJECT, NULL, cmat, scene->r.cfra - give_timeoffset(ob));
-					sub_v3_v3v3(vec, ob->obmat[3], cmat[3]);
-					
-					ob->loc[0] = vec[0];
-					ob->loc[1] = vec[1];
-					ob->loc[2] = vec[2];
-				}
-				else if(pararm && ob->type==OB_MESH && par->type == OB_ARMATURE) {
-					if(partype == PAR_ARMATURE_NAME)
-						create_vgroups_from_armature(op->reports, scene, ob, par, ARM_GROUPS_NAME, 0);
-					else if(partype == PAR_ARMATURE_ENVELOPE)
-						create_vgroups_from_armature(op->reports, scene, ob, par, ARM_GROUPS_ENVELOPE, 0);
-					else if(partype == PAR_ARMATURE_AUTO) {
-						WM_cursor_wait(1);
-						create_vgroups_from_armature(op->reports, scene, ob, par, ARM_GROUPS_AUTO, 0);
-						WM_cursor_wait(0);
-					}
-					/* get corrected inverse */
-					ob->partype= PAROBJECT;
-					what_does_parent(scene, ob, &workob);
-					
-					invert_m4_m4(ob->parentinv, workob.obmat);
-				}
-				else {
-					/* calculate inverse parent matrix */
-					what_does_parent(scene, ob, &workob);
-					invert_m4_m4(ob->parentinv, workob.obmat);
-				}
-				
-				ob->recalc |= OB_RECALC_OB|OB_RECALC_DATA;
+				/* calculate inverse parent matrix */
+				what_does_parent(scene, ob, &workob);
+				invert_m4_m4(ob->parentinv, workob.obmat);
 			}
+			
+			ob->recalc |= OB_RECALC_OB|OB_RECALC_DATA;
+		}
+	}
+
+	return 1;
+}
+
+static int parent_set_exec(bContext *C, wmOperator *op)
+{
+	Main *bmain= CTX_data_main(C);
+	Scene *scene= CTX_data_scene(C);
+	Object *par= ED_object_active_context(C);
+	int partype= RNA_enum_get(op->ptr, "type");
+	int ok = 1;
+
+	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects)
+	{
+		if (!ED_object_parent_set(op->reports, bmain, scene, ob, par, partype)) {
+			ok = 0;
+			break;
 		}
 	}
 	CTX_DATA_END;
-	
+
+	if (!ok)
+		return OPERATOR_CANCELLED;
+
 	DAG_scene_sort(bmain, scene);
 	DAG_ids_flush_update(bmain, 0);
 	WM_event_add_notifier(C, NC_OBJECT|ND_TRANSFORM, NULL);
 	WM_event_add_notifier(C, NC_OBJECT|ND_PARENT, NULL);
-	
+
 	return OPERATOR_FINISHED;
 }
+
 
 static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), wmEvent *UNUSED(event))
 {
@@ -757,7 +758,7 @@ static int parent_noinv_set_exec(bContext *C, wmOperator *op)
 	/* context iterator */
 	CTX_DATA_BEGIN(C, Object*, ob, selected_editable_objects) {
 		if (ob != par) {
-			if (test_parent_loop(par, ob)) {
+			if (BKE_object_parent_loop_check(par, ob)) {
 				BKE_report(op->reports, RPT_ERROR, "Loop in parents");
 			}
 			else {
@@ -1057,7 +1058,7 @@ static unsigned int move_to_layer_init(bContext *C, wmOperator *op)
 	int values[20], a;
 	unsigned int lay= 0;
 
-	if(!RNA_property_is_set(op->ptr, "layers")) {
+	if(!RNA_struct_property_is_set(op->ptr, "layers")) {
 		/* note: layers are set in bases, library objects work for this */
 		CTX_DATA_BEGIN(C, Base*, base, selected_bases) {
 			lay |= base->lay;
@@ -1237,9 +1238,11 @@ static int allow_make_links_data(int ev, Object *ob, Object *obt)
 				return 1;
 			break;
 		case MAKE_LINKS_MATERIALS:
-			if (ELEM5(ob->type, OB_MESH, OB_CURVE, OB_FONT, OB_SURF, OB_MBALL) &&
-				ELEM5(obt->type, OB_MESH, OB_CURVE, OB_FONT, OB_SURF, OB_MBALL))
+			if (OB_TYPE_SUPPORT_MATERIAL(ob->type) &&
+				OB_TYPE_SUPPORT_MATERIAL(obt->type))
+			{
 				return 1;
+			}
 			break;
 		case MAKE_LINKS_ANIMDATA:
 		case MAKE_LINKS_DUPLIGROUP:
@@ -1709,6 +1712,7 @@ static void make_local_makelocalmaterial(Material *ma)
 
 static int make_local_exec(bContext *C, wmOperator *op)
 {
+	Main *bmain= CTX_data_main(C);
 	AnimData *adt;
 	ParticleSystem *psys;
 	Material *ma, ***matarar;
@@ -1717,7 +1721,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 	int a, b, mode= RNA_enum_get(op->ptr, "type");
 	
 	if(mode==3) {
-		all_local(NULL, 0);	/* NULL is all libs */
+		BKE_library_make_local(bmain, NULL, 0);	/* NULL is all libs */
 		WM_event_add_notifier(C, NC_WINDOW, NULL);
 		return OPERATOR_FINISHED;
 	}
@@ -1888,7 +1892,7 @@ static int drop_named_material_invoke(bContext *C, wmOperator *op, wmEvent *even
 	Main *bmain= CTX_data_main(C);
 	Base *base= ED_view3d_give_base_under_cursor(C, event->mval);
 	Material *ma;
-	char name[32];
+	char name[MAX_ID_NAME-2];
 	
 	RNA_string_get(op->ptr, "name", name);
 	ma= (Material *)find_id("MA", name);
@@ -1921,5 +1925,5 @@ void OBJECT_OT_drop_named_material(wmOperatorType *ot)
 	ot->flag= OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_string(ot->srna, "name", "Material", 24, "Name", "Material name to assign.");
+	RNA_def_string(ot->srna, "name", "Material", MAX_ID_NAME-2, "Name", "Material name to assign");
 }

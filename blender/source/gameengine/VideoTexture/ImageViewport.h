@@ -1,4 +1,4 @@
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -24,8 +24,8 @@ http://www.gnu.org/copyleft/lesser.txt.
  *  \ingroup bgevideotex
  */
  
-#if !defined IMAGEVIEWPORT_H
-#define IMAGEVIEWPORT_H
+#ifndef __IMAGEVIEWPORT_H__
+#define __IMAGEVIEWPORT_H__
 
 
 #include "Common.h"
@@ -51,7 +51,7 @@ public:
 	/// is alpha channel used
 	bool getAlpha (void) { return m_alpha; }
 	/// set whole buffer use
-    void setAlpha (bool alpha) { m_alpha = alpha; }
+	void setAlpha (bool alpha) { m_alpha = alpha; }
 
 	/// get capture size in viewport
 	short * getCaptureSize (void) { return m_capSize; }
@@ -71,8 +71,8 @@ protected:
 	short m_capSize[2];
 	/// use whole viewport
 	bool m_whole;
-    /// use alpha channel
-    bool m_alpha;
+	/// use alpha channel
+	bool m_alpha;
 
 	/// position of capture rectangle in viewport
 	GLint m_position[2];

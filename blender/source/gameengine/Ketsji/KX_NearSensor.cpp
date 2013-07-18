@@ -1,7 +1,6 @@
 /*
  * Sense if other objects are near
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -49,8 +48,8 @@ KX_NearSensor::KX_NearSensor(SCA_EventManager* eventmgr,
 							 float resetmargin,
 							 bool bFindMaterial,
 							 const STR_String& touchedpropname,
- 							 PHY_IPhysicsController* ctrl)
-			 :KX_TouchSensor(eventmgr,
+							 PHY_IPhysicsController* ctrl)
+							:KX_TouchSensor(eventmgr,
 							 gameobj,
 							 bFindMaterial,
 							 false,

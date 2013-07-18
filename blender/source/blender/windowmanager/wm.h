@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,8 +28,8 @@
  *  \ingroup wm
  */
 
-#ifndef WM_H
-#define WM_H
+#ifndef __WM_H__
+#define __WM_H__
 
 struct wmWindow;
 struct ReportList;
@@ -53,8 +51,6 @@ extern void wm_clear_default_size(bContext *C);
 			
 			/* register to windowmanager for redo or macro */
 void		wm_operator_register(bContext *C, wmOperator *op);
-
-extern void wm_report_free(wmReport *report);
 
 /* wm_operator.c, for init/exit */
 void wm_operatortype_free(void);
@@ -87,5 +83,5 @@ void wm_autosave_location(char *filepath);
 extern int circle_select_size;
 #endif
 
-#endif /* WM_H */
+#endif /* __WM_H__ */
 

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_EventCursor class.
  */
 
-#ifndef _GHOST_EVENT_CURSOR_H_
-#define _GHOST_EVENT_CURSOR_H_
+#ifndef __GHOST_EVENTCURSOR_H__
+#define __GHOST_EVENTCURSOR_H__
 
 #include "GHOST_Event.h"
 
@@ -65,5 +64,5 @@ protected:
 };
 
 
-#endif // _GHOST_EVENT_CURSOR_H_
+#endif // __GHOST_EVENTCURSOR_H__
 

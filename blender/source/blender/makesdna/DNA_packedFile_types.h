@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,14 +25,14 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DNA_PACKEDFILE_TYPES_H
-#define DNA_PACKEDFILE_TYPES_H
-
 /** \file DNA_packedFile_types.h
  *  \ingroup DNA
  *  \author nzc
  *  \since 12-oct-2000 nzc
  */
+
+#ifndef __DNA_PACKEDFILE_TYPES_H__
+#define __DNA_PACKEDFILE_TYPES_H__
 
 typedef struct PackedFile {
 	int size;

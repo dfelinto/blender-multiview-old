@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,16 +32,17 @@
 
 #include <stdio.h>
 
-#include "BKE_utildefines.h"
-#include "BLI_blenlib.h"
 #include "MEM_guardedalloc.h"
+
+#include "BLI_blenlib.h"
+#include "BLI_md5.h"
+
+#include "BKE_utildefines.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
 #include "IMB_thumbs.h"
 #include "IMB_metadata.h"
-
-#include "md5.h"
 
 #include <ctype.h>
 #include <stdlib.h>
@@ -168,7 +167,7 @@ static void to_hex_char(char* hexbytes, const unsigned char* bytes, int len)
 
 /** ----- end of adapted code from glib --- */
 
-static int uri_from_filename( const char *path, char *uri )
+static int uri_from_filename(const char *path, char *uri)
 {
 	char orig_uri[URI_MAX];	
 	const char* dirstart = path;
@@ -237,10 +236,10 @@ void IMB_thumb_makedirs(void)
 {
 	char tpath[FILE_MAX];
 	if (get_thumb_dir(tpath, THB_NORMAL)) {
-		BLI_recurdir_fileops(tpath);
+		BLI_dir_create_recursive(tpath);
 	}
 	if (get_thumb_dir(tpath, THB_FAIL)) {
-		BLI_recurdir_fileops(tpath);
+		BLI_dir_create_recursive(tpath);
 	}
 }
 
@@ -252,8 +251,8 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 	char tpath[FILE_MAX];
 	char tdir[FILE_MAX];
 	char temp[FILE_MAX];
-	char mtime[40]= "0"; /* incase we can't stat the file */
-	char cwidth[40]= "0"; /* incase images have no data */
+	char mtime[40]= "0"; /* in case we can't stat the file */
+	char cwidth[40]= "0"; /* in case images have no data */
 	char cheight[40]= "0";
 	char thumb[40];
 	short tsize = 128;
@@ -277,7 +276,7 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 
 	/* exception, skip images over 100mb */
 	if(source == THB_SOURCE_IMAGE) {
-		const size_t size= BLI_filepathsize(path);
+		const size_t size= BLI_file_size(path);
 		if(size != -1 && size > THUMB_SIZE_MAX) {
 			// printf("file too big: %d, skipping %s\n", (int)size, path);
 			return NULL;
@@ -311,7 +310,7 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 
 				if (img != NULL) {
 					stat(path, &info);
-					BLI_snprintf(mtime, sizeof(mtime), "%ld", info.st_mtime);
+					BLI_snprintf(mtime, sizeof(mtime), "%ld", (long int)info.st_mtime);
 					BLI_snprintf(cwidth, sizeof(cwidth), "%d", img->x);
 					BLI_snprintf(cheight, sizeof(cheight), "%d", img->y);
 				}
@@ -329,7 +328,7 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 					IMB_free_anim(anim);
 				}
 				stat(path, &info);
-				BLI_snprintf(mtime, sizeof(mtime), "%ld", info.st_mtime);
+				BLI_snprintf(mtime, sizeof(mtime), "%ld", (long int)info.st_mtime);
 			}
 			if (!img) return NULL;
 
@@ -365,7 +364,7 @@ ImBuf* IMB_thumb_create(const char* path, ThumbSize size, ThumbSource source, Im
 			IMB_metadata_change_field(img, "Thumb::Image::Height", cheight);
 		}
 		img->ftype = PNG;
-		img->depth = 32;		
+		img->planes = 32;
 		if (IMB_saveiff(img, temp, IB_rect | IB_metadata)) {
 #ifndef WIN32
 			chmod(temp, S_IRUSR | S_IWUSR);

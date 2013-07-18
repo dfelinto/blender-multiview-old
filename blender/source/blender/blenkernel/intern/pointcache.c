@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,6 +38,7 @@
 
 #include "DNA_ID.h"
 #include "DNA_cloth_types.h"
+#include "DNA_dynamicpaint_types.h"
 #include "DNA_modifier_types.h"
 #include "DNA_object_types.h"
 #include "DNA_object_force.h"
@@ -60,6 +59,7 @@
 #include "BKE_blender.h"
 #include "BKE_cloth.h"
 #include "BKE_depsgraph.h"
+#include "BKE_dynamicpaint.h"
 #include "BKE_global.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
@@ -122,7 +122,7 @@ static int ptcache_extra_datasize[] = {
 /* forward declerations */
 static int ptcache_file_compressed_read(PTCacheFile *pf, unsigned char *result, unsigned int len);
 static int ptcache_file_compressed_write(PTCacheFile *pf, unsigned char *in, unsigned int in_len, unsigned char *out, int mode);
-static int ptcache_file_write(PTCacheFile *pf, void *f, unsigned int tot, unsigned int size);
+static int ptcache_file_write(PTCacheFile *pf, const void *f, unsigned int tot, unsigned int size);
 static int ptcache_file_read(PTCacheFile *pf, void *f, unsigned int tot, unsigned int size);
 
 /* Common functions */
@@ -185,8 +185,8 @@ static void ptcache_softbody_interpolate(int index, void *soft_v, void **data, f
 	if(cfra1 == cfra2)
 		return;
 
-	VECCOPY(keys[1].co, bp->pos);
-	VECCOPY(keys[1].vel, bp->vec);
+	copy_v3_v3(keys[1].co, bp->pos);
+	copy_v3_v3(keys[1].vel, bp->vec);
 
 	if(old_data) {
 		memcpy(keys[2].co, old_data, 3 * sizeof(float));
@@ -204,8 +204,8 @@ static void ptcache_softbody_interpolate(int index, void *soft_v, void **data, f
 
 	mul_v3_fl(keys->vel, 1.0f / dfra);
 
-	VECCOPY(bp->pos, keys->co);
-	VECCOPY(bp->vec, keys->vel);
+	copy_v3_v3(bp->pos, keys->co);
+	copy_v3_v3(bp->vec, keys->vel);
 }
 static int  ptcache_softbody_totpoint(void *soft_v, int UNUSED(cfra))
 {
@@ -275,7 +275,7 @@ static void ptcache_particle_read(int index, void *psys_v, void **data, float cf
 	if(cfra > pa->state.time)
 		memcpy(&pa->prev_state, &pa->state, sizeof(ParticleKey));
 
-	if(old_data){
+	if(old_data) {
 		/* old format cache */
 		memcpy(&pa->state, old_data, sizeof(ParticleKey));
 		return;
@@ -315,9 +315,10 @@ static void ptcache_particle_read(int index, void *psys_v, void **data, float cf
 		}
 	}
 
-	/* determine rotation from velocity */
+	/* default to no rotation */
 	if(data[BPHYS_DATA_LOCATION] && !data[BPHYS_DATA_ROTATION]) {
-		vec_to_quat( pa->state.rot,pa->state.vel, OB_NEGX, OB_POSZ);
+		pa->state.rot[0]=1.0f;
+		pa->state.rot[1]=pa->state.rot[2]=pa->state.rot[3]=0;
 	}
 }
 static void ptcache_particle_interpolate(int index, void *psys_v, void **data, float cfra, float cfra1, float cfra2, float *old_data)
@@ -485,8 +486,8 @@ static void ptcache_cloth_interpolate(int index, void *cloth_v, void **data, flo
 	if(cfra1 == cfra2)
 		return;
 
-	VECCOPY(keys[1].co, vert->x);
-	VECCOPY(keys[1].vel, vert->v);
+	copy_v3_v3(keys[1].co, vert->x);
+	copy_v3_v3(keys[1].vel, vert->v);
 
 	if(old_data) {
 		memcpy(keys[2].co, old_data, 3 * sizeof(float));
@@ -504,8 +505,8 @@ static void ptcache_cloth_interpolate(int index, void *cloth_v, void **data, flo
 
 	mul_v3_fl(keys->vel, 1.0f / dfra);
 
-	VECCOPY(vert->x, keys->co);
-	VECCOPY(vert->v, keys->vel);
+	copy_v3_v3(vert->x, keys->co);
+	copy_v3_v3(vert->v, keys->vel);
 
 	/* should vert->xconst be interpolated somehow too? - jahka */
 }
@@ -603,7 +604,7 @@ static int  ptcache_smoke_write(PTCacheFile *pf, void *smoke_v)
 
 	return ret;
 }
-static void ptcache_smoke_read(PTCacheFile *pf, void *smoke_v)
+static int ptcache_smoke_read(PTCacheFile *pf, void *smoke_v)
 {
 	SmokeModifierData *smd= (SmokeModifierData *)smoke_v;
 	SmokeDomainSettings *sds = smd->domain;
@@ -652,12 +653,92 @@ static void ptcache_smoke_read(PTCacheFile *pf, void *smoke_v)
 			ptcache_file_compressed_read(pf, (unsigned char*)tcw, out_len);
 		}
 	}
+
+	return 1;
 }
 #else // WITH_SMOKE
-static int  ptcache_smoke_totpoint(void *UNUSED(smoke_v), int UNUSED(cfra)) { return 0; };
-static void ptcache_smoke_read(PTCacheFile *UNUSED(pf), void *UNUSED(smoke_v)) {}
+static int  ptcache_smoke_totpoint(void *UNUSED(smoke_v), int UNUSED(cfra)) { return 0; }
+static int  ptcache_smoke_read(PTCacheFile *UNUSED(pf), void *UNUSED(smoke_v)) { return 0; }
 static int  ptcache_smoke_write(PTCacheFile *UNUSED(pf), void *UNUSED(smoke_v)) { return 0; }
 #endif // WITH_SMOKE
+
+static int ptcache_dynamicpaint_totpoint(void *sd, int UNUSED(cfra))
+{
+	DynamicPaintSurface *surface = (DynamicPaintSurface*)sd;
+
+	if (!surface->data) return 0;
+	else return surface->data->total_points;
+}
+
+#define DPAINT_CACHE_VERSION "1.01"
+
+static int  ptcache_dynamicpaint_write(PTCacheFile *pf, void *dp_v)
+{	
+	DynamicPaintSurface *surface = (DynamicPaintSurface*)dp_v;
+	int cache_compress = 1;
+
+	/* version header */
+	ptcache_file_write(pf, DPAINT_CACHE_VERSION, 1, sizeof(char)*4);
+
+	if(surface->format != MOD_DPAINT_SURFACE_F_IMAGESEQ && surface->data) {
+		int total_points=surface->data->total_points;
+		unsigned int in_len;
+		unsigned char *out;
+
+		/* cache type */
+		ptcache_file_write(pf, &surface->type, 1, sizeof(int));
+
+		if (surface->type == MOD_DPAINT_SURFACE_T_PAINT)
+			in_len = sizeof(PaintPoint)*total_points;
+		else if (surface->type == MOD_DPAINT_SURFACE_T_DISPLACE ||
+				 surface->type == MOD_DPAINT_SURFACE_T_WEIGHT)
+			in_len = sizeof(float)*total_points;
+		else if (surface->type == MOD_DPAINT_SURFACE_T_WAVE)
+			in_len = sizeof(PaintWavePoint)*total_points;
+		else return 0;
+
+		out = (unsigned char *)MEM_callocN(LZO_OUT_LEN(in_len), "pointcache_lzo_buffer");
+
+		ptcache_file_compressed_write(pf, (unsigned char *)surface->data->type_data, in_len, out, cache_compress);
+		MEM_freeN(out);
+
+	}
+	return 1;
+}
+static int ptcache_dynamicpaint_read(PTCacheFile *pf, void *dp_v)
+{
+	DynamicPaintSurface *surface = (DynamicPaintSurface*)dp_v;
+	char version[4];
+	
+	/* version header */
+	ptcache_file_read(pf, version, 1, sizeof(char)*4);
+	if (strncmp(version, DPAINT_CACHE_VERSION,4)) {printf("Dynamic Paint: Invalid cache version: %s!\n",version); return 0;}
+
+	if(surface->format != MOD_DPAINT_SURFACE_F_IMAGESEQ && surface->data) {
+		unsigned int data_len;
+		int surface_type;
+
+		/* cache type */
+		ptcache_file_read(pf, &surface_type, 1, sizeof(int));
+
+		if (surface_type != surface->type)
+			return 0;
+
+		/* read surface data */
+		if (surface->type == MOD_DPAINT_SURFACE_T_PAINT)
+			data_len = sizeof(PaintPoint);
+		else if (surface->type == MOD_DPAINT_SURFACE_T_DISPLACE ||
+				 surface->type == MOD_DPAINT_SURFACE_T_WEIGHT)
+			data_len = sizeof(float);
+		else if (surface->type == MOD_DPAINT_SURFACE_T_WAVE)
+			data_len = sizeof(PaintWavePoint);
+		else return 0;
+
+		ptcache_file_compressed_read(pf, (unsigned char*)surface->data->type_data, data_len*surface->data->total_points);
+
+	}
+	return 1;
+}
 
 /* Creating ID's */
 void BKE_ptcache_id_from_softbody(PTCacheID *pid, Object *ob, SoftBody *sb)
@@ -690,6 +771,9 @@ void BKE_ptcache_id_from_softbody(PTCacheID *pid, Object *ob, SoftBody *sb)
 	pid->info_types= 0;
 
 	pid->stack_index = pid->cache->index;
+
+	pid->default_step = 10;
+	pid->max_step = 20;
 }
 void BKE_ptcache_id_from_particles(PTCacheID *pid, Object *ob, ParticleSystem *psys)
 {
@@ -732,14 +816,18 @@ void BKE_ptcache_id_from_particles(PTCacheID *pid, Object *ob, ParticleSystem *p
 		pid->read_extra_data = ptcache_particle_extra_read;
 	}
 
-	if(psys->part->rotmode!=PART_ROT_VEL
-		|| psys->part->avemode!=PART_AVE_SPIN || psys->part->avefac!=0.0f)
-		pid->data_types|= (1<<BPHYS_DATA_AVELOCITY) | (1<<BPHYS_DATA_ROTATION);
-
-	if(psys->part->flag & PART_ROT_DYN)
+	if(psys->part->flag & PART_ROTATIONS) {
 		pid->data_types|= (1<<BPHYS_DATA_ROTATION);
 
+		if(psys->part->rotmode!=PART_ROT_VEL
+			|| psys->part->avemode!=PART_AVE_SPIN || psys->part->avefac!=0.0f)
+			pid->data_types|= (1<<BPHYS_DATA_AVELOCITY);
+	}
+
 	pid->info_types= (1<<BPHYS_DATA_TIMES);
+
+	pid->default_step = 10;
+	pid->max_step = 20;
 }
 void BKE_ptcache_id_from_cloth(PTCacheID *pid, Object *ob, ClothModifierData *clmd)
 {
@@ -770,6 +858,9 @@ void BKE_ptcache_id_from_cloth(PTCacheID *pid, Object *ob, ClothModifierData *cl
 
 	pid->data_types= (1<<BPHYS_DATA_LOCATION) | (1<<BPHYS_DATA_VELOCITY) | (1<<BPHYS_DATA_XCONST);
 	pid->info_types= 0;
+
+	pid->default_step = 1;
+	pid->max_step = 1;
 }
 void BKE_ptcache_id_from_smoke(PTCacheID *pid, struct Object *ob, struct SmokeModifierData *smd)
 {
@@ -810,7 +901,47 @@ void BKE_ptcache_id_from_smoke(PTCacheID *pid, struct Object *ob, struct SmokeMo
 		pid->data_types |= (1<<BPHYS_DATA_SMOKE_LOW);
 	if(sds->wt)
 		pid->data_types |= (1<<BPHYS_DATA_SMOKE_HIGH);
+
+	pid->default_step = 1;
+	pid->max_step = 1;
 }
+
+void BKE_ptcache_id_from_dynamicpaint(PTCacheID *pid, Object *ob, DynamicPaintSurface *surface)
+{
+
+	memset(pid, 0, sizeof(PTCacheID));
+
+	pid->ob= ob;
+	pid->calldata= surface;
+	pid->type= PTCACHE_TYPE_DYNAMICPAINT;
+	pid->cache= surface->pointcache;
+	pid->cache_ptr= &surface->pointcache;
+	pid->ptcaches= &surface->ptcaches;
+	pid->totpoint= pid->totwrite= ptcache_dynamicpaint_totpoint;
+
+	pid->write_point			= NULL;
+	pid->read_point				= NULL;
+	pid->interpolate_point		= NULL;
+
+	pid->write_stream			= ptcache_dynamicpaint_write;
+	pid->read_stream			= ptcache_dynamicpaint_read;
+
+	pid->write_extra_data		= NULL;
+	pid->read_extra_data		= NULL;
+	pid->interpolate_extra_data	= NULL;
+
+	pid->write_header			= ptcache_basic_header_write;
+	pid->read_header			= ptcache_basic_header_read;
+
+	pid->data_types= BPHYS_DATA_DYNAMICPAINT;
+	pid->info_types= 0;
+
+	pid->stack_index = pid->cache->index;
+
+	pid->default_step = 1;
+	pid->max_step = 1;
+}
+
 void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int duplis)
 {
 	PTCacheID *pid;
@@ -851,13 +982,26 @@ void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int dup
 			BKE_ptcache_id_from_cloth(pid, ob, (ClothModifierData*)md);
 			BLI_addtail(lb, pid);
 		}
-		if(md->type == eModifierType_Smoke) {
+		else if(md->type == eModifierType_Smoke) {
 			SmokeModifierData *smd = (SmokeModifierData *)md;
 			if(smd->type & MOD_SMOKE_TYPE_DOMAIN)
 			{
 				pid= MEM_callocN(sizeof(PTCacheID), "PTCacheID");
 				BKE_ptcache_id_from_smoke(pid, ob, (SmokeModifierData*)md);
 				BLI_addtail(lb, pid);
+			}
+		}
+		else if(md->type == eModifierType_DynamicPaint) {
+			DynamicPaintModifierData *pmd = (DynamicPaintModifierData *)md;
+			if(pmd->canvas)
+			{
+				DynamicPaintSurface *surface = pmd->canvas->surfaces.first;
+
+				for (; surface; surface=surface->next) {
+					pid= MEM_callocN(sizeof(PTCacheID), "PTCacheID");
+					BKE_ptcache_id_from_dynamicpaint(pid, ob, surface);
+					BLI_addtail(lb, pid);
+				}
 			}
 		}
 	}
@@ -884,14 +1028,14 @@ void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int dup
 
 /* File handling */
 
-/*	Takes an Object ID and returns a unique name
-	- id: object id
-	- cfra: frame for the cache, can be negative
-	- stack_index: index in the modifier stack. we can have cache for more then one stack_index
-*/
+/* Takes an Object ID and returns a unique name
+ * - id: object id
+ * - cfra: frame for the cache, can be negative
+ * - stack_index: index in the modifier stack. we can have cache for more then one stack_index
+ */
 
 #define MAX_PTCACHE_PATH FILE_MAX
-#define MAX_PTCACHE_FILE ((FILE_MAXDIR+FILE_MAXFILE)*2)
+#define MAX_PTCACHE_FILE ((FILE_MAX)*2)
 
 static int ptcache_path(PTCacheID *pid, char *filename)
 {
@@ -908,9 +1052,9 @@ static int ptcache_path(PTCacheID *pid, char *filename)
 		return BLI_add_slash(filename); /* new strlen() */
 	}
 	else if (G.relbase_valid || lib) {
-		char file[MAX_PTCACHE_PATH]; /* we dont want the dir, only the file */
+		char file[MAX_PTCACHE_PATH]; /* we don't want the dir, only the file */
 
-		BLI_split_dirfile(blendfilename, NULL, file);
+		BLI_split_file_part(blendfilename, file, sizeof(file));
 		i = strlen(file);
 		
 		/* remove .blend */
@@ -923,8 +1067,8 @@ static int ptcache_path(PTCacheID *pid, char *filename)
 	}
 	
 	/* use the temp path. this is weak but better then not using point cache at all */
-	/* btempdir is assumed to exist and ALWAYS has a trailing slash */
-	BLI_snprintf(filename, MAX_PTCACHE_PATH, "%s"PTCACHE_PATH"%d", btempdir, abs(getpid()));
+	/* temporary directory is assumed to exist and ALWAYS has a trailing slash */
+	BLI_snprintf(filename, MAX_PTCACHE_PATH, "%s"PTCACHE_PATH"%d", BLI_temporary_dir(), abs(getpid()));
 	
 	return BLI_add_slash(filename); /* new strlen() */
 }
@@ -985,7 +1129,7 @@ static PTCacheFile *ptcache_file_open(PTCacheID *pid, int mode, int cfra)
 {
 	PTCacheFile *pf;
 	FILE *fp = NULL;
-	char filename[(FILE_MAXDIR+FILE_MAXFILE)*2];
+	char filename[(FILE_MAX)*2];
 
 #ifndef DURIAN_POINTCACHE_LIB_OK
 	/* don't allow writing for linked objects */
@@ -1000,7 +1144,7 @@ static PTCacheFile *ptcache_file_open(PTCacheID *pid, int mode, int cfra)
 		if (!BLI_exists(filename)) {
 			return NULL;
 		}
-		 fp = fopen(filename, "rb");
+		fp = fopen(filename, "rb");
 	} else if (mode==PTCACHE_FILE_WRITE) {
 		BLI_make_existing_file(filename); /* will create the dir if needs be, same as //textures is created */
 		fp = fopen(filename, "wb");
@@ -1134,7 +1278,7 @@ static int ptcache_file_read(PTCacheFile *pf, void *f, unsigned int tot, unsigne
 {
 	return (fread(f, size, tot, pf->fp) == tot);
 }
-static int ptcache_file_write(PTCacheFile *pf, void *f, unsigned int tot, unsigned int size)
+static int ptcache_file_write(PTCacheFile *pf, const void *f, unsigned int tot, unsigned int size)
 {
 	return (fwrite(f, size, tot, pf->fp) == tot);
 }
@@ -1349,7 +1493,7 @@ static int ptcache_old_elemsize(PTCacheID *pid)
 static void ptcache_find_frames_around(PTCacheID *pid, unsigned int frame, int *fra1, int *fra2)
 {
 	if(pid->cache->flag & PTCACHE_DISK_CACHE) {
-		int cfra1=frame-1, cfra2=frame+1;
+		int cfra1=frame, cfra2=frame+1;
 
 		while(cfra1 >= pid->cache->startframe && !BKE_ptcache_id_exist(pid, cfra1))
 			cfra1--;
@@ -1376,7 +1520,7 @@ static void ptcache_find_frames_around(PTCacheID *pid, unsigned int frame, int *
 		PTCacheMem *pm = pid->cache->mem_cache.first;
 		PTCacheMem *pm2 = pid->cache->mem_cache.last;
 
-		while(pm->next && pm->next->frame < frame)
+		while(pm->next && pm->next->frame <= frame)
 			pm= pm->next;
 
 		if(pm2->frame < frame) {
@@ -1592,7 +1736,8 @@ static int ptcache_read_stream(PTCacheID *pid, int cfra)
 		ptcache_file_pointers_init(pf);
 
 		// we have stream reading here
-		pid->read_stream(pf, pid->calldata);
+		if (!pid->read_stream(pf, pid->calldata))
+			error = 1;
 	}
 
 	ptcache_file_close(pf);
@@ -1698,7 +1843,7 @@ static int ptcache_interpolate(PTCacheID *pid, float cfra, int cfra1, int cfra2)
 /* possible to get old or interpolated result */
 int BKE_ptcache_read(PTCacheID *pid, float cfra)
 {
-	int cfrai = (int)cfra, cfra1=0, cfra2=0;
+	int cfrai = (int)floor(cfra), cfra1=0, cfra2=0;
 	int ret = 0;
 
 	/* nothing to read to */
@@ -1728,15 +1873,21 @@ int BKE_ptcache_read(PTCacheID *pid, float cfra)
 		return 0;
 
 	if(cfra1) {
-		if(pid->read_stream)
-			ptcache_read_stream(pid, cfra1);
+		
+		if(pid->read_stream) {
+			if (!ptcache_read_stream(pid, cfra1))
+				return 0;
+		}
 		else if(pid->read_point)
 			ptcache_read(pid, cfra1);
 	}
 
 	if(cfra2) {
-		if(pid->read_stream)
-			ptcache_read_stream(pid, cfra2);
+		
+		if(pid->read_stream) {
+			if (!ptcache_read_stream(pid, cfra2))
+				return 0;
+		}
 		else if(pid->read_point) {
 			if(cfra1 && cfra2 && pid->interpolate_point)
 				ptcache_interpolate(pid, cfra, cfra1, cfra2);
@@ -1958,8 +2109,8 @@ int BKE_ptcache_write(PTCacheID *pid, unsigned int cfra)
 }
 /* youll need to close yourself after!
  * mode - PTCACHE_CLEAR_ALL, 
+ */
 
-*/
 /* Clears & resets */
 void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 {
@@ -1975,6 +2126,9 @@ void BKE_ptcache_id_clear(PTCacheID *pid, int mode, unsigned int cfra)
 	char ext[MAX_PTCACHE_PATH];
 
 	if(!pid || !pid->cache || pid->cache->flag & PTCACHE_BAKED)
+		return;
+
+	if (pid->cache->flag & PTCACHE_IGNORE_CLEAR)
 		return;
 
 	sta = pid->cache->startframe;
@@ -2128,12 +2282,12 @@ int  BKE_ptcache_id_exist(PTCacheID *pid, int cfra)
 }
 void BKE_ptcache_id_time(PTCacheID *pid, Scene *scene, float cfra, int *startframe, int *endframe, float *timescale)
 {
-	Object *ob;
+	/* Object *ob; */ /* UNUSED */
 	PointCache *cache;
 	/* float offset; unused for now */
 	float time, nexttime;
 
-	/* TODO: this has to be sorter out once bsystem_time gets redone, */
+	/* TODO: this has to be sorted out once bsystem_time gets redone, */
 	/*       now caches can handle interpolating etc. too - jahka */
 
 	/* time handling for point cache:
@@ -2145,13 +2299,13 @@ void BKE_ptcache_id_time(PTCacheID *pid, Scene *scene, float cfra, int *startfra
 	 *   is probably to interpolate results from two frames for that ..
 	 */
 
-	ob= pid->ob;
+	/* ob= pid->ob; */ /* UNUSED */
 	cache= pid->cache;
 
 	if(timescale) {
-		time= bsystem_time(scene, ob, cfra, 0.0f);
-		nexttime= bsystem_time(scene, ob, cfra+1.0f, 0.0f);
-
+		time= BKE_curframe(scene);
+		nexttime= BKE_frame_to_ctime(scene, CFRA+1);
+		
 		*timescale= MAX2(nexttime - time, 0.0f);
 	}
 
@@ -2165,7 +2319,7 @@ void BKE_ptcache_id_time(PTCacheID *pid, Scene *scene, float cfra, int *startfra
 		 * system timing. */
 #if 0
 		if ((ob->partype & PARSLOW)==0) {
-			offset= give_timeoffset(ob);
+			offset= ob->sf;
 
 			*startframe += (int)(offset+0.5f);
 			*endframe += (int)(offset+0.5f);
@@ -2290,6 +2444,8 @@ int  BKE_ptcache_id_reset(Scene *scene, PTCacheID *pid, int mode)
 			smokeModifier_reset(pid->calldata);
 		else if(pid->type == PTCACHE_TYPE_SMOKE_HIGHRES)
 			smokeModifier_reset_turbulence(pid->calldata);
+		else if(pid->type == PTCACHE_TYPE_DYNAMICPAINT)
+			dynamicPaint_clearSurface((DynamicPaintSurface*)pid->calldata);
 	}
 	if(clear)
 		BKE_ptcache_id_clear(pid, PTCACHE_CLEAR_ALL, 0);
@@ -2346,6 +2502,18 @@ int  BKE_ptcache_object_reset(Scene *scene, Object *ob, int mode)
 				reset |= BKE_ptcache_id_reset(scene, &pid, mode);
 			}
 		}
+		if(md->type == eModifierType_DynamicPaint) {
+			DynamicPaintModifierData *pmd = (DynamicPaintModifierData *)md;
+			if(pmd->canvas)
+			{
+				DynamicPaintSurface *surface = pmd->canvas->surfaces.first;
+
+				for (; surface; surface=surface->next) {
+					BKE_ptcache_id_from_dynamicpaint(&pid, ob, surface);
+					reset |= BKE_ptcache_id_reset(scene, &pid, mode);
+				}
+			}
+		}
 	}
 
 	if (ob->type == OB_ARMATURE)
@@ -2363,7 +2531,7 @@ void BKE_ptcache_remove(void)
 	
 	ptcache_path(NULL, path);
 
-	if (BLI_exist(path)) {
+	if (BLI_exists(path)) {
 		/* The pointcache dir exists? - remove all pointcache */
 
 		DIR *dir; 
@@ -2380,7 +2548,7 @@ void BKE_ptcache_remove(void)
 				BLI_join_dirfile(path_full, sizeof(path_full), path, de->d_name);
 				BLI_delete(path_full, 0, 0);
 			} else {
-				rmdir = 0; /* unknown file, dont remove the dir */
+				rmdir = 0; /* unknown file, don't remove the dir */
 			}
 		}
 
@@ -2521,7 +2689,7 @@ void BKE_ptcache_quick_cache_all(Main *bmain, Scene *scene)
 }
 
 /* Simulation thread, no need for interlocks as data written in both threads
- are only unitary integers (I/O assumed to be atomic for them) */
+ * are only unitary integers (I/O assumed to be atomic for them) */
 typedef struct {
 	int break_operation;
 	int thread_ended;
@@ -2544,7 +2712,8 @@ static void ptcache_dt_to_str(char *str, double dtime)
 		sprintf(str, "%is", ((int)dtime) % 60);
 }
 
-static void *ptcache_bake_thread(void *ptr) {
+static void *ptcache_bake_thread(void *ptr)
+{
 	int usetimer = 0, sfra, efra;
 	double stime, ptime, ctime, fetd;
 	char run[32], cur[32], etd[32];
@@ -2848,7 +3017,7 @@ void BKE_ptcache_toggle_disk_cache(PTCacheID *pid)
 	PointCache *cache = pid->cache;
 	int last_exact = cache->last_exact;
 
-	if (!G.relbase_valid){
+	if (!G.relbase_valid) {
 		cache->flag &= ~PTCACHE_DISK_CACHE;
 		if (G.f & G_DEBUG) 
 			printf("File must be saved before using disk cache!\n");
@@ -2876,7 +3045,7 @@ void BKE_ptcache_toggle_disk_cache(PTCacheID *pid)
 	BKE_ptcache_update_info(pid);
 }
 
-void BKE_ptcache_disk_cache_rename(PTCacheID *pid, char *from, char *to)
+void BKE_ptcache_disk_cache_rename(PTCacheID *pid, const char *name_src, const char *name_dst)
 {
 	char old_name[80];
 	int len; /* store the length of the string */
@@ -2890,24 +3059,24 @@ void BKE_ptcache_disk_cache_rename(PTCacheID *pid, char *from, char *to)
 	char ext[MAX_PTCACHE_PATH];
 
 	/* save old name */
-	strcpy(old_name, pid->cache->name);
+	BLI_strncpy(old_name, pid->cache->name, sizeof(old_name));
 
 	/* get "from" filename */
-	strcpy(pid->cache->name, from);
+	BLI_strncpy(pid->cache->name, name_src, sizeof(pid->cache->name));
 
 	len = ptcache_filename(pid, old_filename, 0, 0, 0); /* no path */
 
 	ptcache_path(pid, path);
 	dir = opendir(path);
 	if(dir==NULL) {
-		strcpy(pid->cache->name, old_name);
+		BLI_strncpy(pid->cache->name, old_name, sizeof(pid->cache->name));
 		return;
 	}
 
 	BLI_snprintf(ext, sizeof(ext), "_%02u"PTCACHE_EXT, pid->stack_index);
 
 	/* put new name into cache */
-	strcpy(pid->cache->name, to);
+	BLI_strncpy(pid->cache->name, name_dst, sizeof(pid->cache->name));
 
 	while ((de = readdir(dir)) != NULL) {
 		if (strstr(de->d_name, ext)) { /* do we have the right extension?*/
@@ -2929,7 +3098,7 @@ void BKE_ptcache_disk_cache_rename(PTCacheID *pid, char *from, char *to)
 	}
 	closedir(dir);
 
-	strcpy(pid->cache->name, old_name);
+	BLI_strncpy(pid->cache->name, old_name, sizeof(pid->cache->name));
 }
 
 void BKE_ptcache_load_external(PTCacheID *pid)
@@ -2962,7 +3131,7 @@ void BKE_ptcache_load_external(PTCacheID *pid)
 	if(cache->index >= 0)
 		BLI_snprintf(ext, sizeof(ext), "_%02d"PTCACHE_EXT, cache->index);
 	else
-		strcpy(ext, PTCACHE_EXT);
+		BLI_strncpy(ext, PTCACHE_EXT, sizeof(ext));
 	
 	while ((de = readdir(dir)) != NULL) {
 		if (strstr(de->d_name, ext)) { /* do we have the right extension?*/
@@ -3050,11 +3219,11 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 
 		/* smoke doesn't use frame 0 as info frame so can't check based on totpoint */
 		if(pid->type == PTCACHE_TYPE_SMOKE_DOMAIN && totframes)
-			sprintf(cache->info, "%i frames found!", totframes);
+			BLI_snprintf(cache->info, sizeof(cache->info), "%i frames found!", totframes);
 		else if(totframes && cache->totpoint)
-			sprintf(cache->info, "%i points found!", cache->totpoint);
+			BLI_snprintf(cache->info, sizeof(cache->info), "%i points found!", cache->totpoint);
 		else
-			sprintf(cache->info, "No valid data to read!");
+			BLI_snprintf(cache->info, sizeof(cache->info), "No valid data to read!");
 		return;
 	}
 
@@ -3064,9 +3233,9 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 			int totpoint = pid->totpoint(pid->calldata, 0);
 
 			if(cache->totpoint > totpoint)
-				sprintf(mem_info, "%i cells + High Resolution cached", totpoint);
+				BLI_snprintf(mem_info, sizeof(mem_info), "%i cells + High Resolution cached", totpoint);
 			else
-				sprintf(mem_info, "%i cells cached", totpoint);
+				BLI_snprintf(mem_info, sizeof(mem_info), "%i cells cached", totpoint);
 		}
 		else {
 			int cfra = cache->startframe;
@@ -3076,7 +3245,7 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 					totframes++;
 			}
 
-			sprintf(mem_info, "%i frames on disk", totframes);
+			BLI_snprintf(mem_info, sizeof(mem_info), "%i frames on disk", totframes);
 		}
 	}
 	else {
@@ -3100,20 +3269,21 @@ void BKE_ptcache_update_info(PTCacheID *pid)
 
 		mb = (bytes > 1024.0f * 1024.0f);
 
-		sprintf(mem_info, "%i frames in memory (%.1f %s)",
+		BLI_snprintf(mem_info, sizeof(mem_info), "%i frames in memory (%.1f %s)",
 			totframes,
 			bytes / (mb ? 1024.0f * 1024.0f : 1024.0f),
 			mb ? "Mb" : "kb");
 	}
 
 	if(cache->flag & PTCACHE_OUTDATED) {
-		sprintf(cache->info, "%s, cache is outdated!", mem_info);
+		BLI_snprintf(cache->info, sizeof(cache->info), "%s, cache is outdated!", mem_info);
 	}
 	else if(cache->flag & PTCACHE_FRAMES_SKIPPED) {
-		sprintf(cache->info, "%s, not exact since frame %i.", mem_info, cache->last_exact);
+		BLI_snprintf(cache->info, sizeof(cache->info), "%s, not exact since frame %i.", mem_info, cache->last_exact);
 	}
-	else
-		sprintf(cache->info, "%s.", mem_info);
+	else {
+		BLI_snprintf(cache->info, sizeof(cache->info), "%s.", mem_info);
+	}
 }
 
 void BKE_ptcache_validate(PointCache *cache, int framenr)

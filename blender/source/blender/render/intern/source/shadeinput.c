@@ -1,6 +1,4 @@
 /*
-* $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -68,32 +66,33 @@
 extern struct Render R;
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
 
-
-#define VECADDISFAC(v1,v3,fac) {*(v1)+= *(v3)*(fac); *(v1+1)+= *(v3+1)*(fac); *(v1+2)+= *(v3+2)*(fac);}
-
-
-
 /* Shade Sample order:
+ *
+ * - shade_samples_fill_with_ps()
+ *     - for each sample
+ *         - shade_input_set_triangle()  <- if prev sample-face is same, use shade_input_copy_triangle()
+ *         - if vlr
+ *             - shade_input_set_viewco()    <- not for ray or bake
+ *             - shade_input_set_uv()        <- not for ray or bake
+ *             - shade_input_set_normals()
+ * - shade_samples()
+ *     - if AO
+ *         - shade_samples_do_AO()
+ *     - if shading happens
+ *         - for each sample
+ *             - shade_input_set_shade_texco()
+ *             - shade_samples_do_shade()
+ * - OSA: distribute sample result with filter masking
+ *
+ */
 
-- shade_samples_fill_with_ps()
-	- for each sample
-		- shade_input_set_triangle()  <- if prev sample-face is same, use shade_input_copy_triangle()
-		- if vlr
-			- shade_input_set_viewco()    <- not for ray or bake
-			- shade_input_set_uv()        <- not for ray or bake
-			- shade_input_set_normals()
-- shade_samples()
-	- if AO
-		- shade_samples_do_AO()
-	- if shading happens
-		- for each sample
-			- shade_input_set_shade_texco()
-			- shade_samples_do_shade()
-- OSA: distribute sample result with filter masking
+#define VECADDISFAC(v1,v3,fac)  {   \
+	*(v1 + 0) += *(v3 + 0) * (fac); \
+	*(v1 + 1) += *(v3 + 1) * (fac); \
+	*(v1 + 2) += *(v3 + 2) * (fac); \
+}
 
-	*/
-
-/* initialise material variables in shadeinput, 
+/* initialize material variables in shadeinput, 
  * doing inverse gamma correction where applicable */
 void shade_input_init_material(ShadeInput *shi)
 {
@@ -114,10 +113,8 @@ void shade_material_loop(ShadeInput *shi, ShadeResult *shr)
 		float fac= shi->translucency;
 		
 		shade_input_init_material(shi);
-
-		VECCOPY(shi->vn, shi->vno);
-		VECMUL(shi->vn, -1.0f);
-		VECMUL(shi->facenor, -1.0f);
+		negate_v3_v3(shi->vn, shi->vno);
+		negate_v3(shi->facenor);
 		shi->depth++;	/* hack to get real shadow now */
 		shade_lamp_loop(shi, &shr_t);
 		shi->depth--;
@@ -131,8 +128,8 @@ void shade_material_loop(ShadeInput *shi, ShadeResult *shr)
 		if(shi->passflag & SCE_PASS_SHADOW)
 			VECADDISFAC(shr->shad, shr_t.shad, fac);
 
-		VECMUL(shi->vn, -1.0f);
-		VECMUL(shi->facenor, -1.0f);
+		negate_v3(shi->vn);
+		negate_v3(shi->facenor);
 	}
 	
 	/* depth >= 1 when ray-shading */
@@ -184,12 +181,12 @@ void shade_input_do_shade(ShadeInput *shi, ShadeResult *shr)
 	
 	/* copy additional passes */
 	if(shi->passflag & (SCE_PASS_VECTOR|SCE_PASS_NORMAL)) {
-		QUATCOPY(shr->winspeed, shi->winspeed);
-		VECCOPY(shr->nor, shi->vn);
+		copy_v4_v4(shr->winspeed, shi->winspeed);
+		copy_v3_v3(shr->nor, shi->vn);
 	}
 	
 	/* MIST */
-	if((shi->passflag & SCE_PASS_MIST) || ((R.wrld.mode & WO_MIST) && (shi->mat->mode & MA_NOMIST)==0))  {
+	if((shi->passflag & SCE_PASS_MIST) || ((R.wrld.mode & WO_MIST) && (shi->mat->mode & MA_NOMIST)==0)) {
 		if(R.r.mode & R_ORTHO)
 			shr->mist= mistfactor(-shi->co[2], shi->co);
 		else
@@ -217,15 +214,15 @@ void shade_input_do_shade(ShadeInput *shi, ShadeResult *shr)
 	shr->z= -shi->co[2];
 	
 	/* RAYHITS */
-/*
-	if(1 || shi->passflag & SCE_PASS_RAYHITS)
-	{
+#if 0
+	if(1 || shi->passflag & SCE_PASS_RAYHITS) {
 		shr->rayhits[0] = (float)shi->raycounter.faces.test;
 		shr->rayhits[1] = (float)shi->raycounter.bb.hit;
 		shr->rayhits[2] = 0.0;
 		shr->rayhits[3] = 1.0;
 	}
- */
+#endif
+
 	RE_RC_MERGE(&re_rc_counter[shi->thread], &shi->raycounter);
 }
 
@@ -286,9 +283,9 @@ void shade_input_set_triangle_i(ShadeInput *shi, ObjectInstanceRen *obi, VlakRen
 	
 	/* calculate vertexnormals */
 	if(vlr->flag & R_SMOOTH) {
-		VECCOPY(shi->n1, shi->v1->n);
-		VECCOPY(shi->n2, shi->v2->n);
-		VECCOPY(shi->n3, shi->v3->n);
+		copy_v3_v3(shi->n1, shi->v1->n);
+		copy_v3_v3(shi->n2, shi->v2->n);
+		copy_v3_v3(shi->n3, shi->v3->n);
 
 		if(obi->flag & R_TRANSFORMED) {
 			mul_m3_v3(obi->nmat, shi->n1); normalize_v3(shi->n1);
@@ -298,7 +295,7 @@ void shade_input_set_triangle_i(ShadeInput *shi, ObjectInstanceRen *obi, VlakRen
 	}
 }
 
-/* note, facenr declared volatile due to over-eager -O2 optimizations
+/* note, facenr declared volatile due to over-eager -O2 optimization's
  * on cygwin (particularly -frerun-cse-after-loop)
  */
 
@@ -341,26 +338,26 @@ void shade_input_set_strand(ShadeInput *shi, StrandRen *strand, StrandPoint *spo
 	shi->mode= shi->mat->mode_l;		/* or-ed result for all nodes */
 
 	/* shade_input_set_viewco equivalent */
-	VECCOPY(shi->co, spoint->co);
-	VECCOPY(shi->view, shi->co);
+	copy_v3_v3(shi->co, spoint->co);
+	copy_v3_v3(shi->view, shi->co);
 	normalize_v3(shi->view);
 
 	shi->xs= (int)spoint->x;
 	shi->ys= (int)spoint->y;
 
 	if(shi->osatex || (R.r.mode & R_SHADOW)) {
-		VECCOPY(shi->dxco, spoint->dtco);
-		VECCOPY(shi->dyco, spoint->dsco);
+		copy_v3_v3(shi->dxco, spoint->dtco);
+		copy_v3_v3(shi->dyco, spoint->dsco);
 	}
 
 	/* dxview, dyview, not supported */
 
 	/* facenormal, simply viewco flipped */
-	VECCOPY(shi->facenor, spoint->nor);
+	copy_v3_v3(shi->facenor, spoint->nor);
 
 	/* shade_input_set_normals equivalent */
 	if(shi->mat->mode & MA_TANGENT_STR) {
-		VECCOPY(shi->vn, spoint->tan)
+		copy_v3_v3(shi->vn, spoint->tan);
 	}
 	else {
 		float cross[3];
@@ -369,11 +366,11 @@ void shade_input_set_strand(ShadeInput *shi, StrandRen *strand, StrandPoint *spo
 		cross_v3_v3v3(shi->vn, cross, spoint->tan);
 		normalize_v3(shi->vn);
 
-		if(INPR(shi->vn, shi->view) < 0.0f)
+		if(dot_v3v3(shi->vn, shi->view) < 0.0f)
 			negate_v3(shi->vn);
 	}
 
-	VECCOPY(shi->vno, shi->vn);
+	copy_v3_v3(shi->vno, shi->vn);
 }
 
 void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert *svert, StrandPoint *spoint)
@@ -393,17 +390,17 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 	}
 
 	if(mode & (MA_TANGENT_V|MA_NORMAP_TANG)) {
-		VECCOPY(shi->tang, spoint->tan);
-		VECCOPY(shi->nmaptang, spoint->tan);
+		copy_v3_v3(shi->tang, spoint->tan);
+		copy_v3_v3(shi->nmaptang, spoint->tan);
 	}
 
 	if(mode & MA_STR_SURFDIFF) {
 		float *surfnor= RE_strandren_get_surfnor(obr, strand, 0);
 
 		if(surfnor)
-			VECCOPY(shi->surfnor, surfnor)
+			copy_v3_v3(shi->surfnor, surfnor);
 		else
-			VECCOPY(shi->surfnor, shi->vn)
+			copy_v3_v3(shi->surfnor, shi->vn);
 
 		if(shi->mat->strand_surfnor > 0.0f) {
 			shi->surfdist= 0.0f;
@@ -418,7 +415,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 		
 		speed= RE_strandren_get_winspeed(shi->obi, strand, 0);
 		if(speed)
-			QUATCOPY(shi->winspeed, speed)
+			copy_v4_v4(shi->winspeed, speed);
 		else
 			shi->winspeed[0]= shi->winspeed[1]= shi->winspeed[2]= shi->winspeed[3]= 0.0f;
 	}
@@ -426,18 +423,18 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 	/* shade_input_set_shade_texco equivalent */
 	if(texco & NEED_UV) {
 		if(texco & TEXCO_ORCO) {
-			VECCOPY(shi->lo, strand->orco);
+			copy_v3_v3(shi->lo, strand->orco);
 			/* no shi->osatex, orco derivatives are zero */
 		}
 
 		if(texco & TEXCO_GLOB) {
-			VECCOPY(shi->gl, shi->co);
+			copy_v3_v3(shi->gl, shi->co);
 			mul_m4_v3(R.viewinv, shi->gl);
 			
 			if(shi->osatex) {
-				VECCOPY(shi->dxgl, shi->dxco); 
+				copy_v3_v3(shi->dxgl, shi->dxco);
 				mul_mat3_m4_v3(R.viewinv, shi->dxgl); 
-				VECCOPY(shi->dygl, shi->dyco); 
+				copy_v3_v3(shi->dygl, shi->dyco);
 				mul_mat3_m4_v3(R.viewinv, shi->dygl);
 			}
 		}
@@ -451,7 +448,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 			}
 		}
 
-		if((texco & TEXCO_UV) || (mode & (MA_VERTEXCOL|MA_VERTEXCOLP|MA_FACETEXTURE)))  {
+		if((texco & TEXCO_UV) || (mode & (MA_VERTEXCOL|MA_VERTEXCOLP|MA_FACETEXTURE))) {
 			MCol *mcol;
 			float *uv;
 			char *name;
@@ -473,17 +470,20 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 					scol->col[0]= cp[3]/255.0f;
 					scol->col[1]= cp[2]/255.0f;
 					scol->col[2]= cp[1]/255.0f;
+					scol->col[3]= cp[0]/255.0f;
 				}
 
 				if(shi->totcol) {
 					shi->vcol[0]= shi->col[shi->actcol].col[0];
 					shi->vcol[1]= shi->col[shi->actcol].col[1];
 					shi->vcol[2]= shi->col[shi->actcol].col[2];
+					shi->vcol[3]= shi->col[shi->actcol].col[3];
 				}
 				else {
 					shi->vcol[0]= 0.0f;
 					shi->vcol[1]= 0.0f;
 					shi->vcol[2]= 0.0f;
+					shi->vcol[3]= 0.0f;
 				}
 			}
 
@@ -516,6 +516,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 						shi->vcol[0]= 1.0f;
 						shi->vcol[1]= 1.0f;
 						shi->vcol[2]= 1.0f;
+						shi->vcol[3]= 1.0f;
 					}
 				}
 			}
@@ -532,6 +533,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 					shi->vcol[0]= 1.0f;
 					shi->vcol[1]= 1.0f;
 					shi->vcol[2]= 1.0f;
+					shi->vcol[3]= 1.0f;
 				}
 			}
 
@@ -586,7 +588,7 @@ void shade_input_set_strand_texco(ShadeInput *shi, StrandRen *strand, StrandVert
 }
 
 /* from scanline pixel coordinates to 3d coordinates, requires set_triangle */
-void shade_input_calc_viewco(ShadeInput *shi, float x, float y, float z, float *view, float *dxyview, float *co, float *dxco, float *dyco)
+void shade_input_calc_viewco(ShadeInput *shi, float x, float y, float z, float view[3], float dxyview[2], float co[3], float dxco[3], float dyco[3])
 {
 	/* returns not normalized, so is in viewplane coords */
 	calc_view_vector(view, x, y);
@@ -603,11 +605,11 @@ void shade_input_calc_viewco(ShadeInput *shi, float x, float y, float z, float *
 		/* for non-wire, intersect with the triangle to get the exact coord */
 		float fac, dface, v1[3];
 		
-		VECCOPY(v1, shi->v1->co);
+		copy_v3_v3(v1, shi->v1->co);
 		if(shi->obi->flag & R_TRANSFORMED)
 			mul_m4_v3(shi->obi->mat, v1);
 		
-		dface= v1[0]*shi->facenor[0]+v1[1]*shi->facenor[1]+v1[2]*shi->facenor[2];
+		dface = dot_v3v3(v1, shi->facenor);
 		
 		/* ortho viewplane cannot intersect using view vector originating in (0,0,0) */
 		if(R.r.mode & R_ORTHO) {
@@ -649,7 +651,7 @@ void shade_input_calc_viewco(ShadeInput *shi, float x, float y, float z, float *
 		else {
 			float div;
 			
-			div= shi->facenor[0]*view[0] + shi->facenor[1]*view[1] + shi->facenor[2]*view[2];
+			div = dot_v3v3(shi->facenor, view);
 			if (div!=0.0f) fac= dface/div;
 			else fac= 0.0f;
 			
@@ -721,9 +723,9 @@ void shade_input_set_uv(ShadeInput *shi)
 	if((vlr->flag & R_SMOOTH) || (shi->mat->texco & NEED_UV) || (shi->passflag & SCE_PASS_UV)) {
 		float v1[3], v2[3], v3[3];
 
-		VECCOPY(v1, shi->v1->co);
-		VECCOPY(v2, shi->v2->co);
-		VECCOPY(v3, shi->v3->co);
+		copy_v3_v3(v1, shi->v1->co);
+		copy_v3_v3(v2, shi->v2->co);
+		copy_v3_v3(v3, shi->v3->co);
 
 		if(shi->obi->flag & R_TRANSFORMED) {
 			mul_m4_v3(shi->obi->mat, v1);
@@ -755,17 +757,11 @@ void shade_input_set_uv(ShadeInput *shi)
 		}
 		else {
 			/* most of this could become re-used for faces */
-			float detsh, t00, t10, t01, t11, xn, yn, zn;
+			float detsh, t00, t10, t01, t11;
 			int axis1, axis2;
 
 			/* find most stable axis to project */
-			xn= fabs(shi->facenor[0]);
-			yn= fabs(shi->facenor[1]);
-			zn= fabs(shi->facenor[2]);
-
-			if(zn>=xn && zn>=yn) { axis1= 0; axis2= 1; }
-			else if(yn>=xn && yn>=zn) { axis1= 0; axis2= 2; }
-			else { axis1= 1; axis2= 2; }
+			axis_dominant_v3(&axis1, &axis2, shi->facenor);
 
 			/* compute u,v and derivatives */
 			t00= v3[axis1]-v1[axis1]; t01= v3[axis2]-v1[axis2];
@@ -822,18 +818,17 @@ void shade_input_set_normals(ShadeInput *shi)
 		shi->vn[2]= l*n3[2]-u*n1[2]-v*n2[2];
 
 		// use unnormalized normal (closer to games)
-		VECCOPY(shi->nmapnorm, shi->vn);
+		copy_v3_v3(shi->nmapnorm, shi->vn);
 		
 		normalize_v3(shi->vn);
 	}
-	else
-	{
-		VECCOPY(shi->vn, shi->facenor);
-		VECCOPY(shi->nmapnorm, shi->vn);
+	else {
+		copy_v3_v3(shi->vn, shi->facenor);
+		copy_v3_v3(shi->nmapnorm, shi->vn);
 	}
 	
 	/* used in nodes */
-	VECCOPY(shi->vno, shi->vn);
+	copy_v3_v3(shi->vno, shi->vn);
 
 	/* flip normals to viewing direction */
 	if(!(shi->vlr->flag & R_TANGENT))
@@ -856,18 +851,17 @@ void shade_input_set_vertex_normals(ShadeInput *shi)
 		shi->vn[2]= l*n3[2]-u*n1[2]-v*n2[2];
 		
 		// use unnormalized normal (closer to games)
-		VECCOPY(shi->nmapnorm, shi->vn);
+		copy_v3_v3(shi->nmapnorm, shi->vn);
 		
 		normalize_v3(shi->vn);
 	}
-	else
-	{
-		VECCOPY(shi->vn, shi->facenor);
-		VECCOPY(shi->nmapnorm, shi->vn);
+	else {
+		copy_v3_v3(shi->vn, shi->facenor);
+		copy_v3_v3(shi->nmapnorm, shi->vn);
 	}
 	
 	/* used in nodes */
-	VECCOPY(shi->vno, shi->vn);
+	copy_v3_v3(shi->vno, shi->vn);
 }
 
 
@@ -933,7 +927,7 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 		}
 		else {
 			/* qdn: flat faces have tangents too,
-			   could pick either one, using average here */
+			 * could pick either one, using average here */
 			tl= 1.0f/3.0f;
 			tu= -1.0f/3.0f;
 			tv= -1.0f/3.0f;
@@ -956,7 +950,7 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 					mul_m3_v3(obi->nmat, shi->tang);
 
 				normalize_v3(shi->tang);
-				VECCOPY(shi->nmaptang, shi->tang);
+				copy_v3_v3(shi->nmaptang, shi->tang);
 			}
 		}
 
@@ -969,14 +963,13 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 
 				vlr_set_uv_indices(shi->vlr, &j1, &j2, &j3);
 
-				VECCOPY(c0, &tangent[j1*4]);
-				VECCOPY(c1, &tangent[j2*4]);
-				VECCOPY(c2, &tangent[j3*4]);
+				copy_v3_v3(c0, &tangent[j1*4]);
+				copy_v3_v3(c1, &tangent[j2*4]);
+				copy_v3_v3(c2, &tangent[j3*4]);
 
 				// keeping tangents normalized at vertex level
 				// corresponds better to how it's done in game engines
-				if(obi->flag & R_TRANSFORMED)
-				{
+				if (obi->flag & R_TRANSFORMED) {
 					mul_mat3_m4_v3(obi->mat, c0); normalize_v3(c0);
 					mul_mat3_m4_v3(obi->mat, c1); normalize_v3(c1);
 					mul_mat3_m4_v3(obi->mat, c2); normalize_v3(c2);
@@ -999,12 +992,12 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 		float *surfnor= RE_vlakren_get_surfnor(obr, shi->vlr, 0);
 
 		if(surfnor) {
-			VECCOPY(shi->surfnor, surfnor)
+			copy_v3_v3(shi->surfnor, surfnor);
 			if(obi->flag & R_TRANSFORMED)
 				mul_m3_v3(obi->nmat, shi->surfnor);
 		}
 		else
-			VECCOPY(shi->surfnor, shi->vn)
+			copy_v3_v3(shi->surfnor, shi->vn);
 
 		shi->surfdist= 0.0f;
 	}
@@ -1057,16 +1050,16 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 				}
 			}
 
-			VECCOPY(shi->duplilo, obi->dupliorco);
+			copy_v3_v3(shi->duplilo, obi->dupliorco);
 		}
 		
 		if(texco & TEXCO_GLOB) {
-			VECCOPY(shi->gl, shi->co);
+			copy_v3_v3(shi->gl, shi->co);
 			mul_m4_v3(R.viewinv, shi->gl);
 			if(shi->osatex) {
-				VECCOPY(shi->dxgl, shi->dxco); 
+				copy_v3_v3(shi->dxgl, shi->dxco);
 				mul_mat3_m4_v3(R.viewinv, shi->dxgl); 
-				VECCOPY(shi->dygl, shi->dyco); 
+				copy_v3_v3(shi->dygl, shi->dyco);
 				mul_mat3_m4_v3(R.viewinv, shi->dygl);
 			}
 		}
@@ -1081,7 +1074,7 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 			}
 		}
 				
-		if((texco & TEXCO_UV) || (mode & (MA_VERTEXCOL|MA_VERTEXCOLP|MA_FACETEXTURE)))  {
+		if((texco & TEXCO_UV) || (mode & (MA_VERTEXCOL|MA_VERTEXCOLP|MA_FACETEXTURE))) {
 			VlakRen *vlr= shi->vlr;
 			MTFace *tface;
 			MCol *mcol;
@@ -1100,6 +1093,7 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 				for (i=0; (mcol=RE_vlakren_get_mcol(obr, vlr, i, &name, 0)); i++) {
 					ShadeInputCol *scol= &shi->col[i];
 					char *cp1, *cp2, *cp3;
+					float a[3];
 					
 					shi->totcol++;
 					scol->name= name;
@@ -1107,17 +1101,29 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 					cp1= (char *)(mcol+j1);
 					cp2= (char *)(mcol+j2);
 					cp3= (char *)(mcol+j3);
-					
-					scol->col[0]= (l*((float)cp3[3]) - u*((float)cp1[3]) - v*((float)cp2[3]))/255.0f;
-					scol->col[1]= (l*((float)cp3[2]) - u*((float)cp1[2]) - v*((float)cp2[2]))/255.0f;
-					scol->col[2]= (l*((float)cp3[1]) - u*((float)cp1[1]) - v*((float)cp2[1]))/255.0f;
+
+					/* alpha values */
+					a[0] = ((float)cp1[0])/255.f;
+					a[1] = ((float)cp2[0])/255.f;
+					a[2] = ((float)cp3[0])/255.f;
+					scol->col[3]= l*a[2] - u*a[0] - v*a[1];
+
+					/* sample premultiplied color value */
+					scol->col[0]= (l*((float)cp3[3])*a[2] - u*((float)cp1[3])*a[0] - v*((float)cp2[3])*a[1])/255.f;
+					scol->col[1]= (l*((float)cp3[2])*a[2] - u*((float)cp1[2])*a[0] - v*((float)cp2[2])*a[1])/255.f;
+					scol->col[2]= (l*((float)cp3[1])*a[2] - u*((float)cp1[1])*a[0] - v*((float)cp2[1])*a[1])/255.f;
+
+					/* if not zero alpha, restore non-multiplied color */
+					if (scol->col[3]) {
+						mul_v3_fl(scol->col, 1.0f/scol->col[3]);
+					}
 				}
 
 				if(shi->totcol) {
 					shi->vcol[0]= shi->col[shi->actcol].col[0];
 					shi->vcol[1]= shi->col[shi->actcol].col[1];
 					shi->vcol[2]= shi->col[shi->actcol].col[2];
-					shi->vcol[3]= 1.0f;
+					shi->vcol[3]= shi->col[shi->actcol].col[3];
 				}
 				else {
 					shi->vcol[0]= 0.0f;
@@ -1167,8 +1173,9 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 						shi->vcol[2]= 1.0f;
 						shi->vcol[3]= 1.0f;
 					}
-					if(tface && tface->tpage)
+					if(tface->tpage) {
 						render_realtime_texture(shi, tface->tpage);
+					}
 				}
 
 
@@ -1259,7 +1266,7 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 
 				zbuf_make_winmat(&R, winmat);
 				if(shi->obi->flag & R_TRANSFORMED)
-					mul_m4_m4m4(obwinmat, obi->mat, winmat);
+					mult_m4_m4m4(obwinmat, winmat, obi->mat);
 				else
 					copy_m4_m4(obwinmat, winmat);
 
@@ -1304,9 +1311,12 @@ void shade_input_set_shade_texco(ShadeInput *shi)
 				}
 			}
 		}
-	} /* else {
-	 Note! For raytracing winco is not set, important because thus means all shader input's need to have their variables set to zero else in-initialized values are used
-	*/
+	}
+	/* else {
+	 * Note! For raytracing winco is not set,
+	 * important because thus means all shader input's need to have their variables set to zero
+	 * else un-initialized values are used
+	 */
 	if (shi->do_manage) {
 		if(mode & (MA_VERTEXCOL|MA_VERTEXCOLP|MA_FACETEXTURE)) {
 			srgb_to_linearrgb_v3_v3(shi->vcol, shi->vcol);
@@ -1356,20 +1366,18 @@ void shade_sample_initialize(ShadeSample *ssamp, RenderPart *pa, RenderLayer *rl
 /* Do AO or (future) GI */
 void shade_samples_do_AO(ShadeSample *ssamp)
 {
-	ShadeInput *shi;
-	int sample;
-	
 	if(!(R.r.mode & R_SHADOW))
 		return;
 	if(!(R.r.mode & R_RAYTRACE) && !(R.wrld.ao_gather_method == WO_AOGATHER_APPROX))
 		return;
 	
 	if(R.wrld.mode & (WO_AMB_OCC|WO_ENV_LIGHT|WO_INDIRECT_LIGHT)) {
-		shi= &ssamp->shi[0];
+		ShadeInput *shi= &ssamp->shi[0];
+		int sample;
 
 		if(((shi->passflag & SCE_PASS_COMBINED) && (shi->combinedflag & (SCE_PASS_AO|SCE_PASS_ENVIRONMENT|SCE_PASS_INDIRECT)))
 			|| (shi->passflag & (SCE_PASS_AO|SCE_PASS_ENVIRONMENT|SCE_PASS_INDIRECT)))
-			for(sample=0, shi= ssamp->shi; sample<ssamp->tot; shi++, sample++)
+			for(sample=0; sample<ssamp->tot; shi++, sample++)
 				if(!(shi->mode & MA_SHLESS))
 					ambient_occlusion(shi);		/* stores in shi->ao[] */
 	}

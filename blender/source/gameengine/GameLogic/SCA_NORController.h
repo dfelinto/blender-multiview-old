@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,14 +29,14 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_NORCONTROLLER
-#define __KX_NORCONTROLLER
+#ifndef __SCA_NORCONTROLLER_H__
+#define __SCA_NORCONTROLLER_H__
 
 #include "SCA_IController.h"
 
 class SCA_NORController : public SCA_IController
 {
-	Py_Header;
+	Py_Header
 	//virtual void Trigger(class SCA_LogicManager* logicmgr);
 public:
 	SCA_NORController(SCA_IObject* gameobj);
@@ -47,5 +45,5 @@ public:
 	virtual void Trigger(SCA_LogicManager* logicmgr);
 };
 
-#endif //__KX_NORCONTROLLER
+#endif //__SCA_NORCONTROLLER_H__
 

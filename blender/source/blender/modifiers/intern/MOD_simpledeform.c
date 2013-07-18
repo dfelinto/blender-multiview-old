@@ -1,34 +1,32 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_simpledeform.c
  *  \ingroup modifiers
@@ -76,8 +74,7 @@ static void simpleDeform_taper(const float factor, const float dcut[3], float *c
 	co[1] = y + y*scale;
 	co[2] = z;
 
-	if(dcut)
-	{
+	if (dcut) {
 		co[0] += dcut[0];
 		co[1] += dcut[1];
 		co[2] += dcut[2];
@@ -95,9 +92,7 @@ static void simpleDeform_stretch(const float factor, const float dcut[3], float 
 	co[1] = y*scale;
 	co[2] = z*(1.0f+factor);
 
-
-	if(dcut)
-	{
+	if (dcut) {
 		co[0] += dcut[0];
 		co[1] += dcut[1];
 		co[2] += dcut[2];
@@ -117,8 +112,7 @@ static void simpleDeform_twist(const float factor, const float *dcut, float *co)
 	co[1] = x*sint + y*cost;
 	co[2] = z;
 
-	if(dcut)
-	{
+	if(dcut) {
 		co[0] += dcut[0];
 		co[1] += dcut[1];
 		co[2] += dcut[2];
@@ -134,16 +128,13 @@ static void simpleDeform_bend(const float factor, const float dcut[3], float *co
 	sint = sin(theta);
 	cost = cos(theta);
 
-	if(fabsf(factor) > 1e-7f)
-	{
+	if (fabsf(factor) > 1e-7f) {
 		co[0] = -(y-1.0f/factor)*sint;
 		co[1] =  (y-1.0f/factor)*cost + 1.0f/factor;
 		co[2] = z;
 	}
 
-
-	if(dcut)
-	{
+	if (dcut) {
 		co[0] += cost*dcut[0];
 		co[1] += sint*dcut[0];
 		co[2] += dcut[2];
@@ -174,16 +165,13 @@ static void SimpleDeformModifier_do(SimpleDeformModifierData *smd, struct Object
 	smd->limit[0] = MIN2(smd->limit[0], smd->limit[1]);			//Upper limit >= than lower limit
 
 	//Calculate matrixs do convert between coordinate spaces
-	if(smd->origin)
-	{
+	if(smd->origin) {
 		transf = &tmp_transf;
 
-		if(smd->originOpts & MOD_SIMPLEDEFORM_ORIGIN_LOCAL)
-		{
+		if (smd->originOpts & MOD_SIMPLEDEFORM_ORIGIN_LOCAL) {
 			space_transform_from_matrixs(transf, ob->obmat, smd->origin->obmat);
 		}
-		else
-		{
+		else {
 			copy_m4_m4(transf->local2target, smd->origin->obmat);
 			invert_m4_m4(transf->target2local, transf->local2target);
 		}
@@ -200,7 +188,7 @@ static void SimpleDeformModifier_do(SimpleDeformModifierData *smd, struct Object
 		for(i=0; i<numVerts; i++)
 		{
 			float tmp[3];
-			VECCOPY(tmp, vertexCos[i]);
+			copy_v3_v3(tmp, vertexCos[i]);
 
 			if(transf) space_transform_apply(transf, tmp);
 
@@ -232,17 +220,17 @@ static void SimpleDeformModifier_do(SimpleDeformModifierData *smd, struct Object
 	{
 		float weight = defvert_array_find_weight_safe(dvert, i, vgroup);
 
-		if(weight != 0.0f)
-		{
+		if (weight != 0.0f) {
 			float co[3], dcut[3] = {0.0f, 0.0f, 0.0f};
 
-			if(transf) space_transform_apply(transf, vertexCos[i]);
+			if(transf) {
+				space_transform_apply(transf, vertexCos[i]);
+			}
 
-			VECCOPY(co, vertexCos[i]);
+			copy_v3_v3(co, vertexCos[i]);
 
-			//Apply axis limits
-			if(smd->mode != MOD_SIMPLEDEFORM_MODE_BEND) //Bend mode shoulnt have any lock axis
-			{
+			/* Apply axis limits */
+			if(smd->mode != MOD_SIMPLEDEFORM_MODE_BEND) { /* Bend mode shoulnt have any lock axis */
 				if(smd->axis & MOD_SIMPLEDEFORM_LOCK_AXIS_X) axis_limit(0, lock_axis, co, dcut);
 				if(smd->axis & MOD_SIMPLEDEFORM_LOCK_AXIS_Y) axis_limit(1, lock_axis, co, dcut);
 			}
@@ -326,8 +314,8 @@ static void deformVerts(ModifierData *md, Object *ob,
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
 
-	/* we implement requiredDataMask but thats not really usefull since
-	   mesh_calc_modifiers pass a NULL derivedData */
+	/* we implement requiredDataMask but thats not really useful since
+	 * mesh_calc_modifiers pass a NULL derivedData */
 	if(dataMask)
 		dm= get_dm(ob, NULL, dm, NULL, 0);
 
@@ -338,7 +326,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 }
 
 static void deformVertsEM(ModifierData *md, Object *ob,
-						struct EditMesh *editData,
+						struct BMEditMesh *editData,
 						DerivedMesh *derivedData,
 						float (*vertexCos)[3],
 						int numVerts)
@@ -346,8 +334,8 @@ static void deformVertsEM(ModifierData *md, Object *ob,
 	DerivedMesh *dm = derivedData;
 	CustomDataMask dataMask = requiredDataMask(ob, md);
 
-	/* we implement requiredDataMask but thats not really usefull since
-	   mesh_calc_modifiers pass a NULL derivedData */
+	/* we implement requiredDataMask but thats not really useful since
+	 * mesh_calc_modifiers pass a NULL derivedData */
 	if(dataMask)
 		dm= get_dm(ob, editData, dm, NULL, 0);
 

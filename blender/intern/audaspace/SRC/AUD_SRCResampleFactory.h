@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SRCRESAMPLEFACTORY
-#define AUD_SRCRESAMPLEFACTORY
+#ifndef __AUD_SRCRESAMPLEFACTORY_H__
+#define __AUD_SRCRESAMPLEFACTORY_H__
 
 #include "AUD_MixerFactory.h"
 
@@ -56,4 +54,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_SRCRESAMPLEFACTORY
+#endif //__AUD_SRCRESAMPLEFACTORY_H__

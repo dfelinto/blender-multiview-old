@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgerast
  */
 
-#ifndef __RAS_POLYGON
-#define __RAS_POLYGON
+#ifndef __RAS_POLYGON_H__
+#define __RAS_POLYGON_H__
 
 #include "RAS_TexVert.h"
 #include "RAS_MaterialBucket.h"

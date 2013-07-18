@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 7, 2001
@@ -440,8 +438,12 @@ GHOST_TKey GHOST_SystemWin32::hardKey(GHOST_IWindow *window, RAWINPUT const& raw
 
 	GHOST_ModifierKeys modifiers;
 	system->retrieveModifierKeys(modifiers);
-	
-	*keyDown = !(raw.data.keyboard.Flags & RI_KEY_BREAK);
+
+	// RI_KEY_BREAK doesn't work for sticky keys release, so we also
+	// check for the up message
+	unsigned int msg = raw.data.keyboard.Message;
+	*keyDown = !(raw.data.keyboard.Flags & RI_KEY_BREAK) && msg != WM_KEYUP && msg != WM_SYSKEYUP;
+
 	key = this->convertKey(window, raw.data.keyboard.VKey, raw.data.keyboard.MakeCode, (raw.data.keyboard.Flags&(RI_KEY_E1|RI_KEY_E0)));
 	
 	// extra handling of modifier keys: don't send repeats out from GHOST
@@ -712,20 +714,29 @@ GHOST_EventKey* GHOST_SystemWin32::processKeyEvent(GHOST_IWindow *window, RAWINP
 	GHOST_SystemWin32 * system = (GHOST_SystemWin32 *)getSystem();
 	GHOST_TKey key = system->hardKey(window, raw, &keyDown, &vk);
 	GHOST_EventKey* event;
+
 	if (key != GHOST_kKeyUnknown) {
-		char ascii = '\0';
+		char utf8_char[6] = {0};
+		char ascii = 0;
 
-		unsigned short utf16[2]={0};
-		BYTE state[256];
-		GetKeyboardState((PBYTE)state);
+		wchar_t utf16[2]={0};
+		BYTE state[256] ={0};
+		GetKeyboardState(state);  
 
-		if(ToAsciiEx(vk, 0, state, utf16, 0, system->m_keylayout))
-				WideCharToMultiByte(CP_ACP, 0x00000400, 
+		if(ToUnicodeEx(vk, 0, state, utf16, 2, 0, system->m_keylayout))
+			WideCharToMultiByte(CP_UTF8, 0, 
 									(wchar_t*)utf16, 1,
-									(LPSTR) &ascii, 1,
-									NULL,NULL);
+									(LPSTR) utf8_char, 5,
+									NULL,NULL); else *utf8_char = 0;
 
-		event = new GHOST_EventKey(system->getMilliSeconds(), keyDown ? GHOST_kEventKeyDown: GHOST_kEventKeyUp, window, key, ascii);
+		
+
+		if(!keyDown) {utf8_char[0] = '\0'; ascii='\0';}
+			else ascii = utf8_char[0]& 0x80?'?':utf8_char[0];
+
+		if(0x80&state[VK_MENU]) utf8_char[0]='\0';
+
+		event = new GHOST_EventKey(system->getMilliSeconds(), keyDown ? GHOST_kEventKeyDown: GHOST_kEventKeyUp, window, key, ascii, utf8_char);
 		
 #ifdef GHOST_DEBUG
 		std::cout << ascii << std::endl;
@@ -1235,26 +1246,25 @@ LRESULT WINAPI GHOST_SystemWin32::s_wndProc(HWND hwnd, UINT msg, WPARAM wParam, 
 
 GHOST_TUns8* GHOST_SystemWin32::getClipboard(bool selection) const 
 {
-	char *buffer;
+	wchar_t *buffer;
 	char *temp_buff;
 	
-	if ( IsClipboardFormatAvailable(CF_TEXT) && OpenClipboard(NULL) ) {
+	if ( IsClipboardFormatAvailable(CF_UNICODETEXT) && OpenClipboard(NULL) ) {
 		size_t len = 0;
-		HANDLE hData = GetClipboardData( CF_TEXT );
+		HANDLE hData = GetClipboardData( CF_UNICODETEXT );
 		if (hData == NULL) {
 			CloseClipboard();
 			return NULL;
 		}
-		buffer = (char*)GlobalLock( hData );
+		buffer = (wchar_t*)GlobalLock( hData );
 		if (!buffer) {
 			CloseClipboard();
 			return NULL;
 		}
 		
-		len = strlen(buffer);
-		temp_buff = (char*) malloc(len+1);
-		strncpy(temp_buff, buffer, len);
-		temp_buff[len] = '\0';
+		len = WideCharToMultiByte(CP_UTF8, 0, buffer, -1, NULL, 0, NULL, NULL);
+		temp_buff = (char*) malloc(len);
+		WideCharToMultiByte(CP_UTF8, 0, buffer, -1, temp_buff, len, NULL, NULL);
 		
 		/* Buffer mustn't be accessed after CloseClipboard
 		   it would like accessing free-d memory */
@@ -1273,18 +1283,20 @@ void GHOST_SystemWin32::putClipboard(GHOST_TInt8 *buffer, bool selection) const
 
 	if (OpenClipboard(NULL)) {
 		HLOCAL clipbuffer;
-		char *data;
+		wchar_t *data;
 		
 		if (buffer) {
 			EmptyClipboard();
 			
-			clipbuffer = LocalAlloc(LMEM_FIXED,((strlen(buffer)+1)));
-			data = (char*)GlobalLock(clipbuffer);
-
-			strcpy(data, (char*)buffer);
-			data[strlen(buffer)] = '\0';
+			int wlen = MultiByteToWideChar(CP_UTF8, 0, buffer, -1, NULL, 0);
+			
+			clipbuffer = LocalAlloc(LMEM_FIXED, wlen * sizeof(wchar_t));
+			data = (wchar_t*)GlobalLock(clipbuffer);
+			
+			MultiByteToWideChar(CP_UTF8, 0, buffer, -1, data, wlen);
+			
 			LocalUnlock(clipbuffer);
-			SetClipboardData(CF_TEXT,clipbuffer);
+			SetClipboardData(CF_UNICODETEXT,clipbuffer);
 		}
 		CloseClipboard();
 	} else {
@@ -1343,4 +1355,10 @@ int GHOST_SystemWin32::toggleConsole(int action)
 
 
 	return m_consoleStatus;
+}
+
+int GHOST_SystemWin32::confirmQuit(GHOST_IWindow * window) const
+{
+	return (MessageBox(window ? ((GHOST_WindowWin32*)window)->getHWND() : 0, "Some changes have not been saved.\nDo you really want to quit ?",
+			"Exit Blender", MB_OKCANCEL | MB_ICONWARNING | MB_TOPMOST) == IDOK);
 }

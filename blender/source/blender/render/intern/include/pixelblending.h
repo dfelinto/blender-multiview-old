@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,12 +28,12 @@
  */
 
 
-#ifndef PIXELBLENDING_EXT_H
-#define PIXELBLENDING_EXT_H 
+#ifndef __PIXELBLENDING_H__
+#define __PIXELBLENDING_H__ 
 
 
 /**
-* add 1 pixel to into filtered three lines 
+ * add 1 pixel to into filtered three lines
  * (float vecs to float vec)
  */
 void add_filt_fmask(unsigned int mask, float *col, float *rowbuf, int row_w);
@@ -64,12 +62,4 @@ void addalphaAddfacFloat(float *dest, float *source, char addfac);
  */
 void addalphaAddFloat(float *dest, float *source);
 
-/**
- * Blend bron under doel, while doing gamma correction
- */
-void addalphaUnderGammaFloat(float *doel, float *bron);
-
-
-
-#endif /* PIXELBLENDING_EXT_H */
-
+#endif /* __PIXELBLENDING_H__ */

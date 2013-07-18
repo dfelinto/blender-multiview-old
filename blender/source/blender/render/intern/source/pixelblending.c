@@ -4,7 +4,6 @@
  * Functions to blend pixels with or without alpha, in various formats
  * nzc - June 2000
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -56,7 +55,7 @@ extern struct Render R;
 
 
 /* ------------------------------------------------------------------------- */
-/* Debug/behaviour defines                                                   */
+/* Debug/behavior defines                                                   */
 /* if defined: alpha blending with floats clips color, as with shorts       */
 /* #define RE_FLOAT_COLOR_CLIPPING  */
 /* if defined: alpha values are clipped                                      */
@@ -234,18 +233,17 @@ void mask_array(unsigned int mask, float filt[][3])
 }
 
 
-/* 
-
-index ordering, scanline based:
-
- ---    ---   ---  
-| 2,0 | 2,1 | 2,2 |
- ---    ---   ---  
-| 1,0 | 1,1 | 1,2 |
- ---    ---   ---  
-| 0,0 | 0,1 | 0,2 |
- ---    ---   ---  
-*/
+/**
+ * Index ordering, scanline based:
+ *
+ *      ---    ---   ---
+ *     | 2,0 | 2,1 | 2,2 |
+ *      ---    ---   ---
+ *     | 1,0 | 1,1 | 1,2 |
+ *      ---    ---   ---
+ *     | 0,0 | 0,1 | 0,2 |
+ *      ---    ---   ---
+ */
 
 void add_filt_fmask_coord(float filt[][3], float *col, float *rowbuf, int row_w, int col_h, int x, int y)
 {

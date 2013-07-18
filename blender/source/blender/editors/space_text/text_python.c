@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -51,7 +49,7 @@
 
 int text_do_suggest_select(SpaceText *st, ARegion *ar)
 {
-	SuggItem *item, *first, *last, *sel;
+	SuggItem *item, *first, *last /* , *sel */ /* UNUSED */;
 	TextLine *tmp;
 	int l, x, y, w, h, i;
 	int tgti, *top;
@@ -62,7 +60,7 @@ int text_do_suggest_select(SpaceText *st, ARegion *ar)
 
 	first = texttool_suggest_first();
 	last = texttool_suggest_last();
-	sel = texttool_suggest_selected();
+	/* sel = texttool_suggest_selected(); */ /* UNUSED */
 	top = texttool_suggest_top();
 
 	if(!last || !first)
@@ -357,9 +355,10 @@ static short UNUSED_FUNCTION(do_texttools)(SpaceText *st, char ascii, unsigned s
 		}
 	}
 
-	if(draw)
-		{}; // XXX redraw_alltext();
-	
+	if (draw) {
+		// XXX redraw_alltext();
+	}
+
 	return swallow;
 }
 
@@ -542,8 +541,9 @@ static short UNUSED_FUNCTION(do_textmarkers)(SpaceText *st, char ascii, unsigned
 		}
 	}
 	
-	if(draw)
-		{}; // XXX redraw_alltext();
+	if (draw) {
+		// XXX redraw_alltext();
+	}
 	
 	return swallow;
 }

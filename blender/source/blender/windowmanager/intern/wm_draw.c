@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,6 +43,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
+#include "BLI_math_base.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
@@ -56,6 +55,8 @@
 
 #include "GPU_draw.h"
 #include "GPU_extensions.h"
+
+#include "RE_engine.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -89,9 +90,16 @@ static void wm_paintcursor_draw(bContext *C, ARegion *ar)
 					if (ELEM(win->grabcursor, GHOST_kGrabWrap, GHOST_kGrabHide)) {
 						int x = 0, y = 0;
 						wm_get_cursor_position(win, &x, &y);
-						pc->draw(C, x - ar_other->winrct.xmin, y - ar_other->winrct.ymin, pc->customdata);
-					} else {
-						pc->draw(C, win->eventstate->x - ar_other->winrct.xmin, win->eventstate->y - ar_other->winrct.ymin, pc->customdata);
+						pc->draw(C,
+						         x - ar_other->winrct.xmin,
+						         y - ar_other->winrct.ymin,
+						         pc->customdata);
+					}
+					else {
+						pc->draw(C,
+						         win->eventstate->x - ar_other->winrct.xmin,
+						         win->eventstate->y - ar_other->winrct.ymin,
+						         pc->customdata);
 					}
 				}
 			}
@@ -113,6 +121,19 @@ static int wm_area_test_invalid_backbuf(ScrArea *sa)
 		return (((View3D*)sa->spacedata.first)->flag & V3D_INVALID_BACKBUF);
 	else
 		return 1;
+}
+
+static void wm_region_test_render_do_draw(ScrArea *sa, ARegion *ar)
+{
+	if(sa->spacetype == SPACE_VIEW3D) {
+		RegionView3D *rv3d = ar->regiondata;
+		RenderEngine *engine = (rv3d)? rv3d->render_engine: NULL;
+
+		if(engine && (engine->flag & RE_ENGINE_DO_DRAW)) {
+			ar->do_draw = 1;
+			engine->flag &= ~RE_ENGINE_DO_DRAW;
+		}
+	}
 }
 
 /********************** draw all **************************/
@@ -207,7 +228,7 @@ static void wm_method_draw_overlap_all(bContext *C, wmWindow *win, int exchange)
 	for(sa= screen->areabase.first; sa; sa= sa->next)
 		for(ar= sa->regionbase.first; ar; ar= ar->next)
 			if(ar->swinid && !wm_area_test_invalid_backbuf(sa))
-					ED_region_tag_redraw(ar);
+				ED_region_tag_redraw(ar);
 
 	/* flush overlapping regions */
 	if(screen->regionbase.first) {
@@ -342,36 +363,12 @@ typedef struct wmDrawTriple {
 	GLenum target;
 } wmDrawTriple;
 
-static int is_pow2(int n)
-{
-	return ((n)&(n-1))==0;
-}
-
-static int smaller_pow2(int n)
-{
-	while (!is_pow2(n))
-		n= n&(n-1);
-
-	return n;
-}
-
-static int larger_pow2(int n)
-{
-	if (is_pow2(n))
-		return n;
-
-	while(!is_pow2(n))
-		n= n&(n-1);
-
-	return n*2;
-}
-
 static void split_width(int x, int n, int *splitx, int *nx)
 {
 	int a, newnx, waste;
 
 	/* if already power of two just use it */
-	if(is_pow2(x)) {
+	if(is_power_of_2_i(x)) {
 		splitx[0]= x;
 		(*nx)++;
 		return;
@@ -379,12 +376,12 @@ static void split_width(int x, int n, int *splitx, int *nx)
 
 	if(n == 1) {
 		/* last part, we have to go larger */
-		splitx[0]= larger_pow2(x);
+		splitx[0]= power_of_2_max_i(x);
 		(*nx)++;
 	}
 	else {
 		/* two or more parts to go, use smaller part */
-		splitx[0]= smaller_pow2(x);
+		splitx[0]= power_of_2_min_i(x);
 		newnx= ++(*nx);
 		split_width(x-splitx[0], n-1, splitx+1, &newnx);
 
@@ -393,8 +390,8 @@ static void split_width(int x, int n, int *splitx, int *nx)
 
 		/* if we waste more space or use the same amount,
 		 * revert deeper splits and just use larger */
-		if(waste >= larger_pow2(x)) {
-			splitx[0]= larger_pow2(x);
+		if(waste >= power_of_2_max_i(x)) {
+			splitx[0]= power_of_2_max_i(x);
 			memset(splitx+1, 0, sizeof(int)*(n-1));
 		}
 		else
@@ -468,7 +465,8 @@ static int wm_triple_gen_textures(wmWindow *win, wmDrawTriple *triple)
 
 			if(triple->x[x] > maxsize || triple->y[y] > maxsize) {
 				glBindTexture(triple->target, 0);
-				printf("WM: failed to allocate texture for triple buffer drawing (texture too large for graphics card).\n");
+				printf("WM: failed to allocate texture for triple buffer drawing "
+				       "(texture too large for graphics card).\n");
 				return 0;
 			}
 
@@ -578,8 +576,7 @@ static void wm_method_draw_triple(bContext *C, wmWindow *win)
 	else {
 		win->drawdata= MEM_callocN(sizeof(wmDrawTriple), "wmDrawTriple");
 
-		if(!wm_triple_gen_textures(win, win->drawdata))
-		{
+		if(!wm_triple_gen_textures(win, win->drawdata)) {
 			wm_draw_triple_fail(C, win);
 			return;
 		}
@@ -664,13 +661,28 @@ static int wm_draw_update_test_window(wmWindow *win)
 {
 	ScrArea *sa;
 	ARegion *ar;
+	int do_draw= 0;
 
 	for(ar= win->screen->regionbase.first; ar; ar= ar->next) {
 		if(ar->do_draw_overlay) {
 			wm_tag_redraw_overlay(win, ar);
 			ar->do_draw_overlay= 0;
 		}
+		if(ar->swinid && ar->do_draw)
+			do_draw= 1;
 	}
+
+	for(sa= win->screen->areabase.first; sa; sa= sa->next) {
+		for(ar=sa->regionbase.first; ar; ar= ar->next) {
+			wm_region_test_render_do_draw(sa, ar);
+
+			if(ar->swinid && ar->do_draw)
+				do_draw = 1;
+		}
+	}
+
+	if(do_draw)
+		return 1;
 	
 	if(win->screen->do_refresh)
 		return 1;
@@ -683,24 +695,15 @@ static int wm_draw_update_test_window(wmWindow *win)
 	if(win->screen->do_draw_drag)
 		return 1;
 	
-	for(ar= win->screen->regionbase.first; ar; ar= ar->next)
-		if(ar->swinid && ar->do_draw)
-			return 1;
-		
-	for(sa= win->screen->areabase.first; sa; sa= sa->next)
-		for(ar=sa->regionbase.first; ar; ar= ar->next)
-			if(ar->swinid && ar->do_draw)
-				return 1;
-
 	return 0;
 }
 
 static int wm_automatic_draw_method(wmWindow *win)
 {
 	/* Ideally all cards would work well with triple buffer, since if it works
-	   well gives the least redraws and is considerably faster at partial redraw
-	   for sculpting or drawing overlapping menus. For typically lower end cards
-	   copy to texture is slow though and so we use overlap instead there. */
+	 * well gives the least redraws and is considerably faster at partial redraw
+	 * for sculpting or drawing overlapping menus. For typically lower end cards
+	 * copy to texture is slow though and so we use overlap instead there. */
 
 	if(win->drawmethod == USER_DRAW_AUTOMATIC) {
 		/* ATI opensource driver is known to be very slow at this */
@@ -814,5 +817,18 @@ void wm_draw_region_clear(wmWindow *win, ARegion *ar)
 		wm_flush_regions_down(win->screen, &ar->winrct);
 
 	win->screen->do_draw= 1;
+}
+
+void WM_redraw_windows(bContext *C)
+{
+	wmWindow *win_prev= CTX_wm_window(C);
+	ScrArea *area_prev= CTX_wm_area(C);
+	ARegion *ar_prev= CTX_wm_region(C);
+
+	wm_draw_update(C);
+
+	CTX_wm_window_set(C, win_prev);
+	CTX_wm_area_set(C, area_prev);
+	CTX_wm_region_set(C, ar_prev);
 }
 

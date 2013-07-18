@@ -2,7 +2,6 @@
  *  \ingroup blpluginapi
  */
 /* Copyright (c) 1999, Not a Number / NeoGeo b.v. 
- * $Id$
  * 
  * All rights reserved.
  * 
@@ -31,8 +30,8 @@
  * SUCH DAMAGE.
  */
 
-#ifndef FLOATPATCH_H
-#define FLOATPATCH_H
+#ifndef __FLOATPATCH_H__
+#define __FLOATPATCH_H__
 
 /* floating point libs differ at systems... with these defines it comilies at all! */
 
@@ -89,5 +88,5 @@
 
 #endif
 
-#endif /* FLOATPATCH_H */
+#endif /* __FLOATPATCH_H__ */
 

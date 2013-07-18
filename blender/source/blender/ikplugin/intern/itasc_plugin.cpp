@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -91,8 +90,6 @@ typedef float Vector3[3];
 typedef float Vector4[4];
 struct IK_Target;
 typedef void (*ErrorCallback)(const iTaSC::ConstraintValues* values, unsigned int nvalues, IK_Target* iktarget);
-// For some reason, gcc doesn't find the declaration of this function in linux
-void KDL::SetToZero(JntArray& array);
 
 // one structure for each target in the scene
 struct IK_Target
@@ -271,7 +268,7 @@ static int initialize_chain(Object *ob, bPoseChannel *pchan_tip, bConstraint *co
 
 		if (curchan->iktree.first != NULL)
 			// Oh oh, there is already a chain starting from this channel and our chain is longer... 
-			// Should handle this by moving the previous chain up to the begining of our chain
+			// Should handle this by moving the previous chain up to the beginning of our chain
 			// For now we just stop here
 			break;
 	}
@@ -327,11 +324,19 @@ static int initialize_chain(Object *ob, bPoseChannel *pchan_tip, bConstraint *co
 				break;
 			for(; a<size && t<tree->totchannel && tree->pchan[t]==chanlist[segcount-a-1]; a++, t++);
 		}
-		parent= a-1;
+
 		segcount= segcount-a;
 		target->tip= tree->totchannel + segcount - 1;
 
 		if (segcount > 0) {
+			for(parent = a - 1; parent < tree->totchannel; parent++)
+				if(tree->pchan[parent] == chanlist[segcount-1]->parent)
+					break;
+			
+			/* shouldn't happen, but could with dependency cycles */
+			if(parent == tree->totchannel)
+				parent = a - 1;
+
 			/* resize array */
 			newsize= tree->totchannel + segcount;
 			oldchan= tree->pchan;
@@ -470,7 +475,7 @@ static void GetEulerXZY(const KDL::Rotation& R, double& X,double& Z,double& Y)
 	if (fabs(R(0,1)) > 1.0 - KDL::epsilon ) {
         X = -KDL::sign(R(0,1)) * KDL::atan2(R(1,2), R(1,0));
         Z = -KDL::sign(R(0,1)) * KDL::PI / 2;
-        Y = 0.0 ;
+        Y = 0.0;
     } else {
         X = KDL::atan2(R(2,1), R(1,1));
         Z = KDL::atan2(-R(0,1), KDL::sqrt( KDL::sqr(R(0,0)) + KDL::sqr(R(0,2))));
@@ -483,7 +488,7 @@ static void GetEulerXYZ(const KDL::Rotation& R, double& X,double& Y,double& Z)
 	if (fabs(R(0,2)) > 1.0 - KDL::epsilon ) {
         X = KDL::sign(R(0,2)) * KDL::atan2(-R(1,0), R(1,1));
         Y = KDL::sign(R(0,2)) * KDL::PI / 2;
-        Z = 0.0 ;
+        Z = 0.0;
     } else {
         X = KDL::atan2(-R(1,2), R(2,2));
         Y = KDL::atan2(R(0,2), KDL::sqrt( KDL::sqr(R(0,0)) + KDL::sqr(R(0,1))));
@@ -559,11 +564,11 @@ static bool target_callback(const iTaSC::Timestamp& timestamp, const iTaSC::Fram
 			pchan = pchan->parent;
 			float chanmat[4][4];
 			copy_m4_m4(chanmat, pchan->pose_mat);
-			VECCOPY(chanmat[3], pchan->pose_tail);
+			copy_v3_v3(chanmat[3], pchan->pose_tail);
 			mul_serie_m4(restmat, target->owner->obmat, chanmat, target->eeRest, NULL, NULL, NULL, NULL, NULL);
 		} 
 		else {
-			mul_m4_m4m4(restmat, target->eeRest, target->owner->obmat);
+			mult_m4_m4m4(restmat, target->owner->obmat, target->eeRest);
 		}
 		// blend the target
 		blend_m4_m4m4(tarmat, restmat, tarmat, constraint->enforce);
@@ -586,11 +591,11 @@ static bool base_callback(const iTaSC::Timestamp& timestamp, const iTaSC::Frame&
 		pchan = pchan->parent;
 		float chanmat[4][4];
 		copy_m4_m4(chanmat, pchan->pose_mat);
-		VECCOPY(chanmat[3], pchan->pose_tail);
+		copy_v3_v3(chanmat[3], pchan->pose_tail);
 		// save the base as a frame too so that we can compute deformation
 		// after simulation
 		ikscene->baseFrame.setValue(&chanmat[0][0]);
-		mul_m4_m4m4(rootmat, chanmat, ikscene->blArmature->obmat);
+		mult_m4_m4m4(rootmat, ikscene->blArmature->obmat, chanmat);
 	} 
 	else {
 		copy_m4_m4(rootmat, ikscene->blArmature->obmat);
@@ -615,11 +620,11 @@ static bool base_callback(const iTaSC::Timestamp& timestamp, const iTaSC::Frame&
 		// get polar target matrix in world space
 		get_constraint_target_matrix(ikscene->blscene, ikscene->polarConstraint, 1, CONSTRAINT_OBTYPE_OBJECT, ikscene->blArmature, mat, 1.0);
 		// convert to armature space
-		mul_m4_m4m4(polemat, mat, imat);
+		mult_m4_m4m4(polemat, imat, mat);
 		// get the target in world space (was computed before as target object are defined before base object)
 		iktarget->target->getPose().getValue(mat[0]);
 		// convert to armature space
-		mul_m4_m4m4(goalmat, mat, imat);
+		mult_m4_m4m4(goalmat, imat, mat);
 		// take position of target, polar target, end effector, in armature space
 		KDL::Vector goalpos(goalmat[3]);
 		KDL::Vector polepos(polemat[3]);
@@ -885,33 +890,32 @@ static int convert_channels(IK_Scene *ikscene, PoseTree *tree)
 			flag |= IK_TRANSY;
 		}
 		/*
-		Logic to create the segments:
-		RX,RY,RZ = rotational joints with no length
-		RY(tip) = rotational joints with a fixed length arm = (0,length,0)
-		TY = translational joint on Y axis
-		F(pos) = fixed joint with an arm at position pos 
-		Conversion rule of the above flags:
-		-   ==> F(tip)
-		X   ==> RX(tip)
-		Y   ==> RY(tip)
-		Z   ==> RZ(tip)
-		XY  ==> RX+RY(tip)
-		XZ  ==> RX+RZ(tip)
-		YZ  ==> RZ+RY(tip)
-		XYZ ==> full spherical unless there are limits, in which case RX+RZ+RY(tip)
-		In case of stretch, tip=(0,0,0) and there is an additional TY joint
-		The frame at last of these joints represents the tail of the bone. 
-		The head is computed by a reverse translation on Y axis of the bone length
-		or in case of TY joint, by the frame at previous joint.
-		In case of separation of bones, there is an additional F(head) joint
-
-		Computing rest pose and length is complicated: the solver works in world space
-		Here is the logic:
-		rest position is computed only from bone->bone_mat.
-		bone length is computed from bone->length multiplied by the scaling factor of
-		the armature. Non-uniform scaling will give bad result!
-
-		*/
+		 * Logic to create the segments:
+		 * RX,RY,RZ = rotational joints with no length
+		 * RY(tip) = rotational joints with a fixed length arm = (0,length,0)
+		 * TY = translational joint on Y axis
+		 * F(pos) = fixed joint with an arm at position pos
+		 * Conversion rule of the above flags:
+		 * -   ==> F(tip)
+		 * X   ==> RX(tip)
+		 * Y   ==> RY(tip)
+		 * Z   ==> RZ(tip)
+		 * XY  ==> RX+RY(tip)
+		 * XZ  ==> RX+RZ(tip)
+		 * YZ  ==> RZ+RY(tip)
+		 * XYZ ==> full spherical unless there are limits, in which case RX+RZ+RY(tip)
+		 * In case of stretch, tip=(0,0,0) and there is an additional TY joint
+		 * The frame at last of these joints represents the tail of the bone.
+		 * The head is computed by a reverse translation on Y axis of the bone length
+		 * or in case of TY joint, by the frame at previous joint.
+		 * In case of separation of bones, there is an additional F(head) joint
+		 *
+		 * Computing rest pose and length is complicated: the solver works in world space
+		 * Here is the logic:
+		 * rest position is computed only from bone->bone_mat.
+		 * bone length is computed from bone->length multiplied by the scaling factor of
+		 * the armature. Non-uniform scaling will give bad result!
+		 */
 		switch (flag & (IK_XDOF|IK_YDOF|IK_ZDOF))
 		{
 		default:
@@ -996,7 +1000,7 @@ static void convert_pose(IK_Scene *ikscene)
 			copy_m4_m4(bmat, bone->arm_mat);
 		}
 		invert_m4_m4(rmat, bmat);
-		mul_m4_m4m4(bmat, pchan->pose_mat, rmat);
+		mult_m4_m4m4(bmat, rmat, pchan->pose_mat);
 		normalize_m4(bmat);
 		boneRot.setValue(bmat[0]);
 		GetJointRotation(boneRot, ikchan->jointType, rot);
@@ -1022,7 +1026,7 @@ static void rest_pose(IK_Scene *ikscene)
 	// assume uniform scaling and take Y scale as general scale for the armature
 	scale = len_v3(ikscene->blArmature->obmat[1]);
 	// rest pose is 0 
-	KDL::SetToZero(ikscene->jointArray);
+	SetToZero(ikscene->jointArray);
 	// except for transY joints
 	rot = &ikscene->jointArray(0);
 	for(joint=a=0, ikchan = ikscene->channels; a<ikscene->numchan && joint<ikscene->numjoint; ++a, ++ikchan) {
@@ -1412,7 +1416,7 @@ static IK_Scene* convert_tree(Scene *blscene, Object *ob, bPoseChannel *pchan)
 		copy_m4_m4(mat, pchan->bone->arm_mat);
 		copy_v3_v3(mat[3], pchan->bone->arm_tail);
 		// get the rest pose relative to the armature base
-		mul_m4_m4m4(iktarget->eeRest, mat, invBaseFrame);
+		mult_m4_m4m4(iktarget->eeRest, invBaseFrame, mat);
 		iktarget->eeBlend = (!ikscene->polarConstraint && condata->type==CONSTRAINT_IK_COPYPOSE) ? true : false;
 		// use target_callback to make sure the initPose includes enforce coefficient
 		target_callback(iTaSC::Timestamp(), iTaSC::F_identity, initPose, iktarget);
@@ -1663,12 +1667,12 @@ static void execute_scene(Scene* blscene, IK_Scene* ikscene, bItasc* ikparam, fl
 		pchan = ikchan->pchan;
 		// tail mat
 		ikchan->frame.getValue(&pchan->pose_mat[0][0]);
-		VECCOPY(pchan->pose_tail, pchan->pose_mat[3]);
+		copy_v3_v3(pchan->pose_tail, pchan->pose_mat[3]);
 		// shift to head
-		VECCOPY(yaxis, pchan->pose_mat[1]);
+		copy_v3_v3(yaxis, pchan->pose_mat[1]);
 		mul_v3_fl(yaxis, length);
 		sub_v3_v3v3(pchan->pose_mat[3], pchan->pose_mat[3], yaxis);
-		VECCOPY(pchan->pose_head, pchan->pose_mat[3]);
+		copy_v3_v3(pchan->pose_head, pchan->pose_mat[3]);
 		// add scale
 		mul_v3_fl(pchan->pose_mat[0], scale);
 		mul_v3_fl(pchan->pose_mat[1], scale);

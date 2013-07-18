@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -107,8 +105,14 @@ void AUD_SequencerReader::read(int& length, bool& eos, sample_t* buffer)
 
 			if(result < 0)
 			{
-				handle = new AUD_SequencerHandle(entry, m_device);
-				handles.push_front(handle);
+				try
+				{
+					handle = new AUD_SequencerHandle(entry, m_device);
+					handles.push_front(handle);
+				}
+				catch(AUD_Exception&)
+				{
+				}
 				eit++;
 			}
 			else if(result == 0)
@@ -132,8 +136,14 @@ void AUD_SequencerReader::read(int& length, bool& eos, sample_t* buffer)
 
 		while(eit != m_factory->m_entries.end())
 		{
-			handle = new AUD_SequencerHandle(*eit, m_device);
-			handles.push_front(handle);
+			try
+			{
+				handle = new AUD_SequencerHandle(*eit, m_device);
+				handles.push_front(handle);
+			}
+			catch(AUD_Exception&)
+			{
+			}
 			eit++;
 		}
 
@@ -162,10 +172,12 @@ void AUD_SequencerReader::read(int& length, bool& eos, sample_t* buffer)
 
 		for(AUD_HandleIterator it = m_handles.begin(); it != m_handles.end(); it++)
 		{
-			(*it)->update(time, frame);
+			(*it)->update(time, frame, m_factory->m_fps);
 		}
 
 		m_factory->m_volume.read(frame, &volume);
+		if(m_factory->m_muted)
+			volume = 0.0f;
 		m_device.setVolume(volume);
 
 		m_factory->m_orientation.read(frame, q.get());
@@ -174,7 +186,7 @@ void AUD_SequencerReader::read(int& length, bool& eos, sample_t* buffer)
 		m_device.setListenerLocation(v);
 		m_factory->m_location.read(frame + 1, v2.get());
 		v2 -= v;
-		m_device.setListenerVelocity(v2);
+		m_device.setListenerVelocity(v2 * m_factory->m_fps);
 
 		m_device.read(reinterpret_cast<data_t*>(buffer + specs.channels * pos), len);
 

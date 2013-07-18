@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SEQUENCERREADER
-#define AUD_SEQUENCERREADER
+#ifndef __AUD_SEQUENCERREADER_H__
+#define __AUD_SEQUENCERREADER_H__
 
 #include "AUD_IReader.h"
 #include "AUD_ReadDevice.h"
@@ -98,4 +96,4 @@ public:
 	virtual void read(int& length, bool& eos, sample_t* buffer);
 };
 
-#endif //AUD_SEQUENCERREADER
+#endif //__AUD_SEQUENCERREADER_H__

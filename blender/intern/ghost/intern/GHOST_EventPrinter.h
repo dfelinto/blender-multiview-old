@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_EventPrinter class.
  */
 
-#ifndef _GHOST_EVENT_PRINTER_H_
-#define _GHOST_EVENT_PRINTER_H_
+#ifndef __GHOST_EVENTPRINTER_H__
+#define __GHOST_EVENTPRINTER_H__
 
 #include "GHOST_IEventConsumer.h"
 
@@ -61,5 +60,5 @@ protected:
 	void	getKeyString(GHOST_TKey key, char str[32]) const;
 };
 
-#endif // _GHOST_EVENT_PRINTER_H_
+#endif // __GHOST_EVENTPRINTER_H__
 

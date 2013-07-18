@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,12 +26,12 @@
  */
 
 /** \file ghost/intern/GHOST_EventWheel.h
- *  \ingroup GHOSTeel.h
+ *  \ingroup GHOST
  * Declaration of GHOST_EventWheel class.
  */
 
-#ifndef _GHOST_EVENT_WHEEL_H_
-#define _GHOST_EVENT_WHEEL_H_
+#ifndef __GHOST_EVENTWHEEL_H__
+#define __GHOST_EVENTWHEEL_H__
 
 #include "GHOST_Event.h"
 
@@ -65,5 +64,5 @@ protected:
 };
 
 
-#endif // _GHOST_EVENT_WHEEL_H_
+#endif // __GHOST_EVENTWHEEL_H__
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -61,6 +59,7 @@
 
 #include "ED_particle.h"
 #include "ED_screen.h"
+#include "ED_object.h"
 
 #include "physics_intern.h"
 
@@ -68,7 +67,7 @@
 
 static int particle_system_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 	Scene *scene = CTX_data_scene(C);
 
 	if(!scene || !ob)
@@ -99,7 +98,7 @@ void OBJECT_OT_particle_system_add(wmOperatorType *ot)
 
 static int particle_system_remove_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 	Scene *scene = CTX_data_scene(C);
 	int mode_orig = ob->mode;
 	if(!scene || !ob)
@@ -583,7 +582,7 @@ static void disconnect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 static int disconnect_hair_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene= CTX_data_scene(C);
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= NULL;
 	int all = RNA_boolean_get(op->ptr, "all");
@@ -650,6 +649,10 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 	else
 		dm= mesh_get_derived_deform(scene, ob, CD_MASK_BAREMESH);
 
+	/* BMESH_ONLY, deform dm may not have tessface */
+	DM_ensure_tessface(dm);
+
+
 	numverts = dm->getNumVerts (dm);
 
 	/* convert to global coordinates */
@@ -672,7 +675,7 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 			continue;
 		}
 
-		mface = CDDM_get_face(dm,nearest.index);
+		mface = CDDM_get_tessface(dm,nearest.index);
 
 		copy_v3_v3(v[0], CDDM_get_vert(dm,mface->v1)->co);
 		copy_v3_v3(v[1], CDDM_get_vert(dm,mface->v2)->co);
@@ -690,7 +693,7 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 		psys_mat_hair_to_global(ob, psmd->dm, psys->part->from, pa, hairmat);
 		invert_m4_m4(imat,hairmat);
 
-		VECSUB(vec, nearest.co, key->co);
+		sub_v3_v3v3(vec, nearest.co, key->co);
 
 		if(point) {
 			ekey = point->keys;
@@ -698,7 +701,7 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 		}
 
 		for(k=0,key=pa->hair; k<pa->totkey; k++,key++) {
-			VECADD(key->co, key->co, vec);
+			add_v3_v3(key->co, vec);
 			mul_m4_v3(imat,key->co);
 
 			if(ekey) {
@@ -721,7 +724,7 @@ static void connect_hair(Scene *scene, Object *ob, ParticleSystem *psys)
 static int connect_hair_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene= CTX_data_scene(C);
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob= ED_object_context(C);
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem);
 	ParticleSystem *psys= NULL;
 	int all = RNA_boolean_get(op->ptr, "all");

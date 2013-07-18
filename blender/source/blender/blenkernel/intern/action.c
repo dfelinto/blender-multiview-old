@@ -43,6 +43,7 @@
 #include "DNA_object_types.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_bpath.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "BLI_ghash.h"
@@ -64,17 +65,17 @@
 #include "RNA_access.h"
 
 /* *********************** NOTE ON POSE AND ACTION **********************
-
-  - Pose is the local (object level) component of armature. The current
-	object pose is saved in files, and (will be) is presorted for dependency
-  - Actions have fewer (or other) channels, and write data to a Pose
-  - Currently ob->pose data is controlled in where_is_pose only. The (recalc)
-	event system takes care of calling that
-  - The NLA system (here too) uses Poses as interpolation format for Actions
-  - Therefore we assume poses to be static, and duplicates of poses have channels in
-	same order, for quick interpolation reasons
-
-  ****************************** (ton) ************************************ */
+ *
+ * - Pose is the local (object level) component of armature. The current
+ *   object pose is saved in files, and (will be) is presorted for dependency
+ * - Actions have fewer (or other) channels, and write data to a Pose
+ * - Currently ob->pose data is controlled in where_is_pose only. The (recalc)
+ *   event system takes care of calling that
+ * - The NLA system (here too) uses Poses as interpolation format for Actions
+ * - Therefore we assume poses to be static, and duplicates of poses have channels in
+ *   same order, for quick interpolation reasons
+ *
+ * ****************************** (ton) ************************************ */
 
 /* ***************** Library data level operations on action ************** */
 
@@ -91,11 +92,11 @@ bAction *add_empty_action(const char name[])
 
 /* temp data for make_local_action */
 typedef struct tMakeLocalActionContext {
-	bAction *act;    /* original action */
-	bAction *actn;   /* new action */
+	bAction *act;       /* original action */
+	bAction *act_new;   /* new action */
 	
-	int lib;         /* some action users were libraries */
-	int local;       /* some action users were not libraries */
+	int is_lib;         /* some action users were libraries */
+	int is_local;       /* some action users were not libraries */
 } tMakeLocalActionContext;
 
 /* helper function for make_local_action() - local/lib init step */
@@ -104,10 +105,8 @@ static void make_localact_init_cb(ID *id, AnimData *adt, void *mlac_ptr)
 	tMakeLocalActionContext *mlac = (tMakeLocalActionContext *)mlac_ptr;
 	
 	if (adt->action == mlac->act) {
-		if (id->lib) 
-			mlac->lib = 1;
-		else 
-			mlac->local = 1;
+		if (id->lib) mlac->is_lib= TRUE;
+		else mlac->is_local= TRUE;
 	}
 }
 
@@ -117,10 +116,10 @@ static void make_localact_apply_cb(ID *id, AnimData *adt, void *mlac_ptr)
 	tMakeLocalActionContext *mlac = (tMakeLocalActionContext *)mlac_ptr;
 	
 	if (adt->action == mlac->act) {
-		if (id->lib==0) {
-			adt->action = mlac->actn;
+		if (id->lib == NULL) {
+			adt->action = mlac->act_new;
 			
-			id_us_plus(&mlac->actn->id);
+			id_us_plus(&mlac->act_new->id);
 			id_us_min(&mlac->act->id);
 		}
 	}
@@ -129,7 +128,7 @@ static void make_localact_apply_cb(ID *id, AnimData *adt, void *mlac_ptr)
 // does copy_fcurve...
 void make_local_action(bAction *act)
 {
-	tMakeLocalActionContext mlac = {act, NULL, 0, 0};
+	tMakeLocalActionContext mlac = {act, NULL, FALSE, FALSE};
 	Main *bmain= G.main;
 	
 	if (act->id.lib==NULL) 
@@ -137,24 +136,21 @@ void make_local_action(bAction *act)
 	
 	// XXX: double-check this; it used to be just single-user check, but that was when fake-users were still default
 	if ((act->id.flag & LIB_FAKEUSER) && (act->id.us<=1)) {
-		act->id.lib= NULL;
-		act->id.flag= LIB_LOCAL;
-		new_id(&bmain->action, (ID *)act, NULL);
+		id_clear_lib_data(bmain, &act->id);
 		return;
 	}
 	
 	BKE_animdata_main_cb(bmain, make_localact_init_cb, &mlac);
 	
-	if (mlac.local && mlac.lib==0) {
-		act->id.lib= NULL;
-		act->id.flag= LIB_LOCAL;
-		//make_local_action_channels(act);
-		new_id(&bmain->action, (ID *)act, NULL);
+	if (mlac.is_local && mlac.is_lib==FALSE) {
+		id_clear_lib_data(bmain, &act->id);
 	}
-	else if (mlac.local && mlac.lib) {
-		mlac.actn= copy_action(act);
-		mlac.actn->id.us= 0;
-		
+	else if (mlac.is_local && mlac.is_lib) {
+		mlac.act_new= copy_action(act);
+		mlac.act_new->id.us= 0;
+
+		BKE_id_lib_local_paths(bmain, act->id.lib, &mlac.act_new->id);
+
 		BKE_animdata_main_cb(bmain, make_localact_apply_cb, &mlac);
 	}
 }
@@ -189,7 +185,7 @@ bAction *copy_action (bAction *src)
 	
 	if (src == NULL) 
 		return NULL;
-	dst= copy_libblock(src);
+	dst= copy_libblock(&src->id);
 	
 	/* duplicate the lists of groups and markers */
 	BLI_duplicatelist(&dst->groups, &src->groups);
@@ -270,7 +266,7 @@ bActionGroup *action_groups_add_new (bAction *act, const char name[])
 	
 	/* make it selected, with default name */
 	agrp->flag = AGRP_SELECTED;
-	strncpy(agrp->name, name[0] ? name : "Group", sizeof(agrp->name));
+	BLI_strncpy(agrp->name, name[0] ? name : "Group", sizeof(agrp->name));
 	
 	/* add to action, and validate */
 	BLI_addtail(&act->groups, agrp);
@@ -524,7 +520,6 @@ void copy_pose (bPose **dst, bPose *src, int copycon)
 		if (copycon) {
 			copy_constraints(&listb, &pchan->constraints, TRUE);  // copy_constraints NULLs listb
 			pchan->constraints= listb;
-			pchan->path= NULL; // XXX remove this line when the new motionpaths are ready... (depreceated code)
 			pchan->mpath= NULL; /* motion paths should not get copied yet... */
 		}
 		
@@ -595,17 +590,12 @@ void free_pose_channels_hash(bPose *pose)
 
 void free_pose_channel(bPoseChannel *pchan)
 {
-	// XXX this case here will need to be removed when the new motionpaths are ready
-	if (pchan->path) {
-		MEM_freeN(pchan->path);
-		pchan->path= NULL;
-	}
-	
+
 	if (pchan->mpath) {
 		animviz_free_motionpath(pchan->mpath);
 		pchan->mpath= NULL;
 	}
-	
+
 	free_constraints(&pchan->constraints);
 	
 	if (pchan->prop) {
@@ -654,12 +644,12 @@ static void copy_pose_channel_data(bPoseChannel *pchan, const bPoseChannel *chan
 {
 	bConstraint *pcon, *con;
 	
-	VECCOPY(pchan->loc, chan->loc);
-	VECCOPY(pchan->size, chan->size);
-	VECCOPY(pchan->eul, chan->eul);
-	VECCOPY(pchan->rotAxis, chan->rotAxis);
+	copy_v3_v3(pchan->loc, chan->loc);
+	copy_v3_v3(pchan->size, chan->size);
+	copy_v3_v3(pchan->eul, chan->eul);
+	copy_v3_v3(pchan->rotAxis, chan->rotAxis);
 	pchan->rotAngle= chan->rotAngle;
-	QUATCOPY(pchan->quat, chan->quat);
+	copy_qt_qt(pchan->quat, chan->quat);
 	pchan->rotmode= chan->rotmode;
 	copy_m4_m4(pchan->chan_mat, (float(*)[4])chan->chan_mat);
 	copy_m4_m4(pchan->pose_mat, (float(*)[4])chan->pose_mat);
@@ -688,9 +678,9 @@ void duplicate_pose_channel_data(bPoseChannel *pchan, const bPoseChannel *pchan_
 
 	/* ik (dof) settings */
 	pchan->ikflag = pchan_from->ikflag;
-	VECCOPY(pchan->limitmin, pchan_from->limitmin);
-	VECCOPY(pchan->limitmax, pchan_from->limitmax);
-	VECCOPY(pchan->stiffness, pchan_from->stiffness);
+	copy_v3_v3(pchan->limitmin, pchan_from->limitmin);
+	copy_v3_v3(pchan->limitmax, pchan_from->limitmax);
+	copy_v3_v3(pchan->stiffness, pchan_from->stiffness);
 	pchan->ikstretch= pchan_from->ikstretch;
 	pchan->ikrotweight= pchan_from->ikrotweight;
 	pchan->iklinweight= pchan_from->iklinweight;
@@ -887,7 +877,7 @@ void calc_action_range(const bAction *act, float *start, float *end, short incl_
 				
 				/* get extents for this curve */
 				// TODO: allow enabling/disabling this?
-				calc_fcurve_range(fcu, &nmin, &nmax, FALSE);
+				calc_fcurve_range(fcu, &nmin, &nmax, FALSE, TRUE);
 				
 				/* compare to the running tally */
 				min= MIN2(min, nmin);
@@ -1064,7 +1054,7 @@ short action_get_item_transforms (bAction *act, Object *ob, bPoseChannel *pchan,
 /* Copy the data from the action-pose (src) into the pose */
 /* both args are assumed to be valid */
 /* exported to game engine */
-/* Note! this assumes both poses are aligned, this isnt always true when dealing with user poses */
+/* Note! this assumes both poses are aligned, this isn't always true when dealing with user poses */
 void extract_pose_from_pose(bPose *pose, const bPose *src)
 {
 	const bPoseChannel *schan;
@@ -1125,13 +1115,13 @@ void copy_pose_result(bPose *to, bPose *from)
 			copy_m4_m4(pchanto->chan_mat, pchanfrom->chan_mat);
 			
 			/* used for local constraints */
-			VECCOPY(pchanto->loc, pchanfrom->loc);
-			QUATCOPY(pchanto->quat, pchanfrom->quat);
-			VECCOPY(pchanto->eul, pchanfrom->eul);
-			VECCOPY(pchanto->size, pchanfrom->size);
+			copy_v3_v3(pchanto->loc, pchanfrom->loc);
+			copy_qt_qt(pchanto->quat, pchanfrom->quat);
+			copy_v3_v3(pchanto->eul, pchanfrom->eul);
+			copy_v3_v3(pchanto->size, pchanfrom->size);
 			
-			VECCOPY(pchanto->pose_head, pchanfrom->pose_head);
-			VECCOPY(pchanto->pose_tail, pchanfrom->pose_tail);
+			copy_v3_v3(pchanto->pose_head, pchanfrom->pose_head);
+			copy_v3_v3(pchanto->pose_tail, pchanfrom->pose_tail);
 			
 			pchanto->rotmode= pchanfrom->rotmode;
 			pchanto->flag= pchanfrom->flag;
@@ -1209,7 +1199,7 @@ static void blend_pose_strides(bPose *dst, bPose *src, float srcweight, short mo
 {
 	float dstweight;
 	
-	switch (mode){
+	switch (mode) {
 		case ACTSTRIPMODE_BLEND:
 			dstweight = 1.0F - srcweight;
 			break;
@@ -1224,23 +1214,22 @@ static void blend_pose_strides(bPose *dst, bPose *src, float srcweight, short mo
 }
 
 
-/* 
-
-bone matching diagram, strips A and B
-
-				 .------------------------.
-				 |         A              |
-				 '------------------------'
-				 .          .             b2
-				 .          .-------------v----------.
-				 .      	|         B   .          |
-				 .          '------------------------'
-				 .          .             .
-				 .          .             .
-offset:          .    0     .    A-B      .  A-b2+B     
-				 .          .             .
-
-*/
+/*
+ * bone matching diagram, strips A and B
+ * 
+ *                  .------------------------.
+ *                  |         A              |
+ *                  '------------------------'
+ *                  .          .             b2
+ *                  .          .-------------v----------.
+ *                  .          |         B   .          |
+ *                  .          '------------------------'
+ *                  .          .             .
+ *                  .          .             .
+ * offset:          .    0     .    A-B      .  A-b2+B
+ *                  .          .             .
+ *
+ * */
 
 
 static void blend_pose_offset_bone(bActionStrip *strip, bPose *dst, bPose *src, float srcweight, short mode)
@@ -1304,8 +1293,8 @@ static void blend_pose_offset_bone(bActionStrip *strip, bPose *dst, bPose *src, 
 }
 
 /* added "sizecorr" here, to allow armatures to be scaled and still have striding.
-   Only works for uniform scaling. In general I'd advise against scaling armatures ever though! (ton)
-*/
+ * Only works for uniform scaling. In general I'd advise against scaling armatures ever though! (ton)
+ */
 static float stridechannel_frame(Object *ob, float sizecorr, bActionStrip *strip, Path *path, float pathdist, float *stride_offset)
 {
 	bAction *act= strip->act;
@@ -1499,7 +1488,7 @@ static void do_nla(Scene *scene, Object *ob, int blocktype)
 	}
 	
 	/* and now go over all strips */
-	for (strip=ob->nlastrips.first; strip; strip=strip->next){
+	for (strip=ob->nlastrips.first; strip; strip=strip->next) {
 		doit=dostride= 0;
 		
 		if (strip->act && !(strip->flag & ACTSTRIP_MUTE)) {	/* so theres an action */
@@ -1507,10 +1496,10 @@ static void do_nla(Scene *scene, Object *ob, int blocktype)
 			/* Determine if the current frame is within the strip's range */
 			length = strip->end-strip->start;
 			actlength = strip->actend-strip->actstart;
-			striptime = (scene_cfra-(strip->start)) / length;
-			stripframe = (scene_cfra-(strip->start)) ;
+			striptime = (scene_cfra - strip->start) / length;
+			stripframe = (scene_cfra - strip->start);
 
-			if (striptime>=0.0){
+			if (striptime>=0.0) {
 				
 				if(blocktype==ID_AR) 
 					rest_pose(tpose);
@@ -1519,14 +1508,14 @@ static void do_nla(Scene *scene, Object *ob, int blocktype)
 				if (striptime < 1.0f + 0.1f/length) {
 					
 					/* Handle path */
-					if ((strip->flag & ACTSTRIP_USESTRIDE) && (blocktype==ID_AR) && (ob->ipoflag & OB_DISABLE_PATH)==0){
+					if ((strip->flag & ACTSTRIP_USESTRIDE) && (blocktype==ID_AR) && (ob->ipoflag & OB_DISABLE_PATH)==0) {
 						Object *parent= get_parent_path(ob);
 						
 						if (parent) {
 							Curve *cu = parent->data;
 							float ctime, pdist;
 							
-							if (cu->flag & CU_PATH){
+							if (cu->flag & CU_PATH) {
 								/* Ensure we have a valid path */
 								if(cu->path==NULL || cu->path->data==NULL) makeDispListCurveTypes(scene, parent, 0);
 								if(cu->path) {
@@ -1600,7 +1589,7 @@ static void do_nla(Scene *scene, Object *ob, int blocktype)
 				}
 				/* Handle extend */
 				else {
-					if (strip->flag & ACTSTRIP_HOLDLASTFRAME){
+					if (strip->flag & ACTSTRIP_HOLDLASTFRAME) {
 						/* we want the strip to hold on the exact fraction of the repeat value */
 						
 						frametime = actlength * (strip->repeat-(int)strip->repeat);
@@ -1626,13 +1615,13 @@ static void do_nla(Scene *scene, Object *ob, int blocktype)
 				}
 				
 				/* Handle blendin & blendout */
-				if (doit){
+				if (doit) {
 					/* Handle blendin */
 					
-					if (strip->blendin>0.0 && stripframe<=strip->blendin && scene_cfra>=strip->start){
+					if (strip->blendin>0.0 && stripframe<=strip->blendin && scene_cfra>=strip->start) {
 						blendfac = stripframe/strip->blendin;
 					}
-					else if (strip->blendout>0.0 && stripframe>=(length-strip->blendout) && scene_cfra<=strip->end){
+					else if (strip->blendout>0.0 && stripframe>=(length-strip->blendout) && scene_cfra<=strip->end) {
 						blendfac = (length-stripframe)/(strip->blendout);
 					}
 					else

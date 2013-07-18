@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -103,8 +102,8 @@ static int point_inside_obi(RayObject *tree, ObjectInstanceRen *UNUSED(obi), flo
 	int final_depth=0, depth=0, limit=20;
 	
 	/* set up the isect */
-	VECCOPY(isect.start, co);
-	VECCOPY(isect.dir, dir);
+	copy_v3_v3(isect.start, co);
+	copy_v3_v3(isect.dir, dir);
 	isect.mode= RE_RAY_MIRROR;
 	isect.last_hit= NULL;
 	isect.lay= -1;
@@ -285,8 +284,8 @@ static inline int lc_to_ms_I(int x, int y, int z, int *n)
 
 /* *** multiple scattering approximation *** */
 
-/* get the total amount of light energy in the light cache. used to normalise after multiple scattering */
-static float total_ss_energy(VolumePrecache *vp)
+/* get the total amount of light energy in the light cache. used to normalize after multiple scattering */
+static float total_ss_energy(Render *re, int do_test_break, VolumePrecache *vp)
 {
 	int x, y, z;
 	int *res = vp->res;
@@ -302,12 +301,14 @@ static float total_ss_energy(VolumePrecache *vp)
 				if (vp->data_b[i] > 0.f) energy += vp->data_b[i];
 			}
 		}
+
+		if (do_test_break && re->test_break(re->tbh)) break;
 	}
 	
 	return energy;
 }
 
-static float total_ms_energy(float *sr, float *sg, float *sb, int *res)
+static float total_ms_energy(Render *re, int do_test_break, float *sr, float *sg, float *sb, int *res)
 {
 	int x, y, z;
 	float energy=0.f;
@@ -322,16 +323,19 @@ static float total_ms_energy(float *sr, float *sg, float *sb, int *res)
 				if (sb[i] > 0.f) energy += sb[i];
 			}
 		}
+
+		if (do_test_break && re->test_break(re->tbh)) break;
 	}
 	
 	return energy;
 }
 
-static void ms_diffuse(float *x0, float *x, float diff, int *n) //n is the unpadded resolution
+static void ms_diffuse(Render *re, int do_test_break, float *x0, float *x, float diff, int *n) //n is the unpadded resolution
 {
 	int i, j, k, l;
 	const float dt = VOL_MS_TIMESTEP;
-	const float a = dt*diff*n[0]*n[1]*n[2];
+	size_t size = n[0]*n[1]*n[2];
+	const float a = dt*diff*size;
 	
 	for (l=0; l<20; l++)
 	{
@@ -346,7 +350,11 @@ static void ms_diffuse(float *x0, float *x, float diff, int *n) //n is the unpad
 																		) / (1+6*a);
 				}
 			}
+
+			if (do_test_break && re->test_break(re->tbh)) break;
 		}
+
+		if (re->test_break(re->tbh)) break;
 	}
 }
 
@@ -360,6 +368,7 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 	int x, y, z, m;
 	int *n = vp->res;
 	const int size = (n[0]+2)*(n[1]+2)*(n[2]+2);
+	const int do_test_break = (size > 100000);
 	double time, lasttime= PIL_check_seconds_timer();
 	float total;
 	float c=1.0f;
@@ -375,7 +384,7 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 
 	total = (float)(n[0]*n[1]*n[2]*simframes);
 	
-	energy_ss = total_ss_energy(vp);
+	energy_ss = total_ss_energy(re, do_test_break, vp);
 	
 	/* Scattering as diffusion pass */
 	for (m=0; m<simframes; m++)
@@ -410,21 +419,26 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 					}
 				}
 			}
+
+			if (do_test_break && re->test_break(re->tbh)) break;
 		}
+
+		if (re->test_break(re->tbh)) break;
+
 		SWAP(float *,sr,sr0);
 		SWAP(float *,sg,sg0);
 		SWAP(float *,sb,sb0);
 
 		/* main diffusion simulation */
-		ms_diffuse(sr0, sr, diff, n);
-		ms_diffuse(sg0, sg, diff, n);
-		ms_diffuse(sb0, sb, diff, n);
+		ms_diffuse(re, do_test_break, sr0, sr, diff, n);
+		ms_diffuse(re, do_test_break, sg0, sg, diff, n);
+		ms_diffuse(re, do_test_break, sb0, sb, diff, n);
 		
 		if (re->test_break(re->tbh)) break;
 	}
 	
-	/* normalisation factor to conserve energy */
-	energy_ms = total_ms_energy(sr, sg, sb, n);
+	/* normalization factor to conserve energy */
+	energy_ms = total_ms_energy(re, do_test_break, sr, sg, sb, n);
 	fac *= (energy_ss / energy_ms);
 	
 	/* blend multiple scattering back in the light cache */
@@ -450,6 +464,8 @@ static void multiple_scattering_diffusion(Render *re, VolumePrecache *vp, Materi
 				vp->data_b[i] = origf * vp->data_b[i] + fac * sb[j];
 			}
 		}
+
+		if (do_test_break && re->test_break(re->tbh)) break;
 	}
 
 	MEM_freeN(sr0);
@@ -477,6 +493,11 @@ static void *vol_precache_part_test(void *data)
 }
 #endif
 
+typedef struct VolPrecacheQueue {
+	ThreadQueue *work;
+	ThreadQueue *done;
+} VolPrecacheQueue;
+
 /* Iterate over the 3d voxel grid, and fill the voxels with scattering information
  *
  * It's stored in memory as 3 big float grids next to each other, one for each RGB channel.
@@ -485,57 +506,64 @@ static void *vol_precache_part_test(void *data)
  */
 static void *vol_precache_part(void *data)
 {
-	VolPrecachePart *pa =  (VolPrecachePart *)data;
-	ObjectInstanceRen *obi = pa->obi;
-	RayObject *tree = pa->tree;
-	ShadeInput *shi = pa->shi;
-	float scatter_col[3] = {0.f, 0.f, 0.f};
-	float co[3], cco[3];
-	int x, y, z, i;
-	int res[3];
+	VolPrecacheQueue *queue = (VolPrecacheQueue*)data;
+	VolPrecachePart *pa;
 
-	res[0]= pa->res[0];
-	res[1]= pa->res[1];
-	res[2]= pa->res[2];
+	while ((pa = BLI_thread_queue_pop(queue->work))) {
+		ObjectInstanceRen *obi = pa->obi;
+		RayObject *tree = pa->tree;
+		ShadeInput *shi = pa->shi;
+		float scatter_col[3] = {0.f, 0.f, 0.f};
+		float co[3], cco[3], view[3];
+		int x, y, z, i;
+		int res[3];
 
-	for (z= pa->minz; z < pa->maxz; z++) {
-		co[2] = pa->bbmin[2] + (pa->voxel[2] * (z + 0.5f));
-		
-		for (y= pa->miny; y < pa->maxy; y++) {
-			co[1] = pa->bbmin[1] + (pa->voxel[1] * (y + 0.5f));
+		if (pa->re->test_break && pa->re->test_break(pa->re->tbh))
+			break;
+
+		res[0]= pa->res[0];
+		res[1]= pa->res[1];
+		res[2]= pa->res[2];
+
+		for (z= pa->minz; z < pa->maxz; z++) {
+			co[2] = pa->bbmin[2] + (pa->voxel[2] * (z + 0.5f));
 			
-			for (x=pa->minx; x < pa->maxx; x++) {
-				co[0] = pa->bbmin[0] + (pa->voxel[0] * (x + 0.5f));
+			for (y= pa->miny; y < pa->maxy; y++) {
+				co[1] = pa->bbmin[1] + (pa->voxel[1] * (y + 0.5f));
 				
-				if (pa->re->test_break && pa->re->test_break(pa->re->tbh))
-					break;
+				for (x=pa->minx; x < pa->maxx; x++) {
+					co[0] = pa->bbmin[0] + (pa->voxel[0] * (x + 0.5f));
+					
+					if (pa->re->test_break && pa->re->test_break(pa->re->tbh))
+						break;
+					
+					/* convert from world->camera space for shading */
+					mul_v3_m4v3(cco, pa->viewmat, co);
+					
+					i= V_I(x, y, z, res);
+					
+					// don't bother if the point is not inside the volume mesh
+					if (!point_inside_obi(tree, obi, cco)) {
+						obi->volume_precache->data_r[i] = -1.0f;
+						obi->volume_precache->data_g[i] = -1.0f;
+						obi->volume_precache->data_b[i] = -1.0f;
+						continue;
+					}
+					
+					copy_v3_v3(view, cco);
+					normalize_v3(view);
+					vol_get_scattering(shi, scatter_col, cco, view);
 				
-				/* convert from world->camera space for shading */
-				mul_v3_m4v3(cco, pa->viewmat, co);
-				
-				i= V_I(x, y, z, res);
-				
-				// don't bother if the point is not inside the volume mesh
-				if (!point_inside_obi(tree, obi, cco)) {
-					obi->volume_precache->data_r[i] = -1.0f;
-					obi->volume_precache->data_g[i] = -1.0f;
-					obi->volume_precache->data_b[i] = -1.0f;
-					continue;
+					obi->volume_precache->data_r[i] = scatter_col[0];
+					obi->volume_precache->data_g[i] = scatter_col[1];
+					obi->volume_precache->data_b[i] = scatter_col[2];
+					
 				}
-				
-				copy_v3_v3(shi->view, cco);
-				normalize_v3(shi->view);
-				vol_get_scattering(shi, scatter_col, cco);
-			
-				obi->volume_precache->data_r[i] = scatter_col[0];
-				obi->volume_precache->data_g[i] = scatter_col[1];
-				obi->volume_precache->data_b[i] = scatter_col[2];
-				
 			}
 		}
+
+		BLI_thread_queue_push(queue->done, pa);
 	}
-	
-	pa->done = 1;
 	
 	return NULL;
 }
@@ -602,9 +630,6 @@ static void precache_init_parts(Render *re, RayObject *tree, ShadeInput *shi, Ob
 				minz = z * sizez;
 				maxz = minz + sizez;
 				maxz = (maxz>res[2])?res[2]:maxz;
-						
-				pa->done = 0;
-				pa->working = 0;
 				
 				pa->re = re;
 				pa->num = i;
@@ -615,7 +640,7 @@ static void precache_init_parts(Render *re, RayObject *tree, ShadeInput *shi, Ob
 				
 				copy_v3_v3(pa->bbmin, bbmin);
 				copy_v3_v3(pa->voxel, voxel);
-				VECCOPY(pa->res, res);
+				copy_v3_v3_int(pa->res, res);
 				
 				pa->minx = minx; pa->maxx = maxx;
 				pa->miny = miny; pa->maxy = maxy;
@@ -628,21 +653,6 @@ static void precache_init_parts(Render *re, RayObject *tree, ShadeInput *shi, Ob
 			}
 		}
 	}
-}
-
-static VolPrecachePart *precache_get_new_part(Render *re)
-{
-	VolPrecachePart *pa, *nextpa=NULL;
-	
-	for (pa = re->volume_precache_parts.first; pa; pa=pa->next)
-	{
-		if (pa->done==0 && pa->working==0) {
-			nextpa = pa;
-			break;
-		}
-	}
-
-	return nextpa;
 }
 
 /* calculate resolution from bounding box in world space */
@@ -678,14 +688,15 @@ static int precache_resolution(Render *re, VolumePrecache *vp, ObjectInstanceRen
 static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *obi, Material *ma)
 {
 	VolumePrecache *vp;
-	VolPrecachePart *nextpa, *pa;
+	VolPrecachePart *pa;
 	RayObject *tree;
 	ShadeInput shi;
 	ListBase threads;
+	VolPrecacheQueue queue;
 	int parts[3] = {1, 1, 1}, totparts;
 	
-	int caching=1, counter=0;
-	int totthread = re->r.threads;
+	int counter=0;
+	int totthread = re->r.threads, thread;
 	
 	double time, lasttime= PIL_check_seconds_timer();
 	
@@ -718,34 +729,29 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 	
 	precache_init_parts(re, tree, &shi, obi, totthread, parts);
 	totparts = parts[0] * parts[1] * parts[2];
+
+	/* setup work and done queues */
+	queue.work = BLI_thread_queue_init();
+	queue.done = BLI_thread_queue_init();
+	BLI_thread_queue_nowait(queue.work);
+
+	for(pa= re->volume_precache_parts.first; pa; pa= pa->next)
+		BLI_thread_queue_push(queue.work, pa);
 	
+	/* launch threads */
 	BLI_init_threads(&threads, vol_precache_part, totthread);
+
+	for(thread= 0; thread<totthread; thread++)
+		BLI_insert_thread(&threads, &queue);
 	
-	while(caching) {
+	/* loop waiting for work to be done */
+	while(counter < totparts) {
+		if(re->test_break && re->test_break(re->tbh))
+			break;
 
-		if(BLI_available_threads(&threads) && !(re->test_break(re->tbh))) {
-			nextpa = precache_get_new_part(re);
-			if (nextpa) {
-				nextpa->working = 1;
-				BLI_insert_thread(&threads, nextpa);
-			}
-		}
-		else PIL_sleep_ms(50);
+		if(BLI_thread_queue_pop_timeout(queue.done, 50))
+			counter++;
 
-		caching=0;
-		counter=0;
-		for(pa= re->volume_precache_parts.first; pa; pa= pa->next) {
-			
-			if(pa->done) {
-				counter++;
-				BLI_remove_thread(&threads, pa);
-			} else
-				caching = 1;
-		}
-		
-		if (re->test_break(re->tbh) && BLI_available_threads(&threads)==totthread)
-			caching=0;
-		
 		time= PIL_check_seconds_timer();
 		if(time-lasttime>1.0) {
 			char str[64];
@@ -757,7 +763,10 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 		}
 	}
 	
+	/* free */
 	BLI_end_threads(&threads);
+	BLI_thread_queue_free(queue.work);
+	BLI_thread_queue_free(queue.done);
 	BLI_freelistN(&re->volume_precache_parts);
 	
 	if(tree) {
@@ -766,8 +775,7 @@ static void vol_precache_objectinstance_threads(Render *re, ObjectInstanceRen *o
 		//tree= NULL;
 	}
 	
-	if (ELEM(ma->vol.shade_type, MA_VOL_SHADE_MULTIPLE, MA_VOL_SHADE_SHADEDPLUSMULTIPLE))
-	{
+	if (ELEM(ma->vol.shade_type, MA_VOL_SHADE_MULTIPLE, MA_VOL_SHADE_SHADEDPLUSMULTIPLE)) {
 		/* this should be before the filtering */
 		multiple_scattering_diffusion(re, obi->volume_precache, ma);
 	}
@@ -788,13 +796,22 @@ void volume_precache(Render *re)
 	ObjectInstanceRen *obi;
 	VolumeOb *vo;
 
+	re->i.infostr= "Volume preprocessing";
+	re->stats_draw(re->sdh, &re->i);
+
 	for(vo= re->volumes.first; vo; vo= vo->next) {
 		if (using_lightcache(vo->ma)) {
 			for(obi= re->instancetable.first; obi; obi= obi->next) {
 				if (obi->obr == vo->obr) {
 					vol_precache_objectinstance_threads(re, obi, vo->ma);
+
+					if(re->test_break && re->test_break(re->tbh))
+						break;
 				}
 			}
+
+			if(re->test_break && re->test_break(re->tbh))
+				break;
 		}
 	}
 	

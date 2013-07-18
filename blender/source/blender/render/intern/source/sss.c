@@ -1,5 +1,4 @@
-/* 
- * $Id$
+/*
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,16 +32,16 @@
 
 
 /* Possible Improvements:
-   - add fresnel terms
-   - adapt Rd table to scale, now with small scale there are a lot of misses?
-   - possible interesting method: perform sss on all samples in the tree,
-	 and then use those values interpolated somehow later. can also do this
-	 filtering on demand for speed. since we are doing things in screen
-	 space now there is an exact correspondence
-   - avoid duplicate shading (filtering points in advance, irradiance cache
-	 like lookup?)
-   - lower resolution samples
-*/
+ * - add fresnel terms
+ * - adapt Rd table to scale, now with small scale there are a lot of misses?
+ * - possible interesting method: perform sss on all samples in the tree,
+ *   and then use those values interpolated somehow later. can also do this
+ *   filtering on demand for speed. since we are doing things in screen
+ *   space now there is an exact correspondence
+ * - avoid duplicate shading (filtering points in advance, irradiance cache
+ *   like lookup?)
+ * - lower resolution samples
+ */
 
 #include <math.h>
 #include <string.h>
@@ -78,16 +77,14 @@
 #include "sss.h"
 #include "zbuf.h"
 
-extern Render R; // meh
-
 /* Generic Multiple Scattering API */
 
 /* Relevant papers:
-	[1] A Practical Model for Subsurface Light Transport
-	[2] A Rapid Hierarchical Rendering Technique for Translucent Materials
-	[3] Efficient Rendering of Local Subsurface Scattering
-	[4] Implementing a skin BSSRDF (or several...)
-*/
+ * [1] A Practical Model for Subsurface Light Transport
+ * [2] A Rapid Hierarchical Rendering Technique for Translucent Materials
+ * [3] Efficient Rendering of Local Subsurface Scattering
+ * [4] Implementing a skin BSSRDF (or several...)
+ */
 
 /* Defines */
 
@@ -165,7 +162,7 @@ typedef struct ScatterResult {
 } ScatterResult;
 
 /* Functions for BSSRDF reparametrization in to more intuitive parameters,
-   see [2] section 4 for more info. */
+ * see [2] section 4 for more info. */
 
 static float f_Rd(float alpha_, float A, float ro)
 {
@@ -183,7 +180,7 @@ static float compute_reduced_albedo(ScatterSettings *ss)
 	int i;
 
 	/* use secant method to compute reduced albedo using Rd function inverse
-	   with a given reflectance */
+	 * with a given reflectance */
 	fxn= f_Rd(xn, ss->A, ss->ro);
 	fxn_1= f_Rd(xn_1, ss->A, ss->ro);
 
@@ -233,10 +230,10 @@ static float Rd(ScatterSettings *ss, float r)
 }
 
 /* table lookups for Rd. this avoids expensive exp calls. we use two
-   separate tables as well for lower and higher numbers to improve
-   precision, since the number are poorly distributed because we do
-   a lookup with the squared distance for smaller distances, saving
-   another sqrt. */
+ * separate tables as well for lower and higher numbers to improve
+ * precision, since the number are poorly distributed because we do
+ * a lookup with the squared distance for smaller distances, saving
+ * another sqrt. */
 
 static void approximate_Rd_rgb(ScatterSettings **ss, float rr, float *rd)
 {
@@ -394,8 +391,8 @@ static void traverse_octree(ScatterTree *tree, ScatterNode *node, float *co, int
 		for(i=0; i<node->totpoint; i++) {
 			ScatterPoint *p= &node->points[i];
 
-			VECSUB(sub, co, p->co);
-			dist= INPR(sub, sub);
+			sub_v3_v3v3(sub, co, p->co);
+			dist= dot_v3v3(sub, sub);
 
 			if(p->back)
 				add_radiance(tree, NULL, p->rad, 0.0f, p->area, dist, result);
@@ -418,8 +415,8 @@ static void traverse_octree(ScatterTree *tree, ScatterNode *node, float *co, int
 				}
 				else {
 					/* decide subnode traversal based on maximum solid angle */
-					VECSUB(sub, co, subnode->co);
-					dist= INPR(sub, sub);
+					sub_v3_v3v3(sub, co, subnode->co);
+					dist= dot_v3v3(sub, sub);
 
 					/* actually area/dist > error, but this avoids division */
 					if(subnode->area+subnode->backarea>tree->error*dist) {
@@ -445,19 +442,19 @@ static void compute_radiance(ScatterTree *tree, float *co, float *rad)
 	traverse_octree(tree, tree->root, co, 1, &result);
 
 	/* the original paper doesn't do this, but we normalize over the
-	   sampled area and multiply with the reflectance. this is because
-	   our point samples are incomplete, there are no samples on parts
-	   of the mesh not visible from the camera. this can not only make
-	   it darker, but also lead to ugly color shifts */
+	 * sampled area and multiply with the reflectance. this is because
+	 * our point samples are incomplete, there are no samples on parts
+	 * of the mesh not visible from the camera. this can not only make
+	 * it darker, but also lead to ugly color shifts */
 
 	mul_v3_fl(result.rad, tree->ss[0]->frontweight);
 	mul_v3_fl(result.backrad, tree->ss[0]->backweight);
 
-	VECCOPY(rad, result.rad);
-	VECADD(backrad, result.rad, result.backrad);
+	copy_v3_v3(rad, result.rad);
+	add_v3_v3v3(backrad, result.rad, result.backrad);
 
-	VECCOPY(rdsum, result.rdsum);
-	VECADD(backrdsum, result.rdsum, result.backrdsum);
+	copy_v3_v3(rdsum, result.rdsum);
+	add_v3_v3v3(backrdsum, result.rdsum, result.backrdsum);
 
 	if(rdsum[0] > 1e-16f) rad[0]= tree->ss[0]->color*rad[0]/rdsum[0];
 	if(rdsum[1] > 1e-16f) rad[1]= tree->ss[1]->color*rad[1]/rdsum[1];
@@ -485,7 +482,7 @@ static void sum_leaf_radiance(ScatterTree *UNUSED(tree), ScatterNode *node)
 	node->backrad[0]= node->backrad[1]= node->backrad[2]= 0.0;
 
 	/* compute total rad, rad weighted average position,
-	   and total area */
+	 * and total area */
 	for(i=0; i<node->totpoint; i++) {
 		p= &node->points[i];
 
@@ -533,7 +530,7 @@ static void sum_leaf_radiance(ScatterTree *UNUSED(tree), ScatterNode *node)
 	}
 	else {
 		/* make sure that if radiance is 0.0f, we still have these points in
-		   the tree at a good position, they count for rdsum too */
+		 * the tree at a good position, they count for rdsum too */
 		for(i=0; i<node->totpoint; i++) {
 			p= &node->points[i];
 
@@ -559,7 +556,7 @@ static void sum_branch_radiance(ScatterTree *UNUSED(tree), ScatterNode *node)
 	node->backrad[0]= node->backrad[1]= node->backrad[2]= 0.0;
 
 	/* compute total rad, rad weighted average position,
-	   and total area */
+	 * and total area */
 	for(i=0; i<8; i++) {
 		if(node->child[i] == NULL)
 			continue;
@@ -607,7 +604,7 @@ static void sum_branch_radiance(ScatterTree *UNUSED(tree), ScatterNode *node)
 	}
 	else {
 		/* make sure that if radiance is 0.0f, we still have these points in
-		   the tree at a good position, they count for rdsum too */
+		 * the tree at a good position, they count for rdsum too */
 		totnode= 0;
 
 		for(i=0; i<8; i++) {
@@ -687,8 +684,8 @@ static void create_octree_node(ScatterTree *tree, ScatterNode *node, float *mid,
 	}
 
 	/* here we check if only one subnode is used. if this is the case, we don't
-	   create a new node, but rather call this function again, with different 
-	   size and middle position for the same node. */
+	 * create a new node, but rather call this function again, with different
+	 * size and middle position for the same node. */
 	for(usedi=0, usednodes=0, i=0; i<8; i++) {
 		if(nsize[i]) {
 			usednodes++;
@@ -762,8 +759,8 @@ ScatterTree *scatter_tree_new(ScatterSettings *ss[3], float scale, float error,
 	INIT_MINMAX(tree->min, tree->max);
 
 	for(i=0; i<totpoint; i++) {
-		VECCOPY(points[i].co, co[i]);
-		VECCOPY(points[i].rad, color[i]);
+		copy_v3_v3(points[i].co, co[i]);
+		copy_v3_v3(points[i].rad, color[i]);
 		points[i].area= fabsf(area[i])/(tree->scale*tree->scale);
 		points[i].back= (area[i] < 0.0f);
 
@@ -819,7 +816,7 @@ void scatter_tree_sample(ScatterTree *tree, float *co, float *color)
 {
 	float sco[3];
 
-	VECCOPY(sco, co);
+	copy_v3_v3(sco, co);
 	mul_v3_fl(sco, 1.0f/tree->scale);
 
 	compute_radiance(tree, sco, color);
@@ -866,7 +863,7 @@ static void sss_create_tree_mat(Render *re, Material *mat)
 	points.first= points.last= NULL;
 
 	/* TODO: this is getting a bit ugly, copying all those variables and
-	   setting them back, maybe we need to create our own Render? */
+	 * setting them back, maybe we need to create our own Render? */
 
 	/* do SSS preprocessing render */
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);

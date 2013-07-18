@@ -71,7 +71,8 @@ const STR_String & CListValue::GetText()
 
 
 
-CValue* CListValue::GetReplica() {
+CValue* CListValue::GetReplica()
+{
 	CListValue* replica = new CListValue(*this);
 
 	replica->ProcessReplica();
@@ -214,7 +215,7 @@ CValue* CListValue::Calc(VALUE_OPERATOR op,CValue *val)
 	//assert(false); // todo: implement me!
 	static int error_printed =  0;
 	if (error_printed==0) {
-		fprintf(stderr, "CValueList::Calc not yet implimented\n");
+		fprintf(stderr, "CValueList::Calc not yet implemented\n");
 		error_printed = 1;
 	}
 	return NULL;
@@ -227,7 +228,7 @@ CValue* CListValue::CalcFinal(VALUE_DATA_TYPE dtype,
 	//assert(false); // todo: implement me!
 	static int error_printed =  0;
 	if (error_printed==0) {
-		fprintf(stderr, "CValueList::CalcFinal not yet implimented\n");
+		fprintf(stderr, "CValueList::CalcFinal not yet implemented\n");
 		error_printed = 1;
 	}
 	return NULL;
@@ -339,10 +340,9 @@ PyObject* listvalue_mapping_subscript(PyObject* self, PyObject* pyindex)
 		int index = PyLong_AsSsize_t(pyindex);
 		return listvalue_buffer_item(self, index); /* wont add a ref */
 	}
-	
-	PyObject *pyindex_str = PyObject_Repr(pyindex); /* new ref */
-	PyErr_Format(PyExc_KeyError, "CList[key]: '%s' key not in list", _PyUnicode_AsString(pyindex_str));
-	Py_DECREF(pyindex_str);
+
+	PyErr_Format(PyExc_KeyError,
+	             "CList[key]: '%R' key not in list", pyindex);
 	return NULL;
 }
 
@@ -400,7 +400,7 @@ static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
 	// and CListValue concatenated to Python Lists
 	// and CListValue concatenated with another CListValue
 	
-	/* Shallow copy, dont use listval->GetReplica(), it will screw up with KX_GameObjects */
+	/* Shallow copy, don't use listval->GetReplica(), it will screw up with KX_GameObjects */
 	CListValue* listval_new = new CListValue();
 	
 	if (PyList_Check(other))
@@ -428,7 +428,7 @@ static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
 		}
 		
 		if (error) {
-			listval_new->Resize(numitems_orig+i); /* resize so we dont try release NULL pointers */
+			listval_new->Resize(numitems_orig+i); /* resize so we don't try release NULL pointers */
 			listval_new->Release();
 			return NULL; /* ConvertPythonToValue above sets the error */ 
 		}
@@ -446,7 +446,7 @@ static PyObject *listvalue_buffer_concat(PyObject * self, PyObject * other)
 		numitems = otherval->GetCount();
 		
 		/* copy the first part of the list */
-		listval_new->Resize(numitems_orig + numitems); /* resize so we dont try release NULL pointers */
+		listval_new->Resize(numitems_orig + numitems); /* resize so we don't try release NULL pointers */
 		for (i=0;i<numitems_orig;i++)
 			listval_new->SetValue(i, listval->GetValue(i)->AddRef());
 		
@@ -487,12 +487,12 @@ static int listvalue_buffer_contains(PyObject *self_v, PyObject *value)
 static  PySequenceMethods listvalue_as_sequence = {
 	listvalue_bufferlen,//(inquiry)buffer_length, /*sq_length*/
 	listvalue_buffer_concat, /*sq_concat*/
- 	NULL, /*sq_repeat*/
+	NULL, /*sq_repeat*/
 	listvalue_buffer_item, /*sq_item*/
 // TODO, slicing in py3
 	NULL, // listvalue_buffer_slice, /*sq_slice*/
- 	NULL, /*sq_ass_item*/
- 	NULL, /*sq_ass_slice*/
+	NULL, /*sq_ass_item*/
+	NULL, /*sq_ass_slice*/
 	(objobjproc)listvalue_buffer_contains,	/* sq_contains */
 	(binaryfunc) NULL, /* sq_inplace_concat */
 	(ssizeargfunc) NULL, /* sq_inplace_repeat */
@@ -515,12 +515,12 @@ PyTypeObject CListValue::Type = {
 	sizeof(PyObjectPlus_Proxy), /*tp_basicsize*/
 	0,				/*tp_itemsize*/
 	/* methods */
-	py_base_dealloc,	  		/*tp_dealloc*/
-	0,			 	/*tp_print*/
+	py_base_dealloc,			/*tp_dealloc*/
+	0,				/*tp_print*/
 	0, 			/*tp_getattr*/
 	0, 			/*tp_setattr*/
-	0,			        /*tp_compare*/
-	py_base_repr,			        /*tp_repr*/
+	0,			/*tp_compare*/
+	py_base_repr, /*tp_repr*/
 	0,			        /*tp_as_number*/
 	&listvalue_as_sequence, /*tp_as_sequence*/
 	&instance_as_mapping,	        /*tp_as_mapping*/

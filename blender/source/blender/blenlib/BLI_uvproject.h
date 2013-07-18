@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -19,8 +17,8 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef BKE_UVPROJECT_H
-#define BKE_UVPROJECT_H
+#ifndef __BLI_UVPROJECT_H__
+#define __BLI_UVPROJECT_H__
 
 /** \file BLI_uvproject.h
  *  \ingroup bli

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgeconv
  */
 
-#ifndef __BL_ARMATURECONSTRAINT
-#define __BL_ARMATURECONSTRAINT
+#ifndef __BL_ARMATURECONSTRAINT_H__
+#define __BL_ARMATURECONSTRAINT_H__
 
 #include "DNA_constraint_types.h"
 #include "CTR_HashedPtr.h"
@@ -54,7 +52,7 @@ struct bPose;
  */
 class BL_ArmatureConstraint	: public PyObjectPlus
 {
-	Py_Header;
+	Py_Header
 
 private:
 	struct bConstraint* m_constraint;
@@ -106,6 +104,11 @@ public:
 			con->weight = weight;
 		}
 	}
+	void SetInfluence(float influence)
+	{
+		if (m_constraint)
+			m_constraint->enforce = influence;
+	}
 	void SetTarget(KX_GameObject* target);
 	void SetSubtarget(KX_GameObject* subtarget);
 
@@ -119,5 +122,5 @@ public:
 #endif // WITH_PYTHON
 };
 
-#endif //__BL_ARMATURECONSTRAINT
+#endif //__BL_ARMATURECONSTRAINT_H__
 

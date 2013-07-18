@@ -1,7 +1,6 @@
 /*
  * Execute Python scripts
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -165,7 +164,7 @@ void SCA_PythonController::SetNamespace(PyObject*	pythondictionary)
 	
 	/* Without __file__ set the sys.argv[0] is used for the filename
 	 * which ends up with lines from the blender binary being printed in the console */
-	PyDict_SetItemString(m_pythondictionary, "__file__", PyUnicode_FromString(m_scriptName.Ptr()));
+	PyDict_SetItemString(m_pythondictionary, "__file__", PyUnicode_From_STR_String(m_scriptName));
 	
 }
 #endif
@@ -200,7 +199,7 @@ SCA_IActuator* SCA_PythonController::LinkedActuatorFromPy(PyObject *value)
 	
 	if (PyUnicode_Check(value)) {
 		/* get the actuator from the name */
-		char *name= _PyUnicode_AsString(value);
+		const char *name= _PyUnicode_AsString(value);
 		for(it = lacts.begin(); it!= lacts.end(); ++it) {
 			if( name == (*it)->GetName() ) {
 				return *it;
@@ -215,12 +214,11 @@ SCA_IActuator* SCA_PythonController::LinkedActuatorFromPy(PyObject *value)
 			}
 		}
 	}
-	
+
 	/* set the exception */
-	PyObject *value_str = PyObject_Repr(value); /* new ref */
-	PyErr_Format(PyExc_ValueError, "'%s' not in this python controllers actuator list", _PyUnicode_AsString(value_str));
-	Py_DECREF(value_str);
-	
+	PyErr_Format(PyExc_ValueError,
+	             "%R not in this python controllers actuator list", value);
+
 	return NULL;
 }
 
@@ -267,7 +265,7 @@ void SCA_PythonController::ErrorPrint(const char *error_msg)
 	
 	/* Added in 2.48a, the last_traceback can reference Objects for example, increasing
 	 * their user count. Not to mention holding references to wrapped data.
-	 * This is especially bad when the PyObject for the wrapped data is free'd, after blender 
+	 * This is especially bad when the PyObject for the wrapped data is freed, after blender
 	 * has already dealocated the pointer */
 	PySys_SetObject( (char *)"last_traceback", NULL);
 	PyErr_Clear(); /* just to be sure */
@@ -300,7 +298,7 @@ bool SCA_PythonController::Import()
 	//printf("py module modified '%s'\n", m_scriptName.Ptr());
 	m_bModified= false;
 
-	/* incase we re-import */
+	/* in case we re-import */
 	Py_XDECREF(m_function);
 	m_function= NULL;
 	
@@ -355,7 +353,7 @@ bool SCA_PythonController::Import()
 		return false;
 	}
 	
-	m_function_argc = 0; /* rare cases this could be a function that isnt defined in python, assume zero args */
+	m_function_argc = 0; /* rare cases this could be a function that isn't defined in python, assume zero args */
 	if (PyFunction_Check(m_function)) {
 		m_function_argc= ((PyCodeObject *)PyFunction_GET_CODE(m_function))->co_argcount;
 	}
@@ -492,7 +490,7 @@ PyObject* SCA_PythonController::pyattr_get_script(void *self_v, const KX_PYATTRI
 	// static_cast<void *>(dynamic_cast<Derived *>(obj)) - static_cast<void *>(obj)
 
 	SCA_PythonController* self= static_cast<SCA_PythonController*>(self_v);
-	return PyUnicode_FromString(self->m_scriptText);
+	return PyUnicode_From_STR_String(self->m_scriptText);
 }
 
 
@@ -501,7 +499,7 @@ int SCA_PythonController::pyattr_set_script(void *self_v, const KX_PYATTRIBUTE_D
 {
 	SCA_PythonController* self= static_cast<SCA_PythonController*>(self_v);
 	
-	char *scriptArg = _PyUnicode_AsString(value);
+	const char *scriptArg = _PyUnicode_AsString(value);
 	
 	if (scriptArg==NULL) {
 		PyErr_SetString(PyExc_TypeError, "controller.script = string: Python Controller, expected a string script text");

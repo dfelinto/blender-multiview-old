@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,13 +32,12 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * Simple tagged index class.
  */
 
-#ifndef NAN_INCLUDED_CTR_TaggedIndex_h
-#define NAN_INCLUDED_CTR_TaggedIndex_h
+#ifndef __CTR_TAGGEDINDEX_H__
+#define __CTR_TAGGEDINDEX_H__
 
 /**
  * This class is supposed to be a simple tagged index class. If these

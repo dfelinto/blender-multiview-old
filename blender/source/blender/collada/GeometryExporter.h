@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,6 +40,8 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
+#include "ExportSettings.h"
+
 // TODO: optimize UV sets by making indexed list with duplicates removed
 class GeometryExporter : COLLADASW::LibraryGeometries
 {
@@ -58,14 +58,14 @@ class GeometryExporter : COLLADASW::LibraryGeometries
 	Scene *mScene;
 
 public:
-	GeometryExporter(COLLADASW::StreamWriter *sw);
+	GeometryExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings);
 
-	void exportGeom(Scene *sce, bool export_selected);
+	void exportGeom(Scene *sce);
 
 	void operator()(Object *ob);
 
 	// powerful because it handles both cases when there is material and when there's not
-	void createPolylist(int material_index,
+	void createPolylist(short material_index,
 						bool has_uvs,
 						bool has_color,
 						Object *ob,
@@ -96,6 +96,8 @@ public:
 	/* int getTriCount(MFace *faces, int totface);*/
 private:
 	std::set<std::string> exportedGeometry;
+	
+	const ExportSettings *export_settings;
 };
 
 struct GeometryFunctor {

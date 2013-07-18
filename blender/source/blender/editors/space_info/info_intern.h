@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,8 +28,8 @@
  *  \ingroup spinfo
  */
 
-#ifndef ED_INFO_INTERN_H
-#define ED_INFO_INTERN_H
+#ifndef __INFO_INTERN_H__
+#define __INFO_INTERN_H__
 
 /* internal exports only */
 
@@ -63,4 +61,4 @@ void INFO_OT_report_replay(struct wmOperatorType *ot);
 void INFO_OT_report_delete(struct wmOperatorType *ot);
 void INFO_OT_report_copy(struct wmOperatorType *ot);
 
-#endif /* ED_INFO_INTERN_H */
+#endif /* __INFO_INTERN_H__ */

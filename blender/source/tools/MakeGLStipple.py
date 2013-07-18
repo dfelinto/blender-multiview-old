@@ -52,7 +52,7 @@ def main():
                   (xpm, data[0]))
             continue
 
-        col_1 = data[1][1]
+        # col_1 = data[1][1]
         col_2 = data[2][1]
 
         data = [d[1:-1] for d in data[3:]]

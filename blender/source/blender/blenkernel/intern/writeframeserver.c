@@ -1,8 +1,4 @@
-/** \file blender/blenkernel/intern/writeframeserver.c
- *  \ingroup bke
- */
 /*
- * $Id$
  *
  * Frameserver
  * Makes Blender accessible from TMPGenc directly using VFAPI (you can
@@ -20,6 +16,10 @@
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
  * GNU General Public License for more details.
  *
+ */
+
+/** \file blender/blenkernel/intern/writeframeserver.c
+ *  \ingroup bke
  */
 
 #ifdef WITH_FRAMESERVER
@@ -257,7 +257,11 @@ int frameserver_loop(RenderData *rd, ReportList *UNUSED(reports))
 	struct timeval tv;
 	struct sockaddr_in      addr;
 	int len, rval;
+#ifdef FREE_WINDOWS
+	int socklen;
+#else
 	unsigned int socklen;
+#endif
 	char buf[4096];
 
 	if (connsock != -1) {
@@ -306,7 +310,7 @@ int frameserver_loop(RenderData *rd, ReportList *UNUSED(reports))
 		}
 	}
 
-	len = recv(connsock, buf, 4095, 0);
+	len = recv(connsock, buf, sizeof(buf) - 1, 0);
 
 	if (len < 0) {
 		return -1;
@@ -358,7 +362,8 @@ static void serve_ppm(int *pixels, int rectx, int recty)
 	connsock = -1;
 }
 
-int append_frameserver(RenderData *UNUSED(rd), int frame, int *pixels, int rectx, int recty, ReportList *UNUSED(reports))
+int append_frameserver(RenderData *UNUSED(rd), int UNUSED(start_frame), int frame, int *pixels,
+                       int rectx, int recty, ReportList *UNUSED(reports))
 {
 	fprintf(stderr, "Serving frame: %d\n", frame);
 	if (write_ppm) {

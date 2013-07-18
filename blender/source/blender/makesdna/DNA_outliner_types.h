@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,12 +24,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_OUTLINER_TYPES_H
-#define DNA_OUTLINER_TYPES_H
 
 /** \file DNA_outliner_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_OUTLINER_TYPES_H__
+#define __DNA_OUTLINER_TYPES_H__
 
 #include "DNA_listBase.h"
 
@@ -51,6 +50,8 @@ typedef struct TreeStore {
 #define TSE_CLOSED		1
 #define TSE_SELECTED	2
 #define TSE_TEXTBUT		4
+#define TSE_CHILDSEARCH 8
+#define TSE_SEARCHMATCH 16
 
 /* TreeStoreElem types in BIF_outliner.h */
 

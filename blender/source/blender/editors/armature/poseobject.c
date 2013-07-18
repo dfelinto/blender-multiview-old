@@ -58,6 +58,7 @@
 #include "BKE_depsgraph.h"
 #include "BKE_fcurve.h"
 #include "BKE_modifier.h"
+#include "BKE_object.h"
 #include "BKE_report.h"
 
 
@@ -72,41 +73,12 @@
 #include "ED_keyframing.h"
 #include "ED_mesh.h"
 #include "ED_screen.h"
+#include "ED_object.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
 
 #include "armature_intern.h"
-
-static int object_pose_context(Object *ob)
-{
-	if(	(ob) && 
-		(ob->type == OB_ARMATURE) &&
-		(ob->pose) &&
-		(ob->mode & OB_MODE_POSE)
-	) {
-		return 1;
-	}
-	else {
-		return 0;
-	}
-}
-
-Object *ED_object_pose_armature(Object *ob)
-{
-	if(ob==NULL)
-		return NULL;
-	
-	if(object_pose_context(ob))
-		return ob;
-
-	ob= modifiers_isDeformedByArmature(ob);
-
-	if(object_pose_context(ob))
-		return ob;
-
-	return NULL;
-}
 
 /* This function is used to process the necessary updates for */
 void ED_armature_enter_posemode(bContext *C, Base *base)
@@ -228,7 +200,7 @@ void ED_pose_recalculate_paths(Scene *scene, Object *ob)
 /* For the object with pose/action: create path curves for selected bones 
  * This recalculates the WHOLE path within the pchan->pathsf and pchan->pathef range
  */
-static int pose_calculate_paths_exec (bContext *C, wmOperator *UNUSED(op))
+static int pose_calculate_paths_exec (bContext *C, wmOperator *op)
 {
 	ScrArea *sa= CTX_wm_area(C);
 	Scene *scene= CTX_data_scene(C);
@@ -236,9 +208,9 @@ static int pose_calculate_paths_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 		
 	if (ELEM(NULL, ob, ob->pose))
 		return OPERATOR_CANCELLED;
@@ -247,7 +219,7 @@ static int pose_calculate_paths_exec (bContext *C, wmOperator *UNUSED(op))
 	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones) 
 	{
 		/* verify makes sure that the selected bone has a bone with the appropriate settings */
-		animviz_verify_motionpaths(scene, ob, pchan);
+		animviz_verify_motionpaths(op->reports, scene, ob, pchan);
 	}
 	CTX_DATA_END;
 	
@@ -312,9 +284,9 @@ static int pose_clear_paths_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 		
 	/* only continue if there's an object */
 	if ELEM(NULL, ob, ob->pose)
@@ -348,7 +320,7 @@ void POSE_OT_paths_clear (wmOperatorType *ot)
 
 static int pose_select_constraint_target_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	bConstraint *con;
 	int found= 0;
 	
@@ -408,7 +380,7 @@ void POSE_OT_select_constraint_target(wmOperatorType *ot)
 
 static int pose_select_hierarchy_exec(bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	bArmature *arm= ob->data;
 	Bone *curbone, *pabone, *chbone;
 	int direction = RNA_enum_get(op->ptr, "direction");
@@ -525,7 +497,7 @@ static short pose_select_same_group (bContext *C, Object *ob, short extend)
 	}
 	CTX_DATA_END;
 	
-	/* small optimisation: only loop through bones a second time if there are any groups tagged */
+	/* small optimization: only loop through bones a second time if there are any groups tagged */
 	if (tagged) {
 		/* only if group matches (and is not selected or current bone) */
 		CTX_DATA_BEGIN(C, bPoseChannel *, pchan, visible_pose_bones) 
@@ -646,7 +618,7 @@ static int pose_select_same_keyingset(bContext *C, Object *ob, short extend)
 
 static int pose_select_grouped_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	short extend= RNA_boolean_get(op->ptr, "extend");
 	short changed = 0;
 	
@@ -702,7 +674,7 @@ void POSE_OT_select_grouped (wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first.");
+	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_select_grouped_types, 0, "Type", "");
 }
 
@@ -713,7 +685,7 @@ void POSE_OT_select_grouped (wmOperatorType *ot)
 static int pose_bone_flip_active_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob_act= CTX_data_active_object(C);
-	Object *ob= ED_object_pose_armature(ob_act);
+	Object *ob= object_pose_armature_get(ob_act);
 
 	if(ob && (ob->mode & OB_MODE_POSE)) {
 		bArmature *arm= ob->data;
@@ -751,7 +723,7 @@ void POSE_OT_select_flip_active(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Flip Selected Active Bone";
 	ot->idname= "POSE_OT_select_flip_active";
-	ot->description= "Activate the bone with a flipped name.";
+	ot->description= "Activate the bone with a flipped name";
 	
 	/* api callbacks */
 	ot->exec= pose_bone_flip_active_exec;
@@ -783,7 +755,7 @@ static void pose_copy_menu(Scene *scene)
 	pchanact= pchan;
 	arm= ob->data;
 
-	/* if proxy-protected bones selected, some things (such as locks + displays) shouldn't be changable, 
+	/* if proxy-protected bones selected, some things (such as locks + displays) shouldn't be changeable,
 	 * but for constraints (just add local constraints)
 	 */
 	if (pose_has_protected_selected(ob, 0)) {
@@ -804,7 +776,7 @@ static void pose_copy_menu(Scene *scene)
 	if (nr <= 0) 
 		return;
 	
-	if (nr != 5)  {
+	if (nr != 5) {
 		for (pchan= ob->pose->chanbase.first; pchan; pchan= pchan->next) {
 			if ( (arm->layer & pchan->bone->layer) &&
 				 (pchan->bone->flag & BONE_SELECTED) &&
@@ -812,14 +784,14 @@ static void pose_copy_menu(Scene *scene)
 			{
 				switch (nr) {
 					case 1: /* Local Location */
-						VECCOPY(pchan->loc, pchanact->loc);
+						copy_v3_v3(pchan->loc, pchanact->loc);
 						break;
 					case 2: /* Local Rotation */
-						QUATCOPY(pchan->quat, pchanact->quat);
-						VECCOPY(pchan->eul, pchanact->eul);
+						copy_qt_qt(pchan->quat, pchanact->quat);
+						copy_v3_v3(pchan->eul, pchanact->eul);
 						break;
 					case 3: /* Local Size */
-						VECCOPY(pchan->size, pchanact->size);
+						copy_v3_v3(pchan->size, pchanact->size);
 						break;
 					case 4: /* All Constraints */
 					{
@@ -851,9 +823,9 @@ static void pose_copy_menu(Scene *scene)
 					case 7: /* IK (DOF) settings */
 					{
 						pchan->ikflag = pchanact->ikflag;
-						VECCOPY(pchan->limitmin, pchanact->limitmin);
-						VECCOPY(pchan->limitmax, pchanact->limitmax);
-						VECCOPY(pchan->stiffness, pchanact->stiffness);
+						copy_v3_v3(pchan->limitmin, pchanact->limitmin);
+						copy_v3_v3(pchan->limitmax, pchanact->limitmax);
+						copy_v3_v3(pchan->stiffness, pchanact->stiffness);
 						pchan->ikstretch= pchanact->ikstretch;
 						pchan->ikrotweight= pchanact->ikrotweight;
 						pchan->iklinweight= pchanact->iklinweight;
@@ -890,7 +862,7 @@ static void pose_copy_menu(Scene *scene)
 						
 						armature_mat_pose_to_bone(pchan, pchanact->pose_mat, delta_mat);
 						mat4_to_size( size,delta_mat);
-						VECCOPY(pchan->size, size);
+						copy_v3_v3(pchan->size, size);
 					}
 				}
 			}
@@ -1018,7 +990,7 @@ static void set_pose_keys (Object *ob)
 static bPoseChannel *pose_bone_do_paste (Object *ob, bPoseChannel *chan, short selOnly, short flip)
 {
 	bPoseChannel *pchan;
-	char name[32];
+	char name[MAXBONENAME];
 	short paste_ok;
 	
 	/* get the name - if flipping, we must flip this first */
@@ -1043,22 +1015,22 @@ static bPoseChannel *pose_bone_do_paste (Object *ob, bPoseChannel *chan, short s
 		/* only loc rot size 
 		 *	- only copies transform info for the pose 
 		 */
-		VECCOPY(pchan->loc, chan->loc);
-		VECCOPY(pchan->size, chan->size);
+		copy_v3_v3(pchan->loc, chan->loc);
+		copy_v3_v3(pchan->size, chan->size);
 		pchan->flag= chan->flag;
 		
 		/* check if rotation modes are compatible (i.e. do they need any conversions) */
 		if (pchan->rotmode == chan->rotmode) {
 			/* copy the type of rotation in use */
 			if (pchan->rotmode > 0) {
-				VECCOPY(pchan->eul, chan->eul);
+				copy_v3_v3(pchan->eul, chan->eul);
 			}
 			else if (pchan->rotmode == ROT_MODE_AXISANGLE) {
-				VECCOPY(pchan->rotAxis, chan->rotAxis);
+				copy_v3_v3(pchan->rotAxis, chan->rotAxis);
 				pchan->rotAngle = chan->rotAngle;
 			}
 			else {
-				QUATCOPY(pchan->quat, chan->quat);
+				copy_qt_qt(pchan->quat, chan->quat);
 			}
 		}
 		else if (pchan->rotmode > 0) {
@@ -1135,7 +1107,7 @@ static bPoseChannel *pose_bone_do_paste (Object *ob, bPoseChannel *chan, short s
 
 static int pose_copy_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* sanity checking */
 	if ELEM(NULL, ob, ob->pose) {
@@ -1173,12 +1145,15 @@ void POSE_OT_copy (wmOperatorType *ot)
 
 static int pose_paste_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	Scene *scene= CTX_data_scene(C);
 	bPoseChannel *chan;
 	int flip= RNA_boolean_get(op->ptr, "flipped");
 	int selOnly= RNA_boolean_get(op->ptr, "selected_mask");
-	
+
+	/* get KeyingSet to use */
+	KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, ANIM_KS_LOC_ROT_SCALE_ID);
+
 	/* sanity checks */
 	if ELEM(NULL, ob, ob->pose)
 		return OPERATOR_CANCELLED;
@@ -1189,13 +1164,13 @@ static int pose_paste_exec (bContext *C, wmOperator *op)
 	}
 	
 	/* if selOnly option is enabled, if user hasn't selected any bones, 
-	 * just go back to default behaviour to be more in line with other pose tools
+	 * just go back to default behavior to be more in line with other pose tools
 	 */
 	if (selOnly) {
 		if (CTX_DATA_COUNT(C, selected_pose_bones) == 0)
 			selOnly = 0;
 	}
-	
+
 	/* Safely merge all of the channels in the buffer pose into any existing pose */
 	for (chan= g_posebuf->chanbase.first; chan; chan=chan->next) {
 		if (chan->flag & POSE_KEY) {
@@ -1204,30 +1179,7 @@ static int pose_paste_exec (bContext *C, wmOperator *op)
 			
 			if (pchan) {
 				/* keyframing tagging for successful paste */
-				if (autokeyframe_cfra_can_key(scene, &ob->id)) {
-					ListBase dsources = {NULL, NULL};
-					
-					/* get KeyingSet to use */
-					KeyingSet *ks = ANIM_get_keyingset_for_autokeying(scene, "LocRotScale");
-					
-					/* now insert the keyframe(s) using the Keying Set
-					 *	1) add datasource override for the PoseChannel
-					 *	2) insert keyframes
-					 *	3) free the extra info 
-					 */
-					ANIM_relative_keyingset_add_source(&dsources, &ob->id, &RNA_PoseBone, pchan); 
-					ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
-					BLI_freelistN(&dsources);
-					
-					/* clear any unkeyed tags */
-					if (chan->bone)
-						chan->bone->flag &= ~BONE_UNKEYED;
-				}
-				else {
-					/* add unkeyed tags */
-					if (chan->bone)
-						chan->bone->flag |= BONE_UNKEYED;
-				}
+				ED_autokeyframe_pchan(C, scene, ob, pchan, ks);
 			}
 		}
 	}
@@ -1246,7 +1198,7 @@ void POSE_OT_paste (wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Paste Pose";
 	ot->idname= "POSE_OT_paste";
-	ot->description= "Pastes the stored pose on to the current pose";
+	ot->description= "Paste the stored pose on to the current pose";
 	
 	/* api callbacks */
 	ot->exec= pose_paste_exec;
@@ -1256,8 +1208,8 @@ void POSE_OT_paste (wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "flipped", 0, "Flipped on X-Axis", "Paste the stored pose flipped on to current pose");
-	RNA_def_boolean(ot->srna, "selected_mask", 1, "On Selected Only", "Only paste the stored pose on to selected bones in the current pose");
+	RNA_def_boolean(ot->srna, "flipped", FALSE, "Flipped on X-Axis", "Paste the stored pose flipped on to current pose");
+	RNA_def_boolean(ot->srna, "selected_mask", FALSE, "On Selected Only", "Only paste the stored pose on to selected bones in the current pose");
 }
 
 /* ********************************************** */
@@ -1270,9 +1222,9 @@ static int pose_group_add_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 		
 	/* only continue if there's an object */
 	if (ob == NULL)
@@ -1310,9 +1262,9 @@ static int pose_group_remove_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* only continue if there's an object */
 	if (ob == NULL)
@@ -1358,9 +1310,9 @@ static int pose_groups_menu_invoke (bContext *C, wmOperator *op, wmEvent *UNUSED
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* only continue if there's an object, and a pose there too */
 	if (ELEM(NULL, ob, ob->pose)) 
@@ -1407,9 +1359,9 @@ static int pose_group_assign_exec (bContext *C, wmOperator *op)
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* only continue if there's an object, and a pose there too */
 	if (ELEM(NULL, ob, ob->pose))
@@ -1470,9 +1422,9 @@ static int pose_group_unassign_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* only continue if there's an object, and a pose there too */
 	if (ELEM(NULL, ob, ob->pose))
@@ -1515,7 +1467,7 @@ void POSE_OT_group_unassign (wmOperatorType *ot)
 
 static int group_move_exec(bContext *C, wmOperator *op)
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob = ED_object_context(C);
 	bPose *pose= (ob) ? ob->pose : NULL;
 	bPoseChannel *pchan;
 	bActionGroup *grp;
@@ -1613,7 +1565,7 @@ static int compare_agroup(const void *sgrp_a_ptr, const void *sgrp_b_ptr)
 
 static int group_sort_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+	Object *ob = ED_object_context(C);
 	bPose *pose= (ob) ? ob->pose : NULL;
 	bPoseChannel *pchan;
 	tSortActionGroup *agrp_array;
@@ -1705,9 +1657,9 @@ static int pose_group_select_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* only continue if there's an object, and a pose there too */
 	if (ELEM(NULL, ob, ob->pose))
@@ -1743,9 +1695,9 @@ static int pose_group_deselect_exec (bContext *C, wmOperator *UNUSED(op))
 	
 	/* since this call may also be used from the buttons window, we need to check for where to get the object */
 	if (sa->spacetype == SPACE_BUTS) 
-		ob= CTX_data_pointer_get_type(C, "object", &RNA_Object).data;
+		ob= ED_object_context(C);
 	else
-		ob= ED_object_pose_armature(CTX_data_active_object(C));
+		ob= object_pose_armature_get(CTX_data_active_object(C));
 	
 	/* only continue if there's an object, and a pose there too */
 	if (ELEM(NULL, ob, ob->pose))
@@ -1778,7 +1730,7 @@ void POSE_OT_group_deselect (wmOperatorType *ot)
 
 static int pose_flip_names_exec (bContext *C, wmOperator *UNUSED(op))
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	bArmature *arm;
 	
 	/* paranoia checks */
@@ -1789,7 +1741,7 @@ static int pose_flip_names_exec (bContext *C, wmOperator *UNUSED(op))
 	/* loop through selected bones, auto-naming them */
 	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones)
 	{
-		char newname[32];
+		char newname[MAXBONENAME];
 		flip_side_name(newname, pchan->name, TRUE);
 		ED_armature_bone_rename(arm, pchan->name, newname);
 	}
@@ -1823,9 +1775,9 @@ void POSE_OT_flip_names (wmOperatorType *ot)
 
 static int pose_autoside_names_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	bArmature *arm;
-	char newname[32];
+	char newname[MAXBONENAME];
 	short axis= RNA_enum_get(op->ptr, "axis");
 	
 	/* paranoia checks */
@@ -1873,7 +1825,7 @@ void POSE_OT_autoside_names (wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* settings */
-	ot->prop= RNA_def_enum(ot->srna, "axis", axis_items, 0, "Axis", "Axis tag names with.");
+	ot->prop= RNA_def_enum(ot->srna, "axis", axis_items, 0, "Axis", "Axis tag names with");
 }
 
 /* ********************************************** */
@@ -1927,7 +1879,7 @@ static int pose_armature_layers_showall_poll (bContext *C)
 
 static int pose_armature_layers_showall_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	bArmature *arm = (ob)? ob->data : NULL;
 	PointerRNA ptr;
 	int maxLayers = (RNA_boolean_get(op->ptr, "all"))? 32 : 16;
@@ -1979,7 +1931,7 @@ void ARMATURE_OT_layers_show_all (wmOperatorType *ot)
 /* Present a popup to get the layers that should be used */
 static int pose_armature_layers_invoke (bContext *C, wmOperator *op, wmEvent *evt)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	bArmature *arm= (ob)? ob->data : NULL;
 	PointerRNA ptr;
 	int layers[32]; /* hardcoded for now - we can only have 32 armature layers, so this should be fine... */
@@ -2000,7 +1952,7 @@ static int pose_armature_layers_invoke (bContext *C, wmOperator *op, wmEvent *ev
 /* Set the visible layers for the active armature (edit and pose modes) */
 static int pose_armature_layers_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	PointerRNA ptr;
 	int layers[32]; /* hardcoded for now - we can only have 32 armature layers, so this should be fine... */
 
@@ -2090,7 +2042,7 @@ static int pose_bone_layers_invoke (bContext *C, wmOperator *op, wmEvent *evt)
 /* Set the visible layers for the active armature (edit and pose modes) */
 static int pose_bone_layers_exec (bContext *C, wmOperator *op)
 {
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
 	PointerRNA ptr;
 	int layers[32]; /* hardcoded for now - we can only have 32 armature layers, so this should be fine... */
 
@@ -2213,8 +2165,8 @@ void ARMATURE_OT_bone_layers (wmOperatorType *ot)
 static int pose_flip_quats_exec (bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
-	Object *ob= ED_object_pose_armature(CTX_data_active_object(C));
-	KeyingSet *ks = ANIM_builtin_keyingset_get_named(NULL, "LocRotScale");
+	Object *ob= object_pose_armature_get(CTX_data_active_object(C));
+	KeyingSet *ks = ANIM_builtin_keyingset_get_named(NULL, ANIM_KS_LOC_ROT_SCALE_ID);
 	
 	/* loop through all selected pchans, flipping and keying (as needed) */
 	CTX_DATA_BEGIN(C, bPoseChannel*, pchan, selected_pose_bones)
@@ -2223,29 +2175,8 @@ static int pose_flip_quats_exec (bContext *C, wmOperator *UNUSED(op))
 		if (pchan->rotmode == ROT_MODE_QUAT) {
 			/* quaternions have 720 degree range */
 			negate_v4(pchan->quat);
-			
-			/* tagging */
-			if (autokeyframe_cfra_can_key(scene, &ob->id)) {
-				ListBase dsources = {NULL, NULL};
-				
-				/* now insert the keyframe(s) using the Keying Set
-				 *	1) add datasource override for the PoseChannel
-				 *	2) insert keyframes
-				 *	3) free the extra info 
-				 */
-				ANIM_relative_keyingset_add_source(&dsources, &ob->id, &RNA_PoseBone, pchan); 
-				ANIM_apply_keyingset(C, &dsources, NULL, ks, MODIFYKEY_MODE_INSERT, (float)CFRA);
-				BLI_freelistN(&dsources);
-				
-				/* clear any unkeyed tags */
-				if (pchan->bone)
-					pchan->bone->flag &= ~BONE_UNKEYED;
-			}
-			else {
-				/* add unkeyed tags */
-				if (pchan->bone)
-					pchan->bone->flag |= BONE_UNKEYED;
-			}
+
+			ED_autokeyframe_pchan(C, scene, ob, pchan, ks);
 		}
 	}
 	CTX_DATA_END;

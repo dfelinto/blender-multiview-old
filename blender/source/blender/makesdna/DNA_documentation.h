@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -62,17 +60,15 @@
  *
  * DNA has no external dependencies (except for a few system
  * includes).
-
+ *
  * \section dnanote NOTE
-
-  PLEASE READ INSTRUCTIONS ABOUT ADDING VARIABLES IN 'DNA' STRUCTS IN
-
-  intern/dna_genfile.c
-  (ton)
-
+ *
+ * PLEASE READ INSTRUCTIONS ABOUT ADDING VARIABLES IN 'DNA' STRUCTS IN
+ *
+ * intern/dna_genfile.c
+ * (ton)
+ *
  */
 
 
-
 /* This file has intentionally no definitions or implementation. */
-

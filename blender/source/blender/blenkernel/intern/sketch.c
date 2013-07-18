@@ -1,7 +1,4 @@
 /*
- *
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -74,17 +71,15 @@ SK_Sketch* createSketch(void)
 	return sketch;
 }
 
-void sk_initPoint(SK_Point *pt, SK_DrawData *dd, float *no)
+void sk_initPoint(SK_Point *pt, SK_DrawData *dd, const float no[3])
 {
-	if (no)
-	{
+	if (no) {
 		normalize_v3_v3(pt->no, no);
 	}
-	else
-	{
-		pt->no[0] = 0;
-		pt->no[1] = 0;
-		pt->no[2] = 1;
+	else {
+		pt->no[0] = 0.0f;
+		pt->no[1] = 0.0f;
+		pt->no[2] = 1.0f;
 	}
 	pt->p2d[0] = dd->mval[0];
 	pt->p2d[1] = dd->mval[1];
@@ -245,13 +240,13 @@ void sk_straightenStroke(SK_Stroke *stk, int start, int end, float p_start[3], f
 	prev = stk->points + start;
 	next = stk->points + end;
 
-	VECCOPY(pt1.p, p_start);
-	VECCOPY(pt1.no, prev->no);
+	copy_v3_v3(pt1.p, p_start);
+	copy_v3_v3(pt1.no, prev->no);
 	pt1.mode = prev->mode;
 	pt1.type = prev->type;
 
-	VECCOPY(pt2.p, p_end);
-	VECCOPY(pt2.no, next->no);
+	copy_v3_v3(pt2.p, p_end);
+	copy_v3_v3(pt2.no, next->no);
 	pt2.mode = next->mode;
 	pt2.type = next->type;
 
@@ -263,8 +258,7 @@ void sk_straightenStroke(SK_Stroke *stk, int start, int end, float p_start[3], f
 		float delta = (float)i / (float)total;
 		float *p = stk->points[start + 1 + i].p;
 
-		VECCOPY(p, delta_p);
-		mul_v3_fl(p, delta);
+		mul_v3_v3fl(p, delta_p, delta);
 		add_v3_v3(p, p_start);
 	}
 }
@@ -323,7 +317,7 @@ void sk_flattenStroke(SK_Stroke *stk, int start, int end)
 
 	total = end - start + 1;
 
-	VECCOPY(normal, stk->points[start].no);
+	copy_v3_v3(normal, stk->points[start].no);
 
 	sub_v3_v3v3(distance, stk->points[end].p, stk->points[start].p);
 	project_v3_v3v3(normal, distance, normal);
@@ -338,7 +332,7 @@ void sk_flattenStroke(SK_Stroke *stk, int start, int end)
 		sub_v3_v3v3(distance, p, stk->points[start].p);
 		project_v3_v3v3(distance, distance, normal);
 
-		VECCOPY(offset, normal);
+		copy_v3_v3(offset, normal);
 		mul_v3_fl(offset, d);
 
 		sub_v3_v3(p, distance);
@@ -579,15 +573,13 @@ void sk_selectAllSketch(SK_Sketch *sketch, int mode)
 			stk->selected = 0;
 		}
 	}
-	else if (mode == 0)
-	{
+	else if (mode == 0) {
 		for (stk = sketch->strokes.first; stk; stk = stk->next)
 		{
 			stk->selected = 1;
 		}
 	}
-	else if (mode == 1)
-	{
+	else if (mode == 1) {
 		int selected = 1;
 
 		for (stk = sketch->strokes.first; stk; stk = stk->next)

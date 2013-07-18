@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -47,7 +45,6 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
-#include "BLI_storage_types.h"
 #include "BLI_utildefines.h"
 
 #include "DNA_brush_types.h"
@@ -189,7 +186,7 @@ static void def_internal_vicon( int icon_id, VectorDrawFunc drawFunc)
 
 	di = MEM_callocN(sizeof(DrawInfo), "drawinfo");
 	di->type= ICON_TYPE_VECTOR;
-	di->data.vector.func =drawFunc;
+	di->data.vector.func = drawFunc;
 
 	new_icon->drawinfo_free = NULL;
 	new_icon->drawinfo = di;
@@ -465,10 +462,10 @@ static void vicon_move_down_draw(int x, int y, int w, int h, float UNUSED(alpha)
 static void init_brush_icons(void)
 {
 
-#define INIT_BRUSH_ICON(icon_id, name)					     \
-	bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_ ##name## _png, \
-				     datatoc_ ##name## _png_size, IB_rect);  \
-	def_internal_icon(bbuf, icon_id, 0, 0, w, ICON_TYPE_BUFFER);	     \
+#define INIT_BRUSH_ICON(icon_id, name)                                         \
+	bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_ ##name## _png,       \
+					 datatoc_ ##name## _png_size, IB_rect, "<brush icon>");    \
+	def_internal_icon(bbuf, icon_id, 0, 0, w, ICON_TYPE_BUFFER);               \
 	IMB_freeImBuf(bbuf);
 	// end INIT_BRUSH_ICON
 
@@ -479,6 +476,7 @@ static void init_brush_icons(void)
 	INIT_BRUSH_ICON(ICON_BRUSH_BLOB, blob);
 	INIT_BRUSH_ICON(ICON_BRUSH_BLUR, blur);
 	INIT_BRUSH_ICON(ICON_BRUSH_CLAY, clay);
+	INIT_BRUSH_ICON(ICON_BRUSH_CLAY_STRIPS, claystrips);
 	INIT_BRUSH_ICON(ICON_BRUSH_CLONE, clone);
 	INIT_BRUSH_ICON(ICON_BRUSH_CREASE, crease);
 	INIT_BRUSH_ICON(ICON_BRUSH_DARKEN, darken);
@@ -509,10 +507,10 @@ static void init_brush_icons(void)
 
 static void init_internal_icons(void)
 {
-	bTheme *btheme= U.themes.first;
+	bTheme *btheme= UI_GetTheme();
 	ImBuf *bbuf= NULL;
 	int x, y, icontype;
-	char iconfilestr[FILE_MAXDIR+FILE_MAXFILE];
+	char iconfilestr[FILE_MAX];
 	
 	if ((btheme!=NULL) && btheme->tui.iconfile[0]) {
 		char *icondir= BLI_get_folder(BLENDER_DATAFILES, "icons");
@@ -525,9 +523,12 @@ static void init_internal_icons(void)
 				bbuf= NULL;
 			}
 		}
+		else {
+			printf("%s: 'icons' data path not found, continuing\n", __func__);
+		}
 	}
 	if(bbuf==NULL)
-		bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_blenderbuttons, datatoc_blenderbuttons_size, IB_rect);
+		bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_blender_icons_png, datatoc_blender_icons_png_size, IB_rect, "<blender icons>");
 
 	if(bbuf) {
 		/* free existing texture if any */
@@ -606,11 +607,11 @@ static void init_iconfile_list(struct ListBase *list)
 	if(icondir==NULL)
 		return;
 	
-	/* since BLI_getdir changes the current working directory, restore it 
-	   back to old value afterwards */
-	if(!BLI_getwdN(olddir, sizeof(olddir))) 
+	/* since BLI_dir_contents changes the current working directory, restore it 
+	 * back to old value afterwards */
+	if(!BLI_current_working_dir(olddir, sizeof(olddir))) 
 		restoredir = 0;
-	totfile = BLI_getdir(icondir, &dir);
+	totfile = BLI_dir_contents(icondir, &dir);
 	if (restoredir && !chdir(olddir)) {} /* fix warning about checking return value */
 
 	for(i=0; i<totfile; i++) {
@@ -626,7 +627,7 @@ static void init_iconfile_list(struct ListBase *list)
 				ImBuf *bbuf= NULL;
 				/* check to see if the image is the right size, continue if not */
 				/* copying strings here should go ok, assuming that we never get back
-				   a complete path to file longer than 256 chars */
+				 * a complete path to file longer than 256 chars */
 				BLI_join_dirfile(iconfilestr, sizeof(iconfilestr), icondir, filename);
 				bbuf= IMB_loadiffname(iconfilestr, IB_rect);
 
@@ -659,13 +660,15 @@ static void init_iconfile_list(struct ListBase *list)
 		}
 	}
 	
-	/* free temporary direntry structure that's been created by BLI_getdir() */
+	/* free temporary direntry structure that's been created by BLI_dir_contents() */
 	i= totfile-1;
 	
-	for(; i>=0; i--){
+	for (; i>=0; i--) {
 		MEM_freeN(dir[i].relname);
 		MEM_freeN(dir[i].path);
-		if (dir[i].string) MEM_freeN(dir[i].string);
+		if (dir[i].string) {
+			MEM_freeN(dir[i].string);
+		}
 	}
 	free(dir);
 	dir= NULL;
@@ -752,7 +755,7 @@ int UI_icon_get_width(int icon_id)
 	
 	if (icon==NULL) {
 		if (G.f & G_DEBUG)
-			printf("UI_icon_get_width: Internal error, no icon for icon ID: %d\n", icon_id);
+			printf("%s: Internal error, no icon for icon ID: %d\n", __func__, icon_id);
 		return 0;
 	}
 	
@@ -777,7 +780,7 @@ int UI_icon_get_height(int icon_id)
 	
 	if (icon==NULL) {
 		if (G.f & G_DEBUG)
-			printf("UI_icon_get_height: Internal error, no icon for icon ID: %d\n", icon_id);
+			printf("%s: Internal error, no icon for icon ID: %d\n", __func__, icon_id);
 		return 0;
 	}
 	
@@ -825,7 +828,7 @@ static void icon_create_rect(struct PreviewImage* prv_img, enum eIconSizes size)
 
 	if (!prv_img) {
 		if (G.f & G_DEBUG)
-			printf("Error: requested preview image does not exist");
+			printf("%s, error: requested preview image does not exist", __func__);
 	}
 	if (!prv_img->rect[size]) {
 		prv_img->w[size] = render_size;
@@ -842,7 +845,7 @@ static void icon_set_image(bContext *C, ID *id, PreviewImage* prv_img, enum eIco
 {
 	if (!prv_img) {
 		if (G.f & G_DEBUG)
-			printf("No preview image for this ID: %s\n", id->name);
+			printf("%s: no preview image for this ID: %s\n", __func__, id->name);
 		return;
 	}	
 
@@ -858,7 +861,7 @@ static void icon_draw_rect(float x, float y, int w, int h, float UNUSED(aspect),
 
 	/* sanity check */
 	if(w<=0 || h<=0 || w>2000 || h>2000) {
-		printf("icon_draw_rect: icons are %i x %i pixels?\n", w, h);
+		printf("%s: icons are %i x %i pixels?\n", __func__, w, h);
 		BLI_assert(!"invalid icon size");
 		return;
 	}
@@ -948,19 +951,21 @@ static int get_draw_size(enum eIconSizes size)
 	return 0;
 }
 
-static void icon_draw_size(float x, float y, int icon_id, float aspect, float alpha, float *rgb, enum eIconSizes size, int draw_size, int UNUSED(nocreate), int is_preview)
+static void icon_draw_size(float x, float y, int icon_id, float aspect, float alpha, float *rgb, enum eIconSizes size, int draw_size, int UNUSED(nocreate), short is_preview)
 {
+	bTheme *btheme= UI_GetTheme();
 	Icon *icon = NULL;
 	DrawInfo *di = NULL;
 	IconImage *iimg;
-	float fdraw_size= UI_DPI_ICON_FAC*draw_size;
+	float fdraw_size= is_preview ? draw_size : (draw_size * UI_DPI_ICON_FAC);
 	int w, h;
 	
 	icon = BKE_icon_get(icon_id);
+	alpha *= btheme->tui.icon_alpha;
 	
 	if (icon==NULL) {
 		if (G.f & G_DEBUG)
-			printf("icon_draw_mipmap: Internal error, no icon for icon ID: %d\n", icon_id);
+			printf("%s: Internal error, no icon for icon ID: %d\n", __func__, icon_id);
 		return;
 	}
 
@@ -979,7 +984,7 @@ static void icon_draw_size(float x, float y, int icon_id, float aspect, float al
 	
 	if(di->type == ICON_TYPE_VECTOR) {
 		/* vector icons use the uiBlock transformation, they are not drawn
-		with untransformed coordinates like the other icons */
+		 * with untransformed coordinates like the other icons */
 		di->data.vector.func((int)x, (int)y, ICON_DEFAULT_HEIGHT, ICON_DEFAULT_HEIGHT, 1.0f); 
 	} 
 	else if(di->type == ICON_TYPE_TEXTURE) {
@@ -1009,35 +1014,39 @@ static void icon_draw_size(float x, float y, int icon_id, float aspect, float al
 	}
 }
 
+static void ui_id_preview_image_render_size(bContext *C, ID *id, PreviewImage *pi, int size)
+{
+	if ((pi->changed[size] ||!pi->rect[size])) { /* changed only ever set by dynamic icons */
+		/* create the rect if necessary */
+		icon_set_image(C, id, pi, size);
+
+		pi->changed[size] = 0;
+	}
+}
+
 static void ui_id_icon_render(bContext *C, ID *id, int big)
 {
-	PreviewImage *pi = BKE_previewimg_get(id); 
-	
-	if (pi) {			
-		if ((pi->changed[0] ||!pi->rect[0])) /* changed only ever set by dynamic icons */
-		{
-			/* create the rect if necessary */				
-			
-			icon_set_image(C, id, pi, 0);		/* icon size */
-			if (big)
-				icon_set_image(C, id, pi, 1);	/* bigger preview size */
-			
-			pi->changed[0] = 0;
-		}
+	PreviewImage *pi = BKE_previewimg_get(id);
+
+	if (pi) {
+		if (big)
+			ui_id_preview_image_render_size(C, id, pi, ICON_SIZE_PREVIEW);	/* bigger preview size */
+		else
+			ui_id_preview_image_render_size(C, id, pi, ICON_SIZE_ICON);		/* icon size */
 	}
 }
 
 static void ui_id_brush_render(bContext *C, ID *id)
 {
 	PreviewImage *pi = BKE_previewimg_get(id); 
-	int i;
+	enum eIconSizes i;
 	
 	if(!pi)
 		return;
 	
 	for(i = 0; i < NUM_ICON_SIZES; i++) {
 		/* check if rect needs to be created; changed
-		 only set by dynamic icons */
+		 * only set by dynamic icons */
 		if((pi->changed[i] || !pi->rect[i])) {
 			icon_set_image(C, id, pi, i);
 			pi->changed[i] = 0;
@@ -1061,8 +1070,8 @@ static int ui_id_brush_get_icon(bContext *C, ID *id)
 		int tool, mode = 0;
 
 		/* XXX: this is not nice, should probably make brushes
-		   be strictly in one paint mode only to avoid
-		   checking various context stuff here */
+		 * be strictly in one paint mode only to avoid
+		 * checking various context stuff here */
 
 		if(CTX_wm_view3d(C) && ob) {
 			if(ob->mode & OB_MODE_SCULPT)

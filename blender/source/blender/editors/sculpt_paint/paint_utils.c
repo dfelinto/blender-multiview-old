@@ -1,3 +1,30 @@
+/*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ *
+ * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
 /** \file blender/editors/sculpt_paint/paint_utils.c
  *  \ingroup edsculpt
  */
@@ -40,9 +67,80 @@
 
 #include "paint_intern.h"
 
+/* Convert the object-space axis-aligned bounding box (expressed as
+ * its minimum and maximum corners) into a screen-space rectangle,
+ * returns zero if the result is empty */
+int paint_convert_bb_to_rect(rcti *rect,
+							 const float bb_min[3],
+							 const float bb_max[3],
+							 const ARegion *ar,
+							 RegionView3D *rv3d,
+							 Object *ob)
+{
+	float projection_mat[4][4];
+	int i, j, k;
+
+	rect->xmin = rect->ymin = INT_MAX;
+	rect->xmax = rect->ymax = INT_MIN;
+
+	/* return zero if the bounding box has non-positive volume */
+	if(bb_min[0] > bb_max[0] || bb_min[1] > bb_max[1] || bb_min[2] > bb_max[2])
+		return 0;
+
+	ED_view3d_ob_project_mat_get(rv3d, ob, projection_mat);
+
+	for(i = 0; i < 2; ++i) {
+		for(j = 0; j < 2; ++j) {
+			for(k = 0; k < 2; ++k) {
+				float vec[3], proj[2];
+				vec[0] = i ? bb_min[0] : bb_max[0];
+				vec[1] = j ? bb_min[1] : bb_max[1];
+				vec[2] = k ? bb_min[2] : bb_max[2];
+				/* convert corner to screen space */
+				ED_view3d_project_float_v2(ar, vec, proj, projection_mat);
+				/* expand 2D rectangle */
+				rect->xmin = MIN2(rect->xmin, proj[0]);
+				rect->xmax = MAX2(rect->xmax, proj[0]);
+				rect->ymin = MIN2(rect->ymin, proj[1]);
+				rect->ymax = MAX2(rect->ymax, proj[1]);
+			}
+		}
+	}
+
+	/* return false if the rectangle has non-positive area */
+	return rect->xmin < rect->xmax && rect->ymin < rect->ymax;
+}
+
+/* Get four planes in object-space that describe the projection of
+ * screen_rect from screen into object-space (essentially converting a
+ * 2D screens-space bounding box into four 3D planes) */
+void paint_calc_redraw_planes(float planes[4][4],
+							  const ARegion *ar,
+							  RegionView3D *rv3d,
+							  Object *ob,
+							  const rcti *screen_rect)
+{
+	BoundBox bb;
+	bglMats mats;
+	rcti rect;
+
+	memset(&bb, 0, sizeof(BoundBox));
+	view3d_get_transformation(ar, rv3d, ob, &mats);
+
+	/* use some extra space just in case */
+	rect = *screen_rect;
+	rect.xmin -= 2;
+	rect.xmax += 2;
+	rect.ymin -= 2;
+	rect.ymax += 2;
+
+	ED_view3d_calc_clipping(&bb, planes, &mats, &rect);
+	mul_m4_fl(planes, -1.0f);
+}
+
 /* convert a point in model coordinates to 2D screen coordinates */
 /* TODO: can be deleted once all calls are replaced with
-   view3d_project_float() */
+ * view3d_project_float() */
 void projectf(bglMats *mats, const float v[3], float p[2])
 {
 	double ux, uy, uz;
@@ -53,7 +151,7 @@ void projectf(bglMats *mats, const float v[3], float p[2])
 	p[1]= uy;
 }
 
-float paint_calc_object_space_radius(ViewContext *vc, float center[3],
+float paint_calc_object_space_radius(ViewContext *vc, const float center[3],
 				     float pixel_radius)
 {
 	Object *ob = vc->obact;
@@ -95,28 +193,30 @@ float paint_get_tex_pixel(Brush* br, float u, float v)
 
 /* 3D Paint */
 
-static void imapaint_project(Object *ob, float *model, float *proj, float *co, float *pco)
+static void imapaint_project(Object *ob, float model[][4], float proj[][4], const float co[3], float pco[4])
 {
-	VECCOPY(pco, co);
+	copy_v3_v3(pco, co);
 	pco[3]= 1.0f;
 
 	mul_m4_v3(ob->obmat, pco);
-	mul_m4_v3((float(*)[4])model, pco);
-	mul_m4_v4((float(*)[4])proj, pco);
+	mul_m4_v3(model, pco);
+	mul_m4_v4(proj, pco);
 }
 
-static void imapaint_tri_weights(Object *ob, float *v1, float *v2, float *v3, float *co, float *w)
+static void imapaint_tri_weights(Object *ob,
+                                 const float v1[3], const float v2[3], const float v3[3],
+                                 const float co[3], float w[3])
 {
 	float pv1[4], pv2[4], pv3[4], h[3], divw;
-	float model[16], proj[16], wmat[3][3], invwmat[3][3];
+	float model[4][4], proj[4][4], wmat[3][3], invwmat[3][3];
 	GLint view[4];
 
 	/* compute barycentric coordinates */
 
 	/* get the needed opengl matrices */
 	glGetIntegerv(GL_VIEWPORT, view);
-	glGetFloatv(GL_MODELVIEW_MATRIX, model);
-	glGetFloatv(GL_PROJECTION_MATRIX, proj);
+	glGetFloatv(GL_MODELVIEW_MATRIX,  (float *)model);
+	glGetFloatv(GL_PROJECTION_MATRIX, (float *)proj);
 	view[0] = view[1] = 0;
 
 	/* project the verts */
@@ -130,7 +230,7 @@ static void imapaint_tri_weights(Object *ob, float *v1, float *v2, float *v3, fl
 	h[2]= 1.0f;
 
 	/* solve for(w1,w2,w3)/perspdiv in:
-	   h*perspdiv = Project*Model*(w1*v1 + w2*v2 + w3*v3) */
+	 * h * perspdiv = Project * Model * (w1 * v1 + w2 * v2 + w3 * v3) */
 
 	wmat[0][0]= pv1[0];  wmat[1][0]= pv2[0];  wmat[2][0]= pv3[0];
 	wmat[0][1]= pv1[1];  wmat[1][1]= pv2[1];  wmat[2][1]= pv3[1];
@@ -139,21 +239,22 @@ static void imapaint_tri_weights(Object *ob, float *v1, float *v2, float *v3, fl
 	invert_m3_m3(invwmat, wmat);
 	mul_m3_v3(invwmat, h);
 
-	VECCOPY(w, h);
+	copy_v3_v3(w, h);
 
 	/* w is still divided by perspdiv, make it sum to one */
 	divw= w[0] + w[1] + w[2];
-	if(divw != 0.0f)
+	if(divw != 0.0f) {
 		mul_v3_fl(w, 1.0f/divw);
+	}
 }
 
 /* compute uv coordinates of mouse in face */
 void imapaint_pick_uv(Scene *scene, Object *ob, unsigned int faceindex, const int xy[2], float uv[2])
 {
 	DerivedMesh *dm = mesh_get_derived_final(scene, ob, CD_MASK_BAREMESH);
-	const int *index = dm->getFaceDataArray(dm, CD_ORIGINDEX);
-	MTFace *tface = dm->getFaceDataArray(dm, CD_MTFACE), *tf;
-	int numfaces = dm->getNumFaces(dm), a, findex;
+	const int *index = dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
+	MTFace *tface = dm->getTessFaceDataArray(dm, CD_MTFACE), *tf;
+	int numfaces = dm->getNumTessFaces(dm), a, findex;
 	float p[2], w[3], absw, minabsw;
 	MFace mf;
 	MVert mv[4];
@@ -166,7 +267,7 @@ void imapaint_pick_uv(Scene *scene, Object *ob, unsigned int faceindex, const in
 		findex= index ? index[a]: a;
 
 		if(findex == faceindex) {
-			dm->getFace(dm, a, &mf);
+			dm->getTessFace(dm, a, &mf);
 
 			dm->getVert(dm, mf.v1, &mv[0]);
 			dm->getVert(dm, mf.v2, &mv[1]);
@@ -181,7 +282,7 @@ void imapaint_pick_uv(Scene *scene, Object *ob, unsigned int faceindex, const in
 
 			if(mf.v4) {
 				/* the triangle with the largest absolute values is the one
-				   with the most negative weights */
+				 * with the most negative weights */
 				imapaint_tri_weights(ob, mv[0].co, mv[1].co, mv[3].co, p, w);
 				absw= fabs(w[0]) + fabs(w[1]) + fabs(w[2]);
 				if(absw < minabsw) {
@@ -358,6 +459,49 @@ void PAINT_OT_face_select_all(wmOperatorType *ot)
 	WM_operator_properties_select_all(ot);
 }
 
+
+static int vert_select_all_exec(bContext *C, wmOperator *op)
+{
+	Object *ob= CTX_data_active_object(C);
+	paintvert_deselect_all_visible(ob, RNA_enum_get(op->ptr, "action"), TRUE);
+	ED_region_tag_redraw(CTX_wm_region(C));
+	return OPERATOR_FINISHED;
+}
+
+
+void PAINT_OT_vert_select_all(wmOperatorType *ot)
+{
+	ot->name= "Vertex Selection";
+	ot->description= "Change selection for all vertices";
+	ot->idname= "PAINT_OT_vert_select_all";
+
+	ot->exec= vert_select_all_exec;
+	ot->poll= vert_paint_poll;
+
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+
+	WM_operator_properties_select_all(ot);
+}
+
+static int vert_select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Object *ob= CTX_data_active_object(C);
+	paintvert_deselect_all_visible(ob, SEL_INVERT, TRUE);
+	ED_region_tag_redraw(CTX_wm_region(C));
+	return OPERATOR_FINISHED;
+}
+
+void PAINT_OT_vert_select_inverse(wmOperatorType *ot)
+{
+	ot->name= "Vertex Select Invert";
+	ot->description= "Invert selection of vertices";
+	ot->idname= "PAINT_OT_vert_select_inverse";
+
+	ot->exec= vert_select_inverse_exec;
+	ot->poll= vert_paint_poll;
+
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+}
 static int face_select_inverse_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob= CTX_data_active_object(C);
@@ -399,7 +543,7 @@ void PAINT_OT_face_select_hide(wmOperatorType *ot)
 
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects.");
+	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects");
 }
 
 static int face_select_reveal_exec(bContext *C, wmOperator *UNUSED(op))
@@ -421,5 +565,5 @@ void PAINT_OT_face_select_reveal(wmOperatorType *ot)
 
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects.");
+	RNA_def_boolean(ot->srna, "unselected", 0, "Unselected", "Hide unselected rather than selected objects");
 }

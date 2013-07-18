@@ -1,8 +1,4 @@
 /*
- * allocimbuf.c
- *
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -48,8 +44,8 @@
 
 #include "imbuf.h"
 
-#include "MEM_CacheLimiterC-Api.h"
 #include "MEM_guardedalloc.h"
+#include "MEM_CacheLimiterC-Api.h"
 
 void imb_freemipmapImBuf(ImBuf *ibuf)
 {
@@ -165,7 +161,6 @@ void IMB_freeImBuf(ImBuf *ibuf)
 			IMB_freezbufImBuf(ibuf);
 			IMB_freezbuffloatImBuf(ibuf);
 			freeencodedbufferImBuf(ibuf);
-			IMB_cache_limiter_unmanage(ibuf);
 			IMB_metadata_free(ibuf);
 			MEM_freeN(ibuf);
 		}
@@ -325,7 +320,7 @@ short imb_addrectImBuf(ImBuf *ibuf)
 	if((ibuf->rect = MEM_mapallocN(size, "imb_addrectImBuf"))) {
 		ibuf->mall |= IB_rect;
 		ibuf->flags |= IB_rect;
-		if(ibuf->depth > 32) return (addzbufImBuf(ibuf));
+		if(ibuf->planes > 32) return (addzbufImBuf(ibuf));
 		else return TRUE;
 	}
 
@@ -343,7 +338,7 @@ short imb_addtilesImBuf(ImBuf *ibuf)
 	return (ibuf->tiles != NULL);
 }
 
-ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y, uchar d, unsigned int flags)
+ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y, uchar planes, unsigned int flags)
 {
 	ImBuf *ibuf;
 
@@ -352,7 +347,7 @@ ImBuf *IMB_allocImBuf(unsigned int x, unsigned int y, uchar d, unsigned int flag
 	if(ibuf) {
 		ibuf->x= x;
 		ibuf->y= y;
-		ibuf->depth= d;
+		ibuf->planes= planes;
 		ibuf->ftype= TGA;
 		ibuf->channels= 4;	/* float option, is set to other values when buffers get assigned */
 		ibuf->ppm[0]= ibuf->ppm[1]= 150.0 / 0.0254; /* 150dpi -> pixels-per-meter */
@@ -404,7 +399,7 @@ ImBuf *IMB_dupImBuf(ImBuf *ibuf1)
 	y = ibuf1->y;
 	if(ibuf1->flags & IB_fields) y *= 2;
 	
-	ibuf2 = IMB_allocImBuf(x, y, ibuf1->depth, flags);
+	ibuf2 = IMB_allocImBuf(x, y, ibuf1->planes, flags);
 	if(ibuf2 == NULL) return NULL;
 
 	if(flags & IB_rect)
@@ -448,6 +443,7 @@ ImBuf *IMB_dupImBuf(ImBuf *ibuf1)
 	return(ibuf2);
 }
 
+#if 0 /* remove? - campbell */
 /* support for cache limiting */
 
 static void imbuf_cache_destructor(void *data)
@@ -463,65 +459,14 @@ static void imbuf_cache_destructor(void *data)
 	ibuf->c_handle = NULL;
 }
 
+
 static MEM_CacheLimiterC **get_imbuf_cache_limiter(void)
 {
 	static MEM_CacheLimiterC *c = NULL;
 
 	if(!c)
-		c = new_MEM_CacheLimiter(imbuf_cache_destructor);
+		c = new_MEM_CacheLimiter(imbuf_cache_destructor, NULL);
 
 	return &c;
 }
-
-void IMB_free_cache_limiter(void)
-{
-	delete_MEM_CacheLimiter(*get_imbuf_cache_limiter());
-	*get_imbuf_cache_limiter() = NULL;
-}
-
-void IMB_cache_limiter_insert(ImBuf *i)
-{
-	if(!i->c_handle) {
-		i->c_handle = MEM_CacheLimiter_insert(
-			*get_imbuf_cache_limiter(), i);
-		MEM_CacheLimiter_ref(i->c_handle);
-		MEM_CacheLimiter_enforce_limits(
-			*get_imbuf_cache_limiter());
-		MEM_CacheLimiter_unref(i->c_handle);
-	}
-}
-
-void IMB_cache_limiter_unmanage(ImBuf *i)
-{
-	if(i->c_handle) {
-		MEM_CacheLimiter_unmanage(i->c_handle);
-		i->c_handle = NULL;
-	}
-}
-
-void IMB_cache_limiter_touch(ImBuf *i)
-{
-	if(i->c_handle)
-		MEM_CacheLimiter_touch(i->c_handle);
-}
-
-void IMB_cache_limiter_ref(ImBuf *i)
-{
-	if(i->c_handle)
-		MEM_CacheLimiter_ref(i->c_handle);
-}
-
-void IMB_cache_limiter_unref(ImBuf *i)
-{
-	if(i->c_handle)
-		MEM_CacheLimiter_unref(i->c_handle);
-}
-
-int IMB_cache_limiter_get_refcount(ImBuf *i)
-{
-	if(i->c_handle)
-		return MEM_CacheLimiter_get_refcount(i->c_handle);
-
-	return 0;
-}
-
+#endif

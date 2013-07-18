@@ -1,5 +1,4 @@
 /*
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  */
 
 
-#ifndef MEM_CACHELIMITERC_API_H
-#define MEM_CACHELIMITERC_API_H
+#ifndef __MEM_CACHELIMITERC_API_H__
+#define __MEM_CACHELIMITERC_API_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -42,10 +41,13 @@ typedef struct MEM_CacheLimiterHandle_s MEM_CacheLimiterHandleC;
 /* function used to remove data from memory */
 typedef void(*MEM_CacheLimiter_Destruct_Func)(void*);
 
-#ifndef MEM_CACHELIMITER_H
-extern void MEM_CacheLimiter_set_maximum(int m);
+/* function used to measure stored data element size */
+typedef size_t(*MEM_CacheLimiter_DataSize_Func) (void*);
+
+#ifndef __MEM_CACHELIMITER_H__
+extern void MEM_CacheLimiter_set_maximum(size_t m);
 extern int MEM_CacheLimiter_get_maximum(void);
-#endif // MEM_CACHELIMITER_H
+#endif /* __MEM_CACHELIMITER_H__ */
 /** 
  * Create new MEM_CacheLimiter object 
  * managed objects are destructed with the data_destructor
@@ -55,7 +57,8 @@ extern int MEM_CacheLimiter_get_maximum(void);
  */
 
 extern MEM_CacheLimiterC * new_MEM_CacheLimiter(
-	MEM_CacheLimiter_Destruct_Func data_destructor);
+	MEM_CacheLimiter_Destruct_Func data_destructor,
+	MEM_CacheLimiter_DataSize_Func data_size);
 
 /** 
  * Delete MEM_CacheLimiter
@@ -142,4 +145,4 @@ extern void * MEM_CacheLimiter_get(MEM_CacheLimiterHandleC * handle);
 #endif
 
 
-#endif // MEM_CACHELIMITERC_API_H
+#endif // __MEM_CACHELIMITERC_API_H__

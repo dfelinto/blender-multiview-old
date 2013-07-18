@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,8 +28,8 @@
  *  \ingroup edscr
  */
 
-#ifndef ED_SCREEN_INTERN_H
-#define ED_SCREEN_INTERN_H
+#ifndef __SCREEN_INTERN_H__
+#define __SCREEN_INTERN_H__
 
 /* internal exports only */
 struct wmWindow;
@@ -67,7 +65,7 @@ extern const char *screen_context_dir[]; /* doc access */
 void SCREEN_OT_screenshot(struct wmOperatorType *ot);
 void SCREEN_OT_screencast(struct wmOperatorType *ot);
 
-#endif /* ED_SCREEN_INTERN_H */
+#endif /* __SCREEN_INTERN_H__ */
 
 
 

@@ -87,7 +87,7 @@ class MATERIAL_PT_context_material(MaterialButtonsPanel, Panel):
 
     @classmethod
     def poll(cls, context):
-        # An exception, dont call the parent poll func because
+        # An exception, don't call the parent poll func because
         # this manages materials for all engine types
 
         engine = context.scene.render.engine
@@ -124,7 +124,7 @@ class MATERIAL_PT_context_material(MaterialButtonsPanel, Panel):
             split.template_ID(ob, "active_material", new="material.new")
             row = split.row()
             if mat:
-                row.prop(mat, "use_nodes", icon="NODETREE", text="")
+                row.prop(mat, "use_nodes", icon='NODETREE', text="")
 
             if slot:
                 row.prop(slot, "link", text="")
@@ -501,8 +501,8 @@ class MATERIAL_PT_sss(MaterialButtonsPanel, Panel):
         row = layout.row().split()
         sub = row.row(align=True).split(percentage=0.75)
         sub.menu("MATERIAL_MT_sss_presets", text=bpy.types.MATERIAL_MT_sss_presets.bl_label)
-        sub.operator("material.sss_preset_add", text="", icon="ZOOMIN")
-        sub.operator("material.sss_preset_add", text="", icon="ZOOMOUT").remove_active = True
+        sub.operator("material.sss_preset_add", text="", icon='ZOOMIN')
+        sub.operator("material.sss_preset_add", text="", icon='ZOOMOUT').remove_active = True
 
         split = layout.split()
 
@@ -537,7 +537,7 @@ class MATERIAL_PT_halo(MaterialButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        mat = context.material  # dont use node material
+        mat = context.material  # don't use node material
         halo = mat.halo
 
         def number_but(layout, toggle, number, name, color):
@@ -595,7 +595,7 @@ class MATERIAL_PT_flare(MaterialButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        mat = context.material  # dont use node material
+        mat = context.material  # don't use node material
         halo = mat.halo
 
         layout.active = halo.use_flare_mode
@@ -612,8 +612,8 @@ class MATERIAL_PT_flare(MaterialButtonsPanel, Panel):
         col.prop(halo, "flare_subflare_size", text="Subsize")
 
 
-class MATERIAL_PT_physics(MaterialButtonsPanel, Panel):
-    bl_label = "Physics"
+class MATERIAL_PT_game_settings(MaterialButtonsPanel, Panel):
+    bl_label = "Game Settings"
     COMPAT_ENGINES = {'BLENDER_GAME'}
 
     @classmethod
@@ -622,8 +622,38 @@ class MATERIAL_PT_physics(MaterialButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
+        game = context.material.game_settings  # don't use node material
 
-        phys = context.material.physics  # dont use node material
+        row = layout.row()
+        row.prop(game, "use_backface_culling")
+        row.prop(game, "invisible")
+        row.prop(game, "text")
+
+        row = layout.row()
+        row.label(text="Alpha Blend:")
+        row.label(text="Face Orientation:")
+        row = layout.row()
+        row.prop(game, "alpha_blend", text="")
+        row.prop(game, "face_orientation", text="")
+
+
+class MATERIAL_PT_physics(MaterialButtonsPanel, Panel):
+    bl_label = "Physics"
+    COMPAT_ENGINES = {'BLENDER_GAME'}
+
+    def draw_header(self, context):
+        game = context.material.game_settings
+        self.layout.prop(game, "physics", text="")
+
+    @classmethod
+    def poll(cls, context):
+        return context.material and (context.scene.render.engine in cls.COMPAT_ENGINES)
+
+    def draw(self, context):
+        layout = self.layout
+        layout.active = context.material.game_settings.physics
+
+        phys = context.material.physics  # don't use node material
 
         split = layout.split()
         row = split.row()
@@ -656,7 +686,7 @@ class MATERIAL_PT_strand(MaterialButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        mat = context.material  # dont use node material
+        mat = context.material  # don't use node material
         tan = mat.strand
 
         split = layout.split()
@@ -832,7 +862,7 @@ class MATERIAL_PT_volume_density(VolumeButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        vol = context.material.volume  # dont use node material
+        vol = context.material.volume  # don't use node material
 
         row = layout.row()
         row.prop(vol, "density")
@@ -846,7 +876,7 @@ class MATERIAL_PT_volume_shading(VolumeButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        vol = context.material.volume  # dont use node material
+        vol = context.material.volume  # don't use node material
 
         split = layout.split()
 
@@ -871,7 +901,7 @@ class MATERIAL_PT_volume_lighting(VolumeButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        vol = context.material.volume  # dont use node material
+        vol = context.material.volume  # don't use node material
 
         split = layout.split()
 
@@ -912,7 +942,7 @@ class MATERIAL_PT_volume_transp(VolumeButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        mat = context.material  # dont use node material
+        mat = context.material  # don't use node material
 
         layout.prop(mat, "transparency_method", expand=True)
 
@@ -924,7 +954,7 @@ class MATERIAL_PT_volume_integration(VolumeButtonsPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        vol = context.material.volume  # dont use node material
+        vol = context.material.volume  # don't use node material
 
         split = layout.split()
 

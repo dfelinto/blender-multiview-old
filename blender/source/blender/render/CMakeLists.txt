@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -28,6 +27,7 @@
 set(INC 
 	extern/include
 	intern/include
+	../blenfont
 	../blenkernel
 	../blenlib
 	../blenloader
@@ -56,6 +56,7 @@ set(SRC
 	intern/raytrace/rayobject_vbvh.cpp
 	intern/source/convertblender.c
 	intern/source/envmap.c
+	intern/source/external_engine.c
 	intern/source/gammaCorrectionTables.c
 	intern/source/imagetexture.c
 	intern/source/initrender.c
@@ -66,6 +67,7 @@ set(SRC
 	intern/source/pointdensity.c
 	intern/source/rayshade.c
 	intern/source/rendercore.c
+	intern/source/render_result.c
 	intern/source/render_texture.c
 	intern/source/renderdatabase.c
 	intern/source/shadbuf.c
@@ -74,11 +76,13 @@ set(SRC
 	intern/source/sss.c
 	intern/source/strand.c
 	intern/source/sunsky.c
+	intern/source/texture_ocean.c
 	intern/source/volume_precache.c
 	intern/source/volumetric.c
 	intern/source/voxeldata.c
 	intern/source/zbuf.c
 
+	extern/include/RE_engine.h
 	extern/include/RE_pipeline.h
 	extern/include/RE_render_ext.h
 	extern/include/RE_shader_ext.h
@@ -94,6 +98,7 @@ set(SRC
 	intern/include/rayintersection.h
 	intern/include/raycounter.h
 	intern/include/render_types.h
+	intern/include/render_result.h
 	intern/include/rendercore.h
 	intern/include/renderdatabase.h
 	intern/include/renderpipeline.h
@@ -103,6 +108,7 @@ set(SRC
 	intern/include/strand.h
 	intern/include/sunsky.h
 	intern/include/texture.h
+	intern/include/texture_ocean.h
 	intern/include/volume_precache.h
 	intern/include/volumetric.h
 	intern/include/voxeldata.h
@@ -115,6 +121,17 @@ set(SRC
 	intern/raytrace/svbvh.h
 	intern/raytrace/vbvh.h
 )
+
+if(WITH_PYTHON)
+	add_definitions(-DWITH_PYTHON)
+	list(APPEND INC
+		../python
+	)
+
+	list(APPEND INC_SYS
+		${PYTHON_INCLUDE_DIRS}
+	)
+endif()
 
 if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
@@ -132,6 +149,10 @@ if(WITH_CODEC_QUICKTIME)
 		${QUICKTIME_INCLUDE_DIRS}
 	)
 	add_definitions(-DWITH_QUICKTIME)
+endif()
+
+if(WITH_GAMEENGINE)
+	add_definitions(-DWITH_GAMEENGINE)
 endif()
 
 if(APPLE)

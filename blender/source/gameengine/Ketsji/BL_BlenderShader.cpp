@@ -8,6 +8,7 @@
 
 #include "BKE_global.h"
 #include "BKE_main.h"
+#include "BKE_DerivedMesh.h"
 
 #include "BL_BlenderShader.h"
 #include "BL_Material.h"
@@ -27,7 +28,7 @@ BL_BlenderShader::BL_BlenderShader(KX_Scene *scene, struct Material *ma, int lig
 	mGPUMat(NULL)
 {
 	mBlenderScene = scene->GetBlenderScene();
-	mBlendMode = GPU_BLEND_SOLID;
+	mAlphaBlend = GPU_BLEND_SOLID;
 
 	ReloadMaterial();
 }
@@ -146,14 +147,15 @@ void BL_BlenderShader::Update(const RAS_MeshSlot & ms, RAS_IRasterizer* rasty )
 	else
 		obcol[0]= obcol[1]= obcol[2]= obcol[3]= 1.0f;
 
-	GPU_material_bind_uniforms(gpumat, obmat, viewmat, viewinvmat, obcol);
+	float auto_bump_scale = ms.m_pDerivedMesh!=0 ? ms.m_pDerivedMesh->auto_bump_scale : 1.0f;
+	GPU_material_bind_uniforms(gpumat, obmat, viewmat, viewinvmat, obcol, auto_bump_scale);
 
-	mBlendMode = GPU_material_blend_mode(gpumat, obcol);
+	mAlphaBlend = GPU_material_alpha_blend(gpumat, obcol);
 }
 
-int BL_BlenderShader::GetBlendMode()
+int BL_BlenderShader::GetAlphaBlend()
 {
-	return mBlendMode;
+	return mAlphaBlend;
 }
 
 bool BL_BlenderShader::Equals(BL_BlenderShader *blshader)

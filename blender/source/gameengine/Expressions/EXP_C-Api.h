@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup expressions
  */
 
-#ifndef __EXPRESSION_INCLUDE
-#define __EXPRESSION_INCLUDE
+#ifndef __EXP_C_API_H__
+#define __EXP_C_API_H__
 
 #define EXP_DECLARE_HANDLE(name) typedef struct name##__ { int unused; } *name
 
@@ -66,5 +64,5 @@ const char*					EXP_GetText(EXP_ValueHandle);
 }
 #endif
 
-#endif //__EXPRESSION_INCLUDE
+#endif //__EXP_C_API_H__
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_MIXER
-#define AUD_MIXER
+#ifndef __AUD_MIXER_H__
+#define __AUD_MIXER_H__
 
 #include "AUD_ConverterFunctions.h"
 #include "AUD_Buffer.h"
@@ -110,4 +108,4 @@ public:
 	void clear(int length);
 };
 
-#endif //AUD_MIXER
+#endif //__AUD_MIXER_H__

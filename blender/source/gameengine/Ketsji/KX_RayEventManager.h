@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief Manager for ray events
  */
 
-#ifndef __KX_RAYEVENTMGR
-#define __KX_RAYEVENTMGR
+#ifndef __KX_RAYEVENTMANAGER_H__
+#define __KX_RAYEVENTMANAGER_H__
 #include "SCA_EventManager.h"
 #include <vector>
 using namespace std;
@@ -54,5 +52,5 @@ public:
 #endif
 };
 
-#endif //__KX_RAYEVENTMGR
+#endif //__KX_RAYEVENTMANAGER_H__
 

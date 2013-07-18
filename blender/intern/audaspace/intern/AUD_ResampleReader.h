@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -28,8 +26,8 @@
  *  \ingroup audaspaceintern
  */
 
-#ifndef AUD_RESAMPLEREADER
-#define AUD_RESAMPLEREADER
+#ifndef __AUD_RESAMPLEREADER_H__
+#define __AUD_RESAMPLEREADER_H__
 
 #include "AUD_EffectReader.h"
 
@@ -65,4 +63,4 @@ public:
 	virtual AUD_SampleRate getRate();
 };
 
-#endif // AUD_RESAMPLEREADER
+#endif // __AUD_RESAMPLEREADER_H__

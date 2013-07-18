@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -41,32 +40,9 @@ blender_include_dirs(
 	../blender/windowmanager
 )
 
-if(WITH_CODEC_QUICKTIME)
-	add_definitions(-DWITH_QUICKTIME)
-endif()
-
-if(WITH_IMAGE_OPENEXR)
-	add_definitions(-DWITH_OPENEXR)
-endif()
-
-if(WITH_IMAGE_OPENJPEG)
-	add_definitions(-DWITH_OPENJPEG)
-endif()
-
-if(WITH_IMAGE_TIFF)
-	add_definitions(-DWITH_TIFF)
-endif()
-
-if(WITH_IMAGE_DDS)
-	add_definitions(-DWITH_DDS)
-endif()
-
-if(WITH_IMAGE_CINEON)
-	add_definitions(-DWITH_CINEON)
-endif()
-
-if(WITH_IMAGE_HDR)
-	add_definitions(-DWITH_HDR)
+if(WITH_LIBMV)
+	blender_include_dirs(../../extern/libmv)
+	add_definitions(-DWITH_LIBMV)
 endif()
 
 if(WITH_PYTHON)
@@ -88,8 +64,8 @@ if(WITH_GAMEENGINE)
 	add_definitions(-DWITH_GAMEENGINE)
 endif()
 
-if(NOT WITH_SDL)
-	add_definitions(-DDISABLE_SDL)
+if(WITH_SDL)
+	add_definitions(-DWITH_SDL)
 endif()
 
 if(WITH_BINRELOC)
@@ -125,7 +101,7 @@ if(WIN32 AND NOT UNIX)
 			-DBLEN_VER_RC_4=0
 		)
 	endif()
-	
+
 
 	list(APPEND SRC
 		../icons/winblender.rc
@@ -189,7 +165,10 @@ if(WITH_PYTHON_MODULE)
 	add_definitions(-DWITH_PYTHON_MODULE)
 
 	# creates ./bin/bpy.so which can be imported as a python module.
-	add_library(blender SHARED ${SRC})
+	#
+	# note that 'SHARED' works on Linux and Windows,
+	# but not OSX which _must_ be 'MODULE'
+	add_library(blender MODULE ${SRC})
 	set_target_properties(
 		blender
 		PROPERTIES
@@ -198,16 +177,25 @@ if(WITH_PYTHON_MODULE)
 			LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin
 			RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/bin  # only needed on windows
 	)
-	
+
+	if(APPLE)
+		set_target_properties(
+			blender
+			PROPERTIES
+				LINK_FLAGS_RELEASE "${PLATFORM_LINKFLAGS}"
+				LINK_FLAGS_DEBUG "${PLATFORM_LINKFLAGS_DEBUG}"
+		)
+	endif()
+
 	if(WIN32)
 		# python modules use this
 		set_target_properties(
 			blender
 			PROPERTIES
 			SUFFIX ".pyd"
-		)	
+		)
 	endif()
-	
+
 else()
 	add_executable(blender ${EXETYPE} ${SRC})
 endif()
@@ -229,10 +217,6 @@ else()
 	set(TARGETDIR ${EXECUTABLE_OUTPUT_PATH})
 endif()
 
-
-# -----------------------------------------------------------------------------
-# Install Targets
-
 set(BLENDER_TEXT_FILES
 	${CMAKE_SOURCE_DIR}/release/text/GPL-license.txt
 	${CMAKE_SOURCE_DIR}/release/text/Python-license.txt
@@ -240,8 +224,11 @@ set(BLENDER_TEXT_FILES
 	${CMAKE_SOURCE_DIR}/release/text/readme.html
 )
 
-if(UNIX AND NOT APPLE)
 
+# -----------------------------------------------------------------------------
+# Platform Spesific Var: TARGETDIR_VER
+
+if(UNIX AND NOT APPLE)
 	if(WITH_INSTALL_PORTABLE)
 		set(TARGETDIR_VER ${TARGETDIR}/${BLENDER_VERSION})
 	else()
@@ -252,18 +239,75 @@ if(UNIX AND NOT APPLE)
 		endif()
 	endif()
 
-	# important to make a clean  install each time
-	# else old scripts get loaded.
-	install(
-		CODE
-		"file(REMOVE_RECURSE ${TARGETDIR_VER})"
-	)
+elseif(WIN32)
+	set(TARGETDIR_VER ${TARGETDIR}/${BLENDER_VERSION})
 
+elseif(APPLE)
+	if(WITH_PYTHON_MODULE)
+		set(TARGETDIR_VER ${TARGETDIR}/${BLENDER_VERSION})
+	else()
+		set(TARGETDIR_VER ${TARGETDIR}/blender.app/Contents/MacOS/${BLENDER_VERSION})
+	endif()
+
+endif()
+
+
+# -----------------------------------------------------------------------------
+# Install Targets (Generic, All Platforms)
+
+
+# important to make a clean  install each time, else old scripts get loaded.
+install(
+	CODE
+	"file(REMOVE_RECURSE ${TARGETDIR_VER})"
+)
+
+if(WITH_PYTHON)
+	# install(CODE "message(\"copying blender scripts...\")")
+	
+	# exclude addons_contrib if release
+	if("${BLENDER_VERSION_CYCLE}" STREQUAL "release")
+		set(ADDON_EXCLUDE_CONDITIONAL "addons_contrib/*")
+	else()
+		set(ADDON_EXCLUDE_CONDITIONAL "_addons_contrib/*")  # dummy, wont do anything
+	endif()
+
+	install(
+		DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
+		DESTINATION ${TARGETDIR_VER}
+		PATTERN ".svn" EXCLUDE
+		PATTERN "__pycache__" EXCLUDE
+		PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
+	)
+	
+	unset(ADDON_EXCLUDE_CONDITIONAL)
+endif()
+
+# localization
+if(WITH_INTERNATIONAL)
+	install(
+		DIRECTORY
+			${CMAKE_SOURCE_DIR}/release/datafiles/locale
+			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
+		DESTINATION ${TARGETDIR_VER}/datafiles
+		PATTERN ".svn" EXCLUDE
+	)
+endif()
+
+# helpful tip when using make
+if("${CMAKE_GENERATOR}" MATCHES ".*Makefiles.*")
 	# message after building.
 	add_custom_command(
 		TARGET blender POST_BUILD MAIN_DEPENDENCY blender
-		COMMAND ${CMAKE_COMMAND} -E echo 'now run: \"make install\" to copy runtime files & scripts to ${TARGETDIR_VER}'
+		COMMAND ${CMAKE_COMMAND} -E echo 'now run: \"make install\" to copy runtime files and scripts to ${TARGETDIR_VER}'
 	)
+endif()
+
+
+# -----------------------------------------------------------------------------
+# Install Targets (Platform Specific)
+
+if(UNIX AND NOT APPLE)
 
 	# there are a few differences between portable and system install
 	if(WITH_INSTALL_PORTABLE)
@@ -344,24 +388,6 @@ if(UNIX AND NOT APPLE)
 		)
 	endif()
 
-	install(
-		FILES ${CMAKE_SOURCE_DIR}/release/bin/.blender/.bfont.ttf
-		DESTINATION ${TARGETDIR_VER}
-	)
-
-	if(WITH_INTERNATIONAL)
-		install(
-			FILES ${CMAKE_SOURCE_DIR}/release/bin/.blender/.Blanguages
-			DESTINATION ${TARGETDIR_VER}
-		)
-
-		install(
-			DIRECTORY ${CMAKE_SOURCE_DIR}/release/bin/.blender/locale
-			DESTINATION ${TARGETDIR_VER}/datafiles
-			PATTERN ".svn" EXCLUDE
-		)
-	endif()
-
 		# plugins in blender 2.5 don't work at the moment.
 		#
 		# install(
@@ -371,21 +397,22 @@ if(UNIX AND NOT APPLE)
 		# )
 
 	if(WITH_PYTHON)
-		# install(CODE "message(\"copying blender scripts...\")")
-		install(
-			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
-			DESTINATION ${TARGETDIR_VER}
-			PATTERN ".svn" EXCLUDE
-			PATTERN "__pycache__" EXCLUDE
-		)
-
 		if(WITH_PYTHON_INSTALL)
+			# on some platforms (like openSUSE) Python is linked
+			# to be used from lib64 folder.
+			# determine this from Python's libraries path
+			if(${PYTHON_LIBPATH} MATCHES "lib64$")
+				set(_target_LIB "lib64")
+			else()
+				set(_target_LIB "lib")
+			endif()
+
 			# Copy the systems python into the install directory
 			# Scons copy in tools/Blender.py
 			# install(CODE "message(\"copying a subset of the systems python...\")")
 			install(
 				DIRECTORY ${PYTHON_LIBPATH}/python${PYTHON_VERSION}
-				DESTINATION ${TARGETDIR_VER}/python/lib
+				DESTINATION ${TARGETDIR_VER}/python/${_target_LIB}
 				PATTERN ".svn" EXCLUDE
 				PATTERN "__pycache__" EXCLUDE               # * any cache *
 				PATTERN "distutils" EXCLUDE                 # ./distutils
@@ -403,56 +430,29 @@ if(UNIX AND NOT APPLE)
 
 			# # doesnt work, todo
 			# install(CODE "execute_process(COMMAND find ${TARGETDIR}/${BLENDER_VERSION}/python/lib/ -name '*.so' -exec strip -s {} '\;')")
+			unset(_target_LIB)
 		endif()
 	endif()
 elseif(WIN32)
 
-	set(TARGETDIR_VER ${TARGETDIR}/${BLENDER_VERSION})
-
-	install(  # same as linux!, deduplicate
-		CODE
-		"file(REMOVE_RECURSE ${TARGETDIR_VER})"
-	)
-
-	install(  # same as linux!, deduplicate
+	install(
 		FILES ${BLENDER_TEXT_FILES}
 		DESTINATION ${TARGETDIR}
 	)
 
-	install(  # same as linux!, deduplicate
-		FILES ${CMAKE_SOURCE_DIR}/release/bin/.blender/.bfont.ttf
-		DESTINATION ${TARGETDIR_VER}
-	)
-
-	if(WITH_INTERNATIONAL) # same as linux!, deduplicate
+	if(WITH_INTERNATIONAL)
 		install(
-			FILES ${CMAKE_SOURCE_DIR}/release/bin/.blender/.Blanguages
-			DESTINATION ${TARGETDIR_VER}
-		)
-		install(
-			DIRECTORY ${CMAKE_SOURCE_DIR}/release/bin/.blender/locale
-			DESTINATION ${TARGETDIR_VER}/datafiles
-			PATTERN ".svn" EXCLUDE
+			FILES ${LIBDIR}/gettext/lib/gnu_gettext.dll
+			DESTINATION ${TARGETDIR}
 		)
 
 		if(NOT CMAKE_CL_64)
-			install(
-				FILES ${LIBDIR}/gettext/lib/gnu_gettext.dll
-				DESTINATION ${TARGETDIR}
-			)
-
 			install(
 				FILES ${LIBDIR}/iconv/lib/iconv.dll
 				DESTINATION ${TARGETDIR}
 			)
 		endif()
 	endif()
-
-	install( # same as linux!, deduplicate
-		DIRECTORY ${CMAKE_SOURCE_DIR}/release/bin/.blender/locale
-		DESTINATION ${TARGETDIR_VER}/datafiles/locale
-		PATTERN ".svn" EXCLUDE
-	)
 
 	# plugins in blender 2.5 don't work at the moment.
 	#
@@ -463,22 +463,15 @@ elseif(WIN32)
 	# )
 
 	if(WITH_PYTHON)
-		# install(CODE "message(\"copying blender scripts...\")")
-		install(  # same as linux!, deduplicate
-			DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
-			DESTINATION ${TARGETDIR_VER}
-			PATTERN ".svn" EXCLUDE
-			PATTERN "__pycache__" EXCLUDE
-		)
-
+		set_lib_path(PYLIB "python/lib")
 		install(
-			FILES ${LIBDIR}/python/lib/python32.dll
+			FILES ${PYLIB}/python32.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Release;RelWithDebInfo;MinSizeRel
 		)
 
 		install(
-			FILES ${LIBDIR}/python/lib/python32_d.dll
+			FILES ${PYLIB}/python32_d.dll
 			DESTINATION ${TARGETDIR}
 			CONFIGURATIONS Debug
 		)
@@ -524,7 +517,6 @@ elseif(WIN32)
 	else()
 		install(
 			FILES
-				${LIBDIR}/png/lib/libpng.dll
 				${LIBDIR}/zlib/lib/zlib.dll
 			DESTINATION ${TARGETDIR}
 		)
@@ -585,37 +577,23 @@ elseif(WIN32)
 			FILES ${LIBDIR}/thumbhandler/lib/BlendThumb.dll
 			DESTINATION ${TARGETDIR}
 		)
-	else()
+	endif()
+		
+	install( # x86 builds can run on x64 Windows, so this is required at all times
+		FILES ${LIBDIR}/thumbhandler/lib/BlendThumb64.dll
+		DESTINATION ${TARGETDIR}
+	)	
+
+	if(WITH_OPENIMAGEIO)
+		set_lib_path(OIIOBIN "openimageio/bin")
 		install(
-			FILES ${LIBDIR}/thumbhandler/lib/BlendThumb64.dll
+			FILES
+				${OIIOBIN}/OpenImageIO.dll
 			DESTINATION ${TARGETDIR}
 		)
 	endif()
 
 elseif(APPLE)
-	set(SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blender.app)
-	set(SOURCEINFO ${SOURCEDIR}/Contents/Info.plist)
-	set(TARGETDIR_VER ${TARGETDIR}/blender.app/Contents/MacOS/${BLENDER_VERSION})
-
-	# setup Info.plist
-	execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BLENDER_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-	set_target_properties(blender PROPERTIES
-		MACOSX_BUNDLE_INFO_PLIST ${SOURCEINFO}
-		MACOSX_BUNDLE_SHORT_VERSION_STRING ${BLENDER_VERSION}
-		MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION} ${BLENDER_DATE}")
-
-	# important to make a clean  install each time else old scripts get loaded.
-	install(
-		CODE
-		"file(REMOVE_RECURSE ${TARGETDIR_VER})"
-	)
-
-	# message after building.
-	add_custom_command(
-		TARGET blender POST_BUILD MAIN_DEPENDENCY blender
-		COMMAND ${CMAKE_COMMAND} -E echo 'now run: \"make install\" to copy runtime files & scripts to ${TARGETDIR_VER}'
-	)
 
 	# handy install macro to exclude files, we use \$ escape for the "to"
 	# argument when calling so ${BUILD_TYPE} does not get expanded
@@ -634,6 +612,17 @@ elseif(APPLE)
 		)
 	endmacro()
 
+	set(OSX_APP_SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blender.app)
+
+	# setup Info.plist
+	execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BLENDER_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+	set_target_properties(blender PROPERTIES
+		MACOSX_BUNDLE_INFO_PLIST ${OSX_APP_SOURCEDIR}/Contents/Info.plist
+		MACOSX_BUNDLE_SHORT_VERSION_STRING ${BLENDER_VERSION}
+		MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION} ${BLENDER_DATE}")
+
+
 	# install release and app files
 	install(
 		FILES ${BLENDER_TEXT_FILES}
@@ -641,51 +630,34 @@ elseif(APPLE)
 	)
 
 	install(
-		FILES ${SOURCEDIR}/Contents/PkgInfo
+		FILES ${OSX_APP_SOURCEDIR}/Contents/PkgInfo
 		DESTINATION ${TARGETDIR}/blender.app/Contents
 	)
 
 	install_dir(
-		${SOURCEDIR}/Contents/Resources
+		${OSX_APP_SOURCEDIR}/Contents/Resources
 		\${TARGETDIR}/blender.app/Contents/
 	)
 
-	install(
-		FILES ${CMAKE_SOURCE_DIR}/release/bin/.blender/.bfont.ttf
-		DESTINATION ${TARGETDIR_VER}
-	)
-
-	# localization
-	if(WITH_INTERNATIONAL)
-		install(
-			FILES ${CMAKE_SOURCE_DIR}/release/bin/.blender/.Blanguages
-			DESTINATION ${TARGETDIR_VER}/datafiles
-		)
-
-		install_dir(
-			${CMAKE_SOURCE_DIR}/release/bin/.blender/locale/
-			\${TARGETDIR_VER}/datafiles/locale
-		)
-	endif()
-
 	# python
-	if(WITH_PYTHON)
+	if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE)
 		# the python zip is first extract as part of the build process,
 		# and then later installed as part of make install. this is much
 		# quicker, and means we can easily exclude files on copy
+		# Not needed for PYTHON_MODULE or WEB_PLUGIN due uses  Pyhon framework
 		add_custom_target(
 			extractpyzip
 			DEPENDS ${CMAKE_CURRENT_BINARY_DIR}/python)
 
 		set(PYTHON_ZIP "python_${CMAKE_OSX_ARCHITECTURES}.zip")
-			
+
 		add_custom_command(
 			OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python
 			COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}/python/
 			COMMAND mkdir ${CMAKE_CURRENT_BINARY_DIR}/python/
 			COMMAND unzip -q ${LIBDIR}/release/${PYTHON_ZIP} -d ${CMAKE_CURRENT_BINARY_DIR}/python/
 			DEPENDS ${LIBDIR}/release/${PYTHON_ZIP})
-		
+
 		add_dependencies(blender extractpyzip)
 
 		# copy extracted python files
@@ -694,13 +666,58 @@ elseif(APPLE)
 			\${TARGETDIR_VER}
 		)
 
-		# copy scripts
-		install_dir(
-			${CMAKE_SOURCE_DIR}/release/scripts
-			\${TARGETDIR_VER}
+	endif()
+
+	# install blenderplayer bundle - copy of blender.app above. re-using macros et al
+	# note we are using OSX Bundle as base and copying Blender dummy bundle on top of it
+	if(WITH_GAMEENGINE AND WITH_PLAYER)
+		set(OSX_APP_PLAYER_SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blenderplayer.app)
+		set(PLAYER_SOURCEINFO ${OSX_APP_PLAYER_SOURCEDIR}/Contents/Info.plist)
+		set(PLAYER_TARGETDIR_VER ${TARGETDIR}/blenderplayer.app/Contents/MacOS/${BLENDER_VERSION})
+
+
+		# important to make a clean  install each time else old scripts get loaded.
+		install(
+			CODE
+			"file(REMOVE_RECURSE ${PLAYER_TARGETDIR_VER})"
 		)
+
+		install(
+			FILES ${OSX_APP_PLAYER_SOURCEDIR}/Contents/PkgInfo
+			DESTINATION ${TARGETDIR}/blenderplayer.app/Contents
+		)
+
+		install_dir(
+			${OSX_APP_PLAYER_SOURCEDIR}/Contents/Resources
+			\${TARGETDIR}/blenderplayer.app/Contents/
+		)
+
+		# python
+		if(WITH_PYTHON)
+			add_custom_command(
+				OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/python
+				COMMAND rm -rf ${CMAKE_CURRENT_BINARY_DIR}/python/
+				COMMAND mkdir ${CMAKE_CURRENT_BINARY_DIR}/python/
+				COMMAND unzip -q ${LIBDIR}/release/${PYTHON_ZIP} -d ${CMAKE_CURRENT_BINARY_DIR}/python/
+				DEPENDS ${LIBDIR}/release/${PYTHON_ZIP})
+
+			# copy extracted python files
+			install_dir(
+				${CMAKE_CURRENT_BINARY_DIR}/python
+				\${PLAYER_TARGETDIR_VER}
+			)
+		endif()
+
 	endif()
 endif()
+
+# -----------------------------------------------------------------------------
+# Generic Install, for all targets
+
+
+
+# install more files specified elsewhere
+delayed_do_install(${TARGETDIR_VER})
 
 unset(BLENDER_TEXT_FILES)
 
@@ -712,10 +729,24 @@ add_dependencies(blender makesdna)
 
 get_property(BLENDER_LINK_LIBS GLOBAL PROPERTY BLENDER_LINK_LIBS)
 
-set(BLENDER_LINK_LIBS bf_nodes ${BLENDER_LINK_LIBS} bf_windowmanager bf_render)
+set(BLENDER_LINK_LIBS
+	${BLENDER_LINK_LIBS}
+	bf_windowmanager
+	bf_render
+)
 
 if(WITH_MOD_FLUID)
 	list(APPEND BLENDER_LINK_LIBS bf_intern_elbeem)
+endif()
+
+if(WITH_CYCLES)
+	list(APPEND BLENDER_LINK_LIBS
+		cycles_render
+		cycles_bvh
+		cycles_device
+		cycles_kernel
+		cycles_util
+		cycles_subd)
 endif()
 
 #if(UNIX)
@@ -737,10 +768,10 @@ endif()
 		bf_editor_space_outliner
 		bf_editor_space_script
 		bf_editor_space_sequencer
-		bf_editor_space_sound
 		bf_editor_space_time
 		bf_editor_space_userpref
 		bf_editor_space_view3d
+		bf_editor_space_clip
 
 		bf_editor_text
 		bf_editor_transform
@@ -766,17 +797,19 @@ endif()
 		bf_python
 		bf_python_ext
 		bf_python_mathutils
+		bf_python_bmesh
 		bf_ikplugin
 		bf_modifiers
+		bf_bmesh
 		bf_blenkernel
 		bf_nodes
 		bf_gpu
 		bf_blenloader
+		bf_imbuf
 		bf_blenlib
 		bf_intern_ghost
 		bf_intern_string
 		bf_blenpluginapi
-		bf_imbuf
 		bf_avi
 		bf_imbuf_cineon
 		bf_imbuf_openexr
@@ -797,7 +830,9 @@ endif()
 		bf_intern_smoke
 		extern_minilzo
 		extern_lzma
+		extern_colamd
 		ge_logic_ketsji
+		extern_recastnavigation
 		ge_phys_common
 		ge_logic
 		ge_rasterizer
@@ -805,7 +840,6 @@ endif()
 		ge_logic_expressions
 		ge_scenegraph
 		ge_logic_network
-		bf_python # duplicate for BPY_driver_exec
 		ge_logic_ngnetwork
 		extern_bullet
 		ge_logic_loopbacknetwork
@@ -818,7 +852,19 @@ endif()
 		bf_blenfont
 		bf_intern_audaspace
 		bf_intern_mikktspace
+		bf_intern_dualcon
+		bf_intern_cycles
+		cycles_render
+		cycles_bvh
+		cycles_device
+		cycles_kernel
+		cycles_util
+		cycles_subd
 	)
+
+	if(WITH_LIBMV)
+		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
+	endif()
 
 	if(WITH_MOD_CLOTH_ELTOPO)
 		list(APPEND BLENDER_SORTED_LIBS extern_eltopo)
@@ -844,6 +890,14 @@ endif()
 		list(APPEND BLENDER_SORTED_LIBS bf_quicktime)
 	endif()
 
+	if(WITH_CARVE)
+		list(APPEND BLENDER_SORTED_LIBS extern_carve)
+	endif()
+
+	if(WITH_GHOST_XDND)
+		list(APPEND BLENDER_SORTED_LIBS extern_xdnd)
+	endif()
+
 	foreach(SORTLIB ${BLENDER_SORTED_LIBS})
 		set(REMLIB ${SORTLIB})
 		foreach(SEARCHLIB ${BLENDER_LINK_LIBS})
@@ -862,12 +916,12 @@ endif()
 		message(STATUS "Blender Skipping: (${REM_MSG})")
 	endif()
 	target_link_libraries(blender ${BLENDER_SORTED_LIBS})
-	
+
 	unset(SEARCHLIB)
 	unset(SORTLIB)
 	unset(REMLIB)
 	unset(REM_MSG)
-	
+
 #else()
 #	target_link_libraries(blender ${BLENDER_LINK_LIBS})
 #endif()

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -48,14 +46,18 @@
 #include "DNA_scene_types.h"
 #include "DNA_speaker_types.h"
 #include "DNA_vfont_types.h"
+#include "DNA_actuator_types.h"
 
-#include "BLI_math.h"
+#include "BLI_ghash.h"
 #include "BLI_listbase.h"
+#include "BLI_math.h"
+#include "BLI_string.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
 #include "BKE_armature.h"
+#include "BKE_camera.h"
 #include "BKE_constraint.h"
 #include "BKE_context.h"
 #include "BKE_curve.h"
@@ -64,6 +66,7 @@
 #include "BKE_displist.h"
 #include "BKE_effect.h"
 #include "BKE_group.h"
+#include "BKE_lamp.h"
 #include "BKE_lattice.h"
 #include "BKE_library.h"
 #include "BKE_key.h"
@@ -77,6 +80,7 @@
 #include "BKE_particle.h"
 #include "BKE_report.h"
 #include "BKE_sca.h"
+#include "BKE_scene.h"
 #include "BKE_speaker.h"
 #include "BKE_texture.h"
 
@@ -91,6 +95,7 @@
 #include "ED_curve.h"
 #include "ED_mball.h"
 #include "ED_mesh.h"
+#include "ED_node.h"
 #include "ED_object.h"
 #include "ED_render.h"
 #include "ED_screen.h"
@@ -149,7 +154,7 @@ void ED_object_base_init_transform(bContext *C, Base *base, float *loc, float *r
 /* returns standard diameter */
 float ED_object_new_primitive_matrix(bContext *C, Object *obedit, float *loc, float *rot, float primmat[][4])
 {
-	View3D *v3d =CTX_wm_view3d(C);
+	View3D *v3d = CTX_wm_view3d(C);
 	float mat[3][3], rmat[3][3], cmat[3][3], imat[3][3];
 	
 	unit_m4(primmat);
@@ -175,56 +180,65 @@ float ED_object_new_primitive_matrix(bContext *C, Object *obedit, float *loc, fl
 
 /********************* Add Object Operator ********************/
 
+void view_align_update(struct Main *UNUSED(main), struct Scene *UNUSED(scene), struct PointerRNA *ptr)
+{
+	RNA_struct_idprops_unset(ptr, "rotation");
+}
+
 void ED_object_add_generic_props(wmOperatorType *ot, int do_editmode)
 {
 	PropertyRNA *prop;
 	
 	/* note: this property gets hidden for add-camera operator */
-	RNA_def_boolean(ot->srna, "view_align", 0, "Align to View", "Align the new object to the view");
+	prop = RNA_def_boolean(ot->srna, "view_align", 0, "Align to View", "Align the new object to the view");
+	RNA_def_property_update_runtime(prop, view_align_update);
 
 	if(do_editmode) {
-		prop= RNA_def_boolean(ot->srna, "enter_editmode", 0, "Enter Editmode", "Enter editmode when adding this object");
-		RNA_def_property_flag(prop, PROP_HIDDEN);
+		prop = RNA_def_boolean(ot->srna, "enter_editmode", 0, "Enter Editmode",
+		                      "Enter editmode when adding this object");
+		RNA_def_property_flag(prop, PROP_HIDDEN|PROP_SKIP_SAVE);
 	}
 	
-	RNA_def_float_vector_xyz(ot->srna, "location", 3, NULL, -FLT_MAX, FLT_MAX, "Location", "Location for the newly added object", -FLT_MAX, FLT_MAX);
-	RNA_def_float_rotation(ot->srna, "rotation", 3, NULL, -FLT_MAX, FLT_MAX, "Rotation", "Rotation for the newly added object", (float)-M_PI * 2.0f, (float)M_PI * 2.0f);
+	prop = RNA_def_float_vector_xyz(ot->srna, "location", 3, NULL, -FLT_MAX, FLT_MAX, "Location",
+	                               "Location for the newly added object", -FLT_MAX, FLT_MAX);
+	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+	prop = RNA_def_float_rotation(ot->srna, "rotation", 3, NULL, -FLT_MAX, FLT_MAX, "Rotation",
+	                             "Rotation for the newly added object", (float)-M_PI * 2.0f, (float)M_PI * 2.0f);
+	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
 	
 	prop = RNA_def_boolean_layer_member(ot->srna, "layers", 20, NULL, "Layer", "");
-	RNA_def_property_flag(prop, PROP_HIDDEN);
+	RNA_def_property_flag(prop, PROP_HIDDEN|PROP_SKIP_SAVE);
 }
 
 static void object_add_generic_invoke_options(bContext *C, wmOperator *op)
 {
 	if(RNA_struct_find_property(op->ptr, "enter_editmode")) /* optional */
-		if (!RNA_property_is_set(op->ptr, "enter_editmode"))
+		if (!RNA_struct_property_is_set(op->ptr, "enter_editmode"))
 			RNA_boolean_set(op->ptr, "enter_editmode", U.flag & USER_ADD_EDITMODE);
 	
-	if(!RNA_property_is_set(op->ptr, "location")) {
+	if(!RNA_struct_property_is_set(op->ptr, "location")) {
 		float loc[3];
 		
 		ED_object_location_from_view(C, loc);
 		RNA_float_set_array(op->ptr, "location", loc);
 	}
 	 
-	if(!RNA_property_is_set(op->ptr, "layers")) {
+	if(!RNA_struct_property_is_set(op->ptr, "layers")) {
 		View3D *v3d = CTX_wm_view3d(C);
 		Scene *scene = CTX_data_scene(C);
 		int a, values[20], layer;
-		
+
 		if(v3d) {
 			layer = (v3d->scenelock && !v3d->localvd)? scene->layact: v3d->layact;
-
-			for(a=0; a<20; a++)
-				values[a]= (layer & (1<<a));
 		}
 		else {
 			layer = scene->layact;
-
-			for(a=0; a<20; a++)
-				values[a]= (layer & (1<<a));
 		}
-		
+
+		for (a=0; a<20; a++) {
+			values[a]= (layer & (1<<a));
+		}
+
 		RNA_boolean_set_array(op->ptr, "layers", values);
 	}
 }
@@ -235,7 +249,8 @@ int ED_object_add_generic_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(ev
 	return op->type->exec(C, op);
 }
 
-int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, float *rot, int *enter_editmode, unsigned int *layer)
+int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc,
+	float *rot, int *enter_editmode, unsigned int *layer, int *is_view_aligned)
 {
 	View3D *v3d = CTX_wm_view3d(C);
 	int a, layer_values[20];
@@ -246,7 +261,7 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, floa
 		*enter_editmode = TRUE;
 	}
 
-	if(RNA_property_is_set(op->ptr, "layers")) {
+	if(RNA_struct_property_is_set(op->ptr, "layers")) {
 		RNA_boolean_get_array(op->ptr, "layers", layer_values);
 		*layer= 0;
 		for(a=0; a<20; a++) {
@@ -263,13 +278,13 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, floa
 	}
 
 	/* in local view we additionally add local view layers,
-	   not part of operator properties */
+	 * not part of operator properties */
 	if(v3d && v3d->localvd)
 		*layer |= v3d->lay;
 
-	if(RNA_property_is_set(op->ptr, "rotation"))
+	if(RNA_struct_property_is_set(op->ptr, "rotation"))
 		view_align = FALSE;
-	else if (RNA_property_is_set(op->ptr, "view_align"))
+	else if (RNA_struct_property_is_set(op->ptr, "view_align"))
 		view_align = RNA_boolean_get(op->ptr, "view_align");
 	else {
 		view_align = U.flag & USER_ADD_VIEWALIGNED;
@@ -283,7 +298,9 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, floa
 	else
 		RNA_float_get_array(op->ptr, "rotation", rot);
 	
-
+	if (is_view_aligned)
+		*is_view_aligned = view_align;
+	
 	RNA_float_get_array(op->ptr, "location", loc);
 
 	if(*layer == 0) {
@@ -296,7 +313,8 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float *loc, floa
 
 /* for object add primitive operators */
 /* do not call undo push in this function (users of this function have to) */
-Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot, int enter_editmode, unsigned int layer)
+Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot,
+	int enter_editmode, unsigned int layer)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
@@ -315,8 +333,11 @@ Object *ED_object_add_type(bContext *C, int type, float *loc, float *rot, int en
 	/* more editor stuff */
 	ED_object_base_init_transform(C, BASACT, loc, rot);
 
+	DAG_id_type_tag(bmain, ID_OB);
 	DAG_scene_sort(bmain, scene);
-	ED_render_id_flush_update(bmain, ob->data);
+	if (ob->data) {
+		ED_render_id_flush_update(bmain, ob->data);
+	}
 
 	if(enter_editmode)
 		ED_object_enter_editmode(C, EM_IGNORE_LAYER);
@@ -333,7 +354,7 @@ static int object_add_exec(bContext *C, wmOperator *op)
 	unsigned int layer;
 	float loc[3], rot[3];
 	
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
 	ED_object_add_type(C, RNA_enum_get(op->ptr, "type"), loc, rot, enter_editmode, layer);
@@ -390,7 +411,7 @@ static Object *effector_add_type(bContext *C, wmOperator *op, int type)
 	
 	object_add_generic_invoke_options(C, op);
 
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return NULL;
 
 	if(type==PFIELD_GUIDE) {
@@ -400,7 +421,7 @@ static Object *effector_add_type(bContext *C, wmOperator *op, int type)
 		((Curve*)ob->data)->flag |= CU_PATH|CU_3D;
 		ED_object_enter_editmode(C, 0);
 		ED_object_new_primitive_matrix(C, ob, loc, rot, mat);
-		BLI_addtail(curve_get_editcurve(ob), add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_PATH, 1));
+		BLI_addtail(object_editcurve_get(ob), add_nurbs_primitive(C, mat, CU_NURBS|CU_PRIM_PATH, 1));
 
 		if(!enter_editmode)
 			ED_object_exit_editmode(C, EM_FREEDATA);
@@ -466,11 +487,11 @@ static int object_camera_add_exec(bContext *C, wmOperator *op)
 	float loc[3], rot[3];
 	
 	/* force view align for cameras */
-	RNA_boolean_set(op->ptr, "view_align", 1);
+	RNA_boolean_set(op->ptr, "view_align", TRUE);
 	
 	object_add_generic_invoke_options(C, op);
 
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
 	ob= ED_object_add_type(C, OB_CAMERA, loc, rot, FALSE, layer);
@@ -524,7 +545,7 @@ static int object_metaball_add_exec(bContext *C, wmOperator *op)
 	
 	object_add_generic_invoke_options(C, op); // XXX these props don't get set right when only exec() is called
 
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 	
 	if(obedit==NULL || obedit->type!=OB_MBALL) {
@@ -593,7 +614,7 @@ static int object_add_text_exec(bContext *C, wmOperator *op)
 	float loc[3], rot[3];
 	
 	object_add_generic_invoke_options(C, op); // XXX these props don't get set right when only exec() is called
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 	
 	if(obedit && obedit->type==OB_FONT)
@@ -634,7 +655,7 @@ static int object_armature_add_exec(bContext *C, wmOperator *op)
 	float loc[3], rot[3];
 	
 	object_add_generic_invoke_options(C, op); // XXX these props don't get set right when only exec() is called
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 	
 	if ((obedit==NULL) || (obedit->type != OB_ARMATURE)) {
@@ -693,20 +714,29 @@ static const char *get_lamp_defname(int type)
 
 static int object_lamp_add_exec(bContext *C, wmOperator *op)
 {
+	Scene *scene= CTX_data_scene(C);
 	Object *ob;
+	Lamp *la;
 	int type= RNA_enum_get(op->ptr, "type");
 	int enter_editmode;
 	unsigned int layer;
 	float loc[3], rot[3];
 	
 	object_add_generic_invoke_options(C, op);
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
 	ob= ED_object_add_type(C, OB_LAMP, loc, rot, FALSE, layer);
-	((Lamp*)ob->data)->type= type;
-	rename_id((ID *)ob, get_lamp_defname(type));
-	rename_id((ID *)ob->data, get_lamp_defname(type));
+	la= (Lamp*)ob->data;
+
+	la->type= type;
+	rename_id(&ob->id, get_lamp_defname(type));
+	rename_id(&la->id, get_lamp_defname(type));
+
+	if(scene_use_new_shading_nodes(scene)) {
+		ED_node_shader_default(scene, &la->id);
+		la->use_nodes= 1;
+	}
 	
 	return OPERATOR_FINISHED;
 }
@@ -749,7 +779,7 @@ static int group_instance_add_exec(bContext *C, wmOperator *op)
 	float loc[3], rot[3];
 	
 	object_add_generic_invoke_options(C, op);
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
 	if(group) {
@@ -781,7 +811,7 @@ static int object_speaker_add_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 
 	object_add_generic_invoke_options(C, op);
-	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer))
+	if(!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
 	ob= ED_object_add_type(C, OB_SPEAKER, loc, rot, FALSE, layer);
@@ -859,16 +889,18 @@ void OBJECT_OT_group_instance_add(wmOperatorType *ot)
 /* note: now unlinks constraints as well */
 void ED_base_object_free_and_unlink(Main *bmain, Scene *scene, Base *base)
 {
+	DAG_id_type_tag(bmain, ID_OB);
 	BLI_remlink(&scene->base, base);
 	free_libblock_us(&bmain->object, base->object);
 	if(scene->basact==base) scene->basact= NULL;
 	MEM_freeN(base);
 }
 
-static int object_delete_exec(bContext *C, wmOperator *UNUSED(op))
+static int object_delete_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
+	const short use_global= RNA_boolean_get(op->ptr, "use_global");
 	/* int islamp= 0; */ /* UNUSED */
 	
 	if(CTX_data_edit_object(C)) 
@@ -883,6 +915,22 @@ static int object_delete_exec(bContext *C, wmOperator *UNUSED(op))
 
 		/* remove from current scene only */
 		ED_base_object_free_and_unlink(bmain, scene, base);
+
+		if (use_global) {
+			Scene *scene_iter;
+			Base *base_other;
+
+			for (scene_iter= bmain->scene.first; scene_iter; scene_iter= scene_iter->id.next) {
+				if (scene_iter != scene && !(scene_iter->id.lib)) {
+					base_other= object_in_scene(base->object, scene_iter);
+					if (base_other) {
+						ED_base_object_free_and_unlink(bmain, scene_iter, base_other);
+					}
+				}
+			}
+		}
+		/* end global */
+
 	}
 	CTX_DATA_END;
 
@@ -909,6 +957,8 @@ void OBJECT_OT_delete(wmOperatorType *ot)
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+
+	RNA_def_boolean(ot->srna, "use_global", 0, "Delete Globally", "Remove object from all scenes");
 }
 
 /**************************** Copy Utilities ******************************/
@@ -1001,26 +1051,30 @@ static void copy_object_set_idnew(bContext *C, int dupflag)
 
 /********************* Make Duplicates Real ************************/
 
-static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base)
+static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base,
+                                       const short use_base_parent,
+                                       const short use_hierarchy)
 {
-	Base *basen;
-	Object *ob;
 	ListBase *lb;
 	DupliObject *dob;
-	
-	if(!base && !(base = BASACT))
-		return;
+	GHash *dupli_gh= NULL, *parent_gh= NULL;
 	
 	if(!(base->object->transflag & OB_DUPLI))
 		return;
 	
 	lb= object_duplilist(scene, base->object);
+
+	if(use_hierarchy || use_base_parent) {
+		dupli_gh= BLI_ghash_new(BLI_ghashutil_ptrhash, BLI_ghashutil_ptrcmp, "make_object_duplilist_real dupli_gh");
+		parent_gh= BLI_ghash_new(BLI_ghashutil_pairhash, BLI_ghashutil_paircmp, "make_object_duplilist_real parent_gh");
+	}
 	
 	for(dob= lb->first; dob; dob= dob->next) {
-		ob= copy_object(dob->ob);
+		Base *basen;
+		Object *ob= copy_object(dob->ob);
 		/* font duplis can have a totcol without material, we get them from parent
-		* should be implemented better...
-		*/
+		 * should be implemented better...
+		 */
 		if(ob->mat==NULL) ob->totcol= 0;
 		
 		basen= MEM_dupallocN(base);
@@ -1042,24 +1096,101 @@ static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base)
 		
 		copy_m4_m4(ob->obmat, dob->mat);
 		object_apply_mat4(ob, ob->obmat, FALSE, FALSE);
+
+		if(dupli_gh)
+			BLI_ghash_insert(dupli_gh, dob, ob);
+		if(parent_gh)
+			BLI_ghash_insert(parent_gh, BLI_ghashutil_pairalloc(dob->ob, dob->index), ob);
 	}
 	
+	if (use_hierarchy) {
+		for(dob= lb->first; dob; dob= dob->next) {
+			/* original parents */
+			Object *ob_src=     dob->ob;
+			Object *ob_src_par= ob_src->parent;
+
+			Object *ob_dst=     BLI_ghash_lookup(dupli_gh, dob);
+			Object *ob_dst_par= NULL;
+
+			/* find parent that was also made real */
+			if(ob_src_par) {
+				GHashPair *pair = BLI_ghashutil_pairalloc(ob_src_par, dob->index);
+				ob_dst_par = BLI_ghash_lookup(parent_gh, pair);
+				BLI_ghashutil_pairfree(pair);
+			}
+
+			if (ob_dst_par) {
+				/* allow for all possible parent types */
+				ob_dst->partype= ob_src->partype;
+				BLI_strncpy(ob_dst->parsubstr, ob_src->parsubstr, sizeof(ob_dst->parsubstr));
+				ob_dst->par1= ob_src->par1;
+				ob_dst->par2= ob_src->par2;
+				ob_dst->par3= ob_src->par3;
+
+				copy_m4_m4(ob_dst->parentinv, ob_src->parentinv);
+
+				ob_dst->parent= ob_dst_par;
+			}
+			else if (use_base_parent) {
+				ob_dst->parent= base->object;
+				ob_dst->partype= PAROBJECT;
+			}
+
+			if (ob_dst->parent) {
+				invert_m4_m4(ob_dst->parentinv, dob->mat);
+
+				/* note, this may be the parent of other objects, but it should
+				 * still work out ok */
+				object_apply_mat4(ob_dst, dob->mat, FALSE, TRUE);
+
+				/* to set ob_dst->orig and in case theres any other discrepicies */
+				DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB);
+			}
+		}
+	}
+	else if (use_base_parent) {
+		/* since we are ignoring the internal hierarchy - parent all to the
+		 * base object */
+		for(dob= lb->first; dob; dob= dob->next) {
+			/* original parents */
+			Object *ob_dst= BLI_ghash_lookup(dupli_gh, dob);
+
+			ob_dst->parent= base->object;
+			ob_dst->partype= PAROBJECT;
+
+			/* similer to the code above, see comments */
+			invert_m4_m4(ob_dst->parentinv, dob->mat);
+			object_apply_mat4(ob_dst, dob->mat, FALSE, TRUE);
+			DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB);
+
+
+		}
+	}
+
+	if(dupli_gh)
+		BLI_ghash_free(dupli_gh, NULL, NULL);
+	if(parent_gh)
+		BLI_ghash_free(parent_gh, BLI_ghashutil_pairfree, NULL);
+
 	copy_object_set_idnew(C, 0);
 	
 	free_object_duplilist(lb);
 	
-	base->object->transflag &= ~OB_DUPLI;	
+	base->object->transflag &= ~OB_DUPLI;
 }
 
-static int object_duplicates_make_real_exec(bContext *C, wmOperator *UNUSED(op))
+static int object_duplicates_make_real_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain= CTX_data_main(C);
 	Scene *scene= CTX_data_scene(C);
+
+	const short use_base_parent= RNA_boolean_get(op->ptr, "use_base_parent");
+	const short use_hierarchy= RNA_boolean_get(op->ptr, "use_hierarchy");
 	
 	clear_id_newpoins();
 		
 	CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
-		make_object_duplilist_real(C, scene, base);
+		make_object_duplilist_real(C, scene, base, use_base_parent, use_hierarchy);
 
 		/* dependencies were changed */
 		WM_event_add_notifier(C, NC_OBJECT|ND_PARENT, base->object);
@@ -1089,6 +1220,9 @@ void OBJECT_OT_duplicates_make_real(wmOperatorType *ot)
 	
 	/* flags */
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+
+	RNA_def_boolean(ot->srna, "use_base_parent", 0, "Parent", "Parent newly created objects to the original duplicator");
+	RNA_def_boolean(ot->srna, "use_hierarchy", 0, "Keep Hierarchy", "Maintain parent child relationships");
 }
 
 /**************************** Convert **************************/
@@ -1236,7 +1370,9 @@ static int convert_exec(bContext *C, wmOperator *op)
 			dm= mesh_get_derived_final(scene, newob, CD_MASK_MESH);
 			/* dm= mesh_create_derived_no_deform(ob1, NULL);	this was called original (instead of get_derived). man o man why! (ton) */
 
-			DM_to_mesh(dm, newob->data);
+			DM_to_mesh(dm, newob->data, newob);
+
+			/* re-tessellation is called by DM_to_mesh */
 
 			dm->release(dm);
 			object_free_modifiers(newob);	/* after derivedmesh calls! */
@@ -1263,6 +1399,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 				makeDispListCurveTypes(scene, newob, 0);
 
 			newob->type= OB_CURVE;
+			cu->type= OB_CURVE;
 
 			if(cu->vfont) {
 				cu->vfont->id.us--;
@@ -1463,10 +1600,10 @@ void OBJECT_OT_convert(wmOperatorType *ot)
 /**************************** Duplicate ************************/
 
 /* 
-	dupflag: a flag made from constants declared in DNA_userdef_types.h
-	The flag tells adduplicate() weather to copy data linked to the object, or to reference the existing data.
-	U.dupflag for default operations or you can construct a flag as python does
-	if the dupflag is 0 then no data will be copied (linked duplicate) */
+ * dupflag: a flag made from constants declared in DNA_userdef_types.h
+ * The flag tells adduplicate() weather to copy data linked to the object, or to reference the existing data.
+ * U.dupflag for default operations or you can construct a flag as python does
+ * if the dupflag is 0 then no data will be copied (linked duplicate) */
 
 /* used below, assumes id.new is correct */
 /* leaves selection of base/object unaltered */
@@ -1659,8 +1796,22 @@ static Base *object_add_duplicate_internal(Main *bmain, Scene *scene, Base *base
 			Key *key = ob_get_key(obn);
 			
 			if(dupflag & USER_DUP_ACT) {
+				bActuator *act;
+
 				BKE_copy_animdata_id_action((ID *)obn->data);
-				if(key) BKE_copy_animdata_id_action((ID*)key);
+				if(key) {
+					BKE_copy_animdata_id_action((ID*)key);
+				}
+
+				/* Update the duplicated action in the action actuators */
+				for (act = obn->actuators.first; act; act = act->next) {
+					if(act->type == ACT_ACTION) {
+						bActionActuator* actact = (bActionActuator*) act->data;
+						if(ob->adt && actact->act == ob->adt->action) {
+							actact->act = obn->adt->action;
+						}
+					}
+				}
 			}
 			
 			if(dupflag & USER_DUP_MAT) {
@@ -1705,7 +1856,9 @@ Base *ED_object_add_duplicate(Main *bmain, Scene *scene, Base *base, int dupflag
 	set_sca_new_poins_ob(ob);
 
 	DAG_scene_sort(bmain, scene);
-	ED_render_id_flush_update(bmain, ob->data);
+	if (ob->data) {
+		ED_render_id_flush_update(bmain, ob->data);
+	}
 
 	return basen;
 }
@@ -1725,7 +1878,7 @@ static int duplicate_exec(bContext *C, wmOperator *op)
 		Base *basen= object_add_duplicate_internal(bmain, scene, base, dupflag);
 		
 		/* note that this is safe to do with this context iterator,
-		   the list is made in advance */
+		 * the list is made in advance */
 		ED_base_object_select(base, BA_DESELECT);
 
 		if (basen == NULL) {
@@ -1785,7 +1938,7 @@ static int add_named_exec(bContext *C, wmOperator *op)
 	Object *ob;
 	int linked= RNA_boolean_get(op->ptr, "linked");
 	int dupflag= (linked)? 0: U.dupflag;
-	char name[32];
+	char name[MAX_ID_NAME-2];
 
 	/* find object, create fake base */
 	RNA_string_get(op->ptr, "name", name);
@@ -1840,7 +1993,7 @@ void OBJECT_OT_add_named(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	RNA_def_boolean(ot->srna, "linked", 0, "Linked", "Duplicate object but not object data, linking to the original data");
-	RNA_def_string(ot->srna, "name", "Cube", 24, "Name", "Object name to add");
+	RNA_def_string(ot->srna, "name", "Cube", MAX_ID_NAME-2, "Name", "Object name to add");
 }
 
 

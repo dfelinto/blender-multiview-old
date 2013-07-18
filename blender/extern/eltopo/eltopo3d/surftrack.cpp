@@ -19,6 +19,7 @@
 #include <vector>
 #include <queue>
 
+#ifdef USE_GUI
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #include <GLUT/glut.h>
@@ -29,6 +30,7 @@
 #endif
 #include <GL/gl.h>
 #include <GL/glut.h>
+#endif
 #endif
 
 #include <ccd_wrapper.h>

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,7 +34,6 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
-#include "BLI_editVert.h"
 #include "BLI_dlrbTree.h"
 #include "BLI_utildefines.h"
 
@@ -46,15 +43,19 @@
 #include "DNA_curve_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_meta_types.h"
+#include "DNA_mesh_types.h"
+#include "DNA_userdef_types.h"
 
 #include "BKE_context.h"
 #include "BKE_customdata.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_mesh.h"
+#include "BKE_object.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
+#include "BKE_tessmesh.h"
 #include "BKE_sound.h"
 
 #include "WM_api.h"
@@ -193,7 +194,7 @@ int ED_operator_animview_active(bContext *C)
 {
 	if(ED_operator_areaactive(C)) {
 		SpaceLink *sl= (SpaceLink *)CTX_wm_space_data(C);
-		if (sl && (ELEM6(sl->spacetype, SPACE_SEQ, SPACE_SOUND, SPACE_ACTION, SPACE_NLA, SPACE_IPO, SPACE_TIME)))
+		if (sl && (ELEM5(sl->spacetype, SPACE_SEQ, SPACE_ACTION, SPACE_NLA, SPACE_IPO, SPACE_TIME)))
 			return TRUE;
 	}
 
@@ -314,7 +315,7 @@ int ED_operator_editmesh(bContext *C)
 {
 	Object *obedit= CTX_data_edit_object(C);
 	if(obedit && obedit->type==OB_MESH)
-		return NULL != ((Mesh *)obedit->data)->edit_mesh;
+		return NULL != BMEdit_FromObject(obedit);
 	return 0;
 }
 
@@ -346,7 +347,7 @@ int ED_operator_posemode(bContext *C)
 
 	if (obact && !(obact->mode & OB_MODE_EDIT)) {
 		Object *obpose;
-		if((obpose= ED_object_pose_armature(obact))) {
+		if((obpose= object_pose_armature_get(obact))) {
 			if((obact == obpose) || (obact->mode & OB_MODE_WEIGHT_PAINT)) {
 				return 1;
 			}
@@ -366,20 +367,18 @@ int ED_operator_uvedit(bContext *C)
 
 int ED_operator_uvmap(bContext *C)
 {
-	Object *obedit= CTX_data_edit_object(C);
-	EditMesh *em= NULL;
+	Object *obedit = CTX_data_edit_object(C);
+	BMEditMesh *em = NULL;
 	
-	if(obedit && obedit->type==OB_MESH)
-		em= BKE_mesh_get_editmesh((Mesh *)obedit->data);
-	
-	if(em && (em->faces.first)) {
-		BKE_mesh_end_editmesh(obedit->data, em);
-		return 1;
+	if(obedit && obedit->type == OB_MESH) {
+		em = BMEdit_FromObject(obedit);
 	}
 	
-	if(obedit)
-		BKE_mesh_end_editmesh(obedit->data, em);
-	return 0;
+	if(em && (em->bm->totface)) {
+		return TRUE;
+	}
+	
+	return FALSE;
 }
 
 int ED_operator_editsurfcurve(bContext *C)
@@ -404,6 +403,17 @@ int ED_operator_editcurve(bContext *C)
 	Object *obedit= CTX_data_edit_object(C);
 	if(obedit && obedit->type==OB_CURVE)
 		return NULL != ((Curve *)obedit->data)->editnurb;
+	return 0;
+}
+
+int ED_operator_editcurve_3d(bContext *C)
+{
+	Object *obedit= CTX_data_edit_object(C);
+	if(obedit && obedit->type==OB_CURVE) {
+		Curve *cu= (Curve *)obedit->data;
+
+		return (cu->flag&CU_3D) && (NULL != cu->editnurb);
+	}
 	return 0;
 }
 
@@ -442,26 +452,25 @@ int ED_operator_editmball(bContext *C)
 /* *************************** action zone operator ************************** */
 
 /* operator state vars used:  
- none
- 
- functions:
- 
- apply() set actionzone event
- 
- exit()	free customdata
- 
- callbacks:
- 
- exec()	never used
- 
- invoke() check if in zone  
- add customdata, put mouseco and area in it
- add modal handler
- 
- modal()	accept modal events while doing it
- call apply() with gesture info, active window, nonactive window
- call exit() and remove handler when LMB confirm
- 
+ * none
+ * 
+ * functions:
+ * 
+ * apply() set actionzone event
+ * 
+ * exit()	free customdata
+ * 
+ * callbacks:
+ * 
+ * exec()	never used
+ * 
+ * invoke() check if in zone  
+ * add customdata, put mouseco and area in it
+ * add modal handler
+ * 
+ * modal()	accept modal events while doing it
+ * call apply() with gesture info, active window, nonactive window
+ * call exit() and remove handler when LMB confirm
  */
 
 typedef struct sActionzoneData {
@@ -648,30 +657,29 @@ static void SCREEN_OT_actionzone(wmOperatorType *ot)
 	
 	ot->flag= OPTYPE_BLOCKING;
 	
-	RNA_def_int(ot->srna, "modifier", 0, 0, 2, "modifier", "modifier state", 0, 2);
+	RNA_def_int(ot->srna, "modifier", 0, 0, 2, "Modifier", "Modifier state", 0, 2);
 }
 
 /* ************** swap area operator *********************************** */
 
 /* operator state vars used:  
- sa1		start area
- sa2		area to swap with
- 
- functions:
- 
- init()   set custom data for operator, based on actionzone event custom data
- 
- cancel()	cancel the operator
- 
- exit()	cleanup, send notifier
- 
- callbacks:
- 
- invoke() gets called on shift+lmb drag in actionzone
- call init(), add handler
- 
- modal()  accept modal events while doing it
- 
+ * sa1		start area
+ * sa2		area to swap with
+ * 
+ * functions:
+ * 
+ * init()   set custom data for operator, based on actionzone event custom data
+ * 
+ * cancel()	cancel the operator
+ * 
+ * exit()	cleanup, send notifier
+ * 
+ * callbacks:
+ * 
+ * invoke() gets called on shift+lmb drag in actionzone
+ * call init(), add handler
+ * 
+ * modal()  accept modal events while doing it
  */
 
 typedef struct sAreaSwapData {
@@ -840,32 +848,31 @@ static void SCREEN_OT_area_dupli(wmOperatorType *ot)
 /* ************** move area edge operator *********************************** */
 
 /* operator state vars used:  
- x, y   			mouse coord near edge
- delta            movement of edge
- 
- functions:
- 
- init()   set default property values, find edge based on mouse coords, test
- if the edge can be moved, select edges, calculate min and max movement
- 
- apply()	apply delta on selection
- 
- exit()	cleanup, send notifier
- 
- cancel() cancel moving
- 
- callbacks:
- 
- exec()   execute without any user interaction, based on properties
- call init(), apply(), exit()
- 
- invoke() gets called on mouse click near edge
- call init(), add handler
- 
- modal()  accept modal events while doing it
- call apply() with delta motion
- call exit() and remove handler
- 
+ * x, y   			mouse coord near edge
+ * delta            movement of edge
+ * 
+ * functions:
+ * 
+ * init()   set default property values, find edge based on mouse coords, test
+ * if the edge can be moved, select edges, calculate min and max movement
+ * 
+ * apply()	apply delta on selection
+ * 
+ * exit()	cleanup, send notifier
+ * 
+ * cancel() cancel moving
+ * 
+ * callbacks:
+ * 
+ * exec()   execute without any user interaction, based on properties
+ * call init(), apply(), exit()
+ * 
+ * invoke() gets called on mouse click near edge
+ * call init(), add handler
+ * 
+ * modal()  accept modal events while doing it
+ * call apply() with delta motion
+ * call exit() and remove handler
  */
 
 typedef struct sAreaMoveData {
@@ -1097,38 +1104,37 @@ static void SCREEN_OT_area_move(wmOperatorType *ot)
 /* ************** split area operator *********************************** */
 
 /* 
- operator state vars:  
- fac              spit point
- dir              direction 'v' or 'h'
- 
- operator customdata:
- area   			pointer to (active) area
- x, y			last used mouse pos
- (more, see below)
- 
- functions:
- 
- init()   set default property values, find area based on context
- 
- apply()	split area based on state vars
- 
- exit()	cleanup, send notifier
- 
- cancel() remove duplicated area
- 
- callbacks:
- 
- exec()   execute without any user interaction, based on state vars
- call init(), apply(), exit()
- 
- invoke() gets called on mouse click in action-widget
- call init(), add modal handler
- call apply() with initial motion
- 
- modal()  accept modal events while doing it
- call move-areas code with delta motion
- call exit() or cancel() and remove handler
- 
+ * operator state vars:  
+ * fac              spit point
+ * dir              direction 'v' or 'h'
+ * 
+ * operator customdata:
+ * area   			pointer to (active) area
+ * x, y			last used mouse pos
+ * (more, see below)
+ * 
+ * functions:
+ * 
+ * init()   set default property values, find area based on context
+ * 
+ * apply()	split area based on state vars
+ * 
+ * exit()	cleanup, send notifier
+ * 
+ * cancel() remove duplicated area
+ * 
+ * callbacks:
+ * 
+ * exec()   execute without any user interaction, based on state vars
+ * call init(), apply(), exit()
+ * 
+ * invoke() gets called on mouse click in action-widget
+ * call init(), add modal handler
+ * call apply() with initial motion
+ * 
+ * modal()  accept modal events while doing it
+ * call move-areas code with delta motion
+ * call exit() or cancel() and remove handler
  */
 
 #define SPLIT_STARTED	1
@@ -1283,6 +1289,7 @@ static void area_split_exit(bContext *C, wmOperator *op)
 		op->customdata = NULL;
 	}
 	
+	WM_cursor_restore(CTX_wm_window(C));
 	WM_event_add_notifier(C, NC_SCREEN|NA_EDITED, NULL);
 	
 	/* this makes sure aligned edges will result in aligned grabbing */
@@ -1337,12 +1344,12 @@ static int area_split_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		int x, y;
 		
 		/* retrieve initial mouse coord, so we can find the active edge */
-		if(RNA_property_is_set(op->ptr, "mouse_x"))
+		if(RNA_struct_property_is_set(op->ptr, "mouse_x"))
 			x= RNA_int_get(op->ptr, "mouse_x");
 		else
 			x= event->x;
 		
-		if(RNA_property_is_set(op->ptr, "mouse_y"))
+		if(RNA_struct_property_is_set(op->ptr, "mouse_y"))
 			y= RNA_int_get(op->ptr, "mouse_y");
 		else
 			y= event->x;
@@ -1481,6 +1488,37 @@ static int area_split_modal(bContext *C, wmOperator *op, wmEvent *event)
 				}
 			}
 			break;
+			
+		case MIDDLEMOUSE:
+		case TABKEY:
+			if (sd->previewmode==0){
+			}
+			else{
+				dir = RNA_enum_get(op->ptr, "direction");
+				
+				if(event->val==KM_PRESS){
+					if (sd->sarea){
+						sd->sarea->flag &= ~(AREA_FLAG_DRAWSPLIT_H|AREA_FLAG_DRAWSPLIT_V);
+						ED_area_tag_redraw(sd->sarea);
+						
+						if (dir=='v'){
+							RNA_enum_set(op->ptr, "direction", 'h');
+							sd->sarea->flag |= AREA_FLAG_DRAWSPLIT_H;
+							
+							WM_cursor_set(CTX_wm_window(C),CURSOR_X_MOVE);
+						}
+						else{
+							RNA_enum_set(op->ptr, "direction", 'v');
+							sd->sarea->flag |= AREA_FLAG_DRAWSPLIT_V;
+							
+							WM_cursor_set(CTX_wm_window(C),CURSOR_Y_MOVE);
+						}
+					}
+				}
+			}
+			
+			break;
+			
 		case RIGHTMOUSE: /* cancel operation */
 		case ESCKEY:
 			return area_split_cancel(C, op);
@@ -1624,6 +1662,47 @@ static int region_scale_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	return OPERATOR_FINISHED;
 }
 
+static int region_scale_get_maxsize(RegionMoveData *rmd)
+{
+	int maxsize= 0;
+
+	if(rmd->edge==AE_LEFT_TO_TOPRIGHT || rmd->edge==AE_RIGHT_TO_TOPLEFT) {
+		return rmd->sa->winx - UI_UNIT_X;
+	}
+
+	if(rmd->ar->regiontype == RGN_TYPE_TOOL_PROPS) {
+		/* this calculation seems overly verbose
+		 * can someone explain why this method is necessary? - campbell */
+		maxsize = rmd->maxsize - ((rmd->sa->headertype==HEADERTOP)?UI_UNIT_Y*2:UI_UNIT_Y) - (UI_UNIT_Y/4);
+	}
+
+	return maxsize;
+}
+
+static void region_scale_validate_size(RegionMoveData *rmd)
+{
+	if((rmd->ar->flag & RGN_FLAG_HIDDEN)==0) {
+		short *size, maxsize= -1;
+
+
+		if(rmd->edge==AE_LEFT_TO_TOPRIGHT || rmd->edge==AE_RIGHT_TO_TOPLEFT)
+			size= &rmd->ar->sizex;
+		else
+			size= &rmd->ar->sizey;
+
+		maxsize= region_scale_get_maxsize(rmd);
+
+		if(*size > maxsize && maxsize > 0)
+			*size= maxsize;
+	}
+}
+
+static void region_scale_toggle_hidden(bContext *C, RegionMoveData *rmd)
+{
+	ED_region_toggle_hidden(C, rmd->ar);
+	region_scale_validate_size(rmd);
+}
+
 static int region_scale_modal(bContext *C, wmOperator *op, wmEvent *event)
 {
 	RegionMoveData *rmd= op->customdata;
@@ -1643,35 +1722,31 @@ static int region_scale_modal(bContext *C, wmOperator *op, wmEvent *event)
 				if(rmd->ar->sizex < UI_UNIT_X) {
 					rmd->ar->sizex= rmd->origval;
 					if(!(rmd->ar->flag & RGN_FLAG_HIDDEN))
-						ED_region_toggle_hidden(C, rmd->ar);
+						region_scale_toggle_hidden(C, rmd);
 				}
 				else if(rmd->ar->flag & RGN_FLAG_HIDDEN)
-					ED_region_toggle_hidden(C, rmd->ar);
+					region_scale_toggle_hidden(C, rmd);
 			}
 			else {
-				int maxsize=0;
+				int maxsize= region_scale_get_maxsize(rmd);
 				delta= event->y - rmd->origy;
 				if(rmd->edge==AE_BOTTOM_TO_TOPLEFT) delta= -delta;
 				
 				rmd->ar->sizey= rmd->origval + delta;
 				CLAMP(rmd->ar->sizey, 0, rmd->maxsize);
 
-				if(rmd->ar->regiontype == RGN_TYPE_TOOL_PROPS) {
-					/* this calculation seems overly verbose
-					 * can someone explain why this method is necessary? - campbell */
-					maxsize = rmd->maxsize - ((rmd->sa->headertype==HEADERTOP)?UI_UNIT_Y*2:UI_UNIT_Y) - (UI_UNIT_Y/4);
-				}
-
 				/* note, 'UI_UNIT_Y/4' means you need to drag the header almost
 				 * all the way down for it to become hidden, this is done
 				 * otherwise its too easy to do this by accident */
-				if(rmd->ar->sizey < UI_UNIT_Y/4 || (maxsize > 0 && (rmd->ar->sizey > maxsize)) ) {
+				if(rmd->ar->sizey < UI_UNIT_Y/4) {
 					rmd->ar->sizey= rmd->origval;
 					if(!(rmd->ar->flag & RGN_FLAG_HIDDEN))
-						ED_region_toggle_hidden(C, rmd->ar);
+						region_scale_toggle_hidden(C, rmd);
 				}
+				else if(maxsize > 0 && (rmd->ar->sizey > maxsize)) 
+					rmd->ar->sizey= maxsize;
 				else if(rmd->ar->flag & RGN_FLAG_HIDDEN)
-					ED_region_toggle_hidden(C, rmd->ar);
+					region_scale_toggle_hidden(C, rmd);
 			}
 			ED_area_tag_redraw(rmd->sa);
 			WM_event_add_notifier(C, NC_SCREEN|NA_EDITED, NULL);
@@ -1683,10 +1758,14 @@ static int region_scale_modal(bContext *C, wmOperator *op, wmEvent *event)
 				
 				if(ABS(event->x - rmd->origx) < 2 && ABS(event->y - rmd->origy) < 2) {
 					if(rmd->ar->flag & RGN_FLAG_HIDDEN) {
-						ED_region_toggle_hidden(C, rmd->ar);
-						ED_area_tag_redraw(rmd->sa);
-						WM_event_add_notifier(C, NC_SCREEN|NA_EDITED, NULL);
+						region_scale_toggle_hidden(C, rmd);
 					}
+					else if(rmd->ar->flag & RGN_FLAG_TOO_SMALL) {
+						region_scale_validate_size(rmd);
+					}
+
+					ED_area_tag_redraw(rmd->sa);
+					WM_event_add_notifier(C, NC_SCREEN|NA_EDITED, NULL);
 				}
 				MEM_freeN(op->customdata);
 				op->customdata = NULL;
@@ -1738,8 +1817,9 @@ static int frame_offset_exec(bContext *C, wmOperator *op)
 	
 	delta = RNA_int_get(op->ptr, "delta");
 
-	scene->r.cfra += delta;
-	scene->r.subframe = 0.f;
+	CFRA += delta;
+	FRAMENUMBER_MIN_CLAMP(CFRA);
+	SUBFRA = 0.f;
 	
 	sound_seek_scene(bmain, scene);
 
@@ -1810,7 +1890,7 @@ static void SCREEN_OT_frame_jump(wmOperatorType *ot)
 	ot->flag= OPTYPE_UNDO;
 	
 	/* rna */
-	RNA_def_boolean(ot->srna, "end", 0, "Last Frame", "Jump to the last frame of the frame range.");
+	RNA_def_boolean(ot->srna, "end", 0, "Last Frame", "Jump to the last frame of the frame range");
 }
 
 
@@ -1996,31 +2076,30 @@ static void SCREEN_OT_screen_full_area(wmOperatorType *ot)
 /* ************** join area operator ********************************************** */
 
 /* operator state vars used:  
- x1, y1     mouse coord in first area, which will disappear
- x2, y2     mouse coord in 2nd area, which will become joined
- 
- functions:
- 
- init()   find edge based on state vars 
- test if the edge divides two areas, 
- store active and nonactive area,
- 
- apply()  do the actual join
- 
- exit()	cleanup, send notifier
- 
- callbacks:
- 
- exec()	calls init, apply, exit 
- 
- invoke() sets mouse coords in x,y
- call init()
- add modal handler
- 
- modal()	accept modal events while doing it
- call apply() with active window and nonactive window
- call exit() and remove handler when LMB confirm
- 
+ * x1, y1     mouse coord in first area, which will disappear
+ * x2, y2     mouse coord in 2nd area, which will become joined
+ * 
+ * functions:
+ * 
+ * init()   find edge based on state vars 
+ * test if the edge divides two areas, 
+ * store active and nonactive area,
+ * 
+ * apply()  do the actual join
+ * 
+ * exit()	cleanup, send notifier
+ * 
+ * callbacks:
+ * 
+ * exec()	calls init, apply, exit 
+ * 
+ * invoke() sets mouse coords in x,y
+ * call init()
+ * add modal handler
+ * 
+ * modal()	accept modal events while doing it
+ * call apply() with active window and nonactive window
+ * call exit() and remove handler when LMB confirm
  */
 
 typedef struct sAreaJoinData
@@ -2198,8 +2277,8 @@ static int area_join_modal(bContext *C, wmOperator *op, wmEvent *event)
 					} 
 					else {
 						/* we are not bordering on the previously selected area 
-						 we check if area has common border with the one marked for removal
-						 in this case we can swap areas.
+						 * we check if area has common border with the one marked for removal
+						 * in this case we can swap areas.
 						 */
 						dir = area_getorientation(sa, jd->sa2);
 						if (dir >= 0) {
@@ -2773,10 +2852,23 @@ static int match_region_with_redraws(int spacetype, int regiontype, int redraws)
 				if(redraws & TIME_ALL_IMAGE_WIN)
 					return 1;
 				break;
+			case SPACE_CLIP:
+				if(redraws & TIME_CLIPS)
+					return 1;
+				break;
 				
 		}
 	}
 	else if(regiontype==RGN_TYPE_UI) {
+		if(spacetype==SPACE_CLIP) {
+			/* Track Preview button is on Properties Editor in SpaceClip,
+			 * and it's very common case when users want it be refreshing
+			 * during playback, so asking people to enable special option
+			 * for this is a bit tricky, so add exception here for refreshing
+			 * Properties Editor for SpaceClip always */
+			return 1;
+		}
+
 		if(redraws & TIME_ALL_BUTS_WIN)
 			return 1;
 	}
@@ -2790,6 +2882,8 @@ static int match_region_with_redraws(int spacetype, int regiontype, int redraws)
 				if(redraws & (TIME_SEQ|TIME_ALL_ANIM_WIN))
 					return 1;
 				break;
+			case SPACE_CLIP:
+				return 1;
 		}
 	}
 	return 0;
@@ -2813,18 +2907,20 @@ static int screen_animation_step(bContext *C, wmOperator *UNUSED(op), wmEvent *e
 		else if (sad->flag & ANIMPLAY_FLAG_NO_SYNC) sync= 0;
 		else sync= (scene->flag & SCE_FRAME_DROP);
 		
-		if((scene->audio.flag & AUDIO_SYNC) && !(sad->flag & ANIMPLAY_FLAG_REVERSE) && finite(time = sound_sync_scene(scene)))
-			scene->r.cfra = (double)time * FPS + 0.5;
-		else
+		if ((scene->audio.flag & AUDIO_SYNC) &&
+		    (sad->flag & ANIMPLAY_FLAG_REVERSE) == FALSE &&
+		    finite(time = sound_sync_scene(scene)))
 		{
+			scene->r.cfra = (double)time * FPS + 0.5;
+		}
+		else {
 			if (sync) {
-				int step = floor(wt->duration * FPS);
+				int step = floor((wt->duration - sad->last_duration) * FPS);
 				/* skip frames */
 				if (sad->flag & ANIMPLAY_FLAG_REVERSE)
 					scene->r.cfra -= step;
 				else
 					scene->r.cfra += step;
-				wt->duration -= ((double)step)/FPS;
 			}
 			else {
 				/* one frame +/- */
@@ -2835,6 +2931,8 @@ static int screen_animation_step(bContext *C, wmOperator *UNUSED(op), wmEvent *e
 			}
 		}
 		
+		sad->last_duration = wt->duration;
+
 		/* reset 'jumped' flag before checking if we need to jump... */
 		sad->flag &= ~ANIMPLAY_FLAG_JUMPED;
 		
@@ -2964,7 +3062,7 @@ static int screen_animation_play_exec(bContext *C, wmOperator *op)
 	int mode= (RNA_boolean_get(op->ptr, "reverse")) ? -1 : 1;
 	int sync= -1;
 	
-	if (RNA_property_is_set(op->ptr, "sync"))
+	if (RNA_struct_property_is_set(op->ptr, "sync"))
 		sync= (RNA_boolean_get(op->ptr, "sync"));
 	
 	return ED_screen_animation_play(C, sync, mode);
@@ -3022,28 +3120,28 @@ static void SCREEN_OT_animation_cancel(wmOperatorType *ot)
 	
 	ot->poll= ED_operator_screenactive;
 
-	RNA_def_boolean(ot->srna, "restore_frame", TRUE, "Restore Frame", "Restore the frame when animation was initialized.");
+	RNA_def_boolean(ot->srna, "restore_frame", TRUE, "Restore Frame", "Restore the frame when animation was initialized");
 }
 
 /* ************** border select operator (template) ***************************** */
 
 /* operator state vars used: (added by default WM callbacks)   
- xmin, ymin     
- xmax, ymax     
- 
- customdata: the wmGesture pointer
- 
- callbacks:
- 
- exec()	has to be filled in by user
- 
- invoke() default WM function
- adds modal handler
- 
- modal()	default WM function 
- accept modal events while doing it, calls exec(), handles ESC and border drawing
- 
- poll()	has to be filled in by user for context
+ * xmin, ymin     
+ * xmax, ymax     
+ * 
+ * customdata: the wmGesture pointer
+ * 
+ * callbacks:
+ * 
+ * exec()	has to be filled in by user
+ * 
+ * invoke() default WM function
+ * adds modal handler
+ * 
+ * modal()	default WM function 
+ * accept modal events while doing it, calls exec(), handles ESC and border drawing
+ * 
+ * poll()	has to be filled in by user for context
  */
 #if 0
 static int border_select_do(bContext *C, wmOperator *op)
@@ -3097,7 +3195,7 @@ static int fullscreen_back_exec(bContext *C, wmOperator *op)
 		if (sa->full) break;
 	}
 	if (!sa) {
-		BKE_report(op->reports, RPT_ERROR, "No fullscreen areas were found.");
+		BKE_report(op->reports, RPT_ERROR, "No fullscreen areas were found");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -3211,7 +3309,6 @@ static void SCREEN_OT_delete(wmOperatorType *ot)
 static int scene_new_exec(bContext *C, wmOperator *op)
 {
 	Scene *newscene, *scene= CTX_data_scene(C);
-	bScreen *screen= CTX_wm_screen(C);
 	Main *bmain= CTX_data_main(C);
 	int type= RNA_enum_get(op->ptr, "type");
 
@@ -3230,11 +3327,9 @@ static int scene_new_exec(bContext *C, wmOperator *op)
 		}
 	}
 	
-	/* this notifier calls ED_screen_set_scene, doing a lot of UI stuff, not for inside event loops */
-	WM_event_add_notifier(C, NC_SCENE|ND_SCENEBROWSE, newscene);
+	ED_screen_set_scene(C, CTX_wm_screen(C), newscene);
 	
-	if(screen)
-		screen->scene= newscene;
+	WM_event_add_notifier(C, NC_SCENE|ND_SCENEBROWSE, newscene);
 	
 	return OPERATOR_FINISHED;
 }
@@ -3270,9 +3365,14 @@ static void SCENE_OT_new(wmOperatorType *ot)
 static int scene_delete_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Scene *scene= CTX_data_scene(C);
-	
+
+	ED_screen_delete_scene(C, scene);
+
+	if(G.f & G_DEBUG)
+		printf("scene delete %p\n", scene);
+
 	WM_event_add_notifier(C, NC_SCENE|NA_REMOVED, scene);
-	
+
 	return OPERATOR_FINISHED;
 }
 
@@ -3392,7 +3492,7 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 {
 	ListBase *lb;
 	wmKeyMap *keymap;
-	//wmKeyMapItem *kmi;
+	wmKeyMapItem *kmi;
 	
 	/* Screen Editing ------------------------------------------------ */
 	keymap= WM_keymap_find(keyconf, "Screen Editing", 0, 0);
@@ -3459,7 +3559,8 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 	
 	/* render */
 	WM_keymap_add_item(keymap, "RENDER_OT_render", F12KEY, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "RENDER_OT_render", F12KEY, KM_PRESS, KM_CTRL, 0)->ptr, "animation", 1);
+	kmi = WM_keymap_add_item(keymap, "RENDER_OT_render", F12KEY, KM_PRESS, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "animation", TRUE);
 	WM_keymap_add_item(keymap, "RENDER_OT_view_cancel", ESCKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "RENDER_OT_view_show", F11KEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "RENDER_OT_play_rendered_anim", F11KEY, KM_PRESS, KM_CTRL, 0);
@@ -3483,20 +3584,21 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 	RNA_int_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_offset", WHEELDOWNMOUSE, KM_PRESS, KM_ALT, 0)->ptr, "delta", 1);
 	RNA_int_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_offset", WHEELUPMOUSE, KM_PRESS, KM_ALT, 0)->ptr, "delta", -1);
 	
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", UPARROWKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "end", 1);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", DOWNARROWKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "end", 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", RIGHTARROWKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "end", 1);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", LEFTARROWKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "end", 0);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", UPARROWKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "end", TRUE);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", DOWNARROWKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "end", FALSE);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", RIGHTARROWKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "end", TRUE);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_frame_jump", LEFTARROWKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "end", FALSE);
 	
 	WM_keymap_add_item(keymap, "SCREEN_OT_keyframe_jump", UPARROWKEY, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_keyframe_jump", DOWNARROWKEY, KM_PRESS, 0, 0)->ptr, "next", 0);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_keyframe_jump", DOWNARROWKEY, KM_PRESS, 0, 0)->ptr, "next", FALSE);
 	
 	WM_keymap_add_item(keymap, "SCREEN_OT_keyframe_jump", MEDIALAST, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_keyframe_jump", MEDIAFIRST, KM_PRESS, 0, 0)->ptr, "next", 0);
+	kmi = WM_keymap_add_item(keymap, "SCREEN_OT_keyframe_jump", MEDIAFIRST, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "next", FALSE);
 	
 	/* play (forward and backwards) */
 	WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", AKEY, KM_PRESS, KM_ALT, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", AKEY, KM_PRESS, KM_ALT|KM_SHIFT, 0)->ptr, "reverse", 1);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", AKEY, KM_PRESS, KM_ALT|KM_SHIFT, 0)->ptr, "reverse", TRUE);
 	WM_keymap_add_item(keymap, "SCREEN_OT_animation_cancel", ESCKEY, KM_PRESS, 0, 0);
 	
 	WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", MEDIAPLAY, KM_PRESS, 0, 0);
@@ -3506,11 +3608,11 @@ void ED_keymap_screen(wmKeyConfig *keyconf)
 #if 0 // XXX: disabled for restoring later... bad implementation
 	keymap= WM_keymap_find(keyconf, "Frames", 0, 0);
 	kmi = WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", RIGHTARROWKEY, KM_PRESS, KM_ALT, 0);
-		RNA_boolean_set(kmi->ptr, "cycle_speed", 1);
+		RNA_boolean_set(kmi->ptr, "cycle_speed", TRUE);
 	
 	kmi = WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", LEFTARROWKEY, KM_PRESS, KM_ALT, 0);
-		RNA_boolean_set(kmi->ptr, "reverse", 1);
-		RNA_boolean_set(kmi->ptr, "cycle_speed", 1);
+		RNA_boolean_set(kmi->ptr, "reverse", TRUE);
+		RNA_boolean_set(kmi->ptr, "cycle_speed", TRUE);
 	
 	WM_keymap_add_item(keymap, "SCREEN_OT_animation_play", DOWNARROWKEY, KM_PRESS, KM_ALT, 0);
 #endif

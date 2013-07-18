@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_ALWAYSEVENTMGR
-#define __KX_ALWAYSEVENTMGR
+#ifndef __SCA_ALWAYSEVENTMANAGER_H__
+#define __SCA_ALWAYSEVENTMANAGER_H__
 #include "SCA_EventManager.h"
 #include <vector>
 
@@ -51,5 +49,5 @@ public:
 #endif
 };
 
-#endif //__KX_ALWAYSEVENTMGR
+#endif //__SCA_ALWAYSEVENTMANAGER_H__
 

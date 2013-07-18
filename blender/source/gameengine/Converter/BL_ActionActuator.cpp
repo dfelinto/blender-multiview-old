@@ -1,6 +1,4 @@
 /*
-* $Id$
-*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,7 +23,7 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file gameengine/Converter/BL_ActionActuator.cpp
  *  \ingroup bgeconv
@@ -125,7 +123,8 @@ void BL_ActionActuator::ProcessReplica()
 	
 }
 
-void BL_ActionActuator::SetBlendTime (float newtime){
+void BL_ActionActuator::SetBlendTime (float newtime)
+{
 	m_blendframe = newtime;
 }
 
@@ -146,6 +145,7 @@ void BL_ActionActuator::SetLocalTime(float curtime)
 		case ACT_ACTION_PLAY:
 			// Clamp
 			m_localtime = m_endframe;
+			((KX_GameObject*)GetParent())->StopAction(m_layer);
 			break;
 		case ACT_ACTION_LOOP_END:
 			// Put the time back to the beginning
@@ -160,6 +160,8 @@ void BL_ActionActuator::SetLocalTime(float curtime)
 
 			m_starttime = curtime;
 
+			m_flag ^= ACT_FLAG_REVERSE;
+
 			break;
 		}
 	}
@@ -173,7 +175,8 @@ void BL_ActionActuator::ResetStartTime(float curtime)
 	//SetLocalTime(curtime);
 }
 
-CValue* BL_ActionActuator::GetReplica() {
+CValue* BL_ActionActuator::GetReplica()
+{
 	BL_ActionActuator* replica = new BL_ActionActuator(*this);//m_float,GetName());
 	replica->ProcessReplica();
 	return replica;
@@ -208,9 +211,8 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 		
 			if (m_flag & ACT_FLAG_REVERSE)
 			{
-				m_localtime = start;
-				start = end;
-				end = m_localtime;
+				start = m_endframe;
+				end = m_startframe;
 			}
 
 			break;
@@ -226,10 +228,7 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 			break;
 	}
 
-	// Continue only really makes sense for play stop and flipper. All other modes go until they are complete.
-	if (m_flag & ACT_FLAG_CONTINUE &&
-		(m_playtype == ACT_ACTION_LOOP_STOP ||
-		m_playtype == ACT_ACTION_FLIPPER))
+	if (m_flag & ACT_FLAG_CONTINUE)
 		bUseContinue = true;
 	
 	
@@ -241,14 +240,14 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 		RemoveAllEvents();
 	}
 
+	// "Active" actions need to keep updating their current frame
+	if (bUseContinue && (m_flag & ACT_FLAG_ACTIVE))
+		m_localtime = obj->GetActionFrame(m_layer);
+
 	if (m_flag & ACT_FLAG_ATTEMPT_PLAY)
 		SetLocalTime(curtime);
-
-	if (bUseContinue && (m_flag & ACT_FLAG_ACTIVE))
-	{
-		m_localtime = obj->GetActionFrame(m_layer);
+	else
 		ResetStartTime(curtime);
-	}
 
 	// Handle a frame property if it's defined
 	if ((m_flag & ACT_FLAG_ACTIVE) && m_framepropname[0] != 0)
@@ -264,22 +263,28 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 	}
 
 	// Handle a finished animation
-	if ((m_flag & ACT_FLAG_PLAY_END) && obj->IsActionDone(m_layer))
+	if ((m_flag & ACT_FLAG_PLAY_END) && (m_flag & ACT_FLAG_ACTIVE) && obj->IsActionDone(m_layer))
 	{
 		m_flag &= ~ACT_FLAG_ACTIVE;
 		m_flag &= ~ACT_FLAG_ATTEMPT_PLAY;
-		obj->StopAction(m_layer);
+
+		if (m_playtype == ACT_ACTION_PINGPONG)
+			m_flag ^= ACT_FLAG_REVERSE;
 		return false;
 	}
 	
 	// If a different action is playing, we've been overruled and are no longer active
-	if (obj->GetCurrentAction(m_layer) != m_action)
+	if (obj->GetCurrentAction(m_layer) != m_action && !obj->IsActionDone(m_layer))
 		m_flag &= ~ACT_FLAG_ACTIVE;
 
 	if (bPositiveEvent || (m_flag & ACT_FLAG_ATTEMPT_PLAY && !(m_flag & ACT_FLAG_ACTIVE)))
 	{
-		if (bPositiveEvent)
+		if (bPositiveEvent && m_playtype == ACT_ACTION_PLAY)
+		{
+			if (obj->IsActionDone(m_layer))
+				m_localtime = start;
 			ResetStartTime(curtime);
+		}
 
 		if (obj->PlayAction(m_action->id.name+2, start, end, m_layer, m_priority, m_blendin, playtype, m_layer_weight, m_ipo_flags))
 		{
@@ -287,7 +292,7 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 			if (bUseContinue)
 				obj->SetActionFrame(m_layer, m_localtime);
 
-			if (m_playtype == ACT_ACTION_PLAY)
+			if (m_playtype == ACT_ACTION_PLAY || m_playtype == ACT_ACTION_PINGPONG)
 				m_flag |= ACT_FLAG_PLAY_END;
 			else
 				m_flag &= ~ACT_FLAG_PLAY_END;
@@ -297,6 +302,7 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 	else if ((m_flag & ACT_FLAG_ACTIVE) && bNegativeEvent)
 	{	
 		m_flag &= ~ACT_FLAG_ATTEMPT_PLAY;
+		m_localtime = obj->GetActionFrame(m_layer);
 		bAction *curr_action = obj->GetCurrentAction(m_layer);
 		if (curr_action && curr_action != m_action)
 		{
@@ -307,11 +313,6 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 			return false;
 		}
 
-		
-		m_localtime = obj->GetActionFrame(m_layer);
-		if (m_localtime < min(m_startframe, m_endframe) || m_localtime > max(m_startframe, m_endframe))
-			m_localtime = m_startframe;
-
 		switch(m_playtype)
 		{
 			case ACT_ACTION_LOOP_STOP:
@@ -320,9 +321,6 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 				// We're done
 				m_flag &= ~ACT_FLAG_ACTIVE;
 				return false;
-			case ACT_ACTION_PINGPONG:
-				m_flag ^= ACT_FLAG_REVERSE;
-				// Now fallthrough to LOOP_END code
 			case ACT_ACTION_LOOP_END:
 				// Convert into a play and let it finish
 				obj->SetPlayMode(m_layer, BL_Action::ACT_MODE_PLAY);
@@ -350,8 +348,15 @@ bool BL_ActionActuator::Update(double curtime, bool frame)
 /* Python functions                                                          */
 /* ------------------------------------------------------------------------- */
 
-PyObject* BL_ActionActuator::PyGetChannel(PyObject* value) {
-	char *string= _PyUnicode_AsString(value);
+PyObject* BL_ActionActuator::PyGetChannel(PyObject* value)
+{
+	const char *string= _PyUnicode_AsString(value);
+
+	if (GetParent()->GetGameObjectType() != SCA_IObject::OBJ_ARMATURE)
+	{
+		PyErr_SetString(PyExc_NotImplementedError, "actuator.getChannel(): Only armatures support channels");
+		return NULL;
+	}
 	
 	if (!string) {
 		PyErr_SetString(PyExc_TypeError, "expected a single string");
@@ -365,7 +370,7 @@ PyObject* BL_ActionActuator::PyGetChannel(PyObject* value) {
 		obj->GetPose(&m_pose); /* Get the underlying pose from the armature */
 	}
 	
-	// get_pose_channel accounts for NULL pose, run on both incase one exists but
+	// get_pose_channel accounts for NULL pose, run on both in case one exists but
 	// the channel doesnt
 	if(		!(pchan=get_pose_channel(m_userpose, string)) &&
 			!(pchan=get_pose_channel(m_pose, string))  )
@@ -396,12 +401,12 @@ PyObject* BL_ActionActuator::PyGetChannel(PyObject* value) {
 	PyTuple_SET_ITEM(ret, 2, list);
 
 	return ret;
-/*
+#if 0
 	return Py_BuildValue("([fff][fff][ffff])",
 		pchan->loc[0], pchan->loc[1], pchan->loc[2],
 		pchan->size[0], pchan->size[1], pchan->size[2],
 		pchan->quat[0], pchan->quat[1], pchan->quat[2], pchan->quat[3] );
-*/
+#endif
 }
 
 /*     setChannel                                                         */
@@ -416,6 +421,12 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 	PyObject *pymat= NULL;
 	PyObject *pyloc= NULL, *pysize= NULL, *pyquat= NULL;
 	bPoseChannel *pchan;
+
+	if (GetParent()->GetGameObjectType() != SCA_IObject::OBJ_ARMATURE)
+	{
+		PyErr_SetString(PyExc_NotImplementedError, "actuator.setChannel(): Only armatures support channels");
+		return NULL;
+	}
 	
 	if(PyTuple_Size(args)==2) {
 		if (!PyArg_ParseTuple(args,"sO:setChannel", &string, &pymat)) // matrix
@@ -450,9 +461,9 @@ KX_PYMETHODDEF_DOC(BL_ActionActuator, setChannel,
 		pchan= get_pose_channel(m_userpose, string); // adds the channel if its not there.
 		
 		if(pchan) {
-			VECCOPY (pchan->loc, matrix[3]);
-			mat4_to_size( pchan->size,matrix);
-			mat4_to_quat( pchan->quat,matrix);
+			copy_v3_v3(pchan->loc, matrix[3]);
+			mat4_to_size(pchan->size, matrix);
+			mat4_to_quat(pchan->quat, matrix);
 		}
 	}
 	else {
@@ -528,8 +539,8 @@ PyAttributeDef BL_ActionActuator::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("channelNames", BL_ActionActuator, pyattr_get_channel_names),
 	KX_PYATTRIBUTE_SHORT_RW("priority", 0, 100, false, BL_ActionActuator, m_priority),
 	KX_PYATTRIBUTE_RW_FUNCTION("frame", BL_ActionActuator, pyattr_get_frame, pyattr_set_frame),
-	KX_PYATTRIBUTE_STRING_RW("propName", 0, 31, false, BL_ActionActuator, m_propname),
-	KX_PYATTRIBUTE_STRING_RW("framePropName", 0, 31, false, BL_ActionActuator, m_framepropname),
+	KX_PYATTRIBUTE_STRING_RW("propName", 0, MAX_PROP_NAME, false, BL_ActionActuator, m_propname),
+	KX_PYATTRIBUTE_STRING_RW("framePropName", 0, MAX_PROP_NAME, false, BL_ActionActuator, m_framepropname),
 	KX_PYATTRIBUTE_RW_FUNCTION("useContinue", BL_ActionActuator, pyattr_get_use_continue, pyattr_set_use_continue),
 	KX_PYATTRIBUTE_FLOAT_RW_CHECK("blendTime", 0, MAXFRAMEF, BL_ActionActuator, m_blendframe, CheckBlendTime),
 	KX_PYATTRIBUTE_SHORT_RW_CHECK("mode",0,100,false,BL_ActionActuator,m_playtype,CheckType),
@@ -576,6 +587,12 @@ PyObject* BL_ActionActuator::pyattr_get_channel_names(void *self_v, const KX_PYA
 	PyObject *ret= PyList_New(0);
 	PyObject *item;
 	
+	if (self->GetParent()->GetGameObjectType() != SCA_IObject::OBJ_ARMATURE)
+	{
+		PyErr_SetString(PyExc_NotImplementedError, "actuator.channelNames: Only armatures support channels");
+		return NULL;
+	}
+
 	bPose *pose= ((BL_ArmatureObject*)self->GetParent())->GetOrigPose();
 	
 	if(pose) {

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,9 +23,9 @@
  */
 
 
-#ifndef BPY_TRACEBACK_H
-#define BPY_TRACEBACK_H
+#ifndef __BPY_TRACEBACK_H__
+#define __BPY_TRACEBACK_H__
 
 void python_script_error_jump(const char *filepath, int *lineno, int *offset);
 
-#endif // BPY_TRACEBACK_H
+#endif // __BPY_TRACEBACK_H__

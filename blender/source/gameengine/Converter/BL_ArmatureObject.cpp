@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -110,7 +108,6 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 	for (pchan=(bPoseChannel*)out->chanbase.first; pchan; pchan=(bPoseChannel*)pchan->next) {
 		pchan->parent= (bPoseChannel*)BLI_ghash_lookup(ghash, pchan->parent);
 		pchan->child= (bPoseChannel*)BLI_ghash_lookup(ghash, pchan->child);
-		pchan->path= NULL;
 
 		if (copy_constraint) {
 			ListBase listb;
@@ -123,8 +120,10 @@ void game_copy_pose(bPose **dst, bPose *src, int copy_constraint)
 		}
 
 		// fails to link, props are not used in the BGE yet.
-		/* if(pchan->prop)
-			pchan->prop= IDP_CopyProperty(pchan->prop); */
+#if 0
+		if(pchan->prop)
+			pchan->prop= IDP_CopyProperty(pchan->prop);
+#endif
 		pchan->prop= NULL;
 	}
 
@@ -165,8 +164,8 @@ void game_blend_poses(bPose *dst, bPose *src, float srcweight/*, short mode*/)
 		if (schan->rotmode == ROT_MODE_QUAT) {
 			float dquat[4], squat[4];
 			
-			QUATCOPY(dquat, dchan->quat);
-			QUATCOPY(squat, schan->quat);
+			copy_qt_qt(dquat, dchan->quat);
+			copy_qt_qt(squat, schan->quat);
 			if (mode==ACTSTRIPMODE_BLEND)
 				interp_qt_qtqt(dchan->quat, dquat, squat, srcweight);
 			else {
@@ -290,6 +289,7 @@ void BL_ArmatureObject::LoadConstraints(KX_BlenderSceneConverter* converter)
 			// which constraint should we support?
 			switch (pcon->type) {
 			case CONSTRAINT_TYPE_TRACKTO:
+			case CONSTRAINT_TYPE_DAMPTRACK:
 			case CONSTRAINT_TYPE_KINEMATIC:
 			case CONSTRAINT_TYPE_ROTLIKE:
 			case CONSTRAINT_TYPE_LOCLIKE:
@@ -548,11 +548,11 @@ void BL_ArmatureObject::GetPose(bPose **pose)
 	/* Otherwise, copy the armature's pose channels into the caller-supplied pose */
 		
 	if (!*pose) {
-		/*	probably not to good of an idea to
-			duplicate everying, but it clears up 
-			a crash and memory leakage when 
-			&BL_ActionActuator::m_pose is freed
-		*/
+		/* probably not to good of an idea to
+		 * duplicate everything, but it clears up 
+		 * a crash and memory leakage when 
+		 * &BL_ActionActuator::m_pose is freed
+		 */
 		game_copy_pose(pose, m_pose, 0);
 	}
 	else {
@@ -664,7 +664,7 @@ KX_PYMETHODDEF_DOC_NOARGS(BL_ArmatureObject, update,
 						  "update()\n"
 						  "Make sure that the armature will be updated on next graphic frame.\n"
 						  "This is automatically done if a KX_ArmatureActuator with mode run is active\n"
-						  "or if an action is playing. This function is usefull in other cases.\n")
+						  "or if an action is playing. This function is useful in other cases.\n")
 {
 	SetActiveAction(NULL, 0, KX_GetActiveEngine()->GetFrameTime());
 	Py_RETURN_NONE;

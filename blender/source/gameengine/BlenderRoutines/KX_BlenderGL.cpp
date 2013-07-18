@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -148,7 +147,7 @@ void BL_print_game_line(int fontid, const char* text, int size, int dpi, float* 
 
 	BLF_size(fontid, size, dpi);
 	BLF_position(fontid, 0, 0, 0);
-	BLF_draw(fontid, (char *)text, strlen(text));
+	BLF_draw(fontid, (char *)text, 65535);
 
 	BLF_disable(fontid, BLF_MATRIX|BLF_ASPECT);
 }
@@ -266,7 +265,7 @@ void BL_MakeScreenShot(ScrArea *curarea, const char* filename)
 		ImBuf *ibuf;
 		BLI_path_abs(path, G.main->name);
 		/* BKE_add_image_extension() checks for if extension was already set */
-		BKE_add_image_extension(path, R_PNG); /* scene->r.imtype */
+		BKE_add_image_extension(path, R_IMF_IMTYPE_PNG); /* scene->r.im_format.imtype */
 		ibuf= IMB_allocImBuf(dumpsx, dumpsy, 24, 0);
 		ibuf->rect= dumprect;
 		ibuf->ftype= PNG;

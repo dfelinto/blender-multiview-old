@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,7 +42,7 @@
  */
 
 #define PLUGIN_INTERN /* This tells the LIBEXPORT macro to compile with
-	dll export set on windows */
+                       * dll export set on windows */
 
 #ifdef WIN32
 #include "blenpluginapi/util.h"
@@ -132,7 +130,7 @@ LIBEXPORT short saveiff(struct ImBuf *ib,
 LIBEXPORT struct ImBuf *loadifffile(int a,
 						  int b)
 {
-	return IMB_loadifffile(a, b);
+	return IMB_loadifffile(a, b, "loadifffile");
 }
 
 LIBEXPORT struct ImBuf *loadiffname(char *n,
@@ -222,7 +220,7 @@ LIBEXPORT void de_interlace(struct ImBuf *ib)
 /* stuff from plugin.h                                                        */ 
 /* -------------------------------------------------------------------------- */
 
-/* These three need to be defined in the plugion itself. The plugin
+/* These three need to be defined in the plugin itself. The plugin
  * loader looks for these functions to check whether it can use the
  * plugin. For sequences, something similar exists. */
 /*  int plugin_tex_getversion(void); */

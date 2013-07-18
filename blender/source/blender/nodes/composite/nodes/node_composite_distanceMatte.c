@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,8 +34,8 @@
 
 /* ******************* channel Distance Matte ********************************* */
 static bNodeSocketTemplate cmp_node_distance_matte_in[]={
-	{SOCK_RGBA,1,"Image", 0.8f, 0.8f, 0.8f, 1.0f},
-	{SOCK_RGBA,1,"Key Color", 0.8f, 0.8f, 0.8f, 1.0f},
+	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA,1,"Key Color", 1.0f, 1.0f, 1.0f, 1.0f},
 	{-1,0,""}
 };
 
@@ -61,7 +59,7 @@ static void do_distance_matte(bNode *node, float *out, float *in)
 				  (c->key[1]-in[1])*(c->key[1]-in[1]) +
 				  (c->key[2]-in[2])*(c->key[2]-in[2]));
 
-	VECCOPY(out, in);
+	copy_v3_v3(out, in);
 
 	/*make 100% transparent */
 	if(distance < tolerence) {
@@ -130,19 +128,16 @@ static void node_composit_init_distance_matte(bNodeTree *UNUSED(ntree), bNode* n
 	c->t2= 0.1f;
 }
 
-void register_node_type_cmp_distance_matte(ListBase *lb)
+void register_node_type_cmp_distance_matte(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_DIST_MATTE, "Distance Key", NODE_CLASS_MATTE, NODE_PREVIEW|NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_DIST_MATTE, "Distance Key", NODE_CLASS_MATTE, NODE_PREVIEW|NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_distance_matte_in, cmp_node_distance_matte_out);
 	node_type_size(&ntype, 200, 80, 250);
 	node_type_init(&ntype, node_composit_init_distance_matte);
 	node_type_storage(&ntype, "NodeChroma", node_free_standard_storage, node_copy_standard_storage);
 	node_type_exec(&ntype, node_composit_exec_distance_matte);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-

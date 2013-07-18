@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +41,7 @@
 #include "MEM_guardedalloc.h"
 
 /* extracts the thumbnail from between the 'REND' and the 'GLOB'
- * chunks of the header, dont use typical blend loader because its too slow */
+ * chunks of the header, don't use typical blend loader because its too slow */
 
 static ImBuf *loadblend_thumb(gzFile gzfile)
 {
@@ -51,7 +49,7 @@ static ImBuf *loadblend_thumb(gzFile gzfile)
 	int bhead[24/sizeof(int)]; /* max size on 64bit */
 	char endian, pointer_size;
 	char endian_switch;
-	int sizeof_bhead ;
+	int sizeof_bhead;
 
 	/* read the blend file header */
 	if(gzread(gzfile, buf, 12) != 12)
@@ -66,7 +64,7 @@ static ImBuf *loadblend_thumb(gzFile gzfile)
 	else
 		return NULL;
 
-	 sizeof_bhead = 16 + pointer_size;
+	sizeof_bhead = 16 + pointer_size;
 
 	if(buf[8]=='V')
 		endian= B_ENDIAN; /* big: PPC */

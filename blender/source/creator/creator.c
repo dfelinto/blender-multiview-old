@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,12 +44,6 @@
 #include <stddef.h>
 #include <string.h>
 
-/* for setuid / getuid */
-#ifdef __sgi
-#include <sys/types.h>
-#include <unistd.h>
-#endif
-
 /* This little block needed for linking to Blender... */
 
 #include "MEM_guardedalloc.h"
@@ -68,6 +60,7 @@
 
 #include "DNA_ID.h"
 #include "DNA_scene_types.h"
+#include "DNA_userdef_types.h"
 
 #include "BLI_blenlib.h"
 
@@ -84,6 +77,7 @@
 #include "BKE_node.h"
 #include "BKE_report.h"
 #include "BKE_sound.h"
+#include "BKE_image.h"
 
 #include "IMB_imbuf.h"	// for IMB_init
 
@@ -91,6 +85,7 @@
 #include "BPY_extern.h"
 #endif
 
+#include "RE_engine.h"
 #include "RE_pipeline.h"
 
 //XXX #include "playanim_ext.h"
@@ -126,6 +121,10 @@
 #include "binreloc.h"
 #endif
 
+#ifdef WITH_LIBMV
+#include "libmv-capi.h"
+#endif
+
 // from buildinfo.c
 #ifdef BUILD_DATE
 extern char build_date[];
@@ -147,16 +146,15 @@ static int print_version(int argc, const char **argv, void *data);
 
 extern int pluginapi_force_ref(void);  /* from blenpluginapi:pluginapi.c */
 
-char bprogname[FILE_MAX]; /* from blenpluginapi:pluginapi.c */
-char btempdir[FILE_MAX];
-
-#define BLEND_VERSION_STRING_FMT "Blender %d.%02d (sub %d)\n", BLENDER_VERSION/100, BLENDER_VERSION%100, BLENDER_SUBVERSION
+#define BLEND_VERSION_STRING_FMT                                              \
+	"Blender %d.%02d (sub %d)\n",                                             \
+	BLENDER_VERSION/100, BLENDER_VERSION%100, BLENDER_SUBVERSION              \
 
 /* Initialize callbacks for the modules that need them */
 static void setCallbacks(void); 
 
 /* set breakpoints here when running in debug mode, useful to catch floating point errors */
-#if defined(__sgi) || defined(__linux__) || defined(_WIN32) || defined(OSX_SSE_FPE)
+#if defined(__linux__) || defined(_WIN32) || defined(OSX_SSE_FPE)
 static void fpe_handler(int UNUSED(sig))
 {
 	// printf("SIGFPE trapped\n");
@@ -303,7 +301,7 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	printf ("  $BLENDER_USER_CONFIG      Directory for user configuration files.\n");
 	printf ("  $BLENDER_USER_SCRIPTS     Directory for user scripts.\n");
 	printf ("  $BLENDER_SYSTEM_SCRIPTS   Directory for system wide scripts.\n");
-	printf ("  $BLENDER_USER_DATAFILES   Directory for user data files (icons, translations, ..).\n");
+	printf ("  $Directory for user data files (icons, translations, ..).\n");
 	printf ("  $BLENDER_SYSTEM_DATAFILES Directory for system wide data files.\n");
 	printf ("  $BLENDER_SYSTEM_PYTHON    Directory for system python libraries.\n");
 #ifdef WIN32
@@ -311,7 +309,7 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 #else
 	printf ("  $TMP or $TMPDIR           Store temporary files here.\n");
 #endif
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	printf ("  $SDL_AUDIODRIVER          LibSDL audio driver - alsa, esd, dma.\n");
 #endif
 	printf ("  $PYTHONHOME               Path to the python directory, eg. /usr/lib/python.\n\n");
@@ -320,9 +318,6 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 
 	return 0;
 }
-
-
-double PIL_check_seconds_timer(void);
 
 static int end_arguments(int UNUSED(argc), const char **UNUSED(argv), void *UNUSED(data))
 {
@@ -359,13 +354,17 @@ static int debug_mode(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	printf("Build: %s %s %s %s\n", build_date, build_time, build_platform, build_type);
 #endif // WITH_BUILDINFO
 
+#ifdef WITH_LIBMV
+	libmv_startDebugLogging();
+#endif
+
 	BLI_argsPrint(data);
 	return 0;
 }
 
 static int set_fpe(int UNUSED(argc), const char **UNUSED(argv), void *UNUSED(data))
 {
-#if defined(__sgi) || defined(__linux__) || defined(_WIN32) || defined(OSX_SSE_FPE)
+#if defined(__linux__) || defined(_WIN32) || defined(OSX_SSE_FPE)
 	/* zealous but makes float issues a heck of a lot easier to find!
 	 * set breakpoints on fpe_handler */
 	signal(SIGFPE, fpe_handler);
@@ -436,7 +435,7 @@ static int prefsize(int argc, const char **argv, void *UNUSED(data))
 	int stax, stay, sizx, sizy;
 
 	if (argc < 5) {
-		printf ("-p requires four arguments\n");
+		fprintf (stderr, "-p requires four arguments\n");
 		exit(1);
 	}
 
@@ -489,9 +488,9 @@ static int no_joystick(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	SYS_SystemHandle *syshandle = data;
 
 	/**
-	 	don't initialize joysticks if user doesn't want to use joysticks
-		failed joystick initialization delays over 5 seconds, before game engine start
-	*/
+	 * don't initialize joysticks if user doesn't want to use joysticks
+	 * failed joystick initialization delays over 5 seconds, before game engine start
+	 */
 	SYS_WriteCommandLineInt(*syshandle, "nojoystick",1);
 	if (G.f & G_DEBUG) printf("disabling nojoystick\n");
 #endif
@@ -514,7 +513,7 @@ static int no_audio(int UNUSED(argc), const char **UNUSED(argv), void *UNUSED(da
 static int set_audio(int argc, const char **argv, void *UNUSED(data))
 {
 	if (argc < 1) {
-		printf("-setaudio require one argument\n");
+		fprintf(stderr, "-setaudio require one argument\n");
 		exit(1);
 	}
 
@@ -526,8 +525,8 @@ static int set_output(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
 	if (argc >= 1){
-		if (CTX_data_scene(C)) {
-			Scene *scene= CTX_data_scene(C);
+		Scene *scene= CTX_data_scene(C);
+		if (scene) {
 			BLI_strncpy(scene->r.pic, argv[1], sizeof(scene->r.pic));
 		} else {
 			printf("\nError: no blend loaded. cannot use '-o / --render-output'.\n");
@@ -542,39 +541,33 @@ static int set_output(int argc, const char **argv, void *data)
 static int set_engine(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
-	if (argc >= 1)
-	{
-		if (!strcmp(argv[1],"help"))
-		{
+	if (argc >= 2) {
+		if (!strcmp(argv[1], "help")) {
 			RenderEngineType *type = NULL;
-
-			for( type = R_engines.first; type; type = type->next )
-			{
+			printf("Blender Engine Listing:\n");
+			for( type = R_engines.first; type; type = type->next ) {
 				printf("\t%s\n", type->idname);
 			}
 			exit(0);
 		}
-		else
-		{
-			if (CTX_data_scene(C)==NULL)
-			{
-				printf("\nError: no blend loaded. order the arguments so '-E  / --engine ' is after a blend is loaded.\n");
-			}
-			else {
-				Scene *scene= CTX_data_scene(C);
+		else {
+			Scene *scene= CTX_data_scene(C);
+			if (scene) {
 				RenderData *rd = &scene->r;
 
 				if(BLI_findstring(&R_engines, argv[1], offsetof(RenderEngineType, idname))) {
-					BLI_strncpy(rd->engine, argv[1], sizeof(rd->engine));
+					BLI_strncpy_utf8(rd->engine, argv[1], sizeof(rd->engine));
 				}
+			}
+			else {
+				printf("\nError: no blend loaded. order the arguments so '-E  / --engine ' is after a blend is loaded.\n");
 			}
 		}
 
 		return 1;
 	}
-	else
-	{
-		printf("\nEngine not specified.\n");
+	else {
+		printf("\nEngine not specified, give 'help' for a list of available engines.\n");
 		return 0;
 	}
 }
@@ -584,44 +577,19 @@ static int set_image_type(int argc, const char **argv, void *data)
 	bContext *C = data;
 	if (argc >= 1){
 		const char *imtype = argv[1];
-		if (CTX_data_scene(C)==NULL) {
+		Scene *scene= CTX_data_scene(C);
+		if (scene) {
+			const char imtype_new= BKE_imtype_from_arg(imtype);
+
+			if (imtype_new == R_IMF_IMTYPE_INVALID) {
+				printf("\nError: Format from '-F / --render-format' not known or not compiled in this release.\n");
+			}
+			else {
+				scene->r.im_format.imtype= imtype_new;
+			}
+		}
+		else {
 			printf("\nError: no blend loaded. order the arguments so '-F  / --render-format' is after the blend is loaded.\n");
-		} else {
-			Scene *scene= CTX_data_scene(C);
-			if      (!strcmp(imtype,"TGA")) scene->r.imtype = R_TARGA;
-			else if (!strcmp(imtype,"IRIS")) scene->r.imtype = R_IRIS;
-#ifdef WITH_DDS
-			else if (!strcmp(imtype,"DDS")) scene->r.imtype = R_DDS;
-#endif
-			else if (!strcmp(imtype,"JPEG")) scene->r.imtype = R_JPEG90;
-			else if (!strcmp(imtype,"IRIZ")) scene->r.imtype = R_IRIZ;
-			else if (!strcmp(imtype,"RAWTGA")) scene->r.imtype = R_RAWTGA;
-			else if (!strcmp(imtype,"AVIRAW")) scene->r.imtype = R_AVIRAW;
-			else if (!strcmp(imtype,"AVIJPEG")) scene->r.imtype = R_AVIJPEG;
-			else if (!strcmp(imtype,"PNG")) scene->r.imtype = R_PNG;
-			else if (!strcmp(imtype,"AVICODEC")) scene->r.imtype = R_AVICODEC;
-			else if (!strcmp(imtype,"QUICKTIME")) scene->r.imtype = R_QUICKTIME;
-			else if (!strcmp(imtype,"BMP")) scene->r.imtype = R_BMP;
-#ifdef WITH_HDR
-			else if (!strcmp(imtype,"HDR")) scene->r.imtype = R_RADHDR;
-#endif
-#ifdef WITH_TIFF
-			else if (!strcmp(imtype,"TIFF")) scene->r.imtype = R_TIFF;
-#endif
-#ifdef WITH_OPENEXR
-			else if (!strcmp(imtype,"EXR")) scene->r.imtype = R_OPENEXR;
-			else if (!strcmp(imtype,"MULTILAYER")) scene->r.imtype = R_MULTILAYER;
-#endif
-			else if (!strcmp(imtype,"MPEG")) scene->r.imtype = R_FFMPEG;
-			else if (!strcmp(imtype,"FRAMESERVER")) scene->r.imtype = R_FRAMESERVER;
-#ifdef WITH_CINEON
-			else if (!strcmp(imtype,"CINEON")) scene->r.imtype = R_CINEON;
-			else if (!strcmp(imtype,"DPX")) scene->r.imtype = R_DPX;
-#endif
-#ifdef WITH_OPENJPEG
-			else if (!strcmp(imtype,"JP2")) scene->r.imtype = R_JP2;
-#endif
-			else printf("\nError: Format from '-F / --render-format' not known or not compiled in this release.\n");
 		}
 		return 1;
 	} else {
@@ -649,8 +617,8 @@ static int set_extension(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
 	if (argc >= 1) {
-		if (CTX_data_scene(C)) {
-			Scene *scene= CTX_data_scene(C);
+		Scene *scene= CTX_data_scene(C);
+		if (scene) {
 			if (argv[1][0] == '0') {
 				scene->r.scemode &= ~R_EXTENSION;
 			} else if (argv[1][0] == '1') {
@@ -677,31 +645,28 @@ static int set_ge_parameters(int argc, const char **argv, void *data)
 	(void)data;
 #endif
 
-/**
-gameengine parameters are automaticly put into system
--g [paramname = value]
--g [boolparamname]
-example:
--g novertexarrays
--g maxvertexarraysize = 512
-*/
+	/**
+	 * gameengine parameters are automatically put into system
+	 * -g [paramname = value]
+	 * -g [boolparamname]
+	 * example:
+	 * -g novertexarrays
+	 * -g maxvertexarraysize = 512
+	 */
 
-	if(argc >= 1)
-	{
+	if (argc >= 1) {
 		const char *paramname = argv[a];
 		/* check for single value versus assignment */
-		if (a+1 < argc && (*(argv[a+1]) == '='))
-		{
+		if (a+1 < argc && (*(argv[a+1]) == '=')) {
 			a++;
-			if (a+1 < argc)
-			{
+			if (a+1 < argc) {
 				a++;
 				/* assignment */
 #ifdef WITH_GAMEENGINE
 				SYS_WriteCommandLineString(syshandle,paramname,argv[a]);
 #endif
-			}  else
-			{
+			}
+			else {
 				printf("error: argument assignment (%s) without value.\n",paramname);
 				return 0;
 			}
@@ -712,13 +677,11 @@ example:
 			SYS_WriteCommandLineInt(syshandle,argv[a],1);
 #endif
 			/* doMipMap */
-			if (!strcmp(argv[a],"nomipmap"))
-			{
+			if (!strcmp(argv[a],"nomipmap")) {
 				GPU_set_mipmap(0); //doMipMap = 0;
 			}
 			/* linearMipMap */
-			if (!strcmp(argv[a],"linearmipmap"))
-			{
+			if (!strcmp(argv[a],"linearmipmap")) {
 				GPU_set_linear_mipmap(1); //linearMipMap = 1;
 			}
 
@@ -732,9 +695,9 @@ example:
 static int render_frame(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
-	if (CTX_data_scene(C)) {
+	Scene *scene= CTX_data_scene(C);
+	if (scene) {
 		Main *bmain= CTX_data_main(C);
-		Scene *scene= CTX_data_scene(C);
 
 		if (argc > 1) {
 			Render *re = RE_NewRender(scene->id.name);
@@ -755,7 +718,7 @@ static int render_frame(int argc, const char **argv, void *data)
 
 			BKE_reports_init(&reports, RPT_PRINT);
 
-			frame = MIN2(MAXFRAME, MAX2(MINAFRAME, frame));
+			frame = CLAMPIS(frame, MINAFRAME, MAXFRAME);
 
 			RE_SetReports(re, &reports);
 			RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, frame, frame, scene->r.frame_step);
@@ -774,16 +737,17 @@ static int render_frame(int argc, const char **argv, void *data)
 static int render_animation(int UNUSED(argc), const char **UNUSED(argv), void *data)
 {
 	bContext *C = data;
-	if (CTX_data_scene(C)) {
+	Scene *scene= CTX_data_scene(C);
+	if (scene) {
 		Main *bmain= CTX_data_main(C);
-		Scene *scene= CTX_data_scene(C);
 		Render *re= RE_NewRender(scene->id.name);
 		ReportList reports;
 		BKE_reports_init(&reports, RPT_PRINT);
 		RE_SetReports(re, &reports);
 		RE_BlenderAnim(re, bmain, scene, NULL, scene->lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
 		RE_SetReports(re, NULL);
-	} else {
+	}
+	else {
 		printf("\nError: no blend loaded. cannot use '-a'.\n");
 	}
 	return 0;
@@ -793,9 +757,9 @@ static int set_scene(int argc, const char **argv, void *data)
 {
 	if(argc > 1) {
 		bContext *C= data;
-		Scene *sce= set_scene_name(CTX_data_main(C), argv[1]);
-		if(sce) {
-			CTX_data_scene_set(C, sce);
+		Scene *scene= set_scene_name(CTX_data_main(C), argv[1]);
+		if(scene) {
+			CTX_data_scene_set(C, scene);
 		}
 		return 1;
 	} else {
@@ -807,8 +771,8 @@ static int set_scene(int argc, const char **argv, void *data)
 static int set_start_frame(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
-	if (CTX_data_scene(C)) {
-		Scene *scene= CTX_data_scene(C);
+	Scene *scene= CTX_data_scene(C);
+	if (scene) {
 		if (argc > 1) {
 			int frame = atoi(argv[1]);
 			(scene->r.sfra) = CLAMPIS(frame, MINFRAME, MAXFRAME);
@@ -826,8 +790,8 @@ static int set_start_frame(int argc, const char **argv, void *data)
 static int set_end_frame(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
-	if (CTX_data_scene(C)) {
-		Scene *scene= CTX_data_scene(C);
+	Scene *scene= CTX_data_scene(C);
+	if (scene) {
 		if (argc > 1) {
 			int frame = atoi(argv[1]);
 			(scene->r.efra) = CLAMPIS(frame, MINFRAME, MAXFRAME);
@@ -845,8 +809,8 @@ static int set_end_frame(int argc, const char **argv, void *data)
 static int set_skip_frame(int argc, const char **argv, void *data)
 {
 	bContext *C = data;
-	if (CTX_data_scene(C)) {
-		Scene *scene= CTX_data_scene(C);
+	Scene *scene= CTX_data_scene(C);
+	if (scene) {
 		if (argc > 1) {
 			int frame = atoi(argv[1]);
 			(scene->r.frame_step) = CLAMPIS(frame, 1, MAXFRAME);
@@ -863,22 +827,23 @@ static int set_skip_frame(int argc, const char **argv, void *data)
 
 /* macro for ugly context setup/reset */
 #ifdef WITH_PYTHON
-#define BPY_CTX_SETUP(_cmd) \
-{ \
-	wmWindowManager *wm= CTX_wm_manager(C); \
-	wmWindow *prevwin= CTX_wm_window(C); \
-	Scene *prevscene= CTX_data_scene(C); \
-	if(wm->windows.first) { \
-		CTX_wm_window_set(C, wm->windows.first); \
-		_cmd; \
-		CTX_wm_window_set(C, prevwin); \
-	} \
-	else { \
-		fprintf(stderr, "Python script \"%s\" running with missing context data.\n", argv[1]); \
-		_cmd; \
-	} \
-	CTX_data_scene_set(C, prevscene); \
-} \
+#define BPY_CTX_SETUP(_cmd)                                                   \
+{                                                                             \
+	wmWindowManager *wm= CTX_wm_manager(C);                                   \
+	wmWindow *prevwin= CTX_wm_window(C);                                      \
+	Scene *prevscene= CTX_data_scene(C);                                      \
+	if(wm->windows.first) {                                                   \
+		CTX_wm_window_set(C, wm->windows.first);                              \
+		_cmd;                                                                 \
+		CTX_wm_window_set(C, prevwin);                                        \
+	}                                                                         \
+	else {                                                                    \
+		fprintf(stderr, "Python script \"%s\" "                               \
+		                "running with missing context data.\n", argv[1]);     \
+		_cmd;                                                                 \
+	}                                                                         \
+	CTX_data_scene_set(C, prevscene);                                         \
+}                                                                             \
 
 #endif /* WITH_PYTHON */
 
@@ -890,7 +855,7 @@ static int run_python(int argc, const char **argv, void *data)
 	/* workaround for scripts not getting a bpy.context.scene, causes internal errors elsewhere */
 	if (argc > 1) {
 		/* Make the path absolute because its needed for relative linked blends to be found */
-		char filename[FILE_MAXDIR + FILE_MAXFILE];
+		char filename[FILE_MAX];
 		BLI_strncpy(filename, argv[1], sizeof(filename));
 		BLI_path_cwd(filename);
 
@@ -951,15 +916,21 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 	bContext *C = data;
 
 	/* Make the path absolute because its needed for relative linked blends to be found */
-	char filename[FILE_MAXDIR + FILE_MAXFILE];
+	char filename[FILE_MAX];
+
+	/* note, we could skip these, but so far we always tried to load these files */
+	if (argv[0][0] == '-') {
+		fprintf(stderr, "unknown argument, loading as file: %s\n", argv[0]);
+	}
+
 	BLI_strncpy(filename, argv[0], sizeof(filename));
 	BLI_path_cwd(filename);
 
 	if (G.background) {
 		int retval = BKE_read_file(C, filename, NULL);
 
-		/*we successfully loaded a blend file, get sure that
-		pointcache works */
+		/* we successfully loaded a blend file, get sure that
+		 * pointcache works */
 		if (retval != BKE_READ_FILE_FAIL) {
 			wmWindowManager *wm= CTX_wm_manager(C);
 
@@ -979,12 +950,16 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 
 			DAG_on_visible_update(CTX_data_main(C), TRUE);
 		}
+		else {
+			/* failed to load file, stop processing arguments */
+			return -1;
+		}
 
 		/* WM_read_file() runs normally but since we're in background mode do here */
 #ifdef WITH_PYTHON
 		/* run any texts that were loaded in and flagged as modules */
 		BPY_driver_reset();
-		BPY_app_handlers_reset();
+		BPY_app_handlers_reset(FALSE);
 		BPY_modules_load_user(C);
 #endif
 
@@ -993,7 +968,7 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 	//				BKE_write_undo("original");	/* save current state */
 	} else {
 		/* we are not running in background mode here, but start blender in UI mode with
-		   a file - this should do everything a 'load file' does */
+		 * a file - this should do everything a 'load file' does */
 		ReportList reports;
 		BKE_reports_init(&reports, RPT_PRINT);
 		WM_read_file(C, filename, &reports);
@@ -1125,6 +1100,13 @@ static void setupArguments(bContext *C, bArgs *ba, SYS_SystemHandle *syshandle)
 /* allow python module to call main */
 #define main main_python_enter
 static void *evil_C= NULL;
+
+#ifdef __APPLE__
+/* environ is not available in mac shared libraries */
+#include <crt_externs.h>
+char **environ = NULL;
+#endif
+
 #endif
 
 int main(int argc, const char **argv)
@@ -1134,6 +1116,10 @@ int main(int argc, const char **argv)
 	bArgs *ba;
 
 #ifdef WITH_PYTHON_MODULE
+#ifdef __APPLE__
+	environ = *_NSGetEnviron();
+#endif
+
 #undef main
 	evil_C= C;
 #endif
@@ -1142,8 +1128,12 @@ int main(int argc, const char **argv)
 	br_init( NULL );
 #endif
 
+#ifdef WITH_LIBMV
+	libmv_initLogging(argv[0]);
+#endif
+
 	setCallbacks();
-#ifdef __APPLE__
+#if defined(__APPLE__) && !defined(WITH_PYTHON_MODULE)
 		/* patch to ignore argument finder gives us (pid?) */
 	if (argc==2 && strncmp(argv[1], "-psn_", 5)==0) {
 		extern int GHOST_HACK_getFirstFile(char buf[]);
@@ -1163,10 +1153,8 @@ int main(int argc, const char **argv)
 	fpsetmask(0);
 #endif
 
-	// copy path to executable in bprogname. playanim and creting runtimes
-	// need this.
-
-	BLI_where_am_i(bprogname, sizeof(bprogname), argv[0]);
+	// initialize path to executable
+	BLI_init_program_path(argv[0]);
 
 	BLI_threadapi_init();
 
@@ -1198,10 +1186,6 @@ int main(int argc, const char **argv)
 
 	BLI_argsParse(ba, 1, NULL, NULL);
 
-#ifdef __sgi
-	setuid(getuid()); /* end superuser */
-#endif
-
 #if defined(WITH_PYTHON_MODULE) || defined(WITH_HEADLESS)
 	G.background= 1; /* python module mode ALWAYS runs in background mode (for now) */
 #else
@@ -1212,8 +1196,8 @@ int main(int argc, const char **argv)
 	/* background render uses this font too */
 	BKE_font_register_builtin(datatoc_Bfont, datatoc_Bfont_size);
 
-	/* Initialiaze ffmpeg if built in, also needed for bg mode if videos are
-	   rendered via ffmpeg */
+	/* Initialize ffmpeg if built in, also needed for bg mode if videos are
+	 * rendered via ffmpeg */
 	sound_init_once();
 	
 	init_def_material();
@@ -1225,9 +1209,10 @@ int main(int argc, const char **argv)
 		WM_init(C, argc, argv);
 
 		/* this is properly initialized with user defs, but this is default */
-		BLI_where_is_temp(btempdir, FILE_MAX, 1); /* call after loading the startup.blend so we can read U.tempdir */
+		/* call after loading the startup.blend so we can read U.tempdir */
+		BLI_init_temporary_dir(U.tempdir);
 
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	BLI_setenv("SDL_VIDEODRIVER", "dummy");
 #endif
 	}
@@ -1236,16 +1221,15 @@ int main(int argc, const char **argv)
 
 		WM_init(C, argc, argv);
 
-		BLI_where_is_temp(btempdir, FILE_MAX, 0); /* call after loading the startup.blend so we can read U.tempdir */
+		/* don't use user preferences temp dir */
+		BLI_init_temporary_dir(NULL);
 	}
 #ifdef WITH_PYTHON
 	/**
 	 * NOTE: the U.pythondir string is NULL until WM_init() is executed,
 	 * so we provide the BPY_ function below to append the user defined
-	 * pythondir to Python's sys.path at this point.  Simply putting
-	 * WM_init() before BPY_python_start() crashes Blender at startup.
-	 * Update: now this function also inits the bpymenus, which also depend
-	 * on U.pythondir.
+	 * python-dir to Python's sys.path at this point.  Simply putting
+	 * WM_init() before #BPY_python_start() crashes Blender at startup.
 	 */
 
 	// TODO - U.pythondir
@@ -1265,29 +1249,21 @@ int main(int argc, const char **argv)
 	return 0; /* keep blender in background mode running */
 #endif
 
-	if(G.background) {
+	if (G.background) {
 		/* actually incorrect, but works for now (ton) */
 		WM_exit(C);
 	}
-
 	else {
-		if((G.fileflags & G_FILE_AUTOPLAY) && (G.f & G_SCRIPT_AUTOEXEC))
-		{
+		if((G.fileflags & G_FILE_AUTOPLAY) && (G.f & G_SCRIPT_AUTOEXEC)) {
 			if(WM_init_game(C))
 				return 0;
 		}
-		else if(!G.file_loaded)
+		else if(!G.file_loaded) {
 			WM_init_splash(C);
+		}
 	}
 
 	WM_main(C);
-
-
-	/*XXX if (scr_init==0) {
-		main_init_screen();
-	}
-	
-	screenmain();*/ /* main display loop */
 
 	return 0;
 } /* end of int main(argc,argv)	*/

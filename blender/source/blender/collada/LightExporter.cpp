@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -52,13 +50,13 @@ void forEachLampObjectInScene(Scene *sce, Functor &f, bool export_selected)
 	}
 }
 
-LightsExporter::LightsExporter(COLLADASW::StreamWriter *sw): COLLADASW::LibraryLights(sw){}
+LightsExporter::LightsExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings): COLLADASW::LibraryLights(sw), export_settings(export_settings) {}
 
-void LightsExporter::exportLights(Scene *sce, bool export_selected)
+void LightsExporter::exportLights(Scene *sce)
 {
 	openLibrary();
 	
-	forEachLampObjectInScene(sce, *this, export_selected);
+	forEachLampObjectInScene(sce, *this, this->export_settings->selected);
 	
 	closeLibrary();
 }

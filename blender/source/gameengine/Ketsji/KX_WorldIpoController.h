@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef KX_WORLDIPOCONTROLLER_H
-#define KX_WORLDIPOCONTROLLER_H
+#ifndef __KX_WORLDIPOCONTROLLER_H__
+#define __KX_WORLDIPOCONTROLLER_H__
 
 #include "SG_Controller.h"
 #include "SG_Spatial.h"
@@ -104,5 +102,5 @@ public:
 #endif
 };
 
-#endif // KX_LIGHTIPOSGCONTROLLER_H
+#endif // __KX_WORLDIPOCONTROLLER_H__
 

@@ -207,7 +207,7 @@ class InfoPropertyRNA:
             self.fixed_type = None
 
         if self.type == "enum":
-            self.enum_items[:] = rna_prop.enum_items.keys()
+            self.enum_items[:] = [(item.identifier, item.name, item.description) for item in rna_prop.enum_items]
             self.is_enum_flag = rna_prop.is_enum_flag
         else:
             self.is_enum_flag = False
@@ -264,9 +264,9 @@ class InfoPropertyRNA:
                 type_str += " in [%s, %s]" % (range_str(self.min), range_str(self.max))
             elif self.type == "enum":
                 if self.is_enum_flag:
-                    type_str += " set in {%s}" % ", ".join(("'%s'" % s) for s in self.enum_items)
+                    type_str += " set in {%s}" % ", ".join(("'%s'" % s[0]) for s in self.enum_items)
                 else:
-                    type_str += " in [%s]" % ", ".join(("'%s'" % s) for s in self.enum_items)
+                    type_str += " in [%s]" % ", ".join(("'%s'" % s[0]) for s in self.enum_items)
 
             if not (as_arg or as_ret):
                 # write default property, ignore function args for this
@@ -292,7 +292,7 @@ class InfoPropertyRNA:
         elif as_arg:
             if not self.is_required:
                 type_info.append("optional")
-        else:  # readonly is only useful for selfs, not args
+        else:  # readonly is only useful for self's, not args
             if self.is_readonly:
                 type_info.append("readonly")
 
@@ -519,7 +519,7 @@ def BuildRNAInfo():
 
     # Done ordering structs
 
-    # precalc vars to avoid a lot of looping
+    # precalculate vars to avoid a lot of looping
     for (rna_base, identifier, rna_struct) in structs:
 
         # rna_struct_path = full_rna_struct_path(rna_struct)
@@ -634,7 +634,7 @@ if __name__ == "__main__":
     struct = rna_info.BuildRNAInfo()[0]
     data = []
     for struct_id, v in sorted(struct.items()):
-        struct_id_str = v.identifier  # "".join(sid for sid in struct_id if struct_id)
+        struct_id_str = v.identifier  #~ "".join(sid for sid in struct_id if struct_id)
 
         for base in v.get_bases():
             struct_id_str = base.identifier + "|" + struct_id_str

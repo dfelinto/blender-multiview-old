@@ -1,7 +1,4 @@
-/** \file gameengine/VideoTexture/ImageBase.cpp
- *  \ingroup bgevideotex
- */
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -22,6 +19,10 @@ Place - Suite 330, Boston, MA 02111-1307, USA, or go to
 http://www.gnu.org/copyleft/lesser.txt.
 -----------------------------------------------------------------------------
 */
+
+/** \file gameengine/VideoTexture/ImageBase.cpp
+ *  \ingroup bgevideotex
+ */
 
 #include "ImageBase.h"
 extern "C" {
@@ -566,7 +567,7 @@ PyObject * Image_setSource (PyImage * self, PyObject * args)
 	if (self->m_image != NULL)
 	{
 		// check type of object
-		if (pyImageTypes.in(obj->ob_type))
+		if (pyImageTypes.in(Py_TYPE(obj)))
 		{
 			// convert to image struct
 			PyImage * img = reinterpret_cast<PyImage*>(obj);
@@ -618,7 +619,7 @@ int Image_setFilter (PyImage * self, PyObject * value, void * closure)
 	if (self->m_image != NULL)
 	{
 		// check new value
-		if (value == NULL || !pyFilterTypes.in(value->ob_type))
+		if (value == NULL || !pyFilterTypes.in(Py_TYPE(value)))
 		{
 			// report value error
 			PyErr_SetString(PyExc_TypeError, "Invalid type of value");

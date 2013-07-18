@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -92,11 +90,11 @@
 
 /* ------------------------------------------------------------------------- */
 
-/* More dynamic allocation of options for render vertices and faces, so we dont
-   have to reserve this space inside vertices.
-   Important; vertices and faces, should have been created already (to get tables
-   checked) that's a reason why the calls demand VertRen/VlakRen * as arg, not
-   the index */
+/* More dynamic allocation of options for render vertices and faces, so we don't
+ * have to reserve this space inside vertices.
+ * Important; vertices and faces, should have been created already (to get tables
+ * checked) that's a reason why the calls demand VertRen/VlakRen * as arg, not
+ * the index */
 
 /* NOTE! the hardcoded table size 256 is used still in code for going quickly over vertices/faces */
 
@@ -428,7 +426,7 @@ VlakRen *RE_vlakren_copy(ObjectRen *obr, VlakRen *vlr)
 	surfnor= RE_vlakren_get_surfnor(obr, vlr, 0);
 	if(surfnor) {
 		surfnor1= RE_vlakren_get_surfnor(obr, vlr1, 1);
-		VECCOPY(surfnor1, surfnor);
+		copy_v3_v3(surfnor1, surfnor);
 	}
 
 	tangent= RE_vlakren_get_nmap_tangent(obr, vlr, 0);
@@ -451,19 +449,18 @@ void RE_vlakren_get_normal(Render *UNUSED(re), ObjectInstanceRen *obi, VlakRen *
 	float (*nmat)[3]= obi->nmat;
 
 	if(obi->flag & R_TRANSFORMED) {
-		VECCOPY(nor, vlr->n);
-		
-		mul_m3_v3(nmat, nor);
+		mul_v3_m3v3(nor, nmat, vlr->n);
 		normalize_v3(nor);
 	}
-	else
-		VECCOPY(nor, vlr->n);
+	else {
+		copy_v3_v3(nor, vlr->n);
+	}
 }
 
 void RE_set_customdata_names(ObjectRen *obr, CustomData *data)
 {
 	/* CustomData layer names are stored per object here, because the
-	   DerivedMesh which stores the layers is freed */
+	 * DerivedMesh which stores the layers is freed */
 	
 	CustomDataLayer *layer;
 	int numtf = 0, numcol = 0, i, mtfn, mcn;
@@ -482,12 +479,12 @@ void RE_set_customdata_names(ObjectRen *obr, CustomData *data)
 		layer= &data->layers[i];
 
 		if (layer->type == CD_MTFACE) {
-			strcpy(obr->mtface[mtfn++], layer->name);
+			BLI_strncpy(obr->mtface[mtfn++], layer->name, sizeof(layer->name));
 			obr->actmtface= CLAMPIS(layer->active_rnd, 0, numtf);
 			obr->bakemtface= layer->active;
 		}
 		else if (layer->type == CD_MCOL) {
-			strcpy(obr->mcol[mcn++], layer->name);
+			BLI_strncpy(obr->mcol[mcn++], layer->name, sizeof(layer->name));
 			obr->actmcol= CLAMPIS(layer->active_rnd, 0, numcol);
 		}
 	}
@@ -816,20 +813,20 @@ void free_renderdata_tables(Render *re)
 	int a=0;
 	
 	for(obr=re->objecttable.first; obr; obr=obr->next) {
-		if(obr->vertnodes) {
+		if (obr->vertnodes) {
 			free_renderdata_vertnodes(obr->vertnodes);
 			obr->vertnodes= NULL;
 			obr->vertnodeslen= 0;
 		}
 
-		if(obr->vlaknodes) {
+		if (obr->vlaknodes) {
 			free_renderdata_vlaknodes(obr->vlaknodes);
 			obr->vlaknodes= NULL;
 			obr->vlaknodeslen= 0;
 			obr->totvlak= 0;
 		}
 
-		if(obr->bloha) {
+		if (obr->bloha) {
 			for(a=0; obr->bloha[a]; a++)
 				MEM_freeN(obr->bloha[a]);
 
@@ -838,7 +835,7 @@ void free_renderdata_tables(Render *re)
 			obr->blohalen= 0;
 		}
 
-		if(obr->strandnodes) {
+		if (obr->strandnodes) {
 			free_renderdata_strandnodes(obr->strandnodes);
 			obr->strandnodes= NULL;
 			obr->strandnodeslen= 0;
@@ -851,23 +848,23 @@ void free_renderdata_tables(Render *re)
 			MEM_freeN(strandbuf);
 		}
 
-		if(obr->mtface)
+		if (obr->mtface)
 			MEM_freeN(obr->mtface);
-		if(obr->mcol)
+
+		if (obr->mcol)
 			MEM_freeN(obr->mcol);
 			
-		if(obr->rayfaces)
-		{
+		if (obr->rayfaces) {
 			MEM_freeN(obr->rayfaces);
 			obr->rayfaces = NULL;
 		}
-		if(obr->rayprimitives)
-		{
+
+		if (obr->rayprimitives) {
 			MEM_freeN(obr->rayprimitives);
 			obr->rayprimitives = NULL;
 		}
-		if(obr->raytree)
-		{
+
+		if (obr->raytree) {
 			RE_rayobject_free(obr->raytree);
 			obr->raytree = NULL;
 		}
@@ -953,7 +950,7 @@ HaloRen *RE_inithalo(Render *re, ObjectRen *obr, Material *ma,   float *vec,   f
 	}
 
 	har= RE_findOrAddHalo(obr, obr->tothalo++);
-	VECCOPY(har->co, vec);
+	copy_v3_v3(har->co, vec);
 	har->hasize= hasize;
 
 	/* actual projectvert is done in function project_renderdata() because of parts/border/pano */
@@ -1009,7 +1006,7 @@ HaloRen *RE_inithalo(Render *re, ObjectRen *obr, Material *ma,   float *vec,   f
 		else {
 
 			mtex= ma->mtex[0];
-			VECCOPY(texvec, vec);
+			copy_v3_v3(texvec, vec);
 
 			if(mtex->texco & TEXCO_NORM) {
 				;
@@ -1022,14 +1019,14 @@ HaloRen *RE_inithalo(Render *re, ObjectRen *obr, Material *ma,   float *vec,   f
 			}
 			else {
 				if(orco) {
-					VECCOPY(texvec, orco);
+					copy_v3_v3(texvec, orco);
 				}
 			}
 
 			externtex(mtex, texvec, &tin, &tr, &tg, &tb, &ta, 0);
 
 			yn= tin*mtex->colfac;
-			zn= tin*mtex->alphafac;
+			//zn= tin*mtex->alphafac;
 
 			if(mtex->mapto & MAP_COL) {
 				zn= 1.0f-yn;
@@ -1067,7 +1064,7 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 	}
 
 	har= RE_findOrAddHalo(obr, obr->tothalo++);
-	VECCOPY(har->co, vec);
+	copy_v3_v3(har->co, vec);
 	har->hasize= hasize;
 
 	/* actual projectvert is done in function project_renderdata() because of parts/border/pano */
@@ -1115,15 +1112,13 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 	if(ma->mode & MA_HALO_RINGS) har->ringc= ma->ringc;
 	if(ma->mode & MA_HALO_FLARE) har->flarec= ma->flarec;
 
-	if((ma->mode & MA_HALOTEX) && ma->mtex[0]){
+	if((ma->mode & MA_HALOTEX) && ma->mtex[0])
 		har->tex= 1;
-		i=1;
-	}
 	
 	for(i=0; i<MAX_MTEX; i++)
 		if(ma->mtex[i] && (ma->septex & (1<<i))==0) {
 			mtex= ma->mtex[i];
-			VECCOPY(texvec, vec);
+			copy_v3_v3(texvec, vec);
 
 			if(mtex->texco & TEXCO_NORM) {
 				;
@@ -1133,7 +1128,7 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 					mul_m4_v3(mtex->object->imat_ren,texvec);
 			}
 			else if(mtex->texco & TEXCO_GLOB){
-				VECCOPY(texvec,vec);
+				copy_v3_v3(texvec,vec);
 			}
 			else if(mtex->texco & TEXCO_UV && uvco){
 				int uv_index=CustomData_get_named_layer_index(&dm->faceData,CD_MTFACE,mtex->uvname);
@@ -1153,7 +1148,7 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 				texvec[2] = pa_co[2];
 			}
 			else if(orco) {
-				VECCOPY(texvec, orco);
+				copy_v3_v3(texvec, orco);
 			}
 
 			hasrgb = externtex(mtex, texvec, &tin, &tr, &tg, &tb, &ta, 0);
@@ -1228,17 +1223,17 @@ static int panotestclip(Render *re, int do_pano, float *v)
 	return c;
 }
 
-/*
-  This adds the hcs coordinates to vertices. It iterates over all
-  vertices, halos and faces. After the conversion, we clip in hcs.
+/**
+ * This adds the hcs coordinates to vertices. It iterates over all
+ * vertices, halos and faces. After the conversion, we clip in hcs.
+ *
+ * Elsewhere, all primites are converted to vertices.
+ * Called in
+ * - envmapping (envmap.c)
+ * - shadow buffering (shadbuf.c)
+ */
 
-  Elsewhere, all primites are converted to vertices. 
-  Called in 
-  - envmapping (envmap.c)
-  - shadow buffering (shadbuf.c)
-*/
-
-void project_renderdata(Render *re, void (*projectfunc)(float *, float mat[][4], float *),  int do_pano, float xoffs, int UNUSED(do_buckets))
+void project_renderdata(Render *re, void (*projectfunc)(const float *, float mat[][4], float *),  int do_pano, float xoffs, int UNUSED(do_buckets))
 {
 	ObjectRen *obr;
 	HaloRen *har = NULL;
@@ -1264,7 +1259,7 @@ void project_renderdata(Render *re, void (*projectfunc)(float *, float mat[][4],
 				vec[2]= -re->panosi*har->co[0] + re->panoco*har->co[2];
 			}
 			else {
-				VECCOPY(vec, har->co);
+				copy_v3_v3(vec, har->co);
 			}
 
 			projectfunc(vec, re->winmat, hoco);

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -130,7 +129,7 @@ PyObject* KX_MeshProxy::PyGetMaterialName(PyObject* args, PyObject* kwds)
 		return NULL;
 	}
 
-	return PyUnicode_FromString(matname.Ptr());
+	return PyUnicode_From_STR_String(matname);
 
 }
 
@@ -148,7 +147,7 @@ PyObject* KX_MeshProxy::PyGetTextureName(PyObject* args, PyObject* kwds)
 		return NULL;
 	}
 
-	return PyUnicode_FromString(matname.Ptr());
+	return PyUnicode_From_STR_String(matname);
 		
 }
 
@@ -248,12 +247,14 @@ PyObject* KX_MeshProxy::pyattr_get_materials(void *self_v, const KX_PYATTRIBUTE_
 	return materials;
 }
 
-PyObject * KX_MeshProxy::pyattr_get_numMaterials(void * selfv, const KX_PYATTRIBUTE_DEF * attrdef) {
+PyObject * KX_MeshProxy::pyattr_get_numMaterials(void * selfv, const KX_PYATTRIBUTE_DEF * attrdef)
+{
 	KX_MeshProxy * self = static_cast<KX_MeshProxy *> (selfv);
 	return PyLong_FromSsize_t(self->m_meshobj->NumMaterials());
 }
 
-PyObject * KX_MeshProxy::pyattr_get_numPolygons(void * selfv, const KX_PYATTRIBUTE_DEF * attrdef) {
+PyObject * KX_MeshProxy::pyattr_get_numPolygons(void * selfv, const KX_PYATTRIBUTE_DEF * attrdef)
+{
 	KX_MeshProxy * self = static_cast<KX_MeshProxy *> (selfv);
 	return PyLong_FromSsize_t(self->m_meshobj->NumPolygons());
 }

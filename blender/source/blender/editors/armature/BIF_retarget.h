@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -25,8 +23,8 @@
  */
 
 
-#ifndef BIF_RETARGET_H
-#define BIF_RETARGET_H
+#ifndef __BIF_RETARGET_H__
+#define __BIF_RETARGET_H__
 
 #include "DNA_listBase.h"
 
@@ -170,4 +168,4 @@ void RIG_printArc(struct RigGraph *rg, struct RigArc *arc);
 void RIG_printGraph(struct RigGraph *rg);
 void RIG_printArcBones(struct RigArc *arc);
 
-#endif /* BIF_RETARGET_H */
+#endif /* __BIF_RETARGET_H__ */

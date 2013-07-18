@@ -1,7 +1,6 @@
 /*
  * SCA_ANDController.h
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,14 +32,14 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_ANDCONTROLLER
-#define __KX_ANDCONTROLLER
+#ifndef __SCA_ANDCONTROLLER_H__
+#define __SCA_ANDCONTROLLER_H__
 
 #include "SCA_IController.h"
 
 class SCA_ANDController : public SCA_IController
 {
-	Py_Header;
+	Py_Header
 	//virtual void Trigger(class SCA_LogicManager* logicmgr);
 public:
 	SCA_ANDController(SCA_IObject* gameobj);
@@ -49,5 +48,5 @@ public:
 	virtual void Trigger(SCA_LogicManager* logicmgr);
 };
 
-#endif //__KX_ANDCONTROLLER
+#endif //__SCA_ANDCONTROLLER_H__
 

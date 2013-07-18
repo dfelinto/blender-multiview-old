@@ -451,7 +451,7 @@ void BL_Shader::Update( const RAS_MeshSlot & ms, RAS_IRasterizer* rasty )
 		const MT_Matrix4x4& view = rasty->GetViewMatrix();
 
 		if(mAttr==SHD_TANGENT)
-			 ms.m_mesh->SetMeshModified(true);
+			ms.m_mesh->SetMeshModified(true);
 
 		BL_UniformVecDef::iterator it;
 		for(it = mPreDef.begin(); it!= mPreDef.end(); it++)
@@ -1362,14 +1362,17 @@ KX_PYMETHODDEF_DOC( BL_Shader, setAttrib, "setAttrib(enum)" )
 	
 	int attr=0;
 	
-	if(!PyArg_ParseTuple(args, "i:setAttrib", &attr ))
+	if(!PyArg_ParseTuple(args, "i:setAttrib", &attr))
 		return NULL;
-	
+
+	attr= SHD_TANGENT; /* user input is ignored for now, there is only 1 attr */
+
 	if(mShader==0) {
 		PyErr_SetString(PyExc_ValueError, "shader.setAttrib() BL_Shader, invalid shader object");
 		return NULL;
 	}
-	mAttr=SHD_TANGENT; /* What the heck is going on here - attr is just ignored??? - Campbell */
+
+	mAttr= attr;
 	glUseProgramObjectARB(mShader);
 	glBindAttribLocationARB(mShader, mAttr, "Tangent");
 	Py_RETURN_NONE;

@@ -27,6 +27,7 @@ op_poll = ops_module.poll
 op_call = ops_module.call
 op_as_string = ops_module.as_string
 op_get_rna = ops_module.get_rna
+op_get_instance = ops_module.get_instance
 
 
 class BPyOps(object):
@@ -137,7 +138,7 @@ class BPyOpsSubModOp(object):
     @staticmethod
     def _scene_update(context):
         scene = context.scene
-        if scene:  # None in backgroud mode
+        if scene:  # None in background mode
             scene.update()
         else:
             import bpy
@@ -184,10 +185,12 @@ class BPyOpsSubModOp(object):
         return ret
 
     def get_rna(self):
-        '''
-        currently only used for 'bl_rna'
-        '''
+        """Internal function for introspection"""
         return op_get_rna(self.idname())
+
+    def get_instance(self):
+        """Internal function for introspection"""
+        return op_get_instance(self.idname())
 
     def __repr__(self):  # useful display, repr(op)
         import bpy
@@ -205,7 +208,7 @@ class BPyOpsSubModOp(object):
         return "# %s\n%s" % (descr, as_string)
 
     def __str__(self):  # used for print(...)
-        return "<function bpy.ops.%s.%s at 0x%x'>" % \
-                (self.module, self.func, id(self))
+        return ("<function bpy.ops.%s.%s at 0x%x'>" %
+                (self.module, self.func, id(self)))
 
 ops_fake_module = BPyOps()

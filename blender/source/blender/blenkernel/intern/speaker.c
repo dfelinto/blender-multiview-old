@@ -1,8 +1,4 @@
-/* speaker.c
- *
- * 
- * $Id$
- *
+/*
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -38,6 +34,8 @@
 #include "DNA_speaker_types.h"
 
 #include "BLI_math.h"
+#include "BLI_utildefines.h"
+#include "BLI_bpath.h"
 
 #include "BKE_animsys.h"
 #include "BKE_global.h"
@@ -71,7 +69,7 @@ Speaker *copy_speaker(Speaker *spk)
 {
 	Speaker *spkn;
 
-	spkn= copy_libblock(spk);
+	spkn= copy_libblock(&spk->id);
 	if(spkn->sound)
 		spkn->sound->id.us++;
 
@@ -82,46 +80,45 @@ void make_local_speaker(Speaker *spk)
 {
 	Main *bmain= G.main;
 	Object *ob;
-	int local=0, lib=0;
+	int is_local= FALSE, is_lib= FALSE;
 
 	/* - only lib users: do nothing
-		* - only local users: set flag
-		* - mixed: make copy
-		*/
+	 * - only local users: set flag
+	 * - mixed: make copy
+	 */
 
 	if(spk->id.lib==NULL) return;
 	if(spk->id.us==1) {
-		spk->id.lib= NULL;
-		spk->id.flag= LIB_LOCAL;
-		new_id(&bmain->speaker, (ID *)spk, NULL);
+		id_clear_lib_data(bmain, &spk->id);
 		return;
 	}
 
 	ob= bmain->object.first;
 	while(ob) {
 		if(ob->data==spk) {
-			if(ob->id.lib) lib= 1;
-			else local= 1;
+			if(ob->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
 		}
 		ob= ob->id.next;
 	}
 
-	if(local && lib==0) {
-		spk->id.lib= NULL;
-		spk->id.flag= LIB_LOCAL;
-		new_id(&bmain->speaker, (ID *)spk, NULL);
+	if(is_local && is_lib == FALSE) {
+		id_clear_lib_data(bmain, &spk->id);
 	}
-	else if(local && lib) {
-		Speaker *spkn= copy_speaker(spk);
-		spkn->id.us= 0;
+	else if(is_local && is_lib) {
+		Speaker *spk_new= copy_speaker(spk);
+		spk_new->id.us= 0;
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, spk->id.lib, &spk_new->id);
 
 		ob= bmain->object.first;
 		while(ob) {
 			if(ob->data==spk) {
 
 				if(ob->id.lib==NULL) {
-					ob->data= spkn;
-					spkn->id.us++;
+					ob->data= spk_new;
+					spk_new->id.us++;
 					spk->id.us--;
 				}
 			}

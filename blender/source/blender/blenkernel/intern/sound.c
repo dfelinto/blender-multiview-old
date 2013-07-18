@@ -1,10 +1,32 @@
+/*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
+ * All rights reserved.
+ *
+ * The Original Code is: all of this file.
+ *
+ * Contributor(s): none yet.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
 /** \file blender/blenkernel/intern/sound.c
  *  \ingroup bke
- */
-/**
- * sound.c (mar-2001 nzc)
- *
- * $Id$
  */
 
 #include <string.h>
@@ -39,6 +61,10 @@
 #include "BKE_sequencer.h"
 #include "BKE_scene.h"
 
+// evil quiet NaN definition
+static const int NAN_INT = 0x7FC00000;
+#define NAN_FLT *((float*)(&NAN_INT))
+
 #ifdef WITH_AUDASPACE
 // evil global ;-)
 static int sound_cfra;
@@ -51,9 +77,9 @@ struct bSound* sound_new_file(struct Main *bmain, const char *filename)
 	char str[FILE_MAX];
 	char *path;
 
-	int len;
+	size_t len;
 
-	strcpy(str, filename);
+	BLI_strncpy(str, filename, sizeof(str));
 
 	path = /*bmain ? bmain->name :*/ G.main->name;
 
@@ -69,7 +95,7 @@ struct bSound* sound_new_file(struct Main *bmain, const char *filename)
 
 	sound_load(bmain, sound);
 
-	if(!sound->playback_handle)
+	if (!sound->playback_handle)
 	{
 		free_libblock(&bmain->sound, sound);
 		sound = NULL;
@@ -87,14 +113,14 @@ void sound_free(struct bSound* sound)
 	}
 
 #ifdef WITH_AUDASPACE
-	if(sound->handle)
+	if (sound->handle)
 	{
 		AUD_unload(sound->handle);
 		sound->handle = NULL;
 		sound->playback_handle = NULL;
 	}
 
-	if(sound->cache)
+	if (sound->cache)
 	{
 		AUD_unload(sound->cache);
 		sound->cache = NULL;
@@ -117,13 +143,13 @@ static void sound_sync_callback(void* data, int mode, float time)
 	scene = bmain->scene.first;
 	while(scene)
 	{
-		if(scene->audio.flag & AUDIO_SYNC)
+		if (scene->audio.flag & AUDIO_SYNC)
 		{
-			if(mode)
+			if (mode)
 				sound_play_scene(scene);
 			else
 				sound_stop_scene(scene);
-			if(scene->sound_scene_handle)
+			if (scene->sound_scene_handle)
 				AUD_seek(scene->sound_scene_handle, time);
 		}
 		scene = scene->id.next;
@@ -166,22 +192,22 @@ void sound_init(struct Main *bmain)
 	specs.format = U.audioformat;
 	specs.rate = U.audiorate;
 
-	if(force_device >= 0)
+	if (force_device >= 0)
 		device = force_device;
 
-	if(buffersize < 128)
+	if (buffersize < 128)
 		buffersize = AUD_DEFAULT_BUFFER_SIZE;
 
-	if(specs.rate < AUD_RATE_8000)
+	if (specs.rate < AUD_RATE_8000)
 		specs.rate = AUD_RATE_44100;
 
-	if(specs.format <= AUD_FORMAT_INVALID)
+	if (specs.format <= AUD_FORMAT_INVALID)
 		specs.format = AUD_FORMAT_S16;
 
-	if(specs.channels <= AUD_CHANNELS_INVALID)
+	if (specs.channels <= AUD_CHANNELS_INVALID)
 		specs.channels = AUD_CHANNELS_STEREO;
 
-	if(!AUD_init(device, specs, buffersize))
+	if (!AUD_init(device, specs, buffersize))
 		AUD_init(AUD_NULL_DEVICE, specs, buffersize);
 
 	sound_init_main(bmain);
@@ -207,7 +233,7 @@ struct bSound* sound_new_buffer(struct Main *bmain, struct bSound *source)
 {
 	bSound* sound = NULL;
 
-	char name[25];
+	char name[MAX_ID_NAME+5];
 	strcpy(name, "buf_");
 	strcpy(name + 4, source->id.name);
 
@@ -218,7 +244,7 @@ struct bSound* sound_new_buffer(struct Main *bmain, struct bSound *source)
 
 	sound_load(bmain, sound);
 
-	if(!sound->playback_handle)
+	if (!sound->playback_handle)
 	{
 		free_libblock(&bmain->sound, sound);
 		sound = NULL;
@@ -231,7 +257,7 @@ struct bSound* sound_new_limiter(struct Main *bmain, struct bSound *source, floa
 {
 	bSound* sound = NULL;
 
-	char name[25];
+	char name[MAX_ID_NAME+5];
 	strcpy(name, "lim_");
 	strcpy(name + 4, source->id.name);
 
@@ -244,7 +270,7 @@ struct bSound* sound_new_limiter(struct Main *bmain, struct bSound *source, floa
 
 	sound_load(bmain, sound);
 
-	if(!sound->playback_handle)
+	if (!sound->playback_handle)
 	{
 		free_libblock(&bmain->sound, sound);
 		sound = NULL;
@@ -256,7 +282,7 @@ struct bSound* sound_new_limiter(struct Main *bmain, struct bSound *source, floa
 
 void sound_delete(struct Main *bmain, struct bSound* sound)
 {
-	if(sound)
+	if (sound)
 	{
 		sound_free(sound);
 
@@ -267,11 +293,14 @@ void sound_delete(struct Main *bmain, struct bSound* sound)
 void sound_cache(struct bSound* sound)
 {
 	sound->flags |= SOUND_FLAGS_CACHING;
-	if(sound->cache)
+	if (sound->cache)
 		AUD_unload(sound->cache);
 
 	sound->cache = AUD_bufferSound(sound->handle);
-	sound->playback_handle = sound->cache;
+	if (sound->cache)
+		sound->playback_handle = sound->cache;
+	else
+		sound->playback_handle = sound->handle;
 }
 
 void sound_cache_notifying(struct Main* main, struct bSound* sound)
@@ -283,7 +312,7 @@ void sound_cache_notifying(struct Main* main, struct bSound* sound)
 void sound_delete_cache(struct bSound* sound)
 {
 	sound->flags &= ~SOUND_FLAGS_CACHING;
-	if(sound->cache)
+	if (sound->cache)
 	{
 		AUD_unload(sound->cache);
 		sound->cache = NULL;
@@ -293,20 +322,22 @@ void sound_delete_cache(struct bSound* sound)
 
 void sound_load(struct Main *bmain, struct bSound* sound)
 {
-	if(sound)
+	if (sound)
 	{
-		if(sound->cache)
+		if (sound->cache)
 		{
 			AUD_unload(sound->cache);
 			sound->cache = NULL;
 		}
 
-		if(sound->handle)
+		if (sound->handle)
 		{
 			AUD_unload(sound->handle);
 			sound->handle = NULL;
 			sound->playback_handle = NULL;
 		}
+
+		sound_free_waveform(sound);
 
 // XXX unused currently
 #if 0
@@ -316,20 +347,13 @@ void sound_load(struct Main *bmain, struct bSound* sound)
 #endif
 		{
 			char fullpath[FILE_MAX];
-			char *path;
 
 			/* load sound */
 			PackedFile* pf = sound->packedfile;
 
-			/* dont modify soundact->sound->name, only change a copy */
+			/* don't modify soundact->sound->name, only change a copy */
 			BLI_strncpy(fullpath, sound->name, sizeof(fullpath));
-
-			if(sound->id.lib)
-				path = sound->id.lib->filepath;
-			else
-				path = bmain->name;
-
-			BLI_path_abs(fullpath, path);
+			BLI_path_abs(fullpath, ID_BLEND_PATH(bmain, &sound->id));
 
 			/* but we need a packed file then */
 			if (pf)
@@ -343,28 +367,28 @@ void sound_load(struct Main *bmain, struct bSound* sound)
 			break;
 		}
 		case SOUND_TYPE_BUFFER:
-			if(sound->child_sound && sound->child_sound->handle)
+			if (sound->child_sound && sound->child_sound->handle)
 				sound->handle = AUD_bufferSound(sound->child_sound->handle);
 			break;
 		case SOUND_TYPE_LIMITER:
-			if(sound->child_sound && sound->child_sound->handle)
+			if (sound->child_sound && sound->child_sound->handle)
 				sound->handle = AUD_limitSound(sound->child_sound, sound->start, sound->end);
 			break;
 		}
 #endif
-		if(sound->flags & SOUND_FLAGS_MONO)
+		if (sound->flags & SOUND_FLAGS_MONO)
 		{
 			void* handle = AUD_monoSound(sound->handle);
 			AUD_unload(sound->handle);
 			sound->handle = handle;
 		}
 
-		if(sound->flags & SOUND_FLAGS_CACHING)
+		if (sound->flags & SOUND_FLAGS_CACHING)
 		{
 			sound->cache = AUD_bufferSound(sound->handle);
 		}
 
-		if(sound->cache)
+		if (sound->cache)
 			sound->playback_handle = sound->cache;
 		else
 			sound->playback_handle = sound->handle;
@@ -390,25 +414,25 @@ void sound_create_scene(struct Scene *scene)
 
 void sound_destroy_scene(struct Scene *scene)
 {
-	if(scene->sound_scene_handle)
+	if (scene->sound_scene_handle)
 		AUD_stop(scene->sound_scene_handle);
-	if(scene->sound_scrub_handle)
+	if (scene->sound_scrub_handle)
 		AUD_stop(scene->sound_scrub_handle);
-	if(scene->sound_scene)
+	if (scene->sound_scene)
 		AUD_destroySequencer(scene->sound_scene);
-	if(scene->speaker_handles)
+	if (scene->speaker_handles)
 		AUD_destroySet(scene->speaker_handles);
 }
 
 void sound_mute_scene(struct Scene *scene, int muted)
 {
-	if(scene->sound_scene)
+	if (scene->sound_scene)
 		AUD_setSequencerMuted(scene->sound_scene, muted);
 }
 
 void sound_update_fps(struct Scene *scene)
 {
-	if(scene->sound_scene)
+	if (scene->sound_scene)
 		AUD_setSequencerFPS(scene->sound_scene, FPS);
 }
 
@@ -420,9 +444,16 @@ void sound_update_scene_listener(struct Scene *scene)
 
 void* sound_scene_add_scene_sound(struct Scene *scene, struct Sequence* sequence, int startframe, int endframe, int frameskip)
 {
-	if(scene != sequence->scene)
+	if (scene != sequence->scene)
 		return AUD_addSequence(scene->sound_scene, sequence->scene->sound_scene, startframe / FPS, endframe / FPS, frameskip / FPS);
 	return NULL;
+}
+
+void* sound_scene_add_scene_sound_defaults(struct Scene *scene, struct Sequence* sequence)
+{
+	return sound_scene_add_scene_sound(scene, sequence,
+	                                   sequence->startdisp, sequence->enddisp,
+	                                   sequence->startofs + sequence->anim_startofs);
 }
 
 void* sound_add_scene_sound(struct Scene *scene, struct Sequence* sequence, int startframe, int endframe, int frameskip)
@@ -433,6 +464,13 @@ void* sound_add_scene_sound(struct Scene *scene, struct Sequence* sequence, int 
 	AUD_setSequenceAnimData(handle, AUD_AP_PITCH, CFRA, &sequence->pitch, 0);
 	AUD_setSequenceAnimData(handle, AUD_AP_PANNING, CFRA, &sequence->pan, 0);
 	return handle;
+}
+
+void* sound_add_scene_sound_defaults(struct Scene *scene, struct Sequence* sequence)
+{
+	return sound_add_scene_sound(scene, sequence,
+	                             sequence->startdisp, sequence->enddisp,
+	                             sequence->startofs + sequence->anim_startofs);
 }
 
 void sound_remove_scene_sound(struct Scene *scene, void* handle)
@@ -448,6 +486,15 @@ void sound_mute_scene_sound(void* handle, char mute)
 void sound_move_scene_sound(struct Scene *scene, void* handle, int startframe, int endframe, int frameskip)
 {
 	AUD_moveSequence(handle, startframe / FPS, endframe / FPS, frameskip / FPS);
+}
+
+void sound_move_scene_sound_defaults(struct Scene *scene, struct Sequence* sequence)
+{
+	if (sequence->scene_sound) {
+		sound_move_scene_sound(scene, sequence->scene_sound,
+		                       sequence->startdisp, sequence->enddisp,
+		                       sequence->startofs + sequence->anim_startofs);
+	}
 }
 
 void sound_update_scene_sound(void* handle, struct bSound* sound)
@@ -484,18 +531,19 @@ void sound_update_sequencer(struct Main* main, struct bSound* sound)
 {
 	struct Scene* scene;
 
-	for(scene = main->scene.first; scene; scene = scene->id.next)
+	for (scene = main->scene.first; scene; scene = scene->id.next) {
 		seq_update_sound(scene, sound);
+	}
 }
 
 static void sound_start_play_scene(struct Scene *scene)
 {
-	if(scene->sound_scene_handle)
+	if (scene->sound_scene_handle)
 		AUD_stop(scene->sound_scene_handle);
 
 	AUD_setSequencerDeviceSpecs(scene->sound_scene);
 
-	if((scene->sound_scene_handle = AUD_play(scene->sound_scene, 1)))
+	if ((scene->sound_scene_handle = AUD_play(scene->sound_scene, 1)))
 		AUD_setLoop(scene->sound_scene_handle, -1);
 }
 
@@ -506,22 +554,22 @@ void sound_play_scene(struct Scene *scene)
 
 	status = scene->sound_scene_handle ? AUD_getStatus(scene->sound_scene_handle) : AUD_STATUS_INVALID;
 
-	if(status == AUD_STATUS_INVALID)
+	if (status == AUD_STATUS_INVALID)
 		sound_start_play_scene(scene);
 
-	if(!scene->sound_scene_handle)
+	if (!scene->sound_scene_handle)
 	{
 		AUD_unlock();
 		return;
 	}
 
-	if(status != AUD_STATUS_PLAYING)
+	if (status != AUD_STATUS_PLAYING)
 	{
 		AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 		AUD_resume(scene->sound_scene_handle);
 	}
 
-	if(scene->audio.flag & AUDIO_SYNC)
+	if (scene->audio.flag & AUDIO_SYNC)
 		AUD_startPlayback();
 
 	AUD_unlock();
@@ -529,11 +577,11 @@ void sound_play_scene(struct Scene *scene)
 
 void sound_stop_scene(struct Scene *scene)
 {
-	if(scene->sound_scene_handle)
+	if (scene->sound_scene_handle)
 	{
 		AUD_pause(scene->sound_scene_handle);
 
-		if(scene->audio.flag & AUDIO_SYNC)
+		if (scene->audio.flag & AUDIO_SYNC)
 			AUD_stopPlayback();
 	}
 }
@@ -548,11 +596,11 @@ void sound_seek_scene(struct Main *bmain, struct Scene *scene)
 
 	status = scene->sound_scene_handle ? AUD_getStatus(scene->sound_scene_handle) : AUD_STATUS_INVALID;
 
-	if(status == AUD_STATUS_INVALID)
+	if (status == AUD_STATUS_INVALID)
 	{
 		sound_start_play_scene(scene);
 
-		if(!scene->sound_scene_handle)
+		if (!scene->sound_scene_handle)
 		{
 			AUD_unlock();
 			return;
@@ -562,13 +610,15 @@ void sound_seek_scene(struct Main *bmain, struct Scene *scene)
 	}
 
 	animation_playing = 0;
-	for(screen=bmain->screen.first; screen; screen=screen->id.next)
-		if(screen->animtimer)
+	for (screen=bmain->screen.first; screen; screen=screen->id.next) {
+		if (screen->animtimer) {
 			animation_playing = 1;
+		}
+	}
 
-	if(scene->audio.flag & AUDIO_SCRUB && !animation_playing)
+	if (scene->audio.flag & AUDIO_SCRUB && !animation_playing)
 	{
-		if(scene->audio.flag & AUDIO_SYNC)
+		if (scene->audio.flag & AUDIO_SYNC)
 		{
 			AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 			AUD_seekSequencer(scene->sound_scene_handle, CFRA / FPS);
@@ -576,22 +626,19 @@ void sound_seek_scene(struct Main *bmain, struct Scene *scene)
 		else
 			AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 		AUD_resume(scene->sound_scene_handle);
-		if(scene->sound_scrub_handle && AUD_getStatus(scene->sound_scrub_handle) != AUD_STATUS_INVALID)
+		if (scene->sound_scrub_handle && AUD_getStatus(scene->sound_scrub_handle) != AUD_STATUS_INVALID)
 			AUD_seek(scene->sound_scrub_handle, 0);
-		else
-		{
-			if(scene->sound_scrub_handle)
+		else {
+			if (scene->sound_scrub_handle)
 				AUD_stop(scene->sound_scrub_handle);
 			scene->sound_scrub_handle = AUD_pauseAfter(scene->sound_scene_handle, 1 / FPS);
 		}
 	}
-	else
-	{
-		if(scene->audio.flag & AUDIO_SYNC)
+	else {
+		if (scene->audio.flag & AUDIO_SYNC)
 			AUD_seekSequencer(scene->sound_scene_handle, CFRA / FPS);
-		else
-		{
-			if(status == AUD_STATUS_PLAYING)
+		else {
+			if (status == AUD_STATUS_PLAYING)
 				AUD_seek(scene->sound_scene_handle, CFRA / FPS);
 		}
 	}
@@ -601,19 +648,19 @@ void sound_seek_scene(struct Main *bmain, struct Scene *scene)
 
 float sound_sync_scene(struct Scene *scene)
 {
-	if(scene->sound_scene_handle)
+	if (scene->sound_scene_handle)
 	{
-		if(scene->audio.flag & AUDIO_SYNC)
+		if (scene->audio.flag & AUDIO_SYNC)
 			return AUD_getSequencerPosition(scene->sound_scene_handle);
 		else
 			return AUD_getPosition(scene->sound_scene_handle);
 	}
-	return 0.0f;
+	return NAN_FLT;
 }
 
 int sound_scene_playing(struct Scene *scene)
 {
-	if(scene->audio.flag & AUDIO_SYNC)
+	if (scene->audio.flag & AUDIO_SYNC)
 		return AUD_doesPlayback();
 	else
 		return -1;
@@ -621,7 +668,7 @@ int sound_scene_playing(struct Scene *scene)
 
 void sound_free_waveform(struct bSound* sound)
 {
-	if(sound->waveform)
+	if (sound->waveform)
 	{
 		MEM_freeN(((SoundWaveform*)sound->waveform)->data);
 		MEM_freeN(sound->waveform);
@@ -636,7 +683,7 @@ void sound_read_waveform(struct bSound* sound)
 
 	info = AUD_getInfo(sound->playback_handle);
 
-	if(info.length > 0)
+	if (info.length > 0)
 	{
 		SoundWaveform* waveform = MEM_mallocN(sizeof(SoundWaveform), "SoundWaveform");
 		int length = info.length * SOUND_WAVE_SAMPLES_PER_SECOND;
@@ -662,41 +709,39 @@ void sound_update_scene(struct Scene* scene)
 	void* handle;
 	float quat[4];
 
-	for(SETLOOPER(scene, sce_it, base))
+	for (SETLOOPER(scene, sce_it, base))
 	{
 		ob = base->object;
-		if(ob->type == OB_SPEAKER)
+		if (ob->type == OB_SPEAKER)
 		{
-			if(ob->adt)
+			if (ob->adt)
 			{
-				for(track = ob->adt->nla_tracks.first; track; track = track->next)
+				for (track = ob->adt->nla_tracks.first; track; track = track->next)
 				{
-					for(strip = track->strips.first; strip; strip = strip->next)
+					for (strip = track->strips.first; strip; strip = strip->next)
 					{
-						if(strip->type == NLASTRIP_TYPE_SOUND)
+						if (strip->type == NLASTRIP_TYPE_SOUND)
 						{
 							speaker = (Speaker*)ob->data;
 
-							if(AUD_removeSet(scene->speaker_handles, strip->speaker_handle))
+							if (AUD_removeSet(scene->speaker_handles, strip->speaker_handle))
 							{
-								if(speaker->sound)
+								if (speaker->sound)
 									AUD_moveSequence(strip->speaker_handle, strip->start / FPS, -1, 0);
-								else
-								{
+								else {
 									AUD_removeSequence(scene->sound_scene, strip->speaker_handle);
 									strip->speaker_handle = NULL;
 								}
 							}
-							else
-							{
-								if(speaker->sound)
+							else {
+								if (speaker->sound)
 								{
 									strip->speaker_handle = AUD_addSequence(scene->sound_scene, speaker->sound->playback_handle, strip->start / FPS, -1, 0);
 									AUD_setRelativeSequence(strip->speaker_handle, 0);
 								}
 							}
 
-							if(strip->speaker_handle)
+							if (strip->speaker_handle)
 							{
 								AUD_addSet(new_set, strip->speaker_handle);
 								AUD_updateSequenceData(strip->speaker_handle, speaker->volume_max,
@@ -725,7 +770,7 @@ void sound_update_scene(struct Scene* scene)
 		AUD_removeSequence(scene->sound_scene, handle);
 	}
 
-	if(scene->camera)
+	if (scene->camera)
 	{
 		mat4_to_quat(quat, scene->camera->obmat);
 		AUD_setSequencerAnimData(scene->sound_scene, AUD_AP_LOCATION, CFRA, scene->camera->obmat[3], 1);
@@ -757,15 +802,17 @@ void sound_create_scene(struct Scene *UNUSED(scene)) {}
 void sound_destroy_scene(struct Scene *UNUSED(scene)) {}
 void sound_mute_scene(struct Scene *UNUSED(scene), int UNUSED(muted)) {}
 void* sound_scene_add_scene_sound(struct Scene *UNUSED(scene), struct Sequence* UNUSED(sequence), int UNUSED(startframe), int UNUSED(endframe), int UNUSED(frameskip)) { return NULL; }
+void* sound_scene_add_scene_sound_defaults(struct Scene *UNUSED(scene), struct Sequence* UNUSED(sequence)) { return NULL; }
 void* sound_add_scene_sound(struct Scene *UNUSED(scene), struct Sequence* UNUSED(sequence), int UNUSED(startframe), int UNUSED(endframe), int UNUSED(frameskip)) { return NULL; }
+void* sound_add_scene_sound_defaults(struct Scene *UNUSED(scene), struct Sequence* UNUSED(sequence)) { return NULL; }
 void sound_remove_scene_sound(struct Scene *UNUSED(scene), void* UNUSED(handle)) {}
 void sound_mute_scene_sound(void* UNUSED(handle), char UNUSED(mute)) {}
 void sound_move_scene_sound(struct Scene *UNUSED(scene), void* UNUSED(handle), int UNUSED(startframe), int UNUSED(endframe), int UNUSED(frameskip)) {}
-static void sound_start_play_scene(struct Scene *UNUSED(scene)) {}
+void sound_move_scene_sound_defaults(struct Scene *UNUSED(scene), struct Sequence *UNUSED(sequence)) {}
 void sound_play_scene(struct Scene *UNUSED(scene)) {}
 void sound_stop_scene(struct Scene *UNUSED(scene)) {}
 void sound_seek_scene(struct Main *UNUSED(bmain), struct Scene *UNUSED(scene)) {}
-float sound_sync_scene(struct Scene *UNUSED(scene)) { return 0.0f; }
+float sound_sync_scene(struct Scene *UNUSED(scene)) { return NAN_FLT; }
 int sound_scene_playing(struct Scene *UNUSED(scene)) { return -1; }
 int sound_read_sound_buffer(struct bSound* UNUSED(sound), float* UNUSED(buffer), int UNUSED(length), float UNUSED(start), float UNUSED(end)) { return 0; }
 void sound_read_waveform(struct bSound* sound) { (void)sound; }

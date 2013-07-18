@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SRCRESAMPLEREADER
-#define AUD_SRCRESAMPLEREADER
+#ifndef __AUD_SRCRESAMPLEREADER_H__
+#define __AUD_SRCRESAMPLEREADER_H__
 
 #include "AUD_ResampleReader.h"
 #include "AUD_Buffer.h"
@@ -102,4 +100,4 @@ public:
 	virtual void read(int& length, bool& eos, sample_t* buffer);
 };
 
-#endif //AUD_SRCRESAMPLEREADER
+#endif //__AUD_SRCRESAMPLEREADER_H__

@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -538,7 +537,7 @@ void KX_BlenderSceneConverter::RegisterGameMesh(
 									RAS_MeshObject *gamemesh,
 									struct Mesh *for_blendermesh)
 {
-	if(for_blendermesh) { /* dynamically loaded meshes we dont want to keep lookups for */
+	if(for_blendermesh) { /* dynamically loaded meshes we don't want to keep lookups for */
 		m_map_mesh_to_gamemesh.insert(CHashedPtr(for_blendermesh),gamemesh);
 	}
 	m_meshobjects.push_back(pair<KX_Scene*,RAS_MeshObject*>(m_currentScene,gamemesh));
@@ -704,8 +703,8 @@ void	KX_BlenderSceneConverter::ResetPhysicsObjectsAnimationIpo(bool clearIpo)
 
 }
 
-void	KX_BlenderSceneConverter::resetNoneDynamicObjectToIpo(){
-	
+void	KX_BlenderSceneConverter::resetNoneDynamicObjectToIpo()
+{
 	if (addInitFromFrame){		
 		KX_SceneList* scenes = m_ketsjiEngine->CurrentScenes();
 		int numScenes = scenes->size();
@@ -766,7 +765,7 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 		{
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
 			Object* blenderObject = gameObj->GetBlenderObject();
-			if (blenderObject && blenderObject->parent==NULL && gameObj->GetPhysicsController() != NULL)
+			if (blenderObject && blenderObject->parent==NULL && gameObj->IsDynamic())
 			{
 				//KX_IPhysicsController* physCtrl = gameObj->GetPhysicsController();
 
@@ -860,7 +859,7 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 					if (icu_ry) insert_vert_icu(icu_ry, frameNumber, eulerAngles[1], 1);
 					if (icu_rz) insert_vert_icu(icu_rz, frameNumber, eulerAngles[2], 1);
 					
-					// Handles are corrected at the end, testhandles_ipocurve isnt needed yet
+					// Handles are corrected at the end, testhandles_ipocurve isn't needed yet
 #endif
 				}
 			}
@@ -889,11 +888,11 @@ void	KX_BlenderSceneConverter::TestHandlesPhysicsObjectToAnimationIpo()
 			{
 				//KX_IPhysicsController* physCtrl = gameObj->GetPhysicsController();
 				
+#if 0
 				Object* blenderObject = gameObj->GetBlenderObject();
 				if (blenderObject && blenderObject->ipo)
 				{
 					// XXX animato
-#if 0
 					Ipo* ipo = blenderObject->ipo;
 					
 					//create the curves, if not existing
@@ -904,17 +903,11 @@ void	KX_BlenderSceneConverter::TestHandlesPhysicsObjectToAnimationIpo()
 					testhandles_ipocurve(findIpoCurve((IpoCurve *)ipo->curve.first,"RotX"));
 					testhandles_ipocurve(findIpoCurve((IpoCurve *)ipo->curve.first,"RotY"));
 					testhandles_ipocurve(findIpoCurve((IpoCurve *)ipo->curve.first,"RotZ"));
-#endif
 				}
+#endif
 			}
-
 		}
-		
-	
 	}
-
-
-
 }
 
 #ifdef WITH_PYTHON
@@ -960,7 +953,7 @@ bool KX_BlenderSceneConverter::LinkBlendFile(BlendHandle *bpy_openlib, const cha
 	Main *main_tmp= NULL; /* created only for linking, then freed */
 	LinkNode *names = NULL;
 	int idcode= BKE_idcode_from_name(group);
-	short flag= 0; /* dont need any special options */
+	short flag= 0; /* don't need any special options */
 	ReportList reports;
 	static char err_local[255];
 	
@@ -1066,7 +1059,7 @@ bool KX_BlenderSceneConverter::LinkBlendFile(BlendHandle *bpy_openlib, const cha
 			KX_Scene* other= m_ketsjiEngine->CreateScene((Scene *)scene);
 			scene_merge->MergeScene(other);
 			
-			// RemoveScene(other); // Dont run this, it frees the entire scene converter data, just delete the scene
+			// RemoveScene(other); // Don't run this, it frees the entire scene converter data, just delete the scene
 			delete other;
 		}
 
@@ -1085,7 +1078,7 @@ bool KX_BlenderSceneConverter::LinkBlendFile(BlendHandle *bpy_openlib, const cha
 	return true;
 }
 
-/* Note m_map_*** are all ok and dont need to be freed
+/* Note m_map_*** are all ok and don't need to be freed
  * most are temp and NewRemoveObject frees m_map_gameobject_to_blender */
 bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 {
@@ -1130,7 +1123,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 		}
 		else {
 			
-			/* incase the mesh might be refered to later */
+			/* in case the mesh might be refered to later */
 			{
 				CTR_Map<STR_HashedString,void*> &mapStringToMeshes = scene->GetLogicManager()->GetMeshMap();
 				
@@ -1221,7 +1214,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 
 	// delete the entities of this scene
 	/* TODO - */
-	/*
+#if 0
 	vector<pair<KX_Scene*,KX_WorldInfo*> >::iterator worldit;
 	size = m_worldinfos.size();
 	for (i=0, worldit=m_worldinfos.begin(); i<size; ) {
@@ -1234,10 +1227,11 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 			i++;
 			worldit++;
 		}
-	}*/
+	}
+#endif
 
 
-	/* Worlds dont reference original blender data so we need to make a set from them */
+	/* Worlds don't reference original blender data so we need to make a set from them */
 	typedef std::set<KX_WorldInfo*> KX_WorldInfoSet;
 	KX_WorldInfoSet worldset;
 	for (int scene_idx=0;scene_idx<numScenes;scene_idx++)

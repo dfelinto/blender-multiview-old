@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -46,7 +44,7 @@
  * \subsection issues Known issues with BLI
  *
  * - blenlib is written in C.
- * - The posix-compliancy may move to a separate lib that deals with 
+ * - The posix-compliance may move to a separate lib that deals with
  *   platform dependencies. (There are other platform-dependent 
  *   fixes as well.)
  * - The file i/o has some redundant code. It should be cleaned.
@@ -57,14 +55,12 @@
  * standard libraries.
  */
 
-#ifndef BLI_BLENLIB_H
-#define BLI_BLENLIB_H
+#ifndef __BLI_BLENLIB_H__
+#define __BLI_BLENLIB_H__
 
 struct ListBase;
 
 #include <stdlib.h>
-
-extern char btempdir[]; /* creator.c temp dir used instead of U.tempdir, set with BLI_where_is_temp( btempdir, 1 ); */
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,22 +70,15 @@ extern "C" {
 
 #include "BLI_string.h"
 
-#include "BLI_path_util.h"
+#include "BLI_string_utf8.h"
 
-#include "BLI_storage.h"
+#include "BLI_path_util.h"
 
 #include "BLI_fileops.h"
 
 #include "BLI_rect.h"
 
 #include "BLI_noise.h"
-
-/**
- * @param strct The structure of interest
- * @param member The name of a member field of @a strct
- * @retval The offset in bytes of @a member within @a strct
- */
-#define BLI_STRUCT_OFFSET(strct, member)	((int)(intptr_t) &((strct*) 0)->member)
 
 #ifdef __cplusplus
 }

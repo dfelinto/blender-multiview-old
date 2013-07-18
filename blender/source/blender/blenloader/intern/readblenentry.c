@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,7 +32,6 @@
 
 
 #include <stddef.h>
-#include "BLI_storage.h" /* _LARGEFILE_SOURCE */
 
 #include <stdlib.h>
 #include <string.h>
@@ -43,9 +40,12 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_utildefines.h"
+#include "BLI_fileops.h"
 #include "BLI_ghash.h"
 #include "BLI_linklist.h"
+#include "BLI_listbase.h"
+#include "BLI_string.h"
+#include "BLI_utildefines.h"
 
 #include "DNA_genfile.h"
 #include "DNA_sdna_types.h"
@@ -240,7 +240,8 @@ LinkNode *BLO_blendhandle_get_linkable_groups(BlendHandle *bh)
 	return names;
 }		
 
-void BLO_blendhandle_close(BlendHandle *bh) {
+void BLO_blendhandle_close(BlendHandle *bh)
+{
 	FileData *fd= (FileData*) bh;
 	
 	blo_freefiledata(fd);
@@ -287,7 +288,7 @@ BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFil
 	fd = blo_openblendermemfile(memfile, reports);
 	if (fd) {
 		fd->reports= reports;
-		strcpy(fd->relabase, filename);
+		BLI_strncpy(fd->relabase, filename, sizeof(fd->relabase));
 		
 		/* clear ob->proxy_from pointers in old main */
 		blo_clear_proxy_pointers_from_lib(oldmain);
@@ -300,10 +301,16 @@ BlendFileData *BLO_read_from_memfile(Main *oldmain, const char *filename, MemFil
 		/* makes lookup of existing images in old main */
 		blo_make_image_pointer_map(fd, oldmain);
 		
+		/* makes lookup of existing video clips in old main */
+		blo_make_movieclip_pointer_map(fd, oldmain);
+		
 		bfd= blo_read_file_internal(fd, filename);
 		
 		/* ensures relinked images are not freed */
 		blo_end_image_pointer_map(fd, oldmain);
+		
+		/* ensures relinked movie clips are not freed */
+		blo_end_movieclip_pointer_map(fd, oldmain);
 		
 		/* move libraries from old main to new main */
 		if(bfd && mainlist.first!=mainlist.last) {

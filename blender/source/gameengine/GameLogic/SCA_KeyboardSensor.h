@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief Sensor for keyboard input
  */
 
-#ifndef __KX_KEYBOARDSENSOR
-#define __KX_KEYBOARDSENSOR
+#ifndef __SCA_KEYBOARDSENSOR_H__
+#define __SCA_KEYBOARDSENSOR_H__
 
 #include "SCA_ISensor.h"
 #include "BoolValue.h"
@@ -46,7 +44,7 @@
  * exclusive.  */
 class SCA_KeyboardSensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 
 	/**
 	 * the key this sensor is sensing for
@@ -69,7 +67,7 @@ class SCA_KeyboardSensor : public SCA_ISensor
 	 * The property that indicates whether or not to log text when in
 	 * loggin mode. If the property equals 0, no loggin is done. For
 	 * all other values, logging is active. Logging can only become
-	 * active if there is a property to log to. Logging is independant
+	 * active if there is a property to log to. Logging is independent
 	 * from hotkey settings. */
 	STR_String	m_toggleprop;
 
@@ -113,7 +111,7 @@ public:
 	/* --------------------------------------------------------------------- */
 
 	// KeyEvents: 
-	KX_PYMETHOD_DOC_NOARGS(SCA_KeyboardSensor,getEventList); 
+	KX_PYMETHOD_DOC_NOARGS(SCA_KeyboardSensor,getEventList);
 	// KeyStatus: 
 	KX_PYMETHOD_DOC_O(SCA_KeyboardSensor,getKeyStatus);
 	
@@ -139,7 +137,7 @@ bool IsPrintable(int keyIndex);
 bool IsDelete(int keyIndex);
 
 
-#endif //__KX_KEYBOARDSENSOR
+#endif //__SCA_KEYBOARDSENSOR_H__
 
 
 

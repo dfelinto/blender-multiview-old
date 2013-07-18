@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,7 +53,7 @@ void GPC_KeyboardDevice::NextFrame()
 		{
 			m_eventStatusTables[m_currentTable][keyevent] = oldevent;
 			m_eventStatusTables[m_currentTable][keyevent].m_status = SCA_InputEvent::KX_ACTIVE;
-			//m_eventStatusTables[m_currentTable][keyevent].m_status = SCA_InputEvent::KX_JUSTACTIVATED ;
+			//m_eventStatusTables[m_currentTable][keyevent].m_status = SCA_InputEvent::KX_JUSTACTIVATED;
 		}
 	}
 }

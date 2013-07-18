@@ -1,38 +1,36 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-* Modifier stack implementation.
-*
-* BKE_modifier.h contains the function prototypes for this file.
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ * Modifier stack implementation.
+ *
+ * BKE_modifier.h contains the function prototypes for this file.
+ *
+ */
 
 /** \file blender/blenkernel/intern/modifier.c
  *  \ingroup bke
@@ -52,11 +50,19 @@
 #include "DNA_meshdata_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_path_util.h"
+#include "BLI_listbase.h"
+#include "BLI_linklist.h"
+#include "BLI_string.h"
 
-#include "BKE_bmesh.h"
 #include "BKE_cloth.h"
 #include "BKE_key.h"
 #include "BKE_multires.h"
+
+/* may move these, only for modifier_path_relbase */
+#include "BKE_global.h" /* ugh, G.main->name only */
+#include "BKE_main.h"
+/* end */
 
 #include "MOD_modifiertypes.h"
 
@@ -86,8 +92,8 @@ ModifierData *modifier_new(int type)
 	ModifierTypeInfo *mti = modifierType_getInfo(type);
 	ModifierData *md = MEM_callocN(mti->structSize, mti->structName);
 	
-	// FIXME: we need to make the name always be unique somehow...
-	strcpy(md->name, mti->name);
+	/* note, this name must be made unique later */
+	BLI_strncpy(md->name, mti->name, sizeof(md->name));
 
 	md->type = type;
 	md->mode = eModifierMode_Realtime
@@ -133,6 +139,19 @@ int modifier_supportsMapping(ModifierData *md)
 
 	return (mti->type==eModifierTypeType_OnlyDeform ||
 			(mti->flags & eModifierTypeFlag_SupportsMapping));
+}
+
+int modifier_isPreview(ModifierData *md)
+{
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+
+	if (!(mti->flags & eModifierTypeFlag_UsesPreview))
+		return FALSE;
+
+	if (md->mode & eModifierMode_Realtime)
+		return TRUE;
+
+	return FALSE;
 }
 
 ModifierData *modifiers_findByType(Object *ob, ModifierType type)
@@ -232,7 +251,14 @@ int modifier_couldBeCage(struct Scene *scene, ModifierData *md)
 int modifier_sameTopology(ModifierData *md)
 {
 	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
-	return ( mti->type == eModifierTypeType_OnlyDeform || mti->type == eModifierTypeType_Nonconstructive);
+	return ELEM3(mti->type, eModifierTypeType_OnlyDeform, eModifierTypeType_Nonconstructive,
+	             eModifierTypeType_NonGeometrical);
+}
+
+int modifier_nonGeometrical(ModifierData *md)
+{
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+	return (mti->type == eModifierTypeType_NonGeometrical);
 }
 
 void modifier_setError(ModifierData *md, const char *format, ...)
@@ -347,11 +373,11 @@ LinkNode *modifiers_calcDataMasks(struct Scene *scene, Object *ob, ModifierData 
 	}
 
 	/* build the list of required data masks - each mask in the list must
-	* include all elements of the masks that follow it
-	*
-	* note the list is currently in reverse order, so "masks that follow it"
-	* actually means "masks that precede it" at the moment
-	*/
+	 * include all elements of the masks that follow it
+	 *
+	 * note the list is currently in reverse order, so "masks that follow it"
+	 * actually means "masks that precede it" at the moment
+	 */
 	for(curr = dataMasks, prev = NULL; curr; prev = curr, curr = curr->next) {
 		if(prev) {
 			CustomDataMask prev_mask = (CustomDataMask)GET_INT_FROM_POINTER(prev->link);
@@ -371,11 +397,26 @@ LinkNode *modifiers_calcDataMasks(struct Scene *scene, Object *ob, ModifierData 
 	return dataMasks;
 }
 
+ModifierData *modifiers_getLastPreview(struct Scene *scene, ModifierData *md, int required_mode)
+{
+	ModifierData *tmp_md = NULL;
+
+	if (required_mode != eModifierMode_Realtime)
+		return tmp_md;
+
+	/* Find the latest modifier in stack generating preview. */
+	for(; md; md = md->next) {
+		if(modifier_isEnabled(scene, md, required_mode) && modifier_isPreview(md))
+			tmp_md = md;
+	}
+	return tmp_md;
+}
+
 ModifierData *modifiers_getVirtualModifierList(Object *ob)
 {
-		/* Kinda hacky, but should be fine since we are never
-	* reentrant and avoid free hassles.
-		*/
+	/* Kinda hacky, but should be fine since we are never
+	 * re-entrant and avoid free hassles.
+	 */
 	static ArmatureModifierData amd;
 	static CurveModifierData cmd;
 	static LatticeModifierData lmd;
@@ -450,8 +491,7 @@ Object *modifiers_isDeformedByArmature(Object *ob)
 	ModifierData *md = modifiers_getVirtualModifierList(ob);
 	ArmatureModifierData *amd= NULL;
 	
-	/* return the first selected armature, this lets us use multiple armatures
-	*/
+	/* return the first selected armature, this lets us use multiple armatures */
 	for (; md; md=md->next) {
 		if (md->type==eModifierType_Armature) {
 			amd = (ArmatureModifierData*) md;
@@ -467,16 +507,15 @@ Object *modifiers_isDeformedByArmature(Object *ob)
 }
 
 /* Takes an object and returns its first selected lattice, else just its
-* lattice
-* This should work for multiple lattics per object
-*/
+ * lattice
+ * This should work for multiple lattics per object
+ */
 Object *modifiers_isDeformedByLattice(Object *ob)
 {
 	ModifierData *md = modifiers_getVirtualModifierList(ob);
 	LatticeModifierData *lmd= NULL;
 	
-	/* return the first selected lattice, this lets us use multiple lattices
-	*/
+	/* return the first selected lattice, this lets us use multiple lattices */
 	for (; md; md=md->next) {
 		if (md->type==eModifierType_Lattice) {
 			lmd = (LatticeModifierData*) md;
@@ -531,13 +570,27 @@ int modifiers_isCorrectableDeformed(Object *ob)
 	return 0;
 }
 
+/* Check whether the given object has a modifier in its stack that uses WEIGHT_MCOL CD layer
+ * to preview something... Used by DynamicPaint and WeightVG currently. */
+int modifiers_isPreview(Object *ob)
+{
+	ModifierData *md = ob->modifiers.first;
+
+	for (; md; md = md->next) {
+		if (modifier_isPreview(md))
+			return TRUE;
+	}
+
+	return FALSE;
+}
+
 int modifiers_indexInObject(Object *ob, ModifierData *md_seek)
 {
 	int i= 0;
 	ModifierData *md;
 	
 	for (md=ob->modifiers.first; (md && md_seek!=md); md=md->next, i++);
-	if (!md) return -1; /* modifier isnt in the object */
+	if (!md) return -1; /* modifier isn't in the object */
 	return i;
 }
 
@@ -559,7 +612,7 @@ void test_object_modifiers(Object *ob)
 	ModifierData *md;
 
 	/* just multires checked for now, since only multires
-	   modifies mesh data */
+	 * modifies mesh data */
 
 	if(ob->type != OB_MESH) return;
 
@@ -570,4 +623,37 @@ void test_object_modifiers(Object *ob)
 			multiresModifier_set_levels_from_disps(mmd, ob);
 		}
 	}
+}
+
+/* where should this go?, it doesnt fit well anywhere :S - campbell */
+
+/* elubie: changed this to default to the same dir as the render output
+ * to prevent saving to C:\ on Windows */
+
+/* campbell: logic behind this...
+ *
+ * - if the ID is from a library, return library path
+ * - else if the file has been saved return the blend file path.
+ * - else if the file isn't saved and the ID isn't from a library, return the temp dir.
+ */
+const char *modifier_path_relbase(Object *ob)
+{
+	if (G.relbase_valid || ob->id.lib) {
+		return ID_BLEND_PATH(G.main, &ob->id);
+	}
+	else {
+		/* last resort, better then using "" which resolves to the current
+		 * working directory */
+		return BLI_temporary_dir();
+	}
+}
+
+/* initializes the path with either */
+void modifier_path_init(char *path, int path_maxlen, const char *name)
+{
+	/* elubie: changed this to default to the same dir as the render output
+	 * to prevent saving to C:\ on Windows */
+	BLI_join_dirfile(path, path_maxlen,
+	                 G.relbase_valid ? "//" : BLI_temporary_dir(),
+	                 name);
 }

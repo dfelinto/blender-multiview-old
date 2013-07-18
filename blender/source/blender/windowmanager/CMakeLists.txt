@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 12931 2007-12-17 18:20:48Z theeth $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -82,7 +81,7 @@ set(SRC
 add_definitions(-DGLEW_STATIC)
 
 if(WITH_INTERNATIONAL)
-	add_definitions(-DINTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
 if(WITH_OPENCOLLADA)
@@ -104,6 +103,10 @@ if(WITH_CODEC_FFMPEG)
 		${FFMPEG_INCLUDE_DIRS}
 	)
 	add_definitions(-DWITH_FFMPEG)
+endif()
+
+if(WITH_HEADLESS)
+	add_definitions(-DWITH_HEADLESS)
 endif()
 
 if(WITH_PYTHON)

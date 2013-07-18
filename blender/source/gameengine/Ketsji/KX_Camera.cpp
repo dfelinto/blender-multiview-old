@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -135,8 +133,8 @@ const MT_Quaternion KX_Camera::GetCameraOrientation() const
 
 
 /**
-* Sets the projection matrix that is used by the rasterizer.
-*/
+ * Sets the projection matrix that is used by the rasterizer.
+ */
 void KX_Camera::SetProjectionMatrix(const MT_Matrix4x4 & mat)
 {
 	m_projection_matrix = mat;
@@ -148,8 +146,8 @@ void KX_Camera::SetProjectionMatrix(const MT_Matrix4x4 & mat)
 
 
 /**
-* Sets the modelview matrix that is used by the rasterizer.
-*/
+ * Sets the modelview matrix that is used by the rasterizer.
+ */
 void KX_Camera::SetModelviewMatrix(const MT_Matrix4x4 & mat)
 {
 	m_modelview_matrix = mat;
@@ -160,8 +158,8 @@ void KX_Camera::SetModelviewMatrix(const MT_Matrix4x4 & mat)
 
 
 /**
-* Gets the projection matrix that is used by the rasterizer.
-*/
+ * Gets the projection matrix that is used by the rasterizer.
+ */
 const MT_Matrix4x4& KX_Camera::GetProjectionMatrix() const
 {
 	return m_projection_matrix;
@@ -170,8 +168,8 @@ const MT_Matrix4x4& KX_Camera::GetProjectionMatrix() const
 
 
 /**
-* Gets the modelview matrix that is used by the rasterizer.
-*/
+ * Gets the modelview matrix that is used by the rasterizer.
+ */
 const MT_Matrix4x4& KX_Camera::GetModelviewMatrix() const
 {
 	return m_modelview_matrix;
@@ -189,9 +187,9 @@ void KX_Camera::InvalidateProjectionMatrix(bool valid)
 }
 
 
-/*
-* These getters retrieve the clip data and the focal length
-*/
+/**
+ * These getters retrieve the clip data and the focal length
+ */
 float KX_Camera::GetLens() const
 {
 	return m_camdata.m_lens;
@@ -202,7 +200,26 @@ float KX_Camera::GetScale() const
 	return m_camdata.m_scale;
 }
 
+/**
+ * Gets the horizontal size of the sensor - for camera matching.
+ */
+float KX_Camera::GetSensorWidth() const
+{
+	return m_camdata.m_sensor_x;
+}
 
+/**
+ * Gets the vertical size of the sensor - for camera matching.
+ */
+float KX_Camera::GetSensorHeight() const
+{
+	return m_camdata.m_sensor_y;
+}
+/** Gets the mode FOV is calculating from sensor dimensions */
+short KX_Camera::GetSensorFit() const
+{
+	return m_camdata.m_sensor_fit;
+}
 
 float KX_Camera::GetCameraNear() const
 {
@@ -885,7 +902,9 @@ bool ConvertPythonToCamera(PyObject * value, KX_Camera **object, bool py_none_ok
 		if (*object) {
 			return true;
 		} else {
-			PyErr_Format(PyExc_ValueError, "%s, requested name \"%s\" did not match any KX_Camera in this scene", error_prefix, _PyUnicode_AsString(value));
+			PyErr_Format(PyExc_ValueError,
+			             "%s, requested name \"%s\" did not match any KX_Camera in this scene",
+			             error_prefix, _PyUnicode_AsString(value));
 			return false;
 		}
 	}

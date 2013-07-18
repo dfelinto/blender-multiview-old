@@ -2,7 +2,12 @@
 
 #include <algorithm>
 #include <cassert>
+#if defined(_WIN32) && !defined(FREE_WINDOWS)
+#include <float.h>
+#pragma fenv_access (on)
+#else
 #include <fenv.h>
+#endif
 #include <cmath>
 #include <limits>
 #include "tunicate.h"

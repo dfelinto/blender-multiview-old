@@ -18,6 +18,7 @@
 #include <deque>
 #include <queue>
 
+#ifdef USE_GUI
 #ifdef __APPLE__
 #include <OpenGL/gl.h>
 #else
@@ -25,6 +26,7 @@
 #include <windows.h>
 #endif
 #include <GL/gl.h>
+#endif
 #endif
 
 #include <vec.h>

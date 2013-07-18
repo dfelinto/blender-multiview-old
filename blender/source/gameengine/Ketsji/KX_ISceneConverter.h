@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __KX_ISCENECONVERTER_H
-#define __KX_ISCENECONVERTER_H
+#ifndef __KX_ISCENECONVERTER_H__
+#define __KX_ISCENECONVERTER_H__
 
 #include "STR_String.h"
 #include "KX_Python.h"
@@ -51,11 +49,11 @@ public:
 	virtual ~KX_ISceneConverter () {};
 
 	/*
-	scenename: name of the scene to be converted,
-		if the scenename is empty, convert the 'default' scene (whatever this means)
-	destinationscene: pass an empty scene, everything goes into this
-	dictobj: python dictionary (for pythoncontrollers)
-	*/
+	 * scenename: name of the scene to be converted,
+	 * if the scenename is empty, convert the 'default' scene (whatever this means)
+	 * destinationscene: pass an empty scene, everything goes into this
+	 * dictobj: python dictionary (for pythoncontrollers)
+	 */
 	virtual void ConvertScene(
 		class KX_Scene* destinationscene,
 		class RAS_IRenderTools* rendertools, 
@@ -97,5 +95,5 @@ public:
 #endif
 };
 
-#endif //__KX_ISCENECONVERTER_H
+#endif //__KX_ISCENECONVERTER_H__
 

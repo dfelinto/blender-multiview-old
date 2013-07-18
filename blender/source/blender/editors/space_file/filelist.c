@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -48,7 +46,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_linklist.h"
-#include "BLI_storage_types.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
@@ -244,7 +241,8 @@ static int compare_size(const void *a1, const void *a2)
 	else return BLI_natstrcmp(entry1->relname,entry2->relname);
 }
 
-static int compare_extension(const void *a1, const void *a2) {
+static int compare_extension(const void *a1, const void *a2)
+{
 	const struct direntry *entry1=a1, *entry2=a2;
 	const char *sufix1, *sufix2;
 	const char *nil="";
@@ -376,7 +374,7 @@ void filelist_init_icons(void)
 #ifdef WITH_HEADLESS
 	bbuf = NULL;
 #else
-	bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_prvicons, datatoc_prvicons_size, IB_rect);
+	bbuf = IMB_ibImageFromMemory((unsigned char*)datatoc_prvicons, datatoc_prvicons_size, IB_rect, "<splash>");
 #endif
 	if (bbuf) {
 		for (y=0; y<SPECIAL_IMG_ROWS; y++) {
@@ -588,7 +586,7 @@ const char * filelist_dir(struct FileList* filelist)
 
 void filelist_setdir(struct FileList* filelist, const char *dir)
 {
-	BLI_strncpy(filelist->dir, dir, FILE_MAX);
+	BLI_strncpy(filelist->dir, dir, sizeof(filelist->dir));
 }
 
 void filelist_imgsize(struct FileList* filelist, short w, short h)
@@ -668,7 +666,7 @@ struct direntry * filelist_file(struct FileList* filelist, int index)
 	return &filelist->filelist[fidx];
 }
 
-int filelist_find(struct FileList* filelist, char *file)
+int filelist_find(struct FileList* filelist, const char *filename)
 {
 	int index = -1;
 	int i;
@@ -679,7 +677,7 @@ int filelist_find(struct FileList* filelist, char *file)
 
 	
 	for (i = 0; i < filelist->numfiles; ++i) {
-		if ( strcmp(filelist->filelist[i].relname, file) == 0) { /* not dealing with user input so dont need BLI_path_cmp */
+		if ( strcmp(filelist->filelist[i].relname, filename) == 0) { /* not dealing with user input so don't need BLI_path_cmp */
 			index = i;
 			break;
 		}
@@ -735,7 +733,7 @@ static int file_is_blend_backup(const char *str)
 }
 
 
-static int file_extension_type(char *relname)
+static int file_extension_type(const char *relname)
 {
 	if(BLO_has_bfile_extension(relname)) {
 		return BLENDERFILE;
@@ -768,7 +766,7 @@ static int file_extension_type(char *relname)
 	return 0;
 }
 
-int ED_file_extension_icon(char *relname)
+int ED_file_extension_icon(const char *relname)
 {
 	int type= file_extension_type(relname);
 	
@@ -824,10 +822,10 @@ static void filelist_read_dir(struct FileList* filelist)
 	filelist->fidx = NULL;
 	filelist->filelist = NULL;
 
-	BLI_getwdN(wdir, sizeof(wdir));	 /* backup cwd to restore after */
+	BLI_current_working_dir(wdir, sizeof(wdir));	 /* backup cwd to restore after */
 
 	BLI_cleanup_dir(G.main->name, filelist->dir);
-	filelist->numfiles = BLI_getdir(filelist->dir, &(filelist->filelist));
+	filelist->numfiles = BLI_dir_contents(filelist->dir, &(filelist->filelist));
 
 	if(!chdir(wdir)) {} /* fix warning about not checking return value */
 	filelist_setfiletypes(filelist);
@@ -854,11 +852,10 @@ static void filelist_read_library(struct FileList* filelist)
 		file = filelist->filelist;
 		for(num=0; num<filelist->numfiles; num++, file++) {
 			if(BLO_has_bfile_extension(file->relname)) {
-				char name[FILE_MAXDIR+FILE_MAXFILE];
-			
-				BLI_strncpy(name, filelist->dir, sizeof(name));
-				strcat(name, file->relname);
-				
+				char name[FILE_MAX];
+
+				BLI_join_dirfile(name, sizeof(name), filelist->dir, file->relname);
+
 				/* prevent current file being used as acceptable dir */
 				if (BLI_path_cmp(G.main->name, name) != 0) {
 					file->type &= ~S_IFMT;
@@ -972,7 +969,7 @@ int filelist_islibrary(struct FileList* filelist, char* dir, char* group)
 	return BLO_is_a_library(filelist->dir, dir, group);
 }
 
-static int groupname_to_code(char *group)
+static int groupname_to_code(const char *group)
 {
 	char buf[32];
 	char *lslash;
@@ -990,7 +987,7 @@ void filelist_from_library(struct FileList* filelist)
 	LinkNode *l, *names, *previews;
 	struct ImBuf* ima;
 	int ok, i, nprevs, nnames, idcode;
-	char filename[FILE_MAXDIR+FILE_MAXFILE];
+	char filename[FILE_MAX];
 	char dir[FILE_MAX], group[GROUP_MAX];	
 	
 	/* name test */
@@ -1014,7 +1011,7 @@ void filelist_from_library(struct FileList* filelist)
 	idcode= groupname_to_code(group);
 
 	/* memory for strings is passed into filelist[i].relname
-	 * and free'd in freefilelist */
+	 * and freed in freefilelist */
 	if (idcode) {
 		previews= BLO_blendhandle_get_previews(filelist->libfiledata, idcode, &nprevs);
 		names= BLO_blendhandle_get_datablock_names(filelist->libfiledata, idcode, &nnames);
@@ -1158,8 +1155,8 @@ void filelist_from_main(struct FileList *filelist)
 		
 		/* XXXXX TODO: if databrowse F4 or append/link filelist->hide_parent has to be set */
 		if (!filelist->hide_parent) filelist->numfiles+= 1;
-		filelist->filelist= (struct direntry *)malloc(filelist->numfiles * sizeof(struct direntry));
-		
+		filelist->filelist= filelist->numfiles > 0 ? (struct direntry *)malloc(filelist->numfiles * sizeof(struct direntry)) : NULL;
+
 		files = filelist->filelist;
 		
 		if (!filelist->hide_parent) {
@@ -1181,7 +1178,7 @@ void filelist_from_main(struct FileList *filelist)
 					if(id->lib==NULL)
 						files->relname= BLI_strdup(id->name+2);
 					else {
-						files->relname= MEM_mallocN(FILE_MAXDIR+FILE_MAXFILE+32, "filename for lib");
+						files->relname= MEM_mallocN(FILE_MAX+32, "filename for lib");
 						sprintf(files->relname, "%s | %s", id->lib->name, id->name+2);
 					}
 					files->type |= S_IFREG;
@@ -1201,10 +1198,10 @@ void filelist_from_main(struct FileList *filelist)
 					if(idcode == ID_MA || idcode == ID_TE || idcode == ID_LA || idcode == ID_WO || idcode == ID_IM) {
 						files->flags |= IMAGEFILE;
 					}
-					if(id->lib && fake) sprintf(files->extra, "LF %d", id->us);
-					else if(id->lib) sprintf(files->extra, "L    %d", id->us);
-					else if(fake) sprintf(files->extra, "F    %d", id->us);
-					else sprintf(files->extra, "      %d", id->us);
+					if(id->lib && fake) BLI_snprintf(files->extra, sizeof(files->extra), "LF %d", id->us);
+					else if(id->lib) BLI_snprintf(files->extra, sizeof(files->extra), "L    %d", id->us);
+					else if(fake) BLI_snprintf(files->extra, sizeof(files->extra), "F    %d", id->us);
+					else BLI_snprintf(files->extra, sizeof(files->extra), "      %d", id->us);
 					
 					if(id->lib) {
 						if(totlib==0) firstlib= files;

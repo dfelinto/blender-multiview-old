@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -61,7 +59,8 @@
 
 #include "physics_intern.h"
 
-static int cache_break_test(void *UNUSED(cbd)) {
+static int cache_break_test(void *UNUSED(cbd))
+{
 	return G.afbreek==1;
 }
 static int ptcache_bake_all_poll(bContext *C)
@@ -323,7 +322,9 @@ static int ptcache_add_new_exec(bContext *C, wmOperator *UNUSED(op))
 	
 	for(pid=pidlist.first; pid; pid=pid->next) {
 		if(pid->cache == cache) {
-			*(pid->cache_ptr) = BKE_ptcache_add(pid->ptcaches);
+			PointCache *cache = BKE_ptcache_add(pid->ptcaches);
+			cache->step = pid->default_step;
+			*(pid->cache_ptr) = cache;
 			break;
 		}
 	}

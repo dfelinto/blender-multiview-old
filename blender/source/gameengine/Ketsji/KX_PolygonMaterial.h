@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -57,7 +55,7 @@ struct Image;
  */
 class KX_PolygonMaterial : public PyObjectPlus, public RAS_IPolyMaterial
 {
-	Py_Header;
+	Py_Header
 private:
 	/** Blender texture face structure. */
 	MTFace*			m_tface;
@@ -78,10 +76,10 @@ public:
 		int tile,
 		int tilexrep,
 		int tileyrep,
-		int mode,
-		int transp,
+		int alphablend,
 		bool alpha,
 		bool zsort,
+		bool light,
 		int lightlayer,
 		struct MTFace* tface,
 		unsigned int* mcol);
@@ -91,7 +89,7 @@ public:
 	/**
 	 * Returns the caching information for this material,
 	 * This can be used to speed up the rasterizing process.
-	 * @return The caching information.
+	 * \return The caching information.
 	 */
 	virtual TCachingInfo GetCachingInfo(void) const
 	{
@@ -102,8 +100,8 @@ public:
 	 * Activates the material in the (OpenGL) rasterizer.
 	 * On entry, the cachingInfo contains info about the last activated material.
 	 * On exit, the cachingInfo should contain updated info about this material.
-	 * @param rasty			The rasterizer in which the material should be active.
-	 * @param cachingInfo	The information about the material used to speed up rasterizing.
+	 * \param rasty			The rasterizer in which the material should be active.
+	 * \param cachingInfo	The information about the material used to speed up rasterizing.
 	 */
 	void DefaultActivate(RAS_IRasterizer* rasty, TCachingInfo& cachingInfo) const;
 	virtual bool Activate(RAS_IRasterizer* rasty, TCachingInfo& cachingInfo) const;
@@ -117,7 +115,7 @@ public:
 
 	/**
 	 * Returns the Blender texture face structure that is used for this material.
-	 * @return The material's texture face.
+	 * \return The material's texture face.
 	 */
 	MTFace* GetMTFace(void) const
 	{

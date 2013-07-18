@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_ENVELOPEFACTORY
-#define AUD_ENVELOPEFACTORY
+#ifndef __AUD_ENVELOPEFACTORY_H__
+#define __AUD_ENVELOPEFACTORY_H__
 
 #include "AUD_EffectFactory.h"
 class AUD_CallbackIIRFilterReader;
@@ -84,4 +82,4 @@ public:
 	static void endEnvelopeFilter(EnvelopeParameters* param);
 };
 
-#endif //AUD_ENVELOPEFACTORY
+#endif //__AUD_ENVELOPEFACTORY_H__

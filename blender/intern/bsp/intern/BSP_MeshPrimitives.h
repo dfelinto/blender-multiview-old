@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_BSP_MeshPrimitives
-#define NAN_INCLUDED_BSP_MeshPrimitives
+#ifndef __BSP_MESHPRIMITIVES_H__
+#define __BSP_MESHPRIMITIVES_H__
 
 #include "CTR_TaggedIndex.h"
 #include "MT_Vector3.h"
@@ -190,7 +189,7 @@ public :
 		BSP_FaceInd new_f
 	);
 
-    	BSP_VertexInd
+		BSP_VertexInd
 	OpVertex(
 		BSP_VertexInd vi
 	) const;

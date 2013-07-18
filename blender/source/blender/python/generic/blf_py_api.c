@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,8 +22,9 @@
 
 /** \file blender/python/generic/blf_py_api.c
  *  \ingroup pygen
+ *
+ * This file defines the 'bgl' module, used for drawing text in OpenGL.
  */
-
 
 #include <Python.h>
 #include "blf_py_api.h"
@@ -33,8 +32,6 @@
 #include "../../blenfont/BLF_api.h"
 
 #include "BLI_utildefines.h"
-
-
 
 PyDoc_STRVAR(py_blf_position_doc,
 ".. function:: position(fontid, x, y, z)\n"
@@ -185,7 +182,7 @@ static PyObject *py_blf_dimensions(PyObject *UNUSED(self), PyObject *args)
 
 	BLF_width_and_height(fontid, text, &r_width, &r_height);
 
-	ret= PyTuple_New(2);
+	ret = PyTuple_New(2);
 	PyTuple_SET_ITEM(ret, 0, PyFloat_FromDouble(r_width));
 	PyTuple_SET_ITEM(ret, 1, PyFloat_FromDouble(r_height));
 	return ret;
@@ -359,12 +356,32 @@ PyDoc_STRVAR(py_blf_load_doc,
 );
 static PyObject *py_blf_load(PyObject *UNUSED(self), PyObject *args)
 {
-	char* filename;
+	char *filename;
 
 	if (!PyArg_ParseTuple(args, "s:blf.load", &filename))
 		return NULL;
 
 	return PyLong_FromLong(BLF_load(filename));
+}
+
+PyDoc_STRVAR(py_blf_unload_doc,
+".. function:: unload(filename)\n"
+"\n"
+"   Unload an existing font.\n"
+"\n"
+"   :arg filename: the filename of the font.\n"
+"   :type filename: string\n"
+);
+static PyObject *py_blf_unload(PyObject *UNUSED(self), PyObject *args)
+{
+	char *filename;
+
+	if (!PyArg_ParseTuple(args, "s:blf.unload", &filename))
+		return NULL;
+
+	BLF_unload(filename);
+
+	Py_RETURN_NONE;
 }
 
 /*----------------------------MODULE INIT-------------------------*/
@@ -382,6 +399,7 @@ static PyMethodDef BLF_methods[] = {
 	{"shadow_offset", (PyCFunction) py_blf_shadow_offset, METH_VARARGS, py_blf_shadow_offset_doc},
 	{"size", (PyCFunction) py_blf_size, METH_VARARGS, py_blf_size_doc},
 	{"load", (PyCFunction) py_blf_load, METH_VARARGS, py_blf_load_doc},
+	{"unload", (PyCFunction) py_blf_unload, METH_VARARGS, py_blf_unload_doc},
 	{NULL, NULL, 0, NULL}
 };
 

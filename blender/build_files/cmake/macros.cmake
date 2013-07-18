@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id$
 
 
 # foo_bar.spam --> foo_barMySuffix.spam
@@ -17,7 +16,7 @@ macro(file_suffix
 	unset(_file_name_EXT)
 endmacro()
 
-# usefil for adding debug suffix to library lists:
+# useful for adding debug suffix to library lists:
 # /somepath/foo.lib --> /somepath/foo_d.lib
 macro(file_list_suffix
 	fp_list_new fp_list fn_suffix
@@ -166,6 +165,12 @@ macro(SETUP_LIBDIRS)
 	if(WITH_IMAGE_TIFF)
 		link_directories(${TIFF_LIBPATH})
 	endif()
+	if(WITH_BOOST)
+		link_directories(${BOOST_LIBPATH})
+	endif()
+	if(WITH_OPENIMAGEIO)
+		link_directories(${OPENIMAGEIO_LIBPATH})
+	endif()
 	if(WITH_IMAGE_OPENJPEG AND UNIX AND NOT APPLE)
 		link_directories(${OPENJPEG_LIBPATH})
 	endif()
@@ -180,9 +185,6 @@ macro(SETUP_LIBDIRS)
 	endif()
 	if(WITH_CODEC_SNDFILE)
 		link_directories(${SNDFILE_LIBPATH})
-	endif()
-	if(WITH_SAMPLERATE)
-		link_directories(${SAMPLERATE_LIBPATH})
 	endif()
 	if(WITH_FFTW3)
 		link_directories(${FFTW3_LIBPATH})
@@ -213,6 +215,7 @@ macro(setup_liblinks
 			${JPEG_LIBRARIES}
 			${PNG_LIBRARIES}
 			${ZLIB_LIBRARIES}
+			${FREETYPE_LIBRARY}
 			${PLATFORM_LINKLIBS})
 
 	# since we are using the local libs for python when compiling msvc projects, we need to add _d when compiling debug versions
@@ -233,15 +236,8 @@ macro(setup_liblinks
 		target_link_libraries(${target} ${GLEW_LIBRARY})
 	endif()
 
-	target_link_libraries(${target}
-			${OPENGL_glu_LIBRARY}
-			${JPEG_LIBRARIES}
-			${PNG_LIBRARIES}
-			${ZLIB_LIBRARIES}
-			${FREETYPE_LIBRARY})
-
 	if(WITH_INTERNATIONAL)
-		target_link_libraries(${target} ${GETTEXT_LIB})
+		target_link_libraries(${target} ${GETTEXT_LIBRARIES})
 
 		if(WIN32 AND NOT UNIX)
 			target_link_libraries(${target} ${ICONV_LIBRARIES})
@@ -260,9 +256,6 @@ macro(setup_liblinks
 	if(WITH_CODEC_SNDFILE)
 		target_link_libraries(${target} ${SNDFILE_LIBRARIES})
 	endif()
-	if(WITH_SAMPLERATE)
-		target_link_libraries(${target} ${SAMPLERATE_LIBRARIES})
-	endif()
 	if(WITH_SDL)
 		target_link_libraries(${target} ${SDL_LIBRARY})
 	endif()
@@ -272,8 +265,14 @@ macro(setup_liblinks
 	if(WITH_IMAGE_TIFF)
 		target_link_libraries(${target} ${TIFF_LIBRARY})
 	endif()
+	if(WITH_OPENIMAGEIO)
+		target_link_libraries(${target} ${OPENIMAGEIO_LIBRARIES})
+	endif()
+	if(WITH_BOOST)
+		target_link_libraries(${target} ${BOOST_LIBRARIES})
+	endif()
 	if(WITH_IMAGE_OPENEXR)
-		if(WIN32 AND NOT UNIX)
+		if(WIN32 AND NOT UNIX AND NOT CMAKE_COMPILER_IS_GNUCC)
 			file_list_suffix(OPENEXR_LIBRARIES_DEBUG "${OPENEXR_LIBRARIES}" "_d")
 			target_link_libraries_debug(${target} "${OPENEXR_LIBRARIES_DEBUG}")
 			target_link_libraries_optimized(${target} "${OPENEXR_LIBRARIES}")
@@ -286,6 +285,11 @@ macro(setup_liblinks
 		target_link_libraries(${target} ${OPENJPEG_LIBRARIES})
 	endif()
 	if(WITH_CODEC_FFMPEG)
+
+		# Strange!, without this ffmpeg gives linking errors (on linux)
+		# even though its linked above
+		target_link_libraries(${target} ${OPENGL_glu_LIBRARY})
+
 		target_link_libraries(${target} ${FFMPEG_LIBRARIES})
 	endif()
 	if(WITH_OPENCOLLADA)
@@ -295,10 +299,10 @@ macro(setup_liblinks
 			target_link_libraries_optimized(${target} "${OPENCOLLADA_LIBRARIES}")
 			unset(OPENCOLLADA_LIBRARIES_DEBUG)
 
-			file_list_suffix(PCRE_LIB_DEBUG "${PCRE_LIB}" "_d")
-			target_link_libraries_debug(${target} "${PCRE_LIB_DEBUG}")
-			target_link_libraries_optimized(${target} "${PCRE_LIB}")
-			unset(PCRE_LIB_DEBUG)
+			file_list_suffix(PCRE_LIBRARIES_DEBUG "${PCRE_LIBRARIES}" "_d")
+			target_link_libraries_debug(${target} "${PCRE_LIBRARIES_DEBUG}")
+			target_link_libraries_optimized(${target} "${PCRE_LIBRARIES}")
+			unset(PCRE_LIBRARIES_DEBUG)
 
 			if(EXPAT_LIB)
 				file_list_suffix(EXPAT_LIB_DEBUG "${EXPAT_LIB}" "_d")
@@ -309,7 +313,8 @@ macro(setup_liblinks
 		else()
 			target_link_libraries(${target}
 					${OPENCOLLADA_LIBRARIES}
-					${PCRE_LIB}
+					${PCRE_LIBRARIES}
+					${XML2_LIBRARIES}
 					${EXPAT_LIB})
 		endif()
 	endif()
@@ -325,51 +330,66 @@ macro(setup_liblinks
 	endif()
 endmacro()
 
-macro(TEST_SSE_SUPPORT)
+macro(TEST_SSE_SUPPORT
+	_sse_flags
+	_sse2_flags)
+
 	include(CheckCSourceRuns)
 
 	# message(STATUS "Detecting SSE support")
-	if(CMAKE_COMPILER_IS_GNUCC OR CMAKE_COMPILER_IS_GNUCXX)
-		set(CMAKE_REQUIRED_FLAGS "-msse -msse2")
+	if(CMAKE_COMPILER_IS_GNUCC OR (CMAKE_C_COMPILER_ID MATCHES "Clang"))
+		set(${_sse_flags} "-msse")
+		set(${_sse2_flags} "-msse2")
 	elseif(MSVC)
-		set(CMAKE_REQUIRED_FLAGS "/arch:SSE2") # TODO, SSE 1 ?
+		set(${_sse_flags} "/arch:SSE")
+		set(${_sse2_flags} "/arch:SSE2")
+	elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
+		set(${_sse_flags} "")  # icc defaults to -msse
+		set(${_sse2_flags} "-msse2")
+	else()
+		message(WARNING "SSE flags for this compiler: '${CMAKE_C_COMPILER_ID}' not known")
+		set(${_sse_flags})
+		set(${_sse2_flags})
 	endif()
 
-	if(NOT DEFINED ${SUPPORT_SSE_BUILD})
+	set(CMAKE_REQUIRED_FLAGS "${${_sse_flags}} ${${_sse2_flags}}")
+
+	if(NOT DEFINED SUPPORT_SSE_BUILD)
+		# result cached
 		check_c_source_runs("
 			#include <xmmintrin.h>
-			int main() { __m128 v = _mm_setzero_ps(); return 0; }"
+			int main(void) { __m128 v = _mm_setzero_ps(); return 0; }"
 		SUPPORT_SSE_BUILD)
-		
+
 		if(SUPPORT_SSE_BUILD)
 			message(STATUS "SSE Support: detected.")
 		else()
 			message(STATUS "SSE Support: missing.")
 		endif()
-		set(${SUPPORT_SSE_BUILD} ${SUPPORT_SSE_BUILD} CACHE INTERNAL "SSE Test")
-	endif()	
+	endif()
 
-	if(NOT DEFINED ${SUPPORT_SSE2_BUILD})
+	if(NOT DEFINED SUPPORT_SSE2_BUILD)
+		# result cached
 		check_c_source_runs("
 			#include <emmintrin.h>
-			int main() { __m128d v = _mm_setzero_pd(); return 0; }"
+			int main(void) { __m128d v = _mm_setzero_pd(); return 0; }"
 		SUPPORT_SSE2_BUILD)
 
 		if(SUPPORT_SSE2_BUILD)
 			message(STATUS "SSE2 Support: detected.")
 		else()
 			message(STATUS "SSE2 Support: missing.")
-		endif()	
-		set(${SUPPORT_SSE2_BUILD} ${SUPPORT_SSE2_BUILD} CACHE INTERNAL "SSE2 Test")
+		endif()
 	endif()
 
+	unset(CMAKE_REQUIRED_FLAGS)
 endmacro()
 
 # when we have warnings as errors applied globally this
 # needs to be removed for some external libs which we dont maintain.
 
 # utility macro
-macro(remove_flag
+macro(remove_cc_flag
 	flag)
 
 	string(REGEX REPLACE ${flag} "" CMAKE_C_FLAGS "${CMAKE_C_FLAGS}")
@@ -386,16 +406,26 @@ macro(remove_flag
 
 endmacro()
 
+macro(add_cc_flag
+	flag)
+
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${flag}")
+	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${flag}")
+endmacro()
+
 macro(remove_strict_flags)
 
 	if(CMAKE_COMPILER_IS_GNUCC)
-		remove_flag("-Wstrict-prototypes")
-		remove_flag("-Wunused-parameter")
-		remove_flag("-Wwrite-strings")
-		remove_flag("-Wundef")
-		remove_flag("-Wshadow")
-		remove_flag("-Werror=[^ ]+")
-		remove_flag("-Werror")
+		remove_cc_flag("-Wstrict-prototypes")
+		remove_cc_flag("-Wunused-parameter")
+		remove_cc_flag("-Wwrite-strings")
+		remove_cc_flag("-Wundef")
+		remove_cc_flag("-Wshadow")
+		remove_cc_flag("-Werror=[^ ]+")
+		remove_cc_flag("-Werror")
+
+		# negate flags implied by '-Wall'
+		add_cc_flag("${CC_REMOVE_STRICT_FLAGS}")
 	endif()
 
 	if(MSVC)
@@ -403,6 +433,32 @@ macro(remove_strict_flags)
 	endif()
 
 endmacro()
+
+# note, we can only append flags on a single file so we need to negate the options.
+# at the moment we cant shut up ffmpeg deprecations, so use this, but will
+# probably add more removals here.
+macro(remove_strict_flags_file
+	filenames)
+
+	foreach(_SOURCE ${ARGV})
+
+		if(CMAKE_COMPILER_IS_GNUCC)
+			set_source_files_properties(${_SOURCE}
+				PROPERTIES
+					COMPILE_FLAGS "${CC_REMOVE_STRICT_FLAGS}"
+			)
+		endif()
+
+		if(MSVC)
+			# TODO
+		endif()
+
+	endforeach()	
+
+	unset(_SOURCE)
+
+endmacro()
+
 
 macro(ADD_CHECK_C_COMPILER_FLAG
 	_CFLAGS
@@ -481,7 +537,7 @@ macro(get_blender_version)
 	if(${_out_version_char_empty})
 		set(BLENDER_VERSION_CHAR_INDEX "0")
 	else()
-		set(_char_ls a b c d e f g h i j k l m n o p q r s t u v w q y z)
+		set(_char_ls a b c d e f g h i j k l m n o p q r s t u v w x y z)
 		list(FIND _char_ls ${BLENDER_VERSION_CHAR} _out_version_char_index)
 		math(EXPR BLENDER_VERSION_CHAR_INDEX "${_out_version_char_index} + 1")
 		unset(_char_ls)
@@ -498,7 +554,7 @@ endmacro()
 
 
 # hacks to override initial project settings
-# these macros must be called directly before/after project(Blender) 
+# these macros must be called directly before/after project(Blender)
 macro(blender_project_hack_pre)
 	# ----------------
 	# MINGW HACK START
@@ -540,8 +596,10 @@ macro(blender_project_hack_post)
 		# have libs we define and that cmake & scons builds match.
 		set(CMAKE_C_STANDARD_LIBRARIES "" CACHE STRING "" FORCE)
 		set(CMAKE_CXX_STANDARD_LIBRARIES "" CACHE STRING "" FORCE)
-		mark_as_advanced(CMAKE_C_STANDARD_LIBRARIES)
-		mark_as_advanced(CMAKE_CXX_STANDARD_LIBRARIES)
+		mark_as_advanced(
+			CMAKE_C_STANDARD_LIBRARIES
+			CMAKE_CXX_STANDARD_LIBRARIES
+		)
 	endif()
 	unset(_reset_standard_libraries)
 
@@ -570,5 +628,53 @@ macro(blender_project_hack_post)
 			set(CMAKE_INCLUDE_SYSTEM_FLAG_C "-isystem ")
 		endif()
 	endif()
+
+endmacro()
+
+# pair of macros to allow libraries to be specify files to install, but to
+# only install them at the end so the directories don't get cleared with
+# the files in them. used by cycles to install addon.
+macro(delayed_install
+	base
+	files
+	destination)
+
+	foreach(f ${files})
+		set_property(GLOBAL APPEND PROPERTY DELAYED_INSTALL_FILES ${base}/${f})
+		set_property(GLOBAL APPEND PROPERTY DELAYED_INSTALL_DESTINATIONS ${destination})
+	endforeach()
+endmacro()
+
+# note this is a function instead of a macro so that ${BUILD_TYPE} in targetdir
+# does not get expanded in calling but is preserved
+function(delayed_do_install
+	targetdir)
+
+	get_property(files GLOBAL PROPERTY DELAYED_INSTALL_FILES)
+	get_property(destinations GLOBAL PROPERTY DELAYED_INSTALL_DESTINATIONS)
+
+	if(files)
+		list(LENGTH files n)
+		math(EXPR n "${n}-1")
+
+		foreach(i RANGE ${n})
+			list(GET files ${i} f)
+			list(GET destinations ${i} d)
+			install(FILES ${f} DESTINATION ${targetdir}/${d})
+		endforeach()
+	endif()
+endfunction()
+
+macro(set_lib_path
+		lvar
+		lproj)
+
+	
+	if(MSVC10 AND EXISTS ${LIBDIR}/vc2010/${lproj})
+		set(${lvar} ${LIBDIR}/vc2010/${lproj})
+	else()
+		set(${lvar} ${LIBDIR}/${lproj})
+	endif()
+
 
 endmacro()

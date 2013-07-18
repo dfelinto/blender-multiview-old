@@ -29,8 +29,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef DISABLE_SDL
-#include <SDL.h>
+#ifdef WITH_SDL
+#  include <SDL.h>
 #endif
 
 #include <stdio.h>
@@ -57,7 +57,7 @@ SCA_Joystick::SCA_Joystick(short int index)
 	for(int i=0; i<JOYHAT_MAX; i++)
 		m_hat_array[i]= 0;
 	
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	m_private = new PrivateData();
 #endif
 }
@@ -66,7 +66,7 @@ SCA_Joystick::SCA_Joystick(short int index)
 SCA_Joystick::~SCA_Joystick()
 
 {
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	delete m_private;
 #endif
 }
@@ -77,9 +77,9 @@ int SCA_Joystick::m_refCount = 0;
 
 SCA_Joystick *SCA_Joystick::GetInstance( short int joyindex )
 {
-#ifdef DISABLE_SDL
+#ifndef WITH_SDL
 	return NULL;
-#else
+#else  /* WITH_SDL */
 	if (joyindex < 0 || joyindex >= JOYINDEX_MAX) {
 		echo("Error-invalid joystick index: " << joyindex);
 		return NULL;
@@ -88,8 +88,14 @@ SCA_Joystick *SCA_Joystick::GetInstance( short int joyindex )
 	if (m_refCount == 0) 
 	{
 		int i;
-		// do this once only
+		// The video subsystem is required for joystick input to work. However,
+		// when GHOST is running under SDL, video is initialized elsewhere.
+		// Do this once only.
+#  ifdef WITH_GHOST_SDL
+		if(SDL_InitSubSystem(SDL_INIT_JOYSTICK) == -1 ){
+#  else
 		if(SDL_InitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_VIDEO) == -1 ){
+#  endif
 			echo("Error-Initializing-SDL: " << SDL_GetError());
 			return NULL;
 		}
@@ -107,14 +113,14 @@ SCA_Joystick *SCA_Joystick::GetInstance( short int joyindex )
 		m_refCount++;
 	}
 	return m_instance[joyindex];
-#endif
+#endif /* WITH_SDL */
 }
 
 void SCA_Joystick::ReleaseInstance()
 {
 	if (--m_refCount == 0)
 	{
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 		int i;
 		for (i=0; i<JOYINDEX_MAX; i++) {
 			if (m_instance[i]) {
@@ -124,8 +130,15 @@ void SCA_Joystick::ReleaseInstance()
 			m_instance[i]= NULL;
 		}
 
+		// The video subsystem is required for joystick input to work. However,
+		// when GHOST is running under SDL, video is freed elsewhere.
+		// Do this once only.
+#  ifdef WITH_GHOST_SDL
+		SDL_QuitSubSystem(SDL_INIT_JOYSTICK);
+#  else
 		SDL_QuitSubSystem(SDL_INIT_JOYSTICK | SDL_INIT_VIDEO);
-#endif
+#  endif
+#endif /* WITH_SDL */
 	}
 }
 
@@ -163,7 +176,7 @@ bool SCA_Joystick::aAxisIsPositive(int axis_single)
 
 bool SCA_Joystick::aAnyButtonPressIsPositive(void)
 {
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	/* this is needed for the "all events" option
 	 * so we know if there are no buttons pressed */
 	for (int i=0; i<m_buttonmax; i++)
@@ -175,7 +188,7 @@ bool SCA_Joystick::aAnyButtonPressIsPositive(void)
 
 bool SCA_Joystick::aButtonPressIsPositive(int button)
 {
-#ifdef DISABLE_SDL
+#ifndef WITH_SDL
 	return false;
 #else
 	bool result;
@@ -187,7 +200,7 @@ bool SCA_Joystick::aButtonPressIsPositive(int button)
 
 bool SCA_Joystick::aButtonReleaseIsPositive(int button)
 {
-#ifdef DISABLE_SDL
+#ifndef WITH_SDL
 	return false;
 #else
 	bool result;
@@ -221,11 +234,11 @@ int SCA_Joystick::GetNumberOfHats()
 
 bool SCA_Joystick::CreateJoystickDevice(void)
 {
-#ifdef DISABLE_SDL
+#ifndef WITH_SDL
 	m_isinit = true;
 	m_axismax = m_buttonmax = m_hatmax = 0;
 	return false;
-#else
+#else /* WITH_SDL */
 	if(m_isinit == false){
 		if (m_joyindex>=m_joynum) {
 			// don't print a message, because this is done anyway
@@ -257,13 +270,13 @@ bool SCA_Joystick::CreateJoystickDevice(void)
 		
 	}
 	return true;
-#endif
+#endif /* WITH_SDL */
 }
 
 
 void SCA_Joystick::DestroyJoystickDevice(void)
 {
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	if (m_isinit){
 		if(SDL_JoystickOpened(m_joyindex)){
 			echo("Closing-joystick " << m_joyindex);
@@ -271,12 +284,12 @@ void SCA_Joystick::DestroyJoystickDevice(void)
 		}
 		m_isinit = false;
 	}
-#endif
+#endif /* WITH_SDL */
 }
 
 int SCA_Joystick::Connected(void)
 {
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	if (m_isinit && SDL_JoystickOpened(m_joyindex))
 		return 1;
 #endif
@@ -285,7 +298,7 @@ int SCA_Joystick::Connected(void)
 
 int SCA_Joystick::pGetAxis(int axisnum, int udlr)
 {
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	return m_axis_array[(axisnum*2)+udlr];
 #endif
 	return 0;
@@ -293,7 +306,7 @@ int SCA_Joystick::pGetAxis(int axisnum, int udlr)
 
 int SCA_Joystick::pAxisTest(int axisnum)
 {
-#ifndef DISABLE_SDL
+#ifdef WITH_SDL
 	short i1= m_axis_array[(axisnum*2)];
 	short i2= m_axis_array[(axisnum*2)+1];
 	
@@ -304,7 +317,7 @@ int SCA_Joystick::pAxisTest(int axisnum)
 	if (i2 < 0) i2 = -i2;
 	if (i1 <i2) return i2;
 	else		return i1;
-#else
+#else /* WITH_SDL */
 	return 0;
-#endif
+#endif /* WITH_SDL */
 }

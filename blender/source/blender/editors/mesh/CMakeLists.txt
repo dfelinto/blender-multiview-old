@@ -1,4 +1,3 @@
-# $Id: CMakeLists.txt 12931 2007-12-17 18:20:48Z theeth $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -21,9 +20,11 @@
 
 set(INC
 	../include
+	../uvedit
 	../../blenkernel
 	../../blenlib
 	../../blenloader
+	../../bmesh
 	../../imbuf
 	../../makesdna
 	../../makesrna
@@ -37,19 +38,33 @@ set(INC_SYS
 )
 
 set(SRC
+	bmesh_select.c
+	bmesh_selecthistory.c
+	bmesh_tools.c
+	bmesh_utils.c
 	editface.c
-	editmesh.c
 	editmesh_add.c
-	editmesh_lib.c
-	editmesh_loop.c
-	editmesh_mods.c
-	editmesh_tools.c
+	editmesh_bvh.c
+	knifetool.c
 	loopcut.c
 	mesh_data.c
 	mesh_ops.c
 	meshtools.c
 
+	editmesh_bvh.h
 	mesh_intern.h
 )
+
+if(WITH_GAMEENGINE)
+	add_definitions(-DWITH_GAMEENGINE)
+
+	list(APPEND INC
+		../../../../extern/recastnavigation
+	)
+
+	list(APPEND SRC
+		mesh_navmesh.c
+	)
+endif()
 
 blender_add_lib(bf_editor_mesh "${SRC}" "${INC}" "${INC_SYS}")

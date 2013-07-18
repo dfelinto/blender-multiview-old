@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef NAN_INCLUDED_GlutMeshDrawer_h
-#define NAN_INCLUDED_GlutMeshDrawer_h
+#ifndef __GLUTMESHDRAWER_H__
+#define __GLUTMESHDRAWER_H__
 
 #include "common/GlutDrawer.h"
 #include "LOD_decimation.h"

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,16 +35,17 @@
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 #include "DNA_modifier_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 
 #include "BKE_DerivedMesh.h"
 #include "BKE_modifier.h"
 #include "BKE_multires.h"
 #include "BKE_mesh.h"
+#include "BKE_tessmesh.h"
 
 #include "BLI_utildefines.h"
 #include "BLI_math.h"
-#include "BLI_editVert.h"
 
 #include "ED_util.h"
 
@@ -81,8 +80,8 @@ static void make_vertexcos__mapFunc(void *userData, int index, float *co, float 
 	vec+= 3*index;
 	if(!mappedData->flags[index]) {
 		/* we need coord from prototype vertex, not it clones or images,
-		   suppose they stored in the beginning of vertex array stored in DM */
-		VECCOPY(vec, co);
+		 * suppose they stored in the beginning of vertex array stored in DM */
+		copy_v3_v3(vec, co);
 		mappedData->flags[index]= 1;
 	}
 }
@@ -108,18 +107,18 @@ float *crazyspace_get_mapped_editverts(Scene *scene, Object *obedit)
 	Mesh *me= obedit->data;
 	DerivedMesh *dm;
 	float *vertexcos;
-	int nverts= me->edit_mesh->totvert;
+	int nverts= me->edit_btmesh->bm->totvert;
 	short *flags;
 	MappedUserData userData;
 
 	/* disable subsurf temporal, get mapped cos, and enable it */
 	if(modifiers_disable_subsurf_temporary(obedit)) {
 		/* need to make new derivemesh */
-		makeDerivedMesh(scene, obedit, me->edit_mesh, CD_MASK_BAREMESH);
+		makeDerivedMesh(scene, obedit, me->edit_btmesh, CD_MASK_BAREMESH, 0);
 	}
 
 	/* now get the cage */
-	dm= editmesh_get_derived_cage(scene, obedit, me->edit_mesh, CD_MASK_BAREMESH);
+	dm= editbmesh_get_derived_cage(scene, obedit, me->edit_btmesh, CD_MASK_BAREMESH);
 
 	vertexcos= MEM_callocN(3*sizeof(float)*nverts, "vertexcos map");
 	flags= MEM_callocN(sizeof(short)*nverts, "vertexcos flags");
@@ -138,10 +137,59 @@ float *crazyspace_get_mapped_editverts(Scene *scene, Object *obedit)
 	return vertexcos;
 }
 
-void crazyspace_set_quats_editmesh(EditMesh *em, float *origcos, float *mappedcos, float *quats)
+void crazyspace_set_quats_editmesh(BMEditMesh *em, float *origcos, float *mappedcos, float *quats)
 {
-	EditVert *eve, *prev;
-	EditFace *efa;
+	BMVert *v;
+	BMIter iter, liter;
+	BMLoop *l;
+	float *v1, *v2, *v3, *co1, *co2, *co3;
+	int *vert_table = MEM_callocN(sizeof(int)*em->bm->totvert, "vert_table");
+	int index = 0;
+
+	BM_mesh_elem_index_ensure(em->bm, BM_VERT);
+
+	BM_ITER(v, &iter, em->bm, BM_VERTS_OF_MESH, NULL) {
+		if (!BM_elem_flag_test(v, BM_ELEM_SELECT) || BM_elem_flag_test(v, BM_ELEM_HIDDEN))
+			continue;
+		
+		BM_ITER(l, &liter, em->bm, BM_LOOPS_OF_VERT, v) {
+			BMLoop *l2 = BM_face_other_edge_loop(l->f, l->e, v);
+			
+			/* retrieve mapped coordinates */
+			v1= mappedcos + 3*BM_elem_index_get(l->v);
+			v2= mappedcos + 3*BM_elem_index_get(BM_edge_other_vert(l2->e, l->v));
+			v3= mappedcos + 3*BM_elem_index_get(BM_edge_other_vert(l->e, l->v));
+			
+			co1= (origcos)? origcos + 3*BM_elem_index_get(l->v) : l->v->co;
+			co2= (origcos)? origcos + 3*BM_elem_index_get(BM_edge_other_vert(l2->e, l->v)) : BM_edge_other_vert(l2->e, l->v)->co;
+			co3= (origcos)? origcos + 3*BM_elem_index_get(BM_edge_other_vert(l->e, l->v)) : BM_edge_other_vert(l->e, l->v)->co;
+			
+			set_crazy_vertex_quat(quats, v1, v2, v3, co1, co2, co3);
+			quats+= 4;
+			
+			vert_table[BM_elem_index_get(l->v)] = index+1;
+			
+			index++;
+			break; /*just do one corner*/
+		}
+	}
+
+	index = 0;
+	BM_ITER(v, &iter, em->bm, BM_VERTS_OF_MESH, NULL) {
+		if (vert_table[index] != 0)
+			BM_elem_index_set(v, vert_table[index]-1); /* set_dirty! */
+		else
+			BM_elem_index_set(v, -1); /* set_dirty! */
+		
+		index++;
+	}
+	em->bm->elem_index_dirty |= BM_VERT;
+
+	MEM_freeN(vert_table);
+#if 0
+	BMEditVert *eve, *prev;
+	BMEditFace *efa;
+	BMIter iter;
 	float *v1, *v2, *v3, *v4, *co1, *co2, *co3, *co4;
 	intptr_t index= 0;
 
@@ -206,8 +254,10 @@ void crazyspace_set_quats_editmesh(EditMesh *em, float *origcos, float *mappedco
 	/* restore abused prev pointer */
 	for(prev= NULL, eve= em->verts.first; eve; prev= eve, eve= eve->next)
 		eve->prev= prev;
-
+#endif
 }
+
+/* BMESH_TODO - use MPolys over MFace's */
 
 void crazyspace_set_quats_mesh(Mesh *me, float *origcos, float *mappedcos, float *quats)
 {
@@ -269,7 +319,8 @@ void crazyspace_set_quats_mesh(Mesh *me, float *origcos, float *mappedcos, float
 	}
 }
 
-int editmesh_get_first_deform_matrices(Scene *scene, Object *ob, EditMesh *em, float (**deformmats)[3][3], float (**deformcos)[3])
+int editbmesh_get_first_deform_matrices(Scene *scene, Object *ob, BMEditMesh *em, 
+										float (**deformmats)[3][3], float (**deformcos)[3])
 {
 	ModifierData *md;
 	DerivedMesh *dm;
@@ -283,18 +334,18 @@ int editmesh_get_first_deform_matrices(Scene *scene, Object *ob, EditMesh *em, f
 	md = modifiers_getVirtualModifierList(ob);
 
 	/* compute the deformation matrices and coordinates for the first
-	   modifiers with on cage editing that are enabled and support computing
-	   deform matrices */
+	 * modifiers with on cage editing that are enabled and support computing
+	 * deform matrices */
 	for(i = 0; md && i <= cageIndex; i++, md = md->next) {
 		ModifierTypeInfo *mti = modifierType_getInfo(md->type);
 
-		if(!editmesh_modifier_is_enabled(scene, md, dm))
+		if(!editbmesh_modifier_is_enabled(scene, md, dm))
 			continue;
 
 		if(mti->type==eModifierTypeType_OnlyDeform && mti->deformMatricesEM) {
 			if(!defmats) {
-				dm= editmesh_get_derived(em, NULL);
-				deformedVerts= editmesh_get_vertex_cos(em, &numVerts);
+				dm= getEditDerivedBMesh(em, ob, NULL);
+				deformedVerts= editbmesh_get_vertex_cos(em, &numVerts);
 				defmats= MEM_callocN(sizeof(*defmats)*numVerts, "defmats");
 
 				for(a=0; a<numVerts; a++)
@@ -309,7 +360,7 @@ int editmesh_get_first_deform_matrices(Scene *scene, Object *ob, EditMesh *em, f
 	}
 
 	for(; md && i <= cageIndex; md = md->next, i++)
-		if(editmesh_modifier_is_enabled(scene, md, dm) && modifier_isCorrectableDeformed(md))
+		if(editbmesh_modifier_is_enabled(scene, md, dm) && modifier_isCorrectableDeformed(md))
 			numleft++;
 
 	if(dm)
@@ -384,8 +435,8 @@ void crazyspace_build_sculpt(Scene *scene, Object *ob, float (**deformmats)[3][3
 	int totleft= sculpt_get_first_deform_matrices(scene, ob, deformmats, deformcos);
 
 	if(totleft) {
-		/* there are deformation modifier which doesn't support deformation matricies
-		   calculation. Need additional crazyspace correction */
+		/* there are deformation modifier which doesn't support deformation matrices
+		 * calculation. Need additional crazyspace correction */
 
 		float (*deformedVerts)[3]= *deformcos;
 		float (*origVerts)[3]= MEM_dupallocN(deformedVerts);
@@ -401,7 +452,7 @@ void crazyspace_build_sculpt(Scene *scene, Object *ob, float (**deformmats)[3][3
 
 			if(mti->type==eModifierTypeType_OnlyDeform) {
 				/* skip leading modifiers which have been already
-				   handled in sculpt_get_first_deform_matrices */
+				 * handled in sculpt_get_first_deform_matrices */
 				if(mti->deformMatrices && !deformed)
 					continue;
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -54,6 +52,11 @@ GPC_Canvas::GPC_Canvas(
 	m_height(height),
 	m_bannersEnabled(false)
 {
+	// initialize area so that it's available for game logic on frame 1 (ImageViewport)
+	m_displayarea.m_x1 = 0;
+	m_displayarea.m_y1 = 0;
+	m_displayarea.m_x2 = width;
+	m_displayarea.m_y2 = height;
 }
 
 
@@ -108,7 +111,7 @@ void GPC_Canvas::SetViewPort(int x1, int y1, int x2, int y2)
 		*/
 		
 		/* XXX, nasty, this needs to go somewhere else,
-		 * but where... definitly need to clean up this
+		 * but where... definitely need to clean up this
 		 * whole canvas/rendertools mess.
 		 */
 	glEnable(GL_SCISSOR_TEST);
@@ -439,28 +442,28 @@ MakeScreenShot(
 
 	png_init_io(png_ptr, fp);
 
-	/*
+#if 0
 	png_set_filter(png_ptr, 0,
-		PNG_FILTER_NONE  | PNG_FILTER_VALUE_NONE |
-		PNG_FILTER_SUB   | PNG_FILTER_VALUE_SUB  |
-		PNG_FILTER_UP    | PNG_FILTER_VALUE_UP   |
-		PNG_FILTER_AVG   | PNG_FILTER_VALUE_AVG  |
-		PNG_FILTER_PAETH | PNG_FILTER_VALUE_PAETH|
-		PNG_ALL_FILTERS);
+	               PNG_FILTER_NONE  | PNG_FILTER_VALUE_NONE |
+	               PNG_FILTER_SUB   | PNG_FILTER_VALUE_SUB  |
+	               PNG_FILTER_UP    | PNG_FILTER_VALUE_UP   |
+	               PNG_FILTER_AVG   | PNG_FILTER_VALUE_AVG  |
+	               PNG_FILTER_PAETH | PNG_FILTER_VALUE_PAETH|
+	               PNG_ALL_FILTERS);
 
 	png_set_compression_level(png_ptr, Z_BEST_COMPRESSION);
-	*/
+#endif
 
 	// png image settings
 	png_set_IHDR(png_ptr,
-		 info_ptr,
-		 GetWidth(),
-		 GetHeight(),
-		 8,
-		 color_type,
-		 PNG_INTERLACE_NONE,
-		 PNG_COMPRESSION_TYPE_DEFAULT,
-		 PNG_FILTER_TYPE_DEFAULT);
+	             info_ptr,
+	             GetWidth(),
+	             GetHeight(),
+	             8,
+	             color_type,
+	             PNG_INTERLACE_NONE,
+	             PNG_COMPRESSION_TYPE_DEFAULT,
+	             PNG_FILTER_TYPE_DEFAULT);
 
 	// write the file header information
 	png_write_info(png_ptr, info_ptr);

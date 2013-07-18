@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -47,6 +45,7 @@
 
 #include "RNA_access.h"
 
+#include "BLI_bpath.h"
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
 #include "BLI_rand.h"
@@ -145,7 +144,7 @@ Brush *copy_brush(Brush *brush)
 {
 	Brush *brushn;
 	
-	brushn= copy_libblock(brush);
+	brushn= copy_libblock(&brush->id);
 
 	if (brush->mtex.tex)
 		id_us_plus((ID*)brush->mtex.tex);
@@ -183,6 +182,7 @@ void free_brush(Brush *brush)
 static void extern_local_brush(Brush *brush)
 {
 	id_lib_extern((ID *)brush->mtex.tex);
+	id_lib_extern((ID *)brush->clone.image);
 }
 
 void make_local_brush(Brush *brush)
@@ -195,29 +195,26 @@ void make_local_brush(Brush *brush)
 
 	Main *bmain= G.main;
 	Scene *scene;
-	int local= 0, lib= 0;
+	int is_local= FALSE, is_lib= FALSE;
 
 	if(brush->id.lib==NULL) return;
 
 	if(brush->clone.image) {
-		/* special case: ima always local immediately */
-		brush->clone.image->id.lib= NULL;
-		brush->clone.image->id.flag= LIB_LOCAL;
-		new_id(&bmain->brush, (ID *)brush->clone.image, NULL);
+		/* special case: ima always local immediately. Clone image should only
+		 * have one user anyway. */
+		id_clear_lib_data(bmain, &brush->clone.image->id);
 		extern_local_brush(brush);
 	}
 
-	for(scene= bmain->scene.first; scene && ELEM(0, lib, local); scene=scene->id.next) {
+	for(scene= bmain->scene.first; scene && ELEM(0, is_lib, is_local); scene=scene->id.next) {
 		if(paint_brush(&scene->toolsettings->imapaint.paint)==brush) {
-			if(scene->id.lib) lib= 1;
-			else local= 1;
+			if(scene->id.lib) is_lib= TRUE;
+			else is_local= TRUE;
 		}
 	}
 
-	if(local && lib==0) {
-		brush->id.lib= NULL;
-		brush->id.flag= LIB_LOCAL;
-		new_id(&bmain->brush, (ID *)brush, NULL);
+	if(is_local && is_lib == FALSE) {
+		id_clear_lib_data(bmain, &brush->id);
 		extern_local_brush(brush);
 
 		/* enable fake user by default */
@@ -226,15 +223,18 @@ void make_local_brush(Brush *brush)
 			brush->id.us++;
 		}
 	}
-	else if(local && lib) {
-		Brush *brushn= copy_brush(brush);
-		brushn->id.us= 1; /* only keep fake user */
-		brushn->id.flag |= LIB_FAKEUSER;
+	else if(is_local && is_lib) {
+		Brush *brush_new= copy_brush(brush);
+		brush_new->id.us= 1; /* only keep fake user */
+		brush_new->id.flag |= LIB_FAKEUSER;
+
+		/* Remap paths of new ID using old library as base. */
+		BKE_id_lib_local_paths(bmain, brush->id.lib, &brush_new->id);
 		
 		for(scene= bmain->scene.first; scene; scene=scene->id.next) {
 			if(paint_brush(&scene->toolsettings->imapaint.paint)==brush) {
 				if(scene->id.lib==NULL) {
-					paint_brush_set(&scene->toolsettings->imapaint.paint, brushn);
+					paint_brush_set(&scene->toolsettings->imapaint.paint, brush_new);
 				}
 			}
 		}
@@ -331,10 +331,8 @@ void brush_debug_print_state(Brush *br)
 void brush_reset_sculpt(Brush *br)
 {
 	/* enable this to see any non-default
-	   settings used by a brush:
-
-	   brush_debug_print_state(br);
-	*/
+	 * settings used by a brush: */
+	// brush_debug_print_state(br);
 
 	brush_set_defaults(br);
 	brush_curve_preset(br, CURVE_PRESET_SMOOTH);
@@ -384,6 +382,7 @@ void brush_reset_sculpt(Brush *br)
 		br->sub_col[1] = 1.000000;
 		break;
 	case SCULPT_TOOL_ROTATE:
+		br->alpha = 1.0;
 		break;
 	case SCULPT_TOOL_SMOOTH:
 		br->flag &= ~BRUSH_SPACE_ATTEN;
@@ -486,14 +485,14 @@ int brush_clone_image_delete(Brush *brush)
 }
 
 /* Brush Sampling */
-void brush_sample_tex(Brush *brush, float *xy, float *rgba, const int thread)
+void brush_sample_tex(const Scene *scene, Brush *brush, const float xy[2], float rgba[4], const int thread)
 {
 	MTex *mtex= &brush->mtex;
 
 	if (mtex && mtex->tex) {
 		float co[3], tin, tr, tg, tb, ta;
 		int hasrgb;
-		const int radius= brush_size(brush);
+		const int radius= brush_size(scene, brush);
 
 		co[0]= xy[0]/radius;
 		co[1]= xy[1]/radius;
@@ -514,19 +513,20 @@ void brush_sample_tex(Brush *brush, float *xy, float *rgba, const int thread)
 			rgba[3]= 1.0f;
 		}
 	}
-	else if (rgba)
+	else {
 		rgba[0]= rgba[1]= rgba[2]= rgba[3]= 1.0f;
+	}
 }
 
-
-void brush_imbuf_new(Brush *brush, short flt, short texfall, int bufsize, ImBuf **outbuf, int use_color_correction)
+/* TODO, use define for 'texfall' arg */
+void brush_imbuf_new(const Scene *scene, Brush *brush, short flt, short texfall, int bufsize, ImBuf **outbuf, int use_color_correction)
 {
 	ImBuf *ibuf;
-	float xy[2], dist, rgba[4], *dstf;
+	float xy[2], rgba[4], *dstf;
 	int x, y, rowbytes, xoff, yoff, imbflag;
-	const int radius= brush_size(brush);
-	char *dst, crgb[3];
-	const float alpha= brush_alpha(brush);
+	const int radius= brush_size(scene, brush);
+	unsigned char *dst, crgb[3];
+	const float alpha= brush_alpha(scene, brush);
 	float brush_rgb[3];
     
 	imbflag= (flt)? IB_rectfloat: IB_rect;
@@ -541,7 +541,7 @@ void brush_imbuf_new(Brush *brush, short flt, short texfall, int bufsize, ImBuf 
 
 	if (flt) {
 		copy_v3_v3(brush_rgb, brush->rgb);
-		if(use_color_correction){
+		if (use_color_correction) {
 			srgb_to_linearrgb_v3_v3(brush_rgb, brush_rgb);
 		}
 
@@ -553,73 +553,185 @@ void brush_imbuf_new(Brush *brush, short flt, short texfall, int bufsize, ImBuf 
 				xy[1] = y + yoff;
 
 				if (texfall == 0) {
-					dist = sqrt(xy[0]*xy[0] + xy[1]*xy[1]);
-
-					VECCOPY(dstf, brush_rgb);
-					dstf[3]= alpha*brush_curve_strength_clamp(brush, dist, radius);
+					copy_v3_v3(dstf, brush_rgb);
+					dstf[3]= alpha*brush_curve_strength_clamp(brush, len_v2(xy), radius);
 				}
 				else if (texfall == 1) {
-					brush_sample_tex(brush, xy, dstf, 0);
+					brush_sample_tex(scene, brush, xy, dstf, 0);
 				}
 				else {
-					dist = sqrt(xy[0]*xy[0] + xy[1]*xy[1]);
-
-					brush_sample_tex(brush, xy, rgba, 0);
+					brush_sample_tex(scene, brush, xy, rgba, 0);
 					mul_v3_v3v3(dstf, rgba, brush_rgb);
-					dstf[3] = rgba[3]*alpha*brush_curve_strength_clamp(brush, dist, radius);
+					dstf[3] = rgba[3]*alpha*brush_curve_strength_clamp(brush, len_v2(xy), radius);
 				}
 			}
 		}
 	}
 	else {
-		crgb[0]= FTOCHAR(brush->rgb[0]);
-		crgb[1]= FTOCHAR(brush->rgb[1]);
-		crgb[2]= FTOCHAR(brush->rgb[2]);
+		float alpha_f; /* final float alpha to convert to char */
+		rgb_float_to_uchar(crgb, brush->rgb);
 
 		for (y=0; y < ibuf->y; y++) {
-			dst = (char*)ibuf->rect + y*rowbytes;
+			dst = (unsigned char *)ibuf->rect + y*rowbytes;
 
 			for (x=0; x < ibuf->x; x++, dst+=4) {
 				xy[0] = x + xoff;
 				xy[1] = y + yoff;
 
 				if (texfall == 0) {
-					dist = sqrt(xy[0]*xy[0] + xy[1]*xy[1]);
+					alpha_f = alpha * brush_curve_strength(brush, len_v2(xy), radius);
 
-					dst[0]= crgb[0];
-					dst[1]= crgb[1];
-					dst[2]= crgb[2];
-					dst[3]= FTOCHAR(alpha*brush_curve_strength(brush, dist, radius));
+					dst[0] = crgb[0];
+					dst[1] = crgb[1];
+					dst[2] = crgb[2];
+					dst[3] = FTOCHAR(alpha_f);
 				}
 				else if (texfall == 1) {
-					brush_sample_tex(brush, xy, rgba, 0);
-					dst[0]= FTOCHAR(rgba[0]);
-					dst[1]= FTOCHAR(rgba[1]);
-					dst[2]= FTOCHAR(rgba[2]);
-					dst[3]= FTOCHAR(rgba[3]);
+					brush_sample_tex(scene, brush, xy, rgba, 0);
+					rgba_float_to_uchar(dst, rgba);
 				}
 				else if (texfall == 2) {
-					dist = sqrt(xy[0]*xy[0] + xy[1]*xy[1]);
+					brush_sample_tex(scene, brush, xy, rgba, 0);
+					mul_v3_v3(rgba, brush->rgb);
+					alpha_f = rgba[3] * alpha * brush_curve_strength_clamp(brush, len_v2(xy), radius);
 
-					brush_sample_tex(brush, xy, rgba, 0);
-					dst[0] = FTOCHAR(rgba[0]*brush->rgb[0]);
-					dst[1] = FTOCHAR(rgba[1]*brush->rgb[1]);
-					dst[2] = FTOCHAR(rgba[2]*brush->rgb[2]);
-					dst[3] = FTOCHAR(rgba[3]*alpha*brush_curve_strength_clamp(brush, dist, radius));
-				} else {
-					dist = sqrt(xy[0]*xy[0] + xy[1]*xy[1]);
+					rgb_float_to_uchar(dst, rgba);
 
-					brush_sample_tex(brush, xy, rgba, 0);
-					dst[0]= crgb[0];
-					dst[1]= crgb[1];
-					dst[2]= crgb[2];
-					dst[3] = FTOCHAR(rgba[3]*alpha*brush_curve_strength_clamp(brush, dist, radius));
+					dst[3] = FTOCHAR(alpha_f);
+				}
+				else {
+					brush_sample_tex(scene, brush, xy, rgba, 0);
+					alpha_f = rgba[3] * alpha * brush_curve_strength_clamp(brush, len_v2(xy), radius);
+
+					dst[0] = crgb[0];
+					dst[1] = crgb[1];
+					dst[2] = crgb[2];
+					dst[3] = FTOCHAR(alpha_f);
 				}
 			}
 		}
 	}
 
 	*outbuf= ibuf;
+}
+
+/* Unified Size and Strength */
+
+// XXX: be careful about setting size and unprojected radius
+// because they depend on one another
+// these functions do not set the other corresponding value
+// this can lead to odd behavior if size and unprojected
+// radius become inconsistent.
+// the biggest problem is that it isn't possible to change
+// unprojected radius because a view context is not
+// available.  my ussual solution to this is to use the
+// ratio of change of the size to change the unprojected
+// radius.  Not completely convinced that is correct.
+// In anycase, a better solution is needed to prevent
+// inconsistency.
+
+void brush_set_size(Scene *scene, Brush *brush, int size)
+{
+	UnifiedPaintSettings *ups = &scene->toolsettings->unified_paint_settings;
+
+	if (ups->flag & UNIFIED_PAINT_SIZE)
+		ups->size= size;
+	else
+		brush->size= size;
+}
+
+int brush_size(const Scene *scene, Brush *brush)
+{
+	UnifiedPaintSettings *ups = &scene->toolsettings->unified_paint_settings;
+
+	return (ups->flag & UNIFIED_PAINT_SIZE) ? ups->size : brush->size;
+}
+
+int brush_use_locked_size(const Scene *scene, Brush *brush)
+{
+	const short us_flag = scene->toolsettings->unified_paint_settings.flag;
+
+	return (us_flag & UNIFIED_PAINT_SIZE) ?
+	        (us_flag & UNIFIED_PAINT_BRUSH_LOCK_SIZE) :
+	        (brush->flag & BRUSH_LOCK_SIZE);
+}
+
+int brush_use_size_pressure(const Scene *scene, Brush *brush)
+{
+	const short us_flag = scene->toolsettings->unified_paint_settings.flag;
+
+	return (us_flag & UNIFIED_PAINT_SIZE) ?
+	        (us_flag & UNIFIED_PAINT_BRUSH_SIZE_PRESSURE) :
+	        (brush->flag & BRUSH_SIZE_PRESSURE);
+}
+
+int brush_use_alpha_pressure(const Scene *scene, Brush *brush)
+{
+	const short us_flag = scene->toolsettings->unified_paint_settings.flag;
+
+	return (us_flag & UNIFIED_PAINT_ALPHA) ?
+	        (us_flag & UNIFIED_PAINT_BRUSH_ALPHA_PRESSURE) :
+	        (brush->flag & BRUSH_ALPHA_PRESSURE);
+}
+
+void brush_set_unprojected_radius(Scene *scene, Brush *brush, float unprojected_radius)
+{
+	UnifiedPaintSettings *ups = &scene->toolsettings->unified_paint_settings;
+
+	if (ups->flag & UNIFIED_PAINT_SIZE)
+		ups->unprojected_radius= unprojected_radius;
+	else
+		brush->unprojected_radius= unprojected_radius;
+}
+
+float brush_unprojected_radius(const Scene *scene, Brush *brush)
+{
+	UnifiedPaintSettings *ups = &scene->toolsettings->unified_paint_settings;
+
+	return (ups->flag & UNIFIED_PAINT_SIZE) ?
+	        ups->unprojected_radius :
+	        brush->unprojected_radius;
+}
+
+static void brush_set_alpha(Scene *scene, Brush *brush, float alpha)
+{
+	UnifiedPaintSettings *ups = &scene->toolsettings->unified_paint_settings;
+
+	if (ups->flag & UNIFIED_PAINT_ALPHA)
+		ups->alpha= alpha;
+	else
+		brush->alpha= alpha;
+}
+
+float brush_alpha(const Scene *scene, Brush *brush)
+{
+	UnifiedPaintSettings *ups = &scene->toolsettings->unified_paint_settings;
+
+	return (ups->flag & UNIFIED_PAINT_ALPHA) ? ups->alpha : brush->alpha;
+}
+
+/* scale unprojected radius to reflect a change in the brush's 2D size */
+void brush_scale_unprojected_radius(float *unprojected_radius,
+									int new_brush_size,
+									int old_brush_size)
+{
+	float scale = new_brush_size;
+	/* avoid division by zero */
+	if(old_brush_size != 0)
+		scale /= (float)old_brush_size;
+	(*unprojected_radius) *= scale;
+}
+
+/* scale brush size to reflect a change in the brush's unprojected radius */
+void brush_scale_size(int *brush_size,
+					  float new_unprojected_radius,
+					  float old_unprojected_radius)
+{
+	float scale = new_unprojected_radius;
+	/* avoid division by zero */
+	if(old_unprojected_radius != 0)
+		scale /= new_unprojected_radius;
+	(*brush_size)= (int)((float)(*brush_size) * scale);
 }
 
 /* Brush Painting */
@@ -641,6 +753,7 @@ typedef struct BrushPainterCache {
 } BrushPainterCache;
 
 struct BrushPainter {
+	Scene *scene;
 	Brush *brush;
 
 	float lastmousepos[2];	/* mouse position of last paint call */
@@ -664,16 +777,17 @@ struct BrushPainter {
 	BrushPainterCache cache;
 };
 
-BrushPainter *brush_painter_new(Brush *brush)
+BrushPainter *brush_painter_new(Scene *scene, Brush *brush)
 {
 	BrushPainter *painter= MEM_callocN(sizeof(BrushPainter), "BrushPainter");
 
 	painter->brush= brush;
+	painter->scene= scene;
 	painter->firsttouch= 1;
 	painter->cache.lastsize= -1; /* force ibuf create in refresh */
 
-	painter->startsize = brush_size(brush);
-	painter->startalpha = brush_alpha(brush);
+	painter->startsize = brush_size(scene, brush);
+	painter->startalpha = brush_alpha(scene, brush);
 	painter->startjitter = brush->jitter;
 	painter->startspacing = brush->spacing;
 
@@ -706,8 +820,8 @@ void brush_painter_free(BrushPainter *painter)
 {
 	Brush *brush = painter->brush;
 
-	brush_set_size(brush, painter->startsize);
-	brush_set_alpha(brush, painter->startalpha);
+	brush_set_size(painter->scene, brush, painter->startsize);
+	brush_set_alpha(painter->scene, brush, painter->startalpha);
 	brush->jitter = painter->startjitter;
 	brush->spacing = painter->startspacing;
 
@@ -717,14 +831,17 @@ void brush_painter_free(BrushPainter *painter)
 	MEM_freeN(painter);
 }
 
-static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, int x, int y, int w, int h, int xt, int yt, float *pos)
+static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf,
+                                     int x, int y, int w, int h, int xt, int yt,
+                                     const float pos[2])
 {
+	Scene *scene= painter->scene;
 	Brush *brush= painter->brush;
 	ImBuf *ibuf, *maskibuf, *texibuf;
 	float *bf, *mf, *tf, *otf=NULL, xoff, yoff, xy[2], rgba[4];
-	char *b, *m, *t, *ot= NULL;
+	unsigned char *b, *m, *t, *ot= NULL;
 	int dotexold, origx= x, origy= y;
-	const int radius= brush_size(brush);
+	const int radius= brush_size(painter->scene, brush);
 
 	xoff = -radius + 0.5f;
 	yoff = -radius + 0.5f;
@@ -738,8 +855,8 @@ static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, i
 	dotexold = (oldtexibuf != NULL);
 
 	/* not sure if it's actually needed or it's a mistake in coords/sizes
-	   calculation in brush_painter_fixed_tex_partial_update(), but without this
-	   limitation memory gets corrupted at fast strokes with quite big spacing (sergey) */
+	 * calculation in brush_painter_fixed_tex_partial_update(), but without this
+	 * limitation memory gets corrupted at fast strokes with quite big spacing (sergey) */
 	w = MIN2(w, ibuf->x);
 	h = MIN2(h, ibuf->y);
 
@@ -754,7 +871,7 @@ static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, i
 
 			for (x=origx; x < w; x++, bf+=4, mf+=4, tf+=4) {
 				if (dotexold) {
-					VECCOPY(tf, otf);
+					copy_v3_v3(tf, otf);
 					tf[3] = otf[3];
 					otf += 4;
 				}
@@ -762,7 +879,7 @@ static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, i
 					xy[0] = x + xoff;
 					xy[1] = y + yoff;
 
-					brush_sample_tex(brush, xy, tf, 0);
+					brush_sample_tex(scene, brush, xy, tf, 0);
 				}
 
 				bf[0] = tf[0]*mf[0];
@@ -774,12 +891,12 @@ static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, i
 	}
 	else {
 		for (; y < h; y++) {
-			b = (char*)ibuf->rect + (y*ibuf->x + origx)*4;
-			t = (char*)texibuf->rect + (y*texibuf->x + origx)*4;
-			m = (char*)maskibuf->rect + (y*maskibuf->x + origx)*4;
+			b = (unsigned char *)ibuf->rect + (y*ibuf->x + origx)*4;
+			t = (unsigned char *)texibuf->rect + (y*texibuf->x + origx)*4;
+			m = (unsigned char *)maskibuf->rect + (y*maskibuf->x + origx)*4;
 
 			if (dotexold)
-				ot = (char*)oldtexibuf->rect + ((y - origy + yt)*oldtexibuf->x + xt)*4;
+				ot = (unsigned char *)oldtexibuf->rect + ((y - origy + yt)*oldtexibuf->x + xt)*4;
 
 			for (x=origx; x < w; x++, b+=4, m+=4, t+=4) {
 				if (dotexold) {
@@ -793,11 +910,8 @@ static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, i
 					xy[0] = x + xoff;
 					xy[1] = y + yoff;
 
-					brush_sample_tex(brush, xy, rgba, 0);
-					t[0]= FTOCHAR(rgba[0]);
-					t[1]= FTOCHAR(rgba[1]);
-					t[2]= FTOCHAR(rgba[2]);
-					t[3]= FTOCHAR(rgba[3]);
+					brush_sample_tex(scene, brush, xy, rgba, 0);
+					rgba_float_to_uchar(t, rgba);
 				}
 
 				b[0] = t[0]*m[0]/255;
@@ -809,13 +923,14 @@ static void brush_painter_do_partial(BrushPainter *painter, ImBuf *oldtexibuf, i
 	}
 }
 
-static void brush_painter_fixed_tex_partial_update(BrushPainter *painter, float *pos)
+static void brush_painter_fixed_tex_partial_update(BrushPainter *painter, const float pos[2])
 {
+	const Scene *scene= painter->scene;
 	Brush *brush= painter->brush;
 	BrushPainterCache *cache= &painter->cache;
 	ImBuf *oldtexibuf, *ibuf;
 	int imbflag, destx, desty, srcx, srcy, w, h, x1, y1, x2, y2;
-	const int diameter= 2*brush_size(brush);
+	const int diameter= 2*brush_size(scene, brush);
 
 	imbflag= (cache->flt)? IB_rectfloat: IB_rect;
 	if (!cache->ibuf)
@@ -863,15 +978,16 @@ static void brush_painter_fixed_tex_partial_update(BrushPainter *painter, float 
 		brush_painter_do_partial(painter, NULL, x1, y2, x2, ibuf->y, 0, 0, pos);
 }
 
-static void brush_painter_refresh_cache(BrushPainter *painter, float *pos, int use_color_correction)
+static void brush_painter_refresh_cache(BrushPainter *painter, const float pos[2], int use_color_correction)
 {
+	const Scene *scene= painter->scene;
 	Brush *brush= painter->brush;
 	BrushPainterCache *cache= &painter->cache;
 	MTex *mtex= &brush->mtex;
 	int size;
 	short flt;
-	const int diameter= 2*brush_size(brush);
-	const float alpha= brush_alpha(brush);
+	const int diameter= 2*brush_size(scene, brush);
+	const float alpha= brush_alpha(scene, brush);
 
 	if (diameter != cache->lastsize ||
 		alpha != cache->lastalpha ||
@@ -890,11 +1006,11 @@ static void brush_painter_refresh_cache(BrushPainter *painter, float *pos, int u
 		size= (cache->size)? cache->size: diameter;
 
 		if (brush->flag & BRUSH_FIXED_TEX) {
-			brush_imbuf_new(brush, flt, 3, size, &cache->maskibuf, use_color_correction);
+			brush_imbuf_new(scene, brush, flt, 3, size, &cache->maskibuf, use_color_correction);
 			brush_painter_fixed_tex_partial_update(painter, pos);
 		}
 		else
-			brush_imbuf_new(brush, flt, 2, size, &cache->ibuf, use_color_correction);
+			brush_imbuf_new(scene, brush, flt, 2, size, &cache->ibuf, use_color_correction);
 
 		cache->lastsize= diameter;
 		cache->lastalpha= alpha;
@@ -916,27 +1032,27 @@ void brush_painter_break_stroke(BrushPainter *painter)
 
 static void brush_apply_pressure(BrushPainter *painter, Brush *brush, float pressure)
 {
-	if (brush_use_alpha_pressure(brush)) 
-		brush_set_alpha(brush, MAX2(0.0f, painter->startalpha*pressure));
-	if (brush_use_size_pressure(brush))
-		brush_set_size(brush, MAX2(1.0f, painter->startsize*pressure));
+	if (brush_use_alpha_pressure(painter->scene, brush)) 
+		brush_set_alpha(painter->scene, brush, MAX2(0.0f, painter->startalpha*pressure));
+	if (brush_use_size_pressure(painter->scene, brush))
+		brush_set_size(painter->scene, brush, MAX2(1.0f, painter->startsize*pressure));
 	if (brush->flag & BRUSH_JITTER_PRESSURE)
 		brush->jitter = MAX2(0.0f, painter->startjitter*pressure);
 	if (brush->flag & BRUSH_SPACING_PRESSURE)
 		brush->spacing = MAX2(1.0f, painter->startspacing*(1.5f-pressure));
 }
 
-void brush_jitter_pos(Brush *brush, float *pos, float *jitterpos)
+void brush_jitter_pos(const Scene *scene, Brush *brush, const float pos[2], float jitterpos[2])
 {
 	int use_jitter= brush->jitter != 0;
 
-	/* jitter-ed brush gives wierd and unpredictable result for this
-	   kinds of stroke, so manyally disable jitter usage (sergey) */
-	use_jitter&= (brush->flag & (BRUSH_RESTORE_MESH|BRUSH_ANCHORED)) == 0;
+	/* jitter-ed brush gives weird and unpredictable result for this
+	 * kinds of stroke, so manyally disable jitter usage (sergey) */
+	use_jitter &= (brush->flag & (BRUSH_RESTORE_MESH|BRUSH_ANCHORED)) == 0;
 
-	if(use_jitter){
+	if (use_jitter) {
 		float rand_pos[2];
-		const int radius= brush_size(brush);
+		const int radius= brush_size(scene, brush);
 		const int diameter= 2*radius;
 
 		// find random position within a circle of diameter 1
@@ -949,12 +1065,14 @@ void brush_jitter_pos(Brush *brush, float *pos, float *jitterpos)
 		jitterpos[1] = pos[1] + 2*rand_pos[1]*diameter*brush->jitter;
 	}
 	else {
-		VECCOPY2D(jitterpos, pos);
+		copy_v2_v2(jitterpos, pos);
 	}
 }
 
-int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, double time, float pressure, void *user, int use_color_correction)
+int brush_painter_paint(BrushPainter *painter, BrushFunc func, const float pos[2], double time, float pressure,
+                        void *user, int use_color_correction)
 {
+	Scene *scene= painter->scene;
 	Brush *brush= painter->brush;
 	int totpaintops= 0;
 
@@ -1016,10 +1134,10 @@ int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, doubl
 	else {
 		float startdistance, spacing, step, paintpos[2], dmousepos[2], finalpos[2];
 		float t, len, press;
-		const int radius= brush_size(brush);
+		const int radius= brush_size(scene, brush);
 
 		/* compute brush spacing adapted to brush radius, spacing may depend
-		   on pressure, so update it */
+		 * on pressure, so update it */
 		brush_apply_pressure(painter, brush, painter->lastpressure);
 		spacing= MAX2(1.0f, radius)*brush->spacing*0.01f;
 
@@ -1041,7 +1159,7 @@ int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, doubl
 				brush_apply_pressure(painter, brush, press);
 				spacing= MAX2(1.0f, radius)*brush->spacing*0.01f;
 
-				brush_jitter_pos(brush, paintpos, finalpos);
+				brush_jitter_pos(scene, brush, paintpos, finalpos);
 
 				if (painter->cache.enabled)
 					brush_painter_refresh_cache(painter, finalpos, use_color_correction);
@@ -1055,7 +1173,7 @@ int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, doubl
 				startdistance -= spacing;
 			}
 		} else {
-			brush_jitter_pos(brush, pos, finalpos);
+			brush_jitter_pos(scene, brush, pos, finalpos);
 
 			if (painter->cache.enabled)
 				brush_painter_refresh_cache(painter, finalpos, use_color_correction);
@@ -1068,8 +1186,8 @@ int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, doubl
 		}
 
 		/* do airbrush paint ops, based on the number of paint ops left over
-		   from regular painting. this is a temporary solution until we have
-		   accurate time stamps for mouse move events */
+		 * from regular painting. this is a temporary solution until we have
+		 * accurate time stamps for mouse move events */
 		if (brush->flag & BRUSH_AIRBRUSH) {
 			double curtime= time;
 			double painttime= brush->rate*totpaintops;
@@ -1083,7 +1201,7 @@ int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, doubl
 			while (painter->accumtime >= (double)brush->rate) {
 				brush_apply_pressure(painter, brush, pressure);
 
-				brush_jitter_pos(brush, pos, finalpos);
+				brush_jitter_pos(scene, brush, pos, finalpos);
 
 				if (painter->cache.enabled)
 					brush_painter_refresh_cache(painter, finalpos, use_color_correction);
@@ -1101,8 +1219,8 @@ int brush_painter_paint(BrushPainter *painter, BrushFunc func, float *pos, doubl
 	painter->lastmousepos[1]= pos[1];
 	painter->lastpressure= pressure;
 
-	brush_set_alpha(brush, painter->startalpha);
-	brush_set_size(brush, painter->startsize);
+	brush_set_alpha(scene, brush, painter->startalpha);
+	brush_set_size(scene, brush, painter->startsize);
 	brush->jitter = painter->startjitter;
 	brush->spacing = painter->startspacing;
 
@@ -1211,262 +1329,4 @@ struct ImBuf *brush_gen_radial_control_imbuf(Brush *br)
 	}
 
 	return im;
-}
-
-/* Unified Size and Strength */
-
-static void set_unified_settings(Brush *brush, short flag, int value)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			if (value)
-				sce->toolsettings->sculpt_paint_settings |= flag;
-			else
-				sce->toolsettings->sculpt_paint_settings &= ~flag;
-		}
-	}
-}
-
-static short unified_settings(Brush *brush)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			return sce->toolsettings->sculpt_paint_settings;
-		}
-	}
-
-	return 0;
-}
-
-// XXX: be careful about setting size and unprojected radius
-// because they depend on one another
-// these functions do not set the other corresponding value
-// this can lead to odd behavior if size and unprojected
-// radius become inconsistent.
-// the biggest problem is that it isn't possible to change
-// unprojected radius because a view context is not
-// available.  my ussual solution to this is to use the
-// ratio of change of the size to change the unprojected
-// radius.  Not completely convinced that is correct.
-// In anycase, a better solution is needed to prevent
-// inconsistency.
-
-static void set_unified_size(Brush *brush, int value)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			sce->toolsettings->sculpt_paint_unified_size= value;
-		}
-	}
-}
-
-static int unified_size(Brush *brush)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			return sce->toolsettings->sculpt_paint_unified_size;
-		}
-	}
-
-	return 35; // XXX magic number
-}
-
-static void set_unified_alpha(Brush *brush, float value)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			sce->toolsettings->sculpt_paint_unified_alpha= value;
-		}
-	}
-}
-
-static float unified_alpha(Brush *brush)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			return sce->toolsettings->sculpt_paint_unified_alpha;
-		}
-	}
-
-	return 0.5f; // XXX magic number
-}
-
-static void set_unified_unprojected_radius(Brush *brush, float value)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			sce->toolsettings->sculpt_paint_unified_unprojected_radius= value;
-		}
-	}
-}
-
-static float unified_unprojected_radius(Brush *brush)
-{
-	Scene *sce;
-	for (sce= G.main->scene.first; sce; sce= sce->id.next) {
-		if (sce->toolsettings && 
-			ELEM4(brush,
-			    paint_brush(&(sce->toolsettings->imapaint.paint)),
-			    paint_brush(&(sce->toolsettings->vpaint->paint)),
-			    paint_brush(&(sce->toolsettings->wpaint->paint)),
-			    paint_brush(&(sce->toolsettings->sculpt->paint))))
-		{
-			return sce->toolsettings->sculpt_paint_unified_unprojected_radius;
-		}
-	}
-
-	return 0.125f; // XXX magic number
-}
-void brush_set_size(Brush *brush, int size)
-{
-	if (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE)
-		set_unified_size(brush, size);
-	else
-		brush->size= size;
-
-	//WM_main_add_notifier(NC_BRUSH|NA_EDITED, brush);
-}
-
-int brush_size(Brush *brush)
-{
-	return (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE) ? unified_size(brush) : brush->size;
-}
-
-void brush_set_use_locked_size(Brush *brush, int value)
-{
-	if (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE) {
-		set_unified_settings(brush, SCULPT_PAINT_UNIFIED_LOCK_BRUSH_SIZE, value);
-	}
-	else {
-		if (value)
-			brush->flag |= BRUSH_LOCK_SIZE;
-		else
-			brush->flag &= ~BRUSH_LOCK_SIZE;
-	}
-
-	//WM_main_add_notifier(NC_BRUSH|NA_EDITED, brush);
-}
-
-int brush_use_locked_size(Brush *brush)
-{
-	return (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE) ? (unified_settings(brush) & SCULPT_PAINT_UNIFIED_LOCK_BRUSH_SIZE) : (brush->flag & BRUSH_LOCK_SIZE);
-}
-
-void brush_set_use_size_pressure(Brush *brush, int value)
-{
-	if (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE) {
-		set_unified_settings(brush, SCULPT_PAINT_UNIFIED_SIZE_PRESSURE, value);
-	}
-	else {
-		if (value)
-			brush->flag |= BRUSH_SIZE_PRESSURE;
-		else
-			brush->flag &= ~BRUSH_SIZE_PRESSURE;
-	}
-
-	//WM_main_add_notifier(NC_BRUSH|NA_EDITED, brush);
-}
-
-int brush_use_size_pressure(Brush *brush)
-{
-	return (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE) ? (unified_settings(brush) & SCULPT_PAINT_UNIFIED_SIZE_PRESSURE) : (brush->flag & BRUSH_SIZE_PRESSURE);
-}
-
-void brush_set_use_alpha_pressure(Brush *brush, int value)
-{
-	if (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_ALPHA) {
-		set_unified_settings(brush, SCULPT_PAINT_UNIFIED_ALPHA_PRESSURE, value);
-	}
-	else {
-		if (value)
-			brush->flag |= BRUSH_ALPHA_PRESSURE;
-		else
-			brush->flag &= ~BRUSH_ALPHA_PRESSURE;
-	}
-
-	//WM_main_add_notifier(NC_BRUSH|NA_EDITED, brush);
-}
-
-int brush_use_alpha_pressure(Brush *brush)
-{
-	return (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_ALPHA) ? (unified_settings(brush) & SCULPT_PAINT_UNIFIED_ALPHA_PRESSURE) : (brush->flag & BRUSH_ALPHA_PRESSURE);
-}
-
-void brush_set_unprojected_radius(Brush *brush, float unprojected_radius)
-{
-	if (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE)
-		set_unified_unprojected_radius(brush, unprojected_radius);
-	else
-		brush->unprojected_radius= unprojected_radius;
-
-	//WM_main_add_notifier(NC_BRUSH|NA_EDITED, brush);
-}
-
-float brush_unprojected_radius(Brush *brush)
-{
-	return (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_SIZE) ? unified_unprojected_radius(brush) : brush->unprojected_radius;
-}
-
-void brush_set_alpha(Brush *brush, float alpha)
-{
-	if (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_ALPHA) 
-		set_unified_alpha(brush, alpha);
-	else
-		brush->alpha= alpha;
-
-	//WM_main_add_notifier(NC_BRUSH|NA_EDITED, brush);
-}
-
-float brush_alpha(Brush *brush)
-{
-	return (unified_settings(brush) & SCULPT_PAINT_USE_UNIFIED_ALPHA) ? unified_alpha(brush) : brush->alpha;
 }

@@ -1,8 +1,4 @@
 /*
- * radiance_hdr.c
- *
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,25 +23,22 @@
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
-*/
+ */
 
 /** \file blender/imbuf/intern/radiance_hdr.c
  *  \ingroup imbuf
  */
 
-
-#ifdef WITH_HDR
-
 /* ----------------------------------------------------------------------
-  Radiance High Dynamic Range image file IO
-  For description and code for reading/writing of radiance hdr files 
-	by Greg Ward, refer to:
-  http://radsite.lbl.gov/radiance/refer/Notes/picture_format.html
-----------------------------------------------------------------------
-*/
+ * Radiance High Dynamic Range image file IO
+ * For description and code for reading/writing of radiance hdr files
+ * by Greg Ward, refer to:
+ * http://radsite.lbl.gov/radiance/refer/Notes/picture_format.html
+ * ----------------------------------------------------------------------
+ */
 
 #ifdef WIN32
-#include <io.h>
+#  include <io.h>
 #endif
 
 #include "MEM_guardedalloc.h"
@@ -190,8 +183,7 @@ struct ImBuf *imb_loadhdr(unsigned char *mem, size_t size, int flags)
 	unsigned char* ptr;
 	char oriY[80], oriX[80];
 
-	if (imb_is_a_hdr((void*)mem))
-	{
+	if (imb_is_a_hdr((void *)mem)) {
 		/* find empty line, next line is resolution info */
 		for (x=1;x<size;x++) {
 			if ((mem[x-1]=='\n') && (mem[x]=='\n')) {
@@ -369,5 +361,3 @@ int imb_savehdr(struct ImBuf *ibuf, const char *name, int flags)
 	fclose(file);
 	return 1;
 }
-
-#endif /* WITH_HDR */

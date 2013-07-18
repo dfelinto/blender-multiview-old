@@ -18,7 +18,7 @@ IF (WIN32)
 			PATHS
 			$ENV{PROGRAMFILES}/GLEW/lib
 			${PROJECT_SOURCE_DIR}/src/nvgl/glew/bin
-	    	${PROJECT_SOURCE_DIR}/src/nvgl/glew/lib
+			${PROJECT_SOURCE_DIR}/src/nvgl/glew/lib
 			DOC "The GLEW library (64-bit)"
 		)
 	ELSE(NV_SYSTEM_PROCESSOR STREQUAL "AMD64")
@@ -27,7 +27,7 @@ IF (WIN32)
 			PATHS
 			$ENV{PROGRAMFILES}/GLEW/lib
 			${PROJECT_SOURCE_DIR}/src/nvgl/glew/bin
-	    	${PROJECT_SOURCE_DIR}/src/nvgl/glew/lib
+			${PROJECT_SOURCE_DIR}/src/nvgl/glew/lib
 			DOC "The GLEW library"
 		)
 	ENDIF(NV_SYSTEM_PROCESSOR STREQUAL "AMD64")
@@ -51,9 +51,9 @@ ELSE (WIN32)
 ENDIF (WIN32)
 
 IF (GLEW_INCLUDE_PATH)
-	SET( GLEW_FOUND 1 CACHE STRING "Set to 1 if GLEW is found, 0 otherwise")
+	SET(GLEW_FOUND TRUE)
 ELSE (GLEW_INCLUDE_PATH)
-	SET( GLEW_FOUND 0 CACHE STRING "Set to 1 if GLEW is found, 0 otherwise")
+	SET(GLEW_FOUND FALSE)
 ENDIF (GLEW_INCLUDE_PATH)
 
 MARK_AS_ADVANCED( GLEW_FOUND )

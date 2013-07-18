@@ -1,6 +1,5 @@
 /*
  * ErrorValue.h: interface for the CErrorValue class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -17,8 +16,8 @@
  *  \ingroup expressions
  */
 
-#if !defined _ERRORVALUE_H
-#define _ERRORVALUE_H
+#ifndef __ERRORVALUE_H__
+#define __ERRORVALUE_H__
 
 #include "Value.h"
 
@@ -46,5 +45,5 @@ public:
 #endif
 };
 
-#endif // !defined _ERRORVALUE_H
+#endif // !defined __ERRORVALUE_H__
 

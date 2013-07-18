@@ -16,19 +16,10 @@
 # along with this program; if not, write to the Free Software Foundation,
 # Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
 #
-# ***** END GPL LICENCE BLOCK *****
+# ***** END GPL LICENSE BLOCK *****
 # --------------------------------------------------------------------------
 
 # <pep8 compliant>
-
-# History
-#
-# Originally written by Campbell Barton aka ideasman42
-#
-# 2009-11-01: * 2.5 port by Keith "Wahooney" Boshoff
-#              * Replaced old method with my own, speed is similar (about 0.001 sec on Suzanne)
-#               but results are far more accurate
-#
 
 
 def applyVertexDirt(me, blur_iterations, blur_strength, clamp_dirt, clamp_clean, dirt_only):
@@ -69,7 +60,7 @@ def applyVertexDirt(me, blur_iterations, blur_strength, clamp_dirt, clamp_clean,
 
         vec /= tot_con
 
-        # angle is the acos of the dot product between vert and connected verts normals
+        # angle is the acos() of the dot product between vert and connected verts normals
         ang = acos(no.dot(vec))
 
         # enforce min/max
@@ -159,25 +150,25 @@ class VertexPaintDirt(Operator):
             )
     blur_iterations = IntProperty(
             name="Blur Iterations",
-            description="Number times to blur the colors. (higher blurs more)",
+            description="Number of times to blur the colors (higher blurs more)",
             min=0, max=40,
             default=1,
             )
     clean_angle = FloatProperty(
             name="Highlight Angle",
-            description="Less then 90 limits the angle used in the tonal range",
+            description="Less than 90 limits the angle used in the tonal range",
             min=0.0, max=180.0,
             default=180.0,
             )
     dirt_angle = FloatProperty(
             name="Dirt Angle",
-            description="Less then 90 limits the angle used in the tonal range",
+            description="Less than 90 limits the angle used in the tonal range",
             min=0.0, max=180.0,
             default=0.0,
             )
     dirt_only = BoolProperty(
             name="Dirt Only",
-            description="Dont calculate cleans for convex areas",
+            description="Don't calculate cleans for convex areas",
             default=False,
             )
 

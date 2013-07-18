@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,8 +28,8 @@
  *  \ingroup editors
  */
 
-#ifndef _ED_MBALL_H_
-#define _ED_MBALL_H_
+#ifndef __ED_MBALL_H__
+#define __ED_MBALL_H__
 
 struct bContext;
 struct Object;

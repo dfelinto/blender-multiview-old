@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_ManMesh2_h
-#define NAN_INCLUDED_ManMesh2_h
+#ifndef __LOD_MANMESH2_H__
+#define __LOD_MANMESH2_H__
 
 #include "LOD_MeshPrimitives.h"
 #include "MEM_SmartPtr.h"
@@ -77,11 +76,11 @@ public:
 
 		std::vector<LOD_Vertex> &
 	VertexSet(
-	) const ;		
+	) const;
 
 		std::vector<LOD_TriFace> &
 	FaceSet(
-	) const ;
+	) const;
 
 		std::vector<LOD_Edge> &
 	EdgeSet(

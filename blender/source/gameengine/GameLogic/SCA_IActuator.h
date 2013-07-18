@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_IACTUATOR
-#define __KX_IACTUATOR
+#ifndef __SCA_IACTUATOR_H__
+#define __SCA_IACTUATOR_H__
 
 #include "SCA_IController.h"
 #include <vector>
@@ -90,6 +88,7 @@ public:
 		KX_ACT_SHAPEACTION,
 		KX_ACT_STATE,
 		KX_ACT_ARMATURE,
+		KX_ACT_STEERING,
 	};
 
 	SCA_IActuator(SCA_IObject* gameobj, KX_ACTUATOR_TYPE type); 
@@ -167,5 +166,5 @@ public:
 #endif
 };
 
-#endif //__KX_IACTUATOR
+#endif //__SCA_IACTUATOR_H__
 

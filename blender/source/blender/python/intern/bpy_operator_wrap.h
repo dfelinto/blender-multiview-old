@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup pythonintern
  */
 
-#ifndef BPY_OPERATOR_WRAP_H
-#define BPY_OPERATOR_WRAP_H
+#ifndef __BPY_OPERATOR_WRAP_H__
+#define __BPY_OPERATOR_WRAP_H__
 
 struct wmOperatorType;
 

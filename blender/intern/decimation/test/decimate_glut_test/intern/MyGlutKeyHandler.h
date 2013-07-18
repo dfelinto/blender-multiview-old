@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef NAN_INCLUDED_MyGlutKeyHandler_h
-#define NAN_INCLUDED_MyGlutKeyHandler_h
+#ifndef __MYGLUTKEYHANDLER_H__
+#define __MYGLUTKEYHANDLER_H__
 
 #include "common/GlutKeyboardManager.h"
 #include "LOD_decimation.h"

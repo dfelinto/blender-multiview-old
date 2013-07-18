@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -60,7 +58,7 @@ static IDType idtypes[]= {
 	{ ID_ID,		"ID",		"ids",			0}, /* plural is fake */
 	{ ID_IM,		"Image",	"images",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_IP,		"Ipo",		"ipos",			IDTYPE_FLAGS_ISLINKABLE},  /* deprecated */
-	{ ID_KE,		"Key",		"keys",			0}, 
+	{ ID_KE,		"Key",		"shape_keys",	0}, 
 	{ ID_LA,		"Lamp",		"lamps",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_LI,		"Library",	"libraries",	0}, 
 	{ ID_LT,		"Lattice",	"lattices",		IDTYPE_FLAGS_ISLINKABLE}, 
@@ -80,6 +78,7 @@ static IDType idtypes[]= {
 	{ ID_VF,		"VFont",	"fonts",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_WO,		"World",	"worlds",		IDTYPE_FLAGS_ISLINKABLE}, 
 	{ ID_WM,		"WindowManager", "window_managers",	0}, 
+	{ ID_MC,		"MovieClip", "movieclips",	IDTYPE_FLAGS_ISLINKABLE},
 };
 static int nidtypes= sizeof(idtypes)/sizeof(idtypes[0]);
 
@@ -109,7 +108,8 @@ int BKE_idcode_is_valid(int code)
 	return idtype_from_code(code)?1:0;
 }
 
-int BKE_idcode_is_linkable(int code) {
+int BKE_idcode_is_linkable(int code)
+{
 	IDType *idt= idtype_from_code(code);
 	return idt?(idt->flags&IDTYPE_FLAGS_ISLINKABLE):0;
 }

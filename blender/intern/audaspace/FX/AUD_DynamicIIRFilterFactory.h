@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -28,8 +26,8 @@
  *  \ingroup audfx
  */
 
-#ifndef AUD_DYNAMICIIRFILTERFACTORY
-#define AUD_DYNAMICIIRFILTERFACTORY
+#ifndef __AUD_DYNAMICIIRFILTERFACTORY_H__
+#define __AUD_DYNAMICIIRFILTERFACTORY_H__
 
 #include "AUD_EffectFactory.h"
 #include <vector>
@@ -62,4 +60,4 @@ public:
 										 std::vector<float>& a)=0;
 };
 
-#endif // AUD_DYNAMICIIRFILTERFACTORY
+#endif // __AUD_DYNAMICIIRFILTERFACTORY_H__

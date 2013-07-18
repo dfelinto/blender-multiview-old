@@ -21,11 +21,14 @@
 __all__ = (
     "add_object_align_init",
     "object_data_add",
+    "AddObjectHelper",
     )
 
 
 import bpy
 import mathutils
+
+from bpy.props import BoolProperty, FloatVectorProperty
 
 
 def add_object_align_init(context, operator):
@@ -44,7 +47,7 @@ def add_object_align_init(context, operator):
     properties = operator.properties if operator is not None else None
 
     space_data = context.space_data
-    if space_data.type != 'VIEW_3D':
+    if space_data and space_data.type != 'VIEW_3D':
         space_data = None
 
     # location
@@ -86,7 +89,7 @@ def add_object_align_init(context, operator):
     return location * rotation
 
 
-def object_data_add(context, obdata, operator=None):
+def object_data_add(context, obdata, operator=None, use_active_layer=True):
     """
     Add an object using the view context and preference to to initialize the
     location, rotation and layer.
@@ -111,7 +114,18 @@ def object_data_add(context, obdata, operator=None):
     base = scene.objects.link(obj_new)
     base.select = True
 
+    v3d = None
     if context.space_data and context.space_data.type == 'VIEW_3D':
+        v3d = context.space_data
+
+    if use_active_layer:
+        if v3d and v3d.local_view:
+            base.layers_from_view(context.space_data)
+            base.layers[scene.active_layer] = True
+        else:
+            base.layers = [True if i == scene.active_layer
+                else False for i in range(len(scene.layers))]
+    if v3d:
         base.layers_from_view(context.space_data)
 
     obj_new.matrix_world = add_object_align_init(context, operator)
@@ -119,7 +133,7 @@ def object_data_add(context, obdata, operator=None):
     obj_act = scene.objects.active
 
     # XXX
-    # caused because entering editmodedoes not add a empty undo slot!
+    # caused because entering edit-mode does not add a empty undo slot!
     if context.user_preferences.edit.use_enter_edit_mode:
         if not (obj_act and
                 obj_act.mode == 'EDIT' and
@@ -153,3 +167,23 @@ def object_data_add(context, obdata, operator=None):
             bpy.ops.object.mode_set(mode='EDIT')
 
     return base
+
+
+class AddObjectHelper:
+    def view_align_update_callback(self, context):
+        if not self.view_align:
+            self.rotation.zero()
+
+    view_align = BoolProperty(
+            name="Align to View",
+            default=False,
+            update=view_align_update_callback,
+            )
+    location = FloatVectorProperty(
+            name="Location",
+            subtype='TRANSLATION',
+            )
+    rotation = FloatVectorProperty(
+            name="Rotation",
+            subtype='EULER',
+            )

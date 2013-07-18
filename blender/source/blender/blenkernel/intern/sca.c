@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -396,6 +394,8 @@ void init_actuator(bActuator *act)
 	bObjectActuator *oa;
 	bRandomActuator *ra;
 	bSoundActuator *sa;
+	bSteeringActuator *sta;
+	bArmatureActuator *arma;
 	
 	if(act->data) MEM_freeN(act->data);
 	act->data= NULL;
@@ -429,7 +429,7 @@ void init_actuator(bActuator *act)
 	case ACT_CAMERA:
 		act->data= MEM_callocN(sizeof(bCameraActuator), "camact");
 		ca = act->data;
-		ca->axis = ACT_CAMERA_X;
+		ca->axis = OB_POSX;
 		ca->damping = 1.0/32.0;
 		break;
 	case ACT_EDIT_OBJECT:
@@ -469,6 +469,18 @@ void init_actuator(bActuator *act)
 		break;
 	case ACT_ARMATURE:
 		act->data = MEM_callocN(sizeof( bArmatureActuator ), "armature act");
+		arma = act->data;
+		arma->influence = 1.f;
+		break;
+	case ACT_STEERING:
+		act->data = MEM_callocN(sizeof( bSteeringActuator), "steering act");
+		sta = act->data;
+		sta->acceleration = 3.f;
+		sta->turnspeed = 120.f;
+		sta->dist = 1.f;
+		sta->velocity= 3.f;
+		sta->flag = ACT_STEERING_AUTOMATICFACING;
+		sta->facingaxis = 1;
 		break;
 	default:
 		; /* this is very severe... I cannot make any memory for this        */
@@ -595,6 +607,11 @@ void set_sca_new_poins_ob(Object *ob)
 				bPropertyActuator *pa= act->data;
 				ID_NEW(pa->ob);
 			}
+			else if(act->type==ACT_STEERING) {
+				bSteeringActuator *sta = act->data;
+				ID_NEW(sta->navmesh);
+				ID_NEW(sta->target);
+			}
 		}
 		act= act->next;
 	}
@@ -625,6 +642,8 @@ void sca_remove_ob_poin(Object *obt, Object *ob)
 	bMessageActuator *ma;
 	bParentActuator *para;
 	bArmatureActuator *aa;
+	bSteeringActuator *sta;
+
 
 	sens= obt->sensors.first;
 	while(sens) {
@@ -672,6 +691,10 @@ void sca_remove_ob_poin(Object *obt, Object *ob)
 			if (aa->target == ob) aa->target = NULL;
 			if (aa->subtarget == ob) aa->subtarget = NULL;
 			break;
+		case ACT_STEERING:
+			sta = act->data;
+			if (sta->navmesh == ob) sta->navmesh = NULL;
+			if (sta->target == ob) sta->target = NULL;
 		}
 		act= act->next;
 	}	

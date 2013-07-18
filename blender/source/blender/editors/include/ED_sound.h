@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,10 +28,10 @@
  *  \ingroup editors
  */
 
-#ifndef ED_SOUND_H
-#define ED_SOUND_H
+#ifndef __ED_SOUND_H__
+#define __ED_SOUND_H__
 
 void ED_operatortypes_sound(void);
 
-#endif /* ED_SOUND_H */
+#endif /* __ED_SOUND_H__ */
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef BLI_GSQUEUE_H
-#define BLI_GSQUEUE_H
+#ifndef __BLI_GSQUEUE_H__
+#define __BLI_GSQUEUE_H__
 
 /** \file BLI_gsqueue.h
  *  \ingroup bli
@@ -41,8 +39,8 @@ typedef struct _GSQueue GSQueue;
 	/**
 	 * Create a new GSQueue.
 	 * 
-	 * @param elem_size The size of the structures in the queue.
-	 * @retval The new queue
+	 * \param elem_size The size of the structures in the queue.
+	 * \retval The new queue
 	 */
 GSQueue*	BLI_gsqueue_new		(int elem_size);
 
@@ -60,7 +58,7 @@ int			BLI_gsqueue_size(GSQueue *gq);
 	 * Access the item at the head of the queue
 	 * without removing it.
 	 * 
-	 * @param item_r A pointer to an appropriatly
+	 * \param item_r A pointer to an appropriately
 	 * sized structure (the size passed to BLI_gsqueue_new)
 	 */
 void		BLI_gsqueue_peek	(GSQueue *gq, void *item_r);
@@ -69,7 +67,7 @@ void		BLI_gsqueue_peek	(GSQueue *gq, void *item_r);
 	 * Access the item at the head of the queue
 	 * and remove it.
 	 * 
-	 * @param item_r A pointer to an appropriatly
+	 * \param item_r A pointer to an appropriately
 	 * sized structure (the size passed to BLI_gsqueue_new).
 	 * Can be NULL if desired.
 	 */
@@ -78,7 +76,7 @@ void		BLI_gsqueue_pop		(GSQueue *gq, void *item_r);
 	/**
 	 * Push an element onto the tail of the queue.
 	 * 
-	 * @param item A pointer to an appropriatly
+	 * \param item A pointer to an appropriately
 	 * sized structure (the size passed to BLI_gsqueue_new).
 	 */
 void		BLI_gsqueue_push	(GSQueue *gq, void *item);
@@ -87,7 +85,7 @@ void		BLI_gsqueue_push	(GSQueue *gq, void *item);
 	 * Push an element back onto the head of the queue (so
 	 * it would be returned from the next call to BLI_gsqueue_pop).
 	 * 
-	 * @param item A pointer to an appropriatly
+	 * \param item A pointer to an appropriately
 	 * sized structure (the size passed to BLI_gsqueue_new).
 	 */
 void		BLI_gsqueue_pushback	(GSQueue *gq, void *item);
@@ -97,5 +95,5 @@ void		BLI_gsqueue_pushback	(GSQueue *gq, void *item);
 	 */
 void		BLI_gsqueue_free	(GSQueue *gq);
 
-#endif /* BLI_GSQUEUE_H */
+#endif /* __BLI_GSQUEUE_H__ */
 

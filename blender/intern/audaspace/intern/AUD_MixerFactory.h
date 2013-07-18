@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_MIXERFACTORY
-#define AUD_MIXERFACTORY
+#ifndef __AUD_MIXERFACTORY_H__
+#define __AUD_MIXERFACTORY_H__
 
 #include "AUD_IFactory.h"
 
@@ -78,4 +76,4 @@ public:
 	AUD_Reference<AUD_IFactory> getFactory() const;
 };
 
-#endif //AUD_MIXERFACTORY
+#endif //__AUD_MIXERFACTORY_H__

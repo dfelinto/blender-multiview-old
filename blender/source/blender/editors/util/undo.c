@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,10 +37,10 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_mesh_types.h"
 #include "DNA_object_types.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_editVert.h"
 #include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 
@@ -50,6 +48,8 @@
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_screen.h"
+#include "BKE_tessmesh.h" /* BMESH_EM_UNDO_RECALC_TESSFACE_WORKAROUND */
+
 
 #include "ED_armature.h"
 #include "ED_particle.h"
@@ -88,6 +88,19 @@ void ED_undo_push(bContext *C, const char *str)
 		printf("undo push %s\n", str);
 	
 	if(obedit) {
+
+#ifdef BMESH_EM_UNDO_RECALC_TESSFACE_WORKAROUND
+		/* undo is causing tessface recalc, so without we need to do explicitly */
+
+		if (U.undosteps == 0) {
+			if (obedit->type == OB_MESH) {
+				Mesh *me= obedit->data;
+				BMEdit_RecalcTessellation(me->edit_btmesh);
+			}
+		}
+
+#endif /* BMESH_EM_UNDO_RECALC_TESSFACE_WORKAROUND */
+
 		if (U.undosteps == 0) return;
 		
 		if(obedit->type==OB_MESH)
@@ -126,6 +139,12 @@ static int ed_undo_step(bContext *C, int step, const char *undoname)
 	Object *obedit= CTX_data_edit_object(C);
 	Object *obact= CTX_data_active_object(C);
 	ScrArea *sa= CTX_wm_area(C);
+
+	/* undo during jobs are running can easily lead to freeing data using by jobs,
+	 * or they can just lead to freezing job in some other cases */
+	if (WM_jobs_test(CTX_wm_manager(C), CTX_data_scene(C))) {
+		return OPERATOR_CANCELLED;
+	}
 
 	/* grease pencil can be can be used in plenty of spaces, so check it first */
 	if(ED_gpencil_session_active()) {
@@ -337,13 +356,24 @@ int ED_undo_operator_repeat(bContext *C, struct wmOperator *op)
 	int ret= 0;
 
 	if(op) {
+		wmWindowManager *wm= CTX_wm_manager(C);
+		struct Scene *scene= CTX_data_scene(C);
+
 		ARegion *ar= CTX_wm_region(C);
 		ARegion *ar1= BKE_area_find_region_type(CTX_wm_area(C), RGN_TYPE_WINDOW);
 
 		if(ar1)
 			CTX_wm_region_set(C, ar1);
 
-		if(WM_operator_repeat_check(C, op) && WM_operator_poll(C, op->type)) {
+		if ( (WM_operator_repeat_check(C, op)) &&
+		     (WM_operator_poll(C, op->type)) &&
+		     /* note, undo/redo cant run if there are jobs active,
+		      * check for screen jobs only so jobs like material/texture/world preview
+		      * (which copy their data), wont stop redo, see [#29579]],
+		      *
+		      * note, - WM_operator_check_ui_enabled() jobs test _must_ stay in sync with this */
+		     (WM_jobs_test(wm, scene) == 0))
+		{
 			int retval;
 
 			if (G.f & G_DEBUG)
@@ -428,7 +458,7 @@ static EnumPropertyItem *rna_undo_itemf(bContext *C, int undosys, int *totitem)
 	int active, i= 0;
 	
 	while(TRUE) {
-		char *name= NULL;
+		const char *name= NULL;
 		
 		if(undosys==UNDOSYSTEM_PARTICLE) {
 			name= PE_undo_get_name(CTX_data_scene(C), i, &active);
@@ -471,7 +501,7 @@ static int undo_history_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(even
 		if(totitem > 0) {
 			uiPopupMenu *pup= uiPupMenuBegin(C, op->type->name, ICON_NONE);
 			uiLayout *layout= uiPupMenuLayout(pup);
-			uiLayout *split= uiLayoutSplit(layout, 0, 0), *column;
+			uiLayout *split= uiLayoutSplit(layout, 0, 0), *column = NULL;
 			int i, c;
 			
 			for(c=0, i=totitem-1; i >= 0; i--, c++) {
@@ -494,7 +524,7 @@ static int undo_history_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(even
 /* note: also check ed_undo_step() in top if you change notifiers */
 static int undo_history_exec(bContext *C, wmOperator *op)
 {
-	if(RNA_property_is_set(op->ptr, "item")) {
+	if(RNA_struct_property_is_set(op->ptr, "item")) {
 		int undosys= get_undo_system(C);
 		int item= RNA_int_get(op->ptr, "item");
 		

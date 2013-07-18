@@ -1,7 +1,4 @@
 /*
- * @file KX_IPhysicsController.cpp
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -49,5 +46,3 @@ KX_IPhysicsController::KX_IPhysicsController(bool dyna, bool sensor, bool compou
 KX_IPhysicsController::~KX_IPhysicsController()
 {
 }
-
-

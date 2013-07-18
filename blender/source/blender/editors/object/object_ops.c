@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -96,7 +94,6 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_make_links_data);
 	WM_operatortype_append(OBJECT_OT_move_to_layer);
 
-	WM_operatortype_append(OBJECT_OT_select_inverse);
 	WM_operatortype_append(OBJECT_OT_select_random);
 	WM_operatortype_append(OBJECT_OT_select_all);
 	WM_operatortype_append(OBJECT_OT_select_same_group);
@@ -105,7 +102,6 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_select_linked);
 	WM_operatortype_append(OBJECT_OT_select_grouped);
 	WM_operatortype_append(OBJECT_OT_select_mirror);
-	WM_operatortype_append(OBJECT_OT_select_name); /* XXX - weak, not compat with linked objects */
 
 	WM_operatortype_append(GROUP_OT_create);
 	WM_operatortype_append(GROUP_OT_objects_remove);
@@ -144,6 +140,7 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_multires_external_pack);
 	WM_operatortype_append(OBJECT_OT_meshdeform_bind);
 	WM_operatortype_append(OBJECT_OT_explode_refresh);
+	WM_operatortype_append(OBJECT_OT_ocean_bake);
 	
 	WM_operatortype_append(OBJECT_OT_constraint_add);
 	WM_operatortype_append(OBJECT_OT_constraint_add_with_targets);
@@ -162,6 +159,8 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(CONSTRAINT_OT_limitdistance_reset);
 	WM_operatortype_append(CONSTRAINT_OT_childof_set_inverse);
 	WM_operatortype_append(CONSTRAINT_OT_childof_clear_inverse);
+	WM_operatortype_append(CONSTRAINT_OT_objectsolver_set_inverse);
+	WM_operatortype_append(CONSTRAINT_OT_objectsolver_clear_inverse);
 
 	WM_operatortype_append(OBJECT_OT_vertex_group_add);
 	WM_operatortype_append(OBJECT_OT_vertex_group_remove);
@@ -174,6 +173,8 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_vertex_group_copy);
 	WM_operatortype_append(OBJECT_OT_vertex_group_normalize);
 	WM_operatortype_append(OBJECT_OT_vertex_group_normalize_all);
+	WM_operatortype_append(OBJECT_OT_vertex_group_lock);
+	WM_operatortype_append(OBJECT_OT_vertex_group_fix);
 	WM_operatortype_append(OBJECT_OT_vertex_group_invert);
 	WM_operatortype_append(OBJECT_OT_vertex_group_levels);
 	WM_operatortype_append(OBJECT_OT_vertex_group_blend);
@@ -188,6 +189,7 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_game_property_copy);
 	WM_operatortype_append(OBJECT_OT_game_property_clear);
 	WM_operatortype_append(OBJECT_OT_logic_bricks_copy);
+	WM_operatortype_append(OBJECT_OT_game_physics_copy);
 
 	WM_operatortype_append(OBJECT_OT_shape_key_add);
 	WM_operatortype_append(OBJECT_OT_shape_key_remove);
@@ -221,6 +223,7 @@ void ED_operatormacros_object(void)
 	
 	ot= WM_operatortype_append_macro("OBJECT_OT_duplicate_move", "Duplicate Objects", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
+		ot->description = "Duplicate selected objects and move them";
 		WM_operatortype_macro_define(ot, "OBJECT_OT_duplicate");
 		otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
 		RNA_enum_set(otmacro->ptr, "proportional", PROP_EDIT_OFF);
@@ -229,8 +232,9 @@ void ED_operatormacros_object(void)
 	/* grr, should be able to pass options on... */
 	ot= WM_operatortype_append_macro("OBJECT_OT_duplicate_move_linked", "Duplicate Linked", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
+		ot->description = "Duplicate selected objects and move them";
 		otmacro= WM_operatortype_macro_define(ot, "OBJECT_OT_duplicate");
-		RNA_boolean_set(otmacro->ptr, "linked", 1);
+		RNA_boolean_set(otmacro->ptr, "linked", TRUE);
 		otmacro= WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
 		RNA_enum_set(otmacro->ptr, "proportional", PROP_EDIT_OFF);
 	}
@@ -238,7 +242,8 @@ void ED_operatormacros_object(void)
 	/* XXX */
 	ot= WM_operatortype_append_macro("OBJECT_OT_add_named_cursor", "Add named object at cursor", OPTYPE_UNDO|OPTYPE_REGISTER);
 	if(ot) {
-		RNA_def_string(ot->srna, "name", "Cube", 24, "Name", "Object name to add.");
+		ot->description = "Add named object at cursor";
+		RNA_def_string(ot->srna, "name", "Cube", MAX_ID_NAME-2, "Name", "Object name to add");
 
 		WM_operatortype_macro_define(ot, "VIEW3D_OT_cursor3d");
 		WM_operatortype_macro_define(ot, "OBJECT_OT_add_named");
@@ -262,20 +267,20 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 	
 	/* Note: this keymap works disregarding mode */
 	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_mode_set", TABKEY, KM_PRESS, 0, 0);
-		RNA_enum_set(kmi->ptr, "mode", OB_MODE_EDIT);
-		RNA_boolean_set(kmi->ptr, "toggle", 1);
+	RNA_enum_set(kmi->ptr, "mode", OB_MODE_EDIT);
+	RNA_boolean_set(kmi->ptr, "toggle", TRUE);
 
 	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_mode_set", TABKEY, KM_PRESS, KM_CTRL, 0);
-		RNA_enum_set(kmi->ptr, "mode", OB_MODE_POSE);
-		RNA_boolean_set(kmi->ptr, "toggle", 1);
+	RNA_enum_set(kmi->ptr, "mode", OB_MODE_POSE);
+	RNA_boolean_set(kmi->ptr, "toggle", TRUE);
 
 	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_mode_set", VKEY, KM_PRESS, 0, 0);
-		RNA_enum_set(kmi->ptr, "mode", OB_MODE_VERTEX_PAINT);
-		RNA_boolean_set(kmi->ptr, "toggle", 1);
+	RNA_enum_set(kmi->ptr, "mode", OB_MODE_VERTEX_PAINT);
+	RNA_boolean_set(kmi->ptr, "toggle", TRUE);
 	
 	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_mode_set", TABKEY, KM_PRESS, KM_CTRL, 0);
-		RNA_enum_set(kmi->ptr, "mode", OB_MODE_WEIGHT_PAINT);
-		RNA_boolean_set(kmi->ptr, "toggle", 1);
+	RNA_enum_set(kmi->ptr, "mode", OB_MODE_WEIGHT_PAINT);
+	RNA_boolean_set(kmi->ptr, "toggle", TRUE);
 	
 	WM_keymap_add_item(keymap, "OBJECT_OT_origin_set", CKEY, KM_PRESS, KM_ALT|KM_SHIFT|KM_CTRL, 0);
 
@@ -289,23 +294,30 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 
 	WM_keymap_add_item(keymap, "VIEW3D_OT_game_start", PKEY, KM_PRESS, 0, 0);
 
-	WM_keymap_add_item(keymap, "OBJECT_OT_select_all", AKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "OBJECT_OT_select_inverse", IKEY, KM_PRESS, KM_CTRL, 0);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_select_all", AKEY, KM_PRESS, 0, 0);
+	RNA_enum_set(kmi->ptr, "action", SEL_TOGGLE);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_select_all", IKEY, KM_PRESS, KM_CTRL, 0);
+	RNA_enum_set(kmi->ptr, "action", SEL_INVERT);
+
 	WM_keymap_add_item(keymap, "OBJECT_OT_select_linked", LKEY, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "OBJECT_OT_select_grouped", GKEY, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "OBJECT_OT_select_mirror", MKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0);
 	
-	kmi= WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, 0, 0);
-		RNA_enum_set_identifier(kmi->ptr, "direction", "PARENT");
-	kmi= WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
-		RNA_enum_set_identifier(kmi->ptr, "direction", "PARENT");
-		RNA_boolean_set(kmi->ptr, "extend", 1);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, 0, 0);
+	RNA_enum_set_identifier(kmi->ptr, "direction", "PARENT");
+	RNA_boolean_set(kmi->ptr, "extend", FALSE);
 
-	kmi= WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, 0, 0);
-		RNA_enum_set_identifier(kmi->ptr, "direction", "CHILD");
-	kmi= WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
-		RNA_enum_set_identifier(kmi->ptr, "direction", "CHILD");
-		RNA_boolean_set(kmi->ptr, "extend", 1);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", LEFTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_enum_set_identifier(kmi->ptr, "direction", "PARENT");
+	RNA_boolean_set(kmi->ptr, "extend", TRUE);
+
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, 0, 0);
+	RNA_enum_set_identifier(kmi->ptr, "direction", "CHILD");
+	RNA_boolean_set(kmi->ptr, "extend", FALSE);
+
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_select_hierarchy", RIGHTBRACKETKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_enum_set_identifier(kmi->ptr, "direction", "CHILD");
+	RNA_boolean_set(kmi->ptr, "extend", TRUE);
 
 	WM_keymap_verify_item(keymap, "OBJECT_OT_parent_set", PKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_verify_item(keymap, "OBJECT_OT_parent_no_inverse_set", PKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0);
@@ -322,18 +334,35 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 	WM_keymap_verify_item(keymap, "OBJECT_OT_origin_clear", OKEY, KM_PRESS, KM_ALT, 0);
 	
 	WM_keymap_add_item(keymap, "OBJECT_OT_hide_view_clear", HKEY, KM_PRESS, KM_ALT, 0);
-	WM_keymap_add_item(keymap, "OBJECT_OT_hide_view_set", HKEY, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "OBJECT_OT_hide_view_set", HKEY, KM_PRESS, KM_SHIFT, 0)->ptr, "unselected", 1);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_hide_view_set", HKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "unselected", FALSE);
+
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_hide_view_set", HKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "unselected", TRUE);
 
 	/* same as above but for rendering */
 	WM_keymap_add_item(keymap, "OBJECT_OT_hide_render_clear", HKEY, KM_PRESS, KM_ALT|KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "OBJECT_OT_hide_render_set", HKEY, KM_PRESS, KM_CTRL, 0);
-//	RNA_boolean_set(WM_keymap_add_item(keymap, "OBJECT_OT_hide_render_set", HKEY, KM_PRESS, KM_SHIFT|KM_CTRL, 0)->ptr, "unselected", 1); // conflicts, removing
+
+	/* conflicts, removing */
+#if 0
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_hide_render_set", HKEY, KM_PRESS, KM_SHIFT|KM_CTRL, 0)
+	RNA_boolean_set(kmi->ptr, "unselected", TRUE);
+#endif
 
 	WM_keymap_add_item(keymap, "OBJECT_OT_move_to_layer", MKEY, KM_PRESS, 0, 0);
 	
-	WM_keymap_add_item(keymap, "OBJECT_OT_delete", XKEY, KM_PRESS, 0, 0);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_delete", XKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "use_global", FALSE);
+
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_delete", XKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "use_global", TRUE);
+
 	WM_keymap_add_item(keymap, "OBJECT_OT_delete", DELKEY, KM_PRESS, 0, 0);
+	RNA_boolean_set(kmi->ptr, "use_global", FALSE);
+	kmi = WM_keymap_add_item(keymap, "OBJECT_OT_delete", DELKEY, KM_PRESS, KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "use_global", TRUE);
+
 	WM_keymap_add_menu(keymap, "INFO_MT_add", AKEY, KM_PRESS, KM_SHIFT, 0);
 
 	WM_keymap_add_item(keymap, "OBJECT_OT_duplicates_make_real", AKEY, KM_PRESS, KM_SHIFT|KM_CTRL, 0);
@@ -374,11 +403,14 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 	keymap= WM_keymap_find(keyconf, "Lattice", 0, 0);
 	keymap->poll= ED_operator_editlattice;
 
-	WM_keymap_add_item(keymap, "LATTICE_OT_select_all", AKEY, KM_PRESS, 0, 0);
-	
+	kmi = WM_keymap_add_item(keymap, "LATTICE_OT_select_all", AKEY, KM_PRESS, 0, 0);
+	RNA_enum_set(kmi->ptr, "action", SEL_TOGGLE);
+	kmi = WM_keymap_add_item(keymap, "LATTICE_OT_select_all", IKEY, KM_PRESS, KM_CTRL, 0);
+	RNA_enum_set(kmi->ptr, "action", SEL_INVERT);
+
 	WM_keymap_add_item(keymap, "OBJECT_OT_vertex_parent_set", PKEY, KM_PRESS, KM_CTRL, 0);
 	
-		/* menus */
+	/* menus */
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_hook", HKEY, KM_PRESS, KM_CTRL, 0);
 
 	ED_object_generic_keymap(keyconf, keymap, 2);

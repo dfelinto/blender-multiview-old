@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __KX_MOTIONSTATE
-#define __KX_MOTIONSTATE
+#ifndef __KX_MOTIONSTATE_H__
+#define __KX_MOTIONSTATE_H__
 
 #include "PHY_IMotionState.h"
 
@@ -65,5 +63,5 @@ public:
 #endif
 };
 
-#endif //__KX_MOTIONSTATE
+#endif //__KX_MOTIONSTATE_H__
 

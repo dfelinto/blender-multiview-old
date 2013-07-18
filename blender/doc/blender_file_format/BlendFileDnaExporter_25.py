@@ -206,13 +206,13 @@ class DNACatalogHTML:
                 <td>${size}</td>
             </tr>"""
         
-        if field.Type.Structure == None or field.Name.IsPointer():
+        if field.Type.Structure is None or field.Name.IsPointer():
 
             # ${reference}
             reference = field.Name.AsReference(parentReference)
 
             # ${struct}
-            if parentReference != None:
+            if parentReference is not None:
                 struct = '<a href="#{0}">{0}</a>'.format(structure.Type.Name)
             else:
                 struct = structure.Type.Name
@@ -240,7 +240,7 @@ class DNACatalogHTML:
             
             structure_field = Template(structure_field_template).substitute(d)
         
-        elif field.Type.Structure != None:
+        elif field.Type.Structure is not None:
             reference = field.Name.AsReference(parentReference)
             structure_field = self.StructureFields(field.Type.Structure, reference, offset) 
 
@@ -379,15 +379,15 @@ class DNACatalogHTML:
 
 
 def usage():
-    print("\nUsage: \n\tblender2.5 -b -P BlendFileDnaExporter_25.py [-- [options]]")
+    print("\nUsage: \n\tblender2.5 --background -noaudio --python BlendFileDnaExporter_25.py [-- [options]]")
     print("Options:")
     print("\t--dna-keep-blend:      doesn't delete the produced blend file DNA export to html")
     print("\t--dna-debug:           sets the logging level to DEBUG (lots of additional info)")
     print("\t--dna-versioned        saves version informations in the html and blend filenames")
     print("\t--dna-overwrite-css    overwrite dna.css, useful when modifying css in the script")
     print("Examples:")
-    print("\tdefault:       % blender2.5 -b -P BlendFileDnaExporter_25.py")
-    print("\twith options:  % blender2.5 -b -P BlendFileDnaExporter_25.py -- --dna-keep-blend --dna-debug\n")
+    print("\tdefault:       % blender2.5 --background -noaudio --python BlendFileDnaExporter_25.py")
+    print("\twith options:  % blender2.5 --background -noaudio --python BlendFileDnaExporter_25.py -- --dna-keep-blend --dna-debug\n")
 
     
 ######################################################

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -23,8 +21,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
  
-#ifndef _GHOST_NDOFMANAGERX11_H_
-#define _GHOST_NDOFMANAGERX11_H_
+#ifndef __GHOST_NDOFMANAGERX11_H__
+#define __GHOST_NDOFMANAGERX11_H__
 
 #ifdef WITH_INPUT_NDOF
 

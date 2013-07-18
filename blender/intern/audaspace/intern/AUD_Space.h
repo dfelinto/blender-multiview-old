@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SPACE
-#define AUD_SPACE
+#ifndef __AUD_SPACE_H__
+#define __AUD_SPACE_H__
 
 /// The size of a format in bytes.
 #define AUD_FORMAT_SIZE(format) (format & 0x0F)
@@ -255,4 +253,4 @@ typedef struct
 	// void* userData; - for the case it is needed someday
 } AUD_Exception;
 
-#endif //AUD_SPACE
+#endif //__AUD_SPACE_H__

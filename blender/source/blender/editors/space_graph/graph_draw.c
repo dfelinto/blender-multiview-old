@@ -78,11 +78,11 @@
  *	- intV: integer value containing color info packed into an int
  *	- alpha: float value describing the 
  */
-#define cpackA(intVC, alpha) \
-	{ \
-		float _cpackCol[3]; \
-		cpack_to_rgb(intVC, &_cpackCol[0], &_cpackCol[1], &_cpackCol[2]); \
-		glColor4f(_cpackCol[0], _cpackCol[1], _cpackCol[2], alpha); \
+#define cpackA(intVC, alpha)                                                  \
+	{                                                                         \
+		float _cpackCol[3];                                                   \
+		cpack_to_rgb(intVC, &_cpackCol[0], &_cpackCol[1], &_cpackCol[2]);     \
+		glColor4f(_cpackCol[0], _cpackCol[1], _cpackCol[2], alpha);           \
 	}
 
 /* *************************** */
@@ -153,7 +153,7 @@ static void draw_fcurve_vertices_keyframes (FCurve *fcu, SpaceIpo *UNUSED(sipo),
 	bglBegin(GL_POINTS);
 	
 	for (i = 0; i < fcu->totvert; i++, bezt++) {
-		/* as an optimisation step, only draw those in view 
+		/* as an optimization step, only draw those in view 
 		 *	- we apply a correction factor to ensure that points don't pop in/out due to slight twitches of view size
 		 */
 		if IN_RANGE(bezt->vec[1][0], (v2d->cur.xmin - fac), (v2d->cur.xmax + fac)) {
@@ -185,7 +185,7 @@ static void draw_fcurve_handle_control (float x, float y, float xscale, float ys
 {
 	static GLuint displist=0;
 	
-	/* initialise round circle shape */
+	/* initialize round circle shape */
 	if (displist == 0) {
 		GLUquadricObj *qobj;
 		
@@ -292,8 +292,7 @@ static void draw_fcurve_vertices (SpaceIpo *sipo, ARegion *ar, FCurve *fcu, shor
 	glPointSize(UI_GetThemeValuef(TH_VERTEX_SIZE));
 	
 	/* draw the two handles first (if they're shown, the curve doesn't have just a single keyframe, and the curve is being edited) */
-	if (do_handles)
-	{
+	if (do_handles) {
 		set_fcurve_vertex_color(fcu, 0);
 		draw_fcurve_vertices_handles(fcu, sipo, v2d, 0, sel_handle_only);
 		
@@ -327,8 +326,7 @@ static int draw_fcurve_handles_check(SpaceIpo *sipo, FCurve *fcu)
 	{
 		return 0;
 	} 
-	else 
-	{
+	else {
 		return 1;
 	}
 }
@@ -340,7 +338,7 @@ static void draw_fcurve_handles (SpaceIpo *sipo, FCurve *fcu)
 	int sel, b;
 	
 	/* a single call to GL_LINES here around these calls should be sufficient to still
-	 * get separate line segments, but which aren't wrapped with GL_LINE_STRIP everytime we
+	 * get separate line segments, but which aren't wrapped with GL_LINE_STRIP every time we
 	 * want a single line
 	 */
 	glBegin(GL_LINES);
@@ -368,8 +366,7 @@ static void draw_fcurve_handles (SpaceIpo *sipo, FCurve *fcu)
 				fp= bezt->vec[0];
 				
 				/* only draw first handle if previous segment had handles */
-				if ( (!prevbezt && (bezt->ipo==BEZT_IPO_BEZ)) || (prevbezt && (prevbezt->ipo==BEZT_IPO_BEZ)) ) 
-				{
+				if ((!prevbezt && (bezt->ipo==BEZT_IPO_BEZ)) || (prevbezt && (prevbezt->ipo==BEZT_IPO_BEZ))) {
 					UI_GetThemeColor3ubv(basecol + bezt->h1, col);
 					col[3]= drawFCurveFade(fcu) * 255;
 					glColor4ubv((GLubyte *)col);
@@ -378,8 +375,7 @@ static void draw_fcurve_handles (SpaceIpo *sipo, FCurve *fcu)
 				}
 				
 				/* only draw second handle if this segment is bezier */
-				if (bezt->ipo == BEZT_IPO_BEZ) 
-				{
+				if (bezt->ipo == BEZT_IPO_BEZ) {
 					UI_GetThemeColor3ubv(basecol + bezt->h2, col);
 					col[3]= drawFCurveFade(fcu) * 255;
 					glColor4ubv((GLubyte *)col);
@@ -428,7 +424,7 @@ static void draw_fcurve_sample_control (float x, float y, float xscale, float ys
 {
 	static GLuint displist=0;
 	
-	/* initialise X shape */
+	/* initialize X shape */
 	if (displist == 0) {
 		displist= glGenLists(1);
 		glNewList(displist, GL_COMPILE);
@@ -678,7 +674,7 @@ static void draw_fcurve_curve_bezts (bAnimContext *ac, ID *id, FCurve *fcu, View
 	}
 	
 	/* draw curve between first and last keyframe (if there are enough to do so) */
-	// TODO: optimise this to not have to calc stuff out of view too?
+	// TODO: optimize this to not have to calc stuff out of view too?
 	while (b--) {
 		if (prevbezt->ipo==BEZT_IPO_CONST) {
 			/* Constant-Interpolation: draw segment between previous keyframe and next, but holding same value */
@@ -850,7 +846,7 @@ void graph_draw_curves (bAnimContext *ac, SpaceIpo *sipo, ARegion *ar, View2DGri
 		/* draw curve:
 		 *	- curve line may be result of one or more destructive modifiers or just the raw data,
 		 *	  so we need to check which method should be used
-		 *	- controls from active modifier take precidence over keyframes
+		 *	- controls from active modifier take precedence over keyframes
 		 *	  (XXX! editing tools need to take this into account!)
 		 */
 		 
@@ -1003,7 +999,7 @@ void graph_draw_channel_names(bContext *C, bAnimContext *ac, ARegion *ar)
 		}
 	}
 	{	/* second pass: widgets */
-		uiBlock *block= uiBeginBlock(C, ar, "graph channel buttons", UI_EMBOSS);
+		uiBlock *block= uiBeginBlock(C, ar, __func__, UI_EMBOSS);
 		size_t channel_index = 0;
 		
 		y= (float)ACHANNEL_FIRST;

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,8 +31,8 @@
  * To be derived by loopback and network libraries
  */
 
-#ifndef NG_NETWORKDEVICEINTERFACE_H
-#define NG_NETWORKDEVICEINTERFACE_H
+#ifndef __NG_NETWORKDEVICEINTERFACE_H__
+#define __NG_NETWORKDEVICEINTERFACE_H__
 
 #include "NG_NetworkMessage.h"
 #include <vector>
@@ -83,5 +81,5 @@ public:
 #endif
 };
 
-#endif //NG_NETWORKDEVICEINTERFACE_H
+#endif //__NG_NETWORKDEVICEINTERFACE_H__
 

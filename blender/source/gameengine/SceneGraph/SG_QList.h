@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgesg
  */
  
-#ifndef __SG_QLIST
-#define __SG_QLIST
+#ifndef __SG_QLIST_H__
+#define __SG_QLIST_H__
 
 #include "SG_DList.h"
 
@@ -165,5 +163,5 @@ public:
 #endif
 };
 
-#endif //__SG_QLIST
+#endif //__SG_QLIST_H__
 

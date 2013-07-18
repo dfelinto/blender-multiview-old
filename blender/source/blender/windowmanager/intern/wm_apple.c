@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,15 +40,15 @@
 #define ID ID_
 #include <Carbon/Carbon.h>
 
-
 /* To avoid killing small end comps, we want to allow
-blender to start maximised if all the followings are true :
-- Renderer is OpenGL capable
-- Hardware acceleration
-- VRAM > 16 Mo
+ * blender to start maximised if all the followings are true :
+ * - Renderer is OpenGL capable
+ * - Hardware acceleration
+ * - VRAM > 16 Mo
+ *
+ * We will bail out if VRAM is less than 8Mo
+ */
 
-	We will bail out if VRAM is less than 8Mo
-	*/
 /* bad global, used in wm_window.c to open windows */
 int macPrefState = 0;
 
@@ -100,8 +98,8 @@ static int checkAppleVideoCard(void)
 		StandardAlert (   kAlertStopAlert, (ConstStr255Param) &inError, (ConstStr255Param)&inText,NULL,&junkHit);
 		abort();
 	}
-CGLDestroyRendererInfo (rend);
-return 0;
+	CGLDestroyRendererInfo (rend);
+	return 0;
 }
 
 static void getMacAvailableBounds(short *top, short *left, short *bottom, short *right) 

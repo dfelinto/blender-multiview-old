@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_LOD_Quadric_h
-#define NAN_INCLUDED_LOD_Quadric_h
+#ifndef __LOD_QUADRIC_H__
+#define __LOD_QUADRIC_H__
 
 #include "MT_Vector3.h"
 #include "MT_Matrix3x3.h"

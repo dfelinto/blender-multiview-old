@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,14 +28,15 @@
  */
 
 
-#ifndef RENDER_TYPES_H
-#define RENDER_TYPES_H
+#ifndef __RENDER_TYPES_H__
+#define __RENDER_TYPES_H__
 
 /* ------------------------------------------------------------------------- */
 /* exposed internal in render module only! */
 /* ------------------------------------------------------------------------- */
 
 #include "DNA_color_types.h"
+#include "DNA_customdata_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_world_types.h"
 #include "DNA_object_types.h"
@@ -132,8 +131,8 @@ struct Render
 	/* a list of RenderResults, for fullsample */
 	ListBase fullresult;	
 	/* read/write mutex, all internal code that writes to re->result must use a
-	   write lock, all external code must use a read lock. internal code is assumed
-	   to not conflict with writes, so no lock used for that */
+	 * write lock, all external code must use a read lock. internal code is assumed
+	 * to not conflict with writes, so no lock used for that */
 	ThreadRWMutex resultmutex;
 	
 	/* window size, display rect, viewplane */
@@ -150,11 +149,10 @@ struct Render
 	/* real maximum amount of xparts/yparts after correction for minimum */
 	int xparts, yparts;
 	/* real maximum size of parts after correction for minimum 
-	   partx*xparts can be larger than rectx, in that case last part is smaller */
+	 * partx*xparts can be larger than rectx, in that case last part is smaller */
 	int partx, party;
 	
 	/* values for viewing */
-	float lens;
 	float ycor; /* (scene->xasp / scene->yasp), multiplied with 'winy' */
 	
 	float panophi, panosi, panoco, panodxp, panodxv;
@@ -192,7 +190,7 @@ struct Render
 	struct RayObject *raytree;
 	struct RayFace *rayfaces;
 	struct VlakPrimitive *rayprimitives;
-	float maxdist; /* needed for keeping an incorrect behaviour of SUN and HEMI lights (avoid breaking old scenes) */
+	float maxdist; /* needed for keeping an incorrect behavior of SUN and HEMI lights (avoid breaking old scenes) */
 
 	/* occlusion tree */
 	void *occlusiontree;
@@ -231,8 +229,8 @@ struct Render
 	ListBase volume_precache_parts;
 
 	/* arena for allocating data for use during render, for
-		* example dynamic TFaces to go in the VlakRen structure.
-		*/
+	 * example dynamic TFaces to go in the VlakRen structure.
+	 */
 	struct MemArena *memArena;
 	
 	/* callbacks */
@@ -309,8 +307,8 @@ typedef struct ObjectRen {
 	struct HaloRen **bloha;
 	struct StrandBuffer *strandbuf;
 
-	char (*mtface)[32];
-	char (*mcol)[32];
+	char (*mtface)[MAX_CUSTOMDATA_LAYER_NAME];
+	char (*mcol)[MAX_CUSTOMDATA_LAYER_NAME];
 	int  actmtface, actmcol, bakemtface;
 
 	float obmat[4][4];	/* only used in convertblender.c, for instancing */
@@ -338,7 +336,7 @@ typedef struct ObjectInstanceRen {
 	
 	struct VolumePrecache *volume_precache;
 	
-	float *vectors;
+	float *vectors; /* (RE_WINSPEED_ELEMS * VertRen.index) */
 	int totvector;
 	
 	/* used on makeraytree */
@@ -354,8 +352,8 @@ typedef struct VertRen
 	float co[3];
 	float n[3];
 	float *orco;
-	short clip;
-	unsigned short flag;		/* in use for clipping zbuffer parts, temp setting stuff in convertblender.c */
+	unsigned int flag;	/* in use for clipping zbuffer parts, temp setting stuff in convertblender.c
+						 * only an 'int' because of alignment, could be a char too */
 	float accum;		/* accum for radio weighting, and for strand texco static particles */
 	int index;			/* index allows extending vertren with any property */
 } VertRen;
@@ -485,7 +483,6 @@ typedef struct VolPrecachePart
 	int res[3];
 	float bbmin[3];
 	float voxel[3];
-	int working, done;
 	struct Render *re;
 } VolPrecachePart;
 
@@ -604,6 +601,7 @@ typedef struct LampRen {
 #define R_NEED_TANGENT	16
 #define R_BAKE_TRACE	32
 #define R_BAKING		64
+#define R_ANIMATION		128
 
 /* vlakren->flag (vlak = face in dutch) char!!! */
 #define R_SMOOTH		1
@@ -629,7 +627,6 @@ typedef struct LampRen {
 #define R_DUPLI_TRANSFORMED	1
 #define R_ENV_TRANSFORMED	2
 #define R_TRANSFORMED		(1|2)
-#define R_NEED_VECTORS		4
 
-#endif /* RENDER_TYPES_H */
+#endif /* __RENDER_TYPES_H__ */
 

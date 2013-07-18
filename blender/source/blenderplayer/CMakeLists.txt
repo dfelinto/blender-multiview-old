@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -63,6 +62,18 @@ if(WIN32 AND NOT UNIX)
 	endif()
 
 	add_executable(blenderplayer ${EXETYPE} ${CMAKE_CURRENT_BINARY_DIR}/dna.c ../icons/winblender.rc)
+
+elseif(APPLE)
+	add_executable(blenderplayer ${EXETYPE} ${CMAKE_CURRENT_BINARY_DIR}/dna.c)
+	# setup Info.plist
+	execute_process(COMMAND date "+%Y-%m-%d" OUTPUT_VARIABLE BLENDER_DATE OUTPUT_STRIP_TRAILING_WHITESPACE)
+	set(PLAYER_SOURCEDIR ${CMAKE_SOURCE_DIR}/source/darwin/blenderplayer.app)
+	set(PLAYER_SOURCEINFO ${PLAYER_SOURCEDIR}/Contents/Info.plist)
+	set_target_properties(blenderplayer PROPERTIES
+		MACOSX_BUNDLE_INFO_PLIST ${PLAYER_SOURCEINFO}
+		MACOSX_BUNDLE_SHORT_VERSION_STRING ${BLENDER_VERSION}
+		MACOSX_BUNDLE_LONG_VERSION_STRING "${BLENDER_VERSION} ${BLENDER_DATE}")
+
 else()
 	add_executable(blenderplayer ${CMAKE_CURRENT_BINARY_DIR}/dna.c)
 endif()
@@ -89,6 +100,7 @@ endif()
 		bf_intern_string 
 		bf_intern_ghost
 		bf_rna
+		bf_bmesh
 		bf_blenkernel
 		bf_blenloader 
 		bf_blenpluginapi 
@@ -122,6 +134,7 @@ endif()
 		bf_intern_memutil 
 		bf_python_ext
 		bf_python_mathutils
+		bf_python_bmesh
 		bf_blenlib 
 		bf_imbuf_cineon
 		bf_imbuf_openexr 
@@ -133,11 +146,13 @@ endif()
 		bf_blenfont
 		bf_intern_audaspace
 		blenkernel_blc
+		bf_bmesh
 		extern_binreloc
 		extern_minilzo
 		bf_intern_ghost # duplicate for linking
 		bf_blenkernel # duplicate for linking
 		bf_intern_mikktspace
+		extern_recastnavigation
 	)
 
 	if(WITH_MOD_CLOTH_ELTOPO)
@@ -152,6 +167,12 @@ endif()
 		list(APPEND BLENDER_SORTED_LIBS extern_lzma)
 	endif()
 
+	if(WITH_LIBMV)
+		list(APPEND BLENDER_SORTED_LIBS extern_libmv)
+	endif()
+
+	list(APPEND BLENDER_SORTED_LIBS extern_colamd)
+
 	if(WITH_MOD_DECIMATE)
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_decimate)
 	endif()
@@ -160,6 +181,14 @@ endif()
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_bsp)
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_bop)
 		list(APPEND BLENDER_SORTED_LIBS bf_intern_moto)
+	endif()
+
+	if(WITH_CARVE)
+		list(APPEND BLENDER_SORTED_LIBS extern_carve)
+	endif()
+
+	if(WITH_GHOST_XDND)
+		list(APPEND BLENDER_SORTED_LIBS extern_xdnd)
 	endif()
 
 	if(WITH_CODEC_QUICKTIME)

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -191,7 +189,7 @@ static PyObject *KX_PythonSeq_getIndex(PyObject* self, int index)
 	return NULL;
 }
 
-static PyObjectPlus * KX_PythonSeq_subscript__internal(PyObject *self, char *key)
+static PyObjectPlus * KX_PythonSeq_subscript__internal(PyObject *self, const char *key)
 {
 	PyObjectPlus *self_plus= BGE_PROXY_REF(((KX_PythonSeq *)self)->base);
 	
@@ -279,7 +277,7 @@ static PyObject * KX_PythonSeq_subscript(PyObject * self, PyObject *key)
 		return KX_PythonSeq_getIndex(self, PyLong_AsSsize_t( key ));
 	}
 	else if ( PyUnicode_Check(key) ) {
-		char *name = _PyUnicode_AsString(key);
+		const char *name = _PyUnicode_AsString(key);
 		PyObjectPlus *ret = KX_PythonSeq_subscript__internal(self, name);
 		
 		if(ret) {
@@ -358,7 +356,7 @@ PyMethodDef KX_PythonSeq_methods[] = {
 };
 
 /*
- * Initialize the interator index
+ * Initialize the iterator index
  */
 
 static PyObject *KX_PythonSeq_getIter(KX_PythonSeq *self)
@@ -375,9 +373,9 @@ static PyObject *KX_PythonSeq_getIter(KX_PythonSeq *self)
 		return (PyObject *)self;
 	} else {
 		return KX_PythonSeq_CreatePyObject(self->base, self->type);
- 	}
- }
- 
+	}
+}
+
 
 /*
  * Return next KX_PythonSeq iter.

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -47,6 +45,7 @@ static bNodeSocketTemplate sh_node_geom_out[]= {
 	{	SOCK_VECTOR, 0, "UV"},
 	{	SOCK_VECTOR, 0, "Normal"},
 	{	SOCK_RGBA,   0, "Vertex Color"},
+	{	SOCK_FLOAT,   0, "Vertex Alpha"},
 	{	SOCK_FLOAT,   0, "Front/Back"},
 	{	-1, 0, ""	}
 };
@@ -62,7 +61,7 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 		int i;
 
 		if(ngeo->uvname[0]) {
-			/* find uv layer by name */
+			/* find uv map by name */
 			for(i = 0; i < shi->totuv; i++) {
 				if(strcmp(shi->uv[i].name, ngeo->uvname)==0) {
 					suv= &shi->uv[i];
@@ -72,12 +71,12 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 		}
 
 		/* out: global, local, view, orco, uv, normal, vertex color */
-		VECCOPY(out[GEOM_OUT_GLOB]->vec, shi->gl);
-		VECCOPY(out[GEOM_OUT_LOCAL]->vec, shi->co);
-		VECCOPY(out[GEOM_OUT_VIEW]->vec, shi->view);
-		VECCOPY(out[GEOM_OUT_ORCO]->vec, shi->lo);
-		VECCOPY(out[GEOM_OUT_UV]->vec, suv->uv);
-		VECCOPY(out[GEOM_OUT_NORMAL]->vec, shi->vno);
+		copy_v3_v3(out[GEOM_OUT_GLOB]->vec, shi->gl);
+		copy_v3_v3(out[GEOM_OUT_LOCAL]->vec, shi->co);
+		copy_v3_v3(out[GEOM_OUT_VIEW]->vec, shi->view);
+		copy_v3_v3(out[GEOM_OUT_ORCO]->vec, shi->lo);
+		copy_v3_v3(out[GEOM_OUT_UV]->vec, suv->uv);
+		copy_v3_v3(out[GEOM_OUT_NORMAL]->vec, shi->vno);
 
 		if (shi->totcol) {
 			/* find vertex color layer by name */
@@ -92,11 +91,14 @@ static void node_shader_exec_geom(void *data, bNode *node, bNodeStack **UNUSED(i
 				}
 			}
 
-			VECCOPY(out[GEOM_OUT_VCOL]->vec, scol->col);
-			out[GEOM_OUT_VCOL]->vec[3]= 1.0f;
+			copy_v3_v3(out[GEOM_OUT_VCOL]->vec, scol->col);
+			out[GEOM_OUT_VCOL]->vec[3]= scol->col[3];
+			out[GEOM_OUT_VCOL_ALPHA]->vec[0]= scol->col[3];
 		}
-		else
+		else  {
 			memcpy(out[GEOM_OUT_VCOL]->vec, defaultvcol, sizeof(defaultvcol));
+			out[GEOM_OUT_VCOL_ALPHA]->vec[0]= 1.0f;
+		}
 		
 		if(shi->osatex) {
 			out[GEOM_OUT_GLOB]->data= shi->dxgl;
@@ -136,11 +138,12 @@ static int gpu_shader_geom(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUN
 }
 
 /* node type definition */
-void register_node_type_sh_geom(ListBase *lb)
+void register_node_type_sh_geom(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, SH_NODE_GEOMETRY, "Geometry", NODE_CLASS_INPUT, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, SH_NODE_GEOMETRY, "Geometry", NODE_CLASS_INPUT, NODE_OPTIONS);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING);
 	node_type_socket_templates(&ntype, NULL, sh_node_geom_out);
 	node_type_size(&ntype, 120, 80, 160);
 	node_type_init(&ntype, node_shader_init_geometry);
@@ -148,6 +151,5 @@ void register_node_type_sh_geom(ListBase *lb)
 	node_type_exec(&ntype, node_shader_exec_geom);
 	node_type_gpu(&ntype, gpu_shader_geom);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-

@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * quicktime_export.c
  *
@@ -149,18 +148,21 @@ static QuicktimeCodecTypeDesc qtVideoCodecList[] = {
 
 static int qtVideoCodecCount = 12;
 
-int quicktime_get_num_videocodecs() {
+int quicktime_get_num_videocodecs()
+{
 	return qtVideoCodecCount;
 }
 
-QuicktimeCodecTypeDesc* quicktime_get_videocodecType_desc(int indexValue) {
+QuicktimeCodecTypeDesc* quicktime_get_videocodecType_desc(int indexValue)
+{
 	if ((indexValue>=0) && (indexValue < qtVideoCodecCount))
 		return &qtVideoCodecList[indexValue];
 	else
 		return NULL;
 }
 
-int quicktime_rnatmpvalue_from_videocodectype(int codecType) {
+int quicktime_rnatmpvalue_from_videocodectype(int codecType)
+{
 	int i;
 	for (i=0;i<qtVideoCodecCount;i++) {
 		if (qtVideoCodecList[i].codecType == codecType)
@@ -170,7 +172,8 @@ int quicktime_rnatmpvalue_from_videocodectype(int codecType) {
 	return 0;
 }
 
-int quicktime_videocodecType_from_rnatmpvalue(int rnatmpvalue) {
+int quicktime_videocodecType_from_rnatmpvalue(int rnatmpvalue)
+{
 	int i;
 	for (i=0;i<qtVideoCodecCount;i++) {
 		if (qtVideoCodecList[i].rnatmpvalue == rnatmpvalue)
@@ -497,7 +500,8 @@ static void QT_EndAddVideoSamplesToMedia (void)
 } 
 
 
-void filepath_qt(char *string, RenderData *rd) {
+void filepath_qt(char *string, RenderData *rd)
+{
 	char txt[64];
 
 	if (string==0) return;
@@ -508,13 +512,14 @@ void filepath_qt(char *string, RenderData *rd) {
 	BLI_make_existing_file(string);
 
 	if (BLI_strcasecmp(string + strlen(string) - 4, ".mov")) {
-		sprintf(txt, "%04d_%04d.mov", (rd->sfra) , (rd->efra) );
+		sprintf(txt, "%04d-%04d.mov", (rd->sfra) , (rd->efra) );
 		strcat(string, txt);
 	}
 }
 
 
-int start_qt(struct Scene *scene, struct RenderData *rd, int rectx, int recty, ReportList *reports) {
+int start_qt(struct Scene *scene, struct RenderData *rd, int rectx, int recty, ReportList *reports)
+{
 	OSErr err = noErr;
 
 	char name[2048];
@@ -600,13 +605,15 @@ int start_qt(struct Scene *scene, struct RenderData *rd, int rectx, int recty, R
 }
 
 
-int append_qt(struct RenderData *rd, int frame, int *pixels, int rectx, int recty, ReportList *reports) {
+int append_qt(struct RenderData *rd, int start_frame, int frame, int *pixels, int rectx, int recty, ReportList *reports)
+{
 	QT_DoAddVideoSamplesToMedia(frame, pixels, rectx, recty, reports);
 	return 1;
 }
 
 
-void end_qt(void) {
+void end_qt(void)
+{
 	OSErr err = noErr;
 	short resId = movieInDataForkResID;
 
@@ -640,7 +647,8 @@ void end_qt(void) {
 }
 
 
-void free_qtcomponentdata(void) {
+void free_qtcomponentdata(void)
+{
 	if(qtdata) {
 		if(qtdata->theComponent) CloseComponent(qtdata->theComponent);
 		MEM_freeN(qtdata);
@@ -658,13 +666,16 @@ static void check_renderbutton_framerate(RenderData *rd, ReportList *reports)
 	CheckError(err, "SCGetInfo fr error", reports);
 
 	if( (rd->frs_sec == 24 || rd->frs_sec == 30 || rd->frs_sec == 60) &&
-		(qtdata->gTemporalSettings.frameRate == 1571553 ||
-		 qtdata->gTemporalSettings.frameRate == 1964113 ||
-		 qtdata->gTemporalSettings.frameRate == 3928227)) {;} 
+	    (qtdata->gTemporalSettings.frameRate == 1571553 ||
+	     qtdata->gTemporalSettings.frameRate == 1964113 ||
+	     qtdata->gTemporalSettings.frameRate == 3928227))
+	{
+		/* do nothing */
+	}
 	else {
 		if (rd->frs_sec_base > 0)
 			qtdata->gTemporalSettings.frameRate = 
-			((float)(rd->frs_sec << 16) / rd->frs_sec_base) ;
+			((float)(rd->frs_sec << 16) / rd->frs_sec_base);
 	}
 	
 	err = SCSetInfo(qtdata->theComponent, scTemporalSettingsType,	&qtdata->gTemporalSettings);
@@ -685,9 +696,9 @@ static void check_renderbutton_framerate(RenderData *rd, ReportList *reports)
 	}
 }
 
-void quicktime_verify_image_type(RenderData *rd)
+void quicktime_verify_image_type(RenderData *rd, ImageFormatData *imf)
 {
-	if (rd->imtype == R_QUICKTIME) {
+	if (imf->imtype == R_IMF_IMTYPE_QUICKTIME) {
 		if ((rd->qtcodecsettings.codecType== 0) ||
 			(rd->qtcodecsettings.codecSpatialQuality <0) ||
 			(rd->qtcodecsettings.codecSpatialQuality > 100)) {

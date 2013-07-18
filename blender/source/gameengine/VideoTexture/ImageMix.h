@@ -1,4 +1,4 @@
-/* $Id$
+/*
 -----------------------------------------------------------------------------
 This source file is part of VideoTexture library
 
@@ -24,8 +24,8 @@ http://www.gnu.org/copyleft/lesser.txt.
  *  \ingroup bgevideotex
  */
  
-#if !defined IMAGEMIX_H
-#define IMAGEMIX_H
+#ifndef __IMAGEMIX_H__
+#define __IMAGEMIX_H__
 
 
 #include "Common.h"

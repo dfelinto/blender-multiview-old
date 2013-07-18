@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_FADERREADER
-#define AUD_FADERREADER
+#ifndef __AUD_FADERREADER_H__
+#define __AUD_FADERREADER_H__
 
 #include "AUD_EffectReader.h"
 #include "AUD_Buffer.h"
@@ -75,4 +73,4 @@ public:
 	virtual void read(int& length, bool& eos, sample_t* buffer);
 };
 
-#endif //AUD_FADERREADER
+#endif //__AUD_FADERREADER_H__

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_IIRFILTERREADER
-#define AUD_IIRFILTERREADER
+#ifndef __AUD_IIRFILTERREADER_H__
+#define __AUD_IIRFILTERREADER_H__
 
 #include "AUD_BaseIIRFilterReader.h"
 
@@ -72,4 +70,4 @@ public:
 						 const std::vector<float>& a);
 };
 
-#endif //AUD_IIRFILTERREADER
+#endif //__AUD_IIRFILTERREADER_H__

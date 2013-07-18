@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,7 @@
 
 #include "collada_internal.h"
 
-CamerasExporter::CamerasExporter(COLLADASW::StreamWriter *sw): COLLADASW::LibraryCameras(sw){}
+CamerasExporter::CamerasExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings): COLLADASW::LibraryCameras(sw), export_settings(export_settings) {}
 
 template<class Functor>
 void forEachCameraObjectInScene(Scene *sce, Functor &f, bool export_selected)
@@ -56,11 +54,11 @@ void forEachCameraObjectInScene(Scene *sce, Functor &f, bool export_selected)
 	}
 }
 
-void CamerasExporter::exportCameras(Scene *sce, bool export_selected)
+void CamerasExporter::exportCameras(Scene *sce)
 {
 	openLibrary();
 	
-	forEachCameraObjectInScene(sce, *this, export_selected);
+	forEachCameraObjectInScene(sce, *this, this->export_settings->selected);
 	
 	closeLibrary();
 }
@@ -73,7 +71,7 @@ void CamerasExporter::operator()(Object *ob, Scene *sce)
 	
 	if (cam->type == CAM_PERSP) {
 		COLLADASW::PerspectiveOptic persp(mSW);
-		persp.setXFov(lens_to_angle(cam->lens)*(180.0f/M_PI),"xfov");
+		persp.setXFov(RAD2DEGF(focallength_to_fov(cam->lens, cam->sensor_x)), "xfov");
 		persp.setAspectRatio((float)(sce->r.xsch)/(float)(sce->r.ysch),false,"aspect_ratio");
 		persp.setZFar(cam->clipend, false , "zfar");
 		persp.setZNear(cam->clipsta,false , "znear");

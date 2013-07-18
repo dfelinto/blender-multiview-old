@@ -1,6 +1,5 @@
 /*
  * Operator1Expr.h: interface for the COperator1Expr class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -32,7 +31,7 @@ public:
 	virtual bool MergeExpression(CExpression* otherexpr);
 	virtual void BroadcastOperators(VALUE_OPERATOR op);
 
-	virtual unsigned char GetExpressionID() { return COPERATOR1EXPRESSIONID;};
+	virtual unsigned char GetExpressionID() { return COPERATOR1EXPRESSIONID; }
 	CExpression* CheckLink(std::vector<CBrokenLinkInfo*>& brokenlinks);
 	//virtual bool IsInside(float x,float y,float z,bool bBorderInclude = true);
 	virtual	bool NeedsRecalculated();

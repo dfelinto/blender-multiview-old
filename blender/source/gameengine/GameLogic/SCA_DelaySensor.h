@@ -1,7 +1,6 @@
 /*
  * SCA_DelaySensor.h
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,13 +32,13 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_DELAYSENSOR
-#define __KX_DELAYSENSOR
+#ifndef __SCA_DELAYSENSOR_H__
+#define __SCA_DELAYSENSOR_H__
 #include "SCA_ISensor.h"
 
 class SCA_DelaySensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	bool			m_lastResult;
 	bool			m_repeat;
 	int				m_delay; 

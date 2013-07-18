@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup ketsji
  */
 
-#ifndef __KX_VERTEXPROXY
-#define __KX_VERTEXPROXY
+#ifndef __KX_VERTEXPROXY_H__
+#define __KX_VERTEXPROXY_H__
 
 #ifdef WITH_PYTHON
 
@@ -40,7 +38,7 @@
 
 class KX_VertexProxy	: public CValue
 {
-	Py_Header;
+	Py_Header
 protected:
 
 	class RAS_TexVert*	m_vertex;
@@ -50,7 +48,7 @@ public:
 	virtual ~KX_VertexProxy();
 
 	// stuff for cvalue related things
-	CValue*		Calc(VALUE_OPERATOR op, CValue *val) ;
+	CValue*		Calc(VALUE_OPERATOR op, CValue *val);
 	CValue*		CalcFinal(VALUE_DATA_TYPE dtype, VALUE_OPERATOR op, CValue *val);
 	const STR_String &	GetText();
 	double		GetNumber();
@@ -109,5 +107,5 @@ public:
 
 #endif // WITH_PYTHON
 
-#endif //__KX_VERTEXPROXY
+#endif //__KX_VERTEXPROXY_H__
 

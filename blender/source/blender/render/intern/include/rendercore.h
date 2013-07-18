@@ -1,7 +1,6 @@
 /*
  * rendercore_ext.h
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -34,8 +33,8 @@
  */
 
 
-#ifndef RENDERCORE_H
-#define RENDERCORE_H 
+#ifndef __RENDERCORE_H__
+#define __RENDERCORE_H__ 
 
 #include "render_types.h"
 
@@ -43,7 +42,6 @@
 /* vector defines */
 
 #define CROSS(dest, a, b)		{ dest[0]= a[1] * b[2] - a[2] * b[1]; dest[1]= a[2] * b[0] - a[0] * b[2]; dest[2]= a[0] * b[1] - a[1] * b[0]; }
-#define VECMUL(dest, f)			{ dest[0]*= f; dest[1]*= f; dest[2]*= f; }
 
 struct HaloRen;
 struct ShadeInput;
@@ -76,18 +74,15 @@ typedef struct PixStrMain
 
 
 void	calc_view_vector(float *view, float x, float y);
-float   mistfactor(float zcor, float *co);	/* dist and height, return alpha */
+float   mistfactor(float zcor, const float co[3]); /* dist and height, return alpha */
 
-void	renderspothalo(struct ShadeInput *shi, float *col, float alpha);
+void	renderspothalo(struct ShadeInput *shi, float col[4], float alpha);
 void	add_halo_flare(Render *re);
 
-void calc_renderco_zbuf(float *co, float *view, int z);
-void calc_renderco_ortho(float *co, float x, float y, int z);
+void calc_renderco_zbuf(float co[3], const float view[3], int z);
+void calc_renderco_ortho(float co[3], float x, float y, int z);
 
 int count_mask(unsigned short mask);
-
-void zbufshade(void);
-void zbufshadeDA(void);	/* Delta Accum Pixel Struct */
 
 void zbufshade_tile(struct RenderPart *pa);
 void zbufshadeDA_tile(struct RenderPart *pa);
@@ -103,9 +98,9 @@ extern void freeraytree(Render *re);
 extern void makeraytree(Render *re);
 struct RayObject* makeraytree_object(Render *re, ObjectInstanceRen *obi);
 
-extern void ray_shadow(ShadeInput *, LampRen *, float *);
-extern void ray_trace(ShadeInput *, ShadeResult *);
-extern void ray_ao(ShadeInput *, float *, float *);
+extern void ray_shadow(ShadeInput *shi, LampRen *lar, float shadfac[4]);
+extern void ray_trace(ShadeInput *shi, ShadeResult *);
+extern void ray_ao(ShadeInput *shi, float ao[3], float env[3]);
 extern void init_jitter_plane(LampRen *lar);
 extern void init_ao_sphere(struct World *wrld);
 extern void init_render_qmcsampler(Render *re);

@@ -24,11 +24,11 @@ struct EnvMap;
 // --
 
 /** max units
-	this will default to users available units
-	to build with more available, just increment this value
-	although the more you add the slower the search time will be.
-	we will go for eight, which should be enough
-*/
+ * this will default to users available units
+ * to build with more available, just increment this value
+ * although the more you add the slower the search time will be.
+ * we will go for eight, which should be enough
+ */
 #define MAXTEX			8	//match in RAS_TexVert & RAS_OpenGLRasterizer
 
 // different mapping modes
@@ -68,7 +68,7 @@ public:
 
 	float matcolor[4];
 	float speccolor[3];
-	short transp, pad;
+	short alphablend, pad;
 
 	float hard, spec_f;
 	float alpha, emit, color_blend[MAXTEX], ref;
@@ -76,7 +76,6 @@ public:
 
 	int blend_mode[MAXTEX];
 
-	int	 mode;
 	int num_enabled;
 	
 	BL_Mapping	mapping[MAXTEX];
@@ -151,14 +150,16 @@ enum BL_flag
 // BL_Material::ras_mode
 enum BL_ras_mode
 {
-	POLY_VIS=1,
+	// POLY_VIS=1,
 	COLLIDER=2,
 	ZSORT=4,
 	ALPHA=8,
 	// TRIANGLE=16,
 	USE_LIGHT=32,
 	WIRE=64,
-	CAST_SHADOW=128
+	CAST_SHADOW=128,
+	TEX=256,
+	TWOSIDED=512
 };
 
 // -------------------------------------

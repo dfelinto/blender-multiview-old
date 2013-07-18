@@ -172,7 +172,7 @@ static void nla_strip_get_color_inside (AnimData *adt, NlaStrip *strip, float co
 			color[2]= 0.86f;
 		}
 		else {
-			/* normal, unselected strip - use (hardly noticable) blue tinge */
+			/* normal, unselected strip - use (hardly noticeable) blue tinge */
 			// FIXME: hardcoded temp-hack colors
 			color[0]= 0.11f;
 			color[1]= 0.15f;
@@ -190,7 +190,7 @@ static void nla_strip_get_color_inside (AnimData *adt, NlaStrip *strip, float co
 			color[2]= 0.59f;
 		}
 		else {
-			/* normal, unselected strip - use (hardly noticable) dark purple tinge */
+			/* normal, unselected strip - use (hardly noticeable) dark purple tinge */
 			// FIXME: hardcoded temp-hack colors
 			color[0]= 0.20f;
 			color[1]= 0.15f;
@@ -207,7 +207,7 @@ static void nla_strip_get_color_inside (AnimData *adt, NlaStrip *strip, float co
 			color[2]= 0.48f;
 		}
 		else {
-			/* normal, unselected strip - use (hardly noticable) teal tinge */
+			/* normal, unselected strip - use (hardly noticeable) teal tinge */
 			// FIXME: hardcoded temp-hack colors
 			color[0]= 0.17f;
 			color[1]= 0.24f;
@@ -376,7 +376,7 @@ static void nla_draw_strip (SpaceNla *snla, AnimData *adt, NlaTrack *nlt, NlaStr
 	if (nonSolo == 0) {
 		/* strip is in normal track */
 		glColor3fv(color);
-		uiSetRoundBox(15); /* all corners rounded */
+		uiSetRoundBox(UI_CNR_ALL); /* all corners rounded */
 		
 		uiDrawBoxShade(GL_POLYGON, strip->start, yminc, strip->end, ymaxc, 0.0, 0.5, 0.1);
 	}
@@ -514,7 +514,7 @@ static void nla_draw_strip_frames_text(NlaTrack *UNUSED(nlt), NlaStrip *strip, V
 {
 	const float ytol = 1.0f; /* small offset to vertical positioning of text, for legibility */
 	const char col[4] = {220, 220, 220, 255}; /* light grey */
-	char str[32] = "";
+	char numstr[32] = "";
 	
 	
 	/* Always draw times above the strip, whereas sequencer drew below + above.
@@ -524,12 +524,12 @@ static void nla_draw_strip_frames_text(NlaTrack *UNUSED(nlt), NlaStrip *strip, V
 	 *	  while also preserving some accuracy, since we do use floats
 	 */
 		/* start frame */
-	BLI_snprintf(str, sizeof(str), "%.1f", strip->start);
-	UI_view2d_text_cache_add(v2d, strip->start-1.0f, ymaxc+ytol, str, col);
+	BLI_snprintf(numstr, sizeof(numstr), "%.1f", strip->start);
+	UI_view2d_text_cache_add(v2d, strip->start-1.0f, ymaxc+ytol, numstr, col);
 	
 		/* end frame */
-	BLI_snprintf(str, sizeof(str), "%.1f", strip->end);
-	UI_view2d_text_cache_add(v2d, strip->end, ymaxc+ytol, str, col);
+	BLI_snprintf(numstr, sizeof(numstr), "%.1f", strip->end);
+	UI_view2d_text_cache_add(v2d, strip->end, ymaxc+ytol, numstr, col);
 }
 
 /* ---------------------- */
@@ -692,8 +692,7 @@ static void draw_nla_channel_list_gl (bAnimContext *ac, ListBase *anim_data, Vie
 						
 					/* if this track is active and we're tweaking it, don't draw these toggles */
 					// TODO: need a special macro for this...
-					if ( ((nlt->flag & NLATRACK_ACTIVE) && (nlt->flag & NLATRACK_DISABLED)) == 0 ) 
-					{
+					if (((nlt->flag & NLATRACK_ACTIVE) && (nlt->flag & NLATRACK_DISABLED)) == 0) {
 						if (nlt->flag & NLATRACK_MUTED)
 							mute = ICON_MUTE_IPO_ON;
 						else	
@@ -715,7 +714,7 @@ static void draw_nla_channel_list_gl (bAnimContext *ac, ListBase *anim_data, Vie
 					}
 						
 					sel = SEL_NLT(nlt);
-					strcpy(name, nlt->name);
+					BLI_strncpy(name, nlt->name, sizeof(name));
 					
 					// draw manually still
 					doDraw= 1;
@@ -811,9 +810,9 @@ static void draw_nla_channel_list_gl (bAnimContext *ac, ListBase *anim_data, Vie
 					offset += 7 * indent;
 					
 					/* only on top two corners, to show that this channel sits on top of the preceding ones */
-					uiSetRoundBox((1|2)); 
+					uiSetRoundBox(UI_CNR_TOP_LEFT | UI_CNR_TOP_RIGHT);
 					
-					/* draw slightly shifted up vertically to look like it has more separtion from other channels,
+					/* draw slightly shifted up vertically to look like it has more separation from other channels,
 					 * but we then need to slightly shorten it so that it doesn't look like it overlaps
 					 */
 					uiDrawBox(GL_POLYGON, x+offset,  yminc+NLACHANNEL_SKIP, (float)v2d->cur.xmax, ymaxc+NLACHANNEL_SKIP-1, 8);
@@ -958,7 +957,7 @@ void draw_nla_channel_list (bContext *C, bAnimContext *ac, ARegion *ar)
 		draw_nla_channel_list_gl(ac, &anim_data, v2d, y);
 	}
 	{	/* second pass: UI widgets */
-		uiBlock *block= uiBeginBlock(C, ar, "NLA channel buttons", UI_EMBOSS);
+		uiBlock *block= uiBeginBlock(C, ar, __func__, UI_EMBOSS);
 		size_t channel_index = 0;
 		
 		y= (float)(-NLACHANNEL_HEIGHT(snla));

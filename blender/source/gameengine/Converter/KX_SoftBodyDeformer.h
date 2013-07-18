@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgeconv
  */
 
-#ifndef KX_SOFTBODYDEFORMER
-#define KX_SOFTBODYDEFORMER
+#ifndef __KX_SOFTBODYDEFORMER_H__
+#define __KX_SOFTBODYDEFORMER_H__
 
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786) // get rid of stupid stl-visual compiler debug warning

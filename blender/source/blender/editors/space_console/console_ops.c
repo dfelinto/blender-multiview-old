@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,7 +34,9 @@
 
 #include "DNA_userdef_types.h"
 
-#include "BLI_blenlib.h"
+#include "BLI_listbase.h"
+#include "BLI_string_cursor_utf8.h"
+#include "BLI_string.h"
 #include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 
@@ -53,6 +53,14 @@
 #include "RNA_define.h"
 
 #include "console_intern.h"
+
+/* so when we type - the view scrolls to the bottom */
+static void console_scroll_bottom(ARegion *ar)
+{
+	View2D *v2d= &ar->v2d;
+	v2d->cur.ymin = 0.0;
+	v2d->cur.ymax =(float)v2d->winy;
+}
 
 static void console_textview_update_rect(SpaceConsole *sc, ARegion *ar)
 {
@@ -109,43 +117,20 @@ static ConsoleLine * console_history_find(SpaceConsole *sc, const char *str, Con
 static int console_line_cursor_set(ConsoleLine *cl, int cursor)
 {
 	int cursor_new;
-	
-	if(cursor < 0)				cursor_new= 0;
-	else if(cursor > cl->len)	cursor_new= cl->len;
-	else						cursor_new= cursor;
-	
-	if(cursor_new == cl->cursor)
-		return 0;
-	
-	cl->cursor= cursor_new;
-	return 1;
-}
 
-static char cursor_char(ConsoleLine *cl)
-{
-	/* assume cursor is clamped */
-	return cl->line[cl->cursor];
-}
-
-static char cursor_char_prev(ConsoleLine *cl)
-{
-	/* assume cursor is clamped */
-	if(cl->cursor <= 0)
-		return '\0';
-
-	return cl->line[cl->cursor-1];
+	if      (cursor < 0)        cursor_new = 0;
+	else if (cursor > cl->len)  cursor_new = cl->len;
+	else                        cursor_new = cursor;
+	
+	if (cursor_new == cl->cursor) {
+		return FALSE;
+	}
+	
+	cl->cursor = cursor_new;
+	return TRUE;
 }
 
 #if 0 // XXX unused 
-static char cursor_char_next(ConsoleLine *cl)
-{
-	/* assume cursor is clamped */
-	if(cl->cursor + 1 >= cl->len)
-		return '\0';
-
-	return cl->line[cl->cursor+1];
-}
-
 static void console_lb_debug__internal(ListBase *lb)
 {
 	ConsoleLine *cl;
@@ -276,7 +261,7 @@ static int console_line_insert(ConsoleLine *ci, char *str)
 /* static funcs for text editing */
 
 /* similar to the text editor, with some not used. keep compatible */
-static EnumPropertyItem move_type_items[]= {
+static EnumPropertyItem console_move_type_items[]= {
 	{LINE_BEGIN, "LINE_BEGIN", 0, "Line Begin", ""},
 	{LINE_END, "LINE_END", 0, "Line End", ""},
 	{PREV_CHAR, "PREVIOUS_CHARACTER", 0, "Previous Character", ""},
@@ -285,63 +270,71 @@ static EnumPropertyItem move_type_items[]= {
 	{NEXT_WORD, "NEXT_WORD", 0, "Next Word", ""},
 	{0, NULL, 0, NULL, NULL}};
 
-static int move_exec(bContext *C, wmOperator *op)
+static int console_move_exec(bContext *C, wmOperator *op)
 {
 	ConsoleLine *ci= console_history_verify(C);
 	
 	int type= RNA_enum_get(op->ptr, "type");
 	int done= 0;
+	int pos;
 	
-	switch(type) {
+	switch (type) {
 	case LINE_BEGIN:
-		done= console_line_cursor_set(ci, 0);
+			pos = ci->cursor;
+			BLI_str_cursor_step_utf8(ci->line, ci->len,
+			                         &pos, STRCUR_DIR_PREV,
+			                         STRCUR_JUMP_ALL);
+			done = console_line_cursor_set(ci, pos);
 		break;
 	case LINE_END:
-		done= console_line_cursor_set(ci, INT_MAX);
+			pos = ci->cursor;
+			BLI_str_cursor_step_utf8(ci->line, ci->len,
+			                         &pos, STRCUR_DIR_NEXT,
+			                         STRCUR_JUMP_ALL);
+			done = console_line_cursor_set(ci, pos);
 		break;
 	case PREV_CHAR:
-		done= console_line_cursor_set(ci, ci->cursor-1);
+			pos = ci->cursor;
+			BLI_str_cursor_step_utf8(ci->line, ci->len,
+			                         &pos, STRCUR_DIR_PREV,
+			                         STRCUR_JUMP_NONE);
+			done = console_line_cursor_set(ci, pos);
 		break;
 	case NEXT_CHAR:
-		done= console_line_cursor_set(ci, ci->cursor+1);
+			pos = ci->cursor;
+			BLI_str_cursor_step_utf8(ci->line, ci->len,
+			                         &pos, STRCUR_DIR_NEXT,
+			                         STRCUR_JUMP_NONE);
+			done = console_line_cursor_set(ci, pos);
 		break;
 
 	/* - if the character is a delimiter then skip delimiters (including white space)
 	 * - when jump over the word */
 	case PREV_WORD:
-		while(text_check_delim(cursor_char_prev(ci)))
-			if(console_line_cursor_set(ci, ci->cursor-1)==FALSE)
-				break;
-
-		while(text_check_delim(cursor_char_prev(ci))==FALSE)
-			if(console_line_cursor_set(ci, ci->cursor-1)==FALSE)
-				break;
-
-		/* This isnt used for NEXT_WORD because when going back
-		 * its more useful to have the cursor directly after a word then whitespace */
-		while(text_check_whitespace(cursor_char_prev(ci))==TRUE)
-			if(console_line_cursor_set(ci, ci->cursor-1)==FALSE)
-				break;
-
-		done= 1; /* assume changed */
+		pos = ci->cursor;
+		BLI_str_cursor_step_utf8(ci->line, ci->len,
+		                         &pos, STRCUR_DIR_PREV,
+		                         STRCUR_JUMP_DELIM);
+		done = console_line_cursor_set(ci, pos);
 		break;
 	case NEXT_WORD:
-		while(text_check_delim(cursor_char(ci))==TRUE)
-			if (console_line_cursor_set(ci, ci->cursor+1)==FALSE)
-				break;
-
-		while(text_check_delim(cursor_char(ci))==FALSE)
-			if (console_line_cursor_set(ci, ci->cursor+1)==FALSE)
-				break;
-
-		done= 1; /* assume changed */
+		pos = ci->cursor;
+		BLI_str_cursor_step_utf8(ci->line, ci->len,
+		                         &pos, STRCUR_DIR_NEXT,
+		                         STRCUR_JUMP_DELIM);
+		done = console_line_cursor_set(ci, pos);
 		break;
 	}
 	
 	if(done) {
-		ED_area_tag_redraw(CTX_wm_area(C));
+		ScrArea *sa= CTX_wm_area(C);
+		ARegion *ar= CTX_wm_region(C);
+
+		ED_area_tag_redraw(sa);
+		console_scroll_bottom(ar);
 	}
-	
+
+
 	return OPERATOR_FINISHED;
 }
 
@@ -353,15 +346,15 @@ void CONSOLE_OT_move(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_move";
 	
 	/* api callbacks */
-	ot->exec= move_exec;
+	ot->exec= console_move_exec;
 	ot->poll= ED_operator_console_active;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "type", move_type_items, LINE_BEGIN, "Type", "Where to move cursor to.");
+	RNA_def_enum(ot->srna, "type", console_move_type_items, LINE_BEGIN, "Type", "Where to move cursor to");
 }
 
 #define TAB_LENGTH 4
-static int insert_exec(bContext *C, wmOperator *op)
+static int console_insert_exec(bContext *C, wmOperator *op)
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 	ARegion *ar= CTX_wm_region(C);
@@ -391,13 +384,15 @@ static int insert_exec(bContext *C, wmOperator *op)
 
 	console_textview_update_rect(sc, ar);
 	ED_area_tag_redraw(CTX_wm_area(C));
-	
+
+	console_scroll_bottom(ar);
+
 	return OPERATOR_FINISHED;
 }
 
-static int insert_invoke(bContext *C, wmOperator *op, wmEvent *event)
+static int console_insert_invoke(bContext *C, wmOperator *op, wmEvent *event)
 {
-	// if(!RNA_property_is_set(op->ptr, "text")) { /* always set from keymap XXX */
+	// if(!RNA_struct_property_is_set(op->ptr, "text")) { /* always set from keymap XXX */
 	if(!RNA_string_length(op->ptr, "text")) {
 		/* if alt/ctrl/super are pressed pass through */
 		if(event->ctrl || event->oskey) {
@@ -411,7 +406,7 @@ static int insert_invoke(bContext *C, wmOperator *op, wmEvent *event)
 			RNA_string_set(op->ptr, "text", str);
 		}
 	}
-	return insert_exec(C, op);
+	return console_insert_exec(C, op);
 }
 
 void CONSOLE_OT_insert(wmOperatorType *ot)
@@ -422,23 +417,23 @@ void CONSOLE_OT_insert(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_insert";
 	
 	/* api callbacks */
-	ot->exec= insert_exec;
-	ot->invoke= insert_invoke;
+	ot->exec= console_insert_exec;
+	ot->invoke= console_insert_invoke;
 	ot->poll= ED_operator_console_active;
 
 	/* properties */
-	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position.");
+	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position");
 }
 
 
-static EnumPropertyItem delete_type_items[]= {
+static EnumPropertyItem console_delete_type_items[]= {
 	{DEL_NEXT_CHAR, "NEXT_CHARACTER", 0, "Next Character", ""},
 	{DEL_PREV_CHAR, "PREVIOUS_CHARACTER", 0, "Previous Character", ""},
 //	{DEL_NEXT_WORD, "NEXT_WORD", 0, "Next Word", ""},
 //	{DEL_PREV_WORD, "PREVIOUS_WORD", 0, "Previous Word", ""},
 	{0, NULL, 0, NULL, NULL}};
 
-static int delete_exec(bContext *C, wmOperator *op)
+static int console_delete_exec(bContext *C, wmOperator *op)
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 	ARegion *ar= CTX_wm_region(C);
@@ -478,6 +473,8 @@ static int delete_exec(bContext *C, wmOperator *op)
 
 	console_textview_update_rect(sc, ar);
 	ED_area_tag_redraw(CTX_wm_area(C));
+
+	console_scroll_bottom(ar);
 	
 	return OPERATOR_FINISHED;
 }
@@ -491,16 +488,16 @@ void CONSOLE_OT_delete(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_delete";
 	
 	/* api callbacks */
-	ot->exec= delete_exec;
+	ot->exec= console_delete_exec;
 	ot->poll= ED_operator_console_active;
 
 	/* properties */
-	RNA_def_enum(ot->srna, "type", delete_type_items, DEL_NEXT_CHAR, "Type", "Which part of the text to delete.");
+	RNA_def_enum(ot->srna, "type", console_delete_type_items, DEL_NEXT_CHAR, "Type", "Which part of the text to delete");
 }
 
 
 /* the python exec operator uses this */
-static int clear_exec(bContext *C, wmOperator *op)
+static int console_clear_exec(bContext *C, wmOperator *op)
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 	ARegion *ar= CTX_wm_region(C);
@@ -534,7 +531,7 @@ void CONSOLE_OT_clear(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_clear";
 	
 	/* api callbacks */
-	ot->exec= clear_exec;
+	ot->exec= console_clear_exec;
 	ot->poll= ED_operator_console_active;
 	
 	/* properties */
@@ -545,7 +542,7 @@ void CONSOLE_OT_clear(wmOperatorType *ot)
 
 
 /* the python exec operator uses this */
-static int history_cycle_exec(bContext *C, wmOperator *op)
+static int console_history_cycle_exec(bContext *C, wmOperator *op)
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 	ARegion *ar= CTX_wm_region(C);
@@ -589,6 +586,8 @@ static int history_cycle_exec(bContext *C, wmOperator *op)
 	console_textview_update_rect(sc, ar);
 	ED_area_tag_redraw(CTX_wm_area(C));
 
+	console_scroll_bottom(ar);
+
 	return OPERATOR_FINISHED;
 }
 
@@ -600,21 +599,22 @@ void CONSOLE_OT_history_cycle(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_history_cycle";
 	
 	/* api callbacks */
-	ot->exec= history_cycle_exec;
+	ot->exec= console_history_cycle_exec;
 	ot->poll= ED_operator_console_active;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "reverse", 0, "Reverse", "reverse cycle history");
+	RNA_def_boolean(ot->srna, "reverse", 0, "Reverse", "Reverse cycle history");
 }
 
 
 /* the python exec operator uses this */
-static int history_append_exec(bContext *C, wmOperator *op)
+static int console_history_append_exec(bContext *C, wmOperator *op)
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
+	ARegion *ar= CTX_wm_region(C);
 	ScrArea *sa= CTX_wm_area(C);
 	ConsoleLine *ci= console_history_verify(C);
-	char *str= RNA_string_get_alloc(op->ptr, "text", NULL, 0); /* own this text in the new line, dont free */
+	char *str= RNA_string_get_alloc(op->ptr, "text", NULL, 0); /* own this text in the new line, don't free */
 	int cursor= RNA_int_get(op->ptr, "current_character");
 	short rem_dupes= RNA_boolean_get(op->ptr, "remove_duplicates");
 	int prev_len= ci->len;
@@ -637,6 +637,12 @@ static int history_append_exec(bContext *C, wmOperator *op)
 
 	ED_area_tag_redraw(sa);
 
+	/* when calling render modally this can be NULL when calling:
+	 * bpy.ops.render.render('INVOKE_DEFAULT') */
+	if (ar) {
+		console_scroll_bottom(ar);
+	}
+
 	return OPERATOR_FINISHED;
 }
 
@@ -648,24 +654,24 @@ void CONSOLE_OT_history_append(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_history_append";
 	
 	/* api callbacks */
-	ot->exec= history_append_exec;
+	ot->exec= console_history_append_exec;
 	ot->poll= ED_operator_console_active;
 	
 	/* properties */
-	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position.");	
-	RNA_def_int(ot->srna, "current_character", 0, 0, INT_MAX, "Cursor", "The index of the cursor.", 0, 10000);
+	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position");	
+	RNA_def_int(ot->srna, "current_character", 0, 0, INT_MAX, "Cursor", "The index of the cursor", 0, 10000);
 	RNA_def_boolean(ot->srna, "remove_duplicates", 0, "Remove Duplicates", "Remove duplicate items in the history");
 }
 
 
 /* the python exec operator uses this */
-static int scrollback_append_exec(bContext *C, wmOperator *op)
+static int console_scrollback_append_exec(bContext *C, wmOperator *op)
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 	ARegion *ar= CTX_wm_region(C);
 	ConsoleLine *ci;
 	
-	char *str= RNA_string_get_alloc(op->ptr, "text", NULL, 0); /* own this text in the new line, dont free */
+	char *str= RNA_string_get_alloc(op->ptr, "text", NULL, 0); /* own this text in the new line, don't free */
 	int type= RNA_enum_get(op->ptr, "type");
 
 	console_history_verify(C);
@@ -702,16 +708,16 @@ void CONSOLE_OT_scrollback_append(wmOperatorType *ot)
 	ot->idname= "CONSOLE_OT_scrollback_append";
 	
 	/* api callbacks */
-	ot->exec= scrollback_append_exec;
+	ot->exec= console_scrollback_append_exec;
 	ot->poll= ED_operator_console_active;
 	
 	/* properties */
-	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position.");	
-	RNA_def_enum(ot->srna, "type", console_line_type_items, CONSOLE_LINE_OUTPUT, "Type", "Console output type.");
+	RNA_def_string(ot->srna, "text", "", 0, "Text", "Text to insert at the cursor position");
+	RNA_def_enum(ot->srna, "type", console_line_type_items, CONSOLE_LINE_OUTPUT, "Type", "Console output type");
 }
 
 
-static int copy_exec(bContext *C, wmOperator *UNUSED(op))
+static int console_copy_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 
@@ -786,12 +792,12 @@ void CONSOLE_OT_copy(wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->poll= ED_operator_console_active;
-	ot->exec= copy_exec;
+	ot->exec= console_copy_exec;
 
 	/* properties */
 }
 
-static int paste_exec(bContext *C, wmOperator *UNUSED(op))
+static int console_paste_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	SpaceConsole *sc= CTX_wm_space_console(C);
 	ARegion *ar= CTX_wm_region(C);
@@ -825,6 +831,8 @@ static int paste_exec(bContext *C, wmOperator *UNUSED(op))
 	console_textview_update_rect(sc, ar);
 	ED_area_tag_redraw(CTX_wm_area(C));
 
+	console_scroll_bottom(ar);
+
 	return OPERATOR_FINISHED;
 }
 
@@ -837,7 +845,7 @@ void CONSOLE_OT_paste(wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->poll= ED_operator_console_active;
-	ot->exec= paste_exec;
+	ot->exec= console_paste_exec;
 
 	/* properties */
 }
@@ -848,7 +856,7 @@ typedef struct SetConsoleCursor {
 } SetConsoleCursor;
 
 // TODO, cursor placement without selection
-static void set_cursor_to_pos(SpaceConsole *sc, ARegion *ar, SetConsoleCursor *scu, int mval[2], int UNUSED(sel))
+static void console_cursor_set_to_pos(SpaceConsole *sc, ARegion *ar, SetConsoleCursor *scu, int mval[2], int UNUSED(sel))
 {
 	int pos;
 	pos= console_char_pick(sc, ar, mval);
@@ -886,7 +894,7 @@ static void console_modal_select_apply(bContext *C, wmOperator *op, wmEvent *eve
 	sel_prev[0]= sc->sel_start;
 	sel_prev[1]= sc->sel_end;
 	
-	set_cursor_to_pos(sc, ar, scu, mval, TRUE);
+	console_cursor_set_to_pos(sc, ar, scu, mval, TRUE);
 
 	/* only redraw if the selection changed */
 	if(sel_prev[0] != sc->sel_start || sel_prev[1] != sc->sel_end) {
@@ -894,17 +902,18 @@ static void console_modal_select_apply(bContext *C, wmOperator *op, wmEvent *eve
 	}
 }
 
-static void set_cursor_exit(bContext *UNUSED(C), wmOperator *op)
+static void console_cursor_set_exit(bContext *UNUSED(C), wmOperator *op)
 {
 //	SpaceConsole *sc= CTX_wm_space_console(C);
 	SetConsoleCursor *scu= op->customdata;
 
-	/*
+#if 0
 	if(txt_has_sel(text)) {
 		buffer = txt_sel_to_buf(text);
 		WM_clipboard_text_set(buffer, 1);
 		MEM_freeN(buffer);
-	}*/
+	}
+#endif
 
 	MEM_freeN(scu);
 }
@@ -936,7 +945,7 @@ static int console_modal_select(bContext *C, wmOperator *op, wmEvent *event)
 		case LEFTMOUSE:
 		case MIDDLEMOUSE:
 		case RIGHTMOUSE:
-			set_cursor_exit(C, op);
+			console_cursor_set_exit(C, op);
 			return OPERATOR_FINISHED;
 		case MOUSEMOVE:
 			console_modal_select_apply(C, op, event);
@@ -948,7 +957,7 @@ static int console_modal_select(bContext *C, wmOperator *op, wmEvent *event)
 
 static int console_modal_select_cancel(bContext *C, wmOperator *op)
 {
-	set_cursor_exit(C, op);
+	console_cursor_set_exit(C, op);
 	return OPERATOR_FINISHED;
 }
 

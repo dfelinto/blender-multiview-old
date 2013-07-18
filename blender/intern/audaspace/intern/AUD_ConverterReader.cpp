@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -36,9 +34,6 @@ AUD_ConverterReader::AUD_ConverterReader(AUD_Reference<AUD_IReader> reader,
 	AUD_EffectReader(reader),
 	m_format(specs.format)
 {
-	int bigendian = 1;
-	bigendian = (((char*)&bigendian)[0]) ? 0: 1; // 1 if Big Endian
-
 	switch(m_format)
 	{
 	case AUD_FORMAT_U8:
@@ -48,10 +43,11 @@ AUD_ConverterReader::AUD_ConverterReader(AUD_Reference<AUD_IReader> reader,
 		m_convert = AUD_convert_float_s16;
 		break;
 	case AUD_FORMAT_S24:
-		if(bigendian)
-			m_convert = AUD_convert_float_s24_be;
-		else
-			m_convert = AUD_convert_float_s24_le;
+#ifdef __BIG_ENDIAN__
+		m_convert = AUD_convert_float_s24_be;
+#else
+		m_convert = AUD_convert_float_s24_le;
+#endif
 		break;
 	case AUD_FORMAT_S32:
 		m_convert = AUD_convert_float_s32;
@@ -77,5 +73,5 @@ void AUD_ConverterReader::read(int& length, bool& eos, sample_t* buffer)
 	m_reader->read(length, eos, m_buffer.getBuffer());
 
 	m_convert((data_t*)buffer, (data_t*)m_buffer.getBuffer(),
-			  length * specs.channels);
+	          length * specs.channels);
 }

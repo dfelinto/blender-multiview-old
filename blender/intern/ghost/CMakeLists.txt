@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -107,6 +106,10 @@ if(WITH_INPUT_NDOF)
 	list(APPEND INC_SYS
 		${NDOF_INCLUDE_DIRS}
 	)
+endif()
+
+if(WITH_XDG_USER_DIRS)
+	add_definitions(-DWITH_XDG_USER_DIRS)
 endif()
 
 if(WITH_HEADLESS OR WITH_GHOST_SDL)
@@ -224,10 +227,31 @@ elseif(UNIX)
 		intern/GHOST_WindowX11.h
 	)
 
+	if(WITH_GHOST_XDND)
+		add_definitions(-DWITH_XDND)
+
+		list(APPEND INC
+			../../extern/xdnd
+		)
+
+		list(APPEND SRC
+			intern/GHOST_DropTargetX11.cpp
+
+			intern/GHOST_DropTargetX11.h
+		)
+	endif()
+
 	if(X11_XF86keysym_INCLUDE_PATH)
 		add_definitions(-DWITH_XF86KEYSYM)
 		list(APPEND INC_SYS
 			${X11_XF86keysym_INCLUDE_PATH}
+		)
+	endif()
+
+	if(WITH_X11_XF86VMODE)
+		add_definitions(-DWITH_X11_XF86VMODE)
+		list(APPEND INC_SYS
+			${X11_xf86vmode_INCLUDE_PATH}
 		)
 	endif()
 
@@ -248,9 +272,10 @@ elseif(UNIX)
 	endif()
 
 elseif(WIN32)
-	if(MSVC)
-		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
-	endif()
+	## Warnings as errors, this is too strict!
+	#if(MSVC)
+	#	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /WX")
+	#endif()
 
 	list(APPEND INC_SYS
 		${WINTAB_INC}

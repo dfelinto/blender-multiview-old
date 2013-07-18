@@ -1,6 +1,5 @@
 /*
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -89,11 +88,11 @@ static void ibuf_get_color(float *col, struct ImBuf *ibuf, int x, int y)
 	if(ibuf->rect_float) {
 		if(ibuf->channels==4) {
 			float *fp= ibuf->rect_float + 4*ofs;
-			QUATCOPY(col, fp);
+			copy_v4_v4(col, fp);
 		}
 		else if(ibuf->channels==3) {
 			float *fp= ibuf->rect_float + 3*ofs;
-			VECCOPY(col, fp);
+			copy_v3_v3(col, fp);
 			col[3]= 1.0f;
 		}
 		else {
@@ -111,7 +110,7 @@ static void ibuf_get_color(float *col, struct ImBuf *ibuf, int x, int y)
 	}	
 }
 
-int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, TexResult *texres)
+int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResult *texres)
 {
 	float fx, fy, val1, val2, val3;
 	int x, y, retval;
@@ -132,6 +131,8 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, TexResult *texre
 			return retval;
 		
 		ibuf= BKE_image_get_ibuf(ima, &tex->iuser);
+
+		ima->flag|= IMA_USED_FOR_RENDER;
 	}
 	if(ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL))
 		return retval;
@@ -204,6 +205,13 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, TexResult *texre
 		ibuf->rect+= (ibuf->x*ibuf->y);
 	}
 
+	/* keep this before interpolation [#29761] */
+	if (tex->imaflag & TEX_USEALPHA) {
+		if ((tex->imaflag & TEX_CALCALPHA) == 0) {
+			texres->talpha = TRUE;
+		} 
+	}
+
 	/* interpolate */
 	if (tex->imaflag & TEX_INTERPOL) {
 		float filterx, filtery;
@@ -226,11 +234,6 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, TexResult *texre
 		ibuf->rect-= (ibuf->x*ibuf->y);
 	}
 
-	if(tex->imaflag & TEX_USEALPHA) {
-		if(tex->imaflag & TEX_CALCALPHA);
-		else texres->talpha= 1;
-	}
-	
 	if(texres->nor) {
 		if(tex->imaflag & TEX_NORMALMAP) {
 			// qdn: normal from color
@@ -452,7 +455,7 @@ static float clipy_rctf(rctf *rf, float y1, float y2)
 static void boxsampleclip(struct ImBuf *ibuf, rctf *rf, TexResult *texres)
 {
 	/* sample box, is clipped already, and minx etc. have been set at ibuf size.
-	   Enlarge with antialiased edges of the pixels */
+	 * Enlarge with antialiased edges of the pixels */
 
 	float muly, mulx, div, col[4];
 	int x, y, startx, endx, starty, endy;
@@ -539,7 +542,7 @@ static void boxsample(ImBuf *ibuf, float minx, float miny, float maxx, float max
 	 * If variable 'imaprepeat' has been set, the
 	 * clipped-away parts are sampled as well.
 	 */
-	/* note: actually minx etc isnt in the proper range... this due to filter size and offset vectors for bump */
+	/* note: actually minx etc isn't in the proper range... this due to filter size and offset vectors for bump */
 	/* note: talpha must be initialized */
 	/* note: even when 'imaprepeat' is set, this can only repeate once in any direction.
 	 * the point which min/max is derived from is assumed to be wrapped */
@@ -1019,7 +1022,7 @@ static void image_mipmap_test(Tex *tex, ImBuf *ibuf)
 	
 }
 
-static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, float *dxt, float *dyt, TexResult *texres)
+static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], float dxt[3], float dyt[3], TexResult *texres)
 {
 	TexResult texr;
 	float fx, fy, minx, maxx, miny, maxy;
@@ -1093,7 +1096,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, 
 
 	if (tex->imaflag & TEX_FILTER_MIN) {
 		// make sure the filtersize is minimal in pixels (normal, ref map can have miniature pixel dx/dy)
-		 const float addval = (0.5f * tex->filtersize) / (float)MIN2(ibuf->x, ibuf->y);
+		const float addval = (0.5f * tex->filtersize) / (float)MIN2(ibuf->x, ibuf->y);
 		if (addval > minx) minx = addval;
 		if (addval > miny) miny = addval;
 	}
@@ -1409,7 +1412,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, 
 }
 
 
-int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, float *DXT, float *DYT, TexResult *texres)
+int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const float DXT[3], const float DYT[3], TexResult *texres)
 {
 	TexResult texr;
 	float fx, fy, minx, maxx, miny, maxy, dx, dy, dxt[3], dyt[3];
@@ -1418,8 +1421,8 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, float *DXT, f
 
 	// TXF: since dxt/dyt might be modified here and since they might be needed after imagewraposa() call,
 	// make a local copy here so that original vecs remain untouched
-	VECCOPY(dxt, DXT);
-	VECCOPY(dyt, DYT);
+	copy_v3_v3(dxt, DXT);
+	copy_v3_v3(dyt, DYT);
 
 	// anisotropic filtering
 	if (tex->texfilter != TXF_BOX)
@@ -1440,6 +1443,8 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, float *texvec, float *DXT, f
 			return retval;
 		
 		ibuf= BKE_image_get_ibuf(ima, &tex->iuser); 
+
+		ima->flag|= IMA_USED_FOR_RENDER;
 	}
 	if(ibuf==NULL || (ibuf->rect==NULL && ibuf->rect_float==NULL))
 		return retval;
@@ -1811,6 +1816,8 @@ void image_sample(Image *ima, float fx, float fy, float dx, float dy, float *res
 	
 	if( (R.flag & R_SEC_FIELD) && (ibuf->flags & IB_fields) )
 		ibuf->rect-= (ibuf->x*ibuf->y);
+
+	ima->flag|= IMA_USED_FOR_RENDER;
 }
 
 void ibuf_sample(ImBuf *ibuf, float fx, float fy, float dx, float dy, float *result)

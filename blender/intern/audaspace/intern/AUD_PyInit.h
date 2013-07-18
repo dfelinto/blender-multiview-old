@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_PYINIT
-#define AUD_PYINIT
+#ifndef __AUD_PYINIT_H__
+#define __AUD_PYINIT_H__
 
 #ifdef WITH_PYTHON
 #include "Python.h"
@@ -50,4 +48,4 @@ extern PyObject* AUD_initPython(void);
 
 #endif
 
-#endif //AUD_PYINIT
+#endif //__AUD_PYINIT_H__

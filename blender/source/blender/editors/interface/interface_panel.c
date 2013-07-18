@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -45,6 +43,8 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "DNA_userdef_types.h"
 
 #include "BKE_context.h"
@@ -59,6 +59,7 @@
 #include "ED_screen.h"
 
 #include "UI_interface.h"
+#include "UI_resources.h"
 
 #include "interface_intern.h"
 
@@ -173,7 +174,6 @@ static void ui_panel_copy_offset(Panel *pa, Panel *papar)
 
 Panel *uiBeginPanel(ScrArea *sa, ARegion *ar, uiBlock *block, PanelType *pt, int *open)
 {
-	uiStyle *style= U.uistyles.first;
 	Panel *pa, *patab, *palast, *panext;
 	char *drawname= pt->label;
 	char *idname= pt->idname;
@@ -208,7 +208,7 @@ Panel *uiBeginPanel(ScrArea *sa, ARegion *ar, uiBlock *block, PanelType *pt, int
 		}
 	
 		pa->ofsx= 0;
-		pa->ofsy= style->panelouter;
+		pa->ofsy= 0;
 		pa->sizex= 0;
 		pa->sizey= 0;
 		pa->runtime_flag |= PNL_NEW_ADDED;
@@ -292,7 +292,7 @@ void uiEndPanel(uiBlock *block, int width, int height)
 
 static void ui_offset_panel_block(uiBlock *block)
 {
-	uiStyle *style= U.uistyles.first;
+	uiStyle *style= UI_GetStyle();
 	uiBut *but;
 	int ofsy;
 
@@ -330,7 +330,6 @@ static void uiPanelPop(uiBlock *UNUSED(block))
 #endif
 
 /* triangle 'icon' for panel header */
-/* NOTE - this seems to be only used for hiding nodes now */
 void UI_DrawTriIcon(float x, float y, char dir)
 {
 	if(dir=='h') {
@@ -442,8 +441,8 @@ static void ui_draw_aligned_panel_header(uiStyle *style, uiBlock *block, rcti *r
 	Panel *panel= block->panel;
 	rcti hrect;
 	int  pnl_icons;
-	char *activename= panel->drawname[0]?panel->drawname:panel->panelname;
-	
+	const char *activename= IFACE_(panel->drawname[0] ? panel->drawname : panel->panelname);
+
 	/* + 0.001f to avoid flirting with float inaccuracy */
 	if(panel->control & UI_PNL_CLOSE) pnl_icons=(panel->labelofs+2*PNL_ICON+5)/block->aspect + 0.001f;
 	else pnl_icons= (panel->labelofs+PNL_ICON+5)/block->aspect + 0.001f;
@@ -455,6 +454,7 @@ static void ui_draw_aligned_panel_header(uiStyle *style, uiBlock *block, rcti *r
 	hrect= *rect;
 	if(dir == 'h') {
 		hrect.xmin= rect->xmin+pnl_icons;
+		hrect.ymin += 2.0f/block->aspect;
 		uiStyleFontDraw(&style->paneltitle, &hrect, activename);
 	}
 	else {
@@ -482,6 +482,7 @@ static void rectf_scale(rctf *rect, float scale)
 /* panel integrated in buttonswindow, tool/property lists etc */
 void ui_draw_aligned_panel(uiStyle *style, uiBlock *block, rcti *rect)
 {
+	bTheme *btheme= UI_GetTheme();
 	Panel *panel= block->panel;
 	rcti headrect;
 	rctf itemrect;
@@ -496,16 +497,34 @@ void ui_draw_aligned_panel(uiStyle *style, uiBlock *block, rcti *rect)
 	headrect.ymin= headrect.ymax;
 	headrect.ymax= headrect.ymin + floor(PNL_HEADER/block->aspect + 0.001f);
 	
-	if(!(panel->runtime_flag & PNL_FIRST)) {
-		float minx= rect->xmin+5.0f/block->aspect;
-		float maxx= rect->xmax-5.0f/block->aspect;
+	{
+		float minx= rect->xmin;
+		float maxx= rect->xmax;
 		float y= headrect.ymax;
-		
+
 		glEnable(GL_BLEND);
-		glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
-		fdrawline(minx, y+1, maxx, y+1);
-		glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
-		fdrawline(minx, y, maxx, y);
+
+		if(btheme->tui.panel.show_header) {
+			/* draw with background color */
+			glEnable(GL_BLEND);
+			glColor4ubv((unsigned char*)btheme->tui.panel.header);
+			glRectf(minx, headrect.ymin+1, maxx, y);
+
+			fdrawline(minx, y, maxx, y);
+			fdrawline(minx, y, maxx, y);
+		}
+		else if(!(panel->runtime_flag & PNL_FIRST)) {
+			/* draw embossed separator */
+			minx += 5.0f/block->aspect;
+			maxx -= 5.0f/block->aspect;
+			
+			glColor4f(0.0f, 0.0f, 0.0f, 0.5f);
+			fdrawline(minx, y, maxx, y);
+			glColor4f(1.0f, 1.0f, 1.0f, 0.25f);
+			fdrawline(minx, y-1, maxx, y-1);
+			glDisable(GL_BLEND);
+		}
+
 		glDisable(GL_BLEND);
 	}
 	
@@ -518,13 +537,14 @@ void ui_draw_aligned_panel(uiStyle *style, uiBlock *block, rcti *rect)
 		itemrect.xmin= itemrect.xmax - (headrect.ymax-headrect.ymin);
 		itemrect.ymin= headrect.ymin;
 		itemrect.ymax= headrect.ymax;
-		rectf_scale(&itemrect, 0.8f);
+
+		rectf_scale(&itemrect, 0.7f);
 		ui_draw_panel_dragwidget(&itemrect);
 	}
 	
 	/* if the panel is minimized vertically:
-		* (------)
-		*/
+	 * (------)
+	 */
 	if(panel->flag & PNL_CLOSEDY) {
 		
 	}
@@ -537,8 +557,8 @@ void ui_draw_aligned_panel(uiStyle *style, uiBlock *block, rcti *rect)
 		
 		/* in some occasions, draw a border */
 		if(panel->flag & PNL_SELECT) {
-			if(panel->control & UI_PNL_SOLID) uiSetRoundBox(15);
-			else uiSetRoundBox(3);
+			if(panel->control & UI_PNL_SOLID) uiSetRoundBox(UI_CNR_ALL);
+			else uiSetRoundBox(UI_CNR_NONE);
 			
 			UI_ThemeColorShade(TH_BACK, -120);
 			uiRoundRect(0.5f + rect->xmin, 0.5f + rect->ymin, 0.5f + rect->xmax, 0.5f + headrect.ymax+1, 8);
@@ -567,7 +587,7 @@ void ui_draw_aligned_panel(uiStyle *style, uiBlock *block, rcti *rect)
 	itemrect.ymin= headrect.ymin;
 	itemrect.ymax= headrect.ymax;
 	
-	rectf_scale(&itemrect, 0.5f);
+	rectf_scale(&itemrect, 0.35f);
 	
 	if(panel->flag & PNL_CLOSEDY)
 		ui_draw_tria_rect(&itemrect, 'h');
@@ -589,16 +609,16 @@ static int get_panel_header(Panel *pa)
 	return PNL_HEADER;
 }
 
-static int get_panel_size_y(uiStyle *style, Panel *pa)
+static int get_panel_size_y(Panel *pa)
 {
 	if(pa->type && (pa->type->flag & PNL_NO_HEADER))
 		return pa->sizey;
 
-	return PNL_HEADER + pa->sizey + style->panelouter;
+	return PNL_HEADER + pa->sizey;
 }
 
-/* this function is needed because uiBlock and Panel itself dont
-change sizey or location when closed */
+/* this function is needed because uiBlock and Panel itself don't
+ * change sizey or location when closed */
 static int get_panel_real_ofsy(Panel *pa)
 {
 	if(pa->flag & PNL_CLOSEDY) return pa->ofsy+pa->sizey;
@@ -619,10 +639,10 @@ typedef struct PanelSort {
 } PanelSort;
 
 /* note about sorting;
-   the sortorder has a lower value for new panels being added.
-   however, that only works to insert a single panel, when more new panels get
-   added the coordinates of existing panels and the previously stored to-be-insterted
-   panels do not match for sorting */
+ * the sortorder has a lower value for new panels being added.
+ * however, that only works to insert a single panel, when more new panels get
+ * added the coordinates of existing panels and the previously stored to-be-inserted
+ * panels do not match for sorting */
 
 static int find_leftmost_panel(const void *a1, const void *a2)
 {
@@ -667,7 +687,6 @@ static int compare_panel(const void *a1, const void *a2)
 /* returns 1 when it did something */
 static int uiAlignPanelStep(ScrArea *sa, ARegion *ar, float fac, int drag)
 {
-	uiStyle *style= U.uistyles.first;
 	Panel *pa;
 	PanelSort *ps, *panelsort, *psnext;
 	int a, tot=0, done;
@@ -719,18 +738,18 @@ static int uiAlignPanelStep(ScrArea *sa, ARegion *ar, float fac, int drag)
 	/* no smart other default start loc! this keeps switching f5/f6/etc compatible */
 	ps= panelsort;
 	ps->pa->ofsx= 0;
-	ps->pa->ofsy= -get_panel_size_y(style, ps->pa);
+	ps->pa->ofsy= -get_panel_size_y(ps->pa);
 
 	for(a=0; a<tot-1; a++, ps++) {
 		psnext= ps+1;
 	
 		if(align==BUT_VERTICAL) {
 			psnext->pa->ofsx= ps->pa->ofsx;
-			psnext->pa->ofsy= get_panel_real_ofsy(ps->pa) - get_panel_size_y(style, psnext->pa);
+			psnext->pa->ofsy= get_panel_real_ofsy(ps->pa) - get_panel_size_y(psnext->pa);
 		}
 		else {
 			psnext->pa->ofsx= get_panel_real_ofsx(ps->pa);
-			psnext->pa->ofsy= ps->pa->ofsy + get_panel_size_y(style, ps->pa) - get_panel_size_y(style, psnext->pa);
+			psnext->pa->ofsy= ps->pa->ofsy + get_panel_size_y(ps->pa) - get_panel_size_y(psnext->pa);
 		}
 	}
 	
@@ -753,13 +772,43 @@ static int uiAlignPanelStep(ScrArea *sa, ARegion *ar, float fac, int drag)
 			ui_panel_copy_offset(pa, pa->paneltab);
 
 	/* free panelsort array */
-	for(ps= panelsort, a=0; a<tot; a++, ps++)
+	for (ps = panelsort, a = 0; a < tot; a++, ps++) {
 		MEM_freeN(ps->pa);
+	}
 	MEM_freeN(panelsort);
 	
 	return done;
 }
 
+static void ui_panels_size(ScrArea *sa, ARegion *ar, int *x, int *y)
+{
+	Panel *pa;
+	int align= panel_aligned(sa, ar);
+	int sizex = UI_PANEL_WIDTH;
+	int sizey = UI_PANEL_WIDTH;
+
+	/* compute size taken up by panels, for setting in view2d */
+	for(pa= ar->panels.first; pa; pa= pa->next) {
+		if(pa->runtime_flag & PNL_ACTIVE) {
+			int pa_sizex, pa_sizey;
+
+			if(align==BUT_VERTICAL) {
+				pa_sizex= pa->ofsx + pa->sizex;
+				pa_sizey= get_panel_real_ofsy(pa);
+			}
+			else {
+				pa_sizex= get_panel_real_ofsx(pa) + pa->sizex;
+				pa_sizey= pa->ofsy + get_panel_size_y(pa);
+			}
+
+			sizex= MAX2(sizex, pa_sizex);
+			sizey= MIN2(sizey, pa_sizey);
+		}
+	}
+
+	*x= sizex;
+	*y= sizey;
+}
 
 static void ui_do_animate(const bContext *C, Panel *panel)
 {
@@ -788,7 +837,7 @@ void uiBeginPanels(const bContext *UNUSED(C), ARegion *ar)
 {
 	Panel *pa;
   
-	  /* set all panels as inactive, so that at the end we know
+	/* set all panels as inactive, so that at the end we know
 	 * which ones were used */
 	for(pa=ar->panels.first; pa; pa=pa->next) {
 		if(pa->runtime_flag & PNL_ACTIVE)
@@ -799,7 +848,7 @@ void uiBeginPanels(const bContext *UNUSED(C), ARegion *ar)
 }
 
 /* only draws blocks with panels */
-void uiEndPanels(const bContext *C, ARegion *ar)
+void uiEndPanels(const bContext *C, ARegion *ar, int *x, int *y)
 {
 	ScrArea *sa= CTX_wm_area(C);
 	uiBlock *block;
@@ -852,6 +901,14 @@ void uiEndPanels(const bContext *C, ARegion *ar)
 	
 	if(firstpa)
 		firstpa->runtime_flag |= PNL_FIRST;
+	
+	/* compute size taken up by panel */
+	ui_panels_size(sa, ar, x, y);
+}
+
+void uiDrawPanels(const bContext *C, ARegion *ar)
+{
+	uiBlock *block;
 
 	UI_ThemeClearColor(TH_BACK);
 	
@@ -944,7 +1001,7 @@ static void ui_do_drag(const bContext *C, wmEvent *event, Panel *panel)
 
 
 /* this function is supposed to call general window drawing too */
-/* also it supposes a block has panel, and isnt a menu */
+/* also it supposes a block has panel, and isn't a menu */
 static void ui_handle_panel_header(const bContext *C, uiBlock *block, int mx, int my, int event)
 {
 	ScrArea *sa= CTX_wm_area(C);
@@ -1042,7 +1099,7 @@ int ui_handler_panel_region(bContext *C, wmEvent *event)
 				inside= 1;
 		
 		if(inside && event->val==KM_PRESS) {
-			if(event->type == AKEY && !ELEM4(1, event->ctrl, event->oskey, event->shift, event->alt)) {
+			if(event->type == AKEY && !ELEM4(KM_MOD_FIRST, event->ctrl, event->oskey, event->shift, event->alt)) {
 				
 				if(pa->flag & PNL_CLOSEDY) {
 					if((block->maxy <= my) && (block->maxy+PNL_HEADER >= my))
@@ -1093,11 +1150,14 @@ int ui_handler_panel_region(bContext *C, wmEvent *event)
 					}
 				}
 				else if(event->type == ESCKEY) {
-					/*XXX 2.50 if(block->handler) {
+					/*XXX 2.50*/
+#if 0
+					if(block->handler) {
 						rem_blockhandler(sa, block->handler);
 						ED_region_tag_redraw(ar);
 						retval= WM_UI_HANDLER_BREAK;
-					}*/
+					}
+#endif
 				}
 				else if(event->type==PADPLUSKEY || event->type==PADMINUS) {
 #if 0 // XXX make float panel exception?
@@ -1240,13 +1300,17 @@ static void panel_activate_state(const bContext *C, Panel *pa, uiHandlePanelStat
 	ED_region_tag_redraw(ar);
 
 	/* XXX exception handling, 3d window preview panel */
-	/* if(block->drawextra==BIF_view3d_previewdraw)
-		BIF_view3d_previewrender_clear(curarea);*/
-	
+#if 0
+	if(block->drawextra==BIF_view3d_previewdraw)
+		BIF_view3d_previewrender_clear(curarea);
+#endif
+
 	/* XXX exception handling, 3d window preview panel */
-	/* if(block->drawextra==BIF_view3d_previewdraw)
+#if 0
+	if(block->drawextra==BIF_view3d_previewdraw)
 		BIF_view3d_previewrender_signal(curarea, PR_DISPRECT);
 	else if(strcmp(block->name, "image_panel_preview")==0)
-		image_preview_event(2); */
+		image_preview_event(2);
+#endif
 }
 

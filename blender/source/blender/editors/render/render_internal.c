@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -78,10 +76,10 @@
 /* called inside thread! */
 void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect)
 {
-	float x1, y1, *rectf= NULL;
+	float *rectf= NULL;
 	int ymin, ymax, xmin, xmax;
-	int rymin, rxmin, do_color_management;
-	char *rectc;
+	int rymin, rxmin, predivide, profile_from;
+	unsigned char *rectc;
 
 	/* if renrect argument, we only refresh scanlines */
 	if(renrect) {
@@ -121,7 +119,7 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 
 	if(xmax < 1 || ymax < 1) return;
 
-	/* find current float rect for display, first case is after composit... still weak */
+	/* find current float rect for display, first case is after composite... still weak */
 	if(rr->rectf)
 		rectf= rr->rectf;
 	else {
@@ -138,74 +136,82 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 		imb_addrectImBuf(ibuf);
 	
 	rectf+= 4*(rr->rectx*ymin + xmin);
-	rectc= (char *)(ibuf->rect + ibuf->x*rymin + rxmin);
+	rectc= (unsigned char*)(ibuf->rect + ibuf->x*rymin + rxmin);
 
-	do_color_management = (scene && (scene->r.color_mgt_flag & R_COLOR_MANAGEMENT));
-	
-	/* XXX make nice consistent functions for this */
-	for(y1= 0; y1<ymax; y1++) {
-		float *rf= rectf;
-		float srgb[3];
-		char *rc= rectc;
-		const float dither = ibuf->dither / 255.0f;
-
-		/* XXX temp. because crop offset */
-		if(rectc >= (char *)(ibuf->rect)) {
-			for(x1= 0; x1<xmax; x1++, rf += 4, rc+=4) {
-				/* color management */
-				if(do_color_management) {
-					srgb[0]= linearrgb_to_srgb(rf[0]);
-					srgb[1]= linearrgb_to_srgb(rf[1]);
-					srgb[2]= linearrgb_to_srgb(rf[2]);
-				}
-				else {
-					copy_v3_v3(srgb, rf);
-				}
-
-				/* dither */
-				if(dither != 0.0f) {
-					const float d = (BLI_frand()-0.5f)*dither;
-
-					srgb[0] += d;
-					srgb[1] += d;
-					srgb[2] += d;
-				}
-
-				/* write */
-				rc[0]= FTOCHAR(srgb[0]);
-				rc[1]= FTOCHAR(srgb[1]);
-				rc[2]= FTOCHAR(srgb[2]);
-				rc[3]= FTOCHAR(rf[3]);
-			}
-		}
-
-		rectf += 4*rr->rectx;
-		rectc += 4*ibuf->x;
+	if(scene && (scene->r.color_mgt_flag & R_COLOR_MANAGEMENT)) {
+		profile_from= IB_PROFILE_LINEAR_RGB;
+		predivide= (scene->r.color_mgt_flag & R_COLOR_MANAGEMENT_PREDIVIDE);
 	}
+	else {
+		profile_from= IB_PROFILE_SRGB;
+		predivide= 0;
+	}
+
+	IMB_buffer_byte_from_float(rectc, rectf,
+		4, ibuf->dither, IB_PROFILE_SRGB, profile_from, predivide,
+		xmax, ymax, ibuf->x, rr->rectx);
 }
 
 /* ****************************** render invoking ***************** */
 
 /* set callbacks, exported to sequence render too.
- Only call in foreground (UI) renders. */
+ * Only call in foreground (UI) renders. */
+
+static void screen_render_scene_layer_set(wmOperator *op, Main *mainp, Scene **scene, SceneRenderLayer **srl)
+{
+	/* single layer re-render */
+	if(RNA_struct_property_is_set(op->ptr, "scene")) {
+		Scene *scn;
+		char scene_name[MAX_ID_NAME-2];
+
+		RNA_string_get(op->ptr, "scene", scene_name);
+		scn = (Scene *)BLI_findstring(&mainp->scene, scene_name, offsetof(ID, name) + 2);
+		
+		if (scn) {
+			/* camera switch wont have updated */
+			scn->r.cfra= (*scene)->r.cfra;
+			scene_camera_switch_update(scn);
+
+			*scene = scn;
+		}
+	}
+
+	if(RNA_struct_property_is_set(op->ptr, "layer")) {
+		SceneRenderLayer *rl;
+		char rl_name[RE_MAXNAME];
+
+		RNA_string_get(op->ptr, "layer", rl_name);
+		rl = (SceneRenderLayer *)BLI_findstring(&(*scene)->r.layers, rl_name, offsetof(SceneRenderLayer, name));
+		
+		if (rl)
+			*srl = rl;
+	}
+}
 
 /* executes blocking render */
 static int screen_render_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene= CTX_data_scene(C);
-	Render *re= RE_NewRender(scene->id.name);
+	SceneRenderLayer *srl= NULL;
+	Render *re;
 	Image *ima;
 	View3D *v3d= CTX_wm_view3d(C);
 	Main *mainp= CTX_data_main(C);
-	unsigned int lay= (v3d)? v3d->lay: scene->lay;
+	unsigned int lay;
 	const short is_animation= RNA_boolean_get(op->ptr, "animation");
 	const short is_write_still= RNA_boolean_get(op->ptr, "write_still");
 	struct Object *camera_override= v3d ? V3D_CAMERA_LOCAL(v3d) : NULL;
 
-	if(!is_animation && is_write_still && BKE_imtype_is_movie(scene->r.imtype)) {
-		BKE_report(op->reports, RPT_ERROR, "Can't write a single file with an animation format selected.");
+	/* custom scene and single layer re-render */
+	screen_render_scene_layer_set(op, mainp, &scene, &srl);
+
+	if(!is_animation && is_write_still && BKE_imtype_is_movie(scene->r.im_format.imtype)) {
+		BKE_report(op->reports, RPT_ERROR, "Can't write a single file with an animation format selected");
 		return OPERATOR_CANCELLED;
 	}
+
+	re= RE_NewRender(scene->id.name);
+	lay= (v3d)? v3d->lay: scene->lay;
 
 	G.afbreek= 0;
 	RE_test_break_cb(re, NULL, (int (*)(void *)) blender_test_break);
@@ -215,9 +221,9 @@ static int screen_render_exec(bContext *C, wmOperator *op)
 	BKE_image_backup_render(scene, ima);
 
 	/* cleanup sequencer caches before starting user triggered render.
-	   otherwise, invalidated cache entries can make their way into
-	   the output rendering. We can't put that into RE_BlenderFrame,
-	   since sequence rendering can call that recursively... (peter) */
+	 * otherwise, invalidated cache entries can make their way into
+	 * the output rendering. We can't put that into RE_BlenderFrame,
+	 * since sequence rendering can call that recursively... (peter) */
 	seq_stripelem_cache_cleanup();
 
 	RE_SetReports(re, op->reports);
@@ -225,7 +231,7 @@ static int screen_render_exec(bContext *C, wmOperator *op)
 	if(is_animation)
 		RE_BlenderAnim(re, mainp, scene, camera_override, lay, scene->r.sfra, scene->r.efra, scene->r.frame_step);
 	else
-		RE_BlenderFrame(re, mainp, scene, NULL, camera_override, lay, scene->r.cfra, is_write_still);
+		RE_BlenderFrame(re, mainp, scene, srl, camera_override, lay, scene->r.cfra, is_write_still);
 
 	RE_SetReports(re, NULL);
 
@@ -286,10 +292,13 @@ static void make_renderinfo_string(RenderStats *rs, Scene *scene, char *str)
 		spos+= sprintf(spos, "%s ", rs->statstr);
 	}
 	else {
-		spos+= sprintf(spos, "Fra:%d  Ve:%d Fa:%d ", (scene->r.cfra), rs->totvert, rs->totface);
+		spos+= sprintf(spos, "Fra:%d  ", (scene->r.cfra));
+		if(rs->totvert) spos+= sprintf(spos, "Ve:%d ", rs->totvert);
+		if(rs->totface) spos+= sprintf(spos, "Fa:%d ", rs->totface);
 		if(rs->tothalo) spos+= sprintf(spos, "Ha:%d ", rs->tothalo);
 		if(rs->totstrand) spos+= sprintf(spos, "St:%d ", rs->totstrand);
-		spos+= sprintf(spos, "La:%d Mem:%.2fM (%.2fM, peak %.2fM) ", rs->totlamp, megs_used_memory, mmap_used_memory, megs_peak_memory);
+		if(rs->totlamp) spos+= sprintf(spos, "La:%d ", rs->totlamp);
+		spos+= sprintf(spos, "Mem:%.2fM (%.2fM, peak %.2fM) ", megs_used_memory, mmap_used_memory, megs_peak_memory);
 
 		if(rs->curfield)
 			spos+= sprintf(spos, "Field %d ", rs->curfield);
@@ -339,8 +348,12 @@ static void render_progress_update(void *rjv, float progress)
 {
 	RenderJob *rj= rjv;
 	
-	if(rj->progress)
+	if(rj->progress && *rj->progress != progress) {
 		*rj->progress = progress;
+
+		/* make jobs timer to send notifier */
+		*(rj->do_update)= 1;
+	}
 }
 
 static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect)
@@ -398,13 +411,13 @@ static void render_endjob(void *rjv)
 		ED_update_for_newframe(G.main, rj->scene, rj->win->screen, 1);
 	
 	/* XXX above function sets all tags in nodes */
-	ntreeClearTags(rj->scene->nodetree);
+	ntreeCompositClearTags(rj->scene->nodetree);
 	
 	/* potentially set by caller */
 	rj->scene->r.scemode &= ~R_NO_FRAME_UPDATE;
 	
 	if(rj->srl) {
-		NodeTagIDChanged(rj->scene->nodetree, &rj->scene->id);
+		nodeUpdateID(rj->scene->nodetree, &rj->scene->id);
 		WM_main_add_notifier(NC_NODE|NA_EDITED, rj->scene);
 	}
 	
@@ -467,6 +480,7 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	const short is_animation= RNA_boolean_get(op->ptr, "animation");
 	const short is_write_still= RNA_boolean_get(op->ptr, "write_still");
 	struct Object *camera_override= v3d ? V3D_CAMERA_LOCAL(v3d) : NULL;
+	const char *name;
 	
 	/* only one render job at a time */
 	if(WM_jobs_test(CTX_wm_manager(C), scene))
@@ -476,8 +490,8 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 		return OPERATOR_CANCELLED;
 	}
 
-	if(!is_animation && is_write_still && BKE_imtype_is_movie(scene->r.imtype)) {
-		BKE_report(op->reports, RPT_ERROR, "Can't write a single file with an animation format selected.");
+	if(!is_animation && is_write_still && BKE_imtype_is_movie(scene->r.im_format.imtype)) {
+		BKE_report(op->reports, RPT_ERROR, "Can't write a single file with an animation format selected");
 		return OPERATOR_CANCELLED;
 	}	
 	
@@ -503,9 +517,9 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	multires_force_render_update(CTX_data_active_object(C));
 
 	/* cleanup sequencer caches before starting user triggered render.
-	   otherwise, invalidated cache entries can make their way into
-	   the output rendering. We can't put that into RE_BlenderFrame,
-	   since sequence rendering can call that recursively... (peter) */
+	 * otherwise, invalidated cache entries can make their way into
+	 * the output rendering. We can't put that into RE_BlenderFrame,
+	 * since sequence rendering can call that recursively... (peter) */
 	seq_stripelem_cache_cleanup();
 
 	/* get editmode results */
@@ -520,28 +534,11 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 
 	jobflag= WM_JOB_EXCL_RENDER|WM_JOB_PRIORITY|WM_JOB_PROGRESS;
 	
-	/* single layer re-render */
-	if(RNA_property_is_set(op->ptr, "layer")) {
-		SceneRenderLayer *rl;
-		Scene *scn;
-		char scene_name[MAX_ID_NAME-2], rl_name[RE_MAXNAME];
+	/* custom scene and single layer re-render */
+	screen_render_scene_layer_set(op, mainp, &scene, &srl);
 
-		RNA_string_get(op->ptr, "layer", rl_name);
-		RNA_string_get(op->ptr, "scene", scene_name);
-
-		scn = (Scene *)BLI_findstring(&mainp->scene, scene_name, offsetof(ID, name) + 2);
-		rl = (SceneRenderLayer *)BLI_findstring(&scene->r.layers, rl_name, offsetof(SceneRenderLayer, name));
-		
-		if (scn && rl) {
-			/* camera switch wont have updated */
-			scn->r.cfra= scene->r.cfra;
-			scene_camera_switch_update(scn);
-
-			scene = scn;
-			srl = rl;
-		}
+	if(RNA_struct_property_is_set(op->ptr, "layer"))
 		jobflag |= WM_JOB_SUSPEND;
-	}
 
 	/* job custom data */
 	rj= MEM_callocN(sizeof(RenderJob), "render job");
@@ -558,7 +555,10 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	rj->reports= op->reports;
 
 	/* setup job */
-	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Render", jobflag);
+	if(RE_seq_render_active(scene, &scene->r)) name= "Sequence Render";
+	else name= "Render";
+
+	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, name, jobflag);
 	WM_jobs_customdata(steve, rj, render_freejob);
 	WM_jobs_timer(steve, 0.2, NC_SCENE|ND_RENDER_RESULT, 0);
 	WM_jobs_callbacks(steve, render_startjob, NULL, NULL, render_endjob);
@@ -586,8 +586,8 @@ static int screen_render_invoke(bContext *C, wmOperator *op, wmEvent *event)
 	WM_event_add_notifier(C, NC_SCENE|ND_RENDER_RESULT, scene);
 
 	/* we set G.rendering here already instead of only in the job, this ensure
-	   main loop or other scene updates are disabled in time, since they may
-	   have started before the job thread */
+	 * main loop or other scene updates are disabled in time, since they may
+	 * have started before the job thread */
 	G.rendering = 1;
 
 	/* add modal handler for ESC */
@@ -609,11 +609,11 @@ void RENDER_OT_render(wmOperatorType *ot)
 	ot->modal= screen_render_modal;
 	ot->exec= screen_render_exec;
 
-	/*ot->poll= ED_operator_screenactive;*/ /* this isnt needed, causes failer in background mode */
+	/*ot->poll= ED_operator_screenactive;*/ /* this isn't needed, causes failer in background mode */
 
 	RNA_def_boolean(ot->srna, "animation", 0, "Animation", "Render files from the animation range of this scene");
 	RNA_def_boolean(ot->srna, "write_still", 0, "Write Image", "Save rendered the image to the output path (used only when animation is disabled)");
-	RNA_def_string(ot->srna, "layer", "", RE_MAXNAME, "Render Layer", "Single render layer to re-render");
-	RNA_def_string(ot->srna, "scene", "", MAX_ID_NAME-2, "Scene", "Re-render single layer in this scene");
+	RNA_def_string(ot->srna, "layer", "", RE_MAXNAME, "Render Layer", "Single render layer to re-render (used only when animation is disabled)");
+	RNA_def_string(ot->srna, "scene", "", MAX_ID_NAME-2, "Scene", "Scene to render, current scene if not specified");
 }
 

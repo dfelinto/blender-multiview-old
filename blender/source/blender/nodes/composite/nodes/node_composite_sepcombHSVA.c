@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,7 +35,7 @@
 
 /* **************** SEPARATE HSVA ******************** */
 static bNodeSocketTemplate cmp_node_sephsva_in[]= {
-	{	SOCK_RGBA, 1, "Image",			0.8f, 0.8f, 0.8f, 1.0f},
+	{	SOCK_RGBA, 1, "Image",			1.0f, 1.0f, 1.0f, 1.0f},
 	{	-1, 0, ""	}
 };
 static bNodeSocketTemplate cmp_node_sephsva_out[]= {
@@ -101,16 +99,16 @@ static void node_composit_exec_sephsva(void *UNUSED(data), bNode *node, bNodeSta
 	}
 }
 
-void register_node_type_cmp_sephsva(ListBase *lb)
+void register_node_type_cmp_sephsva(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_SEPHSVA, "Separate HSVA", NODE_CLASS_CONVERTOR, 0);
+	node_type_base(ttype, &ntype, CMP_NODE_SEPHSVA, "Separate HSVA", NODE_CLASS_CONVERTOR, 0);
 	node_type_socket_templates(&ntype, cmp_node_sephsva_in, cmp_node_sephsva_out);
 	node_type_size(&ntype, 80, 40, 140);
 	node_type_exec(&ntype, node_composit_exec_sephsva);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
 
 
@@ -143,11 +141,10 @@ static void node_composit_exec_combhsva(void *UNUSED(data), bNode *node, bNodeSt
 	/* stack order out: 1 rgba channels */
 	/* stack order in: 4 value channels */
 
-	/* input no image? then only color operation */
+	/* input no image? then only color operation in HSV */
 	if((in[0]->data==NULL) && (in[1]->data==NULL) && (in[2]->data==NULL) && (in[3]->data==NULL)) {
-		out[0]->vec[0] = in[0]->vec[0];
-		out[0]->vec[1] = in[1]->vec[0];
-		out[0]->vec[2] = in[2]->vec[0];
+		hsv_to_rgb(in[0]->vec[0], in[1]->vec[0], in[2]->vec[0],
+		&out[0]->vec[0], &out[0]->vec[1], &out[0]->vec[2]);
 		out[0]->vec[3] = in[3]->vec[0];
 	}
 	else {
@@ -171,17 +168,14 @@ static void node_composit_exec_combhsva(void *UNUSED(data), bNode *node, bNodeSt
 	}
 }
 
-void register_node_type_cmp_combhsva(ListBase *lb)
+void register_node_type_cmp_combhsva(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_COMBHSVA, "Combine HSVA", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_COMBHSVA, "Combine HSVA", NODE_CLASS_CONVERTOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_combhsva_in, cmp_node_combhsva_out);
 	node_type_size(&ntype, 80, 40, 140);
 	node_type_exec(&ntype, node_composit_exec_combhsva);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-

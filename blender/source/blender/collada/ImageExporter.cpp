@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,7 +41,7 @@
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 
-ImagesExporter::ImagesExporter(COLLADASW::StreamWriter *sw, const char* filename) : COLLADASW::LibraryImages(sw), mfilename(filename)
+ImagesExporter::ImagesExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings) : COLLADASW::LibraryImages(sw), export_settings(export_settings)
 {}
 
 bool ImagesExporter::hasImages(Scene *sce)
@@ -71,12 +69,12 @@ bool ImagesExporter::hasImages(Scene *sce)
 	return false;
 }
 
-void ImagesExporter::exportImages(Scene *sce, bool export_selected)
+void ImagesExporter::exportImages(Scene *sce)
 {
 	if(hasImages(sce)) {
 		openLibrary();
 		MaterialFunctor mf;
-		mf.forEachMaterialInScene<ImagesExporter>(sce, *this, export_selected);
+		mf.forEachMaterialInScene<ImagesExporter>(sce, *this, this->export_settings->selected);
 
 		closeLibrary();
 	}
@@ -97,7 +95,7 @@ void ImagesExporter::operator()(Material *ma, Object *ob)
 			char src[FILE_MAX];
 			char dir[FILE_MAX];
 			
-			BLI_split_dirfile(mfilename, dir, NULL);
+			BLI_split_dir_part(this->export_settings->filepath, dir, sizeof(dir));
 
 			BKE_rebase_path(abs, sizeof(abs), rel, sizeof(rel), G.main->name, image->name, dir);
 
@@ -110,7 +108,7 @@ void ImagesExporter::operator()(Material *ma, Object *ob)
 				// make dest directory if it doesn't exist
 				BLI_make_existing_file(abs);
 			
-				if (BLI_copy_fileops(src, abs) != 0) {
+				if (BLI_copy(src, abs) != 0) {
 					fprintf(stderr, "Cannot copy image to file's directory. \n");
 				}
 			} 

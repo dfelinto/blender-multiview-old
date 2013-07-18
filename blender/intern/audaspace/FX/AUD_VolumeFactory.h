@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_VOLUMEFACTORY
-#define AUD_VOLUMEFACTORY
+#ifndef __AUD_VOLUMEFACTORY_H__
+#define __AUD_VOLUMEFACTORY_H__
 
 #include "AUD_EffectFactory.h"
 
@@ -68,4 +66,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_VOLUMEFACTORY
+#endif //__AUD_VOLUMEFACTORY_H__

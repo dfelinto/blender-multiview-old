@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,3 +26,7 @@
  
 void BPy_init_modules(void);
 extern PyObject *bpy_package_py;
+
+/* bpy_interface_atexit.c */
+void BPY_atexit_register(void);
+void BPY_atexit_unregister(void);

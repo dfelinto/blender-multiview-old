@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -28,7 +26,6 @@
  * NS api template, adapted to link to our own internals.
  */
 
-#define UNIXSH_VERSION "$Id$"
 #define MOZ_X11 1
 
 /* -*- Mode: C; tab-width: 8; c-set-style: bsd -*- */
@@ -79,7 +76,7 @@ execute_blenderplayer(BlenderPluginInstance*);
 /* NPP_GetMIMEDescription() and NPP_GetValue() are called to determine
  * the mime types supported by this plugin. */
 char*
-NPP_GetMIMEDescription( void )
+NPP_GetMIMEDescription(void)
 {
 	log_entry("NPP_GetMIMEDescription");
 	return("application/x-blender-plugin:blend:Blender 3D web plugin");
@@ -478,7 +475,8 @@ NPP_Print(NPP instance, NPPrint* printInfo )
 
 
 void
-execute_blenderplayer(BlenderPluginInstance* instance){
+execute_blenderplayer(BlenderPluginInstance* instance)
+{
 
 	char file_name[] = "/tmp/blender.XXXXXX";
 	int fd = mkstemp(file_name);

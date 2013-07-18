@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_NULLDEVICE
-#define AUD_NULLDEVICE
+#ifndef __AUD_NULLDEVICE_H__
+#define __AUD_NULLDEVICE_H__
 
 #include "AUD_IReader.h"
 #include "AUD_IDevice.h"
@@ -83,4 +81,4 @@ public:
 	virtual void setVolume(float volume);
 };
 
-#endif //AUD_NULLDEVICE
+#endif //__AUD_NULLDEVICE_H__

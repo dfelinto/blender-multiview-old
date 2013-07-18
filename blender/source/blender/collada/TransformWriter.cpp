@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,7 +40,7 @@ void TransformWriter::add_node_transform(COLLADASW::Node& node, float mat[][4], 
 	if (parent_mat) {
 		float invpar[4][4];
 		invert_m4_m4(invpar, parent_mat);
-		mul_m4_m4m4(local, mat, invpar);
+		mult_m4_m4m4(local, invpar, mat);
 	}
 	else {
 		copy_m4_m4(local, mat);
@@ -61,6 +59,7 @@ void TransformWriter::add_node_transform(COLLADASW::Node& node, float mat[][4], 
 
 void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
 {
+	/*
 	float rot[3], loc[3], scale[3];
 
 	if (ob->parent) {
@@ -79,7 +78,7 @@ void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
 		// calculate local mat
 
 		invert_m4_m4(imat, ob->parent->obmat);
-		mul_m4_m4m4(mat, tmat, imat);
+		mult_m4_m4m4(mat, imat, tmat);
 
 		// done
 
@@ -93,6 +92,30 @@ void TransformWriter::add_node_transform_ob(COLLADASW::Node& node, Object *ob)
 	}
 
 	add_transform(node, loc, rot, scale);
+	*/
+
+	/* Using parentinv should allow use of existing curves */
+	if(ob->parent)
+	{
+		// If parentinv is identity don't add it.
+		bool add_parinv = false;
+
+		for(int i = 0; i < 16; ++i)
+		{
+			float f = (i % 4 == i / 4) ? 1.0f : 0.0f;
+			add_parinv |= (ob->parentinv[i % 4][i / 4] != f);
+		}
+
+		if(add_parinv)
+		{
+			double dmat[4][4];
+			UnitConverter converter;
+			converter.mat4_to_dae_double(dmat, ob->parentinv);
+			node.addMatrix("parentinverse", dmat);
+		}
+	}
+
+	add_transform(node, ob->loc, ob->rot, ob->size);
 }
 
 void TransformWriter::add_node_transform_identity(COLLADASW::Node& node)
@@ -107,9 +130,9 @@ void TransformWriter::add_transform(COLLADASW::Node& node, float loc[3], float r
 	/*node.addRotateZ("rotationZ", COLLADABU::Math::Utils::radToDegF(rot[2]));
 	node.addRotateY("rotationY", COLLADABU::Math::Utils::radToDegF(rot[1]));
 	node.addRotateX("rotationX", COLLADABU::Math::Utils::radToDegF(rot[0]));*/
-	node.addRotateZ("rotationZ", rot[2] * 180.0f/M_PI);
-	node.addRotateY("rotationY", (rot[1]* 180.0f/M_PI));
-	node.addRotateX("rotationX", (rot[0]* 180.0f/M_PI));
+	node.addRotateZ("rotationZ", RAD2DEGF(rot[2]));
+	node.addRotateY("rotationY", RAD2DEGF(rot[1]));
+	node.addRotateX("rotationX", RAD2DEGF(rot[0]));
 
 	node.addScale("scale", scale[0], scale[1], scale[2]);
 }

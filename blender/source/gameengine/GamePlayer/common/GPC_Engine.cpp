@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -133,7 +131,7 @@ GPC_Engine::~GPC_Engine()
 }
 
 
-bool GPC_Engine::Start(char *filename)
+bool GPC_Engine::Start(const char *filename)
 {
 	ReportList reports;
 	BlendFileData *bfd;
@@ -227,7 +225,7 @@ void GPC_Engine::StartLoadingAnimation()
 }
 
 	
-// will be platform dependant
+// will be platform dependent
 float GPC_Engine::DetermineProgress(void)
 {
 #if 0
@@ -241,7 +239,7 @@ float GPC_Engine::DetermineProgress(void)
 		progress = 0.f;
 	}
 	progress *= 100.f;
-	return (unsigned int) progress ;
+	return (unsigned int) progress;
 #endif
 	return m_previousProgress + 0.01;  // temporary TODO
 }

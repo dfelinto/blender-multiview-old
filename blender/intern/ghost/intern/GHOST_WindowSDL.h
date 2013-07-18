@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * Declaration of GHOST_WindowSDL class.
  */
 
-#ifndef _GHOST_WINDOWSDL_H_
-#define _GHOST_WINDOWSDL_H_
+#ifndef __GHOST_WINDOWSDL_H__
+#define __GHOST_WINDOWSDL_H__
 
 #include "GHOST_Window.h"
 #include "GHOST_SystemSDL.h"
@@ -70,7 +69,7 @@ public:
 
 	~GHOST_WindowSDL();
 
-	/* SDL spesific */
+	/* SDL specific */
 	SDL_Window *
 	getSDLWindow()
 	{
@@ -164,4 +163,4 @@ protected:
 };
 
 
-#endif // _GHOST_WINDOWSDL_H_
+#endif // __GHOST_WINDOWSDL_H__

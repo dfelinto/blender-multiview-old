@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,7 +42,6 @@
 #include "BLI_blenlib.h"
 #include "BLI_linklist.h"
 #include "BLI_dynstr.h"
-#include "BLI_string.h"
 
 #ifdef WIN32
 #include <windows.h> /* need to include windows.h so _WIN32_IE is defined  */
@@ -213,8 +210,8 @@ void fsmenu_remove_entry(struct FSMenu* fsmenu, FSMenuCategory category, int idx
 
 	if (fsme) {
 		/* you should only be able to remove entries that were 
-		   not added by default, like windows drives.
-		   also separators (where path == NULL) shouldn't be removed */
+		 * not added by default, like windows drives.
+		 * also separators (where path == NULL) shouldn't be removed */
 		if (fsme->save && fsme->path) {
 
 			/* remove fsme from list */
@@ -248,8 +245,9 @@ void fsmenu_write_file(struct FSMenu* fsmenu, const char *filename)
 	fprintf(fp, "[Recent]\n");
 	nskip = fsmenu_get_nentries(fsmenu, FS_CATEGORY_RECENT) - FSMENU_RECENT_MAX;
 	// skip first entries if list too long
-	for (fsme= fsmenu_get_category(fsmenu, FS_CATEGORY_RECENT); fsme && (nskip>0); fsme= fsme->next, --nskip)
-		;
+	for (fsme= fsmenu_get_category(fsmenu, FS_CATEGORY_RECENT); fsme && (nskip>0); fsme= fsme->next, --nskip) {
+		/* pass */
+	}
 	for (; fsme; fsme= fsme->next) {
 		if (fsme->path && fsme->save) {
 			fprintf(fp, "%s\n", fsme->path);
@@ -279,7 +277,7 @@ void fsmenu_read_bookmarks(struct FSMenu* fsmenu, const char *filename)
 				if (line[len-1] == '\n') {
 					line[len-1] = '\0';
 				}
-				if (BLI_exist(line)) {
+				if (BLI_exists(line)) {
 					fsmenu_insert_entry(fsmenu, category, line, 0, 1);
 				}
 			}
@@ -329,22 +327,22 @@ void fsmenu_read_system(struct FSMenu* fsmenu)
 		for (i=1; err!=nsvErr; i++)
 		{
 			FSRef dir;
-			unsigned char path[FILE_MAXDIR+FILE_MAXFILE];
+			unsigned char path[FILE_MAX];
 			
 			err = FSGetVolumeInfo(kFSInvalidVolumeRefNum, i, NULL, kFSVolInfoNone, NULL, NULL, &dir);
 			if (err != noErr)
 				continue;
 			
-			FSRefMakePath(&dir, path, FILE_MAXDIR+FILE_MAXFILE);
-			if (strcmp((char*)path, "/home") && strcmp((char*)path, "/net"))
-			{ /* /net and /home are meaningless on OSX, home folders are stored in /Users */
+			FSRefMakePath(&dir, path, FILE_MAX);
+			if (strcmp((char*)path, "/home") && strcmp((char*)path, "/net")) {
+				/* /net and /home are meaningless on OSX, home folders are stored in /Users */
 				fsmenu_insert_entry(fsmenu, FS_CATEGORY_SYSTEM, (char *)path, 1, 0);
 			}
 		}
 
 		/* As 10.4 doesn't provide proper API to retrieve the favorite places,
-		 assume they are the standard ones 
-		 TODO : replace hardcoded paths with proper BLI_get_folder calls */
+		 * assume they are the standard ones 
+		 * TODO : replace hardcoded paths with proper BLI_get_folder calls */
 		home = getenv("HOME");
 		if(home) {
 			BLI_snprintf(line, 256, "%s/", home);
@@ -417,7 +415,7 @@ void fsmenu_read_system(struct FSMenu* fsmenu)
 			FSRef dir;
 			FSVolumeRefNum volRefNum;
 			struct GetVolParmsInfoBuffer volParmsBuffer;
-			unsigned char path[FILE_MAXDIR+FILE_MAXFILE];
+			unsigned char path[FILE_MAX];
 			
 			err = FSGetVolumeInfo(kFSInvalidVolumeRefNum, i, &volRefNum, kFSVolInfoNone, NULL, NULL, &dir);
 			if (err != noErr)
@@ -428,7 +426,7 @@ void fsmenu_read_system(struct FSMenu* fsmenu)
 				continue;
 			
 			
-			FSRefMakePath(&dir, path, FILE_MAXDIR+FILE_MAXFILE);
+			FSRefMakePath(&dir, path, FILE_MAX);
 			fsmenu_insert_entry(fsmenu, FS_CATEGORY_SYSTEM, (char *)path, 1, 0);
 		}
 		

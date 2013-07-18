@@ -1,5 +1,4 @@
 /**
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef NAN_INCLUDED_GlutDrawer
-#define NAN_INCLUDED_GlutDrawer
+#ifndef __GLUTDRAWER_H__
+#define __GLUTDRAWER_H__
 
 #include "MEM_NonCopyable.h"
 #include "MEM_SmartPtr.h"

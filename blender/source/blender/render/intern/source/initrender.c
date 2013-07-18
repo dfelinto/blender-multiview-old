@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -55,6 +53,7 @@
 #include "DNA_scene_types.h"
 
 
+#include "BKE_camera.h"
 #include "BKE_global.h"
 #include "BKE_material.h"
 #include "BKE_object.h"
@@ -452,15 +451,64 @@ struct Object *RE_GetCamera(Render *re)
 	return re->camera_override ? re->camera_override : re->scene->camera;
 }
 
-/* call this after InitState() */
-/* per render, there's one persistant viewplane. Parts will set their own viewplanes */
-void RE_SetCamera(Render *re, Object *camera)
+static void re_camera_params_get(Render *re, CameraParams *params, Object *cam_ob)
 {
-	object_camera_mode(&re->r, camera);
+	copy_m4_m4(re->winmat, params->winmat);
 
-	object_camera_matrix(&re->r, camera, re->winx, re->winy, re->flag & R_SEC_FIELD,
-			re->winmat, &re->viewplane, &re->clipsta, &re->clipend,
-			&re->lens, &re->ycor, &re->viewdx, &re->viewdy);
+	re->clipsta= params->clipsta;
+	re->clipend= params->clipend;
+
+	re->ycor= params->ycor;
+	re->viewdx= params->viewdx;
+	re->viewdy= params->viewdy;
+	re->viewplane= params->viewplane;
+
+	object_camera_mode(&re->r, cam_ob);
+}
+
+void RE_SetEnvmapCamera(Render *re, Object *cam_ob, float viewscale, float clipsta, float clipend)
+{
+	CameraParams params;
+
+	/* setup parameters */
+	camera_params_init(&params);
+	camera_params_from_object(&params, cam_ob);
+
+	params.lens= 16.0f*viewscale;
+	params.sensor_x= 32.0f;
+	params.sensor_y= 32.0f;
+	params.sensor_fit = CAMERA_SENSOR_FIT_AUTO;
+	params.clipsta= clipsta;
+	params.clipend= clipend;
+	
+	/* compute matrix, viewplane, .. */
+	camera_params_compute_viewplane(&params, re->winx, re->winy, 1.0f, 1.0f);
+	camera_params_compute_matrix(&params);
+
+	/* extract results */
+	re_camera_params_get(re, &params, cam_ob);
+}
+
+/* call this after InitState() */
+/* per render, there's one persistent viewplane. Parts will set their own viewplanes */
+void RE_SetCamera(Render *re, Object *cam_ob)
+{
+	CameraParams params;
+
+	/* setup parameters */
+	camera_params_init(&params);
+	camera_params_from_object(&params, cam_ob);
+
+	params.use_fields= (re->r.mode & R_FIELDS);
+	params.field_second= (re->flag & R_SEC_FIELD);
+	params.field_odd= (re->r.mode & R_ODDFIELD);
+
+	/* compute matrix, viewplane, .. */
+	camera_params_compute_viewplane(&params, re->winx, re->winy, re->r.xasp, re->r.yasp);
+	camera_params_compute_matrix(&params);
+
+	/* extract results */
+	re_camera_params_get(re, &params, cam_ob);
 }
 
 void RE_SetPixelSize(Render *re, float pixsize)

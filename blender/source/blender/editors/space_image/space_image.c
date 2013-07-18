@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -34,6 +32,7 @@
 #include <string.h>
 #include <stdio.h>
 
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
@@ -42,15 +41,18 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
-#include "BLI_editVert.h"
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_colortools.h"
 #include "BKE_context.h"
 #include "BKE_image.h"
+#include "BKE_global.h"
+#include "BKE_main.h"
 #include "BKE_mesh.h"
+#include "BKE_scene.h"
 #include "BKE_screen.h"
+#include "BKE_tessmesh.h"
 
 #include "IMB_imbuf_types.h"
 
@@ -81,9 +83,10 @@ Image *ED_space_image(SpaceImage *sima)
 }
 
 /* called to assign images to UV faces */
-void ED_space_image_set(bContext *C, SpaceImage *sima, Scene *scene, Object *obedit, Image *ima)
+void ED_space_image_set(SpaceImage *sima, Scene *scene, Object *obedit, Image *ima)
 {
-	ED_uvedit_assign_image(scene, obedit, ima, sima->image);
+	/* context may be NULL, so use global */
+	ED_uvedit_assign_image(G.main, scene, obedit, ima, sima->image);
 	
 	/* change the space ima after because uvedit_face_visible uses the space ima
 	 * to check if the face is displayed in UV-localview */
@@ -98,13 +101,10 @@ void ED_space_image_set(bContext *C, SpaceImage *sima, Scene *scene, Object *obe
 	if(sima->image && sima->image->id.us==0)
 		sima->image->id.us= 1;
 	
-	if(C) {
-		if(obedit)
-			WM_event_add_notifier(C, NC_GEOM|ND_DATA, obedit->data);
-		
-		ED_area_tag_redraw(CTX_wm_area(C));
-		
-	}
+	if(obedit)
+		WM_main_add_notifier(NC_GEOM|ND_DATA, obedit->data);
+
+	WM_main_add_notifier(NC_SPACE|ND_SPACE_IMAGE, NULL);
 }
 
 ImBuf *ED_space_image_acquire_buffer(SpaceImage *sima, void **lock_r)
@@ -276,12 +276,11 @@ int ED_space_image_show_uvedit(SpaceImage *sima, Object *obedit)
 		return 0;
 
 	if(obedit && obedit->type == OB_MESH) {
-		EditMesh *em = BKE_mesh_get_editmesh(obedit->data);
+		struct BMEditMesh *em = BMEdit_FromObject(obedit);
 		int ret;
 		
-		ret = EM_texFaceCheck(em);
+		ret = EDBM_texFaceCheck(em);
 		
-		BKE_mesh_end_editmesh(obedit->data, em);
 		return ret;
 	}
 	
@@ -295,12 +294,11 @@ int ED_space_image_show_uvshadow(SpaceImage *sima, Object *obedit)
 	
 	if(ED_space_image_show_paint(sima))
 		if(obedit && obedit->type == OB_MESH) {
-			EditMesh *em = BKE_mesh_get_editmesh(obedit->data);
+			struct BMEditMesh *em = BMEdit_FromObject(obedit);
 			int ret;
 			
-			ret = EM_texFaceCheck(em);
+			ret = EDBM_texFaceCheck(em);
 			
-			BKE_mesh_end_editmesh(obedit->data, em);
 			return ret;
 		}
 	
@@ -544,7 +542,7 @@ static void image_keymap(struct wmKeyConfig *keyconf)
 	/* toggle editmode is handy to have while UV unwrapping */
 	kmi= WM_keymap_add_item(keymap, "OBJECT_OT_mode_set", TABKEY, KM_PRESS, 0, 0);
 	RNA_enum_set(kmi->ptr, "mode", OB_MODE_EDIT);
-	RNA_boolean_set(kmi->ptr, "toggle", 1);
+	RNA_boolean_set(kmi->ptr, "toggle", TRUE);
 }
 
 /* dropboxes */
@@ -574,6 +572,7 @@ static void image_dropboxes(void)
 
 static void image_refresh(const bContext *C, ScrArea *UNUSED(sa))
 {
+	Scene *scene = CTX_data_scene(C);
 	SpaceImage *sima= CTX_wm_space_image(C);
 	Object *obedit= CTX_data_edit_object(C);
 	Image *ima;
@@ -581,30 +580,45 @@ static void image_refresh(const bContext *C, ScrArea *UNUSED(sa))
 	ima= ED_space_image(sima);
 
 	if(sima->iuser.flag & IMA_ANIM_ALWAYS)
-		BKE_image_user_calc_frame(&sima->iuser, CTX_data_scene(C)->r.cfra, 0);
+		BKE_image_user_calc_frame(&sima->iuser, scene->r.cfra, 0);
 	
 	/* check if we have to set the image from the editmesh */
 	if(ima && (ima->source==IMA_SRC_VIEWER || sima->pin));
 	else if(obedit && obedit->type == OB_MESH) {
 		Mesh *me= (Mesh*)obedit->data;
-		EditMesh *em= BKE_mesh_get_editmesh(me);
-		MTFace *tf;
-		
-		if(em && EM_texFaceCheck(em)) {
-			sima->image= NULL;
-			
-			tf = EM_get_active_mtface(em, NULL, NULL, 1); /* partially selected face is ok */
-			
-			if(tf && (tf->mode & TF_TEX)) {
-				/* don't need to check for pin here, see above */
-				sima->image= tf->tpage;
-				
-				if(sima->flag & SI_EDITTILE);
-				else sima->curtile= tf->tile;
+		struct BMEditMesh *em= me->edit_btmesh;
+		int sloppy= 1; /* partially selected face is ok */
+
+		if(scene_use_new_shading_nodes(scene)) {
+			/* new shading system, get image from material */
+			BMFace *efa = BM_active_face_get(em->bm, sloppy);
+
+			if(efa) {
+				Image *node_ima;
+				ED_object_get_active_image(obedit, efa->mat_nr, &node_ima, NULL, NULL);
+
+				if(node_ima)
+					sima->image= node_ima;
 			}
 		}
-
-		BKE_mesh_end_editmesh(obedit->data, em);
+		else {
+			/* old shading system, we set texface */
+			MTexPoly *tf;
+			
+			if(em && EDBM_texFaceCheck(em)) {
+				sima->image= NULL;
+				
+				tf = EDBM_get_active_mtexpoly(em, NULL, TRUE); /* partially selected face is ok */
+				
+				if(tf) {
+					/* don't need to check for pin here, see above */
+					sima->image= tf->tpage;
+					
+					if(sima->flag & SI_EDITTILE);
+					else sima->curtile= tf->tile;
+				}
+			}
+		}
 	}
 }
 
@@ -756,6 +770,9 @@ static void image_main_area_init(wmWindowManager *wm, ARegion *ar)
 	keymap= WM_keymap_find(wm->defaultconf, "UV Editor", 0, 0);
 	WM_event_add_keymap_handler(&ar->handlers, keymap);
 	
+	keymap= WM_keymap_find(wm->defaultconf, "UV Sculpt", 0, 0);
+	WM_event_add_keymap_handler(&ar->handlers, keymap);
+
 	/* own keymaps */
 	keymap= WM_keymap_find(wm->defaultconf, "Image Generic", SPACE_IMAGE, 0);
 	WM_event_add_keymap_handler(&ar->handlers, keymap);
@@ -768,6 +785,7 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 {
 	/* draw entirely, view changes should be handled here */
 	SpaceImage *sima= CTX_wm_space_image(C);
+	Object *obact= CTX_data_active_object(C);
 	Object *obedit= CTX_data_edit_object(C);
 	Scene *scene= CTX_data_scene(C);
 	View2D *v2d= &ar->v2d;
@@ -793,7 +811,7 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 
 	/* and uvs in 0.0-1.0 space */
 	UI_view2d_view_ortho(v2d);
-	draw_uvedit_main(sima, ar, scene, obedit);
+	draw_uvedit_main(sima, ar, scene, obedit, obact);
 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_POST_VIEW);
 		
@@ -806,9 +824,11 @@ static void image_main_area_draw(const bContext *C, ARegion *ar)
 	draw_image_grease_pencil((bContext *)C, 0);
 	
 	/* scrollers? */
-	/*scrollers= UI_view2d_scrollers_calc(C, v2d, V2D_UNIT_VALUES, V2D_GRID_CLAMP, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
+#if 0
+	scrollers= UI_view2d_scrollers_calc(C, v2d, V2D_UNIT_VALUES, V2D_GRID_CLAMP, V2D_ARG_DUMMY, V2D_ARG_DUMMY);
 	UI_view2d_scrollers_draw(C, v2d, scrollers);
-	UI_view2d_scrollers_free(scrollers);*/
+	UI_view2d_scrollers_free(scrollers);
+#endif
 }
 
 static void image_main_area_listener(ARegion *ar, wmNotifier *wmn)
@@ -851,6 +871,12 @@ static void image_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
 		case NC_BRUSH:
 			if(wmn->action==NA_EDITED)
 				ED_region_tag_redraw(ar);
+			break;
+		case NC_TEXTURE:
+		case NC_MATERIAL:
+			/* sending by texture render job and needed to properly update displaying
+			 * brush texture icon */
+			ED_region_tag_redraw(ar);
 			break;
 	}
 }

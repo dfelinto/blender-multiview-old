@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -99,7 +98,7 @@ void	KX_BlenderMouseDevice::NextFrame()
 			if (oldevent.m_status == SCA_InputEvent::KX_JUSTRELEASED)
 			{
 				
-				m_eventStatusTables[m_currentTable][mousemove].m_status = SCA_InputEvent::KX_NO_INPUTSTATUS ;
+				m_eventStatusTables[m_currentTable][mousemove].m_status = SCA_InputEvent::KX_NO_INPUTSTATUS;
 			}
 		}
 	}

@@ -1,5 +1,4 @@
 # -*- mode: cmake; indent-tabs-mode: t; -*-
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -26,8 +25,8 @@
 # ***** END GPL LICENSE BLOCK *****
 
 #-----------------------------------------------------------------------------
-# We don't allow in-source builds. This causes no end of troubles because 
-# all out-of-source builds will use the CMakeCache.txt file there and even 
+# We don't allow in-source builds. This causes no end of troubles because
+# all out-of-source builds will use the CMakeCache.txt file there and even
 # build the libs and objects in it.
 
 if(${CMAKE_SOURCE_DIR} STREQUAL ${CMAKE_BINARY_DIR})
@@ -61,6 +60,13 @@ set(CMAKE_BUILD_TYPE_INIT "Release")
 
 # quiet output for Makefiles, 'make -s' helps too
 # set_property(GLOBAL PROPERTY RULE_MESSAGES OFF)
+
+# global compile definitions since add_definitions() adds for all.
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_DEBUG           DEBUG _DEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELEASE         NDEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_MINSIZEREL      NDEBUG)
+set_property(DIRECTORY APPEND PROPERTY COMPILE_DEFINITIONS_RELWITHDEBINFO  NDEBUG)
+
 
 #-----------------------------------------------------------------------------
 # Set policy
@@ -105,6 +111,7 @@ set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR}/lib CACHE INTERNAL "" FORCE )
 
 get_blender_version()
 
+
 # Blender internal features
 option(WITH_BLENDER "Build blender (disable to build only the blender player)" ON)
 mark_as_advanced(WITH_BLENDER)
@@ -117,7 +124,7 @@ mark_as_advanced(WITH_PYTHON)  # dont want people disabling this unless they rea
 mark_as_advanced(WITH_PYTHON_SECURITY)  # some distrobutions see this as a security issue, rather than have them patch it, make a build option.
 
 option(WITH_PYTHON_SAFETY "Enable internal API error checking to track invalid data to prevent crash on access (at the expense of some effeciency, only enable for development)." OFF)
-option(WITH_PYTHON_MODULE "Enable building as a python module (experemental, only enable for development)" OFF)
+option(WITH_PYTHON_MODULE "Enable building as a python module (experimental, only enable for development)" OFF)
 option(WITH_BUILDINFO     "Include extra build details (only disable for development & faster builds)" ON)
 option(WITH_IK_ITASC      "Enable ITASC IK solver (only disable for development & for incompatible C++ compilers)" ON)
 option(WITH_FFTW3         "Enable FFTW3 support (Used for smoke and audio effects)" OFF)
@@ -148,8 +155,16 @@ else()
 endif()
 
 if(UNIX AND NOT APPLE)
-	option(WITH_X11_XINPUT "Enable X11 Xinput (tablet support)"	ON)
+	option(WITH_X11_XINPUT "Enable X11 Xinput (tablet support and unicode input)"	ON)
+	option(WITH_X11_XF86VMODE "Enable X11 video mode switching"	ON)
 	option(WITH_BUILTIN_GLEW "Use GLEW OpenGL wrapper library bundled with blender" ON)
+	option(WITH_XDG_USER_DIRS    "Build with XDG Base Directory Specification (only config and documents for now)" OFF)
+	mark_as_advanced(WITH_XDG_USER_DIRS)
+
+	# freebsd doesn't seems to support XDND
+	if(NOT ${CMAKE_SYSTEM_NAME} MATCHES "FreeBSD")
+		option(WITH_GHOST_XDND   "Enable drag'n'drop support on Linux using XDND protocol" ON)
+	endif()
 else()
 	# not an option for other OS's
 	set(WITH_BUILTIN_GLEW ON)
@@ -160,8 +175,10 @@ option(WITH_MOD_FLUID        	"Enable Elbeem Modifier (Fluid Simulation)" ON)
 option(WITH_MOD_SMOKE        	"Enable Smoke Modifier (Smoke Simulation)" ON)
 option(WITH_MOD_DECIMATE       	"Enable Decimate Modifier" ON)
 option(WITH_MOD_BOOLEAN        	"Enable Boolean Modifier" ON)
-option(WITH_MOD_CLOTH_ELTOPO   	"Enable Experemental cloth solver" OFF)
+option(WITH_MOD_REMESH        	"Enable Remesh Modifier" ON)
+option(WITH_MOD_CLOTH_ELTOPO   	"Enable Experimental cloth solver" OFF)
 mark_as_advanced(WITH_MOD_CLOTH_ELTOPO)
+option(WITH_MOD_OCEANSIM        "Enable Ocean Modifier" OFF)
 
 # Image format support
 option(WITH_IMAGE_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
@@ -188,19 +205,31 @@ option(WITH_OPENCOLLADA		"Enable OpenCollada Support (http://www.opencollada.org
 option(WITH_SDL           "Enable SDL for sound and joystick support" ON)
 option(WITH_OPENAL        "Enable OpenAL Support (http://www.openal.org)" ON)
 option(WITH_JACK          "Enable Jack Support (http://www.jackaudio.org)" OFF)
-option(WITH_SAMPLERATE    "Enable samplerate conversion" ON)
 
 # Compression
 option(WITH_LZO           "Enable fast LZO compression (used for pointcache)" ON)
 option(WITH_LZMA          "Enable best LZMA compression, (used for pointcache)" ON)
 
+# Camera/motion tracking
+option(WITH_LIBMV         "Enable libmv structure from motion library" ON)
+
+# Mesh boolean lib
+option(WITH_CARVE         "Enable Carve library to handle mesh boolean operations" ON)
+
 # Misc
 option(WITH_INPUT_NDOF "Enable NDOF input devices (SpaceNavigator and friends)" ON)
-option(WITH_RAYOPTIMIZATION	"Enable use of SIMD (SSE) optimizations for the raytracer" ON) 
+option(WITH_RAYOPTIMIZATION	"Enable use of SIMD (SSE) optimizations for the raytracer" ON)
 if(UNIX AND NOT APPLE)
 	option(WITH_INSTALL_PORTABLE "Install redistributeable runtime, otherwise install into CMAKE_INSTALL_PREFIX" ON)
 endif()
 option(WITH_PYTHON_INSTALL       "Copy system python into the blender install folder" ON)
+
+# Cycles
+option(WITH_CYCLES					"Enable cycles Render Engine" ON)
+option(WITH_CYCLES_TEST				"Build cycles test application" OFF)
+option(WITH_CYCLES_CUDA_BINARIES	"Build cycles CUDA binaries" OFF)
+set(CYCLES_CUDA_BINARIES_ARCH		sm_13 sm_20 sm_21 CACHE STRING "CUDA architectures to build binaries for")
+mark_as_advanced(CYCLES_CUDA_BINARIES_ARCH)
 
 # disable for now, but plan to support on all platforms eventually
 option(WITH_MEM_JEMALLOC   "Enable malloc replacement (http://www.canonware.com/jemalloc)" OFF)
@@ -213,21 +242,56 @@ mark_as_advanced(WITH_CXX_GUARDEDALLOC)
 option(WITH_ASSERT_ABORT "Call abort() when raising an assertion through BLI_assert()" OFF)
 mark_as_advanced(WITH_ASSERT_ABORT)
 
+
 if(APPLE)
 	if(NOT CMAKE_OSX_ARCHITECTURES)
 		set(CMAKE_OSX_ARCHITECTURES x86_64 CACHE STRING
 		"Choose the architecture you want to build Blender for: i386, x86_64 or ppc"
 		FORCE)
 	endif()
-	if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-		set(CMAKE_OSX_DEPLOYMENT_TARGET 10.5 CACHE STRING
-		"Choose the minimum OSX version required: 10.4 or 10.5"
-		FORCE)
+	
+	execute_process(COMMAND uname -r OUTPUT_VARIABLE MAC_SYS) # check for actual system-version
+	if (${MAC_SYS} MATCHES 11)
+		set(OSX_SYSTEM 10.7)
+	elseif(${MAC_SYS} MATCHES 10)
+		set(OSX_SYSTEM 10.6)
+	elseif(${MAC_SYS} MATCHES 9)
+		set(OSX_SYSTEM 10.5)
+	else()
+		set(OSX_SYSTEM unsupported)
 	endif()
+	message(STATUS "Detected system-version: " ${OSX_SYSTEM})
+	
+	if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
+			set(CMAKE_OSX_DEPLOYMENT_TARGET "10.5" CACHE STRING "" FORCE) # 10.5 is our minimum target, if you have higher sdk, weak linking happens
+	endif()
+
+	if(${CMAKE_GENERATOR} MATCHES "Xcode")
+	
+		##### workaround for actual official cmake incompatibility with xcode 4.3 #####	
+		if(${XCODE_VERSION} MATCHES '') # cmake fails due looking for xcode in the wrong path, thus will be empty var
+			message("Official cmake does not yet support Xcode 4.3, get a patched version here: http://www.jensverwiebe.de/Blender/CMake%202.8-7patched.zip")
+		endif()
+		### end workaround for actual official cmake incompatibility with xcode 4.3 ###	
+		
+		if(${XCODE_VERSION} VERSION_EQUAL 4 OR ${XCODE_VERSION} VERSION_GREATER 4 AND ${XCODE_VERSION} VERSION_LESS 4.3)
+			# Xcode 4 defaults to the Apple LLVM Compiler.
+			# Override the default compiler selection because Blender only compiles with gcc up to xcode 4.2
+			set(CMAKE_XCODE_ATTRIBUTE_GCC_VERSION "com.apple.compilers.llvmgcc42")
+			message(STATUS "Setting compiler to: " ${CMAKE_XCODE_ATTRIBUTE_GCC_VERSION})
+		endif()
+	else() # unix makefile generator does not fill XCODE_VERSION var, so we get it with a command
+		execute_process(COMMAND xcodebuild -version OUTPUT_VARIABLE XCODE_VERS_BUILDNR )
+		STRING(SUBSTRING ${XCODE_VERS_BUILDNR} 6 3 XCODE_VERSION) # truncate away build-nr
+	endif()
+	
+	message(STATUS "Detected Xcode-version: " ${XCODE_VERSION})
+	
 	option(WITH_COCOA	  "Use Cocoa framework instead of deprecated Carbon" ON)
 	option(USE_QTKIT	  "Use QtKit instead of Carbon quicktime (needed for having partial quicktime for 64bit)" OFF)
 	option(WITH_LIBS10.5  "Use 10.5 libs (needed for 64bit builds)" OFF)
 endif()
+
 
 #-----------------------------------------------------------------------------
 # Check for conflicting/unsupported configurations
@@ -248,8 +312,8 @@ if(NOT WITH_SDL AND WITH_GHOST_SDL)
 	message(FATAL_ERROR "WITH_GHOST_SDL requires WITH_SDL to be ON")
 endif()
 
-if(NOT WITH_IMAGE_OPENJPEG AND WITH_IMAGE_REDCODE)
-	message(FATAL_ERROR "WITH_IMAGE_REDCODE requires WITH_IMAGE_OPENJPEG")
+if(WITH_IMAGE_REDCODE AND ((NOT WITH_IMAGE_OPENJPEG) OR (NOT WITH_CODEC_FFMPEG)))
+	message(FATAL_ERROR "WITH_IMAGE_REDCODE requires WITH_IMAGE_OPENJPEG and WITH_CODEC_FFMPEG")
 endif()
 
 # python module, needs some different options
@@ -261,10 +325,16 @@ if(WITH_PYTHON_MODULE AND WITH_PYTHON_INSTALL)
 	message(FATAL_ERROR "WITH_PYTHON_MODULE requires WITH_PYTHON_INSTALL to be OFF")
 endif()
 
-if(WITH_CODEC_QUICKTIME AND MINGW)
-	message(FATAL_ERROR "MINGW requires WITH_CODEC_QUICKTIME to be OFF "
-						"because it is currently unsupported, remove this "
-						"line if youre a developer who wants to add support.")
+if(MINGW)
+	if(WITH_CODEC_QUICKTIME)
+		message(FATAL_ERROR "MINGW requires WITH_CODEC_QUICKTIME to be OFF "
+							"because it is currently unsupported, remove this "
+							"line if youre a developer who wants to add support.")
+	endif()
+endif()
+
+if(NOT WITH_FFTW3 AND WITH_MOD_OCEANSIM)
+	message(FATAL_ERROR "WITH_MOD_OCEANSIM requires WITH_FFTW3 to be ON")
 endif()
 
 # may as well build python module without a UI
@@ -272,11 +342,47 @@ if(WITH_PYTHON_MODULE)
 	set(WITH_HEADLESS ON)
 endif()
 
-TEST_SSE_SUPPORT()
+# auto enable openimageio for cycles
+if(WITH_CYCLES)
+	set(WITH_OPENIMAGEIO ON)
+endif()
+
+# auto enable boost for cycles and carve
+if(WITH_CYCLES OR WITH_CARVE)
+	set(WITH_BOOST ON)
+endif()
 
 # don't store paths to libs for portable distrobution
 if(WITH_INSTALL_PORTABLE)
 	set(CMAKE_SKIP_BUILD_RPATH TRUE)
+endif()
+
+if(WITH_GHOST_SDL OR WITH_HEADLESS)
+    set(WITH_GHOST_XDND OFF)
+endif()
+
+TEST_SSE_SUPPORT(COMPILER_SSE_FLAG COMPILER_SSE2_FLAG)
+
+
+#-----------------------------------------------------------------------------
+# Check for valid directories
+# ... svn extern paths can be missing because of svn-git.
+
+if(WITH_INTERNATIONAL)
+	if(NOT EXISTS "${CMAKE_SOURCE_DIR}/release/datafiles/locale")
+		message(WARNING "Translation path '${CMAKE_SOURCE_DIR}/release/datafiles/locale' is missing, "
+						"This is an 'svn external', which are known not to work with bridges to other version "
+						"control systems, disabling 'WITH_INTERNATIONAL'.")
+		set(WITH_INTERNATIONAL OFF)
+	endif()
+endif()
+
+if(WITH_PYTHON)
+	if(NOT EXISTS "${CMAKE_SOURCE_DIR}/release/scripts/addons")
+		message(WARNING "Addons path '${CMAKE_SOURCE_DIR}/release/scripts/addons' is missing, "
+						"This is an 'svn external', which are known not to work with bridges to other version "
+						"control systems: * CONTINUING WITHOUT ADDONS *")
+	endif()
 endif()
 
 #-----------------------------------------------------------------------------
@@ -285,8 +391,8 @@ endif()
 # linux only, not cached
 set(WITH_BINRELOC OFF)
 
-# MAXOSX only, set to avoid uninitialized 
-set(EXETYPE)
+# MAXOSX only, set to avoid uninitialized
+set(EXETYPE "")
 
 # C/C++ flags
 set(PLATFORM_CFLAGS)
@@ -295,28 +401,31 @@ set(PLATFORM_CFLAGS)
 set(C_WARNINGS)
 set(CXX_WARNINGS)
 
+# for gcc -Wno-blah-blah
+set(CC_REMOVE_STRICT_FLAGS)
+
 # libraries to link the binary with passed to target_link_libraries()
 # known as LLIBS to scons
-set(PLATFORM_LINKLIBS)
+set(PLATFORM_LINKLIBS "")
 
 # Added to linker flags in setup_liblinks
 # - CMAKE_EXE_LINKER_FLAGS
 # - CMAKE_EXE_LINKER_FLAGS_DEBUG
-set(PLATFORM_LINKFLAGS)
-set(PLATFORM_LINKFLAGS_DEBUG)
+set(PLATFORM_LINKFLAGS "")
+set(PLATFORM_LINKFLAGS_DEBUG "")
 
 
 # disabled for now, not supported
 # option(WITH_WEBPLUGIN     "Enable Web Plugin (Unix only)" OFF)
 
 # For alternate Python locations the commandline can be used to override detected/default cache settings, e.g:
-# On Unix: 
+# On Unix:
 #   cmake ../blender \
 #         -D PYTHON_VERSION=3.2 \
 #         -D PYTHON_INCLUDE_DIR=/opt/py32/include/python3.2d \
 #         -D PYTHON_LIBRARY=/opt/py32/lib/libpython3.2d.so
 #
-# On Macs: 
+# On Macs:
 #   cmake ../blender \
 #         -D PYTHON_INCLUDE_DIR=/System/Library/Frameworks/Python.framework/Versions/3.2/include/python3.2 \
 #         -D PYTHON_LIBPATH=/System/Library/Frameworks/Python.framework/Versions/3.2/lib/python3.2/config \
@@ -328,10 +437,23 @@ set(PLATFORM_LINKFLAGS_DEBUG)
 #Platform specifics
 
 if(UNIX AND NOT APPLE)
-	
+
 	# needed for ubuntu 11.04
 	if(EXISTS "/usr/lib/x86_64-linux-gnu")
 		set(CMAKE_LIBRARY_PATH "/usr/lib/x86_64-linux-gnu;${CMAKE_LIBRARY_PATH}")
+	endif()
+
+	# set lib directory if it exists
+	if(CMAKE_SYSTEM_NAME MATCHES "Linux")
+		if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+			set(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/linux64)
+		else()
+			set(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/linux)
+		endif()
+
+		if(NOT EXISTS ${LIBDIR})
+			unset(LIBDIR)
+		endif()
 	endif()
 
 	find_package(JPEG REQUIRED)
@@ -380,10 +502,12 @@ if(UNIX AND NOT APPLE)
 
 	if(WITH_SDL)
 		find_package(SDL)
-		mark_as_advanced(SDLMAIN_LIBRARY)
-		mark_as_advanced(SDL_INCLUDE_DIR)
-		mark_as_advanced(SDL_LIBRARY)
-		mark_as_advanced(SDL_LIBRARY_TEMP)
+		mark_as_advanced(
+			SDLMAIN_LIBRARY
+			SDL_INCLUDE_DIR
+			SDL_LIBRARY
+			SDL_LIBRARY_TEMP
+		)
 		# unset(SDLMAIN_LIBRARY CACHE)
 		if(NOT SDL_FOUND)
 			set(WITH_SDL OFF)
@@ -406,10 +530,18 @@ if(UNIX AND NOT APPLE)
 	endif()
 
 	if(WITH_CODEC_FFMPEG)
-		set(FFMPEG /usr CACHE PATH "FFMPEG Directory")
+		# use lib dir if available and nothing else specified
+		if(LIBDIR AND NOT FFMPEG)
+			set(FFMPEG ${LIBDIR}/ffmpeg CACHE PATH "FFMPEG Directory")
+			# XXX, some distros might need 'theoraenc theoradec' too
+			set(FFMPEG_LIBRARIES avformat avcodec avutil avdevice swscale dirac_encoder mp3lame ogg orc-0.4 schroedinger-1.0 theora vorbis vorbisenc vpx x264 xvidcore faad asound CACHE STRING "FFMPEG Libraries")
+		else()
+			set(FFMPEG /usr CACHE PATH "FFMPEG Directory")
+			set(FFMPEG_LIBRARIES avformat avcodec avutil avdevice swscale CACHE STRING "FFMPEG Libraries")
+		endif()
+
 		mark_as_advanced(FFMPEG)
 		set(FFMPEG_INCLUDE_DIRS ${FFMPEG}/include)
-		set(FFMPEG_LIBRARIES avformat avcodec avutil avdevice swscale CACHE STRING "FFMPEG Libraries")
 		mark_as_advanced(FFMPEG_LIBRARIES)
 		set(FFMPEG_LIBPATH ${FFMPEG}/lib)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STDC_CONSTANT_MACROS")
@@ -427,11 +559,13 @@ if(UNIX AND NOT APPLE)
 			PATHS
 			/sw/lib
 		)
-		mark_as_advanced(ICONV_LIBRARY)
-		mark_as_advanced(INTL_LIBRARY)
+		mark_as_advanced(
+			ICONV_LIBRARY
+			INTL_LIBRARY
+		)
 
 		if(INTL_LIBRARY AND ICONV_LIBRARY)
-			set(GETTEXT_LIB ${INTL_LIBRARY} ${ICONV_LIBRARY})
+			set(GETTEXT_LIBRARIES ${INTL_LIBRARY} ${ICONV_LIBRARY})
 		endif()
 	endif()
 
@@ -442,25 +576,11 @@ if(UNIX AND NOT APPLE)
 		endif()
 	endif()
 
-	if(WITH_SAMPLERATE)
-		find_package(Samplerate)
-		if(NOT SAMPLERATE_FOUND)
-			set(WITH_SAMPLERATE OFF)
-		endif()
-	endif()
-
 	if(WITH_OPENCOLLADA)
 		find_package(OpenCOLLADA)
 		if(OPENCOLLADA_FOUND)
-			set(PCRE /usr CACHE PATH "PCRE Directory")
-			mark_as_advanced(PCRE)
-			set(PCRE_LIBPATH ${PCRE}/lib)
-			set(PCRE_LIB pcre)
-
-			set(EXPAT /usr CACHE PATH "Expat Directory")
-			mark_as_advanced(EXPAT)
-			set(EXPAT_LIBPATH ${EXPAT}/lib)
-			set(EXPAT_LIB expat)
+			find_package(XML2)
+			find_package(PCRE)
 		else()
 			set(WITH_OPENCOLLADA OFF)
 		endif()
@@ -486,6 +606,45 @@ if(UNIX AND NOT APPLE)
 		endif()
 	endif()
 
+	if(WITH_BOOST)
+		# uses in build instructions to override include and library variables
+		if(NOT BOOST_CUSTOM)
+			# use lib dir if available and nothing else specified
+			if(LIBDIR AND NOT BOOST_ROOT)
+				set(BOOST_ROOT ${LIBDIR}/boost)
+				set(Boost_USE_MULTITHREADED OFF)
+			else()
+				set(Boost_USE_MULTITHREADED ON)
+			endif()
+			find_package(Boost 1.34 COMPONENTS filesystem regex system thread)
+			mark_as_advanced(Boost_DIR)  # why doesnt boost do this?
+		endif()
+
+		set(BOOST_INCLUDE_DIR ${Boost_INCLUDE_DIRS})
+		set(BOOST_LIBRARIES ${Boost_LIBRARIES})
+		set(BOOST_LIBPATH ${Boost_LIBRARY_DIRS})
+		set(BOOST_DEFINITIONS "-DBOOST_ALL_NO_LIB")
+	endif()
+
+	if(WITH_OPENIMAGEIO)
+		# use lib dir if available and nothing else specified
+		if(LIBDIR AND NOT OPENIMAGEIO_ROOT_DIR)
+			set(OPENIMAGEIO_ROOT_DIR ${LIBDIR}/oiio)
+		endif()
+
+		find_package(OpenImageIO)
+
+		set(OPENIMAGEIO_LIBRARIES ${OPENIMAGEIO_LIBRARIES} ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${TIFF_LIBRARY} ${OPENEXR_LIBRARIES} ${ZLIB_LIBRARIES} ${BOOST_LIBRARIES})
+		set(OPENIMAGEIO_LIBPATH)  # TODO, remove and reference the absolute path everywhere
+		set(OPENIMAGEIO_DEFINITIONS)
+
+		if(NOT OPENIMAGEIO_FOUND)
+			set(WITH_OPENIMAGEIO OFF)
+			set(WITH_CYCLES OFF)
+			message(STATUS "OpenImageIO not found, disabling WITH_CYCLES")
+		endif()
+	endif()
+
 	# OpenSuse needs lutil, ArchLinux not, for now keep, can avoid by using --as-needed
 	set(PLATFORM_LINKLIBS "-lutil -lc -lm -lpthread -lstdc++")
 
@@ -494,17 +653,28 @@ if(UNIX AND NOT APPLE)
 		find_path(X11_XF86keysym_INCLUDE_PATH X11/XF86keysym.h ${X11_INC_SEARCH_PATH})
 		mark_as_advanced(X11_XF86keysym_INCLUDE_PATH)
 
-		list(APPEND PLATFORM_LINKLIBS ${X11_X11_LIB})
+		set(PLATFORM_LINKLIBS "${PLATFORM_LINKLIBS} ${X11_X11_LIB}")
 
 		if(WITH_X11_XINPUT)
-			list(APPEND PLATFORM_LINKLIBS ${X11_Xinput_LIB})
+			set(PLATFORM_LINKLIBS "${PLATFORM_LINKLIBS} ${X11_Xinput_LIB}")
+		endif()
+
+		if(WITH_X11_XF86VMODE)
+			# XXX, why dont cmake make this available?
+			FIND_LIBRARY(X11_Xxf86vmode_LIB Xxf86vm   ${X11_LIB_SEARCH_PATH})
+			mark_as_advanced(X11_Xxf86vmode_LIB)
+			if(X11_Xxf86vmode_LIB)
+				set(PLATFORM_LINKLIBS "${PLATFORM_LINKLIBS} ${X11_Xxf86vmode_LIB}")
+			else()
+				set(WITH_X11_XF86VMODE OFF)
+			endif()
 		endif()
 	endif()
 
 	if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 		if(NOT WITH_PYTHON_MODULE)
 			# BSD's dont use libdl.so
-			list(APPEND PLATFORM_LINKLIBS -ldl)
+		set(PLATFORM_LINKLIBS "${PLATFORM_LINKLIBS} -ldl")
 			# binreloc is linux only
 			set(BINRELOC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/extern/binreloc/include)
 			set(WITH_BINRELOC ON)
@@ -513,8 +683,8 @@ if(UNIX AND NOT APPLE)
 
 	set(PLATFORM_LINKFLAGS "-pthread")
 
-	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE")
-	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE")
+	# lfs on glibc, all compilers should use
+	add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE)
 
 	# GNU Compiler
 	if(CMAKE_COMPILER_IS_GNUCC)
@@ -522,19 +692,23 @@ if(UNIX AND NOT APPLE)
 	# CLang is the same as GCC for now.
 	elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
 		set(PLATFORM_CFLAGS "-pipe -fPIC -funsigned-char -fno-strict-aliasing")
+	# Solaris CC
+	elseif(CMAKE_CXX_COMPILER_ID MATCHES "SunPro") 
+		set(PLATFORM_CFLAGS "-pipe -features=extensions -fPIC -D__FUNCTION__=__func__")
+		
 	# Intel C++ Compiler
 	elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
 		# think these next two are broken
-		find_program(XIAR xiar) 
-		if(XIAR) 
+		find_program(XIAR xiar)
+		if(XIAR)
 			set(CMAKE_AR "${XIAR}")
-		endif() 
+		endif()
 		mark_as_advanced(XIAR)
 
-		find_program(XILD xild) 
-		if(XILD) 
+		find_program(XILD xild)
+		if(XILD)
 			set(CMAKE_LINKER "${XILD}")
-		endif() 
+		endif()
 		mark_as_advanced(XILD)
 
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -fp-model precise -prec_div -parallel")
@@ -557,7 +731,7 @@ elseif(WIN32)
 		message("64 bit compiler detected.")
 		set(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/win64)
 	endif()
-	
+
 	add_definitions(-DWIN32)
 
 	if(WITH_INTERNATIONAL)
@@ -567,22 +741,11 @@ elseif(WIN32)
 		set(ICONV_LIBPATH ${ICONV}/lib)
 	endif()
 
-	if(WITH_SAMPLERATE)
-		set(SAMPLERATE ${LIBDIR}/samplerate)
-		set(SAMPLERATE_INCLUDE_DIRS ${SAMPLERATE}/include)
-		set(SAMPLERATE_LIBRARIES libsamplerate)
-		set(SAMPLERATE_LIBPATH ${SAMPLERATE}/lib)
-	endif()
-
-	set(PNG "${LIBDIR}/png")
-	set(PNG_INCLUDE_DIR "${PNG}/include")
-	set(PNG_LIBPATH ${PNG}/lib) # not cmake defined
-
 	set(JPEG "${LIBDIR}/jpeg")
 	set(JPEG_INCLUDE_DIR "${JPEG}/include")
 	set(JPEG_LIBPATH ${JPEG}/lib) # not cmake defined
 
-	set(WINTAB_INC ${LIBDIR}/wintab/include) 
+	set(WINTAB_INC ${LIBDIR}/wintab/include)
 
 	if(WITH_OPENAL)
 		set(OPENAL ${LIBDIR}/openal)
@@ -625,43 +788,39 @@ elseif(WIN32)
 
 		add_definitions(/D_CRT_NONSTDC_NO_DEPRECATE /D_CRT_SECURE_NO_DEPRECATE /D_SCL_SECURE_NO_DEPRECATE /D_CONSOLE /D_LIB)
 
-		set(CMAKE_CXX_FLAGS "/nologo /J /W0 /Gd /wd4018 /wd4244 /wd4305 /wd4800 /wd4065 /wd4267 /we4013" CACHE STRING "MSVC MT C++ flags " FORCE)
-		set(CMAKE_C_FLAGS   "/nologo /J /W0 /Gd /wd4018 /wd4244 /wd4305 /wd4800 /wd4065 /wd4267 /we4013 /EHsc" CACHE STRING "MSVC MT C++ flags " FORCE)
+		set(CMAKE_CXX_FLAGS "/nologo /J /W1 /Gd /wd4018 /wd4244 /wd4305 /wd4800 /wd4065 /wd4267 /we4013" CACHE STRING "MSVC MT C++ flags " FORCE)
+		set(CMAKE_C_FLAGS   "/nologo /J /W1 /Gd /wd4018 /wd4244 /wd4305 /wd4800 /wd4065 /wd4267 /we4013 /EHsc" CACHE STRING "MSVC MT C++ flags " FORCE)
 
 		if(CMAKE_CL_64)
-			set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
+			set(CMAKE_CXX_FLAGS_DEBUG "/Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
 		else()
-			set(CMAKE_CXX_FLAGS_DEBUG "/D_DEBUG /Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /ZI /J" CACHE STRING "MSVC MT flags " FORCE)
+			set(CMAKE_CXX_FLAGS_DEBUG "/Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /ZI /J" CACHE STRING "MSVC MT flags " FORCE)
 		endif()
-		set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /DNDEBUG /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
-		set(CMAKE_CXX_FLAGS_MINSIZEREL "/O1 /Ob1 /DNDEBUG /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
-		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Ob1 /DNDEBUG /EHsc /MT /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
+		set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Ob2 /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
+		set(CMAKE_CXX_FLAGS_MINSIZEREL "/O1 /Ob1 /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
+		set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "/O2 /Ob1 /EHsc /MT /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
 		if(CMAKE_CL_64)
-			set(CMAKE_C_FLAGS_DEBUG "/D_DEBUG /Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
+			set(CMAKE_C_FLAGS_DEBUG "/Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
 		else()
-			set(CMAKE_C_FLAGS_DEBUG "/D_DEBUG /Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /ZI /J" CACHE STRING "MSVC MT flags " FORCE)
+			set(CMAKE_C_FLAGS_DEBUG "/Od /Gm /EHsc /RTC1 /MTd /W3 /nologo /ZI /J" CACHE STRING "MSVC MT flags " FORCE)
 		endif()
-		set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /DNDEBUG /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
-		set(CMAKE_C_FLAGS_MINSIZEREL "/O1 /Ob1 /DNDEBUG /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
-		set(CMAKE_C_FLAGS_RELWITHDEBINFO "/O2 /Ob1 /DNDEBUG /EHsc /MT /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
+		set(CMAKE_C_FLAGS_RELEASE "/O2 /Ob2 /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
+		set(CMAKE_C_FLAGS_MINSIZEREL "/O1 /Ob1 /EHsc /MT /W3 /nologo /J" CACHE STRING "MSVC MT flags " FORCE)
+		set(CMAKE_C_FLAGS_RELWITHDEBINFO "/O2 /Ob1 /EHsc /MT /W3 /nologo /Zi /J" CACHE STRING "MSVC MT flags " FORCE)
 
 		if(WITH_INTERNATIONAL)
 			set(GETTEXT ${LIBDIR}/gettext)
-			set(GETTEXT_INC ${GETTEXT}/include)
+			set(GETTEXT_INCLUDE_DIRS ${GETTEXT}/include)
 			set(GETTEXT_LIBPATH ${GETTEXT}/lib)
-			if(CMAKE_CL_64)
-				set(GETTEXT_LIB gettext)
-			else()
-				set(GETTEXT_LIB gnu_gettext)
-			endif()
+			set(GETTEXT_LIBRARIES gnu_gettext)
 		endif()
 
-		if(CMAKE_CL_64)
-			set(PNG_LIBRARIES libpng)
-		else()
-			set(PNG_LIBRARIES libpng_st)
-		endif()
+		set(PNG_LIBRARIES libpng)
 		set(JPEG_LIBRARIES libjpeg)
+		
+		set(PNG "${LIBDIR}/png")
+		set(PNG_INCLUDE_DIR "${PNG}/include")
+		set(PNG_LIBPATH ${PNG}/lib) # not cmake defined
 
 		set(ZLIB_INCLUDE_DIRS ${LIBDIR}/zlib/include)
 		if(CMAKE_CL_64)
@@ -694,24 +853,29 @@ elseif(WIN32)
 				${LIBDIR}/opencollada/include/COLLADABaseUtils/include
 				${LIBDIR}/opencollada/include/COLLADAFramework/include
 				${LIBDIR}/opencollada/include/COLLADASaxFrameworkLoader/include
-				${LIBDIR}/opencollada/include/GeneratedSaxParser/include			
+				${LIBDIR}/opencollada/include/GeneratedSaxParser/include
 			)
+			
+			set_lib_path(OPENCOLLADA_LIBPATH "opencollada/lib")
 
 			set(OPENCOLLADA_LIBRARIES
-				${LIBDIR}/opencollada/lib/OpenCOLLADASaxFrameworkLoader.lib
-				${LIBDIR}/opencollada/lib/OpenCOLLADAFramework.lib
-				${LIBDIR}/opencollada/lib/OpenCOLLADABaseUtils.lib
-				${LIBDIR}/opencollada/lib/OpenCOLLADAStreamWriter.lib
-				${LIBDIR}/opencollada/lib/MathMLSolver.lib
-				${LIBDIR}/opencollada/lib/GeneratedSaxParser.lib
-				${LIBDIR}/opencollada/lib/xml2.lib
-				${LIBDIR}/opencollada/lib/buffer.lib
-				${LIBDIR}/opencollada/lib/ftoa.lib
-				${LIBDIR}/opencollada/lib/UTF.lib
+				${OPENCOLLADA_LIBPATH}/OpenCOLLADASaxFrameworkLoader.lib
+				${OPENCOLLADA_LIBPATH}/OpenCOLLADAFramework.lib
+				${OPENCOLLADA_LIBPATH}/OpenCOLLADABaseUtils.lib
+				${OPENCOLLADA_LIBPATH}/OpenCOLLADAStreamWriter.lib
+				${OPENCOLLADA_LIBPATH}/MathMLSolver.lib
+				${OPENCOLLADA_LIBPATH}/GeneratedSaxParser.lib
+				${OPENCOLLADA_LIBPATH}/xml2.lib
+				${OPENCOLLADA_LIBPATH}/buffer.lib
+				${OPENCOLLADA_LIBPATH}/ftoa.lib
+				${OPENCOLLADA_LIBPATH}/UTF.lib
 			)
-			set(PCRE_LIB
-				${LIBDIR}/opencollada/lib/pcre.lib
+			set(PCRE_LIBRARIES
+				${OPENCOLLADA_LIBPATH}/pcre.lib
 			)
+			
+			unset(OPENCOLLADA_LIBPATH)
+			
 		endif()
 
 		if(WITH_CODEC_FFMPEG)
@@ -729,18 +893,8 @@ elseif(WIN32)
 		endif()
 
 		if(WITH_IMAGE_OPENEXR)
-			if(MSVC90)
-				set(MSVC_LIB _vs2008)
-				set(MSVC_INC)
-			elseif(MSVC10)
-				set(MSVC_LIB _vs2010)
-				set(MSVC_INC _vs2010)
-			else()
-				set(MSVC_LIB msvc)
-				set(MSVC_INC)
-			endif()
-			set(OPENEXR ${LIBDIR}/openexr)
-			set(OPENEXR_LIBPATH ${OPENEXR}/lib${MSVC_LIB})
+			set_lib_path(OPENEXR "openexr")
+			set_lib_path(OPENEXR_LIBPATH "openexr/lib")
 			set(OPENEXR_LIBRARIES
 				${OPENEXR_LIBPATH}/Iex.lib
 				${OPENEXR_LIBPATH}/Half.lib
@@ -748,10 +902,10 @@ elseif(WIN32)
 				${OPENEXR_LIBPATH}/Imath.lib
 				${OPENEXR_LIBPATH}/IlmThread.lib
 			)
-			set(OPENEXR_INCUDE ${OPENEXR}/include${MSVC_INC})
+			set_lib_path(OPENEXR_INCUDE "openexr/include")
 			set(OPENEXR_INCLUDE_DIRS
 				${OPENEXR_INCUDE}
-			        ${OPENEXR_INCUDE}/IlmImf
+				${OPENEXR_INCUDE}/IlmImf
 				${OPENEXR_INCUDE}/Iex
 				${OPENEXR_INCUDE}/Imath
 			)
@@ -775,12 +929,43 @@ elseif(WIN32)
 		if(WITH_PYTHON)
 			# normally cached but not since we include them with blender
 			set(PYTHON_VERSION 3.2) # CACHE STRING)
-			set(PYTHON_INCLUDE_DIR "${LIBDIR}/python/include/python${PYTHON_VERSION}") # CACHE PATH)
-			set(PYTHON_LIBRARY "${LIBDIR}/python/lib/python32.lib") #CACHE FILEPATH)
-
+			set_lib_path(PYTHON_INCLUDE_DIR "python/include/python${PYTHON_VERSION}")
+			set_lib_path(PYTHON_LIBRARY "python/lib/python32.lib") #CACHE FILEPATH)
+			
 			# uncached vars
 			set(PYTHON_INCLUDE_DIRS "${PYTHON_INCLUDE_DIR}")
 			set(PYTHON_LIBRARIES  "${PYTHON_LIBRARY}")
+		endif()
+
+		if(WITH_BOOST)
+			set(BOOST ${LIBDIR}/boost)
+			set(BOOST_INCLUDE_DIR ${BOOST}/include)
+			if(MSVC10)
+				set(BOOST_POSTFIX "vc100-mt-s-1_47.lib")
+				set(BOOST_DEBUG_POSTFIX "vc100-mt-sgd-1_47.lib")
+			else()
+				set(BOOST_POSTFIX "vc90-mt-s-1_47.lib")
+				set(BOOST_DEBUG_POSTFIX "vc90-mt-sgd-1_47.lib")					
+			endif()
+			set(BOOST_LIBRARIES
+				optimized libboost_date_time-${BOOST_POSTFIX} optimized libboost_filesystem-${BOOST_POSTFIX}
+				optimized libboost_regex-${BOOST_POSTFIX} optimized libboost_system-${BOOST_POSTFIX} optimized libboost_thread-${BOOST_POSTFIX}
+				debug libboost_date_time-${BOOST_DEBUG_POSTFIX} debug libboost_filesystem-${BOOST_DEBUG_POSTFIX}
+				debug libboost_regex-${BOOST_DEBUG_POSTFIX} debug libboost_system-${BOOST_DEBUG_POSTFIX} debug libboost_thread-${BOOST_DEBUG_POSTFIX})
+			if(MSVC10)
+				set(BOOST_LIBPATH ${BOOST}/lib/vc_10)
+			else()
+				set(BOOST_LIBPATH ${BOOST}/lib)
+			endif()
+			set(BOOST_DEFINITIONS "-DBOOST_ALL_NO_LIB")
+		endif()
+			
+		if(WITH_OPENIMAGEIO)
+			set(OPENIMAGEIO ${LIBDIR}/openimageio)
+			set(OPENIMAGEIO_INCLUDE_DIRS ${OPENIMAGEIO}/include)
+			set(OPENIMAGEIO_LIBRARIES OpenImageIO)
+			set_lib_path(OPENIMAGEIO_LIBPATH "openimageio/lib")
+			set(OPENIMAGEIO_DEFINITIONS)
 		endif()
 
 		set(PLATFORM_LINKFLAGS "/SUBSYSTEM:CONSOLE /STACK:2097152 /INCREMENTAL:NO /NODEFAULTLIB:msvcrt.lib /NODEFAULTLIB:msvcmrt.lib /NODEFAULTLIB:msvcurt.lib /NODEFAULTLIB:msvcrtd.lib")
@@ -795,9 +980,9 @@ elseif(WIN32)
 		set(PLATFORM_LINKFLAGS_DEBUG "/NODEFAULTLIB:libcmt.lib /NODEFAULTLIB:libc.lib")
 
 	else()
-		# keep GCC spesific stuff here
+		# keep GCC specific stuff here
 		if(CMAKE_COMPILER_IS_GNUCC)
-			set(PLATFORM_LINKLIBS "-lshell32 -lshfolder -lgdi32 -lmsvcrt -lwinmm -lmingw32 -lm -lws2_32 -lz -lstdc++ -lole32 -luuid -lwsock32")
+			set(PLATFORM_LINKLIBS "-lshell32 -lshfolder -lgdi32 -lmsvcrt -lwinmm -lmingw32 -lm -lws2_32 -lz -lstdc++ -lole32 -luuid -lwsock32 -lpsapi")
 			set(PLATFORM_CFLAGS "-pipe -funsigned-char -fno-strict-aliasing")
 
 			add_definitions(-D_LARGEFILE_SOURCE -D_FILE_OFFSET_BITS=64 -D_LARGEFILE64_SOURCE)
@@ -805,15 +990,16 @@ elseif(WIN32)
 
 		add_definitions(-DFREE_WINDOWS)
 
-		set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -D_DEBUG")
-		set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -D_DEBUG")
-
 		if(WITH_INTERNATIONAL)
 			set(GETTEXT ${LIBDIR}/gcc/gettext)
-			set(GETTEXT_INC ${GETTEXT}/include)
+			set(GETTEXT_INCLUDE_DIRS ${GETTEXT}/include)
 			set(GETTEXT_LIBPATH ${GETTEXT}/lib)
-			set(GETTEXT_LIB intl)
+			set(GETTEXT_LIBRARIES intl)
 		endif()
+		
+		set(PNG "${LIBDIR}/gcc/png")
+		set(PNG_INCLUDE_DIR "${PNG}/include")
+		set(PNG_LIBPATH ${PNG}/lib) # not cmake defined
 
 		set(JPEG_LIBRARIES libjpeg)
 		set(PNG_LIBRARIES png)
@@ -827,7 +1013,7 @@ elseif(WIN32)
 		set(PTHREADS_INCLUDE_DIRS ${PTHREADS}/include)
 		set(PTHREADS_LIBPATH ${PTHREADS}/lib)
 		set(PTHREADS_LIBRARIES pthreadGC2)
-		
+
 		set(FREETYPE ${LIBDIR}/gcc/freetype)
 		set(FREETYPE_INCLUDE_DIRS ${FREETYPE}/include ${FREETYPE}/include/freetype2)
 		set(FREETYPE_LIBPATH ${FREETYPE}/lib)
@@ -847,13 +1033,13 @@ elseif(WIN32)
 				${LIBDIR}/gcc/opencollada/include/COLLADABaseUtils/include
 				${LIBDIR}/gcc/opencollada/include/COLLADAFramework/include
 				${LIBDIR}/gcc/opencollada/include/COLLADASaxFrameworkLoader/include
-				${LIBDIR}/gcc/opencollada/include/GeneratedSaxParser/include			
+				${LIBDIR}/gcc/opencollada/include/GeneratedSaxParser/include
 			)
 			set(OPENCOLLADA_LIBPATH ${OPENCOLLADA}/lib ${OPENCOLLADA}/lib)
 			set(OPENCOLLADA_LIBRARIES OpenCOLLADAStreamWriter OpenCOLLADASaxFrameworkLoader OpenCOLLADAFramework OpenCOLLADABaseUtils GeneratedSaxParser UTF MathMLSolver expat pcre buffer ftoa)
-			set(PCRE_LIB pcre)
+			set(PCRE_LIBRARIES pcre)
 		endif()
-		
+
 		if(WITH_CODEC_FFMPEG)
 			set(FFMPEG ${LIBDIR}/ffmpeg)
 			set(FFMPEG_INCLUDE_DIRS ${FFMPEG}/include ${FFMPEG}/include)
@@ -880,7 +1066,7 @@ elseif(WIN32)
 			set(JACK_INCLUDE_DIRS ${JACK}/include/jack ${JACK}/include)
 			set(JACK_LIBRARIES jack)
 			set(JACK_LIBPATH ${JACK}/lib)
-			
+
 			# TODO, gives linking errors, force off
 			set(WITH_JACK OFF)
 		endif()
@@ -896,7 +1082,33 @@ elseif(WIN32)
 			set(PYTHON_LIBRARIES  "${PYTHON_LIBRARY}")
 		endif()
 
-		set(PLATFORM_LINKFLAGS "--stack,2097152")
+		if(WITH_BOOST)
+			set(BOOST ${LIBDIR}/boost)
+			set(BOOST_INCLUDE_DIR ${BOOST}/include)
+			set(BOOST_POSTFIX "mgw46-mt-s-1_47")
+			set(BOOST_DEBUG_POSTFIX "mgw46-mt-sd-1_47")
+			set(BOOST_LIBRARIES
+				optimized boost_date_time-${BOOST_POSTFIX} boost_filesystem-${BOOST_POSTFIX}
+				boost_regex-${BOOST_POSTFIX} boost_system-${BOOST_POSTFIX} boost_thread-${BOOST_POSTFIX}
+				debug boost_date_time-${BOOST_DEBUG_POSTFIX} boost_filesystem-${BOOST_DEBUG_POSTFIX}
+				boost_regex-${BOOST_DEBUG_POSTFIX} boost_system-${BOOST_DEBUG_POSTFIX} boost_thread-${BOOST_DEBUG_POSTFIX})
+			set(BOOST_LIBPATH ${BOOST}/lib/gcc)
+			set(BOOST_DEFINITIONS "-DBOOST_ALL_NO_LIB -DBOOST_THREAD_USE_LIB ")
+		endif()
+			
+		if(WITH_OPENIMAGEIO)
+			set(OPENIMAGEIO ${LIBDIR}/gcc/openimageio)
+			set(OPENIMAGEIO_INCLUDE_DIRS ${OPENIMAGEIO}/include)
+			set(OPENIMAGEIO_LIBRARIES OpenImageIO)
+			set(OPENIMAGEIO_LIBPATH ${OPENIMAGEIO}/lib)
+			set(OPENIMAGEIO_DEFINITIONS)
+		endif()
+		
+		set(PLATFORM_LINKFLAGS "-Xlinker --stack=2097152")
+
+		## DISABLE - causes linking errors 
+		## for re-distrobution, so users dont need mingw installed
+		# set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -static-libgcc -static-libstdc++")
 
 	endif()
 
@@ -905,10 +1117,20 @@ elseif(WIN32)
 
 elseif(APPLE)
 
-	if (${CMAKE_OSX_DEPLOYMENT_TARGET} STREQUAL "10.5")
-		set(WITH_LIBS10.5 ON CACHE BOOL "Use 10.5 libs" FORCE)
+	if(${CMAKE_OSX_DEPLOYMENT_TARGET} STREQUAL "10.5" OR ${CMAKE_OSX_DEPLOYMENT_TARGET} STRGREATER "10.5")
+		set(WITH_LIBS10.5 ON CACHE BOOL "Use 10.5 libs" FORCE) # valid also for 10.6/10.7
 	endif()
 
+	if(${XCODE_VERSION} LESS 4.3)
+		SET(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk CACHE PATH "" FORCE ) # use guaranteed existing sdk
+	else()
+		# note: i don't use xcode-select path on purpose, cause also /Applications/Xcode.app would be allowed
+		# absolute pathes are more foolproof here !
+		SET(OSX_SYSROOT_PREFIX /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform)
+		SET(OSX_DEVELOPER_PREFIX /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk) # use guaranteed existing sdk
+		SET(CMAKE_OSX_SYSROOT ${OSX_SYSROOT_PREFIX}/${OSX_DEVELOPER_PREFIX} CACHE PATH "" FORCE)
+	endif()	
+	
 	if(WITH_LIBS10.5)
 		set(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/darwin-9.x.universal)
 	else()
@@ -918,7 +1140,7 @@ elseif(APPLE)
 			set(LIBDIR ${CMAKE_SOURCE_DIR}/../lib/darwin-8.0.0-powerpc)
 		endif()
 	endif()
-	
+
 
 	if(WITH_OPENAL)
 		find_package(OpenAL)
@@ -945,16 +1167,28 @@ elseif(APPLE)
 	endif()
 
 	if(WITH_PYTHON)
-		# we use precompiled libraries for py 3.2 and up by default
+		if(NOT WITH_PYTHON_MODULE)
+			# we use precompiled libraries for py 3.2 and up by default
 
-		# normally cached but not since we include them with blender
-		set(PYTHON_VERSION 3.2)
-		set(PYTHON_INCLUDE_DIR "${LIBDIR}/python/include/python${PYTHON_VERSION}")
-		# set(PYTHON_BINARY "${LIBDIR}/python/bin/python${PYTHON_VERSION}") # not used yet
-		set(PYTHON_LIBRARY python${PYTHON_VERSION})
-		set(PYTHON_LIBPATH "${LIBDIR}/python/lib/python${PYTHON_VERSION}")
-		# set(PYTHON_LINKFLAGS "-u _PyMac_Error")  # won't  build with this enabled
+			# normally cached but not since we include them with blender
+			set(PYTHON_VERSION 3.2)
+			set(PYTHON_INCLUDE_DIR "${LIBDIR}/python/include/python${PYTHON_VERSION}")
+			# set(PYTHON_BINARY "${LIBDIR}/python/bin/python${PYTHON_VERSION}") # not used yet
+			set(PYTHON_LIBRARY python${PYTHON_VERSION})
+			set(PYTHON_LIBPATH "${LIBDIR}/python/lib/python${PYTHON_VERSION}")
+			# set(PYTHON_LINKFLAGS "-u _PyMac_Error")  # won't  build with this enabled
+		else()
+			# module must be compiled against Python framework
 
+			# normally cached but not since we include them with blender
+			set(PYTHON_VERSION 3.2)
+			set(PYTHON_INCLUDE_DIR "/Library/Frameworks/Python.framework/Versions/${PYTHON_VERSION}/include/python${PYTHON_VERSION}m")
+			set(PYTHON_BINARY "/Library/Frameworks/Python.framework/Versions/${PYTHON_VERSION}/bin/python${PYTHON_VERSION}")
+			#set(PYTHON_LIBRARY python${PYTHON_VERSION})
+			set(PYTHON_LIBPATH "/Library/Frameworks/Python.framework/Versions/${PYTHON_VERSION}/lib/python${PYTHON_VERSION}/config-3.2m")
+			#set(PYTHON_LINKFLAGS "-u _PyMac_Error -framework Python")  # won't  build with this enabled
+		endif()
+		
 		# uncached vars
 		set(PYTHON_INCLUDE_DIRS "${PYTHON_INCLUDE_DIR}")
 		set(PYTHON_LIBRARIES  "${PYTHON_LIBRARY}")
@@ -962,8 +1196,8 @@ elseif(APPLE)
 
 	if(WITH_INTERNATIONAL)
 		set(GETTEXT ${LIBDIR}/gettext)
-		set(GETTEXT_INC "${GETTEXT}/include")
-		set(GETTEXT_LIB intl iconv)
+		set(GETTEXT_INCLUDE_DIRS "${GETTEXT}/include")
+		set(GETTEXT_LIBRARIES intl iconv)
 		set(GETTEXT_LIBPATH ${GETTEXT}/lib)
 	endif()
 
@@ -1001,22 +1235,15 @@ elseif(APPLE)
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -D__STDC_CONSTANT_MACROS")
 	endif()
 
-	if(WITH_SAMPLERATE)
-		set(SAMPLERATE ${LIBDIR}/samplerate)
-		set(SAMPLERATE_INCLUDE_DIRS ${SAMPLERATE}/include)
-		set(SAMPLERATE_LIBRARIES samplerate)
-		set(SAMPLERATE_LIBPATH ${SAMPLERATE}/lib)
-	endif()
-
-	find_library(SYSTEMSTUBS_LIBRARY 
-		NAMES 
-		SystemStubs 
+	find_library(SYSTEMSTUBS_LIBRARY
+		NAMES
+		SystemStubs
 		PATHS
 	)
 	mark_as_advanced(SYSTEMSTUBS_LIBRARY)
 	if(SYSTEMSTUBS_LIBRARY)
 		set(PLATFORM_LINKLIBS stdc++ SystemStubs)
- 	else()
+	else()
 		set(PLATFORM_LINKLIBS stdc++)
 	endif()
 
@@ -1028,13 +1255,13 @@ elseif(APPLE)
 			set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -framework QTKit")
 			if(CMAKE_OSX_ARCHITECTURES MATCHES i386)
 				set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -framework QuickTime")
-				#libSDL still needs 32bit carbon quicktime 
+				#libSDL still needs 32bit carbon quicktime
 			endif()
 		elseif(WITH_CODEC_QUICKTIME)
 			set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -framework QuickTime")
 		endif()
 
-		# XXX - SOME MAC DEV PLEASE TEST WITH THE SDK INSTALLED! 
+		# XXX - SOME MAC DEV PLEASE TEST WITH THE SDK INSTALLED!
 		# ALSO SHOULD BE MOVED INTO OWN MODULE WHEN FUNCTIONAL
 		if(WITH_INPUT_NDOF)
 			# This thread it *should* work and check the framework - campbell
@@ -1056,7 +1283,11 @@ elseif(APPLE)
 		set(PLATFORM_LINKFLAGS "-fexceptions -framework CoreServices -framework Foundation -framework IOKit -framework AppKit -framework Carbon -framework AGL -framework AudioUnit -framework AudioToolbox -framework CoreAudio -framework QuickTime")
 		set(WITH_INPUT_NDOF OFF)  # unsupported
 	endif()
-
+	
+	if(WITH_PYTHON_MODULE)
+		set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} /Library/Frameworks/Python.framework/Versions/${PYTHON_VERSION}/python")# force cmake to link right framework
+	endif()
+	
 	if(WITH_OPENCOLLADA)
 		set(OPENCOLLADA ${LIBDIR}/opencollada)
 
@@ -1073,7 +1304,7 @@ elseif(APPLE)
 		#pcre is bundled with openCollada
 		#set(PCRE ${LIBDIR}/pcre)
 		#set(PCRE_LIBPATH ${PCRE}/lib)
-		set(PCRE_LIB pcre)
+		set(PCRE_LIBRARIES pcre)
 		#libxml2 is used
 		#set(EXPAT ${LIBDIR}/expat)
 		#set(EXPAT_LIBPATH ${EXPAT}/lib)
@@ -1106,16 +1337,32 @@ elseif(APPLE)
 		# linker needs "-weak_framework 3DconnexionClient"
 	endif()
 
+	if(WITH_BOOST)
+		set(BOOST ${LIBDIR}/boost)
+		set(BOOST_INCLUDE_DIR ${BOOST}/include)
+		set(BOOST_LIBRARIES boost_date_time-mt boost_filesystem-mt boost_regex-mt boost_system-mt boost_thread-mt)
+		set(BOOST_LIBPATH ${BOOST}/lib)
+		set(BOOST_DEFINITIONS)
+	endif()
+
+	if(WITH_OPENIMAGEIO)
+		set(OPENIMAGEIO ${LIBDIR}/openimageio)
+		set(OPENIMAGEIO_INCLUDE_DIRS ${OPENIMAGEIO}/include)
+		set(OPENIMAGEIO_LIBRARIES OpenImageIO ${PNG_LIBRARIES} ${JPEG_LIBRARIES} ${TIFF_LIBRARY} ${OPENEXR_LIBRARIES} ${ZLIB_LIBRARIES})
+		set(OPENIMAGEIO_LIBPATH ${OPENIMAGEIO}/lib ${JPEG_LIBPATH} ${PNG_LIBPATH} ${TIFF_LIBPATH} ${OPENEXR_LIBPATH} ${ZLIB_LIBPATH})
+		set(OPENIMAGEIO_DEFINITIONS "-DOIIO_STATIC_BUILD")
+	endif()
+
 	set(EXETYPE MACOSX_BUNDLE)
 
 	set(CMAKE_C_FLAGS_DEBUG "-fno-strict-aliasing -g")
 	set(CMAKE_CXX_FLAGS_DEBUG "-fno-strict-aliasing -g")
 	if(CMAKE_OSX_ARCHITECTURES MATCHES "i386")
-		set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -fvariable-expansion-in-unroller")
-		set(CMAKE_C_FLAGS_RELEASE "-O3 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -fvariable-expansion-in-unroller")
+		set(CMAKE_CXX_FLAGS_RELEASE "-O2 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -fvariable-expansion-in-unroller")
+		set(CMAKE_C_FLAGS_RELEASE "-O2 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -fvariable-expansion-in-unroller")
 	elseif(CMAKE_OSX_ARCHITECTURES MATCHES "x86_64")
-		set(CMAKE_CXX_FLAGS_RELEASE "-O3 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller")
-		set(CMAKE_C_FLAGS_RELEASE "-O3 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller")
+		set(CMAKE_CXX_FLAGS_RELEASE "-O2 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller")
+		set(CMAKE_C_FLAGS_RELEASE "-O2 -mdynamic-no-pic -ftree-vectorize -msse -msse2 -msse3 -mssse3 -fvariable-expansion-in-unroller")
 	else()
 		set(CMAKE_C_FLAGS_RELEASE "-mdynamic-no-pic -fno-strict-aliasing")
 		set(CMAKE_CXX_FLAGS_RELEASE "-mdynamic-no-pic -fno-strict-aliasing")
@@ -1134,32 +1381,35 @@ endif()
 # See TEST_SSE_SUPPORT() for how this is defined.
 
 if(WITH_RAYOPTIMIZATION)
-	if(CMAKE_COMPILER_IS_GNUCC)
-		set(_sse "-msse")
-		set(_sse2 "-msse2")
-	elseif(MSVC)
-		set(_sse "/arch:SSE")
-		set(_sse2 "/arch:SSE2")
-	else()
-		message(WARNING "SSE flags for this compiler not known")
-		set(_sse)
-		set(_sse2)
-	endif()
-
 	if(SUPPORT_SSE_BUILD)
-		set(PLATFORM_CFLAGS " ${_sse} ${PLATFORM_CFLAGS}")
+		set(PLATFORM_CFLAGS " ${COMPILER_SSE_FLAG} ${PLATFORM_CFLAGS}")
 		add_definitions(-D__SSE__ -D__MMX__)
 	endif()
 	if(SUPPORT_SSE2_BUILD)
-		set(PLATFORM_CFLAGS " ${_sse2} ${PLATFORM_CFLAGS}")
+		set(PLATFORM_CFLAGS " ${COMPILER_SSE2_FLAG} ${PLATFORM_CFLAGS}")
 		add_definitions(-D__SSE2__)
 		if(NOT SUPPORT_SSE_BUILD) # dont double up
 			add_definitions(-D__MMX__)
 		endif()
 	endif()
-	unset(_sse)
-	unset(_sse2)
 endif()
+
+
+# set the endian define
+if(MSVC)
+	# for some reason this fails on msvc
+	add_definitions(-D__LITTLE_ENDIAN__)
+else()
+	include(TestBigEndian)
+	test_big_endian(_SYSTEM_BIG_ENDIAN)
+	if(_SYSTEM_BIG_ENDIAN)
+		add_definitions(-D__BIG_ENDIAN__)
+	else()
+		add_definitions(-D__LITTLE_ENDIAN__)
+	endif()
+	unset(_SYSTEM_BIG_ENDIAN)
+endif()
+
 
 if(WITH_IMAGE_OPENJPEG)
 	if(UNIX AND NOT APPLE)
@@ -1177,7 +1427,7 @@ endif()
 #-----------------------------------------------------------------------------
 # Blender WebPlugin
 
-if(WITH_WEBPLUGIN) 
+if(WITH_WEBPLUGIN)
 	set(GECKO_DIR "${CMAKE_SOURCE_DIR}/../gecko-sdk/" CACHE PATH "Gecko SDK path")
 	set(WEBPLUGIN_SANDBOX_MODE "apparmor" CACHE STRING "WEB Plugin sandbox mode, can be apparmor, privsep, none")
 
@@ -1189,13 +1439,13 @@ endif()
 # Configure OpenGL.
 find_package(OpenGL)
 blender_include_dirs_sys("${OPENGL_INCLUDE_DIR}")
-# unset(OPENGL_LIBRARIES CACHE) # not compat with older cmake 
-# unset(OPENGL_xmesa_INCLUDE_DIR CACHE) # not compat with older cmake 
+# unset(OPENGL_LIBRARIES CACHE) # not compat with older cmake
+# unset(OPENGL_xmesa_INCLUDE_DIR CACHE) # not compat with older cmake
 
 #-----------------------------------------------------------------------------
 # Configure OpenMP.
 if(WITH_OPENMP)
-	find_package(OpenMP)	
+	find_package(OpenMP)
 	if(OPENMP_FOUND)
 		set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
 		set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
@@ -1207,9 +1457,11 @@ if(WITH_OPENMP)
 		set(WITH_OPENMP OFF)
 	endif()
 
-	mark_as_advanced(OpenMP_C_FLAGS)
-	mark_as_advanced(OpenMP_CXX_FLAGS)
-endif() 
+	mark_as_advanced(
+		OpenMP_C_FLAGS
+		OpenMP_CXX_FLAGS
+	)
+endif()
 
 #-----------------------------------------------------------------------------
 # Configure GLEW
@@ -1224,8 +1476,10 @@ else()
 		message(FATAL_ERROR "GLEW is required to build blender, install it or use WITH_BUILTIN_GLEW")
 	endif()
 
-	mark_as_advanced(GLEW_LIBRARY)
-	mark_as_advanced(GLEW_INCLUDE_PATH)
+	mark_as_advanced(
+		GLEW_LIBRARY
+		GLEW_INCLUDE_PATH
+	)
 endif()
 
 #-----------------------------------------------------------------------------
@@ -1233,25 +1487,10 @@ endif()
 
 if(WITH_PYTHON_MODULE)
 	add_definitions(-DPy_ENABLE_SHARED)
-endif() 
+endif()
 
 #-----------------------------------------------------------------------------
 # Extra compile flags
-
-if((NOT WIN32) AND (NOT MSVC))
-	# used for internal debug checks
-	set(CMAKE_CXX_FLAGS_DEBUG "${CMAKE_CXX_FLAGS_DEBUG} -DDEBUG")
-	set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -DDEBUG")
-	
-	# assert() checks for this.
-	set(CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE} -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} -DNDEBUG")
-	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} -DNDEBUG")
-
-	set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_RELEASE} -DNDEBUG")
-	set(CMAKE_C_FLAGS_MINSIZEREL "${CMAKE_C_FLAGS_MINSIZEREL} -DNDEBUG")
-	set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -DNDEBUG")
-endif()
 
 if(CMAKE_COMPILER_IS_GNUCC)
 
@@ -1267,15 +1506,31 @@ if(CMAKE_COMPILER_IS_GNUCC)
 	ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_POINTER_ARITH -Wpointer-arith)
 	ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_UNUSED_PARAMETER -Wunused-parameter)
 	ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_WRITE_STRINGS -Wwrite-strings)
-	ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_UNDEFINED -Wundef)
+
+	# # this causes too many warnings, disable
+	# ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_UNDEFINED -Wundef)
+
 	# disable because it gives warnings for printf() & friends.
 	# ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_DOUBLE_PROMOTION -Wdouble-promotion -Wno-error=double-promotion)
-	ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_NO_ERROR_UNUSED_BUT_SET_VARIABLE -Wno-error=unused-but-set-variable)
+
+	if(NOT APPLE)
+		ADD_CHECK_C_COMPILER_FLAG(C_WARNINGS C_WARN_NO_ERROR_UNUSED_BUT_SET_VARIABLE -Wno-error=unused-but-set-variable)
+	endif()
 
 	ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_ALL -Wall)
 	ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_NO_INVALID_OFFSETOF -Wno-invalid-offsetof)
 	ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_NO_SIGN_COMPARE -Wno-sign-compare)
-	ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_UNDEFINED -Wundef)
+
+	# # this causes too many warnings, disable
+	# ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_UNDEFINED -Wundef)
+
+	# flags to undo strict flags
+	ADD_CHECK_C_COMPILER_FLAG(CC_REMOVE_STRICT_FLAGS C_WARN_NO_DEPRECATED_DECLARATIONS -Wno-deprecated-declarations)
+	ADD_CHECK_C_COMPILER_FLAG(CC_REMOVE_STRICT_FLAGS C_WARN_NO_UNUSED_PARAMETER        -Wno-unused-parameter)
+
+	if(NOT APPLE)
+		ADD_CHECK_C_COMPILER_FLAG(CC_REMOVE_STRICT_FLAGS C_WARN_NO_ERROR_UNUSED_BUT_SET_VARIABLE -Wno-error=unused-but-set-variable)
+	endif()
 
 elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
 
@@ -1287,28 +1542,21 @@ elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
 	ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_NO_INVALID_OFFSETOF -Wno-invalid-offsetof)
 	ADD_CHECK_CXX_COMPILER_FLAG(CXX_WARNINGS CXX_WARN_NO_SIGN_COMPARE -Wno-sign-compare)
 
+	# disable numbered, false positives
+	set(C_WARNINGS "${C_WARNINGS} -wd188,186,144,913,556")
+	set(CXX_WARNINGS "${CXX_WARNINGS} -wd188,186,144,913,556")
+
 endif()
 
 # MSVC2010 fails to links C++ libs right
 if(MSVC10)
 	if(WITH_IMAGE_OPENEXR)
 		message(WARNING "MSVC 2010 does not support OpenEXR, disabling WITH_IMAGE_OPENEXR. To enable support use Use MSVC 2008")
-		set(WITH_IMAGE_OPENEXR OFF)
 	endif()
 	if(WITH_OPENCOLLADA)
 		message(WARNING "MSVC 2010 does not support OpenCollada, disabling WITH_OPENCOLLADA. To enable support use Use MSVC 2008")
-		set(WITH_OPENCOLLADA OFF)
 	endif()
 endif()
-
-if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	if(WITH_IK_ITASC OR WITH_MOD_FLUID)
-		message(WARNING "Using Clang as CXX compiler: disabling WITH_IK_ITASC and WITH_MOD_FLUID, these features will be missing.")
-		set(WITH_IK_ITASC OFF)
-		set(WITH_MOD_FLUID OFF)
-	endif()
-endif()
-
 
 # ensure python header is found since detection can fail, this could happen
 # with _any_ library but since we used a fixed python version this tends to
@@ -1387,8 +1635,8 @@ if(FIRST_RUN)
 	macro(info_cfg_text
 		_text)
 		set(_config_msg "${_config_msg}\n\n  ${_text}")
-		
-		
+
+
 	endmacro()
 
 	info_cfg_text("Build Options:")
@@ -1400,6 +1648,7 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_FFTW3)
 	info_cfg_option(WITH_INTERNATIONAL)
 	info_cfg_option(WITH_INPUT_NDOF)
+	info_cfg_option(WITH_CYCLES)
 
 	info_cfg_text("Compiler Options:")
 	info_cfg_option(WITH_BUILDINFO)
@@ -1408,6 +1657,7 @@ if(FIRST_RUN)
 
 	info_cfg_text("System Options:")
 	info_cfg_option(WITH_INSTALL_PORTABLE)
+	info_cfg_option(WITH_X11_XF86VMODE)
 	info_cfg_option(WITH_X11_XINPUT)
 	info_cfg_option(WITH_BUILTIN_GLEW)
 
@@ -1426,7 +1676,6 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_JACK)
 	info_cfg_option(WITH_CODEC_FFMPEG)
 	info_cfg_option(WITH_CODEC_SNDFILE)
-	info_cfg_option(WITH_SAMPLERATE)
 
 	info_cfg_text("Compression:")
 	info_cfg_option(WITH_LZMA)
@@ -1439,8 +1688,10 @@ if(FIRST_RUN)
 
 	info_cfg_text("Modifiers:")
 	info_cfg_option(WITH_MOD_BOOLEAN)
+	info_cfg_option(WITH_MOD_REMESH)
 	info_cfg_option(WITH_MOD_DECIMATE)
 	info_cfg_option(WITH_MOD_FLUID)
+	info_cfg_option(WITH_MOD_OCEANSIM)
 
 	info_cfg_text("")
 

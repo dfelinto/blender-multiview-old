@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -78,7 +76,7 @@ void WM_operator_free(wmOperator *op)
 
 #ifdef WITH_PYTHON
 	if(op->py_instance) {
-		/* do this first incase there are any __del__ functions or
+		/* do this first in case there are any __del__ functions or
 		 * similar that use properties */
 		BPY_DECREF(op->py_instance);
 	}
@@ -177,26 +175,6 @@ int WM_menutype_add(MenuType* mt)
 	return 1;
 }
 
-/* inefficient but only used for tooltip code */
-int WM_menutype_contains(MenuType* mt)
-{
-	int found= FALSE;
-
-	if(mt) {
-		GHashIterator *iter= BLI_ghashIterator_new(menutypes_hash);
-
-		for( ; !BLI_ghashIterator_isDone(iter); BLI_ghashIterator_step(iter)) {
-			if(mt == BLI_ghashIterator_getValue(iter)) {
-				found= TRUE;
-				break;
-			}
-		}
-		BLI_ghashIterator_free(iter);
-	}
-
-	return found;
-}
-
 void WM_menutype_freelink(MenuType* mt)
 {
 	BLI_ghash_remove(menutypes_hash, mt->idname, NULL, (GHashValFreeFP)MEM_freeN);
@@ -230,6 +208,7 @@ void WM_keymap_init(bContext *C)
 {
 	wmWindowManager *wm= CTX_wm_manager(C);
 
+	/* create standard key configs */
 	if(!wm->defaultconf)
 		wm->defaultconf= WM_keyconfig_new(wm, "Blender");
 	if(!wm->addonconf)
@@ -237,10 +216,17 @@ void WM_keymap_init(bContext *C)
 	if(!wm->userconf)
 		wm->userconf= WM_keyconfig_new(wm, "Blender User");
 	
+	/* initialize only after python init is done, for keymaps that
+	 * use python operators */
 	if(CTX_py_init_get(C) && (wm->initialized & WM_INIT_KEYMAP) == 0) {
-		/* create default key config */
-		wm_window_keymap(wm->defaultconf);
-		ED_spacetypes_keymap(wm->defaultconf);
+		/* create default key config, only initialize once,
+		 * it's persistent across sessions */
+		if(!(wm->defaultconf->flag & KEYCONF_INIT_DEFAULT)) {
+			wm_window_keymap(wm->defaultconf);
+			ED_spacetypes_keymap(wm->defaultconf);
+
+			wm->defaultconf->flag |= KEYCONF_INIT_DEFAULT;
+		}
 
 		WM_keyconfig_update_tag(NULL, NULL);
 		WM_keyconfig_update(wm);
@@ -269,7 +255,7 @@ void WM_check(bContext *C)
 		}
 
 		/* case: no open windows at all, for old file reads */
-		wm_window_add_ghostwindows(C, wm);
+		wm_window_add_ghostwindows(wm);
 	}
 
 	/* case: fileread */

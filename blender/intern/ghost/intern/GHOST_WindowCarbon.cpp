@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 10, 2001
@@ -72,7 +70,8 @@ const EventTypeSpec	kWEvents[] = {
 	{ kEventClassWindow, kEventWindowZoom },  /* for new zoom behaviour */ 
 };
 
-static OSStatus myWEventHandlerProc(EventHandlerCallRef handler, EventRef event, void* userData) {
+static OSStatus myWEventHandlerProc(EventHandlerCallRef handler, EventRef event, void* userData)
+{
 	WindowRef mywindow;
 	GHOST_WindowCarbon *ghost_window;
 	OSStatus err;

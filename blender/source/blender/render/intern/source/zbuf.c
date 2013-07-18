@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -65,6 +63,7 @@
 /* local includes */
 #include "gammaCorrectionTables.h"
 #include "pixelblending.h"
+#include "render_result.h"
 #include "render_types.h"
 #include "renderpipeline.h"
 #include "renderdatabase.h"
@@ -213,9 +212,9 @@ void fillrect(int *rect, int x, int y, int val)
 }
 
 /* based on Liang&Barsky, for clipping of pyramidical volume */
-static short cliptestf(float p, float q, float *u1, float *u2)
+static short cliptestf(float a, float b, float c, float d, float *u1, float *u2)
 {
-	float r;
+	float p= a + b, q= c + d, r;
 	
 	if(p<0.0f) {
 		if(q<p) return 0;
@@ -239,14 +238,14 @@ static short cliptestf(float p, float q, float *u1, float *u2)
 	return 1;
 }
 
-int testclip(float *v)
+int testclip(const float v[4])
 {
 	float abs4;	/* WATCH IT: this function should do the same as cliptestf, otherwise troubles in zbufclip()*/
 	short c=0;
 	
 	/* if we set clip flags, the clipping should be at least larger than epsilon. 
-	   prevents issues with vertices lying exact on borders */
-	abs4= fabs(v[3]) + FLT_EPSILON;
+	 * prevents issues with vertices lying exact on borders */
+	abs4= fabsf(v[3]) + FLT_EPSILON;
 	
 	if( v[0] < -abs4) c+=1;
 	else if( v[0] > abs4) c+=2;
@@ -446,12 +445,12 @@ static void zbuflineAc(ZSpan *zspan, int obi, int zvlnr, float *vec1, float *vec
 
 		/* all lines from left to right */
 		if(vec1[0]<vec2[0]) {
-			VECCOPY(v1, vec1);
-			VECCOPY(v2, vec2);
+			copy_v3_v3(v1, vec1);
+			copy_v3_v3(v2, vec2);
 		}
 		else {
-			VECCOPY(v2, vec1);
-			VECCOPY(v1, vec2);
+			copy_v3_v3(v2, vec1);
+			copy_v3_v3(v1, vec2);
 			dx= -dx; dy= -dy;
 		}
 
@@ -514,12 +513,12 @@ static void zbuflineAc(ZSpan *zspan, int obi, int zvlnr, float *vec1, float *vec
 	
 		/* all lines from top to bottom */
 		if(vec1[1]<vec2[1]) {
-			VECCOPY(v1, vec1);
-			VECCOPY(v2, vec2);
+			copy_v3_v3(v1, vec1);
+			copy_v3_v3(v2, vec2);
 		}
 		else {
-			VECCOPY(v2, vec1);
-			VECCOPY(v1, vec2);
+			copy_v3_v3(v2, vec1);
+			copy_v3_v3(v1, vec2);
 			dx= -dx; dy= -dy;
 		}
 
@@ -600,12 +599,12 @@ static void zbufline(ZSpan *zspan, int obi, int zvlnr, float *vec1, float *vec2)
 
 		/* all lines from left to right */
 		if(vec1[0]<vec2[0]) {
-			VECCOPY(v1, vec1);
-			VECCOPY(v2, vec2);
+			copy_v3_v3(v1, vec1);
+			copy_v3_v3(v2, vec2);
 		}
 		else {
-			VECCOPY(v2, vec1);
-			VECCOPY(v1, vec2);
+			copy_v3_v3(v2, vec1);
+			copy_v3_v3(v1, vec2);
 			dx= -dx; dy= -dy;
 		}
 
@@ -658,12 +657,12 @@ static void zbufline(ZSpan *zspan, int obi, int zvlnr, float *vec1, float *vec2)
 	else {
 		/* all lines from top to bottom */
 		if(vec1[1]<vec2[1]) {
-			VECCOPY(v1, vec1);
-			VECCOPY(v2, vec2);
+			copy_v3_v3(v1, vec1);
+			copy_v3_v3(v2, vec2);
 		}
 		else {
-			VECCOPY(v2, vec1);
-			VECCOPY(v1, vec2);
+			copy_v3_v3(v2, vec1);
+			copy_v3_v3(v1, vec2);
 			dx= -dx; dy= -dy;
 		}
 
@@ -730,12 +729,12 @@ static void zbufline_onlyZ(ZSpan *zspan, int UNUSED(obi), int UNUSED(zvlnr), flo
 		
 		/* all lines from left to right */
 		if(vec1[0]<vec2[0]) {
-			VECCOPY(v1, vec1);
-			VECCOPY(v2, vec2);
+			copy_v3_v3(v1, vec1);
+			copy_v3_v3(v2, vec2);
 		}
 		else {
-			VECCOPY(v2, vec1);
-			VECCOPY(v1, vec2);
+			copy_v3_v3(v2, vec1);
+			copy_v3_v3(v1, vec2);
 			dx= -dx; dy= -dy;
 		}
 		
@@ -786,12 +785,12 @@ static void zbufline_onlyZ(ZSpan *zspan, int UNUSED(obi), int UNUSED(zvlnr), flo
 	else {
 		/* all lines from top to bottom */
 		if(vec1[1]<vec2[1]) {
-			VECCOPY(v1, vec1);
-			VECCOPY(v2, vec2);
+			copy_v3_v3(v1, vec1);
+			copy_v3_v3(v2, vec2);
 		}
 		else {
-			VECCOPY(v2, vec1);
-			VECCOPY(v1, vec2);
+			copy_v3_v3(v2, vec1);
+			copy_v3_v3(v1, vec2);
 			dx= -dx; dy= -dy;
 		}
 		
@@ -843,7 +842,7 @@ static void zbufline_onlyZ(ZSpan *zspan, int UNUSED(obi), int UNUSED(zvlnr), flo
 }
 
 
-static int clipline(float *v1, float *v2)	/* return 0: do not draw */
+static int clipline(float v1[4], float v2[4])	/* return 0: do not draw */
 {
 	float dz,dw, u1=0.0, u2=1.0;
 	float dx, dy, v13;
@@ -852,23 +851,23 @@ static int clipline(float *v1, float *v2)	/* return 0: do not draw */
 	dw= v2[3]-v1[3];
 	
 	/* this 1.01 is for clipping x and y just a tinsy larger. that way it is
-		filled in with zbufwire correctly when rendering in parts. otherwise
-		you see line endings at edges... */
+	 * filled in with zbufwire correctly when rendering in parts. otherwise
+	 * you see line endings at edges... */
 	
-	if(cliptestf(-dz-dw, v1[3]+v1[2], &u1,&u2)) {
-		if(cliptestf(dz-dw, v1[3]-v1[2], &u1,&u2)) {
+	if(cliptestf(-dz, -dw, v1[3], v1[2], &u1,&u2)) {
+		if(cliptestf(dz, -dw, v1[3], -v1[2], &u1,&u2)) {
 			
 			dx= v2[0]-v1[0];
 			dz= 1.01f*(v2[3]-v1[3]);
 			v13= 1.01f*v1[3];
 			
-			if(cliptestf(-dx-dz, v1[0]+v13, &u1,&u2)) {
-				if(cliptestf(dx-dz, v13-v1[0], &u1,&u2)) {
+			if(cliptestf(-dx, -dz, v1[0], v13, &u1,&u2)) {
+				if(cliptestf(dx, -dz, v13, -v1[0], &u1,&u2)) {
 					
 					dy= v2[1]-v1[1];
 					
-					if(cliptestf(-dy-dz, v1[1]+v13, &u1,&u2)) {
-						if(cliptestf(dy-dz, v13-v1[1], &u1,&u2)) {
+					if(cliptestf(-dy, -dz, v1[1], v13, &u1,&u2)) {
+						if(cliptestf(dy, -dz, v13, -v1[1], &u1,&u2)) {
 							
 							if(u2<1.0f) {
 								v2[0]= v1[0]+u2*dx;
@@ -893,7 +892,7 @@ static int clipline(float *v1, float *v2)	/* return 0: do not draw */
 	return 0;
 }
 
-void hoco_to_zco(ZSpan *zspan, float *zco, float *hoco)
+void hoco_to_zco(ZSpan *zspan, float zco[3], const float hoco[4])
 {
 	float div;
 	
@@ -927,8 +926,8 @@ void zbufclipwire(ZSpan *zspan, int obi, int zvlnr, int ec, float *ho1, float *h
 		else {	/* clipping */
 
 			if(ec & ME_V1V2) {
-				QUATCOPY(vez, ho1);
-				QUATCOPY(vez+4, ho2);
+				copy_v4_v4(vez, ho1);
+				copy_v4_v4(vez+4, ho2);
 				if( clipline(vez, vez+4)) {
 					hoco_to_zco(zspan, vez, vez);
 					hoco_to_zco(zspan, vez+4, vez+4);
@@ -936,8 +935,8 @@ void zbufclipwire(ZSpan *zspan, int obi, int zvlnr, int ec, float *ho1, float *h
 				}
 			}
 			if(ec & ME_V2V3) {
-				QUATCOPY(vez, ho2);
-				QUATCOPY(vez+4, ho3);
+				copy_v4_v4(vez, ho2);
+				copy_v4_v4(vez+4, ho3);
 				if( clipline(vez, vez+4)) {
 					hoco_to_zco(zspan, vez, vez);
 					hoco_to_zco(zspan, vez+4, vez+4);
@@ -946,8 +945,8 @@ void zbufclipwire(ZSpan *zspan, int obi, int zvlnr, int ec, float *ho1, float *h
 			}
 			if(ho4) {
 				if(ec & ME_V3V4) {
-					QUATCOPY(vez, ho3);
-					QUATCOPY(vez+4, ho4);
+					copy_v4_v4(vez, ho3);
+					copy_v4_v4(vez+4, ho4);
 					if( clipline(vez, vez+4)) {
 						hoco_to_zco(zspan, vez, vez);
 						hoco_to_zco(zspan, vez+4, vez+4);
@@ -955,8 +954,8 @@ void zbufclipwire(ZSpan *zspan, int obi, int zvlnr, int ec, float *ho1, float *h
 					}
 				}
 				if(ec & ME_V4V1) {
-					QUATCOPY(vez, ho4);
-					QUATCOPY(vez+4, ho1);
+					copy_v4_v4(vez, ho4);
+					copy_v4_v4(vez+4, ho1);
 					if( clipline(vez, vez+4)) {
 						hoco_to_zco(zspan, vez, vez);
 						hoco_to_zco(zspan, vez+4, vez+4);
@@ -966,8 +965,8 @@ void zbufclipwire(ZSpan *zspan, int obi, int zvlnr, int ec, float *ho1, float *h
 			}
 			else {
 				if(ec & ME_V3V1) {
-					QUATCOPY(vez, ho3);
-					QUATCOPY(vez+4, ho1);
+					copy_v4_v4(vez, ho3);
+					copy_v4_v4(vez+4, ho1);
 					if( clipline(vez, vez+4)) {
 						hoco_to_zco(zspan, vez, vez);
 						hoco_to_zco(zspan, vez+4, vez+4);
@@ -998,7 +997,7 @@ void zbufclipwire(ZSpan *zspan, int obi, int zvlnr, int ec, float *ho1, float *h
 
 }
 
-void zbufsinglewire(ZSpan *zspan, int obi, int zvlnr, float *ho1, float *ho2)
+void zbufsinglewire(ZSpan *zspan, int obi, int zvlnr, const float ho1[4], const float ho2[4])
 {
 	float f1[4], f2[4];
 	int c1, c2;
@@ -1008,8 +1007,8 @@ void zbufsinglewire(ZSpan *zspan, int obi, int zvlnr, float *ho1, float *ho2)
 
 	if(c1 | c2) {	/* not in the middle */
 		if(!(c1 & c2)) {	/* not out completely */
-			QUATCOPY(f1, ho1);
-			QUATCOPY(f2, ho2);
+			copy_v4_v4(f1, ho1);
+			copy_v4_v4(f2, ho2);
 
 			if(clipline(f1, f2)) {
 				hoco_to_zco(zspan, f1, f1);
@@ -1033,10 +1032,13 @@ void zbufsinglewire(ZSpan *zspan, int obi, int zvlnr, float *ho1, float *ho2)
  * This is one of the z buffer fill functions called in zbufclip() and
  * zbufwireclip(). 
  *
- * @param v1 [4 floats, world coordinates] first vertex
- * @param v2 [4 floats, world coordinates] second vertex
- * @param v3 [4 floats, world coordinates] third vertex
+ * \param v1 [4 floats, world coordinates] first vertex
+ * \param v2 [4 floats, world coordinates] second vertex
+ * \param v3 [4 floats, world coordinates] third vertex
  */
+
+/* WATCH IT: zbuffillGLinv4 and zbuffillGL4 are identical except for a 2 lines,
+ * commented below */
 static void zbuffillGLinv4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, float *v3, float *v4) 
 {
 	double zxd, zyd, zy0, zverg;
@@ -1048,10 +1050,10 @@ static void zbuffillGLinv4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v
 	int *rectmaskofs, *rm;
 	int *rz, x, y;
 	int sn1, sn2, rectx, *rectzofs, my0, my2;
-	
+
 	/* init */
 	zbuf_init_span(zspan);
-	
+
 	/* set spans */
 	zbuf_add_to_span(zspan, v1, v2);
 	zbuf_add_to_span(zspan, v2, v3);
@@ -1059,19 +1061,19 @@ static void zbuffillGLinv4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v
 		zbuf_add_to_span(zspan, v3, v4);
 		zbuf_add_to_span(zspan, v4, v1);
 	}
-	else 
+	else
 		zbuf_add_to_span(zspan, v3, v1);
-	
+
 	/* clipped */
 	if(zspan->minp2==NULL || zspan->maxp2==NULL) return;
-	
+
 	if(zspan->miny1 < zspan->miny2) my0= zspan->miny2; else my0= zspan->miny1;
 	if(zspan->maxy1 > zspan->maxy2) my2= zspan->maxy2; else my2= zspan->maxy1;
-	
+
 	//	printf("my %d %d\n", my0, my2);
 	if(my2<my0) return;
-	
-	
+
+
 	/* ZBUF DX DY, in floats still */
 	x1= v1[0]- v2[0];
 	x2= v2[0]- v3[0];
@@ -1082,22 +1084,22 @@ static void zbuffillGLinv4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v
 	x0= y1*z2-z1*y2;
 	y0= z1*x2-x1*z2;
 	z0= x1*y2-y1*x2;
-	
+
 	if(z0==0.0f) return;
-	
+
 	xx1= (x0*v1[0] + y0*v1[1])/z0 + v1[2];
-	
+
 	zxd= -(double)x0/(double)z0;
 	zyd= -(double)y0/(double)z0;
 	zy0= ((double)my2)*zyd + (double)xx1;
-	
+
 	/* start-offset in rect */
 	rectx= zspan->rectx;
 	rectzofs= (zspan->rectz+rectx*my2);
 	rectpofs= (zspan->rectp+rectx*my2);
 	rectoofs= (zspan->recto+rectx*my2);
 	rectmaskofs= (zspan->rectmask+rectx*my2);
-	
+
 	/* correct span */
 	sn1= (my0 + my2)/2;
 	if(zspan->span1[sn1] < zspan->span2[sn1]) {
@@ -1108,45 +1110,45 @@ static void zbuffillGLinv4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v
 		span1= zspan->span2+my2;
 		span2= zspan->span1+my2;
 	}
-	
+
 	for(y=my2; y>=my0; y--, span1--, span2--) {
-		
+
 		sn1= floor(*span1);
 		sn2= floor(*span2);
-		sn1++; 
-		
+		sn1++;
+
 		if(sn2>=rectx) sn2= rectx-1;
 		if(sn1<0) sn1= 0;
-		
+
 		if(sn2>=sn1) {
 			int intzverg;
-			
+
 			zverg= (double)sn1*zxd + zy0;
 			rz= rectzofs+sn1;
 			rp= rectpofs+sn1;
 			ro= rectoofs+sn1;
 			rm= rectmaskofs+sn1;
 			x= sn2-sn1;
-			
+
 			while(x>=0) {
 				intzverg= (int)CLAMPIS(zverg, INT_MIN, INT_MAX);
 
-				if( intzverg > *rz || *rz==0x7FFFFFFF) {
+				if( intzverg > *rz || *rz==0x7FFFFFFF) { /* UNIQUE LINE: see comment above */
 					if(!zspan->rectmask || intzverg > *rm) {
-						*ro= obi;
+						*ro= obi; /* UNIQUE LINE: see comment above (order differs) */
 						*rz= intzverg;
 						*rp= zvlnr;
 					}
 				}
 				zverg+= zxd;
-				rz++; 
-				rp++; 
+				rz++;
+				rp++;
 				ro++;
 				rm++;
 				x--;
 			}
 		}
-		
+
 		zy0-=zyd;
 		rectzofs-= rectx;
 		rectpofs-= rectx;
@@ -1157,6 +1159,8 @@ static void zbuffillGLinv4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v
 
 /* uses spanbuffers */
 
+/* WATCH IT: zbuffillGLinv4 and zbuffillGL4 are identical except for a 2 lines,
+ * commented below */
 static void zbuffillGL4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, float *v3, float *v4)
 {
 	double zxd, zyd, zy0, zverg;
@@ -1168,10 +1172,10 @@ static void zbuffillGL4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, 
 	int *rectmaskofs, *rm;
 	int *rz, x, y;
 	int sn1, sn2, rectx, *rectzofs, my0, my2;
-	
+
 	/* init */
 	zbuf_init_span(zspan);
-	
+
 	/* set spans */
 	zbuf_add_to_span(zspan, v1, v2);
 	zbuf_add_to_span(zspan, v2, v3);
@@ -1179,19 +1183,19 @@ static void zbuffillGL4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, 
 		zbuf_add_to_span(zspan, v3, v4);
 		zbuf_add_to_span(zspan, v4, v1);
 	}
-	else 
+	else
 		zbuf_add_to_span(zspan, v3, v1);
-		
+
 	/* clipped */
 	if(zspan->minp2==NULL || zspan->maxp2==NULL) return;
-	
+
 	if(zspan->miny1 < zspan->miny2) my0= zspan->miny2; else my0= zspan->miny1;
 	if(zspan->maxy1 > zspan->maxy2) my2= zspan->maxy2; else my2= zspan->maxy1;
-	
-//	printf("my %d %d\n", my0, my2);
+
+	//	printf("my %d %d\n", my0, my2);
 	if(my2<my0) return;
-	
-	
+
+
 	/* ZBUF DX DY, in floats still */
 	x1= v1[0]- v2[0];
 	x2= v2[0]- v3[0];
@@ -1202,7 +1206,7 @@ static void zbuffillGL4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, 
 	x0= y1*z2-z1*y2;
 	y0= z1*x2-x1*z2;
 	z0= x1*y2-y1*x2;
-	
+
 	if(z0==0.0f) return;
 
 	xx1= (x0*v1[0] + y0*v1[1])/z0 + v1[2];
@@ -1228,45 +1232,45 @@ static void zbuffillGL4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, 
 		span1= zspan->span2+my2;
 		span2= zspan->span1+my2;
 	}
-	
+
 	for(y=my2; y>=my0; y--, span1--, span2--) {
-		
+
 		sn1= floor(*span1);
 		sn2= floor(*span2);
-		sn1++; 
-		
+		sn1++;
+
 		if(sn2>=rectx) sn2= rectx-1;
 		if(sn1<0) sn1= 0;
-		
+
 		if(sn2>=sn1) {
 			int intzverg;
-			
+
 			zverg= (double)sn1*zxd + zy0;
 			rz= rectzofs+sn1;
 			rp= rectpofs+sn1;
 			ro= rectoofs+sn1;
 			rm= rectmaskofs+sn1;
 			x= sn2-sn1;
-			
+
 			while(x>=0) {
 				intzverg= (int)CLAMPIS(zverg, INT_MIN, INT_MAX);
-				
-				if(intzverg < *rz) {
+
+				if(intzverg < *rz) { /* ONLY UNIQUE LINE: see comment above */
 					if(!zspan->rectmask || intzverg > *rm) {
 						*rz= intzverg;
 						*rp= zvlnr;
-						*ro= obi;
+						*ro= obi; /* UNIQUE LINE: see comment above (order differs) */
 					}
 				}
 				zverg+= zxd;
-				rz++; 
-				rp++; 
-				ro++; 
+				rz++;
+				rp++;
+				ro++;
 				rm++;
 				x--;
 			}
 		}
-		
+
 		zy0-=zyd;
 		rectzofs-= rectx;
 		rectpofs-= rectx;
@@ -1281,9 +1285,9 @@ static void zbuffillGL4(ZSpan *zspan, int obi, int zvlnr, float *v1, float *v2, 
  * This is one of the z buffer fill functions called in zbufclip() and
  * zbufwireclip(). 
  *
- * @param v1 [4 floats, world coordinates] first vertex
- * @param v2 [4 floats, world coordinates] second vertex
- * @param v3 [4 floats, world coordinates] third vertex
+ * \param v1 [4 floats, world coordinates] first vertex
+ * \param v2 [4 floats, world coordinates] second vertex
+ * \param v3 [4 floats, world coordinates] third vertex
  */
 
 /* now: filling two Z values, the closest and 2nd closest */
@@ -1587,15 +1591,14 @@ void zspan_scanconvert(ZSpan *zspan, void *handle, float *v1, float *v2, float *
 /**
  * (clip pyramid)
  * Sets labda: flag, and parametrize the clipping of vertices in
- * viewspace coordinates. labda = -1 means no clipping, labda in [0,
-	 * 1] means a clipping.
+ * viewspace coordinates. labda = -1 means no clipping, labda in [0, 1] means a clipping.
  * Note: uses globals.
- * @param v1 start coordinate s
- * @param v2 target coordinate t
- * @param b1 
- * @param b2 
- * @param b3
- * @param a index for coordinate (x, y, or z)
+ * \param v1 start coordinate s
+ * \param v2 target coordinate t
+ * \param b1 
+ * \param b2 
+ * \param b3
+ * \param a index for coordinate (x, y, or z)
  */
 
 static void clippyra(float *labda, float *v1, float *v2, int *b2, int *b3, int a, float clipcrop)
@@ -1624,8 +1627,8 @@ static void clippyra(float *labda, float *v1, float *v2, int *b2, int *b3, int a
 	 * who would have thought that of L&B!
 	 */
 
-	if(cliptestf(-da-dw, v13+v1[a], &u1,&u2)) {
-		if(cliptestf(da-dw, v13-v1[a], &u1,&u2)) {
+	if(cliptestf(-da, -dw, v13, v1[a], &u1,&u2)) {
+		if(cliptestf(da, -dw, v13, -v1[a], &u1,&u2)) {
 			*b3=1;
 			if(u2<1.0f) {
 				labda[1]= u2;
@@ -1648,11 +1651,11 @@ static void clippyra(float *labda, float *v1, float *v2, int *b2, int *b3, int a
  * vertex list of this face.
  * 
  * 
- * @param v1 start coordinate s
- * @param v2 target coordinate t
- * @param b1 
- * @param b2 
- * @param clve vertex vector.
+ * \param v1 start coordinate s
+ * \param v2 target coordinate t
+ * \param b1 
+ * \param b2 
+ * \param clve vertex vector.
  */
 
 static void makevertpyra(float *vez, float *labda, float **trias, float *v1, float *v2, int *b1, int *clve)
@@ -1692,7 +1695,7 @@ static void makevertpyra(float *vez, float *labda, float **trias, float *v1, flo
 
 /* ------------------------------------------------------------------------- */
 
-void projectverto(float *v1, float winmat[][4], float *adr)
+void projectverto(const float v1[3], float winmat[][4], float adr[4])
 {
 	/* calcs homogenic coord of vertex v1 */
 	float x,y,z;
@@ -1710,7 +1713,7 @@ void projectverto(float *v1, float winmat[][4], float *adr)
 
 /* ------------------------------------------------------------------------- */
 
-void projectvert(float *v1, float winmat[][4], float *adr)
+void projectvert(const float v1[3], float winmat[][4], float adr[4])
 {
 	/* calcs homogenic coord of vertex v1 */
 	float x,y,z;
@@ -1747,17 +1750,18 @@ static void zbuf_project_cache_clear(ZbufProjectCache *cache, int size)
 
 static int zbuf_shadow_project(ZbufProjectCache *cache, int index, float winmat[][4], float *co, float *ho)
 {
-	int clipflag, cindex= index & 255;
+	int cindex= index & 255;
 
 	if(cache[cindex].index == index) {
-		QUATCOPY(ho, cache[cindex].ho);
+		copy_v4_v4(ho, cache[cindex].ho);
 		return cache[cindex].clip;
 	}
 	else {
+		int clipflag;
 		projectvert(co, winmat, ho);
 		clipflag= testclip(ho);
 
-		QUATCOPY(cache[cindex].ho, ho);
+		copy_v4_v4(cache[cindex].ho, ho);
 		cache[cindex].clip= clipflag;
 		cache[cindex].index= index;
 
@@ -1775,15 +1779,17 @@ static void zbuffer_part_bounds(int winx, int winy, RenderPart *pa, float *bound
 
 static int zbuf_part_project(ZbufProjectCache *cache, int index, float winmat[][4], float *bounds, float *co, float *ho)
 {
-	float vec[3], wco;
-	int clipflag= 0, cindex= index & 255;
+	float vec[3];
+	int cindex= index & 255;
 
 	if(cache[cindex].index == index) {
-		QUATCOPY(ho, cache[cindex].ho);
+		copy_v4_v4(ho, cache[cindex].ho);
 		return cache[cindex].clip;
 	}
 	else {
-		VECCOPY(vec, co)
+		float wco;
+		int clipflag= 0;
+		copy_v3_v3(vec, co);
 		projectvert(co, winmat, ho);
 
 		wco= ho[3];
@@ -1792,7 +1798,7 @@ static int zbuf_part_project(ZbufProjectCache *cache, int index, float winmat[][
 		if(ho[1] > bounds[3]*wco) clipflag |= 4;
 		else if(ho[1] < bounds[2]*wco) clipflag |= 8;
 
-		QUATCOPY(cache[cindex].ho, ho);
+		copy_v4_v4(cache[cindex].ho, ho);
 		cache[cindex].clip= clipflag;
 		cache[cindex].index= index;
 
@@ -1800,11 +1806,11 @@ static int zbuf_part_project(ZbufProjectCache *cache, int index, float winmat[][
 	}
 }
 
-void zbuf_render_project(float winmat[][4], float *co, float *ho)
+void zbuf_render_project(float winmat[][4], const float co[3], float ho[4])
 {
 	float vec[3];
 
-	VECCOPY(vec, co)
+	copy_v3_v3(vec, co);
 	projectvert(vec, winmat, ho);
 }
 
@@ -1818,7 +1824,7 @@ void zbuf_make_winmat(Render *re, float winmat[][4])
 		panomat[2][0]= -re->panosi;
 		panomat[2][2]= re->panoco;
 
-		mul_m4_m4m4(winmat, panomat, re->winmat);
+		mult_m4_m4m4(winmat, re->winmat, panomat);
 	}
 	else
 		copy_m4_m4(winmat, re->winmat);
@@ -2137,7 +2143,7 @@ void zbuffer_solid(RenderPart *pa, RenderLayer *rl, void(*fillfunc)(RenderPart*,
 				continue;
 			
 			if(obi->flag & R_TRANSFORMED)
-				mul_m4_m4m4(obwinmat, obi->mat, winmat);
+				mult_m4_m4m4(obwinmat, winmat, obi->mat);
 			else
 				copy_m4_m4(obwinmat, winmat);
 
@@ -2317,7 +2323,7 @@ void zbuffer_shadow(Render *re, float winmat[][4], LampRen *lar, int *rectz, int
 			continue;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(obwinmat, obi->mat, winmat);
+			mult_m4_m4m4(obwinmat, winmat, obi->mat);
 		else
 			copy_m4_m4(obwinmat, winmat);
 
@@ -2556,7 +2562,7 @@ void zbuffer_sss(RenderPart *pa, unsigned int lay, void *handle, void (*func)(vo
 			continue;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(obwinmat, obi->mat, winmat);
+			mult_m4_m4m4(obwinmat, winmat, obi->mat);
 		else
 			copy_m4_m4(obwinmat, winmat);
 
@@ -2729,7 +2735,7 @@ static void zbuf_fill_in_rgba(ZSpan *zspan, DrawBufPixel *col, float *v1, float 
 }
 
 /* char value==255 is filled in, rest should be zero */
-/* returns alpha values, but sets alpha to 1 for zero alpha pixels that have an alpha value as neighbour */
+/* returns alpha values, but sets alpha to 1 for zero alpha pixels that have an alpha value as neighbor */
 void antialias_tagbuf(int xsize, int ysize, char *rectmove)
 {
 	char *row1, *row2, *row3;
@@ -2864,7 +2870,7 @@ void RE_zbuf_accumulate_vecblur(NodeBlurData *nbd, int xsize, int ysize, float *
 	float v1[3], v2[3], v3[3], v4[3], fx, fy;
 	float *rectvz, *dvz, *dimg, *dvec1, *dvec2, *dz, *dz1, *dz2, *rectz;
 	float *minvecbufrect= NULL, *rectweight, *rw, *rectmax, *rm, *ro;
-	float maxspeedsq= (float)nbd->maxspeed*nbd->maxspeed, totfac;
+	float maxspeedsq= (float)nbd->maxspeed*nbd->maxspeed;
 	int y, x, step, maxspeed=nbd->maxspeed, samples= nbd->samples;
 	int tsktsk= 0;
 	static int firsttime= 1;
@@ -3038,7 +3044,6 @@ void RE_zbuf_accumulate_vecblur(NodeBlurData *nbd, int xsize, int ysize, float *
 	}
 	
 	memset(newrect, 0, sizeof(float)*xsize*ysize*4);
-	totfac= 0.0f;
 
 	/* accumulate */
 	samples/= 2;
@@ -3300,7 +3305,7 @@ static int zbuffer_abuf(Render *re, RenderPart *pa, APixstr *APixbuf, ListBase *
 			continue;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(obwinmat, obi->mat, winmat);
+			mult_m4_m4m4(obwinmat, winmat, obi->mat);
 		else
 			copy_m4_m4(obwinmat, winmat);
 
@@ -3348,7 +3353,7 @@ static int zbuffer_abuf(Render *re, RenderPart *pa, APixstr *APixbuf, ListBase *
 							mul= 0x7FFFFFFF;
 							zval= mul*(1.0f+ho1[2]/ho1[3]);
 
-							VECCOPY(vec, v1->co);
+							copy_v3_v3(vec, v1->co);
 							/* z is negative, otherwise its being clipped */ 
 							vec[2]-= ma->zoffs;
 							projectverto(vec, obwinmat, hoco);
@@ -3474,7 +3479,7 @@ void add_transp_speed(RenderLayer *rl, int offset, float *speed, float alpha, in
 				if(fp[3]==PASS_VECTOR_MAX) fp[3]= 0.0f;
 			}
 			else if(rdrect==NULL || rdrect[offset]==0 || alpha>0.95f) {
-				QUATCOPY(fp, speed);
+				copy_v4_v4(fp, speed);
 			}
 			else {
 				/* add minimum speed in pixel */
@@ -3866,7 +3871,7 @@ static int addtosamp_shr(ShadeResult *samp_shr, ShadeSample *ssamp, int addpassf
 				samp_shr->z= MIN2(samp_shr->z, shr->z);
 
 				if(addpassflag & SCE_PASS_VECTOR) {
-					QUATCOPY(samp_shr->winspeed, shr->winspeed);
+					copy_v4_v4(samp_shr->winspeed, shr->winspeed);
 				}
 				/* optim... */
 				if(addpassflag & ~(SCE_PASS_VECTOR)) {

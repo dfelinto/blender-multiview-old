@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -62,10 +60,14 @@
 #include "BKE_packedFile.h"
 #include "BKE_sequencer.h" /* free seq clipboard */
 #include "BKE_material.h" /* clear_matcopybuf */
+#include "BKE_tracking.h" /* free tracking clipboard */
 
-#include "BLI_blenlib.h"
-#include "BLI_winstuff.h"
+#include "BLI_listbase.h"
+#include "BLI_scanfill.h"
+#include "BLI_string.h"
+#include "BLI_utildefines.h"
 
+#include "RE_engine.h"
 #include "RE_pipeline.h"		/* RE_ free stuff */
 
 #ifdef WITH_PYTHON
@@ -99,6 +101,7 @@
 
 #include "UI_interface.h"
 #include "BLF_api.h"
+#include "BLF_translation.h"
 
 #include "GPU_buffers.h"
 #include "GPU_extensions.h"
@@ -131,7 +134,7 @@ void WM_init(bContext *C, int argc, const char **argv)
 
 	set_free_windowmanager_cb(wm_close_and_free);	/* library.c */
 	set_blender_test_break_cb(wm_window_testbreak); /* blender.c */
-	DAG_editors_update_cb(ED_render_id_flush_update); /* depsgraph.c */
+	DAG_editors_update_cb(ED_render_id_flush_update, ED_render_scene_update); /* depsgraph.c */
 	
 	ED_spacetypes_init();	/* editors/space_api/spacetype.c */
 	
@@ -142,6 +145,8 @@ void WM_init(bContext *C, int argc, const char **argv)
 	BLF_lang_init();
 	/* get the default database, plus a wm */
 	WM_read_homefile(C, NULL, G.factory_startup);
+
+	BLF_lang_set(NULL);
 
 	/* note: there is a bug where python needs initializing before loading the
 	 * startup.blend because it may contain PyDrivers. It also needs to be after
@@ -156,8 +161,8 @@ void WM_init(bContext *C, int argc, const char **argv)
 	BPY_python_start(argc, argv);
 
 	BPY_driver_reset();
-	BPY_app_handlers_reset(); /* causes addon callbacks to be freed [#28068],
-	                           * but this is actually what we want. */
+	BPY_app_handlers_reset(FALSE); /* causes addon callbacks to be freed [#28068],
+	                                * but this is actually what we want. */
 	BPY_modules_load_user(C);
 #else
 	(void)argc; /* unused */
@@ -187,10 +192,10 @@ void WM_init(bContext *C, int argc, const char **argv)
 	WM_read_history();
 
 	/* allow a path of "", this is what happens when making a new file */
-	/*
+#if 0
 	if(G.main->name[0] == 0)
 		BLI_make_file_string("/", G.main->name, BLI_getDefaultDocumentFolder(), "untitled.blend");
-	*/
+#endif
 
 	BLI_strncpy(G.lib, G.main->name, FILE_MAX);
 }
@@ -207,24 +212,6 @@ void WM_init_splash(bContext *C)
 			CTX_wm_window_set(C, prevwin);
 		}
 	}
-}
-
-static ScrArea *biggest_view3d(bContext *C)
-{
-	bScreen *sc= CTX_wm_screen(C);
-	ScrArea *sa, *big= NULL;
-	int size, maxsize= 0;
-
-	for(sa= sc->areabase.first; sa; sa= sa->next) {
-		if(sa->spacetype==SPACE_VIEW3D) {
-			size= sa->winx * sa->winy;
-			if(size > maxsize) {
-				maxsize= size;
-				big= sa;
-			}
-		}
-	}
-	return big;
 }
 
 int WM_init_game(bContext *C)
@@ -249,7 +236,7 @@ int WM_init_game(bContext *C)
 	if(win)
 		CTX_wm_window_set(C, win);
 
-	sa = biggest_view3d(C);
+	sa = BKE_screen_find_big_area(CTX_wm_screen(C), SPACE_VIEW3D, 0);
 	ar= BKE_area_find_region_type(sa, RGN_TYPE_WINDOW);
 
 	// if we have a valid 3D view
@@ -278,14 +265,13 @@ int WM_init_game(bContext *C)
 		}
 
 		/* Fullscreen */
-		if(scene->gm.fullscreen) {
+		if((scene->gm.playerflag & GAME_PLAYER_FULLSCREEN)) {
 			WM_operator_name_call(C, "WM_OT_window_fullscreen_toggle", WM_OP_EXEC_DEFAULT, NULL);
 			wm_get_screensize(&ar->winrct.xmax, &ar->winrct.ymax);
 			ar->winx = ar->winrct.xmax + 1;
 			ar->winy = ar->winrct.ymax + 1;
 		}
-		else
-		{
+		else {
 			GHOST_RectangleHandle rect = GHOST_GetClientBounds(win->ghostwin);
 			ar->winrct.ymax = GHOST_GetHeightRectangle(rect);
 			ar->winrct.xmax = GHOST_GetWidthRectangle(rect);
@@ -296,10 +282,11 @@ int WM_init_game(bContext *C)
 
 		WM_operator_name_call(C, "VIEW3D_OT_game_start", WM_OP_EXEC_DEFAULT, NULL);
 
+		sound_exit();
+
 		return 1;
 	}
-	else
-	{
+	else {
 		ReportTimerInfo *rti;
 
 		BKE_report(&wm->reports, RPT_ERROR, "No valid 3D View found. Game auto start is not possible.");
@@ -330,9 +317,6 @@ static void free_openrecent(void)
 
 /* bad stuff*/
 
-extern wchar_t *copybuf;
-extern wchar_t *copybufinfo;
-
 	// XXX copy/paste buffer stuff...
 extern void free_anim_copybuf(void); 
 extern void free_anim_drivers_copybuf(void); 
@@ -340,7 +324,8 @@ extern void free_fmodifiers_copybuf(void);
 extern void free_posebuf(void); 
 
 /* called in creator.c even... tsk, split this! */
-void WM_exit(bContext *C)
+/* note, doesnt run exit() call WM_exit() for that */
+void WM_exit_ext(bContext *C, const short do_python)
 {
 	wmWindow *win;
 
@@ -376,7 +361,7 @@ void WM_exit(bContext *C)
 	BIF_freeTemplates(C);
 	
 	free_ttfont(); /* bke_font.h */
-	
+
 	free_openrecent();
 	
 	BKE_freecubetable();
@@ -387,6 +372,7 @@ void WM_exit(bContext *C)
 		wm_free_reports(C);			/* before free_blender! - since the ListBases get freed there */
 
 	seq_free_clipboard(); /* sequencer.c */
+	BKE_tracking_free_clipboard();
 		
 	free_blender();				/* blender.c, does entire library and spacetypes */
 //	free_matcopybuf();
@@ -396,6 +382,12 @@ void WM_exit(bContext *C)
 	free_posebuf();
 
 	BLF_exit();
+
+	BLI_scanfill_free(); /* the order this is called doesn't matter */
+
+#ifdef WITH_INTERNATIONAL
+	BLF_free_unifont();
+#endif
 	
 	ANIM_keyingset_infos_exit();
 	
@@ -406,22 +398,25 @@ void WM_exit(bContext *C)
 	
 
 #ifdef WITH_PYTHON
-	/* XXX - old note */
-	/* before free_blender so py's gc happens while library still exists */
-	/* needed at least for a rare sigsegv that can happen in pydrivers */
+	/* option not to close python so we can use 'atexit' */
+	if(do_python) {
+		/* XXX - old note */
+		/* before free_blender so py's gc happens while library still exists */
+		/* needed at least for a rare sigsegv that can happen in pydrivers */
 
-	/* Update for blender 2.5, move after free_blender because blender now holds references to PyObject's
-	 * so decref'ing them after python ends causes bad problems every time
-	 * the pyDriver bug can be fixed if it happens again we can deal with it then */
-	BPY_python_end();
+		/* Update for blender 2.5, move after free_blender because blender now holds references to PyObject's
+		 * so decref'ing them after python ends causes bad problems every time
+		 * the pyDriver bug can be fixed if it happens again we can deal with it then */
+		BPY_python_end();
+	}
+#else
+	(void)do_python;
 #endif
 
 	GPU_global_buffer_pool_free();
 	GPU_free_unused_buffers();
 	GPU_extensions_exit();
-	
-//	if (copybuf) MEM_freeN(copybuf);
-//	if (copybufinfo) MEM_freeN(copybufinfo);
+
 	if (!G.background) {
 		BKE_undo_save_quit();	// saves quit.blend if global undo is on
 	}
@@ -458,6 +453,10 @@ void WM_exit(bContext *C)
 		getchar();
 	}
 #endif 
-	exit(G.afbreek==1);
 }
 
+void WM_exit(bContext *C)
+{
+	WM_exit_ext(C, 1);
+	exit(G.afbreek==1);
+}

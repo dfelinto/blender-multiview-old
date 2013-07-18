@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,10 +24,10 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  * 
-*/
+ */
 
-#ifndef BLI_NOISE_H
-#define BLI_NOISE_H
+#ifndef __BLI_NOISE_H__
+#define __BLI_NOISE_H__
 
 /** \file BLI_noise.h
  *  \ingroup bli

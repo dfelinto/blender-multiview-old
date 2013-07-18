@@ -91,7 +91,7 @@ typedef struct PVert {
 	} u;
 
 	struct PEdge *edge;
-	float *co;
+	float co[3];
 	float uv[2];
 	unsigned char flag;
 
@@ -219,10 +219,10 @@ typedef struct PHandle {
 
 
 /* PHash
-   - special purpose hash that keeps all its elements in a single linked list.
-   - after construction, this hash is thrown away, and the list remains.
-   - removing elements is not possible efficiently.
-*/
+ * - special purpose hash that keeps all its elements in a single linked list.
+ * - after construction, this hash is thrown away, and the list remains.
+ * - removing elements is not possible efficiently.
+ */
 
 static int PHashSizes[] = {
 	1, 3, 5, 11, 17, 37, 67, 131, 257, 521, 1031, 2053, 4099, 8209, 
@@ -497,7 +497,7 @@ static PBool p_intersect_line_2d(float *v1, float *v2, float *v3, float *v4, flo
 
 	if (!p_intersect_line_2d_dir(v1, dir1, v2, dir2, isect)) {
 		/* parallel - should never happen in theory for polygon kernel, but
-		   let's give a point nearby in case things go wrong */
+		 * let's give a point nearby in case things go wrong */
 		isect[0] = (v1[0] + v2[0])*0.5f;
 		isect[1] = (v1[1] + v2[1])*0.5f;
 		return P_FALSE;
@@ -546,17 +546,21 @@ static void p_face_flip(PFace *f)
 	PEdge *e1 = f->edge, *e2 = e1->next, *e3 = e2->next;
 	PVert *v1 = e1->vert, *v2 = e2->vert, *v3 = e3->vert;
 	int f1 = e1->flag, f2 = e2->flag, f3 = e3->flag;
+	float *orig_uv1 = e1->orig_uv, *orig_uv2 = e2->orig_uv, *orig_uv3 = e3->orig_uv;
 
 	e1->vert = v2;
 	e1->next = e3;
+	e1->orig_uv = orig_uv2;
 	e1->flag = (f1 & ~PEDGE_VERTEX_FLAGS) | (f2 & PEDGE_VERTEX_FLAGS);
 
 	e2->vert = v3;
 	e2->next = e1;
+	e2->orig_uv = orig_uv3;
 	e2->flag = (f2 & ~PEDGE_VERTEX_FLAGS) | (f3 & PEDGE_VERTEX_FLAGS);
 
 	e3->vert = v1;
 	e3->next = e2;
+	e3->orig_uv = orig_uv1;
 	e3->flag = (f3 & ~PEDGE_VERTEX_FLAGS) | (f1 & PEDGE_VERTEX_FLAGS);
 }
 
@@ -651,11 +655,15 @@ static void p_face_backup_uvs(PFace *f)
 {
 	PEdge *e1 = f->edge, *e2 = e1->next, *e3 = e2->next;
 
-	if (e1->orig_uv && e2->orig_uv && e3->orig_uv) {
+	if (e1->orig_uv) {
 		e1->old_uv[0] = e1->orig_uv[0];
 		e1->old_uv[1] = e1->orig_uv[1];
+	}
+	if (e2->orig_uv) {
 		e2->old_uv[0] = e2->orig_uv[0];
 		e2->old_uv[1] = e2->orig_uv[1];
+	}
+	if (e3->orig_uv) {
 		e3->old_uv[0] = e3->orig_uv[0];
 		e3->old_uv[1] = e3->orig_uv[1];
 	}
@@ -665,11 +673,15 @@ static void p_face_restore_uvs(PFace *f)
 {
 	PEdge *e1 = f->edge, *e2 = e1->next, *e3 = e2->next;
 
-	if (e1->orig_uv && e2->orig_uv && e3->orig_uv) {
+	if (e1->orig_uv) {
 		e1->orig_uv[0] = e1->old_uv[0];
 		e1->orig_uv[1] = e1->old_uv[1];
+	}
+	if (e2->orig_uv) {
 		e2->orig_uv[0] = e2->old_uv[0];
 		e2->orig_uv[1] = e2->old_uv[1];
+	}
+	if (e3->orig_uv) {
 		e3->orig_uv[0] = e3->old_uv[0];
 		e3->orig_uv[1] = e3->old_uv[1];
 	}
@@ -680,7 +692,7 @@ static void p_face_restore_uvs(PFace *f)
 static PVert *p_vert_add(PHandle *handle, PHashKey key, float *co, PEdge *e)
 {
 	PVert *v = (PVert*)BLI_memarena_alloc(handle->arena, sizeof *v);
-	v->co = co;
+	copy_v3_v3(v->co, co);
 	v->u.key = key;
 	v->edge = e;
 	v->flag = 0;
@@ -704,7 +716,7 @@ static PVert *p_vert_copy(PChart *chart, PVert *v)
 {
 	PVert *nv = (PVert*)BLI_memarena_alloc(chart->handle->arena, sizeof *nv);
 
-	nv->co = v->co;
+	copy_v3_v3(nv->co, v->co);
 	nv->uv[0] = v->uv[0];
 	nv->uv[1] = v->uv[1];
 	nv->u.key = v->u.key;
@@ -731,8 +743,10 @@ static PEdge *p_edge_lookup(PHandle *handle, PHashKey *vkeys)
 	return NULL;
 }
 
-static PBool p_face_exists(PHandle *handle, PHashKey *vkeys, int i1, int i2, int i3)
+int p_face_exists(ParamHandle *phandle, ParamKey *pvkeys, int i1, int i2, int i3)
 {
+	PHandle *handle = (PHandle*)phandle;
+	PHashKey *vkeys = (PHashKey*)pvkeys;
 	PHashKey key = PHASH_edge(vkeys[i1], vkeys[i2]);
 	PEdge *e = (PEdge*)phash_lookup(handle->hash_edges, key);
 
@@ -1107,9 +1121,9 @@ static PBool p_quad_split_direction(PHandle *handle, float **co, PHashKey *vkeys
 	PBool dir = (fac <= 0.0f);
 
 	/* the face exists check is there because of a special case: when
-	   two quads share three vertices, they can each be split into two
-	   triangles, resulting in two identical triangles. for example in
-	   suzanne's nose. */
+	 * two quads share three vertices, they can each be split into two
+	 * triangles, resulting in two identical triangles. for example in
+	 * suzanne's nose. */
 	if (dir) {
 		if (p_face_exists(handle,vkeys,0,1,2) || p_face_exists(handle,vkeys,0,2,3))
 			return !dir;
@@ -1522,8 +1536,8 @@ static void p_vert_harmonic_insert(PVert *v)
 
 	if (!p_vert_map_harmonic_weights(v)) {
 		/* do polygon kernel center insertion: this is quite slow, but should
-		   only be needed for 0.01 % of verts or so, when insert with harmonic
-		   weights fails */
+		 * only be needed for 0.01 % of verts or so, when insert with harmonic
+		 * weights fails */
 
 		int npoints = 0, i;
 		float (*points)[2];
@@ -1745,7 +1759,7 @@ static PBool p_collapse_allowed_topologic(PEdge *edge, PEdge *pair)
 			return P_FALSE;
 	}
 	/* avoid merging two boundaries (oldv and keepv are on the 'other side' of
-	   the chart) */
+	 * the chart) */
 	else if (!p_vert_interior(oldv) && !p_vert_interior(keepv))
 		return P_FALSE;
 	
@@ -1856,7 +1870,7 @@ static PBool p_collapse_allowed(PEdge *edge, PEdge *pair)
 static float p_collapse_cost(PEdge *edge, PEdge *pair)
 {
 	/* based on volume and boundary optimization from:
-	  "Fast and Memory Efficient Polygonal Simplification" P. Lindstrom, G. Turk */
+	 * "Fast and Memory Efficient Polygonal Simplification" P. Lindstrom, G. Turk */
 
 	PVert *oldv, *keepv;
 	PEdge *e;
@@ -2022,7 +2036,7 @@ static void p_chart_post_collapse_flush(PChart *chart, PEdge *collapsed)
 	}
 
 	/* these are added last so they can be popped of in the right order
-	   for splitting */
+	 * for splitting */
 	for (e=collapsed; e; e=e->nextlink) {
 		e->nextlink = e->u.nextcollapse;
 		laste = e;
@@ -2084,9 +2098,9 @@ static void p_chart_post_split_flush(PChart *chart)
 static void p_chart_simplify_compute(PChart *chart)
 {
 	/* Computes a list of edge collapses / vertex splits. The collapsed
-	   simplices go in the chart->collapsed_* lists, The original and
-	   collapsed may then be view as stacks, where the next collapse/split
-	   is at the top of the respective lists. */
+	 * simplices go in the chart->collapsed_* lists, The original and
+	 * collapsed may then be view as stacks, where the next collapse/split
+	 * is at the top of the respective lists. */
 
 	Heap *heap = BLI_heap_new();
 	PVert *v, **wheelverts;
@@ -2306,7 +2320,7 @@ static float p_abf_compute_sin_product(PAbfSystem *sys, PVert *v, int aid)
 
 		if (aid == e1->u.id) {
 			/* we are computing a derivative for this angle,
-			   so we use cos and drop the other part */
+			 * so we use cos and drop the other part */
 			sin1 *= sys->cosine[e1->u.id];
 			sin2 = 0.0;
 		}
@@ -2624,7 +2638,7 @@ static PBool p_chart_abf_solve(PChart *chart)
 	PEdge *e, *e1, *e2, *e3;
 	PAbfSystem sys;
 	int i;
-	float lastnorm, limit = (chart->nfaces > 100)? 1.0f: 0.001f;
+	float /* lastnorm, */ /* UNUSED */ limit = (chart->nfaces > 100)? 1.0f: 0.001f;
 
 	/* setup id's */
 	sys.ninterior = sys.nfaces = sys.nangles = 0;
@@ -2703,18 +2717,18 @@ static PBool p_chart_abf_solve(PChart *chart)
 		p_abf_compute_sines(&sys);
 
 		/* iteration */
-		lastnorm = 1e10;
+		/* lastnorm = 1e10; */ /* UNUSED */
 
 		for (i = 0; i < ABF_MAX_ITER; i++) {
 			float norm = p_abf_compute_gradient(&sys, chart);
 
-			lastnorm = norm;
+			/* lastnorm = norm; */ /* UNUSED */
 
 			if (norm < limit)
 				break;
 
 			if (!p_abf_matrix_invert(&sys, chart)) {
-				param_warning("ABF failed to invert matrix.");
+				param_warning("ABF failed to invert matrix");
 				p_abf_free_system(&sys);
 				return P_FALSE;
 			}
@@ -2723,7 +2737,7 @@ static PBool p_chart_abf_solve(PChart *chart)
 		}
 
 		if (i == ABF_MAX_ITER) {
-			param_warning("ABF maximum iterations reached.");
+			param_warning("ABF maximum iterations reached");
 			p_abf_free_system(&sys);
 			return P_FALSE;
 		}
@@ -2796,7 +2810,7 @@ static PBool p_chart_symmetry_pins(PChart *chart, PEdge *outer, PVert **pin1, PV
 	float len1, len2;
  
 	 /* find longest series of verts split in the chart itself, these are
-	   marked during construction */
+	  * marked during construction */
 	be = outer;
 	lastbe = p_boundary_edge_prev(be);
 	do {
@@ -3392,7 +3406,7 @@ static PBool p_chart_convex_hull(PChart *chart, PVert ***verts, int *nverts, int
 static float p_rectangle_area(float *p1, float *dir, float *p2, float *p3, float *p4)
 {
 	/* given 4 points on the rectangle edges and the direction of on edge,
-	   compute the area of the rectangle */
+	 * compute the area of the rectangle */
 
 	float orthodir[2], corner1[2], corner2[2], corner3[2];
 
@@ -3609,7 +3623,7 @@ static SmoothNode *p_node_new(MemArena *arena, SmoothTriangle **tri, int ntri, f
 {
 	SmoothNode *node = BLI_memarena_alloc(arena, sizeof *node);
 	int axis, i, t1size = 0, t2size = 0;
-	float split, mi, mx;
+	float split, /* mi, */ /* UNUSED */ mx;
 	SmoothTriangle **t1, **t2, *t;
 
 	node->tri = tri;
@@ -3650,7 +3664,7 @@ static SmoothNode *p_node_new(MemArena *arena, SmoothTriangle **tri, int ntri, f
 	node->axis = axis;
 	node->split = split;
 
-	mi = bmin[axis];
+	/* mi = bmin[axis]; */ /* UNUSED */
 	mx = bmax[axis];
 	bmax[axis] = split;
 	node->c1 = p_node_new(arena, t1, t1size, bmin, bmax, depth+1);
@@ -3831,7 +3845,7 @@ static void p_smooth(PChart *chart)
 		if (hedges) MEM_freeN(hedges);
 		if (vedges) MEM_freeN(vedges);
 
-		// printf("Not enough memory for area smoothing grid.");
+		// printf("Not enough memory for area smoothing grid");
 		return;
 	}
 
@@ -3981,7 +3995,7 @@ static void p_smooth(PChart *chart)
 		if (triangles) MEM_freeN(triangles);
 		if (tri) MEM_freeN(tri);
 
-		// printf("Not enough memory for area smoothing grid.");
+		// printf("Not enough memory for area smoothing grid");
 		return;
 	}
 
@@ -4363,7 +4377,7 @@ void param_pack(ParamHandle *handle, float margin)
 	}	
 	
 	if(margin>0.0f) {
-		/* multiply the margin by the area to give predictable results not dependant on UV scale,
+		/* multiply the margin by the area to give predictable results not dependent on UV scale,
 		 * ...Without using the area running pack multiple times also gives a bad feedback loop.
 		 * multiply by 0.1 so the margin value from the UI can be from 0.0 to 1.0 but not give a massive margin */
 		margin = (margin*(float)area) * 0.1f;

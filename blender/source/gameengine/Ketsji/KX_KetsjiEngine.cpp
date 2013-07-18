@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -84,6 +82,8 @@
 #include "DNA_world_types.h"
 #include "DNA_scene_types.h"
 
+#include "KX_NavMeshObject.h"
+
 // If define: little test for Nzc: guarded drawing. If the canvas is
 // not valid, skip rendering this frame.
 //#define NZC_GUARDED_OUTPUT
@@ -110,6 +110,7 @@ double KX_KetsjiEngine::m_suspendedtime = 0.0;
 double KX_KetsjiEngine::m_suspendeddelta = 0.0;
 double KX_KetsjiEngine::m_average_framerate = 0.0;
 bool   KX_KetsjiEngine::m_restrict_anim_fps = false;
+short  KX_KetsjiEngine::m_exitkey = 130; //ESC Key
 
 
 /**
@@ -392,7 +393,7 @@ void KX_KetsjiEngine::RenderDome()
 }
 
 /**
- * Ketsji Init(), Initializes datastructures and converts data from
+ * Ketsji Init(), Initializes data-structures and converts data from
  * Blender into Ketsji native (realtime) format also sets up the
  * graphics context
  */
@@ -598,9 +599,9 @@ else
 			KX_Scene* scene = *sceneit;
 	
 			/* Suspension holds the physics and logic processing for an
-			* entire scene. Objects can be suspended individually, and
-			* the settings for that preceed the logic and physics
-			* update. */
+			 * entire scene. Objects can be suspended individually, and
+			 * the settings for that preceed the logic and physics
+			 * update. */
 			m_logger->StartLog(tc_logic, m_kxsystem->GetTimeInSeconds(), true);
 
 			m_sceneconverter->resetNoneDynamicObjectToIpo();//this is for none dynamic objects with ipo
@@ -763,12 +764,12 @@ else
 				m_logger->StartLog(tc_scenegraph, m_kxsystem->GetTimeInSeconds(), true);
 				SG_SetActiveStage(SG_STAGE_ACTUATOR);
 				scene->UpdateParents(m_clockTime);
-				 
- 				scene->setSuspendedTime(0.0);
+
+				scene->setSuspendedTime(0.0);
 			} // suspended
- 			else
- 				if(scene->getSuspendedTime()==0.0)
- 					scene->setSuspendedTime(m_clockTime);
+			else
+				if(scene->getSuspendedTime()==0.0)
+					scene->setSuspendedTime(m_clockTime);
 
 			m_logger->StartLog(tc_services, m_kxsystem->GetTimeInSeconds(), true);
 		}
@@ -1251,6 +1252,7 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 				cam->GetScale(),
 				nearfrust,
 				farfrust,
+				cam->GetSensorFit(),
 				frustum
 			);
 			if (!cam->GetViewport()) {
@@ -1268,6 +1270,9 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 				area,
 				viewport,
 				cam->GetLens(),
+				cam->GetSensorWidth(),
+				cam->GetSensorHeight(),
+				cam->GetSensorFit(),
 				nearfrust,
 				farfrust,
 				frustum
@@ -1335,8 +1340,8 @@ void KX_KetsjiEngine::RenderFonts(KX_Scene* scene)
 }
 
 /*
-To run once per scene
-*/
+ * To run once per scene
+ */
 void KX_KetsjiEngine::PostRenderScene(KX_Scene* scene)
 {
 	// We need to first make sure our viewport is correct (enabling multiple viewports can mess this up)
@@ -1347,7 +1352,7 @@ void KX_KetsjiEngine::PostRenderScene(KX_Scene* scene)
 #ifdef WITH_PYTHON
 	scene->RunDrawingCallbacks(scene->GetPostDrawCB());	
 #endif
-	m_rasterizer->FlushDebugLines();
+	m_rasterizer->FlushDebugShapes();
 }
 
 void KX_KetsjiEngine::StopEngine()
@@ -1398,8 +1403,14 @@ void KX_KetsjiEngine::PostProcessScene(KX_Scene* scene)
 		KX_Camera* activecam = NULL;
 
 		RAS_CameraData camdata = RAS_CameraData();
-		if (override_camera) camdata.m_lens = m_overrideCamLens;
-
+		if (override_camera)
+		{
+			camdata.m_lens = m_overrideCamLens;
+			camdata.m_clipstart = m_overrideCamNear;
+			camdata.m_clipend = m_overrideCamFar;
+			
+			camdata.m_perspective= !m_overrideCamUseOrtho;
+		}
 		activecam = new KX_Camera(scene,KX_Scene::m_callbacks,camdata);
 		activecam->SetName("__default__cam__");
 	
@@ -1436,7 +1447,7 @@ void KX_KetsjiEngine::RenderDebugProperties()
 {
 	STR_String debugtxt;
 	int xcoord = 10;	// mmmm, these constants were taken from blender source
-	int ycoord = 14;	// to 'mimic' behaviour
+	int ycoord = 14;	// to 'mimic' behavior
 
 	float tottime = m_logger->GetAverage();
 	if (tottime < 1e-6f) {
@@ -1847,6 +1858,16 @@ double KX_KetsjiEngine::GetAverageFrameRate()
 	return m_average_framerate;
 }
 
+void KX_KetsjiEngine::SetExitKey(short key)
+{
+	m_exitkey = key;
+}
+
+short KX_KetsjiEngine::GetExitKey()
+{
+	return m_exitkey;
+}
+
 void KX_KetsjiEngine::SetTimingDisplay(bool frameRate, bool profile, bool properties)
 {
 	m_show_framerate = frameRate;
@@ -1938,6 +1959,16 @@ void KX_KetsjiEngine::GetOverrideFrameColor(float& r, float& g, float& b) const
 	b = m_overrideFrameColorB;
 }
 
+void KX_KetsjiEngine::SetGlobalSettings(GlobalSettings* gs)
+{
+	m_globalsettings.matmode = gs->matmode;
+	m_globalsettings.glslflag = gs->glslflag;
+}
+
+GlobalSettings* KX_KetsjiEngine::GetGlobalSettings(void)
+{
+	return &m_globalsettings;
+}
 
 void KX_KetsjiEngine::SetGlobalSettings(GlobalSettings* gs)
 {

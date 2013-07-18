@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,8 +34,8 @@
 
 /* ******************* Color Key ********************************************************** */
 static bNodeSocketTemplate cmp_node_color_in[]={
-	{SOCK_RGBA,1,"Image", 0.8f, 0.8f, 0.8f, 1.0f},
-	{SOCK_RGBA,1,"Key Color", 0.8f, 0.8f, 0.8f, 1.0f},
+	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
+	{SOCK_RGBA,1,"Key Color", 1.0f, 1.0f, 1.0f, 1.0f},
 	{-1,0,""}
 };
 
@@ -54,18 +52,18 @@ static void do_color_key(bNode *node, float *out, float *in)
 	c=node->storage;
 
 
-	VECCOPY(out, in);
+	copy_v3_v3(out, in);
 
 	if(
 	/* do hue last because it needs to wrap, and does some more checks  */
 
-	/* sat */	(fabs(in[1]-c->key[1]) < c->t2) &&
-	/* val */	(fabs(in[2]-c->key[2]) < c->t3) &&
+	/* sat */	(fabsf(in[1]-c->key[1]) < c->t2) &&
+	/* val */	(fabsf(in[2]-c->key[2]) < c->t3) &&
 
 	/* multiply by 2 because it wraps on both sides of the hue,
 	 * otherwise 0.5 would key all hue's */
 
-	/* hue */	((h_wrap= 2.0f * fabs(in[0]-c->key[0])) < c->t1 || (2.0f - h_wrap) < c->t1)
+	/* hue */	((h_wrap= 2.0f * fabsf(in[0]-c->key[0])) < c->t1 || (2.0f - h_wrap) < c->t1)
 	) {
 		out[3]=0.0; /*make transparent*/
 	}
@@ -125,19 +123,16 @@ static void node_composit_init_color_matte(bNodeTree *UNUSED(ntree), bNode* node
 	c->fstrength= 1.0f;
 }
 
-void register_node_type_cmp_color_matte(ListBase *lb)
+void register_node_type_cmp_color_matte(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_COLOR_MATTE, "Color Key", NODE_CLASS_MATTE, NODE_PREVIEW|NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_COLOR_MATTE, "Color Key", NODE_CLASS_MATTE, NODE_PREVIEW|NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_color_in, cmp_node_color_out);
 	node_type_size(&ntype, 200, 80, 300);
 	node_type_init(&ntype, node_composit_init_color_matte);
 	node_type_storage(&ntype, "NodeChroma", node_free_standard_storage, node_copy_standard_storage);
 	node_type_exec(&ntype, node_composit_exec_color_matte);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,14 +30,14 @@
  *  \brief Actuator to toggle visibility/invisibility of objects
  */
 
-#ifndef __KX_VISIBILITYACTUATOR
-#define __KX_VISIBILITYACTUATOR
+#ifndef __KX_VISIBILITYACTUATOR_H__
+#define __KX_VISIBILITYACTUATOR_H__
 
 #include "SCA_IActuator.h"
 
 class KX_VisibilityActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	/** Make visible? */
 	bool m_visible;

@@ -1,4 +1,3 @@
-# $Id $
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -42,23 +41,23 @@ set(SRC
 	intern/blf_font.c
 	intern/blf_glyph.c
 	intern/blf_lang.c
+	intern/blf_translation.c
 	intern/blf_util.c
 
 	BLF_api.h
+	BLF_translation.h
 	intern/blf_internal.h
 	intern/blf_internal_types.h
 )
 
 if(WITH_INTERNATIONAL)
 	list(APPEND INC_SYS
-		${GETTEXT_INC}
+		${GETTEXT_INCLUDE_DIRS}
 	)
-	add_definitions(-DINTERNATIONAL)
+	add_definitions(-DWITH_INTERNATIONAL)
 endif()
 
-if(WIN32 AND NOT UNIX)
-	add_definitions(-DUSE_GETTEXT_DLL)
-endif()
+add_definitions(-DGLEW_STATIC)
 
 blender_add_lib(bf_blenfont "${SRC}" "${INC}" "${INC_SYS}")
 

@@ -54,9 +54,11 @@ def main():
 
     # fake module to allow:
     #   from bpy.types import Panel
+    sys.modules["bpy.app"] = app
+    sys.modules["bpy.app.handlers"] = app.handlers
     sys.modules["bpy.types"] = types
 
-    # if "-d" in sys.argv: # Enable this to measure startup speed
+    #~ if "-d" in sys.argv: # Enable this to measure start up speed
     if 0:
         import cProfile
         cProfile.run('import bpy; bpy.utils.load_scripts()', 'blender.prof')

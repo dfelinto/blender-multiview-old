@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,24 +34,26 @@
 #include "DNA_curve_types.h"
 #include "DNA_group_types.h"
 #include "DNA_lattice_types.h"
+#include "DNA_mesh_types.h"
 #include "DNA_meta_types.h"
 #include "DNA_scene_types.h"
 
 #include "BLI_utildefines.h"
 
 #include "BKE_anim.h"
+#include "BKE_blender.h"
+#include "BKE_curve.h"
 #include "BKE_displist.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_key.h"
 #include "BKE_mesh.h"
 #include "BKE_particle.h"
+#include "BKE_tessmesh.h"
 
 #include "ED_info.h"
 #include "ED_armature.h"
 #include "ED_mesh.h"
-#include "ED_curve.h" /* for ED_curve_editnurbs */
 
-#include "BLI_editVert.h"
 
 typedef struct SceneStats {
 	int totvert, totvertsel;
@@ -79,7 +79,7 @@ static void stats_object(Object *ob, int sel, int totob, SceneStats *stats)
 		if(dm) {
 			totvert = dm->getNumVerts(dm);
 			totedge = dm->getNumEdges(dm);
-			totface = dm->getNumFaces(dm);
+			totface = dm->getNumPolys(dm);
 
 			stats->totvert += totvert*totob;
 			stats->totedge += totedge*totob;
@@ -140,26 +140,16 @@ static void stats_object(Object *ob, int sel, int totob, SceneStats *stats)
 static void stats_object_edit(Object *obedit, SceneStats *stats)
 {
 	if(obedit->type==OB_MESH) {
-		/* Mesh Edit */
-		EditMesh *em= BKE_mesh_get_editmesh(obedit->data);
-		EditVert *eve;
-		EditEdge *eed;
-		EditFace *efa;
+		BMEditMesh *em = BMEdit_FromObject(obedit);
+
+		stats->totvert = em->bm->totvert;
+		stats->totvertsel = em->bm->totvertsel;
 		
-		for(eve= em->verts.first; eve; eve=eve->next) {
-			stats->totvert++;
-			if(eve->f & SELECT) stats->totvertsel++;
-		}
-		for(eed= em->edges.first; eed; eed=eed->next) {
-			stats->totedge++;
-			if(eed->f & SELECT) stats->totedgesel++;
-		}
-		for(efa= em->faces.first; efa; efa=efa->next) {
-			stats->totface++;
-			if(efa->f & SELECT) stats->totfacesel++;
-		}
+		stats->totedge = em->bm->totedge;
+		stats->totedgesel = em->bm->totedgesel;
 		
-		EM_validate_selections(em);
+		stats->totface = em->bm->totface;
+		stats->totfacesel = em->bm->totfacesel;
 	}
 	else if(obedit->type==OB_ARMATURE){
 		/* Armature Edit */
@@ -193,7 +183,7 @@ static void stats_object_edit(Object *obedit, SceneStats *stats)
 		BezTriple *bezt;
 		BPoint *bp;
 		int a;
-		ListBase *nurbs= ED_curve_editnurbs(cu);
+		ListBase *nurbs= curve_editnurbs(cu);
 
 		for(nu=nurbs->first; nu; nu=nu->next) {
 			if(nu->type == CU_BEZIER) {
@@ -258,16 +248,6 @@ static void stats_object_pose(Object *ob, SceneStats *stats)
 				if(pchan->bone->layer & arm->layer)
 					stats->totbonesel++;
 		}
-	}
-}
-
-static void stats_object_paint(Object *ob, SceneStats *stats)
-{
-	if(ob->type == OB_MESH) {
-		Mesh *me= ob->data;
-
-		stats->totface= me->totface;
-		stats->totvert= me->totvert;
 	}
 }
 
@@ -345,10 +325,6 @@ static void stats_update(Scene *scene)
 		/* Pose Mode */
 		stats_object_pose(ob, &stats);
 	}
-	else if(ob && (ob->flag & OB_MODE_ALL_PAINT)) {
-		/* Sculpt and Paint Mode */
-		stats_object_paint(ob, &stats);
-	}
 	else {
 		/* Objects */
 		for(base= scene->base.first; base; base=base->next)
@@ -364,7 +340,6 @@ static void stats_update(Scene *scene)
 
 static void stats_string(Scene *scene)
 {
-	extern char versionstr[]; /* from blender.c */
 	SceneStats *stats= scene->stats;
 	Object *ob= (scene->basact)? scene->basact->object: NULL;
 	uintptr_t mem_in_use, mmap_in_use;

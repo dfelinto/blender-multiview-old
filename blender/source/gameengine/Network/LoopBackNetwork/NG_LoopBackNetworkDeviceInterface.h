@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgenetlb
  *  \brief LoopbackNetworkDeviceInterface derived from NG_NetworkDeviceInterface
  */
-#ifndef NG_LOOPBACKNETWORKDEVICEINTERFACE_H
-#define NG_LOOPBACKNETWORKDEVICEINTERFACE_H
+#ifndef __NG_LOOPBACKNETWORKDEVICEINTERFACE_H__
+#define __NG_LOOPBACKNETWORKDEVICEINTERFACE_H__
 
 #include <deque>
 #include "NG_NetworkDeviceInterface.h"
@@ -57,8 +55,8 @@ public:
 	bool Disconnect(void) {return true;}
 
 	virtual void SendNetworkMessage(class NG_NetworkMessage* msg);
-	virtual vector<NG_NetworkMessage*>		RetrieveNetworkMessages();
+	virtual std::vector<NG_NetworkMessage*>		RetrieveNetworkMessages();
 };
 
-#endif //NG_LOOPBACKNETWORKDEVICEINTERFACE_H
+#endif //__NG_LOOPBACKNETWORKDEVICEINTERFACE_H__
 

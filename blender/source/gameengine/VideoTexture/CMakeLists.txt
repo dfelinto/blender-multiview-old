@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -51,6 +50,8 @@ set(INC
 set(INC_SYS
 	${GLEW_INCLUDE_PATH}
 )
+
+add_definitions(-DGLEW_STATIC)
 
 set(SRC
 	Exception.cpp

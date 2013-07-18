@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -40,6 +38,7 @@ extern "C"
 #include "BKE_DerivedMesh.h"
 #include "BKE_fcurve.h"
 #include "BKE_animsys.h"
+#include "BKE_scene.h"
 #ifdef NAN_BUILDINFO
 extern char build_rev[];
 #endif
@@ -84,7 +83,9 @@ private:
 
 public:
 
-	AnimationExporter(COLLADASW::StreamWriter *sw): COLLADASW::LibraryAnimations(sw) { this->sw = sw; }
+	AnimationExporter(COLLADASW::StreamWriter *sw, const ExportSettings *export_settings):
+			COLLADASW::LibraryAnimations(sw), export_settings(export_settings)
+			{ this->sw = sw; }
 	
 
 	void exportAnimations(Scene *sce);
@@ -93,6 +94,7 @@ public:
 	void operator() (Object *ob); 
 	
 protected:
+	const ExportSettings *export_settings;
 
 	void dae_animation(Object* ob, FCurve *fcu, char* transformName , bool is_param, Material *ma = NULL);
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgerast
  */
 
-#ifndef __RAS_IRASTERIZER
-#define __RAS_IRASTERIZER
+#ifndef __RAS_IRASTERIZER_H__
+#define __RAS_IRASTERIZER_H__
 
 #if defined(WIN32) && !defined(FREE_WINDOWS)
 #pragma warning (disable:4786)
@@ -68,11 +66,7 @@ class RAS_IRasterizer
 public:
 	RAS_IRasterizer(RAS_ICanvas* canv){};
 	virtual ~RAS_IRasterizer(){};
-	/**
-	 */
-	enum	{
-			RAS_RENDER_3DPOLYGON_TEXT = 16384	/* TF_BMFONT */
-	};
+
 	/**
 	 * Drawing types
 	 */
@@ -106,9 +100,9 @@ public:
 	/**
 	 */
 	enum    { 	 
-			KX_TEX = 4,			/* TF_TEX */
-			KX_LIGHT = 16,		/* TF_LIGHT */
-			KX_TWOSIDE = 512,	/* TF_TWOSIDE */
+			RAS_RENDER_3DPOLYGON_TEXT = 64,	/* GEMAT_TEXT */
+			KX_BACKCULL = 16,		/* GEMAT_BACKCULL */
+			KX_TEX = 4096,			/* GEMAT_TEX */
 			KX_LINES = 32768 	 
 	};
 
@@ -168,7 +162,7 @@ public:
 	 */
 	virtual bool	SetMaterial(const RAS_IPolyMaterial& mat)=0;
 	/**
-	 * Init initialises the renderer.
+	 * Init initializes the renderer.
 	 */
 	virtual bool	Init()=0;
 	/**
@@ -208,10 +202,10 @@ public:
 	virtual void	SetStereoMode(const StereoMode stereomode)=0;
 	/**
 	 * Stereo can be used to query if the rasterizer is in stereo mode.
-	 * @return true if stereo mode is enabled.
+	 * \return true if stereo mode is enabled.
 	 */
 	virtual bool	Stereo()=0;
-    virtual StereoMode GetStereoMode()=0;
+	virtual StereoMode GetStereoMode()=0;
 	virtual bool	InterlacedStereo()=0;
 	/**
 	 * SetAnaglyphColor will set the anaglyph color (e.g. red-cyan)
@@ -246,7 +240,7 @@ public:
 
 	/**
 	 * IndexPrimitives_3DText will render text into the polygons.
-	 * The text to be rendered is from @param rendertools client object's text property.
+	 * The text to be rendered is from \param rendertools client object's text property.
 	 */
 	virtual void	IndexPrimitives_3DText(class RAS_MeshSlot& ms,
 							class RAS_IPolyMaterial* polymat,
@@ -257,7 +251,7 @@ public:
 	/**
 	 * Set the projection matrix for the rasterizer. This projects
 	 * from camera coordinates to window coordinates.
-	 * @param mat The projection matrix.
+	 * \param mat The projection matrix.
 	 */
 	virtual void	SetProjectionMatrix(const MT_Matrix4x4 & mat)=0;
 	/**
@@ -302,11 +296,11 @@ public:
 								 float alpha)=0;
 	
 	/**
-	 * @param drawingmode = KX_BOUNDINGBOX, KX_WIREFRAME, KX_SOLID, KX_SHADED or KX_TEXTURED.
+	 * \param drawingmode = KX_BOUNDINGBOX, KX_WIREFRAME, KX_SOLID, KX_SHADED or KX_TEXTURED.
 	 */
 	virtual void	SetDrawingMode(int drawingmode)=0;
 	/**
-	 * @return the current drawing mode: KX_BOUNDINGBOX, KX_WIREFRAME, KX_SOLID, KX_SHADED or KX_TEXTURED.
+	 * \return the current drawing mode: KX_BOUNDINGBOX, KX_WIREFRAME, KX_SOLID, KX_SHADED or KX_TEXTURED.
 	 */
 	virtual int	GetDrawingMode()=0;
 	/**
@@ -322,13 +316,13 @@ public:
 	virtual double	GetTime()=0;
 	/**
 	 * Generates a projection matrix from the specified frustum.
-	 * @param left the left clipping plane
-	 * @param right the right clipping plane
-	 * @param bottom the bottom clipping plane
-	 * @param top the top clipping plane
-	 * @param frustnear the near clipping plane
-	 * @param frustfar the far clipping plane
-	 * @return a 4x4 matrix representing the projection transform.
+	 * \param left the left clipping plane
+	 * \param right the right clipping plane
+	 * \param bottom the bottom clipping plane
+	 * \param top the top clipping plane
+	 * \param frustnear the near clipping plane
+	 * \param frustfar the far clipping plane
+	 * \return a 4x4 matrix representing the projection transform.
 	 */
 	virtual MT_Matrix4x4 GetFrustumMatrix(
 		float left,
@@ -343,13 +337,13 @@ public:
 
 	/**
 	 * Generates a orthographic projection matrix from the specified frustum.
-	 * @param left the left clipping plane
-	 * @param right the right clipping plane
-	 * @param bottom the bottom clipping plane
-	 * @param top the top clipping plane
-	 * @param frustnear the near clipping plane
-	 * @param frustfar the far clipping plane
-	 * @return a 4x4 matrix representing the projection transform.
+	 * \param left the left clipping plane
+	 * \param right the right clipping plane
+	 * \param bottom the bottom clipping plane
+	 * \param top the top clipping plane
+	 * \param frustnear the near clipping plane
+	 * \param frustfar the far clipping plane
+	 * \return a 4x4 matrix representing the projection transform.
 	 */
 	virtual MT_Matrix4x4 GetOrthoMatrix(
 		float left,
@@ -397,7 +391,9 @@ public:
 	virtual void	SetPolygonOffset(float mult, float add) = 0;
 	
 	virtual	void	DrawDebugLine(const MT_Vector3& from,const MT_Vector3& to,const MT_Vector3& color)=0;
-	virtual	void	FlushDebugLines()=0;
+	virtual	void	DrawDebugCircle(const MT_Vector3& center, const MT_Scalar radius, const MT_Vector3& color,
+									const MT_Vector3& normal, int nsector)=0;
+	virtual	void	FlushDebugShapes()=0;
 	
 
 
@@ -419,7 +415,7 @@ public:
 	virtual int		GetMotionBlurState()=0;
 	virtual void	SetMotionBlurState(int newstate)=0;
 
-	virtual void	SetBlendingMode(int blendmode)=0;
+	virtual void	SetAlphaBlend(int alphablend)=0;
 	virtual void	SetFrontFace(bool ccw)=0;
 
 	virtual void	SetAnisotropicFiltering(short level)=0;
@@ -433,6 +429,6 @@ public:
 #endif
 };
 
-#endif //__RAS_IRASTERIZER
+#endif //__RAS_IRASTERIZER_H__
 
 

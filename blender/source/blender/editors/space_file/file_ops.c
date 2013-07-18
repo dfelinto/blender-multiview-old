@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
-#include "BLI_storage_types.h"
 #ifdef WIN32
 #include "BLI_winstuff.h"
 #endif
@@ -164,22 +161,26 @@ static FileSelect file_select_do(bContext* C, int selected_idx)
 	SpaceFile *sfile= CTX_wm_space_file(C);
 	FileSelectParams *params = ED_fileselect_get_params(sfile);
 	int numfiles = filelist_numfiles(sfile->files);
+	struct direntry* file;
 
 	/* make the selected file active */
-	if ( (selected_idx >= 0) && (selected_idx < numfiles)) {
-		struct direntry* file = filelist_file(sfile->files, selected_idx);
+	if (		(selected_idx >= 0) &&
+	            (selected_idx < numfiles) &&
+	            (file= filelist_file(sfile->files, selected_idx)))
+	{
 		params->active_file = selected_idx;
 
-		if(file && S_ISDIR(file->type)) {
+		if(S_ISDIR(file->type)) {
 			/* the path is too long and we are not going up! */
-			if (strcmp(file->relname, "..") && strlen(params->dir) + strlen(file->relname) >= FILE_MAX ) 
-			{
+			if (strcmp(file->relname, "..") && strlen(params->dir) + strlen(file->relname) >= FILE_MAX ) {
 				// XXX error("Path too long, cannot enter this directory");
-			} else {
-				if (strcmp(file->relname, "..")==0) { 	 
-					/* avoids /../../ */ 	 
-					BLI_parent_dir(params->dir); 	 
-				} else {
+			}
+			else {
+				if (strcmp(file->relname, "..")==0) {
+					/* avoids /../../ */
+					BLI_parent_dir(params->dir);
+				}
+				else {
 					BLI_cleanup_dir(G.main->name, params->dir);
 					strcat(params->dir, file->relname);
 					BLI_add_slash(params->dir);
@@ -189,8 +190,7 @@ static FileSelect file_select_do(bContext* C, int selected_idx)
 				retval = FILE_SELECT_DIR;
 			}
 		}
-		else if (file)
-		{
+		else  {
 			if (file->relname) {
 				BLI_strncpy(params->file, file->relname, FILE_MAXFILE);
 			}
@@ -215,8 +215,7 @@ static FileSelect file_select(bContext* C, const rcti* rect, FileSelType select,
 	if (sel.first != sel.last) select = 0;
 
 	/* Do we have a valid selection and are we actually selecting */
-	if ( (sel.last >= 0) && ((select == FILE_SEL_ADD) || (select == FILE_SEL_TOGGLE)) )
-	{
+	if ((sel.last >= 0) && ((select == FILE_SEL_ADD) || (select == FILE_SEL_TOGGLE))) {
 		/* Check last selection, if selected, act on the file or dir */
 		if (filelist_is_selected(sfile->files, sel.last, check_type)) {
 			retval = file_select_do(C, sel.last);
@@ -273,12 +272,19 @@ static int file_border_select_exec(bContext *C, wmOperator *op)
 	ARegion *ar= CTX_wm_region(C);
 	rcti rect;
 	FileSelect ret;
-
+	int extend= RNA_boolean_get(op->ptr, "extend");
 	short select= (RNA_int_get(op->ptr, "gesture_mode")==GESTURE_MODAL_SELECT);
+
 	rect.xmin= RNA_int_get(op->ptr, "xmin");
 	rect.ymin= RNA_int_get(op->ptr, "ymin");
 	rect.xmax= RNA_int_get(op->ptr, "xmax");
 	rect.ymax= RNA_int_get(op->ptr, "ymax");
+
+	if(!extend) {
+		SpaceFile *sfile= CTX_wm_space_file(C);
+
+		file_deselect_all(sfile, SELECTED_FILE);
+	}
 
 	BLI_isect_rcti(&(ar->v2d.mask), &rect, &rect);
 
@@ -306,7 +312,7 @@ void FILE_OT_select_border(wmOperatorType *ot)
 	ot->cancel= WM_border_select_cancel;
 
 	/* rna */
-	WM_operator_properties_gesture_border(ot, 0);
+	WM_operator_properties_gesture_border(ot, 1);
 }
 
 static int file_select_invoke(bContext *C, wmOperator *op, wmEvent *event)
@@ -354,8 +360,8 @@ void FILE_OT_select(wmOperatorType *ot)
 	ot->poll= ED_operator_file_active;
 
 	/* rna */
-	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first.");
-	RNA_def_boolean(ot->srna, "fill", 0, "Fill", "Select everything beginning with the last selection.");
+	RNA_def_boolean(ot->srna, "extend", 0, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "fill", 0, "Fill", "Select everything beginning with the last selection");
 }
 
 static int file_select_all_exec(bContext *C, wmOperator *UNUSED(op))
@@ -392,8 +398,8 @@ static int file_select_all_exec(bContext *C, wmOperator *UNUSED(op))
 void FILE_OT_select_all_toggle(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "Select/Deselect All Files";
-	ot->description= "Select/deselect all files";
+	ot->name= "(De)select All Files";
+	ot->description= "Select or deselect all files";
 	ot->idname= "FILE_OT_select_all_toggle";
 	
 	/* api callbacks */
@@ -663,7 +669,7 @@ void file_operator_to_sfile(SpaceFile *sfile, wmOperator *op)
 	if((prop= RNA_struct_find_property(op->ptr, "filepath"))) {
 		char filepath[FILE_MAX];
 		RNA_property_string_get(op->ptr, prop, filepath);
-		BLI_split_dirfile(filepath, sfile->params->dir, sfile->params->file);
+		BLI_split_dirfile(filepath, sfile->params->dir, sfile->params->file, sizeof(sfile->params->dir), sizeof(sfile->params->file));
 	}
 	else {
 		if((prop= RNA_struct_find_property(op->ptr, "filename"))) {
@@ -708,7 +714,7 @@ int file_draw_check_exists(SpaceFile *sfile)
 			if(RNA_boolean_get(sfile->op->ptr, "check_existing")) {
 				char filepath[FILE_MAX];
 				BLI_join_dirfile(filepath, sizeof(filepath), sfile->params->dir, sfile->params->file);
-				if(BLI_exists(filepath) && !BLI_is_dir(filepath)) {
+				if(BLI_is_file(filepath)) {
 					return TRUE;
 				}
 			}
@@ -728,7 +734,7 @@ int file_exec(bContext *C, wmOperator *exec_op)
 		wmOperator *op= sfile->op;
 	
 		/* when used as a macro, for doubleclick, 
-		 to prevent closing when doubleclicking on .. item */
+		 * to prevent closing when doubleclicking on .. item */
 		if (RNA_boolean_get(exec_op->ptr, "need_active")) {
 			int i, active=0;
 			
@@ -746,7 +752,9 @@ int file_exec(bContext *C, wmOperator *exec_op)
 
 		file_sfile_to_operator(op, sfile, filepath);
 
-		fsmenu_insert_entry(fsmenu_get(), FS_CATEGORY_RECENT, sfile->params->dir,0, 1);
+		if (BLI_exists(sfile->params->dir))
+			fsmenu_insert_entry(fsmenu_get(), FS_CATEGORY_RECENT, sfile->params->dir, 0, 1);
+
 		BLI_make_file_string(G.main->name, filepath, BLI_get_folder_create(BLENDER_USER_CONFIG, NULL), BLENDER_BOOKMARK_FILE);
 		fsmenu_write_file(fsmenu_get(), filepath);
 		WM_event_fileselect_event(C, op, EVT_FILESELECT_EXEC);
@@ -767,7 +775,7 @@ void FILE_OT_execute(struct wmOperatorType *ot)
 	ot->exec= file_exec;
 	ot->poll= file_operator_poll; 
 	
-	RNA_def_boolean(ot->srna, "need_active", 0, "Need Active", "Only execute if there's an active selected file in the file list.");
+	RNA_def_boolean(ot->srna, "need_active", 0, "Need Active", "Only execute if there's an active selected file in the file list");
 }
 
 
@@ -977,7 +985,7 @@ void FILE_OT_smoothscroll(wmOperatorType *ot)
 	/* identifiers */
 	ot->name= "Smooth Scroll";
 	ot->idname= "FILE_OT_smoothscroll";
-	ot->description="Smooth scroll to make editable file visible.";
+	ot->description="Smooth scroll to make editable file visible";
 	
 	/* api callbacks */
 	ot->invoke= file_smoothscroll_invoke;
@@ -987,8 +995,8 @@ void FILE_OT_smoothscroll(wmOperatorType *ot)
 
 
 /* create a new, non-existing folder name, returns 1 if successful, 0 if name couldn't be created.
-   The actual name is returned in 'name', 'folder' contains the complete path, including the new folder name.
-*/
+ * The actual name is returned in 'name', 'folder' contains the complete path, including the new folder name.
+ */
 static int new_folder_path(const char* parent, char *folder, char *name)
 {
 	int i = 1;
@@ -997,8 +1005,8 @@ static int new_folder_path(const char* parent, char *folder, char *name)
 	BLI_strncpy(name, "New Folder", FILE_MAXFILE);
 	BLI_join_dirfile(folder, FILE_MAX, parent, name); /* XXX, not real length */
 	/* check whether folder with the name already exists, in this case
-	   add number to the name. Check length of generated name to avoid
-	   crazy case of huge number of folders each named 'New Folder (x)' */
+	 * add number to the name. Check length of generated name to avoid
+	 * crazy case of huge number of folders each named 'New Folder (x)' */
 	while (BLI_exists(folder) && (len<FILE_MAXFILE)) {
 		len = BLI_snprintf(name, FILE_MAXFILE, "New Folder(%d)", i);
 		BLI_join_dirfile(folder, FILE_MAX, parent, name); /* XXX, not real length */
@@ -1017,7 +1025,7 @@ int file_directory_new_exec(bContext *C, wmOperator *op)
 	SpaceFile *sfile= CTX_wm_space_file(C);
 	
 	if(!sfile->params) {
-		BKE_report(op->reports,RPT_WARNING, "No parent directory given.");
+		BKE_report(op->reports,RPT_WARNING, "No parent directory given");
 		return OPERATOR_CANCELLED;
 	}
 	
@@ -1031,16 +1039,16 @@ int file_directory_new_exec(bContext *C, wmOperator *op)
 	if (generate_name) {
 		/* create a new, non-existing folder name */
 		if (!new_folder_path(sfile->params->dir, path, name)) {
-			BKE_report(op->reports,RPT_ERROR, "Couldn't create new folder name.");
+			BKE_report(op->reports,RPT_ERROR, "Couldn't create new folder name");
 			return OPERATOR_CANCELLED;
 		}
 	}
 
 	/* create the file */
-	BLI_recurdir_fileops(path);
+	BLI_dir_create_recursive(path);
 
 	if (!BLI_exists(path)) {
-		BKE_report(op->reports,RPT_ERROR, "Couldn't create new folder.");
+		BKE_report(op->reports,RPT_ERROR, "Couldn't create new folder");
 		return OPERATOR_CANCELLED;
 	} 
 
@@ -1087,8 +1095,14 @@ static void file_expand_directory(bContext *C)
 			BLI_join_dirfile(sfile->params->dir, sizeof(sfile->params->dir), BLI_getDefaultDocumentFolder(), tmpstr);
 		}
 
-#ifdef WIN32
-		if (sfile->params->dir[0] == '\0') {
+		else if (sfile->params->dir[0] == '\0')
+#ifndef WIN32
+		{
+			sfile->params->dir[0] = '/';
+			sfile->params->dir[1] = '\0';
+		}
+#else
+		{
 			get_default_root(sfile->params->dir);
 		}
 		/* change "C:" --> "C:\", [#28102] */
@@ -1131,14 +1145,14 @@ int file_directory_exec(bContext *C, wmOperator *UNUSED(unused))
 		file_expand_directory(C);
 
 		if (!BLI_exists(sfile->params->dir)) {
-			BLI_recurdir_fileops(sfile->params->dir);
+			BLI_dir_create_recursive(sfile->params->dir);
 		}
 
-		/* special case, user may have pasted a fulepath into the directory */
-		if(BLI_exists(sfile->params->dir) && BLI_is_dir(sfile->params->dir) == 0) {
+		/* special case, user may have pasted a filepath into the directory */
+		if(BLI_is_file(sfile->params->dir)) {
 			char path[sizeof(sfile->params->dir)];
 			BLI_strncpy(path, sfile->params->dir, sizeof(path));
-			BLI_split_dirfile(path, sfile->params->dir, sfile->params->file);
+			BLI_split_dirfile(path, sfile->params->dir, sfile->params->file, sizeof(sfile->params->dir), sizeof(sfile->params->file));
 		}
 
 		BLI_cleanup_dir(G.main->name, sfile->params->dir);
@@ -1156,9 +1170,8 @@ int file_filename_exec(bContext *C, wmOperator *UNUSED(unused))
 {
 	SpaceFile *sfile= CTX_wm_space_file(C);
 	
-	if(sfile->params) {
-		if (file_select_match(sfile, sfile->params->file))
-		{
+	if (sfile->params) {
+		if (file_select_match(sfile, sfile->params->file)) {
 			sfile->params->file[0] = '\0';
 			WM_event_add_notifier(C, NC_SPACE|ND_SPACE_FILE_PARAMS, NULL);
 		}
@@ -1171,7 +1184,9 @@ int file_filename_exec(bContext *C, wmOperator *UNUSED(unused))
  * until this is properly supported just disable it. */
 static int file_directory_poll(bContext *C)
 {
-	return ED_operator_file_active(C) && filelist_lib(CTX_wm_space_file(C)->files) == NULL;
+	/* sfile->files can be NULL on file load */
+	SpaceFile *sfile= CTX_wm_space_file(C);
+	return ED_operator_file_active(C) && (sfile->files==NULL || filelist_lib(sfile->files)==NULL);
 }
 
 void FILE_OT_directory(struct wmOperatorType *ot)

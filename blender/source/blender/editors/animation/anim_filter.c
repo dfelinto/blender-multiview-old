@@ -343,6 +343,13 @@ short ANIM_animdata_get_context (const bContext *C, bAnimContext *ac)
  *	   channel can be kept around). No need to clear channels-flag in order to 
  *	   keep expander channels with no sub-data out, as those cases should get
  *	   dealt with by the recursive detection idiom in place.
+ *
+ * Implementation Note:
+ * 	YES the _doSubChannels variable is NOT read anywhere. BUT, this is NOT an excuse
+ * 	to go steamrolling the logic into a single-line expression as from experience,
+ * 	those are notoriously difficult to read + debug when extending later on. The code
+ * 	below is purposefully laid out so that each case noted above corresponds clearly to
+ * 	one case below.
  */
 #define BEGIN_ANIMFILTER_SUBCHANNELS(expanded_check) \
 	{ \
@@ -354,7 +361,8 @@ short ANIM_animdata_get_context (const bContext *C, bAnimContext *ac)
 			_doSubChannels=2; \
 		else {\
 			filter_mode |= ANIMFILTER_TMP_PEEK; \
-		}
+		} \
+		(void) _doSubChannels;
 		/* ... standard sub-channel filtering can go on here now ... */
 #define END_ANIMFILTER_SUBCHANNELS \
 		filter_mode = _filter; \
@@ -893,7 +901,7 @@ static size_t skip_fcurve_selected_data (bDopeSheet *ads, FCurve *fcu, ID *owner
  */
 static short skip_fcurve_with_name (bDopeSheet *ads, FCurve *fcu, ID *owner_id)
 {
-	bAnimListElem ale_dummy = {0};
+	bAnimListElem ale_dummy = {NULL};
 	bAnimChannelType *acf;
 	
 	/* create a dummy wrapper for the F-Curve */
@@ -1030,8 +1038,7 @@ static size_t animfilter_act_group (bAnimContext *ac, ListBase *anim_data, bDope
 			 * but to do this, we need to check that the group doesn't have it's not-visible flag set preventing 
 			 * all its sub-curves to be shown
 			 */
-			if ( !(filter_mode & ANIMFILTER_CURVE_VISIBLE) || !(agrp->flag & AGRP_NOTVISIBLE) )
-			{
+			if (!(filter_mode & ANIMFILTER_CURVE_VISIBLE) || !(agrp->flag & AGRP_NOTVISIBLE)) {
 				/* group must be editable for its children to be editable (if we care about this) */
 				if (!(filter_mode & ANIMFILTER_FOREDIT) || EDITABLE_AGRP(agrp)) {
 					/* get first F-Curve which can be used here */
@@ -1093,7 +1100,7 @@ static size_t animfilter_action (bAnimContext *ac, ListBase *anim_data, bDopeShe
 	}
 	
 	/* un-grouped F-Curves (only if we're not only considering those channels in the active group) */
-	if (!(filter_mode & ANIMFILTER_ACTGROUPED))  {
+	if (!(filter_mode & ANIMFILTER_ACTGROUPED)) {
 		FCurve *firstfcu = (lastchan)? (lastchan->next) : (act->curves.first);
 		items += animfilter_fcurves(anim_data, ads, firstfcu, NULL, filter_mode, owner_id);
 	}
@@ -1221,7 +1228,7 @@ static size_t animdata_filter_shapekey (bAnimContext *ac, ListBase *anim_data, K
 		
 		/* loop through the channels adding ShapeKeys as appropriate */
 		for (kb= key->block.first; kb; kb= kb->next) {
-			/* skip the first one, since that's the non-animateable basis */
+			/* skip the first one, since that's the non-animatable basis */
 			// XXX maybe in future this may become handy?
 			if (kb == key->block.first) continue;
 			
@@ -1277,7 +1284,7 @@ static size_t animdata_filter_gpencil_data (ListBase *anim_data, bGPdata *gpd, i
 	return items;
 }
 
-/* Grab all Grase Pencil datablocks in file */
+/* Grab all Grease Pencil datablocks in file */
 // TODO: should this be amalgamated with the dopesheet filtering code?
 static size_t animdata_filter_gpencil (ListBase *anim_data, void *UNUSED(data), int filter_mode)
 {
@@ -1844,6 +1851,10 @@ static size_t animdata_filter_ds_world (bAnimContext *ac, ListBase *anim_data, b
 		/* textures for world */
 		if (!(ads->filterflag & ADS_FILTER_NOTEX))
 			items += animdata_filter_ds_textures(ac, &tmp_data, ads, (ID *)wo, filter_mode);
+			
+		/* nodes */
+		if ((wo->nodetree) && !(ads->filterflag & ADS_FILTER_NONTREE)) 
+			tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (ID *)wo, wo->nodetree, filter_mode);
 	}
 	END_ANIMFILTER_SUBCHANNELS;
 	
@@ -1939,12 +1950,12 @@ static size_t animdata_filter_dopesheet_scene (bAnimContext *ac, ListBase *anim_
 		}
 		
 		/* world */
-		if ((wo && wo->adt) && !(ads->filterflag & ADS_FILTER_NOWOR)) {
+		if ((wo) && !(ads->filterflag & ADS_FILTER_NOWOR)) {
 			tmp_items += animdata_filter_ds_world(ac, &tmp_data, ads, sce, wo, filter_mode);
 		}
 		
 		/* nodetree */
-		if ((ntree && ntree->adt) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
+		if ((ntree) && !(ads->filterflag & ADS_FILTER_NONTREE)) {
 			tmp_items += animdata_filter_ds_nodetree(ac, &tmp_data, ads, (ID *)sce, ntree, filter_mode);
 		}
 		
@@ -2031,7 +2042,7 @@ static size_t animdata_filter_dopesheet (bAnimContext *ac, ListBase *anim_data, 
 			}
 			
 			/* check selection and object type filters */
-			if ( (ads->filterflag & ADS_FILTER_ONLYSEL) && !((base->flag & SELECT) /*|| (base == sce->basact)*/) )  {
+			if ( (ads->filterflag & ADS_FILTER_ONLYSEL) && !((base->flag & SELECT) /*|| (base == sce->basact)*/) ) {
 				/* only selected should be shown */
 				continue;
 			}
@@ -2197,12 +2208,12 @@ size_t ANIM_animdata_filter (bAnimContext *ac, ListBase *anim_data, int filter_m
 	
 	/* only filter data if there's somewhere to put it */
 	if (data && anim_data) {
-		Object *obact= (ac) ? ac->obact : NULL;
 		
 		/* firstly filter the data */
 		switch (datatype) {
 			case ANIMCONT_ACTION:	/* 'Action Editor' */
 			{
+				Object *obact= ac->obact;
 				SpaceAction *saction = (SpaceAction *)ac->sl;
 				bDopeSheet *ads = (saction)? &saction->ads : NULL;
 				

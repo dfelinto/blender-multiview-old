@@ -1,5 +1,4 @@
 /*
- * $Id$
  *
  * This is external code. Streams bytes to output depending on the
  * endianness of the system.
@@ -43,12 +42,13 @@
 #include "endian.h"
 #include "avi_intern.h"
 
-#if defined(__sgi) || defined (__sparc) || defined (__sparc__) || defined (__PPC__) || defined (__ppc__) || defined (__hppa__) || defined (__BIG_ENDIAN__)
-#define WORDS_BIGENDIAN
+#ifdef __BIG_ENDIAN__
+#include "MEM_guardedalloc.h"
 #endif
 
-#ifdef WORDS_BIGENDIAN
-static void invert (int *num) {
+#ifdef __BIG_ENDIAN__
+static void invert (int *num)
+{
 	int new=0,i,j;
 
 	for (j=0; j < 4; j++) {
@@ -60,7 +60,8 @@ static void invert (int *num) {
 	*num = new;
 }
 
-static void sinvert (short int *num) {
+static void sinvert (short int *num)
+{
 	short int new=0;
 	int i,j;
 
@@ -73,20 +74,23 @@ static void sinvert (short int *num) {
 	*num = new;
 }
 
-static void Ichunk (AviChunk *chunk) {
+static void Ichunk (AviChunk *chunk)
+{
 	invert (&chunk->fcc);
 	invert (&chunk->size);
 }
 #endif
 
-#ifdef WORDS_BIGENDIAN
-static void Ilist (AviList *list){
+#ifdef __BIG_ENDIAN__
+static void Ilist (AviList *list)
+{
 	invert (&list->fcc);
 	invert (&list->size);
 	invert (&list->ids);
 }
 
-static void Imainh (AviMainHeader *mainh) {
+static void Imainh (AviMainHeader *mainh)
+{
 	invert (&mainh->fcc);
 	invert (&mainh->size);
 	invert (&mainh->MicroSecPerFrame);
@@ -105,7 +109,8 @@ static void Imainh (AviMainHeader *mainh) {
 	invert (&mainh->Reserved[3]);
 }
 
-static void Istreamh (AviStreamHeader *streamh) {
+static void Istreamh (AviStreamHeader *streamh)
+{
 	invert (&streamh->fcc);
 	invert (&streamh->size);
 	invert (&streamh->Type);
@@ -127,7 +132,8 @@ static void Istreamh (AviStreamHeader *streamh) {
 	sinvert (&streamh->bottom);
 }
 
-static void Ibitmaph (AviBitmapInfoHeader *bitmaph) {
+static void Ibitmaph (AviBitmapInfoHeader *bitmaph)
+{
 	invert (&bitmaph->fcc);
 	invert (&bitmaph->size);
 	invert (&bitmaph->Size);
@@ -143,7 +149,8 @@ static void Ibitmaph (AviBitmapInfoHeader *bitmaph) {
 	invert (&bitmaph->ClrImportant);
 }
 
-static void Imjpegu (AviMJPEGUnknown *mjpgu) {
+static void Imjpegu (AviMJPEGUnknown *mjpgu)
+{
 	invert (&mjpgu->a);
 	invert (&mjpgu->b);
 	invert (&mjpgu->c);
@@ -153,16 +160,18 @@ static void Imjpegu (AviMJPEGUnknown *mjpgu) {
 	invert (&mjpgu->g);
 }
 
-static void Iindexe (AviIndexEntry *indexe) {
+static void Iindexe (AviIndexEntry *indexe)
+{
 	invert (&indexe->ChunkId);
 	invert (&indexe->Flags);
 	invert (&indexe->Offset);
 	invert (&indexe->Size);
 }
-#endif /* WORDS_BIGENDIAN */
+#endif /* __BIG_ENDIAN__ */
 
-void awrite (AviMovie *movie, void *datain, int block, int size, FILE *fp, int type) {
-#ifdef WORDS_BIGENDIAN
+void awrite (AviMovie *movie, void *datain, int block, int size, FILE *fp, int type)
+{
+#ifdef __BIG_ENDIAN__
 	void *data;
 
 	data = MEM_mallocN (size, "avi endian");
@@ -209,9 +218,9 @@ void awrite (AviMovie *movie, void *datain, int block, int size, FILE *fp, int t
 	}
 
 	MEM_freeN (data);
-#else /* WORDS_BIGENDIAN */
+#else /* __BIG_ENDIAN__ */
 	(void)movie; /* unused */
 	(void)type; /* unused */
 	fwrite (datain, block, size, fp);
-#endif /* WORDS_BIGENDIAN */
+#endif /* __BIG_ENDIAN__ */
 }

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -245,6 +243,10 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		ketsjiengine->SetUseFixedTime(usefixed);
 		ketsjiengine->SetTimingDisplay(frameRate, profile, properties);
 		ketsjiengine->SetRestrictAnimationFPS(restrictAnimFPS);
+		KX_KetsjiEngine::SetExitKey(ConvertKeyCode(startscene->gm.exitkey));
+
+		//set the global settings (carried over if restart/load new files)
+		ketsjiengine->SetGlobalSettings(&gs);
 
 #ifdef WITH_PYTHON
 		CValue::SetDeprecationWarnings(nodepwarnings);
@@ -272,7 +274,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				draw_letterbox = 1;
 			}
 			else {
-				camzoom = 1.0 / BKE_screen_view3d_zoom_to_fac(rv3d->camzoom);
+				camzoom = 1.0f / BKE_screen_view3d_zoom_to_fac(rv3d->camzoom);
 			}
 		}
 		else {
@@ -289,7 +291,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			exitrequested = KX_EXIT_REQUEST_NO_REQUEST;
 			if (bfd) BLO_blendfiledata_free(bfd);
 			
-			char basedpath[240];
+			char basedpath[FILE_MAX];
 			// base the actuator filename with respect
 			// to the original file working directory
 
@@ -364,7 +366,14 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				ketsjiengine->SetCameraOverrideUseOrtho((rv3d->persp == RV3D_ORTHO));
 				ketsjiengine->SetCameraOverrideProjectionMatrix(MT_CmMatrix4x4(rv3d->winmat));
 				ketsjiengine->SetCameraOverrideViewMatrix(MT_CmMatrix4x4(rv3d->viewmat));
-				ketsjiengine->SetCameraOverrideClipping(v3d->near, v3d->far);
+				if(rv3d->persp == RV3D_ORTHO)
+				{
+					ketsjiengine->SetCameraOverrideClipping(-v3d->far, v3d->far);
+				}
+				else
+				{
+					ketsjiengine->SetCameraOverrideClipping(v3d->near, v3d->far);
+				}
 				ketsjiengine->SetCameraOverrideLens(v3d->lens);
 			}
 			

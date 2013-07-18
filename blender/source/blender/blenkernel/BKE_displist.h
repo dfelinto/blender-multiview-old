@@ -1,5 +1,4 @@
 /* 
-	$Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -28,8 +27,8 @@
 
 */
 
-#ifndef BKE_DISPLIST_H
-#define BKE_DISPLIST_H
+#ifndef __BKE_DISPLIST_H__
+#define __BKE_DISPLIST_H__
 
 /** \file BKE_displist.h
  *  \ingroup bke
@@ -64,7 +63,6 @@ struct ListBase;
 struct Material;
 struct Bone;
 struct Mesh;
-struct EditMesh;
 struct DerivedMesh;
 
 /* used for curves, nurbs, mball, importing */

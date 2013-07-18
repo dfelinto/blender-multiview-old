@@ -1,8 +1,5 @@
-/*
- * @file PIL_time.h
- * 
- * Platform independant time functions.
- * $Id$
+/* 
+ * Platform independent time functions.
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -35,8 +32,8 @@
  */
 
  
-#ifndef PIL_TIME_H
-#define PIL_TIME_H
+#ifndef __PIL_TIME_H__
+#define __PIL_TIME_H__
 
 #ifdef __cplusplus
 extern "C" { 
@@ -45,14 +42,14 @@ extern "C" {
 extern 
 	/** Return an indication of time, expressed	as
 	 * seconds since some fixed point. Successive calls
-	 * are guarenteed to generate values greator than or 
+	 * are guaranteed to generate values greater than or
 	 * equal to the last call.
 	 */
 double	PIL_check_seconds_timer		(void);
 
 	/**
-	 * Platform-independant sleep function.
-	 * @param ms Number of milliseconds to sleep
+	 * Platform-independent sleep function.
+	 * \param ms Number of milliseconds to sleep
 	 */
 void	PIL_sleep_ms				(int ms);
 
@@ -81,4 +78,4 @@ void	PIL_sleep_ms				(int ms);
 }
 #endif
 
-#endif /* !PIL_TIME_H */
+#endif /* !__PIL_TIME_H__ */

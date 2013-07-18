@@ -1,8 +1,4 @@
 /*
- * smoke.c
- *
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -81,6 +77,11 @@
 
 #include "BKE_smoke.h"
 
+/* UNUSED so far, may be enabled later */
+/* #define USE_SMOKE_COLLISION_DM */
+
+#ifdef WITH_SMOKE
+
 #ifdef _WIN32
 #include <time.h>
 #include <stdio.h>
@@ -133,15 +134,16 @@ struct Scene;
 struct DerivedMesh;
 struct SmokeModifierData;
 
-// forward declerations
-static void get_cell(float *p0, int res[3], float dx, float *pos, int *cell, int correct);
-void calcTriangleDivs(Object *ob, MVert *verts, int numverts, MFace *tris, int numfaces, int numtris, int **tridivs, float cell_len);
-static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs);
-
 #define TRI_UVOFFSET (1./4.)
 
+/* forward declerations */
+static void calcTriangleDivs(Object *ob, MVert *verts, int numverts, MFace *tris, int numfaces, int numtris, int **tridivs, float cell_len);
+static void get_cell(float *p0, int res[3], float dx, float *pos, int *cell, int correct);
+static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs);
+
+#else /* WITH_SMOKE */
+
 /* Stubs to use when smoke is disabled */
-#ifndef WITH_SMOKE
 struct WTURBULENCE *smoke_turbulence_init(int *UNUSED(res), int UNUSED(amplify), int UNUSED(noisetype)) { return NULL; }
 struct FLUID_3D *smoke_init(int *UNUSED(res), float *UNUSED(p0)) { return NULL; }
 void smoke_free(struct FLUID_3D *UNUSED(fluid)) {}
@@ -150,8 +152,10 @@ void smoke_initWaveletBlenderRNA(struct WTURBULENCE *UNUSED(wt), float *UNUSED(s
 void smoke_initBlenderRNA(struct FLUID_3D *UNUSED(fluid), float *UNUSED(alpha), float *UNUSED(beta), float *UNUSED(dt_factor), float *UNUSED(vorticity), int *UNUSED(border_colli)) {}
 long long smoke_get_mem_req(int UNUSED(xres), int UNUSED(yres), int UNUSED(zres), int UNUSED(amplify)) { return 0; }
 void smokeModifier_do(SmokeModifierData *UNUSED(smd), Scene *UNUSED(scene), Object *UNUSED(ob), DerivedMesh *UNUSED(dm)) {}
-#endif // WITH_SMOKE
 
+#endif /* WITH_SMOKE */
+
+#ifdef WITH_SMOKE
 
 static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene, DerivedMesh *dm)
 {
@@ -171,7 +175,7 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 		{
 			float tmp[3];
 
-			VECCOPY(tmp, verts[i].co);
+			copy_v3_v3(tmp, verts[i].co);
 			mul_m4_v3(ob->obmat, tmp);
 
 			// min BB
@@ -185,11 +189,11 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 			max[2] = MAX2(max[2], tmp[2]);
 		}
 
-		VECCOPY(smd->domain->p0, min);
-		VECCOPY(smd->domain->p1, max);
+		copy_v3_v3(smd->domain->p0, min);
+		copy_v3_v3(smd->domain->p1, max);
 
 		// calc other res with max_res provided
-		VECSUB(size, max, min);
+		sub_v3_v3v3(size, max, min);
 
 		// printf("size: %f, %f, %f\n", size[0], size[1], size[2]);
 
@@ -207,8 +211,7 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 				smd->domain->res[1] = (int)(size[1] * scale + 0.5);
 				smd->domain->res[2] = (int)(size[2] * scale + 0.5);
 			}
-			else
-			{
+			else {
 				scale = res / size[2];
 				smd->domain->dx = size[2] / res;
 				smd->domain->res[2] = res;
@@ -216,8 +219,7 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 				smd->domain->res[1] = (int)(size[1] * scale + 0.5);
 			}
 		}
-		else
-		{
+		else {
 			if(size[1] > size[2])
 			{
 				scale = res / size[1];
@@ -226,8 +228,7 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 				smd->domain->res[0] = (int)(size[0] * scale + 0.5);
 				smd->domain->res[2] = (int)(size[2] * scale + 0.5);
 			}
-			else
-			{
+			else {
 				scale = res / size[2];
 				smd->domain->dx = size[2] / res;
 				smd->domain->res[2] = res;
@@ -313,7 +314,7 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 
 		if(!smd->coll->bvhtree)
 		{
-			smd->coll->bvhtree = NULL; // bvhtree_build_from_smoke ( ob->obmat, dm->getFaceArray(dm), dm->getNumFaces(dm), dm->getVertArray(dm), dm->getNumVerts(dm), 0.0 );
+			smd->coll->bvhtree = NULL; // bvhtree_build_from_smoke ( ob->obmat, dm->getTessFaceArray(dm), dm->getNumTessFaces(dm), dm->getVertArray(dm), dm->getNumVerts(dm), 0.0 );
 		}
 		return 1;
 	}
@@ -324,7 +325,7 @@ static int smokeModifier_init (SmokeModifierData *smd, Object *ob, Scene *scene,
 static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 {
 	MVert *mvert = dm->getVertArray(dm);
-	MFace *mface = dm->getFaceArray(dm);
+	MFace *mface = dm->getTessFaceArray(dm);
 	int i = 0, divs = 0;
 	int *tridivs = NULL;
 	float cell_len = 1.0 / 50.0; // for res = 50
@@ -332,16 +333,16 @@ static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 	int quads = 0, facecounter = 0;
 
 	// count quads
-	for(i = 0; i < dm->getNumFaces(dm); i++)
+	for(i = 0; i < dm->getNumTessFaces(dm); i++)
 	{
 		if(mface[i].v4)
 			quads++;
 	}
 
-	calcTriangleDivs(ob, mvert, dm->getNumVerts(dm), mface,  dm->getNumFaces(dm), dm->getNumFaces(dm) + quads, &tridivs, cell_len);
+	calcTriangleDivs(ob, mvert, dm->getNumVerts(dm), mface,  dm->getNumTessFaces(dm), dm->getNumTessFaces(dm) + quads, &tridivs, cell_len);
 
 	// count triangle divisions
-	for(i = 0; i < dm->getNumFaces(dm) + quads; i++)
+	for(i = 0; i < dm->getNumTessFaces(dm) + quads; i++)
 	{
 		divs += (tridivs[3 * i] + 1) * (tridivs[3 * i + 1] + 1) * (tridivs[3 * i + 2] + 1);
 	}
@@ -353,12 +354,12 @@ static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 	for(i = 0; i < dm->getNumVerts(dm); i++)
 	{
 		float tmpvec[3];
-		VECCOPY(tmpvec, mvert[i].co);
+		copy_v3_v3(tmpvec, mvert[i].co);
 		mul_m4_v3(ob->obmat, tmpvec);
-		VECCOPY(&scs->points[i * 3], tmpvec);
+		copy_v3_v3(&scs->points[i * 3], tmpvec);
 	}
 	
-	for(i = 0, facecounter = 0; i < dm->getNumFaces(dm); i++)
+	for(i = 0, facecounter = 0; i < dm->getNumTessFaces(dm); i++)
 	{
 		int again = 0;
 		do
@@ -371,18 +372,17 @@ static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 			
 			if(again == 1 && mface[i].v4)
 			{
-				VECSUB(side1,  mvert[ mface[i].v3 ].co, mvert[ mface[i].v1 ].co);
-				VECSUB(side2,  mvert[ mface[i].v4 ].co, mvert[ mface[i].v1 ].co);
+				sub_v3_v3v3(side1,  mvert[ mface[i].v3 ].co, mvert[ mface[i].v1 ].co);
+				sub_v3_v3v3(side2,  mvert[ mface[i].v4 ].co, mvert[ mface[i].v1 ].co);
 			}
-			else
-			{
-				VECSUB(side1,  mvert[ mface[i].v2 ].co, mvert[ mface[i].v1 ].co);
-				VECSUB(side2,  mvert[ mface[i].v3 ].co, mvert[ mface[i].v1 ].co);
+			else {
+				sub_v3_v3v3(side1,  mvert[ mface[i].v2 ].co, mvert[ mface[i].v1 ].co);
+				sub_v3_v3v3(side2,  mvert[ mface[i].v3 ].co, mvert[ mface[i].v1 ].co);
 			}
 
 			cross_v3_v3v3(trinormorg, side1, side2);
 			normalize_v3(trinormorg);
-			VECCOPY(trinorm, trinormorg);
+			copy_v3_v3(trinorm, trinormorg);
 			mul_v3_fl(trinorm, 0.25 * cell_len);
 
 			for(j = 0; j <= divs1; j++)
@@ -400,43 +400,41 @@ static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 						continue;
 					}
 
-					VECCOPY(p1, mvert[ mface[i].v1 ].co);
+					copy_v3_v3(p1, mvert[ mface[i].v1 ].co);
 					if(again == 1 && mface[i].v4)
 					{
-						VECCOPY(p2, mvert[ mface[i].v3 ].co);
-						VECCOPY(p3, mvert[ mface[i].v4 ].co);
+						copy_v3_v3(p2, mvert[ mface[i].v3 ].co);
+						copy_v3_v3(p3, mvert[ mface[i].v4 ].co);
 					}
-					else
-					{
-						VECCOPY(p2, mvert[ mface[i].v2 ].co);
-						VECCOPY(p3, mvert[ mface[i].v3 ].co);
+					else {
+						copy_v3_v3(p2, mvert[ mface[i].v2 ].co);
+						copy_v3_v3(p3, mvert[ mface[i].v3 ].co);
 					}
 
 					mul_v3_fl(p1, (1.0-uf-vf));
 					mul_v3_fl(p2, uf);
 					mul_v3_fl(p3, vf);
 					
-					VECADD(p, p1, p2);
-					VECADD(p, p, p3);
+					add_v3_v3v3(p, p1, p2);
+					add_v3_v3(p, p3);
 
 					if(newdivs > divs)
 						printf("mem problem\n");
 
 					// mMovPoints.push_back(p + trinorm);
-					VECCOPY(tmpvec, p);
-					VECADD(tmpvec, tmpvec, trinorm);
+					add_v3_v3v3(tmpvec, p, trinorm);
 					mul_m4_v3(ob->obmat, tmpvec);
-					VECCOPY(&scs->points[3 * (dm->getNumVerts(dm) + newdivs)], tmpvec);
+					copy_v3_v3(&scs->points[3 * (dm->getNumVerts(dm) + newdivs)], tmpvec);
 					newdivs++;
 
 					if(newdivs > divs)
 						printf("mem problem\n");
 
 					// mMovPoints.push_back(p - trinorm);
-					VECCOPY(tmpvec, p);
-					VECSUB(tmpvec, tmpvec, trinorm);
+					copy_v3_v3(tmpvec, p);
+					sub_v3_v3(tmpvec, trinorm);
 					mul_m4_v3(ob->obmat, tmpvec);
-					VECCOPY(&scs->points[3 * (dm->getNumVerts(dm) + newdivs)], tmpvec);
+					copy_v3_v3(&scs->points[3 * (dm->getNumVerts(dm) + newdivs)], tmpvec);
 					newdivs++;
 				}
 			}
@@ -457,7 +455,7 @@ static void fill_scs_points(Object *ob, DerivedMesh *dm, SmokeCollSettings *scs)
 }
 
 /*! init triangle divisions */
-void calcTriangleDivs(Object *ob, MVert *verts, int UNUSED(numverts), MFace *faces, int numfaces, int numtris, int **tridivs, float cell_len) 
+static void calcTriangleDivs(Object *ob, MVert *verts, int UNUSED(numverts), MFace *faces, int numfaces, int numtris, int **tridivs, float cell_len)
 {
 	// mTriangleDivs1.resize( faces.size() );
 	// mTriangleDivs2.resize( faces.size() );
@@ -487,23 +485,23 @@ void calcTriangleDivs(Object *ob, MVert *verts, int UNUSED(numverts), MFace *fac
 		float side3[3];
 		int divs1=0, divs2=0, divs3=0;
 
-		VECCOPY(p0, verts[faces[i].v1].co);
+		copy_v3_v3(p0, verts[faces[i].v1].co);
 		mul_m4_v3(ob->obmat, p0);
-		VECCOPY(p1, verts[faces[i].v2].co);
+		copy_v3_v3(p1, verts[faces[i].v2].co);
 		mul_m4_v3(ob->obmat, p1);
-		VECCOPY(p2, verts[faces[i].v3].co);
+		copy_v3_v3(p2, verts[faces[i].v3].co);
 		mul_m4_v3(ob->obmat, p2);
 
-		VECSUB(side1, p1, p0);
-		VECSUB(side2, p2, p0);
-		VECSUB(side3, p1, p2);
+		sub_v3_v3v3(side1, p1, p0);
+		sub_v3_v3v3(side2, p2, p0);
+		sub_v3_v3v3(side3, p1, p2);
 
-		if(INPR(side1, side1) > fsTri*fsTri) 
+		if(dot_v3v3(side1, side1) > fsTri*fsTri)
 		{ 
 			float tmp = normalize_v3(side1);
 			divs1 = (int)ceil(tmp/fsTri); 
 		}
-		if(INPR(side2, side2) > fsTri*fsTri) 
+		if(dot_v3v3(side2, side2) > fsTri*fsTri)
 		{ 
 			float tmp = normalize_v3(side2);
 			divs2 = (int)ceil(tmp/fsTri); 
@@ -526,23 +524,23 @@ void calcTriangleDivs(Object *ob, MVert *verts, int UNUSED(numverts), MFace *fac
 
 			facecounter++;
 			
-			VECCOPY(p0, verts[faces[i].v3].co);
+			copy_v3_v3(p0, verts[faces[i].v3].co);
 			mul_m4_v3(ob->obmat, p0);
-			VECCOPY(p1, verts[faces[i].v4].co);
+			copy_v3_v3(p1, verts[faces[i].v4].co);
 			mul_m4_v3(ob->obmat, p1);
-			VECCOPY(p2, verts[faces[i].v1].co);
+			copy_v3_v3(p2, verts[faces[i].v1].co);
 			mul_m4_v3(ob->obmat, p2);
 
-			VECSUB(side1, p1, p0);
-			VECSUB(side2, p2, p0);
-			VECSUB(side3, p1, p2);
+			sub_v3_v3v3(side1, p1, p0);
+			sub_v3_v3v3(side2, p2, p0);
+			sub_v3_v3v3(side3, p1, p2);
 
-			if(INPR(side1, side1) > fsTri*fsTri) 
+			if(dot_v3v3(side1, side1) > fsTri*fsTri)
 			{ 
 				float tmp = normalize_v3(side1);
 				divs1 = (int)ceil(tmp/fsTri); 
 			}
-			if(INPR(side2, side2) > fsTri*fsTri) 
+			if(dot_v3v3(side2, side2) > fsTri*fsTri)
 			{ 
 				float tmp = normalize_v3(side2);
 				divs2 = (int)ceil(tmp/fsTri); 
@@ -555,6 +553,8 @@ void calcTriangleDivs(Object *ob, MVert *verts, int UNUSED(numverts), MFace *fac
 		facecounter++;
 	}
 }
+
+#endif /* WITH_SMOKE */
 
 static void smokeModifier_freeDomain(SmokeModifierData *smd)
 {
@@ -615,9 +615,11 @@ static void smokeModifier_freeCollision(SmokeModifierData *smd)
 			smd->coll->bvhtree = NULL;
 		}
 
+#ifdef USE_SMOKE_COLLISION_DM
 		if(smd->coll->dm)
 			smd->coll->dm->release(smd->coll->dm);
 		smd->coll->dm = NULL;
+#endif
 
 		MEM_freeN(smd->coll);
 		smd->coll = NULL;
@@ -680,9 +682,11 @@ void smokeModifier_reset(struct SmokeModifierData *smd)
 				smd->coll->bvhtree = NULL;
 			}
 
+#ifdef USE_SMOKE_COLLISION_DM
 			if(smd->coll->dm)
 				smd->coll->dm->release(smd->coll->dm);
 			smd->coll->dm = NULL;
+#endif
 
 		}
 	}
@@ -770,7 +774,10 @@ void smokeModifier_createType(struct SmokeModifierData *smd)
 			smd->coll->points = NULL;
 			smd->coll->numpoints = 0;
 			smd->coll->bvhtree = NULL;
+
+#ifdef USE_SMOKE_COLLISION_DM
 			smd->coll->dm = NULL;
+#endif
 		}
 	}
 }
@@ -810,16 +817,15 @@ void smokeModifier_copy(struct SmokeModifierData *smd, struct SmokeModifierData 
 		tsmd->flow->vel_multi = smd->flow->vel_multi;
 	} else if (tsmd->coll) {
 		;
-		/* leave it as initialised, collision settings is mostly caches */
+		/* leave it as initialized, collision settings is mostly caches */
 	}
 }
 
+#ifdef WITH_SMOKE
 
 // forward decleration
 static void smoke_calc_transparency(float *result, float *input, float *p0, float *p1, int res[3], float dx, float *light, bresenham_callback cb, float correct);
 static float calc_voxel_transp(float *result, float *input, int res[3], int *pixel, float *tRay, float correct);
-
-#ifdef WITH_SMOKE
 
 static int get_lamp(Scene *scene, float *light)
 {	
@@ -997,6 +1003,7 @@ static void smoke_calc_domain(Scene *scene, Object *ob, SmokeModifierData *smd)
 					{
 						ParticleSimulationData sim;
 						ParticleSystem *psys = sfs->psys;
+						int totpart=psys->totpart, totchild;
 						int p = 0;								
 						float *density = smoke_get_density(sds->fluid);								
 						float *bigdensity = smoke_turbulence_get_density(sds->wt);								
@@ -1032,7 +1039,23 @@ static void smoke_calc_domain(Scene *scene, Object *ob, SmokeModifierData *smd)
 						}
 														
 						// mostly copied from particle code								
-						for(p=0; p<psys->totpart; p++)								
+						if(psys->part->type==PART_HAIR)
+						{
+							/*
+							if(psys->childcache)
+							{
+								totchild = psys->totchildcache;
+							}
+							else
+							*/
+
+							// TODO: PART_HAIR not supported whatsoever
+							totchild=0;
+						}
+						else
+							totchild=psys->totchild*psys->part->disp/100;
+						
+						for(p=0; p<totpart+totchild; p++)								
 						{
 							int cell[3];
 							size_t i = 0;
@@ -1040,17 +1063,26 @@ static void smoke_calc_domain(Scene *scene, Object *ob, SmokeModifierData *smd)
 							int badcell = 0;
 							ParticleKey state;
 
-							if(psys->particles[p].flag & (PARS_NO_DISP|PARS_UNEXIST))
-								continue;
+							if(p < totpart)
+							{
+								if(psys->particles[p].flag & (PARS_NO_DISP|PARS_UNEXIST))
+									continue;
+							}
+							else {
+								/* handle child particle */
+								ChildParticle *cpa = &psys->child[p - totpart];
+					
+								if(psys->particles[cpa->parent].flag & (PARS_NO_DISP|PARS_UNEXIST))
+									continue;
+							}
 
 							state.time = smd->time;
-
 							if(psys_get_particle_state(&sim, p, &state, 0) == 0)
 								continue;
-							
-							// VECCOPY(pos, pa->state.co);									
-							// mul_m4_v3(ob->imat, pos);																		
-							// 1. get corresponding cell	
+												
+							// copy_v3_v3(pos, pa->state.co);
+							// mul_m4_v3(ob->imat, pos);
+							// 1. get corresponding cell
 							get_cell(smd->domain->p0, smd->domain->res, smd->domain->dx, state.co, cell, 0);																	
 							// check if cell is valid (in the domain boundary)									
 							for(i = 0; i < 3; i++)									
@@ -1125,7 +1157,7 @@ static void smoke_calc_domain(Scene *scene, Object *ob, SmokeModifierData *smd)
 											for(z = 0; z < sds->res[2]; z++)													
 											{
 
-												// neighbour cell emission densities (for high resolution smoke smooth interpolation)
+												// neighbor cell emission densities (for high resolution smoke smooth interpolation)
 												float c000, c001, c010, c011,  c100, c101, c110, c111;
 
 												c000 = (x>0 && y>0 && z>0) ? temp_emission_map[smoke_get_index(x-1, sds->res[0], y-1, sds->res[1], z-1)] : 0;
@@ -1234,8 +1266,7 @@ static void smoke_calc_domain(Scene *scene, Object *ob, SmokeModifierData *smd)
 
 										
 				}							
-				else							
-				{								
+				else {								
 					/*								
 					for()								
 					{									
@@ -1338,11 +1369,13 @@ void smokeModifier_do(SmokeModifierData *smd, Scene *scene, Object *ob, DerivedM
 		{
 			// XXX TODO
 			smd->time = scene->r.cfra;
-			
+
+#ifdef USE_SMOKE_COLLISION_DM
 			if(smd->coll->dm)
 				smd->coll->dm->release(smd->coll->dm);
 
-			smd->coll->dm = CDDM_copy(dm);
+			smd->coll->dm = CDDM_copy_from_tessface(dm);
+#endif
 
 			// rigid movement support
 			copy_m4_m4(smd->coll->mat_old, smd->coll->mat);
@@ -1587,17 +1620,15 @@ static void get_cell(float *p0, int res[3], float dx, float *pos, int *cell, int
 {
 	float tmp[3];
 
-	VECSUB(tmp, pos, p0);
+	sub_v3_v3v3(tmp, pos, p0);
 	mul_v3_fl(tmp, 1.0 / dx);
 
-	if(correct)
-	{
+	if (correct) {
 		cell[0] = MIN2(res[0] - 1, MAX2(0, (int)floor(tmp[0])));
 		cell[1] = MIN2(res[1] - 1, MAX2(0, (int)floor(tmp[1])));
 		cell[2] = MIN2(res[2] - 1, MAX2(0, (int)floor(tmp[2])));
 	}
-	else
-	{
+	else {
 		cell[0] = (int)floor(tmp[0]);
 		cell[1] = (int)floor(tmp[1]);
 		cell[2] = (int)floor(tmp[2]);
@@ -1647,8 +1678,7 @@ static void smoke_calc_transparency(float *result, float *input, float *p0, floa
 					// we're ouside
 					get_cell(p0, res, dx, pos, cell, 1);
 				}
-				else
-				{
+				else {
 					// we're inside
 					get_cell(p0, res, dx, light, cell, 1);
 				}
@@ -1662,4 +1692,4 @@ static void smoke_calc_transparency(float *result, float *input, float *p0, floa
 	}
 }
 
-#endif // WITH_SMOKE
+#endif /* WITH_SMOKE */

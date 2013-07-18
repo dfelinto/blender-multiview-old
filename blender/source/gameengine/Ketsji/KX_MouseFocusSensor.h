@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief KX_MouseFocusSensor determines mouse in/out/over events.
  */
 
-#ifndef __KX_MOUSEFOCUSSENSOR
-#define __KX_MOUSEFOCUSSENSOR
+#ifndef __KX_MOUSEFOCUSSENSOR_H__
+#define __KX_MOUSEFOCUSSENSOR_H__
 
 #include "SCA_MouseSensor.h"
 
@@ -49,7 +47,7 @@ class KX_RayCast;
 class KX_MouseFocusSensor : public SCA_MouseSensor
 {
 
-	Py_Header;
+	Py_Header
 	
  public:
 	
@@ -63,7 +61,7 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
 						KX_KetsjiEngine* kxengine,
 						SCA_IObject* gameobj);
 
-	virtual ~KX_MouseFocusSensor() { ; };
+	virtual ~KX_MouseFocusSensor() { }
 	virtual CValue* GetReplica() {
 		CValue* replica = new KX_MouseFocusSensor(*this);
 		// this will copy properties and so on...
@@ -78,7 +76,7 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
 
 
 	/**
-	 * @attention Overrides default evaluate. 
+	 * \attention Overrides default evaluate. 
 	 */
 	virtual bool Evaluate();
 	virtual void Init();
@@ -122,8 +120,8 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
  private:
 	/**
 	 * The focus mode. 1 for handling focus, 0 for not handling, 2 for focus on any object
-	*/
-	 int	m_focusmode;
+	 */
+	int	m_focusmode;
 
 	/**
 	 * Flags whether the previous test showed a mouse-over.
@@ -140,7 +138,7 @@ class KX_MouseFocusSensor : public SCA_MouseSensor
 	 */
 	bool m_positive_event;
 
- 	/**
+	/**
 	 * Tests whether the object is in mouse focus for this camera
 	 */
 	bool ParentObjectHasFocusCamera(KX_Camera *cam);

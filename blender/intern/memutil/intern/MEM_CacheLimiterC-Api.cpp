@@ -1,14 +1,10 @@
-/** \file memutil/intern/MEM_CacheLimiterC-Api.cpp
- *  \ingroup memutil
- */
-/**
+/*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
  * This program is free software; you can redistribute it and/or
  * modify it under the terms of the GNU General Public License
  * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version. The Blender
- * Foundation also sells licenses for use in proprietary software under
- * the Blender License.  See http://www.blender.org/BL/ for information
- * about this.
+ * of the License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -21,6 +17,11 @@
  *
  * Contributor(s): Peter Schlaile <peter@schlaile.de> 2005
  *
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ */
+
+/** \file memutil/intern/MEM_CacheLimiterC-Api.cpp
+ *  \ingroup memutil
  */
 
 #include <cstddef>
@@ -28,18 +29,18 @@
 #include "MEM_CacheLimiter.h"
 #include "MEM_CacheLimiterC-Api.h"
 
-static intptr_t & get_max() 
+static size_t & get_max()
 {
-	static intptr_t m = 32*1024*1024;
+	static size_t m = 32*1024*1024;
 	return m;
 }
 
-void MEM_CacheLimiter_set_maximum(intptr_t m)
+void MEM_CacheLimiter_set_maximum(size_t m)
 {
 	get_max() = m;
 }
 
-intptr_t MEM_CacheLimiter_get_maximum()
+size_t MEM_CacheLimiter_get_maximum()
 {
 	return get_max();
 }
@@ -54,8 +55,8 @@ typedef std::list<MEM_CacheLimiterHandleCClass*,
 
 class MEM_CacheLimiterCClass {
 public:
-	MEM_CacheLimiterCClass(MEM_CacheLimiter_Destruct_Func data_destructor_)
-		: data_destructor(data_destructor_) { 
+	MEM_CacheLimiterCClass(MEM_CacheLimiter_Destruct_Func data_destructor_, MEM_CacheLimiter_DataSize_Func data_size)
+		: data_destructor(data_destructor_), cache(data_size) {
 	}
         ~MEM_CacheLimiterCClass();
 	
@@ -142,10 +143,12 @@ static inline handle_t* cast(MEM_CacheLimiterHandleC * l)
 }
 
 MEM_CacheLimiterC * new_MEM_CacheLimiter(
-	MEM_CacheLimiter_Destruct_Func data_destructor)
+	MEM_CacheLimiter_Destruct_Func data_destructor,
+	MEM_CacheLimiter_DataSize_Func data_size)
 {
 	return (MEM_CacheLimiterC*) new MEM_CacheLimiterCClass(
-		data_destructor);
+		data_destructor,
+		data_size);
 }
 
 void delete_MEM_CacheLimiter(MEM_CacheLimiterC * This)

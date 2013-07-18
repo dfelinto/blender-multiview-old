@@ -366,8 +366,8 @@ void ANIM_deselect_anim_channels (bAnimContext *ac, void *data, short datatype, 
 /* Flush visibility (for Graph Editor) changes up/down hierarchy for changes in the given setting 
  *	- anim_data: list of the all the anim channels that can be chosen
  *		-> filtered using ANIMFILTER_CHANNELS only, since if we took VISIBLE too,
- *	 	  then the channels under closed expanders get ignored...
- *	- ale_setting: the anim channel (not in the anim_data list directly, though occuring there)
+ *		  then the channels under closed expanders get ignored...
+ *	- ale_setting: the anim channel (not in the anim_data list directly, though occurring there)
  *		with the new state of the setting that we want flushed up/down the hierarchy 
  *	- setting: type of setting to set
  *	- on: whether the visibility setting has been enabled or disabled 
@@ -496,7 +496,7 @@ void ANIM_flush_setting_anim_channels (bAnimContext *ac, ListBase *anim_data, bA
 				break;
 			
 			/* store this level as the 'old' level now */
-			prevLevel= level; // XXX: prevLevel is unused
+			// prevLevel= level; // XXX: prevLevel is unused
 		}
 	}
 }
@@ -541,8 +541,7 @@ void ANIM_fcurve_delete_from_animdata (bAnimContext *ac, AnimData *adt, FCurve *
 			/* XXX: there's a problem where many actions could build up in the file if multiple
 			 * full add/delete cycles are performed on the same objects, but assume that this is rare
 			 */
-		if ((adt->action->curves.first == NULL) && (adt->flag & ADT_NLA_EDIT_ON)==0)
-		{
+		if ((adt->action->curves.first == NULL) && (adt->flag & ADT_NLA_EDIT_ON)==0) {
 			id_us_min(&adt->action->id);
 			adt->action = NULL;
 		}
@@ -951,7 +950,7 @@ static void split_groups_action_temp (bAction *act, bActionGroup *tgrp)
 		}
 	}
 	
-	/* Initialise memory for temp-group */
+	/* Initialize memory for temp-group */
 	memset(tgrp, 0, sizeof(bActionGroup));
 	tgrp->flag |= (AGRP_EXPANDED|AGRP_TEMP);
 	BLI_strncpy(tgrp->name, "#TempGroup", sizeof(tgrp->name));
@@ -1529,7 +1528,7 @@ static int animchannels_setflag_exec(bContext *C, wmOperator *op)
 	return OPERATOR_FINISHED;
 }
 
-
+/* duplicate of 'ANIM_OT_channels_setting_toggle' for menu title only, weak! */
 static void ANIM_OT_channels_setting_enable (wmOperatorType *ot)
 {
 	/* identifiers */
@@ -1551,7 +1550,7 @@ static void ANIM_OT_channels_setting_enable (wmOperatorType *ot)
 		/* setting to set */
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_animchannel_settings_types, 0, "Type", "");
 }
-
+/* duplicate of 'ANIM_OT_channels_setting_toggle' for menu title only, weak! */
 static void ANIM_OT_channels_setting_disable (wmOperatorType *ot)
 {
 	/* identifiers */
@@ -1570,28 +1569,6 @@ static void ANIM_OT_channels_setting_disable (wmOperatorType *ot)
 	/* props */
 		/* flag-setting mode */
 	RNA_def_enum(ot->srna, "mode", prop_animchannel_setflag_types, ACHANNEL_SETFLAG_CLEAR, "Mode", "");
-		/* setting to set */
-	ot->prop= RNA_def_enum(ot->srna, "type", prop_animchannel_settings_types, 0, "Type", "");
-}
-
-static void ANIM_OT_channels_setting_invert (wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name= "Invert Channel Setting";
-	ot->idname= "ANIM_OT_channels_setting_toggle";
-	ot->description= "Invert specified setting on all selected animation channels";
-	
-	/* api callbacks */
-	ot->invoke= WM_menu_invoke;
-	ot->exec= animchannels_setflag_exec;
-	ot->poll= animedit_poll_channels_active;
-	
-	/* flags */
-	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
-	
-	/* props */
-		/* flag-setting mode */
-	RNA_def_enum(ot->srna, "mode", prop_animchannel_setflag_types, ACHANNEL_SETFLAG_INVERT, "Mode", "");
 		/* setting to set */
 	ot->prop= RNA_def_enum(ot->srna, "type", prop_animchannel_settings_types, 0, "Type", "");
 }
@@ -1806,7 +1783,7 @@ static int animchannels_deselectall_exec (bContext *C, wmOperator *op)
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
 		
-	/* 'standard' behaviour - check if selected, then apply relevant selection */
+	/* 'standard' behavior - check if selected, then apply relevant selection */
 	if (RNA_boolean_get(op->ptr, "invert"))
 		ANIM_deselect_anim_channels(&ac, ac.data, ac.datatype, 0, ACHANNEL_SETFLAG_TOGGLE);
 	else
@@ -1917,7 +1894,7 @@ static int animchannels_borderselect_exec(bContext *C, wmOperator *op)
 	bAnimContext ac;
 	rcti rect;
 	short selectmode=0;
-	int gesture_mode;
+	int gesture_mode, extend;
 	
 	/* get editor data */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
@@ -1928,8 +1905,13 @@ static int animchannels_borderselect_exec(bContext *C, wmOperator *op)
 	rect.ymin= RNA_int_get(op->ptr, "ymin");
 	rect.xmax= RNA_int_get(op->ptr, "xmax");
 	rect.ymax= RNA_int_get(op->ptr, "ymax");
-		
+	
 	gesture_mode= RNA_int_get(op->ptr, "gesture_mode");
+	extend= RNA_boolean_get(op->ptr, "extend");
+
+	if(!extend)
+		ANIM_deselect_anim_channels(&ac, ac.data, ac.datatype, 1, ACHANNEL_SETFLAG_CLEAR);
+
 	if (gesture_mode == GESTURE_MODAL_SELECT)
 		selectmode = ACHANNEL_SETFLAG_ADD;
 	else
@@ -1963,7 +1945,7 @@ static void ANIM_OT_channels_select_border(wmOperatorType *ot)
 	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
 	
 	/* rna */
-	WM_operator_properties_gesture_border(ot, FALSE);
+	WM_operator_properties_gesture_border(ot, TRUE);
 }
 
 /* ******************* Rename Operator ***************************** */
@@ -2002,7 +1984,7 @@ static void rename_anim_channels (bAnimContext *ac, int channel_index)
 		if (acf->name_prop(ale, &ptr, &prop)) {
 			/* actually showing the rename textfield is done on redraw,
 			 * so here we just store the index of this channel in the 
-			 * dopesheet data, which will get utilised when drawing the
+			 * dopesheet data, which will get utilized when drawing the
 			 * channel...
 			 *
 			 * +1 factor is for backwards compat issues
@@ -2396,7 +2378,6 @@ void ED_operatortypes_animchannels(void)
 	
 	WM_operatortype_append(ANIM_OT_channels_setting_enable);
 	WM_operatortype_append(ANIM_OT_channels_setting_disable);
-	WM_operatortype_append(ANIM_OT_channels_setting_invert);
 	WM_operatortype_append(ANIM_OT_channels_setting_toggle);
 	
 	WM_operatortype_append(ANIM_OT_channels_delete);
@@ -2419,20 +2400,21 @@ void ED_operatortypes_animchannels(void)
 void ED_keymap_animchannels(wmKeyConfig *keyconf)
 {
 	wmKeyMap *keymap = WM_keymap_find(keyconf, "Animation Channels", 0, 0);
-	
+	wmKeyMapItem *kmi;
+
 	/* selection */
 		/* click-select */
 		// XXX for now, only leftmouse.... 
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0)->ptr, "extend", 1);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "children_only", 1);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_SHIFT, 0)->ptr, "extend", TRUE);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_click", LEFTMOUSE, KM_PRESS, KM_CTRL|KM_SHIFT, 0)->ptr, "children_only", TRUE);
 	
 		/* rename */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_rename", LEFTMOUSE, KM_PRESS, KM_CTRL, 0);
 	
 		/* deselect all */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_select_all_toggle", AKEY, KM_PRESS, 0, 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_select_all_toggle", IKEY, KM_PRESS, KM_CTRL, 0)->ptr, "invert", 1);
+	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_select_all_toggle", IKEY, KM_PRESS, KM_CTRL, 0)->ptr, "invert", TRUE);
 	
 		/* borderselect */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_select_border", BKEY, KM_PRESS, 0, 0);
@@ -2447,16 +2429,18 @@ void ED_keymap_animchannels(wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_setting_enable", WKEY, KM_PRESS, KM_CTRL|KM_SHIFT, 0);
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_setting_disable", WKEY, KM_PRESS, KM_ALT, 0);
 	
-	/* settings - specialised hotkeys */
+	/* settings - specialized hotkeys */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_editable_toggle", TABKEY, KM_PRESS, 0, 0);
 	
 	/* expand/collapse */
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_expand", PADPLUSKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "ANIM_OT_channels_collapse", PADMINUS, KM_PRESS, 0, 0);
 	
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_expand", PADPLUSKEY, KM_PRESS, KM_CTRL, 0)->ptr, "all", 0);
-	RNA_boolean_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_collapse", PADMINUS, KM_PRESS, KM_CTRL, 0)->ptr, "all", 0);
-	
+	kmi = WM_keymap_add_item(keymap, "ANIM_OT_channels_expand", PADPLUSKEY, KM_PRESS, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "all", FALSE);
+	kmi = WM_keymap_add_item(keymap, "ANIM_OT_channels_collapse", PADMINUS, KM_PRESS, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "all", FALSE);
+
 	/* rearranging */
 	RNA_enum_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_move", PAGEUPKEY, KM_PRESS, 0, 0)->ptr, "direction", REARRANGE_ANIMCHAN_UP);
 	RNA_enum_set(WM_keymap_add_item(keymap, "ANIM_OT_channels_move", PAGEDOWNKEY, KM_PRESS, 0, 0)->ptr, "direction", REARRANGE_ANIMCHAN_DOWN);

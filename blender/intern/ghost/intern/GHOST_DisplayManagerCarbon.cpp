@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	September 21, 2001
@@ -90,7 +88,7 @@ GHOST_TSuccess GHOST_DisplayManagerCarbon::getDisplaySetting(GHOST_TUns8 display
 	displayModes = ::CGDisplayAvailableModes(d);
 	//CFIndex numModes = ::CFArrayGetCount(displayModes);/*unused*/
 	//GHOST_TInt32 numSettings = (GHOST_TInt32)numModes; /*unused*/
-	 CFDictionaryRef displayModeValues = (CFDictionaryRef)::CFArrayGetValueAtIndex(displayModes, index);
+	CFDictionaryRef displayModeValues = (CFDictionaryRef)::CFArrayGetValueAtIndex(displayModes, index);
 			
 	setting.xPixels		= getValue(displayModeValues, kCGDisplayWidth);
 	setting.yPixels		= getValue(displayModeValues, kCGDisplayHeight);

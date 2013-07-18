@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -24,12 +22,13 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef DNA_SCREEN_TYPES_H
-#define DNA_SCREEN_TYPES_H
 
 /** \file DNA_screen_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_SCREEN_TYPES_H__
+#define __DNA_SCREEN_TYPES_H__
 
 #include "DNA_listBase.h"
 #include "DNA_view2d_types.h"

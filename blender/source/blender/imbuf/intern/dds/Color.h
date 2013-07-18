@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -36,8 +34,8 @@
 
 // This code is in the public domain -- castanyo@yahoo.es
 
-#ifndef _DDS_COLOR_H
-#define _DDS_COLOR_H
+#ifndef __COLOR_H__
+#define __COLOR_H__
 
 /// 32 bit color stored as BGRA.
 class Color32
@@ -98,4 +96,4 @@ public:
 	};
 };
 
-#endif // _DDS_COLOR_H
+#endif // __COLOR_H__

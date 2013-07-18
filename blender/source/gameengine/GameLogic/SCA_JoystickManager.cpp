@@ -65,7 +65,7 @@ void SCA_JoystickManager::NextFrame(double curtime,double deltatime)
 	}
 	else {
 		;
-#ifndef	DISABLE_SDL
+#ifdef WITH_SDL
 		SCA_Joystick::HandleEvents(); /* Handle all SDL Joystick events */
 #endif
 		SG_DList::iterator<SCA_JoystickSensor> it(m_sensors);
@@ -83,8 +83,8 @@ void SCA_JoystickManager::NextFrame(double curtime,double deltatime)
 
 SCA_Joystick *SCA_JoystickManager::GetJoystickDevice( short int joyindex)
 {
-	/* 
-	 *Return the instance of SCA_Joystick for use 
- 	 */
+	/*
+	 *Return the instance of SCA_Joystick for use
+	 */
 	return m_joystick[joyindex];
 }

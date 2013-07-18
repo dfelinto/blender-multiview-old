@@ -1,6 +1,5 @@
 /*
  * StringValue.h: interface for the CStringValue class.
- * $Id$
  * Copyright (c) 1996-2000 Erwin Coumans <coockie@acm.org>
  *
  * Permission to use, copy, modify, distribute and sell this software
@@ -32,8 +31,7 @@ public:
 	CStringValue();
 	CStringValue (const char *txt, const char *name , AllocationTYPE alloctype = CValue::HEAPVALUE);
 
-	virtual ~CStringValue() {
-	};
+	virtual ~CStringValue() {}
 	/// CValue implementation
 	virtual bool		IsEqual(const STR_String & other);
 	virtual const STR_String &	GetText();
@@ -41,11 +39,11 @@ public:
 	
 	virtual	CValue*		Calc(VALUE_OPERATOR op, CValue *val);
 	virtual	CValue*		CalcFinal(VALUE_DATA_TYPE dtype, VALUE_OPERATOR op, CValue *val);
-	virtual void		SetValue(CValue* newval) { 	m_strString = newval->GetText(); SetModified(true);	};
+	virtual void		SetValue(CValue* newval) { 	m_strString = newval->GetText(); SetModified(true);	}
 	virtual CValue*		GetReplica();
 #ifdef WITH_PYTHON
 	virtual PyObject*	ConvertValueToPython() {
-		return PyUnicode_FromString(m_strString.Ptr());
+		return PyUnicode_From_STR_String(m_strString);
 	}
 #endif // WITH_PYTHON
 

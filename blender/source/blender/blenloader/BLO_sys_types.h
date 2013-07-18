@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -42,8 +40,8 @@
  *
  */
 
-#ifndef BLO_SYS_TYPES_H
-#define BLO_SYS_TYPES_H
+#ifndef __BLO_SYS_TYPES_H__
+#define __BLO_SYS_TYPES_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -51,7 +49,7 @@ extern "C" {
  
 #if defined(_WIN32) && !defined(FREE_WINDOWS)
 
-/* The __intXX are built-in types of the visual complier! So we don't
+/* The __intXX are built-in types of the visual compiler! So we don't
  * need to include anything else here. */
 
 
@@ -88,6 +86,15 @@ typedef unsigned long uintptr_t;
 	/* Linux-i386, Linux-Alpha, Linux-ppc */
 #include <stdint.h>
 
+/* XXX */
+#ifndef UINT64_MAX
+# define UINT64_MAX		18446744073709551615
+typedef uint8_t   u_int8_t;
+typedef uint16_t  u_int16_t;
+typedef uint32_t  u_int32_t;
+typedef uint64_t  u_int64_t;
+#endif
+
 #elif defined (__APPLE__)
 
 #include <inttypes.h>
@@ -99,7 +106,7 @@ unsigned long __attribute__((__stdcall__)) htonl(unsigned long);
 
 #else
 
-	/* FreeBSD, Irix, Solaris */
+	/* FreeBSD, Solaris */
 #include <sys/types.h>
 
 #endif /* ifdef platform for types */
@@ -118,7 +125,7 @@ unsigned long __attribute__((__stdcall__)) htonl(unsigned long);
 #include <sys/param.h>
 #elif defined (__APPLE__)
 #include <sys/types.h>
-#else  /* irix sun linux */
+#else  /* sun linux */
 #include <netinet/in.h>
 #endif /* ifdef platform for htonl/ntohl */
 

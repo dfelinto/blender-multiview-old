@@ -1,52 +1,52 @@
 /*
-* $Id$
-*
-* ***** BEGIN GPL LICENSE BLOCK *****
-*
-* This program is free software; you can redistribute it and/or
-* modify it under the terms of the GNU General Public License
-* as published by the Free Software Foundation; either version 2
-* of the License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-* GNU General Public License for more details.
-*
-* You should have received a copy of the GNU General Public License
-* along with this program; if not, write to the Free Software  Foundation,
-* Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
-*
-* The Original Code is Copyright (C) 2005 by the Blender Foundation.
-* All rights reserved.
-*
-* Contributor(s): Daniel Dunbar
-*                 Ton Roosendaal,
-*                 Ben Batt,
-*                 Brecht Van Lommel,
-*                 Campbell Barton
-*
-* ***** END GPL LICENSE BLOCK *****
-*
-*/
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software  Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * The Original Code is Copyright (C) 2005 by the Blender Foundation.
+ * All rights reserved.
+ *
+ * Contributor(s): Daniel Dunbar
+ *                 Ton Roosendaal,
+ *                 Ben Batt,
+ *                 Brecht Van Lommel,
+ *                 Campbell Barton
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ *
+ */
 
 /** \file blender/modifiers/intern/MOD_meshdeform.c
  *  \ingroup modifiers
  */
 
-
+#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_global.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
 #include "BKE_deform.h"
+#include "BKE_tessmesh.h"
 
 #include "depsgraph_private.h"
 
@@ -187,10 +187,9 @@ static void meshdeformModifier_do(
 {
 	MeshDeformModifierData *mmd = (MeshDeformModifierData*) md;
 	struct Mesh *me= (mmd->object)? mmd->object->data: NULL;
-	struct EditMesh *em = (me)? BKE_mesh_get_editmesh(me): NULL;
+	BMEditMesh *em = me ? me->edit_btmesh : NULL;
 	DerivedMesh *tmpdm, *cagedm;
 	MDeformVert *dvert = NULL;
-	MDeformWeight *dw;
 	MDefInfluence *influences;
 	int *offsets;
 	float imat[4][4], cagemat[4][4], iobmat[4][4], icagemat[3][3], cmat[4][4];
@@ -203,10 +202,9 @@ static void meshdeformModifier_do(
 	
 	/* get cage derivedmesh */
 	if(em) {
-		tmpdm= editmesh_get_derived_cage_and_final(md->scene, ob, em, &cagedm, 0);
+		tmpdm= editbmesh_get_derived_cage_and_final(md->scene, ob, em, &cagedm, 0);
 		if(tmpdm)
 			tmpdm->release(tmpdm);
-		BKE_mesh_end_editmesh(me, em);
 	}
 	else
 		cagedm= mmd->object->derivedFinal;
@@ -220,14 +218,14 @@ static void meshdeformModifier_do(
 	}
 	
 	if(!cagedm) {
-		modifier_setError(md, "Can't get mesh from cage object.");
+		modifier_setError(md, TIP_("Can't get mesh from cage object."));
 		return;
 	}
 
 	/* compute matrices to go in and out of cage object space */
 	invert_m4_m4(imat, mmd->object->obmat);
-	mul_m4_m4m4(cagemat, ob->obmat, imat);
-	mul_m4_m4m4(cmat, cagemat, mmd->bindmat);
+	mult_m4_m4m4(cagemat, imat, ob->obmat);
+	mult_m4_m4m4(cmat, mmd->bindmat, cagemat);
 	invert_m4_m4(iobmat, cmat);
 	copy_m3_m4(icagemat, iobmat);
 
@@ -248,16 +246,16 @@ static void meshdeformModifier_do(
 	totcagevert= cagedm->getNumVerts(cagedm);
 
 	if(mmd->totvert != totvert) {
-		modifier_setError(md, "Verts changed from %d to %d.", mmd->totvert, totvert);
+		modifier_setError(md, TIP_("Verts changed from %d to %d."), mmd->totvert, totvert);
 		cagedm->release(cagedm);
 		return;
 	}
 	else if (mmd->totcagevert != totcagevert) {
-		modifier_setError(md, "Cage verts changed from %d to %d.", mmd->totcagevert, totcagevert);
+		modifier_setError(md, TIP_("Cage verts changed from %d to %d."), mmd->totcagevert, totcagevert);
 		cagedm->release(cagedm);
 		return;
 	} else if (mmd->bindcagecos == NULL) {
-		modifier_setError(md, "Bind data missing.");
+		modifier_setError(md, TIP_("Bind data missing."));
 		cagedm->release(cagedm);
 		return;
 	}
@@ -295,21 +293,14 @@ static void meshdeformModifier_do(
 				continue;
 
 		if(dvert) {
-			for(dw=NULL, a=0; a<dvert[b].totweight; a++) {
-				if(dvert[b].dw[a].def_nr == defgrp_index) {
-					dw = &dvert[b].dw[a];
-					break;
-				}
+			fac= defvert_find_weight(&dvert[b], defgrp_index);
+
+			if (mmd->flag & MOD_MDEF_INVERT_VGROUP) {
+				fac= 1.0f - fac;
 			}
 
-			if(mmd->flag & MOD_MDEF_INVERT_VGROUP) {
-				if(!dw) fac= 1.0f;
-				else if(dw->weight == 1.0f) continue;
-				else fac=1.0f-dw->weight;
-			}
-			else {
-				if(!dw) continue;
-				else fac= dw->weight;
+			if (fac <= 0.0f) {
+				continue;
 			}
 		}
 
@@ -363,7 +354,7 @@ static void deformVerts(ModifierData *md, Object *ob,
 }
 
 static void deformVertsEM(ModifierData *md, Object *ob,
-						struct EditMesh *UNUSED(editData),
+						struct BMEditMesh *UNUSED(editData),
 						DerivedMesh *derivedData,
 						float (*vertexCos)[3],
 						int numVerts)

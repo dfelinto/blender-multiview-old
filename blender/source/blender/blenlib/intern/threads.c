@@ -1,6 +1,5 @@
 /*
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -64,48 +63,48 @@ static void *thread_tls_data;
 #endif
 
 /* ********** basic thread control API ************ 
-
-Many thread cases have an X amount of jobs, and only an Y amount of
-threads are useful (typically amount of cpus)
-
-This code can be used to start a maximum amount of 'thread slots', which
-then can be filled in a loop with an idle timer. 
-
-A sample loop can look like this (pseudo c);
-
-	ListBase lb;
-	int maxthreads= 2;
-	int cont= 1;
-
-	BLI_init_threads(&lb, do_something_func, maxthreads);
-
-	while(cont) {
-		if(BLI_available_threads(&lb) && !(escape loop event)) {
-			// get new job (data pointer)
-			// tag job 'processed 
-			BLI_insert_thread(&lb, job);
-		}
-		else PIL_sleep_ms(50);
-		
-		// find if a job is ready, this the do_something_func() should write in job somewhere
-		cont= 0;
-		for(go over all jobs)
-			if(job is ready) {
-				if(job was not removed) {
-					BLI_remove_thread(&lb, job);
-				}
-			}
-			else cont= 1;
-		}
-		// conditions to exit loop 
-		if(if escape loop event) {
-			if(BLI_available_threadslots(&lb)==maxthreads)
-				break;
-		}
-	}
-
-	BLI_end_threads(&lb);
-
+ * 
+ * Many thread cases have an X amount of jobs, and only an Y amount of
+ * threads are useful (typically amount of cpus)
+ *
+ * This code can be used to start a maximum amount of 'thread slots', which
+ * then can be filled in a loop with an idle timer. 
+ *
+ * A sample loop can look like this (pseudo c);
+ *
+ *     ListBase lb;
+ *     int maxthreads= 2;
+ *     int cont= 1;
+ * 
+ *     BLI_init_threads(&lb, do_something_func, maxthreads);
+ * 
+ *     while(cont) {
+ *         if(BLI_available_threads(&lb) && !(escape loop event)) {
+ *             // get new job (data pointer)
+ *             // tag job 'processed 
+ *             BLI_insert_thread(&lb, job);
+ *         }
+ *         else PIL_sleep_ms(50);
+ *         
+ *         // find if a job is ready, this the do_something_func() should write in job somewhere
+ *         cont= 0;
+ *         for(go over all jobs)
+ *             if(job is ready) {
+ *                 if(job was not removed) {
+ *                     BLI_remove_thread(&lb, job);
+ *                 }
+ *             }
+ *             else cont= 1;
+ *         }
+ *         // conditions to exit loop 
+ *         if(if escape loop event) {
+ *             if(BLI_available_threadslots(&lb)==maxthreads)
+ *                 break;
+ *         }
+ *     }
+ * 
+ *     BLI_end_threads(&lb);
+ *
  ************************************************ */
 static pthread_mutex_t _malloc_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _image_lock = PTHREAD_MUTEX_INITIALIZER;
@@ -114,6 +113,9 @@ static pthread_mutex_t _viewer_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _custom1_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _rcache_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_mutex_t _opengl_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _nodes_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _movieclip_lock = PTHREAD_MUTEX_INITIALIZER;
+static pthread_mutex_t _scanfill_lock = PTHREAD_MUTEX_INITIALIZER;
 static pthread_t mainid;
 static int thread_levels= 0;	/* threads can be invoked inside threads */
 
@@ -144,8 +146,8 @@ void BLI_threadapi_init(void)
 }
 
 /* tot = 0 only initializes malloc mutex in a safe way (see sequence.c)
-   problem otherwise: scene render will kill of the mutex!
-*/
+ * problem otherwise: scene render will kill of the mutex!
+ */
 
 void BLI_init_threads(ListBase *threadbase, void *(*do_thread)(void *), int tot)
 {
@@ -170,8 +172,8 @@ void BLI_init_threads(ListBase *threadbase, void *(*do_thread)(void *), int tot)
 
 #if defined(__APPLE__) && (PARALLEL == 1) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
 		/* workaround for Apple gcc 4.2.1 omp vs background thread bug,
-		   we copy gomp thread local storage pointer to setting it again
-		   inside the thread that we start */
+		 * we copy gomp thread local storage pointer to setting it again
+		 * inside the thread that we start */
 		thread_tls_data = pthread_getspecific(gomp_tls_key);
 #endif
 	}
@@ -211,14 +213,15 @@ static void *tslot_thread_start(void *tslot_p)
 
 #if defined(__APPLE__) && (PARALLEL == 1) && (__GNUC__ == 4) && (__GNUC_MINOR__ == 2)
 	/* workaround for Apple gcc 4.2.1 omp vs background thread bug,
-	   set gomp thread local storage pointer which was copied beforehand */
+	 * set gomp thread local storage pointer which was copied beforehand */
 	pthread_setspecific (gomp_tls_key, thread_tls_data);
 #endif
 
 	return tslot->do_thread(tslot->callerdata);
 }
 
-int BLI_thread_is_main(void) {
+int BLI_thread_is_main(void)
+{
 	return pthread_equal(pthread_self(), mainid);
 }
 
@@ -318,8 +321,6 @@ int BLI_system_thread_count( void )
 	mib[1] = HW_NCPU;
 	len = sizeof(t);
 	sysctl(mib, 2, &t, &len, NULL, 0);
-#	elif defined(__sgi)
-	t = sysconf(_SC_NPROC_ONLN);
 #	else
 	t = (int)sysconf(_SC_NPROCESSORS_ONLN);
 #	endif
@@ -349,6 +350,12 @@ void BLI_lock_thread(int type)
 		pthread_mutex_lock(&_rcache_lock);
 	else if (type==LOCK_OPENGL)
 		pthread_mutex_lock(&_opengl_lock);
+	else if (type==LOCK_NODES)
+		pthread_mutex_lock(&_nodes_lock);
+	else if (type==LOCK_MOVIECLIP)
+		pthread_mutex_lock(&_movieclip_lock);
+	else if (type == LOCK_SCANFILL)
+		pthread_mutex_lock(&_scanfill_lock);
 }
 
 void BLI_unlock_thread(int type)
@@ -365,6 +372,12 @@ void BLI_unlock_thread(int type)
 		pthread_mutex_unlock(&_rcache_lock);
 	else if(type==LOCK_OPENGL)
 		pthread_mutex_unlock(&_opengl_lock);
+	else if(type==LOCK_NODES)
+		pthread_mutex_unlock(&_nodes_lock);
+	else if(type==LOCK_MOVIECLIP)
+		pthread_mutex_unlock(&_movieclip_lock);
+	else if(type == LOCK_SCANFILL)
+		pthread_mutex_unlock(&_scanfill_lock);
 }
 
 /* Mutex Locks */
@@ -451,12 +464,10 @@ ThreadedWorker *BLI_create_worker(void *(*do_thread)(void *), int tot, int sleep
 	
 	worker = MEM_callocN(sizeof(ThreadedWorker), "threadedworker");
 	
-	if (tot > RE_MAX_THREAD)
-	{
+	if (tot > RE_MAX_THREAD) {
 		tot = RE_MAX_THREAD;
 	}
-	else if (tot < 1)
-	{
+	else if (tot < 1) {
 		tot= 1;
 	}
 	
@@ -485,25 +496,20 @@ void BLI_insert_work(ThreadedWorker *worker, void *param)
 	WorkParam *p = MEM_callocN(sizeof(WorkParam), "workparam");
 	int index;
 	
-	if (BLI_available_threads(&worker->threadbase) == 0)
-	{
+	if (BLI_available_threads(&worker->threadbase) == 0) {
 		index = worker->total;
-		while(index == worker->total)
-		{
+		while(index == worker->total) {
 			PIL_sleep_ms(worker->sleep_time);
 			
-			for (index = 0; index < worker->total; index++)
-			{
-				if (worker->busy[index] == 0)
-				{
+			for (index = 0; index < worker->total; index++) {
+				if (worker->busy[index] == 0) {
 					BLI_remove_thread_index(&worker->threadbase, index);
 					break;
 				}
 			}
 		}
 	}
-	else
-	{
+	else {
 		index = BLI_available_thread_index(&worker->threadbase);
 	}
 	
@@ -661,3 +667,17 @@ void BLI_thread_queue_nowait(ThreadQueue *queue)
 	pthread_mutex_unlock(&queue->mutex);
 }
 
+void BLI_begin_threaded_malloc(void)
+{
+	if(thread_levels == 0) {
+		MEM_set_lock_callback(BLI_lock_malloc_thread, BLI_unlock_malloc_thread);
+	}
+	thread_levels++;
+}
+
+void BLI_end_threaded_malloc(void)
+{
+	thread_levels--;
+	if(thread_levels==0)
+		MEM_set_lock_callback(NULL, NULL);
+}

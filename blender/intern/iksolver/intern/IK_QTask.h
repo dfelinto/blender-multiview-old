@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +31,8 @@
  */
 
 
-#ifndef NAN_INCLUDED_IK_QTask_h
-#define NAN_INCLUDED_IK_QTask_h
+#ifndef __IK_QTASK_H__
+#define __IK_QTASK_H__
 
 #include "MT_Vector3.h"
 #include "MT_Transform.h"

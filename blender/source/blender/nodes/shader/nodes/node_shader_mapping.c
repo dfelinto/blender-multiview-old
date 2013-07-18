@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -71,7 +69,7 @@ static void node_shader_exec_mapping(void *UNUSED(data), bNode *node, bNodeStack
 
 static void node_shader_init_mapping(bNodeTree *UNUSED(ntree), bNode* node, bNodeTemplate *UNUSED(ntemp))
 {
-	node->storage= add_mapping();
+	node->storage= add_tex_mapping();
 }
 
 static int gpu_shader_mapping(GPUMaterial *mat, bNode *node, GPUNodeStack *in, GPUNodeStack *out)
@@ -88,11 +86,12 @@ static int gpu_shader_mapping(GPUMaterial *mat, bNode *node, GPUNodeStack *in, G
 	return GPU_stack_link(mat, "mapping", in, out, tmat, tmin, tmax, tdomin, tdomax);
 }
 
-void register_node_type_sh_mapping(ListBase *lb)
+void register_node_type_sh_mapping(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 	
-	node_type_base(&ntype, SH_NODE_MAPPING, "Mapping", NODE_CLASS_OP_VECTOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, SH_NODE_MAPPING, "Mapping", NODE_CLASS_OP_VECTOR, NODE_OPTIONS);
+	node_type_compatibility(&ntype, NODE_OLD_SHADING|NODE_NEW_SHADING);
 	node_type_socket_templates(&ntype, sh_node_mapping_in, sh_node_mapping_out);
 	node_type_size(&ntype, 240, 160, 320);
 	node_type_init(&ntype, node_shader_init_mapping);
@@ -100,5 +99,5 @@ void register_node_type_sh_mapping(ListBase *lb)
 	node_type_exec(&ntype, node_shader_exec_mapping);
 	node_type_gpu(&ntype, gpu_shader_mapping);
 	
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }

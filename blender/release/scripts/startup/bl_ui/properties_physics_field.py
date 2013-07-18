@@ -20,8 +20,7 @@
 import bpy
 from bpy.types import Panel
 
-
-from bl_ui.properties_physics_common import (
+from .properties_physics_common import (
     basic_force_field_settings_ui,
     basic_force_field_falloff_ui,
     )
@@ -62,6 +61,10 @@ class PHYSICS_PT_field(PhysicButtonsPanel, Panel):
             split = layout.split(percentage=0.2)
             split.label(text="Shape:")
             split.prop(field, "shape", text="")
+        elif field.type == 'TEXTURE':
+            split = layout.split(percentage=0.2)
+            split.label(text="Texture:")
+            split.row().template_ID(field, "texture", new="texture.new")
 
         split = layout.split()
 
@@ -104,7 +107,6 @@ class PHYSICS_PT_field(PhysicButtonsPanel, Panel):
         elif field.type == 'TEXTURE':
             col = split.column()
             col.prop(field, "strength")
-            col.prop(field, "texture", text="")
             col.prop(field, "texture_mode", text="")
             col.prop(field, "texture_nabla")
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief Execute Python scripts
  */
 
-#ifndef KX_PYTHONCONTROLLER_H
-#define KX_PYTHONCONTROLLER_H
+#ifndef __SCA_PYTHONCONTROLLER_H__
+#define __SCA_PYTHONCONTROLLER_H__
 
 #include "SCA_IController.h"
 #include "SCA_LogicManager.h"
@@ -44,7 +42,7 @@
 class SCA_IObject;
 class SCA_PythonController : public SCA_IController
 {
-	Py_Header;
+	Py_Header
 #ifdef WITH_PYTHON
 	struct _object *		m_bytecode; /* SCA_PYEXEC_SCRIPT only */
 	PyObject*				m_function; /* SCA_PYEXEC_MODULE only */
@@ -117,5 +115,5 @@ class SCA_PythonController : public SCA_IController
 #endif
 };
 
-#endif //KX_PYTHONCONTROLLER_H
+#endif //__SCA_PYTHONCONTROLLER_H__
 

@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,8 +25,8 @@
  * ***** END GPL LICENSE BLOCK *****
  */
  
-#ifndef __WINSTUFF_H__
-#define __WINSTUFF_H__
+#ifndef __BLI_WINSTUFF_H__
+#define __BLI_WINSTUFF_H__
 
 /** \file BLI_winstuff.h
  *  \ingroup bli
@@ -152,5 +150,5 @@ int BLI_getInstallationDir(char *str);
 
 #endif /* _WIN32 */
 
-#endif /* __WINSTUFF_H__ */
+#endif /* __BLI_WINSTUFF_H__ */
 

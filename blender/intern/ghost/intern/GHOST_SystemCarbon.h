@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_SystemCarbon class.
  */
 
-#ifndef _GHOST_SYSTEM_CARBON_H_
-#define _GHOST_SYSTEM_CARBON_H_
+#ifndef __GHOST_SYSTEMCARBON_H__
+#define __GHOST_SYSTEMCARBON_H__
 
 #ifndef __APPLE__
 #error Apple OSX only!
@@ -55,16 +54,16 @@ class GHOST_EventWindow;
  */
 class GHOST_SystemCarbon : public GHOST_System {
 public:
-    /**
-     * Constructor.
-     */
-    GHOST_SystemCarbon();
-    
-    /** 
-     * Destructor.
-     */
-    ~GHOST_SystemCarbon();
-    
+	/**
+	 * Constructor.
+	 */
+	GHOST_SystemCarbon();
+
+	/**
+	 * Destructor.
+	 */
+	~GHOST_SystemCarbon();
+
 	/***************************************************************************************
 	 ** Time(r) functionality
 	 ***************************************************************************************/
@@ -211,54 +210,54 @@ protected:
 	virtual GHOST_TSuccess exit();
 
 	
-    /**
-     * Handles a tablet event.
-     * @param event	A Mac event.
-     * @return Indication whether the event was handled. 
-     */
-    OSStatus handleTabletEvent(EventRef event);
-    /**
-     * Handles a mouse event.
-     * @param event	A Mac event.
-     * @return Indication whether the event was handled. 
-     */
-    OSStatus handleMouseEvent(EventRef event);
+	/**
+	 * Handles a tablet event.
+	 * @param event	A Mac event.
+	 * @return Indication whether the event was handled.
+	 */
+	OSStatus handleTabletEvent(EventRef event);
+	/**
+	 * Handles a mouse event.
+	 * @param event	A Mac event.
+	 * @return Indication whether the event was handled.
+	 */
+	OSStatus handleMouseEvent(EventRef event);
 
-    /**
-     * Handles a key event.
-     * @param event	A Mac event.
-     * @return Indication whether the event was handled. 
-     */
-    OSStatus handleKeyEvent(EventRef event);
+	/**
+	 * Handles a key event.
+	 * @param event	A Mac event.
+	 * @return Indication whether the event was handled.
+	 */
+	OSStatus handleKeyEvent(EventRef event);
 
-   /**
-     * Handles a window event.
-     * @param event	A Mac event.
-     * @return Indication whether the event was handled. 
-     */
-    OSStatus handleWindowEvent(EventRef event);
+	/**
+	 * Handles a window event.
+	 * @param event	A Mac event.
+	 * @return Indication whether the event was handled.
+	 */
+	OSStatus handleWindowEvent(EventRef event);
 
-    /**
-     * Handles all basic Mac application stuff for a mouse down event.
-     * @param event	A Mac event.
-     * @return Indication whether the event was handled. 
-     */
-    bool handleMouseDown(EventRef event);
+	/**
+	 * Handles all basic Mac application stuff for a mouse down event.
+	 * @param event	A Mac event.
+	 * @return Indication whether the event was handled.
+	 */
+	bool handleMouseDown(EventRef event);
 
-    /**
-     * Handles a Mac menu command.
-     * @param menuResult A Mac menu/item identifier.
-     * @return Indication whether the event was handled. 
-     */
-    bool handleMenuCommand(GHOST_TInt32 menuResult);
-    
-    /* callback for blender generated events */
-//	static OSStatus blendEventHandlerProc(EventHandlerCallRef handler, EventRef event, void* userData);
+	/**
+	 * Handles a Mac menu command.
+	 * @param menuResult A Mac menu/item identifier.
+	 * @return Indication whether the event was handled.
+	 */
+	bool handleMenuCommand(GHOST_TInt32 menuResult);
+
+	/* callback for blender generated events */
+	//	static OSStatus blendEventHandlerProc(EventHandlerCallRef handler, EventRef event, void* userData);
 
 
-    /**
-     * Callback for Carbon when it has events.
-     */
+	/**
+	 * Callback for Carbon when it has events.
+	 */
 	static OSStatus sEventHandlerProc(EventHandlerCallRef handler, EventRef event, void* userData);
 	
 	/** Apple Event Handlers */
@@ -267,24 +266,24 @@ protected:
 	static OSErr sAEHandlerPrintDocs(const AppleEvent *event, AppleEvent *reply, SInt32 refCon);
 	static OSErr sAEHandlerQuit(const AppleEvent *event, AppleEvent *reply, SInt32 refCon);
 
-    /**
-     * Callback for Mac Timer tasks that expire.
-     * @param tmTask Pointer to the timer task that expired.
-     */
-    //static void s_timerCallback(TMTaskPtr tmTask);
-    
-    /** Event handler reference. */
-    EventHandlerRef m_handler;
+	/**
+	 * Callback for Mac Timer tasks that expire.
+	 * @param tmTask Pointer to the timer task that expired.
+	 */
+	//static void s_timerCallback(TMTaskPtr tmTask);
+
+	/** Event handler reference. */
+	EventHandlerRef m_handler;
 	
 	/** Start time at initialization. */
 	GHOST_TUns64 m_start_time;
 	
-    /** State of the modifiers. */
-    UInt32 m_modifierMask;
+	/** State of the modifiers. */
+	UInt32 m_modifierMask;
 
-    /** Ignores window size messages (when window is dragged). */
-    bool m_ignoreWindowSizedMessages;    
+	/** Ignores window size messages (when window is dragged). */
+	bool m_ignoreWindowSizedMessages;
 };
 
-#endif // _GHOST_SYSTEM_CARBON_H_
+#endif // __GHOST_SYSTEMCARBON_H__
 

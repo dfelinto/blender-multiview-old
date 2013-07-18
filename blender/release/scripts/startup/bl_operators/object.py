@@ -20,11 +20,14 @@
 
 import bpy
 from bpy.types import Operator
-from bpy.props import StringProperty, BoolProperty, EnumProperty, IntProperty
+from bpy.props import (StringProperty,
+                       BoolProperty,
+                       EnumProperty,
+                       IntProperty)
 
 
 class SelectPattern(Operator):
-    '''Select object matching a naming pattern'''
+    '''Select objects matching a naming pattern'''
     bl_idname = "object.select_pattern"
     bl_label = "Select Pattern"
     bl_options = {'REGISTER', 'UNDO'}
@@ -54,7 +57,7 @@ class SelectPattern(Operator):
             pattern_match = fnmatch.fnmatchcase
         else:
             pattern_match = (lambda a, b:
-                                 fnmatch.fnmatchcase(a.upper(), b.upper()))
+                             fnmatch.fnmatchcase(a.upper(), b.upper()))
         is_ebone = False
         obj = context.object
         if obj and obj.mode == 'POSE':
@@ -122,7 +125,7 @@ class SelectCamera(Operator):
 
 
 class SelectHierarchy(Operator):
-    '''Select object relative to the active objects position''' \
+    '''Select object relative to the active object's position ''' \
     '''in the hierarchy'''
     bl_idname = "object.select_hierarchy"
     bl_label = "Select Hierarchy"
@@ -174,7 +177,7 @@ class SelectHierarchy(Operator):
                 select_new.sort(key=lambda obj_iter: obj_iter.name)
                 act_new = select_new[0]
 
-        # dont edit any object settings above this
+        # don't edit any object settings above this
         if select_new:
             if not self.extend:
                 bpy.ops.object.select_all(action='DESELECT')
@@ -283,11 +286,11 @@ class ShapeTransfer(Operator):
                     ),
                    ('RELATIVE_FACE',
                     "Relative Face",
-                    "Calculate relative position (using faces).",
+                    "Calculate relative position (using faces)",
                     ),
                    ('RELATIVE_EDGE',
                    "Relative Edge",
-                   "Calculate relative position (using edges).",
+                   "Calculate relative position (using edges)",
                    ),
                    ),
             name="Transformation Mode",
@@ -297,7 +300,7 @@ class ShapeTransfer(Operator):
     use_clamp = BoolProperty(
             name="Clamp Offset",
             description=("Clamp the transformation to the distance each "
-                         "vertex moves in the original shape."),
+                         "vertex moves in the original shape"),
             default=False,
             )
 
@@ -331,8 +334,8 @@ class ShapeTransfer(Operator):
         orig_shape_coords = me_cos(ob_act.active_shape_key.data)
 
         orig_normals = me_nos(me.vertices)
-        # the actual mverts location isnt as relyable as the base shape :S
-        # orig_coords = me_cos(me.vertices)
+        # actual mesh vertex location isn't as reliable as the base shape :S
+        #~ orig_coords = me_cos(me.vertices)
         orig_coords = me_cos(me.shape_keys.key_blocks[0].data)
 
         for ob_other in objects:
@@ -489,9 +492,9 @@ class ShapeTransfer(Operator):
         return (obj and obj.mode != 'EDIT')
 
     def execute(self, context):
-        C = bpy.context
-        ob_act = C.active_object
-        objects = [ob for ob in C.selected_editable_objects if ob != ob_act]
+        ob_act = context.active_object
+        objects = [ob for ob in context.selected_editable_objects
+                   if ob != ob_act]
 
         if 1:  # swap from/to, means we cant copy to many at once.
             if len(objects) != 1:
@@ -503,7 +506,7 @@ class ShapeTransfer(Operator):
             ob_act, objects = objects[0], [ob_act]
 
         if ob_act.type != 'MESH':
-            self.report({'ERROR'}, "Other object is not a mesh.")
+            self.report({'ERROR'}, "Other object is not a mesh")
             return {'CANCELLED'}
 
         if ob_act.active_shape_key is None:
@@ -585,11 +588,6 @@ class MakeDupliFace(Operator):
     bl_idname = "object.make_dupli_face"
     bl_label = "Make Dupli-Face"
 
-    @classmethod
-    def poll(cls, context):
-        obj = context.active_object
-        return (obj and obj.type == 'MESH')
-
     def _main(self, context):
         from mathutils import Vector
 
@@ -601,22 +599,22 @@ class MakeDupliFace(Operator):
                     Vector((-offset, +offset, 0.0)),
                     )
 
-        def matrix_to_quat(matrix):
+        def matrix_to_quad(matrix):
             # scale = matrix.median_scale
             trans = matrix.to_translation()
             rot = matrix.to_3x3()  # also contains scale
 
             return [(rot * b) + trans for b in base_tri]
-        scene = bpy.context.scene
+        scene = context.scene
         linked = {}
-        for obj in bpy.context.selected_objects:
+        for obj in context.selected_objects:
             data = obj.data
             if data:
                 linked.setdefault(data, []).append(obj)
 
         for data, objects in linked.items():
             face_verts = [axis for obj in objects
-                          for v in matrix_to_quat(obj.matrix_world)
+                          for v in matrix_to_quad(obj.matrix_world)
                           for axis in v]
 
             faces = list(range(len(face_verts) // 3))
@@ -655,8 +653,8 @@ class MakeDupliFace(Operator):
 
 
 class IsolateTypeRender(Operator):
-    '''Hide unselected render objects of same type as active ''' \
-    '''by setting the hide render flag'''
+    """Hide unselected render objects of same type as active """ \
+    """by setting the hide render flag"""
     bl_idname = "object.isolate_type_render"
     bl_label = "Restrict Render Unselected"
     bl_options = {'REGISTER', 'UNDO'}
@@ -721,8 +719,8 @@ class TransformsToDeltasAnim(Operator):
                     fcu.data_path = "delta_rotation_quaternion"
                     obj.rotation_quaternion.identity()
                 # XXX: currently not implemented
-                # elif fcu.data_path == "rotation_axis_angle":
-                #    fcu.data_path = "delta_rotation_axis_angle"
+                #~ elif fcu.data_path == "rotation_axis_angle":
+                #~    fcu.data_path = "delta_rotation_axis_angle"
                 elif fcu.data_path == "scale":
                     fcu.data_path = "delta_scale"
                     obj.scale = 1.0, 1.0, 1.0

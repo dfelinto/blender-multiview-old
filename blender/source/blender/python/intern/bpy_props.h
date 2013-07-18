@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -27,8 +25,8 @@
  */
 
 
-#ifndef BPY_PROPS_H
-#define BPY_PROPS_H
+#ifndef __BPY_PROPS_H__
+#define __BPY_PROPS_H__
 
 PyObject *BPY_rna_props(void);
 

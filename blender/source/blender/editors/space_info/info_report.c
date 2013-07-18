@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -160,7 +158,7 @@ void INFO_OT_select_pick(wmOperatorType *ot)
 	/* ot->flag= OPTYPE_REGISTER; */
 
 	/* properties */
-	RNA_def_int(ot->srna, "report_index", 0, 0, INT_MAX, "Report", "The index of the report.", 0, INT_MAX);
+	RNA_def_int(ot->srna, "report_index", 0, 0, INT_MAX, "Report", "Index of the report", 0, INT_MAX);
 }
 
 
@@ -201,8 +199,8 @@ static int report_select_all_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 void INFO_OT_select_all_toggle(wmOperatorType *ot)
 {
 	/* identifiers */
-	ot->name= "(De)Select All";
-	ot->description= "(de)select all reports";
+	ot->name= "(De)select All";
+	ot->description= "Select or deselect all reports";
 	ot->idname= "INFO_OT_select_all_toggle";
 
 	/* api callbacks */
@@ -222,6 +220,7 @@ static int borderselect_exec(bContext *C, wmOperator *op)
 	ARegion *ar= CTX_wm_region(C);
 	ReportList *reports= CTX_wm_reports(C);
 	int report_mask= info_report_mask(sinfo);
+	int extend= RNA_boolean_get(op->ptr, "extend");
 	Report *report_min, *report_max, *report;
 
 	//View2D *v2d= UI_view2d_fromcontext(C);
@@ -237,14 +236,24 @@ static int borderselect_exec(bContext *C, wmOperator *op)
 	rect.xmax= RNA_int_get(op->ptr, "xmax");
 	rect.ymax= RNA_int_get(op->ptr, "ymax");
 
-	/*
+#if 0
 	mval[0]= rect.xmin;
 	mval[1]= rect.ymin;
 	UI_view2d_region_to_view(v2d, mval[0], mval[1], &rectf.xmin, &rectf.ymin);
 	mval[0]= rect.xmax;
 	mval[1]= rect.ymax;
 	UI_view2d_region_to_view(v2d, mval[0], mval[1], &rectf.xmax, &rectf.ymax);
-*/
+#endif
+
+	if(!extend) {
+		for(report= reports->list.first; report; report= report->next) {
+
+			if((report->type & report_mask)==0)
+				continue;
+
+			report->flag &= ~SELECT;
+		}
+	}
 
 	report_min= info_text_pick(sinfo, ar, reports, rect.ymax);
 	report_max= info_text_pick(sinfo, ar, reports, rect.ymin);
@@ -310,7 +319,7 @@ void INFO_OT_select_border(wmOperatorType *ot)
 	/* ot->flag= OPTYPE_REGISTER; */
 
 	/* rna */
-	WM_operator_properties_gesture_border(ot, FALSE);
+	WM_operator_properties_gesture_border(ot, TRUE);
 }
 
 

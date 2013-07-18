@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,6 +41,7 @@
 #include "BKE_context.h"
 #include "BKE_main.h"
 #include "BKE_sca.h"
+#include "BKE_material.h" //for texface convert
 
 #include "ED_logic.h"
 #include "ED_object.h"
@@ -56,6 +55,11 @@
 #include "WM_types.h"
 
 #include "logic_intern.h"
+
+// temporary new includes for texface functions
+#include "DNA_mesh_types.h"
+#include "DNA_material_types.h"
+#include "DNA_meshdata_types.h"
 
 /* ************* Generic Operator Helpers ************* */
 static int edit_sensor_poll(bContext *C)
@@ -84,15 +88,15 @@ static int edit_actuator_poll(bContext *C)
 
 static void edit_sensor_properties(wmOperatorType *ot)
 {
-	RNA_def_string(ot->srna, "sensor", "", 32, "Sensor", "Name of the sensor to edit");
-	RNA_def_string(ot->srna, "object", "", 32, "Object", "Name of the object the sensor belongs to");
+	RNA_def_string(ot->srna, "sensor", "", MAX_NAME, "Sensor", "Name of the sensor to edit");
+	RNA_def_string(ot->srna, "object", "", MAX_NAME, "Object", "Name of the object the sensor belongs to");
 }
 
 static int edit_sensor_invoke_properties(bContext *C, wmOperator *op)
 {
 	PointerRNA ptr= CTX_data_pointer_get_type(C, "sensor", &RNA_Sensor);
 	
-	if (RNA_property_is_set(op->ptr, "sensor") && RNA_property_is_set(op->ptr, "object") )
+	if (RNA_struct_property_is_set(op->ptr, "sensor") && RNA_struct_property_is_set(op->ptr, "object") )
 		return 1;
 	
 	if (ptr.data) {
@@ -109,14 +113,14 @@ static int edit_sensor_invoke_properties(bContext *C, wmOperator *op)
 
 static Object *edit_object_property_get(bContext *C, wmOperator *op)
 {
-	char ob_name[32];
+	char ob_name[MAX_NAME];
 	Object *ob;
 
 	RNA_string_get(op->ptr, "object", ob_name);
 
 	/* if ob_name is valid try to find the object with this name
-	otherwise gets the active object */
-	if (BLI_strnlen(ob_name, 32) > 0)
+	 * otherwise gets the active object */
+	if (BLI_strnlen(ob_name, MAX_NAME) > 0)
 		ob = BLI_findstring(&(CTX_data_main(C)->object), ob_name, offsetof(ID, name) + 2);
 	else
 		ob= ED_object_active_context(C);
@@ -126,7 +130,7 @@ static Object *edit_object_property_get(bContext *C, wmOperator *op)
 
 static bSensor *edit_sensor_property_get(bContext *C, wmOperator *op, Object **ob)
 {
-	char sensor_name[32];
+	char sensor_name[MAX_NAME];
 	bSensor *sens;
 	
 	RNA_string_get(op->ptr, "sensor", sensor_name);
@@ -140,15 +144,15 @@ static bSensor *edit_sensor_property_get(bContext *C, wmOperator *op, Object **o
 
 static void edit_controller_properties(wmOperatorType *ot)
 {
-	RNA_def_string(ot->srna, "controller", "", 32, "Controller", "Name of the controller to edit");
-	RNA_def_string(ot->srna, "object", "", 32, "Object", "Name of the object the controller belongs to");
+	RNA_def_string(ot->srna, "controller", "", MAX_NAME, "Controller", "Name of the controller to edit");
+	RNA_def_string(ot->srna, "object", "", MAX_NAME, "Object", "Name of the object the controller belongs to");
 }
 
 static int edit_controller_invoke_properties(bContext *C, wmOperator *op)
 {
 	PointerRNA ptr= CTX_data_pointer_get_type(C, "controller", &RNA_Controller);
 	
-	if (RNA_property_is_set(op->ptr, "controller") && RNA_property_is_set(op->ptr, "object") )
+	if (RNA_struct_property_is_set(op->ptr, "controller") && RNA_struct_property_is_set(op->ptr, "object") )
 		return 1;
 	
 	if (ptr.data) {
@@ -165,7 +169,7 @@ static int edit_controller_invoke_properties(bContext *C, wmOperator *op)
 
 static bController *edit_controller_property_get(bContext *C, wmOperator *op, Object **ob)
 {
-	char controller_name[32];
+	char controller_name[MAX_NAME];
 	bController *cont;
 	
 	RNA_string_get(op->ptr, "controller", controller_name);
@@ -179,15 +183,15 @@ static bController *edit_controller_property_get(bContext *C, wmOperator *op, Ob
 
 static void edit_actuator_properties(wmOperatorType *ot)
 {
-	RNA_def_string(ot->srna, "actuator", "", 32, "Actuator", "Name of the actuator to edit");
-	RNA_def_string(ot->srna, "object", "", 32, "Object", "Name of the object the actuator belongs to");
+	RNA_def_string(ot->srna, "actuator", "", MAX_NAME, "Actuator", "Name of the actuator to edit");
+	RNA_def_string(ot->srna, "object", "", MAX_NAME, "Object", "Name of the object the actuator belongs to");
 }
 
 static int edit_actuator_invoke_properties(bContext *C, wmOperator *op)
 {
 	PointerRNA ptr= CTX_data_pointer_get_type(C, "actuator", &RNA_Actuator);
 	
-	if (RNA_property_is_set(op->ptr, "actuator") && RNA_property_is_set(op->ptr, "object") )
+	if (RNA_struct_property_is_set(op->ptr, "actuator") && RNA_struct_property_is_set(op->ptr, "object") )
 		return 1;
 	
 	if (ptr.data) {
@@ -204,7 +208,7 @@ static int edit_actuator_invoke_properties(bContext *C, wmOperator *op)
 
 static bActuator *edit_actuator_property_get(bContext *C, wmOperator *op, Object **ob)
 {
-	char actuator_name[32];
+	char actuator_name[MAX_NAME];
 	bActuator *act;
 	
 	RNA_string_get(op->ptr, "actuator", actuator_name);
@@ -274,7 +278,7 @@ static int sensor_add_exec(bContext *C, wmOperator *op)
 	PointerRNA sens_ptr;
 	PropertyRNA *prop;
 	const char *sens_name;
-	char name[32];
+	char name[MAX_NAME];
 	int type= RNA_enum_get(op->ptr, "type");
 
 	ob= edit_object_property_get(C, op);
@@ -289,7 +293,7 @@ static int sensor_add_exec(bContext *C, wmOperator *op)
 	prop = RNA_struct_find_property(&sens_ptr, "type");
 
 	RNA_string_get(op->ptr, "name", name);
-	if(BLI_strnlen(name, 32) < 1){
+	if(BLI_strnlen(name, MAX_NAME) < 1){
 		RNA_property_enum_name(C, &sens_ptr, prop, RNA_property_enum_get(&sens_ptr, prop), &sens_name);
 		BLI_strncpy(sens->name, sens_name, sizeof(sens->name));
 	}
@@ -324,8 +328,8 @@ static void LOGIC_OT_sensor_add(wmOperatorType *ot)
 	/* properties */
 	ot->prop= prop= RNA_def_enum(ot->srna, "type", DummyRNA_NULL_items, SENS_ALWAYS, "Type", "Type of sensor to add");
 	RNA_def_enum_funcs(prop, rna_Sensor_type_itemf);
-	RNA_def_string(ot->srna, "name", "", 32, "Name", "Name of the Sensor to add");
-	RNA_def_string(ot->srna, "object", "", 32, "Object", "Name of the Object to add the Sensor to");
+	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Name of the Sensor to add");
+	RNA_def_string(ot->srna, "object", "", MAX_NAME, "Object", "Name of the Object to add the Sensor to");
 }
 
 /* ************* Add/Remove Controller Operator ************* */
@@ -378,7 +382,7 @@ static int controller_add_exec(bContext *C, wmOperator *op)
 	PropertyRNA *prop;
 	const char *cont_name;
 	int bit;
-	char name[32];
+	char name[MAX_NAME];
 	int type= RNA_enum_get(op->ptr, "type");
 
 	ob= edit_object_property_get(C, op);
@@ -393,7 +397,7 @@ static int controller_add_exec(bContext *C, wmOperator *op)
 	prop = RNA_struct_find_property(&cont_ptr, "type");
 
 	RNA_string_get(op->ptr, "name", name);
-	if(BLI_strnlen(name, 32) < 1){
+	if(BLI_strnlen(name, MAX_NAME) < 1){
 		RNA_property_enum_name(C, &cont_ptr, prop, RNA_property_enum_get(&cont_ptr, prop), &cont_name);
 		BLI_strncpy(cont->name, cont_name, sizeof(cont->name));
 	}
@@ -402,8 +406,8 @@ static int controller_add_exec(bContext *C, wmOperator *op)
 
 	make_unique_prop_names(C, cont->name);
 	/* set the controller state mask from the current object state.
-	 A controller is always in a single state, so select the lowest bit set
-	 from the object state */
+	 * A controller is always in a single state, so select the lowest bit set
+	 * from the object state */
 	for (bit=0; bit<OB_MAX_STATES; bit++) {
 		if (ob->state & (1<<bit))
 			break;
@@ -438,8 +442,8 @@ static void LOGIC_OT_controller_add(wmOperatorType *ot)
 	
 	/* properties */
 	ot->prop= RNA_def_enum(ot->srna, "type", controller_type_items, CONT_LOGIC_AND, "Type", "Type of controller to add");
-	RNA_def_string(ot->srna, "name", "", 32, "Name", "Name of the Controller to add");
-	RNA_def_string(ot->srna, "object", "", 32, "Object", "Name of the Object to add the Controller to");
+	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Name of the Controller to add");
+	RNA_def_string(ot->srna, "object", "", MAX_NAME, "Object", "Name of the Object to add the Controller to");
 }
 
 /* ************* Add/Remove Actuator Operator ************* */
@@ -472,7 +476,7 @@ static int actuator_remove_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(e
 static void LOGIC_OT_actuator_remove(wmOperatorType *ot)
 {
 	ot->name= "Remove Actuator";
-	ot->description= "Remove a actuator from the active object";
+	ot->description= "Remove an actuator from the active object";
 	ot->idname= "LOGIC_OT_actuator_remove";
 	
 	ot->invoke= actuator_remove_invoke;
@@ -491,7 +495,7 @@ static int actuator_add_exec(bContext *C, wmOperator *op)
 	PointerRNA act_ptr;
 	PropertyRNA *prop;
 	const char *act_name;
-	char  name[32];
+	char  name[MAX_NAME];
 	int type= RNA_enum_get(op->ptr, "type");
 		
 	ob= edit_object_property_get(C, op);
@@ -506,7 +510,7 @@ static int actuator_add_exec(bContext *C, wmOperator *op)
 	prop = RNA_struct_find_property(&act_ptr, "type");
 
 	RNA_string_get(op->ptr, "name", name);
-	if (BLI_strnlen(name, 32) < 1){
+	if (BLI_strnlen(name, MAX_NAME) < 1){
 		RNA_property_enum_name(C, &act_ptr, prop, RNA_property_enum_get(&act_ptr, prop), &act_name);
 		BLI_strncpy(act->name, act_name, sizeof(act->name));
 	}
@@ -527,7 +531,7 @@ static void LOGIC_OT_actuator_add(wmOperatorType *ot)
 	
 	/* identifiers */
 	ot->name= "Add Actuator";
-	ot->description = "Add a actuator to the active object";
+	ot->description = "Add an actuator to the active object";
 	ot->idname= "LOGIC_OT_actuator_add";
 	
 	/* api callbacks */
@@ -541,8 +545,8 @@ static void LOGIC_OT_actuator_add(wmOperatorType *ot)
 	/* properties */
 	ot->prop= prop= RNA_def_enum(ot->srna, "type", DummyRNA_NULL_items, CONT_LOGIC_AND, "Type", "Type of actuator to add");
 	RNA_def_enum_funcs(prop, rna_Actuator_type_itemf);
-	RNA_def_string(ot->srna, "name", "", 32, "Name", "Name of the Actuator to add");
-	RNA_def_string(ot->srna, "object", "", 32, "Object", "Name of the Object to add the Actuator to");
+	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Name of the Actuator to add");
+	RNA_def_string(ot->srna, "object", "", MAX_NAME, "Object", "Name of the Object to add the Actuator to");
 }
 
 /* ************* Move Logic Bricks Operator ************* */
@@ -687,6 +691,36 @@ static void LOGIC_OT_actuator_move(wmOperatorType *ot)
 	RNA_def_enum(ot->srna, "direction", logicbricks_move_direction, 1, "Direction", "Move Up or Down");
 }
 
+/* ************* TexFace Converter Operator ************* */
+static int texface_convert_exec(bContext *C, wmOperator *UNUSED(op))
+{
+	Main *bmain= CTX_data_main(C);
+	do_version_tface(bmain, 0);
+	
+	return OPERATOR_FINISHED;
+}
+
+static int texface_convert_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
+{
+	return texface_convert_exec(C, op);
+}
+
+ static void LOGIC_OT_texface_convert(wmOperatorType *ot)
+{
+	/* identifiers */
+	ot->name= "TexFace to Material Converter";
+	ot->description = "Convert old texface settings into material. It may create new materials if needed";
+	ot->idname= "LOGIC_OT_texface_convert";
+
+	/* api callbacks */
+	ot->invoke= texface_convert_invoke;
+	ot->exec= texface_convert_exec;
+//	ot->poll= texface_convert_poll;
+ 
+	/* flags */
+	ot->flag= OPTYPE_REGISTER|OPTYPE_UNDO;
+}
+
 
 void ED_operatortypes_logic(void)
 {
@@ -699,4 +733,5 @@ void ED_operatortypes_logic(void)
 	WM_operatortype_append(LOGIC_OT_actuator_remove);
 	WM_operatortype_append(LOGIC_OT_actuator_add);
 	WM_operatortype_append(LOGIC_OT_actuator_move);
+	WM_operatortype_append(LOGIC_OT_texface_convert);
 }

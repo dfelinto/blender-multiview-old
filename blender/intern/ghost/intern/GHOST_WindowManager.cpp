@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -33,7 +32,6 @@
 
 /**
 
- * $Id$
  * Copyright (C) 2001 NaN Technologies B.V.
  * @author	Maarten Gribnau
  * @date	May 11, 2001
@@ -81,7 +79,7 @@ GHOST_TSuccess GHOST_WindowManager::removeWindow(const GHOST_IWindow* window)
 			endFullScreen();
 		}
 		else {
-			vector<GHOST_IWindow*>::iterator result = find(m_windows.begin(), m_windows.end(), window);
+			std::vector<GHOST_IWindow*>::iterator result = find(m_windows.begin(), m_windows.end(), window);
 			if (result != m_windows.end()) {
 				setWindowInactive(window);
 				m_windows.erase(result);
@@ -101,7 +99,7 @@ bool GHOST_WindowManager::getWindowFound(const GHOST_IWindow* window) const
             found = true;
         }
         else {
-            vector<GHOST_IWindow*>::const_iterator result = find(m_windows.begin(), m_windows.end(), window);
+            std::vector<GHOST_IWindow*>::const_iterator result = find(m_windows.begin(), m_windows.end(), window);
             if (result != m_windows.end()) {
                 found = true;
             }

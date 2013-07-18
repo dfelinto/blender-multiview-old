@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -28,8 +26,8 @@
  *  \ingroup audaspaceintern
  */
 
-#ifndef AUD_IHANDLE
-#define AUD_IHANDLE
+#ifndef __AUD_IHANDLE_H__
+#define __AUD_IHANDLE_H__
 
 //#include "AUD_Space.h"
 //#include "AUD_Reference.h"

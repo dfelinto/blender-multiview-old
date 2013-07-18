@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_Window class.
  */
 
-#ifndef _GHOST_WINDOW_H_
-#define _GHOST_WINDOW_H_
+#ifndef __GHOST_WINDOW_H__
+#define __GHOST_WINDOW_H__
 
 #include "GHOST_IWindow.h"
 
@@ -290,8 +289,9 @@ protected:
 	 * Sets the cursor shape on the window using
 	 * native window system calls.
 	 */
-	virtual GHOST_TSuccess setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2], GHOST_TUns8 mask[16][2],
-							 int hotX, int hotY) = 0;
+	virtual GHOST_TSuccess setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2],
+	                                                  GHOST_TUns8 mask[16][2],
+	                                                  int hotX, int hotY) = 0;
 	
 	virtual GHOST_TSuccess setWindowCustomCursorShape(GHOST_TUns8 *bitmap, GHOST_TUns8 *mask, 
 						int szx, int szy, int hotX, int hotY, int fg, int bg) = 0;
@@ -339,11 +339,11 @@ protected:
 	
 	/** Number of samples used in anti-aliasing, set to 0 if no AA **/
 	GHOST_TUns16 m_numOfAASamples;
-    
-    /** Full-screen width */
-    GHOST_TUns32 m_fullScreenWidth;
-    /** Full-screen height */
-    GHOST_TUns32 m_fullScreenHeight;
+
+	/** Full-screen width */
+	GHOST_TUns32 m_fullScreenWidth;
+	/** Full-screen height */
+	GHOST_TUns32 m_fullScreenHeight;
 };
 
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_REVERSEFACTORY
-#define AUD_REVERSEFACTORY
+#ifndef __AUD_REVERSEFACTORY_H__
+#define __AUD_REVERSEFACTORY_H__
 
 #include "AUD_EffectFactory.h"
 
@@ -55,4 +53,4 @@ public:
 	virtual AUD_Reference<AUD_IReader> createReader();
 };
 
-#endif //AUD_REVERSEFACTORY
+#endif //__AUD_REVERSEFACTORY_H__

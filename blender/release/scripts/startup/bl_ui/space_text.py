@@ -66,9 +66,11 @@ class TEXT_HT_header(Header):
             row = layout.row()
             if text.filepath:
                 if text.is_dirty:
-                    row.label(text="File: *%r (unsaved)" % text.filepath)
+                    row.label(text="File" + ": *%r " %
+                              text.filepath + "(unsaved)")
                 else:
-                    row.label(text="File: %r" % text.filepath)
+                    row.label(text="File" + ": %r" %
+                              text.filepath)
             else:
                 row.label(text="Text: External"
                           if text.library
@@ -172,9 +174,7 @@ class TEXT_MT_text(Menu):
         st = context.space_data
         text = st.text
 
-        layout.operator_context = 'EXEC_AREA'
         layout.operator("text.new")
-        layout.operator_context = 'INVOKE_AREA'
         layout.operator("text.open")
 
         if text:

@@ -59,18 +59,17 @@
 #include "shading.h"
 #include "zbuf.h"
 
-/* XXX, could be better implemented... this is for endian issues
-*/
-#if defined(__sgi) || defined(__sparc) || defined(__sparc__) || defined (__PPC__) || defined (__ppc__) || defined (__hppa__) || defined (__BIG_ENDIAN__)
-#define RCOMP	3
-#define GCOMP	2
-#define BCOMP	1
-#define ACOMP	0
+/* XXX, could be better implemented... this is for endian issues */
+#ifdef __BIG_ENDIAN__
+#  define RCOMP	3
+#  define GCOMP	2
+#  define BCOMP	1
+#  define ACOMP	0
 #else
-#define RCOMP	0
-#define GCOMP	1
-#define BCOMP	2
-#define ACOMP	3
+#  define RCOMP	0
+#  define GCOMP	1
+#  define BCOMP	2
+#  define ACOMP	3
 #endif
 
 /* ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ */
@@ -185,17 +184,19 @@ static int verg_deepsample(const void *poin1, const void *poin2)
 static int compress_deepsamples(DeepSample *dsample, int tot, float epsilon)
 {
 	/* uses doubles to avoid overflows and other numerical issues,
-	   could be improved */
+	 * could be improved */
 	DeepSample *ds, *newds;
 	float v;
 	double slope, slopemin, slopemax, min, max, div, newmin, newmax;
 	int a, first, z, newtot= 0;
 
-	/*if(print) {
+#if 0
+	if(print) {
 		for(a=0, ds=dsample; a<tot; a++, ds++)
 			printf("%lf,%f ", ds->z/(double)0x7FFFFFFF, ds->v);
 		printf("\n");
-	}*/
+	}
+#endif
 
 	/* read from and write into same array */
 	ds= dsample;
@@ -212,7 +213,7 @@ static int compress_deepsamples(DeepSample *dsample, int tot, float epsilon)
 			//dz= ds->z - newds->z;
 			if(ds->z == newds->z) {
 				/* still in same z position, simply check
-				   visibility difference against epsilon */
+				 * visibility difference against epsilon */
 				if(!(fabs(newds->v - ds->v) <= epsilon)) {
 					break;
 				}
@@ -274,11 +275,13 @@ static int compress_deepsamples(DeepSample *dsample, int tot, float epsilon)
 	if(newtot == 0 || (newds->v != (newds-1)->v))
 		newtot++;
 
-	/*if(print) {
+#if 0
+	if(print) {
 		for(a=0, ds=dsample; a<newtot; a++, ds++)
 			printf("%lf,%f ", ds->z/(double)0x7FFFFFFF, ds->v);
 		printf("\n");
-	}*/
+	}
+#endif
 
 	return newtot;
 }
@@ -640,7 +643,7 @@ static void shadowbuf_autoclip(Render *re, LampRen *lar)
 		obr= obi->obr;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(obviewmat, obi->mat, viewmat);
+			mult_m4_m4m4(obviewmat, viewmat, obi->mat);
 		else
 			copy_m4_m4(obviewmat, viewmat);
 
@@ -672,7 +675,7 @@ static void shadowbuf_autoclip(Render *re, LampRen *lar)
 			else ver++;
 			
 			if(clipflag[a]) {
-				VECCOPY(vec, ver->co);
+				copy_v3_v3(vec, ver->co);
 				mul_m4_v3(obviewmat, vec);
 				/* Z on visible side of lamp space */
 				if(vec[2] < 0.0f) {
@@ -764,12 +767,12 @@ void makeshadowbuf(Render *re, LampRen *lar)
 	if(lar->bufflag & (LA_SHADBUF_AUTO_START|LA_SHADBUF_AUTO_END))
 		shadowbuf_autoclip(re, lar);
 	
-	/* just to enforce identical behaviour of all irregular buffers */
+	/* just to enforce identical behavior of all irregular buffers */
 	if(lar->buftype==LA_SHADBUF_IRREGULAR)
 		shb->size= 1024;
 	
 	/* matrices and window: in winmat the transformation is being put,
-		transforming from observer view to lamp view, including lamp window matrix */
+	 * transforming from observer view to lamp view, including lamp window matrix */
 	
 	angle= saacos(lar->spotsi);
 	temp= 0.5f*shb->size*cos(angle)/sin(angle);
@@ -777,7 +780,7 @@ void makeshadowbuf(Render *re, LampRen *lar)
 	wsize= shb->pixsize*(shb->size/2.0f);
 	
 	perspective_m4( shb->winmat,-wsize, wsize, -wsize, wsize, shb->d, shb->clipend);
-	mul_m4_m4m4(shb->persmat, shb->viewmat, shb->winmat);
+	mult_m4_m4m4(shb->persmat, shb->winmat, shb->viewmat);
 
 	if(ELEM3(lar->buftype, LA_SHADBUF_REGULAR, LA_SHADBUF_HALFWAY, LA_SHADBUF_DEEP)) {
 		shb->totbuf= lar->buffers;
@@ -978,8 +981,7 @@ static float readdeepvisibility(DeepSample *dsample, int tot, int z, int bias, f
 	/* tricky stuff here; we use ints which can overflow easily with bias values */
 
 	ds= dsample;
-	for(a=0; a<tot && (z-bias > ds->z); a++, ds++)
-		;
+	for (a=0; a<tot && (z-bias > ds->z); a++, ds++) {}
 
 	if(a == tot) {
 		if(biast)
@@ -1083,7 +1085,7 @@ static float readshadowbuf(ShadBuf *shb, ShadSampleBuf *shsample, int bias, int 
 	else {
 		/* got warning on this for 64 bits.... */
 		/* but it's working code! in this case rz is not a pointer but zvalue (ton) */
-		 zsamp= GET_INT_FROM_POINTER(rz);
+		zsamp= GET_INT_FROM_POINTER(rz);
 	}
 
 	/* tricky stuff here; we use ints which can overflow easily with bias values */
@@ -1099,7 +1101,7 @@ static float readshadowbuf(ShadBuf *shb, ShadSampleBuf *shsample, int bias, int 
 	}
 }
 
-static void shadowbuf_project_co(float *x, float *y, float *z, ShadBuf *shb, float co[3])
+static void shadowbuf_project_co(float *x, float *y, float *z, ShadBuf *shb, const float co[3])
 {
 	float hco[4], size= 0.5f*(float)shb->size;
 
@@ -1115,7 +1117,7 @@ static void shadowbuf_project_co(float *x, float *y, float *z, ShadBuf *shb, flo
 
 /* the externally called shadow testing (reading) function */
 /* return 1.0: no shadow at all */
-float testshadowbuf(Render *re, ShadBuf *shb, float *co, float *dxco, float *dyco, float inp, float mat_bias)
+float testshadowbuf(Render *re, ShadBuf *shb, const float co[3], const float dxco[3], const float dyco[3], float inp, float mat_bias)
 {
 	ShadSampleBuf *shsample;
 	float fac, dco[3], dx[3], dy[3], shadfac=0.0f;
@@ -1135,7 +1137,7 @@ float testshadowbuf(Render *re, ShadBuf *shb, float *co, float *dxco, float *dyc
 	shadowbuf_project_co(&xs1, &ys1, &zs1, shb, co);
 
 	/* clip z coordinate, z is projected so that (-1.0, 1.0) matches
-	   (clipstart, clipend), so we can do this simple test */
+	 * (clipstart, clipend), so we can do this simple test */
 	if(zs1>=1.0f)
 		return 0.0f;
 	else if(zs1<= -1.0f)
@@ -1152,7 +1154,7 @@ float testshadowbuf(Render *re, ShadBuf *shb, float *co, float *dxco, float *dyc
 	if(mat_bias!=0.0f) biasf= shb->bias*mat_bias;
 	else biasf= shb->bias;
 	/* with inp==1.0, bias is half the size. correction value was 1.1, giving errors 
-	   on cube edges, with one side being almost frontal lighted (ton)  */
+	 * on cube edges, with one side being almost frontal lighted (ton)  */
 	bias= (1.5f-inp*inp)*biasf;
 	
 	/* in case of no filtering we can do things simpler */
@@ -1267,7 +1269,7 @@ static float readshadowbuf_halo(ShadBuf *shb, ShadSampleBuf *shsample, int xs, i
 	else {
 		/* same as before */
 		/* still working code! (ton) */
-		 zsamp= GET_INT_FROM_POINTER(rz);
+		zsamp= GET_INT_FROM_POINTER(rz);
 	}
 
 	/* NO schadow when sampled at 'eternal' distance */
@@ -1291,7 +1293,7 @@ static float readshadowbuf_halo(ShadBuf *shb, ShadSampleBuf *shsample, int xs, i
 }
 
 
-float shadow_halo(LampRen *lar, float *p1, float *p2)
+float shadow_halo(LampRen *lar, const float p1[3], const float p2[3])
 {
 	/* p1 p2 already are rotated in spot-space */
 	ShadBuf *shb= lar->shb;
@@ -1417,12 +1419,12 @@ float shadow_halo(LampRen *lar, float *p1, float *p2)
 /* ********** storage of all view samples in a raster of lists ***** */
 
 /* based on several articles describing this method, like:
-The Irregular Z-Buffer and its Application to Shadow Mapping
-Gregory S. Johnson - William R. Mark - Christopher A. Burns 
-and
-Alias-Free Shadow Maps
-Timo Aila and Samuli Laine
-*/
+ * The Irregular Z-Buffer and its Application to Shadow Mapping
+ * Gregory S. Johnson - William R. Mark - Christopher A. Burns
+ * and
+ * Alias-Free Shadow Maps
+ * Timo Aila and Samuli Laine
+ */
 
 /* bsp structure (actually kd tree) */
 
@@ -1469,7 +1471,7 @@ static void init_box(Boxf *box)
 }
 
 /* use v1 to calculate boundbox */
-static void bound_boxf(Boxf *box, float *v1)
+static void bound_boxf(Boxf *box, const float v1[3])
 {
 	if(v1[0] < box->xmin) box->xmin= v1[0];
 	if(v1[0] > box->xmax) box->xmax= v1[0];
@@ -1480,7 +1482,7 @@ static void bound_boxf(Boxf *box, float *v1)
 }
 
 /* use v1 to calculate boundbox */
-static void bound_rectf(rctf *box, float *v1)
+static void bound_rectf(rctf *box, const float v1[2])
 {
 	if(v1[0] < box->xmin) box->xmin= v1[0];
 	if(v1[0] > box->xmax) box->xmax= v1[0];
@@ -1639,24 +1641,17 @@ static int isb_bsp_insert(ISBBranch *root, MemArena *memarena, ISBSample *sample
 	return 0;
 }
 
-static float VecLen2f( float *v1, float *v2)
-{
-	float x= v1[0]-v2[0];
-	float y= v1[1]-v2[1];
-	return (float)sqrt(x*x+y*y);
-}
-
 /* initialize vars in face, for optimal point-in-face test */
 static void bspface_init_strand(BSPFace *face) 
 {
 	
-	face->radline= 0.5f*VecLen2f(face->v1, face->v2);
+	face->radline= 0.5f* len_v2v2(face->v1, face->v2);
 	
 	mid_v3_v3v3(face->vec1, face->v1, face->v2);
 	if(face->v4)
 		mid_v3_v3v3(face->vec2, face->v3, face->v4);
 	else
-		VECCOPY(face->vec2, face->v3);
+		copy_v3_v3(face->vec2, face->v3);
 	
 	face->rc[0]= face->vec2[0]-face->vec1[0];
 	face->rc[1]= face->vec2[1]-face->vec1[1];
@@ -1671,7 +1666,7 @@ static void bspface_init_strand(BSPFace *face)
 }
 
 /* brought back to a simple 2d case */
-static int point_behind_strand(float *p, BSPFace *face)
+static int point_behind_strand(const float p[3], BSPFace *face)
 {
 	/* v1 - v2 is radius, v1 - v3 length */
 	float dist, rc[2], pt[2];
@@ -1712,7 +1707,7 @@ static int point_behind_strand(float *p, BSPFace *face)
 
 
 /* return 1 if inside. code derived from src/parametrizer.c */
-static int point_behind_tria2d(float *p, float *v1, float *v2, float *v3)
+static int point_behind_tria2d(const float p[3], const float v1[3], const float v2[3], const float v3[3])
 {
 	float a[2], c[2], h[2], div;
 	float u, v;
@@ -1751,7 +1746,7 @@ static int point_behind_tria2d(float *p, float *v1, float *v2, float *v3)
 /* tested these calls, but it gives inaccuracy, 'side' cannot be found reliably using v3 */
 
 /* check if line v1-v2 has all rect points on other side of point v3 */
-static int rect_outside_line(rctf *rect, float *v1, float *v2, float *v3)
+static int rect_outside_line(rctf *rect, const float v1[3], const float v2[3], const float v3[3])
 {
 	float a, b, c;
 	int side;
@@ -1772,7 +1767,7 @@ static int rect_outside_line(rctf *rect, float *v1, float *v2, float *v3)
 }
 
 /* check if one of the triangle edges separates all rect points on 1 side */
-static int rect_isect_tria(rctf *rect, float *v1, float *v2, float *v3)
+static int rect_isect_tria(rctf *rect, const float v1[3], const float v2[3], const float v3[3])
 {
 	if(rect_outside_line(rect, v1, v2, v3))
 		return 0;
@@ -1935,7 +1930,7 @@ static void isb_bsp_test_face(ZSpan *zspan, int obi, int zvlnr, float *v1, float
 	isb_bsp_face_inside((ISBBranch *)zspan->rectz, &face);
 }
 
-static int testclip_minmax(float *ho, float *minmax)
+static int testclip_minmax(const float ho[4], const float minmax[4])
 {
 	float wco= ho[3];
 	int flag= 0;
@@ -1994,7 +1989,7 @@ static void isb_bsp_fillfaces(Render *re, LampRen *lar, ISBBranch *root)
 		obr= obi->obr;
 
 		if(obi->flag & R_TRANSFORMED)
-			mul_m4_m4m4(winmat, obi->mat, shb->persmat);
+			mult_m4_m4m4(winmat, shb->persmat, obi->mat);
 		else
 			copy_m4_m4(winmat, shb->persmat);
 
@@ -2064,18 +2059,18 @@ static void isb_bsp_fillfaces(Render *re, LampRen *lar, ISBBranch *root)
 }
 
 /* returns 1 when the viewpixel is visible in lampbuffer */
-static int viewpixel_to_lampbuf(ShadBuf *shb, ObjectInstanceRen *obi, VlakRen *vlr, float x, float y, float *co)
+static int viewpixel_to_lampbuf(ShadBuf *shb, ObjectInstanceRen *obi, VlakRen *vlr, float x, float y, float co_r[3])
 {
 	float hoco[4], v1[3], nor[3];
 	float dface, fac, siz;
 	
 	RE_vlakren_get_normal(&R, obi, vlr, nor);
-	VECCOPY(v1, vlr->v1->co);
+	copy_v3_v3(v1, vlr->v1->co);
 	if(obi->flag & R_TRANSFORMED)
 		mul_m4_v3(obi->mat, v1);
 
 	/* from shadepixel() */
-	dface= v1[0]*nor[0] + v1[1]*nor[1] + v1[2]*nor[2];
+	dface = dot_v3v3(v1, nor);
 	hoco[3]= 1.0f;
 	
 	/* ortho viewplane cannot intersect using view vector originating in (0,0,0) */
@@ -2098,7 +2093,7 @@ static int viewpixel_to_lampbuf(ShadBuf *shb, ObjectInstanceRen *obi, VlakRen *v
 		
 		calc_view_vector(view, x, y);
 		
-		div= nor[0]*view[0] + nor[1]*view[1] + nor[2]*view[2];
+		div = dot_v3v3(nor, view);
 		if (div==0.0f) 
 			return 0;
 		
@@ -2123,12 +2118,12 @@ static int viewpixel_to_lampbuf(ShadBuf *shb, ObjectInstanceRen *obi, VlakRen *v
 		return 0;
 	
 	siz= 0.5f*(float)shb->size;
-	co[0]= siz*(1.0f+hoco[0]/hoco[3]) -0.5f;
-	co[1]= siz*(1.0f+hoco[1]/hoco[3]) -0.5f;
-	co[2]= ((float)0x7FFFFFFF)*(hoco[2]/hoco[3]);
+	co_r[0]= siz*(1.0f+hoco[0]/hoco[3]) -0.5f;
+	co_r[1]= siz*(1.0f+hoco[1]/hoco[3]) -0.5f;
+	co_r[2]= ((float)0x7FFFFFFF)*(hoco[2]/hoco[3]);
 	
 	/* XXXX bias, much less than normal shadbuf, or do we need a constant? */
-	co[2] -= 0.05f*shb->bias;
+	co_r[2] -= 0.05f*shb->bias;
 	
 	return 1;
 }
@@ -2163,7 +2158,7 @@ static int isb_add_samples(RenderPart *pa, ISBBranch *root, MemArena *memarena, 
 	int xi, yi, *xcos, *ycos;
 	int sample, bsp_err= 0;
 	
-	/* bsp split doesn't like to handle regular sequenes */
+	/* bsp split doesn't like to handle regular sequences */
 	xcos= MEM_mallocN( pa->rectx*sizeof(int), "xcos");
 	ycos= MEM_mallocN( pa->recty*sizeof(int), "ycos");
 	for(xi=0; xi<pa->rectx; xi++)
@@ -2308,7 +2303,7 @@ static void isb_make_buffer(RenderPart *pa, LampRen *lar)
 			
 			isb_bsp_fillfaces(&R, lar, &root);	/* shb->persmat should have been calculated */
 			
-			/* copy shadow samples to persistant buffer, reduce memory overhead */
+			/* copy shadow samples to persistent buffer, reduce memory overhead */
 			if(R.osa) {
 				ISBShadfacA **isbsa= isbdata->shadfaca= MEM_callocN(pa->rectx*pa->recty*sizeof(void *), "isb shadfacs");
 				
@@ -2367,7 +2362,7 @@ static int isb_add_samples_transp(RenderPart *pa, ISBBranch *root, MemArena *mem
 	int xi, yi, *xcos, *ycos;
 	int sample, bsp_err= 0;
 	
-	/* bsp split doesn't like to handle regular sequenes */
+	/* bsp split doesn't like to handle regular sequences */
 	xcos= MEM_mallocN( pa->rectx*sizeof(int), "xcos");
 	ycos= MEM_mallocN( pa->recty*sizeof(int), "ycos");
 	for(xi=0; xi<pa->rectx; xi++)
@@ -2470,7 +2465,7 @@ static void isb_make_buffer_transp(RenderPart *pa, APixstr *apixbuf, LampRen *la
 											samp->facenr= apn->p[a] & ~RE_QUAD_OFFS;
 											samp->shadfac= &apn->shadfac[a];
 											
-											VECCOPY(samp->zco, zco);
+											copy_v3_v3(samp->zco, zco);
 											bound_rectf((rctf *)&root.box, samp->zco);
 										}
 									}
@@ -2486,7 +2481,7 @@ static void isb_make_buffer_transp(RenderPart *pa, APixstr *apixbuf, LampRen *la
 									samp->facenr= apn->p[a] & ~RE_QUAD_OFFS;
 									samp->shadfac= &apn->shadfac[a];
 									
-									VECCOPY(samp->zco, zco);
+									copy_v3_v3(samp->zco, zco);
 									bound_rectf((rctf *)&root.box, samp->zco);
 								}
 							}
@@ -2512,7 +2507,7 @@ static void isb_make_buffer_transp(RenderPart *pa, APixstr *apixbuf, LampRen *la
 			/* go over all faces and fill in shadow values */
 			isb_bsp_fillfaces(&R, lar, &root);	/* shb->persmat should have been calculated */
 			
-			/* copy shadow samples to persistant buffer, reduce memory overhead */
+			/* copy shadow samples to persistent buffer, reduce memory overhead */
 			isbsa= isbdata->shadfaca= MEM_callocN(pa->rectx*pa->recty*sizeof(void *), "isb shadfacs");
 			
 			isbdata->memarena = BLI_memarena_new(0x8000 * sizeof(ISBSampleA), "isb arena");

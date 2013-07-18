@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,11 +30,6 @@
  *  \ingroup edobj
  */
 
-
-/*
-	meshtools.c: no editmode (violated already :), tools operating on meshes
-*/
-
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
@@ -56,6 +49,7 @@
 #include "BLI_math_geom.h"
 
 #include "BKE_blender.h"
+#include "BKE_screen.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
@@ -87,7 +81,7 @@
 /* ****************** multires BAKING ********************** */
 
 /* holder of per-object data needed for bake job
-   needed to make job totally thread-safe */
+ * needed to make job totally thread-safe */
 typedef struct MultiresBakerJobData {
 	struct MultiresBakerJobData *next, *prev;
 	DerivedMesh *lores_dm, *hires_dm;
@@ -154,7 +148,12 @@ typedef struct {
 	float height_min, height_max;
 	Image *ima;
 	DerivedMesh *ssdm;
+	const int *origindex;
 } MHeightBakeData;
+
+typedef struct {
+	const int *origindex;
+} MNormalBakeData;
 
 static void multiresbake_get_normal(const MResolvePixelData *data, float norm[], const int face_num, const int vert_index)
 {
@@ -162,7 +161,7 @@ static void multiresbake_get_normal(const MResolvePixelData *data, float norm[],
 	                         data->mface[face_num].v3, data->mface[face_num].v4};
 	const int smoothnormal= (data->mface[face_num].flag & ME_SMOOTH);
 
-	if(!smoothnormal)  { /* flat */
+	if(!smoothnormal) { /* flat */
 		if(data->precomputed_normals) {
 			copy_v3_v3(norm, &data->precomputed_normals[3*face_num]);
 		} else {
@@ -235,11 +234,11 @@ static void flush_pixel(const MResolvePixelData *data, const int x, const int y)
 	w= 1-u-v;
 
 	/* the sign is the same at all face vertices for any non degenerate face.
-	   Just in case we clamp the interpolated value though. */
+	 * Just in case we clamp the interpolated value though. */
 	sign= (tang0[3]*u + tang1[3]*v + tang2[3]*w)<0 ? (-1.0f) : 1.0f;
 
 	/* this sequence of math is designed specifically as is with great care
-	   to be compatible with our shader. Please don't change without good reason. */
+	 * to be compatible with our shader. Please don't change without good reason. */
 	for(r= 0; r<3; r++) {
 		from_tang[0][r]= tang0[r]*u + tang1[r]*v + tang2[r]*w;
 		from_tang[2][r]= no0[r]*u + no1[r]*v + no2[r]*w;
@@ -363,16 +362,16 @@ static void do_multires_bake(MultiresBakeRender *bkr, Image* ima, MPassKnownData
 	DerivedMesh *dm= bkr->lores_dm;
 	ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
 	const int lvl= bkr->lvl;
-	const int tot_face= dm->getNumFaces(dm);
+	const int tot_face= dm->getNumTessFaces(dm);
 	MVert *mvert= dm->getVertArray(dm);
-	MFace *mface= dm->getFaceArray(dm);
-	MTFace *mtface= dm->getFaceDataArray(dm, CD_MTFACE);
+	MFace *mface= dm->getTessFaceArray(dm);
+	MTFace *mtface= dm->getTessFaceDataArray(dm, CD_MTFACE);
 	float *pvtangent= NULL;
 
 	if(CustomData_get_layer_index(&dm->faceData, CD_TANGENT) == -1)
 		DM_add_tangent_layer(dm);
 
-	pvtangent= DM_get_face_data_layer(dm, CD_TANGENT);
+	pvtangent= DM_get_tessface_data_layer(dm, CD_TANGENT);
 
 	if(tot_face > 0) {  /* sanity check */
 		int f= 0;
@@ -383,7 +382,7 @@ static void do_multires_bake(MultiresBakeRender *bkr, Image* ima, MPassKnownData
 		data.mvert= mvert;
 		data.mtface= mtface;
 		data.pvtangent= pvtangent;
-		data.precomputed_normals= dm->getFaceDataArray(dm, CD_NORMAL);	/* don't strictly need this */
+		data.precomputed_normals= dm->getTessFaceDataArray(dm, CD_NORMAL);	/* don't strictly need this */
 		data.w= ibuf->x;
 		data.h= ibuf->y;
 		data.lores_dm= dm;
@@ -409,7 +408,7 @@ static void do_multires_bake(MultiresBakeRender *bkr, Image* ima, MPassKnownData
 			data.face_index= f;
 
 			/* might support other forms of diagonal splits later on such as
-			   split by shortest diagonal.*/
+			 * split by shortest diagonal.*/
 			verts[0][0]=0;
 			verts[1][0]=1;
 			verts[2][0]=2;
@@ -420,9 +419,9 @@ static void do_multires_bake(MultiresBakeRender *bkr, Image* ima, MPassKnownData
 
 			nr_tris= mface[f].v4!=0 ? 2 : 1;
 			for(t= 0; t<nr_tris; t++) {
-				data.i0= verts[0][t];
-				data.i1= verts[1][t];
-				data.i2 =verts[2][t];
+				data.i0 = verts[0][t];
+				data.i1 = verts[1][t];
+				data.i2 = verts[2][t];
 
 				bake_rasterize(&bake_rast, mtfate->uv[data.i0], mtfate->uv[data.i1], mtfate->uv[data.i2]);
 			}
@@ -471,7 +470,7 @@ static void interp_barycentric_tri_data(float data[3][3], float u, float v, floa
 }
 
 /* mode = 0: interpolate normals,
-   mode = 1: interpolate coord */
+ * mode = 1: interpolate coord */
 static void interp_bilinear_grid(DMGridData *grid, int grid_size, float crn_x, float crn_y, int mode, float res[3])
 {
 	int x0, x1, y0, y1;
@@ -502,7 +501,7 @@ static void interp_bilinear_grid(DMGridData *grid, int grid_size, float crn_x, f
 	interp_bilinear_quad_data(data, u, v, res);
 }
 
-static void get_ccgdm_data(DerivedMesh *lodm, DerivedMesh *hidm,  const int lvl, const int face_index, const float u, const float v, float co[3], float n[3])
+static void get_ccgdm_data(DerivedMesh *lodm, DerivedMesh *hidm, const int *origindex,  const int lvl, const int face_index, const float u, const float v, float co[3], float n[3])
 {
 	MFace mface;
 	DMGridData **grid_data;
@@ -510,7 +509,7 @@ static void get_ccgdm_data(DerivedMesh *lodm, DerivedMesh *hidm,  const int lvl,
 	int grid_size, S, face_side;
 	int *grid_offset, g_index;
 
-	lodm->getFace(lodm, face_index, &mface);
+	lodm->getTessFace(lodm, face_index, &mface);
 
 	grid_size= hidm->getGridSize(hidm);
 	grid_data= hidm->getGridData(hidm);
@@ -522,9 +521,8 @@ static void get_ccgdm_data(DerivedMesh *lodm, DerivedMesh *hidm,  const int lvl,
 		g_index= grid_offset[face_index];
 		S= mdisp_rot_face_to_crn(mface.v4 ? 4 : 3, face_side, u*(face_side-1), v*(face_side-1), &crn_x, &crn_y);
 	} else {
-		const int *index= lodm->getFaceDataArray(lodm, CD_ORIGINDEX);
 		int side= (1 << (lvl-1)) + 1;
-		int grid_index= index[face_index];
+		int grid_index= origindex[face_index];
 		int loc_offs= face_index % (1<<(2*lvl));
 		int cell_index= loc_offs % ((side-1)*(side-1));
 		int cell_side= grid_size / (side-1);
@@ -549,7 +547,7 @@ static void get_ccgdm_data(DerivedMesh *lodm, DerivedMesh *hidm,  const int lvl,
 }
 
 /* mode = 0: interpolate normals,
-   mode = 1: interpolate coord */
+ * mode = 1: interpolate coord */
 static void interp_bilinear_mface(DerivedMesh *dm, MFace *mface, const float u, const float v, const int mode, float res[3])
 {
 	float data[4][3];
@@ -570,7 +568,7 @@ static void interp_bilinear_mface(DerivedMesh *dm, MFace *mface, const float u, 
 }
 
 /* mode = 0: interpolate normals,
-   mode = 1: interpolate coord */
+ * mode = 1: interpolate coord */
 static void interp_barycentric_mface(DerivedMesh *dm, MFace *mface, const float u, const float v, const int mode, float res[3])
 {
 	float data[3][3];
@@ -588,10 +586,11 @@ static void interp_barycentric_mface(DerivedMesh *dm, MFace *mface, const float 
 	interp_barycentric_tri_data(data, u, v, res);
 }
 
-static void *init_heights_data(MultiresBakeRender *bkr, Image* ima)
+static void *init_heights_data(MultiresBakeRender *bkr, Image *ima)
 {
 	MHeightBakeData *height_data;
 	ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
+	DerivedMesh *lodm= bkr->lores_dm;
 
 	height_data= MEM_callocN(sizeof(MHeightBakeData), "MultiresBake heightData");
 
@@ -615,7 +614,28 @@ static void *init_heights_data(MultiresBakeRender *bkr, Image* ima)
 		height_data->ssdm= subsurf_make_derived_from_derived(bkr->lores_dm, &smd, 0, NULL, 0, 0, 0);
 	}
 
+	height_data->origindex= lodm->getTessFaceDataArray(lodm, CD_ORIGINDEX);
+
 	return (void*)height_data;
+}
+
+static void *init_normal_data(MultiresBakeRender *bkr, Image *UNUSED(ima))
+{
+	MNormalBakeData *normal_data;
+	DerivedMesh *lodm= bkr->lores_dm;
+
+	normal_data= MEM_callocN(sizeof(MNormalBakeData), "MultiresBake normalData");
+
+	normal_data->origindex= lodm->getTessFaceDataArray(lodm, CD_ORIGINDEX);
+
+	return (void*)normal_data;
+}
+
+static void free_normal_data(void *bake_data)
+{
+	MNormalBakeData *normal_data= (MNormalBakeData*)bake_data;
+
+	MEM_freeN(normal_data);
 }
 
 static void apply_heights_data(void *bake_data)
@@ -666,11 +686,11 @@ static void free_heights_data(void *bake_data)
 }
 
 /* MultiresBake callback for heights baking
-   general idea:
-     - find coord of point with specified UV in hi-res mesh (let's call it p1)
-     - find coord of point and normal with specified UV in lo-res mesh (or subdivided lo-res
-       mesh to make texture smoother) let's call this point p0 and n.
-     - height wound be dot(n, p1-p0) */
+ * general idea:
+ *   - find coord of point with specified UV in hi-res mesh (let's call it p1)
+ *   - find coord of point and normal with specified UV in lo-res mesh (or subdivided lo-res
+ *     mesh to make texture smoother) let's call this point p0 and n.
+ *   - height wound be dot(n, p1-p0) */
 static void apply_heights_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm, const void *bake_data,
                                    const int face_index, const int lvl, const float st[2],
                                    float UNUSED(tangmat[3][3]), const int x, const int y)
@@ -684,7 +704,7 @@ static void apply_heights_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 	int pixel= ibuf->x*y + x;
 	float vec[3], p0[3], p1[3], n[3], len;
 
-	lores_dm->getFace(lores_dm, face_index, &mface);
+	lores_dm->getTessFace(lores_dm, face_index, &mface);
 
 	st0= mtface[face_index].uv[0];
 	st1= mtface[face_index].uv[1];
@@ -699,14 +719,12 @@ static void apply_heights_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 	CLAMP(uv[0], 0.0f, 1.0f);
 	CLAMP(uv[1], 0.0f, 1.0f);
 
-	get_ccgdm_data(lores_dm, hires_dm, lvl, face_index, uv[0], uv[1], p1, 0);
+	get_ccgdm_data(lores_dm, hires_dm, height_data->origindex, lvl, face_index, uv[0], uv[1], p1, 0);
 
 	if(height_data->ssdm) {
-		//get_ccgdm_data_ss(lores_dm, height_data->ssdm, lvl, face_index, uv[0], uv[1], p0, n);
-		get_ccgdm_data(lores_dm, height_data->ssdm, 0, face_index, uv[0], uv[1], p0, n);
+		get_ccgdm_data(lores_dm, height_data->ssdm, height_data->origindex, 0, face_index, uv[0], uv[1], p0, n);
 	} else {
-		MFace mface;
-		lores_dm->getFace(lores_dm, face_index, &mface);
+		lores_dm->getTessFace(lores_dm, face_index, &mface);
 
 		if(mface.v4) {
 			interp_bilinear_mface(lores_dm, &mface, uv[0], uv[1], 1, p0);
@@ -718,7 +736,6 @@ static void apply_heights_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 	}
 
 	sub_v3_v3v3(vec, p1, p0);
-	//len= len_v3(vec);
 	len= dot_v3v3(n, vec);
 
 	height_data->heights[pixel]= len;
@@ -737,11 +754,11 @@ static void apply_heights_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 }
 
 /* MultiresBake callback for normals' baking
-   general idea:
-     - find coord and normal of point with specified UV in hi-res mesh
-     - multiply it by tangmat
-     - vector in color space would be norm(vec) /2 + (0.5, 0.5, 0.5) */
-static void apply_tangmat_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm, const void *UNUSED(bake_data),
+ * general idea:
+ *   - find coord and normal of point with specified UV in hi-res mesh
+ *   - multiply it by tangmat
+ *   - vector in color space would be norm(vec) /2 + (0.5, 0.5, 0.5) */
+static void apply_tangmat_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm, const void *bake_data,
                                    const int face_index, const int lvl, const float st[2],
                                    float tangmat[3][3], const int x, const int y)
 {
@@ -749,11 +766,12 @@ static void apply_tangmat_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 	MFace mface;
 	Image *ima= mtface[face_index].tpage;
 	ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
+	MNormalBakeData *normal_data= (MNormalBakeData*)bake_data;
 	float uv[2], *st0, *st1, *st2, *st3;
 	int pixel= ibuf->x*y + x;
 	float n[3], vec[3], tmp[3]= {0.5, 0.5, 0.5};
 
-	lores_dm->getFace(lores_dm, face_index, &mface);
+	lores_dm->getTessFace(lores_dm, face_index, &mface);
 
 	st0= mtface[face_index].uv[0];
 	st1= mtface[face_index].uv[1];
@@ -768,7 +786,7 @@ static void apply_tangmat_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 	CLAMP(uv[0], 0.0f, 1.0f);
 	CLAMP(uv[1], 0.0f, 1.0f);
 
-	get_ccgdm_data(lores_dm, hires_dm, lvl, face_index, uv[0], uv[1], NULL, n);
+	get_ccgdm_data(lores_dm, hires_dm, normal_data->origindex, lvl, face_index, uv[0], uv[1], NULL, n);
 
 	mul_v3_m3v3(vec, tangmat, n);
 	normalize_v3(vec);
@@ -784,10 +802,8 @@ static void apply_tangmat_callback(DerivedMesh *lores_dm, DerivedMesh *hires_dm,
 
 		ibuf->userflags= IB_RECT_INVALID;
 	} else {
-		char *rrgb= (char*)ibuf->rect + pixel*4;
-		rrgb[0]= FTOCHAR(vec[0]);
-		rrgb[1]= FTOCHAR(vec[1]);
-		rrgb[2]= FTOCHAR(vec[2]);
+		unsigned char *rrgb= (unsigned char *)ibuf->rect + pixel*4;
+		rgb_float_to_uchar(rrgb, vec);
 		rrgb[3]= 255;
 	}
 }
@@ -801,7 +817,7 @@ static void count_images(MultiresBakeRender *bkr)
 	bkr->image.first= bkr->image.last= NULL;
 	bkr->tot_image= 0;
 
-	totface= dm->getNumFaces(dm);
+	totface= dm->getNumTessFaces(dm);
 
 	for(a= 0; a<totface; a++)
 		mtface[a].tpage->id.flag&= ~LIB_DOIT;
@@ -833,7 +849,7 @@ static void bake_images(MultiresBakeRender *bkr)
 
 			switch(bkr->mode) {
 				case RE_BAKE_NORMALS:
-					do_multires_bake(bkr, ima, apply_tangmat_callback, NULL, NULL, NULL);
+					do_multires_bake(bkr, ima, apply_tangmat_callback, init_normal_data, NULL, free_normal_data);
 					break;
 				case RE_BAKE_DISPLACEMENT:
 					do_multires_bake(bkr, ima, apply_heights_callback, init_heights_data,
@@ -883,7 +899,8 @@ static void multiresbake_start(MultiresBakeRender *bkr)
 	finish_images(bkr);
 }
 
-static int multiresbake_check(bContext *C, wmOperator *op) {
+static int multiresbake_check(bContext *C, wmOperator *op)
+{
 	Scene *scene= CTX_data_scene(C);
 	Object *ob;
 	Mesh *me;
@@ -922,20 +939,22 @@ static int multiresbake_check(bContext *C, wmOperator *op) {
 			break;
 		}
 
-		if(!me->mtface) {
+		if(!me->mtpoly) {
 			BKE_report(op->reports, RPT_ERROR, "Mesh should be unwrapped before multires data baking");
 
 			ok= 0;
-		} else {
-			a= me->totface;
+		}
+		else {
+			a = me->totpoly;
 			while (ok && a--) {
-				Image *ima= me->mtface[a].tpage;
+				Image *ima = me->mtpoly[a].tpage;
 
 				if(!ima) {
 					BKE_report(op->reports, RPT_ERROR, "You should have active texture to use multires baker");
 
 					ok= 0;
-				} else {
+				}
+				else {
 					ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
 
 					if(!ibuf) {
@@ -970,8 +989,7 @@ static DerivedMesh *multiresbake_create_loresdm(Scene *scene, Object *ob, int *l
 	MultiresModifierData *mmd= get_multires_modifier(scene, ob, 0);
 	Mesh *me= (Mesh*)ob->data;
 
-	if(ob->mode==OB_MODE_SCULPT) *lvl= mmd->sculptlvl;
-	else *lvl= mmd->lvl;
+	*lvl= mmd->lvl;
 
 	if(*lvl==0) {
 		DerivedMesh *tmp_dm= CDDM_from_mesh(me, ob);
@@ -982,7 +1000,8 @@ static DerivedMesh *multiresbake_create_loresdm(Scene *scene, Object *ob, int *l
 		DerivedMesh *cddm= CDDM_from_mesh(me, ob);
 
 		tmp_mmd.lvl= *lvl;
-		dm= multires_dm_create_from_derived(&tmp_mmd, 1, cddm, ob, 0, 0);
+		tmp_mmd.sculptlvl= *lvl;
+		dm= multires_dm_create_from_derived(&tmp_mmd, 1, cddm, ob, 0);
 		cddm->release(cddm);
 	}
 
@@ -1001,7 +1020,8 @@ static DerivedMesh *multiresbake_create_hiresdm(Scene *scene, Object *ob, int *l
 	*simple= mmd->simple;
 
 	tmp_mmd.lvl= mmd->totlvl;
-	dm= multires_dm_create_from_derived(&tmp_mmd, 1, cddm, ob, 0, 0);
+	tmp_mmd.sculptlvl= mmd->totlvl;
+	dm= multires_dm_create_from_derived(&tmp_mmd, 1, cddm, ob, 0);
 	cddm->release(cddm);
 
 	return dm;
@@ -1022,7 +1042,7 @@ static void clear_images(MTFace *mtface, int totface)
 		if((ima->id.flag&LIB_DOIT)==0) {
 			ImBuf *ibuf= BKE_image_get_ibuf(ima, NULL);
 
-			IMB_rectfill(ibuf, (ibuf->depth == 32) ? vec_alpha : vec_solid);
+			IMB_rectfill(ibuf, (ibuf->planes == R_IMF_PLANES_RGBA) ? vec_alpha : vec_solid);
 			ima->id.flag|= LIB_DOIT;
 		}
 	}
@@ -1035,6 +1055,7 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 {
 	Object *ob;
 	Scene *scene= CTX_data_scene(C);
+	int objects_baked= 0;
 
 	if(!multiresbake_check(C, op))
 		return OPERATOR_CANCELLED;
@@ -1056,6 +1077,8 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 
 		ob= base->object;
 
+		multires_force_update(ob);
+
 		/* copy data stored in job descriptor */
 		bkr.bake_filter= scene->r.bake_filter;
 		bkr.mode= scene->r.bake_mode;
@@ -1063,6 +1086,10 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 
 		/* create low-resolution DM (to bake to) and hi-resolution DM (to bake from) */
 		bkr.lores_dm= multiresbake_create_loresdm(scene, ob, &bkr.lvl);
+
+		if(!bkr.lores_dm)
+			continue;
+
 		bkr.hires_dm= multiresbake_create_hiresdm(scene, ob, &bkr.tot_lvl, &bkr.simple);
 
 		multiresbake_start(&bkr);
@@ -1071,8 +1098,13 @@ static int multiresbake_image_exec_locked(bContext *C, wmOperator *op)
 
 		bkr.lores_dm->release(bkr.lores_dm);
 		bkr.hires_dm->release(bkr.hires_dm);
+
+		objects_baked++;
 	}
 	CTX_DATA_END;
+
+	if(!objects_baked)
+		BKE_report(op->reports, RPT_ERROR, "No objects found to bake from");
 
 	return OPERATOR_FINISHED;
 }
@@ -1091,11 +1123,21 @@ static void init_multiresbake_job(bContext *C, MultiresBakeJob *bkj)
 
 	CTX_DATA_BEGIN(C, Base*, base, selected_editable_bases) {
 		MultiresBakerJobData *data;
+		DerivedMesh *lores_dm;
+		int lvl;
 		ob= base->object;
 
+		multires_force_update(ob);
+
+		lores_dm = multiresbake_create_loresdm(scene, ob, &lvl);
+		if(!lores_dm)
+			continue;
+
 		data= MEM_callocN(sizeof(MultiresBakerJobData), "multiresBaker derivedMesh_data");
-		data->lores_dm = multiresbake_create_loresdm(scene, ob, &data->lvl);
+		data->lores_dm = lores_dm;
+		data->lvl = lvl;
 		data->hires_dm = multiresbake_create_hiresdm(scene, ob, &data->tot_lvl, &data->simple);
+
 		BLI_addtail(&bkj->data, data);
 	}
 	CTX_DATA_END;
@@ -1114,7 +1156,7 @@ static void multiresbake_startjob(void *bkv, short *stop, short *do_update, floa
 			DerivedMesh *dm= data->lores_dm;
 			MTFace *mtface= CustomData_get_layer(&dm->faceData, CD_MTFACE);
 
-			clear_images(mtface, dm->getNumFaces(dm));
+			clear_images(mtface, dm->getNumTessFaces(dm));
 		}
 	}
 
@@ -1178,6 +1220,11 @@ static int multiresbake_image_exec(bContext *C, wmOperator *op)
 	bkr= MEM_callocN(sizeof(MultiresBakeJob), "MultiresBakeJob data");
 	init_multiresbake_job(C, bkr);
 
+	if(!bkr->data.first) {
+		BKE_report(op->reports, RPT_ERROR, "No objects found to bake from");
+		return OPERATOR_CANCELLED;
+	}
+
 	/* setup job */
 	steve= WM_jobs_get(CTX_wm_manager(C), CTX_wm_window(C), scene, "Multires Bake", WM_JOB_EXCL_RENDER|WM_JOB_PRIORITY|WM_JOB_PROGRESS);
 	WM_jobs_customdata(steve, bkr, multiresbake_freejob);
@@ -1203,30 +1250,12 @@ static int thread_break(void *UNUSED(arg))
 	return G.afbreek;
 }
 
-static ScrArea *biggest_image_area(bScreen *screen)
-{
-	ScrArea *sa, *big= NULL;
-	int size, maxsize= 0;
-
-	for(sa= screen->areabase.first; sa; sa= sa->next) {
-		if(sa->spacetype==SPACE_IMAGE) {
-			size= sa->winx*sa->winy;
-			if(sa->winx > 10 && sa->winy > 10 && size > maxsize) {
-				maxsize= size;
-				big= sa;
-			}
-		}
-	}
-	return big;
-}
-
-
 typedef struct BakeRender {
 	Render *re;
 	Main *main;
 	Scene *scene;
 	struct Object *actob;
-	int tot, ready;
+	int result, ready;
 
 	ReportList *reports;
 
@@ -1249,9 +1278,7 @@ static int test_bake_internal(bContext *C, ReportList *reports)
 {
 	Scene *scene= CTX_data_scene(C);
 
-	if(scene->r.renderer!=R_INTERN) {
-		BKE_report(reports, RPT_ERROR, "Bake only supported for Internal Renderer");
-	} else if((scene->r.bake_flag & R_BAKE_TO_ACTIVE) && CTX_data_active_object(C)==NULL) {
+	if((scene->r.bake_flag & R_BAKE_TO_ACTIVE) && CTX_data_active_object(C)==NULL) {
 		BKE_report(reports, RPT_ERROR, "No active object");
 	}
 	else if(scene->r.bake_mode==RE_BAKE_AO && scene->world==NULL) {
@@ -1271,7 +1298,7 @@ static void init_bake_internal(BakeRender *bkr, bContext *C)
 	/* get editmode results */
 	ED_object_exit_editmode(C, 0);  /* 0 = does not exit editmode */
 
-	bkr->sa= biggest_image_area(CTX_wm_screen(C)); /* can be NULL */
+	bkr->sa= BKE_screen_find_big_area(CTX_wm_screen(C), SPACE_IMAGE, 10); /* can be NULL */
 	bkr->main= CTX_data_main(C);
 	bkr->scene= scene;
 	bkr->actob= (scene->r.bake_flag & R_BAKE_TO_ACTIVE) ? OBACT : NULL;
@@ -1301,7 +1328,7 @@ static void finish_bake_internal(BakeRender *bkr)
 		if(bkr->prev_r_raytrace == 0)
 			bkr->scene->r.mode &= ~R_RAYTRACE;
 
-	if(bkr->tot) {
+	if(bkr->result==BAKE_RESULT_OK) {
 		Image *ima;
 		/* force OpenGL reload and mipmap recalc */
 		for(ima= G.main->image.first; ima; ima= ima->id.next) {
@@ -1328,7 +1355,7 @@ static void *do_bake_render(void *bake_v)
 {
 	BakeRender *bkr= bake_v;
 
-	bkr->tot= RE_bake_shade_all_selected(bkr->re, bkr->scene->r.bake_mode, bkr->actob, NULL, bkr->progress);
+	bkr->result= RE_bake_shade_all_selected(bkr->re, bkr->scene->r.bake_mode, bkr->actob, NULL, bkr->progress);
 	bkr->ready= 1;
 
 	return NULL;
@@ -1350,14 +1377,14 @@ static void bake_startjob(void *bkv, short *stop, short *do_update, float *progr
 	RE_Database_Baking(bkr->re, bmain, scene, scene->lay, scene->r.bake_mode, bkr->actob);
 
 	/* baking itself is threaded, cannot use test_break in threads. we also update optional imagewindow */
-	bkr->tot= RE_bake_shade_all_selected(bkr->re, scene->r.bake_mode, bkr->actob, bkr->do_update, bkr->progress);
+	bkr->result= RE_bake_shade_all_selected(bkr->re, scene->r.bake_mode, bkr->actob, bkr->do_update, bkr->progress);
 }
 
 static void bake_update(void *bkv)
 {
 	BakeRender *bkr= bkv;
 
-	if(bkr->sa && bkr->sa->spacetype==SPACE_IMAGE) { /* incase the user changed while baking */
+	if(bkr->sa && bkr->sa->spacetype==SPACE_IMAGE) { /* in case the user changed while baking */
 		SpaceImage *sima= bkr->sa->spacedata.first;
 		if(sima)
 			sima->image= RE_bake_shade_get_image();
@@ -1369,7 +1396,11 @@ static void bake_freejob(void *bkv)
 	BakeRender *bkr= bkv;
 	finish_bake_internal(bkr);
 
-	if(bkr->tot==0) BKE_report(bkr->reports, RPT_ERROR, "No objects or images found to bake to");
+	if(bkr->result==BAKE_RESULT_NO_OBJECTS)
+		BKE_report(bkr->reports, RPT_ERROR, "No objects or images found to bake to");
+	else if(bkr->result==BAKE_RESULT_FEEDBACK_LOOP)
+		BKE_report(bkr->reports, RPT_WARNING, "Feedback loop detected");
+
 	MEM_freeN(bkr);
 	G.rendering = 0;
 }
@@ -1486,7 +1517,10 @@ static int bake_image_exec(bContext *C, wmOperator *op)
 			}
 			BLI_end_threads(&threads);
 
-			if(bkr.tot==0) BKE_report(op->reports, RPT_ERROR, "No valid images found to bake to");
+			if(bkr.result==BAKE_RESULT_NO_OBJECTS)
+				BKE_report(op->reports, RPT_ERROR, "No valid images found to bake to");
+			else if(bkr.result==BAKE_RESULT_FEEDBACK_LOOP)
+				BKE_report(op->reports, RPT_ERROR, "Feedback loop detected");
 
 			finish_bake_internal(&bkr);
 

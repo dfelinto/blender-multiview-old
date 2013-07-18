@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -43,6 +41,8 @@
 #include "BLI_string.h"
 #include "BLI_utildefines.h"
 
+#include "BLF_translation.h"
+
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_idprop.h"
@@ -65,6 +65,14 @@
 
 #define EM_SEPR_X		6
 #define EM_SEPR_Y		6
+
+#define UI_OPERATOR_ERROR_RET(_ot, _opname, return_statement)                 \
+	if (ot == NULL) {                                                         \
+		ui_item_disabled(layout, _opname);                                    \
+		RNA_warning("'%s' unknown operator", _opname);                        \
+		return_statement;                                                     \
+	} (void)0                                                                 \
+
 
 /* uiLayoutRoot */
 
@@ -320,7 +328,7 @@ static void ui_layer_but_cb(bContext *C, void *arg_but, void *arg_index)
 	int len= RNA_property_array_length(ptr, prop);
 
 	if(!shift) {
-		RNA_property_boolean_set_index(ptr, prop, index, 1);
+		RNA_property_boolean_set_index(ptr, prop, index, TRUE);
 
 		for(i=0; i<len; i++)
 			if(i != index)
@@ -334,7 +342,7 @@ static void ui_layer_but_cb(bContext *C, void *arg_but, void *arg_index)
 }
 
 /* create buttons for an item with an RNA array */
-static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, int icon, PointerRNA *ptr, PropertyRNA *prop, int len, int x, int y, int w, int h, int expand, int slider, int toggle, int icon_only)
+static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, int icon, PointerRNA *ptr, PropertyRNA *prop, int len, int x, int y, int w, int UNUSED(h), int expand, int slider, int toggle, int icon_only)
 {
 	uiStyle *style= layout->root->style;
 	uiBut *but;
@@ -407,7 +415,7 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 		if (totdim != 2) return;	/* only 2D matrices supported in UI so far */
 		
 		w /= dim_size[0];
-		h /= dim_size[1];
+		/* h /= dim_size[1]; */ /* UNUSED */
 
 		for(a=0; a<len; a++) {
 			col= a % dim_size[0];
@@ -475,7 +483,7 @@ static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *pt
 	const char *name;
 	int a, totitem, itemw, icon, value, free;
 
-	RNA_property_enum_items(block->evil_C, ptr, prop, &item, &totitem, &free);
+	RNA_property_enum_items_gettexted(block->evil_C, ptr, prop, &item, &totitem, &free);
 
 	uiBlockSetCurLayout(block, ui_item_local_sublayout(layout, layout, 1));
 	for(a=0; a<totitem; a++) {
@@ -499,8 +507,9 @@ static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *pt
 	}
 	uiBlockSetCurLayout(block, layout);
 
-	if(free)
+	if (free) {
 		MEM_freeN(item);
+	}
 }
 
 /* callback for keymap item change button */
@@ -527,9 +536,11 @@ static uiBut *ui_item_with_label(uiLayout *layout, uiBlock *block, const char *n
 	uiBlockSetCurLayout(block, sub);
 
 	if(name[0]) {
-		/* XXX UI_GetStringWidth is not accurate
-		labelw= UI_GetStringWidth(name);
-		CLAMP(labelw, w/4, 3*w/4);*/
+		/* XXX UI_GetStringWidth is not accurate */
+#if 0
+		labelw = UI_GetStringWidth(name);
+		CLAMP(labelw, w/4, 3*w/4);
+#endif
 		labelw= w/3;
 		uiDefBut(block, LABEL, 0, name, x, y, labelw, h, NULL, 0.0, 0.0, 0, 0, "");
 		w= w-labelw;
@@ -621,21 +632,19 @@ static void ui_item_disabled(uiLayout *layout, const char *name)
 }
 
 /* operator items */
-PointerRNA uiItemFullO(uiLayout *layout, const char *opname, const char *name, int icon, IDProperty *properties, int context, int flag)
+PointerRNA uiItemFullO_ptr(uiLayout *layout, wmOperatorType *ot, const char *name, int icon, IDProperty *properties, int context, int flag)
 {
 	uiBlock *block= layout->root->block;
-	wmOperatorType *ot= WM_operatortype_find(opname, 1);
 	uiBut *but;
 	int w;
 
-	if(!ot) {
-		ui_item_disabled(layout, opname);
-		RNA_warning("uiItemFullO: unknown operator '%s'\n", opname);
-		return PointerRNA_NULL;
+	if(!name) {
+		if (ot && ot->srna)
+			name = RNA_struct_ui_name(ot->srna);
+		else
+			name = "";
 	}
 
-	if(!name)
-		name= ot->name;
 	if(layout->root->type == UI_LAYOUT_MENU && !icon)
 		icon= ICON_BLANK1;
 
@@ -647,12 +656,18 @@ PointerRNA uiItemFullO(uiLayout *layout, const char *opname, const char *name, i
 	if (flag & UI_ITEM_R_NO_BG)
 		uiBlockSetEmboss(block, UI_EMBOSSN);
 
-	if(icon && name[0])
-		but= uiDefIconTextButO(block, BUT, ot->idname, context, icon, name, 0, 0, w, UI_UNIT_Y, NULL);
-	else if(icon)
-		but= uiDefIconButO(block, BUT, ot->idname, context, icon, 0, 0, w, UI_UNIT_Y, NULL);
-	else
-		but= uiDefButO(block, BUT, ot->idname, context, name, 0, 0, w, UI_UNIT_Y, NULL);
+	/* create the button */
+	if(icon) {
+		if (name[0]) {
+			but = uiDefIconTextButO_ptr(block, BUT, ot, context, icon, name, 0, 0, w, UI_UNIT_Y, NULL);
+		}
+		else {
+			but = uiDefIconButO_ptr(block, BUT, ot, context, icon, 0, 0, w, UI_UNIT_Y, NULL);
+		}
+	}
+	else {
+		but= uiDefButO_ptr(block, BUT, ot, context, name, 0, 0, w, UI_UNIT_Y, NULL);
+	}
 
 	assert(but->optype != NULL);
 
@@ -675,7 +690,7 @@ PointerRNA uiItemFullO(uiLayout *layout, const char *opname, const char *name, i
 		}
 		else {
 			IDPropertyTemplate val = {0};
-			opptr->data= IDP_New(IDP_GROUP, val, "wmOperatorProperties");
+			opptr->data= IDP_New(IDP_GROUP, &val, "wmOperatorProperties");
 		}
 
 		return *opptr;
@@ -684,52 +699,85 @@ PointerRNA uiItemFullO(uiLayout *layout, const char *opname, const char *name, i
 	return PointerRNA_NULL;
 }
 
-static const char *ui_menu_enumpropname(uiLayout *layout, const char *opname, const char *propname, int retval)
+PointerRNA uiItemFullO(uiLayout *layout, const char *opname, const char *name, int icon, IDProperty *properties, int context, int flag)
 {
-	wmOperatorType *ot= WM_operatortype_find(opname, 0);
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
+
+	UI_OPERATOR_ERROR_RET(ot, opname, return PointerRNA_NULL);
+
+	return uiItemFullO_ptr(layout, ot, name, icon, properties, context, flag);
+}
+
+static const char *ui_menu_enumpropname(uiLayout *layout, PointerRNA *ptr, PropertyRNA *prop, int retval)
+{
+	EnumPropertyItem *item;
+	int totitem, free;
+	const char *name;
+
+	RNA_property_enum_items_gettexted(layout->root->block->evil_C, ptr, prop, &item, &totitem, &free);
+	if (RNA_enum_name(item, retval, &name) == 0) {
+		name = "";
+	}
+
+	if (free) {
+		MEM_freeN(item);
+	}
+
+	return name;
+}
+
+/* same as below but 'prop' is already known */
+static void uiItemEnumO_ptr__internal(uiLayout *layout, wmOperatorType *ot, const char *name, int icon, PropertyRNA *prop, int value)
+{
+	PointerRNA ptr;
+	WM_operator_properties_create_ptr(&ptr, ot);
+	RNA_property_enum_set(&ptr, prop, value);
+
+	if(!name)
+		name = ui_menu_enumpropname(layout, &ptr, prop, value);
+
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
+}
+void uiItemEnumO_ptr(uiLayout *layout, wmOperatorType *ot, const char *name, int icon, const char *propname, int value)
+{
 	PointerRNA ptr;
 	PropertyRNA *prop;
 
-	if(!ot || !ot->srna)
-		return "";
+	WM_operator_properties_create_ptr(&ptr, ot);
 
-	RNA_pointer_create(NULL, ot->srna, NULL, &ptr);
-	prop= RNA_struct_find_property(&ptr, propname);
-
-	if(prop) {
-		EnumPropertyItem *item;
-		int totitem, free;
-		const char *name;
-
-		RNA_property_enum_items(layout->root->block->evil_C, &ptr, prop, &item, &totitem, &free);
-		if(RNA_enum_name(item, retval, &name)) {
-			if(free) MEM_freeN(item);
-			return name;
-		}
-		
-		if(free)
-			MEM_freeN(item);
+	if ((prop = RNA_struct_find_property(&ptr, propname))) {
+		/* pass */
+	}
+	else {
+		RNA_warning("%s.%s not found", RNA_struct_identifier(ptr.type), propname);
+		return;
 	}
 
-	return "";
-}
-
-void uiItemEnumO(uiLayout *layout, const char *opname, const char *name, int icon, const char *propname, int value)
-{
-	PointerRNA ptr;
-
-	WM_operator_properties_create(&ptr, opname);
-	RNA_enum_set(&ptr, propname, value);
+	RNA_property_enum_set(&ptr, prop, value);
 
 	if(!name)
-		name= ui_menu_enumpropname(layout, opname, propname, value);
+		name = ui_menu_enumpropname(layout, &ptr, prop, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
+}
+void uiItemEnumO(uiLayout *layout, const char *opname, const char *name, int icon, const char *propname, int value)
+{
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
+
+	if(ot) {
+		uiItemEnumO_ptr(layout, ot, name, icon, propname, value);
+	}
+	else {
+		ui_item_disabled(layout, opname);
+		RNA_warning("unknown operator '%s'", opname);
+	}
+
 }
 
 void uiItemsFullEnumO(uiLayout *layout, const char *opname, const char *propname, IDProperty *properties, int context, int flag)
 {
-	wmOperatorType *ot= WM_operatortype_find(opname, 1);
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
+
 	PointerRNA ptr;
 	PropertyRNA *prop;
 	uiBut *bt;
@@ -737,12 +785,12 @@ void uiItemsFullEnumO(uiLayout *layout, const char *opname, const char *propname
 
 	if(!ot || !ot->srna) {
 		ui_item_disabled(layout, opname);
-		RNA_warning("uiItemsFullEnumO: %s '%s'\n", ot ? "unknown operator" : "operator missing srna", opname);
+		RNA_warning("%s '%s'", ot ? "unknown operator" : "operator missing srna", opname);
 		return;
 	}
 
 	RNA_pointer_create(NULL, ot->srna, NULL, &ptr);
-	prop= RNA_struct_find_property(&ptr, propname);
+	prop = RNA_struct_find_property(&ptr, propname);
 
 	/* don't let bad properties slip through */
 	BLI_assert((prop == NULL) || (RNA_property_type(prop) == PROP_ENUM));
@@ -753,25 +801,26 @@ void uiItemsFullEnumO(uiLayout *layout, const char *opname, const char *propname
 		uiLayout *split= uiLayoutSplit(layout, 0, 0);
 		uiLayout *column= uiLayoutColumn(split, 0);
 
-		RNA_property_enum_items(block->evil_C, &ptr, prop, &item, &totitem, &free);
+		RNA_property_enum_items_gettexted(block->evil_C, &ptr, prop, &item, &totitem, &free);
 
 		for(i=0; i<totitem; i++) {
 			if(item[i].identifier[0]) {
 				if(properties) {
 					PointerRNA tptr;
 
-					WM_operator_properties_create(&tptr, opname);
+					WM_operator_properties_create_ptr(&tptr, ot);
 					if(tptr.data) {
 						IDP_FreeProperty(tptr.data);
 						MEM_freeN(tptr.data);
 					}
 					tptr.data= IDP_CopyProperty(properties);
-					RNA_enum_set(&tptr, propname, item[i].value);
+					RNA_property_enum_set(&tptr, prop, item[i].value);
 
-					uiItemFullO(column, opname, item[i].name, item[i].icon, tptr.data, context, flag);
+					uiItemFullO_ptr(column, ot, item[i].name, item[i].icon, tptr.data, context, flag);
 				}
-				else
-					uiItemEnumO(column, opname, item[i].name, item[i].icon, propname, item[i].value);
+				else {
+					uiItemEnumO_ptr__internal(column, ot, item[i].name, item[i].icon, prop, item[i].value);
+				}
 			}
 			else {
 				if(item[i].name) {
@@ -790,8 +839,9 @@ void uiItemsFullEnumO(uiLayout *layout, const char *opname, const char *propname
 			}
 		}
 
-		if(free)
+		if (free) {
 			MEM_freeN(item);
+		}
 	}
 }
 
@@ -803,19 +853,20 @@ void uiItemsEnumO(uiLayout *layout, const char *opname, const char *propname)
 /* for use in cases where we have */
 void uiItemEnumO_value(uiLayout *layout, const char *name, int icon, const char *opname, const char *propname, int value)
 {
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	PointerRNA ptr;
-
-	/* for getting the enum */
 	PropertyRNA *prop;
 
-	WM_operator_properties_create(&ptr, opname);
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
+	WM_operator_properties_create_ptr(&ptr, ot);
 
 	/* enum lookup */
-	if((prop= RNA_struct_find_property(&ptr, propname))) {
+	if ((prop = RNA_struct_find_property(&ptr, propname))) {
 		/* pass */
 	}
 	else {
-		RNA_warning("uiItemEnumO_value: %s.%s not found.\n", RNA_struct_identifier(ptr.type), propname);
+		RNA_warning("%s.%s not found", RNA_struct_identifier(ptr.type), propname);
 		return;
 	}
 
@@ -823,36 +874,41 @@ void uiItemEnumO_value(uiLayout *layout, const char *name, int icon, const char 
 
 	/* same as uiItemEnumO */
 	if(!name)
-		name= ui_menu_enumpropname(layout, opname, propname, value);
+		name = ui_menu_enumpropname(layout, &ptr, prop, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
 }
 
 void uiItemEnumO_string(uiLayout *layout, const char *name, int icon, const char *opname, const char *propname, const char *value_str)
 {
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	PointerRNA ptr;
-	
-	/* for getting the enum */
 	PropertyRNA *prop;
+
 	EnumPropertyItem *item;
 	int value, free;
 
-	WM_operator_properties_create(&ptr, opname);
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
+	WM_operator_properties_create_ptr(&ptr, ot);
 	
 	/* enum lookup */
 	if((prop= RNA_struct_find_property(&ptr, propname))) {
-		RNA_property_enum_items(layout->root->block->evil_C, &ptr, prop, &item, NULL, &free);
+		RNA_property_enum_items_gettexted(layout->root->block->evil_C, &ptr, prop, &item, NULL, &free);
 		if(item==NULL || RNA_enum_value_from_id(item, value_str, &value)==0) {
-			if(free) MEM_freeN(item);
-			RNA_warning("uiItemEnumO_string: %s.%s, enum %s not found.\n", RNA_struct_identifier(ptr.type), propname, value_str);
+			if(free) {
+				MEM_freeN(item);
+			}
+			RNA_warning("%s.%s, enum %s not found", RNA_struct_identifier(ptr.type), propname, value_str);
 			return;
 		}
 
-		if(free)
+		if (free) {
 			MEM_freeN(item);
+		}
 	}
 	else {
-		RNA_warning("uiItemEnumO_string: %s.%s not found.\n", RNA_struct_identifier(ptr.type), propname);
+		RNA_warning("%s.%s not found", RNA_struct_identifier(ptr.type), propname);
 		return;
 	}
 	
@@ -860,49 +916,61 @@ void uiItemEnumO_string(uiLayout *layout, const char *name, int icon, const char
 	
 	/* same as uiItemEnumO */
 	if(!name)
-		name= ui_menu_enumpropname(layout, opname, propname, value);
+		name = ui_menu_enumpropname(layout, &ptr, prop, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
 }
 
 void uiItemBooleanO(uiLayout *layout, const char *name, int icon, const char *opname, const char *propname, int value)
 {
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	PointerRNA ptr;
 
-	WM_operator_properties_create(&ptr, opname);
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
+	WM_operator_properties_create_ptr(&ptr, ot);
 	RNA_boolean_set(&ptr, propname, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
 }
 
 void uiItemIntO(uiLayout *layout, const char *name, int icon, const char *opname, const char *propname, int value)
 {
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	PointerRNA ptr;
 
-	WM_operator_properties_create(&ptr, opname);
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
+	WM_operator_properties_create_ptr(&ptr, ot);
 	RNA_int_set(&ptr, propname, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
 }
 
 void uiItemFloatO(uiLayout *layout, const char *name, int icon, const char *opname, const char *propname, float value)
 {
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	PointerRNA ptr;
 
-	WM_operator_properties_create(&ptr, opname);
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
+	WM_operator_properties_create_ptr(&ptr, ot);
 	RNA_float_set(&ptr, propname, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
 }
 
 void uiItemStringO(uiLayout *layout, const char *name, int icon, const char *opname, const char *propname, const char *value)
 {
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	PointerRNA ptr;
 
-	WM_operator_properties_create(&ptr, opname);
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
+	WM_operator_properties_create_ptr(&ptr, ot);
 	RNA_string_set(&ptr, propname, value);
 
-	uiItemFullO(layout, opname, name, icon, ptr.data, layout->root->opcontext, 0);
+	uiItemFullO_ptr(layout, ot, name, icon, ptr.data, layout->root->opcontext, 0);
 }
 
 void uiItemO(uiLayout *layout, const char *name, int icon, const char *opname)
@@ -1059,7 +1127,7 @@ void uiItemR(uiLayout *layout, PointerRNA *ptr, const char *propname, int flag, 
 
 	if(!prop) {
 		ui_item_disabled(layout, propname);
-		RNA_warning("uiItemR: property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
@@ -1072,7 +1140,7 @@ void uiItemEnumR(uiLayout *layout, const char *name, int icon, struct PointerRNA
 
 	if(!prop || RNA_property_type(prop) != PROP_ENUM) {
 		ui_item_disabled(layout, propname);
-		RNA_warning("uiItemEnumR: property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
@@ -1087,16 +1155,18 @@ void uiItemEnumR_string(uiLayout *layout, struct PointerRNA *ptr, const char *pr
 
 	if(!prop || RNA_property_type(prop) != PROP_ENUM) {
 		ui_item_disabled(layout, propname);
-		RNA_warning("uiItemEnumR_string: enum property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("enum property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
-	RNA_property_enum_items(layout->root->block->evil_C, ptr, prop, &item, NULL, &free);
+	RNA_property_enum_items_gettexted(layout->root->block->evil_C, ptr, prop, &item, NULL, &free);
 
 	if(!RNA_enum_value_from_id(item, value, &ivalue)) {
-		if(free) MEM_freeN(item);
+		if (free) {
+			MEM_freeN(item);
+		}
 		ui_item_disabled(layout, propname);
-		RNA_warning("uiItemEnumR: enum property value not found: %s\n", value);
+		RNA_warning("enum property value not found: %s", value);
 		return;
 	}
 
@@ -1107,8 +1177,9 @@ void uiItemEnumR_string(uiLayout *layout, struct PointerRNA *ptr, const char *pr
 		}
 	}
 
-	if(free)
+	if (free) {
 		MEM_freeN(item);
+	}
 }
 
 void uiItemsEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propname)
@@ -1121,12 +1192,12 @@ void uiItemsEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propname
 
 	if(!prop) {
 		ui_item_disabled(layout, propname);
-		RNA_warning("uiItemsEnumR: enum property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("enum property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
 	if(RNA_property_type(prop) != PROP_ENUM) {
-		RNA_warning("uiItemsEnumR: not an enum property: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("not an enum property: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 	else {
@@ -1135,7 +1206,7 @@ void uiItemsEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propname
 		uiLayout *split= uiLayoutSplit(layout, 0, 0);
 		uiLayout *column= uiLayoutColumn(split, 0);
 
-		RNA_property_enum_items(block->evil_C, ptr, prop, &item, &totitem, &free);
+		RNA_property_enum_items_gettexted(block->evil_C, ptr, prop, &item, &totitem, &free);
 
 		for(i=0; i<totitem; i++) {
 			if(item[i].identifier[0]) {
@@ -1158,8 +1229,9 @@ void uiItemsEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propname
 			}
 		}
 
-		if(free)
+		if (free) {
 			MEM_freeN(item);
+		}
 	}
 }
 
@@ -1206,18 +1278,18 @@ static void rna_search_cb(const struct bContext *C, void *arg_but, const char *s
 
 		if(itemptr.type && RNA_struct_is_ID(itemptr.type)) {
 			ID *id= itemptr.data;
-			char name_ui[32];
+			char name_ui[MAX_ID_NAME];
 
 #if 0		/* this name is used for a string comparison and can't be modified, TODO */
 			name_uiprefix_id(name_ui, id);
 #else
-			strcpy(name_ui, id->name+2);
+			BLI_strncpy(name_ui, id->name+2, sizeof(name_ui));
 #endif
 			name= BLI_strdup(name_ui);
-			iconid= ui_id_icon_get((bContext*)C, id, 1);
+			iconid= ui_id_icon_get((bContext*)C, id, 0);
 		}
 		else {
-			name= RNA_struct_name_get_alloc(&itemptr, NULL, 0);
+			name= RNA_struct_name_get_alloc(&itemptr, NULL, 0, NULL); /* could use the string length here */
 			iconid = 0;
 		}
 
@@ -1314,13 +1386,13 @@ void uiItemPointerR(uiLayout *layout, struct PointerRNA *ptr, const char *propna
 	prop= RNA_struct_find_property(ptr, propname);
 
 	if(!prop) {
-		RNA_warning("uiItemPointerR: property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 	
 	type= RNA_property_type(prop);
 	if(!ELEM(type, PROP_POINTER, PROP_STRING)) {
-		RNA_warning("uiItemPointerR: property %s must be a pointer or string.\n", propname);
+		RNA_warning("Property %s must be a pointer or string", propname);
 		return;
 	}
 
@@ -1328,11 +1400,11 @@ void uiItemPointerR(uiLayout *layout, struct PointerRNA *ptr, const char *propna
 
 
 	if(!searchprop) {
-		RNA_warning("uiItemPointerR: search collection property not found: %s.%s\n", RNA_struct_identifier(ptr->type), searchpropname);
+		RNA_warning("search collection property not found: %s.%s", RNA_struct_identifier(ptr->type), searchpropname);
 		return;
 	}
 	else if (RNA_property_type(searchprop) != PROP_COLLECTION) {
-		RNA_warning("uiItemPointerR: search collection property is not a collection type: %s.%s\n", RNA_struct_identifier(ptr->type), searchpropname);
+		RNA_warning("search collection property is not a collection type: %s.%s", RNA_struct_identifier(ptr->type), searchpropname);
 		return;
 	}
 
@@ -1368,7 +1440,7 @@ static void ui_item_menutype_func(bContext *C, uiLayout *layout, void *arg_mt)
 	mt->draw(C, &menu);
 }
 
-static void ui_item_menu(uiLayout *layout, const char *name, int icon, uiMenuCreateFunc func, void *arg, void *argN)
+static void ui_item_menu(uiLayout *layout, const char *name, int icon, uiMenuCreateFunc func, void *arg, void *argN, const char *tip)
 {
 	uiBlock *block= layout->root->block;
 	uiBut *but;
@@ -1391,11 +1463,11 @@ static void ui_item_menu(uiLayout *layout, const char *name, int icon, uiMenuCre
 		w -= 10;
 
 	if(name[0] && icon)
-		but= uiDefIconTextMenuBut(block, func, arg, icon, name, 0, 0, w, h, "");
+		but= uiDefIconTextMenuBut(block, func, arg, icon, name, 0, 0, w, h, tip);
 	else if(icon)
-		but= uiDefIconMenuBut(block, func, arg, icon, 0, 0, w, h, "");
+		but= uiDefIconMenuBut(block, func, arg, icon, 0, 0, w, h, tip);
 	else
-		but= uiDefMenuBut(block, func, arg, name, 0, 0, w, h, "");
+		but= uiDefMenuBut(block, func, arg, name, 0, 0, w, h, tip);
 
 	if(argN) { /* ugly .. */
 		but->poin= (char*)but;
@@ -1417,16 +1489,18 @@ void uiItemM(uiLayout *layout, bContext *UNUSED(C), const char *menuname, const 
 	mt= WM_menutype_find(menuname, FALSE);
 
 	if(mt==NULL) {
-		RNA_warning("uiItemM: not found %s\n", menuname);
+		RNA_warning("not found %s", menuname);
 		return;
 	}
 
-	if(!name)
-		name= mt->label;
+	if(!name) {
+		name= IFACE_(mt->label);
+	}
+
 	if(layout->root->type == UI_LAYOUT_MENU && !icon)
 		icon= ICON_BLANK1;
 
-	ui_item_menu(layout, name, icon, ui_item_menutype_func, mt, NULL);
+	ui_item_menu(layout, name, icon, ui_item_menutype_func, mt, NULL, mt->description);
 }
 
 /* label item */
@@ -1488,11 +1562,11 @@ void uiItemV(uiLayout *layout, const char *name, int icon, int argval)
 	w= ui_text_icon_width(layout, name, icon, 0);
 
 	if(icon && name[0])
-		uiDefIconTextButF(block, BUTM, 0, icon, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, argval, "");
+		uiDefIconTextButF(block, BUT, argval, icon, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, 0, "");
 	else if(icon)
-		uiDefIconButF(block, BUTM, 0, icon, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, argval, "");
+		uiDefIconButF(block, BUT, argval, icon, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, 0, "");
 	else
-		uiDefButF(block, BUTM, 0, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, argval, "");
+		uiDefButF(block, BUT, argval, name, 0, 0, w, UI_UNIT_Y, retvalue, 0.0, 0.0, 0, 0, "");
 }
 
 /* separator item */
@@ -1510,12 +1584,12 @@ void uiItemMenuF(uiLayout *layout, const char *name, int icon, uiMenuCreateFunc 
 	if(!func)
 		return;
 
-	ui_item_menu(layout, name, icon, func, arg, NULL);
+	ui_item_menu(layout, name, icon, func, arg, NULL, "");
 }
 
 typedef struct MenuItemLevel {
 	int opcontext;
-	/* dont use pointers to the strings because python can dynamically
+	/* don't use pointers to the strings because python can dynamically
 	 * allocate strings and free before the menu draws, see [#27304] */
 	char opname[OP_MAX_TYPENAME];
 	char propname[MAX_IDPROP_NAME];
@@ -1532,17 +1606,14 @@ static void menu_item_enum_opname_menu(bContext *UNUSED(C), uiLayout *layout, vo
 
 void uiItemMenuEnumO(uiLayout *layout, const char *opname, const char *propname, const char *name, int icon)
 {
-	wmOperatorType *ot= WM_operatortype_find(opname, 1);
+	wmOperatorType *ot = WM_operatortype_find(opname, 0); /* print error next */
 	MenuItemLevel *lvl;
 
-	if(!ot) {
-		ui_item_disabled(layout, opname);
-		RNA_warning("uiItemMenuEnumO: unknown operator '%s'\n", opname);
-		return;
-	}
+	UI_OPERATOR_ERROR_RET(ot, opname, return);
+
 	if(!ot->srna) {
 		ui_item_disabled(layout, opname);
-		RNA_warning("uiItemMenuEnumO: operator missing srna '%s'\n", opname);
+		RNA_warning("operator missing srna '%s'", opname);
 		return;
 	}
 
@@ -1556,7 +1627,7 @@ void uiItemMenuEnumO(uiLayout *layout, const char *opname, const char *propname,
 	BLI_strncpy(lvl->propname, propname, sizeof(lvl->propname));
 	lvl->opcontext= layout->root->opcontext;
 
-	ui_item_menu(layout, name, icon, menu_item_enum_opname_menu, NULL, lvl);
+	ui_item_menu(layout, name, icon, menu_item_enum_opname_menu, NULL, lvl, ot->description);
 }
 
 static void menu_item_enum_rna_menu(bContext *UNUSED(C), uiLayout *layout, void *arg)
@@ -1575,7 +1646,7 @@ void uiItemMenuEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propn
 	prop= RNA_struct_find_property(ptr, propname);
 	if(!prop) {
 		ui_item_disabled(layout, propname);
-		RNA_warning("uiItemMenuEnumR: property not found: %s.%s\n", RNA_struct_identifier(ptr->type), propname);
+		RNA_warning("property not found: %s.%s", RNA_struct_identifier(ptr->type), propname);
 		return;
 	}
 
@@ -1589,7 +1660,7 @@ void uiItemMenuEnumR(uiLayout *layout, struct PointerRNA *ptr, const char *propn
 	BLI_strncpy(lvl->propname, propname, sizeof(lvl->propname));
 	lvl->opcontext= layout->root->opcontext;
 
-	ui_item_menu(layout, name, icon, menu_item_enum_rna_menu, NULL, lvl);
+	ui_item_menu(layout, name, icon, menu_item_enum_rna_menu, NULL, lvl, RNA_property_description(prop));
 }
 
 /**************************** Layout Items ***************************/
@@ -2418,7 +2489,7 @@ static void ui_item_estimate(uiItem *item)
 	}
 }
 
-static void ui_item_align(uiLayout *litem, int nr)
+static void ui_item_align(uiLayout *litem, short nr)
 {
 	uiItem *item;
 	uiButtonItem *bitem;
@@ -2513,7 +2584,7 @@ static void ui_item_layout(uiItem *item)
 static void ui_layout_end(uiBlock *block, uiLayout *layout, int *x, int *y)
 {
 	if(layout->root->handlefunc)
-		uiBlockSetButmFunc(block, layout->root->handlefunc, layout->root->argv);
+		uiBlockSetHandleFunc(block, layout->root->handlefunc, layout->root->argv);
 
 	ui_item_estimate(&layout->item);
 	ui_item_layout(&layout->item);
@@ -2727,8 +2798,9 @@ const char *uiLayoutIntrospect(uiLayout *layout)
 {
 	DynStr *ds= BLI_dynstr_new();
 
-	if(str)
+	if (str) {
 		MEM_freeN(str);
+	}
 
 	ui_intro_uiLayout(ds, layout);
 
@@ -2738,12 +2810,17 @@ const char *uiLayoutIntrospect(uiLayout *layout)
 	return str;
 }
 
+static void ui_layout_operator_buts__reset_cb(bContext *UNUSED(C), void *op_pt, void *UNUSED(arg_dummy2))
+{
+	WM_operator_properties_reset((wmOperator *)op_pt);
+}
+
 /* this function does not initialize the layout, functions can be called on the layout before and after */
-void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,int (*check_prop)(struct PropertyRNA *), const char label_align, const short flag)
+void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,int (*check_prop)(struct PointerRNA *, struct PropertyRNA *), const char label_align, const short flag)
 {
 	if(!op->properties) {
 		IDPropertyTemplate val = {0};
-		op->properties= IDP_New(IDP_GROUP, val, "wmOperatorProperties");
+		op->properties= IDP_New(IDP_GROUP, &val, "wmOperatorProperties");
 	}
 
 	if(flag & UI_LAYOUT_OP_SHOW_TITLE) {
@@ -2763,6 +2840,8 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,in
 		PointerRNA op_ptr;
 		uiLayout *row;
 
+		uiLayoutGetBlock(layout)->ui_operator= op;
+
 		row= uiLayoutRow(layout, TRUE);
 		uiItemM(row, (bContext *)C, "WM_MT_operator_presets", NULL, ICON_NONE);
 
@@ -2772,7 +2851,7 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,in
 
 		WM_operator_properties_create(&op_ptr, "WM_OT_operator_preset_add");
 		RNA_string_set(&op_ptr, "operator", op->type->idname);
-		RNA_boolean_set(&op_ptr, "remove_active", 1);
+		RNA_boolean_set(&op_ptr, "remove_active", TRUE);
 		op_ptr= uiItemFullO(row, "WM_OT_operator_preset_add", "", ICON_ZOOMOUT, op_ptr.data, WM_OP_INVOKE_DEFAULT, 0);
 	}
 
@@ -2794,10 +2873,25 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,in
 		empty= uiDefAutoButsRNA(layout, &ptr, check_prop, label_align) == 0;
 
 		if(empty && (flag & UI_LAYOUT_OP_SHOW_EMPTY)) {
-			uiItemL(layout, "No Properties.", ICON_NONE);
+			uiItemL(layout, IFACE_("No Properties"), ICON_NONE);
 		}
 	}
-	
+
+	/* its possible that reset can do nothing if all have PROP_SKIP_SAVE enabled
+	 * but this is not so important if this button is drawn in those cases
+	 * (which isn't all that likely anyway) - campbell */
+	if (op->properties->len) {
+		uiBlock *block;
+		uiBut *but;
+		uiLayout *col; /* needed to avoid alignment errors with previous buttons */
+
+		col= uiLayoutColumn(layout, 0);
+		block= uiLayoutGetBlock(col);
+		but = uiDefIconTextBut(block , BUT, 0, ICON_FILE_REFRESH, IFACE_("Reset"), 0, 0, 18, 20,
+		                       NULL, 0.0, 0.0, 0.0, 0.0, TIP_("Reset operator defaults"));
+		uiButSetFunc(but, ui_layout_operator_buts__reset_cb, op, NULL);
+	}
+
 	/* set various special settings for buttons */
 	{
 		uiBut *but;
@@ -2813,5 +2907,16 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,in
 				uiButSetFocusOnEnter(CTX_wm_window(C), but);
 			}
 		}
+	}
+}
+
+/* this is a bit of a hack but best keep it in one place at least */
+MenuType *uiButGetMenuType(uiBut *but)
+{
+	if(but->menu_create_func == ui_item_menutype_func) {
+		return (MenuType *)but->poin;
+	}
+	else {
+		return NULL;
 	}
 }

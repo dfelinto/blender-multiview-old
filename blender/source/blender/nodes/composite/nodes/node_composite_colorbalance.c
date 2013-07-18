@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,7 @@
 /* ******************* Color Balance ********************************* */
 static bNodeSocketTemplate cmp_node_colorbalance_in[]={
 	{SOCK_FLOAT, 1, "Fac",	1.0f, 0.0f, 0.0f, 1.0f, 0.0f, 1.0f, PROP_FACTOR},
-	{SOCK_RGBA,1,"Image", 0.8f, 0.8f, 0.8f, 1.0f},
+	{SOCK_RGBA,1,"Image", 1.0f, 1.0f, 1.0f, 1.0f},
 	{-1,0,""}
 };
 
@@ -63,7 +61,7 @@ DO_INLINE float colorbalance_cdl(float in, float offset, float power, float slop
 	float x = in * slope + offset;
 	
 	/* prevent NaN */
-	CLAMP(x, 0.0, 1.0);
+	CLAMP(x, 0.0f, 1.0f);
 	
 	return powf(x, power);
 }
@@ -71,7 +69,7 @@ DO_INLINE float colorbalance_cdl(float in, float offset, float power, float slop
 /* note: lift_lgg is just 2-lift, gamma_inv is 1.0/gamma */
 DO_INLINE float colorbalance_lgg(float in, float lift_lgg, float gamma_inv, float gain)
 {
-	/* 1:1 match with the sequencer with linear/srgb conversions, the conversion isnt pretty
+	/* 1:1 match with the sequencer with linear/srgb conversions, the conversion isn'tisn't pretty
 	 * but best keep it this way, sice testing for durian shows a similar calculation
 	 * without lin/srgb conversions gives bad results (over-saturated shadows) with colors
 	 * slightly below 1.0. some correction can be done but it ends up looking bad for shadows or lighter tones - campbell */
@@ -184,18 +182,16 @@ static void node_composit_init_colorbalance(bNodeTree *UNUSED(ntree), bNode* nod
 	n->gain[0] = n->gain[1] = n->gain[2] = 1.0f;
 }
 
-void register_node_type_cmp_colorbalance(ListBase *lb)
+void register_node_type_cmp_colorbalance(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_COLORBALANCE, "Color Balance", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_COLORBALANCE, "Color Balance", NODE_CLASS_OP_COLOR, NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_colorbalance_in, cmp_node_colorbalance_out);
 	node_type_size(&ntype, 400, 200, 400);
 	node_type_init(&ntype, node_composit_init_colorbalance);
 	node_type_storage(&ntype, "NodeColorBalance", node_free_standard_storage, node_copy_standard_storage);
 	node_type_exec(&ntype, node_composit_exec_colorbalance);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-

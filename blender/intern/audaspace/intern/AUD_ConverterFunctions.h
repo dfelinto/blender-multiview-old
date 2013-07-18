@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_CONVERTERFUNCTIONS
-#define AUD_CONVERTERFUNCTIONS
+#ifndef __AUD_CONVERTERFUNCTIONS_H__
+#define __AUD_CONVERTERFUNCTIONS_H__
 
 #include "AUD_Space.h"
 
@@ -137,4 +135,4 @@ void AUD_convert_double_s32(data_t* target, data_t* source, int length);
 
 void AUD_convert_double_float(data_t* target, data_t* source, int length);
 
-#endif //AUD_CONVERTERFUNCTIONS
+#endif //__AUD_CONVERTERFUNCTIONS_H__

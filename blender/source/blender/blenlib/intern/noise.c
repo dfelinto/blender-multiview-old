@@ -1,6 +1,5 @@
 /*
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -920,10 +919,6 @@ static float g[512+2][3]= {
 	{-0.944031, -0.326599, -0.045624},
 };
 
-
-
-#define DOT(a,b) (a[0] * b[0] + a[1] * b[1] + a[2] * b[2])
-
 #define setup(i,b0,b1,r0,r1) \
 		t = vec[i] + 10000.0f; \
 		b0 = ((int)t) & 255; \
@@ -962,29 +957,29 @@ static float noise3_perlin(float vec[3])
 	sz = surve(rz0);
 
 
-	q = g[ b00 + bz0 ] ;
+	q = g[ b00 + bz0 ];
 	u = at(rx0,ry0,rz0);
-	q = g[ b10 + bz0 ] ;
+	q = g[ b10 + bz0 ];
 	v = at(rx1,ry0,rz0);
 	a = lerp(sx, u, v);
 
-	q = g[ b01 + bz0 ] ;
+	q = g[ b01 + bz0 ];
 	u = at(rx0,ry1,rz0);
-	q = g[ b11 + bz0 ] ;
+	q = g[ b11 + bz0 ];
 	v = at(rx1,ry1,rz0);
 	b = lerp(sx, u, v);
 
 	c = lerp(sy, a, b);          /* interpolate in y at lo x */
 
-	q = g[ b00 + bz1 ] ;
+	q = g[ b00 + bz1 ];
 	u = at(rx0,ry0,rz1);
-	q = g[ b10 + bz1 ] ;
+	q = g[ b10 + bz1 ];
 	v = at(rx1,ry0,rz1);
 	a = lerp(sx, u, v);
 
-	q = g[ b01 + bz1 ] ;
+	q = g[ b01 + bz1 ];
 	u = at(rx0,ry1,rz1);
-	q = g[ b11 + bz1 ] ;
+	q = g[ b11 + bz1 ];
 	v = at(rx1,ry1,rz1);
 	b = lerp(sx, u, v);
 
@@ -1048,7 +1043,8 @@ float BLI_hnoisep(float noisesize, float x, float y, float z)
 	return noise3_perlin(vec);
 }
 
-/*static float turbulencep(float noisesize, float x, float y, float z, int nr)
+#if 0
+static float turbulencep(float noisesize, float x, float y, float z, int nr)
 {
 	float vec[3];
 
@@ -1057,7 +1053,8 @@ float BLI_hnoisep(float noisesize, float x, float y, float z)
 	vec[2]= z/noisesize;
 	nr++;
 	return turbulence_perlin(vec, 1.0, (float)(1<<nr));
-}*/
+}
+#endif
 
 /******************/
 /* VORONOI/WORLEY */
@@ -1111,7 +1108,7 @@ static float dist_Minkovsky(float x, float y, float z, float e)
 
 
 /* Not 'pure' Worley, but the results are virtually the same.
-	 Returns distances in da and point coords in pa */
+ * Returns distances in da and point coords in pa */
 void voronoi(float x, float y, float z, float* da, float* pa, float me, int dtype)
 {
 	int xx, yy, zz, xi, yi, zi;
@@ -1227,7 +1224,7 @@ static float voronoi_Cr(float x, float y, float z)
 
 
 /* Signed version of all 6 of the above, just 2x-1, not really correct though (range is potentially (0, sqrt(6)).
-   Used in the musgrave functions */
+ * Used in the musgrave functions */
 static float voronoi_F1S(float x, float y, float z)
 {
 	float da[4], pa[12];
@@ -1511,9 +1508,10 @@ float mg_fBm(float x, float y, float z, float H, float lacunarity, float octaves
  *    ``octaves''  is the number of frequencies in the fBm
  *    ``offset''  is the zero offset, which determines multifractality (NOT USED??)
  */
- /* this one is in fact rather confusing,
-	 * there seem to be errors in the original source code (in all three versions of proc.text&mod),
-	* I modified it to something that made sense to me, so it might be wrong... */
+
+/* this one is in fact rather confusing,
+ * there seem to be errors in the original source code (in all three versions of proc.text&mod),
+ * I modified it to something that made sense to me, so it might be wrong... */
 float mg_MultiFractal(float x, float y, float z, float H, float lacunarity, float octaves, int noisebasis)
 {
 	float	rmd, value=1.0, pwr=1.0, pwHL=powf(lacunarity, -H);

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup bgerast
  */
 
-#ifndef __RAS_ICANVAS
-#define __RAS_ICANVAS
+#ifndef __RAS_ICANVAS_H__
+#define __RAS_ICANVAS_H__
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #include "MEM_guardedalloc.h"
@@ -82,8 +80,8 @@ public:
 	 * Initializes the canvas for drawing.  Drawing to the canvas is
 	 * only allowed between BeginDraw() and EndDraw().
 	 *
-	 * @retval false Acquiring the canvas failed.
-	 * @retval true Acquiring the canvas succeeded.
+	 * \retval false Acquiring the canvas failed.
+	 * \retval true Acquiring the canvas succeeded.
 	 *
 	 */
 
@@ -172,7 +170,7 @@ public:
 	) = 0;
 
 	/**
-	 * Set the visible vieport 
+	 * Set the visible view-port 
 	 */
 
 	virtual
@@ -207,6 +205,15 @@ public:
 	MakeScreenShot(
 		const char* filename
 	)=0;
+
+	virtual
+		void 
+	ResizeWindow(
+		int width,
+		int height
+	)=0;
+
+		
 	
 protected:
 	RAS_MouseState m_mousestate;
@@ -218,5 +225,5 @@ public:
 #endif
 };
 
-#endif //__RAS_ICANVAS
+#endif //__RAS_ICANVAS_H__
 

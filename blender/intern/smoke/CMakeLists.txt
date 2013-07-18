@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN GPL LICENSE BLOCK *****
 #
 # This program is free software; you can redistribute it and/or
@@ -83,8 +82,13 @@ set(SRC
 	intern/tnt/tnt_version.h
 )
 
+# quiet -Wundef
+add_definitions(-DDDF_DEBUG=0)
+
 if(WITH_OPENMP)
 	add_definitions(-DPARALLEL=1)
+else()
+	add_definitions(-DPARALLEL=0)
 endif()
 
 if(WITH_FFTW3)

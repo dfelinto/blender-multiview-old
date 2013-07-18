@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -39,7 +37,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_editVert.h"	/* lasso tessellation */
 #include "BLI_math.h"
 #include "BLI_scanfill.h"	/* lasso tessellation */
 #include "BLI_utildefines.h"
@@ -76,7 +73,9 @@ wmGesture *WM_gesture_new(bContext *C, wmEvent *event, int type)
 	
 	wm_subwindow_getorigin(window, gesture->swinid, &sx, &sy);
 	
-	if( ELEM5(type, WM_GESTURE_RECT, WM_GESTURE_CROSS_RECT, WM_GESTURE_TWEAK, WM_GESTURE_CIRCLE, WM_GESTURE_STRAIGHTLINE)) {
+	if (ELEM5(type, WM_GESTURE_RECT, WM_GESTURE_CROSS_RECT, WM_GESTURE_TWEAK,
+	                WM_GESTURE_CIRCLE, WM_GESTURE_STRAIGHTLINE))
+	{
 		rcti *rect= MEM_callocN(sizeof(rcti), "gesture rect new");
 		
 		gesture->customdata= rect;
@@ -126,14 +125,13 @@ void WM_gestures_remove(bContext *C)
 
 
 /* tweak and line gestures */
-#define TWEAK_THRESHOLD		10
 int wm_gesture_evaluate(wmGesture *gesture)
 {
 	if(gesture->type==WM_GESTURE_TWEAK) {
 		rcti *rect= gesture->customdata;
 		int dx= rect->xmax - rect->xmin;
 		int dy= rect->ymax - rect->ymin;
-		if(ABS(dx)+ABS(dy) > TWEAK_THRESHOLD) {
+		if(ABS(dx)+ABS(dy) > U.tweak_threshold) {
 			int theta= (int)floor(4.0f*atan2f((float)dy, (float)dx)/(float)M_PI + 0.5f);
 			int val= EVT_GESTURE_W;
 			
@@ -231,12 +229,12 @@ static void wm_gesture_draw_circle(wmGesture *gt)
 
 static void draw_filled_lasso(wmGesture *gt)
 {
-	EditVert *v=NULL, *lastv=NULL, *firstv=NULL;
-	EditEdge *e;
-	EditFace *efa;
+	ScanFillVert *v=NULL, *lastv=NULL, *firstv=NULL;
+	ScanFillFace *efa;
 	short *lasso= (short *)gt->customdata;
 	int i;
 	
+	BLI_begin_edgefill();
 	for (i=0; i<gt->points; i++, lasso+=2) {
 		float co[3];
 
@@ -246,7 +244,7 @@ static void draw_filled_lasso(wmGesture *gt)
 
 		v = BLI_addfillvert(co);
 		if (lastv)
-			e = BLI_addfilledge(lastv, v);
+			/* e = */ /* UNUSED */ BLI_addfilledge(lastv, v);
 		lastv = v;
 		if (firstv==NULL) firstv = v;
 	}
@@ -260,9 +258,9 @@ static void draw_filled_lasso(wmGesture *gt)
 		glColor4f(1.0, 1.0, 1.0, 0.05);
 		glBegin(GL_TRIANGLES);
 		for (efa = fillfacebase.first; efa; efa=efa->next) {
-			glVertex2f(efa->v1->co[0], efa->v1->co[1]);
-			glVertex2f(efa->v2->co[0], efa->v2->co[1]);
-			glVertex2f(efa->v3->co[0], efa->v3->co[1]);
+			glVertex2fv(efa->v1->co);
+			glVertex2fv(efa->v2->co);
+			glVertex2fv(efa->v3->co);
 		}
 		glEnd();
 		glDisable(GL_BLEND);

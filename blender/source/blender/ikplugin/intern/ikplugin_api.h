@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +31,8 @@
  */
 
 
-#ifndef IKPLUGIN_API_H
-#define IKPLUGIN_API_H
+#ifndef __IKPLUGIN_API_H__
+#define __IKPLUGIN_API_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -61,5 +60,5 @@ typedef struct IKPlugin IKPlugin;
 }
 #endif
 
-#endif // IKPLUGIN_API_H
+#endif // __IKPLUGIN_API_H__
 

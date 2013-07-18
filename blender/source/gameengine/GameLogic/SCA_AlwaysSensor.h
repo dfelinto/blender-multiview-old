@@ -1,7 +1,6 @@
 /*
  * SCA_AlwaysSensor.h
  *
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -33,13 +32,13 @@
  *  \ingroup gamelogic
  */
 
-#ifndef __KX_ALWAYSSENSOR
-#define __KX_ALWAYSSENSOR
+#ifndef __SCA_ALWAYSSENSOR_H__
+#define __SCA_ALWAYSSENSOR_H__
 #include "SCA_ISensor.h"
 
 class SCA_AlwaysSensor : public SCA_ISensor
 {
-	Py_Header;
+	Py_Header
 	bool			m_alwaysresult;
 public:
 	SCA_AlwaysSensor(class SCA_EventManager* eventmgr,
@@ -51,5 +50,5 @@ public:
 	virtual void Init();
 };
 
-#endif //__KX_ALWAYSSENSOR
+#endif //__SCA_ALWAYSSENSOR_H__
 

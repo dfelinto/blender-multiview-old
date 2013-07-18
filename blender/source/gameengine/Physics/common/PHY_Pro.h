@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +29,8 @@
  *  \ingroup phys
  */
 
-#ifndef PHY_PROPSH
-#define PHY_PROPSH
+#ifndef __PHY_PRO_H__
+#define __PHY_PRO_H__
 
 #include <MT_Scalar.h>
 
@@ -61,5 +59,5 @@ struct PHY_MaterialProps {
 	bool      m_fh_normal;             // Should the object slide off slopes?
 };
 
-#endif //PHY_PROPSH
+#endif //__PHY_PRO_H__
 

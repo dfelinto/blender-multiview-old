@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * Copyright 2009-2011 Jörg Hermann Müller
@@ -29,8 +27,8 @@
  */
 
 
-#ifndef AUD_SEQUENCERHANDLE
-#define AUD_SEQUENCERHANDLE
+#ifndef __AUD_SEQUENCERHANDLE_H__
+#define __AUD_SEQUENCERHANDLE_H__
 
 #include "AUD_SequencerEntry.h"
 #include "AUD_IHandle.h"
@@ -94,8 +92,9 @@ public:
 	 * Updates the handle for playback.
 	 * \param position The current time during playback.
 	 * \param frame The current frame during playback.
+	 * \param fps The animation frames per second.
 	 */
-	void update(float position, float frame);
+	void update(float position, float frame, float fps);
 
 	/**
 	 * Seeks the handle to a specific time position.
@@ -104,4 +103,4 @@ public:
 	void seek(float position);
 };
 
-#endif //AUD_SEQUENCERHANDLE
+#endif //__AUD_SEQUENCERHANDLE_H__

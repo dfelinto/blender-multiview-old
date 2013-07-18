@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -30,8 +28,8 @@
  *  \ingroup wm
  */
 
-#ifndef WM_TYPES_H
-#define WM_TYPES_H
+#ifndef __WM_TYPES_H__
+#define __WM_TYPES_H__
 
 #ifdef __cplusplus
 extern "C" {
@@ -98,6 +96,11 @@ enum {
 #define KM_ALT2		64
 #define KM_OSKEY2	128
 
+/* KM_MOD_ flags for wmKeyMapItem and wmEvent.alt/shift/oskey/ctrl  */
+/* note that KM_ANY and FALSE are used with these defines too */
+#define KM_MOD_FIRST  1
+#define KM_MOD_SECOND 2
+
 /* type: defined in wm_event_types.c */
 #define KM_TEXTINPUT	-2
 
@@ -134,13 +137,13 @@ typedef struct wmNotifier {
 } wmNotifier;
 
 
-/* 4 levels 
-
-0xFF000000; category
-0x00FF0000; data
-0x0000FF00; data subtype (unused?)
-0x000000FF; action
-*/
+/* 4 levels
+ *
+ * 0xFF000000; category
+ * 0x00FF0000; data
+ * 0x0000FF00; data subtype (unused?)
+ * 0x000000FF; action
+ */
 
 /* category */
 #define NOTE_CATEGORY		0xFF000000
@@ -163,6 +166,7 @@ typedef struct wmNotifier {
 #define NC_NODE				(17<<24)
 #define NC_ID				(18<<24)
 #define NC_LOGIC			(19<<24)
+#define NC_MOVIECLIP			(20<<24)
 
 /* data type, 256 entries is enough, it can overlap */
 #define NOTE_DATA			0x00FF0000
@@ -272,6 +276,7 @@ typedef struct wmNotifier {
 #define ND_SPACE_SEQUENCER		(16<<16)
 #define ND_SPACE_NODE_VIEW		(17<<16)
 #define ND_SPACE_CHANGED		(18<<16) /*sent to a new editor type after it's replaced an old one*/
+#define ND_SPACE_CLIP			(19<<16)
 
 /* subtype, 256 entries too */
 #define NOTE_SUBTYPE		0x0000FF00
@@ -341,8 +346,10 @@ typedef struct wmEvent {
 	short val;			/* press, release, scrollvalue */
 	int x, y;			/* mouse pointer position, screen coord */
 	int mval[2];		/* region mouse position, name convention pre 2.5 :) */
-	short unicode;		/* future, ghost? */
-	char ascii;			/* from ghost */
+	char utf8_buf[6];	/* from, ghost if utf8 is enabled for the platform,
+						 * BLI_str_utf8_size() must _always_ be valid, check
+						 * when assigning s we don't need to check on every access after */
+	char ascii;			/* from ghost, fallback if utf8 isn't set */
 	char pad;
 
 	/* previous state */
@@ -421,6 +428,8 @@ typedef struct wmTimer {
 	int sleep;				/* internal, put timers to sleep when needed */
 } wmTimer;
 
+/* Default context for operator names/labels. */
+#define WM_OPERATOR_DEFAULT_I18NCONTEXT "Operator"
 
 typedef struct wmOperatorType {
 	const char *name;		/* text for ui, undo */
@@ -441,7 +450,7 @@ typedef struct wmOperatorType {
 
 	/* for modal temporary operators, initially invoke is called. then
 	 * any further events are handled in modal. if the operation is
-	 * cancelled due to some external reason, cancel is called
+	 * canceled due to some external reason, cancel is called
 	 * - see defines below for return values */
 	int (*invoke)(struct bContext *, struct wmOperator *, struct wmEvent *);
 	int (*cancel)(struct bContext *, struct wmOperator *);
@@ -464,8 +473,6 @@ typedef struct wmOperatorType {
 	/* struct wmOperatorTypeMacro */
 	ListBase macro;
 
-	short flag;
-
 	/* pointer to modal keymap, do not free! */
 	struct wmKeyMap *modalkeymap;
 
@@ -476,6 +483,10 @@ typedef struct wmOperatorType {
 
 	/* RNA integration */
 	ExtensionRNA ext;
+
+	/* Flag last for padding */
+	short flag;
+
 } wmOperatorType;
 
 /* **************** Paint Cursor ******************* */
@@ -517,14 +528,14 @@ typedef struct wmDrag {
 	
 	int icon, type;					/* type, see WM_DRAG defines above */
 	void *poin;
-	char path[240]; /* FILE_MAX */
+	char path[1024]; /* FILE_MAX */
 	double value;
 	
 	struct ImBuf *imb;						/* if no icon but imbuf should be drawn around cursor */
 	float scale;
 	int sx, sy;
 	
-	char opname[240]; /* FILE_MAX */			/* if set, draws operator name*/
+	char opname[200]; /* if set, draws operator name*/
 } wmDrag;
 
 /* dropboxes are like keymaps, part of the screen/area/region definition */
@@ -540,10 +551,11 @@ typedef struct wmDropBox {
 	
 	/* if poll survives, operator is called */
 	wmOperatorType *ot;				/* not saved in file, so can be pointer */
-	short opcontext;				/* default invoke */
-	
-	struct IDProperty *properties;			/* operator properties, assigned to ptr->data and can be written to a file */
+
+	struct IDProperty *properties;	/* operator properties, assigned to ptr->data and can be written to a file */
 	struct PointerRNA *ptr;			/* rna pointer to access properties */
+
+	short opcontext;				/* default invoke */
 
 } wmDropBox;
 
@@ -559,5 +571,5 @@ typedef struct RecentFile {
 }
 #endif
 
-#endif /* WM_TYPES_H */
+#endif /* __WM_TYPES_H__ */
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *  \ingroup collada
  */
 
-#ifndef __BC_ANIMATIONIMPORTER_H__
-#define __BC_ANIMATIONIMPORTER_H__
+#ifndef __ANIMATIONIMPORTER_H__
+#define __ANIMATIONIMPORTER_H__
 
 #include <map>
 #include <vector>
@@ -150,10 +148,12 @@ public:
 												   std::map<COLLADAFW::UniqueId, Object*>& object_map ,
 												   std::map<COLLADAFW::UniqueId, const COLLADAFW::Object*> FW_object_map);
 
-	AnimMix* get_animation_type( const COLLADAFW::Node * node , std::map<COLLADAFW::UniqueId,const COLLADAFW::Object*> FW_object_map ) ;
+	AnimMix* get_animation_type( const COLLADAFW::Node * node , std::map<COLLADAFW::UniqueId,const COLLADAFW::Object*> FW_object_map );
 
 	void apply_matrix_curves( Object * ob, std::vector<FCurve*>& animcurves, COLLADAFW::Node* root ,COLLADAFW::Node* node,
 									COLLADAFW::Transformation * tm );
+
+	void add_bone_animation_sampled(Object * ob, std::vector<FCurve*>& animcurves, COLLADAFW::Node* root ,COLLADAFW::Node* node, COLLADAFW::Transformation * tm);
 
 	void Assign_transform_animations(COLLADAFW::Transformation* transform , 
 									 const COLLADAFW::AnimationList::AnimationBinding * binding,
@@ -164,7 +164,7 @@ public:
 
 	int setAnimType ( const COLLADAFW::Animatable * prop , int type, int addition);
 	
-	void modify_fcurve(std::vector<FCurve*>* curves , char* rna_path , int array_index );
+	void modify_fcurve(std::vector<FCurve*>* curves , const char* rna_path , int array_index );
 	// prerequisites:
 	// animlist_map - map animlist id -> animlist
 	// curve_map - map anim id -> curve(s)

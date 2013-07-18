@@ -1,6 +1,4 @@
 /*
- * $Id$ 
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,8 +24,8 @@
  *
  * ***** END GPL LICENSE BLOCK *****
  */
-#ifndef BKE_PACKEDFILE_H
-#define BKE_PACKEDFILE_H
+#ifndef __BKE_PACKEDFILE_H__
+#define __BKE_PACKEDFILE_H__
 
 /** \file BKE_packedFile.h
  *  \ingroup bke
@@ -45,13 +43,13 @@ struct ReportList;
 struct VFont;
 
 /* pack */
-struct PackedFile *newPackedFile(struct ReportList *reports, const char *filename);
+struct PackedFile *newPackedFile(struct ReportList *reports, const char *filename, const char *relabase);
 struct PackedFile *newPackedFileMemory(void *mem, int memlen);
 
 void packAll(struct Main *bmain, struct ReportList *reports);
 
 /* unpack */
-char *unpackFile(struct ReportList *reports, char *abs_name, char *local_name, struct PackedFile *pf, int how);
+char *unpackFile(struct ReportList *reports, const char *abs_name, const char *local_name, struct PackedFile *pf, int how);
 int unpackVFont(struct ReportList *reports, struct VFont *vfont, int how);
 int unpackSound(struct Main *bmain, struct ReportList *reports, struct bSound *sound, int how);
 int unpackImage(struct ReportList *reports, struct Image *ima, int how);

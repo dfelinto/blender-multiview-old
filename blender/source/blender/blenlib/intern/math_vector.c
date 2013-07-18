@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -114,8 +112,12 @@ void mid_v3_v3v3(float v[3], const float v1[3], const float v2[3])
 /********************************** Angles ***********************************/
 
 /* Return the angle in radians between vecs 1-2 and 2-3 in radians
-   If v1 is a shoulder, v2 is the elbow and v3 is the hand,
-   this would return the angle at the elbow */
+ * If v1 is a shoulder, v2 is the elbow and v3 is the hand,
+ * this would return the angle at the elbow.
+ *
+ * note that when v1/v2/v3 represent 3 points along a straight line
+ * that the angle returned will be pi (180deg), rather then 0.0
+ */
 float angle_v3v3v3(const float v1[3], const float v2[3], const float v3[3])
 {
 	float vec1[3], vec2[3];
@@ -170,6 +172,12 @@ float angle_v2v2(const float v1[2], const float v2[2])
 	normalize_v2(vec2);
 
 	return angle_normalized_v2v2(vec1, vec2);
+}
+
+float angle_signed_v2v2(const float v1[2], const float v2[2])
+{
+	const float perp_dot = (v1[1] * v2[0]) - (v1[0] * v2[1]);
+	return atan2f(perp_dot, dot_v2v2(v1, v2));
 }
 
 float angle_normalized_v3v3(const float v1[3], const float v2[3])
@@ -241,6 +249,20 @@ void angle_quad_v3(float angles[4], const float v1[3], const float v2[3], const 
 	angles[3]= (float)M_PI - angle_normalized_v3v3(ed4, ed1);
 }
 
+void angle_poly_v3(float *angles, const float *verts[3], int len)
+{
+	int i;
+	float vec[3][3];
+
+	sub_v3_v3v3(vec[2], verts[len-1], verts[0]);
+	normalize_v3(vec[2]);
+	for (i = 0; i < len; i++) {
+		sub_v3_v3v3(vec[i%3], verts[i%len], verts[(i+1)%len]);
+		normalize_v3(vec[i%3]);
+		angles[i] = (float)M_PI - angle_normalized_v3v3(vec[(i+2)%3], vec[i%3]);
+	}
+}
+
 /********************************* Geometry **********************************/
 
 /* Project v1 on v2 */
@@ -277,8 +299,8 @@ void bisect_v3_v3v3v3(float out[3], const float v1[3], const float v2[3], const 
 }
 
 /* Returns a reflection vector from a vector and a normal vector
-reflect = vec - ((2 * DotVecs(vec, mirror)) * mirror)
-*/
+ * reflect = vec - ((2 * DotVecs(vec, mirror)) * mirror)
+ */
 void reflect_v3_v3v3(float out[3], const float v1[3], const float v2[3])
 {
 	float vec[3], normal[3];
@@ -320,8 +342,8 @@ void ortho_basis_v3v3_v3(float v1[3], float v2[3], const float v[3])
 }
 
 /* Rotate a point p by angle theta around an arbitrary axis r
-   http://local.wasp.uwa.edu.au/~pbourke/geometry/
-*/
+ * http://local.wasp.uwa.edu.au/~pbourke/geometry/
+ */
 void rotate_normalized_v3_v3v3fl(float r[3], const float p[3], const float axis[3], const float angle)
 {
 	const float costheta= cos(angle);
@@ -380,12 +402,51 @@ void minmax_v3v3_v3(float min[3], float max[3], const float vec[3])
 
 /***************************** Array Functions *******************************/
 
-void range_vni(int *array_tar, const int size, const int start)
+double dot_vn_vn(const float *array_src_a, const float *array_src_b, const int size)
+{
+	double d= 0.0f;
+	const float *array_pt_a= array_src_a + (size-1);
+	const float *array_pt_b= array_src_b + (size-1);
+	int i= size;
+	while(i--) { d += *(array_pt_a--) * *(array_pt_b--); }
+	return d;
+}
+
+float normalize_vn_vn(float *array_tar, const float *array_src, const int size)
+{
+	double d= dot_vn_vn(array_tar, array_src, size);
+	float d_sqrt;
+	if (d > 1.0e-35) {
+		d_sqrt= (float)sqrt(d);
+		mul_vn_vn_fl(array_tar, array_src, size, 1.0f/d_sqrt);
+	}
+	else {
+		fill_vn_fl(array_tar, size, 0.0f);
+		d_sqrt= 0.0f;
+	}
+	return d_sqrt;
+}
+
+float normalize_vn(float *array_tar, const int size)
+{
+	return normalize_vn_vn(array_tar, array_tar, size);
+}
+
+void range_vn_i(int *array_tar, const int size, const int start)
 {
 	int *array_pt= array_tar + (size-1);
 	int j= start + (size-1);
 	int i= size;
 	while(i--) { *(array_pt--) = j--; }
+}
+
+void range_vn_fl(float *array_tar, const int size, const float start, const float step)
+{
+	float *array_pt= array_tar + (size-1);
+	int i= size;
+	while(i--) {
+		*(array_pt--) = start + step * (float)(i);
+	}
 }
 
 void negate_vn(float *array_tar, const int size)
@@ -452,14 +513,14 @@ void sub_vn_vnvn(float *array_tar, const float *array_src_a, const float *array_
 	while(i--) { *(tar--) = *(src_a--) - *(src_b--); }
 }
 
-void fill_vni(int *array_tar, const int size, const int val)
+void fill_vn_i(int *array_tar, const int size, const int val)
 {
 	int *tar= array_tar + (size-1);
 	int i= size;
 	while(i--) { *(tar--) = val; }
 }
 
-void fill_vn(float *array_tar, const int size, const float val)
+void fill_vn_fl(float *array_tar, const int size, const float val)
 {
 	float *tar= array_tar + (size-1);
 	int i= size;

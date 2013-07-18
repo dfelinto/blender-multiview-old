@@ -1,10 +1,4 @@
 /*
- * bmfont.c
- *
- * 04-10-2000 frank
- *
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -26,7 +20,7 @@
  *
  * The Original Code is: all of this file.
  *
- * Contributor(s): none yet.
+ * Contributor(s): 04-10-2000 frank.
  *
  * ***** END GPL LICENSE BLOCK *****
  *
@@ -165,7 +159,7 @@ void readBitmapFontVersion0(ImBuf * ibuf, unsigned char * rect, int step)
 		ibuf->userdata = bmfont;
 		ibuf->userflags |= IB_BITMAPFONT;
 
-		if (ibuf->depth < 32) {
+		if (ibuf->planes < 32) {
 			// we're going to fake alpha here:
 			calcAlpha(ibuf);
 		}

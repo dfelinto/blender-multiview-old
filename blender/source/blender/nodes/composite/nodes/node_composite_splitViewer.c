@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -44,10 +42,10 @@ static bNodeSocketTemplate cmp_node_splitviewer_in[]= {
 static void do_copy_split_rgba(bNode *UNUSED(node), float *out, float *in1, float *in2, float *fac)
 {
 	if(*fac==0.0f) {
-		QUATCOPY(out, in1);
+		copy_v4_v4(out, in1);
 	}
 	else {
-		QUATCOPY(out, in2);
+		copy_v4_v4(out, in2);
 	}
 }
 
@@ -151,21 +149,18 @@ static void node_composit_init_splitviewer(bNodeTree *UNUSED(ntree), bNode* node
 	node->custom1= 50;	/* default 50% split */
 }
 
-void register_node_type_cmp_splitviewer(ListBase *lb)
+void register_node_type_cmp_splitviewer(bNodeTreeType *ttype)
 {
 	static bNodeType ntype;
 
-	node_type_base(&ntype, CMP_NODE_SPLITVIEWER, "SplitViewer", NODE_CLASS_OUTPUT, NODE_PREVIEW|NODE_OPTIONS);
+	node_type_base(ttype, &ntype, CMP_NODE_SPLITVIEWER, "SplitViewer", NODE_CLASS_OUTPUT, NODE_PREVIEW|NODE_OPTIONS);
 	node_type_socket_templates(&ntype, cmp_node_splitviewer_in, NULL);
 	node_type_size(&ntype, 140, 100, 320);
 	node_type_init(&ntype, node_composit_init_splitviewer);
 	node_type_storage(&ntype, "ImageUser", node_free_standard_storage, node_copy_standard_storage);
 	node_type_exec(&ntype, node_composit_exec_splitviewer);
+	/* Do not allow muting for this node. */
+	node_type_internal_connect(&ntype, NULL);
 
-	nodeRegisterType(lb, &ntype);
+	nodeRegisterType(ttype, &ntype);
 }
-
-
-
-
-

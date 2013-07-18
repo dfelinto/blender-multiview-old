@@ -1,4 +1,3 @@
-# $Id$
 # ***** BEGIN LGPL LICENSE BLOCK *****
 #
 # Copyright 2009 Jrg Hermann Mller
@@ -23,7 +22,6 @@
 set(INC
 	.
 	FX
-	SRC
 	intern
 	../ffmpeg
 )
@@ -67,6 +65,7 @@ set(SRC
 	FX/AUD_SuperposeFactory.cpp
 	FX/AUD_SuperposeReader.cpp
 	FX/AUD_VolumeFactory.cpp
+
 	intern/AUD_3DMath.h
 	intern/AUD_AnimateableProperty.cpp
 	intern/AUD_AnimateableProperty.h
@@ -257,20 +256,6 @@ if(WITH_CODEC_SNDFILE)
 		sndfile/AUD_SndFileFactory.h
 		sndfile/AUD_SndFileReader.h
 		sndfile/AUD_SndFileWriter.h
-	)
-endif()
-
-if(WITH_SAMPLERATE)
-	add_definitions(-DWITH_SAMPLERATE)
-	list(APPEND INC_SYS
-		${SAMPLERATE_INCLUDE_DIRS}
-	)
-	list(APPEND SRC
-		SRC/AUD_SRCResampleFactory.cpp
-		SRC/AUD_SRCResampleReader.cpp
-
-		SRC/AUD_SRCResampleFactory.h
-		SRC/AUD_SRCResampleReader.h
 	)
 endif()
 

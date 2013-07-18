@@ -119,7 +119,7 @@ void draw_channel_names(bContext *C, bAnimContext *ac, ARegion *ar)
 		}
 	}
 	{	/* second pass: widgets */
-		uiBlock *block= uiBeginBlock(C, ar, "dopesheet channel buttons", UI_EMBOSS);
+		uiBlock *block= uiBeginBlock(C, ar, __func__, UI_EMBOSS);
 		size_t channel_index = 0;
 		
 		y= (float)ACHANNEL_FIRST;
@@ -189,7 +189,7 @@ void draw_channel_strips(bAnimContext *ac, SpaceAction *saction, ARegion *ar)
 
 	/* if in NLA there's a strip active, map the view */
 	if (ac->datatype == ANIMCONT_ACTION) {
-		adt= ANIM_nla_mapping_get(ac, NULL);
+		/* adt= ANIM_nla_mapping_get(ac, NULL); */ /* UNUSED */
 		
 		/* start and end of action itself */
 		calc_action_range(ac->data, &act_start, &act_end, 0);
@@ -300,7 +300,7 @@ void draw_channel_strips(bAnimContext *ac, SpaceAction *saction, ARegion *ar)
 	
 	/* Draw keyframes 
 	 *	1) Only channels that are visible in the Action Editor get drawn/evaluated.
-	 *	   This is to try to optimise this for heavier data sets
+	 *	   This is to try to optimize this for heavier data sets
 	 *	2) Keyframes which are out of view horizontally are disregarded 
 	 */
 	y= (float)(-ACHANNEL_HEIGHT);

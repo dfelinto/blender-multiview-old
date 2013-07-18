@@ -1,5 +1,4 @@
 /* 
- * $Id$
  *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
@@ -27,12 +26,12 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
-#ifndef DNA_BOID_TYPES_H
-#define DNA_BOID_TYPES_H
-
 /** \file DNA_boid_types.h
  *  \ingroup DNA
  */
+
+#ifndef __DNA_BOID_TYPES_H__
+#define __DNA_BOID_TYPES_H__
 
 #include "DNA_listBase.h"
 

@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -70,7 +68,8 @@ struct DynStr {
 
 /***/
 
-DynStr *BLI_dynstr_new(void) {
+DynStr *BLI_dynstr_new(void)
+{
 	DynStr *ds= MEM_mallocN(sizeof(*ds), "DynStr");
 	ds->elems= ds->last= NULL;
 	ds->curlen= 0;
@@ -78,7 +77,8 @@ DynStr *BLI_dynstr_new(void) {
 	return ds;
 }
 
-void BLI_dynstr_append(DynStr *ds, const char *cstr) {
+void BLI_dynstr_append(DynStr *ds, const char *cstr)
+{
 	DynStrElem *dse= malloc(sizeof(*dse));
 	int cstrlen= strlen(cstr);
 	
@@ -94,7 +94,8 @@ void BLI_dynstr_append(DynStr *ds, const char *cstr) {
 	ds->curlen+= cstrlen;
 }
 
-void BLI_dynstr_nappend(DynStr *ds, const char *cstr, int len) {
+void BLI_dynstr_nappend(DynStr *ds, const char *cstr, int len)
+{
 	DynStrElem *dse= malloc(sizeof(*dse));
 	int cstrlen= BLI_strnlen(cstr, len);
 
@@ -220,14 +221,16 @@ void BLI_dynstr_appendf(DynStr *ds, const char *format, ...)
 	}
 }
 
-int BLI_dynstr_get_len(DynStr *ds) {
+int BLI_dynstr_get_len(DynStr *ds)
+{
 	return ds->curlen;
 }
 
-char *BLI_dynstr_get_cstring(DynStr *ds) {
-	char *s, *rets= MEM_mallocN(ds->curlen+1, "dynstr_cstring");
+void BLI_dynstr_get_cstring_ex(DynStr *ds, char *rets)
+{
+	char *s;
 	DynStrElem *dse;
-	
+
 	for (s= rets, dse= ds->elems; dse; dse= dse->next) {
 		int slen= strlen(dse->str);
 
@@ -236,11 +239,17 @@ char *BLI_dynstr_get_cstring(DynStr *ds) {
 		s+= slen;
 	}
 	rets[ds->curlen]= '\0';
-	
+}
+
+char *BLI_dynstr_get_cstring(DynStr *ds)
+{
+	char *rets= MEM_mallocN(ds->curlen+1, "dynstr_cstring");
+	BLI_dynstr_get_cstring_ex(ds, rets);
 	return rets;
 }
 
-void BLI_dynstr_free(DynStr *ds) {
+void BLI_dynstr_free(DynStr *ds)
+{
 	DynStrElem *dse;
 	
 	for (dse= ds->elems; dse; ) {

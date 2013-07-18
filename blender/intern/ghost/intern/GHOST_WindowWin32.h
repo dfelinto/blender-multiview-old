@@ -1,5 +1,4 @@
 /*
- * $Id$
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -31,8 +30,8 @@
  * Declaration of GHOST_WindowWin32 class.
  */
 
-#ifndef _GHOST_WINDOW_WIN32_H_
-#define _GHOST_WINDOW_WIN32_H_
+#ifndef __GHOST_WINDOWWIN32_H__
+#define __GHOST_WINDOWWIN32_H__
 
 #ifndef WIN32
 #error WIN32 only!
@@ -310,7 +309,9 @@ protected:
 	 * Sets the cursor shape on the window using
 	 * native window system calls.
 	 */
-	virtual GHOST_TSuccess setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2], GHOST_TUns8 mask[16][2], int hotX, int hotY);
+	virtual GHOST_TSuccess setWindowCustomCursorShape(GHOST_TUns8 bitmap[16][2],
+	                                                  GHOST_TUns8 mask[16][2],
+	                                                  int hotX, int hotY);
 
 	virtual GHOST_TSuccess setWindowCustomCursorShape(
 		GHOST_TUns8 *bitmap, 
@@ -389,4 +390,4 @@ protected:
 	GHOST_TEmbedderWindowID m_parentWindowHwnd;
 };
 
-#endif // _GHOST_WINDOW_WIN32_H_
+#endif // __GHOST_WINDOWWIN32_H__

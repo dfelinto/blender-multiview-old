@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -37,11 +35,11 @@
 
 #include "BLI_math.h"
 
-#ifndef BLI_MATH_BASE_INLINE_H
-#define BLI_MATH_BASE_INLINE_H
+#ifndef __MATH_BASE_INLINE_C__
+#define __MATH_BASE_INLINE_C__
 
 /* A few small defines. Keep'em local! */
-#define SMALL_NUMBER	1.e-8
+#define SMALL_NUMBER	1.e-8f
 
 MINLINE float sqrt3f(float f)
 {
@@ -104,11 +102,11 @@ MINLINE float interpf(float target, float origin, float fac)
 
 /* useful to calculate an even width shell, by taking the angle between 2 planes.
  * The return value is a scale on the offset.
- * no angle between planes is 1.0, as the angle between the 2 planes approches 180d
+ * no angle between planes is 1.0, as the angle between the 2 planes approaches 180d
  * the distance gets very high, 180d would be inf, but this case isn't valid */
 MINLINE float shell_angle_to_dist(const float angle)
 {
-	return (angle < (float)SMALL_NUMBER) ? 1.0f : fabsf(1.0f / cosf(angle));
+	return (angle < SMALL_NUMBER) ? 1.0f : fabsf(1.0f / cosf(angle));
 }
 
 /* used for zoom values*/
@@ -116,6 +114,31 @@ MINLINE float power_of_2(float val)
 {
 	return (float)pow(2.0, ceil(log((double)val) / M_LN2));
 }
+
+MINLINE int is_power_of_2_i(int n)
+{
+	return (n & (n - 1)) == 0;
+}
+
+MINLINE int power_of_2_max_i(int n)
+{
+	if (is_power_of_2_i(n))
+		return n;
+
+	while(!is_power_of_2_i(n))
+		n = n & (n - 1);
+
+	return n * 2;
+}
+
+MINLINE int power_of_2_min_i(int n)
+{
+	while (!is_power_of_2_i(n))
+		n = n & (n - 1);
+
+	return n;
+}
+
 
 MINLINE float minf(float a, float b)
 {
@@ -132,5 +155,5 @@ MINLINE float signf(float f)
 	return (f < 0.f)? -1.f: 1.f;
 }
 
-#endif /* BLI_MATH_BASE_INLINE_H */
 
+#endif /* __MATH_BASE_INLINE_C__ */

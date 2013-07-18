@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -32,8 +30,8 @@
  *  \brief Do translation/rotation actions
  */
 
-#ifndef __KX_OBJECTACTUATOR
-#define __KX_OBJECTACTUATOR
+#ifndef __KX_OBJECTACTUATOR_H__
+#define __KX_OBJECTACTUATOR_H__
 
 #include "SCA_IActuator.h"
 #include "MT_Vector3.h"
@@ -82,7 +80,7 @@ struct KX_LocalFlags {
 
 class KX_ObjectActuator : public SCA_IActuator
 {
-	Py_Header;
+	Py_Header
 
 	MT_Vector3		m_force;
 	MT_Vector3		m_torque;
@@ -100,7 +98,7 @@ class KX_ObjectActuator : public SCA_IActuator
 	// used in servo control
 	MT_Vector3		m_previous_error;
 	MT_Vector3		m_error_accumulator;
-  	KX_LocalFlags	m_bitLocalFlag;
+	KX_LocalFlags	m_bitLocalFlag;
 	KX_GameObject*  m_reference;
 	// A hack bool -- oh no sorry everyone
 	// This bool is used to check if we have informed 
@@ -224,5 +222,5 @@ public:
 
 };
 
-#endif //__KX_OBJECTACTUATOR
+#endif //__KX_OBJECTACTUATOR_H__
 

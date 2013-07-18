@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -74,7 +72,7 @@ public:
 	/** these should not be here */
 	Object* create_camera_object(COLLADAFW::InstanceCamera*, Scene*);
 	Object* create_lamp_object(COLLADAFW::InstanceLight*, Scene*);
-	Object* create_instance_node(Object*, COLLADAFW::Node*, COLLADAFW::Node*, Scene*, Object*, bool);
+	Object* create_instance_node(Object*, COLLADAFW::Node*, COLLADAFW::Node*, Scene*, bool);
 	void write_node(COLLADAFW::Node*, COLLADAFW::Node*, Scene*, Object*, bool);
 	MTex* create_texture(COLLADAFW::EffectCommon*, COLLADAFW::Texture&, Material*, int, TexIndexTextureArrayMap&);
 	void write_profile_COMMON(COLLADAFW::EffectCommon*, Material*);
@@ -82,7 +80,7 @@ public:
 
 	/** This method will be called if an error in the loading process occurred and the loader cannot
 	continue to load. The writer should undo all operations that have been performed.
-	@param errorMessage A message containing informations about the error that occurred.
+	\param errorMessage A message containing informations about the error that occurred.
 	*/
 	void cancel(const COLLADAFW::String& errorMessage);
 

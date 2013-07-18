@@ -1,6 +1,4 @@
 /*
- * $Id$
- *
  * ***** BEGIN GPL LICENSE BLOCK *****
  *
  * This program is free software; you can redistribute it and/or
@@ -74,7 +72,8 @@
 #define SEQ_RIGHTHANDLE	2
 
 
-/* Note, Dont use WHILE_SEQ while drawing! - it messes up transform, - Campbell */
+/* Note, Don't use SEQ_BEGIN/SEQ_END while drawing!
+ * it messes up transform, - Campbell */
 static void draw_shadedstrip(Sequence *seq, unsigned char col[3], float x1, float y1, float x2, float y2);
 
 static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[3])
@@ -99,7 +98,7 @@ static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[
 		UI_GetThemeColor3ubv(TH_SEQ_SCENE, col);
 		
 		if(seq->scene==curscene) {
-			UI_GetColorPtrBlendShade3ubv(col, col, col, 1.0, 20);
+			UI_GetColorPtrShade3ubv(col, col, 20);
 		}
 		break;
 		
@@ -144,7 +143,7 @@ static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[
 		
 	case SEQ_COLOR:
 		if (colvars->col) {
-			rgb_float_to_byte(colvars->col, col);
+			rgb_float_to_uchar(col, colvars->col);
 		} else {
 			col[0] = col[1] = col[2] = 128;
 		}
@@ -168,12 +167,11 @@ static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[
 static void drawseqwave(Scene *scene, Sequence *seq, float x1, float y1, float x2, float y2, float stepsize)
 {
 	/*
-	x1 is the starting x value to draw the wave,
-	x2 the end x value, same for y1 and y2
-	stepsize is width of a pixel.
-	*/
-	if(seq->flag & SEQ_AUDIO_DRAW_WAVEFORM)
-	{
+	 * x1 is the starting x value to draw the wave,
+	 * x2 the end x value, same for y1 and y2
+	 * stepsize is width of a pixel.
+	 */
+	if(seq->flag & SEQ_AUDIO_DRAW_WAVEFORM) {
 		int i, j, pos;
 		int length = floor((x2-x1)/stepsize)+1;
 		float ymid = (y1+y2)/2;
@@ -187,7 +185,13 @@ static void drawseqwave(Scene *scene, Sequence *seq, float x1, float y1, float x
 		if(!seq->sound->waveform)
 			sound_read_waveform(seq->sound);
 
+		if(!seq->sound->waveform)
+			return; /* zero length sound */
+
 		waveform = seq->sound->waveform;
+
+		if(!waveform)
+			return;
 
 		startsample = floor((seq->startofs + seq->anim_startofs)/FPS * SOUND_WAVE_SAMPLES_PER_SECOND);
 		endsample = ceil((seq->startofs + seq->anim_startofs + seq->enddisp - seq->startdisp)/FPS * SOUND_WAVE_SAMPLES_PER_SECOND);
@@ -249,8 +253,10 @@ static void drawmeta_stipple(int value)
 
 static void drawmeta_contents(Scene *scene, Sequence *seqm, float x1, float y1, float x2, float y2)
 {
-	/* Note, this used to use WHILE_SEQ, but it messes up the seq->depth value, (needed by transform when doing overlap checks)
-	 * so for now, just use the meta's immediate children, could be fixed but its only drawing - Campbell */
+	/* note: this used to use SEQ_BEGIN/SEQ_END, but it messes up the
+	 * seq->depth value, (needed by transform when doing overlap checks)
+	 * so for now, just use the meta's immediate children, could be fixed but
+	 * its only drawing - campbell */
 	Sequence *seq;
 	unsigned char col[4];
 
@@ -299,7 +305,7 @@ static void drawmeta_contents(Scene *scene, Sequence *seqm, float x1, float y1, 
 
 			glRectf(x1_chan,  y1_chan, x2_chan,  y2_chan);
 
-			UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, -30);
+			UI_GetColorPtrShade3ubv(col, col, -30);
 			glColor4ubv(col);
 			fdrawbox(x1_chan,  y1_chan, x2_chan,  y2_chan);
 
@@ -321,7 +327,7 @@ static void draw_seq_handle(View2D *v2d, Sequence *seq, float pixelx, short dire
 	float x1, x2, y1, y2;
 	float handsize;
 	float minhandle, maxhandle;
-	char str[32];
+	char numstr[32];
 	unsigned int whichsel=0;
 	
 	x1= seq->startdisp;
@@ -385,15 +391,15 @@ static void draw_seq_handle(View2D *v2d, Sequence *seq, float pixelx, short dire
 	if(G.moving || (seq->flag & whichsel)) {
 		const char col[4]= {255, 255, 255, 255};
 		if (direction == SEQ_LEFTHANDLE) {
-			sprintf(str, "%d", seq->startdisp);
+			BLI_snprintf(numstr, sizeof(numstr),"%d", seq->startdisp);
 			x1= rx1;
 			y1 -= 0.45f;
 		} else {
-			sprintf(str, "%d", seq->enddisp - 1);
+			BLI_snprintf(numstr, sizeof(numstr), "%d", seq->enddisp - 1);
 			x1= x2 - handsize*0.75f;
 			y1= y2 + 0.05f;
 		}
-		UI_view2d_text_cache_add(v2d, x1, y1, str, col);
+		UI_view2d_text_cache_add(v2d, x1, y1, numstr, col);
 	}	
 }
 
@@ -471,9 +477,9 @@ static void draw_seq_extensions(Scene *scene, ARegion *ar, Sequence *seq)
 		draw_shadedstrip(seq, col, x1, y1, (float)(seq->start), y2);
 		
 		/* feint pinstripes, helps see exactly which is extended and which isn't,
-		* especially when the extension is very small */ 
+		 * especially when the extension is very small */ 
 		if (seq->flag & SELECT) UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, 24);
-		else UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, -16);
+		else UI_GetColorPtrShade3ubv(col, col, -16);
 		
 		glColor3ubv((GLubyte *)col);
 		
@@ -489,9 +495,9 @@ static void draw_seq_extensions(Scene *scene, ARegion *ar, Sequence *seq)
 		draw_shadedstrip(seq, col, (float)(seq->start+seq->len), y1, x2, y2);
 		
 		/* feint pinstripes, helps see exactly which is extended and which isn't,
-		* especially when the extension is very small */ 
-		if (seq->flag & SELECT) UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, 24);
-		else UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, -16);
+		 * especially when the extension is very small */ 
+		if (seq->flag & SELECT) UI_GetColorPtrShade3ubv(col, col, 24);
+		else UI_GetColorPtrShade3ubv(col, col, -16);
 		
 		glColor3ubv((GLubyte *)col);
 		
@@ -505,50 +511,54 @@ static void draw_seq_extensions(Scene *scene, ARegion *ar, Sequence *seq)
 static void draw_seq_text(View2D *v2d, Sequence *seq, float x1, float x2, float y1, float y2, const unsigned char background_col[3])
 {
 	rctf rect;
-	char str[32 + FILE_MAXDIR+FILE_MAXFILE];
+	char str[32 + FILE_MAX];
 	const char *name= seq->name+2;
 	char col[4];
-	
+
+	/* note, all strings should include 'name' */
 	if(name[0]=='\0')
 		name= give_seqname(seq);
 
 	if(seq->type == SEQ_META || seq->type == SEQ_ADJUSTMENT) {
-		sprintf(str, "%d | %s", seq->len, name);
+		BLI_snprintf(str, sizeof(str), "%d | %s", seq->len, name);
 	}
 	else if(seq->type == SEQ_SCENE) {
 		if(seq->scene) {
 			if(seq->scene_camera) {
-				sprintf(str, "%d | %s: %s (%s)", seq->len, name, seq->scene->id.name+2, ((ID *)seq->scene_camera)->name+2);
+				BLI_snprintf(str, sizeof(str), "%d | %s: %s (%s)", seq->len, name, seq->scene->id.name+2, ((ID *)seq->scene_camera)->name+2);
 			} else {
-				sprintf(str, "%d | %s: %s", seq->len, name, seq->scene->id.name+2);
+				BLI_snprintf(str, sizeof(str), "%d | %s: %s", seq->len, name, seq->scene->id.name+2);
 			}
 		}
 		else {
-			sprintf(str, "%d | %s", seq->len, name);
+			BLI_snprintf(str, sizeof(str), "%d | %s", seq->len, name);
 		}
 	}
 	else if(seq->type == SEQ_MULTICAM) {
-		sprintf(str, "Cam: %d", seq->multicam_source);
+		BLI_snprintf(str, sizeof(str), "Cam | %s: %d", name, seq->multicam_source);
 	}
 	else if(seq->type == SEQ_IMAGE) {
-		sprintf(str, "%d | %s%s", seq->len, seq->strip->dir, seq->strip->stripdata->name);
+		BLI_snprintf(str, sizeof(str), "%d | %s: %s%s", seq->len, name, seq->strip->dir, seq->strip->stripdata->name);
 	}
 	else if(seq->type & SEQ_EFFECT) {
 		int can_float = (seq->type != SEQ_PLUGIN)
 			|| (seq->plugin && seq->plugin->version >= 4);
 
 		if(seq->seq3!=seq->seq2 && seq->seq1!=seq->seq3)
-			sprintf(str, "%d | %s: %d>%d (use %d)%s", seq->len, name, seq->seq1->machine, seq->seq2->machine, seq->seq3->machine, can_float ? "" : " No float, upgrade plugin!");
+			BLI_snprintf(str, sizeof(str), "%d | %s: %d>%d (use %d)%s", seq->len, name, seq->seq1->machine, seq->seq2->machine, seq->seq3->machine, can_float ? "" : " No float, upgrade plugin!");
 		else if (seq->seq1 && seq->seq2)
-			sprintf(str, "%d | %s: %d>%d%s", seq->len, name, seq->seq1->machine, seq->seq2->machine, can_float ? "" : " No float, upgrade plugin!");
+			BLI_snprintf(str, sizeof(str), "%d | %s: %d>%d%s", seq->len, name, seq->seq1->machine, seq->seq2->machine, can_float ? "" : " No float, upgrade plugin!");
 		else
-			sprintf(str, "%d | %s", seq->len, name);
+			BLI_snprintf(str, sizeof(str), "%d | %s", seq->len, name);
 	}
 	else if (seq->type == SEQ_SOUND) {
-		sprintf(str, "%d | %s", seq->len, seq->sound->name);
+		if(seq->sound)
+			BLI_snprintf(str, sizeof(str), "%d | %s: %s", seq->len, name, seq->sound->name);
+		else
+			BLI_snprintf(str, sizeof(str), "%d | %s", seq->len, name);
 	}
 	else if (seq->type == SEQ_MOVIE) {
-		sprintf(str, "%d | %s%s", seq->len, seq->strip->dir, seq->strip->stripdata->name);
+		BLI_snprintf(str, sizeof(str), "%d | %s: %s%s", seq->len, name, seq->strip->dir, seq->strip->stripdata->name);
 	}
 	
 	if(seq->flag & SELECT){
@@ -584,8 +594,8 @@ static void draw_shadedstrip(Sequence *seq, unsigned char col[3], float x1, floa
 	glBegin(GL_QUADS);
 	
 	if(seq->flag & SEQ_INVALID_EFFECT) { col[0]= 255; col[1]= 0; col[2]= 255; }
-	else if(seq->flag & SELECT) UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, -50);
-	else UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, 0);
+	else if(seq->flag & SELECT) UI_GetColorPtrShade3ubv(col, col, -50);
+	/* else UI_GetColorPtrShade3ubv(col, col, 0); */ /* DO NOTHING */
 	
 	glColor3ubv(col);
 	
@@ -594,7 +604,7 @@ static void draw_shadedstrip(Sequence *seq, unsigned char col[3], float x1, floa
 
 	if(seq->flag & SEQ_INVALID_EFFECT) { col[0]= 255; col[1]= 0; col[2]= 255; }
 	else if(seq->flag & SELECT) UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, 5);
-	else UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, -5);
+	else UI_GetColorPtrShade3ubv(col, col, -5);
 
 	glColor3ubv((GLubyte *)col);
 	
@@ -610,8 +620,8 @@ static void draw_shadedstrip(Sequence *seq, unsigned char col[3], float x1, floa
 	glVertex2f(x1,ymid2);
 	glVertex2f(x2,ymid2);
 	
-	if(seq->flag & SELECT) UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, -15);
-	else UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, 25);
+	if(seq->flag & SELECT) UI_GetColorPtrShade3ubv(col, col, -15);
+	else UI_GetColorPtrShade3ubv(col, col, 25);
 	
 	glColor3ubv((GLubyte *)col);
 	
@@ -626,10 +636,10 @@ static void draw_shadedstrip(Sequence *seq, unsigned char col[3], float x1, floa
 }
 
 /*
-Draw a sequence strip, bounds check already made
-ARegion is currently only used to get the windows width in pixels
-so wave file sample drawing precision is zoom adjusted
-*/
+ * Draw a sequence strip, bounds check already made
+ * ARegion is currently only used to get the windows width in pixels
+ * so wave file sample drawing precision is zoom adjusted
+ */
 static void draw_seq_strip(Scene *scene, ARegion *ar, Sequence *seq, int outline_tint, float pixelx)
 {
 	View2D *v2d= &ar->v2d;
@@ -697,10 +707,10 @@ static void draw_seq_strip(Scene *scene, ARegion *ar, Sequence *seq, int outline
 			col[0]= 255; col[1]= col[2]= 40;
 		}
 		else
-			UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, 120+outline_tint);
+			UI_GetColorPtrShade3ubv(col, col, 120+outline_tint);
 	}
 	else
-		UI_GetColorPtrBlendShade3ubv(col, col, col, 0.0, outline_tint);
+		UI_GetColorPtrShade3ubv(col, col, outline_tint);
 	
 	glColor3ubv((GLubyte *)col);
 	
@@ -820,7 +830,7 @@ void draw_image_seq(const bContext* C, Scene *scene, ARegion *ar, SpaceSeq *sseq
 		}
 		break;
 	case SEQ_DRAW_IMG_WAVEFORM:
-		if ((sseq->flag & SEQ_DRAW_COLOR_SEPERATED) != 0) {
+		if ((sseq->flag & SEQ_DRAW_COLOR_SEPARATED) != 0) {
 			scope = make_sep_waveform_view_from_ibuf(ibuf);
 		} else {
 			scope = make_waveform_view_from_ibuf(ibuf);
@@ -914,7 +924,7 @@ void draw_image_seq(const bContext* C, Scene *scene, ARegion *ar, SpaceSeq *sseq
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_LINE);
 
-			uiSetRoundBox(15);
+			uiSetRoundBox(UI_CNR_ALL);
 			uiDrawBox(GL_LINE_LOOP, x1, y1, x2, y2, 12.0);
 
 			glPolygonMode(GL_FRONT_AND_BACK, GL_FILL);
