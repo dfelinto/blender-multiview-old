@@ -222,6 +222,7 @@ wmOperator *WM_operator_last_redo(const struct bContext *C);
 #define WM_FILESEL_DIRECTORY	(1 << 1)
 #define WM_FILESEL_FILENAME		(1 << 2)
 #define WM_FILESEL_FILEPATH		(1 << 3)
+#define WM_FILESEL_FILES		(1 << 4)
 
 
 		/* operator as a python command (resultuing string must be free'd) */
@@ -299,6 +300,8 @@ int			WM_jobs_test(struct wmWindowManager *wm, void *owner);
 float		WM_jobs_progress(struct wmWindowManager *wm, void *owner);
 char		*WM_jobs_name(struct wmWindowManager *wm, void *owner);
 
+int             WM_jobs_is_running(struct wmJob *);
+void*           WM_jobs_get_customdata(struct wmJob *);
 void		WM_jobs_customdata(struct wmJob *, void *customdata, void (*free)(void *));
 void		WM_jobs_timer(struct wmJob *, double timestep, unsigned int note, unsigned int endnote);
 void		WM_jobs_callbacks(struct wmJob *, 

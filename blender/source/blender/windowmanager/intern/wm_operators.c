@@ -108,21 +108,28 @@ static GHash *global_ops_hash= NULL;
 
 wmOperatorType *WM_operatortype_find(const char *idname, int quiet)
 {
-	wmOperatorType *ot;
-	
-	char idname_bl[OP_MAX_TYPENAME]; // XXX, needed to support python style names without the _OT_ syntax
-	WM_operator_bl_idname(idname_bl, idname);
+	if(idname[0]) {
+		wmOperatorType *ot;
 
-	if (idname_bl[0]) {
+		/* needed to support python style names without the _OT_ syntax */
+		char idname_bl[OP_MAX_TYPENAME];
+		WM_operator_bl_idname(idname_bl, idname);
+
 		ot= BLI_ghash_lookup(global_ops_hash, idname_bl);
 		if(ot) {
 			return ot;
 		}
+
+		if(!quiet) {
+			printf("search for unknown operator '%s', '%s'\n", idname_bl, idname);
+		}
 	}
-	
-	if(!quiet)
-		printf("search for unknown operator %s, %s\n", idname_bl, idname);
-	
+	else {
+		if(!quiet) {
+			printf("search for empty operator\n");
+		}
+	}
+
 	return NULL;
 }
 
@@ -213,6 +220,7 @@ static int wm_macro_exec(bContext *C, wmOperator *op)
 		
 		if(opm->type->exec) {
 			retval= opm->type->exec(C, opm);
+			OPERATOR_RETVAL_CHECK(retval);
 		
 			if (retval & OPERATOR_FINISHED) {
 				MacroData *md = op->customdata;
@@ -236,6 +244,8 @@ static int wm_macro_invoke_internal(bContext *C, wmOperator *op, wmEvent *event,
 			retval= opm->type->invoke(C, opm, event);
 		else if(opm->type->exec)
 			retval= opm->type->exec(C, opm);
+
+		OPERATOR_RETVAL_CHECK(retval);
 
 		BLI_movelisttolist(&op->reports->list, &opm->reports->list);
 		
@@ -265,6 +275,7 @@ static int wm_macro_modal(bContext *C, wmOperator *op, wmEvent *event)
 		printf("macro error, calling NULL modal()\n");
 	else {
 		retval = opm->type->modal(C, opm, event);
+		OPERATOR_RETVAL_CHECK(retval);
 
 		/* if this one is done but it's not the last operator in the macro */
 		if ((retval & OPERATOR_FINISHED) && opm->next) {
@@ -655,7 +666,9 @@ int WM_menu_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 		printf("WM_menu_invoke: %s \"%s\" is not an enum property\n", op->type->idname, RNA_property_identifier(prop));
 	}
 	else if (RNA_property_is_set(op->ptr, RNA_property_identifier(prop))) {
-		return op->type->exec(C, op);
+		const int retval= op->type->exec(C, op);
+		OPERATOR_RETVAL_CHECK(retval);
+		return retval;
 	}
 	else {
 		pup= uiPupMenuBegin(C, op->type->name, ICON_NONE);
@@ -810,6 +823,9 @@ void WM_operator_properties_filesel(wmOperatorType *ot, int filter, short type, 
 
 	if(flag & WM_FILESEL_FILENAME)
 		RNA_def_string_file_name(ot->srna, "filename", "", FILE_MAX, "File Name", "Name of the file");
+
+	if(flag & WM_FILESEL_FILES)
+		RNA_def_collection_runtime(ot->srna, "files", &RNA_OperatorFileListElement, "Files", "");
 
 	if (action == FILE_SAVE) {
 		prop= RNA_def_boolean(ot->srna, "check_existing", 1, "Check Existing", "Check and warn on overwriting existing files");
@@ -1199,7 +1215,7 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	MenuType *mt= WM_menutype_find("USERPREF_MT_splash", TRUE);
 	char url[96];
 	
-#ifdef NAN_BUILDINFO
+#ifdef WITH_BUILDINFO
 	int ver_width, rev_width;
 	char *version_str = NULL;
 	char *revision_str = NULL;
@@ -1216,7 +1232,7 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	BLF_size(style->widgetlabel.uifont_id, style->widgetlabel.points, U.dpi);
 	ver_width = (int)BLF_width(style->widgetlabel.uifont_id, version_str) + 5;
 	rev_width = (int)BLF_width(style->widgetlabel.uifont_id, revision_str) + 5;
-#endif //NAN_BUILDINFO
+#endif //WITH_BUILDINFO
 
 	block= uiBeginBlock(C, ar, "_popup", UI_EMBOSS);
 	uiBlockSetFlag(block, UI_BLOCK_KEEP_OPEN);
@@ -1225,10 +1241,10 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	uiButSetFunc(but, wm_block_splash_close, block, NULL);
 	uiBlockSetFunc(block, wm_block_splash_refreshmenu, block, NULL);
 	
-#ifdef NAN_BUILDINFO	
+#ifdef WITH_BUILDINFO	
 	uiDefBut(block, LABEL, 0, version_str, 494-ver_width, 282-24, ver_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
 	uiDefBut(block, LABEL, 0, revision_str, 494-rev_width, 282-36, rev_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
-#endif //NAN_BUILDINFO
+#endif //WITH_BUILDINFO
 	
 	layout= uiBlockLayout(block, UI_LAYOUT_VERTICAL, UI_LAYOUT_PANEL, 10, 2, 480, 110, style);
 	
@@ -1250,11 +1266,12 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	split = uiLayoutSplit(layout, 0, 0);
 	col = uiLayoutColumn(split, 0);
 	uiItemL(col, "Links", ICON_NONE);
-	uiItemStringO(col, "Donations", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/blenderorg/blender-foundation/donation-payment/");
-	uiItemStringO(col, "Release Log", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/development/release-logs/blender-259/");
+	uiItemStringO(col, "Donations", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/blenderorg/blender-foundation/donation-payment");
+	uiItemStringO(col, "Credits", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/development/credits");
+	uiItemStringO(col, "Release Log", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/development/release-logs/blender-259");
 	uiItemStringO(col, "Manual", ICON_URL, "WM_OT_url_open", "url", "http://wiki.blender.org/index.php/Doc:2.5/Manual");
-	uiItemStringO(col, "Blender Website", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/");
-	uiItemStringO(col, "User Community", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/community/user-community/"); // 
+	uiItemStringO(col, "Blender Website", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org");
+	uiItemStringO(col, "User Community", ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org/community/user-community");
 	if(strcmp(STRINGIFY(BLENDER_VERSION_CYCLE), "release")==0) {
 		BLI_snprintf(url, sizeof(url), "http://www.blender.org/documentation/blender_python_api_%d_%d" STRINGIFY(BLENDER_VERSION_CHAR) "_release", BLENDER_VERSION/100, BLENDER_VERSION%100);
 	}
@@ -1748,14 +1765,12 @@ static void WM_OT_link_append(wmOperatorType *ot)
 	
 	ot->flag |= OPTYPE_UNDO;
 
-	WM_operator_properties_filesel(ot, FOLDERFILE|BLENDERFILE, FILE_LOADLIB, FILE_OPENFILE, WM_FILESEL_FILEPATH|WM_FILESEL_DIRECTORY|WM_FILESEL_FILENAME| WM_FILESEL_RELPATH);
+	WM_operator_properties_filesel(ot, FOLDERFILE|BLENDERFILE, FILE_LOADLIB, FILE_OPENFILE, WM_FILESEL_FILEPATH|WM_FILESEL_DIRECTORY|WM_FILESEL_FILENAME| WM_FILESEL_RELPATH|WM_FILESEL_FILES);
 	
 	RNA_def_boolean(ot->srna, "link", 1, "Link", "Link the objects or datablocks rather than appending");
 	RNA_def_boolean(ot->srna, "autoselect", 1, "Select", "Select the linked objects");
 	RNA_def_boolean(ot->srna, "active_layer", 1, "Active Layer", "Put the linked objects on the active layer");
 	RNA_def_boolean(ot->srna, "instance_groups", 1, "Instance Groups", "Create instances for each group as a DupliGroup");
-
-	RNA_def_collection_runtime(ot->srna, "files", &RNA_OperatorFileListElement, "Files", "");
 }	
 
 /* *************** recover last session **************** */
@@ -2009,8 +2024,6 @@ static void WM_OT_save_mainfile(wmOperatorType *ot)
 
 static int wm_collada_export_invoke(bContext *C, wmOperator *op, wmEvent *UNUSED(event))
 {	
-	int selected = 0;
-
 	if(!RNA_property_is_set(op->ptr, "filepath")) {
 		char filepath[FILE_MAX];
 		BLI_strncpy(filepath, G.main->name, sizeof(filepath));
@@ -2069,7 +2082,9 @@ static int wm_collada_import_exec(bContext *C, wmOperator *op)
 	}
 
 	RNA_string_get(op->ptr, "filepath", filename);
-	collada_import(C, filename);
+	if(collada_import(C, filename)) return OPERATOR_FINISHED;
+	
+	BKE_report(op->reports, RPT_ERROR, "Errors found during parsing COLLADA document. Please see console for error log.");
 	
 	return OPERATOR_FINISHED;
 }
@@ -2346,7 +2361,6 @@ static void gesture_circle_apply(bContext *C, wmOperator *op)
 	
 	if(op->type->exec)
 		op->type->exec(C, op);
-
 #ifdef GESTURE_MEMORY
 	circle_select_size= rect->xmax;
 #endif
@@ -2567,7 +2581,6 @@ static void gesture_lasso_apply(bContext *C, wmOperator *op)
 		
 	if(op->type->exec)
 		op->type->exec(C, op);
-	
 }
 
 int WM_gesture_lasso_modal(bContext *C, wmOperator *op, wmEvent *event)
@@ -2927,7 +2940,7 @@ static void radial_control_paint_cursor(bContext *C, int x, int y, void *customd
 	case PROP_FACTOR:
 		r1= (1 - rc->current_value) * WM_RADIAL_CONTROL_DISPLAY_SIZE;
 		r2= tex_radius= WM_RADIAL_CONTROL_DISPLAY_SIZE;
-		alpha = rc->current_value / 2 + 0.5;
+		alpha = rc->current_value / 2.0f + 0.5f;
 		break;
 	case PROP_ANGLE:
 		r1= r2= tex_radius= WM_RADIAL_CONTROL_DISPLAY_SIZE;

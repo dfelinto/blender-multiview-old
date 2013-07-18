@@ -18,6 +18,7 @@
 
 # <pep8 compliant>
 import bpy
+from bpy.types import Panel
 
 
 class ConstraintButtonsPanel():
@@ -234,7 +235,6 @@ class ConstraintButtonsPanel():
         row.label()
 
     def LIMIT_ROTATION(self, context, layout, con):
-
         split = layout.split()
 
         col = split.column(align=True)
@@ -258,9 +258,7 @@ class ConstraintButtonsPanel():
         sub.prop(con, "min_z", text="Min")
         sub.prop(con, "max_z", text="Max")
 
-        row = layout.row()
-        row.prop(con, "use_transform_limit")
-        row.label()
+        layout.prop(con, "use_transform_limit")
 
         row = layout.row()
         row.label(text="Convert:")
@@ -475,6 +473,10 @@ class ConstraintButtonsPanel():
         row = layout.row()
         row.label(text="Clamp Region:")
         row.prop(con, "limit_mode", text="")
+
+        row = layout.row()
+        row.prop(con, "use_transform_limit")
+        row.label()
 
     def STRETCH_TO(self, context, layout, con):
         self.target_template(layout, con)
@@ -755,7 +757,7 @@ class ConstraintButtonsPanel():
         layout.label("Blender 2.5 has no py-constraints")
 
 
-class OBJECT_PT_constraints(ConstraintButtonsPanel, bpy.types.Panel):
+class OBJECT_PT_constraints(ConstraintButtonsPanel, Panel):
     bl_label = "Object Constraints"
     bl_context = "constraint"
 
@@ -779,7 +781,7 @@ class OBJECT_PT_constraints(ConstraintButtonsPanel, bpy.types.Panel):
             self.draw_constraint(context, con)
 
 
-class BONE_PT_constraints(ConstraintButtonsPanel, bpy.types.Panel):
+class BONE_PT_constraints(ConstraintButtonsPanel, Panel):
     bl_label = "Bone Constraints"
     bl_context = "bone_constraint"
 

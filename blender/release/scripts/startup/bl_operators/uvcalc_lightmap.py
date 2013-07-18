@@ -19,6 +19,7 @@
 # <pep8 compliant>
 
 import bpy
+from bpy.types import Operator
 import mathutils
 
 
@@ -543,7 +544,7 @@ def unwrap(operator, context, **kwargs):
 from bpy.props import BoolProperty, FloatProperty, IntProperty
 
 
-class LightMapPack(bpy.types.Operator):
+class LightMapPack(Operator):
     '''Follow UVs from active quads along continuous face loops'''
     bl_idname = "uv.lightmap_pack"
     bl_label = "Lightmap Pack"
@@ -551,7 +552,6 @@ class LightMapPack(bpy.types.Operator):
 
     PREF_CONTEXT = bpy.props.EnumProperty(
             name="Selection",
-            description="",
             items=(("SEL_FACES", "Selected Faces", "Space all UVs evently"),
                    ("ALL_FACES", "All Faces", "Average space UVs edge length of each loop"),
                    ("ALL_OBJECTS", "Selected Mesh Object", "Average space UVs edge length of each loop")

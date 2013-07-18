@@ -145,11 +145,6 @@ endmacro()
 
 
 macro(SETUP_LIBDIRS)
-	# see "cmake --help-policy CMP0003"
-	if(COMMAND cmake_policy)
-		cmake_policy(SET CMP0003 NEW)
-	endif()
-
 	link_directories(${JPEG_LIBPATH} ${PNG_LIBPATH} ${ZLIB_LIBPATH} ${FREETYPE_LIBPATH})
 
 	if(WITH_PYTHON)  #  AND NOT WITH_PYTHON_MODULE  # WIN32 needs
@@ -397,6 +392,7 @@ macro(remove_strict_flags)
 		remove_flag("-Wstrict-prototypes")
 		remove_flag("-Wunused-parameter")
 		remove_flag("-Wwrite-strings")
+		remove_flag("-Wundef")
 		remove_flag("-Wshadow")
 		remove_flag("-Werror=[^ ]+")
 		remove_flag("-Werror")

@@ -100,6 +100,8 @@ RAS_OpenGLRasterizer::RAS_OpenGLRasterizer(RAS_ICanvas* canvas)
 	}
 	hinterlace_mask[32] = 0;
 
+	m_prevafvalue = GPU_get_anisotropic();
+
 	/* initialize the anaglyph mode to red-cyan*/
 	SetAnaglyphColor(0);
 }
@@ -108,6 +110,8 @@ RAS_OpenGLRasterizer::RAS_OpenGLRasterizer(RAS_ICanvas* canvas)
 
 RAS_OpenGLRasterizer::~RAS_OpenGLRasterizer()
 {
+	// Restore the previous AF value
+	GPU_set_anisotropic(m_prevafvalue);
 }
 
 bool RAS_OpenGLRasterizer::Init()
@@ -1241,3 +1245,12 @@ void RAS_OpenGLRasterizer::SetFrontFace(bool ccw)
 	m_last_frontface = ccw;
 }
 
+void RAS_OpenGLRasterizer::SetAnisotropicFiltering(short level)
+{
+	GPU_set_anisotropic((float)level);
+}
+
+short RAS_OpenGLRasterizer::GetAnisotropicFiltering()
+{
+	return (short)GPU_get_anisotropic();
+}

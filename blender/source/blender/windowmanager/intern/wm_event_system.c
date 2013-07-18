@@ -437,9 +437,18 @@ static void wm_operator_print(bContext *C, wmOperator *op)
 
 static void wm_operator_reports(bContext *C, wmOperator *op, int retval, int popup)
 {
-	if(popup)
-		if(op->reports->list.first)
+	if(popup) {
+		if(op->reports->list.first) {
+			/* FIXME, temp setting window, see other call to uiPupMenuReports for why */
+			wmWindow *win_prev= CTX_wm_window(C);
+			if(win_prev==NULL)
+				CTX_wm_window_set(C, CTX_wm_manager(C)->windows.first);
+
 			uiPupMenuReports(C, op->reports);
+
+			CTX_wm_window_set(C, win_prev);
+		}
+	}
 	
 	if(retval & OPERATOR_FINISHED) {
 		if(G.f & G_DEBUG)
@@ -531,6 +540,7 @@ static int wm_operator_exec(bContext *C, wmOperator *op, int repeat)
 			wm->op_undo_depth++;
 
 		retval= op->type->exec(C, op);
+		OPERATOR_RETVAL_CHECK(retval);
 
 		if(op->type->flag & OPTYPE_UNDO && CTX_wm_manager(C) == wm)
 			wm->op_undo_depth--;
@@ -690,6 +700,7 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event, P
 				wm->op_undo_depth++;
 
 			retval= op->type->invoke(C, op, event);
+			OPERATOR_RETVAL_CHECK(retval);
 
 			if(op->type->flag & OPTYPE_UNDO && CTX_wm_manager(C) == wm)
 				wm->op_undo_depth--;
@@ -699,6 +710,7 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event, P
 				wm->op_undo_depth++;
 
 			retval= op->type->exec(C, op);
+			OPERATOR_RETVAL_CHECK(retval);
 
 			if(op->type->flag & OPTYPE_UNDO && CTX_wm_manager(C) == wm)
 				wm->op_undo_depth--;
@@ -874,8 +886,8 @@ static int wm_operator_call_internal(bContext *C, wmOperatorType *ot, PointerRNA
 				CTX_wm_region_set(C, NULL);
 				CTX_wm_area_set(C, NULL);
 				retval= wm_operator_invoke(C, ot, event, properties, reports, poll_only);
-				CTX_wm_region_set(C, ar);
 				CTX_wm_area_set(C, area);
+				CTX_wm_region_set(C, ar);
 
 				return retval;
 			}
@@ -917,6 +929,7 @@ int WM_operator_call_py(bContext *C, wmOperatorType *ot, int context, PointerRNA
 			wm->op_undo_depth++;
 
 		retval= op->type->exec(C, op);
+		OPERATOR_RETVAL_CHECK(retval);
 
 		if(op->type->flag & OPTYPE_UNDO && CTX_wm_manager(C) == wm)
 			wm->op_undo_depth--;
@@ -1203,6 +1216,7 @@ static int wm_handler_operator_call(bContext *C, ListBase *handlers, wmEventHand
 				wm->op_undo_depth++;
 
 			retval= ot->modal(C, op, event);
+			OPERATOR_RETVAL_CHECK(retval);
 
 			if(ot->flag & OPTYPE_UNDO && CTX_wm_manager(C) == wm)
 				wm->op_undo_depth--;

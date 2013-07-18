@@ -39,35 +39,19 @@ set(INC
 )
 
 set(INC_SYS
-
+	${OPENCOLLADA_INCLUDE_DIRS}
 )
-
-if(APPLE)
-	list(APPEND INC_SYS
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADAStreamWriter
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADABaseUtils
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADAFramework
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADASaxFrameworkLoader
-		${OPENCOLLADA_INCLUDE_DIR}/GeneratedSaxParser
-	)
-else()
-	list(APPEND INC_SYS
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADAStreamWriter/include
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADABaseUtils/include
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADAFramework/include
-		${OPENCOLLADA_INCLUDE_DIR}/COLLADASaxFrameworkLoader/include
-		${OPENCOLLADA_INCLUDE_DIR}/GeneratedSaxParser/include
-	)
-endif()
 
 set(SRC
 	AnimationImporter.cpp
+	AnimationExporter.cpp
 	ArmatureExporter.cpp
 	ArmatureImporter.cpp
 	CameraExporter.cpp
 	DocumentExporter.cpp
 	DocumentImporter.cpp
 	EffectExporter.cpp
+	ErrorHandler.cpp
 	ExtraHandler.cpp
 	ExtraTags.cpp
 	GeometryExporter.cpp
@@ -77,6 +61,7 @@ set(SRC
 	MaterialExporter.cpp
 	MeshImporter.cpp
 	SkinInfo.cpp
+	SceneExporter.cpp
 	TransformReader.cpp
 	TransformWriter.cpp
 	collada.cpp
@@ -84,12 +69,14 @@ set(SRC
 	collada_utils.cpp
 
 	AnimationImporter.h
+	AnimationExporter.h	
 	ArmatureExporter.h
 	ArmatureImporter.h
 	CameraExporter.h
 	DocumentExporter.h
 	DocumentImporter.h
 	EffectExporter.h
+	ErrorHandler.h
 	ExtraHandler.h
 	ExtraTags.h
 	GeometryExporter.h
@@ -99,6 +86,7 @@ set(SRC
 	MaterialExporter.h
 	MeshImporter.h
 	SkinInfo.h
+	SceneExporter.h
 	TransformReader.h
 	TransformWriter.h
 	collada.h
@@ -107,7 +95,7 @@ set(SRC
 )
 
 if(WITH_BUILDINFO)
-	add_definitions(-DNAN_BUILDINFO)
+	add_definitions(-DWITH_BUILDINFO)
 endif()
 
 if(CMAKE_COMPILER_IS_GNUCXX)
