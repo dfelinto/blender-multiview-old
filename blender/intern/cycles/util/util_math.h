@@ -165,7 +165,7 @@ __device_inline float clamp(float a, float mn, float mx)
 
 __device_inline int float_to_int(float f)
 {
-#ifdef __KERNEL_SSE2__
+#if defined(__KERNEL_SSE2__) && !defined(_MSC_VER)
 	return _mm_cvtt_ss2si(_mm_load_ss(&f));
 #else
 	return (int)f;
@@ -1100,6 +1100,42 @@ __device_inline float3 safe_divide_color(float3 a, float3 b)
 	return make_float3(x, y, z);
 }
 
+__device_inline float3 safe_divide_even_color(float3 a, float3 b)
+{
+	float x, y, z;
+
+	x = (b.x != 0.0f)? a.x/b.x: 0.0f;
+	y = (b.y != 0.0f)? a.y/b.y: 0.0f;
+	z = (b.z != 0.0f)? a.z/b.z: 0.0f;
+
+	/* try to get grey even if b is zero */
+	if(b.x == 0.0f) {
+		if(b.y == 0.0f) {
+			x = z;
+			y = z;
+		}
+		else if(b.z == 0.0f) {
+			x = y;
+			z = y;
+		}
+		else
+			x = 0.5f*(y + z);
+	}
+	else if(b.y == 0.0f) {
+		if(b.z == 0.0f) {
+			y = x;
+			z = x;
+		}
+		else
+			y = 0.5f*(x + z);
+	}
+	else if(b.z == 0.0f) {
+		z = 0.5f*(x + y);
+	}
+
+	return make_float3(x, y, z);
+}
+
 /* Rotation of point around axis and angle */
 
 __device_inline float3 rotate_around_axis(float3 p, float3 axis, float angle)
@@ -1166,7 +1202,7 @@ __device float safe_powf(float a, float b)
 		return 1.0f;
 	if(a == 0.0f)
 		return 0.0f;
-	if(a < 0.0f && b != (int)b)
+	if(a < 0.0f && b != float_to_int(b))
 		return 0.0f;
 	
 	return compatible_powf(a, b);

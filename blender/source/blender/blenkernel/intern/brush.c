@@ -15,11 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -544,7 +539,7 @@ float BKE_brush_sample_tex_3D(const Scene *scene, Brush *br,
 	else if (mtex->brush_map_mode == MTEX_MAP_MODE_STENCIL) {
 		float rotation = -mtex->rot;
 		float point_2d[2] = {point[0], point[1]};
-		float x = 0.0f, y = 0.0f; /* Quite warnings */
+		float x, y;
 		float co[3];
 
 		x = point_2d[0] - br->stencil_pos[0];
@@ -663,7 +658,7 @@ float BKE_brush_sample_masktex(const Scene *scene, Brush *br,
 	if (mtex->brush_map_mode == MTEX_MAP_MODE_STENCIL) {
 		float rotation = -mtex->rot;
 		float point_2d[2] = {point[0], point[1]};
-		float x = 0.0f, y = 0.0f; /* Quite warnings */
+		float x, y;
 		float co[3];
 
 		x = point_2d[0] - br->mask_stencil_pos[0];
@@ -998,7 +993,8 @@ unsigned int *BKE_brush_gen_texture_cache(Brush *br, int half_side)
 				co[2] = 0.0f;
 
 				/* This is copied from displace modifier code */
-				hasrgb = multitex_ext(mtex->tex, co, NULL, NULL, 0, &texres, NULL);
+				/* TODO(sergey): brush are always cacheing with CM enabled for now. */
+				hasrgb = multitex_ext(mtex->tex, co, NULL, NULL, 0, &texres, NULL, true);
 
 				/* if the texture gave an RGB value, we assume it didn't give a valid
 				 * intensity, so calculate one (formula from do_material_tex).

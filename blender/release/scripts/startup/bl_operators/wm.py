@@ -27,34 +27,8 @@ from bpy.props import (StringProperty,
                        EnumProperty,
                        )
 
-from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
-
 from bpy.app.translations import pgettext_tip as tip_
 
-
-class MESH_OT_delete_edgeloop(Operator):
-    """Delete an edge loop by merging the faces on each side """ \
-    """to a single face loop"""
-    bl_idname = "mesh.delete_edgeloop"
-    bl_label = "Delete Edge Loop"
-    bl_options = {'UNDO', 'REGISTER'}
-
-    @classmethod
-    def poll(cls, context):
-        return bpy.ops.transform.edge_slide.poll()
-
-    def execute(self, context):
-        mesh = context.object.data
-        use_mirror_x = mesh.use_mirror_x
-        mesh.use_mirror_x = False
-        if 'FINISHED' in bpy.ops.transform.edge_slide(value=1.0, correct_uv=True):
-            bpy.ops.mesh.select_more()
-            bpy.ops.mesh.remove_doubles()
-            ret = {'FINISHED'}
-        else:
-            ret = {'CANCELLED'}
-        mesh.use_mirror_x = use_mirror_x
-        return ret
 
 rna_path_prop = StringProperty(
         name="Context Attributes",
@@ -497,24 +471,6 @@ class WM_OT_context_cycle_array(Operator):
         return operator_path_undo_return(context, data_path)
 
 
-class WM_MT_context_menu_enum(Menu):
-    bl_label = ""
-    data_path = ""  # BAD DESIGN, set from operator below.
-
-    def draw(self, context):
-        data_path = self.data_path
-        value = context_path_validate(context, data_path)
-        if value is Ellipsis:
-            return {'PASS_THROUGH'}
-        base_path, prop_string = data_path.rsplit(".", 1)
-        value_base = context_path_validate(context, base_path)
-        prop = value_base.bl_rna.properties[prop_string]
-
-        layout = self.layout
-        layout.label(prop.name, icon=prop.icon)
-        layout.prop(value_base, prop_string, expand=True)
-
-
 class WM_OT_context_menu_enum(Operator):
     bl_idname = "wm.context_menu_enum"
     bl_label = "Context Enum Menu"
@@ -523,8 +479,21 @@ class WM_OT_context_menu_enum(Operator):
 
     def execute(self, context):
         data_path = self.data_path
-        WM_MT_context_menu_enum.data_path = data_path
-        bpy.ops.wm.call_menu(name="WM_MT_context_menu_enum")
+        value = context_path_validate(context, data_path)
+
+        if value is Ellipsis:
+            return {'PASS_THROUGH'}
+
+        base_path, prop_string = data_path.rsplit(".", 1)
+        value_base = context_path_validate(context, base_path)
+        prop = value_base.bl_rna.properties[prop_string]
+
+        def draw_cb(self, context):
+            layout = self.layout
+            layout.prop(value_base, prop_string, expand=True)
+
+        context.window_manager.popup_menu(draw_func=draw_cb, title=prop.name, icon=prop.icon)
+
         return {'PASS_THROUGH'}
 
 
@@ -1053,6 +1022,8 @@ class WM_OT_properties_edit(Operator):
             )
 
     def execute(self, context):
+        from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
+
         data_path = self.data_path
         value = self.value
         prop = self.property
@@ -1104,6 +1075,8 @@ class WM_OT_properties_edit(Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
+        from rna_prop_ui import rna_idprop_ui_prop_get
+
         data_path = self.data_path
 
         if not data_path:
@@ -1133,6 +1106,8 @@ class WM_OT_properties_add(Operator):
     data_path = rna_path
 
     def execute(self, context):
+        from rna_prop_ui import rna_idprop_ui_prop_get
+
         data_path = self.data_path
         item = eval("context.%s" % data_path)
 
@@ -1203,6 +1178,7 @@ class WM_OT_keyconfig_activate(Operator):
             return {'FINISHED'}
         else:
             return {'CANCELLED'}
+
 
 class WM_OT_appconfig_default(Operator):
     bl_idname = "wm.appconfig_default"
@@ -1599,7 +1575,15 @@ class WM_OT_addon_enable(Operator):
     def execute(self, context):
         import addon_utils
 
-        mod = addon_utils.enable(self.module)
+        err_str = ""
+
+        def err_cb():
+            import traceback
+            nonlocal err_str
+            err_str = traceback.format_exc()
+            print(err_str)
+
+        mod = addon_utils.enable(self.module, handle_error=err_cb)
 
         if mod:
             info = addon_utils.module_bl_info(mod)
@@ -1614,6 +1598,10 @@ class WM_OT_addon_enable(Operator):
                                          info_ver)
             return {'FINISHED'}
         else:
+
+            if err_str:
+                self.report({'ERROR'}, err_str)
+
             return {'CANCELLED'}
 
 
@@ -1630,7 +1618,19 @@ class WM_OT_addon_disable(Operator):
     def execute(self, context):
         import addon_utils
 
-        addon_utils.disable(self.module)
+        err_str = ""
+
+        def err_cb():
+            import traceback
+            nonlocal err_str
+            err_str = traceback.format_exc()
+            print(err_str)
+
+        addon_utils.disable(self.module, handle_error=err_cb)
+
+        if err_str:
+            self.report({'ERROR'}, err_str)
+
         return {'FINISHED'}
 
 

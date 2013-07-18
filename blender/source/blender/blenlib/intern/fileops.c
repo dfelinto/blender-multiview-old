@@ -199,7 +199,7 @@ bool BLI_file_touch(const char *file)
 {
 	FILE *f = BLI_fopen(file, "r+b");
 	if (f != NULL) {
-		char c = getc(f);
+		int c = getc(f);
 		rewind(f);
 		putc(c, f);
 	}
@@ -251,7 +251,7 @@ void *BLI_gzopen(const char *filename, const char *mode)
 			fclose(ufopen(filename, "a"));
 
 		/* temporary #if until we update all libraries to 1.2.7
-		 * for  correct wide char path handling */
+		 * for correct wide char path handling */
 #if ZLIB_VERNUM >= 0x1270 && !defined(FREE_WINDOWS)
 		UTF16_ENCODE(filename);
 

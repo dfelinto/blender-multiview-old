@@ -144,11 +144,13 @@ static void bridge_loop_pair(BMesh *bm,
                              struct BMEdgeLoopStore *el_store_b,
                              const bool use_merge, const float merge_factor)
 {
+	const float eps = 0.00001f;
 	LinkData *el_a_first, *el_b_first;
 	const bool is_closed = BM_edgeloop_is_closed(el_store_a) && BM_edgeloop_is_closed(el_store_b);
 	int el_store_a_len, el_store_b_len;
 	bool el_store_b_free = false;
 	float el_dir[3];
+	float dot_a, dot_b;
 	const bool use_edgeout = true;
 
 	el_store_a_len = BM_edgeloop_length_get((struct BMEdgeLoopStore *)el_store_a);
@@ -160,7 +162,7 @@ static void bridge_loop_pair(BMesh *bm,
 	}
 
 	if (use_merge) {
-		BLI_assert((el_store_a_len == el_store_a_len));
+		BLI_assert((el_store_a_len == el_store_b_len));
 	}
 
 	if (el_store_a_len != el_store_b_len) {
@@ -189,7 +191,10 @@ static void bridge_loop_pair(BMesh *bm,
 		            ((BMVert *)(((LinkData *)lb_b->first)->data))->co,
 		            ((BMVert *)(((LinkData *)lb_b->last)->data))->co);
 
-		/* this isnt totally reliable but works well in most cases */
+		/* make the directions point out from the normals, 'no' is used as a temp var */
+		cross_v3_v3v3(no, dir_a, el_dir); cross_v3_v3v3(dir_a, no, el_dir);
+		cross_v3_v3v3(no, dir_b, el_dir); cross_v3_v3v3(dir_b, no, el_dir);
+
 		if (dot_v3v3(dir_a, dir_b) < 0.0f) {
 			BM_edgeloop_flip(bm, el_store_b);
 		}
@@ -199,9 +204,22 @@ static void bridge_loop_pair(BMesh *bm,
 		BM_edgeloop_calc_normal_aligned(bm, el_store_b, no);
 	}
 
-	if ((dot_v3v3(BM_edgeloop_normal_get(el_store_a), el_dir) < 0.0f) !=
-		(dot_v3v3(BM_edgeloop_normal_get(el_store_b), el_dir) < 0.0f))
+	dot_a = dot_v3v3(BM_edgeloop_normal_get(el_store_a), el_dir);
+	dot_b = dot_v3v3(BM_edgeloop_normal_get(el_store_b), el_dir);
+
+	if (UNLIKELY((len_squared_v3(el_dir) < eps) ||
+	             ((fabsf(dot_a) < eps) && (fabsf(dot_b) < eps))))
 	{
+		/* in this case there is no depth between the two loops,
+		 * eg: 2x 2d circles, one scaled smaller,
+		 * in this case 'el_dir' cant be used, just ensure we have matching flipping. */
+		if (dot_v3v3(BM_edgeloop_normal_get(el_store_a),
+		             BM_edgeloop_normal_get(el_store_b)) < 0.0f)
+		{
+			BM_edgeloop_flip(bm, el_store_b);
+		}
+	}
+	else if ((dot_a < 0.0f) != (dot_b < 0.0f)) {
 		BM_edgeloop_flip(bm, el_store_b);
 	}
 
@@ -363,7 +381,7 @@ static void bridge_loop_pair(BMesh *bm,
 		int i;
 
 		BMOperator op_sub;
-		/* when we have to bridge betweeen different sized edge-loops,
+		/* when we have to bridge between different sized edge-loops,
 		 * be clever and post-process for best results */
 
 
@@ -371,6 +389,14 @@ static void bridge_loop_pair(BMesh *bm,
 		BMO_op_initf(bm, &op_sub, 0,
 		             "triangulate faces=%hf",
 		             BM_ELEM_TAG, true);
+		/* calc normals for input faces before executing */
+		{
+			BMOIter siter;
+			BMFace *f;
+			BMO_ITER (f, &siter, op_sub.slots_in, "faces", BM_FACE) {
+				BM_face_normal_update(f);
+			}
+		}
 		BMO_op_exec(bm, &op_sub);
 		BMO_slot_buffer_flag_enable(bm, op_sub.slots_out, "faces.out", BM_FACE, FACE_OUT);
 		BMO_slot_buffer_hflag_enable(bm, op_sub.slots_out, "faces.out", BM_FACE, BM_ELEM_TAG, false);

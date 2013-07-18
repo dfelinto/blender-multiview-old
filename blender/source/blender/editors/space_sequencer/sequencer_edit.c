@@ -551,6 +551,7 @@ int seq_effect_find_selected(Scene *scene, Sequence *activeseq, int type, Sequen
 			}
 			if (seq1 == NULL) seq1 = seq2;
 			if (seq3 == NULL) seq3 = seq2;
+			/* fall-through */
 		case 2:
 			if (seq1 == NULL || seq2 == NULL) {
 				*error_str = N_("2 selected sequence strips are needed");
@@ -866,7 +867,7 @@ static int cut_seq_list(Scene *scene, ListBase *slist, int cutframe,
 	return (seq_first_new != NULL);
 }
 
-static bool insert_gap(Scene *scene, int gap, int cfra)
+static bool sequence_offset_after_frame(Scene *scene, const int delta, const int cfra)
 {
 	Sequence *seq;
 	Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
@@ -876,15 +877,13 @@ static bool insert_gap(Scene *scene, int gap, int cfra)
 	
 	if (ed == NULL) return 0;
 
-	SEQP_BEGIN (ed, seq)
-	{
+	for (seq = ed->seqbasep->first; seq; seq = seq->next) {
 		if (seq->startdisp >= cfra) {
-			seq->start += gap;
+			BKE_sequence_translate(scene, seq, delta);
 			BKE_sequence_calc(scene, seq);
 			done = true;
 		}
 	}
-	SEQ_END
 
 	return done;
 }
@@ -1017,7 +1016,7 @@ static int sequencer_gap_remove_exec(bContext *C, wmOperator *op)
 		else if (BKE_sequencer_evaluate_frame(scene, cfra) == 0) {
 			done = true;
 			while (BKE_sequencer_evaluate_frame(scene, cfra) == 0) {
-				done = insert_gap(scene, -1, cfra);
+				done = sequence_offset_after_frame(scene, -1, cfra);
 				if (done == false) break;
 			}
 			if (done == false || do_all == false) break;
@@ -1054,7 +1053,7 @@ static int sequencer_gap_insert_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	int frames = RNA_int_get(op->ptr, "frames");
 	
-	insert_gap(scene, frames, CFRA);
+	sequence_offset_after_frame(scene, frames, CFRA);
 	
 	WM_event_add_notifier(C, NC_SCENE | ND_SEQUENCER, scene);
 	

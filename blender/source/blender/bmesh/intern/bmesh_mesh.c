@@ -240,7 +240,7 @@ void BM_mesh_clear(BMesh *bm)
 	bm_mempool_init(bm, &bm_mesh_allocsize_default);
 
 	bm->stackdepth = 1;
-	bm->totflags = 1;
+	bm->totflags = 0;
 
 	CustomData_reset(&bm->vdata);
 	CustomData_reset(&bm->edata);
@@ -628,6 +628,8 @@ void BM_mesh_elem_index_validate(BMesh *bm, const char *location, const char *fu
  */
 int BM_mesh_elem_count(BMesh *bm, const char htype)
 {
+	BLI_assert((htype & ~BM_ALL_NOLOOP) == 0);
+
 	switch (htype) {
 		case BM_VERT: return bm->totvert;
 		case BM_EDGE: return bm->totedge;

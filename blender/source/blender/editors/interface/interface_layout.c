@@ -525,7 +525,7 @@ static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *pt
 		name = (!uiname || uiname[0]) ? item->name : "";
 		icon = item->icon;
 		value = item->value;
-		itemw = ui_text_icon_width(block->curlayout, name, icon, 0);
+		itemw = ui_text_icon_width(block->curlayout, icon_only ? "" : name, icon, 0);
 
 		if (icon && name[0] && !icon_only)
 			but = uiDefIconTextButR_prop(block, ROW, 0, icon, name, 0, 0, itemw, h, ptr, prop, -1, 0, value, -1, -1, NULL);
@@ -1632,7 +1632,7 @@ static uiBut *uiItemL_(uiLayout *layout, const char *name, int icon)
 		but = uiDefIconBut(block, LABEL, 0, icon, 0, 0, w, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
 	else
 		but = uiDefBut(block, LABEL, 0, name, 0, 0, w, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
-	
+
 	/* to compensate for string size padding in ui_text_icon_width,
 	 * make text aligned right if the layout is aligned right.
 	 */
@@ -1640,7 +1640,12 @@ static uiBut *uiItemL_(uiLayout *layout, const char *name, int icon)
 		but->flag &= ~UI_TEXT_LEFT;	/* default, needs to be unset */
 		but->flag |= UI_TEXT_RIGHT;
 	}
-	
+
+	/* Mark as a label inside a listbox. */
+	if (block->flag & UI_BLOCK_LIST_ITEM) {
+		but->type = LISTLABEL;
+	}
+
 	return but;
 }
 
@@ -1749,7 +1754,7 @@ void uiItemMenuEnumO(uiLayout *layout, bContext *C, const char *opname, const ch
 
 	/* add hotkey here, lower UI code can't detect it */
 	if (layout->root->block->flag & UI_BLOCK_LOOP) {
-		if (ot->prop &&
+		if (ot->prop && ot->invoke &&
 		    WM_key_event_operator_string(C, ot->idname, layout->root->opcontext, NULL, false, keybuf, sizeof(keybuf)))
 		{
 			namestr += BLI_snprintf(namestr, sizeof(namestr_buf) - (namestr - namestr_buf), "|%s", keybuf);
@@ -2399,6 +2404,18 @@ uiLayout *uiLayoutBox(uiLayout *layout)
 	return (uiLayout *)ui_layout_box(layout, ROUNDBOX);
 }
 
+/* Check all buttons defined in this layout, and set labels as active/selected.
+ * Needed to handle correctly text colors of list items. */
+void ui_layout_list_set_labels_active(uiLayout *layout)
+{
+	uiButtonItem *bitem;
+	for (bitem = layout->items.first; bitem; bitem = bitem->item.next) {
+		if (bitem->item.type == ITEM_BUTTON && bitem->but->type == LISTLABEL) {
+			uiButSetFlag(bitem->but, UI_SELECT);
+		}
+	}
+}
+
 uiLayout *uiLayoutListBox(uiLayout *layout, uiList *ui_list, PointerRNA *ptr, PropertyRNA *prop, PointerRNA *actptr,
                           PropertyRNA *actprop)
 {
@@ -2411,6 +2428,11 @@ uiLayout *uiLayoutListBox(uiLayout *layout, uiList *ui_list, PointerRNA *ptr, Pr
 	but->rnasearchprop = prop;
 	but->rnapoin = *actptr;
 	but->rnaprop = actprop;
+
+	/* only for the undo string */
+	if (but->flag & UI_BUT_UNDO) {
+		but->tip = RNA_property_description(actprop);
+	}
 
 	return (uiLayout *)box;
 }
@@ -3060,12 +3082,14 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,
 			/* no undo for buttons for operator redo panels */
 			uiButClearFlag(but, UI_BUT_UNDO);
 			
+#if 0		/* broken, causes freedback loop, see [#36109] */
 			/* if button is operator's default property, and a text-field, enable focus for it
 			 *	- this is used for allowing operators with popups to rename stuff with fewer clicks
 			 */
 			if ((but->rnaprop == op->type->prop) && (but->type == TEX)) {
 				uiButSetFocusOnEnter(CTX_wm_window(C), but);
 			}
+#endif
 		}
 	}
 }

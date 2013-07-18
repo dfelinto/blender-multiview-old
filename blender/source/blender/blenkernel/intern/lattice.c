@@ -62,6 +62,25 @@
 
 #include "BKE_deform.h"
 
+int BKE_lattice_index_from_uvw(struct Lattice *lt,
+                               const int u, const int v, const int w)
+{
+	const int totu = lt->pntsu;
+	const int totv = lt->pntsv;
+
+	return (w * (totu * totv) + (v * totu) + u);
+}
+
+void BKE_lattice_index_to_uvw(struct Lattice *lt, const int index,
+                              int *r_u, int *r_v, int *r_w)
+{
+	const int totu = lt->pntsu;
+	const int totv = lt->pntsv;
+
+	*r_u = (index % totu);
+	*r_v = (index / totu) % totv;
+	*r_w = (index / (totu * totv));
+}
 
 void calc_lat_fudu(int flag, int res, float *r_fu, float *r_du)
 {
@@ -662,7 +681,7 @@ void curve_deform_verts(Scene *scene, Object *cuOb, Object *target,
 	 * we want either a Mesh with no derived data, or derived data with
 	 * deformverts
 	 */
-	if (target && target->type == OB_MESH) {
+	if (target->type == OB_MESH) {
 		/* if there's derived data without deformverts, don't use vgroups */
 		if (dm) {
 			use_vgroups = (dm->getVertData(dm, 0, CD_MDEFORMVERT) != NULL);
@@ -867,7 +886,7 @@ int object_deform_mball(Object *ob, ListBase *dispbase)
 
 static BPoint *latt_bp(Lattice *lt, int u, int v, int w)
 {
-	return &lt->def[LT_INDEX(lt, u, v, w)];
+	return &lt->def[BKE_lattice_index_from_uvw(lt, u, v, w)];
 }
 
 void outside_lattice(Lattice *lt)

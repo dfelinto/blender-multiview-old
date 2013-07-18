@@ -232,7 +232,6 @@ class VIEW3D_PT_tools_meshedit_options(View3DPanel, Panel):
         mesh = ob.data
 
         col = layout.column(align=True)
-        col.active = tool_settings.proportional_edit == 'DISABLED'
         col.prop(mesh, "use_mirror_x")
 
         row = col.row()
@@ -564,7 +563,7 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
             row = col.row(align=True)
 
             ups = toolsettings.unified_paint_settings
-            if     ((ups.use_unified_size and ups.use_locked_size) or
+            if ((ups.use_unified_size and ups.use_locked_size) or
                     ((not ups.use_unified_size) and brush.use_locked_size)):
                 self.prop_unified_size(row, context, brush, "use_locked_size", icon='LOCKED')
                 self.prop_unified_size(row, context, brush, "unprojected_radius", slider=True, text="Radius")
@@ -682,7 +681,7 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
                 row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
                 row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
-        
+
             sub = row.row()
             sub.prop(brush, "cursor_overlay_alpha", text="Alpha")
             sub.prop(brush, "use_cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
@@ -715,21 +714,18 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
             col = layout.column(align=True)
             col.label(text="Overlay:")
 
-            row = col.row()            
+            row = col.row()
             if brush.use_cursor_overlay:
                 row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
                 row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
-        
+
             sub = row.row()
             sub.prop(brush, "cursor_overlay_alpha", text="Alpha")
             sub.prop(brush, "use_cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
 
-
         # Weight Paint Mode #
         elif context.weight_paint_object and brush:
-            layout.prop(toolsettings, "use_auto_normalize", text="Auto Normalize")
-            layout.prop(toolsettings, "use_multipaint", text="Multi-Paint")
 
             col = layout.column()
 
@@ -747,6 +743,10 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
             row = col.row(align=True)
 
             col.prop(brush, "vertex_tool", text="Blend")
+
+            col = layout.column()
+            col.prop(toolsettings, "use_auto_normalize", text="Auto Normalize")
+            col.prop(toolsettings, "use_multipaint", text="Multi-Paint")
 
         # Vertex Paint Mode #
         elif context.vertex_paint_object and brush:
@@ -777,7 +777,7 @@ class VIEW3D_PT_tools_brush(Panel, View3DPaintPanel):
                 row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
                 row.prop(brush, "use_cursor_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
-        
+
             sub = row.row()
             sub.prop(brush, "cursor_overlay_alpha", text="Alpha")
             sub.prop(brush, "use_cursor_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
@@ -817,7 +817,7 @@ class VIEW3D_PT_tools_brush_texture(Panel, View3DPaintPanel):
                 row.prop(brush, "use_primary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
                 row.prop(brush, "use_primary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
-        
+
         sub = row.row()
         sub.prop(brush, "texture_overlay_alpha", text="Alpha")
         sub.prop(brush, "use_primary_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
@@ -844,7 +844,7 @@ class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
         col.template_ID_preview(brush, "mask_texture", new="texture.new", rows=3, cols=8)
 
         brush_mask_texture_settings(col, brush)
- 
+
         col = layout.column(align=True)
         col.active = brush.brush_capabilities.has_overlay
         col.label(text="Overlay:")
@@ -855,7 +855,7 @@ class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
                 row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_OFF')
             else:
                 row.prop(brush, "use_secondary_overlay", toggle=True, text="", icon='RESTRICT_VIEW_ON')
-        
+
         sub = row.row()
         sub.prop(brush, "mask_overlay_alpha", text="Alpha")
         sub.prop(brush, "use_secondary_overlay_override", toggle=True, text="", icon='BRUSH_DATA')
@@ -1084,7 +1084,7 @@ class VIEW3D_PT_tools_brush_appearance(Panel, View3DPaintPanel):
             return
 
         col = layout.column()
-        col.prop(settings, "show_brush");
+        col.prop(settings, "show_brush")
 
         col = col.column()
         col.active = settings.show_brush
@@ -1115,10 +1115,7 @@ class VIEW3D_PT_tools_weightpaint(View3DPanel, Panel):
     def draw(self, context):
         layout = self.layout
 
-        ob = context.active_object
-
         col = layout.column()
-        col.active = ob.vertex_groups.active is not None
         col.operator("object.vertex_group_normalize_all", text="Normalize All")
         col.operator("object.vertex_group_normalize", text="Normalize")
         col.operator("object.vertex_group_mirror", text="Mirror")
@@ -1153,7 +1150,9 @@ class VIEW3D_PT_tools_weightpaint_options(Panel, View3DPaintPanel):
         if obj.type == 'MESH':
             mesh = obj.data
             col.prop(mesh, "use_mirror_x")
-            col.prop(mesh, "use_mirror_topology")
+            row = col.row()
+            row.active = mesh.use_mirror_x
+            row.prop(mesh, "use_mirror_topology")
 
         col.prop(wpaint, "input_samples")
 

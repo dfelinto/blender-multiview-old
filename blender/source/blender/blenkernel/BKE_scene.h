@@ -75,7 +75,17 @@ struct Base *BKE_scene_base_add(struct Scene *sce, struct Object *ob);
 void         BKE_scene_base_unlink(struct Scene *sce, struct Base *base);
 void         BKE_scene_base_deselect_all(struct Scene *sce);
 void         BKE_scene_base_select(struct Scene *sce, struct Base *selbase);
-int          BKE_scene_base_iter_next(struct Scene **scene, int val, struct Base **base, struct Object **ob);
+
+/* Scene base iteration function.
+ * Define struct here, so no need to bother with alloc/free it.
+ */
+typedef struct SceneBaseIter {
+	struct ListBase *duplilist;
+	struct DupliObject *dupob;
+	int fase;
+} SceneBaseIter;
+
+int          BKE_scene_base_iter_next(struct SceneBaseIter *iter, struct Scene **scene, int val, struct Base **base, struct Object **ob);
 
 void BKE_scene_base_flag_to_objects(struct Scene *scene);
 void BKE_scene_base_flag_from_objects(struct Scene *scene);
@@ -99,6 +109,7 @@ int BKE_scene_validate_setscene(struct Main *bmain, struct Scene *sce);
 
 float BKE_scene_frame_get(struct Scene *scene);
 float BKE_scene_frame_get_from_ctime(struct Scene *scene, const float frame);
+void  BKE_scene_frame_set(struct Scene *scene, double cfra);
 
 void BKE_scene_update_tagged(struct Main *bmain, struct Scene *sce);
 

@@ -1556,6 +1556,13 @@ static PointerRNA rna_Mesh_tessface_uv_texture_new(struct Mesh *me, ReportList *
 	return ptr;
 }
 
+
+static int rna_Mesh_is_editmode_get(PointerRNA *ptr)
+{
+	Mesh *me = rna_mesh(ptr);
+	return (me->edit_btmesh != NULL);
+}
+
 /* only to quiet warnings */
 static void UNUSED_FUNCTION(rna_mesh_unused)(void)
 {
@@ -2367,14 +2374,14 @@ void rna_def_texmat_common(StructRNA *srna, const char *texspace_editable)
 	RNA_def_property_ui_text(prop, "Texture Space Location", "Texture space location");
 	RNA_def_property_float_funcs(prop, "rna_Mesh_texspace_loc_get", NULL, NULL);
 	RNA_def_property_editable_func(prop, texspace_editable);
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
 	prop = RNA_def_property(srna, "texspace_size", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_float_sdna(prop, NULL, "size");
 	RNA_def_property_ui_text(prop, "Texture Space Size", "Texture space size");
 	RNA_def_property_float_funcs(prop, "rna_Mesh_texspace_size_get", NULL, NULL);
 	RNA_def_property_editable_func(prop, texspace_editable);
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 
 	/* not supported yet */
 #if 0
@@ -2382,7 +2389,7 @@ void rna_def_texmat_common(StructRNA *srna, const char *texspace_editable)
 	RNA_def_property_float(prop, NULL, "rot");
 	RNA_def_property_ui_text(prop, "Texture Space Rotation", "Texture space rotation");
 	RNA_def_property_editable_func(prop, texspace_editable);
-	RNA_def_property_update(prop, 0, "rna_Mesh_update_draw");
+	RNA_def_property_update(prop, 0, "rna_Mesh_update_data");
 #endif
 
 	/* materials */
@@ -3210,6 +3217,11 @@ static void rna_def_mesh(BlenderRNA *brna)
 	RNA_def_property_int_funcs(prop, "rna_Mesh_tot_face_get", NULL, NULL);
 	RNA_def_property_ui_text(prop, "Selected Face Total", "Selected face count in editmode");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+
+	prop = RNA_def_property(srna, "is_editmode", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_funcs(prop, "rna_Mesh_is_editmode_get", NULL);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Is Editmode", "True when used in editmode");
 
 	/* pointers */
 	rna_def_animdata_common(srna);

@@ -48,6 +48,7 @@
 #include "BLI_rect.h"
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
+#include "BLI_threads.h"
 #include "BLI_linklist.h"  /* linknode */
 
 #include "BIF_gl.h"
@@ -64,15 +65,18 @@
 
 /* freetype2 handle ONLY for this file!. */
 static FT_Library ft_lib;
+static SpinLock ft_lib_mutex;
 
 int blf_font_init(void)
 {
+	BLI_spin_init(&ft_lib_mutex);
 	return FT_Init_FreeType(&ft_lib);
 }
 
 void blf_font_exit(void)
 {
 	FT_Done_FreeType(ft_lib);
+	BLI_spin_end(&ft_lib_mutex);
 }
 
 void blf_font_size(FontBLF *font, unsigned int size, unsigned int dpi)
@@ -83,7 +87,7 @@ void blf_font_size(FontBLF *font, unsigned int size, unsigned int dpi)
 	err = FT_Set_Char_Size(font->face, 0, (FT_F26Dot6)(size * 64), dpi, dpi);
 	if (err) {
 		/* FIXME: here we can go through the fixed size and choice a close one */
-		printf("The current font don't support the size, %d and dpi, %d\n", size, dpi);
+		printf("The current font don't support the size, %u and dpi, %u\n", size, dpi);
 		return;
 	}
 
@@ -572,6 +576,7 @@ static void blf_font_fill(FontBLF *font)
 	font->buf_info.col[3] = 0;
 
 	font->ft_lib = ft_lib;
+	font->ft_lib_mutex = &ft_lib_mutex;
 }
 
 FontBLF *blf_font_new(const char *name, const char *filename)

@@ -222,7 +222,7 @@ static void compo_updatejob(void *cjv)
 		cj->need_sync = FALSE;
 	}
 
-	WM_main_add_notifier(NC_WINDOW | ND_DRAW, NULL);
+	WM_main_add_notifier(NC_SCENE | ND_COMPO_RESULT, NULL);
 }
 
 static void compo_progressjob(void *cjv, float progress)
@@ -299,7 +299,7 @@ void ED_node_composite_job(const bContext *C, struct bNodeTree *nodetree, Scene 
 
 	/* setup job */
 	WM_jobs_customdata_set(wm_job, cj, compo_freejob);
-	WM_jobs_timer(wm_job, 0.1, NC_SCENE, NC_SCENE | ND_COMPO_RESULT);
+	WM_jobs_timer(wm_job, 0.1, NC_SCENE | ND_COMPO_RESULT, NC_SCENE | ND_COMPO_RESULT);
 	WM_jobs_callbacks(wm_job, compo_startjob, compo_initjob, compo_updatejob, NULL);
 
 	WM_jobs_start(CTX_wm_manager(C), wm_job);
@@ -577,9 +577,10 @@ void snode_set_context(const bContext *C)
 	if (!treetype ||
 	    (treetype->poll && !treetype->poll(C, treetype)))
 	{
-		/* invalid tree type, disable */
-		snode->tree_idname[0] = '\0';
-		ED_node_tree_start(snode, NULL, NULL, NULL);
+		/* invalid tree type, skip
+		 * NB: not resetting the node path here, invalid bNodeTreeType
+		 * may still be registered at a later point.
+		 */
 		return;
 	}
 	

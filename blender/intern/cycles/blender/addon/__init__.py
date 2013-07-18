@@ -21,7 +21,7 @@
 bl_info = {
     "name": "Cycles Render Engine",
     "author": "",
-    "blender": (2, 66, 0),
+    "blender": (2, 67, 0),
     "location": "Info header, render engine menu",
     "description": "Cycles Render Engine integration",
     "warning": "",
@@ -41,6 +41,7 @@ class CyclesRender(bpy.types.RenderEngine):
     bl_use_shading_nodes = True
     bl_use_preview = True
     bl_use_exclude_layers = True
+    bl_use_save_buffers = True
 
     def __init__(self):
         self.session = None

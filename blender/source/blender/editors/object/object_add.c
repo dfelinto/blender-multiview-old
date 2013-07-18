@@ -226,7 +226,7 @@ float ED_object_new_primitive_matrix(bContext *C, Object *obedit,
 		return dia;
 	}
 
-	return 1.0f;
+	// return 1.0f;
 }
 
 /********************* Add Object Operator ********************/
@@ -265,6 +265,7 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
                                    bool *enter_editmode, unsigned int *layer, bool *is_view_aligned)
 {
 	View3D *v3d = CTX_wm_view3d(C);
+	unsigned int _layer;
 
 	/* Switch to Edit mode? */
 	if (RNA_struct_find_property(op->ptr, "enter_editmode")) { /* optional */
@@ -283,7 +284,6 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
 	/* Get layers! */
 	{
 		int a, layer_values[20];
-		unsigned int _layer;
 		if (!layer)
 			layer = &_layer;
 
@@ -342,7 +342,7 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
 		else if (RNA_struct_property_is_set(op->ptr, "view_align"))
 			*is_view_aligned = RNA_boolean_get(op->ptr, "view_align");
 		else {
-			*is_view_aligned = U.flag & USER_ADD_VIEWALIGNED;
+			*is_view_aligned = (U.flag & USER_ADD_VIEWALIGNED) != 0;
 			RNA_boolean_set(op->ptr, "view_align", *is_view_aligned);
 		}
 
@@ -657,12 +657,12 @@ void OBJECT_OT_text_add(wmOperatorType *ot)
 static int object_armature_add_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit = CTX_data_edit_object(C);
-	View3D *v3d = CTX_wm_view3d(C);
 	RegionView3D *rv3d = CTX_wm_region_view3d(C);
 	bool newob = false;
 	bool enter_editmode;
 	unsigned int layer;
 	float loc[3], rot[3];
+	bool view_aligned = rv3d && (U.flag & USER_ADD_VIEWALIGNED);
 
 	if (!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
@@ -681,8 +681,7 @@ static int object_armature_add_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
-	/* v3d and rv3d are allowed to be NULL */
-	add_primitive_bone(CTX_data_scene(C), v3d, rv3d);
+	add_primitive_bone(obedit, view_aligned);
 
 	/* userdef */
 	if (newob && !enter_editmode)
@@ -1762,7 +1761,7 @@ void OBJECT_OT_convert(wmOperatorType *ot)
 
 /* 
  * dupflag: a flag made from constants declared in DNA_userdef_types.h
- * The flag tells adduplicate() weather to copy data linked to the object, or to reference the existing data.
+ * The flag tells adduplicate() whether to copy data linked to the object, or to reference the existing data.
  * U.dupflag for default operations or you can construct a flag as python does
  * if the dupflag is 0 then no data will be copied (linked duplicate) */
 
@@ -2038,7 +2037,7 @@ static int duplicate_exec(bContext *C, wmOperator *op)
 	clear_id_newpoins();
 	clear_sca_new_poins();  /* sensor/contr/act */
 
-	CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
+	CTX_DATA_BEGIN (C, Base *, base, selected_bases)
 	{
 		Base *basen = object_add_duplicate_internal(bmain, scene, base, dupflag);
 

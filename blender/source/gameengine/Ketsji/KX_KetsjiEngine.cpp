@@ -54,7 +54,6 @@
 #include "MT_Transform.h"
 #include "SCA_IInputDevice.h"
 #include "KX_Camera.h"
-#include "KX_FontObject.h"
 #include "KX_Dome.h"
 #include "KX_Light.h"
 #include "KX_PythonInit.h"
@@ -340,7 +339,7 @@ void KX_KetsjiEngine::RenderDome()
 				// do the rendering
 				m_dome->RenderDomeFrame(scene,cam, i);
 				//render all the font objects for this scene
-				RenderFonts(scene);
+				scene->RenderFonts();
 			}
 			
 			list<class KX_Camera*>* cameras = scene->GetCameras();
@@ -358,7 +357,7 @@ void KX_KetsjiEngine::RenderDome()
 					// do the rendering
 					m_dome->RenderDomeFrame(scene, (*it),i);
 					//render all the font objects for this scene
-					RenderFonts(scene);
+					scene->RenderFonts();
 				}
 				
 				it++;
@@ -521,10 +520,23 @@ void KX_KetsjiEngine::EndFrame()
 		RenderDebugProperties();
 	}
 
-	m_average_framerate = m_logger->GetAverage();
-	if (m_average_framerate < 1e-6)
-		m_average_framerate = 1e-6;
-	m_average_framerate = 1.0/m_average_framerate;
+	double tottime = m_logger->GetAverage(), time;
+	if (tottime < 1e-6)
+		tottime = 1e-6;
+
+#ifdef WITH_PYTHON
+	for (int i = tc_first; i < tc_numCategories; ++i) {
+		time = m_logger->GetAverage((KX_TimeCategory)i);
+		PyObject *val = PyTuple_New(2);
+		PyTuple_SetItem(val, 0, PyFloat_FromDouble(time*1000.f));
+		PyTuple_SetItem(val, 1, PyFloat_FromDouble(time/tottime * 100.f));
+
+		PyDict_SetItemString(m_pyprofiledict, m_profileLabels[i], val);
+		Py_DECREF(val);
+	}
+#endif
+
+	m_average_framerate = 1.0/tottime;
 
 	// Go to next profiling measurement, time spend after this call is shown in the next frame.
 	m_logger->NextMeasurement(m_kxsystem->GetTimeInSeconds());
@@ -1326,21 +1338,10 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools);
 
 	//render all the font objects for this scene
-	RenderFonts(scene);
+	scene->RenderFonts();
 	
 	if (scene->GetPhysicsEnvironment())
 		scene->GetPhysicsEnvironment()->debugDrawWorld();
-}
-
-void KX_KetsjiEngine::RenderFonts(KX_Scene* scene)
-{
-	list<class KX_FontObject*>* fonts = scene->GetFonts();
-	
-	list<KX_FontObject*>::iterator it = fonts->begin();
-	while (it != fonts->end()) {
-		(*it)->DrawText();
-		++it;
-	}
 }
 
 /*
@@ -1526,15 +1527,6 @@ void KX_KetsjiEngine::RenderDebugProperties()
 
 			m_rendertools->RenderBox2D(xcoord + (int)(2.2 * profile_indent), ycoord, m_canvas->GetWidth(), m_canvas->GetHeight(), time/tottime);
 			ycoord += const_ysize;
-
-#ifdef WITH_PYTHON
-			PyObject *val = PyTuple_New(2);
-			PyTuple_SetItem(val, 0, PyFloat_FromDouble(time*1000.f));
-			PyTuple_SetItem(val, 1, PyFloat_FromDouble(time/tottime * 100.f));
-
-			PyDict_SetItemString(m_pyprofiledict, m_profileLabels[j], val);
-			Py_DECREF(val);
-#endif
 		}
 	}
 	// Add the ymargin for titles below the other section of debug info
@@ -1645,10 +1637,10 @@ void KX_KetsjiEngine::ConvertAndAddScene(const STR_String& scenename,bool overla
 	}
 	else {
 		if (overlay) {
-			m_addingOverlayScenes.insert(scenename);
+			m_addingOverlayScenes.push_back(scenename);
 		}
 		else {
-			m_addingBackgroundScenes.insert(scenename);
+			m_addingBackgroundScenes.push_back(scenename);
 		}
 	}
 }
@@ -1660,7 +1652,7 @@ void KX_KetsjiEngine::RemoveScene(const STR_String& scenename)
 {
 	if (FindScene(scenename))
 	{
-		m_removingScenes.insert(scenename);
+		m_removingScenes.push_back(scenename);
 	}
 	else
 	{
@@ -1675,7 +1667,7 @@ void KX_KetsjiEngine::RemoveScheduledScenes()
 {
 	if (m_removingScenes.size())
 	{
-		set<STR_String>::iterator scenenameit;
+		vector<STR_String>::iterator scenenameit;
 		for (scenenameit=m_removingScenes.begin();scenenameit != m_removingScenes.end();scenenameit++)
 		{
 			STR_String scenename = *scenenameit;
@@ -1721,7 +1713,7 @@ KX_Scene* KX_KetsjiEngine::CreateScene(const STR_String& scenename)
 
 void KX_KetsjiEngine::AddScheduledScenes()
 {
-	set<STR_String>::iterator scenenameit;
+	vector<STR_String>::iterator scenenameit;
 
 	if (m_addingOverlayScenes.size())
 	{
@@ -1757,7 +1749,7 @@ void KX_KetsjiEngine::AddScheduledScenes()
 
 void KX_KetsjiEngine::ReplaceScene(const STR_String& oldscene,const STR_String& newscene)
 {
-	m_replace_scenes.insert(std::make_pair(oldscene,newscene));
+	m_replace_scenes.push_back(std::make_pair(oldscene,newscene));
 }
 
 // replace scene is not the same as removing and adding because the
@@ -1768,7 +1760,7 @@ void KX_KetsjiEngine::ReplaceScheduledScenes()
 {
 	if (m_replace_scenes.size())
 	{
-		set<pair<STR_String,STR_String> >::iterator scenenameit;
+		vector<pair<STR_String,STR_String> >::iterator scenenameit;
 		
 		for (scenenameit = m_replace_scenes.begin();
 			scenenameit != m_replace_scenes.end();

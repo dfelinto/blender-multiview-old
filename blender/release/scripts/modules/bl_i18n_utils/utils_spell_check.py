@@ -40,6 +40,7 @@ class SpellChecker():
         "derivate",
         "doesn",  # doesn't
         "fader",
+        "globbing",
         "hasn",  # hasn't
         "hoc",  # ad-hoc
         "indices",
@@ -58,6 +59,8 @@ class SpellChecker():
         "arcsine", "arccosine", "arctangent",
         "autoclip",
         "autocomplete",
+        "autoexec",
+        "autoexecution",
         "autoname",
         "autosave",
         "autoscale",
@@ -437,6 +440,7 @@ class SpellChecker():
         "oren",
         "prewitt",
         "runge",
+        "sobol",
         "verlet",
         "worley",
 

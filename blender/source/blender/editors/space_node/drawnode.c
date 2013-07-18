@@ -1379,6 +1379,7 @@ static void node_composit_buts_zcombine(uiLayout *layout, bContext *UNUSED(C), P
 	
 	col = uiLayoutColumn(layout, TRUE);
 	uiItemR(col, ptr, "use_alpha", 0, NULL, ICON_NONE);
+	uiItemR(col, ptr, "use_antialias_z", 0, NULL, ICON_NONE);
 }
 
 
@@ -2021,9 +2022,6 @@ static void node_composit_backdrop_boxmask(SpaceNode *snode, ImBuf *backdrop, bN
 	float y1, y2, y3, y4;
 
 
-	/* keep this, saves us from a version patch */
-	if (snode->zoom == 0.0f) snode->zoom = 1.0f;
-
 	glColor3f(1.0, 1.0, 1.0);
 
 	cx  = x + snode->zoom * backdropWidth * boxmask->x;
@@ -2061,9 +2059,6 @@ static void node_composit_backdrop_ellipsemask(SpaceNode *snode, ImBuf *backdrop
 	float cx, cy, x1, x2, x3, x4;
 	float y1, y2, y3, y4;
 
-
-	/* keep this, saves us from a version patch */
-	if (snode->zoom == 0.0f) snode->zoom = 1.0f;
 
 	glColor3f(1.0, 1.0, 1.0);
 
@@ -2885,9 +2880,6 @@ void draw_nodespace_back_pix(const bContext *C, ARegion *ar, SpaceNode *snode, b
 		glPushMatrix();
 		glMatrixMode(GL_MODELVIEW);
 		glPushMatrix();
-		
-		/* keep this, saves us from a version patch */
-		if (snode->zoom == 0.0f) snode->zoom = 1.0f;
 		
 		/* somehow the offset has to be calculated inverse */
 		

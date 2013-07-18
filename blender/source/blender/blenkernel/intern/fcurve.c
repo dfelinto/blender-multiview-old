@@ -577,7 +577,7 @@ short calc_fcurve_bounds(FCurve *fcu, float *xmin, float *xmax, float *ymin, flo
 }
 
 /* Calculate the extents of F-Curve's keyframes */
-void calc_fcurve_range(FCurve *fcu, float *start, float *end,
+bool calc_fcurve_range(FCurve *fcu, float *start, float *end,
                        const short do_sel_only, const short do_min_length)
 {
 	float min = 999999999.0f, max = -999999999.0f;
@@ -621,6 +621,8 @@ void calc_fcurve_range(FCurve *fcu, float *start, float *end,
 
 	*start = min;
 	*end = max;
+
+	return foundvert;
 }
 
 /* ----------------- Status Checks -------------------------- */
@@ -1697,7 +1699,7 @@ static float evaluate_driver(ChannelDriver *driver, const float evaltime)
 				
 				/* perform operations on the total if appropriate */
 				if (driver->type == DRIVER_TYPE_AVERAGE)
-					driver->curval = (value / (float)tot);
+					driver->curval = tot ? (value / (float)tot) : 0.0f;
 				else
 					driver->curval = value;
 			}

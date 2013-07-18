@@ -157,6 +157,7 @@ static Render *envmap_render_copy(Render *re, EnvMap *env)
 	envre->r.yasp = envre->r.xasp = 1;
 	
 	RE_InitState(envre, NULL, &envre->r, NULL, cuberes, cuberes, NULL);
+	envre->main = re->main;
 	envre->scene = re->scene;    /* unsure about this... */
 	envre->scene_color_manage = re->scene_color_manage;
 	envre->lay = re->lay;
@@ -721,6 +722,10 @@ int envmaptex(Tex *tex, const float texvec[3], float dxt[3], float dyt[3], int o
 					envmap_split_ima(env, ibuf_ima);
 				else
 					env->ok = 0;
+
+				if (env->type == ENV_PLANE)
+					tex->extend = TEX_EXTEND;
+
 				BKE_image_pool_release_ibuf(env->ima, ibuf_ima, pool);
 			}
 		}

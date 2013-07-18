@@ -1033,6 +1033,9 @@ int main(int argc, char** argv)
 						 * removal is needed else the system will free an already freed value */
 						system->removeEventConsumer(&app);
 
+						/* nodesystem relies on blendfile data, free it first */
+						free_nodesystem();
+
 						BLO_blendfiledata_free(bfd);
 						if (python_main) MEM_freeN(python_main);
 					}
@@ -1063,7 +1066,6 @@ int main(int argc, char** argv)
 
 	IMB_exit();
 	BKE_images_exit();
-	free_nodesystem();
 
 	SYS_DeleteSystem(syshandle);
 

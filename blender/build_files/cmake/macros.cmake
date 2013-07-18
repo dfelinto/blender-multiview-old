@@ -401,8 +401,14 @@ macro(TEST_SSE_SUPPORT
 		set(${_sse_flags} "-msse")
 		set(${_sse2_flags} "-msse2")
 	elseif(MSVC)
-		set(${_sse_flags} "/arch:SSE")
-		set(${_sse2_flags} "/arch:SSE2")
+		# x86_64 has this auto enabled
+		if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+			set(${_sse_flags} "")
+			set(${_sse2_flags} "")
+		else()
+			set(${_sse_flags} "/arch:SSE")
+			set(${_sse2_flags} "/arch:SSE2")
+		endif()
 	elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
 		set(${_sse_flags} "")  # icc defaults to -msse
 		set(${_sse2_flags} "-msse2")
@@ -524,7 +530,9 @@ macro(remove_strict_flags_file
 
 	foreach(_SOURCE ${ARGV})
 
-		if(CMAKE_COMPILER_IS_GNUCC)
+		if(CMAKE_COMPILER_IS_GNUCC OR
+		  (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+
 			set_source_files_properties(${_SOURCE}
 				PROPERTIES
 					COMPILE_FLAGS "${CC_REMOVE_STRICT_FLAGS}"
@@ -750,17 +758,6 @@ function(delayed_do_install
 		endforeach()
 	endif()
 endfunction()
-
-macro(set_lib_path
-		lvar
-		lproj)
-
-	if(MSVC10)
-		set(${lvar} ${LIBDIR}/${lproj}/vc2010)
-	else()
-		set(${lvar} ${LIBDIR}/${lproj})
-	endif()
-endmacro()
 
 
 macro(data_to_c

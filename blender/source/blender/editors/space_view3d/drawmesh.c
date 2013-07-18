@@ -89,6 +89,7 @@ typedef struct drawEMTFMapped_userData {
 } drawEMTFMapped_userData;
 
 typedef struct drawTFace_userData {
+	Mesh *me;
 	MFace *mf;
 	MTFace *tf;
 } drawTFace_userData;
@@ -538,7 +539,7 @@ static void update_tface_color_layer(DerivedMesh *dm)
 
 static DMDrawOption draw_tface_mapped__set_draw(void *userData, int index)
 {
-	Mesh *me = (Mesh *)userData;
+	Mesh *me = ((drawTFace_userData *)userData)->me;
 
 	/* array checked for NULL before calling */
 	MPoly *mpoly = &me->mpoly[index];
@@ -565,9 +566,14 @@ static DMDrawOption draw_em_tf_mapped__set_draw(void *userData, int index)
 {
 	drawEMTFMapped_userData *data = userData;
 	BMEditMesh *em = data->em;
-	BMFace *efa = EDBM_face_at_index(em, index);
+	BMFace *efa;
 
-	if (efa == NULL || BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+	if (UNLIKELY(index >= em->bm->totface))
+		return DM_DRAW_OPTION_NORMAL;
+
+	efa = EDBM_face_at_index(em, index);
+
+	if (BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		return DM_DRAW_OPTION_SKIP;
 	}
 	else {
@@ -735,6 +741,7 @@ static int compareDrawOptions(void *userData, int cur_index, int next_index)
 	return 1;
 }
 
+
 static int compareDrawOptionsEm(void *userData, int cur_index, int next_index)
 {
 	drawEMTFMapped_userData *data = userData;
@@ -777,8 +784,14 @@ static void draw_mesh_textured_old(Scene *scene, View3D *v3d, RegionView3D *rv3d
 		if (ob->mode & OB_MODE_WEIGHT_PAINT)
 			dm->drawMappedFaces(dm, wpaint__setSolidDrawOptions_facemask, GPU_enable_material, NULL, me,
 			                    DM_DRAW_USE_COLORS | DM_DRAW_ALWAYS_SMOOTH);
-		else
-			dm->drawMappedFacesTex(dm, me->mpoly ? draw_tface_mapped__set_draw : NULL, NULL, me);
+		else {
+			drawTFace_userData userData;
+
+			userData.mf = DM_get_tessface_data_layer(dm, CD_MFACE);
+			userData.tf = DM_get_tessface_data_layer(dm, CD_MTFACE);
+			userData.me = me;
+			dm->drawMappedFacesTex(dm, me->mpoly ? draw_tface_mapped__set_draw : NULL, compareDrawOptions, &userData);
+		}
 	}
 	else {
 		if (GPU_buffer_legacy(dm)) {
@@ -794,6 +807,7 @@ static void draw_mesh_textured_old(Scene *scene, View3D *v3d, RegionView3D *rv3d
 
 			userData.mf = DM_get_tessface_data_layer(dm, CD_MFACE);
 			userData.tf = DM_get_tessface_data_layer(dm, CD_MTFACE);
+			userData.me = NULL;
 
 			dm->drawFacesTex(dm, draw_tface__set_draw, compareDrawOptions, &userData);
 		}
@@ -913,7 +927,13 @@ static int tex_mat_set_face_editmesh_cb(void *userData, int index)
 	/* editmode face hiding */
 	TexMatCallback *data = (TexMatCallback *)userData;
 	Mesh *me = (Mesh *)data->me;
-	BMFace *efa = EDBM_face_at_index(me->edit_btmesh, index);
+	BMEditMesh *em = me->edit_btmesh;
+	BMFace *efa;
+
+	if (UNLIKELY(index >= em->bm->totface))
+		return DM_DRAW_OPTION_NORMAL;
+
+	efa = EDBM_face_at_index(em, index);
 
 	return !BM_elem_flag_test(efa, BM_ELEM_HIDDEN);
 }
@@ -995,45 +1015,83 @@ void draw_mesh_textured(Scene *scene, View3D *v3d, RegionView3D *rv3d,
 }
 
 /* Vertex Paint and Weight Paint */
+void draw_mesh_paint_weight_faces(DerivedMesh *dm, const bool use_light,
+                                  void *facemask_cb, void *user_data)
+{
+	if (use_light) {
+		const float spec[4] = {0.47f, 0.47f, 0.47f, 0.47f};
+
+		/* but set default spec */
+		glColorMaterial(GL_FRONT_AND_BACK, GL_SPECULAR);
+		glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec);
+
+		/* diffuse */
+		glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
+		glEnable(GL_LIGHTING);
+		glEnable(GL_COLOR_MATERIAL);
+	}
+
+	dm->drawMappedFaces(dm, (DMSetDrawOptions)facemask_cb, GPU_enable_material, NULL, user_data,
+	                    DM_DRAW_USE_COLORS | DM_DRAW_ALWAYS_SMOOTH);
+
+	if (use_light) {
+		glDisable(GL_COLOR_MATERIAL);
+		glDisable(GL_LIGHTING);
+
+		GPU_disable_material();
+	}
+}
+
+void draw_mesh_paint_weight_edges(RegionView3D *rv3d, DerivedMesh *dm, const bool use_depth,
+                                  void *edgemask_cb, void *user_data)
+{
+	/* weight paint in solid mode, special case. focus on making the weights clear
+	 * rather than the shading, this is also forced in wire view */
+
+	if (use_depth) {
+		bglPolygonOffset(rv3d->dist, 1.0);
+		glDepthMask(0);  /* disable write in zbuffer, selected edge wires show better */
+	}
+	else {
+		glDisable(GL_DEPTH_TEST);
+	}
+
+	glEnable(GL_BLEND);
+	glColor4ub(255, 255, 255, 96);
+	glEnable(GL_LINE_STIPPLE);
+	glLineStipple(1, 0xAAAA);
+
+	dm->drawMappedEdges(dm, (DMSetDrawOptions)edgemask_cb, user_data);
+
+	if (use_depth) {
+		bglPolygonOffset(rv3d->dist, 0.0);
+		glDepthMask(1);
+	}
+	else {
+		glEnable(GL_DEPTH_TEST);
+	}
+
+	glDisable(GL_LINE_STIPPLE);
+	glDisable(GL_BLEND);
+}
 
 void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d,
                      Object *ob, DerivedMesh *dm, const int draw_flags)
 {
 	DMSetDrawOptions facemask = NULL;
 	Mesh *me = ob->data;
-	const bool do_light = (v3d->drawtype >= OB_SOLID);
+	const bool use_light = (v3d->drawtype >= OB_SOLID);
 
 	/* hide faces in face select mode */
 	if (me->editflag & (ME_EDIT_PAINT_VERT_SEL | ME_EDIT_PAINT_FACE_SEL))
 		facemask = wpaint__setSolidDrawOptions_facemask;
 
 	if (ob->mode & OB_MODE_WEIGHT_PAINT) {
-
-		if (do_light) {
-			const float spec[4] = {0.47f, 0.47f, 0.47f, 0.47f};
-
-			/* enforce default material settings */
+		if (use_light) {
 			GPU_enable_material(0, NULL);
-		
-			/* but set default spec */
-			glColorMaterial(GL_FRONT_AND_BACK, GL_SPECULAR);
-			glMaterialfv(GL_FRONT_AND_BACK, GL_SPECULAR, spec);
-
-			/* diffuse */
-			glColorMaterial(GL_FRONT_AND_BACK, GL_DIFFUSE);
-			glEnable(GL_LIGHTING);
-			glEnable(GL_COLOR_MATERIAL);
 		}
 
-		dm->drawMappedFaces(dm, facemask, GPU_enable_material, NULL, me,
-		                    DM_DRAW_USE_COLORS | DM_DRAW_ALWAYS_SMOOTH);
-
-		if (do_light) {
-			glDisable(GL_COLOR_MATERIAL);
-			glDisable(GL_LIGHTING);
-
-			GPU_disable_material();
-		}
+		draw_mesh_paint_weight_faces(dm, use_light, facemask, me);
 	}
 	else if (ob->mode & OB_MODE_VERTEX_PAINT) {
 		if (me->mloopcol) {
@@ -1051,37 +1109,9 @@ void draw_mesh_paint(View3D *v3d, RegionView3D *rv3d,
 	if (draw_flags & DRAW_FACE_SELECT) {
 		draw_mesh_face_select(rv3d, me, dm);
 	}
-	else if ((do_light == false) || (ob->dtx & OB_DRAWWIRE)) {
-		const int use_depth = (v3d->flag & V3D_ZBUF_SELECT) || !(ob->mode & OB_MODE_WEIGHT_PAINT);
-
-		/* weight paint in solid mode, special case. focus on making the weights clear
-		 * rather than the shading, this is also forced in wire view */
-
-		if (use_depth) {
-			bglPolygonOffset(rv3d->dist, 1.0);
-			glDepthMask(0);  /* disable write in zbuffer, selected edge wires show better */
-		}
-		else {
-			glDisable(GL_DEPTH_TEST);
-		}
-
-		glEnable(GL_BLEND);
-		glColor4ub(255, 255, 255, 96);
-		glEnable(GL_LINE_STIPPLE);
-		glLineStipple(1, 0xAAAA);
-
-		dm->drawEdges(dm, 1, 1);
-
-		if (use_depth) {
-			bglPolygonOffset(rv3d->dist, 0.0);
-			glDepthMask(1);
-		}
-		else {
-			glEnable(GL_DEPTH_TEST);
-		}
-
-		glDisable(GL_LINE_STIPPLE);
-		glDisable(GL_BLEND);
+	else if ((use_light == false) || (ob->dtx & OB_DRAWWIRE)) {
+		const bool use_depth = (v3d->flag & V3D_ZBUF_SELECT) || !(ob->mode & OB_MODE_WEIGHT_PAINT);
+		draw_mesh_paint_weight_edges(rv3d, dm, use_depth, NULL, NULL);
 	}
 }
 

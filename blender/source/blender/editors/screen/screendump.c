@@ -220,7 +220,7 @@ static int screenshot_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(
 	return OPERATOR_CANCELLED;
 }
 
-static int screenshot_check(bContext *UNUSED(C), wmOperator *op)
+static bool screenshot_check(bContext *UNUSED(C), wmOperator *op)
 {
 	ScreenshotData *scd = op->customdata;
 	return WM_operator_filesel_ensure_ext_imtype(op, &scd->im_format);
@@ -254,6 +254,13 @@ static void screenshot_draw(bContext *UNUSED(C), wmOperator *op)
 	uiDefAutoButsRNA(layout, &ptr, screenshot_draw_check_prop, '\0');
 }
 
+static int screenshot_poll(bContext *C)
+{
+	if (G.background)
+		return false;
+
+	return WM_operator_winactive(C);
+}
 
 void SCREEN_OT_screenshot(wmOperatorType *ot)
 {
@@ -266,7 +273,7 @@ void SCREEN_OT_screenshot(wmOperatorType *ot)
 	ot->exec = screenshot_exec;
 	ot->cancel = screenshot_cancel;
 	ot->ui = screenshot_draw;
-	ot->poll = WM_operator_winactive;
+	ot->poll = screenshot_poll;
 	
 	ot->flag = 0;
 	
@@ -504,7 +511,7 @@ void SCREEN_OT_screencast(wmOperatorType *ot)
 	
 	ot->invoke = WM_operator_confirm;
 	ot->exec = screencast_exec;
-	ot->poll = WM_operator_winactive;
+	ot->poll = screenshot_poll;  /* shared poll */
 	
 	ot->flag = 0;
 	

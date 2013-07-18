@@ -16,6 +16,7 @@
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
+#include "background.h"
 #include "device.h"
 #include "integrator.h"
 #include "film.h"
@@ -30,7 +31,7 @@
 
 CCL_NAMESPACE_BEGIN
 
-static void dump_background_pixels(Device *device, DeviceScene *dscene, int res, vector<float3>& pixels)
+static void shade_background_pixels(Device *device, DeviceScene *dscene, int res, vector<float3>& pixels)
 {
 	/* create input */
 	int width = res;
@@ -52,7 +53,7 @@ static void dump_background_pixels(Device *device, DeviceScene *dscene, int res,
 	}
 
 	/* compute on device */
-	float4 *d_output_data = d_output.resize(width*height);
+	d_output.resize(width*height);
 	memset((void*)d_output.data_pointer, 0, d_output.memory_size());
 
 	device->const_copy_to("__data", &dscene->data, sizeof(dscene->data));
@@ -81,7 +82,7 @@ static void dump_background_pixels(Device *device, DeviceScene *dscene, int res,
 	device->mem_free(d_input);
 	device->mem_free(d_output);
 
-	d_output_data = reinterpret_cast<float4*>(d_output.data_pointer);
+	float4 *d_output_data = reinterpret_cast<float4*>(d_output.data_pointer);
 
 	pixels.resize(width*height);
 
@@ -164,7 +165,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 		foreach(uint sindex, mesh->used_shaders) {
 			Shader *shader = scene->shaders[sindex];
 
-			if(shader->sample_as_light && shader->has_surface_emission) {
+			if(shader->use_mis && shader->has_surface_emission) {
 				have_emission = true;
 				break;
 			}
@@ -175,7 +176,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 			for(size_t i = 0; i < mesh->triangles.size(); i++) {
 				Shader *shader = scene->shaders[mesh->shader[i]];
 
-				if(shader->sample_as_light && shader->has_surface_emission)
+				if(shader->use_mis && shader->has_surface_emission)
 					num_triangles++;
 			}
 
@@ -184,7 +185,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 			foreach(Mesh::Curve& curve, mesh->curves) {
 				Shader *shader = scene->shaders[curve.shader];
 
-				if(shader->sample_as_light && shader->has_surface_emission)
+				if(shader->use_mis && shader->has_surface_emission)
 					num_curve_segments += curve.num_segments();
 #endif
 		}
@@ -215,7 +216,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 		foreach(uint sindex, mesh->used_shaders) {
 			Shader *shader = scene->shaders[sindex];
 
-			if(shader->sample_as_light && shader->has_surface_emission) {
+			if(shader->use_mis && shader->has_surface_emission) {
 				have_emission = true;
 				break;
 			}
@@ -247,7 +248,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 			for(size_t i = 0; i < mesh->triangles.size(); i++) {
 				Shader *shader = scene->shaders[mesh->shader[i]];
 
-				if(shader->sample_as_light && shader->has_surface_emission) {
+				if(shader->use_mis && shader->has_surface_emission) {
 					distribution[offset].x = totarea;
 					distribution[offset].y = __int_as_float(i + mesh->tri_offset);
 					distribution[offset].z = __int_as_float(shader_id);
@@ -277,7 +278,7 @@ void LightManager::device_update_distribution(Device *device, DeviceScene *dscen
 				Shader *shader = scene->shaders[curve.shader];
 				int first_key = curve.first_key;
 
-				if(shader->sample_as_light && shader->has_surface_emission) {
+				if(shader->use_mis && shader->has_surface_emission) {
 					for(int j = 0; j < curve.num_segments(); j++) {
 						distribution[offset].x = totarea;
 						distribution[offset].y = __int_as_float(i + mesh->curve_offset); // XXX fix kernel code
@@ -433,7 +434,7 @@ void LightManager::device_update_background(Device *device, DeviceScene *dscene,
 	assert(res > 0);
 
 	vector<float3> pixels;
-	dump_background_pixels(device, dscene, res, pixels);
+	shade_background_pixels(device, dscene, res, pixels);
 
 	if(progress.get_cancel())
 		return;
@@ -568,8 +569,23 @@ void LightManager::device_update_points(Device *device, DeviceScene *dscene, Sce
 			light_data[i*LIGHT_SIZE + 3] = make_float4(samples, 0.0f, 0.0f, 0.0f);
 		}
 		else if(light->type == LIGHT_BACKGROUND) {
+			uint visibility = scene->background->visibility;
+
 			shader_id &= ~SHADER_AREA_LIGHT;
 			shader_id |= SHADER_USE_MIS;
+
+			if(!(visibility & PATH_RAY_DIFFUSE)) {
+				shader_id |= SHADER_EXCLUDE_DIFFUSE;
+				use_light_visibility = true;
+			}
+			if(!(visibility & PATH_RAY_GLOSSY)) {
+				shader_id |= SHADER_EXCLUDE_GLOSSY;
+				use_light_visibility = true;
+			}
+			if(!(visibility & PATH_RAY_TRANSMIT)) {
+				shader_id |= SHADER_EXCLUDE_TRANSMIT;
+				use_light_visibility = true;
+			}
 
 			light_data[i*LIGHT_SIZE + 0] = make_float4(__int_as_float(light->type), 0.0f, 0.0f, 0.0f);
 			light_data[i*LIGHT_SIZE + 1] = make_float4(__int_as_float(shader_id), 0.0f, 0.0f, 0.0f);

@@ -1256,7 +1256,7 @@ static char *rna_def_property_lookup_string_func(FILE *f, StructRNA *srna, Prope
 	fprintf(f, "	extern int %s_%s_length(PointerRNA *);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
 	fprintf(f, "	extern void %s_%s_get(PointerRNA *, char *);\n\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
 
-	fprintf(f, "	int found= 0;\n");
+	fprintf(f, "	bool found = false;\n");
 	fprintf(f, "	CollectionPropertyIterator iter;\n");
 	fprintf(f, "	char namebuf[%d];\n", namebuflen);
 	fprintf(f, "	char *name;\n\n");
@@ -1264,26 +1264,29 @@ static char *rna_def_property_lookup_string_func(FILE *f, StructRNA *srna, Prope
 	fprintf(f, "	%s_%s_begin(&iter, ptr);\n\n", srna->identifier, rna_safe_id(prop->identifier));
 
 	fprintf(f, "	while (iter.valid) {\n");
-	fprintf(f, "		int namelen = %s_%s_length(&iter.ptr);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
-	fprintf(f, "		if (namelen < %d) {\n", namebuflen);
-	fprintf(f, "			%s_%s_get(&iter.ptr, namebuf);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
-	fprintf(f, "			if (strcmp(namebuf, key) == 0) {\n");
-	fprintf(f, "				found = 1;\n");
-	fprintf(f, "				*r_ptr = iter.ptr;\n");
-	fprintf(f, "				break;\n");
+	fprintf(f, "		if (iter.ptr.data) {\n");
+	fprintf(f, "			int namelen = %s_%s_length(&iter.ptr);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
+	fprintf(f, "			if (namelen < %d) {\n", namebuflen);
+	fprintf(f, "				%s_%s_get(&iter.ptr, namebuf);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
+	fprintf(f, "				if (strcmp(namebuf, key) == 0) {\n");
+	fprintf(f, "					found = true;\n");
+	fprintf(f, "					*r_ptr = iter.ptr;\n");
+	fprintf(f, "					break;\n");
+	fprintf(f, "				}\n");
 	fprintf(f, "			}\n");
-	fprintf(f, "		}\n");
-	fprintf(f, "		else {\n");
-	fprintf(f, "			name = MEM_mallocN(namelen+1, \"name string\");\n");
-	fprintf(f, "			%s_%s_get(&iter.ptr, name);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
-	fprintf(f, "			if (strcmp(name, key) == 0) {\n");
-	fprintf(f, "				MEM_freeN(name);\n\n");
-	fprintf(f, "				found = 1;\n");
-	fprintf(f, "				*r_ptr = iter.ptr;\n");
-	fprintf(f, "				break;\n");
+	fprintf(f, "			else {\n");
+	fprintf(f, "				name = MEM_mallocN(namelen+1, \"name string\");\n");
+	fprintf(f, "				%s_%s_get(&iter.ptr, name);\n", item_name_base->identifier, rna_safe_id(item_name_prop->identifier));
+	fprintf(f, "				if (strcmp(name, key) == 0) {\n");
+	fprintf(f, "					MEM_freeN(name);\n\n");
+	fprintf(f, "					found = true;\n");
+	fprintf(f, "					*r_ptr = iter.ptr;\n");
+	fprintf(f, "					break;\n");
+	fprintf(f, "				}\n");
+	fprintf(f, "				else {\n");
+	fprintf(f, "					MEM_freeN(name);\n");
+	fprintf(f, "				}\n");
 	fprintf(f, "			}\n");
-	fprintf(f, "			else\n");
-	fprintf(f, "				MEM_freeN(name);\n");
 	fprintf(f, "		}\n");
 	fprintf(f, "		%s_%s_next(&iter);\n", srna->identifier, rna_safe_id(prop->identifier));
 	fprintf(f, "	}\n");
@@ -1659,12 +1662,15 @@ static void rna_def_property_funcs_header_cpp(FILE *f, StructRNA *srna, Property
 	if (prop->flag & (PROP_IDPROPERTY | PROP_BUILTIN))
 		return;
 	
+	/* disabled for now to avoid msvc compiler error due to large file size */
+#if 0
 	if (prop->name && prop->description && prop->description[0] != '\0')
 		fprintf(f, "\t/* %s: %s */\n", prop->name, prop->description);
 	else if (prop->name)
 		fprintf(f, "\t/* %s */\n", prop->name);
 	else
 		fprintf(f, "\t/* */\n");
+#endif
 
 	switch (prop->type) {
 		case PROP_BOOLEAN:
@@ -1823,7 +1829,9 @@ static void rna_def_struct_function_prototype_cpp(FILE *f, StructRNA *UNUSED(srn
 		flag = dp->prop->flag;
 		pout = (flag & PROP_OUTPUT);
 
-		if (type == PROP_POINTER)
+		if (flag & PROP_DYNAMIC)
+			ptrstr = pout ? "**" : "*";
+		else if (type == PROP_POINTER)
 			ptrstr = pout ? "*": "";
 		else if (dp->prop->arraydimension)
 			ptrstr = "*";
@@ -1852,14 +1860,15 @@ static void rna_def_struct_function_prototype_cpp(FILE *f, StructRNA *UNUSED(srn
 
 static void rna_def_struct_function_header_cpp(FILE *f, StructRNA *srna, FunctionDefRNA *dfunc)
 {
-	FunctionRNA *func = dfunc->func;
+	if (dfunc->call) {
+		/* disabled for now to avoid msvc compiler error due to large file size */
+#if 0
+		FunctionRNA *func = dfunc->func;
+		fprintf(f, "\n\t/* %s */\n", func->description);
+#endif
 
-	if (!dfunc->call)
-		return;
-
-	fprintf(f, "\n\t/* %s */\n", func->description);
-
-	rna_def_struct_function_prototype_cpp(f, srna, dfunc, NULL, 1);
+		rna_def_struct_function_prototype_cpp(f, srna, dfunc, NULL, 1);
+	}
 }
 
 static void rna_def_property_funcs_impl_cpp(FILE *f, StructRNA *srna, PropertyDefRNA *dp)

@@ -47,6 +47,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
+#include "BLI_bitmap.h"
 #include "BLI_math.h"
 #include "BLI_dynstr.h"
 #include "BLI_rand.h"
@@ -2832,6 +2833,44 @@ void CURVE_OT_reveal(wmOperatorType *ot)
 
 /********************** subdivide operator *********************/
 
+static BezTriple *next_spline_bezier_point_get(Nurb *nu, BezTriple *bezt)
+{
+	BezTriple *nextbezt;
+
+	if (bezt == nu->bezt + nu->pntsu - 1) {
+		if (nu->flagu & CU_NURB_CYCLIC) {
+			nextbezt = nu->bezt;
+		}
+		else {
+			nextbezt = NULL;
+		}
+	}
+	else {
+		nextbezt = bezt + 1;
+	}
+
+	return nextbezt;
+}
+
+static BPoint *next_spline_bpoint_get(Nurb *nu, BPoint *bp)
+{
+	BPoint *nextbp;
+
+	if (bp == nu->bp + nu->pntsu - 1) {
+		if (nu->flagu & CU_NURB_CYCLIC) {
+			nextbp = nu->bp;
+		}
+		else {
+			nextbp = NULL;
+		}
+	}
+	else {
+		nextbp = bp + 1;
+	}
+
+	return nextbp;
+}
+
 /** Divide the line segments associated with the currently selected
  * curve nodes (Bezier or NURB). If there are no valid segment
  * selections within the current selection, nothing happens.
@@ -2841,7 +2880,7 @@ static void subdividenurb(Object *obedit, int number_cuts)
 	Curve *cu = obedit->data;
 	EditNurb *editnurb = cu->editnurb;
 	Nurb *nu;
-	BezTriple *prevbezt, *bezt, *beztnew, *beztn;
+	BezTriple *bezt, *beztnew, *beztn;
 	BPoint *bp, *prevbp, *bpnew, *bpn;
 	float vec[15];
 	int a, b, sel, amount, *usel, *vsel, i;
@@ -2852,25 +2891,25 @@ static void subdividenurb(Object *obedit, int number_cuts)
 	for (nu = editnurb->nurbs.first; nu; nu = nu->next) {
 		amount = 0;
 		if (nu->type == CU_BEZIER) {
+			BezTriple *nextbezt;
+
 			/*
 			 * Insert a point into a 2D Bezier curve.
 			 * Endpoints are preserved. Otherwise, all selected and inserted points are
 			 * newly created. Old points are discarded.
 			 */
 			/* count */
-			if (nu->flagu & CU_NURB_CYCLIC) {
-				a = nu->pntsu;
-				bezt = nu->bezt;
-				prevbezt = bezt + (a - 1);
-			}
-			else {
-				a = nu->pntsu - 1;
-				prevbezt = nu->bezt;
-				bezt = prevbezt + 1;
-			}
+			a = nu->pntsu;
+			bezt = nu->bezt;
 			while (a--) {
-				if (BEZSELECTED_HIDDENHANDLES(cu, prevbezt) && BEZSELECTED_HIDDENHANDLES(cu, bezt) ) amount += number_cuts;
-				prevbezt = bezt;
+				nextbezt = next_spline_bezier_point_get(nu, bezt);
+				if (nextbezt == NULL) {
+					break;
+				}
+
+				if (BEZSELECTED_HIDDENHANDLES(cu, bezt) && BEZSELECTED_HIDDENHANDLES(cu, nextbezt)) {
+					amount += number_cuts;
+				}
 				bezt++;
 			}
 
@@ -2878,35 +2917,32 @@ static void subdividenurb(Object *obedit, int number_cuts)
 				/* insert */
 				beztnew = (BezTriple *)MEM_mallocN((amount + nu->pntsu) * sizeof(BezTriple), "subdivNurb");
 				beztn = beztnew;
-				if (nu->flagu & CU_NURB_CYCLIC) {
-					a = nu->pntsu;
-					bezt = nu->bezt;
-					prevbezt = bezt + (a - 1);
-				}
-				else {
-					a = nu->pntsu - 1;
-					prevbezt = nu->bezt;
-					bezt = prevbezt + 1;
-				}
+				a = nu->pntsu;
+				bezt = nu->bezt;
 				while (a--) {
-					memcpy(beztn, prevbezt, sizeof(BezTriple));
-					keyIndex_updateBezt(editnurb, prevbezt, beztn, 1);
+					memcpy(beztn, bezt, sizeof(BezTriple));
+					keyIndex_updateBezt(editnurb, bezt, beztn, 1);
 					beztn++;
 
-					if (BEZSELECTED_HIDDENHANDLES(cu, prevbezt) && BEZSELECTED_HIDDENHANDLES(cu, bezt)) {
+					nextbezt = next_spline_bezier_point_get(nu, bezt);
+					if (nextbezt == NULL) {
+						break;
+					}
+
+					if (BEZSELECTED_HIDDENHANDLES(cu, bezt) && BEZSELECTED_HIDDENHANDLES(cu, nextbezt)) {
 						float prevvec[3][3];
 
-						memcpy(prevvec, prevbezt->vec, sizeof(float) * 9);
+						memcpy(prevvec, bezt->vec, sizeof(float) * 9);
 
 						for (i = 0; i < number_cuts; i++) {
 							factor = 1.0f / (number_cuts + 1 - i);
 
-							memcpy(beztn, bezt, sizeof(BezTriple));
+							memcpy(beztn, nextbezt, sizeof(BezTriple));
 
 							/* midpoint subdividing */
 							interp_v3_v3v3(vec, prevvec[1], prevvec[2], factor);
-							interp_v3_v3v3(vec + 3, prevvec[2], bezt->vec[0], factor);
-							interp_v3_v3v3(vec + 6, bezt->vec[0], bezt->vec[1], factor);
+							interp_v3_v3v3(vec + 3, prevvec[2], nextbezt->vec[0], factor);
+							interp_v3_v3v3(vec + 6, nextbezt->vec[0], nextbezt->vec[1], factor);
 
 							interp_v3_v3v3(vec + 9, vec, vec + 3, factor);
 							interp_v3_v3v3(vec + 12, vec + 3, vec + 6, factor);
@@ -2919,23 +2955,17 @@ static void subdividenurb(Object *obedit, int number_cuts)
 							copy_v3_v3(beztn->vec[2], vec + 12);
 							/* handle of next bezt */
 							if (a == 0 && i == number_cuts - 1 && (nu->flagu & CU_NURB_CYCLIC)) { copy_v3_v3(beztnew->vec[0], vec + 6); }
-							else                                                                { copy_v3_v3(bezt->vec[0], vec + 6); }
+							else                                                                { copy_v3_v3(nextbezt->vec[0], vec + 6); }
 
-							beztn->radius = (prevbezt->radius + bezt->radius) / 2;
-							beztn->weight = (prevbezt->weight + bezt->weight) / 2;
+							beztn->radius = (bezt->radius + nextbezt->radius) / 2;
+							beztn->weight = (bezt->weight + nextbezt->weight) / 2;
 
 							memcpy(prevvec, beztn->vec, sizeof(float) * 9);
 							beztn++;
 						}
 					}
 
-					prevbezt = bezt;
 					bezt++;
-				}
-				/* last point */
-				if ((nu->flagu & CU_NURB_CYCLIC) == 0) {
-					memcpy(beztn, prevbezt, sizeof(BezTriple));
-					keyIndex_updateBezt(editnurb, prevbezt, beztn, 1);
 				}
 
 				MEM_freeN(nu->bezt);
@@ -2946,6 +2976,8 @@ static void subdividenurb(Object *obedit, int number_cuts)
 			}
 		} /* End of 'if (nu->type == CU_BEZIER)' */
 		else if (nu->pntsv == 1) {
+			BPoint *nextbp;
+
 			/*
 			 * All flat lines (ie. co-planar), except flat Nurbs. Flat NURB curves
 			 * are handled together with the regular NURB plane division, as it
@@ -2953,19 +2985,17 @@ static void subdividenurb(Object *obedit, int number_cuts)
 			 * stable... nzc 30-5-'00
 			 */
 			/* count */
-			if (nu->flagu & CU_NURB_CYCLIC) {
-				a = nu->pntsu;
-				bp = nu->bp;
-				prevbp = bp + (a - 1);
-			}
-			else {
-				a = nu->pntsu - 1;
-				prevbp = nu->bp;
-				bp = prevbp + 1;
-			}
+			a = nu->pntsu;
+			bp = nu->bp;
 			while (a--) {
-				if ( (bp->f1 & SELECT) && (prevbp->f1 & SELECT) ) amount += number_cuts;
-				prevbp = bp;
+				nextbp = next_spline_bpoint_get(nu, bp);
+				if (nextbp == NULL) {
+					break;
+				}
+
+				if ((bp->f1 & SELECT) && (nextbp->f1 & SELECT)) {
+					amount += number_cuts;
+				}
 				bp++;
 			}
 
@@ -2974,38 +3004,32 @@ static void subdividenurb(Object *obedit, int number_cuts)
 				bpnew = (BPoint *)MEM_mallocN((amount + nu->pntsu) * sizeof(BPoint), "subdivNurb2");
 				bpn = bpnew;
 
-				if (nu->flagu & CU_NURB_CYCLIC) {
-					a = nu->pntsu;
-					bp = nu->bp;
-					prevbp = bp + (a - 1);
-				}
-				else {
-					a = nu->pntsu - 1;
-					prevbp = nu->bp;
-					bp = prevbp + 1;
-				}
+				a = nu->pntsu;
+				bp = nu->bp;
+
 				while (a--) {
-					memcpy(bpn, prevbp, sizeof(BPoint));
-					keyIndex_updateBP(editnurb, prevbp, bpn, 1);
+					/* Copy "old" point. */
+					memcpy(bpn, bp, sizeof(BPoint));
+					keyIndex_updateBP(editnurb, bp, bpn, 1);
 					bpn++;
 
-					if ((bp->f1 & SELECT) && (prevbp->f1 & SELECT)) {
+					nextbp = next_spline_bpoint_get(nu, bp);
+					if (nextbp == NULL) {
+						break;
+					}
+
+					if ((bp->f1 & SELECT) && (nextbp->f1 & SELECT)) {
 						// printf("*** subdivideNurb: insert 'linear' point\n");
 						for (i = 0; i < number_cuts; i++) {
 							factor = (float)(i + 1) / (number_cuts + 1);
 
-							memcpy(bpn, bp, sizeof(BPoint));
-							interp_v4_v4v4(bpn->vec, prevbp->vec, bp->vec, factor);
+							memcpy(bpn, nextbp, sizeof(BPoint));
+							interp_v4_v4v4(bpn->vec, bp->vec, nextbp->vec, factor);
 							bpn++;
 						}
 
 					}
-					prevbp = bp;
 					bp++;
-				}
-				if ((nu->flagu & CU_NURB_CYCLIC) == 0) { /* last point */
-					memcpy(bpn, prevbp, sizeof(BPoint));
-					keyIndex_updateBP(editnurb, prevbp, bpn, 1);
 				}
 
 				MEM_freeN(nu->bp);
@@ -5143,7 +5167,6 @@ static int select_more_exec(bContext *C, wmOperator *UNUSED(op))
 	BPoint *bp, *tempbp;
 	int a;
 	short sel = 0;
-	short *selbpoints;
 	
 	/* note that NURBS surface is a special case because we mimic */
 	/* the behavior of "select more" of mesh tools.	      */
@@ -5151,11 +5174,12 @@ static int select_more_exec(bContext *C, wmOperator *UNUSED(op))
 	/* may not be optimal always (example: end of NURBS sphere)   */
 	if (obedit->type == OB_SURF) {
 		for (nu = editnurb->first; nu; nu = nu->next) {
+			BLI_bitmap selbpoints;
 			a = nu->pntsu * nu->pntsv;
 			bp = nu->bp;
-			selbpoints = MEM_callocN(sizeof(short) * a - nu->pntsu, "selectlist");
+			selbpoints = BLI_BITMAP_NEW(a, "selectlist");
 			while (a > 0) {
-				if ((selbpoints[a] != 1) && (bp->hide == 0) && (bp->f1 & SELECT)) {
+				if ((!BLI_BITMAP_GET(selbpoints, a)) && (bp->hide == 0) && (bp->f1 & SELECT)) {
 					/* upper control point */
 					if (a % nu->pntsu != 0) {
 						tempbp = bp - 1;
@@ -5168,7 +5192,7 @@ static int select_more_exec(bContext *C, wmOperator *UNUSED(op))
 						tempbp = bp + nu->pntsu;
 						if (!(tempbp->f1 & SELECT)) sel = select_bpoint(tempbp, SELECT, 1, VISIBLE);
 						/* make sure selected bpoint is discarded */
-						if (sel == 1) selbpoints[a - nu->pntsu] = 1;
+						if (sel == 1) BLI_BITMAP_SET(selbpoints, a - nu->pntsu);
 					}
 					
 					/* right control point */
@@ -5233,13 +5257,13 @@ static int select_less_exec(bContext *C, wmOperator *UNUSED(op))
 	BezTriple *bezt;
 	int a;
 	short sel = 0, lastsel = false;
-	short *selbpoints;
 	
 	if (obedit->type == OB_SURF) {
 		for (nu = editnurb->first; nu; nu = nu->next) {
+			BLI_bitmap selbpoints;
 			a = nu->pntsu * nu->pntsv;
 			bp = nu->bp;
-			selbpoints = MEM_callocN(sizeof(short) * a, "selectlist");
+			selbpoints = BLI_BITMAP_NEW(a, "selectlist");
 			while (a--) {
 				if ((bp->hide == 0) && (bp->f1 & SELECT)) {
 					sel = 0;
@@ -5251,7 +5275,7 @@ static int select_less_exec(bContext *C, wmOperator *UNUSED(op))
 					}
 					else {
 						bp--;
-						if ((selbpoints[a + 1] == 1) || ((bp->hide == 0) && (bp->f1 & SELECT))) sel++;
+						if (BLI_BITMAP_GET(selbpoints, a + 1) || ((bp->hide == 0) && (bp->f1 & SELECT))) sel++;
 						bp++;
 					}
 					
@@ -5269,7 +5293,7 @@ static int select_less_exec(bContext *C, wmOperator *UNUSED(op))
 					}
 					else {
 						bp -= nu->pntsu;
-						if ((selbpoints[a + nu->pntsu] == 1) || ((bp->hide == 0) && (bp->f1 & SELECT))) sel++;
+						if (BLI_BITMAP_GET(selbpoints, a + nu->pntsu) || ((bp->hide == 0) && (bp->f1 & SELECT))) sel++;
 						bp += nu->pntsu;
 					}
 
@@ -5284,7 +5308,7 @@ static int select_less_exec(bContext *C, wmOperator *UNUSED(op))
 
 					if (sel != 4) {
 						select_bpoint(bp, DESELECT, 1, VISIBLE); 
-						selbpoints[a] = 1;
+						BLI_BITMAP_SET(selbpoints, a);
 					}
 				}
 				else {
@@ -6076,7 +6100,7 @@ void CURVE_OT_shade_flat(wmOperatorType *ot)
 
 /************** join operator, to be used externally? ****************/
 /* TODO: shape keys - as with meshes */
-int join_curve_exec(bContext *C, wmOperator *UNUSED(op))
+int join_curve_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
@@ -6088,6 +6112,22 @@ int join_curve_exec(bContext *C, wmOperator *UNUSED(op))
 	ListBase tempbase;
 	float imat[4][4], cmat[4][4];
 	int a;
+	bool ok = false;
+
+	CTX_DATA_BEGIN(C, Base *, base, selected_editable_bases)
+	{
+		if (base->object == ob) {
+			ok = true;
+			break;
+		}
+	}
+	CTX_DATA_END;
+
+	/* that way the active object is always selected */
+	if (ok == false) {
+		BKE_report(op->reports, RPT_WARNING, "Active object is not a selected curve");
+		return OPERATOR_CANCELLED;
+	}
 
 	tempbase.first = tempbase.last = NULL;
 	

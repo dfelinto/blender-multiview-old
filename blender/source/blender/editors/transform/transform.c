@@ -59,7 +59,6 @@
 #include "BLI_string.h"
 #include "BLI_ghash.h"
 #include "BLI_linklist.h"
-#include "BLI_smallhash.h"
 
 #include "BKE_nla.h"
 #include "BKE_bmesh.h"
@@ -1676,9 +1675,9 @@ static void drawAutoKeyWarning(TransInfo *UNUSED(t), ARegion *ar)
 	 */
 	UI_ThemeColorShade(TH_TEXT_HI, -50);
 #ifdef WITH_INTERNATIONAL
-	BLF_draw_default(xco, ar->winy - 17, 0.0f, printable, sizeof(printable));
+	BLF_draw_default(xco, ar->winy - 17, 0.0f, printable, BLF_DRAW_STR_DUMMY_MAX);
 #else
-	BLF_draw_default_ascii(xco, ar->winy - 17, 0.0f, printable, sizeof(printable));
+	BLF_draw_default_ascii(xco, ar->winy - 17, 0.0f, printable, BLF_DRAW_STR_DUMMY_MAX);
 #endif
 	
 	/* autokey recording icon... */
@@ -1736,12 +1735,15 @@ void saveTransform(bContext *C, TransInfo *t, wmOperator *op)
 	}
 
 	/* convert flag to enum */
-	switch (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+	switch (t->flag & T_PROP_EDIT_ALL) {
+		case T_PROP_EDIT:
+			proportional = PROP_EDIT_ON;
+			break;
 		case (T_PROP_EDIT | T_PROP_CONNECTED):
 			proportional = PROP_EDIT_CONNECTED;
 			break;
-		case T_PROP_EDIT:
-			proportional = PROP_EDIT_ON;
+		case (T_PROP_EDIT | T_PROP_PROJECTED):
+			proportional = PROP_EDIT_PROJECTED;
 			break;
 		default:
 			proportional = PROP_EDIT_OFF;
@@ -2180,17 +2182,6 @@ int transformEnd(bContext *C, TransInfo *t)
 
 		/* send events out for redraws */
 		viewRedrawPost(C, t);
-
-		/*  Undo as last, certainly after special_trans_update! */
-
-		if (t->state == TRANS_CANCEL) {
-//			if (t->undostr) ED_undo_push(C, t->undostr);
-		}
-		else {
-//			if (t->undostr) ED_undo_push(C, t->undostr);
-//			else ED_undo_push(C, transform_to_undostr(t));
-		}
-		t->undostr = NULL;
 
 		viewRedrawForce(C, t);
 	}
@@ -2956,7 +2947,7 @@ static void headerResize(TransInfo *t, float vec[3], char *str)
 		}
 	}
 
-	if (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+	if (t->flag & T_PROP_EDIT_ALL) {
 		ofs += BLI_snprintf(str + ofs, MAX_INFO_LEN - ofs, IFACE_(" Proportional size: %.2f"), t->prop_size);
 	}
 }
@@ -3154,7 +3145,7 @@ int Resize(TransInfo *t, const int mval[2])
 		/* vertices in the radius of the brush end */
 		/* outside the clipping area               */
 		/* XXX HACK - dg */
-		if (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+		if (t->flag & T_PROP_EDIT_ALL) {
 			clipUVData(t);
 		}
 	}
@@ -3614,7 +3605,7 @@ static void applyRotation(TransInfo *t, float angle, float axis[3])
 	float mat[3][3];
 	int i;
 	
-	vec_rot_to_mat3(mat, axis, angle);
+	axis_angle_normalized_to_mat3(mat, axis, angle);
 	
 	for (i = 0; i < t->total; i++, td++) {
 		
@@ -3626,10 +3617,10 @@ static void applyRotation(TransInfo *t, float angle, float axis[3])
 		
 		if (t->con.applyRot) {
 			t->con.applyRot(t, td, axis, NULL);
-			vec_rot_to_mat3(mat, axis, angle * td->factor);
+			axis_angle_normalized_to_mat3(mat, axis, angle * td->factor);
 		}
 		else if (t->flag & T_PROP_EDIT) {
-			vec_rot_to_mat3(mat, axis, angle * td->factor);
+			axis_angle_normalized_to_mat3(mat, axis, angle * td->factor);
 		}
 		
 		ElementRotation(t, td, mat, t->around);
@@ -3674,7 +3665,7 @@ int Rotation(TransInfo *t, const int UNUSED(mval[2]))
 		                    RAD2DEGF(final), t->con.text, t->proptext);
 	}
 	
-	if (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+	if (t->flag & T_PROP_EDIT_ALL) {
 		ofs += BLI_snprintf(str + ofs, MAX_INFO_LEN - ofs, IFACE_(" Proportional size: %.2f"), t->prop_size);
 	}
 
@@ -3710,14 +3701,14 @@ void initTrackball(TransInfo *t)
 	t->flag |= T_NO_CONSTRAINT;
 }
 
-static void applyTrackball(TransInfo *t, float axis1[3], float axis2[3], float angles[2])
+static void applyTrackball(TransInfo *t, const float axis1[3], const float axis2[3], float angles[2])
 {
 	TransData *td = t->data;
 	float mat[3][3], smat[3][3], totmat[3][3];
 	int i;
 
-	vec_rot_to_mat3(smat, axis1, angles[0]);
-	vec_rot_to_mat3(totmat, axis2, angles[1]);
+	axis_angle_normalized_to_mat3(smat, axis1, angles[0]);
+	axis_angle_normalized_to_mat3(totmat, axis2, angles[1]);
 
 	mul_m3_m3m3(mat, smat, totmat);
 
@@ -3729,8 +3720,8 @@ static void applyTrackball(TransInfo *t, float axis1[3], float axis2[3], float a
 			continue;
 
 		if (t->flag & T_PROP_EDIT) {
-			vec_rot_to_mat3(smat, axis1, td->factor * angles[0]);
-			vec_rot_to_mat3(totmat, axis2, td->factor * angles[1]);
+			axis_angle_normalized_to_mat3(smat, axis1, td->factor * angles[0]);
+			axis_angle_normalized_to_mat3(totmat, axis2, td->factor * angles[1]);
 
 			mul_m3_m3m3(mat, smat, totmat);
 		}
@@ -3775,12 +3766,12 @@ int Trackball(TransInfo *t, const int UNUSED(mval[2]))
 		                    RAD2DEGF(phi[0]), RAD2DEGF(phi[1]), t->proptext);
 	}
 
-	if (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+	if (t->flag & T_PROP_EDIT_ALL) {
 		ofs += BLI_snprintf(str + ofs, MAX_INFO_LEN - ofs, IFACE_(" Proportional size: %.2f"), t->prop_size);
 	}
 
-	vec_rot_to_mat3(smat, axis1, phi[0]);
-	vec_rot_to_mat3(totmat, axis2, phi[1]);
+	axis_angle_normalized_to_mat3(smat, axis1, phi[0]);
+	axis_angle_normalized_to_mat3(totmat, axis2, phi[1]);
 
 	mul_m3_m3m3(mat, smat, totmat);
 
@@ -3923,7 +3914,7 @@ static void headerTranslation(TransInfo *t, float vec[3], char *str)
 		}
 	}
 
-	if (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+	if (t->flag & T_PROP_EDIT_ALL) {
 		ofs += BLI_snprintf(str + ofs, MAX_INFO_LEN - ofs, IFACE_(" Proportional size: %.2f"), t->prop_size);
 	}
 }
@@ -4030,7 +4021,7 @@ int Translation(TransInfo *t, const int UNUSED(mval[2]))
 		/* vertices in the radius of the brush end */
 		/* outside the clipping area               */
 		/* XXX HACK - dg */
-		if (t->flag & (T_PROP_EDIT | T_PROP_CONNECTED)) {
+		if (t->flag & T_PROP_EDIT_ALL) {
 			clipUVData(t);
 		}
 	}
@@ -5003,8 +4994,7 @@ static bool createEdgeSlideVerts(TransInfo *t)
 	TransDataEdgeSlideVert *sv_array;
 	int sv_tot;
 	BMBVHTree *btree;
-	/* BMVert -> sv_array index */
-	SmallHash table;
+	int *sv_table;  /* BMVert -> sv_array index */
 	EdgeSlideData *sld = MEM_callocN(sizeof(*sld), "sld");
 	View3D *v3d = NULL;
 	RegionView3D *rv3d = NULL;
@@ -5022,6 +5012,17 @@ static bool createEdgeSlideVerts(TransInfo *t)
 		rv3d = t->ar ? t->ar->regiondata : NULL;
 	}
 
+	if ((t->settings->uvcalc_flag & UVCALC_TRANSFORM_CORRECT) &&
+	    /* don't do this at all for non-basis shape keys, too easy to
+		 * accidentally break uv maps or vertex colors then */
+	    (bm->shapenr <= 1))
+	{
+		sld->use_origfaces = true;
+	}
+	else {
+		sld->use_origfaces = false;
+	}
+
 	sld->is_proportional = true;
 	sld->curr_sv_index = 0;
 	sld->flipped_vtx = FALSE;
@@ -5033,11 +5034,7 @@ static bool createEdgeSlideVerts(TransInfo *t)
 	else {
 		ED_view3d_ob_project_mat_get(rv3d, t->obedit, projectMat);
 	}
-	
-	BLI_smallhash_init(&sld->vhash);
-	BLI_smallhash_init(&sld->origfaces);
-	BLI_smallhash_init(&table);
-	
+
 	/*ensure valid selection*/
 	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
 		if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
@@ -5071,20 +5068,26 @@ static bool createEdgeSlideVerts(TransInfo *t)
 		}
 	}
 
+	sv_table = MEM_mallocN(sizeof(*sv_table) * bm->totvert, __func__);
+
 	j = 0;
-	BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+	BM_ITER_MESH_INDEX (v, &iter, bm, BM_VERTS_OF_MESH, i) {
 		if (BM_elem_flag_test(v, BM_ELEM_SELECT)) {
 			BM_elem_flag_enable(v, BM_ELEM_TAG);
-			BLI_smallhash_insert(&table, (uintptr_t)v, SET_INT_IN_POINTER(j));
+			sv_table[i] = j;
 			j += 1;
 		}
 		else {
 			BM_elem_flag_disable(v, BM_ELEM_TAG);
+			sv_table[i] = -1;
 		}
+		BM_elem_index_set(v, i); /* set_inline */
 	}
+	bm->elem_index_dirty &= ~BM_VERT;
 
 	if (!j) {
 		MEM_freeN(sld);
+		MEM_freeN(sv_table);
 		return false;
 	}
 
@@ -5181,9 +5184,9 @@ static bool createEdgeSlideVerts(TransInfo *t)
 			BMEdge *e_prev;
 
 			/* XXX, 'sv' will initialize multiple times, this is suspicious. see [#34024] */
-			BLI_assert(BLI_smallhash_haskey(&table, (uintptr_t)v) != false);
 			BLI_assert(v != NULL);
-			sv = sv_array + GET_INT_FROM_POINTER(BLI_smallhash_lookup(&table, (uintptr_t)v));
+			BLI_assert(sv_table[BM_elem_index_get(v)] != -1);
+			sv = &sv_array[sv_table[BM_elem_index_get(v)]];
 			sv->v = v;
 			copy_v3_v3(sv->v_co_orig, v->co);
 			sv->loop_nr = loop_nr;
@@ -5207,9 +5210,9 @@ static bool createEdgeSlideVerts(TransInfo *t)
 			e = get_other_edge(v, e);
 
 			if (!e) {
-				BLI_assert(BLI_smallhash_haskey(&table, (uintptr_t)v) != false);
 				BLI_assert(v != NULL);
-				sv = sv_array + GET_INT_FROM_POINTER(BLI_smallhash_lookup(&table, (uintptr_t)v));
+				BLI_assert(sv_table[BM_elem_index_get(v)] != -1);
+				sv = &sv_array[sv_table[BM_elem_index_get(v)]];
 				sv->v = v;
 				copy_v3_v3(sv->v_co_orig, v->co);
 				sv->loop_nr = loop_nr;
@@ -5276,7 +5279,6 @@ static bool createEdgeSlideVerts(TransInfo *t)
 		loop_nr++;
 	}
 
-
 	/* use for visibility checks */
 	use_btree_disp = (v3d && t->obedit->dt > OB_WIRE && v3d->drawtype > OB_WIRE);
 
@@ -5324,8 +5326,8 @@ static bool createEdgeSlideVerts(TransInfo *t)
 						continue;
 					}
 
-					BLI_assert(BLI_smallhash_haskey(&table, (uintptr_t)v) != false);
-					j = GET_INT_FROM_POINTER(BLI_smallhash_lookup(&table, (uintptr_t)v));
+					BLI_assert(sv_table[BM_elem_index_get(v)] != -1);
+					j = sv_table[BM_elem_index_get(v)];
 
 					if (sv_array[j].v_b) {
 						ED_view3d_project_float_v3_m4(ar, sv_array[j].v_b->co, sco_b, projectMat);
@@ -5372,32 +5374,28 @@ static bool createEdgeSlideVerts(TransInfo *t)
 
 	bmesh_edit_begin(bm, BMO_OPTYPE_FLAG_UNTAN_MULTIRES);
 
+	if (sld->use_origfaces) {
+		sld->origfaces = BLI_ghash_ptr_new(__func__);
+		sld->bm_origfaces = BM_mesh_create(&bm_mesh_allocsize_default);
+		/* we need to have matching customdata */
+		BM_mesh_copy_init_customdata(sld->bm_origfaces, bm, NULL);
+	}
+
 	/*create copies of faces for customdata projection*/
 	sv_array = sld->sv;
 	for (i = 0; i < sld->totsv; i++, sv_array++) {
-		BMIter fiter, liter;
+		BMIter fiter;
 		BMFace *f;
-		BMLoop *l;
 		
-		BM_ITER_ELEM (f, &fiter, sv_array->v, BM_FACES_OF_VERT) {
-			
-			if (!BLI_smallhash_haskey(&sld->origfaces, (uintptr_t)f)) {
-				BMFace *copyf = BM_face_copy(bm, f, true, true);
-				
-				BM_face_select_set(bm, copyf, false);
-				BM_elem_flag_enable(copyf, BM_ELEM_HIDDEN);
-				BM_ITER_ELEM (l, &liter, copyf, BM_LOOPS_OF_FACE) {
-					BM_vert_select_set(bm, l->v, false);
-					BM_elem_flag_enable(l->v, BM_ELEM_HIDDEN);
-					BM_edge_select_set(bm, l->e, false);
-					BM_elem_flag_enable(l->e, BM_ELEM_HIDDEN);
-				}
 
-				BLI_smallhash_insert(&sld->origfaces, (uintptr_t)f, copyf);
+		if (sld->use_origfaces) {
+			BM_ITER_ELEM (f, &fiter, sv_array->v, BM_FACES_OF_VERT) {
+				if (!BLI_ghash_haskey(sld->origfaces, f)) {
+					BMFace *f_copy = BM_face_copy(sld->bm_origfaces, bm, f, true, true);
+					BLI_ghash_insert(sld->origfaces, f, f_copy);
+				}
 			}
 		}
-
-		BLI_smallhash_insert(&sld->vhash, (uintptr_t)sv_array->v, sv_array);
 
 		/* switch a/b if loop direction is different from global direction */
 		l_nr = sv_array->loop_nr;
@@ -5410,9 +5408,8 @@ static bool createEdgeSlideVerts(TransInfo *t)
 	if (rv3d)
 		calcNonProportionalEdgeSlide(t, sld, mval);
 
-	sld->origfaces_init = true;
 	sld->em = em;
-	
+
 	/*zero out start*/
 	zero_v2(mval_start);
 
@@ -5430,15 +5427,12 @@ static bool createEdgeSlideVerts(TransInfo *t)
 	
 	t->customData = sld;
 	
-	BLI_smallhash_release(&table);
+	MEM_freeN(sv_table);
 	if (btree) {
 		BKE_bmbvh_free(btree);
 	}
 	MEM_freeN(loop_dir);
 	MEM_freeN(loop_maxdist);
-
-	/* arrays are dirty from copying faces: EDBM_index_arrays_free */
-	EDBM_update_generic(em, false, true);
 
 	return true;
 }
@@ -5450,17 +5444,10 @@ void projectEdgeSlideData(TransInfo *t, bool is_final)
 	BMEditMesh *em = sld->em;
 	int i;
 
-	if (!em)
+	if (sld->use_origfaces == false) {
 		return;
-	
-	if (!(t->settings->uvcalc_flag & UVCALC_TRANSFORM_CORRECT))
-		return;
+	}
 
-	/* don't do this at all for non-basis shape keys, too easy to
-	 * accidentally break uv maps or vertex colors then */
-	if (em->bm->shapenr > 1)
-		return;
-	
 	for (i = 0, sv = sld->sv; i < sld->totsv; sv++, i++) {
 		BMIter fiter;
 		BMLoop *l;
@@ -5468,15 +5455,8 @@ void projectEdgeSlideData(TransInfo *t, bool is_final)
 		BM_ITER_ELEM (l, &fiter, sv->v, BM_LOOPS_OF_VERT) {
 			BMFace *f_copy;      /* the copy of 'f' */
 			BMFace *f_copy_flip; /* the copy of 'f' or detect if we need to flip to the shorter side. */
-			bool is_sel, is_hide;
 			
-			/* the face attributes of the copied face will get
-			 * copied over, so its necessary to save the selection
-			 * and hidden state*/
-			is_sel = BM_elem_flag_test(l->f, BM_ELEM_SELECT) != 0;
-			is_hide = BM_elem_flag_test(l->f, BM_ELEM_HIDDEN) != 0;
-			
-			f_copy = BLI_smallhash_lookup(&sld->origfaces, (uintptr_t)l->f);
+			f_copy = BLI_ghash_lookup(sld->origfaces, l->f);
 			
 			/* project onto copied projection face */
 			f_copy_flip = f_copy;
@@ -5490,12 +5470,12 @@ void projectEdgeSlideData(TransInfo *t, bool is_final)
 
 				if (sld->perc < 0.0f) {
 					if (BM_vert_in_face(l_ed_sel->radial_next->f, sv->v_b)) {
-						f_copy_flip = BLI_smallhash_lookup(&sld->origfaces, (uintptr_t)l_ed_sel->radial_next->f);
+						f_copy_flip = BLI_ghash_lookup(sld->origfaces, l_ed_sel->radial_next->f);
 					}
 				}
 				else if (sld->perc > 0.0f) {
 					if (BM_vert_in_face(l_ed_sel->radial_next->f, sv->v_a)) {
-						f_copy_flip = BLI_smallhash_lookup(&sld->origfaces, (uintptr_t)l_ed_sel->radial_next->f);
+						f_copy_flip = BLI_ghash_lookup(sld->origfaces, l_ed_sel->radial_next->f);
 					}
 				}
 
@@ -5581,7 +5561,7 @@ void projectEdgeSlideData(TransInfo *t, bool is_final)
 							l_adj = l;
 						}
 
-						f_copy_flip = BLI_smallhash_lookup(&sld->origfaces, (uintptr_t)l_adj->f);
+						f_copy_flip = BLI_ghash_lookup(sld->origfaces, l_adj->f);
 					}
 				}
 			}
@@ -5598,36 +5578,23 @@ void projectEdgeSlideData(TransInfo *t, bool is_final)
 			}
 			
 			/* make sure face-attributes are correct (e.g. MTexPoly) */
-			BM_elem_attrs_copy(em->bm, em->bm, f_copy, l->f);
-			
-			/* restore selection and hidden flags */
-			BM_face_select_set(em->bm, l->f, is_sel);
-			if (!is_hide) {
-				/* this check is a workaround for bug, see note - [#30735],
-				 * without this edge can be hidden and selected */
-				BM_elem_hide_set(em->bm, l->f, is_hide);
-			}
+			BM_elem_attrs_copy(sld->bm_origfaces, em->bm, f_copy, l->f);
 		}
 	}
 }
 
 void freeEdgeSlideTempFaces(EdgeSlideData *sld)
 {
-	if (sld->origfaces_init) {
-		SmallHashIter hiter;
-		BMFace *copyf;
-
-		copyf = BLI_smallhash_iternew(&sld->origfaces, &hiter, NULL);
-		for (; copyf; copyf = BLI_smallhash_iternext(&hiter, NULL)) {
-			BM_face_verts_kill(sld->em->bm, copyf);
+	if (sld->use_origfaces) {
+		if (sld->bm_origfaces) {
+			BM_mesh_free(sld->bm_origfaces);
+			sld->bm_origfaces = NULL;
 		}
 
-		BLI_smallhash_release(&sld->origfaces);
-
-		sld->origfaces_init = false;
-
-		/* arrays are dirty from removing faces: EDBM_index_arrays_free */
-		EDBM_update_generic(sld->em, FALSE, TRUE);
+		if (sld->origfaces) {
+			BLI_ghash_free(sld->origfaces, NULL, NULL);
+			sld->origfaces = NULL;
+		}
 	}
 }
 
@@ -5636,30 +5603,12 @@ void freeEdgeSlideVerts(TransInfo *t)
 {
 	EdgeSlideData *sld = t->customData;
 	
-#if 0 /*BMESH_TODO*/
-	if (me->drawflag & ME_DRAWEXTRA_EDGELEN) {
-		TransDataEdgeSlideVert *sv;
-		LinkNode *look = sld->vertlist;
-		GHash *vertgh = sld->vhash;
-		while (look) {
-			sv  = BLI_ghash_lookup(vertgh, (EditVert *)look->link);
-			if (sv != NULL) {
-				sv->v_a->f &= !SELECT;
-				sv->v_b->f &= !SELECT;
-			}
-			look = look->next;
-		}
-	}
-#endif
-	
 	if (!sld)
 		return;
 	
 	freeEdgeSlideTempFaces(sld);
 
 	bmesh_edit_end(sld->em->bm, BMO_OPTYPE_FLAG_UNTAN_MULTIRES);
-
-	BLI_smallhash_release(&sld->vhash);
 	
 	MEM_freeN(sld->sv);
 	MEM_freeN(sld);

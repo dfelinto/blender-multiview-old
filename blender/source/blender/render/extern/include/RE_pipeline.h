@@ -145,6 +145,7 @@ typedef struct RenderStats {
 	int cfra;
 	int totface, totvert, totstrand, tothalo, totlamp, totpart;
 	short curfield, curblur, curpart, partsdone, convertdone, curfsa;
+	bool localview;
 	double starttime, lastframetime;
 	const char *infostr, *statstr;
 	char scene_name[MAX_ID_NAME - 2];
@@ -206,6 +207,7 @@ void RE_GetViewPlane(struct Render *re, rctf *viewplane, rcti *disprect);
 
 /* make or free the dbase */
 void RE_Database_FromScene(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int use_camera_view);
+void RE_Database_Preprocess(struct Render *re);
 void RE_Database_Free(struct Render *re);
 
 /* project dbase again, when viewplane/perspective changed */

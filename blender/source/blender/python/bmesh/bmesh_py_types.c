@@ -907,6 +907,9 @@ static PyObject *bpy_bmesh_to_mesh(BPy_BMesh *self, PyObject *args)
 
 	bm = self->bm;
 
+	/* python won't ensure matching uv/mtex */
+	BM_mesh_cd_validate(bm);
+
 	BM_mesh_bm_to_me(bm, me, false);
 
 	/* we could have the user do this but if they forget blender can easy crash
@@ -1613,7 +1616,7 @@ static PyObject *bpy_bmface_copy(BPy_BMFace *self, PyObject *args, PyObject *kw)
 		return NULL;
 	}
 
-	f_cpy = BM_face_copy(bm, self->f, do_verts, do_edges);
+	f_cpy = BM_face_copy(bm, bm, self->f, do_verts, do_edges);
 
 	if (f_cpy) {
 		return BPy_BMFace_CreatePyObject(bm, f_cpy);

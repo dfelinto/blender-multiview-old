@@ -42,7 +42,6 @@
 #include "KX_WorldInfo.h"
 #include "DNA_Scene_types.h"
 #include <vector>
-#include <set>
 
 class KX_TimeCategoryLogger;
 
@@ -93,13 +92,13 @@ private:
 	class KX_Dome*						m_dome; // dome stereo mode
 
 	/** Lists of scenes scheduled to be removed at the end of the frame. */
-	std::set<STR_String> m_removingScenes;
+	std::vector<STR_String> m_removingScenes;
 	/** Lists of overley scenes scheduled to be added at the end of the frame. */
-	std::set<STR_String> m_addingOverlayScenes;
+	std::vector<STR_String> m_addingOverlayScenes;
 	/** Lists of background scenes scheduled to be added at the end of the frame. */
-	std::set<STR_String> m_addingBackgroundScenes;
+	std::vector<STR_String> m_addingBackgroundScenes;
 	/** Lists of scenes scheduled to be replaced at the end of the frame. */
-	std::set<std::pair<STR_String,STR_String> >	m_replace_scenes;
+	std::vector<std::pair<STR_String,STR_String> >	m_replace_scenes;
 
 	/* The current list of scenes. */
 	KX_SceneList		m_scenes;
@@ -211,7 +210,6 @@ private:
 	void					RenderDebugProperties();
 	void					RenderShadowBuffers(KX_Scene *scene);
 	void					SetBackGround(KX_WorldInfo* worldinfo);
-	void					RenderFonts(KX_Scene* scene);
 
 public:
 	KX_KetsjiEngine(class KX_ISystem* system);

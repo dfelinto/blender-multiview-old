@@ -15,9 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
  * The Original Code is: all of this file.
  *
  * Contributor(s): none yet.
@@ -79,6 +76,8 @@ void BKE_object_copy_proxy_drivers(struct Object *ob, struct Object *target);
 void BKE_object_unlink(struct Object *ob);
 bool BKE_object_exists_check(struct Object *obtest);
 bool BKE_object_is_in_editmode(struct Object *ob);
+bool BKE_object_is_in_editmode_vgroup(struct Object *ob);
+bool BKE_object_is_in_wpaint_select_vert(struct Object *ob);
 
 struct Object *BKE_object_add_only_object(struct Main *bmain, int type, const char *name);
 struct Object *BKE_object_add(struct Main *bmain, struct Scene *scene, int type);
@@ -96,15 +95,16 @@ void BKE_object_mat3_to_rot(struct Object *ob, float mat[3][3], bool use_compat)
 void BKE_object_to_mat3(struct Object *ob, float mat[3][3]);
 void BKE_object_to_mat4(struct Object *ob, float mat[4][4]);
 void BKE_object_apply_mat4(struct Object *ob, float mat[4][4], const bool use_compat, const bool use_parent);
+void BKE_object_matrix_local_get(struct Object *ob, float mat[4][4]);
 
 bool BKE_object_pose_context_check(struct Object *ob);
 struct Object *BKE_object_pose_armature_get(struct Object *ob);
 
 void BKE_object_where_is_calc(struct Scene *scene, struct Object *ob);
-void BKE_object_where_is_calc_ex(struct Scene *scene, struct RigidBodyWorld *rbw, struct Object *ob);
+void BKE_object_where_is_calc_ex(struct Scene *scene, struct RigidBodyWorld *rbw, struct Object *ob, float r_originmat[3][3]);
 void BKE_object_where_is_calc_time(struct Scene *scene, struct Object *ob, float ctime);
 void BKE_object_where_is_calc_time_ex(struct Scene *scene, struct Object *ob, float ctime,
-                                      struct RigidBodyWorld *rbw);
+                                      struct RigidBodyWorld *rbw, float r_originmat[3][3]);
 void BKE_object_where_is_calc_simul(struct Scene *scene, struct Object *ob);
 void BKE_object_where_is_calc_mat4(struct Scene *scene, struct Object *ob, float obmat[4][4]);
 

@@ -148,12 +148,6 @@ PartDeflect *object_add_collision_fields(int type)
 	return pd;
 }
 
-/* temporal struct, used for reading return of mesh_get_mapped_verts_nors() */
-
-typedef struct VeNoCo {
-	float co[3], no[3];
-} VeNoCo;
-
 /* ***************** PARTICLES ***************** */
 
 /* -------------------------- Effectors ------------------ */
@@ -750,6 +744,7 @@ static void do_texture_effector(EffectorCache *eff, EffectorData *efd, EffectedP
 	float nabla = eff->pd->tex_nabla;
 	int hasrgb;
 	short mode = eff->pd->tex_mode;
+	bool scene_color_manage;
 
 	if (!eff->pd->tex)
 		return;
@@ -769,7 +764,9 @@ static void do_texture_effector(EffectorCache *eff, EffectorData *efd, EffectedP
 		mul_m4_v3(eff->ob->imat, tex_co);
 	}
 
-	hasrgb = multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result, NULL);
+	scene_color_manage = BKE_scene_check_color_management_enabled(eff->scene);
+
+	hasrgb = multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result, NULL, scene_color_manage);
 
 	if (hasrgb && mode==PFIELD_TEX_RGB) {
 		force[0] = (0.5f - result->tr) * strength;
@@ -780,15 +777,15 @@ static void do_texture_effector(EffectorCache *eff, EffectorData *efd, EffectedP
 		strength/=nabla;
 
 		tex_co[0] += nabla;
-		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+1, NULL);
+		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+1, NULL, scene_color_manage);
 
 		tex_co[0] -= nabla;
 		tex_co[1] += nabla;
-		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+2, NULL);
+		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+2, NULL, scene_color_manage);
 
 		tex_co[1] -= nabla;
 		tex_co[2] += nabla;
-		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+3, NULL);
+		multitex_ext(eff->pd->tex, tex_co, NULL, NULL, 0, result+3, NULL, scene_color_manage);
 
 		if (mode == PFIELD_TEX_GRAD || !hasrgb) { /* if we don't have rgb fall back to grad */
 			/* generate intensity if texture only has rgb value */
