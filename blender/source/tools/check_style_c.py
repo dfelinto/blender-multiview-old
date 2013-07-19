@@ -647,7 +647,7 @@ def blender_check_function_definition(i):
     # Warning, this is a fairly slow check and guesses
     # based on some fuzzy rules
 
-    # assert(tokens[index] == "{")
+    # assert(tokens[index].text == "{")
 
     # check function declaration is not:
     #  'void myfunc() {'
@@ -709,6 +709,28 @@ def blender_check_function_definition(i):
                     # now we are done skipping stuff
 
                     warning("function's '{' must be on a newline", i_begin, i)
+
+
+def blender_check_brace_indent(i):
+    # assert(tokens[index].text == "{")
+
+    i_match = tk_match_backet(i)
+
+    if tokens[i].line != tokens[i_match].line:
+        ws_i_match = extract_to_linestart(i_match)
+
+        # allow for...
+        # a[] = {1, 2,
+        #        3, 4}
+        # ... so only check braces which are the first text
+        if ws_i_match.isspace():
+	        ws_i = extract_to_linestart(i)
+            ws_i_match_lstrip = ws_i_match.lstrip()
+
+            ws_i = ws_i[:len(ws_i) - len(ws_i.lstrip())]
+            ws_i_match = ws_i_match[:len(ws_i_match) - len(ws_i_match_lstrip)]
+            if ws_i != ws_i_match:
+                warning("indentation '{' does not match brace", i, i_match)
 
 
 def quick_check_indentation(code):
@@ -828,6 +850,9 @@ def scan_source(fp, args):
                 if item_range is not None:
                     blender_check_cast(item_range[0], item_range[1])
             elif tok.text == "{":
+                # check matching brace is indented correctly (slow!)
+                blender_check_brace_indent(i)
+
                 # check previous character is either a '{' or whitespace.
                 if (tokens[i - 1].line == tok.line) and not (tokens[i - 1].text.isspace() or tokens[i - 1].text == "{"):
                     warning("no space before '{'", i, i)
