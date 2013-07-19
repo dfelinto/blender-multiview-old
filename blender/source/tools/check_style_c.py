@@ -172,6 +172,25 @@ def tk_index_is_linestart(index):
     return tokens[index_prev].line < tokens[index].line
 
 
+def extract_text(index_start, index_end):
+    return "".join(tokens[i].text for i in range(index_start, index_end))
+
+
+def extract_to_linestart(index):
+    ls = []
+    line = tokens[index].line
+    index -= 1
+    while index > 0 and tokens[index].line == line:
+        ls.append(tokens[index].text)
+        index -= 1
+
+    if index != 0:
+        ls.append(tokens[index].text.rsplit("\n", 1)[1])
+
+    ls.reverse()
+    return "".join(ls)
+
+
 def extract_statement_if(index_kw):
     # assert(tokens[index_kw].text == "if")
 
@@ -403,6 +422,49 @@ def blender_check_kw_else(index_kw):
     if tokens[i_prev].type == Token.Punctuation and tokens[i_prev].text == "}":
         if tokens[index_kw].line == tokens[i_prev].line:
             warning("else has no newline before the brace '} else'", i_prev, index_kw)
+
+
+def blender_check_kw_switch(index_kw_start, index_kw, index_kw_end):
+    # In this function we check the body of the switch
+
+    # switch (value) {
+    # ...
+    # }
+
+    # assert(tokens[index_kw].text == "switch")
+
+    index_next = tk_advance_ws_newline(index_kw_end, 1)
+
+    if tokens[index_next].type == Token.Punctuation and tokens[index_next].text == "{":
+        ws_switch_indent = extract_to_linestart(index_kw)
+
+        # TODO, check case statement has a break, return or /* fall-through */
+
+        if ws_switch_indent.isspace():
+
+            # 'case' should have at least 1 indent.
+            # otherwise expect 2 indent (or more, for nested switches)
+            ws_test = {
+                "case": ws_switch_indent + "\t",
+                "default": ws_switch_indent + "\t",
+                "break": ws_switch_indent + "\t\t",
+                "return": ws_switch_indent + "\t\t",
+                }
+
+            index_final = tk_match_backet(index_next)
+
+            for i in range(index_next + 1, index_final):
+                if tokens[i].type == Token.Keyword:
+                    if tokens[i].text in {"case", "break", "return"}:
+                        ws_other_indent = extract_to_linestart(i)
+                        # non ws start - we ignore for now, allow case A: case B: ...
+                        if ws_other_indent.isspace():
+                            if not ws_other_indent.startswith(ws_test[tokens[i].text]):
+                                warning("%s is not indented enough" % tokens[i].text, i, i)
+        else:
+            warning("switch isn't the first token in the line", index_kw_start, index_kw_end)
+    else:
+        warning("switch brace missing", index_kw_start, index_kw_end)
 
 
 def blender_check_kw_sizeof(index_kw):
@@ -739,6 +801,8 @@ def scan_source(fp, args):
                 item_range = extract_statement_if(i)
                 if item_range is not None:
                     blender_check_kw_if(item_range[0], i, item_range[1])
+                if tok.text == "switch":
+                    blender_check_kw_switch(item_range[0], i, item_range[1])
             elif tok.text == "else":
                 blender_check_kw_else(i)
             elif tok.text == "sizeof":
