@@ -220,6 +220,9 @@ class RENDERLAYER_PT_view_options(RenderLayerButtonsPanel, Panel):
         col = split.column()
         col.prop(rv, "camera")
 
+        if rv.camera and rv.camera.data.use_stereoscopy:
+            col.prop(rv, "stereoscopy_camera")
+
         col.separator()
         col.prop(rv, "use_custom_suffix")
 

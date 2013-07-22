@@ -3251,6 +3251,17 @@ static int view3d_stereo(const bContext *C, Scene *scene)
 	return has_left && has_right;
 }
 
+static Object *view3d_stereo_camera(Object *ob, StereoViews stereo_view)
+{
+	if (ob && (ob->type == OB_CAMERA)) {
+		if (((Camera *)ob->data)->flag & CAM_STEREOSCOPY) {
+			return BKE_camera_from_stereoscopy(ob, stereo_view);
+		}
+	}
+
+	return ob;
+}
+
 /* warning: this function has duplicate drawing in ED_view3d_draw_offscreen() */
 static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const char **grid_unit)
 {
@@ -3288,8 +3299,19 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 		else
 			srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
 
-		v3d->camera = srv->camera;
+		if (srv->camera && ((Camera *) srv->camera->data)->flag & CAM_STEREOSCOPY)
+			v3d->camera = view3d_stereo_camera(srv->camera, srv->stereo_camera);
+		else
+			v3d->camera = (srv->camera ? srv->camera : orig_cam);
+
+		/* update the viewport matrices with the new camera */
 		view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
+
+		/* remove the camera created temporarily */
+		if (v3d->camera != srv->camera && v3d->camera != orig_cam)
+			BKE_object_free(v3d->camera);
+
+		/* restore the original camera */
 		v3d->camera = orig_cam;
 	}
 

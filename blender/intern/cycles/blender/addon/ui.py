@@ -401,6 +401,9 @@ class CyclesRender_PT_view_options(CyclesButtonsPanel, Panel):
         col = split.column()
         col.prop(rv, "camera")
 
+        if rv.camera and rv.camera.data.use_stereoscopy:
+            col.prop(rv, "stereoscopy_camera")
+
         col.separator()
         col.prop(rv, "use_custom_suffix")
 
@@ -1317,6 +1320,7 @@ def get_panels():
         types.DATA_PT_vertex_colors,
         types.DATA_PT_camera,
         types.DATA_PT_camera_display,
+        types.DATA_PT_camera_stereoscopy,
         types.DATA_PT_lens,
         types.DATA_PT_speaker,
         types.DATA_PT_distance,
