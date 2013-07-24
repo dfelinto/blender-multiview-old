@@ -2311,16 +2311,16 @@ static void curve_smooth_value(ListBase *editnurb,
 					last_sel = end_sel; /* before we modify it */
 
 					/* now blend between start and end sel */
-					start_rad = end_rad = -1.0;
+					start_rad = end_rad = FLT_MAX;
 
 					if (start_sel == end_sel) {
 						/* simple, only 1 point selected */
 						if (start_sel > 0)                         start_rad = BEZT_VALUE(&nu->bezt[start_sel - 1]);
 						if (end_sel != -1 && end_sel < nu->pntsu)  end_rad   = BEZT_VALUE(&nu->bezt[start_sel + 1]);
 
-						if      (start_rad >= 0.0f && end_rad >= 0.0f)  BEZT_VALUE(&nu->bezt[start_sel]) = (start_rad + end_rad) / 2.0f;
-						else if (start_rad >= 0.0f)                     BEZT_VALUE(&nu->bezt[start_sel]) = start_rad;
-						else if (end_rad >= 0.0f)                       BEZT_VALUE(&nu->bezt[start_sel]) = end_rad;
+						if      (start_rad != FLT_MAX && end_rad >= FLT_MAX) BEZT_VALUE(&nu->bezt[start_sel]) = (start_rad + end_rad) / 2.0f;
+						else if (start_rad != FLT_MAX)                       BEZT_VALUE(&nu->bezt[start_sel]) = start_rad;
+						else if (end_rad   != FLT_MAX)                       BEZT_VALUE(&nu->bezt[start_sel]) = end_rad;
 					}
 					else {
 						/* if endpoints selected, then use them */
@@ -2381,16 +2381,16 @@ static void curve_smooth_value(ListBase *editnurb,
 					last_sel = end_sel; /* before we modify it */
 
 					/* now blend between start and end sel */
-					start_rad = end_rad = -1.0;
+					start_rad = end_rad = FLT_MAX;
 
 					if (start_sel == end_sel) {
 						/* simple, only 1 point selected */
 						if (start_sel > 0) start_rad = BP_VALUE(&nu->bp[start_sel - 1]);
 						if (end_sel != -1 && end_sel < nu->pntsu) end_rad = BP_VALUE(&nu->bp[start_sel + 1]);
 
-						if      (start_rad >= 0.0f && end_rad >= 0.0f)  BP_VALUE(&nu->bp[start_sel]) = (start_rad + end_rad) / 2;
-						else if (start_rad >= 0.0f)                     BP_VALUE(&nu->bp[start_sel]) = start_rad;
-						else if (end_rad >= 0.0f)                       BP_VALUE(&nu->bp[start_sel]) = end_rad;
+						if      (start_rad != FLT_MAX && end_rad != FLT_MAX) BP_VALUE(&nu->bp[start_sel]) = (start_rad + end_rad) / 2;
+						else if (start_rad != FLT_MAX)                       BP_VALUE(&nu->bp[start_sel]) = start_rad;
+						else if (end_rad   != FLT_MAX)                       BP_VALUE(&nu->bp[start_sel]) = end_rad;
 					}
 					else {
 						/* if endpoints selected, then use them */
