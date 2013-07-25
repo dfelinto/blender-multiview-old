@@ -51,7 +51,7 @@ static BMLoop *bm_face_find_longest_loop_manifold(BMFace *f)
 	l_iter = l_first = BM_FACE_FIRST_LOOP(f);
 
 	do {
-		if (BM_edge_is_boundary(l_iter->e) == false) {
+		if (BM_edge_is_wire(l_iter->e) == false) {
 			const float len = len_squared_v3v3(l_iter->v->co, l_iter->next->v->co);
 			if (len >= longest_len) {
 				longest_loop = l_iter;
