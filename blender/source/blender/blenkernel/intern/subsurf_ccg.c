@@ -69,7 +69,6 @@
 #include "PIL_time.h"
 
 #ifndef USE_DYNSIZE
-#  include "BLI_array.h"
 #endif
 
 #include "GL/glew.h"
