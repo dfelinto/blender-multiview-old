@@ -401,29 +401,21 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 	wmWindow *win = CTX_wm_window(C);
 	ScrArea *sa = CTX_wm_area(C);
 	ARegionType *at = ar->type;
-	rcti srct;
 	
 	/* see BKE_spacedata_draw_locks() */
 	if (at->do_lock)
 		return;
 	
 	/* if no partial draw rect set, full rect */
-	if (ar->drawrct.xmin == ar->drawrct.xmax) {
+	if (ar->drawrct.xmin == ar->drawrct.xmax)
 		ar->drawrct = ar->winrct;
-		srct = ar->drawrct;
-	}
 	else {
 		/* extra clip for safety */
 		BLI_rcti_isect(&ar->winrct, &ar->drawrct, &ar->drawrct);
-		srct = ar->drawrct;
-
-		/* compensate for wmSubWindowScissorSet which adds one */
-		srct.xmax -= 1;
-		srct.ymax -= 1;
 	}
 	
 	/* note; this sets state, so we can use wmOrtho and friends */
-	wmSubWindowScissorSet(win, ar->swinid, &srct);
+	wmSubWindowScissorSet(win, ar->swinid, &ar->drawrct);
 	
 	UI_SetTheme(sa ? sa->spacetype : 0, at->regionid);
 	
