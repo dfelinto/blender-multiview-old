@@ -517,9 +517,10 @@ def blender_check_kw_switch(index_kw_start, index_kw, index_kw_end):
                                         ok = True
                                         break
                                     else:
-                                        print("indent mismatch...")
-                                        print("'%s'" % ws_other_indent)
-                                        print("'%s'" % ws_test_other)
+                                        pass
+                                        #~ print("indent mismatch...")
+                                        #~ print("'%s'" % ws_other_indent)
+                                        #~ print("'%s'" % ws_test_other)
                     if not ok:
                         warning("case/default statement has no break", i_case, i_end)
                         #~ print(tk_range_to_str(i_case - 1, i_end - 1, expand_tabs=True))
