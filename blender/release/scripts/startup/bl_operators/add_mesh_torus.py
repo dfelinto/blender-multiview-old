@@ -105,7 +105,7 @@ class AddTorus(Operator, object_utils.AddObjectHelper):
             default=12,
             )
     mode = bpy.props.EnumProperty(
-            name="Torus Dimentions",
+            name="Torus Dimensions",
             items=(("MAJOR_MINOR", "Major/Minor", 
                     "Use the major/minor radiuses for torus dimensions"),
                    ("EXT_INT", "Exterior/Interior", 
