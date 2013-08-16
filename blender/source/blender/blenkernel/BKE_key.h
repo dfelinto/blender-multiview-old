@@ -74,8 +74,7 @@ struct KeyBlock *BKE_keyblock_find_name(struct Key *key, const char name[]);
 void             BKE_keyblock_copy_settings(struct KeyBlock *kb_dst, const struct KeyBlock *kb_src);
 char            *BKE_keyblock_curval_rnapath_get(struct Key *key, struct KeyBlock *kb);
 // needed for the GE
-void BKE_key_evaluate_relative(const int start, int end, const int tot, char *basispoin, struct Key *key, struct KeyBlock *actkb,
-                               float **all_keyblock_weights, const int mode);
+void BKE_key_evaluate_relative(const int start, int end, const int tot, char *basispoin, struct Key *key, struct KeyBlock *actkb, const int mode);
 
 /* conversion functions */
 void    BKE_key_convert_to_mesh(struct KeyBlock *kb, struct Mesh *me);
