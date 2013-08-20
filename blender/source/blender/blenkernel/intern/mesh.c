@@ -3728,6 +3728,11 @@ int BKE_mesh_center_centroid(Mesh *me, float cent[3])
 		mul_v3_fl(cent, 1.0f / total_area);
 	}
 
+	/* zero area faces cause this, fallback to median */
+	if (UNLIKELY(!is_finite_v3(cent))) {
+		BKE_mesh_center_median(me, cent);
+	}
+
 	return (me->totpoly != 0);
 }
 
