@@ -81,6 +81,7 @@ int g_highlightIndex;
 void **g_highlightedNodes;
 void **g_highlightedNodesRead;
 
+#if COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE
 #define HIGHLIGHT(wp) \
 { \
 	ExecutionGroup *group = wp->getExecutionGroup(); \
@@ -103,6 +104,7 @@ void **g_highlightedNodesRead;
 		} \
 	} \
 }
+#endif  /* COM_CURRENT_THREADING_MODEL == COM_TM_QUEUE */
 
 void COM_startReadHighlights()
 {
@@ -311,7 +313,8 @@ void WorkScheduler::initialize(bool use_opencl)
 			cl_uint numberOfPlatforms = 0;
 			cl_int error;
 			error = clGetPlatformIDs(0, 0, &numberOfPlatforms);
-			if (error != CL_SUCCESS) { printf("CLERROR[%d]: %s\n", error, clewErrorString(error));  }
+			if (error == -1001) { }   /* GPU not supported */
+			else if (error != CL_SUCCESS) { printf("CLERROR[%d]: %s\n", error, clewErrorString(error));  }
 			if (G.f & G_DEBUG) printf("%d number of platforms\n", numberOfPlatforms);
 			cl_platform_id *platforms = (cl_platform_id *)MEM_mallocN(sizeof(cl_platform_id) * numberOfPlatforms, __func__);
 			error = clGetPlatformIDs(numberOfPlatforms, platforms, 0);

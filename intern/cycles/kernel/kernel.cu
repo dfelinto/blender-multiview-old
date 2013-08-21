@@ -1,19 +1,17 @@
 /*
- * Copyright 2011, Blender Foundation.
+ * Copyright 2011-2013 Blender Foundation
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
  */
 
 /* CUDA kernel entry points */
@@ -26,14 +24,25 @@
 #include "kernel_path.h"
 #include "kernel_displace.h"
 
-extern "C" __global__ void kernel_cuda_path_trace(float *buffer, uint *rng_state, int sample, int sx, int sy, int sw, int sh, int offset, int stride)
+extern "C" __global__ void kernel_cuda_path_trace_progressive(float *buffer, uint *rng_state, int sample, int sx, int sy, int sw, int sh, int offset, int stride)
 {
 	int x = sx + blockDim.x*blockIdx.x + threadIdx.x;
 	int y = sy + blockDim.y*blockIdx.y + threadIdx.y;
 
 	if(x < sx + sw && y < sy + sh)
-		kernel_path_trace(NULL, buffer, rng_state, sample, x, y, offset, stride);
+		kernel_path_trace_progressive(NULL, buffer, rng_state, sample, x, y, offset, stride);
 }
+
+#ifdef __NON_PROGRESSIVE__
+extern "C" __global__ void kernel_cuda_path_trace_non_progressive(float *buffer, uint *rng_state, int sample, int sx, int sy, int sw, int sh, int offset, int stride)
+{
+	int x = sx + blockDim.x*blockIdx.x + threadIdx.x;
+	int y = sy + blockDim.y*blockIdx.y + threadIdx.y;
+
+	if(x < sx + sw && y < sy + sh)
+		kernel_path_trace_non_progressive(NULL, buffer, rng_state, sample, x, y, offset, stride);
+}
+#endif
 
 extern "C" __global__ void kernel_cuda_tonemap(uchar4 *rgba, float *buffer, int sample, int sx, int sy, int sw, int sh, int offset, int stride)
 {

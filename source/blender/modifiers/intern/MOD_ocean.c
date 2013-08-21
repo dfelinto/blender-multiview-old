@@ -318,8 +318,8 @@ static DerivedMesh *generate_ocean_geometry(OceanModifierData *omd)
 
 	/* create vertices */
 	#pragma omp parallel for private(x, y) if (rx > OMP_MIN_RES)
-	for (y = 0; y < res_y + 1; y++) {
-		for (x = 0; x < res_x + 1; x++) {
+	for (y = 0; y <= res_y; y++) {
+		for (x = 0; x <= res_x; x++) {
 			const int i = y * (res_x + 1) + x;
 			float *co = mverts[i].co;
 			co[0] = ox + (x * sx);
@@ -426,6 +426,11 @@ static DerivedMesh *doOcean(ModifierData *md, Object *ob,
 
 	const float size_co_inv = 1.0f / (omd->size * omd->spatial_size);
 
+	/* can happen in when size is small, avoid bad array lookups later and quit now */
+	if (!finite(size_co_inv)) {
+		return derivedData;
+	}
+
 	/* update modifier */
 	if (omd->refresh & MOD_OCEAN_REFRESH_ADD)
 		omd->ocean = BKE_add_ocean();
@@ -531,7 +536,7 @@ static DerivedMesh *doOcean(ModifierData *md, Object *ob,
 		}
 	}
 
-	#undef OCEAN_CO
+#undef OCEAN_CO
 
 	return dm;
 }
@@ -551,8 +556,6 @@ static DerivedMesh *applyModifier(ModifierData *md, Object *ob,
                                   ModifierApplyFlag UNUSED(flag))
 {
 	DerivedMesh *result;
-
-	CDDM_calc_normals(derivedData);
 
 	result = doOcean(md, ob, derivedData, 0);
 

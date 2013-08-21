@@ -132,6 +132,14 @@ void wm_event_free_all(wmWindow *win)
 	}
 }
 
+void wm_event_init_from_window(wmWindow *win, wmEvent *event)
+{
+	/* make sure we don't copy any owned pointers */
+	BLI_assert(win->eventstate->tablet_data == NULL);
+
+	*event = *(win->eventstate);
+}
+
 /* ********************* notifiers, listeners *************** */
 
 static int wm_test_duplicate_notifier(wmWindowManager *wm, unsigned int type, void *reference)
@@ -274,7 +282,7 @@ void wm_event_do_notifiers(bContext *C)
 			}
 
 			if (note->window == win ||
-			    (note->window == NULL && (note->reference == NULL || note->reference == CTX_data_scene(C))))
+			    (note->window == NULL && (note->reference == NULL || note->reference == win->screen->scene)))
 			{
 				if (note->category == NC_SCENE) {
 					if (note->data == ND_FRAME)
@@ -282,7 +290,7 @@ void wm_event_do_notifiers(bContext *C)
 				}
 			}
 			if (ELEM5(note->category, NC_SCENE, NC_OBJECT, NC_GEOM, NC_SCENE, NC_WM)) {
-				ED_info_stats_clear(CTX_data_scene(C));
+				ED_info_stats_clear(win->screen->scene);
 				WM_event_add_notifier(C, NC_SPACE | ND_SPACE_INFO, NULL);
 			}
 		}
@@ -445,7 +453,9 @@ static void wm_handler_ui_cancel(bContext *C)
 		nexthandler = handler->next;
 
 		if (handler->ui_handle) {
-			wmEvent event = *(win->eventstate);
+			wmEvent event;
+
+			wm_event_init_from_window(win, &event);
 			event.type = EVT_BUT_CANCEL;
 			handler->ui_handle(C, &event, handler->ui_userdata);
 		}
@@ -972,7 +982,7 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event,
 			WM_operator_last_properties_init(op);
 		}
 
-		if ((G.debug & G_DEBUG_HANDLERS) && event && event->type != MOUSEMOVE) {
+		if ((G.debug & G_DEBUG_HANDLERS) && ((event == NULL) || (event->type != MOUSEMOVE))) {
 			printf("%s: handle evt %d win %d op %s\n",
 			       __func__, event ? event->type : 0, CTX_wm_screen(C)->subwinactive, ot->idname);
 		}
@@ -1116,6 +1126,7 @@ static int wm_operator_call_internal(bContext *C, wmOperatorType *ot, PointerRNA
 				break;
 			default:
 				event = NULL;
+				break;
 		}
 
 		switch (context) {
@@ -1362,40 +1373,17 @@ int WM_userdef_event_map(int kmitype)
 {
 	switch (kmitype) {
 		case SELECTMOUSE:
-			if (U.flag & USER_LMOUSESELECT)
-				return LEFTMOUSE;
-			else
-				return RIGHTMOUSE;
-			
+			return (U.flag & USER_LMOUSESELECT) ? LEFTMOUSE : RIGHTMOUSE;
 		case ACTIONMOUSE:
-			if (U.flag & USER_LMOUSESELECT)
-				return RIGHTMOUSE;
-			else
-				return LEFTMOUSE;
-			
-		case WHEELOUTMOUSE:
-			if (U.uiflag & USER_WHEELZOOMDIR)
-				return WHEELUPMOUSE;
-			else
-				return WHEELDOWNMOUSE;
-			
-		case WHEELINMOUSE:
-			if (U.uiflag & USER_WHEELZOOMDIR)
-				return WHEELDOWNMOUSE;
-			else
-				return WHEELUPMOUSE;
-			
+			return (U.flag & USER_LMOUSESELECT) ? RIGHTMOUSE : LEFTMOUSE;
 		case EVT_TWEAK_A:
-			if (U.flag & USER_LMOUSESELECT)
-				return EVT_TWEAK_R;
-			else
-				return EVT_TWEAK_L;
-			
+			return (U.flag & USER_LMOUSESELECT) ? EVT_TWEAK_R : EVT_TWEAK_L;
 		case EVT_TWEAK_S:
-			if (U.flag & USER_LMOUSESELECT)
-				return EVT_TWEAK_L;
-			else
-				return EVT_TWEAK_R;
+			return (U.flag & USER_LMOUSESELECT) ? EVT_TWEAK_L : EVT_TWEAK_R;
+		case WHEELOUTMOUSE:
+			return (U.uiflag & USER_WHEELZOOMDIR) ? WHEELUPMOUSE : WHEELDOWNMOUSE;
+		case WHEELINMOUSE:
+			return (U.uiflag & USER_WHEELZOOMDIR) ? WHEELDOWNMOUSE : WHEELUPMOUSE;
 	}
 	
 	return kmitype;
@@ -1638,8 +1626,8 @@ static int wm_handler_fileselect_call(bContext *C, ListBase *handlers, wmEventHa
 			ED_fileselect_set_params(sfile);
 				
 			action = WM_HANDLER_BREAK;
+			break;
 		}
-		break;
 			
 		case EVT_FILESELECT_EXEC:
 		case EVT_FILESELECT_CANCEL:
@@ -1734,8 +1722,8 @@ static int wm_handler_fileselect_call(bContext *C, ListBase *handlers, wmEventHa
 			wm_event_free_handler(handler);
 
 			action = WM_HANDLER_BREAK;
+			break;
 		}
-		break;
 	}
 	
 	return action;

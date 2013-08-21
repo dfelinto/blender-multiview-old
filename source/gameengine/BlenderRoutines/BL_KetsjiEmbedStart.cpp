@@ -284,6 +284,14 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			canvas->SetMouseState(RAS_ICanvas::MOUSE_NORMAL);
 		else
 			canvas->SetMouseState(RAS_ICanvas::MOUSE_INVISIBLE);
+
+		// Setup vsync
+		int previous_vsync = canvas->GetSwapInterval();
+		if (startscene->gm.vsync == VSYNC_ADAPTIVE)
+			canvas->SetSwapInterval(-1);
+		else
+			canvas->SetSwapInterval(!startscene->gm.vsync); // VSYNC_OFF == 1, VSYNC_ON == 0, so this works
+
 		RAS_IRenderTools* rendertools = new KX_BlenderRenderTools();
 		RAS_IRasterizer* rasterizer = NULL;
 		//Don't use displaylists with VBOs
@@ -371,7 +379,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			// to the original file working directory
 
 			if (exitstring != "")
-				strcpy(basedpath, exitstring.Ptr());
+				BLI_strncpy(basedpath, exitstring.ReadPtr(), sizeof(basedpath));
 
 			// load relative to the last loaded file, this used to be relative
 			// to the first file but that makes no sense, relative paths in
@@ -384,9 +392,8 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			if (!bfd)
 			{
 				// just add "//" in front of it
-				char temppath[242];
-				strcpy(temppath, "//");
-				strcat(temppath, basedpath);
+				char temppath[FILE_MAX] = "//";
+				BLI_strncpy(temppath + 2, basedpath, FILE_MAX - 2);
 				
 				BLI_path_abs(temppath, pathname);
 				bfd = load_game_data(temppath);
@@ -664,6 +671,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		}
 		if (canvas)
 		{
+			canvas->SetSwapInterval(previous_vsync); // Set the swap interval back
 			delete canvas;
 			canvas = NULL;
 		}

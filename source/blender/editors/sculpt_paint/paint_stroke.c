@@ -46,6 +46,7 @@
 #include "BKE_context.h"
 #include "BKE_paint.h"
 #include "BKE_brush.h"
+#include "BKE_colortools.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -375,13 +376,13 @@ static float paint_space_stroke_spacing(const Scene *scene, PaintStroke *stroke,
 
 	/* apply spacing pressure */
 	if (stroke->brush->flag & BRUSH_SPACING_PRESSURE)
-		spacing = max_ff(1.0f, spacing * (1.5f - spacing_pressure));
+		spacing = spacing * (1.5f - spacing_pressure);
 
 	/* stroke system is used for 2d paint too, so we need to account for
 	 * the fact that brush can be scaled there. */
 	spacing *= stroke->zoom_2d;
 
-	return (size_clamp * spacing / 50.0f);
+	return max_ff(1.0, size_clamp * spacing / 50.0f);
 }
 
 static float paint_space_stroke_spacing_variable(const Scene *scene, PaintStroke *stroke, float pressure, float dpressure, float length)
@@ -477,6 +478,9 @@ PaintStroke *paint_stroke_new(bContext *C,
 	stroke->redraw = redraw;
 	stroke->done = done;
 	stroke->event_type = event_type; /* for modal, return event */
+
+	/* initialize here to avoid initialization conflict with threaded strokes */
+	curvemapping_initialize(br->curve);
 	
 	BKE_paint_set_overlay_override(br->overlay_flags);
 
@@ -540,8 +544,9 @@ bool paint_supports_dynamic_size(Brush *br, PaintMode mode)
 		case PAINT_SCULPT:
 			if (sculpt_is_grab_tool(br))
 				return false;
+			break;
 		default:
-			;
+			break;
 	}
 	return true;
 }
@@ -559,8 +564,9 @@ bool paint_supports_smooth_stroke(Brush *br, PaintMode mode)
 		case PAINT_SCULPT:
 			if (sculpt_is_grab_tool(br))
 				return false;
+			break;
 		default:
-			;
+			break;
 	}
 	return true;
 }
@@ -575,9 +581,10 @@ bool paint_supports_dynamic_tex_coords(Brush *br, PaintMode mode)
 		case PAINT_SCULPT:
 			if (sculpt_is_grab_tool(br))
 				return false;
+			break;
 		default:
-			;
-		}
+			break;
+	}
 	return true;
 }
 

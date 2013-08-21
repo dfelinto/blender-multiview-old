@@ -167,6 +167,19 @@ void BKE_object_free_bulletsoftbody(Object *ob)
 	}
 }
 
+void BKE_object_free_curve_cache(Object *ob)
+{
+	if (ob->curve_cache) {
+		BKE_displist_free(&ob->curve_cache->disp);
+		BLI_freelistN(&ob->curve_cache->bev);
+		if (ob->curve_cache->path) {
+			free_path(ob->curve_cache->path);
+		}
+		MEM_freeN(ob->curve_cache);
+		ob->curve_cache = NULL;
+	}
+}
+
 void BKE_object_free_modifiers(Object *ob)
 {
 	while (ob->modifiers.first) {
@@ -246,8 +259,14 @@ void BKE_object_free_derived_caches(Object *ob)
 		Mesh *me = ob->data;
 
 		if (me->bb) {
-			MEM_freeN(me->bb);
-			me->bb = NULL;
+			me->bb->flag |= BOUNDBOX_DIRTY;
+		}
+	}
+	else if (ELEM3(ob->type, OB_SURF, OB_CURVE, OB_FONT)) {
+		Curve *cu = ob->data;
+
+		if (cu->bb) {
+			cu->bb->flag |= BOUNDBOX_DIRTY;
 		}
 	}
 
@@ -267,7 +286,9 @@ void BKE_object_free_derived_caches(Object *ob)
 		ob->derivedDeform = NULL;
 	}
 	
-	BKE_displist_free(&ob->disp);
+	if (ob->curve_cache) {
+		BKE_displist_free(&ob->curve_cache->disp);
+	}
 }
 
 /* do not free object itself */
@@ -337,6 +358,14 @@ void BKE_object_free(Object *ob)
 	free_sculptsession(ob);
 
 	if (ob->pc_ids.first) BLI_freelistN(&ob->pc_ids);
+
+	/* Free runtime curves data. */
+	if (ob->curve_cache) {
+		BLI_freelistN(&ob->curve_cache->bev);
+		if (ob->curve_cache->path)
+			free_path(ob->curve_cache->path);
+		MEM_freeN(ob->curve_cache);
+	}
 }
 
 static void unlink_object__unlinkModifierLinks(void *userData, Object *ob, Object **obpoin)
@@ -684,9 +713,10 @@ void BKE_object_unlink(Object *ob)
 					SpaceOops *so = (SpaceOops *)sl;
 
 					if (so->treestore) {
-						TreeStoreElem *tselem = so->treestore->data;
-						int i;
-						for (i = 0; i < so->treestore->usedelem; i++, tselem++) {
+						TreeStoreElem *tselem;
+						BLI_mempool_iter iter;
+						BLI_mempool_iternew(so->treestore, &iter);
+						while ((tselem = BLI_mempool_iterstep(&iter))) {
 							if (tselem->id == (ID *)ob) tselem->id = NULL;
 						}
 					}
@@ -697,6 +727,14 @@ void BKE_object_unlink(Object *ob)
 					if (sbuts->pinid == (ID *)ob) {
 						sbuts->flag &= ~SB_PIN_CONTEXT;
 						sbuts->pinid = NULL;
+					}
+				}
+				else if (sl->spacetype == SPACE_NODE) {
+					SpaceNode *snode = (SpaceNode *)sl;
+
+					if (snode->from == (ID *)ob) {
+						snode->flag &= ~SNODE_PIN;
+						snode->from = NULL;
 					}
 				}
 			}
@@ -1253,8 +1291,6 @@ Object *BKE_object_copy_ex(Main *bmain, Object *ob, int copy_caches)
 
 	for (a = 0; a < obn->totcol; a++) id_us_plus((ID *)obn->mat[a]);
 	
-	obn->disp.first = obn->disp.last = NULL;
-	
 	if (ob->pd) {
 		obn->pd = MEM_dupallocN(ob->pd);
 		if (obn->pd->tex)
@@ -1276,7 +1312,10 @@ Object *BKE_object_copy_ex(Main *bmain, Object *ob, int copy_caches)
 	obn->pc_ids.first = obn->pc_ids.last = NULL;
 
 	obn->mpath = NULL;
-	
+
+	/* Copy runtime surve data. */
+	obn->curve_cache = NULL;
+
 	return obn;
 }
 
@@ -1595,13 +1634,15 @@ void BKE_object_mat3_to_rot(Object *ob, float mat[3][3], bool use_compat)
 			normalize_qt_qt(dquat, ob->dquat);
 			invert_qt(dquat);
 			mul_qt_qtqt(ob->quat, dquat, ob->quat);
+			break;
 		}
-		break;
 		case ROT_MODE_AXISANGLE:
+		{
 			mat3_to_axis_angle(ob->rotAxis, &ob->rotAngle, mat);
 			sub_v3_v3(ob->rotAxis, ob->drotAxis);
 			ob->rotAngle -= ob->drotAngle;
 			break;
+		}
 		default: /* euler */
 		{
 			float quat[4];
@@ -1618,6 +1659,7 @@ void BKE_object_mat3_to_rot(Object *ob, float mat[3][3], bool use_compat)
 
 			if (use_compat) mat3_to_compatible_eulO(ob->rot, ob->rot, ob->rotmode, tmat);
 			else            mat3_to_eulO(ob->rot, ob->rotmode, tmat);
+			break;
 		}
 	}
 }
@@ -1766,9 +1808,9 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[4][4])
 	unit_m4(mat);
 	
 	cu = par->data;
-	if (cu->path == NULL || cu->path->data == NULL) /* only happens on reload file, but violates depsgraph still... fix! */
+	if (ELEM3(NULL, par->curve_cache, par->curve_cache->path, par->curve_cache->path->data)) /* only happens on reload file, but violates depsgraph still... fix! */
 		BKE_displist_make_curveTypes(scene, par, 0);
-	if (cu->path == NULL) return;
+	if (par->curve_cache->path == NULL) return;
 	
 	/* catch exceptions: feature for nla stride editing */
 	if (ob->ipoflag & OB_DISABLE_PATH) {
@@ -1799,7 +1841,7 @@ static void ob_parcurve(Scene *scene, Object *ob, Object *par, float mat[4][4])
 	
 	/* time calculus is correct, now apply distance offset */
 	if (cu->flag & CU_OFFS_PATHDIST) {
-		ctime += timeoffs / cu->path->totdist;
+		ctime += timeoffs / par->curve_cache->path->totdist;
 
 		/* restore */
 		SWAP(float, sf_orig, ob->sf);
@@ -1956,7 +1998,7 @@ static void give_parvert(Object *par, int nr, float vec[3])
 	}
 	else if (par->type == OB_LATTICE) {
 		Lattice *latt  = par->data;
-		DispList *dl   = BKE_displist_find(&par->disp, DL_VERTS);
+		DispList *dl   = par->curve_cache ? BKE_displist_find(&par->curve_cache->disp, DL_VERTS) : NULL;
 		float (*co)[3] = dl ? (float (*)[3])dl->verts : NULL;
 		int tot;
 
@@ -2032,15 +2074,13 @@ static void solve_parenting(Scene *scene, Object *ob, Object *par, float obmat[4
 				}
 			}
 			
-			if (ok) mul_serie_m4(totmat, par->obmat, tmat,
-				                 NULL, NULL, NULL, NULL, NULL, NULL);
+			if (ok) mul_m4_m4m4(totmat, par->obmat, tmat);
 			else copy_m4_m4(totmat, par->obmat);
 			
 			break;
 		case PARBONE:
 			ob_parbone(ob, par, tmat);
-			mul_serie_m4(totmat, par->obmat, tmat,
-			             NULL, NULL, NULL, NULL, NULL, NULL);
+			mul_m4_m4m4(totmat, par->obmat, tmat);
 			break;
 		
 		case PARVERT1:
@@ -2056,8 +2096,7 @@ static void solve_parenting(Scene *scene, Object *ob, Object *par, float obmat[4
 		case PARVERT3:
 			ob_parvert3(ob, par, tmat);
 			
-			mul_serie_m4(totmat, par->obmat, tmat,
-			             NULL, NULL, NULL, NULL, NULL, NULL);
+			mul_m4_m4m4(totmat, par->obmat, tmat);
 			break;
 		
 		case PARSKEL:
@@ -2066,10 +2105,8 @@ static void solve_parenting(Scene *scene, Object *ob, Object *par, float obmat[4
 	}
 	
 	/* total */
-	mul_serie_m4(tmat, totmat, ob->parentinv,
-	             NULL, NULL, NULL, NULL, NULL, NULL);
-	mul_serie_m4(obmat, tmat, locmat,         
-	             NULL, NULL, NULL, NULL, NULL, NULL);
+	mul_m4_m4m4(tmat, totmat, ob->parentinv);
+	mul_m4_m4m4(obmat, tmat, locmat);
 	
 	if (simul) {
 
@@ -2290,7 +2327,7 @@ BoundBox *BKE_object_boundbox_get(Object *ob)
 		bb = BKE_mesh_boundbox_get(ob);
 	}
 	else if (ELEM3(ob->type, OB_CURVE, OB_SURF, OB_FONT)) {
-		bb = ob->bb ? ob->bb : ((Curve *)ob->data)->bb;
+		bb = BKE_curve_boundbox_get(ob);
 	}
 	else if (ob->type == OB_MBALL) {
 		bb = ob->bb;
@@ -2359,25 +2396,15 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 		case OB_FONT:
 		case OB_SURF:
 		{
-			Curve *cu = ob->data;
-
-			/* Use the object bounding box so that modifier output
-			 * gets taken into account */
-			if (ob->bb)
-				bb = *(ob->bb);
-			else {
-				if (cu->bb == NULL)
-					BKE_curve_texspace_calc(cu);
-				bb = *(cu->bb);
-			}
+			bb = *BKE_curve_boundbox_get(ob);
 
 			for (a = 0; a < 8; a++) {
 				mul_m4_v3(ob->obmat, bb.vec[a]);
 				minmax_v3v3_v3(min_r, max_r, bb.vec[a]);
 			}
 			change = TRUE;
+			break;
 		}
-		break;
 		case OB_LATTICE:
 		{
 			Lattice *lt = ob->data;
@@ -2393,9 +2420,10 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 				}
 			}
 			change = TRUE;
+			break;
 		}
-		break;
 		case OB_ARMATURE:
+		{
 			if (ob->pose) {
 				bArmature *arm = ob->data;
 				bPoseChannel *pchan;
@@ -2414,6 +2442,7 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 				}
 			}
 			break;
+		}
 		case OB_MESH:
 		{
 			Mesh *me = BKE_mesh_from_object(ob);
@@ -2427,8 +2456,8 @@ void BKE_object_minmax(Object *ob, float min_r[3], float max_r[3], const bool us
 				}
 				change = TRUE;
 			}
+			break;
 		}
-		break;
 		case OB_MBALL:
 		{
 			float ob_min[3], ob_max[3];
@@ -2515,10 +2544,10 @@ void BKE_object_foreach_display_point(
 			func_cb(co, user_data);
 		}
 	}
-	else if (ob->disp.first) {
+	else if (ob->curve_cache && ob->curve_cache->disp.first) {
 		DispList *dl;
 
-		for (dl = ob->disp.first; dl; dl = dl->next) {
+		for (dl = ob->curve_cache->disp.first; dl; dl = dl->next) {
 			float *v3 = dl->verts;
 			int totvert = dl->nr;
 			int i;
@@ -2539,7 +2568,7 @@ void BKE_scene_foreach_display_point(
 	Object *ob;
 
 	for (base = FIRSTBASE; base; base = base->next) {
-		if (BASE_VISIBLE(v3d, base) && (base->flag & flag) == flag) {
+		if (BASE_VISIBLE_BGMODE(v3d, scene, base) && (base->flag & flag) == flag) {
 			ob = base->object;
 
 			if ((ob->transflag & OB_DUPLI) == 0) {
@@ -2727,10 +2756,8 @@ void BKE_object_handle_update_ex(Scene *scene, Object *ob,
 						makeDerivedMesh(scene, ob, NULL, data_mask, 0);
 					}
 #endif
-
+					break;
 				}
-				break;
-
 				case OB_ARMATURE:
 					if (ob->id.lib && ob->proxy_from) {
 						if (BKE_pose_copy_result(ob->pose, ob->proxy_from->pose) == false) {
@@ -3156,8 +3183,9 @@ int BKE_object_is_modified(Scene *scene, Object *ob)
 	}
 	else {
 		ModifierData *md;
+		VirtualModifierData virtualModifierData;
 		/* cloth */
-		for (md = modifiers_getVirtualModifierList(ob);
+		for (md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
 		     md && (flag != (eModifierMode_Render | eModifierMode_Realtime));
 		     md = md->next)
 		{
@@ -3178,10 +3206,11 @@ int BKE_object_is_modified(Scene *scene, Object *ob)
 int BKE_object_is_deform_modified(Scene *scene, Object *ob)
 {
 	ModifierData *md;
+	VirtualModifierData virtualModifierData;
 	int flag = 0;
 
 	/* cloth */
-	for (md = modifiers_getVirtualModifierList(ob);
+	for (md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
 	     md && (flag != (eModifierMode_Render | eModifierMode_Realtime));
 	     md = md->next)
 	{
@@ -3203,8 +3232,9 @@ int BKE_object_is_deform_modified(Scene *scene, Object *ob)
 bool BKE_object_is_animated(Scene *scene, Object *ob)
 {
 	ModifierData *md;
+	VirtualModifierData virtualModifierData;
 
-	for (md = modifiers_getVirtualModifierList(ob); md; md = md->next)
+	for (md = modifiers_getVirtualModifierList(ob, &virtualModifierData); md; md = md->next)
 		if (modifier_dependsOnTime(md) &&
 		    (modifier_isEnabled(scene, md, eModifierMode_Realtime) ||
 		     modifier_isEnabled(scene, md, eModifierMode_Render)))

@@ -1009,8 +1009,6 @@ static void draw_sensor_armature(uiLayout *layout, PointerRNA *ptr)
 	bSensor *sens = (bSensor *)ptr->data;
 	bArmatureSensor *as = (bArmatureSensor *) sens->data;
 	Object *ob = (Object *)ptr->id.data;
-	PointerRNA pose_ptr, pchan_ptr;
-	PropertyRNA *bones_prop= NULL;
 	uiLayout *row;
 
 	if (ob->type != OB_ARMATURE) {
@@ -1019,11 +1017,12 @@ static void draw_sensor_armature(uiLayout *layout, PointerRNA *ptr)
 	}
 
 	if (ob->pose) {
+		PointerRNA pose_ptr, pchan_ptr;
+		PropertyRNA *bones_prop;
+
 		RNA_pointer_create((ID *)ob, &RNA_Pose, ob->pose, &pose_ptr);
 		bones_prop = RNA_struct_find_property(&pose_ptr, "bones");
-	}
 
-	if (&pose_ptr.data) {
 		uiItemPointerR(layout, ptr, "bone", &pose_ptr, "bones", NULL, ICON_BONE_DATA);
 
 		if (RNA_property_collection_lookup_string(&pose_ptr, bones_prop, as->posechannel, &pchan_ptr))
@@ -1466,6 +1465,7 @@ static void draw_actuator_action(uiLayout *layout, PointerRNA *ptr)
 	row = uiLayoutRow(layout, FALSE);
 	uiItemR(row, ptr, "layer", 0, NULL, ICON_NONE);
 	uiItemR(row, ptr, "layer_weight", 0, NULL, ICON_NONE);
+	uiItemR(row, ptr, "blend_mode", 0, "", ICON_NONE);
 
 	uiItemPointerR(layout, ptr, "frame_property", &settings_ptr, "properties", NULL, ICON_NONE);
 

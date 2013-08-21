@@ -187,7 +187,7 @@ static void bm_grid_fill_array(BMesh *bm, BMVert **v_grid, const int xtot, const
 			        (float)y / ((float)ytot - 1));
 #endif
 
-			v = BM_vert_create(bm, co, NULL, 0);
+			v = BM_vert_create(bm, co, NULL, BM_CREATE_NOP);
 			v_grid[(y * xtot) + x] = v;
 
 			/* interpolate only along one axis, this could be changed
@@ -218,7 +218,7 @@ static void bm_grid_fill_array(BMesh *bm, BMVert **v_grid, const int xtot, const
 				        v_grid[XY(x + 1, y + 1)],  /* TR */
 				        v_grid[XY(x + 1, y + 0)],  /* BR */
 				        NULL,
-				        false);
+				        BM_CREATE_NOP);
 			}
 			else {
 				f = BM_face_create_quad_tri(
@@ -228,7 +228,7 @@ static void bm_grid_fill_array(BMesh *bm, BMVert **v_grid, const int xtot, const
 				        v_grid[XY(x,     y + 1)],  /* TL */
 				        v_grid[XY(x,     y + 0)],  /* BL */
 				        NULL,
-				        false);
+				        BM_CREATE_NOP);
 			}
 			BMO_elem_flag_enable(bm, f, FACE_OUT);
 			f->mat_nr = mat_nr;

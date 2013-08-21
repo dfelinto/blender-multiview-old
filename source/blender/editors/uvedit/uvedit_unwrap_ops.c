@@ -44,6 +44,7 @@
 #include "DNA_modifier_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_alloca.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
 #include "BLI_uvproject.h"
@@ -65,7 +66,6 @@
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
 #include "BLI_scanfill.h"
-#include "BLI_array.h"
 #include "BLI_uvproject.h"
 
 #include "PIL_time.h"
@@ -362,7 +362,7 @@ static ParamHandle *construct_param_handle_subsurfed(Scene *scene, Object *ob, B
 	ModifierData *md;
 	SubsurfModifierData *smd_real;
 	/* modifier initialization data, will  control what type of subdivision will happen*/
-	SubsurfModifierData smd = {{0}};
+	SubsurfModifierData smd = {{NULL}};
 	/* Used to hold subsurfed Mesh */
 	DerivedMesh *derivedMesh, *initialDerived;
 	/* holds original indices for subsurfed mesh */

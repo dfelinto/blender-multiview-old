@@ -1094,6 +1094,7 @@ const char *IMB_colormanagement_role_colorspace_name_get(int role)
 		default:
 			printf("Unknown role was passed to %s\n", __func__);
 			BLI_assert(0);
+			break;
 	}
 
 	return NULL;
@@ -2786,9 +2787,9 @@ static void update_glsl_display_processor(const ColorManagedViewSettings *view_s
 	    check_glsl_display_processor_changed(view_settings, display_settings, from_colorspace))
 	{
 		/* Store settings of processor for further comparison. */
-		strcpy(global_glsl_state.view, view_settings->view_transform);
-		strcpy(global_glsl_state.display, display_settings->display_device);
-		strcpy(global_glsl_state.input, from_colorspace);
+		BLI_strncpy(global_glsl_state.view, view_settings->view_transform, MAX_COLORSPACE_NAME);
+		BLI_strncpy(global_glsl_state.display, display_settings->display_device, MAX_COLORSPACE_NAME);
+		BLI_strncpy(global_glsl_state.input, from_colorspace, MAX_COLORSPACE_NAME);
 		global_glsl_state.exposure = view_settings->exposure;
 		global_glsl_state.gamma = view_settings->gamma;
 

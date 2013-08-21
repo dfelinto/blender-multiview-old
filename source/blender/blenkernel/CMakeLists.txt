@@ -45,6 +45,7 @@ set(INC
 	../../../intern/raskter
 	../../../intern/smoke/extern
 	../../../extern/libmv
+	../../../intern/atomic
 
 	# XXX - BAD LEVEL CALL WM_api.h
 	../windowmanager
@@ -165,7 +166,6 @@ set(SRC
 	BKE_armature.h
 	BKE_autoexec.h
 	BKE_blender.h
-	BKE_bmesh.h
 	BKE_bmfont.h
 	BKE_bmfont_types.h
 	BKE_boids.h

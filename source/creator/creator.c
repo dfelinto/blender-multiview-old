@@ -92,6 +92,7 @@
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_material.h"
+#include "BKE_modifier.h"
 #include "BKE_packedFile.h"
 #include "BKE_scene.h"
 #include "BKE_node.h"
@@ -499,7 +500,7 @@ static void blender_crash_handler_backtrace(FILE *fp)
 #undef SIZE
 }
 
-#elif defined(_MSV_VER)
+#elif defined(_MSC_VER)
 
 static void blender_crash_handler_backtrace(FILE *fp)
 {
@@ -1517,6 +1518,7 @@ int main(int argc, const char **argv)
 
 	IMB_init();
 	BKE_images_init();
+	BKE_modifier_init();
 
 	BKE_brush_system_init();
 
