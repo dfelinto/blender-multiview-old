@@ -350,6 +350,7 @@ typedef struct TransInfo {
 	struct ToolSettings *settings;
 	struct wmTimer *animtimer;
 	struct wmKeyMap *keymap;  /* so we can do lookups for header text */
+	struct ReportList *reports;  /* assign from the operator, or can be NULL */
 	int         mval[2];        /* current mouse position               */
 	float       zfac;           /* use for 3d view */
 	struct Object *obedit;
@@ -455,7 +456,7 @@ typedef struct TransInfo {
 #define	TD_USEQUAT			(1 << 3)
 #define TD_NOTCONNECTED		(1 << 4)
 #define TD_SINGLESIZE		(1 << 5)	/* used for scaling of MetaElem->rad */
-/*#define TD_TIMEONLY			(1 << 8) */ /*UNUSED*/
+#define TD_INDIVIDUAL_SCALE	(1 << 8) /* Scale relative to individual element center */
 #define TD_NOCENTER			(1 << 9)
 #define TD_NO_EXT			(1 << 10)	/* ext abused for particle key timing */
 #define TD_SKIP				(1 << 11)	/* don't transform this data */
@@ -725,7 +726,7 @@ void initTransformOrientation(struct bContext *C, TransInfo *t);
 
 /* Those two fill in mat and return non-zero on success */
 bool createSpaceNormal(float mat[3][3], const float normal[3]);
-bool createSpaceNormalTangent(float mat[3][3], float normal[3], float tangent[3]);
+bool createSpaceNormalTangent(float mat[3][3], const float normal[3], const float tangent[3]);
 
 struct TransformOrientation *addMatrixSpace(struct bContext *C, float mat[3][3], char name[], int overwrite);
 void applyTransformOrientation(const struct bContext *C, float mat[3][3], char *name);

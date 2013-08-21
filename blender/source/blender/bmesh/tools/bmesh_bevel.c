@@ -34,6 +34,7 @@
 #include "DNA_meshdata_types.h"
 
 #include "BLI_array.h"
+#include "BLI_alloca.h"
 #include "BLI_math.h"
 #include "BLI_memarena.h"
 
@@ -176,7 +177,7 @@ static NewVert *mesh_vert(VMesh *vm, int i, int j, int k)
 static void create_mesh_bmvert(BMesh *bm, VMesh *vm, int i, int j, int k, BMVert *eg)
 {
 	NewVert *nv = mesh_vert(vm, i, j, k);
-	nv->v = BM_vert_create(bm, nv->co, eg, 0);
+	nv->v = BM_vert_create(bm, nv->co, eg, BM_CREATE_NOP);
 	BM_elem_flag_disable(nv->v, BM_ELEM_TAG);
 }
 
@@ -254,20 +255,8 @@ static BMFace *bev_create_ngon(BMesh *bm, BMVert **vert_arr, const int totv,
 	BMFace *f, *interp_f;
 	int i;
 
-	if (totv == 3) {
-		f = BM_face_create_quad_tri_v(bm, vert_arr, 3, facerep, FALSE);
-	}
-	else if (totv == 4) {
-		f = BM_face_create_quad_tri_v(bm, vert_arr, 4, facerep, FALSE);
-	}
-	else {
-		BMEdge **ee = BLI_array_alloca(ee, totv);
+	f = BM_face_create_verts(bm, vert_arr, totv, facerep, BM_CREATE_NOP, true);
 
-		for (i = 0; i < totv; i++) {
-			ee[i] = BM_edge_create(bm, vert_arr[i], vert_arr[(i + 1) % totv], NULL, BM_CREATE_NO_DOUBLE);
-		}
-		f = BM_face_create(bm, vert_arr, ee, totv, 0);
-	}
 	if ((facerep || (face_arr && face_arr[0])) && f) {
 		BM_elem_attrs_copy(bm, bm, facerep ? facerep : face_arr[0], f);
 		if (do_interp) {
@@ -427,14 +416,14 @@ static void bev_merge_uvs(BMesh *bm, BMVert *v)
 
 	n = 0;
 	zero_v2(uv);
-	BM_ITER_ELEM(l, &iter, v, BM_LOOPS_OF_VERT) {
+	BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
 		luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
 		add_v2_v2(uv, luv->uv);
 		n++;
 	}
 	if (n > 1) {
 		mul_v2_fl(uv, 1.0f / (float)n);
-		BM_ITER_ELEM(l, &iter, v, BM_LOOPS_OF_VERT) {
+		BM_ITER_ELEM (l, &iter, v, BM_LOOPS_OF_VERT) {
 			luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
 			copy_v2_v2(luv->uv, uv);
 		}
@@ -1142,7 +1131,7 @@ static void bevel_build_rings(BMesh *bm, BevVert *bv)
 		mul_v3_fl(midco, 1.0f / nn);
 		if (epipe)
 			snap_to_edge_profile(epipe, va_pipe, vb_pipe, midco);
-		bmv = BM_vert_create(bm, midco, NULL, 0);
+		bmv = BM_vert_create(bm, midco, NULL, BM_CREATE_NOP);
 		v = vm->boundstart;
 		do {
 			i = v->index;
@@ -2332,14 +2321,14 @@ static float bevel_limit_offset(BMesh *bm, BevelParams *bp)
 	bool vbeveled;
 
 	limited_offset = bp->offset;
-	BM_ITER_MESH(v, &v_iter, bm, BM_VERTS_OF_MESH) {
+	BM_ITER_MESH (v, &v_iter, bm, BM_VERTS_OF_MESH) {
 		if (BM_elem_flag_test(v, BM_ELEM_TAG)) {
 			if (bp->vertex_only) {
 				vbeveled = true;
 			}
 			else {
 				vbeveled = false;
-				BM_ITER_ELEM(e, &e_iter, v, BM_EDGES_OF_VERT) {
+				BM_ITER_ELEM (e, &e_iter, v, BM_EDGES_OF_VERT) {
 					if (BM_elem_flag_test(BM_edge_other_vert(e, v), BM_ELEM_TAG)) {
 						vbeveled = true;
 						break;
@@ -2347,7 +2336,7 @@ static float bevel_limit_offset(BMesh *bm, BevelParams *bp)
 				}
 			}
 			if (vbeveled) {
-				BM_ITER_ELEM(e, &e_iter, v, BM_EDGES_OF_VERT) {
+				BM_ITER_ELEM (e, &e_iter, v, BM_EDGES_OF_VERT) {
 					half_elen = 0.5f * BM_edge_calc_length(e);
 					if (half_elen < limited_offset)
 						limited_offset = half_elen;

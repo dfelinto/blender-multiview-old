@@ -108,6 +108,7 @@
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
 #include "BLI_threads.h"
+#include "BLI_mempool.h"
 
 #include "BLF_translation.h"
 
@@ -327,7 +328,7 @@ void blo_do_versions_oldnewmap_insert(OldNewMap *onm, void *oldaddr, void *newad
 	oldnewmap_insert(onm, oldaddr, newaddr, nr);
 }
 
-static void *oldnewmap_lookup_and_inc(OldNewMap *onm, void *addr) 
+static void *oldnewmap_lookup_and_inc(OldNewMap *onm, void *addr, bool increase_users) 
 {
 	int i;
 	
@@ -337,7 +338,8 @@ static void *oldnewmap_lookup_and_inc(OldNewMap *onm, void *addr)
 		OldNew *entry = &onm->entries[++onm->lasthit];
 		
 		if (entry->old == addr) {
-			entry->nr++;
+			if (increase_users)
+				entry->nr++;
 			return entry->newp;
 		}
 	}
@@ -348,7 +350,8 @@ static void *oldnewmap_lookup_and_inc(OldNewMap *onm, void *addr)
 		if (entry->old == addr) {
 			onm->lasthit = i;
 			
-			entry->nr++;
+			if (increase_users)
+				entry->nr++;
 			return entry->newp;
 		}
 	}
@@ -1200,34 +1203,39 @@ int BLO_is_a_library(const char *path, char *dir, char *group)
 
 static void *newdataadr(FileData *fd, void *adr)		/* only direct databocks */
 {
-	return oldnewmap_lookup_and_inc(fd->datamap, adr);
+	return oldnewmap_lookup_and_inc(fd->datamap, adr, true);
+}
+
+static void *newdataadr_no_us(FileData *fd, void *adr)		/* only direct databocks */
+{
+	return oldnewmap_lookup_and_inc(fd->datamap, adr, false);
 }
 
 static void *newglobadr(FileData *fd, void *adr)	    /* direct datablocks with global linking */
 {
-	return oldnewmap_lookup_and_inc(fd->globmap, adr);
+	return oldnewmap_lookup_and_inc(fd->globmap, adr, true);
 }
 
 static void *newimaadr(FileData *fd, void *adr)		    /* used to restore image data after undo */
 {
 	if (fd->imamap && adr)
-		return oldnewmap_lookup_and_inc(fd->imamap, adr);
+		return oldnewmap_lookup_and_inc(fd->imamap, adr, true);
 	return NULL;
 }
 
 static void *newmclipadr(FileData *fd, void *adr)      /* used to restore movie clip data after undo */
 {
 	if (fd->movieclipmap && adr)
-		return oldnewmap_lookup_and_inc(fd->movieclipmap, adr);
+		return oldnewmap_lookup_and_inc(fd->movieclipmap, adr, true);
 	return NULL;
 }
 
 static void *newpackedadr(FileData *fd, void *adr)      /* used to restore packed data after undo */
 {
 	if (fd->packedmap && adr)
-		return oldnewmap_lookup_and_inc(fd->packedmap, adr);
+		return oldnewmap_lookup_and_inc(fd->packedmap, adr, true);
 	
-	return oldnewmap_lookup_and_inc(fd->datamap, adr);
+	return oldnewmap_lookup_and_inc(fd->datamap, adr, true);
 }
 
 
@@ -3115,7 +3123,6 @@ static void direct_link_mball(FileData *fd, MetaBall *mb)
 	
 	mb->disp.first = mb->disp.last = NULL;
 	mb->editelems = NULL;
-	mb->bb = NULL;
 /*	mb->edit_elems.first= mb->edit_elems.last= NULL;*/
 	mb->lastelem = NULL;
 }
@@ -3391,11 +3398,9 @@ static void direct_link_curve(FileData *fd, Curve *cu)
 		if (cu->wordspace == 0.0f) cu->wordspace = 1.0f;
 	}
 
-	cu->bev.first = cu->bev.last = NULL;
 	cu->disp.first = cu->disp.last = NULL;
 	cu->editnurb = NULL;
 	cu->lastsel = NULL;
-	cu->path = NULL;
 	cu->editfont = NULL;
 	
 	for (nu = cu->nurb.first; nu; nu = nu->next) {
@@ -4337,7 +4342,7 @@ static void lib_link_object(FileData *fd, Main *main)
 				/* Only expand so as not to loose any object materials that might be set. */
 				if (totcol_data && (*totcol_data > ob->totcol)) {
 					/* printf("'%s' %d -> %d\n", ob->id.name, ob->totcol, *totcol_data); */
-					resize_object_material(ob, *totcol_data);
+					BKE_material_resize_object(ob, *totcol_data, false);
 				}
 			}
 			
@@ -4821,8 +4826,6 @@ static void direct_link_object(FileData *fd, Object *ob)
 		ob->mode &= ~(OB_MODE_EDIT | OB_MODE_PARTICLE_EDIT);
 	}
 	
-	ob->disp.first = ob->disp.last = NULL;
-	
 	ob->adt = newdataadr(fd, ob->adt);
 	direct_link_animdata(fd, ob->adt);
 	
@@ -5016,6 +5019,9 @@ static void direct_link_object(FileData *fd, Object *ob)
 	ob->derivedFinal = NULL;
 	ob->gpulamp.first= ob->gpulamp.last = NULL;
 	link_list(fd, &ob->pc_ids);
+
+	/* Runtime curve data  */
+	ob->curve_cache = NULL;
 
 	/* in case this value changes in future, clamp else we get undefined behavior */
 	CLAMP(ob->rotmode, ROT_MODE_MIN, ROT_MODE_MAX);
@@ -5435,10 +5441,10 @@ static void direct_link_scene(FileData *fd, Scene *sce)
 	link_list(fd, &(sce->transform_spaces));
 	link_list(fd, &(sce->r.layers));
 
-	for(srl = sce->r.layers.first; srl; srl = srl->next) {
+	for (srl = sce->r.layers.first; srl; srl = srl->next) {
 		link_list(fd, &(srl->freestyleConfig.modules));
 	}
-	for(srl = sce->r.layers.first; srl; srl = srl->next) {
+	for (srl = sce->r.layers.first; srl; srl = srl->next) {
 		link_list(fd, &(srl->freestyleConfig.linesets));
 	}
 	
@@ -5684,15 +5690,23 @@ static void lib_link_screen(FileData *fd, Main *main)
 					}
 					else if (sl->spacetype == SPACE_OUTLINER) {
 						SpaceOops *so= (SpaceOops *)sl;
-						TreeStoreElem *tselem;
-						int a;
-						
 						so->search_tse.id = newlibadr(fd, NULL, so->search_tse.id);
 						
 						if (so->treestore) {
-							tselem = so->treestore->data;
-							for (a=0; a < so->treestore->usedelem; a++, tselem++) {
+							TreeStoreElem *tselem;
+							BLI_mempool_iter iter;
+
+							BLI_mempool_iternew(so->treestore, &iter);
+							while ((tselem = BLI_mempool_iterstep(&iter))) {
 								tselem->id = newlibadr(fd, NULL, tselem->id);
+							}
+							if (so->treehash) {
+								/* update hash table, because it depends on ids too */
+								BLI_ghash_clear(so->treehash, NULL, NULL);
+								BLI_mempool_iternew(so->treestore, &iter);
+								while ((tselem = BLI_mempool_iterstep(&iter))) {
+									BLI_ghash_insert(so->treehash, tselem, tselem);
+								}
 							}
 						}
 					}
@@ -5803,21 +5817,23 @@ static void *restore_pointer_by_name(Main *mainp, ID *id, int user)
 	return NULL;
 }
 
+static void lib_link_seq_clipboard_pt_restore(ID *id, Main *newmain)
+{
+	if (id) {
+		/* clipboard must ensure this */
+		BLI_assert(id->newid != NULL);
+		id->newid = restore_pointer_by_name(newmain, (ID *)id->newid, 1);
+	}
+}
 static int lib_link_seq_clipboard_cb(Sequence *seq, void *arg_pt)
 {
 	Main *newmain = (Main *)arg_pt;
-	
-	if (seq->sound) {
-		seq->sound = restore_pointer_by_name(newmain, (ID *)seq->sound, 0);
-		seq->sound->id.us++;
-	}
-	
-	if (seq->scene)
-		seq->scene = restore_pointer_by_name(newmain, (ID *)seq->scene, 1);
-	
-	if (seq->scene_camera)
-		seq->scene_camera = restore_pointer_by_name(newmain, (ID *)seq->scene_camera, 1);
-	
+
+	lib_link_seq_clipboard_pt_restore((ID *)seq->scene, newmain);
+	lib_link_seq_clipboard_pt_restore((ID *)seq->scene_camera, newmain);
+	lib_link_seq_clipboard_pt_restore((ID *)seq->clip, newmain);
+	lib_link_seq_clipboard_pt_restore((ID *)seq->mask, newmain);
+	lib_link_seq_clipboard_pt_restore((ID *)seq->sound, newmain);
 	return 1;
 }
 
@@ -6014,15 +6030,24 @@ void blo_lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *cursc
 				}
 				else if (sl->spacetype == SPACE_OUTLINER) {
 					SpaceOops *so= (SpaceOops *)sl;
-					int a;
 					
 					so->search_tse.id = restore_pointer_by_name(newmain, so->search_tse.id, 0);
 					
 					if (so->treestore) {
-						TreeStore *ts = so->treestore;
-						TreeStoreElem *tselem = ts->data;
-						for (a = 0; a < ts->usedelem; a++, tselem++) {
+						TreeStoreElem *tselem;
+						BLI_mempool_iter iter;
+
+						BLI_mempool_iternew(so->treestore, &iter);
+						while ((tselem = BLI_mempool_iterstep(&iter))) {
 							tselem->id = restore_pointer_by_name(newmain, tselem->id, 0);
+						}
+						if (so->treehash) {
+							/* update hash table, because it depends on ids too */
+							BLI_ghash_clear(so->treehash, NULL, NULL);
+							BLI_mempool_iternew(so->treestore, &iter);
+							while ((tselem = BLI_mempool_iterstep(&iter))) {
+								BLI_ghash_insert(so->treehash, tselem, tselem);
+							}
 						}
 					}
 				}
@@ -6111,20 +6136,26 @@ static void direct_link_region(FileData *fd, ARegion *ar, int spacetype)
 		ui_list->type = NULL;
 	}
 
-	ar->regiondata = newdataadr(fd, ar->regiondata);
-	if (ar->regiondata) {
-		if (spacetype == SPACE_VIEW3D) {
-			RegionView3D *rv3d = ar->regiondata;
-			
-			rv3d->localvd = newdataadr(fd, rv3d->localvd);
-			rv3d->clipbb = newdataadr(fd, rv3d->clipbb);
-			
-			rv3d->depths = NULL;
-			rv3d->gpuoffscreen = NULL;
-			rv3d->ri = NULL;
-			rv3d->render_engine = NULL;
-			rv3d->sms = NULL;
-			rv3d->smooth_timer = NULL;
+	if (spacetype == SPACE_EMPTY) {
+		/* unkown space type, don't leak regiondata */
+		ar->regiondata = NULL;
+	}
+	else {
+		ar->regiondata = newdataadr(fd, ar->regiondata);
+		if (ar->regiondata) {
+			if (spacetype == SPACE_VIEW3D) {
+				RegionView3D *rv3d = ar->regiondata;
+
+				rv3d->localvd = newdataadr(fd, rv3d->localvd);
+				rv3d->clipbb = newdataadr(fd, rv3d->clipbb);
+
+				rv3d->depths = NULL;
+				rv3d->gpuoffscreen = NULL;
+				rv3d->ri = NULL;
+				rv3d->render_engine = NULL;
+				rv3d->sms = NULL;
+				rv3d->smooth_timer = NULL;
+			}
 		}
 	}
 	
@@ -6211,6 +6242,11 @@ static bool direct_link_screen(FileData *fd, bScreen *sc)
 		sa->handlers.first = sa->handlers.last = NULL;
 		sa->type = NULL;	/* spacetype callbacks */
 		sa->region_active_win = -1;
+
+		/* if we do not have the spacetype registered (game player), we cannot
+		 * free it, so don't allocate any new memory for such spacetypes. */
+		if (!BKE_spacetype_exists(sa->spacetype))
+			sa->spacetype = SPACE_EMPTY;
 		
 		for (ar = sa->regionbase.first; ar; ar = ar->next)
 			direct_link_region(fd, ar, sa->spacetype);
@@ -6228,7 +6264,12 @@ static bool direct_link_screen(FileData *fd, bScreen *sc)
 		
 		for (sl = sa->spacedata.first; sl; sl = sl->next) {
 			link_list(fd, &(sl->regionbase));
-			
+
+			/* if we do not have the spacetype registered (game player), we cannot
+			 * free it, so don't allocate any new memory for such spacetypes. */
+			if (!BKE_spacetype_exists(sl->spacetype))
+				sl->spacetype = SPACE_EMPTY;
+
 			for (ar = sl->regionbase.first; ar; ar = ar->next)
 				direct_link_region(fd, ar, sl->spacetype);
 			
@@ -6281,13 +6322,28 @@ static bool direct_link_screen(FileData *fd, bScreen *sc)
 			else if (sl->spacetype == SPACE_OUTLINER) {
 				SpaceOops *soops = (SpaceOops *) sl;
 				
-				soops->treestore = newdataadr(fd, soops->treestore);
-				if (soops->treestore) {
-					soops->treestore->data = newdataadr(fd, soops->treestore->data);
+				/* use newdataadr_no_us and do not free old memory avoidign double
+				 * frees and use of freed memory. this could happen because of a
+				 * bug fixed in revision 58959 where the treestore memory address
+				 * was not unique */
+				TreeStore *ts = newdataadr_no_us(fd, soops->treestore);
+				soops->treestore = NULL;
+				if (ts) {
+					TreeStoreElem *elems = newdataadr_no_us(fd, ts->data);
+					
+					soops->treestore = BLI_mempool_create(sizeof(TreeStoreElem), ts->usedelem,
+					                                      512, BLI_MEMPOOL_ALLOW_ITER);
+					if (ts->usedelem && elems) {
+						int i;
+						for (i = 0; i < ts->usedelem; i++) {
+							TreeStoreElem *new_elem = BLI_mempool_alloc(soops->treestore);
+							*new_elem = elems[i];
+						}
+					}
 					/* we only saved what was used */
-					soops->treestore->totelem = soops->treestore->usedelem;
 					soops->storeflag |= SO_TREESTORE_CLEANUP;	// at first draw
 				}
+				soops->treehash = NULL;
 				soops->tree.first = soops->tree.last= NULL;
 			}
 			else if (sl->spacetype == SPACE_IMAGE) {
@@ -6629,6 +6685,28 @@ static void direct_link_movieTracks(FileData *fd, ListBase *tracksbase)
 	}
 }
 
+static void direct_link_moviePlaneTracks(FileData *fd, ListBase *plane_tracks_base)
+{
+	MovieTrackingPlaneTrack *plane_track;
+
+	link_list(fd, plane_tracks_base);
+
+	for (plane_track = plane_tracks_base->first;
+	     plane_track;
+	     plane_track = plane_track->next)
+	{
+		int i;
+
+		plane_track->point_tracks = newdataadr(fd, plane_track->point_tracks);
+
+		for (i = 0; i < plane_track->point_tracksnr; i++) {
+			plane_track->point_tracks[i] = newdataadr(fd, plane_track->point_tracks[i]);
+		}
+
+		plane_track->markers = newdataadr(fd, plane_track->markers);
+	}
+}
+
 static void direct_link_movieclip(FileData *fd, MovieClip *clip)
 {
 	MovieTracking *tracking = &clip->tracking;
@@ -6643,9 +6721,11 @@ static void direct_link_movieclip(FileData *fd, MovieClip *clip)
 	else clip->tracking.camera.intrinsics = NULL;
 
 	direct_link_movieTracks(fd, &tracking->tracks);
+	direct_link_moviePlaneTracks(fd, &tracking->plane_tracks);
 	direct_link_movieReconstruction(fd, &tracking->reconstruction);
 
 	clip->tracking.act_track = newdataadr(fd, clip->tracking.act_track);
+	clip->tracking.act_plane_track = newdataadr(fd, clip->tracking.act_plane_track);
 
 	clip->anim = NULL;
 	clip->tracking_context = NULL;
@@ -6662,6 +6742,7 @@ static void direct_link_movieclip(FileData *fd, MovieClip *clip)
 	
 	for (object = tracking->objects.first; object; object = object->next) {
 		direct_link_movieTracks(fd, &object->tracks);
+		direct_link_moviePlaneTracks(fd, &object->plane_tracks);
 		direct_link_movieReconstruction(fd, &object->reconstruction);
 	}
 }
@@ -6950,16 +7031,16 @@ static void direct_link_linestyle(FileData *fd, FreestyleLineStyle *linestyle)
 	linestyle->adt= newdataadr(fd, linestyle->adt);
 	direct_link_animdata(fd, linestyle->adt);
 	link_list(fd, &linestyle->color_modifiers);
-	for(modifier = linestyle->color_modifiers.first; modifier; modifier = modifier->next)
+	for (modifier = linestyle->color_modifiers.first; modifier; modifier = modifier->next)
 		direct_link_linestyle_color_modifier(fd, modifier);
 	link_list(fd, &linestyle->alpha_modifiers);
-	for(modifier = linestyle->alpha_modifiers.first; modifier; modifier = modifier->next)
+	for (modifier = linestyle->alpha_modifiers.first; modifier; modifier = modifier->next)
 		direct_link_linestyle_alpha_modifier(fd, modifier);
 	link_list(fd, &linestyle->thickness_modifiers);
-	for(modifier = linestyle->thickness_modifiers.first; modifier; modifier = modifier->next)
+	for (modifier = linestyle->thickness_modifiers.first; modifier; modifier = modifier->next)
 		direct_link_linestyle_thickness_modifier(fd, modifier);
 	link_list(fd, &linestyle->geometry_modifiers);
-	for(modifier = linestyle->geometry_modifiers.first; modifier; modifier = modifier->next)
+	for (modifier = linestyle->geometry_modifiers.first; modifier; modifier = modifier->next)
 		direct_link_linestyle_geometry_modifier(fd, modifier);
 }
 
@@ -7244,7 +7325,7 @@ static void link_global(FileData *fd, BlendFileData *bfd)
 	}
 }
 
-void convert_tface_mt(FileData *fd, Main *main)
+static void convert_tface_mt(FileData *fd, Main *main)
 {
 	Main *gmain;
 	
@@ -7689,31 +7770,38 @@ static const char *node_get_static_idname(int type, int treetype)
 static const char *node_socket_get_static_idname(bNodeSocket *sock)
 {
 	switch (sock->type) {
-	case SOCK_FLOAT: {
-		bNodeSocketValueFloat *dval = sock->default_value;
-		return nodeStaticSocketType(SOCK_FLOAT, dval->subtype);
-	}
-	case SOCK_INT: {
-		bNodeSocketValueInt *dval = sock->default_value;
-		return nodeStaticSocketType(SOCK_INT, dval->subtype);
-	}
-	case SOCK_BOOLEAN: {
-		return nodeStaticSocketType(SOCK_BOOLEAN, PROP_NONE);
-	}
-	case SOCK_VECTOR: {
-		bNodeSocketValueVector *dval = sock->default_value;
-		return nodeStaticSocketType(SOCK_VECTOR, dval->subtype);
-	}
-	case SOCK_RGBA: {
-		return nodeStaticSocketType(SOCK_RGBA, PROP_NONE);
-	}
-	case SOCK_STRING: {
-		bNodeSocketValueString *dval = sock->default_value;
-		return nodeStaticSocketType(SOCK_STRING, dval->subtype);
-	}
-	case SOCK_SHADER: {
-		return nodeStaticSocketType(SOCK_SHADER, PROP_NONE);
-	}
+		case SOCK_FLOAT:
+		{
+			bNodeSocketValueFloat *dval = sock->default_value;
+			return nodeStaticSocketType(SOCK_FLOAT, dval->subtype);
+		}
+		case SOCK_INT:
+		{
+			bNodeSocketValueInt *dval = sock->default_value;
+			return nodeStaticSocketType(SOCK_INT, dval->subtype);
+		}
+		case SOCK_BOOLEAN:
+		{
+			return nodeStaticSocketType(SOCK_BOOLEAN, PROP_NONE);
+		}
+		case SOCK_VECTOR:
+		{
+			bNodeSocketValueVector *dval = sock->default_value;
+			return nodeStaticSocketType(SOCK_VECTOR, dval->subtype);
+		}
+		case SOCK_RGBA:
+		{
+			return nodeStaticSocketType(SOCK_RGBA, PROP_NONE);
+		}
+		case SOCK_STRING:
+		{
+			bNodeSocketValueString *dval = sock->default_value;
+			return nodeStaticSocketType(SOCK_STRING, dval->subtype);
+		}
+		case SOCK_SHADER:
+		{
+			return nodeStaticSocketType(SOCK_SHADER, PROP_NONE);
+		}
 	}
 	return "";
 }
@@ -8133,12 +8221,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			for (ob = main->object.first; ob; ob = ob->id.next) {
 				bConstraint *con;
 				for (con = ob->constraints.first; con; con = con->next) {
-					bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
-					
-					if (!cti)
-						continue;
-					
-					if (cti->type == CONSTRAINT_TYPE_OBJECTSOLVER) {
+					if (con->type == CONSTRAINT_TYPE_OBJECTSOLVER) {
 						bObjectSolverConstraint *data = (bObjectSolverConstraint *)con->data;
 						
 						if (data->invmat[3][3] == 0.0f)
@@ -9370,12 +9453,12 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		SceneRenderLayer *srl;
 		FreestyleLineStyle *linestyle;
 
-		for(sce = main->scene.first; sce; sce = sce->id.next) {
+		for (sce = main->scene.first; sce; sce = sce->id.next) {
 			if (sce->r.line_thickness_mode == 0) {
 				sce->r.line_thickness_mode = R_LINE_THICKNESS_ABSOLUTE;
 				sce->r.unit_line_thickness = 1.0f;
 			}
-			for(srl = sce->r.layers.first; srl; srl = srl->next) {
+			for (srl = sce->r.layers.first; srl; srl = srl->next) {
 				if (srl->freestyleConfig.mode == 0)
 					srl->freestyleConfig.mode = FREESTYLE_CONTROL_EDITOR_MODE;
 				if (srl->freestyleConfig.raycasting_algorithm == FREESTYLE_ALGO_CULLED_ADAPTIVE_CUMULATIVE ||
@@ -9405,7 +9488,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			}
 
 		}
-		for(linestyle = main->linestyle.first; linestyle; linestyle = linestyle->id.next) {
+		for (linestyle = main->linestyle.first; linestyle; linestyle = linestyle->id.next) {
 #if 1
 			/* disable the Misc panel for now */
 			if (linestyle->panel == LS_PANEL_MISC) {
@@ -9480,7 +9563,29 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 	}
 
+	if (!MAIN_VERSION_ATLEAST(main, 268, 1)) {
+		Brush *brush;
+		for (brush = main->brush.first; brush; brush = brush->id.next) {
+			brush->spacing = MAX2(1, brush->spacing);
+		}
+	}
 
+	if (!MAIN_VERSION_ATLEAST(main, 268, 2)) {
+		Brush *brush;
+		#define BRUSH_FIXED (1 << 6)
+		for (brush = main->brush.first; brush; brush = brush->id.next) {
+			brush->flag &= ~BRUSH_FIXED;
+
+			if (brush->cursor_overlay_alpha < 2)
+				brush->cursor_overlay_alpha = 33;
+			if (brush->texture_overlay_alpha < 2)
+				brush->texture_overlay_alpha = 33;
+			if (brush->mask_overlay_alpha <2)
+				brush->mask_overlay_alpha = 33;
+		}
+		#undef BRUSH_FIXED
+	}
+	
 	{
 		bScreen *sc;
 		Object *ob;
@@ -10106,6 +10211,7 @@ static void expand_texture(FileData *fd, Main *mainvar, Tex *tex)
 static void expand_brush(FileData *fd, Main *mainvar, Brush *brush)
 {
 	expand_doit(fd, mainvar, brush->mtex.tex);
+	expand_doit(fd, mainvar, brush->mask_mtex.tex);
 	expand_doit(fd, mainvar, brush->clone.image);
 }
 

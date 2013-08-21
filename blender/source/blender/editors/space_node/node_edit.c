@@ -510,13 +510,9 @@ void ED_node_composit_default(const bContext *C, struct Scene *sce)
 	
 	out = nodeAddStaticNode(C, sce->nodetree, CMP_NODE_COMPOSITE);
 	out->locx = 300.0f; out->locy = 400.0f;
-	out->id = &sce->id;
-	id_us_plus(out->id);
 	
 	in = nodeAddStaticNode(C, sce->nodetree, CMP_NODE_R_LAYERS);
 	in->locx = 10.0f; in->locy = 400.0f;
-	in->id = &sce->id;
-	id_us_plus(in->id);
 	nodeSetActive(sce->nodetree, in);
 	
 	/* links from color to color */
@@ -2262,24 +2258,26 @@ static int ntree_socket_move_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	
 	switch (direction) {
-	case 1: {	/* up */
-		bNodeSocket *before = iosock->prev;
-		BLI_remlink(lb, iosock);
-		if (before)
-			BLI_insertlinkbefore(lb, before, iosock);
-		else
-			BLI_addhead(lb, iosock);
-		break;
-	}
-	case 2: {	/* down */
-		bNodeSocket *after = iosock->next;
-		BLI_remlink(lb, iosock);
-		if (after)
-			BLI_insertlinkafter(lb, after, iosock);
-		else
-			BLI_addtail(lb, iosock);
-		break;
-	}
+		case 1:
+		{	/* up */
+			bNodeSocket *before = iosock->prev;
+			BLI_remlink(lb, iosock);
+			if (before)
+				BLI_insertlinkbefore(lb, before, iosock);
+			else
+				BLI_addhead(lb, iosock);
+			break;
+		}
+		case 2:
+		{	/* down */
+			bNodeSocket *after = iosock->next;
+			BLI_remlink(lb, iosock);
+			if (after)
+				BLI_insertlinkafter(lb, after, iosock);
+			else
+				BLI_addtail(lb, iosock);
+			break;
+		}
 	}
 	
 	ntreeUpdateTree(CTX_data_main(C), ntree);

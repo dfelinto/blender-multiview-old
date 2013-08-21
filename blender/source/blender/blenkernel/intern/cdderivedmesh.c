@@ -40,7 +40,6 @@
 #include "BLI_blenlib.h"
 #include "BLI_edgehash.h"
 #include "BLI_math.h"
-#include "BLI_array.h"
 #include "BLI_smallhash.h"
 #include "BLI_utildefines.h"
 #include "BLI_scanfill.h"
@@ -1424,7 +1423,7 @@ static void cdDM_drawFacesGLSL(DerivedMesh *dm, DMSetMaterial setMaterial)
 
 static void cdDM_drawMappedFacesMat(DerivedMesh *dm,
                                     void (*setMaterial)(void *userData, int, void *attribs),
-                                    int (*setFace)(void *userData, int index), void *userData)
+                                    bool (*setFace)(void *userData, int index), void *userData)
 {
 	CDDerivedMesh *cddm = (CDDerivedMesh *) dm;
 	GPUVertexAttribs gattribs;
@@ -1548,19 +1547,26 @@ static void cdDM_drawMappedEdges(DerivedMesh *dm, DMSetDrawOptions setDrawOption
 static void cdDM_foreachMappedVert(
         DerivedMesh *dm,
         void (*func)(void *userData, int index, const float co[3], const float no_f[3], const short no_s[3]),
-        void *userData)
+        void *userData,
+        DMForeachFlag flag)
 {
 	MVert *mv = CDDM_get_verts(dm);
-	int i, orig, *index = DM_get_vert_data_layer(dm, CD_ORIGINDEX);
+	int *index = DM_get_vert_data_layer(dm, CD_ORIGINDEX);
+	int i;
 
-	for (i = 0; i < dm->numVertData; i++, mv++) {
-		if (index) {
-			orig = *index++;
+	if (index) {
+		for (i = 0; i < dm->numVertData; i++, mv++) {
+			const short *no = (flag & DM_FOREACH_USE_NORMAL) ? mv->no : NULL;
+			const int orig = *index++;
 			if (orig == ORIGINDEX_NONE) continue;
-			func(userData, orig, mv->co, NULL, mv->no);
+			func(userData, orig, mv->co, NULL, no);
 		}
-		else
-			func(userData, i, mv->co, NULL, mv->no);
+	}
+	else {
+		for (i = 0; i < dm->numVertData; i++, mv++) {
+			const short *no = (flag & DM_FOREACH_USE_NORMAL) ? mv->no : NULL;
+			func(userData, i, mv->co, NULL, no);
+		}
 	}
 }
 
@@ -1588,47 +1594,37 @@ static void cdDM_foreachMappedEdge(
 static void cdDM_foreachMappedFaceCenter(
         DerivedMesh *dm,
         void (*func)(void *userData, int index, const float cent[3], const float no[3]),
-        void *userData)
+        void *userData,
+        DMForeachFlag flag)
 {
 	CDDerivedMesh *cddm = (CDDerivedMesh *)dm;
 	MVert *mvert = cddm->mvert;
 	MPoly *mp;
 	MLoop *ml;
-	int i, j, orig, *index;
+	int i, orig, *index;
 
 	index = CustomData_get_layer(&dm->polyData, CD_ORIGINDEX);
 	mp = cddm->mpoly;
 	for (i = 0; i < dm->numPolyData; i++, mp++) {
 		float cent[3];
-		float no[3];
+		float *no, _no[3];
 
 		if (index) {
 			orig = *index++;
 			if (orig == ORIGINDEX_NONE) continue;
 		}
-		else
+		else {
 			orig = i;
+		}
 		
 		ml = &cddm->mloop[mp->loopstart];
-		cent[0] = cent[1] = cent[2] = 0.0f;
-		for (j = 0; j < mp->totloop; j++, ml++) {
-			add_v3_v3v3(cent, cent, mvert[ml->v].co);
-		}
-		mul_v3_fl(cent, 1.0f / (float)j);
+		BKE_mesh_calc_poly_center(mp, ml, mvert, cent);
 
-		ml = &cddm->mloop[mp->loopstart];
-		if (j > 3) {
-			normal_quad_v3(no,
-			               mvert[(ml + 0)->v].co,
-			               mvert[(ml + 1)->v].co,
-			               mvert[(ml + 2)->v].co,
-			               mvert[(ml + 3)->v].co);
+		if (flag & DM_FOREACH_USE_NORMAL) {
+			BKE_mesh_calc_poly_normal(mp, ml, mvert, (no = _no));
 		}
 		else {
-			normal_tri_v3(no,
-			              mvert[(ml + 0)->v].co,
-			              mvert[(ml + 1)->v].co,
-			              mvert[(ml + 2)->v].co);
+			no = NULL;
 		}
 
 		func(userData, orig, cent, no);
@@ -1818,7 +1814,13 @@ DerivedMesh *CDDM_from_mesh(Mesh *mesh, Object *UNUSED(ob))
 
 DerivedMesh *CDDM_from_curve(Object *ob)
 {
-	return CDDM_from_curve_displist(ob, &ob->disp);
+	ListBase disp = {NULL, NULL};
+
+	if (ob->curve_cache) {
+		disp = ob->curve_cache->disp;
+	}
+
+	return CDDM_from_curve_displist(ob, &disp);
 }
 
 DerivedMesh *CDDM_from_curve_displist(Object *ob, ListBase *dispbase)
@@ -1973,8 +1975,7 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 
 	index = dm->getVertDataArray(dm, CD_ORIGINDEX);
 
-	eve = BM_iter_new(&iter, bm, BM_VERTS_OF_MESH, NULL);
-	for (i = 0; eve; eve = BM_iter_step(&iter), i++, index++) {
+	BM_ITER_MESH_INDEX (eve, &iter, bm, BM_VERTS_OF_MESH, i) {
 		MVert *mv = &mvert[i];
 
 		copy_v3_v3(mv->co, eve->co);
@@ -1987,15 +1988,14 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 
 		if (cd_vert_bweight_offset != -1) mv->bweight = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(eve, cd_vert_bweight_offset);
 
-		if (add_orig) *index = i;
+		if (add_orig) *index++ = i;
 
 		CustomData_from_bmesh_block(&bm->vdata, &dm->vertData, eve->head.data, i);
 	}
 	bm->elem_index_dirty &= ~BM_VERT;
 
 	index = dm->getEdgeDataArray(dm, CD_ORIGINDEX);
-	eed = BM_iter_new(&iter, bm, BM_EDGES_OF_MESH, NULL);
-	for (i = 0; eed; eed = BM_iter_step(&iter), i++, index++) {
+	BM_ITER_MESH_INDEX (eed, &iter, bm, BM_EDGES_OF_MESH, i) {
 		MEdge *med = &medge[i];
 
 		BM_elem_index_set(eed, i); /* set_inline */
@@ -2017,7 +2017,7 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 		if (cd_edge_bweight_offset != -1) med->bweight = BM_ELEM_CD_GET_FLOAT_AS_UCHAR(eed, cd_edge_bweight_offset);
 
 		CustomData_from_bmesh_block(&bm->edata, &dm->edgeData, eed->head.data, i);
-		if (add_orig) *index = i;
+		if (add_orig) *index++ = i;
 	}
 	bm->elem_index_dirty &= ~BM_EDGE;
 
@@ -2027,7 +2027,7 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 		BM_mesh_elem_index_ensure(bm, BM_FACE);
 
 		index = dm->getTessFaceDataArray(dm, CD_ORIGINDEX);
-		for (i = 0; i < dm->numTessFaceData; i++, index++) {
+		for (i = 0; i < dm->numTessFaceData; i++) {
 			MFace *mf = &mface[i];
 			const BMLoop **l = em_looptris[i];
 			efa = l[0]->f;
@@ -2040,7 +2040,7 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 			mf->flag = BM_face_flag_to_mflag(efa);
 
 			/* map mfaces to polygons in the same cddm intentionally */
-			*index = BM_elem_index_get(efa);
+			*index++ = BM_elem_index_get(efa);
 
 			loops_to_customdata_corners(bm, &dm->faceData, i, l, numCol, numTex);
 			test_index_face(mf, &dm->faceData, i, 3);
@@ -2049,8 +2049,7 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 	
 	index = CustomData_get_layer(&dm->polyData, CD_ORIGINDEX);
 	j = 0;
-	efa = BM_iter_new(&iter, bm, BM_FACES_OF_MESH, NULL);
-	for (i = 0; efa; i++, efa = BM_iter_step(&iter), index++) {
+	BM_ITER_MESH_INDEX (efa, &iter, bm, BM_FACES_OF_MESH, i) {
 		BMLoop *l_iter;
 		BMLoop *l_first;
 		MPoly *mp = &mpoly[i];
@@ -2074,7 +2073,7 @@ static DerivedMesh *cddm_from_bmesh_ex(struct BMesh *bm, int use_mdisps,
 
 		CustomData_from_bmesh_block(&bm->pdata, &dm->polyData, efa->head.data, i);
 
-		if (add_orig) *index = i;
+		if (add_orig) *index++ = i;
 	}
 	bm->elem_index_dirty &= ~BM_FACE;
 

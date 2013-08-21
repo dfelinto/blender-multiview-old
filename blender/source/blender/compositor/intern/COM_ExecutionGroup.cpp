@@ -248,7 +248,7 @@ void ExecutionGroup::execute(ExecutionSystem *graph)
 	OrderOfChunks chunkorder = COM_ORDER_OF_CHUNKS_DEFAULT;
 
 	if (operation->isViewerOperation()) {
-		ViewerBaseOperation *viewer = (ViewerBaseOperation *)operation;
+		ViewerOperation *viewer = (ViewerOperation *)operation;
 		centerX = viewer->getCenterX();
 		centerY = viewer->getCenterY();
 		chunkorder = viewer->getChunkOrder();
@@ -288,8 +288,8 @@ void ExecutionGroup::execute(ExecutionSystem *graph)
 
 			delete hotspots[0];
 			MEM_freeN(chunkOrders);
+			break;
 		}
-		break;
 		case COM_TO_RULE_OF_THIRDS:
 		{
 			ChunkOrderHotspot *hotspots[9];
@@ -336,8 +336,8 @@ void ExecutionGroup::execute(ExecutionSystem *graph)
 			delete hotspots[7];
 			delete hotspots[8];
 			MEM_freeN(chunkOrders);
+			break;
 		}
-		break;
 		case COM_TO_TOP_DOWN:
 		default:
 			break;

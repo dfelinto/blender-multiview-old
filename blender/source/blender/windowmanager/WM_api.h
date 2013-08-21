@@ -187,6 +187,8 @@ __attribute__ ((format(printf, 3, 4)))
 ;
 
 void		wm_event_add(struct wmWindow *win, const struct wmEvent *event_to_add);
+void		wm_event_init_from_window(struct wmWindow *win, struct wmEvent *event);
+
 
 			/* at maximum, every timestep seconds it triggers event_type events */
 struct wmTimer *WM_event_add_timer(struct wmWindowManager *wm, struct wmWindow *win, int event_type, double timestep);
@@ -340,7 +342,7 @@ ListBase	*WM_dropboxmap_find(const char *idname, int spaceid, int regionid);
 
 			/* Set a subwindow active in pixelspace view, with optional scissor subset */
 void		wmSubWindowSet			(struct wmWindow *win, int swinid);
-void		wmSubWindowScissorSet	(struct wmWindow *win, int swinid, struct rcti *srct);
+void		wmSubWindowScissorSet	(struct wmWindow *win, int swinid, const struct rcti *srct, bool srct_pad);
 
 			/* OpenGL utilities with safety check + working in modelview matrix mode */
 void		wmFrustum			(float x1, float x2, float y1, float y2, float n, float f);

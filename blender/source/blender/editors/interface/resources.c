@@ -1353,7 +1353,8 @@ void UI_make_axis_color(const unsigned char src_col[3], unsigned char dst_col[3]
 			UI_GetColorPtrBlendShade3ubv(src_col, col, dst_col, 0.5f, -10);
 			break;
 		default:
-			BLI_assert(!"invalid axis arg");
+			BLI_assert(0);
+			break;
 	}
 }
 
@@ -1952,7 +1953,7 @@ void init_userdef_do_versions(void)
 	if (bmain->versionfile < 262 || (bmain->versionfile == 262 && bmain->subversionfile < 4)) {
 		bTheme *btheme;
 		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
-			if (btheme->tseq.movieclip[0] == 0) {
+			if (btheme->tseq.movieclip[3] == 0) {
 				rgba_char_args_set(btheme->tseq.movieclip,  32, 32, 143, 255);
 			}
 		}
@@ -2001,7 +2002,7 @@ void init_userdef_do_versions(void)
 	if (bmain->versionfile < 263 || (bmain->versionfile == 263 && bmain->subversionfile < 11)) {
 		bTheme *btheme;
 		for (btheme = U.themes.first; btheme; btheme = btheme->next) {
-			if (btheme->tseq.movieclip[0] == 0) {
+			if (btheme->tseq.mask[3] == 0) {
 				rgba_char_args_set(btheme->tseq.mask,  152, 78, 62, 255);
 			}
 		}

@@ -1871,7 +1871,7 @@ static PyObject *bpy_bmvertseq_new(BPy_BMElemSeq *self, PyObject *args)
 			return NULL;
 		}
 
-		v = BM_vert_create(bm, co, NULL, 0);
+		v = BM_vert_create(bm, co, NULL, BM_CREATE_NOP);
 
 		if (v == NULL) {
 			PyErr_SetString(PyExc_ValueError,
@@ -1940,7 +1940,7 @@ static PyObject *bpy_bmedgeseq_new(BPy_BMElemSeq *self, PyObject *args)
 			goto cleanup;
 		}
 
-		e = BM_edge_create(bm, vert_array[0], vert_array[1], NULL, 0);
+		e = BM_edge_create(bm, vert_array[0], vert_array[1], NULL, BM_CREATE_NOP);
 
 		if (e == NULL) {
 			PyErr_SetString(PyExc_ValueError,
@@ -2020,16 +2020,13 @@ static PyObject *bpy_bmfaceseq_new(BPy_BMElemSeq *self, PyObject *args)
 		/* Go ahead and make the face!
 		 * --------------------------- */
 
-		f_new = BM_face_create_ngon_verts(bm, vert_array, vert_seq_len, 0, false, true);
+		f_new = BM_face_create_verts(bm, vert_array, vert_seq_len,
+		                             py_face_example ? py_face_example->f : NULL, BM_CREATE_NOP, true);
 
 		if (UNLIKELY(f_new == NULL)) {
 			PyErr_SetString(PyExc_ValueError,
 			                "faces.new(verts): couldn't create the new face, internal error");
 			goto cleanup;
-		}
-
-		if (py_face_example) {
-			BM_elem_attrs_copy(py_face_example->bm, bm, py_face_example->f, f_new);
 		}
 
 		ret = BPy_BMFace_CreatePyObject(bm, f_new);

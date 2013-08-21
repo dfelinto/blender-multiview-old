@@ -251,8 +251,8 @@ extern "C" {
 #include "intern/bmesh_operator_api.h"
 #include "intern/bmesh_error.h"
 
-#include "intern/bmesh_construct.h"
 #include "intern/bmesh_core.h"
+#include "intern/bmesh_construct.h"
 #include "intern/bmesh_edgeloop.h"
 #include "intern/bmesh_interp.h"
 #include "intern/bmesh_iterators.h"
@@ -271,6 +271,8 @@ extern "C" {
 
 #include "tools/bmesh_bevel.h"
 #include "tools/bmesh_decimate.h"
+#include "tools/bmesh_edgenet.h"
+#include "tools/bmesh_edgesplit.h"
 #include "tools/bmesh_path.h"
 #include "tools/bmesh_triangulate.h"
 

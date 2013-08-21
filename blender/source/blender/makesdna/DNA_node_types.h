@@ -788,6 +788,12 @@ typedef struct NodeShaderAttribute {
 	char name[64];
 } NodeShaderAttribute;
 
+typedef struct NodeShaderVectTransform {
+	int type;
+	int convert_from, convert_to;
+	int pad;
+} NodeShaderVectTransform;
+
 /* TEX_output */
 typedef struct TexNodeOutput {
 	char name[64];
@@ -821,6 +827,10 @@ typedef struct NodeTranslateData {
 	char pad[6];
 } NodeTranslateData;
 
+typedef struct NodePlaneTrackDeformData {
+	char tracking_object[64];
+	char plane_track_name[64];
+} NodePlaneTrackDeformData;
 
 typedef struct NodeShaderScript {
 	int mode;
@@ -868,6 +878,15 @@ typedef struct NodeShaderNormalMap {
 #define SHD_GLOSSY_BECKMANN	0
 #define SHD_GLOSSY_SHARP	1
 #define SHD_GLOSSY_GGX		2
+
+/* vector transform */
+#define SHD_VECT_TRANSFORM_TYPE_VECTOR	0
+#define SHD_VECT_TRANSFORM_TYPE_POINT	1
+#define SHD_VECT_TRANSFORM_TYPE_NORMAL	2
+
+#define SHD_VECT_TRANSFORM_SPACE_WORLD	0
+#define SHD_VECT_TRANSFORM_SPACE_OBJECT	1
+#define SHD_VECT_TRANSFORM_SPACE_CAMERA	2
 
 /* toon modes */
 #define SHD_TOON_DIFFUSE	0
@@ -918,10 +937,6 @@ typedef struct NodeShaderNormalMap {
 #define SHD_WAVE_BANDS		0
 #define SHD_WAVE_RINGS		1
 
-#define SHD_WAVE_SINE	0
-#define SHD_WAVE_SAW	1
-#define SHD_WAVE_TRI	2
-
 /* image/environment texture */
 #define SHD_COLORSPACE_NONE		0
 #define SHD_COLORSPACE_COLOR	1
@@ -949,6 +964,11 @@ typedef struct NodeShaderNormalMap {
 #define SHD_NORMAL_MAP_WORLD			2
 #define SHD_NORMAL_MAP_BLENDER_OBJECT	3
 #define SHD_NORMAL_MAP_BLENDER_WORLD	4
+
+/* tangent */
+#define SHD_SUBSURFACE_COMPATIBLE		0
+#define SHD_SUBSURFACE_CUBIC			1
+#define SHD_SUBSURFACE_GAUSSIAN			2
 
 /* blur node */
 #define CMP_NODE_BLUR_ASPECT_NONE		0

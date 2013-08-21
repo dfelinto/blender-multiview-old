@@ -290,9 +290,7 @@ static bool ED_vgroup_give_parray(ID *id, MDeformVert ***dvert_arr, int *dvert_t
 
 					return true;
 				}
-				else {
-					return false;
-				}
+				return false;
 			}
 			case ID_LT:
 			{
@@ -320,9 +318,7 @@ static bool ED_vgroup_give_parray(ID *id, MDeformVert ***dvert_arr, int *dvert_t
 
 					return true;
 				}
-				else {
-					return false;
-				}
+				return false;
 			}
 		}
 	}
@@ -551,7 +547,6 @@ static void vgroup_normalize_active(Object *ob, eVGroupSelect subset_type)
 			ED_mesh_defvert_mirror_update_em(ob, eve_act, -1, -1, cd_dvert_offset);
 		}
 		else {
-			int v_act = BKE_mesh_mselect_active_get(me, ME_VSEL);
 			ED_mesh_defvert_mirror_update_ob(ob, -1, v_act);
 		}
 	}
@@ -1098,6 +1093,7 @@ static void ED_vgroup_nr_vert_add(Object *ob,
 
 					/* we checked if the vertex was added before so no need to test again, simply add */
 					defvert_add_index_notest(dv, def_nr, weight);
+					break;
 			}
 		}
 	}

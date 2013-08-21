@@ -45,6 +45,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
+#include "BLI_ghash.h"
 
 #include "BKE_animsys.h"
 #include "BKE_context.h"
@@ -298,13 +299,17 @@ static void object_delete_cb(bContext *C, Scene *scene, TreeElement *te,
 	if (base == NULL)
 		base = BKE_scene_base_find(scene, (Object *)tselem->id);
 	if (base) {
+		SpaceOops *soops = CTX_wm_space_outliner(C);
+
 		// check also library later
 		if (scene->obedit == base->object)
 			ED_object_editmode_exit(C, EM_FREEDATA | EM_FREEUNDO | EM_WAITCURSOR | EM_DO_UNDO);
 		
 		ED_base_object_free_and_unlink(CTX_data_main(C), scene, base);
 		te->directdata = NULL;
+		BLI_ghash_remove(soops->treehash, tselem, NULL, NULL);
 		tselem->id = NULL;
+		BLI_ghash_insert(soops->treehash, tselem, tselem);
 	}
 }
 
@@ -683,6 +688,10 @@ static int outliner_object_operation_exec(bContext *C, wmOperator *op)
 		outliner_do_object_operation(C, scene, soops, &soops->tree, item_rename_cb);
 		str = "Rename Object";
 	}
+	else {
+		BLI_assert(0);
+		return OPERATOR_CANCELLED;
+	}
 
 	ED_undo_push(C, str);
 	
@@ -854,17 +863,15 @@ static int outliner_id_operation_exec(bContext *C, wmOperator *op)
 					BKE_report(op->reports, RPT_WARNING, "Not yet implemented");
 					break;
 			}
+			break;
 		}
-		break;
-			
 		case OUTLINER_IDOP_LOCAL:
 		{
 			/* make local */
 			outliner_do_libdata_operation(C, scene, soops, &soops->tree, id_local_cb);
 			ED_undo_push(C, "Localized Data");
+			break;
 		}
-		break;
-			
 		case OUTLINER_IDOP_SINGLE:
 		{
 			/* make single user */
@@ -887,9 +894,8 @@ static int outliner_id_operation_exec(bContext *C, wmOperator *op)
 					BKE_report(op->reports, RPT_WARNING, "Not yet implemented");
 					break;
 			}
+			break;
 		}
-		break;
-			
 		case OUTLINER_IDOP_FAKE_ADD:
 		{
 			/* set fake user */
@@ -897,9 +903,8 @@ static int outliner_id_operation_exec(bContext *C, wmOperator *op)
 			
 			WM_event_add_notifier(C, NC_ID | NA_EDITED, NULL);
 			ED_undo_push(C, "Add Fake User");
+			break;
 		}
-		break;
-			
 		case OUTLINER_IDOP_FAKE_CLEAR:
 		{
 			/* clear fake user */
@@ -907,8 +912,8 @@ static int outliner_id_operation_exec(bContext *C, wmOperator *op)
 			
 			WM_event_add_notifier(C, NC_ID | NA_EDITED, NULL);
 			ED_undo_push(C, "Clear Fake User");
+			break;
 		}
-		break;
 		case OUTLINER_IDOP_RENAME:
 		{
 			/* rename */
@@ -916,9 +921,8 @@ static int outliner_id_operation_exec(bContext *C, wmOperator *op)
 			
 			WM_event_add_notifier(C, NC_ID | NA_EDITED, NULL);
 			ED_undo_push(C, "Rename");
+			break;
 		}
-		break;
-
 		case OUTLINER_IDOP_SELECT_LINKED:
 			outliner_do_libdata_operation(C, scene, soops, &soops->tree, id_select_linked_cb);
 			ED_undo_push(C, "Select");

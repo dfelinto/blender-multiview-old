@@ -37,8 +37,8 @@
 #include "DNA_view3d_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_alloca.h"
 #include "BLI_path_util.h"
-#include "BLI_array.h"
 #include "BLI_math.h"
 
 #include "BKE_context.h"
@@ -116,6 +116,7 @@ static CustomData *mesh_customdata_get_type(Mesh *me, const char htype, int *r_t
 			BLI_assert(0);
 			tot = 0;
 			data = NULL;
+			break;
 	}
 
 	*r_tot = tot;
@@ -138,7 +139,7 @@ static void delete_customdata_layer(Mesh *me, CustomDataLayer *layer)
 		BM_data_layer_free_n(me->edit_btmesh->bm, data, type, n);
 	}
 	else {
-		CustomData_free_layer(data, type, tot, n);
+		CustomData_free_layer(data, type, tot, layer_index + n);
 		BKE_mesh_update_customdata_pointers(me, true);
 	}
 }
@@ -566,7 +567,7 @@ static int drop_named_image_invoke(bContext *C, wmOperator *op, const wmEvent *e
 	obedit = base->object;
 	me = obedit->data;
 	if (me->edit_btmesh == NULL) {
-		EDBM_mesh_make(scene->toolsettings, scene, obedit);
+		EDBM_mesh_make(scene->toolsettings, obedit);
 		exitmode = 1;
 	}
 	if (me->edit_btmesh == NULL)

@@ -184,6 +184,9 @@ set(SRC
 	nodes/COM_GlareNode.cpp
 	nodes/COM_GlareNode.h
 
+	nodes/COM_PlaneTrackDeformNode.cpp
+	nodes/COM_PlaneTrackDeformNode.h
+
 	nodes/COM_CropNode.cpp
 	nodes/COM_CropNode.h
 	operations/COM_CropOperation.cpp
@@ -425,14 +428,12 @@ set(SRC
 	operations/COM_CompositorOperation.cpp
 	operations/COM_OutputFileOperation.h
 	operations/COM_OutputFileOperation.cpp
-	operations/COM_ViewerBaseOperation.h
-	operations/COM_ViewerBaseOperation.cpp
 	operations/COM_ViewerOperation.h
 	operations/COM_ViewerOperation.cpp
 	operations/COM_PreviewOperation.h
 	operations/COM_PreviewOperation.cpp
-	operations/COM_SplitViewerOperation.h
-	operations/COM_SplitViewerOperation.cpp
+	operations/COM_SplitOperation.h
+	operations/COM_SplitOperation.cpp
 	operations/COM_ConvertValueToColorProg.h
 	operations/COM_ConvertValueToColorProg.cpp
 	operations/COM_ConvertColorToValueProg.h
@@ -597,6 +598,12 @@ set(SRC
 	operations/COM_ProjectorLensDistortionOperation.h
 	operations/COM_ScreenLensDistortionOperation.cpp
 	operations/COM_ScreenLensDistortionOperation.h
+	operations/COM_PlaneTrackCommonOperation.cpp
+	operations/COM_PlaneTrackCommonOperation.h
+	operations/COM_PlaneTrackMaskOperation.cpp
+	operations/COM_PlaneTrackMaskOperation.h
+	operations/COM_PlaneTrackWarpImageOperation.cpp
+	operations/COM_PlaneTrackWarpImageOperation.h
 
 	#Filter operations
 	operations/COM_ConvolutionFilterOperation.h

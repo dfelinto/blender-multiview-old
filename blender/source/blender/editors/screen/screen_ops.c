@@ -649,7 +649,8 @@ static void actionzone_apply(bContext *C, wmOperator *op, int type)
 	
 	sad->modifier = RNA_int_get(op->ptr, "modifier");
 	
-	event = *(win->eventstate);  /* XXX huh huh? make api call */
+	wm_event_init_from_window(win, &event);
+
 	if (type == AZONE_AREA)
 		event.type = EVT_ACTIONZONE_AREA;
 	else
@@ -1154,7 +1155,7 @@ static int area_move_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	/* execute the events */
 	switch (event->type) {
 		case MOUSEMOVE:
-			
+		{
 			x = RNA_int_get(op->ptr, "x");
 			y = RNA_int_get(op->ptr, "y");
 			
@@ -1164,9 +1165,9 @@ static int area_move_modal(bContext *C, wmOperator *op, const wmEvent *event)
 			
 			area_move_apply(C, op);
 			break;
-			
+		}
 		case EVT_MODAL_MAP:
-			
+		{
 			switch (event->val) {
 				case KM_MODAL_APPLY:
 					area_move_exit(C, op);
@@ -1182,6 +1183,8 @@ static int area_move_modal(bContext *C, wmOperator *op, const wmEvent *event)
 					md->step = 0;
 					break;
 			}
+			break;
+		}
 	}
 	
 	return OPERATOR_RUNNING_MODAL;
@@ -2463,8 +2466,8 @@ static int area_join_modal(bContext *C, wmOperator *op, const wmEvent *event)
 					WM_event_add_notifier(C, NC_WINDOW, NULL);
 				}
 			}
+			break;
 		}
-		break;
 		case LEFTMOUSE:
 			if (event->val == KM_RELEASE) {
 				ED_area_tag_redraw(jd->sa1);
@@ -2562,7 +2565,7 @@ static void SCREEN_OT_area_options(wmOperatorType *ot)
 /* ******************************* */
 
 
-static int spacedata_cleanup(bContext *C, wmOperator *op)
+static int spacedata_cleanup_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
 	bScreen *screen;
@@ -2594,7 +2597,7 @@ static void SCREEN_OT_spacedata_cleanup(wmOperatorType *ot)
 	ot->idname = "SCREEN_OT_spacedata_cleanup";
 	
 	/* api callbacks */
-	ot->exec = spacedata_cleanup;
+	ot->exec = spacedata_cleanup_exec;
 	ot->poll = WM_operator_winactive;
 	
 }
@@ -3182,7 +3185,7 @@ static int screen_animation_step(bContext *C, wmOperator *UNUSED(op), const wmEv
 			sound_seek_scene(bmain, scene);
 		
 		/* since we follow drawflags, we can't send notifier but tag regions ourselves */
-		ED_update_for_newframe(CTX_data_main(C), scene, 1);
+		ED_update_for_newframe(bmain, scene, 1);
 
 		for (window = wm->windows.first; window; window = window->next) {
 			for (sa = window->screen->areabase.first; sa; sa = sa->next) {
@@ -3367,7 +3370,7 @@ static void SCREEN_OT_animation_cancel(wmOperatorType *ot)
  * poll()	has to be filled in by user for context
  */
 #if 0
-static int border_select_do(bContext *C, wmOperator *op)
+static int border_select_exec(bContext *C, wmOperator *op)
 {
 	int event_type = RNA_int_get(op->ptr, "event_type");
 	
@@ -3388,7 +3391,7 @@ static void SCREEN_OT_border_select(wmOperatorType *ot)
 	ot->idname = "SCREEN_OT_border_select";
 	
 	/* api callbacks */
-	ot->exec = border_select_do;
+	ot->exec = border_select_exec;
 	ot->invoke = WM_border_select_invoke;
 	ot->modal = WM_border_select_modal;
 	ot->cancel = WM_border_select_cancel;

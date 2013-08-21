@@ -804,6 +804,11 @@ static bool render_view3d_get_rects(ARegion *ar, View3D *v3d, RegionView3D *rv3d
 	return true;
 }
 
+static bool render_view3d_is_valid(RenderPreview *rp)
+{
+	return (rp->rv3d->render_engine != NULL);
+}
+
 /* called by renderer, checks job value */
 static int render_view3d_break(void *rpv)
 {
@@ -813,8 +818,9 @@ static int render_view3d_break(void *rpv)
 		return 1;
 	
 	/* during render, rv3d->engine can get freed */
-	if (rp->rv3d->render_engine == NULL)
+	if (render_view3d_is_valid(rp) == false) {
 		*rp->stop = 1;
+	}
 	
 	return *(rp->stop);
 }
@@ -928,8 +934,11 @@ static void render_view3d_startjob(void *customdata, short *stop, short *do_upda
 		RE_Database_Preprocess(re);
 
 		/* conversion not completed, need to do it again */
-		if (!rstats->convertdone)
-			rp->engine->job_update_flag |= PR_UPDATE_DATABASE;
+		if (!rstats->convertdone) {
+			if (render_view3d_is_valid(rp)) {
+				rp->engine->job_update_flag |= PR_UPDATE_DATABASE;
+			}
+		}
 
 		// printf("dbase update\n");
 	}
@@ -1120,7 +1129,7 @@ void render_view3d_draw(RenderEngine *engine, const bContext *C)
 				glEnable(GL_BLEND);
 				glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 				glaDrawPixelsTex(rres.xof, rres.yof, rres.rectx, rres.recty, GL_RGBA, GL_FLOAT,
-				                 GL_LINEAR, rres.rectf);
+				                 GL_NEAREST, rres.rectf);
 				glDisable(GL_BLEND);
 
 				IMB_colormanagement_finish_glsl_draw();
@@ -1139,7 +1148,7 @@ void render_view3d_draw(RenderEngine *engine, const bContext *C)
 			glEnable(GL_BLEND);
 			glColor4f(1.0f, 1.0f, 1.0f, 1.0f);
 			glaDrawPixelsAuto(rres.xof, rres.yof, rres.rectx, rres.recty, GL_RGBA, GL_UNSIGNED_BYTE,
-			                  GL_LINEAR, display_buffer);
+			                  GL_NEAREST, display_buffer);
 			glDisable(GL_BLEND);
 
 			MEM_freeN(display_buffer);

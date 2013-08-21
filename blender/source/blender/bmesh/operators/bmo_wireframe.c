@@ -177,7 +177,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 
 	/* will over-alloc, but makes for easy lookups by index to keep aligned  */
 	BMVert **verts_boundary = use_boundary ?
-	                          MEM_mallocN(sizeof(BMVert **) * totvert_orig, __func__) : NULL;
+	                          MEM_mallocN(sizeof(BMVert *) * totvert_orig, __func__) : NULL;
 
 	float  *verts_relfac    = use_relative_offset ?
 	                          MEM_mallocN(sizeof(float) * totvert_orig, __func__) : NULL;
@@ -229,9 +229,9 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 			}
 
 			madd_v3_v3v3fl(tvec, v_src->co, v_src->no, -fac);
-			verts_neg[i] = BM_vert_create(bm, tvec, v_src, 0);
+			verts_neg[i] = BM_vert_create(bm, tvec, v_src, BM_CREATE_NOP);
 			madd_v3_v3v3fl(tvec, v_src->co, v_src->no,  fac);
-			verts_pos[i] = BM_vert_create(bm, tvec, v_src, 0);
+			verts_pos[i] = BM_vert_create(bm, tvec, v_src, BM_CREATE_NOP);
 		}
 		else {
 			/* could skip this */
@@ -250,7 +250,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 		BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, false);
 	}
 
-	verts_loop = MEM_mallocN(sizeof(BMVert **) * verts_loop_tot, __func__);
+	verts_loop = MEM_mallocN(sizeof(BMVert *) * verts_loop_tot, __func__);
 	verts_loop_tot = 0; /* count up again */
 
 	BMO_ITER (f_src, &oiter, op->slots_in, "faces", BM_FACE) {
@@ -269,7 +269,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 			}
 
 			madd_v3_v3v3fl(tvec, l->v->co, tvec, fac);
-			verts_loop[verts_loop_tot] = BM_vert_create(bm, tvec, l->v, 0);
+			verts_loop[verts_loop_tot] = BM_vert_create(bm, tvec, l->v, BM_CREATE_NOP);
 
 
 			if (use_boundary) {
@@ -303,7 +303,7 @@ void bmo_wireframe_exec(BMesh *bm, BMOperator *op)
 								fac *= verts_relfac[BM_elem_index_get(l_pair[i]->v)];
 							}
 							madd_v3_v3v3fl(tvec, l_pair[i]->v->co, tvec, fac);
-							verts_boundary[BM_elem_index_get(l_pair[i]->v)] = BM_vert_create(bm, tvec, l_pair[i]->v, 0);
+							verts_boundary[BM_elem_index_get(l_pair[i]->v)] = BM_vert_create(bm, tvec, l_pair[i]->v, BM_CREATE_NOP);
 						}
 					}
 				}
