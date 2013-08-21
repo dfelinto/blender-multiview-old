@@ -75,6 +75,8 @@ struct MaskSplinePoint *ED_mask_point_find_nearest(
 
 void MASK_OT_layer_move(struct wmOperatorType *ot);
 
+void MASK_OT_duplicate(struct wmOperatorType *ot);
+
 /* mask_relationships.c */
 void MASK_OT_parent_set(struct wmOperatorType *ot);
 void MASK_OT_parent_clear(struct wmOperatorType *ot);
@@ -88,6 +90,8 @@ void MASK_OT_select_lasso(struct wmOperatorType *ot);
 void MASK_OT_select_circle(struct wmOperatorType *ot);
 void MASK_OT_select_linked_pick(struct wmOperatorType *ot);
 void MASK_OT_select_linked(struct wmOperatorType *ot);
+void MASK_OT_select_more(struct wmOperatorType *ot);
+void MASK_OT_select_less(struct wmOperatorType *ot);
 
 int ED_mask_spline_select_check(struct MaskSpline *spline);
 int ED_mask_layer_select_check(struct MaskLayer *masklay);

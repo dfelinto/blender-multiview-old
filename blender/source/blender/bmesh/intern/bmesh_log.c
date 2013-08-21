@@ -95,6 +95,7 @@ struct BMLog {
 
 typedef struct {
 	float co[3];
+	short no[3];
 	float mask;
 	char hflag;
 } BMLogVert;
@@ -117,10 +118,8 @@ static void bm_log_vert_id_set(BMLog *log, BMVert *v, unsigned int id)
 {
 	void *vid = SET_INT_IN_POINTER(id);
 	
-	BLI_ghash_remove(log->id_to_elem, vid, NULL, NULL);
-	BLI_ghash_insert(log->id_to_elem, vid, v);
-	BLI_ghash_remove(log->elem_to_id, v, NULL, NULL);
-	BLI_ghash_insert(log->elem_to_id, v, vid);
+	BLI_ghash_assign(log->id_to_elem, vid, v, NULL, NULL);
+	BLI_ghash_assign(log->elem_to_id, v, vid, NULL, NULL);
 }
 
 /* Get a vertex from its unique ID */
@@ -142,11 +141,9 @@ static unsigned int bm_log_face_id_get(BMLog *log, BMFace *f)
 static void bm_log_face_id_set(BMLog *log, BMFace *f, unsigned int id)
 {
 	void *fid = SET_INT_IN_POINTER(id);
-	
-	BLI_ghash_remove(log->id_to_elem, fid, NULL, NULL);
-	BLI_ghash_insert(log->id_to_elem, fid, f);
-	BLI_ghash_remove(log->elem_to_id, f, NULL, NULL);
-	BLI_ghash_insert(log->elem_to_id, f, fid);
+
+	BLI_ghash_assign(log->id_to_elem, fid, f, NULL, NULL);
+	BLI_ghash_assign(log->elem_to_id, f, fid, NULL, NULL);
 }
 
 /* Get a face from its unique ID */
@@ -191,6 +188,7 @@ static void vert_mask_set(BMesh *bm, BMVert *v, float new_mask)
 static void bm_log_vert_bmvert_copy(BMesh *bm, BMLogVert *lv, BMVert *v)
 {
 	copy_v3_v3(lv->co, v->co);
+	normal_float_to_short_v3(lv->no, v->no);
 	lv->mask = vert_mask_get(bm, v);
 	lv->hflag = v->head.hflag;
 }
@@ -277,9 +275,10 @@ static void bm_log_verts_restore(BMesh *bm, BMLog *log, GHash *verts)
 	GHASH_ITER (gh_iter, verts) {
 		void *key = BLI_ghashIterator_getKey(&gh_iter);
 		BMLogVert *lv = BLI_ghashIterator_getValue(&gh_iter);
-		BMVert *v = BM_vert_create(bm, lv->co, NULL, 0);
+		BMVert *v = BM_vert_create(bm, lv->co, NULL, BM_CREATE_NOP);
 		v->head.hflag = lv->hflag;
 		vert_mask_set(bm, v, lv->mask);
+		normal_short_to_float_v3(v->no, lv->no);
 		bm_log_vert_id_set(log, v, GET_INT_FROM_POINTER(key));
 	}
 }
@@ -295,7 +294,7 @@ static void bm_log_faces_restore(BMesh *bm, BMLog *log, GHash *faces)
 		                bm_log_vert_from_id(log, lf->v_ids[2])};
 		BMFace *f;
 
-		f = BM_face_create_quad_tri_v(bm, v, 3, NULL, false);
+		f = BM_face_create_verts(bm, v, 3, NULL, BM_CREATE_NOP, true);
 		bm_log_face_id_set(log, f, GET_INT_FROM_POINTER(key));
 	}
 }
@@ -309,8 +308,12 @@ static void bm_log_vert_values_swap(BMesh *bm, BMLog *log, GHash *verts)
 		unsigned int id = GET_INT_FROM_POINTER(key);
 		BMVert *v = bm_log_vert_from_id(log, id);
 		float mask;
+		short normal[3];
 
 		swap_v3_v3(v->co, lv->co);
+		copy_v3_v3_short(normal, lv->no);
+		normal_float_to_short_v3(lv->no, v->no);
+		normal_short_to_float_v3(v->no, normal);
 		SWAP(char, v->head.hflag, lv->hflag);
 		mask = lv->mask;
 		lv->mask = vert_mask_get(bm, v);
@@ -929,6 +932,24 @@ const float *BM_log_original_vert_co(BMLog *log, BMVert *v)
 
 	lv = BLI_ghash_lookup(entry->modified_verts, key);
 	return lv->co;
+}
+
+/* Get the logged normal of a vertex
+ *
+ * Does not modify the log or the vertex */
+const short *BM_log_original_vert_no(BMLog *log, BMVert *v)
+{
+	BMLogEntry *entry = log->current_entry;
+	const BMLogVert *lv;
+	unsigned v_id = bm_log_vert_id_get(log, v);
+	void *key = SET_INT_IN_POINTER(v_id);
+
+	BLI_assert(entry);
+
+	BLI_assert(BLI_ghash_haskey(entry->modified_verts, key));
+
+	lv = BLI_ghash_lookup(entry->modified_verts, key);
+	return lv->no;
 }
 
 /* Get the logged mask of a vertex

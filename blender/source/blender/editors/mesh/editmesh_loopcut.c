@@ -125,9 +125,9 @@ static void edgering_find_order(BMEdge *lasteed, BMEdge *eed,
 	l = eed->l;
 
 	/* find correct order for v[1] */
-	if (!(BM_edge_in_face(l->f, eed) && BM_edge_in_face(l->f, lasteed))) {
+	if (!(BM_edge_in_face(eed, l->f) && BM_edge_in_face(lasteed, l->f))) {
 		BM_ITER_ELEM (l, &liter, l, BM_LOOPS_OF_LOOP) {
-			if (BM_edge_in_face(l->f, eed) && BM_edge_in_face(l->f, lasteed))
+			if (BM_edge_in_face(eed, l->f) && BM_edge_in_face(lasteed, l->f))
 				break;
 		}
 	}
@@ -261,11 +261,14 @@ static void edgering_sel(RingSelOpData *lcd, int previewlines, bool select)
 		eed_last = eed;
 	}
 	
+	if ((eed_last != eed_start) &&
 #ifdef BMW_EDGERING_NGON
-	if (lasteed != startedge && BM_edge_share_face_check(lasteed, startedge)) {
+	    BM_edge_share_face_check(eed_last, eed_start)
 #else
-	if (eed_last != eed_start && BM_edge_share_quad_check(eed_last, eed_start)) {
+	    BM_edge_share_quad_check(eed_last, eed_start)
 #endif
+	    )
+	{
 		v[1][0] = v[0][0];
 		v[1][1] = v[0][1];
 

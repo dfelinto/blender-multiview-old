@@ -136,7 +136,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 		BMEditMesh *em;
 
 		EDBM_mesh_load(obedit);
-		EDBM_mesh_make(scene->toolsettings, scene, obedit);
+		EDBM_mesh_make(scene->toolsettings, obedit);
 
 		em = me->edit_btmesh;
 
@@ -494,23 +494,21 @@ void ED_object_parent_clear(Object *ob, int type)
 			
 			/* clear parenting relationship completely */
 			ob->parent = NULL;
+			break;
 		}
-		break;
-		
 		case CLEAR_PARENT_KEEP_TRANSFORM:
 		{
 			/* remove parent, and apply the parented transform result as object's local transforms */
 			ob->parent = NULL;
 			BKE_object_apply_mat4(ob, ob->obmat, TRUE, FALSE);
+			break;
 		}
-		break;
-		
 		case CLEAR_PARENT_INVERSE:
 		{
 			/* object stays parented, but the parent inverse (i.e. offset from parent to retain binding state) is cleared */
 			unit_m4(ob->parentinv);
+			break;
 		}
-		break;
 	}
 	
 	DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
@@ -2051,7 +2049,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 			if (adt) BKE_animdata_make_local(adt);
 			
 			/* tag indirect data direct */
-			matarar = (Material ***)give_matarar(ob);
+			matarar = give_matarar(ob);
 			if (matarar) {
 				for (a = 0; a < ob->totcol; a++) {
 					ma = (*matarar)[a];

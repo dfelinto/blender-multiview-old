@@ -618,7 +618,7 @@ static int outliner_show_active_exec(bContext *C, wmOperator *UNUSED(op))
 	te = outliner_find_id(so, &so->tree, (ID *)OBACT);
 	if (te) {
 		/* make te->ys center of view */
-		ytop = (int)(te->ys + BLI_rcti_size_y(&v2d->mask) / 2);
+		ytop = te->ys + BLI_rcti_size_y(&v2d->mask) / 2;
 		if (ytop > 0) ytop = 0;
 		
 		v2d->cur.ymax = (float)ytop;
@@ -984,7 +984,7 @@ static int ed_operator_outliner_datablocks_active(bContext *C)
  * NOTE: the caller must zero-out all values of the pointers that it passes here first, as
  * this function does not do that yet 
  */
-static void tree_element_to_path(SpaceOops *soops, TreeElement *te, TreeStoreElem *tselem, 
+static void tree_element_to_path(TreeElement *te, TreeStoreElem *tselem,
                                  ID **id, char **path, int *array_index, short *flag, short *UNUSED(groupmode))
 {
 	ListBase hierarchy = {NULL, NULL};
@@ -1152,7 +1152,7 @@ static void do_outliner_drivers_editop(SpaceOops *soops, ListBase *tree, ReportL
 			    RNA_property_animateable(&te->rnaptr, te->directdata))
 			{
 				/* get id + path + index info from the selected element */
-				tree_element_to_path(soops, te, tselem, 
+				tree_element_to_path(te, tselem,
 				                     &id, &path, &array_index, &flag, &groupmode);
 			}
 			
@@ -1181,14 +1181,14 @@ static void do_outliner_drivers_editop(SpaceOops *soops, ListBase *tree, ReportL
 						{
 							/* add a new driver with the information obtained (only if valid) */
 							ANIM_add_driver(reports, id, path, array_index, dflags, DRIVER_TYPE_PYTHON);
+							break;
 						}
-						break;
 						case DRIVERS_EDITMODE_REMOVE:
 						{
 							/* remove driver matching the information obtained (only if valid) */
 							ANIM_remove_driver(reports, id, path, array_index, dflags);
+							break;
 						}
-						break;
 					}
 				}
 				
@@ -1333,7 +1333,7 @@ static void do_outliner_keyingset_editop(SpaceOops *soops, KeyingSet *ks, ListBa
 			    RNA_property_animateable(&te->rnaptr, te->directdata))
 			{
 				/* get id + path + index info from the selected element */
-				tree_element_to_path(soops, te, tselem, 
+				tree_element_to_path(te, tselem,
 				                     &id, &path, &array_index, &flag, &groupmode);
 			}
 			
@@ -1648,26 +1648,29 @@ void OUTLINER_OT_parent_drop(wmOperatorType *ot)
 	RNA_def_enum(ot->srna, "type", prop_make_parent_types, 0, "Type", "");
 }
 
+static int outliner_parenting_poll(bContext *C)
+{
+	SpaceOops *soops = CTX_wm_space_outliner(C);
+
+	if (soops) {
+		return ELEM4(soops->outlinevis, SO_ALL_SCENES, SO_CUR_SCENE, SO_VISIBLE, SO_GROUPS);
+	}
+
+	return FALSE;
+}
+
 static int parent_clear_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Main *bmain = CTX_data_main(C);
-	Scene *scene = NULL;
 	Object *ob = NULL;
 	SpaceOops *soops = CTX_wm_space_outliner(C);
-	TreeElement *te;
 	char obname[MAX_ID_NAME];
 
 	RNA_string_get(op->ptr, "dragged_obj", obname);
 	ob = (Object *)BKE_libblock_find_name(ID_OB, obname);
 
 	/* search forwards to find the object */
-	te = outliner_find_id(soops, &soops->tree, (ID *)ob);
-	/* then search backwards to get the scene */
-	scene = (Scene *)outliner_search_back(soops, te, ID_SCE);
-
-	if (scene == NULL) {
-		return OPERATOR_CANCELLED;
-	}
+	outliner_find_id(soops, &soops->tree, (ID *)ob);
 
 	ED_object_parent_clear(ob, RNA_enum_get(op->ptr, "type"));
 
@@ -1687,7 +1690,7 @@ void OUTLINER_OT_parent_clear(wmOperatorType *ot)
 	/* api callbacks */
 	ot->invoke = parent_clear_invoke;
 
-	ot->poll = ED_operator_outliner_active;
+	ot->poll = outliner_parenting_poll;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;

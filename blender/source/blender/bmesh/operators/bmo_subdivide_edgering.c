@@ -40,14 +40,13 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_utildefines.h"
-#include "BLI_array.h"
+#include "BLI_alloca.h"
 #include "BLI_math.h"
 #include "BLI_listbase.h"
 
 #include "BKE_curve.h"
 
 #include "bmesh.h"
-#include "tools/bmesh_edgesplit.h"
 
 #include "intern/bmesh_operators_private.h" /* own include */
 
@@ -1167,6 +1166,7 @@ void bmo_subdivide_edgering_exec(BMesh *bm, BMOperator *op)
 			bm_edgering_pair_ringsubd(bm, lpair, el_store_a, el_store_b,
 			                          interp_mode, cuts, smooth, falloff_cache);
 			bm_edgering_pair_store_free(lpair, interp_mode);
+			change = true;
 		}
 		else {
 			BMO_error_raise(bm, op, BMERR_INVALID_SELECTION,
@@ -1217,6 +1217,7 @@ void bmo_subdivide_edgering_exec(BMesh *bm, BMOperator *op)
 				bm_edgering_pair_ringsubd(bm, lpair, el_store_a, el_store_b,
 				                          interp_mode, cuts, smooth, falloff_cache);
 				bm_edgering_pair_store_free(lpair, interp_mode);
+				change = true;
 			}
 
 			BLI_assert(bm_verts_tag_count(bm) == 0);
@@ -1229,6 +1230,6 @@ cleanup:
 
 	/* flag output */
 	if (change) {
-		BMO_slot_buffer_flag_enable(bm, op->slots_out, "faces.out", BM_FACE, FACE_OUT);
+		BMO_slot_buffer_from_enabled_flag(bm, op, op->slots_out, "faces.out", BM_FACE, FACE_OUT);
 	}
 }

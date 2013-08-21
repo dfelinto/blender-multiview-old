@@ -55,6 +55,7 @@ typedef struct MemArena MemArena;
 
 struct MemArena    *BLI_memarena_new(const int bufsize, const char *name)
 #if MEM_GNU_ATTRIBUTES
+__attribute__((malloc))
 __attribute__((warn_unused_result))
 __attribute__((nonnull(2)))
 #endif
@@ -85,9 +86,16 @@ __attribute__((nonnull(1)))
 
 void               *BLI_memarena_alloc(struct MemArena *ma, int size)
 #if MEM_GNU_ATTRIBUTES
+__attribute__((malloc))
 __attribute__((warn_unused_result))
 __attribute__((nonnull(1)))
 __attribute__((alloc_size(2)))
+#endif
+;
+
+void BLI_memarena_clear(MemArena *ma)
+#if MEM_GNU_ATTRIBUTES
+__attribute__((nonnull(1)))
 #endif
 ;
 
@@ -95,6 +103,4 @@ __attribute__((alloc_size(2)))
 }
 #endif
 
-
-#endif
-
+#endif  /* __BLI_MEMARENA_H__ */

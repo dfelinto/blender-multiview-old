@@ -826,6 +826,7 @@ static void view3d_main_area_listener(bScreen *sc, ScrArea *sa, ARegion *ar, wmN
 					if (rv3d->persp == RV3D_CAMOB) {
 						ED_region_tag_redraw(ar);
 					}
+					break;
 				}
 			}
 			break;
@@ -881,8 +882,8 @@ static void view3d_main_area_listener(bScreen *sc, ScrArea *sa, ARegion *ar, wmN
 					/* screen was changed, need to update used layers due to NC_SCENE|ND_LAYER_CONTENT */
 					/* updates used layers only for View3D in active screen */
 					if (wmn->reference) {
-						bScreen *sc = wmn->reference;
-						view3d_recalc_used_layers(ar, wmn, sc->scene);
+						bScreen *sc_ref = wmn->reference;
+						view3d_recalc_used_layers(ar, wmn, sc_ref->scene);
 					}
 					ED_region_tag_redraw(ar);
 					break;
@@ -1141,17 +1142,17 @@ const char *view3d_context_dir[] = {
 
 static int view3d_context(const bContext *C, const char *member, bContextDataResult *result)
 {
-	View3D *v3d = CTX_wm_view3d(C);
-	Scene *scene = CTX_data_scene(C);
-	Base *base;
 	/* fallback to the scene layer, allows duplicate and other object operators to run outside the 3d view */
-	unsigned int lay = v3d ? v3d->lay : scene->lay;
 
 	if (CTX_data_dir(member)) {
 		CTX_data_dir_set(result, view3d_context_dir);
 	}
 	else if (CTX_data_equals(member, "selected_objects") || CTX_data_equals(member, "selected_bases")) {
-		int selected_objects = CTX_data_equals(member, "selected_objects");
+		View3D *v3d = CTX_wm_view3d(C);
+		Scene *scene = CTX_data_scene(C);
+		const unsigned int lay = v3d ? v3d->lay : scene->lay;
+		Base *base;
+		const bool selected_objects = CTX_data_equals(member, "selected_objects");
 
 		for (base = scene->base.first; base; base = base->next) {
 			if ((base->flag & SELECT) && (base->lay & lay)) {
@@ -1167,7 +1168,11 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 		return 1;
 	}
 	else if (CTX_data_equals(member, "selected_editable_objects") || CTX_data_equals(member, "selected_editable_bases")) {
-		int selected_editable_objects = CTX_data_equals(member, "selected_editable_objects");
+		View3D *v3d = CTX_wm_view3d(C);
+		Scene *scene = CTX_data_scene(C);
+		const unsigned int lay = v3d ? v3d->lay : scene->lay;
+		Base *base;
+		const bool selected_editable_objects = CTX_data_equals(member, "selected_editable_objects");
 
 		for (base = scene->base.first; base; base = base->next) {
 			if ((base->flag & SELECT) && (base->lay & lay)) {
@@ -1185,7 +1190,11 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 		return 1;
 	}
 	else if (CTX_data_equals(member, "visible_objects") || CTX_data_equals(member, "visible_bases")) {
-		int visible_objects = CTX_data_equals(member, "visible_objects");
+		View3D *v3d = CTX_wm_view3d(C);
+		Scene *scene = CTX_data_scene(C);
+		const unsigned int lay = v3d ? v3d->lay : scene->lay;
+		Base *base;
+		const bool visible_objects = CTX_data_equals(member, "visible_objects");
 
 		for (base = scene->base.first; base; base = base->next) {
 			if (base->lay & lay) {
@@ -1201,7 +1210,11 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 		return 1;
 	}
 	else if (CTX_data_equals(member, "selectable_objects") || CTX_data_equals(member, "selectable_bases")) {
-		int selectable_objects = CTX_data_equals(member, "selectable_objects");
+		View3D *v3d = CTX_wm_view3d(C);
+		Scene *scene = CTX_data_scene(C);
+		const unsigned int lay = v3d ? v3d->lay : scene->lay;
+		Base *base;
+		const bool selectable_objects = CTX_data_equals(member, "selectable_objects");
 
 		for (base = scene->base.first; base; base = base->next) {
 			if (base->lay & lay) {
@@ -1217,6 +1230,9 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 		return 1;
 	}
 	else if (CTX_data_equals(member, "active_base")) {
+		View3D *v3d = CTX_wm_view3d(C);
+		Scene *scene = CTX_data_scene(C);
+		const unsigned int lay = v3d ? v3d->lay : scene->lay;
 		if (scene->basact && (scene->basact->lay & lay)) {
 			Object *ob = scene->basact->object;
 			/* if hidden but in edit mode, we still display, can happen with animation */
@@ -1227,6 +1243,9 @@ static int view3d_context(const bContext *C, const char *member, bContextDataRes
 		return 1;
 	}
 	else if (CTX_data_equals(member, "active_object")) {
+		View3D *v3d = CTX_wm_view3d(C);
+		Scene *scene = CTX_data_scene(C);
+		const unsigned int lay = v3d ? v3d->lay : scene->lay;
 		if (scene->basact && (scene->basact->lay & lay)) {
 			Object *ob = scene->basact->object;
 			if ((ob->restrictflag & OB_RESTRICT_VIEW) == 0 || (ob->mode & OB_MODE_EDIT))

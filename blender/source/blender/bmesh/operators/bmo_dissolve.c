@@ -103,10 +103,10 @@ void bmo_dissolve_faces_exec(BMesh *bm, BMOperator *op)
 {
 	BMOIter oiter;
 	BMFace *f;
-	BLI_array_declare(faces);
-	BLI_array_declare(regions);
 	BMFace ***regions = NULL;
 	BMFace **faces = NULL;
+	BLI_array_declare(regions);
+	BLI_array_declare(faces);
 	BMFace *act_face = bm->act_face;
 	BMWalker regwalker;
 	int i;
@@ -248,7 +248,7 @@ void bmo_dissolve_edges_exec(BMesh *bm, BMOperator *op)
 		BM_ITER_MESH (v, &viter, bm, BM_VERTS_OF_MESH) {
 			BMIter iter;
 			int untag_count = 0;
-			BM_ITER_ELEM(e, &iter, v, BM_EDGES_OF_VERT) {
+			BM_ITER_ELEM (e, &iter, v, BM_EDGES_OF_VERT) {
 				if (!BMO_elem_flag_test(bm, e, EDGE_TAG)) {
 					untag_count++;
 				}
@@ -310,21 +310,21 @@ static bool test_extra_verts(BMesh *bm, BMVert *v)
 
 	/* test faces around verts for verts that would be wrongly killed
 	 * by dissolve faces. */
-	BM_ITER_ELEM(f, &fiter, v, BM_FACES_OF_VERT) {
-		BM_ITER_ELEM(l, &liter, f, BM_LOOPS_OF_FACE) {
+	BM_ITER_ELEM (f, &fiter, v, BM_FACES_OF_VERT) {
+		BM_ITER_ELEM (l, &liter, f, BM_LOOPS_OF_FACE) {
 			if (!BMO_elem_flag_test(bm, l->v, VERT_MARK)) {
 				/* if an edge around a vert is a boundary edge,
 				 * then dissolve faces won't destroy it.
 				 * also if it forms a boundary with one
 				 * of the face region */
 				bool found = false;
-				BM_ITER_ELEM(e, &eiter, l->v, BM_EDGES_OF_VERT) {
+				BM_ITER_ELEM (e, &eiter, l->v, BM_EDGES_OF_VERT) {
 					BMFace *f_iter;
 					if (BM_edge_is_boundary(e)) {
 						found = true;
 					}
 					else {
-						BM_ITER_ELEM(f_iter, &fiter_sub, e, BM_FACES_OF_EDGE) {
+						BM_ITER_ELEM (f_iter, &fiter_sub, e, BM_FACES_OF_EDGE) {
 							if (!BMO_elem_flag_test(bm, f_iter, FACE_MARK)) {
 								found = true;
 								break;
@@ -430,5 +430,8 @@ void bmo_dissolve_limit_exec(BMesh *bm, BMOperator *op)
 
 	BM_mesh_decimate_dissolve_ex(bm, angle_limit, do_dissolve_boundaries, delimit,
 	                             (BMVert **)BMO_SLOT_AS_BUFFER(vinput), vinput->len,
-	                             (BMEdge **)BMO_SLOT_AS_BUFFER(einput), einput->len);
+	                             (BMEdge **)BMO_SLOT_AS_BUFFER(einput), einput->len,
+	                             FACE_NEW);
+
+	BMO_slot_buffer_from_enabled_flag(bm, op, op->slots_out, "region.out", BM_FACE, FACE_NEW);
 }
