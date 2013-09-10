@@ -144,8 +144,8 @@
 
 /* check for typeof() */
 #define BLI_SMALLSTACK_POP(var) \
-	(_BLI_SMALLSTACK_CAST(var)) ((_##var##_stack) ? \
-	(_BLI_SMALLSTACK_DEL(var), (_##var##_free->link)) : NULL)
+	((_BLI_SMALLSTACK_CAST(var)) ((_##var##_stack) ? \
+	(_BLI_SMALLSTACK_DEL(var), (_##var##_free->link)) : NULL))
 
 #define BLI_SMALLSTACK_FREE(var)  { \
 	(void)&(_##var##_type); \
