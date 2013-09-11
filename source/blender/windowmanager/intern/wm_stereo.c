@@ -377,40 +377,48 @@ static bool wm_stereo_need_fullscreen(eStereoDisplayMode stereo_display)
 	             S3D_DISPLAY_PAGEFLIP);
 }
 
-bool wm_stereo_enabled(wmWindow *win)
+static bool wm_stereo_required(bScreen *screen)
 {
-	bScreen *screen = win->screen;
+	ScrArea *sa;
+	for (sa = screen->areabase.first; sa; sa = sa->next) {
+		SpaceLink *sl;
+		for (sl = sa->spacedata.first; sl; sl= sl->next) {
 
-	if (win->flag & WM_STEREO)
-		return TRUE;
-
-	if (wm_stereo_need_fullscreen(U.stereo_display) == FALSE) {
-
-		/* where there is no */
-		ScrArea *sa;
-		for (sa = screen->areabase.first; sa; sa = sa->next) {
-			SpaceLink *sl;
-			for (sl = sa->spacedata.first; sl; sl= sl->next) {
-
-				if (sl->spacetype == SPACE_VIEW3D) {
-					View3D *v3d = (View3D*) sl;
-					if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) &&
-							(v3d->stereo_camera == STEREO_3D_ID))
-						return TRUE;
-				}
+			if (sl->spacetype == SPACE_VIEW3D) {
+				View3D *v3d = (View3D*) sl;
+				if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) &&
+						(v3d->stereo_camera == STEREO_3D_ID))
+					return TRUE;
+			}
 
 #if 0 // waiting to image editor refactor
-				if (sl->spacetype == SPACE_IMAGE) {
-					SpaceImage *sima = (SpaceImage *) sl;
-//					if (sima->iuser.view == STEREO_3D_ID)
-						return TRUE;
-				}
-#endif
+			if (sl->spacetype == SPACE_IMAGE) {
+				SpaceImage *sima = (SpaceImage *) sl;
+				if (sima->iuser.view == STEREO_3D_ID)
+					return TRUE;
 			}
+#endif
 		}
 	}
 
 	return FALSE;
+}
+
+bool wm_stereo_enabled(wmWindow *win)
+{
+	bScreen *screen = win->screen;
+
+	/* the per-window stereo setting is a way to disable the 3D momentaneously */
+	if ((win->flag & WM_STEREO) == 0)
+		return FALSE;
+
+	if (wm_stereo_required(screen) == FALSE)
+		return FALSE;
+
+	if (wm_stereo_need_fullscreen(U.stereo_display))
+		return (GHOST_GetWindowState(win->ghostwin) == GHOST_kWindowStateFullScreen);
+
+	return TRUE;
 }
 
 int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
