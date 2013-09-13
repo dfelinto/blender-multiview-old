@@ -298,7 +298,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 	CCGVertHDL *fverts = NULL;
 	BLI_array_declare(fverts);
 #endif
-	EdgeHash *ehash;
+	EdgeSet *eset;
 	float creaseFactor = (float)ccgSubSurf_getSubdivisionLevels(ss);
 	float uv[3] = {0.0f, 0.0f, 0.0f}; /* only first 2 values are written into */
 
@@ -334,7 +334,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 	}
 
 	/* create edges */
-	ehash = BLI_edgehash_new();
+	eset = BLI_edgeset_new_ex(__func__, BLI_EDGEHASH_SIZE_GUESS_FROM_POLYS(totface));
 
 	for (i = 0; i < totface; i++) {
 		MPoly *mp = &((MPoly *) mpoly)[i];
@@ -359,7 +359,7 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 			MVert *mv0 = mvert + (ml[j_next].v);
 			MVert *mv1 = mvert + (ml[j].v);
 
-			if (!BLI_edgehash_haskey(ehash, v0, v1)) {
+			if (BLI_edgeset_reinsert(eset, v0, v1)) {
 				CCGEdge *e, *orige = ccgSubSurf_getFaceEdge(origf, j_next);
 				CCGEdgeHDL ehdl = SET_INT_IN_POINTER(mp->loopstart + j_next);
 				float crease;
@@ -370,12 +370,11 @@ static int ss_sync_from_uv(CCGSubSurf *ss, CCGSubSurf *origss, DerivedMesh *dm, 
 					crease = ccgSubSurf_getEdgeCrease(orige);
 
 				ccgSubSurf_syncEdge(ss, ehdl, fverts[j_next], fverts[j], crease, &e);
-				BLI_edgehash_insert(ehash, v0, v1, NULL);
 			}
 		}
 	}
 
-	BLI_edgehash_free(ehash, NULL);
+	BLI_edgeset_free(eset);
 
 	/* create faces */
 	for (i = 0; i < totface; i++) {
@@ -1332,7 +1331,7 @@ static void ccgDM_copyFinalLoopArray(DerivedMesh *dm, MLoop *mloop)
 	if (!ccgdm->ehash) {
 		MEdge *medge;
 
-		ccgdm->ehash = BLI_edgehash_new();
+		ccgdm->ehash = BLI_edgehash_new_ex(__func__, ccgdm->dm.numEdgeData);
 		medge = ccgdm->dm.getEdgeArray((DerivedMesh *)ccgdm);
 
 		for (i = 0; i < ccgdm->dm.numEdgeData; i++) {
@@ -3190,8 +3189,10 @@ static CCGDerivedMesh *getCCGDerivedMesh(CCGSubSurf *ss,
 	ccgdm->dm.getVert = ccgDM_getFinalVert;
 	ccgdm->dm.getEdge = ccgDM_getFinalEdge;
 	ccgdm->dm.getTessFace = ccgDM_getFinalFace;
+
 	ccgdm->dm.getVertCo = ccgDM_getFinalVertCo;
 	ccgdm->dm.getVertNo = ccgDM_getFinalVertNo;
+
 	ccgdm->dm.copyVertArray = ccgDM_copyFinalVertArray;
 	ccgdm->dm.copyEdgeArray = ccgDM_copyFinalEdgeArray;
 	ccgdm->dm.copyTessFaceArray = ccgDM_copyFinalFaceArray;
@@ -3216,11 +3217,6 @@ static CCGDerivedMesh *getCCGDerivedMesh(CCGSubSurf *ss,
 	ccgdm->dm.getGridHidden = ccgDM_getGridHidden;
 	ccgdm->dm.getPolyMap = ccgDM_getPolyMap;
 	ccgdm->dm.getPBVH = ccgDM_getPBVH;
-
-	ccgdm->dm.getTessFace = ccgDM_getFinalFace;
-	ccgdm->dm.copyVertArray = ccgDM_copyFinalVertArray;
-	ccgdm->dm.copyEdgeArray = ccgDM_copyFinalEdgeArray;
-	ccgdm->dm.copyTessFaceArray = ccgDM_copyFinalFaceArray;
 
 	ccgdm->dm.calcNormals = ccgDM_calcNormals;
 	ccgdm->dm.recalcTessellation = ccgDM_recalcTessellation;
@@ -3577,6 +3573,8 @@ struct DerivedMesh *subsurf_make_derived_from_derived(
 	int drawInteriorEdges = !(smd->flags & eSubsurfModifierFlag_ControlEdges);
 	CCGDerivedMesh *result;
 
+	/* note: editmode calculation can only run once per
+	 * modifier stack evaluation (uses freed cache) [#36299] */
 	if (flags & SUBSURF_FOR_EDIT_MODE) {
 		int levels = (smd->modifier.scene) ? get_render_subsurf_level(&smd->modifier.scene->r, smd->levels) : smd->levels;
 

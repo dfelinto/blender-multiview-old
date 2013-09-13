@@ -95,6 +95,8 @@ void MESH_OT_primitive_ico_sphere_add(struct wmOperatorType *ot);
 /* *** editmesh_bevel.c *** */
 void MESH_OT_bevel(struct wmOperatorType *ot);
 
+/* *** editmesh_bisect.c *** */
+void MESH_OT_bisect(struct wmOperatorType *ot);
 
 /* *** editmesh_extrude.c *** */
 void MESH_OT_extrude_repeat(struct wmOperatorType *ot);

@@ -220,10 +220,10 @@ void ED_view3d_clipping_enable(void)
 
 static bool view3d_clipping_test(const float co[3], float clip[6][4])
 {
-	if (0.0f < clip[0][3] + dot_v3v3(co, clip[0]))
-		if (0.0f < clip[1][3] + dot_v3v3(co, clip[1]))
-			if (0.0f < clip[2][3] + dot_v3v3(co, clip[2]))
-				if (0.0f < clip[3][3] + dot_v3v3(co, clip[3]))
+	if (plane_point_side_v3(clip[0], co) > 0.0f)
+		if (plane_point_side_v3(clip[1], co) > 0.0f)
+			if (plane_point_side_v3(clip[2], co) > 0.0f)
+				if (plane_point_side_v3(clip[3], co) > 0.0f)
 					return false;
 
 	return true;
@@ -1662,7 +1662,7 @@ static void view3d_draw_bgpic(Scene *scene, ARegion *ar, View3D *v3d,
 
 				if (bgpic->flag & V3D_BGPIC_CAMERACLIP) {
 					if (scene->camera)
-						clip = BKE_object_movieclip_get(scene, scene->camera, 1);
+						clip = BKE_object_movieclip_get(scene, scene->camera, true);
 				}
 				else {
 					clip = bgpic->clip;

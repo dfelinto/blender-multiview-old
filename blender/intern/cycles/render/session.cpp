@@ -56,7 +56,7 @@ Session::Session(const SessionParams& params_)
 	}
 	else {
 		buffers = new RenderBuffers(device);
-		display = new DisplayBuffer(device);
+		display = new DisplayBuffer(device, params.display_buffer_linear);
 	}
 
 	session_thread = NULL;
@@ -66,6 +66,7 @@ Session::Session(const SessionParams& params_)
 	reset_time = 0.0;
 	preview_time = 0.0;
 	paused_time = 0.0;
+	last_update_time = 0.0;
 
 	delayed_reset.do_reset = false;
 	delayed_reset.samples = 0;
@@ -371,7 +372,6 @@ bool Session::acquire_tile(Device *tile_device, RenderTile& rtile)
 
 		rtile.buffer = buffers->buffer.device_pointer;
 		rtile.rng_state = buffers->rng_state.device_pointer;
-		rtile.rgba = display->rgba.device_pointer;
 		rtile.buffers = buffers;
 
 		device->map_tile(tile_device, rtile);
@@ -415,7 +415,6 @@ bool Session::acquire_tile(Device *tile_device, RenderTile& rtile)
 
 	rtile.buffer = tilebuffers->buffer.device_pointer;
 	rtile.rng_state = tilebuffers->rng_state.device_pointer;
-	rtile.rgba = 0;
 	rtile.buffers = tilebuffers;
 
 	/* this will tag tile as IN PROGRESS in blender-side render pipeline,
@@ -830,7 +829,7 @@ void Session::path_trace()
 	task.update_tile_sample = function_bind(&Session::update_tile_sample, this, _1);
 	task.update_progress_sample = function_bind(&Session::update_progress_sample, this);
 	task.need_finish_queue = params.progressive_refine;
-	task.integrator_progressive = scene->integrator->progressive;
+	task.integrator_branched = scene->integrator->method == Integrator::BRANCHED_PATH;
 
 	device->task_add(task);
 }
@@ -838,13 +837,14 @@ void Session::path_trace()
 void Session::tonemap()
 {
 	/* add tonemap task */
-	DeviceTask task(DeviceTask::TONEMAP);
+	DeviceTask task(DeviceTask::FILM_CONVERT);
 
 	task.x = tile_manager.state.buffer.full_x;
 	task.y = tile_manager.state.buffer.full_y;
 	task.w = tile_manager.state.buffer.width;
 	task.h = tile_manager.state.buffer.height;
-	task.rgba = display->rgba.device_pointer;
+	task.rgba_byte = display->rgba_byte.device_pointer;
+	task.rgba_half = display->rgba_half.device_pointer;
 	task.buffer = buffers->buffer.device_pointer;
 	task.sample = tile_manager.state.sample;
 	tile_manager.state.buffer.get_offset_stride(task.offset, task.stride);

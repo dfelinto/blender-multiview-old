@@ -230,7 +230,7 @@ static bool bm_loop_path_build_step(BLI_mempool *vs_pool, ListBase *lb, const in
 					/* on the same side - do nothing */
 				}
 				else {
-					/* we have met out match! (vertices from differnt sides meet) */
+					/* we have met out match! (vertices from different sides meet) */
 					if (dir == 1) {
 						v_match[0] = vs->v;
 						v_match[1] = v_next;
@@ -361,8 +361,7 @@ bool BM_mesh_edgeloops_find_path(BMesh *bm, ListBase *r_eloops,
 void BM_mesh_edgeloops_free(ListBase *eloops)
 {
 	BMEdgeLoopStore *el_store;
-	while ((el_store = eloops->first)) {
-		BLI_remlink(eloops, el_store);
+	while ((el_store = BLI_pophead(eloops))) {
 		BM_edgeloop_free(el_store);
 	}
 }

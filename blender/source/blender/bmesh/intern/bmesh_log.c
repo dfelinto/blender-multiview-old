@@ -18,6 +18,21 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/bmesh/intern/bmesh_log.c
+ *  \ingroup bmesh
+ *
+ * The BMLog is an interface for storing undo/redo steps as a BMesh is
+ * modified. It only stores changes to the BMesh, not full copies.
+ *
+ * Currently it supports the following types of changes:
+ *
+ * - Adding and removing vertices
+ * - Adding and removing faces
+ * - Moving vertices
+ * - Setting vertex paint-mask values
+ * - Setting vertex hflags
+ */
+
 #include "MEM_guardedalloc.h"
 
 #include "BLI_utildefines.h"
@@ -118,8 +133,8 @@ static void bm_log_vert_id_set(BMLog *log, BMVert *v, unsigned int id)
 {
 	void *vid = SET_INT_IN_POINTER(id);
 	
-	BLI_ghash_assign(log->id_to_elem, vid, v, NULL, NULL);
-	BLI_ghash_assign(log->elem_to_id, v, vid, NULL, NULL);
+	BLI_ghash_reinsert(log->id_to_elem, vid, v, NULL, NULL);
+	BLI_ghash_reinsert(log->elem_to_id, v, vid, NULL, NULL);
 }
 
 /* Get a vertex from its unique ID */
@@ -142,8 +157,8 @@ static void bm_log_face_id_set(BMLog *log, BMFace *f, unsigned int id)
 {
 	void *fid = SET_INT_IN_POINTER(id);
 
-	BLI_ghash_assign(log->id_to_elem, fid, f, NULL, NULL);
-	BLI_ghash_assign(log->elem_to_id, f, fid, NULL, NULL);
+	BLI_ghash_reinsert(log->id_to_elem, fid, f, NULL, NULL);
+	BLI_ghash_reinsert(log->elem_to_id, f, fid, NULL, NULL);
 }
 
 /* Get a face from its unique ID */
@@ -407,7 +422,7 @@ static int uint_compare(const void *a_v, const void *b_v)
  */
 static GHash *bm_log_compress_ids_to_indices(unsigned int *ids, int totid)
 {
-	GHash *map = BLI_ghash_int_new(AT);
+	GHash *map = BLI_ghash_int_new_ex(AT, totid);
 	int i;
 
 	qsort(ids, totid, sizeof(*ids), uint_compare);
@@ -441,8 +456,8 @@ BMLog *BM_log_create(BMesh *bm)
 	BMLog *log = MEM_callocN(sizeof(*log), AT);
 
 	log->unused_ids = range_tree_uint_alloc(0, (unsigned)-1);
-	log->id_to_elem = BLI_ghash_ptr_new(AT);
-	log->elem_to_id = BLI_ghash_ptr_new(AT);
+	log->id_to_elem = BLI_ghash_ptr_new_ex(AT, bm->totvert + bm->totface);
+	log->elem_to_id = BLI_ghash_ptr_new_ex(AT, bm->totvert + bm->totface);
 
 	/* Assign IDs to all existing vertices and faces */
 	bm_log_assign_ids(bm, log);

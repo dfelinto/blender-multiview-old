@@ -122,12 +122,12 @@ static int bpy_bm_elem_hflag_set(BPy_BMElem *self, PyObject *value, void *flag)
 
 	param = PyLong_AsLong(value);
 
-	if (param == true) {
-		BM_elem_flag_enable(self->ele, hflag);
-		return 0;
-	}
-	else if (param == false) {
-		BM_elem_flag_disable(self->ele, hflag);
+	if ((unsigned int)param <= 1) {
+		if (hflag == BM_ELEM_SELECT)
+			BM_elem_select_set(self->bm, self->ele, param);
+		else
+			BM_elem_flag_set(self->ele, hflag, param);
+
 		return 0;
 	}
 	else {
@@ -1046,6 +1046,8 @@ static PyObject *bpy_bmesh_from_mesh(BPy_BMesh *self, PyObject *args, PyObject *
 	int use_fnorm  = true;
 	int use_shape_key = false;
 	int shape_key_index = 0;
+
+	BPY_BM_CHECK_OBJ(self);
 
 	if (!PyArg_ParseTupleAndKeywords(args, kw, "O|iii:from_mesh", (char **)kwlist,
 	                                 &py_mesh, &use_fnorm, &use_shape_key, &shape_key_index) ||
@@ -2918,7 +2920,8 @@ static void bpy_bmvert_dealloc(BPy_BMElem *self)
 	BMesh *bm = self->bm;
 	if (bm) {
 		void **ptr = CustomData_bmesh_get(&bm->vdata, self->ele->head.data, CD_BM_ELEM_PYPTR);
-		*ptr = NULL;
+		if (ptr)
+			*ptr = NULL;
 	}
 	PyObject_DEL(self);
 }
@@ -2928,7 +2931,8 @@ static void bpy_bmedge_dealloc(BPy_BMElem *self)
 	BMesh *bm = self->bm;
 	if (bm) {
 		void **ptr = CustomData_bmesh_get(&bm->edata, self->ele->head.data, CD_BM_ELEM_PYPTR);
-		*ptr = NULL;
+		if (ptr)
+			*ptr = NULL;
 	}
 	PyObject_DEL(self);
 }
@@ -2938,7 +2942,8 @@ static void bpy_bmface_dealloc(BPy_BMElem *self)
 	BMesh *bm = self->bm;
 	if (bm) {
 		void **ptr = CustomData_bmesh_get(&bm->pdata, self->ele->head.data, CD_BM_ELEM_PYPTR);
-		*ptr = NULL;
+		if (ptr)
+			*ptr = NULL;
 	}
 	PyObject_DEL(self);
 }
@@ -2948,7 +2953,8 @@ static void bpy_bmloop_dealloc(BPy_BMElem *self)
 	BMesh *bm = self->bm;
 	if (bm) {
 		void **ptr = CustomData_bmesh_get(&bm->ldata, self->ele->head.data, CD_BM_ELEM_PYPTR);
-		*ptr = NULL;
+		if (ptr)
+			*ptr = NULL;
 	}
 	PyObject_DEL(self);
 }

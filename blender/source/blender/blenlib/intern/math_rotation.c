@@ -62,7 +62,7 @@ void copy_qt_qt(float q1[4], const float q2[4])
 	q1[3] = q2[3];
 }
 
-int is_zero_qt(float *q)
+bool is_zero_qt(const float q[4])
 {
 	return (q[0] == 0 && q[1] == 0 && q[2] == 0 && q[3] == 0);
 }
@@ -817,7 +817,8 @@ void mat4_to_axis_angle(float axis[3], float *angle, float mat[4][4])
 	quat_to_axis_angle(axis, angle, q);
 }
 
-void single_axis_angle_to_mat3(float mat[3][3], const char axis, const float angle)
+/* rotation matrix from a single axis */
+void axis_angle_to_mat3_single(float mat[3][3], const char axis, const float angle)
 {
 	const float angle_cos = cosf(angle);
 	const float angle_sin = sinf(angle);
@@ -860,6 +861,18 @@ void single_axis_angle_to_mat3(float mat[3][3], const char axis, const float ang
 			BLI_assert(0);
 			break;
 	}
+}
+
+void angle_to_mat2(float mat[2][2], const float angle)
+{
+	const float angle_cos = cosf(angle);
+	const float angle_sin = sinf(angle);
+
+	/* 2D rotation matrix */
+	mat[0][0] =  angle_cos;
+	mat[0][1] =  angle_sin;
+	mat[1][0] = -angle_sin;
+	mat[1][1] =  angle_cos;
 }
 
 /******************************** XYZ Eulers *********************************/
@@ -993,7 +1006,7 @@ void quat_to_eul(float *eul, const float quat[4])
 }
 
 /* XYZ order */
-void eul_to_quat(float *quat, const float eul[3])
+void eul_to_quat(float quat[4], const float eul[3])
 {
 	float ti, tj, th, ci, cj, ch, si, sj, sh, cc, cs, sc, ss;
 
@@ -1018,7 +1031,7 @@ void eul_to_quat(float *quat, const float eul[3])
 }
 
 /* XYZ order */
-void rotate_eul(float *beul, const char axis, const float ang)
+void rotate_eul(float beul[3], const char axis, const float ang)
 {
 	float eul[3], mat1[3][3], mat2[3][3], totmat[3][3];
 
@@ -1229,7 +1242,7 @@ void eulO_to_mat3(float M[3][3], const float e[3], const short order)
 }
 
 /* returns two euler calculation methods, so we can pick the best */
-static void mat3_to_eulo2(float M[3][3], float *e1, float *e2, const short order)
+static void mat3_to_eulo2(float M[3][3], float e1[3], float e2[3], const short order)
 {
 	const RotOrderInfo *R = GET_ROTATIONORDER_INFO(order);
 	short i = R->axis[0], j = R->axis[1], k = R->axis[2];
@@ -1478,9 +1491,10 @@ void mat4_to_dquat(DualQuat *dq, float basemat[4][4], float mat[4][4])
 	dq->trans[3] =  0.5f * ( t[0] * q[2] - t[1] * q[1] + t[2] * q[0]);
 }
 
-void dquat_to_mat4(float mat[4][4], DualQuat *dq)
+void dquat_to_mat4(float mat[4][4], const DualQuat *dq)
 {
-	float len, *t, q0[4];
+	float len, q0[4];
+	const float *t;
 
 	/* regular quaternion */
 	copy_qt_qt(q0, dq->quat);
@@ -1502,7 +1516,7 @@ void dquat_to_mat4(float mat[4][4], DualQuat *dq)
 	/* note: this does not handle scaling */
 }
 
-void add_weighted_dq_dq(DualQuat *dqsum, DualQuat *dq, float weight)
+void add_weighted_dq_dq(DualQuat *dqsum, const DualQuat *dq, float weight)
 {
 	int flipped = 0;
 
@@ -1530,7 +1544,7 @@ void add_weighted_dq_dq(DualQuat *dqsum, DualQuat *dq, float weight)
 		if (flipped) /* we don't want negative weights for scaling */
 			weight = -weight;
 
-		copy_m4_m4(wmat, dq->scale);
+		copy_m4_m4(wmat, (float(*)[4])dq->scale);
 		mul_m4_fl(wmat, weight);
 		add_m4_m4m4(dqsum->scale, dqsum->scale, wmat);
 		dqsum->scale_weight += weight;
@@ -1609,7 +1623,7 @@ void mul_v3m3_dq(float co[3], float mat[3][3], DualQuat *dq)
 	}
 }
 
-void copy_dq_dq(DualQuat *dq1, DualQuat *dq2)
+void copy_dq_dq(DualQuat *dq1, const DualQuat *dq2)
 {
 	memcpy(dq1, dq2, sizeof(DualQuat));
 }

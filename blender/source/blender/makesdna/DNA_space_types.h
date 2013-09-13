@@ -132,8 +132,9 @@ typedef struct SpaceButs {
 	short mainb, mainbo, mainbuser; /* context tabs */
 	short re_align, align;          /* align for panels */
 	short preview;                  /* preview is signal to refresh */
-	short texture_context;          /* texture context selector (material, world, brush)*/
-	char flag, pad;
+	/* texture context selector (material, lamp, particles, world, other)*/
+	short texture_context, texture_context_prev;
+	char flag, pad[7];
 	
 	void *path;                     /* runtime */
 	int pathflag, dataicon;         /* runtime */
@@ -261,11 +262,8 @@ typedef struct SpaceOops {
 
 	short flag, outlinevis, storeflag, search_flags;
 	
-	/* search index for every element in treestore;
-	 * It is ok for treehash to contain duplicates, because the semantics of its usage
-	 * allows duplicates (see check_persistent)
-	 */
-	struct GHash *treehash;
+	/* pointers to treestore elements, grouped by (id, type, nr) in hashtable for faster searching */
+	void *treehash;
 } SpaceOops;
 
 
@@ -1094,6 +1092,8 @@ typedef struct SpaceClip {
 	short gpencil_src, pad2;
 
 	int around, pad4;             /* pivot point for transforms */
+
+	float cursor[2];              /* Mask editor 2d cursor */
 
 	MaskSpaceInfo mask_info;
 } SpaceClip;

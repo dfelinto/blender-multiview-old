@@ -1991,39 +1991,42 @@ void add_halo_flare(Render *re)
 	RenderResult *rr= re->result;
 	RenderLayer *rl;
 	HaloRen *har;
-	int a, mode, do_draw = FALSE;
+	int a, mode;
 	float *rect;
 	
 	/* for now, we get the first renderlayer in list with halos set */
-	for (rl= rr->layers.first; rl; rl= rl->next)
-		if (rl->layflag & SCE_LAY_HALO)
-			break;
-
-	rect = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
-
-	if (rl==NULL || rect)
-		return;
-	
-	mode= R.r.mode;
-	R.r.mode &= ~R_PANORAMA;
-	
-	project_renderdata(&R, projectverto, 0, 0, 0);
-	
-	for (a=0; a<R.tothalo; a++) {
-		har= R.sortedhalos[a];
+	for (rl= rr->layers.first; rl; rl= rl->next) {
+		int do_draw = FALSE;
 		
-		if (har->flarec) {
-			do_draw = TRUE;
-			renderflare(rr, rect, har);
-		}
-	}
+		if ((rl->layflag & SCE_LAY_HALO) == 0)
+			continue;
 
-	if (do_draw) {
-		/* weak... the display callback wants an active renderlayer pointer... */
-		rr->renlay= rl;
-		re->display_draw(re->ddh, rr, NULL, re->actview);
+		rect = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, re->actview);
+
+		if (rl==NULL || rect)
+			return;
+		
+		mode= R.r.mode;
+		R.r.mode &= ~R_PANORAMA;
+		
+		project_renderdata(&R, projectverto, 0, 0, 0);
+		
+		for (a=0; a<R.tothalo; a++) {
+			har= R.sortedhalos[a];
+			
+			if (har->flarec && (har->lay & rl->lay)) {
+				do_draw = TRUE;
+				renderflare(rr, rl->rectf, har);
+			}
+		}
+		
+		if (do_draw) {
+			/* weak... the display callback wants an active renderlayer pointer... */
+			rr->renlay= rl;
+			re->display_draw(re->ddh, rr, NULL, re->actview);
+		}
+
+		R.r.mode= mode;
 	}
-	
-	R.r.mode= mode;
 }
 

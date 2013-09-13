@@ -261,7 +261,8 @@ mark_as_advanced(PYTHON_NUMPY_PATH)
 
 # Cycles
 option(WITH_CYCLES					"Enable cycles Render Engine" ON)
-option(WITH_CYCLES_TEST				"Build cycles test application" OFF)
+option(WITH_CYCLES_STANDALONE		"Build cycles standalone application" OFF)
+option(WITH_CYCLES_STANDALONE_GUI	"Build cycles standalone with GUI" OFF)
 option(WITH_CYCLES_OSL				"Build Cycles with OSL support" OFF)
 option(WITH_CYCLES_CUDA_BINARIES	"Build cycles CUDA binaries" OFF)
 set(CYCLES_CUDA_BINARIES_ARCH sm_20 sm_21 sm_30 sm_35 CACHE STRING "CUDA architectures to build binaries for")
@@ -305,7 +306,9 @@ if(APPLE)
 	endif()
 	
 	execute_process(COMMAND uname -r OUTPUT_VARIABLE MAC_SYS) # check for actual system-version
-	if(${MAC_SYS} MATCHES 12)
+	if(${MAC_SYS} MATCHES 13)
+		set(OSX_SYSTEM 10.9)
+	elseif(${MAC_SYS} MATCHES 12)
 		set(OSX_SYSTEM 10.8)
 	elseif(${MAC_SYS} MATCHES 11)
 		set(OSX_SYSTEM 10.7)
@@ -320,6 +323,16 @@ if(APPLE)
 
 	if(${CMAKE_GENERATOR} MATCHES "Xcode")
 	
+		# workaround for incorrect cmake xcode lookup for developer previews - XCODE_VERSION does not take xcode-select path into accout
+		# but would always look into /Applications/Xcode.app while dev versions are named Xcode<version>-DP<preview_number>
+		execute_process(COMMAND xcode-select --print-path  OUTPUT_VARIABLE XCODE_CHECK OUTPUT_STRIP_TRAILING_WHITESPACE)
+		string(REPLACE "/Contents/Developer" "" XCODE_BUNDLE ${XCODE_CHECK}) # truncate to bundlepath in any case
+		message(STATUS "Xcode-bundle : " ${XCODE_BUNDLE})
+		string(SUBSTRING "${XCODE_CHECK}" 14 6 DP_NAME) # reduce to XCode name without dp extension
+		if(${DP_NAME} MATCHES Xcode5)
+			set(XCODE_VERSION 5)
+		endif()
+
 		##### cmake incompatibility with xcode  4.3 and higher #####
 		if(${XCODE_VERSION} MATCHES '') # cmake fails due looking for xcode in the wrong path, thus will be empty var
 			message(FATAL_ERROR "Xcode 4.3 and higher must be used with cmake 2.8-8 or higher")
@@ -343,9 +356,10 @@ if(APPLE)
 	if(${XCODE_VERSION} VERSION_LESS 4.3)
 		set(CMAKE_OSX_SYSROOT /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk CACHE PATH "" FORCE)  # use guaranteed existing sdk
 	else()
-		# note: i don't use xcode-select path on purpose, cause also /Applications/Xcode.app would be allowed
-		# absolute pathes are more foolproof here !
-		set(OSX_SYSROOT_PREFIX /Applications/Xcode.app/Contents/Developer/Platforms/MacOSX.platform)
+		# note: xcode-select path could be ambigous, cause /Applications/Xcode.app/Contents/Developer or /Applications/Xcode.app would be allowed
+		# so i use a selfcomposed bundlepath here  
+		set(OSX_SYSROOT_PREFIX ${XCODE_BUNDLE}/Contents/Developer/Platforms/MacOSX.platform)
+		message(STATUS "OSX_SYSROOT_PREFIX: " ${OSX_SYSROOT_PREFIX})
 		set(OSX_DEVELOPER_PREFIX /Developer/SDKs/MacOSX${OSX_SYSTEM}.sdk) # use guaranteed existing sdk
 		set(CMAKE_OSX_SYSROOT ${OSX_SYSROOT_PREFIX}/${OSX_DEVELOPER_PREFIX} CACHE PATH "" FORCE)
 	endif()
@@ -373,7 +387,7 @@ endif()
 #-----------------------------------------------------------------------------
 # Check for conflicting/unsupported configurations
 
-if(NOT WITH_BLENDER AND NOT WITH_PLAYER AND NOT WITH_CYCLES_TEST)
+if(NOT WITH_BLENDER AND NOT WITH_PLAYER AND NOT WITH_CYCLES_STANDALONE)
 	message(FATAL_ERROR "At least one of WITH_BLENDER or WITH_PLAYER must be enabled, nothing to do!")
 endif()
 
@@ -771,14 +785,14 @@ if(UNIX AND NOT APPLE)
 		endif()
 
 		if(LLVM_DIRECTORY)
-			FIND_PROGRAM(LLVM_CONFIG llvm-config-${LLVM_VERSION} HINTS ${LLVM_DIRECTORY}/bin NO_CMAKE_PATH)
+			find_program(LLVM_CONFIG llvm-config-${LLVM_VERSION} HINTS ${LLVM_DIRECTORY}/bin NO_CMAKE_PATH)
 			if(NOT LLVM_CONFIG)
-				FIND_PROGRAM(LLVM_CONFIG llvm-config HINTS ${LLVM_DIRECTORY}/bin NO_CMAKE_PATH)
+				find_program(LLVM_CONFIG llvm-config HINTS ${LLVM_DIRECTORY}/bin NO_CMAKE_PATH)
 			endif()
 		else()
-			FIND_PROGRAM(LLVM_CONFIG llvm-config-${LLVM_VERSION})
+			find_program(LLVM_CONFIG llvm-config-${LLVM_VERSION})
 			if(NOT LLVM_CONFIG)
-				FIND_PROGRAM(LLVM_CONFIG llvm-config)
+				find_program(LLVM_CONFIG llvm-config)
 			endif()
 		endif()
 		execute_process(COMMAND ${LLVM_CONFIG} --version
@@ -881,8 +895,6 @@ if(UNIX AND NOT APPLE)
 
 	if(CMAKE_SYSTEM_NAME MATCHES "Linux")
 		if(NOT WITH_PYTHON_MODULE)
-			# BSD's dont use libdl.so
-		set(PLATFORM_LINKLIBS "${PLATFORM_LINKLIBS} -ldl")
 			# binreloc is linux only
 			set(BINRELOC_INCLUDE_DIRS ${CMAKE_SOURCE_DIR}/extern/binreloc/include)
 			set(WITH_BINRELOC ON)
@@ -1623,7 +1635,7 @@ elseif(APPLE)
 		endif()
 
 	if(WITH_JACK)
-		set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -weak_framework jackmp")
+		set(PLATFORM_LINKFLAGS "${PLATFORM_LINKFLAGS} -F/Library/Frameworks -weak_framework jackmp")
 	endif()
 
 	else()
@@ -1781,6 +1793,15 @@ elseif(APPLE)
 	else()
 		set(CMAKE_C_FLAGS_RELEASE "-mdynamic-no-pic -fno-strict-aliasing")
 		set(CMAKE_CXX_FLAGS_RELEASE "-mdynamic-no-pic -fno-strict-aliasing")
+	endif()
+
+	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+		if(${CMAKE_GENERATOR} MATCHES "Xcode")
+			if(${XCODE_VERSION} VERSION_EQUAL 5 OR ${XCODE_VERSION} VERSION_GREATER 5)
+				# Xcode 5 has too low template depth of 128 for libmv
+				set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ftemplate-depth=1024")
+			endif()
+		endif()
 	endif()
 endif()
 
@@ -2144,6 +2165,23 @@ endif()
 # eg: -Wno-uninitialized
 set(CMAKE_C_FLAGS "${C_WARNINGS} ${CMAKE_C_FLAGS} ${PLATFORM_CFLAGS}")
 set(CMAKE_CXX_FLAGS "${CXX_WARNINGS} ${CMAKE_CXX_FLAGS} ${PLATFORM_CFLAGS}")
+
+# defined above, platform spesific but shared names
+mark_as_advanced(
+	CYCLES_OSL
+	OSL_LIB_EXEC
+	OSL_COMPILER
+	OSL_LIB_COMP
+	OSL_LIB_QUERY
+	OSL_INCLUDES
+)
+
+mark_as_advanced(
+	LLVM_CONFIG
+	LLVM_DIRECTORY
+	LLVM_LIBRARY
+	LLVM_VERSION
+)
 
 #-------------------------------------------------------------------------------
 # Global Defines

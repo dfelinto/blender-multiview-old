@@ -19,7 +19,7 @@ Prerequisites directory: python-2.4.1.msi, PyOpenGL-2.0.1.09.py2.4-numpy23, pywi
 
 3. Copy empty.blend to the root directory of your CTS installation
 
-4. Modify config.py in the root directory of your CTS installation:
+4. Modify config.txt in the root directory of your CTS installation:
 
 blenderPath		d:\blenderdev\buildcmake\bin\Debug\blender.exe
 blenderEmpty		d:\blenderdev\COLLADA\CTS\empty.blend

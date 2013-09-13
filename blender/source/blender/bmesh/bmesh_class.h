@@ -65,7 +65,7 @@ typedef struct BMHeader {
 	void *data; /* customdata layers */
 	int index; /* notes:
 	            * - Use BM_elem_index_get/set macros for index
-	            * - Unitialized to -1 so we can easily tell its not set.
+	            * - Uninitialized to -1 so we can easily tell its not set.
 	            * - Used for edge/vert/face, check BMesh.elem_index_dirty for valid index values,
 	            *   this is abused by various tools which set it dirty.
 	            * - For loops this is used for sorting during tessellation. */
@@ -292,6 +292,12 @@ typedef bool (*BMElemFilterFunc)(BMElem *, void *user_data);
  * but should not error on valid cases */
 #define BM_LOOP_RADIAL_MAX 10000
 #define BM_NGON_MAX 100000
-#define BM_OMP_LIMIT 10000 /* 10000 */  /* setting zero so we can catch bugs in OpenMP/BMesh */
+
+/* setting zero so we can catch bugs in OpenMP/BMesh */
+#ifdef DEBUG
+#  define BM_OMP_LIMIT 0
+#else
+#  define BM_OMP_LIMIT 10000
+#endif
 
 #endif /* __BMESH_CLASS_H__ */

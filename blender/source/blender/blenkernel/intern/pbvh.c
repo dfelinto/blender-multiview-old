@@ -245,9 +245,13 @@ static int map_insert_vert(PBVH *bvh, GHash *map,
                            unsigned int *face_verts,
                            unsigned int *uniq_verts, int vertex)
 {
-	void *value, *key = SET_INT_IN_POINTER(vertex);
+	void *key, **value_p;
 
-	if (!BLI_ghash_haskey(map, key)) {
+	key = SET_INT_IN_POINTER(vertex);
+	value_p = BLI_ghash_lookup_p(map, key);
+
+	if (value_p == NULL) {
+		void *value;
 		if (BLI_BITMAP_GET(bvh->vert_bitmap, vertex)) {
 			value = SET_INT_IN_POINTER(~(*face_verts));
 			++(*face_verts);
@@ -261,8 +265,9 @@ static int map_insert_vert(PBVH *bvh, GHash *map,
 		BLI_ghash_insert(map, key, value);
 		return GET_INT_FROM_POINTER(value);
 	}
-	else
-		return GET_INT_FROM_POINTER(BLI_ghash_lookup(map, key));
+	else {
+		return GET_INT_FROM_POINTER(*value_p);
+	}
 }
 
 /* Find vertices used by the faces in this node and update the draw buffers */
@@ -272,10 +277,11 @@ static void build_mesh_leaf_node(PBVH *bvh, PBVHNode *node)
 	GHash *map;
 	int i, j, totface;
 
-	map = BLI_ghash_int_new("build_mesh_leaf_node gh");
-	
 	node->uniq_verts = node->face_verts = 0;
 	totface = node->totprim;
+
+	/* reserve size is rough guess */
+	map = BLI_ghash_int_new_ex("build_mesh_leaf_node gh", 2 * totface);
 
 	node->face_vert_indices = MEM_callocN(sizeof(int) * 4 * totface,
 	                                      "bvh node face vert indices");
@@ -608,9 +614,9 @@ void BKE_pbvh_free(PBVH *bvh)
 			if (node->bm_faces)
 				BLI_ghash_free(node->bm_faces, NULL, NULL);
 			if (node->bm_unique_verts)
-				BLI_ghash_free(node->bm_unique_verts, NULL, NULL);
+				BLI_gset_free(node->bm_unique_verts, NULL);
 			if (node->bm_other_verts)
-				BLI_ghash_free(node->bm_other_verts, NULL, NULL);
+				BLI_gset_free(node->bm_other_verts, NULL);
 		}
 	}
 
@@ -1308,8 +1314,8 @@ void BKE_pbvh_node_num_verts(PBVH *bvh, PBVHNode *node, int *uniquevert, int *to
 			if (uniquevert) *uniquevert = node->uniq_verts;
 			break;
 		case PBVH_BMESH:
-			tot = BLI_ghash_size(node->bm_unique_verts);
-			if (totvert) *totvert = tot + BLI_ghash_size(node->bm_other_verts);
+			tot = BLI_gset_size(node->bm_unique_verts);
+			if (totvert) *totvert = tot + BLI_gset_size(node->bm_other_verts);
 			if (uniquevert) *uniquevert = tot;
 			break;
 	}
@@ -1860,9 +1866,10 @@ void pbvh_vertex_iter_init(PBVH *bvh, PBVHNode *node,
 	vi->mverts = verts;
 
 	if (bvh->type == PBVH_BMESH) {
-		BLI_ghashIterator_init(&vi->bm_unique_verts, node->bm_unique_verts);
-		BLI_ghashIterator_init(&vi->bm_other_verts, node->bm_other_verts);
+		BLI_gsetIterator_init(&vi->bm_unique_verts, node->bm_unique_verts);
+		BLI_gsetIterator_init(&vi->bm_other_verts, node->bm_other_verts);
 		vi->bm_vdata = &bvh->bm->vdata;
+		vi->cd_vert_mask_offset = CustomData_get_offset(vi->bm_vdata, CD_PAINT_MASK);
 	}
 
 	vi->gh = NULL;

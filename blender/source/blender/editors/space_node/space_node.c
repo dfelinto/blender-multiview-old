@@ -307,10 +307,12 @@ static SpaceLink *node_new(const bContext *UNUSED(C))
 	snode->zoom = 1.0f;
 
 	/* select the first tree type for valid type */
-	NODE_TREE_TYPES_BEGIN(treetype)
+	NODE_TREE_TYPES_BEGIN (treetype)
+	{
 		strcpy(snode->tree_idname, treetype->idname);
 		break;
-	NODE_TREE_TYPES_END
+	}
+	NODE_TREE_TYPES_END;
 
 	/* header */
 	ar = MEM_callocN(sizeof(ARegion), "header for node");
@@ -602,8 +604,14 @@ static void node_cursor(wmWindow *win, ScrArea *sa, ARegion *ar)
 	/* convert mouse coordinates to v2d space */
 	UI_view2d_region_to_view(&ar->v2d, win->eventstate->x - ar->winrct.xmin, win->eventstate->y - ar->winrct.ymin,
 	                         &snode->cursor[0], &snode->cursor[1]);
+	
+	/* here snode->cursor is used to detect the node edge for sizing */
+	node_set_cursor(win, snode, snode->cursor);
 
-	node_set_cursor(win, snode);
+	/* XXX snode->cursor is in placing new nodes space */
+	snode->cursor[0] /= UI_DPI_FAC;
+	snode->cursor[1] /= UI_DPI_FAC;
+	
 }
 
 /* Initialize main area, setting handlers. */

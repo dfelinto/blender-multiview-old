@@ -1321,6 +1321,26 @@ void RNA_def_property_ui_range(PropertyRNA *prop, double min, double max, double
 {
 	StructRNA *srna = DefRNA.laststruct;
 
+#ifdef DEBUG
+	if (min > max) {
+		fprintf(stderr, "%s: \"%s.%s\", min > max.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+
+	if (step < 0 || step > 100) {
+		fprintf(stderr, "%s: \"%s.%s\", step outside range.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+
+	if (precision < -1 || precision > 10) {
+		fprintf(stderr, "%s: \"%s.%s\", step outside range.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+#endif
+
 	switch (prop->type) {
 		case PROP_INT:
 		{
@@ -1365,6 +1385,14 @@ void RNA_def_property_ui_range(PropertyRNA *prop, double min, double max, double
 void RNA_def_property_range(PropertyRNA *prop, double min, double max)
 {
 	StructRNA *srna = DefRNA.laststruct;
+
+#ifdef DEBUG
+	if (min > max) {
+		fprintf(stderr, "%s: \"%s.%s\", min > max.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+#endif
 
 	switch (prop->type) {
 		case PROP_INT:
@@ -3208,7 +3236,7 @@ void RNA_def_property_duplicate_pointers(StructOrFunctionRNA *cont_, PropertyRNA
 	if (prop->identifier) {
 		if (cont->prophash) {
 			prop->identifier = BLI_strdup(prop->identifier);
-			BLI_ghash_assign(cont->prophash, (void *)prop->identifier, prop, NULL, NULL);
+			BLI_ghash_reinsert(cont->prophash, (void *)prop->identifier, prop, NULL, NULL);
 		}
 		else {
 			prop->identifier = BLI_strdup(prop->identifier);

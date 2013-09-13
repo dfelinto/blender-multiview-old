@@ -78,6 +78,7 @@
 #include "WM_types.h"
 
 #include "ED_sculpt.h"
+#include "ED_object.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
 #include "ED_util.h" /* for crazyspace correction */
@@ -92,6 +93,7 @@
 #include "GPU_buffers.h"
 
 #include "bmesh.h"
+#include "bmesh_tools.h"
 
 #include <math.h>
 #include <stdlib.h>
@@ -3425,7 +3427,7 @@ static void sculpt_update_tex(const Scene *scene, Sculpt *sd, SculptSession *ss)
 	/* Need to allocate a bigger buffer for bigger brush size */
 	ss->texcache_side = 2 * radius;
 	if (!ss->texcache || ss->texcache_side > ss->texcache_actual) {
-		ss->texcache = BKE_brush_gen_texture_cache(brush, radius);
+		ss->texcache = BKE_brush_gen_texture_cache(brush, radius, false);
 		ss->texcache_actual = ss->texcache_side;
 		ss->tex_pool = BKE_image_pool_new();
 	}
@@ -4567,7 +4569,9 @@ static void SCULPT_OT_set_persistent_base(wmOperatorType *ot)
 
 static void sculpt_dynamic_topology_triangulate(BMesh *bm)
 {
-	BM_mesh_triangulate(bm, false, false, NULL, NULL);
+	if (bm->totloop != bm->totface * 3) {
+		BM_mesh_triangulate(bm, false, false, NULL, NULL);
+	}
 }
 
 void sculpt_pbvh_clear(Object *ob)
@@ -4806,8 +4810,8 @@ static int sculpt_symmetrize_exec(bContext *C, wmOperator *UNUSED(op))
 
 	/* Symmetrize and re-triangulate */
 	BMO_op_callf(ss->bm, BMO_FLAG_DEFAULTS,
-	             "symmetrize input=%avef direction=%i",
-	             sd->symmetrize_direction);
+	             "symmetrize input=%avef direction=%i  dist=%f",
+	             sd->symmetrize_direction, 0.00001f);
 	sculpt_dynamic_topology_triangulate(ss->bm);
 
 	/* Finish undo */
@@ -4913,21 +4917,31 @@ int ED_sculpt_mask_layers_ensure(Object *ob, MultiresModifierData *mmd)
 	return ret;
 }
 
-static int sculpt_mode_toggle_exec(bContext *C, wmOperator *UNUSED(op))
+static int sculpt_mode_toggle_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
 	ToolSettings *ts = CTX_data_tool_settings(C);
 	Object *ob = CTX_data_active_object(C);
-	Mesh *me = ob->data;
+	const int mode_flag = OB_MODE_SCULPT;
+	const bool is_mode_set = (ob->mode & mode_flag) != 0;
+	Mesh *me;
 	MultiresModifierData *mmd = sculpt_multires_active(scene, ob);
 	int flush_recalc = 0;
+
+	if (!is_mode_set) {
+		if (!ED_object_mode_compat_set(C, ob, mode_flag, op->reports)) {
+			return OPERATOR_CANCELLED;
+		}
+	}
+
+	me = BKE_mesh_from_object(ob);
 
 	/* multires in sculpt mode could have different from object mode subdivision level */
 	flush_recalc |= mmd && mmd->sculptlvl != mmd->lvl;
 	/* if object has got active modifiers, it's dm could be different in sculpt mode  */
 	flush_recalc |= sculpt_has_active_modifiers(scene, ob);
 
-	if (ob->mode & OB_MODE_SCULPT) {
+	if (is_mode_set) {
 		if (mmd)
 			multires_force_update(ob);
 
@@ -4942,13 +4956,13 @@ static int sculpt_mode_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 		}
 
 		/* Leave sculptmode */
-		ob->mode &= ~OB_MODE_SCULPT;
+		ob->mode &= ~mode_flag;
 
 		free_sculptsession(ob);
 	}
 	else {
 		/* Enter sculptmode */
-		ob->mode |= OB_MODE_SCULPT;
+		ob->mode |= mode_flag;
 
 		/* Remove dynamic-topology flag; this will be enabled if the
 		 * file was saved with dynamic topology on, but we don't

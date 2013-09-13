@@ -121,7 +121,7 @@ static void bm_bridge_best_rotation(struct BMEdgeLoopStore *el_store_a, struct B
 	}
 
 	if (el_b_best) {
-		BLI_rotatelist(lb_b, el_b_best);
+		BLI_rotatelist_first(lb_b, el_b_best);
 	}
 }
 
@@ -273,9 +273,8 @@ static void bridge_loop_pair(BMesh *bm,
 		if (twist_offset != 0) {
 			const int len_b = BM_edgeloop_length_get(el_store_b);
 			ListBase *lb_b = BM_edgeloop_verts_get(el_store_b);
-			const int offset = twist_offset % len_b;
-			LinkData *el_b = BLI_rfindlink(lb_b, (offset < 0) ? (offset + len_b) : offset);
-			BLI_rotatelist(lb_b, el_b);
+			LinkData *el_b = BLI_rfindlink(lb_b, mod_i(twist_offset, len_b));
+			BLI_rotatelist_first(lb_b, el_b);
 		}
 	}
 

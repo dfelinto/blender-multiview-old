@@ -1672,7 +1672,7 @@ static void drawcamera(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base
 	int i;
 	float drawsize;
 	const bool is_view = (rv3d->persp == RV3D_CAMOB && ob == v3d->camera);
-	MovieClip *clip = BKE_object_movieclip_get(scene, base->object, 0);
+	MovieClip *clip = BKE_object_movieclip_get(scene, base->object, false);
 
 	/* draw data for movie clip set as active for scene */
 	if (clip) {
@@ -2552,6 +2552,11 @@ static void draw_dm_bweights(BMEditMesh *em, Scene *scene, DerivedMesh *dm)
 	}
 }
 
+static int draw_dm_override_material_color(int UNUSED(nr), void *UNUSED(attribs))
+{
+	return 1;
+}
+
 /* Second section of routines: Combine first sets to form fancy
  * drawing routines (for example rendering twice to get overlays).
  *
@@ -3094,9 +3099,6 @@ static void draw_em_fancy(Scene *scene, ARegion *ar, View3D *v3d,
 	BMVert *eve_act = NULL;
 	bool use_occlude_wire = (v3d->flag2 & V3D_OCCLUDE_WIRE) && (dt > OB_WIRE);
 	
-	// BLI_assert(!cageDM || !(cageDM->dirty & DM_DIRTY_NORMALS));
-	BLI_assert(!finalDM || !(finalDM->dirty & DM_DIRTY_NORMALS));
-
 	if (em->bm->selected.last) {
 		BMEditSelection *ese = em->bm->selected.last;
 		/* face is handeled above */
@@ -3369,8 +3371,6 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 	if (!dm)
 		return;
 
-	if (dm)  BLI_assert(!(dm->dirty & DM_DIRTY_NORMALS));
-
 	/* Check to draw dynamic paint colors (or weights from WeightVG modifiers).
 	 * Note: Last "preview-active" modifier in stack will win! */
 	if (DM_get_tessface_data_layer(dm, CD_PREVIEW_MCOL) && modifiers_isPreview(ob))
@@ -3473,7 +3473,7 @@ static void draw_mesh_fancy(Scene *scene, ARegion *ar, View3D *v3d, RegionView3D
 				glEnable(GL_LIGHTING);
 				glEnable(GL_COLOR_MATERIAL);
 
-				dm->drawMappedFaces(dm, NULL, GPU_enable_material, NULL, NULL, DM_DRAW_USE_COLORS);
+				dm->drawMappedFaces(dm, NULL, draw_dm_override_material_color, NULL, NULL, DM_DRAW_USE_COLORS);
 				glDisable(GL_COLOR_MATERIAL);
 				glDisable(GL_LIGHTING);
 
@@ -6661,23 +6661,17 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 
 	/* faceselect exception: also draw solid when (dt == wire), except in editmode */
 	if (is_obact && (ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT | OB_MODE_TEXTURE_PAINT))) {
-		if (ob->type == OB_MESH) {
-
-			if (ob->mode & OB_MODE_EDIT) {
-				/* pass */
+		if (ob->type == OB_MESH) {			
+			if (dt < OB_SOLID) {
+				zbufoff = 1;
+				dt = OB_SOLID;
 			}
-			else {
-				if (dt < OB_SOLID) {
-					zbufoff = 1;
-					dt = OB_SOLID;
-				}
 
-				if (ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT)) {
-					dt = OB_PAINT;
-				}
-
-				glEnable(GL_DEPTH_TEST);
+			if (ob->mode & (OB_MODE_VERTEX_PAINT | OB_MODE_WEIGHT_PAINT)) {
+				dt = OB_PAINT;
 			}
+
+			glEnable(GL_DEPTH_TEST);
 		}
 		else {
 			if (dt < OB_SOLID) {
@@ -7051,6 +7045,7 @@ void draw_object(Scene *scene, ARegion *ar, View3D *v3d, Base *base, const short
 
 				// get view vector
 				copy_v3_v3(viewnormal, rv3d->viewinv[2]);
+				invert_m4_m4(ob->imat, ob->obmat);
 				mul_mat3_m4_v3(ob->imat, viewnormal);
 				normalize_v3(viewnormal);
 

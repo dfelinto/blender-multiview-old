@@ -1151,17 +1151,26 @@ void txt_pop_sel(Text *text)
 	text->selc = text->curc;
 }
 
-void txt_order_cursors(Text *text)
+void txt_order_cursors(Text *text, const bool reverse)
 {
 	if (!text) return;
 	if (!text->curl) return;
 	if (!text->sell) return;
 	
-	/* Flip so text->curl is before text->sell */
-	if ((txt_get_span(text->curl, text->sell) < 0) ||
-	    (text->curl == text->sell && text->curc > text->selc))
-	{
-		txt_curs_swap(text);
+	/* Flip so text->curl is before/after text->sell */
+	if (reverse == false) {
+		if ((txt_get_span(text->curl, text->sell) < 0) ||
+		    (text->curl == text->sell && text->curc > text->selc))
+		{
+			txt_curs_swap(text);
+		}
+	}
+	else {
+		if ((txt_get_span(text->curl, text->sell) > 0) ||
+		    (text->curl == text->sell && text->curc < text->selc))
+		{
+			txt_curs_swap(text);
+		}
 	}
 }
 
@@ -1181,7 +1190,7 @@ static void txt_delete_sel(Text *text)
 
 	if (!txt_has_sel(text)) return;
 	
-	txt_order_cursors(text);
+	txt_order_cursors(text, false);
 
 	if (!undoing) {
 		buf = txt_sel_to_buf(text);
@@ -1305,7 +1314,7 @@ int txt_find_string(Text *text, const char *findstr, int wrap, int match_case)
 
 	if (!text || !text->curl || !text->sell) return 0;
 	
-	txt_order_cursors(text);
+	txt_order_cursors(text, false);
 
 	tl = startl = text->sell;
 	
@@ -1938,6 +1947,7 @@ static unsigned int txt_redo_read_unicode(const char *undo_buf, int *undo_pos, s
 void txt_do_undo(Text *text)
 {
 	int op = text->undo_buf[text->undo_pos];
+	int prev_flags;
 	unsigned int linep, i;
 	unsigned int uchar;
 	unsigned int curln, selln;
@@ -2061,8 +2071,14 @@ void txt_do_undo(Text *text)
 			txt_move_to(text, selln, selc, 1);
 			
 			if ((curln == selln) && (curc == selc)) {
+				/* disable tabs to spaces since moving right may involve skipping multiple spaces */
+				prev_flags = text->flags;
+				text->flags &= ~TXT_TABSTOSPACES;
+				
 				for (i = 0; i < linep; i++)
 					txt_move_right(text, 1);
+				
+				text->flags = prev_flags;
 			}
 			
 			txt_delete_selected(text);
@@ -2833,7 +2849,7 @@ void txt_move_lines(struct Text *text, const int direction)
 
 	if (!text || !text->curl || !text->sell) return;
 	
-	txt_order_cursors(text);
+	txt_order_cursors(text, false);
 
 	line_other =  (direction == TXT_MOVE_LINE_DOWN) ? text->sell->next : text->curl->prev;
 	

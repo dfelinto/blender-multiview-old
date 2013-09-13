@@ -1828,7 +1828,7 @@ static void *acf_dsmball_setting_ptr(bAnimListElem *ale, int setting, short *typ
 	
 	switch (setting) {
 		case ACHANNEL_SETTING_EXPAND: /* expanded */
-			return GET_ACF_FLAG_PTR(mb->flag, type);
+			return GET_ACF_FLAG_PTR(mb->flag2, type);
 			
 		case ACHANNEL_SETTING_SELECT: /* selected */
 		case ACHANNEL_SETTING_MUTE: /* muted (for NLA only) */
@@ -2781,6 +2781,9 @@ static void ANIM_init_channel_typeinfo_data(void)
 	if (ACF_INIT) {
 		ACF_INIT = 0;
 		
+		/* NOTE: need to keep the order of these synchronized with the definition of
+		 * channel types (eAnim_ChannelType) in ED_anim_api.h
+		 */
 		animchannelTypeInfo[type++] = NULL;              /* None */
 		animchannelTypeInfo[type++] = NULL;              /* AnimData */
 		animchannelTypeInfo[type++] = NULL;              /* Special */
@@ -2808,8 +2811,8 @@ static void ANIM_init_channel_typeinfo_data(void)
 		animchannelTypeInfo[type++] = &ACF_DSMESH;       /* Mesh Channel */
 		animchannelTypeInfo[type++] = &ACF_DSTEX;        /* Texture Channel */
 		animchannelTypeInfo[type++] = &ACF_DSLAT;        /* Lattice Channel */
-		animchannelTypeInfo[type++] = &ACF_DSSPK;        /* Speaker Channel */
 		animchannelTypeInfo[type++] = &ACF_DSLINESTYLE;  /* LineStyle Channel */
+		animchannelTypeInfo[type++] = &ACF_DSSPK;        /* Speaker Channel */
 		
 		animchannelTypeInfo[type++] = &ACF_SHAPEKEY;     /* ShapeKey */
 		

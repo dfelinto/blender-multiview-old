@@ -73,6 +73,10 @@ def words_from_text(text):
         if not w:
             return False
 
+        # ignore all uppercase words
+        if w.isupper():
+            return False
+
         # check for string with no characters in it
         is_alpha = False
         for c in w:

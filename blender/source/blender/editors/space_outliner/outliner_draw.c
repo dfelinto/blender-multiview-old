@@ -363,6 +363,9 @@ void restrictbutton_gr_restrict_flag(void *poin, void *poin2, int flag)
 
 	if (group_restrict_flag(gr, flag)) {
 		for (gob = gr->gobject.first; gob; gob = gob->next) {
+			if (gob->ob->id.lib)
+				continue;
+
 			gob->ob->restrictflag &= ~flag;
 			
 			if (flag == OB_RESTRICT_VIEW)
@@ -372,6 +375,9 @@ void restrictbutton_gr_restrict_flag(void *poin, void *poin2, int flag)
 	}
 	else {
 		for (gob = gr->gobject.first; gob; gob = gob->next) {
+			if (gob->ob->id.lib)
+				continue;
+
 			/* not in editmode */
 			if (scene->obedit != gob->ob) {
 				gob->ob->restrictflag |= flag;
@@ -565,7 +571,11 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 			}
 			if (tselem->type == 0 && te->idcode == ID_GR) {
 				int restrict_bool;
+				int but_flag = UI_BUT_DRAG_LOCK;
 				gr = (Group *)tselem->id;
+
+				if (gr->id.lib)
+					but_flag |= UI_BUT_DISABLED;
 				
 				uiBlockSetEmboss(block, UI_EMBOSSN);
 
@@ -574,21 +584,21 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 				                  (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_VIEWX), te->ys, UI_UNIT_X, UI_UNIT_Y,
 				                  NULL, 0, 0, 0, 0, TIP_("Restrict/Allow visibility in the 3D View"));
 				uiButSetFunc(bt, restrictbutton_gr_restrict_view, scene, gr);
-				uiButSetFlag(bt, UI_BUT_DRAG_LOCK);
+				uiButSetFlag(bt, but_flag);
 
 				restrict_bool = group_restrict_flag(gr, OB_RESTRICT_SELECT);
 				bt = uiDefIconBut(block, ICONTOG, 0, restrict_bool ? ICON_RESTRICT_SELECT_ON : ICON_RESTRICT_SELECT_OFF,
 				                  (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_SELECTX), te->ys, UI_UNIT_X, UI_UNIT_Y,
 				                  NULL, 0, 0, 0, 0, TIP_("Restrict/Allow selection in the 3D View"));
 				uiButSetFunc(bt, restrictbutton_gr_restrict_select, scene, gr);
-				uiButSetFlag(bt, UI_BUT_DRAG_LOCK);
+				uiButSetFlag(bt, but_flag);
 
 				restrict_bool = group_restrict_flag(gr, OB_RESTRICT_RENDER);
 				bt = uiDefIconBut(block, ICONTOG, 0, restrict_bool ? ICON_RESTRICT_RENDER_ON : ICON_RESTRICT_RENDER_OFF,
 				                  (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_RENDERX), te->ys, UI_UNIT_X, UI_UNIT_Y,
 				                  NULL, 0, 0, 0, 0, TIP_("Restrict/Allow renderability"));
 				uiButSetFunc(bt, restrictbutton_gr_restrict_render, scene, gr);
-				uiButSetFlag(bt, UI_BUT_DRAG_LOCK);
+				uiButSetFlag(bt, but_flag);
 
 				uiBlockSetEmboss(block, UI_EMBOSS);
 			}
@@ -1035,48 +1045,37 @@ static void outliner_draw_keymapbuts(uiBlock *block, ARegion *ar, SpaceOops *soo
 }
 
 
-static void outliner_buttons(const bContext *C, uiBlock *block, ARegion *ar, SpaceOops *soops, ListBase *lb)
+static void outliner_buttons(const bContext *C, uiBlock *block, ARegion *ar, TreeElement *te)
 {
 	uiBut *bt;
-	TreeElement *te;
 	TreeStoreElem *tselem;
 	int spx, dx, len;
-	
-	for (te = lb->first; te; te = te->next) {
-		tselem = TREESTORE(te);
-		if (te->ys + 2 * UI_UNIT_Y >= ar->v2d.cur.ymin && te->ys <= ar->v2d.cur.ymax) {
-			
-			if (tselem->flag & TSE_TEXTBUT) {
-				
-				/* If we add support to rename Sequence.
-				 * need change this.
-				 */
-				// prevent crash when trying to rename 'pose' entry of armature
-				if (tselem->type == TSE_POSE_BASE) continue;  
-				
-				if (tselem->type == TSE_EBONE) len = sizeof(((EditBone *) 0)->name);
-				else if (tselem->type == TSE_MODIFIER) len = sizeof(((ModifierData *) 0)->name);
-				else if (tselem->id && GS(tselem->id->name) == ID_LI) len = sizeof(((Library *) 0)->name);
-				else len = MAX_ID_NAME - 2;
-				
 
-				dx = (int)UI_GetStringWidth(te->name);
-				if (dx < 5 * UI_UNIT_X) dx = 5 * UI_UNIT_X;
-				spx = te->xs + 1.8f * UI_UNIT_X;
-				if (spx + dx + 0.5f * UI_UNIT_X > ar->v2d.cur.xmax) dx = ar->v2d.cur.xmax - spx - 0.5f * UI_UNIT_X;
+	tselem = TREESTORE(te);
 
-				bt = uiDefBut(block, TEX, OL_NAMEBUTTON, "", spx, te->ys, dx + UI_UNIT_X, UI_UNIT_Y - 1, (void *)te->name,
-				              1.0, (float)len, 0, 0, "");
-				uiButSetRenameFunc(bt, namebutton_cb, tselem);
-				
-				/* returns false if button got removed */
-				if (false == uiButActiveOnly(C, ar, block, bt)) {
-					tselem->flag &= ~TSE_TEXTBUT;
-				}
-			}
-		}
-		
-		if (TSELEM_OPEN(tselem, soops)) outliner_buttons(C, block, ar, soops, &te->subtree);
+	BLI_assert(tselem->flag & TSE_TEXTBUT);
+	/* If we add support to rename Sequence.
+	 * need change this.
+	 */
+
+	if (tselem->type == TSE_EBONE) len = sizeof(((EditBone *) 0)->name);
+	else if (tselem->type == TSE_MODIFIER) len = sizeof(((ModifierData *) 0)->name);
+	else if (tselem->id && GS(tselem->id->name) == ID_LI) len = sizeof(((Library *) 0)->name);
+	else len = MAX_ID_NAME - 2;
+
+	spx = te->xs + 1.8f * UI_UNIT_X;
+	dx = ar->v2d.cur.xmax - (spx + 3.2f * UI_UNIT_X);
+
+	bt = uiDefBut(block, TEX, OL_NAMEBUTTON, "", spx, te->ys, dx, UI_UNIT_Y - 1, (void *)te->name,
+	              1.0, (float)len, 0, 0, "");
+	uiButSetRenameFunc(bt, namebutton_cb, tselem);
+
+	/* returns false if button got removed */
+	if (false == uiButActiveOnly(C, ar, block, bt)) {
+		tselem->flag &= ~TSE_TEXTBUT;
+
+		/* bad! (notifier within draw) without this, we don't get a refesh */
+		WM_event_add_notifier(C, NC_SPACE | ND_SPACE_OUTLINER, NULL);
 	}
 }
 
@@ -1389,6 +1388,8 @@ static void tselem_draw_icon(uiBlock *block, int xmax, float x, float y, TreeSto
 				tselem_draw_icon_uibut(&arg, ICON_GROUP); break;
 			case ID_LI:
 				tselem_draw_icon_uibut(&arg, ICON_LIBRARY_DATA_DIRECT); break;
+			case ID_LS:
+				tselem_draw_icon_uibut(&arg, ICON_BRUSH_DATA); break; /* FIXME proper icon */
 		}
 	}
 }
@@ -1472,7 +1473,7 @@ static void outliner_set_coord_tree_element(SpaceOops *soops, TreeElement *te, i
 
 
 static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene, ARegion *ar, SpaceOops *soops,
-                                       TreeElement *te, int startx, int *starty)
+                                       TreeElement *te, int startx, int *starty, TreeElement **te_edit)
 {
 	TreeElement *ten;
 	TreeStoreElem *tselem;
@@ -1485,6 +1486,10 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 		int xmax = ar->v2d.cur.xmax;
 		unsigned char alpha = 128;
 		
+		if ((tselem->flag & TSE_TEXTBUT) && (*te_edit == NULL)) {
+			*te_edit = te;
+		}
+
 		/* icons can be ui buts, we don't want it to overlap with restrict */
 		if ((soops->flag & SO_HIDE_RESTRICTCOLS) == 0)
 			xmax -= OL_TOGW + UI_UNIT_X;
@@ -1665,7 +1670,7 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 		*starty -= UI_UNIT_Y;
 		
 		for (ten = te->subtree.first; ten; ten = ten->next)
-			outliner_draw_tree_element(C, block, scene, ar, soops, ten, startx + UI_UNIT_X, starty);
+			outliner_draw_tree_element(C, block, scene, ar, soops, ten, startx + UI_UNIT_X, starty, te_edit);
 	}
 	else {
 		for (ten = te->subtree.first; ten; ten = ten->next)
@@ -1749,7 +1754,8 @@ static void outliner_draw_selection(ARegion *ar, SpaceOops *soops, ListBase *lb,
 }
 
 
-static void outliner_draw_tree(bContext *C, uiBlock *block, Scene *scene, ARegion *ar, SpaceOops *soops)
+static void outliner_draw_tree(bContext *C, uiBlock *block, Scene *scene, ARegion *ar,
+                               SpaceOops *soops, TreeElement **te_edit)
 {
 	TreeElement *te;
 	int starty, startx;
@@ -1781,7 +1787,7 @@ static void outliner_draw_tree(bContext *C, uiBlock *block, Scene *scene, ARegio
 	starty = (int)ar->v2d.tot.ymax - UI_UNIT_Y - OL_Y_OFFSET;
 	startx = 0;
 	for (te = soops->tree.first; te; te = te->next) {
-		outliner_draw_tree_element(C, block, scene, ar, soops, te, startx, &starty);
+		outliner_draw_tree_element(C, block, scene, ar, soops, te, startx, &starty, te_edit);
 	}
 }
 
@@ -1851,6 +1857,7 @@ void draw_outliner(const bContext *C)
 	SpaceOops *soops = CTX_wm_space_outliner(C);
 	uiBlock *block;
 	int sizey = 0, sizex = 0, sizex_rna = 0;
+	TreeElement *te_edit = NULL;
 
 	outliner_build_tree(mainvar, scene, soops); // always
 	
@@ -1904,7 +1911,7 @@ void draw_outliner(const bContext *C)
 	/* draw outliner stuff (background, hierachy lines and names) */
 	outliner_back(ar);
 	block = uiBeginBlock(C, ar, __func__, UI_EMBOSS);
-	outliner_draw_tree((bContext *)C, block, scene, ar, soops);
+	outliner_draw_tree((bContext *)C, block, scene, ar, soops, &te_edit);
 	
 	if (ELEM(soops->outlinevis, SO_DATABLOCKS, SO_USERDEF)) {
 		/* draw rna buttons */
@@ -1921,7 +1928,9 @@ void draw_outliner(const bContext *C)
 	}
 
 	/* draw edit buttons if nessecery */
-	outliner_buttons(C, block, ar, soops, &soops->tree);
+	if (te_edit) {
+		outliner_buttons(C, block, ar, te_edit);
+	}
 
 	uiEndBlock(C, block);
 	uiDrawBlock(C, block);

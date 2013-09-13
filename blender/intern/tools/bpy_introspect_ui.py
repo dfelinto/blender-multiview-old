@@ -310,7 +310,8 @@ def fake_runtime():
     bpy_extras.keyconfig_utils.keyconfig_merge = lambda a, b: ()
 
     addon_utils = module_add("addon_utils")
-    addon_utils.modules = lambda f: ()
+    addon_utils.modules = lambda f: []
+    addon_utils.modules_refresh = lambda f: None
     addon_utils.module_bl_info = lambda f: None
     addon_utils.addons_fake_modules = {}
     addon_utils.error_duplicates = ()
