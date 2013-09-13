@@ -386,11 +386,17 @@ class CyclesRender_PT_views(CyclesButtonsPanel, Panel):
     bl_label = "Views"
     bl_context = "render_layer"
 
+    def draw_header(self, context):
+        rd = context.scene.render
+        self.layout.prop(rd, "use_multiple_views", text="")
+
     def draw(self, context):
         layout = self.layout
 
         scene = context.scene
         rd = scene.render
+
+        layout.active = rd.use_multiple_views
 
         row = layout.row()
         row.template_list("RENDERLAYER_UL_renderviews", "", rd, "views", rd.views, "active_index", rows=2)
@@ -403,33 +409,17 @@ class CyclesRender_PT_views(CyclesButtonsPanel, Panel):
         rv = rd.views.active
         if rv and rv.name not in ('left', 'right'):
             row.prop(rv, "name")
-        else:
-            row.label()
-        row.prop(rd, "use_single_view", text="", icon_only=True)
 
-
-class CyclesRender_PT_view_options(CyclesButtonsPanel, Panel):
-    bl_label = "View"
-    bl_context = "render_layer"
-
-    def draw(self, context):
-        layout = self.layout
-
-        scene = context.scene
-        rd = scene.render
         rv = rd.views.active
 
-        split = layout.split()
+        row = layout.row()
+        row.prop(rv, "camera")
 
-        col = split.column()
-        col.prop(rv, "camera")
-
-        col.separator()
-        col.prop(rv, "use_custom_suffix")
-
-        sub = col.column()
+        row = layout.row()
+        row.prop(rv, "use_custom_suffix")
+        sub = row.row()
         sub.active = rv.use_custom_suffix
-        sub.prop(rv, "file_suffix")
+        sub.prop(rv, "file_suffix", text="")
 
 
 class Cycles_PT_post_processing(CyclesButtonsPanel, Panel):

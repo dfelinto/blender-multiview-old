@@ -3234,11 +3234,11 @@ static int view3d_stereo(const bContext *C, Scene *scene)
 	if ((win->flag & WM_STEREO) == 0)
 		return FALSE;
 
+	if ((scene->r.scemode & R_MULTIVIEW) == 0)
+		return FALSE;
+
 	/* check renderdata for amount of views */
 	for (srv= (SceneRenderView *) scene->r.views.first; srv; srv = srv->next) {
-
-		if ((scene->r.scemode & R_SINGLE_VIEW))
-			continue;
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
