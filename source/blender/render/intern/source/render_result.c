@@ -552,17 +552,19 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	}
 
 	/* check renderdata for amount of views */
-	for (srv = re->r.views.first; srv; srv = srv->next) {
+	if ((re->r.scemode & R_MULTIVIEW)) {
+		for (srv = re->r.views.first; srv; srv = srv->next) {
 
-		if (srv->viewflag & SCE_VIEW_DISABLE)
-			continue;
+			if (srv->viewflag & SCE_VIEW_DISABLE)
+				continue;
 
-		rv = MEM_callocN(sizeof(RenderView), "new render view");
-		BLI_addtail(&rr->views, rv);
+			rv = MEM_callocN(sizeof(RenderView), "new render view");
+			BLI_addtail(&rr->views, rv);
 
-		BLI_strncpy(rv->name, srv->name, sizeof(rv->name));
+			BLI_strncpy(rv->name, srv->name, sizeof(rv->name));
 
-		rv->camera = (srv->camera)?srv->camera:RE_GetCamera(re);
+			rv->camera = (srv->camera)?srv->camera:RE_GetCamera(re);
+		}
 	}
 
 	/* we always need at least one view */
