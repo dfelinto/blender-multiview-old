@@ -4912,10 +4912,9 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Render Views", "");
 	rna_def_render_views(brna, prop);
 
-	prop = RNA_def_property(srna, "use_single_view", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_SINGLE_VIEW);
-	RNA_def_property_ui_text(prop, "Single View", "Only render the active view");
-	RNA_def_property_ui_icon(prop, ICON_UNPINNED, 1);
+	prop = RNA_def_property(srna, "use_multiple_views", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_MULTIVIEW);
+	RNA_def_property_ui_text(prop, "Multiple Views", "Use multiple views in the scene");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 	/* engine */

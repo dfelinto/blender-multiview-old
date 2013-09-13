@@ -47,11 +47,11 @@ static char *view_name(const RenderData *rd, int actview)
 	int nr;
 	int numviews = 0;
 
+	if ((rd->scemode & R_MULTIVIEW) == 0)
+		return NULL;
+
 	/* check renderdata for amount of views */
 	for (nr = 0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
-
-		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
-			continue;
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;

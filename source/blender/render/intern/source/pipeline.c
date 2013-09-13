@@ -310,7 +310,6 @@ static bool dont_write_individual_views(Render *re, RenderData *rd)
 {
 	ImageFormatData *format = &rd->im_format;
 	SceneRenderView *srv;
-	int nr;
 
 	if(!re)
 		return TRUE;
@@ -318,10 +317,10 @@ static bool dont_write_individual_views(Render *re, RenderData *rd)
 	if (format->imtype == R_IMF_IMTYPE_MULTIVIEW)
 		return TRUE;
 
-	for (nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
+	if ((rd->scemode & R_MULTIVIEW) == 0)
+		return TRUE;
 
-		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
-			continue;
+	for (srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
