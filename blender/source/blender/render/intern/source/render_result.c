@@ -552,9 +552,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	}
 
 	/* check renderdata for amount of views */
-	for (nr = 0, srv = re->r.views.first; srv; srv = srv->next, nr++) {
-		if ((re->r.scemode & R_SINGLE_VIEW) && nr != re->r.actview)
-			continue;
+	for (srv = re->r.views.first; srv; srv = srv->next) {
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
