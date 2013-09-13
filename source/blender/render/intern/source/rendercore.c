@@ -2016,7 +2016,7 @@ void add_halo_flare(Render *re)
 			
 			if (har->flarec && (har->lay & rl->lay)) {
 				do_draw = TRUE;
-				renderflare(rr, rl->rectf, har);
+				renderflare(rr, rect, har);
 			}
 		}
 		
