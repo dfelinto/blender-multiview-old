@@ -2273,11 +2273,12 @@ static void rna_def_function_funcs(FILE *f, StructDefRNA *dsrna, FunctionDefRNA 
 				valstr = "*";
 			}
 
-			/* this must be kept in sync with RNA_parameter_length_get_data,
+			/* this must be kept in sync with RNA_parameter_dynamic_length_get_data and RNA_parameter_get,
 			 * we could just call the function directly, but this is faster */
 			if (flag & PROP_DYNAMIC) {
-				fprintf(f, "\t%s_len = %s((int *)_data);\n", dparm->prop->identifier, pout ? "" : "*");
-				data_str = "(&(((char *)_data)[sizeof(void *)]))";
+				fprintf(f, "\t%s_len = %s((ParameterDynAlloc *)_data)->array_tot;\n", dparm->prop->identifier,
+				                                                                      pout ? "(int *)&" : "(int)");
+				data_str = "(&(((ParameterDynAlloc *)_data)->array))";
 			}
 			else {
 				data_str = "_data";
@@ -3544,8 +3545,12 @@ static const char *cpp_classes = ""
 "	} \n"
 "#define COLLECTION_PROPERTY_LOOKUP_INT_TRUE(sname, identifier) \\\n"
 "	inline static int sname##_##identifier##_lookup_int_wrap(PointerRNA *ptr, int key, PointerRNA *r_ptr) \\\n"
-"	{ return sname##_##identifier##_lookup_int(ptr, key, r_ptr); } \n"
-"\n"
+"	{ \\\n"
+"		int found = sname##_##identifier##_lookup_int(ptr, key, r_ptr); \\\n"
+"		if (!found) \\\n"
+"			memset(r_ptr, 0, sizeof(*r_ptr)); \\\n"
+"		return found; \\\n"
+"	} \n"
 "#define COLLECTION_PROPERTY_LOOKUP_STRING_FALSE(sname, identifier) \\\n"
 "	inline static int sname##_##identifier##_lookup_string_wrap(PointerRNA *ptr, const char *key, PointerRNA *r_ptr) \\\n"
 "	{ \\\n"
@@ -3573,8 +3578,12 @@ static const char *cpp_classes = ""
 "	} \n"
 "#define COLLECTION_PROPERTY_LOOKUP_STRING_TRUE(sname, identifier) \\\n"
 "	inline static int sname##_##identifier##_lookup_string_wrap(PointerRNA *ptr, const char *key, PointerRNA *r_ptr) \\\n"
-"	{ return sname##_##identifier##_lookup_string(ptr, key, r_ptr); } \n"
-"\n"
+"	{ \\\n"
+"		int found = sname##_##identifier##_lookup_string(ptr, key, r_ptr); \\\n"
+"		if (!found) \\\n"
+"			memset(r_ptr, 0, sizeof(*r_ptr)); \\\n"
+"		return found; \\\n"
+"	} \n"
 "#define COLLECTION_PROPERTY(collection_funcs, type, sname, identifier, has_length, has_lookup_int, has_lookup_string) \\\n"
 "	typedef CollectionIterator<type, sname##_##identifier##_begin, \\\n"
 "		sname##_##identifier##_next, sname##_##identifier##_end> identifier##_iterator; \\\n"

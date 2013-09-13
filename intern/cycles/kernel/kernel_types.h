@@ -55,7 +55,7 @@ CCL_NAMESPACE_BEGIN
 #ifdef __KERNEL_CPU__
 #define __KERNEL_SHADING__
 #define __KERNEL_ADV_SHADING__
-#define __NON_PROGRESSIVE__
+#define __BRANCHED_PATH__
 #ifdef WITH_OSL
 #define __OSL__
 #endif
@@ -67,7 +67,7 @@ CCL_NAMESPACE_BEGIN
 #define __KERNEL_SHADING__
 #if __CUDA_ARCH__ >= 200
 #define __KERNEL_ADV_SHADING__
-#define __NON_PROGRESSIVE__
+#define __BRANCHED_PATH__
 #endif
 #endif
 
@@ -220,6 +220,7 @@ enum PathRayFlag {
 	PATH_RAY_MIS_SKIP = 1024,
 	PATH_RAY_DIFFUSE_ANCESTOR = 2048,
 	PATH_RAY_GLOSSY_ANCESTOR = 4096,
+	PATH_RAY_BSSRDF_ANCESTOR = 8192,
 
 	/* this gives collisions with localview bits
 	 * see: blender_util.h, grr - Campbell */
@@ -391,10 +392,10 @@ typedef struct differential {
 /* Ray */
 
 typedef struct Ray {
-	float3 P;
-	float3 D;
-	float t;
-	float time;
+	float3 P;		/* origin */
+	float3 D;		/* direction */
+	float t;		/* length of the ray */
+	float time;		/* time (for motion blur) */
 
 #ifdef __RAY_DIFFERENTIALS__
 	differential3 dP;
@@ -461,7 +462,7 @@ typedef struct ShaderClosure {
 	float data1;
 
 	float3 N;
-#ifdef __ANISOTROPIC__
+#if defined(__ANISOTROPIC__) || defined(__SUBSURFACE__)
 	float3 T;
 #endif
 
@@ -716,16 +717,6 @@ typedef struct KernelBackground {
 	float ao_distance;
 } KernelBackground;
 
-typedef struct KernelSunSky {
-	/* sun direction in spherical and cartesian */
-	float theta, phi, pad3, pad4;
-
-	/* perez function parameters */
-	float zenith_Y, zenith_x, zenith_y, pad2;
-	float perez_Y[5], perez_x[5], perez_y[5];
-	float pad5;
-} KernelSunSky;
-
 typedef struct KernelIntegrator {
 	/* emission */
 	int use_direct_light;
@@ -763,8 +754,8 @@ typedef struct KernelIntegrator {
 	/* clamp */
 	float sample_clamp;
 
-	/* non-progressive */
-	int progressive;
+	/* branched path */
+	int branched;
 	int aa_samples;
 	int diffuse_samples;
 	int glossy_samples;
@@ -836,7 +827,6 @@ typedef struct KernelData {
 	KernelCamera cam;
 	KernelFilm film;
 	KernelBackground background;
-	KernelSunSky sunsky;
 	KernelIntegrator integrator;
 	KernelBVH bvh;
 	KernelCurves curve;

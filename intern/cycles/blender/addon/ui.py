@@ -48,6 +48,49 @@ class CyclesButtonsPanel():
         return rd.engine == 'CYCLES'
 
 
+def draw_samples_info(layout, cscene):
+    integrator = cscene.progressive
+
+    # Calculate sample values
+    if integrator == 'PATH':
+        aa = cscene.samples
+        if cscene.use_square_samples:
+            aa = aa * aa
+    else:
+        aa = cscene.aa_samples
+        d = cscene.diffuse_samples
+        g = cscene.glossy_samples
+        t = cscene.transmission_samples
+        ao = cscene.ao_samples
+        ml = cscene.mesh_light_samples
+        sss = cscene.subsurface_samples
+
+        if cscene.use_square_samples:
+            aa = aa * aa
+            d = d * d
+            g = g * g
+            t = t * t
+            ao = ao * ao
+            ml = ml * ml
+            sss = sss * sss
+
+    # Draw interface
+    # Do not draw for progressive, when Square Samples are disabled
+    if (integrator == 'BRANCHED_PATH') or (cscene.use_square_samples and integrator == 'PATH'):
+        col = layout.column(align=True)
+        col.scale_y = 0.6
+        col.label("Total Samples:")
+        col.separator()
+        if integrator == 'PATH':
+            col.label("%s AA" % aa)
+        else:
+            col.label("%s AA, %s Diffuse, %s Glossy, %s Transmission" %
+                      (aa, d * aa, g * aa, t * aa))
+            col.separator()
+            col.label("%s AO, %s Mesh Light, %s Subsurface" %
+                      (ao * aa, ml * aa, sss * aa))
+
+
 class CyclesRender_PT_sampling(CyclesButtonsPanel, Panel):
     bl_label = "Sampling"
     bl_options = {'DEFAULT_CLOSED'}
@@ -58,27 +101,25 @@ class CyclesRender_PT_sampling(CyclesButtonsPanel, Panel):
         scene = context.scene
         cscene = scene.cycles
         device_type = context.user_preferences.system.compute_device_type
-        
+
         row = layout.row(align=True)
         row.menu("CYCLES_MT_sampling_presets", text=bpy.types.CYCLES_MT_sampling_presets.bl_label)
         row.operator("render.cycles_sampling_preset_add", text="", icon="ZOOMIN")
         row.operator("render.cycles_sampling_preset_add", text="", icon="ZOOMOUT").remove_active = True
 
         row = layout.row()
-        row.prop(cscene, "progressive")
-        
-        if not cscene.progressive:
-            row.prop(cscene, "squared_samples")
-        
+        row.prop(cscene, "progressive", text="")
+        row.prop(cscene, "use_square_samples")
+
         split = layout.split()
-        
+
         col = split.column()
         sub = col.column(align=True)
         sub.label("Settings:")
         sub.prop(cscene, "seed")
         sub.prop(cscene, "sample_clamp")
 
-        if cscene.progressive:
+        if cscene.progressive == 'PATH':
             col = split.column()
             sub = col.column(align=True)
             sub.label(text="Samples:")
@@ -107,6 +148,8 @@ class CyclesRender_PT_sampling(CyclesButtonsPanel, Panel):
                 layout.separator()
                 layout.row().prop(cscene, "use_layer_samples")
                 break
+
+        draw_samples_info(layout, cscene)
 
 
 class CyclesRender_PT_light_paths(CyclesButtonsPanel, Panel):
@@ -209,8 +252,8 @@ class CyclesRender_PT_performance(CyclesButtonsPanel, Panel):
         col = split.column(align=True)
 
         col.label(text="Threads:")
-        col.row().prop(rd, "threads_mode", expand=True)
-        sub = col.column()
+        col.row(align=True).prop(rd, "threads_mode", expand=True)
+        sub = col.column(align=True)
         sub.enabled = rd.threads_mode == 'FIXED'
         sub.prop(rd, "threads")
 
@@ -223,7 +266,7 @@ class CyclesRender_PT_performance(CyclesButtonsPanel, Panel):
 
         sub.prop(cscene, "use_progressive_refine")
 
-        subsub = sub.column()
+        subsub = sub.column(align=True)
         subsub.enabled = not rd.use_border
         subsub.prop(rd, "use_save_buffers")
 
@@ -242,7 +285,7 @@ class CyclesRender_PT_performance(CyclesButtonsPanel, Panel):
 
         col.separator()
 
-        col.label(text="Acceleration structure:")   
+        col.label(text="Acceleration structure:")
         col.prop(cscene, "debug_use_spatial_splits")
 
 
@@ -376,7 +419,7 @@ class CyclesRender_PT_layer_passes(CyclesButtonsPanel, Panel):
         row.prop(rl, "use_pass_subsurface_direct", text="Direct", toggle=True)
         row.prop(rl, "use_pass_subsurface_indirect", text="Indirect", toggle=True)
         row.prop(rl, "use_pass_subsurface_color", text="Color", toggle=True)
-        
+
         col.separator()
         col.prop(rl, "use_pass_emit", text="Emission")
         col.prop(rl, "use_pass_environment")
@@ -591,7 +634,8 @@ class CyclesObject_PT_ray_visibility(CyclesButtonsPanel, Panel):
     @classmethod
     def poll(cls, context):
         ob = context.object
-        return CyclesButtonsPanel.poll(context) and ob and ob.type in {'MESH', 'CURVE', 'CURVE', 'SURFACE', 'FONT', 'META', 'LAMP'}
+        return (CyclesButtonsPanel.poll(context) and
+                ob and ob.type in {'MESH', 'CURVE', 'CURVE', 'SURFACE', 'FONT', 'META', 'LAMP'})
 
     def draw(self, context):
         layout = self.layout
@@ -711,7 +755,7 @@ class CyclesLamp_PT_lamp(CyclesButtonsPanel, Panel):
                 sub.prop(lamp, "size", text="Size X")
                 sub.prop(lamp, "size_y", text="Size Y")
 
-        if not cscene.progressive:
+        if cscene.progressive == 'BRANCHED_PATH':
             col.prop(clamp, "samples")
 
         col = split.column()
@@ -807,7 +851,6 @@ class CyclesWorld_PT_volume(CyclesButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.active = False
 
         world = context.world
         panel_node_draw(layout, world, 'OUTPUT_WORLD', 'Volume')
@@ -827,12 +870,13 @@ class CyclesWorld_PT_ambient_occlusion(CyclesButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
+
         light = context.world.light_settings
 
-        layout.active = light.use_ambient_occlusion
-
         row = layout.row()
-        row.prop(light, "ao_factor", text="Factor")
+        sub = row.row()
+        sub.active = light.use_ambient_occlusion
+        sub.prop(light, "ao_factor", text="Factor")
         row.prop(light, "distance", text="Distance")
 
 
@@ -907,7 +951,7 @@ class CyclesWorld_PT_settings(CyclesButtonsPanel, Panel):
         sub = col.row(align=True)
         sub.active = cworld.sample_as_light
         sub.prop(cworld, "sample_map_resolution")
-        if not cscene.progressive:
+        if cscene.progressive == 'BRANCHED_PATH':
             sub.prop(cworld, "samples")
 
 
@@ -953,7 +997,6 @@ class CyclesMaterial_PT_volume(CyclesButtonsPanel, Panel):
 
     def draw(self, context):
         layout = self.layout
-        layout.active = False
 
         mat = context.material
         cmat = mat.cycles

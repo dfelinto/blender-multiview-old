@@ -471,6 +471,8 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 					but->type = NUMSLI;
 				if (toggle && but->type == OPTION)
 					but->type = TOG;
+				if ((a == 0) && (subtype == PROP_AXISANGLE))
+					uiButSetUnitType(but, PROP_UNIT_ROTATION);
 			}
 
 			if (boolarr) {
@@ -568,7 +570,7 @@ static uiBut *ui_item_with_label(uiLayout *layout, uiBlock *block, const char *n
 	PropertySubType subtype;
 	int labelw;
 
-	sub = uiLayoutRow(layout, FALSE);
+	sub = uiLayoutRow(layout, layout->align);
 	uiBlockSetCurLayout(block, sub);
 
 	if (name[0]) {
@@ -1465,6 +1467,7 @@ void uiItemPointerR(uiLayout *layout, struct PointerRNA *ptr, const char *propna
 	uiBlock *block;
 	StructRNA *icontype;
 	int w, h;
+	char namestr[UI_MAX_NAME_STR];
 	
 	/* validate arguments */
 	prop = RNA_struct_find_property(ptr, propname);
@@ -1506,6 +1509,8 @@ void uiItemPointerR(uiLayout *layout, struct PointerRNA *ptr, const char *propna
 	}
 	if (!name)
 		name = RNA_property_ui_name(prop);
+
+	name = ui_item_name_add_colon(name, namestr);
 
 	/* create button */
 	block = uiLayoutGetBlock(layout);
@@ -2429,6 +2434,15 @@ uiLayout *uiLayoutListBox(uiLayout *layout, uiList *ui_list, PointerRNA *ptr, Pr
 	but->rnapoin = *actptr;
 	but->rnaprop = actprop;
 
+	/* Resizing data. */
+	/* Note: we can't use usual "num button" value handling, as it only tries rnapoin when it is non-NULL... :/
+	 *       So just setting but->poin, not but->pointype.
+	 */
+	but->poin = (void *)&ui_list->list_grip;
+	but->hardmin = but->softmin = 0.0f;
+	but->hardmax = but->softmax = 1000.0f; /* Should be more than enough! */
+	but->a1 = 0.0f;
+
 	/* only for the undo string */
 	if (but->flag & UI_BUT_UNDO) {
 		but->tip = RNA_property_description(actprop);
@@ -2678,8 +2692,9 @@ static void ui_item_align(uiLayout *litem, short nr)
 			BLI_remlink(&litem->root->block->buttons, box->roundbox);
 			BLI_addhead(&litem->root->block->buttons, box->roundbox);
 		}
-		else
+		else if (((uiLayout *)item)->align) {
 			ui_item_align((uiLayout *)item, nr);
+		}
 	}
 }
 

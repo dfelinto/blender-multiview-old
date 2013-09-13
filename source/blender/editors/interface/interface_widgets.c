@@ -1215,7 +1215,7 @@ static void widget_draw_text(uiFontStyle *fstyle, uiWidgetColors *wcol, uiBut *b
 	/* cut string in 2 parts - only for menu entries */
 	if ((but->block->flag & UI_BLOCK_LOOP)) {
 		if (ELEM3(but->type, NUM, TEX, NUMSLI) == 0) {
-			cpoin = strchr(but->drawstr, '|');
+			cpoin = strchr(but->drawstr, UI_SEP_CHAR);
 			if (cpoin) *cpoin = 0;
 		}
 	}
@@ -1261,7 +1261,7 @@ static void widget_draw_text(uiFontStyle *fstyle, uiWidgetColors *wcol, uiBut *b
 		fstyle->align = UI_STYLE_TEXT_RIGHT;
 		rect->xmax -= ui_but_draw_menu_icon(but) ? UI_DPI_ICON_SIZE : 0.25f * U.widget_unit;
 		uiStyleFontDraw(fstyle, rect, cpoin + 1);
-		*cpoin = '|';
+		*cpoin = UI_SEP_CHAR;
 	}
 }
 
@@ -2850,6 +2850,16 @@ static void widget_optionbut(uiWidgetColors *wcol, rcti *rect, int state, int UN
 	rect->xmin += BLI_rcti_size_y(rect) * 0.7 + delta;
 }
 
+/* labels use Editor theme colors for text */
+static void widget_state_label(uiWidgetType *wt, int state)
+{
+	/* call this for option button */
+	widget_state(wt, state);
+	if (state & UI_SELECT)
+		UI_GetThemeColor3ubv(TH_TEXT_HI, (unsigned char *)wt->wcol.text);
+	else
+		UI_GetThemeColor3ubv(TH_TEXT, (unsigned char *)wt->wcol.text);
+}
 
 static void widget_radiobut(uiWidgetColors *wcol, rcti *rect, int UNUSED(state), int roundboxalign)
 {
@@ -2970,9 +2980,12 @@ static uiWidgetType *widget_type(uiWidgetTypeEnum type)
 
 		case UI_WTYPE_LISTLABEL:
 			wt.wcol_theme = &btheme->tui.wcol_list_item;
-			/* fall-through */  /* we use usual label code too. */
+			wt.draw = NULL;
+			/* Can't use usual label code. */
+			break;
 		case UI_WTYPE_LABEL:
 			wt.draw = NULL;
+			wt.state = widget_state_label;
 			break;
 			
 		case UI_WTYPE_TOGGLE:
@@ -3482,7 +3495,7 @@ void ui_draw_search_back(uiStyle *UNUSED(style), uiBlock *block, rcti *rect)
 
 /* helper call to draw a menu item without button */
 /* state: UI_ACTIVE or 0 */
-void ui_draw_menu_item(uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state)
+void ui_draw_menu_item(uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state, bool use_sep)
 {
 	uiWidgetType *wt = widget_type(UI_WTYPE_MENU_ITEM);
 	rcti _rect = *rect;
@@ -3499,21 +3512,25 @@ void ui_draw_menu_item(uiFontStyle *fstyle, rcti *rect, const char *name, int ic
 	if (iconid) rect->xmin += UI_DPI_ICON_SIZE;
 
 	/* cut string in 2 parts? */
-	cpoin = strchr(name, '|');
-	if (cpoin) {
-		*cpoin = 0;
-		rect->xmax -= BLF_width(fstyle->uifont_id, cpoin + 1) + 10;
+	if (use_sep) {
+		cpoin = strchr(name, UI_SEP_CHAR);
+		if (cpoin) {
+			*cpoin = 0;
+			rect->xmax -= BLF_width(fstyle->uifont_id, cpoin + 1) + 10;
+		}
 	}
 	
 	glColor4ubv((unsigned char *)wt->wcol.text);
 	uiStyleFontDraw(fstyle, rect, name);
 	
 	/* part text right aligned */
-	if (cpoin) {
-		fstyle->align = UI_STYLE_TEXT_RIGHT;
-		rect->xmax = _rect.xmax - 5;
-		uiStyleFontDraw(fstyle, rect, cpoin + 1);
-		*cpoin = '|';
+	if (use_sep) {
+		if (cpoin) {
+			fstyle->align = UI_STYLE_TEXT_RIGHT;
+			rect->xmax = _rect.xmax - 5;
+			uiStyleFontDraw(fstyle, rect, cpoin + 1);
+			*cpoin = UI_SEP_CHAR;
+		}
 	}
 	
 	/* restore rect, was messed with */

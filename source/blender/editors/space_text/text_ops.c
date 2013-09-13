@@ -949,7 +949,7 @@ static int text_indent_exec(bContext *C, wmOperator *UNUSED(op))
 	text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
 	if (txt_has_sel(text)) {
-		txt_order_cursors(text);
+		txt_order_cursors(text, false);
 		txt_indent(text);
 	}
 	else
@@ -983,7 +983,7 @@ static int text_unindent_exec(bContext *C, wmOperator *UNUSED(op))
 
 	text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
-	txt_order_cursors(text);
+	txt_order_cursors(text, false);
 	txt_unindent(text);
 
 	text_update_edited(text);
@@ -1063,7 +1063,7 @@ static int text_comment_exec(bContext *C, wmOperator *UNUSED(op))
 	if (txt_has_sel(text)) {
 		text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
-		txt_order_cursors(text);
+		txt_order_cursors(text, false);
 		txt_comment(text);
 		text_update_edited(text);
 
@@ -1096,7 +1096,7 @@ static int text_uncomment_exec(bContext *C, wmOperator *UNUSED(op))
 	if (txt_has_sel(text)) {
 		text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
-		txt_order_cursors(text);
+		txt_order_cursors(text, false);
 		txt_uncomment(text);
 		text_update_edited(text);
 
@@ -1861,11 +1861,23 @@ static int text_move_cursor(bContext *C, int type, int select)
 			break;
 
 		case PREV_CHAR:
-			txt_move_left(text, select);
+			if (txt_has_sel(text) && !select) {
+				txt_order_cursors(text, false);
+				txt_pop_sel(text);
+			}
+			else {
+				txt_move_left(text, select);
+			}
 			break;
 
 		case NEXT_CHAR:
-			txt_move_right(text, select);
+			if (txt_has_sel(text) && !select) {
+				txt_order_cursors(text, true);
+				txt_pop_sel(text);
+			}
+			else {
+				txt_move_right(text, select);
+			}
 			break;
 
 		case PREV_LINE:
@@ -2086,10 +2098,17 @@ void TEXT_OT_overwrite_toggle(wmOperatorType *ot)
 
 static void txt_screen_clamp(SpaceText *st, ARegion *ar)
 {
-	int last;
-	last = text_get_total_lines(st, ar);
-	last = last - (st->viewlines / 2);
-	CLAMP(st->top, 0, last);
+	if (st->top <= 0) {
+		st->top = 0;
+	}
+	else {
+		int last;
+		last = text_get_total_lines(st, ar);
+		last = last - (st->viewlines / 2);
+		if (last > 0 && st->top > last) {
+			st->top = last;
+		}
+	}
 }
 
 /* Moves the view vertically by the specified number of lines */

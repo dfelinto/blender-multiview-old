@@ -168,7 +168,7 @@ void OutputSingleLayerOperation::deinitExecution()
 		ibuf->mall |= IB_rectfloat; 
 		ibuf->dither = this->m_rd->dither_intensity;
 		
-		IMB_colormanagement_imbuf_for_write(ibuf, TRUE, FALSE, m_viewSettings, m_displaySettings,
+		IMB_colormanagement_imbuf_for_write(ibuf, true, false, m_viewSettings, m_displaySettings,
 		                                    this->m_format);
 
 		const char *view = view_name(this->m_rd, this->m_actview);

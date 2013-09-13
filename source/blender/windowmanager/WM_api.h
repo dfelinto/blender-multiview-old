@@ -40,6 +40,7 @@
 /* dna-savable wmStructs here */
 #include "DNA_windowmanager_types.h"
 #include "WM_keymap.h"
+#include "BLI_compiler_attrs.h"
 
 #ifdef __cplusplus
 extern "C" {
@@ -76,17 +77,9 @@ void		WM_init_native_pixels(bool do_it);
 void		WM_init				(struct bContext *C, int argc, const char **argv);
 void		WM_exit_ext			(struct bContext *C, const short do_python);
 
-void		WM_exit				(struct bContext *C)
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((noreturn))
-#endif
-;
+void		WM_exit				(struct bContext *C) ATTR_NORETURN;
 
-void		WM_main				(struct bContext *C)
-#if defined(__GNUC__) || defined(__clang__)
-__attribute__((noreturn))
-#endif
-;
+void		WM_main				(struct bContext *C) ATTR_NORETURN;
 
 bool 		WM_init_game		(struct bContext *C);
 void		WM_init_splash		(struct bContext *C);
@@ -118,9 +111,9 @@ void		WM_autosave_init(struct wmWindowManager *wm);
 void		WM_recover_last_session(struct bContext *C, struct ReportList *reports);
 
 			/* mouse cursors */
-void		WM_cursor_set		(struct wmWindow *win, int curs);
-void		WM_cursor_modal		(struct wmWindow *win, int curs);
-void		WM_cursor_restore	(struct wmWindow *win);
+void		WM_cursor_set(struct wmWindow *win, int curs);
+void		WM_cursor_modal_set(struct wmWindow *win, int curs);
+void		WM_cursor_modal_restore(struct wmWindow *win);
 void		WM_cursor_wait		(bool val);
 void		WM_cursor_grab_enable(struct wmWindow *win, bool wrap, bool hide, int bounds[4]);
 void		WM_cursor_grab_disable(struct wmWindow *win, int mouse_ungrab_xy[2]);
@@ -151,9 +144,9 @@ struct wmEventHandler *WM_event_add_keymap_handler_priority(ListBase *handlers, 
 void		WM_event_remove_keymap_handler(ListBase *handlers, wmKeyMap *keymap);
 
 struct wmEventHandler *WM_event_add_ui_handler(
-		const struct bContext *C, ListBase *handlers,
-		int (*func)(struct bContext *C, const struct wmEvent *event, void *userdata),
-		void (*remove)(struct bContext *C, void *userdata), void *userdata);
+        const struct bContext *C, ListBase *handlers,
+        int (*func)(struct bContext *C, const struct wmEvent *event, void *userdata),
+        void (*remove)(struct bContext *C, void *userdata), void *userdata);
 
 void		WM_event_remove_ui_handler(ListBase *handlers,
                                        int (*func)(struct bContext *C, const struct wmEvent *event, void *userdata),
@@ -180,11 +173,7 @@ void		WM_main_remove_notifier_reference(const void *reference);
 
 			/* reports */
 void        WM_report(const struct bContext *C, ReportType type, const char *message);
-void        WM_reportf(const struct bContext *C, ReportType type, const char *format, ...)
-#ifdef __GNUC__
-__attribute__ ((format(printf, 3, 4)))
-#endif
-;
+void        WM_reportf(const struct bContext *C, ReportType type, const char *format, ...) ATTR_PRINTF_FORMAT(3, 4);
 
 void		wm_event_add(struct wmWindow *win, const struct wmEvent *event_to_add);
 void		wm_event_init_from_window(struct wmWindow *win, struct wmEvent *event);
@@ -386,6 +375,7 @@ struct wmJob *WM_jobs_get(struct wmWindowManager *wm, struct wmWindow *win, void
 int			WM_jobs_test(struct wmWindowManager *wm, void *owner, int job_type);
 float		WM_jobs_progress(struct wmWindowManager *wm, void *owner);
 char       *WM_jobs_name(struct wmWindowManager *wm, void *owner);
+void       *WM_jobs_customdata(struct wmWindowManager *wm, void *owner);
 
 int         WM_jobs_is_running(struct wmJob *);
 void       *WM_jobs_customdata_get(struct wmJob *);

@@ -22,6 +22,7 @@ set(SRC_HEADERS
 	kernel.h
 	kernel_accumulate.h
 	kernel_bvh.h
+	kernel_bvh_subsurface.h
 	kernel_bvh_traversal.h
 	kernel_camera.h
 	kernel_compat_cpu.h
@@ -40,6 +41,7 @@ set(SRC_HEADERS
 	kernel_object.h
 	kernel_passes.h
 	kernel_path.h
+	kernel_path_state.h
 	kernel_primitive.h
 	kernel_projection.h
 	kernel_random.h

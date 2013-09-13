@@ -69,7 +69,7 @@
 #define USE_EDBM_LOOPTRIS
 
 
-void draw_image_cursor(SpaceImage *sima, ARegion *ar)
+void draw_image_cursor(ARegion *ar, const float cursor[2])
 {
 	float zoom[2], x_fac, y_fac;
 
@@ -80,7 +80,7 @@ void draw_image_cursor(SpaceImage *sima, ARegion *ar)
 	y_fac = zoom[1];
 	
 	cpack(0xFFFFFF);
-	glTranslatef(sima->cursor[0], sima->cursor[1], 0.0);
+	glTranslatef(cursor[0], cursor[1], 0.0);
 	fdrawline(-0.05f * x_fac, 0, 0, 0.05f * y_fac);
 	fdrawline(0, 0.05f * y_fac, 0.05f * x_fac, 0.0f);
 	fdrawline(0.05f * x_fac, 0.0f, 0.0f, -0.05f * y_fac);
@@ -108,7 +108,7 @@ void draw_image_cursor(SpaceImage *sima, ARegion *ar)
 	fdrawline(0.0f, -0.020f * y_fac, 0.0f, -0.1f * y_fac);
 	fdrawline(0.0f, 0.1f * y_fac, 0.0f, 0.020f * y_fac);
 
-	glTranslatef(-sima->cursor[0], -sima->cursor[1], 0.0);
+	glTranslatef(-cursor[0], -cursor[1], 0.0);
 	setlinestyle(0);
 }
 
@@ -158,7 +158,7 @@ static int draw_uvs_dm_shadow(DerivedMesh *dm)
 	/* draw shadow mesh - this is the mesh with the modifier applied */
 
 	if (dm && dm->drawUVEdges && CustomData_has_layer(&dm->loopData, CD_MLOOPUV)) {
-		glColor3ub(112, 112, 112);
+		UI_ThemeColor(TH_UV_SHADOW);
 		dm->drawUVEdges(dm);
 		return 1;
 	}
@@ -362,7 +362,7 @@ static void draw_uvs_other(Scene *scene, Object *obedit, Image *curimage)
 {
 	Base *base;
 
-	glColor3ub(96, 96, 96);
+	UI_ThemeColor(TH_UV_OTHERS);
 
 	for (base = scene->base.first; base; base = base->next) {
 		Object *ob = base->object;
@@ -404,7 +404,7 @@ static void draw_uvs_texpaint(SpaceImage *sima, Scene *scene, Object *ob)
 	if (sima->flag & SI_DRAW_OTHER)
 		draw_uvs_other(scene, ob, curimage);
 
-	glColor3ub(112, 112, 112);
+	UI_ThemeColor(TH_UV_SHADOW);
 
 	if (me->mtpoly) {
 		MPoly *mpoly = me->mpoly;
@@ -884,7 +884,7 @@ void draw_uvedit_main(SpaceImage *sima, ARegion *ar, Scene *scene, Object *obedi
 			draw_uvs_texpaint(sima, scene, obact);
 
 		if (show_uvedit && !(toolsettings->use_uv_sculpt))
-			draw_image_cursor(sima, ar);
+			draw_image_cursor(ar, sima->cursor);
 	}
 }
 

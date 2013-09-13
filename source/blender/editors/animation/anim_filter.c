@@ -1541,10 +1541,16 @@ static size_t animdata_filter_ds_nodetree(bAnimContext *ac, ListBase *anim_data,
 static size_t animdata_filter_ds_linestyle(bAnimContext *ac, ListBase *anim_data, bDopeSheet *ads, Scene *sce, int filter_mode)
 {
 	SceneRenderLayer *srl;
+	FreestyleLineSet *lineset;
 	size_t items = 0;
 	
 	for (srl = sce->r.layers.first; srl; srl = srl->next) {
-		FreestyleLineSet *lineset;
+		for (lineset = srl->freestyleConfig.linesets.first; lineset; lineset = lineset->next) {
+			lineset->linestyle->id.flag |= LIB_DOIT;
+		}
+	}
+
+	for (srl = sce->r.layers.first; srl; srl = srl->next) {
 		
 		/* skip render layers without Freestyle enabled */
 		if (!(srl->layflag & SCE_LAY_FRS))
@@ -1555,6 +1561,10 @@ static size_t animdata_filter_ds_linestyle(bAnimContext *ac, ListBase *anim_data
 			FreestyleLineStyle *linestyle = lineset->linestyle;
 			ListBase tmp_data = {NULL, NULL};
 			size_t tmp_items = 0;
+
+			if (!(linestyle->id.flag & LIB_DOIT))
+				continue;
+			linestyle->id.flag &= ~LIB_DOIT;
 			
 			/* add scene-level animation channels */
 			BEGIN_ANIMFILTER_SUBCHANNELS(FILTER_LS_SCED(linestyle))
@@ -2533,13 +2543,13 @@ static size_t animdata_filter_remove_invalid(ListBase *anim_data)
 static size_t animdata_filter_remove_duplis(ListBase *anim_data)
 {
 	bAnimListElem *ale, *next;
-	GHash *gh;
+	GSet *gs;
 	size_t items = 0;
 	
 	/* build new hashtable to efficiently store and retrieve which entries have been 
 	 * encountered already while searching
 	 */
-	gh = BLI_ghash_ptr_new("animdata_filter_duplis_remove gh");
+	gs = BLI_gset_ptr_new(__func__);
 	
 	/* loop through items, removing them from the list if a similar item occurs already */
 	for (ale = anim_data->first; ale; ale = next) {
@@ -2549,9 +2559,8 @@ static size_t animdata_filter_remove_duplis(ListBase *anim_data)
 		 *	- just use ale->data for now, though it would be nicer to involve 
 		 *	  ale->type in combination too to capture corner cases (where same data performs differently)
 		 */
-		if (BLI_ghash_haskey(gh, ale->data) == 0) {
+		if (BLI_gset_reinsert(gs, ale->data, NULL)) {
 			/* this entry is 'unique' and can be kept */
-			BLI_ghash_insert(gh, ale->data, NULL);
 			items++;
 		}
 		else {
@@ -2561,7 +2570,7 @@ static size_t animdata_filter_remove_duplis(ListBase *anim_data)
 	}
 	
 	/* free the hash... */
-	BLI_ghash_free(gh, NULL, NULL);
+	BLI_gset_free(gs, NULL);
 	
 	/* return the number of items still in the list */
 	return items;
