@@ -809,9 +809,13 @@ static void node_shader_buts_tex_environment(uiLayout *layout, bContext *C, Poin
 }
 
 static void node_shader_buts_tex_sky(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
-{
+{	
+	uiItemR(layout, ptr, "sky_type", 0, "", ICON_NONE);
 	uiItemR(layout, ptr, "sun_direction", 0, "", ICON_NONE);
 	uiItemR(layout, ptr, "turbidity", 0, NULL, ICON_NONE);
+
+	if (RNA_enum_get(ptr, "sky_type") == SHD_SKY_NEW)
+		uiItemR(layout, ptr, "ground_albedo", 0, NULL, ICON_NONE);
 }
 
 static void node_shader_buts_tex_gradient(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -1628,12 +1632,14 @@ static void node_composit_buts_file_output_details(uiLayout *layout, bContext *C
 	active_index = RNA_int_get(ptr, "active_input_index");
 	/* using different collection properties if multilayer format is enabled */
 	if (multilayer) {
-		uiTemplateList(col, C, "UI_UL_list", "file_output_node", ptr, "layer_slots", ptr, "active_input_index", 0, 0, 0);
+		uiTemplateList(col, C, "UI_UL_list", "file_output_node", ptr, "layer_slots", ptr, "active_input_index",
+		               0, 0, 0, 0);
 		RNA_property_collection_lookup_int(ptr, RNA_struct_find_property(ptr, "layer_slots"),
 		                                   active_index, &active_input_ptr);
 	}
 	else {
-		uiTemplateList(col, C, "UI_UL_list", "file_output_node", ptr, "file_slots", ptr, "active_input_index", 0, 0, 0);
+		uiTemplateList(col, C, "UI_UL_list", "file_output_node", ptr, "file_slots", ptr, "active_input_index",
+		               0, 0, 0, 0);
 		RNA_property_collection_lookup_int(ptr, RNA_struct_find_property(ptr, "file_slots"),
 		                                   active_index, &active_input_ptr);
 	}
@@ -3069,7 +3075,16 @@ int node_link_bezier_points(View2D *v2d, SpaceNode *snode, bNodeLink *link, floa
 {
 	float dist, vec[4][2];
 	float deltax, deltay;
+	float cursor[2] = {0.0f, 0.0f};
 	int toreroute, fromreroute;
+	
+	/* this function can be called with snode null (via cut_links_intersect) */
+	/* XXX map snode->cursor back to view space */
+	if (snode) {
+		cursor[0] = snode->cursor[0] * UI_DPI_FAC;
+		cursor[1] = snode->cursor[1] * UI_DPI_FAC;
+	}
+	
 	/* in v0 and v3 we put begin/end points */
 	if (link->fromsock) {
 		vec[0][0] = link->fromsock->locx;
@@ -3078,7 +3093,7 @@ int node_link_bezier_points(View2D *v2d, SpaceNode *snode, bNodeLink *link, floa
 	}
 	else {
 		if (snode == NULL) return 0;
-		copy_v2_v2(vec[0], snode->cursor);
+		copy_v2_v2(vec[0], cursor);
 		fromreroute = 0;
 	}
 	if (link->tosock) {
@@ -3088,7 +3103,7 @@ int node_link_bezier_points(View2D *v2d, SpaceNode *snode, bNodeLink *link, floa
 	}
 	else {
 		if (snode == NULL) return 0;
-		copy_v2_v2(vec[3], snode->cursor);
+		copy_v2_v2(vec[3], cursor);
 		toreroute = 0;
 	}
 

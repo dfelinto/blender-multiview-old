@@ -85,10 +85,11 @@
 #  include "RNA_enum_types.h"
 #endif
 
+static void wm_notifier_clear(wmNotifier *note);
 static void update_tablet_data(wmWindow *win, wmEvent *event);
 
 static int wm_operator_call_internal(bContext *C, wmOperatorType *ot, PointerRNA *properties, ReportList *reports,
-                                     short context, short poll_only);
+                                     const short context, const bool poll_only);
 
 /* ************ event management ************** */
 
@@ -126,8 +127,7 @@ void wm_event_free_all(wmWindow *win)
 {
 	wmEvent *event;
 	
-	while ((event = win->queue.first)) {
-		BLI_remlink(&win->queue, event);
+	while ((event = BLI_pophead(&win->queue))) {
 		wm_event_free(event);
 	}
 }
@@ -218,19 +218,18 @@ void WM_main_remove_notifier_reference(const void *reference)
 			note_next = note->next;
 
 			if (note->reference == reference) {
-				BLI_remlink(&wm->queue, note);
-				MEM_freeN(note);
+				/* don't remove because this causes problems for #wm_event_do_notifiers
+				 * which may be looping on the data (deleting screens) */
+				wm_notifier_clear(note);
 			}
 		}
 	}
 }
 
-static wmNotifier *wm_notifier_next(wmWindowManager *wm)
+static void wm_notifier_clear(wmNotifier *note)
 {
-	wmNotifier *note = wm->queue.first;
-	
-	if (note) BLI_remlink(&wm->queue, note);
-	return note;
+	/* NULL the entire notifier, only leaving (next, prev) members intact */
+	memset(((char *)note) + sizeof(Link), 0, sizeof(*note) - sizeof(Link));
 }
 
 /* called in mainloop */
@@ -265,7 +264,6 @@ void wm_event_do_notifiers(bContext *C)
 				if (note->category == NC_SCREEN) {
 					if (note->data == ND_SCREENBROWSE) {
 						/* free popup handlers only [#35434] */
-						wmWindow *win = CTX_wm_window(C);
 						UI_remove_popup_handlers_all(C, &win->modalhandlers);
 
 
@@ -308,7 +306,7 @@ void wm_event_do_notifiers(bContext *C)
 	}
 	
 	/* the notifiers are sent without context, to keep it clean */
-	while ( (note = wm_notifier_next(wm)) ) {
+	while ((note = BLI_pophead(&wm->queue))) {
 		for (win = wm->windows.first; win; win = win->next) {
 			
 			/* filter out notifiers */
@@ -964,9 +962,8 @@ int WM_operator_last_properties_store(wmOperator *UNUSED(op))
 #endif
 
 static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event,
-                              PointerRNA *properties, ReportList *reports, short poll_only)
+                              PointerRNA *properties, ReportList *reports, const bool poll_only)
 {
-	wmWindowManager *wm = CTX_wm_manager(C);
 	int retval = OPERATOR_PASS_THROUGH;
 
 	/* this is done because complicated setup is done to call this function that is better not duplicated */
@@ -974,6 +971,7 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event,
 		return WM_operator_poll(C, ot);
 
 	if (WM_operator_poll(C, ot)) {
+		wmWindowManager *wm = CTX_wm_manager(C);
 		wmOperator *op = wm_operator_create(wm, ot, properties, reports); /* if reports == NULL, they'll be initialized */
 		const short is_nested_call = (wm->op_undo_depth != 0);
 		
@@ -1102,9 +1100,8 @@ static int wm_operator_invoke(bContext *C, wmOperatorType *ot, wmEvent *event,
  * 
  * invokes operator in context */
 static int wm_operator_call_internal(bContext *C, wmOperatorType *ot, PointerRNA *properties, ReportList *reports,
-                                     short context, short poll_only)
+                                     const short context, const bool poll_only)
 {
-	wmWindow *window = CTX_wm_window(C);
 	wmEvent *event;
 	
 	int retval;
@@ -1113,16 +1110,23 @@ static int wm_operator_call_internal(bContext *C, wmOperatorType *ot, PointerRNA
 
 	/* dummie test */
 	if (ot && C) {
+		wmWindow *window = CTX_wm_window(C);
+
 		switch (context) {
 			case WM_OP_INVOKE_DEFAULT:
 			case WM_OP_INVOKE_REGION_WIN:
 			case WM_OP_INVOKE_AREA:
 			case WM_OP_INVOKE_SCREEN:
 				/* window is needed for invoke, cancel operator */
-				if (window == NULL)
+				if (window == NULL) {
+					if (poll_only) {
+						CTX_wm_operator_poll_msg_set(C, "Missing 'window' in context");
+					}
 					return 0;
-				else
+				}
+				else {
 					event = window->eventstate;
+				}
 				break;
 			default:
 				event = NULL;
@@ -1323,9 +1327,7 @@ void WM_event_remove_handlers(bContext *C, ListBase *handlers)
 	wmWindowManager *wm = CTX_wm_manager(C);
 	
 	/* C is zero on freeing database, modal handlers then already were freed */
-	while ((handler = handlers->first)) {
-		BLI_remlink(handlers, handler);
-		
+	while ((handler = BLI_pophead(handlers))) {
 		if (handler->op) {
 			if (handler->op->type->cancel) {
 				ScrArea *area = CTX_wm_area(C);
@@ -2100,7 +2102,7 @@ static void wm_event_drag_test(wmWindowManager *wm, wmWindow *win, wmEvent *even
 		win->screen->do_draw_drag = TRUE;
 		
 		/* restore cursor (disabled, see wm_dragdrop.c) */
-		// WM_cursor_restore(win);
+		// WM_cursor_modal_restore(win);
 	}
 	
 	/* overlap fails otherwise */

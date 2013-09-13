@@ -551,7 +551,7 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 			}
 		}
 		else if (ob->type == OB_CAMERA) {
-			MovieClip *clip = BKE_object_movieclip_get(scene, ob, FALSE);
+			MovieClip *clip = BKE_object_movieclip_get(scene, ob, false);
 
 			/* applying scale on camera actually scales clip's reconstruction.
 			 * of there's clip assigned to camera nothing to do actually.
@@ -561,6 +561,21 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 
 			if (apply_scale)
 				BKE_tracking_reconstruction_scale(&clip->tracking, ob->size);
+		}
+		else if (ob->type == OB_EMPTY) {
+			/* It's possible for empties too, even though they don't 
+			 * really have obdata, since we can simply apply the maximum
+			 * scaling to the empty's drawsize.
+			 *
+			 * Core Assumptions:
+			 * 1) Most scaled empties have uniform scaling 
+			 *    (i.e. for visibility reasons), AND/OR
+			 * 2) Preserving non-uniform scaling is not that important,
+			 *    and is something that many users would be willing to
+			 *    sacrifice for having an easy way to do this.
+			 */
+			 float max_scale = MAX3(ob->size[0], ob->size[1], ob->size[2]);
+			 ob->empty_drawsize *= max_scale;
 		}
 		else {
 			continue;
@@ -589,8 +604,10 @@ static int apply_objects_internal(bContext *C, ReportList *reports, int apply_lo
 	}
 	CTX_DATA_END;
 
-	if (!change)
+	if (!change) {
+		BKE_report(reports, RPT_WARNING, "Objects have no data to transform");
 		return OPERATOR_CANCELLED;
+	}
 
 	WM_event_add_notifier(C, NC_OBJECT | ND_TRANSFORM, NULL);
 	return OPERATOR_FINISHED;
@@ -768,7 +785,7 @@ static int object_origin_set_exec(bContext *C, wmOperator *op)
 	}
 
 	if (ctx_ob_act) {
-		BLI_rotatelist(&ctx_data_list, (LinkData *)ctx_ob_act);
+		BLI_rotatelist_first(&ctx_data_list, (LinkData *)ctx_ob_act);
 	}
 
 	for (tob = bmain->object.first; tob; tob = tob->id.next) {

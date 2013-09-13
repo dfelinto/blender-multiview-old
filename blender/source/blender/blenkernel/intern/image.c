@@ -195,9 +195,7 @@ static void image_free_buffers(Image *ima)
 {
 	ImBuf *ibuf;
 
-	while ((ibuf = ima->ibufs.first)) {
-		BLI_remlink(&ima->ibufs, ibuf);
-
+	while ((ibuf = BLI_pophead(&ima->ibufs))) {
 		if (ibuf->userdata) {
 			MEM_freeN(ibuf->userdata);
 			ibuf->userdata = NULL;
@@ -524,8 +522,7 @@ void BKE_image_merge(Image *dest, Image *source)
 	/* sanity check */
 	if (dest && source && dest != source) {
 
-		while ((ibuf = source->ibufs.first)) {
-			BLI_remlink(&source->ibufs, ibuf);
+		while ((ibuf = BLI_pophead(&source->ibufs))) {
 			image_assign_ibuf(dest, ibuf, IMA_INDEX_PASS(ibuf->index), IMA_INDEX_FRAME(ibuf->index));
 		}
 
@@ -1329,7 +1326,7 @@ int BKE_add_image_extension_from_type(char *string, const char imtype)
 void BKE_imformat_defaults(ImageFormatData *im_format)
 {
 	memset(im_format, 0, sizeof(*im_format));
-	im_format->planes = R_IMF_PLANES_RGB;
+	im_format->planes = R_IMF_PLANES_RGBA;
 	im_format->imtype = R_IMF_IMTYPE_PNG;
 	im_format->depth = R_IMF_CHAN_DEPTH_8;
 	im_format->quality = 90;
@@ -2152,9 +2149,7 @@ void BKE_image_walk_all_users(const Main *mainp, void *customdata,
 	/* texture users */
 	for (tex = mainp->tex.first; tex; tex = tex->id.next) {
 		if (tex->type == TEX_IMAGE && tex->ima) {
-			if (ELEM(tex->ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
-				callback(tex->ima, &tex->iuser, customdata);
-			}
+			callback(tex->ima, &tex->iuser, customdata);
 		}
 	}
 
@@ -2196,7 +2191,7 @@ static void image_tag_frame_recalc(Image *ima, ImageUser *iuser, void *customdat
 {
 	Image *changed_image = customdata;
 
-	if (ima == changed_image) {
+	if (ima == changed_image && ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
 		iuser->flag |= IMA_NEED_FRAME_RECALC;
 	}
 }

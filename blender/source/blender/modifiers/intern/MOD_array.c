@@ -199,7 +199,7 @@ static int *find_doubles_index_map(BMesh *bm, BMOperator *dupe_op,
 
 	/*element type argument doesn't do anything here*/
 	BMO_ITER (v, &oiter, find_op.slots_out, "targetmap.out", 0) {
-		v2 = BMO_iter_map_value_p(&oiter);
+		v2 = BMO_iter_map_value_ptr(&oiter);
 
 		index_map[BM_elem_index_get(v)] = BM_elem_index_get(v2) + 1;
 	}
@@ -272,7 +272,7 @@ static void bm_merge_dm_transform(BMesh *bm, DerivedMesh *dm, float mat[4][4],
 
 		/* add new merge targets to weld operator */
 		BMO_ITER (v, &oiter, find_op.slots_out, "targetmap.out", 0) {
-			v2 = BMO_iter_map_value_p(&oiter);
+			v2 = BMO_iter_map_value_ptr(&oiter);
 			/* check in case the target vertex (v2) is already marked
 			 * for merging */
 			while ((v3 = BMO_slot_map_elem_get(slot_targetmap, v2))) {
@@ -319,8 +319,10 @@ static void merge_first_last(BMesh *bm,
 	/* add new merge targets to weld operator */
 	slot_targetmap = BMO_slot_get(weld_op->slots_in, "targetmap");
 	BMO_ITER (v, &oiter, find_op.slots_out, "targetmap.out", 0) {
-		v2 = BMO_iter_map_value_p(&oiter);
-		BMO_slot_map_elem_insert(weld_op, slot_targetmap, v, v2);
+		if (!BMO_slot_map_contains(slot_targetmap, v)) {
+			v2 = BMO_iter_map_value_ptr(&oiter);
+			BMO_slot_map_elem_insert(weld_op, slot_targetmap, v, v2);
+		}
 	}
 
 	BMO_op_finish(bm, &find_op);
@@ -344,7 +346,7 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 	int *indexMap = NULL;
 	DerivedMesh *start_cap = NULL, *end_cap = NULL;
 	MVert *src_mvert;
-	BMOpSlot *slot_targetmap = NULL;  /* for weldop */
+	BMOpSlot *slot_targetmap = NULL;  /* for weld_op */
 
 	/* need to avoid infinite recursion here */
 	if (amd->start_cap && amd->start_cap != ob && amd->start_cap->type == OB_MESH)
@@ -400,7 +402,7 @@ static DerivedMesh *arrayModifier_doArray(ArrayModifierData *amd,
 	/* calculate the maximum number of copies which will fit within the
 	 * prescribed length */
 	if (amd->fit_type == MOD_ARR_FITLENGTH || amd->fit_type == MOD_ARR_FITCURVE) {
-		float dist = sqrt(dot_v3v3(offset[3], offset[3]));
+		float dist = len_v3(offset[3]);
 
 		if (dist > 1e-6f)
 			/* this gives length = first copy start to last copy end

@@ -170,7 +170,7 @@ int BKE_object_is_deform_modified(struct Scene *scene, struct Object *ob);
 
 void BKE_object_relink(struct Object *ob);
 
-struct MovieClip *BKE_object_movieclip_get(struct Scene *scene, struct Object *ob, int use_default);
+struct MovieClip *BKE_object_movieclip_get(struct Scene *scene, struct Object *ob, bool use_default);
 
 /* this function returns a superset of the scenes selection based on relationships */
 
@@ -193,6 +193,8 @@ typedef enum eObjectSet {
 struct LinkNode *BKE_object_relational_superset(struct Scene *scene, eObjectSet objectSet, eObRelationTypes includeFilter);
 struct LinkNode *BKE_object_groups(struct Object *ob);
 void             BKE_object_groups_clear(struct Scene *scene, struct Base *base, struct Object *object);
+
+struct KDTree *BKE_object_as_kdtree(struct Object *ob, int *r_tot);
 
 #ifdef __cplusplus
 }

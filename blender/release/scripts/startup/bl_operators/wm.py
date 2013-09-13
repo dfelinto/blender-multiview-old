@@ -1272,6 +1272,8 @@ class WM_OT_blenderplayer_start(Operator):
         import sys
         import subprocess
 
+        gs = context.scene.game_settings
+
         # these remain the same every execution
         blender_bin_path = bpy.app.binary_path
         blender_bin_dir = os.path.dirname(blender_bin_path)
@@ -1286,9 +1288,25 @@ class WM_OT_blenderplayer_start(Operator):
             self.report({'ERROR'}, "Player path: %r not found" % player_path)
             return {'CANCELLED'}
 
-        filepath = os.path.join(bpy.app.tempdir, "game.blend")
+        filepath = bpy.data.filepath + '~' if bpy.data.is_saved else os.path.join(bpy.app.tempdir, "game.blend")
         bpy.ops.wm.save_as_mainfile('EXEC_DEFAULT', filepath=filepath, copy=True)
-        subprocess.call([player_path, filepath])
+
+        # start the command line call with the player path
+        args = [player_path]
+
+        # handle some UI options as command line arguments
+        args.extend([
+            "-g", "show_framerate=%d" % gs.show_framerate_profile,
+            "-g", "show_profile=%d" % gs.show_framerate_profile,
+            "-g", "show_properties=%d" % gs.show_debug_properties,
+            "-g", "ignore_deprecation_warnings=%d" % (not gs.use_deprecation_warnings),
+            ])
+
+        # finish the call with the path to the blend file
+        args.append(filepath)
+
+        subprocess.call(args)
+        os.remove(filepath)
         return {'FINISHED'}
 
 
@@ -1591,11 +1609,12 @@ class WM_OT_addon_enable(Operator):
             info_ver = info.get("blender", (0, 0, 0))
 
             if info_ver > bpy.app.version:
-                self.report({'WARNING'}, ("This script was written Blender "
-                                          "version %d.%d.%d and might not "
-                                          "function (correctly), "
-                                          "though it is enabled") %
-                                         info_ver)
+                self.report({'WARNING'},
+                            ("This script was written Blender "
+                             "version %d.%d.%d and might not "
+                             "function (correctly), "
+                             "though it is enabled" %
+                             info_ver))
             return {'FINISHED'}
         else:
 
@@ -1693,6 +1712,19 @@ class WM_OT_theme_install(Operator):
         return {'RUNNING_MODAL'}
 
 
+class WM_OT_addon_refresh(Operator):
+    "Scan addon directories for new modules"
+    bl_idname = "wm.addon_refresh"
+    bl_label = "Refresh"
+
+    def execute(self, context):
+        import addon_utils
+
+        addon_utils.modules_refresh()
+
+        return {'FINISHED'}
+
+
 class WM_OT_addon_install(Operator):
     "Install an addon"
     bl_idname = "wm.addon_install"
@@ -1782,7 +1814,7 @@ class WM_OT_addon_install(Operator):
         del pyfile_dir
         # done checking for exceptional case
 
-        addons_old = {mod.__name__ for mod in addon_utils.modules(addon_utils.addons_fake_modules)}
+        addons_old = {mod.__name__ for mod in addon_utils.modules()}
 
         #check to see if the file is in compressed format (.zip)
         if zipfile.is_zipfile(pyfile):
@@ -1825,7 +1857,7 @@ class WM_OT_addon_install(Operator):
                 traceback.print_exc()
                 return {'CANCELLED'}
 
-        addons_new = {mod.__name__ for mod in addon_utils.modules(addon_utils.addons_fake_modules)} - addons_old
+        addons_new = {mod.__name__ for mod in addon_utils.modules()} - addons_old
         addons_new.discard("modules")
 
         # disable any addons we may have enabled previously and removed.
@@ -1835,7 +1867,7 @@ class WM_OT_addon_install(Operator):
 
         # possible the zip contains multiple addons, we could disallow this
         # but for now just use the first
-        for mod in addon_utils.modules(addon_utils.addons_fake_modules):
+        for mod in addon_utils.modules(refresh=False):
             if mod.__name__ in addons_new:
                 info = addon_utils.module_bl_info(mod)
 
@@ -1875,7 +1907,7 @@ class WM_OT_addon_remove(Operator):
         import os
         import addon_utils
 
-        for mod in addon_utils.modules(addon_utils.addons_fake_modules):
+        for mod in addon_utils.modules():
             if mod.__name__ == module:
                 filepath = mod.__file__
                 if os.path.exists(filepath):

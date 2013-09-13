@@ -71,6 +71,11 @@ static void remdoubles_splitface(BMFace *f, BMesh *bm, BMOperator *op, BMOpSlot 
 #define EDGE_COL	2
 #define FACE_MARK	2
 
+/**
+ * \note with 'targetmap', multiple 'keys' are currently supported, though no callers should be using.
+ * (because slot maps currently use GHash without the GHASH_FLAG_ALLOW_DUPES flag set)
+ *
+ */
 void bmo_weld_verts_exec(BMesh *bm, BMOperator *op)
 {
 	BMIter iter, liter;
@@ -493,12 +498,17 @@ static void bmesh_find_doubles_common(BMesh *bm, BMOperator *op,
 	for (i = 0; i < verts_len; i++) {
 		BMVert *v_check = verts[i];
 
-		if (BMO_elem_flag_test(bm, v_check, VERT_DOUBLE)) {
+		if (BMO_elem_flag_test(bm, v_check, VERT_DOUBLE | VERT_TARGET)) {
 			continue;
 		}
 
 		for (j = i + 1; j < verts_len; j++) {
 			BMVert *v_other = verts[j];
+
+			/* a match has already been found, (we could check which is best, for now don't) */
+			if (BMO_elem_flag_test(bm, v_other, VERT_DOUBLE | VERT_TARGET)) {
+				continue;
+			}
 
 			/* Compare sort values of the verts using 3x tolerance (allowing for the tolerance
 			 * on each of the three axes). This avoids the more expensive length comparison

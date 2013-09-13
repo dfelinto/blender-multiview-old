@@ -62,7 +62,22 @@ void ReadBufferOperation::executePixel(float output[4], float x, float y, PixelS
 		m_buffer->read(output, x, y);
 	}
 	else {
-		m_buffer->readCubic(output, x, y);
+		m_buffer->readBilinear(output, x, y);
+	}
+}
+
+void ReadBufferOperation::executePixelExtend(float output[4], float x, float y, PixelSampler sampler,
+                                             MemoryBufferExtend extend_x, MemoryBufferExtend extend_y)
+{
+	if (m_single_value) {
+		/* write buffer has a single value stored at (0,0) */
+		m_buffer->read(output, 0, 0);
+	}
+	else if (sampler == COM_PS_NEAREST) {
+		m_buffer->read(output, x, y, extend_x, extend_y);
+	}
+	else {
+		m_buffer->readBilinear(output, x, y, extend_x, extend_y);
 	}
 }
 

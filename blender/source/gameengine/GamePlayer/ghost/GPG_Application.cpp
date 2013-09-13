@@ -566,7 +566,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 
 		bool fixed_framerate= (SYS_GetCommandLineInt(syshandle, "fixedtime", (gm->flag & GAME_ENABLE_ALL_FRAMES)) != 0);
 		bool frameRate = (SYS_GetCommandLineInt(syshandle, "show_framerate", 0) != 0);
-		bool useLists = (SYS_GetCommandLineInt(syshandle, "displaylists", gm->flag & GAME_DISPLAY_LISTS) != 0);
+		bool useLists = (SYS_GetCommandLineInt(syshandle, "displaylists", gm->flag & GAME_DISPLAY_LISTS) != 0) && GPU_display_list_support();
 		bool nodepwarnings = (SYS_GetCommandLineInt(syshandle, "ignore_deprecation_warnings", 1) != 0);
 		bool restrictAnimFPS = gm->flag & GAME_RESTRICT_ANIM_UPDATES;
 
@@ -586,7 +586,7 @@ bool GPG_Application::initEngine(GHOST_IWindow* window, const int stereoMode)
 		if (gm->vsync == VSYNC_ADAPTIVE)
 			m_canvas->SetSwapInterval(-1);
 		else
-			m_canvas->SetSwapInterval(!gm->vsync); // VSYNC_OFF == 1, VSYNC_ON == 0, so this works
+			m_canvas->SetSwapInterval((gm->vsync == VSYNC_ON) ? 1 : 0);
 
 		m_canvas->Init();
 		if (gm->flag & GAME_SHOW_MOUSE)

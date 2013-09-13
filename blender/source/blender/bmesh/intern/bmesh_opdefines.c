@@ -542,6 +542,7 @@ static BMOpDefine bmo_grid_fill_def = {
 	/* restricts edges to groups.  maps edges to integer */
 	 {"mat_nr",         BMO_OP_SLOT_INT},      /* material to use */
 	 {"use_smooth",     BMO_OP_SLOT_BOOL},     /* smooth state to use */
+	 {"use_interp_simple", BMO_OP_SLOT_BOOL},  /* use simple interpolation */
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -1118,6 +1119,30 @@ static BMOpDefine bmo_subdivide_edgering_def = {
 };
 
 /*
+ * Bisect Plane.
+ *
+ * Bisects the mesh by a plane (cut the mesh in half).
+ */
+static BMOpDefine bmo_bisect_plane_def = {
+	"bisect_plane",
+	/* slots_in */
+	{{"geom", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},
+	 {"dist",         BMO_OP_SLOT_FLT},     /* minimum distance when testing if a vert is exactly on the plane */
+	 {"plane_co", BMO_OP_SLOT_VEC},         /* point on the plane */
+	 {"plane_no", BMO_OP_SLOT_VEC},         /* direction of the plane */
+	 {"use_snap_center", BMO_OP_SLOT_BOOL},  /* snap axis aligned verts to the center */
+	 {"clear_outer",   BMO_OP_SLOT_BOOL},    /* when enabled. remove all geometry on the positive side of the plane */
+	 {"clear_inner",   BMO_OP_SLOT_BOOL},    /* when enabled. remove all geometry on the negative side of the plane */
+	 {{'\0'}},
+	},
+	{{"geom_cut.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE}},  /* output new geometry from the cut */
+	 {"geom.out",     BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},  /* input and output geometry (result of cut)  */
+	 {{'\0'}}},
+	bmo_bisect_plane_exec,
+	BMO_OPTYPE_FLAG_UNTAN_MULTIRES | BMO_OPTYPE_FLAG_NORMALS_CALC | BMO_OPTYPE_FLAG_SELECT_FLUSH,
+};
+
+/*
  * Delete Geometry.
  *
  * Utility operator to delete geometry.
@@ -1153,6 +1178,8 @@ static BMOpDefine bmo_duplicate_def = {
 	 {"geom.out", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},
 	/* facemap maps from source faces to dupe
 	 * faces, and from dupe faces to source faces */
+	 {"vert_map.out", BMO_OP_SLOT_MAPPING, {BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
+	 {"edge_map.out", BMO_OP_SLOT_MAPPING, {BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
 	 {"face_map.out", BMO_OP_SLOT_MAPPING, {BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
 	 {"boundary_map.out", BMO_OP_SLOT_MAPPING, {BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
 	 {"isovert_map.out", BMO_OP_SLOT_MAPPING, {BMO_OP_SLOT_SUBTYPE_MAP_ELEM}},
@@ -1572,7 +1599,9 @@ static BMOpDefine bmo_triangle_fill_def = {
 	"triangle_fill",
 	/* slots_in */
 	{{"use_beauty", BMO_OP_SLOT_BOOL},
+	 {"use_dissolve", BMO_OP_SLOT_BOOL},  /* dissolve resulting faces */
 	 {"edges", BMO_OP_SLOT_ELEMENT_BUF, {BM_EDGE}},    /* input edges */
+	 {"normal", BMO_OP_SLOT_VEC},  /* optionally pass the fill normal to use */
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -1751,6 +1780,7 @@ static BMOpDefine bmo_symmetrize_def = {
 	/* slots_in */
 	{{"input", BMO_OP_SLOT_ELEMENT_BUF, {BM_VERT | BM_EDGE | BM_FACE}},
 	 {"direction", BMO_OP_SLOT_INT},
+	 {"dist", BMO_OP_SLOT_FLT}, /* minimum distance */
 	 {{'\0'}},
 	},
 	/* slots_out */
@@ -1834,6 +1864,7 @@ const BMOpDefine *bmo_opdefines[] = {
 	&bmo_split_edges_def,
 	&bmo_subdivide_edges_def,
 	&bmo_subdivide_edgering_def,
+	&bmo_bisect_plane_def,
 	&bmo_symmetrize_def,
 	&bmo_transform_def,
 	&bmo_translate_def,

@@ -49,9 +49,11 @@ public:
 	bool experimental;
 	int samples;
 	int2 tile_size;
-	int tile_order;
+	TileOrder tile_order;
 	int start_resolution;
 	int threads;
+
+	bool display_buffer_linear;
 
 	double cancel_timeout;
 	double reset_timeout;
@@ -72,11 +74,14 @@ public:
 		start_resolution = INT_MAX;
 		threads = 0;
 
+		display_buffer_linear = false;
+
 		cancel_timeout = 0.1;
 		reset_timeout = 0.1;
 		text_timeout = 1.0;
 
 		shadingsystem = SVM;
+		tile_order = TILE_CENTER;
 	}
 
 	bool modified(const SessionParams& params)
@@ -91,9 +96,11 @@ public:
 		&& tile_size == params.tile_size
 		&& start_resolution == params.start_resolution
 		&& threads == params.threads
+		&& display_buffer_linear == params.display_buffer_linear
 		&& cancel_timeout == params.cancel_timeout
 		&& reset_timeout == params.reset_timeout
 		&& text_timeout == params.text_timeout
+		&& tile_order == params.tile_order
 		&& shadingsystem == params.shadingsystem); }
 
 };

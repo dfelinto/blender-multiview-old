@@ -207,8 +207,11 @@ void WM_jobs_kill_all_except(struct wmWindowManager *wm) {STUB_ASSERT(0);}
 char *WM_clipboard_text_get(int selection) {STUB_ASSERT(0); return (char *)0;}
 void WM_clipboard_text_set(char *buf, int selection) {STUB_ASSERT(0);}
 
-void	WM_cursor_restore(struct wmWindow *win) {STUB_ASSERT(0);}
-void	WM_cursor_time(struct wmWindow *win, int nr) {STUB_ASSERT(0);}
+void WM_cursor_set(struct wmWindow *win, int curor) {STUB_ASSERT(0);}
+void WM_cursor_modal_set(struct wmWindow *win, int curor) {STUB_ASSERT(0);}
+void WM_cursor_modal_restore(struct wmWindow *win) {STUB_ASSERT(0);}
+void WM_cursor_time(struct wmWindow *win, int nr) {STUB_ASSERT(0);}
+void WM_cursor_warp(struct wmWindow *win, int x, int y) {STUB_ASSERT(0);}
 
 void                WM_uilisttype_init(void) {STUB_ASSERT(0);}
 struct uiListType  *WM_uilisttype_find(const char *idname, int quiet) {STUB_ASSERT(0); return (struct uiListType *)NULL;}
@@ -458,7 +461,7 @@ void uiTemplateLayers(struct uiLayout *layout, struct PointerRNA *ptr, char *pro
 void uiTemplateImageLayers(struct uiLayout *layout, struct bContext *C, struct Image *ima, struct ImageUser *iuser) {STUB_ASSERT(0);}
 void uiTemplateList(struct uiLayout *layout, struct bContext *C, const char *listtype_name, const char *list_id,
                     PointerRNA *dataptr, const char *propname, PointerRNA *active_dataptr,
-                    const char *active_propname, int rows, int maxrows, int layout_type) {STUB_ASSERT(0);}
+                    const char *active_propname, int rows, int maxrows, int layout_type, int columns) {STUB_ASSERT(0);}
 void uiTemplateRunningJobs(struct uiLayout *layout, struct bContext *C) {STUB_ASSERT(0);}
 void uiTemplateOperatorSearch(struct uiLayout *layout) {STUB_ASSERT(0);}
 void uiTemplateHeader3D(struct uiLayout *layout, struct bContext *C) {STUB_ASSERT(0);}

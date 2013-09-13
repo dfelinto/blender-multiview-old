@@ -64,6 +64,7 @@
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "BLI_linklist.h"
+#include "BLI_kdtree.h"
 
 #include "BLF_translation.h"
 
@@ -142,11 +143,9 @@ void BKE_object_update_base_layer(struct Scene *scene, Object *ob)
 
 void BKE_object_free_particlesystems(Object *ob)
 {
-	while (ob->particlesystem.first) {
-		ParticleSystem *psys = ob->particlesystem.first;
-		
-		BLI_remlink(&ob->particlesystem, psys);
-		
+	ParticleSystem *psys;
+
+	while ((psys = BLI_pophead(&ob->particlesystem))) {
 		psys_free(ob, psys);
 	}
 }
@@ -182,11 +181,9 @@ void BKE_object_free_curve_cache(Object *ob)
 
 void BKE_object_free_modifiers(Object *ob)
 {
-	while (ob->modifiers.first) {
-		ModifierData *md = ob->modifiers.first;
-		
-		BLI_remlink(&ob->modifiers, md);
-		
+	ModifierData *md;
+
+	while ((md = BLI_pophead(&ob->modifiers))) {
 		modifier_free(md);
 	}
 
@@ -2016,29 +2013,23 @@ static void give_parvert(Object *par, int nr, float vec[3])
 
 static void ob_parvert3(Object *ob, Object *par, float mat[4][4])
 {
-	float cmat[3][3], v1[3], v2[3], v3[3], q[4];
 
 	/* in local ob space */
-	unit_m4(mat);
-	
-	if (ELEM4(par->type, OB_MESH, OB_SURF, OB_CURVE, OB_LATTICE)) {
-		
+	if (OB_TYPE_SUPPORT_PARVERT(par->type)) {
+		float cmat[3][3], v1[3], v2[3], v3[3], q[4];
+
 		give_parvert(par, ob->par1, v1);
 		give_parvert(par, ob->par2, v2);
 		give_parvert(par, ob->par3, v3);
-				
+
 		tri_to_quat(q, v1, v2, v3);
 		quat_to_mat3(cmat, q);
 		copy_m4_m3(mat, cmat);
-		
-		if (ob->type == OB_CURVE) {
-			copy_v3_v3(mat[3], v1);
-		}
-		else {
-			add_v3_v3v3(mat[3], v1, v2);
-			add_v3_v3(mat[3], v3);
-			mul_v3_fl(mat[3], 1.0f / 3.0f);
-		}
+
+		mid_v3_v3v3v3(mat[3], v1, v2, v3);
+	}
+	else {
+		unit_m4(mat);
 	}
 }
 
@@ -3270,7 +3261,7 @@ void BKE_object_relink(Object *ob)
 	ID_NEW(ob->proxy_group);
 }
 
-MovieClip *BKE_object_movieclip_get(Scene *scene, Object *ob, int use_default)
+MovieClip *BKE_object_movieclip_get(Scene *scene, Object *ob, bool use_default)
 {
 	MovieClip *clip = use_default ? scene->clip : NULL;
 	bConstraint *con = ob->constraints.first, *scon = NULL;
@@ -3443,4 +3434,132 @@ void BKE_object_groups_clear(Scene *scene, Base *base, Object *object)
 	while ((group = BKE_group_object_find(group, base->object))) {
 		BKE_group_object_unlink(group, object, scene, base);
 	}
+}
+
+/**
+ * Return a KDTree from the deformed object (in worldspace)
+ *
+ * \note Only mesh objects currently support deforming, others are TODO.
+ *
+ * \param ob
+ * \param r_tot
+ * \return The kdtree or NULL if it can't be created.
+ */
+KDTree *BKE_object_as_kdtree(Object *ob, int *r_tot)
+{
+	KDTree *tree = NULL;
+	unsigned int tot = 0;
+
+	switch (ob->type) {
+		case OB_MESH:
+		{
+			Mesh *me = ob->data;
+			unsigned int i;
+
+			DerivedMesh *dm = ob->derivedDeform ? ob->derivedDeform : ob->derivedFinal;
+			int *index;
+
+			if (dm && (index = CustomData_get_layer(&dm->vertData, CD_ORIGINDEX))) {
+				MVert *mvert = dm->getVertArray(dm);
+				unsigned int totvert = dm->getNumVerts(dm);
+
+				/* tree over-allocs in case where some verts have ORIGINDEX_NONE */
+				tot = 0;
+				tree = BLI_kdtree_new(totvert);
+
+				/* we don't how how many verts from the DM we can use */
+				for (i = 0; i < totvert; i++) {
+					if (index[i] != ORIGINDEX_NONE) {
+						float co[3];
+						mul_v3_m4v3(co, ob->obmat, mvert[i].co);
+						BLI_kdtree_insert(tree, index[i], co, NULL);
+						tot++;
+					}
+				}
+			}
+			else {
+				MVert *mvert = me->mvert;
+
+				tot = me->totvert;
+				tree = BLI_kdtree_new(tot);
+
+				for (i = 0; i < tot; i++) {
+					float co[3];
+					mul_v3_m4v3(co, ob->obmat, mvert[i].co);
+					BLI_kdtree_insert(tree, i, co, NULL);
+				}
+			}
+
+			BLI_kdtree_balance(tree);
+			break;
+		}
+		case OB_CURVE:
+		case OB_SURF:
+		{
+			/* TODO: take deformation into account */
+			Curve *cu = ob->data;
+			unsigned int i, a;
+
+			Nurb *nu;
+
+			tot = BKE_nurbList_verts_count_without_handles(&cu->nurb);
+			tree = BLI_kdtree_new(tot);
+			i = 0;
+
+			nu = cu->nurb.first;
+			while (nu) {
+				if (nu->bezt) {
+					BezTriple *bezt;
+
+					bezt = nu->bezt;
+					a = nu->pntsu;
+					while (a--) {
+						float co[3];
+						mul_v3_m4v3(co, ob->obmat, bezt->vec[1]);
+						BLI_kdtree_insert(tree, i++, co, NULL);
+						bezt++;
+					}
+				}
+				else {
+					BPoint *bp;
+
+					bp = nu->bp;
+					a = nu->pntsu * nu->pntsv;
+					while (a--) {
+						float co[3];
+						mul_v3_m4v3(co, ob->obmat, bp->vec);
+						BLI_kdtree_insert(tree, i++, co, NULL);
+						bp++;
+					}
+				}
+				nu = nu->next;
+			}
+
+			BLI_kdtree_balance(tree);
+			break;
+		}
+		case OB_LATTICE:
+		{
+			/* TODO: take deformation into account */
+			Lattice *lt = ob->data;
+			BPoint *bp;
+			unsigned int i;
+
+			tot = lt->pntsu * lt->pntsv * lt->pntsw;
+			tree = BLI_kdtree_new(tot);
+			i = 0;
+
+			for (bp = lt->def; i < tot; bp++) {
+				float co[3];
+				mul_v3_m4v3(co, ob->obmat, bp->vec);
+				BLI_kdtree_insert(tree, i++, co, NULL);
+			}
+
+			BLI_kdtree_balance(tree);
+			break;
+		}
+	}
+
+	*r_tot = tot;
+	return tree;
 }

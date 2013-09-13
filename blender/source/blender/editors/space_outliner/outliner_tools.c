@@ -57,6 +57,7 @@
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
+#include "BKE_treehash.h"
 
 #include "ED_armature.h"
 #include "ED_object.h"
@@ -113,7 +114,7 @@ static void set_operation_types(SpaceOops *soops, ListBase *lb,
 					case ID_LA: case ID_AR: case ID_CA: case ID_SPK:
 					case ID_MA: case ID_TE: case ID_IP: case ID_IM:
 					case ID_SO: case ID_KE: case ID_WO: case ID_AC:
-					case ID_NLA: case ID_TXT: case ID_GR:
+					case ID_NLA: case ID_TXT: case ID_GR: case ID_LS:
 						if (*idlevel == 0) *idlevel = idcode;
 						else if (*idlevel != idcode) *idlevel = -1;
 						break;
@@ -299,17 +300,13 @@ static void object_delete_cb(bContext *C, Scene *scene, TreeElement *te,
 	if (base == NULL)
 		base = BKE_scene_base_find(scene, (Object *)tselem->id);
 	if (base) {
-		SpaceOops *soops = CTX_wm_space_outliner(C);
-
 		// check also library later
 		if (scene->obedit == base->object)
 			ED_object_editmode_exit(C, EM_FREEDATA | EM_FREEUNDO | EM_WAITCURSOR | EM_DO_UNDO);
 		
 		ED_base_object_free_and_unlink(CTX_data_main(C), scene, base);
 		te->directdata = NULL;
-		BLI_ghash_remove(soops->treehash, tselem, NULL, NULL);
 		tselem->id = NULL;
-		BLI_ghash_insert(soops->treehash, tselem, tselem);
 	}
 }
 

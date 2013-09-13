@@ -32,8 +32,8 @@
  *  \ingroup bke
  */
 
-#include "BLI_ghash.h"
 #include "BLI_utildefines.h"
+#include "BLI_ghash.h"
 
 #include "DNA_listBase.h"
 
@@ -337,7 +337,7 @@ struct GHashIterator *ntreeTypeGetIterator(void);
 #define NODE_TREE_TYPES_END \
 	} \
 	BLI_ghashIterator_free(__node_tree_type_iter__); \
-}
+} (void)0
 
 void ntreeSetTypes(const struct bContext *C, struct bNodeTree *ntree);
 

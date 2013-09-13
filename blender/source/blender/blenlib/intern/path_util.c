@@ -46,19 +46,11 @@
 #include "BLI_path_util.h"
 #include "BLI_string.h"
 #include "BLI_string_utf8.h"
+#include "BLI_fnmatch.h"
 
 #include "../blenkernel/BKE_blender.h"  /* BLENDER_VERSION, bad level include (no function call) */
 
 #include "GHOST_Path-api.h"
-
-#if defined WIN32 && !defined _LIBC  || defined __sun
-#  include "BLI_fnmatch.h" /* use fnmatch included in blenlib */
-#else
-#  ifndef _GNU_SOURCE
-#    define _GNU_SOURCE
-#  endif
-#  include <fnmatch.h>
-#endif
 
 #ifdef WIN32
 #  include "utf_winfunc.h"
@@ -1649,6 +1641,16 @@ bool BLI_ensure_extension(char *path, size_t maxlen, const char *ext)
 	return true;
 }
 
+bool BLI_ensure_filename(char *filepath, size_t maxlen, const char *filename)
+{
+	char *c = (char *)BLI_last_slash(filepath);
+	if (!c || ((c - filepath) < maxlen - (strlen(filename) + 1))) {
+		strcpy(c ? &c[1] : filepath, filename);
+		return true;
+	}
+	return false;
+}
+
 /* Converts "/foo/bar.txt" to "/foo/" and "bar.txt"
  * - wont change 'string'
  * - wont create any directories
@@ -1693,7 +1695,7 @@ void BLI_split_file_part(const char *string, char *file, const size_t filelen)
 /**
  * Append a filename to a dir, ensuring slash separates.
  */
-void BLI_path_append(char *dst, const size_t maxlen, const char *file)
+void BLI_path_append(char *__restrict dst, const size_t maxlen, const char *__restrict file)
 {
 	size_t dirlen = BLI_strnlen(dst, maxlen);
 
@@ -1714,7 +1716,7 @@ void BLI_path_append(char *dst, const size_t maxlen, const char *file)
  * Simple appending of filename to dir, does not check for valid path!
  * Puts result into *dst, which may be same area as *dir.
  */
-void BLI_join_dirfile(char *dst, const size_t maxlen, const char *dir, const char *file)
+void BLI_join_dirfile(char *__restrict dst, const size_t maxlen, const char *__restrict dir, const char *__restrict file)
 {
 	size_t dirlen = BLI_strnlen(dir, maxlen);
 

@@ -34,11 +34,12 @@ class Tile;
 
 class DeviceTask : public Task {
 public:
-	typedef enum { PATH_TRACE, TONEMAP, SHADER } Type;
+	typedef enum { PATH_TRACE, FILM_CONVERT, SHADER } Type;
 	Type type;
 
 	int x, y, w, h;
-	device_ptr rgba;
+	device_ptr rgba_byte;
+	device_ptr rgba_half;
 	device_ptr buffer;
 	int sample;
 	int num_samples;
@@ -63,7 +64,7 @@ public:
 	boost::function<bool(void)> get_cancel;
 
 	bool need_finish_queue;
-	bool integrator_progressive;
+	bool integrator_branched;
 protected:
 	double last_update_time;
 };
