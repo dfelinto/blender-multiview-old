@@ -562,7 +562,7 @@ static void rna_def_sculpt_capabilities(BlenderRNA *brna)
 	SCULPT_TOOL_CAPABILITY(has_smooth_stroke, "Has Smooth Stroke");
 	SCULPT_TOOL_CAPABILITY(has_space_attenuation, "Has Space Attenuation");
 	SCULPT_TOOL_CAPABILITY(has_strength, "Has Strength");
-	SCULPT_TOOL_CAPABILITY(has_frontface, "Has Strength");
+	SCULPT_TOOL_CAPABILITY(has_frontface, "Has Front Facing");
 
 #undef SCULPT_CAPABILITY
 }
