@@ -795,7 +795,7 @@ def blender_check_brace_indent(i):
                 warning("indentation '{' does not match brace", i, i_match)
 
 
-def quick_check_indentation(code):
+def quick_check_indentation(lines):
     """
     Quick check for multiple tab indents.
     """
@@ -803,7 +803,7 @@ def quick_check_indentation(code):
     m_comment_prev = False
     ls_prev = ""
 
-    for i, l in enumerate(code.split("\n")):
+    for i, l in enumerate(lines):
         skip = False
 
         # skip blank lines
@@ -846,8 +846,66 @@ def quick_check_indentation(code):
                 warning_lineonly("indentation mis-match (indent of %d) '%s'" % (t - t_prev, tabs), i + 1)
             t_prev = t
 
+import re
+re_ifndef = re.compile("^\s*#\s*ifndef\s+([A-z0-9_]+).*$")
+re_define = re.compile("^\s*#\s*define\s+([A-z0-9_]+).*$")
 
-def scan_source(fp, args):
+def quick_check_include_guard(lines):
+    found = 0
+    def_value = ""
+    ok = False
+
+    def fn_as_guard(fn):
+        name = os.path.basename(fn).upper().replace(".", "_").replace("-", "_")
+        return "__%s__" % name
+
+    for i, l in enumerate(lines):
+        ndef_match = re_ifndef.match(l)
+        if ndef_match:
+            ndef_value = ndef_match.group(1).strip()
+            for j in range(i + 1, len(lines)):
+                l_next = lines[j]
+                def_match = re_define.match(l_next)
+                if def_match:
+                    def_value = def_match.group(1).strip()
+                    if def_value == ndef_value:
+                        ok = True
+                        break
+                elif l_next.strip():
+                    # print(filepath)
+                    # found non empty non ndef line. quit
+                    break
+                else:
+                    # allow blank lines
+                    pass
+            break
+
+    guard = fn_as_guard(filepath)
+
+    if ok:
+        # print("found:", def_value, "->", filepath)
+        if def_value != guard:
+            # print("%s: %s -> %s" % (filepath, def_value, guard))
+            warning_lineonly("non-conforming include guard (found %r, expected %r)" % (def_value, guard), i + 1)
+    else:
+        warning_lineonly("missing include guard %r" % guard, 1)
+
+def quick_check_source(fp, code, args):
+
+    global filepath
+
+    is_header = fp.endswith((".h", ".hxx", ".hpp"))
+
+    filepath = fp
+
+    lines = code.split("\n")
+
+    if is_header:
+        quick_check_include_guard(lines)
+
+    quick_check_indentation(lines)
+
+def scan_source(fp, code, args):
     # print("scanning: %r" % fp)
 
     global filepath
@@ -862,10 +920,6 @@ def scan_source(fp, args):
     filepath_base = os.path.basename(filepath)
 
     #print(highlight(code, CLexer(), RawTokenFormatter()).decode('utf-8'))
-    code = open(filepath, 'r', encoding="utf-8").read()
-
-    quick_check_indentation(code)
-    # return
 
     del tokens[:]
     line = 1
@@ -985,7 +1039,13 @@ def scan_source_recursive(dirpath, args):
         #~ if not filepath.endswith("creator.c"):
         #~     continue
 
-        scan_source(filepath, args)
+        code = open(filepath, 'r', encoding="utf-8").read()
+
+        # fast checks which don't require full parsing
+        quick_check_source(filepath, code, args)
+
+        # use lexer
+        scan_source(filepath, code, args)
 
 
 if __name__ == "__main__":
