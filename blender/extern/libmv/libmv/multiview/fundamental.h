@@ -166,7 +166,7 @@ struct FundamentalEstimationOptions {
 
   // Function tolerance used  by minimizer termination criteria.
   float function_tolerance;
-} FundamentalEstimationOptions;
+};
 
 /**
  * Fundamental transformation estimation.
