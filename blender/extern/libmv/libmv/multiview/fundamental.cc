@@ -493,7 +493,6 @@ bool FundamentalFromCorrespondencesEuc(const Mat &x1,
   LG << "Final refined matrix: " << F;
 
   return !(summary.termination_type == ceres::DID_NOT_RUN ||
-           summary.termination_type == ceres::NO_CONVERGENCE ||
            summary.termination_type == ceres::NUMERICAL_FAILURE);
 }
 
