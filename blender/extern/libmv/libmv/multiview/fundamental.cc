@@ -470,7 +470,7 @@ bool FundamentalFromCorrespondencesEuc(const Mat &x1,
     problem.AddResidualBlock(
         new ceres::AutoDiffCostFunction<
             FundamentalSymmetricEpipolarCostFunctor,
-            2, /* num_residuals */
+            2,  // num_residuals
             9>(fundamental_symmetric_epipolar_cost_function),
         NULL,
         F->data());
