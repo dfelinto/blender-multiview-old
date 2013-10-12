@@ -532,7 +532,7 @@ static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *pt
 		if (!item->identifier[0])
 			continue;
 
-		name = uiname ? uiname : item->name;
+		name = (!uiname || uiname[0]) ? item->name : "";
 		icon = item->icon;
 		value = item->value;
 		itemw = ui_text_icon_width(block->curlayout, icon_only ? "" : name, icon, 0);
