@@ -2450,10 +2450,10 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			 * Since groups are used to collect F-Curves of the same Bone by default
 			 * (via Keying Sets) so that they can be managed better, we try to make
 			 * things here easier for animators by mapping group selection to bone
-			 * selection 
+			 * selection
 			 */
 			if ((ale->id) && (GS(ale->id->name) == ID_OB)) {
-				 ob = (ID *)ale->id;
+				ob = (Object *)ale->id;
 				
 				if (ob->type == OB_ARMATURE) {
 					/* Assume for now that any group with corresponding name is what we want
@@ -2487,7 +2487,7 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			else {
 				/* select group by itself */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
-				if (pchan) ED_pose_deselctall(ob, 0);
+				if (pchan) ED_pose_deselectall(ob, 0);
 				
 				agrp->flag |= AGRP_SELECTED;
 			}
