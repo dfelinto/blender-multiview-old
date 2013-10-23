@@ -22,7 +22,7 @@
 #include "COM_ChromaMatteNode.h"
 #include "BKE_node.h"
 #include "COM_ChromaMatteOperation.h"
-#include "COM_ConvertRGBToYCCOperation.h"
+#include "COM_ConvertOperation.h"
 #include "COM_SetAlphaOperation.h"
 
 ChromaMatteNode::ChromaMatteNode(bNode *editorNode) : Node(editorNode)
@@ -47,7 +47,7 @@ void ChromaMatteNode::convertToOperations(ExecutionSystem *graph, CompositorCont
 	operation->setSettings((NodeChroma *)editorsnode->storage);
 
 	inputSocketImage->relinkConnections(operationRGBToYCC_Image->getInputSocket(0), 0, graph);
-	inputSocketKey->relinkConnections(operationRGBToYCC_Key->getInputSocket(0), 0, graph);
+	inputSocketKey->relinkConnections(operationRGBToYCC_Key->getInputSocket(0), 1, graph);
 
 	addLink(graph, operationRGBToYCC_Image->getOutputSocket(), operation->getInputSocket(0));
 	addLink(graph, operationRGBToYCC_Key->getOutputSocket(), operation->getInputSocket(1));

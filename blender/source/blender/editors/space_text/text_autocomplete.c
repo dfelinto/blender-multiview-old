@@ -15,13 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
- * Contributor(s): none yet.
- *
  * ***** END GPL LICENSE BLOCK *****
  */
 
@@ -368,6 +361,7 @@ static int text_autocomplete_modal(bContext *C, wmOperator *op, const wmEvent *e
 			}
 			break;
 		case RETKEY:
+		case PADENTER:
 			if (event->val == KM_PRESS) {
 				if (tools & TOOL_SUGG_LIST) {
 					confirm_suggestion(st->text);
@@ -440,6 +434,7 @@ static int text_autocomplete_modal(bContext *C, wmOperator *op, const wmEvent *e
 			break;
 		case PAGEDOWNKEY:
 			scroll = SUGG_LIST_SIZE - 1;
+			/* fall-through */
 		case WHEELDOWNMOUSE:
 		case DOWNARROWKEY:
 			if (event->val == KM_PRESS) {
@@ -467,6 +462,7 @@ static int text_autocomplete_modal(bContext *C, wmOperator *op, const wmEvent *e
 			break;
 		case PAGEUPKEY:
 			scroll = SUGG_LIST_SIZE - 1;
+			/* fall-through */
 		case WHEELUPMOUSE:
 		case UPARROWKEY:
 			if (event->val == KM_PRESS) {

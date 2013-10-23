@@ -46,11 +46,12 @@
 #include "DNA_space_types.h"
 #include "DNA_scene_types.h"
 
+#include "BLI_utildefines.h"
+#include "BLI_alloca.h"
 #include "BLI_math.h"
 #include "BLI_lasso.h"
 #include "BLI_blenlib.h"
 #include "BLI_array.h"
-#include "BLI_utildefines.h"
 
 #include "BKE_context.h"
 #include "BKE_customdata.h"
@@ -84,8 +85,8 @@
 #include "uvedit_intern.h"
 
 static void uv_select_all_perform(Scene *scene, Image *ima, BMEditMesh *em, int action);
-static void uv_select_flush_from_tag_face(SpaceImage *sima, Scene *scene, Object *obedit, bool select);
-static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, bool select);
+static void uv_select_flush_from_tag_face(SpaceImage *sima, Scene *scene, Object *obedit, const bool select);
+static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, const bool select);
 
 /************************* state testing ************************/
 
@@ -2098,7 +2099,7 @@ static int uv_mouse_select(bContext *C, const float co[2], bool extend, bool loo
 		}
 		
 		/* make active */
-		BM_active_face_set(em->bm, hit.efa);
+		BM_mesh_active_face_set(em->bm, hit.efa);
 
 		/* mark all face vertices as being hit */
 
@@ -2113,7 +2114,7 @@ static int uv_mouse_select(bContext *C, const float co[2], bool extend, bool loo
 		hitlen = hit.efa->len;
 	}
 	else if (selectmode == UV_SELECT_ISLAND) {
-		uv_find_nearest_vert(scene, ima, em, co, NULL, &hit);
+		uv_find_nearest_edge(scene, ima, em, co, &hit);
 
 		if (hit.efa == NULL) {
 			return OPERATOR_CANCELLED;
@@ -2378,7 +2379,7 @@ static int uv_select_linked_internal(bContext *C, wmOperator *op, const wmEvent 
 			RNA_float_get_array(op->ptr, "location", co);
 		}
 
-		uv_find_nearest_vert(scene, ima, em, co, NULL, &hit);
+		uv_find_nearest_edge(scene, ima, em, co, &hit);
 		hit_p = &hit;
 	}
 
@@ -2694,7 +2695,7 @@ static void uv_select_flush_from_tag_face(SpaceImage *sima, Scene *scene, Object
  *
  * \note! This function is very similar to #uv_select_flush_from_tag_loop, be sure to update both upon changing.
  */
-static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, bool select)
+static void uv_select_flush_from_tag_loop(SpaceImage *sima, Scene *scene, Object *obedit, const bool select)
 {
 	/* Selecting UV Loops with some modes requires us to change
 	 * the selection in other faces (depending on the sticky mode).
@@ -3226,7 +3227,7 @@ static void UV_OT_snap_cursor(wmOperatorType *ot)
 
 /* ******************** snap selection operator **************** */
 
-static bool uv_snap_uvs_to_cursor(Scene *scene, Image *ima, Object *obedit, SpaceImage *sima)
+static bool uv_snap_uvs_to_cursor(Scene *scene, Image *ima, Object *obedit, const float cursor[2])
 {
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	BMFace *efa;
@@ -3247,7 +3248,37 @@ static bool uv_snap_uvs_to_cursor(Scene *scene, Image *ima, Object *obedit, Spac
 		BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
 			if (uvedit_uv_select_test(scene, l, cd_loop_uv_offset)) {
 				luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
-				copy_v2_v2(luv->uv, sima->cursor);
+				copy_v2_v2 (luv->uv, cursor);
+				change = true;
+			}
+		}
+	}
+
+	return change;
+}
+
+static bool uv_snap_uvs_offset(Scene *scene, Image *ima, Object *obedit, const float offset[2])
+{
+	BMEditMesh *em = BKE_editmesh_from_object(obedit);
+	BMFace *efa;
+	BMLoop *l;
+	BMIter iter, liter;
+	MTexPoly *tface;
+	MLoopUV *luv;
+	bool change = false;
+
+	const int cd_loop_uv_offset  = CustomData_get_offset(&em->bm->ldata, CD_MLOOPUV);
+	const int cd_poly_tex_offset = CustomData_get_offset(&em->bm->pdata, CD_MTEXPOLY);
+
+	BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {
+		tface = BM_ELEM_CD_GET_VOID_P(efa, cd_poly_tex_offset);
+		if (!uvedit_face_visible_test(scene, ima, efa, tface))
+			continue;
+
+		BM_ITER_ELEM (l, &liter, efa, BM_LOOPS_OF_FACE) {
+			if (uvedit_uv_select_test(scene, l, cd_loop_uv_offset)) {
+				luv = BM_ELEM_CD_GET_VOID_P(l, cd_loop_uv_offset);
+				add_v2_v2(luv->uv, offset);
 				change = true;
 			}
 		}
@@ -3365,9 +3396,19 @@ static int uv_snap_selection_exec(bContext *C, wmOperator *op)
 			change = uv_snap_uvs_to_pixels(sima, scene, obedit);
 			break;
 		case 1:
-			change = uv_snap_uvs_to_cursor(scene, ima, obedit, sima);
+			change = uv_snap_uvs_to_cursor(scene, ima, obedit, sima->cursor);
 			break;
 		case 2:
+		{
+			float center[2];
+			if (uvedit_center(scene, ima, obedit, center, sima->around)) {
+				float offset[2];
+				sub_v2_v2v2(offset, sima->cursor, center);
+				change = uv_snap_uvs_offset(scene, ima, obedit, offset);
+			}
+			break;
+		}
+		case 3:
 			change = uv_snap_uvs_to_adjacent_unselected(scene, ima, obedit);
 			break;
 	}
@@ -3387,7 +3428,8 @@ static void UV_OT_snap_selected(wmOperatorType *ot)
 	static EnumPropertyItem target_items[] = {
 		{0, "PIXELS", 0, "Pixels", ""},
 		{1, "CURSOR", 0, "Cursor", ""},
-		{2, "ADJACENT_UNSELECTED", 0, "Adjacent Unselected", ""},
+		{2, "CURSOR_OFFSET", 0, "Cursor (Offset)", ""},
+		{3, "ADJACENT_UNSELECTED", 0, "Adjacent Unselected", ""},
 		{0, NULL, 0, NULL, NULL}};
 
 	/* identifiers */
@@ -3781,6 +3823,12 @@ static void UV_OT_reveal(wmOperatorType *ot)
 
 /******************** set 3d cursor operator ********************/
 
+static int uv_set_2d_cursor_poll(bContext *C)
+{
+	return ED_operator_uvedit_space_image(C) ||
+	       ED_space_image_maskedit_poll(C);
+}
+
 static int uv_set_2d_cursor_exec(bContext *C, wmOperator *op)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
@@ -3816,7 +3864,7 @@ static void UV_OT_cursor_set(wmOperatorType *ot)
 	/* api callbacks */
 	ot->exec = uv_set_2d_cursor_exec;
 	ot->invoke = uv_set_2d_cursor_invoke;
-	ot->poll = ED_operator_uvedit_space_image;
+	ot->poll = uv_set_2d_cursor_poll;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

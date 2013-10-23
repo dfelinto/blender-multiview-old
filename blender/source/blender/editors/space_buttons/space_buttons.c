@@ -87,7 +87,7 @@ static SpaceLink *buttons_new(const bContext *UNUSED(C))
 	
 	BLI_addtail(&sbuts->regionbase, ar);
 	ar->regiontype = RGN_TYPE_WINDOW;
-	
+
 	return (SpaceLink *)sbuts;
 }
 
@@ -200,22 +200,17 @@ static void buttons_keymap(struct wmKeyConfig *keyconf)
 /* add handlers, stuff you only do once or on area/region changes */
 static void buttons_header_area_init(wmWindowManager *UNUSED(wm), ARegion *ar)
 {
-	UI_view2d_region_reinit(&ar->v2d, V2D_COMMONVIEW_HEADER, ar->winx, ar->winy);
+	ED_region_header_init(ar);
 }
 
 static void buttons_header_area_draw(const bContext *C, ARegion *ar)
 {
-	/* clear */
-	UI_ThemeClearColor(ED_screen_area_active(C) ? TH_HEADER : TH_HEADERDESEL);
-	glClear(GL_COLOR_BUFFER_BIT);
-	
-	/* set view2d view matrix for scrolling (without scrollers) */
-	UI_view2d_view_ortho(&ar->v2d);
-	
-	buttons_header_buttons(C, ar);
+	SpaceButs *sbuts = CTX_wm_space_buts(C);
 
-	/* restore view matrix? */
-	UI_view2d_view_restore(C);
+	/* Needed for RNA to get the good values! */
+	buttons_context_compute(C, sbuts);
+
+	ED_region_header(C, ar);
 }
 
 /* draw a certain button set only if properties area is currently
@@ -230,7 +225,7 @@ static void buttons_area_redraw(ScrArea *sa, short buttons)
 }
 
 /* reused! */
-static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
+static void buttons_area_listener(bScreen *UNUSED(sc), ScrArea *sa, wmNotifier *wmn)
 {
 	SpaceButs *sbuts = sa->spacedata.first;
 
@@ -271,6 +266,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 					break;
 				case ND_POSE:
 					buttons_area_redraw(sa, BCONTEXT_DATA);
+					break;
 				case ND_BONE_ACTIVE:
 				case ND_BONE_SELECT:
 					buttons_area_redraw(sa, BCONTEXT_BONE);
@@ -297,9 +293,11 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 					buttons_area_redraw(sa, BCONTEXT_OBJECT);
 					buttons_area_redraw(sa, BCONTEXT_DATA);
 					buttons_area_redraw(sa, BCONTEXT_PHYSICS);
+					break;
 				case ND_SHADING:
 				case ND_SHADING_DRAW:
 				case ND_SHADING_LINKS:
+				case ND_SHADING_PREVIEW:
 					/* currently works by redraws... if preview is set, it (re)starts job */
 					sbuts->preview = 1;
 					break;
@@ -323,6 +321,7 @@ static void buttons_area_listener(ScrArea *sa, wmNotifier *wmn)
 				case ND_SHADING:
 				case ND_SHADING_DRAW:
 				case ND_SHADING_LINKS:
+				case ND_SHADING_PREVIEW:
 				case ND_NODES:
 					/* currently works by redraws... if preview is set, it (re)starts job */
 					sbuts->preview = 1;

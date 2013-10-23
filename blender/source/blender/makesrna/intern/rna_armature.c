@@ -398,16 +398,7 @@ static void rna_EditBone_parent_set(PointerRNA *ptr, PointerRNA value)
 static void rna_EditBone_matrix_get(PointerRNA *ptr, float *values)
 {
 	EditBone *ebone = (EditBone *)(ptr->data);
-
-	float delta[3], tmat[3][3], mat[4][4];
-
-	/* Find the current bone matrix */
-	sub_v3_v3v3(delta, ebone->tail, ebone->head);
-	vec_roll_to_mat3(delta, ebone->roll, tmat);
-	copy_m4_m3(mat, tmat);
-	copy_v3_v3(mat[3], ebone->head);
-
-	memcpy(values, mat, 16 * sizeof(float));
+	ED_armature_ebone_to_mat4(ebone, (float(*)[4])values);
 }
 
 static void rna_Armature_editbone_transform_update(Main *bmain, Scene *scene, PointerRNA *ptr)
@@ -472,10 +463,13 @@ static void rna_Armature_bones_next(CollectionPropertyIterator *iter)
 	iter->valid = (internal->link != NULL);
 }
 
-#else
+static int rna_Armature_is_editmode_get(PointerRNA *ptr)
+{
+	bArmature *arm = (bArmature *)ptr->id.data;
+	return (arm->edbo != NULL);
+}
 
-static int rna_matrix_dimsize_4x4[] = {4, 4};
-static int rna_matrix_dimsize_3x3[] = {3, 3};
+#else
 
 static void rna_def_bone_common(StructRNA *srna, int editbone)
 {
@@ -924,7 +918,7 @@ static void rna_def_armature(BlenderRNA *brna)
 	/* Collections */
 	prop = RNA_def_property(srna, "bones", PROP_COLLECTION, PROP_NONE);
 	RNA_def_property_collection_sdna(prop, NULL, "bonebase", NULL);
-	RNA_def_property_collection_funcs(prop, 0, "rna_Armature_bones_next", NULL, NULL, NULL, NULL, NULL, NULL);
+	RNA_def_property_collection_funcs(prop, NULL, "rna_Armature_bones_next", NULL, NULL, NULL, NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "Bone");
 	RNA_def_property_ui_text(prop, "Bones", "");
 	rna_def_armature_bones(brna, prop);
@@ -1071,6 +1065,12 @@ static void rna_def_armature(BlenderRNA *brna)
 	RNA_def_property_update(prop, 0, "rna_Armature_redraw_data");
 	RNA_def_property_flag(prop, PROP_LIB_EXCEPTION);
 /* XXX deprecated ....... old animviz for armatures only */
+
+
+	prop = RNA_def_property(srna, "is_editmode", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_funcs(prop, "rna_Armature_is_editmode_get", NULL);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_ui_text(prop, "Is Editmode", "True when used in editmode");
 }
 
 void RNA_def_armature(BlenderRNA *brna)

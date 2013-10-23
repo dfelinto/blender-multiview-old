@@ -27,14 +27,15 @@
 #include <stdlib.h>
 #include <assert.h>
 
-#include "RNA_define.h"
-
 #include "DNA_brush_types.h"
 #include "DNA_texture_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
 #include "BLI_math.h"
+
+#include "RNA_define.h"
+#include "RNA_enum_types.h"
 
 #include "rna_internal.h"
 
@@ -667,7 +668,7 @@ static void rna_def_brush(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "vertex_tool", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "vertexpaint_tool");
 	RNA_def_property_enum_items(prop, brush_vertex_tool_items);
-	RNA_def_property_ui_text(prop, "Vertex/Weight Paint Tool", "");
+	RNA_def_property_ui_text(prop, "Blending mode", "Brush blending mode");
 	RNA_def_property_update(prop, 0, "rna_Brush_vertex_tool_update");
 	
 	prop = RNA_def_property(srna, "image_tool", PROP_ENUM, PROP_NONE);
@@ -1086,19 +1087,19 @@ static void rna_def_brush(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "texture_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
 	RNA_def_property_int_sdna(prop, NULL, "texture_overlay_alpha");
-	RNA_def_property_range(prop, 1, 100);
+	RNA_def_property_range(prop, 0, 100);
 	RNA_def_property_ui_text(prop, "Texture Overlay Alpha", "");
 	RNA_def_property_update(prop, 0, "rna_Brush_update");
 
 	prop = RNA_def_property(srna, "mask_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
 	RNA_def_property_int_sdna(prop, NULL, "mask_overlay_alpha");
-	RNA_def_property_range(prop, 1, 100);
+	RNA_def_property_range(prop, 0, 100);
 	RNA_def_property_ui_text(prop, "Mask Texture Overlay Alpha", "");
 	RNA_def_property_update(prop, 0, "rna_Brush_update");
 
 	prop = RNA_def_property(srna, "cursor_overlay_alpha", PROP_INT, PROP_PERCENTAGE);
 	RNA_def_property_int_sdna(prop, NULL, "cursor_overlay_alpha");
-	RNA_def_property_range(prop, 1, 100);
+	RNA_def_property_range(prop, 0, 100);
 	RNA_def_property_ui_text(prop, "Mask Texture Overlay Alpha", "");
 	RNA_def_property_update(prop, 0, "rna_Brush_update");
 

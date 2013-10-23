@@ -174,6 +174,10 @@ if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
 endif()
 
+if(WITH_OPENIMAGEIO)
+	add_definitions(-DWITH_OPENIMAGEIO)
+endif()
+
 if(WITH_IMAGE_OPENJPEG)
 	add_definitions(-DWITH_OPENJPEG)
 endif()

@@ -243,7 +243,7 @@ macro(SETUP_LIBDIRS)
 		link_directories(${EXPAT_LIBPATH})
 	endif()
 	if(WITH_LLVM)
-		link_directories(${LLVM_LIB_DIR})
+		link_directories(${LLVM_LIBPATH})
 	endif()
 	if(WITH_MEM_JEMALLOC)
 		link_directories(${JEMALLOC_LIBPATH})
@@ -387,7 +387,7 @@ macro(setup_liblinks
 		target_link_libraries(${target} ${PTHREADS_LIBRARIES})
 	endif()
 
-	target_link_libraries(${target} ${PLATFORM_LINKLIBS})
+	target_link_libraries(${target} ${PLATFORM_LINKLIBS} ${CMAKE_DL_LIBS})
 endmacro()
 
 macro(TEST_SSE_SUPPORT
@@ -401,8 +401,14 @@ macro(TEST_SSE_SUPPORT
 		set(${_sse_flags} "-msse")
 		set(${_sse2_flags} "-msse2")
 	elseif(MSVC)
-		set(${_sse_flags} "/arch:SSE")
-		set(${_sse2_flags} "/arch:SSE2")
+		# x86_64 has this auto enabled
+		if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
+			set(${_sse_flags} "")
+			set(${_sse2_flags} "")
+		else()
+			set(${_sse_flags} "/arch:SSE")
+			set(${_sse2_flags} "/arch:SSE2")
+		endif()
 	elseif(CMAKE_C_COMPILER_ID MATCHES "Intel")
 		set(${_sse_flags} "")  # icc defaults to -msse
 		set(${_sse2_flags} "-msse2")
@@ -492,6 +498,7 @@ macro(remove_strict_flags)
 		remove_cc_flag("-Wredundant-decls")
 		remove_cc_flag("-Wundef")
 		remove_cc_flag("-Wshadow")
+		remove_cc_flag("-Wdouble-promotion")
 		remove_cc_flag("-Wold-style-definition")
 		remove_cc_flag("-Werror=[^ ]+")
 		remove_cc_flag("-Werror")
@@ -524,7 +531,9 @@ macro(remove_strict_flags_file
 
 	foreach(_SOURCE ${ARGV})
 
-		if(CMAKE_COMPILER_IS_GNUCC)
+		if(CMAKE_COMPILER_IS_GNUCC OR
+		  (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+
 			set_source_files_properties(${_SOURCE}
 				PROPERTIES
 					COMPILE_FLAGS "${CC_REMOVE_STRICT_FLAGS}"
@@ -576,7 +585,8 @@ endmacro()
 
 macro(get_blender_version)
 	# So cmake depends on BKE_blender.h, beware of inf-loops!
-	CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/source/blender/blenkernel/BKE_blender.h ${CMAKE_BINARY_DIR}/source/blender/blenkernel/BKE_blender.h.done)
+	CONFIGURE_FILE(${CMAKE_SOURCE_DIR}/source/blender/blenkernel/BKE_blender.h
+	               ${CMAKE_BINARY_DIR}/source/blender/blenkernel/BKE_blender.h.done)
 
 	file(STRINGS ${CMAKE_SOURCE_DIR}/source/blender/blenkernel/BKE_blender.h _contents REGEX "^#define[ \t]+BLENDER_.*$")
 
@@ -751,17 +761,6 @@ function(delayed_do_install
 	endif()
 endfunction()
 
-macro(set_lib_path
-		lvar
-		lproj)
-
-	if(MSVC10)
-		set(${lvar} ${LIBDIR}/${lproj}/vc2010)
-	else()
-		set(${lvar} ${LIBDIR}/${lproj})
-	endif()
-endmacro()
-
 
 macro(data_to_c
       file_from file_to
@@ -776,6 +775,9 @@ macro(data_to_c
 		COMMAND ${CMAKE_COMMAND} -E make_directory ${_file_to_path}
 		COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/datatoc ${file_from} ${file_to}
 		DEPENDS ${file_from} datatoc)
+
+	set_source_files_properties(${file_to} PROPERTIES GENERATED TRUE)
+
 	unset(_file_to_path)
 endmacro()
 
@@ -799,7 +801,49 @@ macro(data_to_c_simple
 		COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/datatoc ${_file_from} ${_file_to}
 		DEPENDS ${_file_from} datatoc)
 
+	set_source_files_properties(${_file_to} PROPERTIES GENERATED TRUE)
+
 	unset(_file_from)
 	unset(_file_to)
 	unset(_file_to_path)
+endmacro()
+
+# XXX Not used for now...
+macro(svg_to_png
+      file_from
+      file_to
+      dpi
+      list_to_add)
+
+	# remove ../'s
+	get_filename_component(_file_from ${CMAKE_CURRENT_SOURCE_DIR}/${file_from} REALPATH)
+	get_filename_component(_file_to   ${CMAKE_CURRENT_SOURCE_DIR}/${file_to}   REALPATH)
+
+	list(APPEND ${list_to_add} ${_file_to})
+
+	find_program(INKSCAPE_EXE inkscape)
+	mark_as_advanced(INKSCAPE_EXE)
+
+	if(INKSCAPE_EXE)
+		if(APPLE)
+			# in OS X app bundle, the binary is a shim that doesn't take any
+			# command line arguments, replace it with the actual binary
+			string(REPLACE "MacOS/Inkscape" "Resources/bin/inkscape" INKSCAPE_REAL_EXE ${INKSCAPE_EXE})
+			if(EXISTS "${INKSCAPE_REAL_EXE}")
+				set(INKSCAPE_EXE ${INKSCAPE_REAL_EXE})
+			endif()
+		endif()
+
+		add_custom_command(
+			OUTPUT  ${_file_to}
+			COMMAND ${INKSCAPE_EXE} ${_file_from} --export-dpi=${dpi}  --without-gui --export-png=${_file_to}
+			DEPENDS ${_file_from} ${INKSCAPE_EXE}
+		)
+	else()
+		message(WARNING "Inkscape not found, could not re-generate ${_file_to} from ${_file_from}!")
+	endif()
+
+	unset(_file_from)
+	unset(_file_to)
+
 endmacro()

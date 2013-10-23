@@ -282,7 +282,7 @@ static int tree_element_active_material(bContext *C, Scene *scene, SpaceOops *so
 	return 0;
 }
 
-static int tree_element_active_texture(bContext *C, Scene *scene, SpaceOops *soops, TreeElement *te, int set)
+static int tree_element_active_texture(bContext *C, Scene *scene, SpaceOops *UNUSED(soops), TreeElement *te, int set)
 {
 	TreeElement *tep;
 	TreeStoreElem /* *tselem,*/ *tselemp;
@@ -384,7 +384,7 @@ static int tree_element_active_camera(bContext *UNUSED(C), Scene *scene, SpaceOo
 	return scene->camera == ob;
 }
 
-static int tree_element_active_world(bContext *C, Scene *scene, SpaceOops *soops, TreeElement *te, int set)
+static int tree_element_active_world(bContext *C, Scene *scene, SpaceOops *UNUSED(soops), TreeElement *te, int set)
 {
 	TreeElement *tep;
 	TreeStoreElem *tselem = NULL;
@@ -704,7 +704,7 @@ static int tree_element_active_sequence_dup(Scene *scene, TreeElement *te, TreeS
 // XXX	select_single_seq(seq, 1);
 	p = ed->seqbasep->first;
 	while (p) {
-		if ((!p->strip) || (!p->strip->stripdata) || (!p->strip->stripdata->name)) {
+		if ((!p->strip) || (!p->strip->stripdata) || (p->strip->stripdata->name[0] == '\0')) {
 			p = p->next;
 			continue;
 		}
@@ -902,7 +902,7 @@ int outliner_item_do_activate(bContext *C, int x, int y, bool extend, bool recur
 
 	UI_view2d_region_to_view(&ar->v2d, x, y, fmval, fmval + 1);
 
-	if (!ELEM3(soops->outlinevis, SO_DATABLOCKS, SO_USERDEF, SO_KEYMAP) &&
+	if (!ELEM(soops->outlinevis, SO_DATABLOCKS, SO_USERDEF) &&
 	    !(soops->flag & SO_HIDE_RESTRICTCOLS) &&
 	    (fmval[0] > ar->v2d.cur.xmax - OL_TOG_RESTRICT_VIEWX))
 	{

@@ -48,6 +48,8 @@ void ED_mask_point_pos(struct ScrArea *sa, struct ARegion *ar, float x, float y,
 void ED_mask_point_pos__reverse(struct ScrArea *sa, struct ARegion *ar,
                                 float x, float y, float *xr, float *yr);
 
+void ED_mask_cursor_location_get(struct ScrArea *sa, float cursor[2]);
+
 void ED_operatortypes_mask(void);
 void ED_keymap_mask(struct wmKeyConfig *keyconf);
 void ED_operatormacros_mask(void);
@@ -55,7 +57,7 @@ void ED_operatormacros_mask(void);
 /* mask_draw.c */
 void ED_mask_draw(const struct bContext *C, const char draw_flag, const char draw_type);
 void ED_mask_draw_region(struct Mask *mask, struct ARegion *ar,
-                         const char draw_flag, const char draw_type,
+                         const char draw_flag, const char draw_type, const char overlay_mode,
                          const int width_i, const int height_i,
                          const float aspx, const float aspy,
                          const short do_scale_applied, const short do_draw_cb,

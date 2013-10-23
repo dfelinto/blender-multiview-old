@@ -23,8 +23,10 @@
 #
 # ***** END GPL LICENSE BLOCK *****
 
-# Generated code has some unused vars we can ignore.
-remove_strict_flags()
+if(CMAKE_COMPILER_IS_GNUCC)
+	# add here so we fail early.
+	set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Werror=implicit-function-declaration")
+endif()
 
 # message(STATUS "Configuring makesrna")
 
@@ -119,7 +121,7 @@ set(APISRC
 )
 
 string(REGEX REPLACE "rna_([a-zA-Z0-9_-]*).c" "${CMAKE_CURRENT_BINARY_DIR}/rna_\\1_gen.c" GENSRC "${DEFSRC}")
-set_source_files_properties(GENSRC PROPERTIES GENERATED true)
+set_source_files_properties(${GENSRC} PROPERTIES GENERATED TRUE)
 
 set(SRC_RNA_INC
 	../RNA_access.h
@@ -135,6 +137,8 @@ set(SRC
 	${DEFSRC}
 	${APISRC}
 	../../../../intern/guardedalloc/intern/mallocn.c
+	../../../../intern/guardedalloc/intern/mallocn_guarded_impl.c
+	../../../../intern/guardedalloc/intern/mallocn_lockfree_impl.c
 	../../../../intern/guardedalloc/intern/mmap_win.c
 )
 
@@ -160,6 +164,10 @@ endif()
 
 if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
+endif()
+
+if(WITH_OPENIMAGEIO)
+	add_definitions(-DWITH_OPENIMAGEIO)
 endif()
 
 if(WITH_IMAGE_TIFF)
@@ -247,11 +255,6 @@ if(WITH_BULLET)
 	add_definitions(-DWITH_BULLET)
 endif()
 
-# for mallocn.c
-if (WITH_GUARDEDALLOC)
-	add_definitions(-DWITH_GUARDEDALLOC)
-endif()
-
 # Build makesrna executable
 blender_include_dirs(
 	.
@@ -271,14 +274,10 @@ blender_include_dirs(
 	../../../../intern/audaspace/intern
 	../../../../intern/cycles/blender
 	../../../../intern/guardedalloc
+	../../../../intern/atomic
 	../../../../intern/memutil
 	../../../../intern/smoke/extern
 )
-
-if(WITH_FREESTYLE)
-	# TO BE REMOVED when the trunk merger is done
-	add_definitions(-DWITH_FREESTYLE)
-endif()
 
 blender_include_dirs_sys(
 	${GLEW_INCLUDE_PATH}

@@ -59,6 +59,7 @@
 #include "BKE_context.h"
 #include "BKE_editmesh.h"
 #include "BKE_mesh.h"
+#include "BKE_tracking.h"
 
 #include "RNA_access.h"
 
@@ -133,7 +134,8 @@ bool validSnap(TransInfo *t)
 
 bool activeSnap(TransInfo *t)
 {
-	return (t->modifiers & (MOD_SNAP | MOD_SNAP_INVERT)) == MOD_SNAP || (t->modifiers & (MOD_SNAP | MOD_SNAP_INVERT)) == MOD_SNAP_INVERT;
+	return ((t->modifiers & (MOD_SNAP | MOD_SNAP_INVERT)) == MOD_SNAP) ||
+	       ((t->modifiers & (MOD_SNAP | MOD_SNAP_INVERT)) == MOD_SNAP_INVERT);
 }
 
 void drawSnapping(const struct bContext *C, TransInfo *t)
@@ -265,16 +267,16 @@ void drawSnapping(const struct bContext *C, TransInfo *t)
 	}
 }
 
-bool handleSnapping(TransInfo *t, const wmEvent *event)
+eRedrawFlag handleSnapping(TransInfo *t, const wmEvent *event)
 {
-	bool status = false;
+	eRedrawFlag status = TREDRAW_NOTHING;
 
 #if 0 // XXX need a proper selector for all snap mode
 	if (BIF_snappingSupported(t->obedit) && event->type == TABKEY && event->shift) {
 		/* toggle snap and reinit */
 		t->settings->snap_flag ^= SCE_SNAP;
 		initSnapping(t, NULL);
-		status = 1;
+		status = TREDRAW_HARD;
 	}
 #endif
 	if (event->type == MOUSEMOVE) {
@@ -604,9 +606,10 @@ void addSnapPoint(TransInfo *t)
 	}
 }
 
-bool updateSelectedSnapPoint(TransInfo *t)
+eRedrawFlag updateSelectedSnapPoint(TransInfo *t)
 {
-	bool status = false;
+	eRedrawFlag status = TREDRAW_NOTHING;
+
 	if (t->tsnap.status & MULTI_POINTS) {
 		TransSnapPoint *p, *closest_p = NULL;
 		float closest_dist = TRANSFORM_SNAP_MAX_PX;
@@ -629,7 +632,10 @@ bool updateSelectedSnapPoint(TransInfo *t)
 		}
 
 		if (closest_p) {
-			status = (t->tsnap.selectedPoint != closest_p);
+			if (t->tsnap.selectedPoint != closest_p) {
+				status = TREDRAW_HARD;
+			}
+
 			t->tsnap.selectedPoint = closest_p;
 		}
 	}
@@ -1147,7 +1153,7 @@ static void TargetSnapClosest(TransInfo *t)
 	}
 }
 
-static bool snapEdge(ARegion *ar, float v1co[3], short v1no[3], float v2co[3], short v2no[3], float obmat[4][4], float timat[3][3],
+static bool snapEdge(ARegion *ar, const float v1co[3], const short v1no[3], const float v2co[3], const short v2no[3], float obmat[4][4], float timat[3][3],
                      const float ray_start[3], const float ray_start_local[3], const float ray_normal_local[3], const float mval_fl[2],
                      float r_loc[3], float r_no[3], float *r_dist_px, float *r_depth)
 {
@@ -1234,7 +1240,7 @@ static bool snapEdge(ARegion *ar, float v1co[3], short v1no[3], float v2co[3], s
 	return retval;
 }
 
-static bool snapVertex(ARegion *ar, float vco[3], short vno[3], float obmat[4][4], float timat[3][3],
+static bool snapVertex(ARegion *ar, const float vco[3], const short vno[3], float obmat[4][4], float timat[3][3],
                        const float ray_start[3], const float ray_start_local[3], const float ray_normal_local[3], const float mval_fl[2],
                        float r_loc[3], float r_no[3], float *r_dist_px, float *r_depth)
 {
@@ -1446,7 +1452,9 @@ static bool snapDerivedMesh(short snap_mode, ARegion *ar, Object *ob, DerivedMes
 							else {
 								eve = EDBM_vert_at_index(em, index);
 								
-								if (eve && (BM_elem_flag_test(eve, BM_ELEM_HIDDEN) || BM_elem_flag_test(eve, BM_ELEM_SELECT))) {
+								if ((BM_elem_flag_test(eve, BM_ELEM_HIDDEN) ||
+								     BM_elem_flag_test(eve, BM_ELEM_SELECT)))
+								{
 									test = 0;
 								}
 							}
@@ -1475,7 +1483,6 @@ static bool snapDerivedMesh(short snap_mode, ARegion *ar, Object *ob, DerivedMes
 					}
 					
 					for (i = 0; i < totedge; i++) {
-						BMEdge *eed = NULL;
 						MEdge *e = edges + i;
 						
 						test = 1; /* reset for every vert */
@@ -1492,11 +1499,11 @@ static bool snapDerivedMesh(short snap_mode, ARegion *ar, Object *ob, DerivedMes
 								test = 0;
 							}
 							else {
-								eed = EDBM_edge_at_index(em, index);
-								
-								if (eed && (BM_elem_flag_test(eed, BM_ELEM_HIDDEN) ||
-								            BM_elem_flag_test(eed->v1, BM_ELEM_SELECT) ||
-								            BM_elem_flag_test(eed->v2, BM_ELEM_SELECT)))
+								BMEdge *eed = EDBM_edge_at_index(em, index);
+
+								if ((BM_elem_flag_test(eed, BM_ELEM_HIDDEN) ||
+								     BM_elem_flag_test(eed->v1, BM_ELEM_SELECT) ||
+								     BM_elem_flag_test(eed->v2, BM_ELEM_SELECT)))
 								{
 									test = 0;
 								}
@@ -1516,6 +1523,129 @@ static bool snapDerivedMesh(short snap_mode, ARegion *ar, Object *ob, DerivedMes
 
 	return retval;
 } 
+
+/* may extend later (for now just snaps to empty center) */
+static bool snapEmpty(short snap_mode, ARegion *ar, Object *ob, float obmat[4][4],
+                      const float ray_start[3], const float ray_normal[3], const float mval[2],
+                      float r_loc[3], float *UNUSED(r_no), float *r_dist_px, float *r_depth)
+{
+	float imat[4][4];
+	float ray_start_local[3], ray_normal_local[3];
+	bool retval = false;
+
+	if (ob->transflag & OB_DUPLI) {
+		return retval;
+	}
+	/* for now only vertex supported */
+	if (snap_mode != SCE_SNAP_MODE_VERTEX) {
+		return retval;
+	}
+
+	invert_m4_m4(imat, obmat);
+
+	copy_v3_v3(ray_start_local, ray_start);
+	copy_v3_v3(ray_normal_local, ray_normal);
+
+	mul_m4_v3(imat, ray_start_local);
+	mul_mat3_m4_v3(imat, ray_normal_local);
+
+	switch (snap_mode) {
+		case SCE_SNAP_MODE_VERTEX:
+		{
+			const float zero_co[3] = {0.0f};
+			retval |= snapVertex(ar, zero_co, NULL, obmat, NULL, ray_start, ray_start_local, ray_normal_local, mval, r_loc, NULL, r_dist_px, r_depth);
+			break;
+		}
+		default:
+			break;
+	}
+
+	return retval;
+}
+
+static bool snapCamera(short snap_mode, ARegion *ar, Scene *scene, Object *object, float obmat[4][4],
+                       const float ray_start[3], const float ray_normal[3], const float mval[2],
+                       float r_loc[3], float *UNUSED(r_no), float *r_dist_px, float *r_depth)
+{
+	float orig_camera_mat[4][4], orig_camera_imat[4][4], imat[4][4];
+	bool retval = false;
+	MovieClip *clip = BKE_object_movieclip_get(scene, object, false);
+	MovieTracking *tracking;
+	float ray_start_local[3], ray_normal_local[3];
+
+	if (clip == NULL) {
+		return retval;
+	}
+	if (object->transflag & OB_DUPLI) {
+		return retval;
+	}
+
+	tracking = &clip->tracking;
+
+	BKE_tracking_get_camera_object_matrix(scene, object, orig_camera_mat);
+
+	invert_m4_m4(orig_camera_imat, orig_camera_mat);
+	invert_m4_m4(imat, obmat);
+
+	switch (snap_mode) {
+		case SCE_SNAP_MODE_VERTEX:
+		{
+			MovieTrackingObject *tracking_object;
+
+			for (tracking_object = tracking->objects.first;
+			     tracking_object;
+			     tracking_object = tracking_object->next)
+			{
+				ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, tracking_object);
+				MovieTrackingTrack *track;
+				float reconstructed_camera_mat[4][4],
+				      reconstructed_camera_imat[4][4];
+				float (*vertex_obmat)[4];
+
+				copy_v3_v3(ray_start_local, ray_start);
+				copy_v3_v3(ray_normal_local, ray_normal);
+
+				if ((tracking_object->flag & TRACKING_OBJECT_CAMERA) == 0) {
+					BKE_tracking_camera_get_reconstructed_interpolate(tracking, tracking_object,
+					                                                  CFRA, reconstructed_camera_mat);
+
+					invert_m4_m4(reconstructed_camera_imat, reconstructed_camera_mat);
+				}
+
+				for (track = tracksbase->first; track; track = track->next) {
+					float bundle_pos[3];
+
+					if ((track->flag & TRACK_HAS_BUNDLE) == 0) {
+						continue;
+					}
+
+					copy_v3_v3(bundle_pos, track->bundle_pos);
+					if (tracking_object->flag & TRACKING_OBJECT_CAMERA) {
+						mul_m4_v3(orig_camera_imat, ray_start_local);
+						mul_mat3_m4_v3(orig_camera_imat, ray_normal_local);
+						vertex_obmat = orig_camera_mat;
+					}
+					else {
+						mul_m4_v3(reconstructed_camera_imat, bundle_pos);
+						mul_m4_v3(imat, ray_start_local);
+						mul_mat3_m4_v3(imat, ray_normal_local);
+						vertex_obmat = obmat;
+					}
+
+					retval |= snapVertex(ar, bundle_pos, NULL, vertex_obmat, NULL,
+					                     ray_start, ray_start_local, ray_normal_local, mval,
+					                     r_loc, NULL, r_dist_px, r_depth);
+				}
+			}
+
+			break;
+		}
+		default:
+			break;
+	}
+
+	return retval;
+}
 
 static bool snapObject(Scene *scene, short snap_mode, ARegion *ar, Object *ob, float obmat[4][4], bool use_obedit,
                        Object **r_ob, float r_obmat[4][4],
@@ -1543,6 +1673,12 @@ static bool snapObject(Scene *scene, short snap_mode, ARegion *ar, Object *ob, f
 	}
 	else if (ob->type == OB_ARMATURE) {
 		retval = snapArmature(snap_mode, ar, ob, ob->data, obmat, ray_start, ray_normal, mval, r_loc, r_no, r_dist_px, r_depth);
+	}
+	else if (ob->type == OB_EMPTY) {
+		retval = snapEmpty(snap_mode, ar, ob, obmat, ray_start, ray_normal, mval, r_loc, r_no, r_dist_px, r_depth);
+	}
+	else if (ob->type == OB_CAMERA) {
+		retval = snapCamera(snap_mode, ar, scene, ob, obmat, ray_start, ray_normal, mval, r_loc, r_no, r_dist_px, r_depth);
 	}
 	
 	if (retval) {

@@ -73,11 +73,37 @@ typedef struct TexSnapshot {
 	GLuint overlay_texture;
 	int winx;
 	int winy;
-	bool init;
 	int old_size;
 	float old_zoom;
 	bool old_col;
 } TexSnapshot;
+
+typedef struct CursorSnapshot {
+	GLuint overlay_texture;
+	int size;
+	int zoom;
+} CursorSnapshot;
+
+static TexSnapshot primary_snap = {0};
+static TexSnapshot secondary_snap  = {0};
+static CursorSnapshot cursor_snap  = {0};
+
+/* delete overlay cursor textures to preserve memory and invalidate all overlay flags */
+void paint_cursor_delete_textures(void)
+{
+	if (primary_snap.overlay_texture)
+		glDeleteTextures(1, &primary_snap.overlay_texture);
+	if (secondary_snap.overlay_texture)
+		glDeleteTextures(1, &secondary_snap.overlay_texture);
+	if (cursor_snap.overlay_texture)
+		glDeleteTextures(1, &cursor_snap.overlay_texture);
+
+	memset(&primary_snap, 0, sizeof(TexSnapshot));
+	memset(&secondary_snap, 0, sizeof(TexSnapshot));
+	memset(&cursor_snap, 0, sizeof(CursorSnapshot));
+
+	BKE_paint_invalidate_overlay_all();
+}
 
 static int same_tex_snap(TexSnapshot *snap, MTex *mtex, ViewContext *vc, bool col, float zoom)
 {
@@ -103,9 +129,7 @@ static void make_tex_snap(TexSnapshot *snap, ViewContext *vc, float zoom)
 
 static int load_tex(Brush *br, ViewContext *vc, float zoom, bool col, bool primary)
 {
-	static int init = 0;
-	static TexSnapshot primary_snap = {0};
-	static TexSnapshot secondary_snap  = {0};
+	bool init;
 	TexSnapshot *target;
 
 	MTex *mtex = (primary) ? &br->mtex : &br->mask_mtex;
@@ -120,11 +144,13 @@ static int load_tex(Brush *br, ViewContext *vc, float zoom, bool col, bool prima
 	                           (overlay_flags & PAINT_INVALID_OVERLAY_TEXTURE_SECONDARY);
 
 	target = (primary) ? &primary_snap : &secondary_snap;
-		
+
 	refresh = 
 	    !target->overlay_texture ||
 	    (invalid != 0) ||
 	    !same_tex_snap(target, mtex, vc, col, zoom);
+
+	init = (target->overlay_texture != 0);
 
 	if (refresh) {
 		struct ImagePool *pool = NULL;
@@ -160,7 +186,7 @@ static int load_tex(Brush *br, ViewContext *vc, float zoom, bool col, bool prima
 				target->overlay_texture = 0;
 			}
 
-			init = 0;
+			init = false;
 
 			target->old_size = size;
 		}
@@ -267,7 +293,6 @@ static int load_tex(Brush *br, ViewContext *vc, float zoom, bool col, bool prima
 	if (refresh) {
 		if (!init || (target->old_col != col)) {
 			glTexImage2D(GL_TEXTURE_2D, 0, format, size, size, 0, format, GL_UNSIGNED_BYTE, buffer);
-			init = 1;
 		}
 		else {
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size, size, format, GL_UNSIGNED_BYTE, buffer);
@@ -297,10 +322,7 @@ static int load_tex(Brush *br, ViewContext *vc, float zoom, bool col, bool prima
 
 static int load_tex_cursor(Brush *br, ViewContext *vc, float zoom)
 {
-	static GLuint overlay_texture = 0;
-	static int init = 0;
-	static int old_size = -1;
-	static int old_zoom = -1;
+	bool init;
 
 	OverlayControlFlags overlay_flags = BKE_paint_get_overlay_flags();
 	GLubyte *buffer = NULL;
@@ -310,14 +332,16 @@ static int load_tex_cursor(Brush *br, ViewContext *vc, float zoom)
 	int refresh;
 
 	refresh =
-	    !overlay_texture ||
+	    !cursor_snap.overlay_texture ||
 	    (overlay_flags & PAINT_INVALID_OVERLAY_CURVE) ||
-	    old_zoom != zoom;
+	    cursor_snap.zoom != zoom;
+
+	init = (cursor_snap.overlay_texture != 0);
 
 	if (refresh) {
 		int s, r;
 
-		old_zoom = zoom;
+		cursor_snap.zoom = zoom;
 
 		s = BKE_brush_size_get(vc->scene, br);
 		r = 1;
@@ -330,18 +354,18 @@ static int load_tex_cursor(Brush *br, ViewContext *vc, float zoom)
 		if (size < 256)
 			size = 256;
 
-		if (size < old_size)
-			size = old_size;
+		if (size < cursor_snap.size)
+			size = cursor_snap.size;
 
-		if (old_size != size) {
-			if (overlay_texture) {
-				glDeleteTextures(1, &overlay_texture);
-				overlay_texture = 0;
+		if (cursor_snap.size != size) {
+			if (cursor_snap.overlay_texture) {
+				glDeleteTextures(1, &cursor_snap.overlay_texture);
+				cursor_snap.overlay_texture = 0;
 			}
 
-			init = 0;
+			init = false;
 
-			old_size = size;
+			cursor_snap.size = size;
 		}
 		buffer = MEM_mallocN(sizeof(GLubyte) * size * size, "load_tex");
 
@@ -383,19 +407,18 @@ static int load_tex_cursor(Brush *br, ViewContext *vc, float zoom)
 			}
 		}
 
-		if (!overlay_texture)
-			glGenTextures(1, &overlay_texture);
+		if (!cursor_snap.overlay_texture)
+			glGenTextures(1, &cursor_snap.overlay_texture);
 	}
 	else {
-		size = old_size;
+		size = cursor_snap.size;
 	}
 
-	glBindTexture(GL_TEXTURE_2D, overlay_texture);
+	glBindTexture(GL_TEXTURE_2D, cursor_snap.overlay_texture);
 
 	if (refresh) {
 		if (!init) {
 			glTexImage2D(GL_TEXTURE_2D, 0, GL_ALPHA, size, size, 0, GL_ALPHA, GL_UNSIGNED_BYTE, buffer);
-			init = 1;
 		}
 		else {
 			glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, size, size, GL_ALPHA, GL_UNSIGNED_BYTE, buffer);
@@ -643,21 +666,17 @@ static void paint_draw_cursor_overlay(UnifiedPaintSettings *ups, Brush *brush,
 	}
 
 	if (load_tex_cursor(brush, vc, zoom)) {
+		bool do_pop = false;
+		float center[2];
 		glEnable(GL_BLEND);
 
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glDepthMask(GL_FALSE);
 		glDepthFunc(GL_ALWAYS);
 
-		/* scale based on tablet pressure */
-		if (ups->draw_pressure && BKE_brush_use_size_pressure(vc->scene, brush)) {
-			glTranslatef(0.5f, 0.5f, 0);
-			glScalef(1.0f / ups->pressure_value, 1.0f / ups->pressure_value, 1);
-			glTranslatef(-0.5f, -0.5f, 0);
-		}
-
 		if (ups->draw_anchored) {
 			const float *aim = ups->anchored_initial_mouse;
+			copy_v2_v2(center, aim);
 			quad.xmin = aim[0] - ups->anchored_size;
 			quad.ymin = aim[1] - ups->anchored_size;
 			quad.xmax = aim[0] + ups->anchored_size;
@@ -665,10 +684,23 @@ static void paint_draw_cursor_overlay(UnifiedPaintSettings *ups, Brush *brush,
 		}
 		else {
 			const int radius = BKE_brush_size_get(vc->scene, brush) * zoom;
+			center[0] = x;
+			center[1] = y;
+
 			quad.xmin = x - radius;
 			quad.ymin = y - radius;
 			quad.xmax = x + radius;
 			quad.ymax = y + radius;
+		}
+
+		/* scale based on tablet pressure */
+		if (ups->draw_pressure && BKE_brush_use_size_pressure(vc->scene, brush)) {
+			do_pop = true;
+			glPushMatrix();
+			glLoadIdentity();
+			glTranslatef(center[0], center[1], 0);
+			glScalef(ups->pressure_value, ups->pressure_value, 1);
+			glTranslatef(-center[0], -center[1], 0);
 		}
 
 		glColor4f(U.sculpt_paint_overlay_col[0],
@@ -687,6 +719,9 @@ static void paint_draw_cursor_overlay(UnifiedPaintSettings *ups, Brush *brush,
 		glTexCoord2f(0, 1);
 		glVertex2f(quad.xmin, quad.ymax);
 		glEnd();
+
+		if (do_pop)
+			glPopMatrix();
 	}
 }
 

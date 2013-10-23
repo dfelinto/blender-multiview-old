@@ -72,7 +72,6 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, 
 {
 	DerivedMesh *dm;
 	ClothModifierData *clmd = (ClothModifierData *) md;
-	DerivedMesh *result = NULL;
 	
 	/* check for alloc failing */
 	if (!clmd->sim_parms || !clmd->coll_parms) {
@@ -82,7 +81,7 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, 
 			return;
 	}
 
-	dm = get_dm(ob, NULL, derivedData, NULL, 0);
+	dm = get_dm(ob, NULL, derivedData, NULL, false, false);
 	if (dm == derivedData)
 		dm = CDDM_copy(dm);
 
@@ -91,11 +90,6 @@ static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData, 
 	DM_ensure_tessface(dm); /* BMESH - UNTIL MODIFIER IS UPDATED FOR MPoly */
 
 	clothModifier_do(clmd, md->scene, ob, dm, vertexCos);
-
-	if (result) {
-		result->getVertCos(result, vertexCos);
-		result->release(result);
-	}
 
 	dm->release(dm);
 }

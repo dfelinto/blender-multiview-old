@@ -56,7 +56,7 @@ static int bm_vert_other_tag(BMVert *v, BMVert *v_prev,
                              BMEdge **r_e)
 {
 	BMIter iter;
-	BMEdge *e, *e_next;
+	BMEdge *e, *e_next = NULL;
 	unsigned int count = 0;
 
 	BM_ITER_ELEM (e, &iter, v, BM_EDGES_OF_VERT) {
@@ -230,7 +230,7 @@ static bool bm_loop_path_build_step(BLI_mempool *vs_pool, ListBase *lb, const in
 					/* on the same side - do nothing */
 				}
 				else {
-					/* we have met out match! (vertices from differnt sides meet) */
+					/* we have met out match! (vertices from different sides meet) */
 					if (dir == 1) {
 						v_match[0] = vs->v;
 						v_match[1] = v_next;
@@ -361,8 +361,7 @@ bool BM_mesh_edgeloops_find_path(BMesh *bm, ListBase *r_eloops,
 void BM_mesh_edgeloops_free(ListBase *eloops)
 {
 	BMEdgeLoopStore *el_store;
-	while ((el_store = eloops->first)) {
-		BLI_remlink(eloops, el_store);
+	while ((el_store = BLI_pophead(eloops))) {
 		BM_edgeloop_free(el_store);
 	}
 }
@@ -428,7 +427,7 @@ void BM_mesh_edgeloops_calc_order(BMesh *UNUSED(bm), ListBase *eloops, const boo
 		float len_best = FLT_MAX;
 
 		if (use_normals)
-			BLI_assert(fabsf(len_squared_v3(no) - 1.0f) < FLT_EPSILON);
+			BLI_ASSERT_UNIT_V3(no);
 
 		for (el_store = eloops->first; el_store; el_store = el_store->next) {
 			float len;
@@ -520,7 +519,7 @@ const float *BM_edgeloop_center_get(struct BMEdgeLoopStore *el_store)
 #define NODE_AS_CO(n) ((BMVert *)((LinkData *)n)->data)->co
 
 /**
- * edges are assined to one vert -> the next.
+ * edges are assigned to one vert -> the next.
  */
 void BM_edgeloop_edges_get(struct BMEdgeLoopStore *el_store, BMEdge **e_arr)
 {
@@ -612,7 +611,7 @@ bool BM_edgeloop_calc_normal(BMesh *UNUSED(bm), BMEdgeLoopStore *el_store)
 }
 
 /**
- * For open loops that are stright lines,
+ * For open loops that are straight lines,
  * calculating the normal as if it were a polygon is meaningless.
  *
  * Instead use an alignment vector and calculate the normal based on that.

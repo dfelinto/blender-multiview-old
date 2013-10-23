@@ -172,7 +172,7 @@ def enable_addons(addons={}, support={}, disable=False, check_only=False):
     userpref = bpy.context.user_preferences
     used_ext = {ext.module for ext in userpref.addons}
 
-    ret = [mod for mod in addon_utils.modules(addon_utils.addons_fake_modules)
+    ret = [mod for mod in addon_utils.modules()
                if ((addons and mod.__name__ in addons) or
                    (not addons and addon_utils.module_bl_info(mod)["support"] in support))]
 
@@ -446,10 +446,10 @@ class I18nMessages:
         """
         ret = []
         default_context = self.settings.DEFAULT_CONTEXT
-        _format = re.compile("%[.0-9]*[tslfd]").findall
+        _format = re.compile(self.settings.CHECK_PRINTF_FORMAT).findall
         done_keys = set()
-        tmp = {}
         rem = set()
+        tmp = {}
         for key, msg in self.msgs.items():
             msgctxt, msgid, msgstr = msg.msgctxt, msg.msgid, msg.msgstr
             real_key = (msgctxt or default_context, msgid)
@@ -462,9 +462,10 @@ class I18nMessages:
                 elif fix:
                     tmp[real_key] = msg
             done_keys.add(key)
-            if '%' in msgid and msgstr and len(_format(msgid)) != len(_format(msgstr)):
+            if '%' in msgid and msgstr and _format(msgid) != _format(msgstr):
                 if not msg.is_fuzzy:
-                    ret.append("Error! msg's format entities are not matched in msgid and msgstr ({})".format(real_key))
+                    ret.append("Error! msg's format entities are not matched in msgid and msgstr ({} / \"{}\")"
+                               "".format(real_key, msgstr))
                 if fix:
                     msg.msgstr = ""
         for k in rem:

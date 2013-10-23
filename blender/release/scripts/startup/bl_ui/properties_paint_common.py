@@ -45,8 +45,9 @@ class UnifiedPaintPanel():
     def unified_paint_settings(parent, context):
         ups = context.tool_settings.unified_paint_settings
         parent.label(text="Unified Settings:")
-        parent.prop(ups, "use_unified_size", text="Size")
-        parent.prop(ups, "use_unified_strength", text="Strength")
+        row = parent.row()
+        row.prop(ups, "use_unified_size", text="Size")
+        row.prop(ups, "use_unified_strength", text="Strength")
         if context.weight_paint_object:
             parent.prop(ups, "use_unified_weight", text="Weight")
 
@@ -133,13 +134,12 @@ def brush_mask_texture_settings(layout, brush):
             layout.operator("brush.stencil_fit_image_aspect").mask = True
         layout.operator("brush.stencil_reset_transform").mask = True
 
-    if brush.mask_texture:
-        layout.label(text="Mask Mapping:")
-        col = layout.column()
-        col.active = brush.brush_capabilities.has_texture_angle
-        col.prop(mask_tex_slot, "angle", text="")
+    col = layout.column()
+    col.label(text="Angle:")
+    col.active = brush.brush_capabilities.has_texture_angle
+    col.prop(mask_tex_slot, "angle", text="")
 
-        # scale and offset
-        split = layout.split()
-        split.prop(mask_tex_slot, "offset")
-        split.prop(mask_tex_slot, "scale")
+    # scale and offset
+    split = layout.split()
+    split.prop(mask_tex_slot, "offset")
+    split.prop(mask_tex_slot, "scale")

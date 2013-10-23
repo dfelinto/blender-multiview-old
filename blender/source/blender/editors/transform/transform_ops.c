@@ -60,7 +60,7 @@ typedef struct TransformModeItem {
 	void (*opfunc)(wmOperatorType *);
 } TransformModeItem;
 
-static float VecOne[3] = {1, 1, 1};
+static const float VecOne[3] = {1, 1, 1};
 
 static char OP_TRANSLATION[] = "TRANSFORM_OT_translate";
 static char OP_ROTATION[] = "TRANSFORM_OT_rotate";
@@ -357,10 +357,10 @@ static int transformops_data(bContext *C, wmOperator *op, const wmEvent *event)
 		}
 
 		retval = initTransform(C, t, op, event, mode);
-		G.moving = 1;
 
 		/* store data */
 		if (retval) {
+			G.moving = special_transform_moving(t);
 			op->customdata = t;
 		}
 		else {
@@ -500,7 +500,11 @@ void Transform_Properties(struct wmOperatorType *ot, int flags)
 	}
 
 	if (flags & P_MIRROR) {
-		RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+		prop = RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+		if (flags & P_MIRROR_DUMMY) {
+			/* only used so macros can disable this option */
+			RNA_def_property_flag(prop, PROP_HIDDEN);
+		}
 	}
 
 
@@ -533,15 +537,19 @@ void Transform_Properties(struct wmOperatorType *ot, int flags)
 
 	if (flags & P_OPTIONS) {
 		RNA_def_boolean(ot->srna, "texture_space", 0, "Edit Texture Space", "Edit Object data texture space");
+		prop = RNA_def_boolean(ot->srna, "remove_on_cancel", 0, "Remove on Cancel", "Remove elements on cancel");
+		RNA_def_property_flag(prop, PROP_HIDDEN);
 	}
 
 	if (flags & P_CORRECT_UV) {
 		RNA_def_boolean(ot->srna, "correct_uv", 0, "Correct UVs", "Correct UV coordinates when transforming");
 	}
 
-	// Add confirm method all the time. At the end because it's not really that important and should be hidden only in log, not in keymap edit
-	/*prop =*/ RNA_def_boolean(ot->srna, "release_confirm", 0, "Confirm on Release", "Always confirm operation when releasing button");
-	//RNA_def_property_flag(prop, PROP_HIDDEN);
+	if ((flags & P_NO_DEFAULTS) == 0) {
+		// Add confirm method all the time. At the end because it's not really that important and should be hidden only in log, not in keymap edit
+		/*prop =*/ RNA_def_boolean(ot->srna, "release_confirm", 0, "Confirm on Release", "Always confirm operation when releasing button");
+		//RNA_def_property_flag(prop, PROP_HIDDEN);
+	}
 }
 
 static void TRANSFORM_OT_translate(struct wmOperatorType *ot)

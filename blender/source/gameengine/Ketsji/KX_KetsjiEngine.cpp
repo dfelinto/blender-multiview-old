@@ -54,7 +54,6 @@
 #include "MT_Transform.h"
 #include "SCA_IInputDevice.h"
 #include "KX_Camera.h"
-#include "KX_FontObject.h"
 #include "KX_Dome.h"
 #include "KX_Light.h"
 #include "KX_PythonInit.h"
@@ -100,7 +99,8 @@ const char KX_KetsjiEngine::m_profileLabels[tc_numCategories][15] = {
 	"Rasterizer:",	// tc_rasterizer
 	"Services:",	// tc_services
 	"Overhead:",	// tc_overhead
-	"Outside:"		// tc_outside
+	"Outside:",		// tc_outside
+	"GPU Latency:"	// tc_latency
 };
 
 double KX_KetsjiEngine::m_ticrate = DEFAULT_LOGIC_TIC_RATE;
@@ -129,8 +129,6 @@ KX_KetsjiEngine::KX_KetsjiEngine(KX_ISystem* system)
 #endif
 	m_keyboarddevice(NULL),
 	m_mousedevice(NULL),
-
-	m_propertiesPresent(false),
 
 	m_bInitialized(false),
 	m_activecam(0),
@@ -340,7 +338,7 @@ void KX_KetsjiEngine::RenderDome()
 				// do the rendering
 				m_dome->RenderDomeFrame(scene,cam, i);
 				//render all the font objects for this scene
-				RenderFonts(scene);
+				scene->RenderFonts();
 			}
 			
 			list<class KX_Camera*>* cameras = scene->GetCameras();
@@ -358,7 +356,7 @@ void KX_KetsjiEngine::RenderDome()
 					// do the rendering
 					m_dome->RenderDomeFrame(scene, (*it),i);
 					//render all the font objects for this scene
-					RenderFonts(scene);
+					scene->RenderFonts();
 				}
 				
 				it++;
@@ -516,15 +514,28 @@ void KX_KetsjiEngine::EndFrame()
 
 	// Show profiling info
 	m_logger->StartLog(tc_overhead, m_kxsystem->GetTimeInSeconds(), true);
-	if (m_show_framerate || m_show_profile || (m_show_debug_properties && m_propertiesPresent))
+	if (m_show_framerate || m_show_profile || (m_show_debug_properties))
 	{
 		RenderDebugProperties();
 	}
 
-	m_average_framerate = m_logger->GetAverage();
-	if (m_average_framerate < 1e-6)
-		m_average_framerate = 1e-6;
-	m_average_framerate = 1.0/m_average_framerate;
+	double tottime = m_logger->GetAverage(), time;
+	if (tottime < 1e-6)
+		tottime = 1e-6;
+
+#ifdef WITH_PYTHON
+	for (int i = tc_first; i < tc_numCategories; ++i) {
+		time = m_logger->GetAverage((KX_TimeCategory)i);
+		PyObject *val = PyTuple_New(2);
+		PyTuple_SetItem(val, 0, PyFloat_FromDouble(time*1000.f));
+		PyTuple_SetItem(val, 1, PyFloat_FromDouble(time/tottime * 100.f));
+
+		PyDict_SetItemString(m_pyprofiledict, m_profileLabels[i], val);
+		Py_DECREF(val);
+	}
+#endif
+
+	m_average_framerate = 1.0/tottime;
 
 	// Go to next profiling measurement, time spend after this call is shown in the next frame.
 	m_logger->NextMeasurement(m_kxsystem->GetTimeInSeconds());
@@ -532,7 +543,10 @@ void KX_KetsjiEngine::EndFrame()
 	m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
 	m_rasterizer->EndFrame();
 	// swap backbuffer (drawing into this buffer) <-> front/visible buffer
+	m_logger->StartLog(tc_latency, m_kxsystem->GetTimeInSeconds(), true);
 	m_rasterizer->SwapBuffers();
+	m_logger->StartLog(tc_rasterizer, m_kxsystem->GetTimeInSeconds(), true);
+
 	m_rendertools->EndFrame(m_rasterizer);
 
 	
@@ -1187,6 +1201,7 @@ void KX_KetsjiEngine::RenderShadowBuffers(KX_Scene *scene)
 
 			/* render */
 			m_rasterizer->ClearDepthBuffer();
+			m_rasterizer->ClearColorBuffer();
 			scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools);
 
 			/* unbind framebuffer object, restore drawmode, free camera */
@@ -1326,21 +1341,10 @@ void KX_KetsjiEngine::RenderFrame(KX_Scene* scene, KX_Camera* cam)
 	scene->RenderBuckets(camtrans, m_rasterizer, m_rendertools);
 
 	//render all the font objects for this scene
-	RenderFonts(scene);
+	scene->RenderFonts();
 	
 	if (scene->GetPhysicsEnvironment())
 		scene->GetPhysicsEnvironment()->debugDrawWorld();
-}
-
-void KX_KetsjiEngine::RenderFonts(KX_Scene* scene)
-{
-	list<class KX_FontObject*>* fonts = scene->GetFonts();
-	
-	list<KX_FontObject*>::iterator it = fonts->begin();
-	while (it != fonts->end()) {
-		(*it)->DrawText();
-		++it;
-	}
 }
 
 /*
@@ -1388,7 +1392,6 @@ void KX_KetsjiEngine::AddScene(KX_Scene* scene)
 { 
 	m_scenes.push_back(scene);
 	PostProcessScene(scene);
-	SceneListsChanged();
 }
 
 
@@ -1526,22 +1529,13 @@ void KX_KetsjiEngine::RenderDebugProperties()
 
 			m_rendertools->RenderBox2D(xcoord + (int)(2.2 * profile_indent), ycoord, m_canvas->GetWidth(), m_canvas->GetHeight(), time/tottime);
 			ycoord += const_ysize;
-
-#ifdef WITH_PYTHON
-			PyObject *val = PyTuple_New(2);
-			PyTuple_SetItem(val, 0, PyFloat_FromDouble(time*1000.f));
-			PyTuple_SetItem(val, 1, PyFloat_FromDouble(time/tottime * 100.f));
-
-			PyDict_SetItemString(m_pyprofiledict, m_profileLabels[j], val);
-			Py_DECREF(val);
-#endif
 		}
 	}
 	// Add the ymargin for titles below the other section of debug info
 	ycoord += title_y_top_margin;
 
 	/* Property display*/
-	if (m_show_debug_properties && m_propertiesPresent) {
+	if (m_show_debug_properties) {
 
 		/* Title for debugging("Debug properties") */
 		m_rendertools->RenderText2D(RAS_IRenderTools::RAS_TEXT_PADDED,
@@ -1556,18 +1550,22 @@ void KX_KetsjiEngine::RenderDebugProperties()
 		// Add the title indent afterwards
 		ycoord += title_y_bottom_margin;
 
+		/* Calculate amount of properties that can displayed. */
+		unsigned propsAct = 0;
+		unsigned propsMax = (m_canvas->GetHeight() - ycoord) / const_ysize;
+
 		KX_SceneList::iterator sceneit;
 		for (sceneit = m_scenes.begin();sceneit != m_scenes.end(); sceneit++) {
 			KX_Scene* scene = *sceneit;
 			/* the 'normal' debug props */
 			vector<SCA_DebugProp*>& debugproplist = scene->GetDebugProperties();
 			
-			for (vector<SCA_DebugProp*>::iterator it = debugproplist.begin();
-			     !(it==debugproplist.end());it++)
+			for (unsigned i=0; i < debugproplist.size() && propsAct < propsMax; i++)
 			{
-				CValue *propobj = (*it)->m_obj;
+				CValue *propobj = debugproplist[i]->m_obj;
 				STR_String objname = propobj->GetName();
-				STR_String propname = (*it)->m_name;
+				STR_String propname = debugproplist[i]->m_name;
+				propsAct++;
 				if (propname == "__state__") {
 					// reserve name for object state
 					KX_GameObject* gameobj = static_cast<KX_GameObject*>(propobj);
@@ -1645,10 +1643,10 @@ void KX_KetsjiEngine::ConvertAndAddScene(const STR_String& scenename,bool overla
 	}
 	else {
 		if (overlay) {
-			m_addingOverlayScenes.insert(scenename);
+			m_addingOverlayScenes.push_back(scenename);
 		}
 		else {
-			m_addingBackgroundScenes.insert(scenename);
+			m_addingBackgroundScenes.push_back(scenename);
 		}
 	}
 }
@@ -1660,7 +1658,7 @@ void KX_KetsjiEngine::RemoveScene(const STR_String& scenename)
 {
 	if (FindScene(scenename))
 	{
-		m_removingScenes.insert(scenename);
+		m_removingScenes.push_back(scenename);
 	}
 	else
 	{
@@ -1675,7 +1673,7 @@ void KX_KetsjiEngine::RemoveScheduledScenes()
 {
 	if (m_removingScenes.size())
 	{
-		set<STR_String>::iterator scenenameit;
+		vector<STR_String>::iterator scenenameit;
 		for (scenenameit=m_removingScenes.begin();scenenameit != m_removingScenes.end();scenenameit++)
 		{
 			STR_String scenename = *scenenameit;
@@ -1721,7 +1719,7 @@ KX_Scene* KX_KetsjiEngine::CreateScene(const STR_String& scenename)
 
 void KX_KetsjiEngine::AddScheduledScenes()
 {
-	set<STR_String>::iterator scenenameit;
+	vector<STR_String>::iterator scenenameit;
 
 	if (m_addingOverlayScenes.size())
 	{
@@ -1757,7 +1755,7 @@ void KX_KetsjiEngine::AddScheduledScenes()
 
 void KX_KetsjiEngine::ReplaceScene(const STR_String& oldscene,const STR_String& newscene)
 {
-	m_replace_scenes.insert(std::make_pair(oldscene,newscene));
+	m_replace_scenes.push_back(std::make_pair(oldscene,newscene));
 }
 
 // replace scene is not the same as removing and adding because the
@@ -1768,7 +1766,7 @@ void KX_KetsjiEngine::ReplaceScheduledScenes()
 {
 	if (m_replace_scenes.size())
 	{
-		set<pair<STR_String,STR_String> >::iterator scenenameit;
+		vector<pair<STR_String,STR_String> >::iterator scenenameit;
 		
 		for (scenenameit = m_replace_scenes.begin();
 			scenenameit != m_replace_scenes.end();
@@ -1951,24 +1949,6 @@ void KX_KetsjiEngine::ProcessScheduledScenes(void)
 		ReplaceScheduledScenes();
 		RemoveScheduledScenes();
 		AddScheduledScenes();
-
-		// Notify
-		SceneListsChanged();
-	}
-}
-
-
-
-void KX_KetsjiEngine::SceneListsChanged(void)
-{
-	m_propertiesPresent = false;
-	KX_SceneList::iterator sceneit = m_scenes.begin();
-	while ((sceneit != m_scenes.end()) && (!m_propertiesPresent))
-	{
-		KX_Scene* scene = *sceneit;
-		vector<SCA_DebugProp*>& debugproplist = scene->GetDebugProperties();
-		m_propertiesPresent = !debugproplist.empty();
-		sceneit++;
 	}
 }
 

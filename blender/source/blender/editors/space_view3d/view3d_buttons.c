@@ -95,8 +95,6 @@ typedef struct {
 	float ob_dims[3];
 	short link_scale;
 	float ve_median[NBR_TRANSFORM_PROPERTIES];
-	int curdef;
-	float *defweightp;
 } TransformProperties;
 
 /* Helper function to compute a median changed value,
@@ -154,17 +152,14 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 #define L_WEIGHT  4
 
 	uiBlock *block = (layout) ? uiLayoutAbsoluteBlock(layout) : NULL;
-	MDeformVert *dvert = NULL;
 	TransformProperties *tfp;
 	float median[NBR_TRANSFORM_PROPERTIES], ve_median[NBR_TRANSFORM_PROPERTIES];
 	int tot, totedgedata, totcurvedata, totlattdata, totskinradius, totcurvebweight;
 	bool has_meshdata = false;
-	char defstr[320];
 	PointerRNA data_ptr;
 
 	fill_vn_fl(median, NBR_TRANSFORM_PROPERTIES, 0.0f);
 	tot = totedgedata = totcurvedata = totlattdata = totskinradius = totcurvebweight = 0;
-	defstr[0] = '\0';
 
 	/* make sure we got storage */
 	if (v3d->properties_storage == NULL)
@@ -175,7 +170,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		Mesh *me = ob->data;
 		BMEditMesh *em = me->edit_btmesh;
 		BMesh *bm = em->bm;
-		BMVert *eve, *evedef = NULL;
+		BMVert *eve;
 		BMEdge *eed;
 		BMIter iter;
 
@@ -187,7 +182,6 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		if (bm->totvertsel) {
 			BM_ITER_MESH (eve, &iter, bm, BM_VERTS_OF_MESH) {
 				if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-					evedef = eve;
 					tot++;
 					add_v3_v3(&median[LOC_X], eve->co);
 
@@ -224,33 +218,6 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 		}
 		else {
 			totedgedata = bm->totedgesel;
-		}
-
-		/* check for defgroups */
-		if (evedef)
-			dvert = CustomData_bmesh_get(&bm->vdata, evedef->head.data, CD_MDEFORMVERT);
-		if (tot == 1 && dvert && dvert->totweight) {
-			bDeformGroup *dg;
-			int i, max = 1, init = 1;
-			char str[320];
-
-			for (i = 0; i < dvert->totweight; i++) {
-				dg = BLI_findlink(&ob->defbase, dvert->dw[i].def_nr);
-				if (dg) {
-					max += BLI_snprintf(str, sizeof(str), "%s %%x%d|", dg->name, dvert->dw[i].def_nr);
-					if (max < sizeof(str)) strcat(defstr, str);
-				}
-
-				if (tfp->curdef == dvert->dw[i].def_nr) {
-					init = 0;
-					tfp->defweightp = &dvert->dw[i].weight;
-				}
-			}
-
-			if (init) { /* needs new initialized */
-				tfp->curdef = dvert->dw[0].def_nr;
-				tfp->defweightp = &dvert->dw[0].weight;
-			}
 		}
 
 		has_meshdata = (totedgedata || totskinradius);
@@ -715,7 +682,7 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 					}
 				}
 				BKE_nurb_test2D(nu);
-				BKE_nurb_handles_test(nu); /* test for bezier too */
+				BKE_nurb_handles_test(nu, true); /* test for bezier too */
 
 				nu = nu->next;
 			}
@@ -770,226 +737,37 @@ static void v3d_editvertex_buts(uiLayout *layout, View3D *v3d, Object *ob, float
 }
 #undef NBR_TRANSFORM_PROPERTIES
 
-
-#define B_VGRP_PNL_COPY 1
-#define B_VGRP_PNL_NORMALIZE 2
-#define B_VGRP_PNL_EDIT_SINGLE 8 /* or greater */
-#define B_VGRP_PNL_COPY_SINGLE 16384 /* or greater */
-
-static void act_vert_def(Object *ob, BMVert **r_eve, MDeformVert **r_dvert)
-{
-	if (ob && ob->mode & OB_MODE_EDIT && ob->type == OB_MESH && ob->defbase.first) {
-		Mesh *me = ob->data;
-		BMEditMesh *em = me->edit_btmesh;
-		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
-
-		if (cd_dvert_offset != -1) {
-			BMEditSelection *ese = (BMEditSelection *)em->bm->selected.last;
-
-			if (ese && ese->htype == BM_VERT) {
-				BMVert *eve = (BMVert *)ese->ele;
-				if (r_eve) *r_eve = eve;
-				*r_dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
-				return;
-			}
-		}
-	}
-
-	if (r_eve) *r_eve = NULL;
-	*r_dvert = NULL;
-}
-
-static void editvert_mirror_update(Object *ob, BMVert *eve, int def_nr, int index,
-                                   const int cd_dvert_offset)
-{
-	Mesh *me = ob->data;
-	BMEditMesh *em = me->edit_btmesh;
-	BMVert *eve_mirr;
-
-	eve_mirr = editbmesh_get_x_mirror_vert(ob, em, eve, eve->co, index);
-
-	if (eve_mirr && eve_mirr != eve) {
-		MDeformVert *dvert_src = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
-		MDeformVert *dvert_dst = BM_ELEM_CD_GET_VOID_P(eve_mirr, cd_dvert_offset);
-		if (dvert_dst) {
-			if (def_nr == -1) {
-				/* all vgroups, add groups where neded  */
-				int flip_map_len;
-				int *flip_map = defgroup_flip_map(ob, &flip_map_len, true);
-				defvert_sync_mapped(dvert_dst, dvert_src, flip_map, flip_map_len, true);
-				MEM_freeN(flip_map);
-			}
-			else {
-				/* single vgroup */
-				MDeformWeight *dw = defvert_verify_index(dvert_dst, defgroup_flip_index(ob, def_nr, 1));
-				if (dw) {
-					dw->weight = defvert_find_weight(dvert_src, def_nr);
-				}
-			}
-		}
-	}
-}
-
-static void vgroup_adjust_active(Object *ob, int def_nr)
-{
-	Mesh *me = ob->data;
-	BMEditMesh *em = me->edit_btmesh;
-	const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
-	BMVert *eve_act;
-	MDeformVert *dvert_act;
-
-	act_vert_def(ob, &eve_act, &dvert_act);
-
-	if (dvert_act) {
-		if (me->editflag & ME_EDIT_MIRROR_X)
-			editvert_mirror_update(ob, eve_act, def_nr, -1, cd_dvert_offset);
-	}
-}
-
-static void vgroup_copy_active_to_sel(Object *ob)
-{
-	BMVert *eve_act;
-	MDeformVert *dvert_act;
-
-	act_vert_def(ob, &eve_act, &dvert_act);
-
-	if (dvert_act == NULL) {
-		return;
-	}
-	else {
-		Mesh *me = ob->data;
-		BMEditMesh *em = me->edit_btmesh;
-		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
-
-		BMIter iter;
-		BMVert *eve;
-		MDeformVert *dvert;
-		int index = 0;
-
-		BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
-			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
-				dvert = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
-				if (dvert) {
-					defvert_copy(dvert, dvert_act);
-
-					if (me->editflag & ME_EDIT_MIRROR_X)
-						editvert_mirror_update(ob, eve, -1, index, cd_dvert_offset);
-
-				}
-			}
-
-			index++;
-		}
-	}
-}
-
-static void vgroup_copy_active_to_sel_single(Object *ob, const int def_nr)
-{
-	BMVert *eve_act;
-	MDeformVert *dv_act;
-
-	act_vert_def(ob, &eve_act, &dv_act);
-
-	if (dv_act == NULL) {
-		return;
-	}
-	else {
-		Mesh *me = ob->data;
-		BMEditMesh *em = me->edit_btmesh;
-		const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
-		BMIter iter;
-		BMVert *eve;
-		MDeformVert *dv;
-		MDeformWeight *dw;
-		float weight_act;
-		int index = 0;
-
-		dw = defvert_find_index(dv_act, def_nr);
-
-		if (dw == NULL)
-			return;
-
-		weight_act = dw->weight;
-
-		eve = BM_iter_new(&iter, em->bm, BM_VERTS_OF_MESH, NULL);
-		for (index = 0; eve; eve = BM_iter_step(&iter), index++) {
-			if (BM_elem_flag_test(eve, BM_ELEM_SELECT) && eve != eve_act) {
-				dv = BM_ELEM_CD_GET_VOID_P(eve, cd_dvert_offset);
-				dw = defvert_find_index(dv, def_nr);
-				if (dw) {
-					dw->weight = weight_act;
-
-					if (me->editflag & ME_EDIT_MIRROR_X) {
-						editvert_mirror_update(ob, eve, -1, index, cd_dvert_offset);
-					}
-				}
-			}
-		}
-
-		if (me->editflag & ME_EDIT_MIRROR_X) {
-			editvert_mirror_update(ob, eve_act, -1, -1, cd_dvert_offset);
-		}
-	}
-}
-
-static void vgroup_normalize_active(Object *ob)
-{
-	Mesh *me = ob->data;
-	BMEditMesh *em = me->edit_btmesh;
-	const int cd_dvert_offset = CustomData_get_offset(&em->bm->vdata, CD_MDEFORMVERT);
-
-	BMVert *eve_act;
-	MDeformVert *dvert_act;
-
-	act_vert_def(ob, &eve_act, &dvert_act);
-
-	if (dvert_act == NULL)
-		return;
-
-	defvert_normalize(dvert_act);
-
-	if (me->editflag & ME_EDIT_MIRROR_X)
-		editvert_mirror_update(ob, eve_act, -1, -1, cd_dvert_offset);
-}
+#define B_VGRP_PNL_EDIT_SINGLE 8       /* or greater */
 
 static void do_view3d_vgroup_buttons(bContext *C, void *UNUSED(arg), int event)
 {
-	Scene *scene = CTX_data_scene(C);
-	Object *ob = OBACT;
-
-	/* XXX TODO Use operators? */
-	if (event == B_VGRP_PNL_NORMALIZE) {
-		vgroup_normalize_active(ob);
+	if (event < B_VGRP_PNL_EDIT_SINGLE) {
+		/* not for me */
+		return;
 	}
-	else if (event == B_VGRP_PNL_COPY) {
-		vgroup_copy_active_to_sel(ob);
+	else {
+		Scene *scene = CTX_data_scene(C);
+		Object *ob = scene->basact->object;
+		ED_vgroup_vert_active_mirror(ob, event - B_VGRP_PNL_EDIT_SINGLE);
+		DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
+		WM_event_add_notifier(C, NC_GEOM | ND_DATA, ob->data);
 	}
-	else if (event >= B_VGRP_PNL_COPY_SINGLE) {
-		vgroup_copy_active_to_sel_single(ob, event - B_VGRP_PNL_COPY_SINGLE);
-	}
-	else if (event >= B_VGRP_PNL_EDIT_SINGLE) {
-		vgroup_adjust_active(ob, event - B_VGRP_PNL_EDIT_SINGLE);
-	}
-
-#if 0 /* TODO */
-	if (((Mesh *)ob->data)->editflag & ME_EDIT_MIRROR_X)
-		ED_vgroup_mirror(ob, 1, 1, 0);
-#endif
-
-	/* default for now */
-	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
-	WM_event_add_notifier(C, NC_GEOM | ND_DATA, ob->data);
 }
 
 static int view3d_panel_vgroup_poll(const bContext *C, PanelType *UNUSED(pt))
 {
 	Scene *scene = CTX_data_scene(C);
 	Object *ob = OBACT;
-	MDeformVert *dvert_act;
+	if (ob && (BKE_object_is_in_editmode_vgroup(ob) ||
+	           BKE_object_is_in_wpaint_select_vert(ob)))
+	{
+		MDeformVert *dvert_act = ED_mesh_active_dvert_get_only(ob);
+		if (dvert_act) {
+			return (dvert_act->totweight != 0);
+		}
+	}
 
-	act_vert_def(ob, NULL, &dvert_act);
-
-	return dvert_act ? dvert_act->totweight : 0;
+	return false;
 }
 
 
@@ -997,52 +775,126 @@ static void view3d_panel_vgroup(const bContext *C, Panel *pa)
 {
 	uiBlock *block = uiLayoutAbsoluteBlock(pa->layout);
 	Scene *scene = CTX_data_scene(C);
-	Object *ob = OBACT;
+	Object *ob = scene->basact->object;
 
 	MDeformVert *dv;
 
-	act_vert_def(ob, NULL, &dv);
+	dv = ED_mesh_active_dvert_get_only(ob);
 
 	if (dv && dv->totweight) {
-		uiLayout *col;
+		ToolSettings *ts = scene->toolsettings;
+
+		wmOperatorType *ot_weight_set_active = WM_operatortype_find("OBJECT_OT_vertex_weight_set_active", true);
+		wmOperatorType *ot_weight_paste = WM_operatortype_find("OBJECT_OT_vertex_weight_paste", true);
+		wmOperatorType *ot_weight_delete = WM_operatortype_find("OBJECT_OT_vertex_weight_delete", true);
+
+		wmOperatorType *ot;
+		PointerRNA op_ptr, tools_ptr;
+		PointerRNA *but_ptr;
+
+		uiLayout *col, *bcol;
+		uiLayout *row;
+		uiBut *but;
 		bDeformGroup *dg;
 		unsigned int i;
 		int subset_count, vgroup_tot;
-		bool *vgroup_validmap;
-		eVGroupSelect subset_type = WT_VGROUP_ALL;
+		const bool *vgroup_validmap;
+		eVGroupSelect subset_type = ts->vgroupsubset;
 		int yco = 0;
+		int lock_count = 0;
 
 		uiBlockSetHandleFunc(block, do_view3d_vgroup_buttons, NULL);
 
-		col = uiLayoutColumn(pa->layout, FALSE);
-		block = uiLayoutAbsoluteBlock(col);
+		bcol = uiLayoutColumn(pa->layout, true);
+		row = uiLayoutRow(bcol, true); /* The filter button row */
+		
+		RNA_pointer_create(NULL, &RNA_ToolSettings, ts, &tools_ptr);
+		uiItemR(row, &tools_ptr, "vertex_group_subset", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
 
-		uiBlockBeginAlign(block);
+		col = uiLayoutColumn(bcol, true);
 
 		vgroup_validmap = ED_vgroup_subset_from_select_type(ob, subset_type, &vgroup_tot, &subset_count);
 		for (i = 0, dg = ob->defbase.first; dg; i++, dg = dg->next) {
+			bool locked = dg->flag & DG_LOCK_WEIGHT;
 			if (vgroup_validmap[i]) {
 				MDeformWeight *dw = defvert_find_index(dv, i);
 				if (dw) {
-					uiDefButF(block, NUM, B_VGRP_PNL_EDIT_SINGLE + i, dg->name, 0, yco, 180, 20,
-								&dw->weight, 0.0, 1.0, 1, 3, "");
-					uiDefBut(block, BUT, B_VGRP_PNL_COPY_SINGLE + i, "C", 180, yco, 20, 20,
-								NULL, 0, 0, 0, 0, TIP_("Copy this group's weight to other selected verts"));
-					yco -= 20;
+					int x, xco = 0;
+					int icon;
+					uiLayout *split = uiLayoutSplit(col, 0.45, true);
+					row = uiLayoutRow(split, true);
+
+					/* The Weight Group Name */
+
+					ot = ot_weight_set_active;
+					but = uiDefButO_ptr(block, BUT, ot, WM_OP_EXEC_DEFAULT, dg->name,
+					                    xco, yco, (x = UI_UNIT_X * 5), UI_UNIT_Y, "");
+					but_ptr = uiButGetOperatorPtrRNA(but);
+					RNA_int_set(but_ptr, "weight_group", i);
+					uiButSetFlag(but, UI_TEXT_RIGHT);
+					if (ob->actdef != i + 1) {
+						uiButSetFlag(but, UI_BUT_INACTIVE);
+					}
+					xco += x;
+					
+					row = uiLayoutRow(split, true);
+					uiLayoutSetEnabled(row, !locked);
+
+					/* The weight group value */
+					/* To be reworked still */
+					but = uiDefButF(block, NUM, B_VGRP_PNL_EDIT_SINGLE + i, "",
+					                xco, yco, (x = UI_UNIT_X * 4), UI_UNIT_Y,
+					                &dw->weight, 0.0, 1.0, 1, 3, "");
+					uiButSetFlag(but, UI_TEXT_LEFT);
+					if (locked) {
+						lock_count++;
+					}
+					xco += x;
+
+					/* The weight group paste function */
+
+					ot = ot_weight_paste;
+					WM_operator_properties_create_ptr(&op_ptr, ot);
+					RNA_int_set(&op_ptr, "weight_group", i);
+					icon = (locked) ? ICON_BLANK1:ICON_PASTEDOWN;
+					uiItemFullO_ptr(row, ot, "", icon, op_ptr.data, WM_OP_INVOKE_DEFAULT, 0);
+
+					/* The weight entry delete function */
+
+					ot = ot_weight_delete;
+					WM_operator_properties_create_ptr(&op_ptr, ot);
+					RNA_int_set(&op_ptr, "weight_group", i);
+					icon = (locked) ? ICON_LOCKED:ICON_X;
+					uiItemFullO_ptr(row, ot, "", icon, op_ptr.data, WM_OP_INVOKE_DEFAULT, 0);
+
+					yco -= UI_UNIT_Y;
+					
 				}
 			}
 		}
-		MEM_freeN(vgroup_validmap);
+		MEM_freeN((void *)vgroup_validmap);
 
 		yco -= 2;
 
-		uiBlockEndAlign(block);
-		uiBlockBeginAlign(block);
-		uiDefBut(block, BUT, B_VGRP_PNL_NORMALIZE, IFACE_("Normalize"), 0, yco, 100, 20,
-		         NULL, 0, 0, 0, 0, TIP_("Normalize active vertex weights"));
-		uiDefBut(block, BUT, B_VGRP_PNL_COPY, IFACE_("Copy"), 100, yco, 100, 20,
-		         NULL, 0, 0, 0, 0, TIP_("Copy active vertex to other selected verts"));
-		uiBlockEndAlign(block);
+		col = uiLayoutColumn(pa->layout, true);
+		row = uiLayoutRow(col, true);
+
+		ot = WM_operatortype_find("OBJECT_OT_vertex_weight_normalize_active_vertex", 1);
+		but = uiDefButO_ptr(block, BUT, ot, WM_OP_EXEC_DEFAULT, "Normalize",
+		                    0, yco, UI_UNIT_X * 5, UI_UNIT_Y,
+		                    TIP_("Normalize weights of active vertex (if affected groups are unlocked)"));
+		if (lock_count) {
+			uiButSetFlag(but, UI_BUT_DISABLED);
+		}
+
+		ot = WM_operatortype_find("OBJECT_OT_vertex_weight_copy", 1);
+		but = uiDefButO_ptr(block, BUT, ot, WM_OP_EXEC_DEFAULT, "Copy",
+		                    UI_UNIT_X * 5, yco, UI_UNIT_X * 5, UI_UNIT_Y,
+		                    TIP_("Copy active vertex to other selected vertices (if affected groups are unlocked)"));
+		if (lock_count) {
+			uiButSetFlag(but, UI_BUT_DISABLED);
+		}
+
 	}
 }
 
@@ -1247,40 +1099,45 @@ static void do_view3d_region_buttons(bContext *C, void *UNUSED(index), int event
 	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
 }
 
-static void view3d_panel_object(const bContext *C, Panel *pa)
+static int view3d_panel_transform_poll(const bContext *C, PanelType *UNUSED(pt))
+{
+	Scene *scene = CTX_data_scene(C);
+	return (scene->basact != NULL);
+}
+
+static void view3d_panel_transform(const bContext *C, Panel *pa)
 {
 	uiBlock *block;
 	Scene *scene = CTX_data_scene(C);
 	Object *obedit = CTX_data_edit_object(C);
-	View3D *v3d = CTX_wm_view3d(C);
-	Object *ob = OBACT;
-	PointerRNA obptr;
+	Object *ob = scene->basact->object;
 	uiLayout *col;
-	float lim;
-
-	if (ob == NULL)
-		return;
-
-	lim = 10000.0f * max_ff(1.0f, v3d->grid);
 
 	block = uiLayoutGetBlock(pa->layout);
 	uiBlockSetHandleFunc(block, do_view3d_region_buttons, NULL);
 
 	col = uiLayoutColumn(pa->layout, FALSE);
-	RNA_id_pointer_create(&ob->id, &obptr);
 
 	if (ob == obedit) {
-		if (ob->type == OB_ARMATURE)
+		if (ob->type == OB_ARMATURE) {
 			v3d_editarmature_buts(col, ob);
-		else if (ob->type == OB_MBALL)
+		}
+		else if (ob->type == OB_MBALL) {
 			v3d_editmetaball_buts(col, ob);
-		else
+		}
+		else {
+			View3D *v3d = CTX_wm_view3d(C);
+			const float lim = 10000.0f * max_ff(1.0f, v3d->grid);
 			v3d_editvertex_buts(col, v3d, ob, lim);
+		}
 	}
 	else if (ob->mode & OB_MODE_POSE) {
 		v3d_posearmature_buts(col, ob);
 	}
 	else {
+		PointerRNA obptr;
+
+		RNA_id_pointer_create(&ob->id, &obptr);
 		v3d_transform_butsR(col, &obptr);
 	}
 }
@@ -1290,10 +1147,11 @@ void view3d_buttons_register(ARegionType *art)
 	PanelType *pt;
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel object");
-	strcpy(pt->idname, "VIEW3D_PT_object");
+	strcpy(pt->idname, "VIEW3D_PT_transform");
 	strcpy(pt->label, N_("Transform"));  /* XXX C panels not  available through RNA (bpy.types)! */
 	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
-	pt->draw = view3d_panel_object;
+	pt->draw = view3d_panel_transform;
+	pt->poll = view3d_panel_transform_poll;
 	BLI_addtail(&art->paneltypes, pt);
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype view3d panel gpencil");
@@ -1313,7 +1171,7 @@ void view3d_buttons_register(ARegionType *art)
 	BLI_addtail(&art->paneltypes, pt);
 }
 
-static int view3d_properties(bContext *C, wmOperator *UNUSED(op))
+static int view3d_properties_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ScrArea *sa = CTX_wm_area(C);
 	ARegion *ar = view3d_has_buttons_region(sa);
@@ -1330,7 +1188,7 @@ void VIEW3D_OT_properties(wmOperatorType *ot)
 	ot->description = "Toggles the properties panel display";
 	ot->idname = "VIEW3D_OT_properties";
 
-	ot->exec = view3d_properties;
+	ot->exec = view3d_properties_toggle_exec;
 	ot->poll = ED_operator_view3d_active;
 
 	/* flags */

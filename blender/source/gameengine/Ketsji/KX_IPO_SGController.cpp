@@ -33,6 +33,8 @@
 
 #if defined(_WIN64) && !defined(FREE_WINDOWS64)
 typedef unsigned __int64 uint_ptr;
+#elif defined(FREE_WINDOWS64)
+typedef unsigned long long uint_ptr;
 #else
 typedef unsigned long uint_ptr;
 #endif
@@ -132,7 +134,7 @@ bool KX_IpoSGController::Update(double currentTime)
 		SG_Spatial* ob = (SG_Spatial*)m_pObject;
 
 		//initialization on the first frame of the IPO
-		if (! m_ipo_start_initialized && currentTime > 0.0) {
+		if (! m_ipo_start_initialized && currentTime != 0.0) {
 			m_ipo_start_point = ob->GetLocalPosition();
 			m_ipo_start_orient = ob->GetLocalOrientation();
 			m_ipo_start_scale = ob->GetLocalScale();

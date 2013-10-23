@@ -75,7 +75,6 @@ void WriteBufferOperation::executeRegion(rcti *rect, unsigned int tileNumber)
 			for (x = x1; x < x2; x++) {
 				this->m_input->read(&(buffer[offset4]), x, y, data);
 				offset4 += COM_NUMBER_OF_CHANNELS;
-
 			}
 			if (isBreaked()) {
 				breaked = true;
@@ -158,20 +157,35 @@ void WriteBufferOperation::executeOpenCLRegion(OpenCLDevice *device, rcti *rect,
 	this->getMemoryProxy()->getBuffer()->copyContentFrom(outputBuffer);
 
 	// STEP 4
-	while (clMemToCleanUp->size() > 0) {
+	while (!clMemToCleanUp->empty()) {
 		cl_mem mem = clMemToCleanUp->front();
 		error = clReleaseMemObject(mem);
 		if (error != CL_SUCCESS) { printf("CLERROR[%d]: %s\n", error, clewErrorString(error));  }
 		clMemToCleanUp->pop_front();
 	}
 
-	while (clKernelsToCleanUp->size() > 0) {
+	while (!clKernelsToCleanUp->empty()) {
 		cl_kernel kernel = clKernelsToCleanUp->front();
 		error = clReleaseKernel(kernel);
 		if (error != CL_SUCCESS) { printf("CLERROR[%d]: %s\n", error, clewErrorString(error));  }
 		clKernelsToCleanUp->pop_front();
 	}
 	delete clKernelsToCleanUp;
+}
+
+void WriteBufferOperation::determineResolution(unsigned int resolution[2], unsigned int preferredResolution[2])
+{
+	NodeOperation::determineResolution(resolution, preferredResolution);
+	/* make sure there is at least one pixel stored in case the input is a single value */
+	m_single_value = false;
+	if (resolution[0] == 0) {
+		resolution[0] = 1;
+		m_single_value = true;
+	}
+	if (resolution[1] == 0) {
+		resolution[1] = 1;
+		m_single_value = true;
+	}
 }
 
 void WriteBufferOperation::readResolutionFromInputSocket()

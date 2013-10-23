@@ -29,6 +29,7 @@ add_definitions(-DWITH_DNA_GHASH)
 
 blender_include_dirs(
 	../../../../intern/guardedalloc
+	../../../../intern/atomic
 	../../blenlib
 	..
 )
@@ -39,6 +40,8 @@ blender_include_dirs(
 set(SRC
 	makesdna.c
 	../../../../intern/guardedalloc/intern/mallocn.c
+	../../../../intern/guardedalloc/intern/mallocn_guarded_impl.c
+	../../../../intern/guardedalloc/intern/mallocn_lockfree_impl.c
 )
 
 if(WIN32 AND NOT UNIX)
@@ -48,11 +51,6 @@ if(WIN32 AND NOT UNIX)
 endif()
 
 # SRC_DNA_INC is defined in the parent dir
-
-# for mallocn.c
-if (WITH_GUARDEDALLOC)
-	add_definitions(-DWITH_GUARDEDALLOC)
-endif()
 
 add_executable(makesdna ${SRC} ${SRC_DNA_INC})
 
@@ -79,6 +77,8 @@ set(SRC
 	dna.c
 	${SRC_DNA_INC}
 )
+
+set_source_files_properties(${CMAKE_CURRENT_BINARY_DIR}/dna.c PROPERTIES GENERATED TRUE)
 
 blender_add_lib(bf_dna "${SRC}" "${INC}" "${INC_SYS}")
 

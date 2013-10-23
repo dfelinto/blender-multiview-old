@@ -354,7 +354,7 @@ static void alphasort_version_246(FileData *fd, Library *lib, Mesh *me)
 				ma = NULL;
 
 			for (b = 0; ma && b < MAX_MTEX; b++)
-				if (ma->mtex && ma->mtex[b] && ma->mtex[b]->mapto & MAP_ALPHA)
+				if (ma->mtex[b] && ma->mtex[b]->mapto & MAP_ALPHA)
 					texalpha = 1;
 		}
 		else {
@@ -518,11 +518,8 @@ static void do_version_free_effects_245(ListBase *lb)
 {
 	Effect *eff;
 
-	eff = lb->first;
-	while (eff) {
-		BLI_remlink(lb, eff);
+	while ((eff = BLI_pophead(lb))) {
 		do_version_free_effect_245(eff);
-		eff = lb->first;
 	}
 }
 
@@ -1997,15 +1994,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 		while (sce) {
 			if (sce->toolsettings == NULL) {
 				sce->toolsettings = MEM_callocN(sizeof(struct ToolSettings), "Tool Settings Struct");
-				sce->toolsettings->cornertype =0;
-				sce->toolsettings->degr = 90;
-				sce->toolsettings->step = 9;
-				sce->toolsettings->turn = 1;
-				sce->toolsettings->extr_offs = 1;
 				sce->toolsettings->doublimit = 0.001f;
-				sce->toolsettings->segments = 32;
-				sce->toolsettings->rings = 32;
-				sce->toolsettings->vertices = 32;
 			}
 			sce = sce->id.next;
 		}
@@ -2092,7 +2081,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 
 		for (me = main->mesh.first; me; me = me->id.next) {
 			if (!me->medge) {
-				BKE_mesh_make_edges(me, 1);	/* 1 = use mface->edcode */
+				BKE_mesh_calc_edges_legacy(me, true);  /* true = use mface->edcode */
 			}
 			else {
 				BKE_mesh_strip_loose_faces(me);
@@ -2152,9 +2141,6 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 		}
 
 		for (; sce; sce = sce->id.next) {
-			/* make 'innervert' the default subdivide type, for backwards compat */
-			sce->toolsettings->cornertype = 1;
-
 			if (sce->r.scemode & R_PASSEPARTOUT) {
 				set_passepartout = 1;
 				sce->r.scemode &= ~R_PASSEPARTOUT;
@@ -2241,11 +2227,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 				ntree_version_241(sce->nodetree);
 
 			/* uv calculation options moved to toolsettings */
-			if (sce->toolsettings->uvcalc_radius == 0.0f) {
-				sce->toolsettings->uvcalc_radius = 1.0f;
-				sce->toolsettings->uvcalc_cubesize = 1.0f;
-				sce->toolsettings->uvcalc_mapdir = 1;
-				sce->toolsettings->uvcalc_mapalign = 1;
+			if (sce->toolsettings->unwrapper == 0) {
 				sce->toolsettings->uvcalc_flag = UVCALC_FILLHOLES;
 				sce->toolsettings->unwrapper = 1;
 			}
@@ -2346,8 +2328,6 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 		for (sce = main->scene.first; sce; sce = sce->id.next) {
 			if (sce->toolsettings->select_thresh == 0.0f)
 				sce->toolsettings->select_thresh = 0.01f;
-			if (sce->toolsettings->clean_thresh == 0.0f)
-				sce->toolsettings->clean_thresh = 0.1f;
 
 			if (sce->r.threads == 0) {
 				if (sce->r.mode & R_THREADS)
@@ -2555,14 +2535,6 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 				sce->r.bake_filter = 16;
 				sce->r.bake_osa = 5;
 				sce->r.bake_flag = R_BAKE_CLEAR;
-			}
-		}
-
-		if (main->subversionfile < 5) {
-			for (sce = main->scene.first; sce; sce = sce->id.next) {
-				/* improved triangle to quad conversion settings */
-				if (sce->toolsettings->jointrilimit == 0.0f)
-					sce->toolsettings->jointrilimit = 0.8f;
 			}
 		}
 	}

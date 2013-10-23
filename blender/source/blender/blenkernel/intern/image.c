@@ -195,9 +195,7 @@ static void image_free_buffers(Image *ima)
 {
 	ImBuf *ibuf;
 
-	while ((ibuf = ima->ibufs.first)) {
-		BLI_remlink(&ima->ibufs, ibuf);
-
+	while ((ibuf = BLI_pophead(&ima->ibufs))) {
 		if (ibuf->userdata) {
 			MEM_freeN(ibuf->userdata);
 			ibuf->userdata = NULL;
@@ -524,8 +522,7 @@ void BKE_image_merge(Image *dest, Image *source)
 	/* sanity check */
 	if (dest && source && dest != source) {
 
-		while ((ibuf = source->ibufs.first)) {
-			BLI_remlink(&source->ibufs, ibuf);
+		while ((ibuf = BLI_pophead(&source->ibufs))) {
 			image_assign_ibuf(dest, ibuf, IMA_INDEX_PASS(ibuf->index), IMA_INDEX_FRAME(ibuf->index));
 		}
 
@@ -597,7 +594,8 @@ Image *BKE_image_load(Main *bmain, const char *filepath)
 
 	/* exists? */
 	file = BLI_open(str, O_BINARY | O_RDONLY, 0);
-	if (file == -1) return NULL;
+	if (file < 0)
+		return NULL;
 	close(file);
 
 	/* create a short library name */
@@ -633,7 +631,7 @@ Image *BKE_image_load_exists(const char *filepath)
 	for (ima = G.main->image.first; ima; ima = ima->id.next) {
 		if (ima->source != IMA_SRC_VIEWER && ima->source != IMA_SRC_GENERATED) {
 			BLI_strncpy(strtest, ima->name, sizeof(ima->name));
-			BLI_path_abs(strtest, G.main->name);
+			BLI_path_abs(strtest, ID_BLEND_PATH(G.main, &ima->id));
 
 			if (BLI_path_cmp(strtest, str) == 0) {
 				if (ima->anim == NULL || ima->id.us == 0) {
@@ -652,7 +650,7 @@ Image *BKE_image_load_exists(const char *filepath)
 }
 
 static ImBuf *add_ibuf_size(unsigned int width, unsigned int height, const char *name, int depth, int floatbuf, short gen_type,
-                            float color[4], ColorManagedColorspaceSettings *colorspace_settings)
+                            const float color[4], ColorManagedColorspaceSettings *colorspace_settings)
 {
 	ImBuf *ibuf;
 	unsigned char *rect = NULL;
@@ -695,6 +693,7 @@ static ImBuf *add_ibuf_size(unsigned int width, unsigned int height, const char 
 			break;
 		default:
 			BKE_image_buf_fill_color(rect, rect_float, width, height, color);
+			break;
 	}
 
 	if (rect_float) {
@@ -708,7 +707,7 @@ static ImBuf *add_ibuf_size(unsigned int width, unsigned int height, const char 
 }
 
 /* adds new image block, creates ImBuf and initializes color */
-Image *BKE_image_add_generated(Main *bmain, unsigned int width, unsigned int height, const char *name, int depth, int floatbuf, short gen_type, float color[4])
+Image *BKE_image_add_generated(Main *bmain, unsigned int width, unsigned int height, const char *name, int depth, int floatbuf, short gen_type, const float color[4])
 {
 	/* on save, type is changed to FILE in editsima.c */
 	Image *ima = image_alloc(bmain, name, IMA_SRC_GENERATED, IMA_TYPE_UV_TEST);
@@ -721,6 +720,7 @@ Image *BKE_image_add_generated(Main *bmain, unsigned int width, unsigned int hei
 		ima->gen_y = height;
 		ima->gen_type = gen_type;
 		ima->gen_flag |= (floatbuf ? IMA_GEN_FLOAT : 0);
+		ima->gen_depth = depth;
 
 		ibuf = add_ibuf_size(width, height, ima->name, depth, floatbuf, gen_type, color, &ima->colorspace_settings);
 		image_assign_ibuf(ima, ibuf, IMA_NO_INDEX, 0);
@@ -1120,6 +1120,7 @@ char BKE_imtype_valid_channels(const char imtype)
 		case R_IMF_IMTYPE_QUICKTIME:
 		case R_IMF_IMTYPE_DPX:
 			chan_flag |= IMA_CHAN_FLAG_ALPHA;
+			break;
 	}
 
 	/* bw */
@@ -1131,6 +1132,7 @@ char BKE_imtype_valid_channels(const char imtype)
 		case R_IMF_IMTYPE_TIFF:
 		case R_IMF_IMTYPE_IRIS:
 			chan_flag |= IMA_CHAN_FLAG_BW;
+			break;
 	}
 
 	return chan_flag;
@@ -1248,6 +1250,12 @@ static int do_add_image_extension(char *string, const char imtype, const ImageFo
 		}
 	}
 #endif
+#ifdef WITH_OPENIMAGEIO
+	else if (imtype == R_IMF_IMTYPE_PSD) {
+		if (!BLI_testextensie(string, ".psd"))
+			extension = ".psd";
+	}
+#endif
 #ifdef WITH_OPENEXR
 	else if (ELEM(imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
 		if (!BLI_testextensie(string, ".exr"))
@@ -1324,7 +1332,7 @@ int BKE_add_image_extension_from_type(char *string, const char imtype)
 void BKE_imformat_defaults(ImageFormatData *im_format)
 {
 	memset(im_format, 0, sizeof(*im_format));
-	im_format->planes = R_IMF_PLANES_RGB;
+	im_format->planes = R_IMF_PLANES_RGBA;
 	im_format->imtype = R_IMF_IMTYPE_PNG;
 	im_format->depth = R_IMF_CHAN_DEPTH_8;
 	im_format->quality = 90;
@@ -2147,9 +2155,7 @@ void BKE_image_walk_all_users(const Main *mainp, void *customdata,
 	/* texture users */
 	for (tex = mainp->tex.first; tex; tex = tex->id.next) {
 		if (tex->type == TEX_IMAGE && tex->ima) {
-			if (ELEM(tex->ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
-				callback(tex->ima, &tex->iuser, customdata);
-			}
+			callback(tex->ima, &tex->iuser, customdata);
 		}
 	}
 
@@ -2191,7 +2197,7 @@ static void image_tag_frame_recalc(Image *ima, ImageUser *iuser, void *customdat
 {
 	Image *changed_image = customdata;
 
-	if (ima == changed_image) {
+	if (ima == changed_image && ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
 		iuser->flag |= IMA_NEED_FRAME_RECALC;
 	}
 }
@@ -2718,8 +2724,8 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	re = RE_GetRender(iuser->scene->id.name);
 
 	channels = 4;
-	layer = (iuser) ? iuser->layer : 0;
-	pass = (iuser) ? iuser->pass : 0;
+	layer = iuser->layer;
+	pass = iuser->pass;
 
 	if (from_render) {
 		RE_AcquireResultImage(re, &rres);
@@ -2992,7 +2998,8 @@ static ImBuf *image_acquire_ibuf(Image *ima, ImageUser *iuser, void **lock_r)
 			/* UV testgrid or black or solid etc */
 			if (ima->gen_x == 0) ima->gen_x = 1024;
 			if (ima->gen_y == 0) ima->gen_y = 1024;
-			ibuf = add_ibuf_size(ima->gen_x, ima->gen_y, ima->name, 24, (ima->gen_flag & IMA_GEN_FLOAT) != 0, ima->gen_type,
+			if (ima->gen_depth == 0) ima->gen_depth = 24;
+			ibuf = add_ibuf_size(ima->gen_x, ima->gen_y, ima->name, ima->gen_depth, (ima->gen_flag & IMA_GEN_FLOAT) != 0, ima->gen_type,
 			                     color, &ima->colorspace_settings);
 			image_assign_ibuf(ima, ibuf, IMA_NO_INDEX, 0);
 			ima->ok = IMA_OK_LOADED;
