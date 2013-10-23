@@ -378,12 +378,15 @@ void VIEW3D_OT_smoothview(wmOperatorType *ot)
 	
 	/* identifiers */
 	ot->name = "Smooth View";
+	ot->description = "";
 	ot->idname = "VIEW3D_OT_smoothview";
-	ot->description = "The time to animate the change of view (in milliseconds)";
 	
 	/* api callbacks */
 	ot->invoke = view3d_smoothview_invoke;
 	
+	/* flags */
+	ot->flag = OPTYPE_INTERNAL;
+
 	ot->poll = ED_operator_view3d_active;
 }
 
@@ -1177,7 +1180,7 @@ static bool view3d_localview_init(Main *bmain, Scene *scene, ScrArea *sa, Report
 	return ok;
 }
 
-static void restore_localviewdata(ScrArea *sa, int free)
+static void restore_localviewdata(Main *bmain, ScrArea *sa, int free)
 {
 	ARegion *ar;
 	View3D *v3d = sa->spacedata.first;
@@ -1214,12 +1217,7 @@ static void restore_localviewdata(ScrArea *sa, int free)
 				}
 			}
 
-			if (v3d->drawtype != OB_RENDER) {
-				if (rv3d->render_engine) {
-					RE_engine_free(rv3d->render_engine);
-					rv3d->render_engine = NULL;
-				}
-			}
+			ED_view3d_shade_update(bmain, v3d, sa);
 		}
 	}
 }
@@ -1234,7 +1232,7 @@ static bool view3d_localview_exit(Main *bmain, Scene *scene, ScrArea *sa)
 		
 		locallay = v3d->lay & 0xFF000000;
 		
-		restore_localviewdata(sa, 1); /* 1 = free */
+		restore_localviewdata(bmain, sa, 1); /* 1 = free */
 
 		/* for when in other window the layers have changed */
 		if (v3d->scenelock) v3d->lay = scene->lay;

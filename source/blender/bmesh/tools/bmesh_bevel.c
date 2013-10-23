@@ -1207,8 +1207,12 @@ static void bevel_build_rings(BMesh *bm, BevVert *bv)
 			f = boundvert_rep_face(v);
 			f2 = boundvert_rep_face(v->next);
 			if (!v->any_seam) {
-				for (ring = 1; ring < ns2; ring++)
-					bev_merge_uvs(bm, mesh_vert(vm, i, ring, ns2)->v);
+				for (ring = 1; ring < ns2; ring++) {
+					BMVert *v_uv = mesh_vert(vm, i, ring, ns2)->v;
+					if (v_uv) {
+						bev_merge_uvs(bm, v_uv);
+					}
+				}
 			}
 		} while ((v = v->next) != vm->boundstart);
 		if (!bv->any_seam)
@@ -2371,7 +2375,7 @@ void BM_mesh_bevel(BMesh *bm, const float offset, const float segments,
                    const struct MDeformVert *dvert, const int vertex_group)
 {
 	BMIter iter;
-	BMVert *v;
+	BMVert *v, *v_next;
 	BMEdge *e;
 	BevelParams bp = {NULL};
 
@@ -2414,7 +2418,7 @@ void BM_mesh_bevel(BMesh *bm, const float offset, const float segments,
 			}
 		}
 
-		BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+		BM_ITER_MESH_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_flag_test(v, BM_ELEM_TAG)) {
 				BLI_assert(find_bevvert(&bp, v) != NULL);
 				BM_vert_kill(bm, v);

@@ -206,6 +206,7 @@ option(WITH_MOD_OCEANSIM        "Enable Ocean Modifier" OFF)
 option(WITH_IMAGE_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
 option(WITH_IMAGE_OPENJPEG      "Enable OpenJpeg Support (http://www.openjpeg.org)" ON)
 option(WITH_IMAGE_TIFF          "Enable LibTIFF Support" ON)
+option(WITH_IMAGE_PSD           "Enable Photoshop PSD Support" ON)
 option(WITH_IMAGE_DDS           "Enable DDS Image Support" ON)
 option(WITH_IMAGE_CINEON        "Enable CINEON and DPX Image Support" ON)
 option(WITH_IMAGE_HDR           "Enable HDR Image Support" ON)
@@ -277,6 +278,10 @@ mark_as_advanced(LLVM_STATIC)
 # disable for now, but plan to support on all platforms eventually
 option(WITH_MEM_JEMALLOC   "Enable malloc replacement (http://www.canonware.com/jemalloc)" OFF)
 mark_as_advanced(WITH_MEM_JEMALLOC)
+
+# currently only used for BLI_mempool
+option(WITH_MEM_VALGRIND "Enable extended valgrind support for better reporting" OFF)
+mark_as_advanced(WITH_MEM_VALGRIND)
 
 # Debug
 option(WITH_CXX_GUARDEDALLOC "Enable GuardedAlloc for C++ memory allocation tracking (only enable for development)" OFF)
@@ -368,7 +373,7 @@ if(APPLE)
 	endif()
 	
 	if(NOT CMAKE_OSX_DEPLOYMENT_TARGET)
-			set(CMAKE_OSX_DEPLOYMENT_TARGET "10.5" CACHE STRING "" FORCE) # 10.5 is our min. target, if you use higher sdk, weak linking happens
+		set(CMAKE_OSX_DEPLOYMENT_TARGET "10.5" CACHE STRING "" FORCE) # 10.5 is our min. target, if you use higher sdk, weak linking happens
 	endif()
 	
 	if(NOT ${CMAKE_GENERATOR} MATCHES "Xcode")
@@ -435,6 +440,11 @@ endif()
 
 if(NOT WITH_PYTHON)
 	set(WITH_CYCLES OFF)
+endif()
+
+# auto enable openimageio for photoshop psd
+if(WITH_IMAGE_PSD)
+	set(WITH_OPENIMAGEIO ON)
 endif()
 
 # enable boost for cycles, booleans, audaspace or i18n
@@ -2281,6 +2291,7 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_X11_XF86VMODE)
 	info_cfg_option(WITH_X11_XINPUT)
 	info_cfg_option(WITH_MEM_JEMALLOC)
+	info_cfg_option(WITH_MEM_VALGRIND)
 	info_cfg_option(WITH_SYSTEM_GLEW)
 	info_cfg_option(WITH_SYSTEM_OPENJPEG)
 
@@ -2292,6 +2303,7 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_IMAGE_OPENJPEG)
 	info_cfg_option(WITH_IMAGE_REDCODE)
 	info_cfg_option(WITH_IMAGE_TIFF)
+	info_cfg_option(WITH_IMAGE_PSD)
 
 	info_cfg_text("Audio:")
 	info_cfg_option(WITH_OPENAL)

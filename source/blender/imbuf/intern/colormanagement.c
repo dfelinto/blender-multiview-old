@@ -119,6 +119,11 @@ static struct global_glsl_state {
 	char input[MAX_COLORSPACE_NAME];
 	float exposure, gamma;
 
+	CurveMapping *curve_mapping, *orig_curve_mapping;
+	bool use_curve_mapping;
+	int curve_mapping_timestamp;
+	OCIO_CurveMappingSettings curve_mapping_settings;
+
 	/* Container for GLSL state needed for OCIO module. */
 	struct OCIO_GLSLDrawState *ocio_glsl_state;
 	struct OCIO_GLSLDrawState *transform_ocio_glsl_state;
@@ -196,6 +201,7 @@ typedef struct ColormanageCacheViewSettings {
 	int view;
 	float exposure;
 	float gamma;
+	float dither;
 	CurveMapping *curve_mapping;
 } ColormanageCacheViewSettings;
 
@@ -213,6 +219,7 @@ typedef struct ColormnaageCacheData {
 	int look;        /* Additional artistics transform */
 	float exposure;  /* exposure value cached buffer is calculated with */
 	float gamma;     /* gamma value cached buffer is calculated with */
+	float dither;    /* dither value cached buffer is calculated with */
 	CurveMapping *curve_mapping;  /* curve mapping used for cached buffer */
 	int curve_mapping_timestamp;  /* time stamp of curve mapping used for cached buffer */
 } ColormnaageCacheData;
@@ -291,7 +298,8 @@ static void colormanage_cachedata_set(ImBuf *ibuf, ColormnaageCacheData *data)
 	ibuf->colormanage_cache->data = data;
 }
 
-static void colormanage_view_settings_to_cache(ColormanageCacheViewSettings *cache_view_settings,
+static void colormanage_view_settings_to_cache(ImBuf *ibuf,
+                                               ColormanageCacheViewSettings *cache_view_settings,
                                                const ColorManagedViewSettings *view_settings)
 {
 	int look = IMB_colormanagement_look_get_named_index(view_settings->look);
@@ -301,6 +309,7 @@ static void colormanage_view_settings_to_cache(ColormanageCacheViewSettings *cac
 	cache_view_settings->view = view;
 	cache_view_settings->exposure = view_settings->exposure;
 	cache_view_settings->gamma = view_settings->gamma;
+	cache_view_settings->dither = ibuf->dither;
 	cache_view_settings->flag = view_settings->flag;
 	cache_view_settings->curve_mapping = view_settings->curve_mapping;
 }
@@ -378,6 +387,7 @@ static unsigned char *colormanage_cache_get(ImBuf *ibuf, const ColormanageCacheV
 		if (cache_data->look != view_settings->look ||
 		    cache_data->exposure != view_settings->exposure ||
 		    cache_data->gamma != view_settings->gamma ||
+		    cache_data->dither != view_settings->dither ||
 		    cache_data->flag != view_settings->flag ||
 		    cache_data->curve_mapping != curve_mapping ||
 		    cache_data->curve_mapping_timestamp != curve_mapping_timestamp)
@@ -424,6 +434,7 @@ static void colormanage_cache_put(ImBuf *ibuf, const ColormanageCacheViewSetting
 	cache_data->look = view_settings->look;
 	cache_data->exposure = view_settings->exposure;
 	cache_data->gamma = view_settings->gamma;
+	cache_data->dither = view_settings->dither;
 	cache_data->flag = view_settings->flag;
 	cache_data->curve_mapping = curve_mapping;
 	cache_data->curve_mapping_timestamp = curve_mapping_timestamp;
@@ -656,6 +667,12 @@ void colormanagement_exit(void)
 {
 	if (global_glsl_state.processor)
 		OCIO_processorRelease(global_glsl_state.processor);
+
+	if (global_glsl_state.curve_mapping)
+		curvemapping_free(global_glsl_state.curve_mapping);
+
+	if (global_glsl_state.curve_mapping_settings.lut)
+		MEM_freeN(global_glsl_state.curve_mapping_settings.lut);
 
 	if (global_glsl_state.ocio_glsl_state)
 		OCIO_freeOGLState(global_glsl_state.ocio_glsl_state);
@@ -1909,7 +1926,7 @@ ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, bool save_as_render, boo
 		 * we need to allocate byte buffer and store color managed
 		 * image there
 		 */
-		for (type = IMB_FILE_TYPES; type->is_a; type++) {
+		for (type = IMB_FILE_TYPES; type < IMB_FILE_TYPES_LAST; type++) {
 			if (type->save && type->ftype(type, colormanaged_ibuf)) {
 				if ((type->flag & IM_FTYPE_FLOAT) == 0)
 					make_byte = true;
@@ -2024,7 +2041,7 @@ unsigned char *IMB_display_buffer_acquire(ImBuf *ibuf, const ColorManagedViewSet
 				return (unsigned char *) ibuf->rect;
 		}
 
-		colormanage_view_settings_to_cache(&cache_view_settings, applied_view_settings);
+		colormanage_view_settings_to_cache(ibuf, &cache_view_settings, applied_view_settings);
 		colormanage_display_settings_to_cache(&cache_display_settings, display_settings);
 
 		if (ibuf->invalid_rect.xmin != ibuf->invalid_rect.xmax) {
@@ -2445,7 +2462,7 @@ void IMB_colormanagment_colorspace_from_ibuf_ftype(ColorManagedColorspaceSetting
 {
 	ImFileType *type;
 
-	for (type = IMB_FILE_TYPES; type->is_a; type++) {
+	for (type = IMB_FILE_TYPES; type < IMB_FILE_TYPES_LAST; type++) {
 		if (type->save && type->ftype(type, ibuf)) {
 			const char *role_colorspace;
 
@@ -2735,7 +2752,7 @@ void IMB_partial_display_buffer_update(ImBuf *ibuf, const float *linear_buffer, 
 		unsigned char *display_buffer = NULL;
 		int view_flag, display_index, buffer_width;
 
-		colormanage_view_settings_to_cache(&cache_view_settings, view_settings);
+		colormanage_view_settings_to_cache(ibuf, &cache_view_settings, view_settings);
 		colormanage_display_settings_to_cache(&cache_display_settings, display_settings);
 
 		view_flag = 1 << (cache_view_settings.view - 1);
@@ -2931,16 +2948,61 @@ static bool check_glsl_display_processor_changed(const ColorManagedViewSettings 
 	         STREQ(global_glsl_state.input, from_colorspace));
 }
 
+static void curve_mapping_to_ocio_settings(CurveMapping *curve_mapping,
+                                           OCIO_CurveMappingSettings *curve_mapping_settings)
+{
+	int i;
+
+	curvemapping_initialize(curve_mapping);
+	curvemapping_premultiply(curve_mapping, false);
+	curvemapping_table_RGBA(curve_mapping,
+	                        &curve_mapping_settings->lut,
+	                        &curve_mapping_settings->lut_size);
+
+	for (i = 0; i < 4; i++) {
+		CurveMap *cuma = curve_mapping->cm + i;
+		curve_mapping_settings->use_extend_extrapolate[i] = (cuma->flag & CUMA_EXTEND_EXTRAPOLATE) != 0;
+		curve_mapping_settings->range[i] = cuma->range;
+		curve_mapping_settings->mintable[i] = cuma->mintable;
+		curve_mapping_settings->ext_in_x[i] = cuma->ext_in[0];
+		curve_mapping_settings->ext_in_y[i] = cuma->ext_in[1];
+		curve_mapping_settings->ext_out_x[i] = cuma->ext_out[0];
+		curve_mapping_settings->ext_out_y[i] = cuma->ext_out[1];
+		curve_mapping_settings->first_x[i] = cuma->table[0].x;
+		curve_mapping_settings->first_y[i] = cuma->table[0].y;
+		curve_mapping_settings->last_x[i] = cuma->table[CM_TABLE].x;
+		curve_mapping_settings->last_y[i] = cuma->table[CM_TABLE].y;
+	}
+
+	copy_v3_v3(curve_mapping_settings->black, curve_mapping->black);
+	copy_v3_v3(curve_mapping_settings->bwmul, curve_mapping->bwmul);
+
+	curve_mapping_settings->cache_id = (size_t) curve_mapping;
+}
+
 static void update_glsl_display_processor(const ColorManagedViewSettings *view_settings,
                                           const ColorManagedDisplaySettings *display_settings,
                                           const char *from_colorspace)
 {
+	bool use_curve_mapping = (view_settings->flag & COLORMANAGE_VIEW_USE_CURVES) != 0;
+	bool need_update = false;
+
+	need_update = global_glsl_state.processor == NULL ||
+	              check_glsl_display_processor_changed(view_settings, display_settings, from_colorspace) ||
+	              use_curve_mapping != global_glsl_state.use_curve_mapping;
+
+	if (use_curve_mapping && need_update == false) {
+		need_update |= view_settings->curve_mapping->changed_timestamp != global_glsl_state.curve_mapping_timestamp ||
+		               view_settings->curve_mapping != global_glsl_state.orig_curve_mapping;
+	}
+
 	/* Update state if there's no processor yet or
 	 * processor settings has been changed.
 	 */
-	if (global_glsl_state.processor == NULL ||
-	    check_glsl_display_processor_changed(view_settings, display_settings, from_colorspace))
-	{
+	if (need_update) {
+		OCIO_CurveMappingSettings *curve_mapping_settings = &global_glsl_state.curve_mapping_settings;
+		CurveMapping *new_curve_mapping = NULL;
+
 		/* Store settings of processor for further comparison. */
 		BLI_strncpy(global_glsl_state.look, view_settings->look, MAX_COLORSPACE_NAME);
 		BLI_strncpy(global_glsl_state.view, view_settings->view_transform, MAX_COLORSPACE_NAME);
@@ -2948,6 +3010,35 @@ static void update_glsl_display_processor(const ColorManagedViewSettings *view_s
 		BLI_strncpy(global_glsl_state.input, from_colorspace, MAX_COLORSPACE_NAME);
 		global_glsl_state.exposure = view_settings->exposure;
 		global_glsl_state.gamma = view_settings->gamma;
+
+		/* We're using curve mapping's address as a acache ID,
+		 * so we need to make sure re-allocation gives new address here.
+		 * We do this by allocating new curve mapping before freeing ol one.
+		 */
+		if (use_curve_mapping) {
+			new_curve_mapping = curvemapping_copy(view_settings->curve_mapping);
+		}
+
+		if (global_glsl_state.curve_mapping) {
+			curvemapping_free(global_glsl_state.curve_mapping);
+			MEM_freeN(curve_mapping_settings->lut);
+			global_glsl_state.curve_mapping = NULL;
+			curve_mapping_settings->lut = NULL;
+		}
+
+		/* Fill in OCIO's curve mapping settings. */
+		if (use_curve_mapping) {
+			curve_mapping_to_ocio_settings(new_curve_mapping, &global_glsl_state.curve_mapping_settings);
+
+			global_glsl_state.curve_mapping = new_curve_mapping;
+			global_glsl_state.curve_mapping_timestamp = view_settings->curve_mapping->changed_timestamp;
+			global_glsl_state.orig_curve_mapping = view_settings->curve_mapping;
+			global_glsl_state.use_curve_mapping = true;
+		}
+		else {
+			global_glsl_state.orig_curve_mapping = NULL;
+			global_glsl_state.use_curve_mapping = false;
+		}
 
 		/* Free old processor, if any. */
 		if (global_glsl_state.processor)
@@ -2964,14 +3055,8 @@ static void update_glsl_display_processor(const ColorManagedViewSettings *view_s
 	}
 }
 
-bool IMB_colormanagement_support_glsl_draw(const ColorManagedViewSettings *view_settings,
-                                           bool skip_curves)
+bool IMB_colormanagement_support_glsl_draw(const ColorManagedViewSettings *UNUSED(view_settings))
 {
-	/* curves not supported yet */
-	if (!skip_curves)
-		if (view_settings && (view_settings->flag & COLORMANAGE_VIEW_USE_CURVES))
-			return 0;
-
 	return OCIO_supportGLSLDraw();
 }
 
@@ -2990,8 +3075,7 @@ bool IMB_colormanagement_support_glsl_draw(const ColorManagedViewSettings *view_
  */
 bool IMB_colormanagement_setup_glsl_draw_from_space(const ColorManagedViewSettings *view_settings,
                                                     const ColorManagedDisplaySettings *display_settings,
-                                                    struct ColorSpace *from_colorspace, bool predivide,
-                                                    bool skip_curves)
+                                                    struct ColorSpace *from_colorspace, bool predivide)
 {
 	ColorManagedViewSettings default_view_settings;
 	const ColorManagedViewSettings *applied_view_settings;
@@ -3008,25 +3092,22 @@ bool IMB_colormanagement_setup_glsl_draw_from_space(const ColorManagedViewSettin
 		applied_view_settings = &default_view_settings;
 	}
 
-	/* RGB curves mapping is not supported on GPU yet. */
-	if (!skip_curves)
-		if (applied_view_settings->flag & COLORMANAGE_VIEW_USE_CURVES)
-			return false;
-
 	/* Make sure OCIO processor is up-to-date. */
 	update_glsl_display_processor(applied_view_settings, display_settings,
 	                              from_colorspace ? from_colorspace->name : global_role_scene_linear);
 
-	return OCIO_setupGLSLDraw(&global_glsl_state.ocio_glsl_state, global_glsl_state.processor, predivide);
+	return OCIO_setupGLSLDraw(&global_glsl_state.ocio_glsl_state, global_glsl_state.processor,
+	                          global_glsl_state.use_curve_mapping ? &global_glsl_state.curve_mapping_settings : NULL,
+	                          predivide);
 }
 
 /* Configures GLSL shader for conversion from scene linear to display space */
 bool IMB_colormanagement_setup_glsl_draw(const ColorManagedViewSettings *view_settings,
                                          const ColorManagedDisplaySettings *display_settings,
-                                         bool predivide, bool skip_curves)
+                                         bool predivide)
 {
 	return IMB_colormanagement_setup_glsl_draw_from_space(view_settings, display_settings,
-	                                                      NULL, predivide, skip_curves);
+	                                                      NULL, predivide);
 }
 
 /* Same as setup_glsl_draw_from_space, but color management settings are guessing from a given context */
@@ -3037,7 +3118,7 @@ bool IMB_colormanagement_setup_glsl_draw_from_space_ctx(const struct bContext *C
 
 	IMB_colormanagement_display_settings_from_ctx(C, &view_settings, &display_settings);
 
-	return IMB_colormanagement_setup_glsl_draw_from_space(view_settings, display_settings, from_colorspace, predivide, false);
+	return IMB_colormanagement_setup_glsl_draw_from_space(view_settings, display_settings, from_colorspace, predivide);
 }
 
 /* Same as setup_glsl_draw, but color management settings are guessing from a given context */
@@ -3076,7 +3157,7 @@ bool IMB_colormanagement_setup_transform_from_role_glsl(int role, bool predivide
 
 	processor = colorspace_to_scene_linear_processor(colorspace);
 
-	return OCIO_setupGLSLDraw(&global_glsl_state.transform_ocio_glsl_state, processor, predivide);
+	return OCIO_setupGLSLDraw(&global_glsl_state.transform_ocio_glsl_state, processor, NULL, predivide);
 }
 
 /* Finish GLSL-based color space conversion */

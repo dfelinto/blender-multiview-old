@@ -983,12 +983,6 @@ void MESH_OT_flip_normals(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 }
 
-static const EnumPropertyItem direction_items[] = {
-	{false, "CW", 0, "Clockwise", ""},
-	{true, "CCW", 0, "Counter Clockwise", ""},
-	{0, NULL, 0, NULL, NULL}
-};
-
 /* only accepts 1 selected edge, or 2 selected faces */
 static int edbm_edge_rotate_selected_exec(bContext *C, wmOperator *op)
 {
@@ -3008,7 +3002,7 @@ static int edbm_fill_grid_exec(bContext *C, wmOperator *op)
 		}
 
 		offset = RNA_property_int_get(op->ptr, prop_offset);
-		offset = mod_i(offset, clamp);
+		offset = clamp ? mod_i(offset, clamp) : 0;
 
 		/* in simple cases, move selection for tags, but also support more advanced cases */
 		edbm_fill_grid_prepare(em->bm, offset, &span, calc_span);
@@ -3342,7 +3336,7 @@ void MESH_OT_dissolve_verts(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Dissolve Vertices";
-	ot->description = "Dissolve geometry";
+	ot->description = "Dissolve verts, merge edges and faces";
 	ot->idname = "MESH_OT_dissolve_verts";
 
 	/* api callbacks */
@@ -3379,7 +3373,7 @@ void MESH_OT_dissolve_edges(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Dissolve Edges";
-	ot->description = "Dissolve geometry";
+	ot->description = "Dissolve edges, merging faces";
 	ot->idname = "MESH_OT_dissolve_edges";
 
 	/* api callbacks */
@@ -3418,7 +3412,7 @@ void MESH_OT_dissolve_faces(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Dissolve Faces";
-	ot->description = "Dissolve geometry";
+	ot->description = "Dissolve faces";
 	ot->idname = "MESH_OT_dissolve_faces";
 
 	/* api callbacks */
@@ -4519,7 +4513,7 @@ void MESH_OT_wireframe(wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "Wire Frame";
 	ot->idname = "MESH_OT_wireframe";
-	ot->description = "Inset new faces into selected faces";
+	ot->description = "Create a solid wire-frame from faces";
 
 	/* api callbacks */
 	ot->exec = edbm_wireframe_exec;
@@ -4561,7 +4555,8 @@ static int edbm_convex_hull_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
-	
+	BMO_slot_buffer_hflag_enable(em->bm, bmop.slots_out, "geom.out", BM_FACE, BM_ELEM_SELECT, true);
+
 	/* Delete unused vertices, edges, and faces */
 	if (RNA_boolean_get(op->ptr, "delete_unused")) {
 		if (!EDBM_op_callf(em, op, "delete geom=%S context=%i",
@@ -4584,9 +4579,11 @@ static int edbm_convex_hull_exec(bContext *C, wmOperator *op)
 
 	/* Merge adjacent triangles */
 	if (RNA_boolean_get(op->ptr, "join_triangles")) {
-		if (!EDBM_op_callf(em, op, "join_triangles faces=%S limit=%f",
-		                   &bmop, "geom.out",
-		                   RNA_float_get(op->ptr, "limit")))
+		if (!EDBM_op_call_and_selectf(em, op,
+		                              "faces.out", true,
+		                              "join_triangles faces=%S limit=%f",
+		                              &bmop, "geom.out",
+		                              RNA_float_get(op->ptr, "limit")))
 		{
 			EDBM_op_finish(em, &bmop, op, true);
 			return OPERATOR_CANCELLED;

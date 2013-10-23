@@ -1546,8 +1546,16 @@ static void knife_find_line_hits(KnifeTool_OpData *kcd)
 	knife_project_v2(kcd, v1, s1);
 	knife_project_v2(kcd, v2, s2);
 
-	if (len_squared_v2v2(s1, s2) < 1)
-		return;
+	if (kcd->is_interactive) {
+		if (len_squared_v2v2(s1, s2) < 1.0f) {
+			return;
+		}
+	}
+	else {
+		if (len_squared_v2v2(s1, s2) < KNIFE_FLT_EPS_SQUARED) {
+			return;
+		}
+	}
 
 	/* unproject screen line */
 	ED_view3d_win_to_segment(kcd->ar, kcd->vc.v3d, s1, v1, v3, true);
@@ -3517,7 +3525,7 @@ static bool edbm_mesh_knife_face_isect(ARegion *ar, LinkNode *polys, BMFace *f, 
 		while (p) {
 			const float (*mval_fl)[2] = p->link;
 			const int mval_tot = MEM_allocN_len(mval_fl) / sizeof(*mval_fl);
-			isect += (int)isect_point_poly_v2(cent_ss, mval_fl, mval_tot - 1);
+			isect += (int)isect_point_poly_v2(cent_ss, mval_fl, mval_tot - 1, false);
 			p = p->next;
 		}
 

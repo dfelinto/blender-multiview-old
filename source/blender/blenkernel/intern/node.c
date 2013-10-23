@@ -1107,7 +1107,7 @@ bNodeTree *ntreeAddTree(Main *bmain, const char *name, const char *idname)
  * copying for internal use (threads for eg), where you wont want it to modify the
  * scene data.
  */
-static bNodeTree *ntreeCopyTree_internal(bNodeTree *ntree, const short do_id_user, const short do_make_extern, const short copy_previews)
+static bNodeTree *ntreeCopyTree_internal(bNodeTree *ntree, Main *bmain, bool do_id_user, bool do_make_extern, bool copy_previews)
 {
 	bNodeTree *newtree;
 	bNode *node /*, *nnode */ /* UNUSED */, *last;
@@ -1116,13 +1116,17 @@ static bNodeTree *ntreeCopyTree_internal(bNodeTree *ntree, const short do_id_use
 	
 	if (ntree == NULL) return NULL;
 	
-	/* is ntree part of library? */
-	for (newtree = G.main->nodetree.first; newtree; newtree = newtree->id.next)
-		if (newtree == ntree) break;
-	if (newtree) {
-		newtree = BKE_libblock_copy(&ntree->id);
+	if (bmain) {
+		/* is ntree part of library? */
+		if (BLI_findindex(&bmain->nodetree, ntree) != -1)
+			newtree = BKE_libblock_copy(&ntree->id);
+		else
+			newtree = NULL;
 	}
-	else {
+	else
+		newtree = NULL;
+	
+	if (newtree == NULL) {
 		newtree = MEM_dupallocN(ntree);
 		newtree->id.lib = NULL;	/* same as owning datablock id.lib */
 		BKE_libblock_copy_data(&newtree->id, &ntree->id, true); /* copy animdata and ID props */
@@ -1208,7 +1212,7 @@ static bNodeTree *ntreeCopyTree_internal(bNodeTree *ntree, const short do_id_use
 
 bNodeTree *ntreeCopyTree_ex(bNodeTree *ntree, const short do_id_user)
 {
-	return ntreeCopyTree_internal(ntree, do_id_user, TRUE, TRUE);
+	return ntreeCopyTree_internal(ntree, G.main, do_id_user, TRUE, TRUE);
 }
 bNodeTree *ntreeCopyTree(bNodeTree *ntree)
 {
@@ -1590,6 +1594,8 @@ static void node_unlink_attached(bNodeTree *ntree, bNode *parent)
 void nodeFreeNode(bNodeTree *ntree, bNode *node)
 {
 	bNodeSocket *sock, *nextsock;
+	char propname_esc[MAX_IDPROP_NAME * 2];
+	char prefix[MAX_IDPROP_NAME * 2];
 	
 	/* extra free callback */
 	if (node->typeinfo && node->typeinfo->freefunc_api) {
@@ -1609,6 +1615,11 @@ void nodeFreeNode(bNodeTree *ntree, bNode *node)
 		
 		BLI_remlink(&ntree->nodes, node);
 		
+		BLI_strescape(propname_esc, node->name, sizeof(propname_esc));
+		BLI_snprintf(prefix, sizeof(prefix), "nodes[\"%s\"]", propname_esc);
+
+		BKE_animdata_fix_paths_remove((ID *)ntree, prefix);
+
 		if (ntree->typeinfo && ntree->typeinfo->free_node_cache)
 			ntree->typeinfo->free_node_cache(ntree, node);
 		
@@ -1657,6 +1668,22 @@ static void node_socket_interface_free(bNodeTree *UNUSED(ntree), bNodeSocket *so
 		MEM_freeN(sock->default_value);
 }
 
+static void free_localized_node_groups(bNodeTree *ntree)
+{
+	bNode *node;
+	
+	for (node = ntree->nodes.first; node; node = node->next) {
+		if (node->type == NODE_GROUP && node->id) {
+			bNodeTree *ngroup = (bNodeTree *)node->id;
+			if (BLI_findindex(&G.main->nodetree, ngroup) == -1) {
+				/* ntree is not in library, i.e. localized node group: free it */
+				ntreeFreeTree_ex(ngroup, false);
+				MEM_freeN(ngroup);
+			}
+		}
+	}
+}
+
 /* do not free ntree itself here, BKE_libblock_free calls this function too */
 void ntreeFreeTree_ex(bNodeTree *ntree, const short do_id_user)
 {
@@ -1682,6 +1709,9 @@ void ntreeFreeTree_ex(bNodeTree *ntree, const short do_id_user)
 				break;
 		}
 	}
+	
+	/* XXX not nice, but needed to free localized node groups properly */
+	free_localized_node_groups(ntree);
 	
 	/* unregister associated RNA types */
 	ntreeInterfaceTypeFree(ntree);
@@ -1932,8 +1962,14 @@ bNodeTree *ntreeLocalize(bNodeTree *ntree)
 		/* Make full copy.
 		 * Note: previews are not copied here.
 		 */
-		ltree = ntreeCopyTree_internal(ntree, FALSE, FALSE, FALSE);
-	
+		ltree = ntreeCopyTree_internal(ntree, NULL, FALSE, FALSE, FALSE);
+		
+		for (node = ltree->nodes.first; node; node = node->next) {
+			if (node->type == NODE_GROUP && node->id) {
+				node->id = (ID *)ntreeLocalize((bNodeTree *)node->id);
+			}
+		}
+		
 		if (adt) {
 			AnimData *ladt = BKE_animdata_from_id(&ltree->id);
 	
@@ -1978,7 +2014,7 @@ void ntreeLocalSync(bNodeTree *localtree, bNodeTree *ntree)
 /* we have to assume the editor already changed completely */
 void ntreeLocalMerge(bNodeTree *localtree, bNodeTree *ntree)
 {
-	if (localtree && ntree) {
+	if (ntree && localtree) {
 		if (ntree->typeinfo->local_merge)
 			ntree->typeinfo->local_merge(localtree, ntree);
 		
@@ -2285,7 +2321,7 @@ bNode *nodeGetActive(bNodeTree *ntree)
 
 static bNode *node_get_active_id_recursive(bNodeInstanceKey active_key, bNodeInstanceKey parent_key, bNodeTree *ntree, short idtype)
 {
-	if (parent_key.value == active_key.value) {
+	if (parent_key.value == active_key.value || active_key.value == 0) {
 		bNode *node;
 		for (node = ntree->nodes.first; node; node = node->next)
 			if (node->id && GS(node->id->name) == idtype)

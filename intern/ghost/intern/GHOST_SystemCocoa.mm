@@ -1018,12 +1018,20 @@ void GHOST_SystemCocoa::notifyExternalEventProcessed()
 //Note: called from NSWindow delegate
 GHOST_TSuccess GHOST_SystemCocoa::handleWindowEvent(GHOST_TEventType eventType, GHOST_WindowCocoa* window)
 {
+	NSArray *windowsList;
+	windowsList = [NSApp orderedWindows];
 	if (!validWindow(window)) {
 		return GHOST_kFailure;
 	}
 		switch (eventType) {
 			case GHOST_kEventWindowClose:
-				pushEvent( new GHOST_Event(getMilliSeconds(), GHOST_kEventWindowClose, window) );
+				// check for index of mainwindow as it would quit blender without dialog and discard
+				if ([windowsList count] > 1  && window->getCocoaWindow() != [windowsList objectAtIndex:[windowsList count] - 1]) {
+					pushEvent( new GHOST_Event(getMilliSeconds(), GHOST_kEventWindowClose, window) );
+				}
+				else {
+					handleQuitRequest(); // -> quit dialog
+				}
 				break;
 			case GHOST_kEventWindowActivate:
 				m_windowManager->setActiveWindow(window);
@@ -1761,6 +1769,10 @@ GHOST_TSuccess GHOST_SystemCocoa::handleKeyEvent(void *eventPtr)
 
 			/* arrow keys should not have utf8 */
 			if ((keyCode > 266) && (keyCode < 271))
+				utf8_buf[0] = '\0';
+
+			/* no text with command key pressed */
+			if (m_modifierMask & NSCommandKeyMask)
 				utf8_buf[0] = '\0';
 
 			if ((keyCode == GHOST_kKeyQ) && (m_modifierMask & NSCommandKeyMask))

@@ -1448,7 +1448,6 @@ void ED_area_newspace(bContext *C, ScrArea *sa, int type)
 		}
 		
 		if (sl) {
-			
 			/* swap regions */
 			slold->regionbase = sa->regionbase;
 			sa->regionbase = sl->regionbase;

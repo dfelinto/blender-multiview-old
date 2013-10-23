@@ -712,7 +712,8 @@ int isect_line_sphere_v2(const float l1[2], const float l2[2],
 }
 
 /* point in polygon (keep float and int versions in sync) */
-bool isect_point_poly_v2(const float pt[2], const float verts[][2], const unsigned int nr)
+bool isect_point_poly_v2(const float pt[2], const float verts[][2], const unsigned int nr,
+                         const bool use_holes)
 {
 	/* we do the angle rule, define that all added angles should be about zero or (2 * PI) */
 	float angletot = 0.0;
@@ -749,9 +750,18 @@ bool isect_point_poly_v2(const float pt[2], const float verts[][2], const unsign
 		p1 = p2;
 	}
 
-	return (fabsf(angletot) > 4.0f);
+	angletot = fabsf(angletot);
+	if (use_holes) {
+		const int nested = floorf((angletot / (float)(M_PI * 2.0)) + 0.00001f);
+		angletot -= nested * (float)(M_PI * 2.0);
+		return (angletot > 4.0f) != (nested % 2);
+	}
+	else {
+		return (angletot > 4.0f);
+	}
 }
-bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const unsigned int nr)
+bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const unsigned int nr,
+                             const bool use_holes)
 {
 	/* we do the angle rule, define that all added angles should be about zero or (2 * PI) */
 	float angletot = 0.0;
@@ -788,7 +798,15 @@ bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const unsign
 		p1 = p2;
 	}
 
-	return (fabsf(angletot) > 4.0f);
+	angletot = fabsf(angletot);
+	if (use_holes) {
+		const int nested = floorf((angletot / (float)(M_PI * 2.0)) + 0.00001f);
+		angletot -= nested * (float)(M_PI * 2.0);
+		return (angletot > 4.0f) != (nested % 2);
+	}
+	else {
+		return (angletot > 4.0f);
+	}
 }
 
 /* point in tri */
@@ -1977,6 +1995,59 @@ void plot_line_v2v2i(const int p1[2], const int p2[2], bool (*callback)(int, int
 			}
 		}
 	}
+}
+
+void fill_poly_v2i_n(
+        const int xmin, const int ymin, const int xmax, const int ymax,
+        const int verts[][2], const int nr,
+        void (*callback)(int, int, void *), void *userData)
+{
+	/* originally by Darel Rex Finley, 2007 */
+
+	int  nodes, pixel_y, i, j, swap;
+	int *node_x = MEM_mallocN(sizeof(*node_x) * (nr + 1), __func__);
+
+	/* Loop through the rows of the image. */
+	for (pixel_y = ymin; pixel_y < ymax; pixel_y++) {
+
+		/* Build a list of nodes. */
+		nodes = 0; j = nr - 1;
+		for (i = 0; i < nr; i++) {
+			if ((verts[i][1] < pixel_y && verts[j][1] >= pixel_y) ||
+			    (verts[j][1] < pixel_y && verts[i][1] >= pixel_y))
+			{
+				node_x[nodes++] = (int)(verts[i][0] +
+				                        ((double)(pixel_y - verts[i][1]) / (verts[j][1] - verts[i][1])) *
+				                        (verts[j][0] - verts[i][0]));
+			}
+			j = i;
+		}
+
+		/* Sort the nodes, via a simple "Bubble" sort. */
+		i = 0;
+		while (i < nodes - 1) {
+			if (node_x[i] > node_x[i + 1]) {
+				SWAP_TVAL(swap, node_x[i], node_x[i + 1]);
+				if (i) i--;
+			}
+			else {
+				i++;
+			}
+		}
+
+		/* Fill the pixels between node pairs. */
+		for (i = 0; i < nodes; i += 2) {
+			if (node_x[i] >= xmax) break;
+			if (node_x[i + 1] >  xmin) {
+				if (node_x[i    ] < xmin) node_x[i    ] = xmin;
+				if (node_x[i + 1] > xmax) node_x[i + 1] = xmax;
+				for (j = node_x[i]; j < node_x[i + 1]; j++) {
+					callback(j - xmin, pixel_y - ymin, userData);
+				}
+			}
+		}
+	}
+	MEM_freeN(node_x);
 }
 
 /****************************** Axis Utils ********************************/
