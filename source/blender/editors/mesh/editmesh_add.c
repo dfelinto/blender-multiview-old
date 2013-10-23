@@ -96,15 +96,6 @@ static void make_prim_finish(bContext *C, Object *obedit, bool was_editmode, int
 	WM_event_add_notifier(C, NC_OBJECT | ND_DRAW, obedit);
 }
 
-static void make_prim_radius_prop(wmOperatorType *ot)
-{
-	PropertyRNA *prop;
-
-	prop = RNA_def_float(ot->srna, "radius", 1.0f, 0.0, FLT_MAX, "Radius", "", 0.001, 100.00);
-	RNA_def_property_subtype(prop, PROP_DISTANCE);
-}
-
-
 static int add_primitive_plane_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit;
@@ -114,6 +105,7 @@ static int add_primitive_plane_exec(bContext *C, wmOperator *op)
 	bool was_editmode;
 	unsigned int layer;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Plane"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -139,14 +131,13 @@ void MESH_OT_primitive_plane_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_plane_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_plane_exec;
 	ot->poll = ED_operator_scene_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	make_prim_radius_prop(ot);
+	ED_object_add_unit_props(ot);
 	ED_object_add_generic_props(ot, true);
 }
 
@@ -159,6 +150,7 @@ static int add_primitive_cube_exec(bContext *C, wmOperator *op)
 	bool was_editmode;
 	unsigned int layer;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Cube"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -185,14 +177,13 @@ void MESH_OT_primitive_cube_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_cube_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_cube_exec;
 	ot->poll = ED_operator_scene_editable;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	make_prim_radius_prop(ot);
+	ED_object_add_unit_props(ot);
 	ED_object_add_generic_props(ot, true);
 }
 
@@ -215,6 +206,7 @@ static int add_primitive_circle_exec(bContext *C, wmOperator *op)
 	cap_end = RNA_enum_get(op->ptr, "fill_type");
 	cap_tri = (cap_end == 2);
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Circle"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -241,7 +233,6 @@ void MESH_OT_primitive_circle_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_circle_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_circle_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -250,7 +241,7 @@ void MESH_OT_primitive_circle_add(wmOperatorType *ot)
 
 	/* props */
 	RNA_def_int(ot->srna, "vertices", 32, 3, INT_MAX, "Vertices", "", 3, 500);
-	make_prim_radius_prop(ot);
+	ED_object_add_unit_props(ot);
 	RNA_def_enum(ot->srna, "fill_type", fill_type_items, 0, "Fill Type", "");
 
 	ED_object_add_generic_props(ot, true);
@@ -268,6 +259,7 @@ static int add_primitive_cylinder_exec(bContext *C, wmOperator *op)
 	const bool cap_end = (end_fill_type != 0);
 	const bool cap_tri = (end_fill_type == 2);
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Cylinder"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -299,7 +291,6 @@ void MESH_OT_primitive_cylinder_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_cylinder_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_cylinder_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -308,7 +299,7 @@ void MESH_OT_primitive_cylinder_add(wmOperatorType *ot)
 
 	/* props */
 	RNA_def_int(ot->srna, "vertices", 32, 3, INT_MAX, "Vertices", "", 3, 500);
-	make_prim_radius_prop(ot);
+	ED_object_add_unit_props(ot);
 	prop = RNA_def_float(ot->srna, "depth", 2.0f, 0.0, FLT_MAX, "Depth", "", 0.001, 100.00);
 	RNA_def_property_subtype(prop, PROP_DISTANCE);
 	RNA_def_enum(ot->srna, "end_fill_type", fill_type_items, 1, "Cap Fill Type", "");
@@ -328,6 +319,7 @@ static int add_primitive_cone_exec(bContext *C, wmOperator *op)
 	const bool cap_end = (end_fill_type != 0);
 	const bool cap_tri = (end_fill_type == 2);
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Cone"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -356,7 +348,6 @@ void MESH_OT_primitive_cone_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_cone_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_cone_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -385,6 +376,7 @@ static int add_primitive_grid_exec(bContext *C, wmOperator *op)
 	bool was_editmode;
 	unsigned int layer;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Grid"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -412,7 +404,6 @@ void MESH_OT_primitive_grid_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_grid_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_grid_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -422,7 +413,7 @@ void MESH_OT_primitive_grid_add(wmOperatorType *ot)
 	/* props */
 	RNA_def_int(ot->srna, "x_subdivisions", 10, 3, INT_MAX, "X Subdivisions", "", 3, 1000);
 	RNA_def_int(ot->srna, "y_subdivisions", 10, 3, INT_MAX, "Y Subdivisions", "", 3, 1000);
-	make_prim_radius_prop(ot);
+	ED_object_add_unit_props(ot);
 
 	ED_object_add_generic_props(ot, true);
 }
@@ -437,6 +428,7 @@ static int add_primitive_monkey_exec(bContext *C, wmOperator *op)
 	unsigned int layer;
 	bool was_editmode;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, &is_view_aligned);
 	if (!is_view_aligned)
 		rot[0] += (float)M_PI / 2.0f;
@@ -469,12 +461,11 @@ void MESH_OT_primitive_monkey_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_monkey_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_monkey_exec;
 	ot->poll = ED_operator_scene_editable;
 
 	/* flags */
-	make_prim_radius_prop(ot);
+	ED_object_add_unit_props(ot);
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	ED_object_add_generic_props(ot, true);
@@ -489,6 +480,7 @@ static int add_primitive_uvsphere_exec(bContext *C, wmOperator *op)
 	bool was_editmode;
 	unsigned int layer;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Sphere"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -517,7 +509,6 @@ void MESH_OT_primitive_uv_sphere_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_uv_sphere_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_uvsphere_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -542,6 +533,7 @@ static int add_primitive_icosphere_exec(bContext *C, wmOperator *op)
 	bool was_editmode;
 	unsigned int layer;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL);
 	obedit = make_prim_init(C, CTX_DATA_(BLF_I18NCONTEXT_ID_MESH, "Icosphere"), &dia, mat, &was_editmode, loc, rot, layer);
 	em = BKE_editmesh_from_object(obedit);
@@ -570,7 +562,6 @@ void MESH_OT_primitive_ico_sphere_add(wmOperatorType *ot)
 	ot->idname = "MESH_OT_primitive_ico_sphere_add";
 
 	/* api callbacks */
-	ot->invoke = WM_operator_view3d_distance_invoke;
 	ot->exec = add_primitive_icosphere_exec;
 	ot->poll = ED_operator_scene_editable;
 

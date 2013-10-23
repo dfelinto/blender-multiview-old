@@ -326,12 +326,15 @@ if(APPLE)
 	execute_process(COMMAND xcode-select --print-path  OUTPUT_VARIABLE XCODE_CHECK OUTPUT_STRIP_TRAILING_WHITESPACE)
 	string(REPLACE "/Contents/Developer" "" XCODE_BUNDLE ${XCODE_CHECK}) # truncate to bundlepath in any case
 	message(STATUS "Xcode-bundle : " ${XCODE_BUNDLE})
-	string(SUBSTRING "${XCODE_CHECK}" 14 6 DP_NAME) # reduce to XCode name without dp extension
-	if(${DP_NAME} MATCHES Xcode5)
-		set(XCODE_VERSION 5)
-	endif()
 	
 	if(${CMAKE_GENERATOR} MATCHES "Xcode")
+	
+		if(${XCODE_VERSION} VERSION_GREATER 4.2) # earlier xcode has no bundled developer dir, no sense in getting xcode path from
+			string(SUBSTRING "${XCODE_CHECK}" 14 6 DP_NAME) # reduce to XCode name without dp extension
+			if(${DP_NAME} MATCHES Xcode5)
+				set(XCODE_VERSION 5)
+			endif()
+		endif()
 
 		##### cmake incompatibility with xcode  4.3 and higher #####
 		if(${XCODE_VERSION} MATCHES '') # cmake fails due looking for xcode in the wrong path, thus will be empty var
@@ -453,7 +456,7 @@ if(NOT WITH_BOOST)
 
 	set_and_warn(WITH_OPENAL         OFF)  # depends on AUDASPACE
 	set_and_warn(WITH_GAMEENGINE     OFF)  # depends on AUDASPACE
-elseif(WITH_CYCLES OR WITH_MOD_BOOLEAN OR WITH_AUDASPACE OR WITH_INTERNATIONAL)
+elseif(WITH_CYCLES OR WITH_OPENIMAGEIO OR WITH_MOD_BOOLEAN OR WITH_AUDASPACE OR WITH_INTERNATIONAL)
 	# Keep enabled
 else()
 	# Enabled but we don't need it
@@ -795,33 +798,38 @@ if(UNIX AND NOT APPLE)
 				find_program(LLVM_CONFIG llvm-config)
 			endif()
 		endif()
-		execute_process(COMMAND ${LLVM_CONFIG} --version
-		                OUTPUT_VARIABLE LLVM_VERSION
-		                OUTPUT_STRIP_TRAILING_WHITESPACE)
-		execute_process(COMMAND ${LLVM_CONFIG} --prefix
-		                OUTPUT_VARIABLE LLVM_DIRECTORY
-		                OUTPUT_STRIP_TRAILING_WHITESPACE)
-		execute_process(COMMAND ${LLVM_CONFIG} --libdir
-		                OUTPUT_VARIABLE LLVM_LIB_DIR
-		                OUTPUT_STRIP_TRAILING_WHITESPACE)
+
+		if(NOT DEFINED LLVM_VERSION)
+			execute_process(COMMAND ${LLVM_CONFIG} --version
+							OUTPUT_VARIABLE LLVM_VERSION
+							OUTPUT_STRIP_TRAILING_WHITESPACE)
+			set(LLVM_VERSION ${LLVM_VERSION} CACHE STRING "Version of LLVM to use")
+		endif()
+		if(NOT DEFINED LLVM_DIRECTORY)
+			execute_process(COMMAND ${LLVM_CONFIG} --prefix
+							OUTPUT_VARIABLE LLVM_DIRECTORY
+							OUTPUT_STRIP_TRAILING_WHITESPACE)
+			set(LLVM_DIRECTORY ${LLVM_DIRECTORY} CACHE PATH "Path to the LLVM installation")
+		endif()
+		if(NOT DEFINED LLVM_LIBPATH)
+			execute_process(COMMAND ${LLVM_CONFIG} --libdir
+							OUTPUT_VARIABLE LLVM_LIBPATH
+							OUTPUT_STRIP_TRAILING_WHITESPACE)
+			set(LLVM_LIBPATH ${LLVM_LIBPATH} CACHE PATH "Path to the LLVM library path")
+		endif()
 
 		if(LLVM_STATIC)
 			find_library(LLVM_LIBRARY
 			             NAMES LLVMAnalysis # first of a whole bunch of libs to get
-			             PATHS ${LLVM_LIB_DIR})
+			             PATHS ${LLVM_LIBPATH})
 		else()
 			find_library(LLVM_LIBRARY
 			             NAMES LLVM-${LLVM_VERSION}
-			             PATHS ${LLVM_LIB_DIR})
+			             PATHS ${LLVM_LIBPATH})
 		endif()
 
-		message(STATUS "LLVM version  = ${LLVM_VERSION}")
-		message(STATUS "LLVM dir      = ${LLVM_DIRECTORY}")
-		message(STATUS "LLVM lib dir  = ${LLVM_LIB_DIR}")
-		set(LLVM_VERSION ${LLVM_VERSION} CACHE STRING "Version of LLVM to use")
-		set(LLVM_DIRECTORY ${LLVM_DIRECTORY} CACHE PATH "Path to the LLVM installation")
 
-		if(LLVM_LIBRARY AND LLVM_DIRECTORY AND LLVM_LIB_DIR)
+		if(LLVM_LIBRARY AND LLVM_DIRECTORY AND LLVM_LIBPATH)
 			if(LLVM_STATIC)
 				# if static LLVM libraries were requested, use llvm-config to generate
 				# the list of what libraries we need, and substitute that in the right
@@ -829,7 +837,7 @@ if(UNIX AND NOT APPLE)
 				execute_process(COMMAND ${LLVM_CONFIG} --libfiles
 				                OUTPUT_VARIABLE LLVM_LIBRARY
 				                OUTPUT_STRIP_TRAILING_WHITESPACE)
-				string(REPLACE " " ";" LLVM_LIBRARY ${LLVM_LIBRARY})
+				string(REPLACE " " ";" LLVM_LIBRARY "${LLVM_LIBRARY}")
 			endif()
 		else()
 			message(FATAL_ERROR "LLVM not found.")
@@ -1446,7 +1454,7 @@ elseif(WIN32)
 		
 		if(WITH_LLVM)
 			set(LLVM_DIRECTORY ${LIBDIR}/llvm CACHE PATH	"Path to the LLVM installation")
-			set(LLVM_LIB_DIR ${LLVM_DIRECTORY}/lib)
+			set(LLVM_LIBPATH ${LLVM_DIRECTORY}/lib)
 			# Explicitly set llvm lib order.
 			#---- WARNING ON GCC ORDER OF LIBS IS IMPORTANT, DO NOT CHANGE! ---------
 			set(LLVM_LIBRARY LLVMSelectionDAG LLVMCodeGen LLVMScalarOpts LLVMAnalysis LLVMArchive
@@ -1740,13 +1748,13 @@ elseif(APPLE)
 		                OUTPUT_VARIABLE LLVM_DIRECTORY
 		                OUTPUT_STRIP_TRAILING_WHITESPACE)
 		execute_process(COMMAND ${LLVM_CONFIG} --libdir
-		                OUTPUT_VARIABLE LLVM_LIB_DIR
+		                OUTPUT_VARIABLE LLVM_LIBPATH
 		                OUTPUT_STRIP_TRAILING_WHITESPACE)
 		find_library(LLVM_LIBRARY
 		             NAMES LLVMAnalysis # first of a whole bunch of libs to get
-		             PATHS ${LLVM_LIB_DIR})
+		             PATHS ${LLVM_LIBPATH})
 
-		if(LLVM_LIBRARY AND LLVM_DIRECTORY AND LLVM_LIB_DIR)
+		if(LLVM_LIBRARY AND LLVM_DIRECTORY AND LLVM_LIBPATH)
 			if(LLVM_STATIC)
 				# if static LLVM libraries were requested, use llvm-config to generate
 				# the list of what libraries we need, and substitute that in the right
@@ -1820,22 +1828,22 @@ endif()
 
 if(WITH_CYCLES)
 	if(NOT WITH_OPENIMAGEIO)
-		message(FATAL_ERROR "Cycles reqires WITH_OPENIMAGEIO, the library may not have been found. Configure OIIO or disable WITH_CYCLES")
+		message(FATAL_ERROR "Cycles requires WITH_OPENIMAGEIO, the library may not have been found. Configure OIIO or disable WITH_CYCLES")
 	endif()
 	if(NOT WITH_BOOST)
-		message(FATAL_ERROR "Cycles reqires WITH_BOOST, the library may not have been found. Configure BOOST or disable WITH_CYCLES")
+		message(FATAL_ERROR "Cycles requires WITH_BOOST, the library may not have been found. Configure BOOST or disable WITH_CYCLES")
 	endif()
 
 	if(WITH_CYCLES_OSL)
 		if(NOT WITH_LLVM)
-			message(FATAL_ERROR "Cycles OSL reqires WITH_LLVM, the library may not have been found. Configure LLVM or disable WITH_CYCLES_OSL")
+			message(FATAL_ERROR "Cycles OSL requires WITH_LLVM, the library may not have been found. Configure LLVM or disable WITH_CYCLES_OSL")
 		endif()
 	endif()
 endif()
 
 if(WITH_INTERNATIONAL)
 	if(NOT WITH_BOOST)
-		message(FATAL_ERROR "Internationalization reqires WITH_BOOST, the library may not have been found. Configure BOOST or disable WITH_INTERNATIONAL")
+		message(FATAL_ERROR "Internationalization requires WITH_BOOST, the library may not have been found. Configure BOOST or disable WITH_INTERNATIONAL")
 	endif()
 endif()
 

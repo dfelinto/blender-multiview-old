@@ -543,22 +543,20 @@ char *WM_operator_pystring(bContext *C, wmOperatorType *ot, PointerRNA *opptr, i
 	/* only to get the orginal props for comparisons */
 	PointerRNA opptr_default;
 
-	if (all_args == 0 || opptr == NULL) {
+	if (opptr == NULL) {
 		WM_operator_properties_create_ptr(&opptr_default, ot);
-
-		if (opptr == NULL)
-			opptr = &opptr_default;
+		opptr = &opptr_default;
 	}
 
 	WM_operator_py_idname(idname_py, ot->idname);
 	BLI_dynstr_appendf(dynstr, "bpy.ops.%s(", idname_py);
 
-	cstring_args = RNA_pointer_as_string_keywords(C, opptr, &opptr_default, FALSE,
+	cstring_args = RNA_pointer_as_string_keywords(C, opptr, false,
 	                                              all_args, max_prop_length);
 	BLI_dynstr_append(dynstr, cstring_args);
 	MEM_freeN(cstring_args);
 
-	if (all_args == 0 || opptr == &opptr_default)
+	if (opptr == &opptr_default)
 		WM_operator_properties_free(&opptr_default);
 
 	BLI_dynstr_append(dynstr, ")");
@@ -893,33 +891,38 @@ void WM_operator_properties_free(PointerRNA *ptr)
 
 /* ************ default op callbacks, exported *********** */
 
-int WM_operator_view3d_distance_invoke(struct bContext *C, struct wmOperator *op, const struct wmEvent *UNUSED(event))
+void WM_operator_view3d_unit_defaults(struct bContext *C, struct wmOperator *op)
 {
-	Scene *scene = CTX_data_scene(C);
-	View3D *v3d = CTX_wm_view3d(C);
+	if (op->flag & OP_IS_INVOKE) {
+		Scene *scene = CTX_data_scene(C);
+		View3D *v3d = CTX_wm_view3d(C);
 
-	const float dia = v3d ? ED_view3d_grid_scale(scene, v3d, NULL) : ED_scene_grid_scale(scene, NULL);
+		const float dia = v3d ? ED_view3d_grid_scale(scene, v3d, NULL) : ED_scene_grid_scale(scene, NULL);
 
-	/* always run, so the values are initialized,
-	 * otherwise we may get differ behavior when (dia != 1.0) */
-	RNA_STRUCT_BEGIN (op->ptr, prop)
-	{
-		if (RNA_property_type(prop) == PROP_FLOAT) {
-			PropertySubType pstype = RNA_property_subtype(prop);
-			if (pstype == PROP_DISTANCE) {
-				/* we don't support arrays yet */
-				BLI_assert(RNA_property_array_check(prop) == FALSE);
-				/* initialize */
-				if (!RNA_property_is_set_ex(op->ptr, prop, FALSE)) {
-					const float value = RNA_property_float_get_default(op->ptr, prop) * dia;
-					RNA_property_float_set(op->ptr, prop, value);
+		/* always run, so the values are initialized,
+		 * otherwise we may get differ behavior when (dia != 1.0) */
+		RNA_STRUCT_BEGIN (op->ptr, prop)
+		{
+			if (RNA_property_type(prop) == PROP_FLOAT) {
+				PropertySubType pstype = RNA_property_subtype(prop);
+				if (pstype == PROP_DISTANCE) {
+					/* we don't support arrays yet */
+					BLI_assert(RNA_property_array_check(prop) == FALSE);
+					/* initialize */
+					if (!RNA_property_is_set_ex(op->ptr, prop, FALSE)) {
+						const float value = RNA_property_float_get_default(op->ptr, prop) * dia;
+						RNA_property_float_set(op->ptr, prop, value);
+					}
 				}
 			}
 		}
+		RNA_STRUCT_END;
 	}
-	RNA_STRUCT_END;
+}
 
-	return op->type->exec(C, op);
+int WM_operator_smooth_viewtx_get(const wmOperator *op)
+{
+	return (op->flag & OP_IS_INVOKE) ? U.smooth_viewtx : 0;
 }
 
 /* invoke callback, uses enum property named "type" */
@@ -1679,7 +1682,7 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	uiItemStringO(col, IFACE_("Credits"), ICON_URL, "WM_OT_url_open", "url",
 	              "http://www.blender.org/development/credits");
 	uiItemStringO(col, IFACE_("Release Log"), ICON_URL, "WM_OT_url_open", "url",
-	              "http://www.blender.org/development/release-logs/blender-268");
+	              "http://www.blender.org/development/release-logs/blender-269");
 	uiItemStringO(col, IFACE_("Manual"), ICON_URL, "WM_OT_url_open", "url",
 	              "http://wiki.blender.org/index.php/Doc:2.6/Manual");
 	uiItemStringO(col, IFACE_("Blender Website"), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org");

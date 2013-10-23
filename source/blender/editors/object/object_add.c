@@ -191,7 +191,7 @@ void ED_object_base_init_transform(bContext *C, Base *base, const float loc[3], 
  * Returns standard diameter. */
 float ED_object_new_primitive_matrix(bContext *C, Object *obedit,
                                      const float loc[3], const float rot[3], float primmat[4][4],
-                                     int apply_diameter)
+                                     bool apply_diameter)
 {
 	Scene *scene = CTX_data_scene(C);
 	View3D *v3d = CTX_wm_view3d(C);
@@ -236,7 +236,15 @@ static void view_align_update(struct Main *UNUSED(main), struct Scene *UNUSED(sc
 	RNA_struct_idprops_unset(ptr, "rotation");
 }
 
-void ED_object_add_generic_props(wmOperatorType *ot, int do_editmode)
+void ED_object_add_unit_props(wmOperatorType *ot)
+{
+	PropertyRNA *prop;
+
+	prop = RNA_def_float(ot->srna, "radius", 1.0f, 0.0, FLT_MAX, "Radius", "", 0.001, 100.00);
+	RNA_def_property_subtype(prop, PROP_DISTANCE);
+}
+
+void ED_object_add_generic_props(wmOperatorType *ot, bool do_editmode)
 {
 	PropertyRNA *prop;
 
@@ -261,8 +269,8 @@ void ED_object_add_generic_props(wmOperatorType *ot, int do_editmode)
 	RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 }
 
-int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], float rot[3],
-                                   bool *enter_editmode, unsigned int *layer, bool *is_view_aligned)
+bool ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], float rot[3],
+                                    bool *enter_editmode, unsigned int *layer, bool *is_view_aligned)
 {
 	View3D *v3d = CTX_wm_view3d(C);
 	unsigned int _layer;
@@ -356,16 +364,16 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
 
 	if (layer && *layer == 0) {
 		BKE_report(op->reports, RPT_ERROR, "Property 'layer' has no values set");
-		return 0;
+		return false;
 	}
 
-	return 1;
+	return true;
 }
 
 /* For object add primitive operators.
  * Do not call undo push in this function (users of this function have to). */
 Object *ED_object_add_type(bContext *C, int type, const float loc[3], const float rot[3],
-                           int enter_editmode, unsigned int layer)
+                           bool enter_editmode, unsigned int layer)
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
@@ -570,6 +578,7 @@ static int object_metaball_add_exec(bContext *C, wmOperator *op)
 	float mat[4][4];
 	float dia;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	if (!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
@@ -577,12 +586,14 @@ static int object_metaball_add_exec(bContext *C, wmOperator *op)
 		obedit = ED_object_add_type(C, OB_MBALL, loc, rot, TRUE, layer);
 		newob = true;
 	}
-	else
+	else {
 		DAG_id_tag_update(&obedit->id, OB_RECALC_DATA);
+	}
 
-	dia = ED_object_new_primitive_matrix(C, obedit, loc, rot, mat, FALSE);
+	ED_object_new_primitive_matrix(C, obedit, loc, rot, mat, false);
+	dia = RNA_float_get(op->ptr, "radius");
 
-	add_metaball_primitive(C, obedit, mat, dia, RNA_enum_get(op->ptr, "type"), newob);
+	add_metaball_primitive(C, obedit, mat, dia, RNA_enum_get(op->ptr, "type"));
 
 	/* userdef */
 	if (newob && !enter_editmode) {
@@ -602,7 +613,7 @@ void OBJECT_OT_metaball_add(wmOperatorType *ot)
 	ot->idname = "OBJECT_OT_metaball_add";
 
 	/* api callbacks */
-	ot->invoke = WM_menu_invoke;/* object_metaball_add_invoke; */
+	ot->invoke = WM_menu_invoke;
 	ot->exec = object_metaball_add_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -611,6 +622,7 @@ void OBJECT_OT_metaball_add(wmOperatorType *ot)
 
 	ot->prop = RNA_def_enum(ot->srna, "type", metaelem_type_items, 0, "Primitive", "");
 
+	ED_object_add_unit_props(ot);
 	ED_object_add_generic_props(ot, TRUE);
 }
 

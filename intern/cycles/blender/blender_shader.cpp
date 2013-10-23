@@ -147,6 +147,7 @@ static void get_tex_mapping(TextureMapping *mapping, BL::TexMapping b_mapping)
 	mapping->translation = get_float3(b_mapping.translation());
 	mapping->rotation = get_float3(b_mapping.rotation());
 	mapping->scale = get_float3(b_mapping.scale());
+	mapping->type = (TextureMapping::Type)b_mapping.type();
 
 	mapping->x_mapping = (TextureMapping::Mapping)b_mapping.mapping_x();
 	mapping->y_mapping = (TextureMapping::Mapping)b_mapping.mapping_y();
@@ -161,6 +162,7 @@ static void get_tex_mapping(TextureMapping *mapping, BL::ShaderNodeMapping b_map
 	mapping->translation = get_float3(b_mapping.translation());
 	mapping->rotation = get_float3(b_mapping.rotation());
 	mapping->scale = get_float3(b_mapping.scale());
+	mapping->type = (TextureMapping::Type)b_mapping.type();
 
 	mapping->use_minmax = b_mapping.use_min() || b_mapping.use_max();
 
@@ -394,6 +396,19 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 				break;
 		}
 		node = toon;
+	}
+	else if (b_node.is_a(&RNA_ShaderNodeBsdfHair)) {
+		BL::ShaderNodeBsdfHair b_hair_node(b_node);
+		HairBsdfNode *hair = new HairBsdfNode();
+		switch(b_hair_node.component()) {
+			case BL::ShaderNodeBsdfHair::component_Reflection:
+				hair->component = ustring("Reflection");
+				break;
+			case BL::ShaderNodeBsdfHair::component_Transmission:
+				hair->component = ustring("Transmission");
+				break;
+		}
+		node = hair;
 	}
 	else if (b_node.is_a(&RNA_ShaderNodeBsdfTranslucent)) {
 		node = new TranslucentBsdfNode();

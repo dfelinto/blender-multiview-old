@@ -497,7 +497,7 @@ static KnifeVert *knife_split_edge(KnifeTool_OpData *kcd, KnifeEdge *kfe, float 
  * and move cur data to prev. */
 static void knife_add_single_cut(KnifeTool_OpData *kcd)
 {
-	KnifeEdge *kfe = new_knife_edge(kcd), *kfe2 = NULL, *kfe3 = NULL;
+	KnifeEdge *kfe, *kfe2 = NULL, *kfe3 = NULL;
 
 	if ((kcd->prev.vert && kcd->prev.vert == kcd->curr.vert) ||
 	    (kcd->prev.edge && kcd->prev.edge == kcd->curr.edge))
@@ -506,6 +506,7 @@ static void knife_add_single_cut(KnifeTool_OpData *kcd)
 		return;
 	}
 
+	kfe = new_knife_edge(kcd);
 	kfe->draw = true;
 
 	if (kcd->prev.vert) {
@@ -590,24 +591,56 @@ static int verge_linehit(const void *vlh1, const void *vlh2)
 static int find_connected_linehit(KnifeTool_OpData *kcd, int testi, BMFace *f, int firsti, int lasti)
 {
 	int i;
+	ListBase *testfaces, *ifaces;
+	BMFace *testface, *iface;
+	BMEdgeHit *lh;
+	bool shareface;
 
+	if (testi >= 0 && testi < kcd->totlinehit) {
+		testface = NULL;
+		testfaces = NULL;
+		lh = &kcd->linehits[testi];
+		if (lh->v)
+			testfaces = &lh->v->faces;
+		else if (lh->kfe)
+			testfaces = &lh->kfe->faces;
+		else if (lh->f) {
+			testfaces = NULL;
+			testface = lh->f;
+		}
+	}
+	else {
+		testface = f;
+		testfaces = NULL;
+	}
 	for (i = firsti; i <= lasti; i++) {
-		if (testi >= 0 && testi < kcd->totlinehit) {
-			if (knife_find_common_face(&kcd->linehits[testi].kfe->faces,
-			                           &kcd->linehits[i].kfe->faces))
-			{
-				return i;
-			}
-			else if (kcd->linehits[testi].v &&
-			         kcd->linehits[testi].v == kcd->linehits[i].v)
-			{
-				return i;
-			}
+		shareface = false;
+		lh = &kcd->linehits[i];
+		iface = NULL;
+		ifaces = NULL;
+		if (lh->v)
+			ifaces = &lh->v->faces;
+		else if (lh->kfe)
+			ifaces = &lh->kfe->faces;
+		else if (lh->f) {
+			ifaces = NULL;
+			iface = lh->f;
 		}
-		else if (f) {
-			if (find_ref(&kcd->linehits[i].kfe->faces, f))
-				return i;
+		if (testfaces) {
+			if (ifaces)
+				shareface = (knife_find_common_face(testfaces, ifaces) != NULL);
+			else if (iface)
+				shareface = (find_ref(testfaces, iface) != NULL);
 		}
+		else if (ifaces) {
+			if (testface)
+				shareface = (find_ref(ifaces, testface) != NULL);
+		}
+		else if (testface && iface) {
+			shareface = (testface == iface);
+		}
+		if (shareface)
+			return i;
 	}
 	return -1;
 }
@@ -1200,6 +1233,69 @@ static float len_v3_tri_side_max(const float v1[3], const float v2[3], const flo
 	return sqrtf(max_fff(s1, s2, s3));
 }
 
+/**
+ * given a tri, return 3 planes aligned with the tri's normal.
+ *
+ * If the triangle were extruded along its normal,
+ * the planes calculated would be the 3 sides around the extrusion.
+ */
+static void plane_from_tri_clip3_v3(
+        float tri_plane_clip[3][4],
+        const float v0[3], const float v1[3], const float v2[3])
+{
+	float tri_norm[3];
+	float tvec[3], cross[3];
+
+	normal_tri_v3(tri_norm, v0, v1, v2);
+
+	sub_v3_v3v3(tvec, v0, v1);
+	cross_v3_v3v3(cross, tvec, tri_norm);
+	plane_from_point_normal_v3(tri_plane_clip[0], v0, cross);
+
+	sub_v3_v3v3(tvec, v1, v2);
+	cross_v3_v3v3(cross, tvec, tri_norm);
+	plane_from_point_normal_v3(tri_plane_clip[1], v1, cross);
+
+	sub_v3_v3v3(tvec, v2, v0);
+	cross_v3_v3v3(cross, tvec, tri_norm);
+	plane_from_point_normal_v3(tri_plane_clip[2], v2, cross);
+}
+
+/**
+ * Given a line that is planar with a tri, clip the segment by that tri.
+ *
+ * This is needed so we end up with both points in the triangle.
+ */
+static bool isect_line_tri_coplanar_v3(
+        const float p1[3], const float p2[3],
+        const float v0[3], const float v1[3], const float v2[3],
+        float r_isects[2][3],
+
+        /* avoid re-calculating every time */
+        float tri_plane[4], float tri_plane_clip[3][4])
+{
+	float p1_tmp[3] = {UNPACK3(p1)};
+	float p2_tmp[3] = {UNPACK3(p2)};
+
+	(void)v0, (void)v1, (void)v2;
+
+	/* first check if the points are planar with the tri */
+	if ((fabsf(dist_squared_to_plane_v3(p1, tri_plane)) < KNIFE_FLT_EPS_SQUARED) &&
+	    (fabsf(dist_squared_to_plane_v3(p2, tri_plane)) < KNIFE_FLT_EPS_SQUARED) &&
+	    /* clip the segment by planes around the triangle so we can be sure the points
+	     * aren't outside the triangle */
+	    (clip_segment_v3_plane_n(p1_tmp, p2_tmp, tri_plane_clip, 3)))
+	{
+		copy_v3_v3(r_isects[0], p1_tmp);
+		copy_v3_v3(r_isects[1], p2_tmp);
+
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
                                        const float v1[3],  const float v2[3], const float v3[3],
                                        SmallHash *ehash, bglMats *mats, int *count)
@@ -1210,8 +1306,10 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 	BVHTreeOverlap *results, *result;
 	BMLoop **ls;
 	float cos[9], tri_norm[3], tri_plane[4], isects[2][3], lambda;
+	float tri_plane_clip[3][4];
 	unsigned int tot = 0;
 	int i, j, n_isects;
+
 
 	/* for comparing distances, error of intersection depends on triangle scale.
 	 * need to scale down before squaring for accurate comparison */
@@ -1222,8 +1320,10 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 	copy_v3_v3(cos + 3, v2);
 	copy_v3_v3(cos + 6, v3);
 
+	/* avoid re-calculation in #isect_line_tri_coplanar_v3 */
 	normal_tri_v3(tri_norm, v1, v2, v3);
 	plane_from_point_normal_v3(tri_plane, v1, tri_norm);
+	plane_from_tri_clip3_v3(tri_plane_clip, v1, v2, v3);
 
 	BLI_bvhtree_insert(tree2, 0, cos, 3);
 	BLI_bvhtree_balance(tree2);
@@ -1249,21 +1349,25 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 			}
 
 			n_isects = 0;
-			if (fabsf(dist_to_plane_v3(kfe->v1->cageco, tri_plane)) < KNIFE_FLT_EPS &&
-			    fabsf(dist_to_plane_v3(kfe->v2->cageco, tri_plane)) < KNIFE_FLT_EPS)
+
+			if (isect_line_tri_coplanar_v3(kfe->v1->cageco, kfe->v2->cageco, v1, v2, v3,
+			                               isects,
+			                               /* cached values */
+			                               tri_plane, tri_plane_clip))
 			{
 				/* both kfe ends are in cutting triangle */
-				copy_v3_v3(isects[0], kfe->v1->cageco);
-				copy_v3_v3(isects[1], kfe->v2->cageco);
 				n_isects = 2;
 			}
-			else if (isect_line_tri_epsilon_v3(kfe->v1->cageco, kfe->v2->cageco, v1, v2, v3, &lambda, NULL, depsilon)) {
+			else if (isect_line_tri_epsilon_v3(kfe->v1->cageco, kfe->v2->cageco, v1, v2, v3,
+			                                   &lambda, NULL, depsilon))
+			{
 				/* kfe intersects cutting triangle lambda of the way along kfe */
 				interp_v3_v3v3(isects[0], kfe->v1->cageco, kfe->v2->cageco, lambda);
 				n_isects = 1;
 			}
+
 			for (j = 0; j < n_isects; j++) {
-				float p[3], no[3], view[3], sp[2];
+				float p[3];
 
 				copy_v3_v3(p, isects[j]);
 				if (kcd->curr.vert && len_squared_v3v3(kcd->curr.vert->cageco, p) < depsilon_sq) {
@@ -1283,16 +1387,18 @@ static BMEdgeHit *knife_edge_tri_isect(KnifeTool_OpData *kcd, BMBVHTree *bmtree,
 					continue;
 				}
 
-				knife_project_v2(kcd, p, sp);
-				ED_view3d_unproject(mats, view, sp[0], sp[1], 0.0f);
-				mul_m4_v3(kcd->ob->imat, view);
-
 				if (kcd->cut_through) {
 					f_hit = NULL;
 				}
 				else {
 					/* check if this point is visible in the viewport */
-					float p1[3], lambda1;
+					float p1[3], no[3], view[3], sp[2];
+					float lambda1;
+
+					/* screen projection */
+					knife_project_v2(kcd, p, sp);
+					ED_view3d_unproject(mats, view, sp[0], sp[1], 0.0f);
+					mul_m4_v3(kcd->ob->imat, view);
 
 					/* if face isn't planer, p may be behind the current tesselated tri,
 					 * so move it onto that and then a little towards eye */
@@ -2706,7 +2812,7 @@ static void knife_make_chain_cut(KnifeTool_OpData *kcd, BMFace *f, ListBase *cha
 	l_new = NULL;
 	if (nco == 0) {
 		/* Want to prevent creating two-sided polygons */
-		if (BM_edge_exists(v1, v2)) {
+		if (v1 == v2 || BM_edge_exists(v1, v2)) {
 			f_new = NULL;
 		}
 		else {
@@ -3123,7 +3229,8 @@ enum {
 	KNF_MODEL_IGNORE_SNAP_OFF,
 	KNF_MODAL_ADD_CUT,
 	KNF_MODAL_ANGLE_SNAP_TOGGLE,
-	KNF_MODAL_CUT_THROUGH_TOGGLE
+	KNF_MODAL_CUT_THROUGH_TOGGLE,
+	KNF_MODAL_PANNING
 };
 
 wmKeyMap *knifetool_modal_keymap(wmKeyConfig *keyconf)
@@ -3139,6 +3246,7 @@ wmKeyMap *knifetool_modal_keymap(wmKeyConfig *keyconf)
 		{KNF_MODAL_CUT_THROUGH_TOGGLE, "CUT_THROUGH_TOGGLE", 0, "Toggle Cut Through", ""},
 		{KNF_MODAL_NEW_CUT, "NEW_CUT", 0, "End Current Cut", ""},
 		{KNF_MODAL_ADD_CUT, "ADD_CUT", 0, "Add Cut", ""},
+		{KNF_MODAL_PANNING, "PANNING", 0, "Panning", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -3152,6 +3260,7 @@ wmKeyMap *knifetool_modal_keymap(wmKeyConfig *keyconf)
 
 	/* items for modal map */
 	WM_modalkeymap_add_item(keymap, ESCKEY, KM_PRESS, KM_ANY, 0, KNF_MODAL_CANCEL);
+	WM_modalkeymap_add_item(keymap, MIDDLEMOUSE, KM_ANY, KM_ANY, 0, KNF_MODAL_PANNING);
 	WM_modalkeymap_add_item(keymap, LEFTMOUSE, KM_PRESS, KM_ANY, 0, KNF_MODAL_ADD_CUT);
 	WM_modalkeymap_add_item(keymap, RIGHTMOUSE, KM_PRESS, KM_ANY, 0, KNF_MODAL_CANCEL);
 	WM_modalkeymap_add_item(keymap, RETKEY, KM_PRESS, KM_ANY, 0, KNF_MODAL_CONFIRM);
@@ -3277,18 +3386,12 @@ static int knifetool_modal(bContext *C, wmOperator *op, const wmEvent *event)
 
 				ED_region_tag_redraw(kcd->ar);
 				break;
-		}
-	}
-	else { /* non-modal-mapped events */
-		switch (event->type) {
-			case WHEELUPMOUSE:
-			case WHEELDOWNMOUSE:
-				return OPERATOR_PASS_THROUGH;
-			case MIDDLEMOUSE:
+			case KNF_MODAL_PANNING:
 				if (event->val != KM_RELEASE) {
-					if (kcd->mode != MODE_PANNING)
+					if (kcd->mode != MODE_PANNING) {
 						kcd->prevmode = kcd->mode;
-					kcd->mode = MODE_PANNING;
+						kcd->mode = MODE_PANNING;
+					}
 				}
 				else {
 					kcd->mode = kcd->prevmode;
@@ -3296,7 +3399,17 @@ static int knifetool_modal(bContext *C, wmOperator *op, const wmEvent *event)
 
 				ED_region_tag_redraw(kcd->ar);
 				return OPERATOR_PASS_THROUGH;
-
+				break;
+		}
+	}
+	else { /* non-modal-mapped events */
+		switch (event->type) {
+			case MOUSEPAN:
+			case MOUSEZOOM:
+			case MOUSEROTATE:
+			case WHEELUPMOUSE:
+			case WHEELDOWNMOUSE:
+				return OPERATOR_PASS_THROUGH;
 			case MOUSEMOVE: /* mouse moved somewhere to select another loop */
 				if (kcd->mode != MODE_PANNING) {
 					knifetool_update_mval_i(kcd, event->mval);

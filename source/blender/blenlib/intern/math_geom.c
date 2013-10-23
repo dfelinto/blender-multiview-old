@@ -1114,7 +1114,7 @@ bool isect_point_planes_v3(float (*planes)[4], int totplane, const float p[3])
 }
 
 /**
- * Intersect line/plane, optionally treat line as directional (like a ray) with the no_flip argument.
+ * Intersect line/plane.
  *
  * \param out The intersection point.
  * \param l1 The first point of the line.
@@ -1610,7 +1610,7 @@ bool isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3],
 	tymax = (bbox[1 - data->sign[1]][1] - data->ray_start[1]) * data->ray_inv_dir[1];
 
 	if ((tmin > tymax) || (tymin > tmax))
-		return FALSE;
+		return false;
 
 	if (tymin > tmin)
 		tmin = tymin;
@@ -1622,7 +1622,7 @@ bool isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3],
 	tzmax = (bbox[1 - data->sign[2]][2] - data->ray_start[2]) * data->ray_inv_dir[2];
 
 	if ((tmin > tzmax) || (tzmin > tmax))
-		return FALSE;
+		return false;
 
 	if (tzmin > tmin)
 		tmin = tzmin;
@@ -1634,7 +1634,7 @@ bool isect_ray_aabb(const IsectRayAABBData *data, const float bb_min[3],
 	if (tmin_out)
 		(*tmin_out) = tmin;
 
-	return TRUE;
+	return true;
 }
 
 /* find closest point to p on line through (l1, l2) and return lambda,
