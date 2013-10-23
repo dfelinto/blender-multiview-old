@@ -2127,7 +2127,7 @@ static void createTransEditVerts(TransInfo *t)
 	BMVert *eve;
 	BMIter iter;
 	BMVert *eve_act = NULL;
-	float *mappedcos = NULL, *quats = NULL;
+	float (*mappedcos)[3] = NULL, (*quats)[4] = NULL;
 	float mtx[3][3], smtx[3][3], (*defmats)[3][3] = NULL, (*defcos)[3] = NULL;
 	float *dists = NULL;
 	int a;
@@ -2216,30 +2216,34 @@ static void createTransEditVerts(TransInfo *t)
 		island_info = editmesh_islands_info_calc(em, &island_info_tot, &island_vert_map);
 	}
 
-	/* BMESH_TODO, crazy-space writing into the index values is BAD!, means we cant
-	 * use the values for vertex mirror - campbell */
-
 	/* detect CrazySpace [tm] */
 	if (modifiers_getCageIndex(t->scene, t->obedit, NULL, 1) >= 0) {
-		if (modifiers_isCorrectableDeformed(t->obedit)) {
-			int totleft;
+		int totleft = -1;
+		if (modifiers_isCorrectableDeformed(t->scene, t->obedit)) {
 			/* check if we can use deform matrices for modifier from the
 			 * start up to stack, they are more accurate than quats */
 			totleft = editbmesh_get_first_deform_matrices(t->scene, t->obedit, em, &defmats, &defcos);
+		}
 
-			/* if we still have more modifiers, also do crazyspace
-			 * correction with quats, relative to the coordinates after
-			 * the modifiers that support deform matrices (defcos) */
-			if (totleft > 0) {
-				mappedcos = crazyspace_get_mapped_editverts(t->scene, t->obedit);
-				quats = MEM_mallocN((t->total) * sizeof(float) * 4, "crazy quats");
-				crazyspace_set_quats_editmesh(em, (float *)defcos, mappedcos, quats); /* BMESH_TODO, abuses vertex index, should use an int array */
-				if (mappedcos)
-					MEM_freeN(mappedcos);
-			}
+		/* if we still have more modifiers, also do crazyspace
+		 * correction with quats, relative to the coordinates after
+		 * the modifiers that support deform matrices (defcos) */
 
-			if (defcos)
-				MEM_freeN(defcos);
+#if 0	/* TODO, fix crazyspace+extrude so it can be enabled for general use - campbell */
+		if ((totleft > 0) || (totleft == -1))
+#else
+		if (totleft > 0)
+#endif
+		{
+			mappedcos = crazyspace_get_mapped_editverts(t->scene, t->obedit);
+			quats = MEM_mallocN(em->bm->totvert * sizeof(*quats), "crazy quats");
+			crazyspace_set_quats_editmesh(em, defcos, mappedcos, quats);
+			if (mappedcos)
+				MEM_freeN(mappedcos);
+		}
+
+		if (defcos) {
+			MEM_freeN(defcos);
 		}
 	}
 
@@ -2285,12 +2289,12 @@ static void createTransEditVerts(TransInfo *t)
 				}
 
 				/* CrazySpace */
-				if (defmats || (quats && BM_elem_index_get(eve) != -1)) {
+				if (defmats || (quats && BM_elem_flag_test(eve, BM_ELEM_TAG))) {
 					float mat[3][3], qmat[3][3], imat[3][3];
 
 					/* use both or either quat and defmat correction */
-					if (quats && BM_elem_index_get(eve) != -1) {
-						quat_to_mat3(qmat, quats + 4 * BM_elem_index_get(eve));
+					if (quats && BM_elem_flag_test(eve, BM_ELEM_TAG)) {
+						quat_to_mat3(qmat, quats[BM_elem_index_get(eve)]);
 
 						if (defmats)
 							mul_serie_m3(mat, mtx, qmat, defmats[a],
@@ -5325,6 +5329,25 @@ static void special_aftertrans_update__mask(bContext *C, TransInfo *t)
 	}
 }
 
+static void special_aftertrans_update__node(bContext *UNUSED(C), TransInfo *t)
+{
+	int canceled = (t->state == TRANS_CANCEL);
+	
+	if (canceled && t->remove_on_cancel) {
+		/* remove selected nodes on cancel */
+		SpaceNode *snode = (SpaceNode *)t->sa->spacedata.first;
+		bNodeTree *ntree = snode->edittree;
+		if (ntree) {
+			bNode *node, *node_next;
+			for (node = ntree->nodes.first; node; node = node_next) {
+				node_next = node->next;
+				if (node->flag & NODE_SELECT)
+					nodeFreeNode(ntree, node);
+			}
+		}
+	}
+}
+
 static void special_aftertrans_update__mesh(bContext *UNUSED(C), TransInfo *t)
 {
 	/* so automerge supports mirror */
@@ -5436,6 +5459,7 @@ void special_aftertrans_update(bContext *C, TransInfo *t)
 	}
 	else if (t->spacetype == SPACE_NODE) {
 		SpaceNode *snode = (SpaceNode *)t->sa->spacedata.first;
+		special_aftertrans_update__node(C, t);
 		if (canceled == 0) {
 			ED_node_post_apply_transform(C, snode->edittree);
 			

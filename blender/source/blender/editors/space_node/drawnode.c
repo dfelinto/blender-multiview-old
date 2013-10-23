@@ -710,6 +710,8 @@ static void node_shader_buts_mapping(uiLayout *layout, bContext *UNUSED(C), Poin
 {
 	uiLayout *row;
 	
+	uiItemR(layout, ptr, "type", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
+
 	uiItemL(layout, IFACE_("Location:"), ICON_NONE);
 	row = uiLayoutRow(layout, TRUE);
 	uiItemR(row, ptr, "translation", 0, "", ICON_NONE);
@@ -912,12 +914,25 @@ static void node_shader_buts_glossy(uiLayout *layout, bContext *UNUSED(C), Point
 	uiItemR(layout, ptr, "distribution", 0, "", ICON_NONE);
 }
 
-static void node_shader_buts_subsurface(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+static void node_shader_buts_subsurface(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
+	/* SSS does not work on GPU yet */
+	PointerRNA scene = CTX_data_pointer_get(C, "scene");
+	if (scene.data) {
+		PointerRNA cscene = RNA_pointer_get(&scene, "cycles");
+		if (cscene.data && RNA_enum_get(&cscene, "device") == 1)
+			uiItemL(layout, IFACE_("SSS not supported on GPU"), ICON_NONE);
+	}
+
 	uiItemR(layout, ptr, "falloff", 0, "", ICON_NONE);
 }
 
 static void node_shader_buts_toon(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "component", 0, "", ICON_NONE);
+}
+
+static void node_shader_buts_hair(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "component", 0, "", ICON_NONE);
 }
@@ -1054,6 +1069,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 			break;
 		case SH_NODE_BSDF_TOON:
 			ntype->uifunc = node_shader_buts_toon;
+			break;
+		case SH_NODE_BSDF_HAIR:
+			ntype->uifunc = node_shader_buts_hair;
 			break;
 		case SH_NODE_SCRIPT:
 			ntype->uifunc = node_shader_buts_script;

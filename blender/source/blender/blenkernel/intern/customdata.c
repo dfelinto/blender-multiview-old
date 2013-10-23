@@ -45,11 +45,12 @@
 #include "DNA_ID.h"
 
 #include "BLI_utildefines.h"
-#include "BLI_blenlib.h"
-#include "BLI_linklist.h"
+#include "BLI_string.h"
+#include "BLI_path_util.h"
 #include "BLI_math.h"
 #include "BLI_mempool.h"
 #include "BLI_utildefines.h"
+#include "BLI_alloca.h"
 
 #include "BLF_translation.h"
 
@@ -256,7 +257,7 @@ static void layerInterp_mdeformvert(void **sources, const float *weights,
 
 			/* if this def_nr is not in the list, add it */
 			if (!node) {
-				struct MDeformWeight_Link *tmp_dwlink = MEM_mallocN(sizeof(*tmp_dwlink), __func__);
+				struct MDeformWeight_Link *tmp_dwlink = alloca(sizeof(*tmp_dwlink));
 				tmp_dwlink->dw.def_nr = dw->def_nr;
 				tmp_dwlink->dw.weight = weight;
 
@@ -286,12 +287,9 @@ static void layerInterp_mdeformvert(void **sources, const float *weights,
 	}
 
 	if (totweight) {
-		struct MDeformWeight_Link *node_next;
 		dvert->totweight = totweight;
-		for (i = 0, node = dest_dwlink; node; node = node_next, i++) {
-			node_next = node->next;
+		for (i = 0, node = dest_dwlink; node; node = node->next, i++) {
 			dvert->dw[i] = node->dw;
-			MEM_freeN(node);
 		}
 	}
 	else {
@@ -973,6 +971,11 @@ static void layerDefault_mcol(void *data, int count)
 	}
 }
 
+static void layerDefault_origindex(void *data, int count)
+{
+	fill_vn_i((int *)data, count, ORIGINDEX_NONE);
+}
+
 static void layerInterp_bweight(void **sources, const float *weights,
                                 const float *UNUSED(sub_weights), int count, void *dest)
 {
@@ -1079,7 +1082,7 @@ static const LayerTypeInfo LAYERTYPEINFO[CD_NUMTYPES] = {
 	{sizeof(MCol) * 4, "MCol", 4, N_("Col"), NULL, NULL, layerInterp_mcol,
 	 layerSwap_mcol, layerDefault_mcol},
 	/* 7: CD_ORIGINDEX */
-	{sizeof(int), "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	{sizeof(int), "", 0, NULL, NULL, NULL, NULL, NULL, layerDefault_origindex},
 	/* 8: CD_NORMAL */
 	/* 3 floats per normal vector */
 	{sizeof(float) * 3, "vec3f", 1, NULL, NULL, NULL, NULL, NULL, NULL},
@@ -1315,7 +1318,7 @@ bool CustomData_merge(const struct CustomData *source, struct CustomData *dest,
 
 		if (lastflag & CD_FLAG_NOCOPY) continue;
 		else if (!(mask & CD_TYPE_AS_MASK(type))) continue;
-		else if (number < CustomData_number_of_layers(dest, type)) continue;
+		else if (CustomData_get_layer_named(dest, type, layer->name)) continue;
 
 		switch (alloctype) {
 			case CD_ASSIGN:
@@ -1459,8 +1462,10 @@ int CustomData_get_named_layer_index(const CustomData *data, int type, const cha
 	int i;
 
 	for (i = 0; i < data->totlayer; ++i)
-		if (data->layers[i].type == type && strcmp(data->layers[i].name, name) == 0)
-			return i;
+		if (data->layers[i].type == type)
+			if ((!name && !data->layers[i].name) ||
+			    (strcmp(data->layers[i].name, name) == 0))
+				return i;
 
 	return -1;
 }
@@ -1949,13 +1954,61 @@ void CustomData_copy_elements(int type, void *source, void *dest, int count)
 		memcpy(dest, source, typeInfo->size * count);
 }
 
+static void CustomData_copy_data_layer(const CustomData *source, CustomData *dest,
+                                       int src_i, int dest_i,
+                                       int source_index, int dest_index, int count) {
+	const LayerTypeInfo *typeInfo;
+	int src_offset;
+	int dest_offset;
+
+	char *src_data = source->layers[src_i].data;
+	char *dest_data = dest->layers[dest_i].data;
+
+	typeInfo = layerType_getInfo(source->layers[src_i].type);
+
+	src_offset = source_index * typeInfo->size;
+	dest_offset = dest_index * typeInfo->size;
+
+	if (!src_data || !dest_data) {
+		if (src_data != NULL && dest_data != NULL) {
+			printf("%s: warning null data for %s type (%p --> %p), skipping\n",
+			       __func__, layerType_getName(source->layers[src_i].type),
+			       (void *)src_data, (void *)dest_data);
+		}
+		return;
+	}
+
+	if (typeInfo->copy)
+		typeInfo->copy(src_data + src_offset,
+		               dest_data + dest_offset,
+		               count);
+	else
+		memcpy(dest_data + dest_offset,
+		       src_data + src_offset,
+		       count * typeInfo->size);
+}
+
+void CustomData_copy_data_named(const CustomData *source, CustomData *dest,
+                                int source_index, int dest_index, int count)
+{
+	int src_i, dest_i;
+
+	/* copies a layer at a time */
+	for (src_i = 0; src_i < source->totlayer; ++src_i) {
+
+		dest_i = CustomData_get_named_layer_index(dest, source->layers[src_i].type, source->layers[src_i].name);
+
+		/* if we found a matching layer, copy the data */
+		if (dest_i > -1) {
+			CustomData_copy_data_layer(source, dest, src_i, dest_i, source_index, dest_index, count);
+		}
+	}
+}
+
 void CustomData_copy_data(const CustomData *source, CustomData *dest,
                           int source_index, int dest_index, int count)
 {
-	const LayerTypeInfo *typeInfo;
 	int src_i, dest_i;
-	int src_offset;
-	int dest_offset;
 
 	/* copies a layer at a time */
 	dest_i = 0;
@@ -1973,32 +2026,8 @@ void CustomData_copy_data(const CustomData *source, CustomData *dest,
 
 		/* if we found a matching layer, copy the data */
 		if (dest->layers[dest_i].type == source->layers[src_i].type) {
-			char *src_data = source->layers[src_i].data;
-			char *dest_data = dest->layers[dest_i].data;
-
-			typeInfo = layerType_getInfo(source->layers[src_i].type);
-
-			src_offset = source_index * typeInfo->size;
-			dest_offset = dest_index * typeInfo->size;
+			CustomData_copy_data_layer(source, dest, src_i, dest_i, source_index, dest_index, count);
 			
-			if (!src_data || !dest_data) {
-				if (src_data != NULL && dest_data != NULL) {
-					printf("%s: warning null data for %s type (%p --> %p), skipping\n",
-					       __func__, layerType_getName(source->layers[src_i].type),
-					       (void *)src_data, (void *)dest_data);
-				}
-				continue;
-			}
-			
-			if (typeInfo->copy)
-				typeInfo->copy(src_data + src_offset,
-				               dest_data + dest_offset,
-				               count);
-			else
-				memcpy(dest_data + dest_offset,
-				       src_data + src_offset,
-				       count * typeInfo->size);
-
 			/* if there are multiple source & dest layers of the same type,
 			 * we don't want to copy all source layers to the same dest, so
 			 * increment dest_i

@@ -272,7 +272,7 @@ void shader_setup_from_sample(KernelGlobals *kg, ShaderData *sd,
 #ifdef __INSTANCING__
 	sd->object = object;
 #endif
-	/* currently no access to bvh prim index for strand sd->prim - this will cause errors with needs fixing*/
+	/* currently no access to bvh prim index for strand sd->prim*/
 	sd->prim = prim;
 #ifdef __UV__
 	sd->u = u;
@@ -600,6 +600,16 @@ __device float3 shader_bsdf_transparency(KernelGlobals *kg, ShaderData *sd)
 	else
 		return make_float3(0.0f, 0.0f, 0.0f);
 #endif
+}
+
+__device float3 shader_bsdf_alpha(KernelGlobals *kg, ShaderData *sd)
+{
+	float3 alpha = make_float3(1.0f, 1.0f, 1.0f) - shader_bsdf_transparency(kg, sd);
+
+	alpha = max(alpha, make_float3(0.0f, 0.0f, 0.0f));
+	alpha = min(alpha, make_float3(1.0f, 1.0f, 1.0f));
+	
+	return alpha;
 }
 
 __device float3 shader_bsdf_diffuse(KernelGlobals *kg, ShaderData *sd)

@@ -20,6 +20,7 @@
 #include "osl.h"
 #include "sky_model.h"
 
+#include "util_foreach.h"
 #include "util_transform.h"
 
 CCL_NAMESPACE_BEGIN
@@ -41,6 +42,8 @@ TextureMapping::TextureMapping()
 	y_mapping = Y;
 	z_mapping = Z;
 
+	type = TEXTURE;
+
 	projection = FLAT;
 }
 
@@ -54,12 +57,52 @@ Transform TextureMapping::compute_transform()
 		mmat[1][y_mapping-1] = 1.0f;
 	if(z_mapping != NONE)
 		mmat[2][z_mapping-1] = 1.0f;
+	
+	float3 scale_clamped = scale;
 
-	Transform smat = transform_scale(scale);
+	if(type == TEXTURE || type == NORMAL) {
+		/* keep matrix invertible */
+		if(fabsf(scale.x) < 1e-5f)
+			scale_clamped.x = signf(scale.x)*1e-5f;
+		if(fabsf(scale.y) < 1e-5f)
+			scale_clamped.y = signf(scale.y)*1e-5f;
+		if(fabsf(scale.z) < 1e-5f)
+			scale_clamped.z = signf(scale.z)*1e-5f;
+	}
+	
+	Transform smat = transform_scale(scale_clamped);
 	Transform rmat = transform_euler(rotation);
 	Transform tmat = transform_translate(translation);
 
-	return tmat*rmat*smat*mmat;
+	Transform mat;
+
+	switch(type) {
+		case TEXTURE:
+			/* inverse transform on texture coordinate gives
+			 * forward transform on texture */
+			mat = tmat*rmat*smat;
+			mat = transform_inverse(mat);
+			break;
+		case POINT:
+			/* full transform */
+			mat = tmat*rmat*smat;
+			break;
+		case VECTOR:
+			/* no translation for vectors */
+			mat = rmat*smat;
+			break;
+		case NORMAL:
+			/* no translation for normals, and inverse transpose */
+			mat = rmat*smat;
+			mat = transform_inverse(mat);
+			mat = transform_transpose(mat);
+			break;
+	}
+
+	/* projection last */
+	mat = mat*mmat;
+
+	return mat;
 }
 
 bool TextureMapping::skip()
@@ -96,6 +139,11 @@ void TextureMapping::compile(SVMCompiler& compiler, int offset_in, int offset_ou
 		compiler.add_node(NODE_MIN_MAX, offset_out, offset_out);
 		compiler.add_node(float3_to_float4(min));
 		compiler.add_node(float3_to_float4(max));
+	}
+
+	if(type == NORMAL) {
+		compiler.add_node(NODE_VECTOR_MATH, NODE_VECTOR_MATH_NORMALIZE, offset_out, offset_out);
+		compiler.add_node(NODE_VECTOR_MATH, SVM_STACK_INVALID, offset_out);
 	}
 }
 
@@ -471,6 +519,9 @@ static void sky_texture_precompute_new(SunSky *sunsky, float3 dir, float turbidi
 	float2 spherical = sky_spherical_coordinates(dir);
 	float theta = spherical.x;
 	float phi = spherical.y;
+	
+	/* Clamp Turbidity */
+	turbidity = clamp(turbidity, 0.0f, 10.0f); 
 	
 	/* Clamp to Horizon */
 	theta = clamp(theta, 0.0f, M_PI_2_F); 
@@ -1948,6 +1999,46 @@ void IsotropicVolumeNode::compile(SVMCompiler& compiler)
 void IsotropicVolumeNode::compile(OSLCompiler& compiler)
 {
 	compiler.add(this, "node_isotropic_volume");
+}
+
+/* Hair BSDF Closure */
+
+static ShaderEnum hair_component_init()
+{
+	ShaderEnum enm;
+
+	enm.insert("Reflection", CLOSURE_BSDF_HAIR_REFLECTION_ID);
+	enm.insert("Transmission", CLOSURE_BSDF_HAIR_TRANSMISSION_ID);
+	
+
+	return enm;
+}
+
+ShaderEnum HairBsdfNode::component_enum = hair_component_init();
+
+HairBsdfNode::HairBsdfNode()
+{
+	component = ustring("Reflection");
+
+	add_input("Offset", SHADER_SOCKET_FLOAT);
+	add_input("RoughnessU", SHADER_SOCKET_FLOAT);
+	add_input("RoughnessV", SHADER_SOCKET_FLOAT);
+
+}
+
+void HairBsdfNode::compile(SVMCompiler& compiler)
+{
+	closure = (ClosureType)component_enum[component];
+
+	BsdfNode::compile(compiler, input("RoughnessU"), input("RoughnessV"), input("Offset"));
+}
+
+void HairBsdfNode::compile(OSLCompiler& compiler)
+{
+	compiler.parameter("component", component);
+
+	compiler.add(this, "node_hair_bsdf");
+
 }
 
 /* Geometry */
@@ -3637,6 +3728,26 @@ void OSLScriptNode::compile(SVMCompiler& compiler)
 
 void OSLScriptNode::compile(OSLCompiler& compiler)
 {
+	/* XXX fix for #36790:
+	 * point and normal parameters are reflected as generic SOCK_VECTOR sockets
+	 * on the node. Socket fixed input values need to be copied explicitly here for
+	 * vector sockets, otherwise OSL will reject the value due to mismatching type.
+	 */
+	foreach(ShaderInput *input, this->inputs) {
+		if(!input->link) {
+			/* no need for compatible_name here, OSL parameter names are always unique */
+			string param_name(input->name);
+			switch(input->type) {
+				case SHADER_SOCKET_VECTOR:
+					compiler.parameter_point(param_name.c_str(), input->value);
+					compiler.parameter_normal(param_name.c_str(), input->value);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+
 	if(!filepath.empty())
 		compiler.add(this, filepath.c_str(), true);
 	else

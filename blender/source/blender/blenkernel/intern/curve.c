@@ -2665,9 +2665,16 @@ void BKE_curve_bevelList_make(Object *ob, ListBase *nurbs, bool for_render)
 	bl = bev->first;
 	while (bl) {
 		if (bl->nr) { /* null bevel items come from single points */
+			bool is_cyclic = bl->poly != -1;
 			nr = bl->nr;
-			bevp1 = (BevPoint *)(bl + 1);
-			bevp0 = bevp1 + (nr - 1);
+			if (is_cyclic) {
+				bevp1 = (BevPoint *)(bl + 1);
+				bevp0 = bevp1 + (nr - 1);
+			}
+			else {
+				bevp0 = (BevPoint *)(bl + 1);
+				bevp1 = bevp0 + 1;
+			}
 			nr--;
 			while (nr--) {
 				if (fabsf(bevp0->vec[0] - bevp1->vec[0]) < 0.00001f) {
@@ -3304,6 +3311,33 @@ void BKE_nurbList_handles_set(ListBase *editnurb, short code)
 				BKE_nurb_handles_calc(nu);
 			}
 			nu = nu->next;
+		}
+	}
+}
+
+void BKE_nurbList_flag_set(ListBase *editnurb, short flag)
+{
+	Nurb *nu;
+	BezTriple *bezt;
+	BPoint *bp;
+	int a;
+
+	for (nu = editnurb->first; nu; nu = nu->next) {
+		if (nu->type == CU_BEZIER) {
+			a = nu->pntsu;
+			bezt = nu->bezt;
+			while (a--) {
+				bezt->f1 = bezt->f2 = bezt->f3 = flag;
+				bezt++;
+			}
+		}
+		else {
+			a = nu->pntsu * nu->pntsv;
+			bp = nu->bp;
+			while (a--) {
+				bp->f1 = flag;
+				bp++;
+			}
 		}
 	}
 }

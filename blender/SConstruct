@@ -906,6 +906,11 @@ for tp, tn, tf in os.walk('release/text'):
     for f in tf:
         textlist.append(tp+os.sep+f)
 
+# Font licenses
+textlist.append('release/datafiles/LICENSE-bfont.ttf.txt')
+if env['WITH_BF_INTERNATIONAL']:
+    textlist += ['release/datafiles/LICENSE-droidsans.ttf.txt', 'release/datafiles/LICENSE-bmonofont-i18n.ttf.txt']
+
 textinstall = env.Install(dir=env['BF_INSTALLDIR'], source=textlist)
 
 if  env['OURPLATFORM']=='darwin':
