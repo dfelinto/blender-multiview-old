@@ -147,7 +147,7 @@ static void get_tex_mapping(TextureMapping *mapping, BL::TexMapping b_mapping)
 	mapping->translation = get_float3(b_mapping.translation());
 	mapping->rotation = get_float3(b_mapping.rotation());
 	mapping->scale = get_float3(b_mapping.scale());
-	mapping->type = (TextureMapping::Type)b_mapping.type();
+	mapping->type = (TextureMapping::Type)b_mapping.vector_type();
 
 	mapping->x_mapping = (TextureMapping::Mapping)b_mapping.mapping_x();
 	mapping->y_mapping = (TextureMapping::Mapping)b_mapping.mapping_y();
@@ -162,7 +162,7 @@ static void get_tex_mapping(TextureMapping *mapping, BL::ShaderNodeMapping b_map
 	mapping->translation = get_float3(b_mapping.translation());
 	mapping->rotation = get_float3(b_mapping.rotation());
 	mapping->scale = get_float3(b_mapping.scale());
-	mapping->type = (TextureMapping::Type)b_mapping.type();
+	mapping->type = (TextureMapping::Type)b_mapping.vector_type();
 
 	mapping->use_minmax = b_mapping.use_min() || b_mapping.use_max();
 
@@ -322,9 +322,6 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 		SubsurfaceScatteringNode *subsurface = new SubsurfaceScatteringNode();
 
 		switch(b_subsurface_node.falloff()) {
-		case BL::ShaderNodeSubsurfaceScattering::falloff_COMPATIBLE:
-			subsurface->closure = CLOSURE_BSSRDF_COMPATIBLE_ID;
-			break;
 		case BL::ShaderNodeSubsurfaceScattering::falloff_CUBIC:
 			subsurface->closure = CLOSURE_BSSRDF_CUBIC_ID;
 			break;

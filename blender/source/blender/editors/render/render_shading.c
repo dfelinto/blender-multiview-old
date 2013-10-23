@@ -652,6 +652,20 @@ void SCENE_OT_render_view_remove(wmOperatorType *ot)
 
 #ifdef WITH_FREESTYLE
 
+static bool freestyle_linestyle_check_report(FreestyleLineSet *lineset, ReportList *reports)
+{
+	if (!lineset) {
+		BKE_report(reports, RPT_ERROR, "No active lineset and associated line style to add the modifier to");
+		return false;
+	}
+	if (!lineset->linestyle) {
+		BKE_report(reports, RPT_ERROR, "The active lineset does not have a line style (indicating data corruption)");
+		return false;
+	}
+
+	return true;
+}
+
 static int freestyle_active_module_poll(bContext *C)
 {
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "freestyle_module", &RNA_FreestyleModuleSettings);
@@ -924,8 +938,13 @@ static int freestyle_linestyle_new_exec(bContext *C, wmOperator *op)
 		BKE_report(op->reports, RPT_ERROR, "No active lineset to add a new line style to");
 		return OPERATOR_CANCELLED;
 	}
-	lineset->linestyle->id.us--;
-	lineset->linestyle = BKE_copy_linestyle(lineset->linestyle);
+	if (lineset->linestyle) {
+		lineset->linestyle->id.us--;
+		lineset->linestyle = BKE_copy_linestyle(lineset->linestyle);
+	}
+	else {
+		lineset->linestyle = BKE_new_linestyle("LineStyle", NULL);
+	}
 
 	WM_event_add_notifier(C, NC_SCENE | ND_RENDER_OPTIONS, scene);
 
@@ -954,10 +973,10 @@ static int freestyle_color_modifier_add_exec(bContext *C, wmOperator *op)
 	FreestyleLineSet *lineset = BKE_freestyle_lineset_get_active(&srl->freestyleConfig);
 	int type = RNA_enum_get(op->ptr, "type");
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style to add the modifier to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
+
 	if (BKE_add_linestyle_color_modifier(lineset->linestyle, type) == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Unknown line color modifier type");
 		return OPERATOR_CANCELLED;
@@ -993,10 +1012,10 @@ static int freestyle_alpha_modifier_add_exec(bContext *C, wmOperator *op)
 	FreestyleLineSet *lineset = BKE_freestyle_lineset_get_active(&srl->freestyleConfig);
 	int type = RNA_enum_get(op->ptr, "type");
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style to add the modifier to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
+
 	if (BKE_add_linestyle_alpha_modifier(lineset->linestyle, type) == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Unknown alpha transparency modifier type");
 		return OPERATOR_CANCELLED;
@@ -1032,10 +1051,10 @@ static int freestyle_thickness_modifier_add_exec(bContext *C, wmOperator *op)
 	FreestyleLineSet *lineset = BKE_freestyle_lineset_get_active(&srl->freestyleConfig);
 	int type = RNA_enum_get(op->ptr, "type");
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style to add the modifier to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
+
 	if (BKE_add_linestyle_thickness_modifier(lineset->linestyle, type) == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Unknown line thickness modifier type");
 		return OPERATOR_CANCELLED;
@@ -1071,10 +1090,10 @@ static int freestyle_geometry_modifier_add_exec(bContext *C, wmOperator *op)
 	FreestyleLineSet *lineset = BKE_freestyle_lineset_get_active(&srl->freestyleConfig);
 	int type = RNA_enum_get(op->ptr, "type");
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style to add the modifier to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
+
 	if (BKE_add_linestyle_geometry_modifier(lineset->linestyle, type) == NULL) {
 		BKE_report(op->reports, RPT_ERROR, "Unknown stroke geometry modifier type");
 		return OPERATOR_CANCELLED;
@@ -1124,8 +1143,7 @@ static int freestyle_modifier_remove_exec(bContext *C, wmOperator *op)
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "modifier", &RNA_LineStyleModifier);
 	LineStyleModifier *modifier = ptr.data;
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style the modifier belongs to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
 
@@ -1174,8 +1192,7 @@ static int freestyle_modifier_copy_exec(bContext *C, wmOperator *op)
 	PointerRNA ptr = CTX_data_pointer_get_type(C, "modifier", &RNA_LineStyleModifier);
 	LineStyleModifier *modifier = ptr.data;
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style the modifier belongs to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
 
@@ -1225,8 +1242,7 @@ static int freestyle_modifier_move_exec(bContext *C, wmOperator *op)
 	LineStyleModifier *modifier = ptr.data;
 	int dir = RNA_enum_get(op->ptr, "direction");
 
-	if (!lineset) {
-		BKE_report(op->reports, RPT_ERROR, "No active lineset and associated line style the modifier belongs to");
+	if (!freestyle_linestyle_check_report(lineset, op->reports)) {
 		return OPERATOR_CANCELLED;
 	}
 

@@ -792,6 +792,7 @@ static void toggle_paint_cursor(bContext *C, int enable)
 	if (settings->imapaint.paintcursor && !enable) {
 		WM_paint_cursor_end(wm, settings->imapaint.paintcursor);
 		settings->imapaint.paintcursor = NULL;
+		paint_cursor_delete_textures();
 	}
 	else if (enable)
 		paint_cursor_start(C, image_paint_poll);
@@ -819,6 +820,9 @@ void ED_space_image_paint_update(wmWindowManager *wm, ToolSettings *settings)
 		BKE_paint_init(&imapaint->paint, PAINT_CURSOR_TEXTURE_PAINT);
 
 		paint_cursor_start_explicit(&imapaint->paint, wm, image_paint_poll);
+	}
+	else {
+		paint_cursor_delete_textures();
 	}
 }
 
@@ -963,24 +967,9 @@ static int sample_color_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
-/* same as image_paint_poll but fail when face mask mode is enabled */
-static int image_paint_sample_color_poll(bContext *C)
+static int sample_color_poll(bContext *C)
 {
-	if (image_paint_poll(C)) {
-		if (CTX_wm_view3d(C)) {
-			Object *obact = CTX_data_active_object(C);
-			if (obact && obact->mode & OB_MODE_TEXTURE_PAINT) {
-				Mesh *me = BKE_mesh_from_object(obact);
-				if (me) {
-					return !(me->editflag & ME_EDIT_PAINT_FACE_SEL);
-				}
-			}
-		}
-
-		return 1;
-	}
-
-	return 0;
+	return (image_paint_poll(C) || vertex_paint_poll(C));
 }
 
 void PAINT_OT_sample_color(wmOperatorType *ot)
@@ -994,7 +983,7 @@ void PAINT_OT_sample_color(wmOperatorType *ot)
 	ot->exec = sample_color_exec;
 	ot->invoke = sample_color_invoke;
 	ot->modal = sample_color_modal;
-	ot->poll = image_paint_sample_color_poll;
+	ot->poll = sample_color_poll;
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

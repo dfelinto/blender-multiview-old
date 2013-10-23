@@ -1729,7 +1729,7 @@ static int psys_map_index_on_dm(DerivedMesh *dm, int from, int index, int index_
 		return 0;
 
 	if (dm->deformedOnly || index_dmcache == DMCACHE_ISCHILD) {
-		/* for meshes that are either only defined or for child particles, the
+		/* for meshes that are either only deformed or for child particles, the
 		 * index and fw do not require any mapping, so we can directly use it */
 		if (from == PART_FROM_VERT) {
 			if (index >= dm->getNumVerts(dm))
@@ -1817,8 +1817,8 @@ void psys_particle_on_dm(DerivedMesh *dm, int from, int index, int index_dmcache
 			copy_v3_v3(orco, orcodata[mapindex]);
 
 		if (ornor) {
-			dm->getVertNo(dm, mapindex, nor);
-			normalize_v3(nor);
+			dm->getVertNo(dm, mapindex, ornor);
+			normalize_v3(ornor);
 		}
 
 		if (utan && vtan) {
@@ -1843,7 +1843,7 @@ void psys_particle_on_dm(DerivedMesh *dm, int from, int index, int index_dmcache
 			if (nor)
 				copy_v3_v3(nor, tmpnor);
 
-			normalize_v3(tmpnor);
+			normalize_v3(tmpnor);  /* XXX Why not normalize tmpnor before copying it into nor??? -- mont29 */
 			mul_v3_fl(tmpnor, -foffset);
 			add_v3_v3(vec, tmpnor);
 		}

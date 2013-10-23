@@ -123,6 +123,20 @@
 #include "transform.h"
 #include "bmesh.h"
 
+/**
+ * Transforming around ourselves is no use, fallback to individual origins,
+ * useful for curve/armatures.
+ */
+static void transform_around_single_fallback(TransInfo *t)
+{
+	if ((t->total == 1) &&
+	    (ELEM3(t->around, V3D_CENTER, V3D_CENTROID, V3D_ACTIVE)) &&
+	    (ELEM3(t->mode, TFM_RESIZE, TFM_ROTATION, TFM_TRACKBALL)))
+	{
+		t->around = V3D_LOCAL;
+	}
+}
+
 /* when transforming islands */
 struct TransIslandData {
 	float co[3];
@@ -1084,6 +1098,8 @@ static void createTransArmatureVerts(TransInfo *t)
 
 	if (!t->total) return;
 
+	transform_around_single_fallback(t);
+
 	copy_m3_m4(mtx, t->obedit->obmat);
 	pseudoinverse_m3_m3(smtx, mtx, PSEUDOINVERSE_EPSILON);
 
@@ -1408,6 +1424,8 @@ static void createTransCurveVerts(TransInfo *t)
 	else t->total = countsel;
 	t->data = MEM_callocN(t->total * sizeof(TransData), "TransObData(Curve EditMode)");
 
+	transform_around_single_fallback(t);
+
 	copy_m3_m4(mtx, t->obedit->obmat);
 	pseudoinverse_m3_m3(smtx, mtx, PSEUDOINVERSE_EPSILON);
 
@@ -1443,7 +1461,9 @@ static void createTransCurveVerts(TransInfo *t)
 					{
 						copy_v3_v3(td->iloc, bezt->vec[0]);
 						td->loc = bezt->vec[0];
-						copy_v3_v3(td->center, bezt->vec[(hide_handles || bezt->f2 & SELECT) ? 1 : 0]);
+						copy_v3_v3(td->center, bezt->vec[(hide_handles ||
+						                                  (t->around == V3D_LOCAL) ||
+						                                  (bezt->f2 & SELECT)) ? 1 : 0]);
 						if (hide_handles) {
 							if (bezt->f2 & SELECT) td->flag = TD_SELECTED;
 							else td->flag = 0;
@@ -1511,7 +1531,9 @@ static void createTransCurveVerts(TransInfo *t)
 					{
 						copy_v3_v3(td->iloc, bezt->vec[2]);
 						td->loc = bezt->vec[2];
-						copy_v3_v3(td->center, bezt->vec[(hide_handles || bezt->f2 & SELECT) ? 1 : 2]);
+						copy_v3_v3(td->center, bezt->vec[(hide_handles ||
+						                                  (t->around == V3D_LOCAL) ||
+						                                  (bezt->f2 & SELECT)) ? 1 : 2]);
 						if (hide_handles) {
 							if (bezt->f2 & SELECT) td->flag = TD_SELECTED;
 							else td->flag = 0;
@@ -1552,7 +1574,7 @@ static void createTransCurveVerts(TransInfo *t)
 			 * but for now just don't change handle types */
 			if (ELEM(t->mode, TFM_CURVE_SHRINKFATTEN, TFM_TILT) == 0) {
 				/* sets the handles based on their selection, do this after the data is copied to the TransData */
-				BKE_nurb_handles_test(nu);
+				BKE_nurb_handles_test(nu, !hide_handles);
 			}
 		}
 		else {
@@ -3872,7 +3894,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 					}
 					
 					/* if handles were not selected, store their selection status */
-					if (!(sel1) && !(sel3)) {
+					if (!(sel1) || !(sel3)) {
 						if (hdata == NULL)
 							hdata = initTransDataCurveHandles(td, bezt);
 					}

@@ -28,13 +28,8 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_array.h"
-#include "BLI_alloca.h"
-#include "BLI_smallhash.h"
-#include "BLI_rand.h"
-#include "BLI_heap.h"
 
 #include "bmesh.h"
 #include "bmesh_tools.h"
@@ -44,10 +39,7 @@
 #define EDGE_MARK	1
 #define EDGE_VIS	2
 
-#define FACE_NEW	1
-
 #define ELE_NEW		1
-#define ELE_ORIG	4
 
 void bmo_edgenet_fill_exec(BMesh *bm, BMOperator *op)
 {

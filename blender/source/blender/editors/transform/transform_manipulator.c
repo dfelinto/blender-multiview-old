@@ -428,12 +428,12 @@ int calc_manipulator_stats(const bContext *C)
 								totsel++;
 							}
 							else {
-								if (bezt->f1) {
-									calc_tw_center(scene, bezt->vec[0]);
+								if (bezt->f1 & SELECT) {
+									calc_tw_center(scene, bezt->vec[(v3d->around == V3D_LOCAL) ? 1 : 0]);
 									totsel++;
 								}
-								if (bezt->f3) {
-									calc_tw_center(scene, bezt->vec[2]);
+								if (bezt->f3 & SELECT) {
+									calc_tw_center(scene, bezt->vec[(v3d->around == V3D_LOCAL) ? 1 : 2]);
 									totsel++;
 								}
 							}
@@ -1858,11 +1858,12 @@ int BIF_do_manipulator(bContext *C, const struct wmEvent *event, wmOperator *op)
 			 * See [#34621], it's a miracle it did not cause more problems!!! */
 			/* However, we need to copy the "release_confirm" property... */
 			PointerRNA props_ptr;
-			WM_operator_properties_create(&props_ptr, "TRANSFORM_OT_trackball");
+			wmOperatorType *ot = WM_operatortype_find("TRANSFORM_OT_trackball", true);
+			WM_operator_properties_create_ptr(&props_ptr, ot);
 			RNA_boolean_set(&props_ptr, "release_confirm", RNA_boolean_get(op->ptr, "release_confirm"));
-
-			WM_operator_name_call(C, "TRANSFORM_OT_trackball", WM_OP_INVOKE_DEFAULT, &props_ptr);
-			//wm_operator_invoke(C, WM_operatortype_find("TRANSFORM_OT_trackball", 0), event, NULL, NULL, FALSE);
+			WM_operator_name_call(C, ot->idname, WM_OP_INVOKE_DEFAULT, &props_ptr);
+			//wm_operator_invoke(C, WM_operatortype_find(ot->idname, 0), event, NULL, NULL, FALSE);
+			WM_operator_properties_free(&props_ptr);
 		}
 		else if (drawflags & MAN_ROT_C) {
 			switch (drawflags) {

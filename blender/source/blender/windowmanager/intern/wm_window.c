@@ -131,7 +131,7 @@ static void wm_window_check_position(rcti *rect)
 {
 	int width, height, d;
 	
-	wm_get_desktopsize(&width, &height);
+	wm_get_screensize(&width, &height);
 	
 #if defined(__APPLE__) && !defined(GHOST_COCOA)
 	height -= 70;
@@ -364,7 +364,7 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 	/* a new window is created when pageflip mode is required for a window */
 	stereo = (win->flag & WM_STEREO) && U.stereo_display == S3D_DISPLAY_PAGEFLIP;
 
-	wm_get_desktopsize(&scr_w, &scr_h);
+	wm_get_screensize(&scr_w, &scr_h);
 	posy = (scr_h - win->posy - win->sizey);
 	
 	ghostwin = GHOST_CreateWindow(g_system, title,
@@ -383,12 +383,12 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 		win->ghostwin = ghostwin;
 		GHOST_SetWindowUserData(ghostwin, win); /* pointer back */
 		
-		/* set the state*/
-		GHOST_SetWindowState(ghostwin, (GHOST_TWindowState)win->windowstate);
-
 		if (win->eventstate == NULL)
 			win->eventstate = MEM_callocN(sizeof(wmEvent), "window event state");
 		
+		/* set the state */
+		GHOST_SetWindowState(ghostwin, (GHOST_TWindowState)win->windowstate);
+
 		/* until screens get drawn, make it nice gray */
 		glClearColor(0.55, 0.55, 0.55, 0.0);
 		/* Crash on OSS ATI: bugs.launchpad.net/ubuntu/+source/mesa/+bug/656100 */
