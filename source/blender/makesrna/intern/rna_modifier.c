@@ -118,6 +118,7 @@ EnumPropertyItem modifier_type_items[] = {
 #include "BKE_depsgraph.h"
 #include "BKE_library.h"
 #include "BKE_modifier.h"
+#include "BKE_object.h"
 #include "BKE_particle.h"
 
 static void rna_UVProject_projectors_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
@@ -534,6 +535,14 @@ static int rna_MultiresModifier_filepath_length(PointerRNA *ptr)
 	CustomDataExternal *external = ((Mesh *)ob->data)->ldata.external;
 
 	return strlen((external) ? external->filename : "");
+}
+
+static void rna_HookModifier_object_set(PointerRNA *ptr, PointerRNA value)
+{
+	HookModifierData *hmd = ptr->data;
+
+	hmd->object = (Object *)value.data;
+	BKE_object_modifier_hook_reset((Object *)ptr->id.data, hmd);
 }
 
 static void modifier_object_set(Object *self, Object **ob_p, int type, PointerRNA value)
@@ -1434,6 +1443,7 @@ static void rna_def_modifier_hook(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "object", PROP_POINTER, PROP_NONE);
 	RNA_def_property_ui_text(prop, "Object", "Parent Object for hook, also recalculates and clears offset");
 	RNA_def_property_flag(prop, PROP_EDITABLE | PROP_ID_SELF_CHECK);
+	RNA_def_property_pointer_funcs(prop, NULL, "rna_HookModifier_object_set", NULL, NULL);
 	RNA_def_property_update(prop, 0, "rna_Modifier_dependency_update");
 	
 	prop = RNA_def_property(srna, "subtarget", PROP_STRING, PROP_NONE);

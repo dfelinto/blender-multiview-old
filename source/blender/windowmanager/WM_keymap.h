@@ -91,12 +91,15 @@ void		WM_modalkeymap_assign(struct wmKeyMap *km, const char *opname);
 void		WM_keymap_restore_to_default(struct wmKeyMap *keymap, struct bContext *C);
 void		WM_keymap_properties_reset(struct wmKeyMapItem *kmi, struct IDProperty *properties);
 void		WM_keymap_restore_item_to_default(struct bContext *C, struct wmKeyMap *keymap, struct wmKeyMapItem *kmi);
+int			WM_keymap_map_type_get(struct wmKeyMapItem *kmi);
 
 /* Key Event */
 
 const char	*WM_key_event_string(short type);
 int			WM_key_event_operator_id(const struct bContext *C, const char *opname, int opcontext, struct IDProperty *properties, int hotkey, struct wmKeyMap **keymap_r);
 char		*WM_key_event_operator_string(const struct bContext *C, const char *opname, int opcontext, struct IDProperty *properties, const bool strict, char *str, int len);
+
+const char *WM_bool_as_string(bool test);
 
 #ifdef __cplusplus
 }

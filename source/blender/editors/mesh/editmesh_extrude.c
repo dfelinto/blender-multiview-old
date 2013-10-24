@@ -290,7 +290,7 @@ static int edbm_extrude_repeat_exec(bContext *C, wmOperator *op)
 		//BMO_op_callf(em->bm, BMO_FLAG_DEFAULTS, "extrude_face_region geom=%hef", BM_ELEM_SELECT);
 		BMO_op_callf(em->bm, BMO_FLAG_DEFAULTS,
 		             "translate vec=%v verts=%hv",
-		             (float *)dvec, BM_ELEM_SELECT);
+		             dvec, BM_ELEM_SELECT);
 		//extrudeflag(obedit, em, SELECT, nor);
 		//translateflag(em, SELECT, dvec);
 	}
@@ -377,7 +377,6 @@ static int edbm_extrude_mesh(Scene *scene, Object *obedit, BMEditMesh *em, wmOpe
 		BKE_object_handle_update(scene, obedit);
 
 		/* individual faces? */
-//		BIF_TransformSetUndo("Extrude");
 		if (nr == 2) {
 //			initTransform(TFM_SHRINKFATTEN, CTX_NO_PET|CTX_NO_MIRROR);
 //			Transform();

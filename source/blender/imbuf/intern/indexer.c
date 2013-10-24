@@ -55,12 +55,12 @@
 #endif
 
 
-static char magic[] = "BlenMIdx";
-static char temp_ext[] = "_part";
+static const char magic[] = "BlenMIdx";
+static const char temp_ext[] = "_part";
 
-static int proxy_sizes[] = { IMB_PROXY_25, IMB_PROXY_50, IMB_PROXY_75,
+static const int proxy_sizes[] = { IMB_PROXY_25, IMB_PROXY_50, IMB_PROXY_75,
 	                         IMB_PROXY_100 };
-static float proxy_fac[] = { 0.25, 0.50, 0.75, 1.00 };
+static const float proxy_fac[] = { 0.25, 0.50, 0.75, 1.00 };
 
 #ifdef WITH_FFMPEG
 static int tc_types[] = {IMB_TC_RECORD_RUN,
@@ -656,7 +656,6 @@ static int add_to_proxy_output_ffmpeg(
 static void free_proxy_output_ffmpeg(struct proxy_output_ctx *ctx,
                                      int rollback)
 {
-	int i;
 	char fname[FILE_MAX];
 	char fname_tmp[FILE_MAX];
 
@@ -674,18 +673,12 @@ static void free_proxy_output_ffmpeg(struct proxy_output_ctx *ctx,
 	
 	avcodec_close(ctx->c);
 	
-	for (i = 0; i < ctx->of->nb_streams; i++) {
-		if (&ctx->of->streams[i]) {
-			av_freep(&ctx->of->streams[i]);
-		}
-	}
-
 	if (ctx->of->oformat) {
 		if (!(ctx->of->oformat->flags & AVFMT_NOFILE)) {
 			avio_close(ctx->of->pb);
 		}
 	}
-	av_free(ctx->of);
+	avformat_free_context(ctx->of);
 
 	MEM_freeN(ctx->video_buffer);
 
@@ -853,6 +846,9 @@ static void index_rebuild_ffmpeg_finish(FFmpegIndexBuilderContext *context, int 
 			free_proxy_output_ffmpeg(context->proxy_ctx[i], stop);
 		}
 	}
+
+	avcodec_close(context->iCodecCtx);
+	avformat_close_input(&context->iFormatCtx);
 
 	MEM_freeN(context);
 }

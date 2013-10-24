@@ -158,6 +158,7 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		rv = scen->r.views;
 		scen->r = sce->r;
 		scen->r.layers = rl;
+		scen->r.actlay = 0;
 		scen->r.views = rv;
 		scen->unit = sce->unit;
 		scen->physics_settings = sce->physics_settings;
@@ -890,18 +891,35 @@ Object *BKE_scene_camera_switch_find(Scene *scene)
 	TimeMarker *m;
 	int cfra = scene->r.cfra;
 	int frame = -(MAXFRAME + 1);
+	int min_frame = MAXFRAME + 1;
 	Object *camera = NULL;
+	Object *first_camera = NULL;
 
 	for (m = scene->markers.first; m; m = m->next) {
-		if (m->camera && (m->camera->restrictflag & OB_RESTRICT_RENDER) == 0 && (m->frame <= cfra) && (m->frame > frame)) {
-			camera = m->camera;
-			frame = m->frame;
+		if (m->camera && (m->camera->restrictflag & OB_RESTRICT_RENDER) == 0) {
+			if ((m->frame <= cfra) && (m->frame > frame)) {
+				camera = m->camera;
+				frame = m->frame;
 
-			if (frame == cfra)
-				break;
+				if (frame == cfra)
+					break;
+			}
 
+			if (m->frame < min_frame) {
+				first_camera = m->camera;
+				min_frame = m->frame;
+			}
 		}
 	}
+
+	if (camera == NULL) {
+		/* If there's no marker to the left of current frame,
+		 * use camera from left-most marker to solve all sort
+		 * of Schrodinger uncertainties.
+		 */
+		return first_camera;
+	}
+
 	return camera;
 }
 #endif
@@ -1537,16 +1555,6 @@ void BKE_scene_disable_color_management(Scene *scene)
 
 int BKE_scene_check_color_management_enabled(const Scene *scene)
 {
-	/* TODO(sergey): shouldn't be needed. but we're currently far to close to the release,
-	 *               so better be extra-safe than sorry.
-	 *
-	 *               Will remove the check after the release.
-	 */
-	if (!scene) {
-		BLI_assert(!"Shouldn't happen!");
-		return TRUE;
-	}
-
 	return strcmp(scene->display_settings.display_device, "None") != 0;
 }
 

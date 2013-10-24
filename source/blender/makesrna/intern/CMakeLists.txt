@@ -137,6 +137,8 @@ set(SRC
 	${DEFSRC}
 	${APISRC}
 	../../../../intern/guardedalloc/intern/mallocn.c
+	../../../../intern/guardedalloc/intern/mallocn_guarded_impl.c
+	../../../../intern/guardedalloc/intern/mallocn_lockfree_impl.c
 	../../../../intern/guardedalloc/intern/mmap_win.c
 )
 
@@ -164,8 +166,8 @@ if(WITH_IMAGE_OPENEXR)
 	add_definitions(-DWITH_OPENEXR)
 endif()
 
-if(WITH_IMAGE_PSD)
-	add_definitions(-DWITH_PSD)
+if(WITH_OPENIMAGEIO)
+	add_definitions(-DWITH_OPENIMAGEIO)
 endif()
 
 if(WITH_IMAGE_TIFF)
@@ -251,11 +253,6 @@ if(WITH_BULLET)
 		../../../../intern/rigidbody
 	)
 	add_definitions(-DWITH_BULLET)
-endif()
-
-# for mallocn.c
-if (WITH_GUARDEDALLOC)
-	add_definitions(-DWITH_GUARDEDALLOC)
 endif()
 
 # Build makesrna executable

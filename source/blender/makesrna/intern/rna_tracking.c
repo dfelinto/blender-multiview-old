@@ -711,9 +711,6 @@ static EnumPropertyItem pattern_match_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-static int rna_matrix_dimsize_4x4[] = {4, 4};
-static int rna_matrix_dimsize_4x2[] = {4, 2};
-
 static void rna_def_trackingSettings(BlenderRNA *brna)
 {
 	StructRNA *srna;
@@ -769,22 +766,6 @@ static void rna_def_trackingSettings(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Speed",
 	                         "Limit speed of tracking to make visual feedback easier "
 	                         "(this does not affect the tracking quality)");
-
-	/* reconstruction success_threshold */
-	prop = RNA_def_property(srna, "reconstruction_success_threshold", PROP_FLOAT, PROP_NONE);
-	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_float_default(prop, 0.001f);
-	RNA_def_property_range(prop, 0, FLT_MAX);
-	RNA_def_property_ui_text(prop, "Success Threshold",
-	                         "Threshold value of reconstruction error which is still considered successful");
-
-	/* use fallback reconstruction */
-	prop = RNA_def_property(srna, "use_fallback_reconstruction", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_boolean_sdna(prop, NULL, "reconstruction_flag", TRACKING_USE_FALLBACK_RECONSTRUCTION);
-	RNA_def_property_ui_text(prop, "Use Fallback",
-	                         "Use fallback reconstruction algorithm in cases main reconstruction algorithm failed "
-	                         "(could give better solution with bad tracks)");
 
 	/* use keyframe selection */
 	prop = RNA_def_property(srna, "use_keyframe_selection", PROP_BOOLEAN, PROP_NONE);

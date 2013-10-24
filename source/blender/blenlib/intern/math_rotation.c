@@ -286,7 +286,7 @@ void mat3_to_quat(float q[4], float wmat[3][3])
 
 	tr = 0.25 * (double)(1.0f + mat[0][0] + mat[1][1] + mat[2][2]);
 
-	if (tr > (double)FLT_EPSILON) {
+	if (tr > (double)1e-4f) {
 		s = sqrt(tr);
 		q[0] = (float)s;
 		s = 1.0 / (4.0 * s);
@@ -300,7 +300,7 @@ void mat3_to_quat(float q[4], float wmat[3][3])
 			q[1] = (float)(0.25 * s);
 
 			s = 1.0 / s;
-			q[0] = (float)((double)(mat[2][1] - mat[1][2]) * s);
+			q[0] = (float)((double)(mat[1][2] - mat[2][1]) * s);
 			q[2] = (float)((double)(mat[1][0] + mat[0][1]) * s);
 			q[3] = (float)((double)(mat[2][0] + mat[0][2]) * s);
 		}
@@ -318,7 +318,7 @@ void mat3_to_quat(float q[4], float wmat[3][3])
 			q[3] = (float)(0.25 * s);
 
 			s = 1.0 / s;
-			q[0] = (float)((double)(mat[1][0] - mat[0][1]) * s);
+			q[0] = (float)((double)(mat[0][1] - mat[1][0]) * s);
 			q[1] = (float)((double)(mat[2][0] + mat[0][2]) * s);
 			q[2] = (float)((double)(mat[2][1] + mat[1][2]) * s);
 		}
@@ -1712,7 +1712,7 @@ float fov_to_focallength(float hfov, float sensor)
 	return (sensor / 2.0f) / tanf(hfov * 0.5f);
 }
 
-/* 'mod_inline(-3,4)= 1', 'fmod(-3,4)= -3' */
+/* 'mod_inline(-3, 4)= 1', 'fmod(-3, 4)= -3' */
 static float mod_inline(float a, float b)
 {
 	return a - (b * floorf(a / b));

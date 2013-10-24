@@ -82,7 +82,7 @@ static void rna_generate_static_parameter_prototypes(FILE *f, StructRNA *srna, F
 		fprintf(f, param); \
 	} (void)0
 
-static int replace_if_different(char *tmpfile, const char *dep_files[])
+static int replace_if_different(const char *tmpfile, const char *dep_files[])
 {
 	/* return 0;  *//* use for testing had edited rna */
 
@@ -1555,7 +1555,7 @@ static void rna_def_property_funcs_header(FILE *f, StructRNA *srna, PropertyDefR
 			}
 			else if (prop->arraydimension && prop->totarraylength) {
 				fprintf(f, "void %sget(PointerRNA *ptr, int values[%u]);\n", func, prop->totarraylength);
-				fprintf(f, "void %sset(PointerRNA *ptr, const int values[%d]);\n", func, prop->totarraylength);
+				fprintf(f, "void %sset(PointerRNA *ptr, const int values[%u]);\n", func, prop->totarraylength);
 			}
 			else {
 				fprintf(f, "void %sget(PointerRNA *ptr, int values[]);\n", func);
@@ -1571,7 +1571,7 @@ static void rna_def_property_funcs_header(FILE *f, StructRNA *srna, PropertyDefR
 			}
 			else if (prop->arraydimension && prop->totarraylength) {
 				fprintf(f, "void %sget(PointerRNA *ptr, float values[%u]);\n", func, prop->totarraylength);
-				fprintf(f, "void %sset(PointerRNA *ptr, const float values[%d]);\n", func, prop->totarraylength);
+				fprintf(f, "void %sset(PointerRNA *ptr, const float values[%u]);\n", func, prop->totarraylength);
 			}
 			else {
 				fprintf(f, "void %sget(PointerRNA *ptr, float values[]);\n", func);
@@ -3446,7 +3446,7 @@ static const char *cpp_classes = ""
 "	inline void sname::identifier(int value) { sname##_##identifier##_set(&ptr, value); }\n"
 "\n"
 "#define BOOLEAN_ARRAY_PROPERTY(sname, size, identifier) \\\n"
-"	inline Array<int,size> sname::identifier(void) \\\n"
+"	inline Array<int, size> sname::identifier(void) \\\n"
 "		{ Array<int, size> ar; sname##_##identifier##_get(&ptr, ar.data); return ar; } \\\n"
 "	inline void sname::identifier(int values[size]) \\\n"
 "		{ sname##_##identifier##_set(&ptr, values); } \\\n"
@@ -3466,7 +3466,7 @@ static const char *cpp_classes = ""
 "	inline void sname::identifier(int value) { sname##_##identifier##_set(&ptr, value); }\n"
 "\n"
 "#define INT_ARRAY_PROPERTY(sname, size, identifier) \\\n"
-"	inline Array<int,size> sname::identifier(void) \\\n"
+"	inline Array<int, size> sname::identifier(void) \\\n"
 "		{ Array<int, size> ar; sname##_##identifier##_get(&ptr, ar.data); return ar; } \\\n"
 "	inline void sname::identifier(int values[size]) \\\n"
 "		{ sname##_##identifier##_set(&ptr, values); } \\\n"
@@ -3486,7 +3486,7 @@ static const char *cpp_classes = ""
 "	inline void sname::identifier(float value) { sname##_##identifier##_set(&ptr, value); }\n"
 "\n"
 "#define FLOAT_ARRAY_PROPERTY(sname, size, identifier) \\\n"
-"	inline Array<float,size> sname::identifier(void) \\\n"
+"	inline Array<float, size> sname::identifier(void) \\\n"
 "		{ Array<float, size> ar; sname##_##identifier##_get(&ptr, ar.data); return ar; } \\\n"
 "	inline void sname::identifier(float values[size]) \\\n"
 "		{ sname##_##identifier##_set(&ptr, values); } \\\n"
@@ -3695,7 +3695,7 @@ static const char *cpp_classes = ""
 "         typename Tcollection_funcs>\n"
 "class Collection : public Tcollection_funcs {\n"
 "public:\n"
-"	Collection(const PointerRNA &p) : Tcollection_funcs(p), ptr(p)  {}\n"
+"	Collection(const PointerRNA &p) : Tcollection_funcs(p), ptr(p) {}\n"
 "\n"
 "	void begin(CollectionIterator<T, Tbegin, Tnext, Tend>& iter)\n"
 "	{ iter.begin(ptr); }\n"

@@ -1909,10 +1909,16 @@ class VIEW3D_MT_edit_mesh_extrude(Menu):
     bl_label = "Extrude"
 
     _extrude_funcs = {
-        'VERT': lambda layout: layout.operator("mesh.extrude_vertices_move", text="Vertices Only"),
-        'EDGE': lambda layout: layout.operator("mesh.extrude_edges_move", text="Edges Only"),
-        'FACE': lambda layout: layout.operator("mesh.extrude_faces_move", text="Individual Faces"),
-        'REGION': lambda layout: layout.operator("view3d.edit_mesh_extrude_move_normal", text="Region"),
+        'VERT': lambda layout:
+            layout.operator("mesh.extrude_vertices_move", text="Vertices Only"),
+        'EDGE': lambda layout:
+            layout.operator("mesh.extrude_edges_move", text="Edges Only"),
+        'FACE': lambda layout:
+            layout.operator("mesh.extrude_faces_move", text="Individual Faces"),
+        'REGION': lambda layout:
+            layout.operator("view3d.edit_mesh_extrude_move_normal", text="Region"),
+        'REGION_VERT_NORMAL': lambda layout:
+            layout.operator("view3d.edit_mesh_extrude_move_shrink_fatten", text="Region (Vertex Normals)"),
     }
 
     @staticmethod
@@ -1922,7 +1928,7 @@ class VIEW3D_MT_edit_mesh_extrude(Menu):
 
         menu = []
         if mesh.total_face_sel:
-            menu += ['REGION', 'FACE']
+            menu += ['REGION', 'REGION_VERT_NORMAL', 'FACE']
         if mesh.total_edge_sel and (select_mode[0] or select_mode[1]):
             menu += ['EDGE']
         if mesh.total_vert_sel and select_mode[0]:
@@ -2633,10 +2639,14 @@ class VIEW3D_PT_view3d_shading(Panel):
         if not scene.render.use_shading_nodes:
             col.prop(gs, "material_mode", text="")
             col.prop(view, "show_textured_solid")
+        
         if view.viewport_shade == 'SOLID':
             col.prop(view, "use_matcap")
             if view.use_matcap:
                 col.template_icon_view(view, "matcap_icon")
+        elif view.viewport_shade == 'TEXTURED':
+            col.prop(view, "show_textured_shadeless")
+
         col.prop(view, "show_backface_culling")
         if obj and obj.mode == 'EDIT' and view.viewport_shade not in {'BOUNDBOX', 'WIREFRAME'}:
             col.prop(view, "show_occlude_wire")

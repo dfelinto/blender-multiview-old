@@ -774,33 +774,31 @@ static void obmat_to_viewmat(RegionView3D *rv3d, Object *ob)
 	mat3_to_quat(rv3d->viewquat, tmat);
 }
 
-#define QUATSET(a, b, c, d, e) { a[0] = b; a[1] = c; a[2] = d; a[3] = e; } (void)0
-
 bool ED_view3d_lock(RegionView3D *rv3d)
 {
 	switch (rv3d->view) {
 		case RV3D_VIEW_BOTTOM:
-			QUATSET(rv3d->viewquat, 0.0, -1.0, 0.0, 0.0);
+			copy_v4_fl4(rv3d->viewquat, 0.0, -1.0, 0.0, 0.0);
 			break;
 
 		case RV3D_VIEW_BACK:
-			QUATSET(rv3d->viewquat, 0.0, 0.0, -M_SQRT1_2, -M_SQRT1_2);
+			copy_v4_fl4(rv3d->viewquat, 0.0, 0.0, -M_SQRT1_2, -M_SQRT1_2);
 			break;
 
 		case RV3D_VIEW_LEFT:
-			QUATSET(rv3d->viewquat, 0.5, -0.5, 0.5, 0.5);
+			copy_v4_fl4(rv3d->viewquat, 0.5, -0.5, 0.5, 0.5);
 			break;
 
 		case RV3D_VIEW_TOP:
-			QUATSET(rv3d->viewquat, 1.0, 0.0, 0.0, 0.0);
+			copy_v4_fl4(rv3d->viewquat, 1.0, 0.0, 0.0, 0.0);
 			break;
 
 		case RV3D_VIEW_FRONT:
-			QUATSET(rv3d->viewquat, M_SQRT1_2, -M_SQRT1_2, 0.0, 0.0);
+			copy_v4_fl4(rv3d->viewquat, M_SQRT1_2, -M_SQRT1_2, 0.0, 0.0);
 			break;
 
 		case RV3D_VIEW_RIGHT:
-			QUATSET(rv3d->viewquat, 0.5, -0.5, -0.5, -0.5);
+			copy_v4_fl4(rv3d->viewquat, 0.5, -0.5, -0.5, -0.5);
 			break;
 		default:
 			return false;
@@ -876,10 +874,12 @@ void setviewmatrixview3d(Scene *scene, View3D *v3d, RegionView3D *rv3d)
 	}
 }
 
-/* IGLuint-> GLuint */
-/* Warning: be sure to account for a negative return value
- *   This is an error, "Too many objects in select buffer"
- *   and no action should be taken (can crash blender) if this happens
+/**
+ * \warning be sure to account for a negative return value
+ * This is an error, "Too many objects in select buffer"
+ * and no action should be taken (can crash blender) if this happens
+ *
+ * \note (vc->obedit == NULL) can be set to explicitly skip edit-object selection.
  */
 short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int bufsize, rcti *input)
 {
@@ -890,6 +890,7 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 	short code, hits;
 	char dt;
 	short dtx;
+	const bool use_obedit_skip = (scene->obedit != NULL) && (vc->obedit == NULL);
 	
 	G.f |= G_PICKSEL;
 	
@@ -937,8 +938,11 @@ short view3d_opengl_select(ViewContext *vc, unsigned int *buffer, unsigned int b
 		for (base = scene->base.first; base; base = base->next) {
 			if (base->lay & v3d->lay) {
 				
-				if (base->object->restrictflag & OB_RESTRICT_SELECT)
+				if ((base->object->restrictflag & OB_RESTRICT_SELECT) ||
+				    (use_obedit_skip && (scene->obedit->data == base->object->data)))
+				{
 					base->selcol = 0;
+				}
 				else {
 					base->selcol = code;
 					glLoadName(code);

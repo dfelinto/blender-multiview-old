@@ -505,6 +505,14 @@ static void ui_item_enum_expand_handle(bContext *C, void *arg1, void *arg2)
 static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *ptr, PropertyRNA *prop,
                                 const char *uiname, int h, int icon_only)
 {
+	/* XXX The way this function currently handles uiname parameter is insane and inconsistent with general UI API:
+	 *     * uiname is the *enum property* label.
+	 *     * when it is NULL or empty, we do not draw *enum items* labels, this doubles the icon_only parameter.
+	 *     * we *never* draw (i.e. really use) the enum label uiname, it is just used as a mere flag!
+	 *     Unfortunately, fixing this implies an API "soft break", so better to defer it for later... :/
+	 *     --mont29
+	 */
+
 	uiBut *but;
 	EnumPropertyItem *item, *item_array;
 	const char *name;

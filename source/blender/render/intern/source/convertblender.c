@@ -167,7 +167,7 @@ static HaloRen *initstar(Render *re, ObjectRen *obr, const float vec[3], float h
  */
 
 void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
-                   void (*vertexfunc)(float *),  void (*termfunc)(void))
+                   void (*vertexfunc)(const float *),  void (*termfunc)(void))
 {
 	extern unsigned char hash[512];
 	ObjectRen *obr= NULL;
@@ -334,7 +334,7 @@ void RE_make_stars(Render *re, Scene *scenev3d, void (*initfunc)(void),
  * cleanup      */
 /* ------------------------------------------------------------------------- */
 
-#define UVTOINDEX(u,v) (startvlak + (u) * sizev + (v))
+#define UVTOINDEX(u, v) (startvlak + (u) * sizev + (v))
 /*
  *
  * NOTE THAT U/V COORDINATES ARE SOMETIMES SWAPPED !!
@@ -860,28 +860,13 @@ static void autosmooth(Render *UNUSED(re), ObjectRen *obr, float mat[4][4], int 
 /* Orco hash and Materials                                                   */
 /* ------------------------------------------------------------------------- */
 
-static float *get_object_orco(Render *re, Object *ob)
+static float *get_object_orco(Render *re, void *ob)
 {
-	float *orco;
-
-	if (!re->orco_hash)
-		re->orco_hash = BLI_ghash_ptr_new("get_object_orco gh");
-
-	orco = BLI_ghash_lookup(re->orco_hash, ob);
-
-	if (!orco) {
-		if (ELEM(ob->type, OB_CURVE, OB_FONT)) {
-			orco = BKE_curve_make_orco(re->scene, ob, NULL);
-		}
-		else if (ob->type==OB_SURF) {
-			orco = BKE_curve_surf_make_orco(ob);
-		}
-
-		if (orco)
-			BLI_ghash_insert(re->orco_hash, ob, orco);
+	if (!re->orco_hash) {
+		return NULL;
 	}
 
-	return orco;
+	return BLI_ghash_lookup(re->orco_hash, ob);
 }
 
 static void set_object_orco(Render *re, void *ob, float *orco)
@@ -1676,8 +1661,11 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 
 		if (path_nbr) {
 			if (!ELEM(ma->material_type, MA_TYPE_HALO, MA_TYPE_WIRE)) {
-				sd.orco = MEM_mallocN(3*sizeof(float)*(totpart+totchild), "particle orcos");
-				set_object_orco(re, psys, sd.orco);
+				sd.orco = get_object_orco(re, psys);
+				if (!sd.orco) {
+					sd.orco = MEM_mallocN(3*sizeof(float)*(totpart+totchild), "particle orcos");
+					set_object_orco(re, psys, sd.orco);
+				}
 			}
 		}
 
@@ -2829,9 +2817,12 @@ static void init_render_surf(Render *re, ObjectRen *obr, int timeoffset)
 
 	if (dm) {
 		if (need_orco) {
-			orco= BKE_displist_make_orco(re->scene, ob, dm, 1, 1);
-			if (orco) {
-				set_object_orco(re, ob, orco);
+			orco = get_object_orco(re, ob);
+			if (!orco) {
+				orco= BKE_displist_make_orco(re->scene, ob, dm, 1, 1);
+				if (orco) {
+					set_object_orco(re, ob, orco);
+				}
 			}
 		}
 
@@ -2840,7 +2831,11 @@ static void init_render_surf(Render *re, ObjectRen *obr, int timeoffset)
 	}
 	else {
 		if (need_orco) {
-			orco= get_object_orco(re, ob);
+			orco = get_object_orco(re, ob);
+			if (!orco) {
+				orco = BKE_curve_surf_make_orco(ob);
+				set_object_orco(re, ob, orco);
+			}
 		}
 
 		/* walk along displaylist and create rendervertices/-faces */
@@ -2900,9 +2895,12 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 
 	if (dm) {
 		if (need_orco) {
-			orco= BKE_displist_make_orco(re->scene, ob, dm, 1, 1);
-			if (orco) {
-				set_object_orco(re, ob, orco);
+			orco = get_object_orco(re, ob);
+			if (!orco) {
+				orco = BKE_displist_make_orco(re->scene, ob, dm, 1, 1);
+				if (orco) {
+					set_object_orco(re, ob, orco);
+				}
 			}
 		}
 
@@ -2912,6 +2910,10 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 	else {
 		if (need_orco) {
 			orco = get_object_orco(re, ob);
+			if (!orco) {
+				orco = BKE_curve_make_orco(re->scene, ob, NULL);
+				set_object_orco(re, ob, orco);
+			}
 		}
 
 		while (dl) {
@@ -3401,10 +3403,13 @@ static void init_render_mesh(Render *re, ObjectRen *obr, int timeoffset)
 	if (dm==NULL) return;	/* in case duplicated object fails? */
 
 	if (mask & CD_MASK_ORCO) {
-		orco= dm->getVertDataArray(dm, CD_ORCO);
-		if (orco) {
-			orco= MEM_dupallocN(orco);
-			set_object_orco(re, ob, orco);
+		orco = get_object_orco(re, ob);
+		if (!orco) {
+			orco= dm->getVertDataArray(dm, CD_ORCO);
+			if (orco) {
+				orco= MEM_dupallocN(orco);
+				set_object_orco(re, ob, orco);
+			}
 		}
 	}
 
@@ -5982,6 +5987,7 @@ void RE_Database_FromScene_Vectors(Render *re, Main *bmain, Scene *sce, unsigned
  * RE_BAKE_NORMALS:for baking, no lamps and only selected objects
  * RE_BAKE_AO:     for baking, no lamps, but all objects
  * RE_BAKE_TEXTURE:for baking, no lamps, only selected objects
+ * RE_BAKE_VERTEX_COLORS:for baking, no lamps, only selected objects
  * RE_BAKE_DISPLACEMENT:for baking, no lamps, only selected objects
  * RE_BAKE_DERIVATIVE:for baking, no lamps, only selected objects
  * RE_BAKE_SHADOW: for baking, only shadows, but all objects
@@ -5991,8 +5997,8 @@ void RE_Database_Baking(Render *re, Main *bmain, Scene *scene, unsigned int lay,
 	Object *camera;
 	float mat[4][4];
 	float amb[3];
-	const short onlyselected= !ELEM4(type, RE_BAKE_LIGHT, RE_BAKE_ALL, RE_BAKE_SHADOW, RE_BAKE_AO);
-	const short nolamps= ELEM4(type, RE_BAKE_NORMALS, RE_BAKE_TEXTURE, RE_BAKE_DISPLACEMENT, RE_BAKE_DERIVATIVE);
+	const short onlyselected= !ELEM5(type, RE_BAKE_LIGHT, RE_BAKE_ALL, RE_BAKE_SHADOW, RE_BAKE_AO, RE_BAKE_VERTEX_COLORS);
+	const short nolamps= ELEM5(type, RE_BAKE_NORMALS, RE_BAKE_TEXTURE, RE_BAKE_DISPLACEMENT, RE_BAKE_DERIVATIVE, RE_BAKE_VERTEX_COLORS);
 
 	re->main= bmain;
 	re->scene= scene;
@@ -6010,8 +6016,11 @@ void RE_Database_Baking(Render *re, Main *bmain, Scene *scene, unsigned int lay,
 
 	if (type==RE_BAKE_NORMALS && re->r.bake_normal_space==R_BAKE_SPACE_TANGENT)
 		re->flag |= R_NEED_TANGENT;
-	
-	if (!actob && ELEM5(type, RE_BAKE_LIGHT, RE_BAKE_NORMALS, RE_BAKE_TEXTURE, RE_BAKE_DISPLACEMENT, RE_BAKE_DERIVATIVE)) {
+
+	if (type==RE_BAKE_VERTEX_COLORS)
+		re->flag |=  R_NEED_VCOL;
+
+	if (!actob && ELEM6(type, RE_BAKE_LIGHT, RE_BAKE_NORMALS, RE_BAKE_TEXTURE, RE_BAKE_DISPLACEMENT, RE_BAKE_DERIVATIVE, RE_BAKE_VERTEX_COLORS)) {
 		re->r.mode &= ~R_SHADOW;
 		re->r.mode &= ~R_RAYTRACE;
 	}

@@ -230,10 +230,10 @@ static void knife_update_header(bContext *C, KnifeTool_OpData *kcd)
 	BLI_snprintf(header, HEADER_LENGTH, IFACE_("LMB: define cut lines, Return/Spacebar: confirm, Esc or RMB: cancel, "
 	                                           "E: new cut, Ctrl: midpoint snap (%s), Shift: ignore snap (%s), "
 	                                           "C: angle constrain (%s), Z: cut through (%s)"),
-	             kcd->snap_midpoints ? IFACE_("On") : IFACE_("Off"),
-	             kcd->ignore_edge_snapping ?  IFACE_("On") : IFACE_("Off"),
-	             kcd->angle_snapping ? IFACE_("On") : IFACE_("Off"),
-	             kcd->cut_through ? IFACE_("On") : IFACE_("Off"));
+	             WM_bool_as_string(kcd->snap_midpoints),
+	             WM_bool_as_string(kcd->ignore_edge_snapping),
+	             WM_bool_as_string(kcd->angle_snapping),
+	             WM_bool_as_string(kcd->cut_through));
 
 	ED_area_headerprint(CTX_wm_area(C), header);
 }
@@ -2131,7 +2131,7 @@ static void knifenet_fill_faces(KnifeTool_OpData *kcd)
 	facenet_entry *entry;
 	ListBase *face_nets = MEM_callocN(sizeof(ListBase) * bm->totface, "face_nets");
 	BMFace **faces = MEM_callocN(sizeof(BMFace *) * bm->totface, "faces knife");
-	MemArena *arena = BLI_memarena_new(1 << 16, "knifenet_fill_faces");
+	MemArena *arena = BLI_memarena_new(MEM_SIZE_OPTIMAL(1 << 16), "knifenet_fill_faces");
 	SmallHash shash;
 	RNG *rng;
 	int i, j, k = 0, totface = bm->totface;
@@ -3159,7 +3159,7 @@ static void knifetool_init(bContext *C, KnifeTool_OpData *kcd,
 	                          (only_select ? BMBVH_RESPECT_SELECT : BMBVH_RESPECT_HIDDEN),
 	                          kcd->cagecos, false);
 
-	kcd->arena = BLI_memarena_new(1 << 15, "knife");
+	kcd->arena = BLI_memarena_new(MEM_SIZE_OPTIMAL(1 << 15), "knife");
 	kcd->vthresh = KMAXDIST - 1;
 	kcd->ethresh = KMAXDIST;
 

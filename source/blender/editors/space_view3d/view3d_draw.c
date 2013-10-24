@@ -113,9 +113,9 @@ static void star_stuff_init_func(void)
 	glPointSize(1.0);
 	glBegin(GL_POINTS);
 }
-static void star_stuff_vertex_func(float *i)
+static void star_stuff_vertex_func(const float vec[3])
 {
-	glVertex3fv(i);
+	glVertex3fv(vec);
 }
 static void star_stuff_term_func(void)
 {
@@ -2857,7 +2857,7 @@ ImBuf *ED_view3d_draw_offscreen_imbuf_simple(Scene *scene, Object *camera, int w
 /* NOTE: the info that this uses is updated in ED_refresh_viewport_fps(), 
  * which currently gets called during SCREEN_OT_animation_step.
  */
-static void draw_viewport_fps(Scene *scene, rcti *rect)
+void ED_scene_draw_fps(Scene *scene, rcti *rect)
 {
 	ScreenFrameRateInfo *fpsi = scene->fps_info;
 	float fps;
@@ -3497,7 +3497,7 @@ static void view3d_main_area_draw_info(const bContext *C, ARegion *ar, const cha
 
 	if ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
 		if ((U.uiflag & USER_SHOW_FPS) && ED_screen_animation_playing(wm)) {
-			draw_viewport_fps(scene, &rect);
+			ED_scene_draw_fps(scene, &rect);
 		}
 		else if (U.uiflag & USER_SHOW_VIEWPORTNAME) {
 			draw_viewport_name(ar, v3d, &rect);

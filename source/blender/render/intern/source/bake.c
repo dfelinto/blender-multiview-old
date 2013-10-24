@@ -168,7 +168,7 @@ static void bake_shade(void *handle, Object *ob, ShadeInput *shi, int UNUSED(qua
 	else {
 		if (bs->type == RE_BAKE_SHADOW) /* Why do shadows set the color anyhow?, ignore material color for baking */
 			shi->r = shi->g = shi->b = 1.0f;
-	
+
 		shade_input_set_shade_texco(shi);
 		
 		/* only do AO for a full bake (and obviously AO bakes)
@@ -260,12 +260,16 @@ static void bake_shade(void *handle, Object *ob, ShadeInput *shi, int UNUSED(qua
 			copy_v3_fl(shr.combined, shi->emit);
 			shr.alpha = 1.0f;
 		}
+		else if (bs->type == RE_BAKE_VERTEX_COLORS) {
+			copy_v3_v3(shr.combined, shi->vcol);
+			shr.alpha = shi->vcol[3];
+		}
 	}
 	
 	if (bs->rect_float && !bs->vcol) {
 		float *col = bs->rect_float + 4 * (bs->rectx * y + x);
 		copy_v3_v3(col, shr.combined);
-		if (bs->type == RE_BAKE_ALL || bs->type == RE_BAKE_TEXTURE) {
+		if (bs->type == RE_BAKE_ALL || bs->type == RE_BAKE_TEXTURE || bs->type == RE_BAKE_VERTEX_COLORS) {
 			col[3] = shr.alpha;
 		}
 		else {
@@ -294,7 +298,7 @@ static void bake_shade(void *handle, Object *ob, ShadeInput *shi, int UNUSED(qua
 			rgb_float_to_uchar(col, shr.combined);
 		}
 		
-		if (ELEM(bs->type, RE_BAKE_ALL, RE_BAKE_TEXTURE)) {
+		if (ELEM3(bs->type, RE_BAKE_ALL, RE_BAKE_TEXTURE, RE_BAKE_VERTEX_COLORS)) {
 			col[3] = FTOCHAR(shr.alpha);
 		}
 		else {
@@ -317,6 +321,10 @@ static void bake_shade(void *handle, Object *ob, ShadeInput *shi, int UNUSED(qua
 	
 	if (bs->rect_mask) {
 		bs->rect_mask[bs->rectx * y + x] = FILTER_MASK_USED;
+	}
+
+	if (bs->do_update) {
+		*bs->do_update = true;
 	}
 }
 
@@ -1137,7 +1145,7 @@ struct Image *RE_bake_shade_get_image(void)
 
 static void add_single_heights_margin(const ImBuf *ibuf, const char *mask, float *heights_buffer)
 {
-	int x ,y;
+	int x, y;
 
 	for (y = 0; y < ibuf->y; y++) {
 		for (x = 0; x < ibuf->x; x++) {
@@ -1196,11 +1204,11 @@ float RE_bake_make_derivative(ImBuf *ibuf, float *heights_buffer, const char *ma
 	if (auto_range_fit) {
 		/* If automatic range fitting is enabled. */
 		for (y = 0; y < ibuf->y; y++) {
-			const int Yu = y == (ibuf->y - 1) ? (ibuf->y - 1) : (y+1);
+			const int Yu = y == (ibuf->y - 1) ? (ibuf->y - 1) : (y + 1);
 			const int Yc = y;
 			const int Yd = y == 0 ? 0 : (y - 1);
 
-			for (x= 0; x < ibuf->x; x++) {
+			for (x = 0; x < ibuf->x; x++) {
 				const int Xl = x == 0 ? 0 : (x - 1);
 				const int Xc = x;
 				const int Xr = x == (ibuf->x - 1) ? (ibuf->x - 1) : (x + 1);
@@ -1240,11 +1248,11 @@ float RE_bake_make_derivative(ImBuf *ibuf, float *heights_buffer, const char *ma
 	/* Output derivatives. */
 	auto_range_fit &= (max_num_deriv > 0);
 	for (y = 0; y < ibuf->y; y++) {
-		const int Yu= y==(ibuf->y-1) ? (ibuf->y-1) : (y+1);
-		const int Yc= y;
-		const int Yd= y==0 ? 0 : (y-1);
+		const int Yu = y == (ibuf->y - 1) ? (ibuf->y - 1) : (y + 1);
+		const int Yc = y;
+		const int Yd = y == 0 ? 0 : (y - 1);
 
-		for(x= 0; x<ibuf->x; x++) {
+		for (x = 0; x < ibuf->x; x++) {
 			const int Xl = x == 0 ? 0 : (x - 1);
 			const int Xc = x;
 			const int Xr = x == (ibuf->x - 1) ? (ibuf->x - 1) : (x + 1);
@@ -1265,14 +1273,15 @@ float RE_bake_make_derivative(ImBuf *ibuf, float *heights_buffer, const char *ma
 
 			/* Early out. */
 			index = ibuf->x * y + x;
-			if (mask[index] != FILTER_MASK_USED){
+			if (mask[index] != FILTER_MASK_USED) {
 				continue;
 			}
 
 			if (auto_range_fit) {
 				deriv_x /= max_num_deriv;
 				deriv_y /= max_num_deriv;
-			} else {
+			}
+			else {
 				deriv_x *= (fmult / denom);
 				deriv_y *= (fmult / denom);
 			}
@@ -1292,8 +1301,9 @@ float RE_bake_make_derivative(ImBuf *ibuf, float *heights_buffer, const char *ma
 				rrgbf[1] = deriv_y;
 				rrgbf[2] = 0.0f;
 				rrgbf[3] = 1.0f;
-			} else {
-				char *rrgb = (char*)ibuf->rect + index * 4;
+			}
+			else {
+				char *rrgb = (char *)ibuf->rect + index * 4;
 
 				rrgb[0] = FTOCHAR(deriv_x);
 				rrgb[1] = FTOCHAR(deriv_y);

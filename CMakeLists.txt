@@ -203,10 +203,10 @@ option(WITH_MOD_REMESH          "Enable Remesh Modifier" ON)
 option(WITH_MOD_OCEANSIM        "Enable Ocean Modifier" OFF)
 
 # Image format support
+option(WITH_OPENIMAGEIO         "Enable OpenImageIO Support (http://www.openimageio.org)" OFF)
 option(WITH_IMAGE_OPENEXR       "Enable OpenEXR Support (http://www.openexr.com)" ON)
 option(WITH_IMAGE_OPENJPEG      "Enable OpenJpeg Support (http://www.openjpeg.org)" ON)
 option(WITH_IMAGE_TIFF          "Enable LibTIFF Support" ON)
-option(WITH_IMAGE_PSD           "Enable Photoshop PSD Support" ON)
 option(WITH_IMAGE_DDS           "Enable DDS Image Support" ON)
 option(WITH_IMAGE_CINEON        "Enable CINEON and DPX Image Support" ON)
 option(WITH_IMAGE_HDR           "Enable HDR Image Support" ON)
@@ -286,9 +286,6 @@ mark_as_advanced(WITH_MEM_VALGRIND)
 # Debug
 option(WITH_CXX_GUARDEDALLOC "Enable GuardedAlloc for C++ memory allocation tracking (only enable for development)" OFF)
 mark_as_advanced(WITH_CXX_GUARDEDALLOC)
-
-option(WITH_GUARDEDALLOC "Enable GuardedAlloc (DISABLE AT OWN RISK!)" ON)
-mark_as_advanced(WITH_GUARDEDALLOC)
 
 option(WITH_ASSERT_ABORT "Call abort() when raising an assertion through BLI_assert()" OFF)
 mark_as_advanced(WITH_ASSERT_ABORT)
@@ -440,11 +437,6 @@ endif()
 
 if(NOT WITH_PYTHON)
 	set(WITH_CYCLES OFF)
-endif()
-
-# auto enable openimageio for photoshop psd
-if(WITH_IMAGE_PSD)
-	set(WITH_OPENIMAGEIO ON)
 endif()
 
 # enable boost for cycles, booleans, audaspace or i18n
@@ -2296,6 +2288,7 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_SYSTEM_OPENJPEG)
 
 	info_cfg_text("Image Formats:")
+	info_cfg_option(WITH_OPENIMAGEIO)
 	info_cfg_option(WITH_IMAGE_CINEON)
 	info_cfg_option(WITH_IMAGE_DDS)
 	info_cfg_option(WITH_IMAGE_HDR)
@@ -2303,7 +2296,6 @@ if(FIRST_RUN)
 	info_cfg_option(WITH_IMAGE_OPENJPEG)
 	info_cfg_option(WITH_IMAGE_REDCODE)
 	info_cfg_option(WITH_IMAGE_TIFF)
-	info_cfg_option(WITH_IMAGE_PSD)
 
 	info_cfg_text("Audio:")
 	info_cfg_option(WITH_OPENAL)

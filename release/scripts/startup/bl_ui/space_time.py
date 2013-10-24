@@ -40,7 +40,9 @@ class TIME_HT_header(Header):
             row.menu("TIME_MT_frame")
             row.menu("TIME_MT_playback")
 
-        layout.prop(scene, "use_preview_range", text="", toggle=True)
+        row = layout.row(align=True)
+        row.prop(scene, "use_preview_range", text="", toggle=True)
+        row.prop(scene, "lock_frame_selection_to_range", text="", toggle=True)
 
         row = layout.row(align=True)
         if not scene.use_preview_range:
@@ -226,6 +228,11 @@ def marker_menu_generic(layout):
 
     layout.operator("marker.rename", text="Rename Marker")
     layout.operator("marker.move", text="Grab/Move Marker")
+    
+    layout.separator()
+    
+    layout.operator("screen.marker_jump", text="Jump to Next Marker").next = True
+    layout.operator("screen.marker_jump", text="Jump to Previous Marker").next = False
 
 
 if __name__ == "__main__":  # only for live edit.

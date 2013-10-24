@@ -65,6 +65,7 @@
 #include "ED_curve.h"
 #include "ED_mesh.h"
 #include "ED_screen.h"
+#include "ED_object.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
@@ -701,26 +702,9 @@ static int object_hook_reset_exec(bContext *C, wmOperator *op)
 		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
-	
-	/* reset functionality */
-	if (hmd->object) {
-		bPoseChannel *pchan = BKE_pose_channel_find_name(hmd->object->pose, hmd->subtarget);
-		
-		if (hmd->subtarget[0] && pchan) {
-			float imat[4][4], mat[4][4];
-			
-			/* calculate the world-space matrix for the pose-channel target first, then carry on as usual */
-			mul_m4_m4m4(mat, hmd->object->obmat, pchan->pose_mat);
-			
-			invert_m4_m4(imat, mat);
-			mul_m4_m4m4(hmd->parentinv, imat, ob->obmat);
-		}
-		else {
-			invert_m4_m4(hmd->object->imat, hmd->object->obmat);
-			mul_m4_m4m4(hmd->parentinv, hmd->object->imat, ob->obmat);
-		}
-	}
-	
+
+	BKE_object_modifier_hook_reset(ob, hmd);
+
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
 	

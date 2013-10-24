@@ -212,7 +212,6 @@ void BKE_tracking_settings_init(MovieTracking *tracking)
 	tracking->settings.default_algorithm_flag |= TRACK_ALGORITHM_FLAG_USE_BRUTE;
 	tracking->settings.dist = 1;
 	tracking->settings.object_distance = 1;
-	tracking->settings.reconstruction_success_threshold = 1e-3f;
 
 	tracking->stabilization.scaleinf = 1.0f;
 	tracking->stabilization.locinf = 1.0f;
@@ -3264,23 +3263,6 @@ static int point_markers_correspondences_on_both_image(MovieTrackingPlaneTrack *
 	return correspondence_index;
 }
 
-/* TODO(sergey): Make it generic function available for everyone. */
-BLI_INLINE void mat3f_from_mat3d(float mat_float[3][3], double mat_double[3][3])
-{
-	/* Keep it stupid simple for better data flow in CPU. */
-	mat_float[0][0] = mat_double[0][0];
-	mat_float[0][1] = mat_double[0][1];
-	mat_float[0][2] = mat_double[0][2];
-
-	mat_float[1][0] = mat_double[1][0];
-	mat_float[1][1] = mat_double[1][1];
-	mat_float[1][2] = mat_double[1][2];
-
-	mat_float[2][0] = mat_double[2][0];
-	mat_float[2][1] = mat_double[2][1];
-	mat_float[2][2] = mat_double[2][2];
-}
-
 /* NOTE: frame number should be in clip space, not scene space */
 static void track_plane_from_existing_motion(MovieTrackingPlaneTrack *plane_track, int start_frame,
                                              int direction, bool retrack)
@@ -3342,7 +3324,7 @@ static void track_plane_from_existing_motion(MovieTrackingPlaneTrack *plane_trac
 
 		libmv_homography2DFromCorrespondencesEuc(x1, x2, num_correspondences, H_double);
 
-		mat3f_from_mat3d(H, H_double);
+		copt_m3_m3d(H, H_double);
 
 		for (i = 0; i < 4; i++) {
 			float vec[3] = {0.0f, 0.0f, 1.0f}, vec2[3];
@@ -3446,7 +3428,7 @@ void BKE_tracking_homography_between_two_quads(/*const*/ float reference_corners
 
 	libmv_homography2DFromCorrespondencesEuc(x1, x2, 4, H_double);
 
-	mat3f_from_mat3d(H, H_double);
+	copt_m3_m3d(H, H_double);
 }
 
 /*********************** Camera solving *************************/
@@ -3472,9 +3454,6 @@ typedef struct MovieReconstructContext {
 	float reprojection_error;
 
 	TracksMap *tracks_map;
-
-	float success_threshold;
-	bool use_fallback_reconstruction;
 
 	int sfra, efra;
 } MovieReconstructContext;
@@ -3780,9 +3759,6 @@ MovieReconstructContext *BKE_tracking_reconstruction_context_new(MovieTracking *
 	context->k2 = camera->k2;
 	context->k3 = camera->k3;
 
-	context->success_threshold = tracking->settings.reconstruction_success_threshold;
-	context->use_fallback_reconstruction = tracking->settings.reconstruction_flag & TRACKING_USE_FALLBACK_RECONSTRUCTION;
-
 	context->tracks_map = tracks_map_new(context->object_name, context->is_camera, num_tracks, 0);
 
 	track = tracksbase->first;
@@ -3877,9 +3853,6 @@ static void reconstructionOptionsFromContext(libmv_ReconstructionOptions *recons
 	reconstruction_options->keyframe2 = context->keyframe2;
 
 	reconstruction_options->refine_intrinsics = context->refine_flags;
-
-	reconstruction_options->success_threshold = context->success_threshold;
-	reconstruction_options->use_fallback_reconstruction = context->use_fallback_reconstruction;
 }
 
 /* Solve camera/object motion and reconstruct 3D markers position
