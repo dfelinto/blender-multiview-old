@@ -1921,7 +1921,7 @@ static void curvemap_tools_dofunc(bContext *C, void *cumap_v, int event)
 		case UICURVE_FUNC_RESET_NEG:
 		case UICURVE_FUNC_RESET_POS: /* reset */
 			curvemap_reset(cuma, &cumap->clipr, cumap->preset,
-			               (event == -1) ? CURVEMAP_SLOPE_NEGATIVE : CURVEMAP_SLOPE_POSITIVE);
+			               (event == UICURVE_FUNC_RESET_NEG) ? CURVEMAP_SLOPE_NEGATIVE : CURVEMAP_SLOPE_POSITIVE);
 			curvemapping_changed(cumap, FALSE);
 			break;
 		case UICURVE_FUNC_RESET_VIEW:
@@ -3065,11 +3065,11 @@ void uiTemplateList(uiLayout *layout, bContext *C, const char *listtype_name, co
 
 		if (ui_list->filter_flag & UILST_FLT_SHOW) {
 			but = uiDefIconButBitI(subblock, TOG, UILST_FLT_SHOW, 0, ICON_DISCLOSURE_TRI_DOWN, 0, 0,
-			                       UI_UNIT_X, UI_UNIT_Y * 0.6f, &(ui_list->filter_flag), 0, 0, 0, 0,
+			                       UI_UNIT_X, UI_UNIT_Y * 0.8f, &(ui_list->filter_flag), 0, 0, 0, 0,
 			                       TIP_("Hide filtering options"));
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 
-			but = uiDefIconBut(subblock, BUT, 0, ICON_GRIP, 0, 0, UI_UNIT_X * 10.0f, UI_UNIT_Y * 0.6f, ui_list,
+			but = uiDefIconBut(subblock, BUT, 0, ICON_GRIP, 0, 0, UI_UNIT_X * 10.0f, UI_UNIT_Y * 0.8f, ui_list,
 			                   0.0, 0.0, 0, -1, "");
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 
@@ -3083,11 +3083,11 @@ void uiTemplateList(uiLayout *layout, bContext *C, const char *listtype_name, co
 		}
 		else {
 			but = uiDefIconButBitI(subblock, TOG, UILST_FLT_SHOW, 0, ICON_DISCLOSURE_TRI_RIGHT, 0, 0,
-			                       UI_UNIT_X, UI_UNIT_Y * 0.6f, &(ui_list->filter_flag), 0, 0, 0, 0,
+			                       UI_UNIT_X, UI_UNIT_Y * 0.8f, &(ui_list->filter_flag), 0, 0, 0, 0,
 			                       TIP_("Show filtering options"));
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 
-			but = uiDefIconBut(subblock, BUT, 0, ICON_GRIP, 0, 0, UI_UNIT_X * 10.0f, UI_UNIT_Y * 0.6f, ui_list,
+			but = uiDefIconBut(subblock, BUT, 0, ICON_GRIP, 0, 0, UI_UNIT_X * 10.0f, UI_UNIT_Y * 0.8f, ui_list,
 			                   0.0, 0.0, 0, -1, "");
 			uiButClearFlag(but, UI_BUT_UNDO); /* skip undo on screen buttons */
 

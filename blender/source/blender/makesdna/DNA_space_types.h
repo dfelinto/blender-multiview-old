@@ -286,11 +286,11 @@ typedef enum eSpaceOutliner_Mode {
 	SO_GROUPS = 6,
 	SO_LIBRARIES = 7,
 	/* SO_VERSE_SESSION = 8, */  /* deprecated! */
-	/* SO_VERSE_MS = 9, */       /* deprecated!*/
+	/* SO_VERSE_MS = 9, */       /* deprecated! */
 	SO_SEQUENCE = 10,
 	SO_DATABLOCKS = 11,
 	SO_USERDEF = 12,
-	SO_KEYMAP = 13,
+	/* SO_KEYMAP = 13, */        /* deprecated! */
 } eSpaceOutliner_Mode;
 
 /* SpaceOops->storeflag */
@@ -546,7 +546,8 @@ typedef struct MaskSpaceInfo
 	/* draw options */
 	char draw_flag;
 	char draw_type;
-	char pad3[6];
+	char overlay_mode;
+	char pad3[5];
 } MaskSpaceInfo;
 
 /* sseq->mainb */

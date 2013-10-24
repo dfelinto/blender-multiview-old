@@ -103,7 +103,7 @@ enum TfmMode {
  * returns 1 if successful, 0 otherwise (usually means there's no selection)
  * (if 0 is returns, *vec is unmodified)
  * */
-int calculateTransformCenter(struct bContext *C, int centerMode, float cent3d[3], int cent2d[2]);
+int calculateTransformCenter(struct bContext *C, int centerMode, float cent3d[3], float cent2d[2]);
 
 struct TransInfo;
 struct ScrArea;
@@ -129,8 +129,6 @@ void BIF_selectTransformOrientationValue(struct bContext *C, int orientation);
 void ED_getTransformOrientationMatrix(const struct bContext *C, float orientation_mat[3][3], const bool activeOnly);
 
 int BIF_countTransformOrientation(const struct bContext *C);
-
-void BIF_TransformSetUndo(const char *str);
 
 /* to be able to add operator properties to other operators */
 

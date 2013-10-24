@@ -926,14 +926,32 @@ void PAINT_OT_grab_clone(wmOperatorType *ot)
 }
 
 /******************** sample color operator ********************/
+typedef struct {
+	bool show_cursor;
+	short event_type;
+} SampleColorData;
+
 static int sample_color_exec(bContext *C, wmOperator *op)
 {
-	Brush *brush = image_paint_brush(C);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *brush = BKE_paint_brush(paint);
 	ARegion *ar = CTX_wm_region(C);
+	wmWindow *win = CTX_wm_window(C);
+	bool show_cursor = ((paint->flags & PAINT_SHOW_BRUSH) != 0);
 	int location[2];
+
+	paint->flags &= ~PAINT_SHOW_BRUSH;
+
+	/* force redraw without cursor */
+	WM_paint_cursor_tag_redraw(win, ar);
+	WM_redraw_windows(C);
 
 	RNA_int_get_array(op->ptr, "location", location);
 	paint_sample_color(C, ar, location[0], location[1]);
+
+	if (show_cursor) {
+		paint->flags |= PAINT_SHOW_BRUSH;
+	}
 
 	WM_event_add_notifier(C, NC_BRUSH | NA_EDITED, brush);
 	
@@ -942,10 +960,22 @@ static int sample_color_exec(bContext *C, wmOperator *op)
 
 static int sample_color_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	RNA_int_set_array(op->ptr, "location", event->mval);
-	sample_color_exec(C, op);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	SampleColorData *data = MEM_mallocN(sizeof(SampleColorData), "sample color custom data");
+	ARegion *ar = CTX_wm_region(C);
+	wmWindow *win = CTX_wm_window(C);
 
-	op->customdata = SET_INT_IN_POINTER(event->type);
+	data->event_type = event->type;
+	data->show_cursor = ((paint->flags & PAINT_SHOW_BRUSH) != 0);
+	op->customdata = data;
+	paint->flags &= ~PAINT_SHOW_BRUSH;
+
+	/* force redraw without cursor */
+	WM_paint_cursor_tag_redraw(win, ar);
+	WM_redraw_windows(C);
+
+	RNA_int_set_array(op->ptr, "location", event->mval);
+	paint_sample_color(C, ar, event->mval[0], event->mval[1]);
 
 	WM_event_add_modal_handler(C, op);
 
@@ -954,14 +984,28 @@ static int sample_color_invoke(bContext *C, wmOperator *op, const wmEvent *event
 
 static int sample_color_modal(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	if (event->type == (intptr_t)(op->customdata) && event->val == KM_RELEASE)
+	SampleColorData *data = op->customdata;
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *brush = BKE_paint_brush(paint);
+
+	if ((event->type == data->event_type) && (event->val == KM_RELEASE)) {
+		if (data->show_cursor) {
+			paint->flags |= PAINT_SHOW_BRUSH;
+		}
+
+		MEM_freeN(data);
 		return OPERATOR_FINISHED;
+	}
 
 	switch (event->type) {
 		case MOUSEMOVE:
+		{
+			ARegion *ar = CTX_wm_region(C);
 			RNA_int_set_array(op->ptr, "location", event->mval);
-			sample_color_exec(C, op);
+			paint_sample_color(C, ar, event->mval[0], event->mval[1]);
+			WM_event_add_notifier(C, NC_BRUSH | NA_EDITED, brush);
 			break;
+		}
 	}
 
 	return OPERATOR_RUNNING_MODAL;

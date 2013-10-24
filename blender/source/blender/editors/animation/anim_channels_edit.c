@@ -58,6 +58,7 @@
 #include "UI_view2d.h"
 
 #include "ED_anim_api.h"
+#include "ED_armature.h"
 #include "ED_keyframes_edit.h" // XXX move the select modes out of there!
 #include "ED_screen.h"
 
@@ -1106,7 +1107,6 @@ static int animchannels_rearrange_exec(bContext *C, wmOperator *op)
 					break;
 				
 				case ANIMCONT_SHAPEKEY: // DOUBLE CHECK ME...
-					
 				default: /* some collection of actions */
 					if (adt->action)
 						rearrange_action_channels(&ac, adt->action, mode);
@@ -2441,6 +2441,35 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 		{
 			bActionGroup *agrp = (bActionGroup *)ale->data;
 			
+			Object *ob = NULL;
+			bPoseChannel *pchan = NULL;
+			
+			
+			/* Armatures-Specific Feature:
+			 * Since groups are used to collect F-Curves of the same Bone by default
+			 * (via Keying Sets) so that they can be managed better, we try to make
+			 * things here easier for animators by mapping group selection to bone
+			 * selection. 
+			 *
+			 * Only do this if "Only Selected" dopesheet filter is not active, or else it
+			 * becomes too unpredictable/tricky to manage
+			 */
+			if ((ac->ads->filterflag & ADS_FILTER_ONLYSEL) == 0) {
+				if ((ale->id) && (GS(ale->id->name) == ID_OB)) {
+					ob = (Object *)ale->id;
+					
+					if (ob->type == OB_ARMATURE) {
+						/* Assume for now that any group with corresponding name is what we want
+						 * (i.e. for an armature whose location is animated, things would break
+						 * if the user were to add a bone named "Location").
+						 *
+						 * TODO: check the first F-Curve or so to be sure...
+						 */
+						pchan = BKE_pose_channel_find_name(ob->pose, agrp->name);
+					}	
+				}
+			}
+			
 			/* select/deselect group */
 			if (selectmode == SELECT_INVERT) {
 				/* inverse selection status of this group only */
@@ -2452,6 +2481,7 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 				
 				/* deselect all other channels */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+				if (pchan) ED_pose_deselectall(ob, 0);
 				
 				/* only select channels in group and group itself */
 				for (fcu = agrp->channels.first; fcu && fcu->grp == agrp; fcu = fcu->next)
@@ -2461,14 +2491,20 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			else {
 				/* select group by itself */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+				if (pchan) ED_pose_deselectall(ob, 0);
+				
 				agrp->flag |= AGRP_SELECTED;
 			}
 			
 			/* if group is selected now, make group the 'active' one in the visible list */
-			if (agrp->flag & AGRP_SELECTED)
+			if (agrp->flag & AGRP_SELECTED) {
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, agrp, ANIMTYPE_GROUP);
-			else
+				if (pchan) ED_pose_bone_select(ob, pchan, true);
+			}
+			else {
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, NULL, ANIMTYPE_GROUP);
+				if (pchan) ED_pose_bone_select(ob, pchan, false);
+			}
 				
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
 			break;

@@ -124,7 +124,7 @@ class MATERIAL_PT_context_material(MaterialButtonsPanel, Panel):
         if ob:
             row = layout.row()
 
-            row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=2)
+            row.template_list("MATERIAL_UL_matslots", "", ob, "material_slots", ob, "active_material_index", rows=1)
 
             col = row.column(align=True)
             col.operator("object.material_slot_add", icon='ZOOMIN', text="")
@@ -518,7 +518,7 @@ class MATERIAL_PT_sss(MaterialButtonsPanel, Panel):
         layout.active = (sss.use) and (not mat.use_shadeless)
 
         row = layout.row().split()
-        sub = row.row(align=True).split(percentage=0.75)
+        sub = row.row(align=True).split(align=True, percentage=0.75)
         sub.menu("MATERIAL_MT_sss_presets", text=bpy.types.MATERIAL_MT_sss_presets.bl_label)
         sub.operator("material.sss_preset_add", text="", icon='ZOOMIN')
         sub.operator("material.sss_preset_add", text="", icon='ZOOMOUT').remove_active = True

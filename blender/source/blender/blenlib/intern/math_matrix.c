@@ -112,6 +112,22 @@ void copy_m4_m3(float m1[4][4], float m2[3][3]) /* no clear */
 
 }
 
+void copt_m3_m3d(float R[3][3], double A[3][3])
+{
+	/* Keep it stupid simple for better data flow in CPU. */
+	R[0][0] = A[0][0];
+	R[0][1] = A[0][1];
+	R[0][2] = A[0][2];
+
+	R[1][0] = A[1][0];
+	R[1][1] = A[1][1];
+	R[1][2] = A[1][2];
+
+	R[2][0] = A[2][0];
+	R[2][1] = A[2][1];
+	R[2][2] = A[2][2];
+}
+
 void swap_m3m3(float m1[3][3], float m2[3][3])
 {
 	float t;
@@ -2070,3 +2086,9 @@ void pseudoinverse_m3_m3(float Ainv[3][3], float A[3][3], float epsilon)
 	}
 }
 
+bool has_zero_axis_m4(float matrix[4][4])
+{
+	return len_squared_v3(matrix[0]) < FLT_EPSILON ||
+	       len_squared_v3(matrix[1]) < FLT_EPSILON ||
+	       len_squared_v3(matrix[2]) < FLT_EPSILON;
+}

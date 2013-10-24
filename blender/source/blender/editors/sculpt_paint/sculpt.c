@@ -1082,6 +1082,7 @@ static void calc_area_normal(Sculpt *sd, Object *ob, float an[3], PBVHNode **nod
 	float out_flip[3] = {0.0f, 0.0f, 0.0f};
 
 	SculptSession *ss = ob->sculpt;
+	const Brush *brush = BKE_paint_brush(&sd->paint);
 	int n, original;
 
 	/* Grab brush requires to test on original data (see r33888 and
@@ -1090,8 +1091,14 @@ static void calc_area_normal(Sculpt *sd, Object *ob, float an[3], PBVHNode **nod
 	            TRUE : ss->cache->original);
 
 	/* In general the original coords are not available with dynamic
-	 * topology */
-	if (ss->bm)
+	 * topology
+	 *
+	 * Mask tool could not use undo nodes to get coordinates from
+	 * since the coordinates are not stored in those odes.
+	 * And mask tool is not gonna to modify vertex coordinates,
+	 * so we don't actually need to use modified coords.
+	 */
+	if (ss->bm || brush->sculpt_tool == SCULPT_TOOL_MASK)
 		original = FALSE;
 
 	(void)sd; /* unused w/o openmp */
@@ -2481,7 +2488,7 @@ static void calc_area_normal_and_flatten_center(Sculpt *sd, Object *ob,
 
 			/* for flatten center */
 			add_v3_v3(fc, private_fc);
-			add_v3_v3(fc_flip, private_fc);
+			add_v3_v3(fc_flip, private_fc_flip);
 			count += private_count;
 			count_flipped += private_count_flip;
 		}

@@ -662,6 +662,7 @@ static int ui_but_update_from_old_block(const bContext *C, uiBlock *block, uiBut
 				/* drawing */
 				oldbut->icon = but->icon;
 				oldbut->iconadd = but->iconadd;
+				oldbut->alignnr = but->alignnr;
 				
 				/* typically the same pointers, but not on undo/redo */
 				/* XXX some menu buttons store button itself in but->poin. Ugly */
@@ -2874,7 +2875,7 @@ static uiBut *ui_def_but(uiBlock *block, int type, int retval, const char *str,
 	}
 
 	/* keep track of UI_interface.h */
-	if      (ELEM8(but->type, BLOCK, BUT, LABEL, PULLDOWN, ROUNDBOX, BUTM, SCROLL, SEPR)) {}
+	if      (ELEM9(but->type, BLOCK, BUT, LABEL, PULLDOWN, ROUNDBOX, LISTBOX, BUTM, SCROLL, SEPR)) {}
 	else if (but->type >= SEARCH_MENU) {}
 	else but->flag |= UI_BUT_UNDO;
 
@@ -3157,9 +3158,14 @@ uiBut *uiDefBut(uiBlock *block, int type, int retval, const char *str, int x, in
 	return but;
 }
 
-/* if _x_ is a power of two (only one bit) return the power,
+/**
+ * if \a _x_ is a power of two (only one bit) return the power,
  * otherwise return -1.
- * (1<<findBitIndex(x))==x for powers of two.
+ *
+ * for powers of two:
+ * \code{.c}
+ *     ((1 << findBitIndex(x)) == x);
+ * \endcode
  */
 static int findBitIndex(unsigned int x)
 {
@@ -4185,5 +4191,6 @@ void UI_reinit_font(void)
 void UI_exit(void)
 {
 	ui_resources_free();
+	ui_button_clipboard_free();
 }
 

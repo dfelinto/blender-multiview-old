@@ -82,7 +82,7 @@ class MASK_PT_layers:
         mask = sc.mask
         active_layer = mask.layers.active
 
-        rows = 5 if active_layer else 2
+        rows = 4 if active_layer else 1
 
         row = layout.row()
         row.template_list("MASK_UL_layers", "", mask, "layers",
@@ -221,6 +221,11 @@ class MASK_PT_display():
 
         layout.prop(space_data, "mask_draw_type", text="")
         layout.prop(space_data, "show_mask_smooth")
+
+        layout.prop(space_data, "show_mask_overlay")
+        row = layout.row()
+        row.active = space_data.show_mask_overlay
+        row.prop(space_data, "mask_overlay_mode", text="")
 
 
 class MASK_PT_tools():

@@ -60,6 +60,9 @@ void copy_m4_m4(float R[4][4], float A[4][4]);
 void copy_m3_m4(float R[3][3], float A[4][4]);
 void copy_m4_m3(float R[4][4], float A[3][3]);
 
+/* double->float */
+void copt_m3_m3d(float R[3][3], double A[3][3]);
+
 void swap_m3m3(float A[3][3], float B[3][3]);
 void swap_m4m4(float A[4][4], float B[4][4]);
 
@@ -159,6 +162,8 @@ float determinant_m4(float A[4][4]);
 void svd_m4(float U[4][4], float s[4], float V[4][4], float A[4][4]);
 void pseudoinverse_m4_m4(float Ainv[4][4], float A[4][4], float epsilon);
 void pseudoinverse_m3_m3(float Ainv[3][3], float A[3][3], float epsilon);
+
+bool has_zero_axis_m4(float matrix[4][4]);
 
 /****************************** Transformations ******************************/
 

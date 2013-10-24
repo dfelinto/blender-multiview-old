@@ -242,6 +242,11 @@ static int ui_handler_region_menu(bContext *C, const wmEvent *event, void *userd
 static void ui_handle_button_activate(bContext *C, ARegion *ar, uiBut *but, uiButtonActivateType type);
 static void button_timers_tooltip_remove(bContext *C, uiBut *but);
 
+/* buttons clipboard */
+static ColorBand but_copypaste_coba = {0};
+static CurveMapping but_copypaste_curve = {0};
+static bool but_copypaste_curve_alive = false;
+
 /* ******************** menu navigation helpers ************** */
 
 /* assumes event type is MOUSEPAN */
@@ -1324,7 +1329,6 @@ static void ui_but_drop(bContext *C, const wmEvent *event, uiBut *but, uiHandleB
 /* c = copy, v = paste */
 static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data, char mode)
 {
-	static ColorBand but_copypaste_coba = {0};
 	char buf[UI_MAX_DRAW_STR + 1] = {0};
 
 	if (mode == 'v' && but->lock  == TRUE) {
@@ -1371,6 +1375,32 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 			}
 		}
 	}
+
+	/* NORMAL button */
+	else if (but->type == BUT_NORMAL) {
+		float xyz[3];
+
+		if (but->poin == NULL && but->rnapoin.data == NULL) {
+			/* pass */
+		}
+		else if (mode == 'c') {
+			ui_get_but_vectorf(but, xyz);
+			BLI_snprintf(buf, sizeof(buf), "[%f, %f, %f]", xyz[0], xyz[1], xyz[2]);
+			WM_clipboard_text_set(buf, 0);
+		}
+		else {
+			if (sscanf(buf, "[%f, %f, %f]", &xyz[0], &xyz[1], &xyz[2]) == 3) {
+				if (normalize_v3(xyz) == 0.0f) {
+					/* better set Z up then have a zero vector */
+					xyz[2] = 1.0;
+				}
+				button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+				ui_set_but_vectorf(but, xyz);
+				button_activate_state(C, but, BUTTON_STATE_EXIT);
+			}
+		}
+	}
+
 
 	/* RGB triple */
 	else if (but->type == COLOR) {
@@ -1455,6 +1485,28 @@ static void ui_but_copy_paste(bContext *C, uiBut *but, uiHandleButtonData *data,
 
 			button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 			memcpy(data->coba, &but_copypaste_coba, sizeof(ColorBand));
+			button_activate_state(C, but, BUTTON_STATE_EXIT);
+		}
+	}
+	else if (but->type == BUT_CURVE) {
+		if (mode == 'c') {
+			if (but->poin == NULL)
+				return;
+
+			but_copypaste_curve_alive = true;
+			curvemapping_free_data(&but_copypaste_curve);
+			curvemapping_copy_data(&but_copypaste_curve, (CurveMapping *) but->poin);
+		}
+		else {
+			if (!but_copypaste_curve_alive)
+				return;
+
+			if (!but->poin)
+				but->poin = MEM_callocN(sizeof(CurveMapping), "curvemapping");
+
+			button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
+			curvemapping_free_data((CurveMapping *) but->poin);
+			curvemapping_copy_data((CurveMapping *) but->poin, &but_copypaste_curve);
 			button_activate_state(C, but, BUTTON_STATE_EXIT);
 		}
 	}
@@ -2648,7 +2700,9 @@ static int ui_do_but_TEX(bContext *C, uiBlock *block, uiBut *but, uiHandleButton
 static int ui_do_but_SEARCH_UNLINK(bContext *C, uiBlock *block, uiBut *but, uiHandleButtonData *data, const wmEvent *event)
 {
 	/* unlink icon is on right */
-	if (ELEM4(event->type, LEFTMOUSE, EVT_BUT_OPEN, PADENTER, RETKEY) && event->val == KM_PRESS) {
+	if (ELEM4(event->type, LEFTMOUSE, EVT_BUT_OPEN, PADENTER, RETKEY) && event->val == KM_PRESS &&
+	    ui_is_but_search_unlink_visible(but))
+	{
 		ARegion *ar = data->region;
 		rcti rect;
 		int x = event->x, y = event->y;
@@ -5761,6 +5815,13 @@ bool ui_is_but_interactive(uiBut *but)
 	return true;
 }
 
+bool ui_is_but_search_unlink_visible(uiBut *but)
+{
+	BLI_assert(but->type == SEARCH_MENU_UNLINK);
+	return ((but->editstr == NULL) &&
+	        (but->drawstr[0] != '\0'));
+}
+
 uiBut *ui_but_find_mouse_over(ARegion *ar, int x, int y)
 {
 	uiBlock *block;
@@ -7842,3 +7903,7 @@ bool UI_textbutton_activate_event(const bContext *C, ARegion *ar,
 	}
 }
 
+void ui_button_clipboard_free(void)
+{
+	curvemapping_free_data(&but_copypaste_curve);
+}

@@ -62,6 +62,13 @@ struct wmTimer;
 struct ARegion;
 struct ReportList;
 
+/* transinfo->redraw */
+typedef enum {
+	TREDRAW_NOTHING   = 0,
+	TREDRAW_HARD      = 1,
+	TREDRAW_SOFT      = 2,
+} eRedrawFlag;
+
 typedef struct TransSnapPoint {
 	struct TransSnapPoint *next, *prev;
 	float co[3];
@@ -271,7 +278,7 @@ typedef struct MouseInput {
 	int     imval[2];       	/* initial mouse position                */
 	char	precision;
 	int     precision_mval[2];	/* mouse position when precision key was pressed */
-	int		center[2];
+	float	center[2];
 	float	factor;
 	void 	*data; /* additional data, if needed by the particular function */
 } MouseInput;
@@ -284,9 +291,9 @@ typedef struct TransInfo {
 	int         options;        /* current context/options for transform                      */
 	float       val;            /* init value for some transformations (and rotation angle)  */
 	float       fac;            /* factor for distance based transform  */
-	int       (*transform)(struct TransInfo *, const int *);
+	void      (*transform)(struct TransInfo *, const int[2]);
 								/* transform function pointer           */
-	int       (*handleEvent)(struct TransInfo *, const struct wmEvent *);
+	eRedrawFlag (*handleEvent)(struct TransInfo *, const struct wmEvent *);
 								/* event handler function pointer  RETURN 1 if redraw is needed */
 	int         total;          /* total number of transformed data     */
 	TransData  *data;           /* transformed data (array)             */
@@ -296,11 +303,11 @@ typedef struct TransInfo {
 	TransSnap	tsnap;
 	NumInput    num;            /* numerical input                      */
 	MouseInput	mouse;			/* mouse input                          */
-	char        redraw;         /* redraw flag                          */
+	eRedrawFlag redraw;         /* redraw flag                          */
 	float		prop_size;		/* proportional circle radius           */
 	char		proptext[20];	/* proportional falloff text			*/
 	float       center[3];      /* center of transformation             */
-	int         center2d[2];    /* center in screen coordinates         */
+	float       center2d[2];    /* center in screen coordinates         */
 	int         imval[2];       /* initial mouse position               */
 	short		event_type;		/* event->type used to invoke transform */
 	short       idx_max;		/* maximum index on the input vector	*/
@@ -371,12 +378,6 @@ typedef struct TransInfo {
 #define TRANS_RUNNING	1
 #define TRANS_CONFIRM	2
 #define TRANS_CANCEL	3
-
-/* transinfo->redraw */
-#define TREDRAW_NOTHING  	0
-#define TREDRAW_HARD		1
-#define TREDRAW_SOFT		2
-
 
 /* transinfo->flag */
 #define T_OBJECT		(1 << 0)
@@ -494,91 +495,6 @@ void projectFloatView(TransInfo *t, const float vec[3], float adr[2]);
 void applyAspectRatio(TransInfo *t, float *vec);
 void removeAspectRatio(TransInfo *t, float *vec);
 
-void initWarp(TransInfo *t);
-int handleEventWarp(TransInfo *t, const struct wmEvent *event);
-int Warp(TransInfo *t, const int mval[2]);
-
-void initShear(TransInfo *t);
-int handleEventShear(TransInfo *t, const struct wmEvent *event);
-int Shear(TransInfo *t, const int mval[2]);
-
-void initResize(TransInfo *t);
-int Resize(TransInfo *t, const int mval[2]);
-
-void initSkinResize(TransInfo *t);
-int SkinResize(TransInfo *t, const int mval[2]);
-
-void initTranslation(TransInfo *t);
-int Translation(TransInfo *t, const int mval[2]);
-
-void initToSphere(TransInfo *t);
-int ToSphere(TransInfo *t, const int mval[2]);
-
-void initRotation(TransInfo *t);
-int Rotation(TransInfo *t, const int mval[2]);
-
-void initShrinkFatten(TransInfo *t);
-int ShrinkFatten(TransInfo *t, const int mval[2]);
-
-void initTilt(TransInfo *t);
-int Tilt(TransInfo *t, const int mval[2]);
-
-void initCurveShrinkFatten(TransInfo *t);
-int CurveShrinkFatten(TransInfo *t, const int mval[2]);
-
-void initMaskShrinkFatten(TransInfo *t);
-int MaskShrinkFatten(TransInfo *t, const int mval[2]);
-
-void initTrackball(TransInfo *t);
-int Trackball(TransInfo *t, const int mval[2]);
-
-void initPushPull(TransInfo *t);
-int PushPull(TransInfo *t, const int mval[2]);
-
-void initBevelWeight(TransInfo *t);
-int BevelWeight(TransInfo *t, const int mval[2]);
-
-void initCrease(TransInfo *t);
-int Crease(TransInfo *t, const int mval[2]);
-
-void initBoneSize(TransInfo *t);
-int BoneSize(TransInfo *t, const int mval[2]);
-
-void initBoneEnvelope(TransInfo *t);
-int BoneEnvelope(TransInfo *t, const int mval[2]);
-
-void initBoneRoll(TransInfo *t);
-int BoneRoll(TransInfo *t, const int mval[2]);
-
-void initEdgeSlide(TransInfo *t);
-int handleEventEdgeSlide(TransInfo *t, const struct wmEvent *event);
-int EdgeSlide(TransInfo *t, const int mval[2]);
-
-void initVertSlide(TransInfo *t);
-int handleEventVertSlide(TransInfo *t, const struct wmEvent *event);
-int VertSlide(TransInfo *t, const int mval[2]);
-
-void initTimeTranslate(TransInfo *t);
-int TimeTranslate(TransInfo *t, const int mval[2]);
-
-void initTimeSlide(TransInfo *t);
-int TimeSlide(TransInfo *t, const int mval[2]);
-
-void initTimeScale(TransInfo *t);
-int TimeScale(TransInfo *t, const int mval[2]);
-
-void initBakeTime(TransInfo *t);
-int BakeTime(TransInfo *t, const int mval[2]);
-
-void initMirror(TransInfo *t);
-int Mirror(TransInfo *t, const int mval[2]);
-
-void initAlign(TransInfo *t);
-int Align(TransInfo *t, const int mval[2]);
-
-void initSeqSlide(TransInfo *t);
-int SeqSlide(TransInfo *t, const int mval[2]);
-
 void drawPropCircle(const struct bContext *C, TransInfo *t);
 
 struct wmKeyMap *transform_modal_keymap(struct wmKeyConfig *keyconf);
@@ -660,14 +576,14 @@ void initSnapping(struct TransInfo *t, struct wmOperator *op);
 void applyProject(TransInfo *t);
 void applySnapping(TransInfo *t, float *vec);
 void resetSnapping(TransInfo *t);
-bool handleSnapping(TransInfo *t, const struct wmEvent *event);
+eRedrawFlag handleSnapping(TransInfo *t, const struct wmEvent *event);
 void drawSnapping(const struct bContext *C, TransInfo *t);
 bool usingSnappingNormal(TransInfo *t);
 bool validSnappingNormal(TransInfo *t);
 
 void getSnapPoint(TransInfo *t, float vec[3]);
 void addSnapPoint(TransInfo *t);
-bool updateSelectedSnapPoint(TransInfo *t);
+eRedrawFlag updateSelectedSnapPoint(TransInfo *t);
 void removeSnapPoint(TransInfo *t);
 
 /********************** Mouse Input ******************************/
@@ -678,6 +594,7 @@ typedef enum {
 	INPUT_SPRING,
 	INPUT_SPRING_FLIP,
 	INPUT_ANGLE,
+	INPUT_ANGLE_SPRING,
 	INPUT_TRACKBALL,
 	INPUT_HORIZONTAL_RATIO,
 	INPUT_HORIZONTAL_ABSOLUTE,
@@ -687,9 +604,9 @@ typedef enum {
 	INPUT_CUSTOM_RATIO_FLIP
 } MouseInputMode;
 
-void initMouseInput(TransInfo *t, MouseInput *mi, const int center[2], const int mval[2]);
+void initMouseInput(TransInfo *t, MouseInput *mi, const float center[2], const int mval[2]);
 void initMouseInputMode(TransInfo *t, MouseInput *mi, MouseInputMode mode);
-int handleMouseInput(struct TransInfo *t, struct MouseInput *mi, const struct wmEvent *event);
+eRedrawFlag handleMouseInput(struct TransInfo *t, struct MouseInput *mi, const struct wmEvent *event);
 void applyMouseInput(struct TransInfo *t, struct MouseInput *mi, const int mval[2], float output[3]);
 
 void setCustomPoints(TransInfo *t, MouseInput *mi, const int start[2], const int end[2]);

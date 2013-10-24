@@ -1377,8 +1377,8 @@ static bNodeType *rna_Node_register_base(Main *bmain, ReportList *reports, Struc
 	nt->initfunc_api = (have_function[3]) ? rna_Node_init : NULL;
 	nt->copyfunc_api = (have_function[4]) ? rna_Node_copy : NULL;
 	nt->freefunc_api = (have_function[5]) ? rna_Node_free : NULL;
-	nt->uifunc = (have_function[6]) ? rna_Node_draw_buttons : NULL;
-	nt->uifuncbut = (have_function[7]) ? rna_Node_draw_buttons_ext : NULL;
+	nt->draw_buttons = (have_function[6]) ? rna_Node_draw_buttons : NULL;
+	nt->draw_buttons_ex = (have_function[7]) ? rna_Node_draw_buttons_ext : NULL;
 	
 	/* sanitize size values in case not all have been registered */
 	if (nt->maxwidth < nt->minwidth)
@@ -1889,6 +1889,12 @@ static void rna_NodeSocket_update(Main *bmain, Scene *UNUSED(scene), PointerRNA 
 	ED_node_tag_update_nodetree(bmain, ntree);
 }
 
+static int rna_NodeSocket_is_output_get(PointerRNA *ptr)
+{
+	bNodeSocket *sock = ptr->data;
+	return sock->in_out == SOCK_OUT;
+}
+
 static void rna_NodeSocket_link_limit_set(PointerRNA *ptr, int value)
 {
 	bNodeSocket *sock = ptr->data;
@@ -2336,24 +2342,24 @@ static void rna_NodeInternal_update(ID *id, bNode *node)
 
 static void rna_NodeInternal_draw_buttons(ID *id, bNode *node, struct bContext *C, struct uiLayout *layout)
 {
-	if (node->typeinfo->uifunc) {
+	if (node->typeinfo->draw_buttons) {
 		PointerRNA ptr;
 		RNA_pointer_create(id, &RNA_Node, node, &ptr);
-		node->typeinfo->uifunc(layout, C, &ptr);
+		node->typeinfo->draw_buttons(layout, C, &ptr);
 	}
 }
 
 static void rna_NodeInternal_draw_buttons_ext(ID *id, bNode *node, struct bContext *C, struct uiLayout *layout)
 {
-	if (node->typeinfo->uifuncbut) {
+	if (node->typeinfo->draw_buttons_ex) {
 		PointerRNA ptr;
 		RNA_pointer_create(id, &RNA_Node, node, &ptr);
-		node->typeinfo->uifuncbut(layout, C, &ptr);
+		node->typeinfo->draw_buttons_ex(layout, C, &ptr);
 	}
-	else if (node->typeinfo->uifunc) {
+	else if (node->typeinfo->draw_buttons) {
 		PointerRNA ptr;
 		RNA_pointer_create(id, &RNA_Node, node, &ptr);
-		node->typeinfo->uifunc(layout, C, &ptr);
+		node->typeinfo->draw_buttons(layout, C, &ptr);
 	}
 }
 
@@ -3335,6 +3341,7 @@ static void def_sh_tex_sky(StructRNA *srna)
 		{SHD_SKY_NEW, "HOSEK_WILKIE", 0, "Hosek / Wilkie", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
+	static float default_dir[3] = {0.0f, 0.0f, 1.0f};
 	
 	PropertyRNA *prop;
 	
@@ -3349,6 +3356,8 @@ static void def_sh_tex_sky(StructRNA *srna)
 	
 	prop = RNA_def_property(srna, "sun_direction", PROP_FLOAT, PROP_DIRECTION);
 	RNA_def_property_ui_text(prop, "Sun Direction", "Direction from where the sun is shining");
+	RNA_def_property_array(prop, 3);
+	RNA_def_property_float_array_default(prop, default_dir);
 	RNA_def_property_update(prop, NC_NODE | NA_EDITED, "rna_Node_update");
 	
 	prop = RNA_def_property(srna, "turbidity", PROP_FLOAT, PROP_NONE);
@@ -6294,12 +6303,10 @@ static void rna_def_node_socket(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Identifier", "Unique identifier for mapping sockets");
 
-	prop = RNA_def_property(srna, "in_out", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_sdna(prop, NULL, "in_out");
-	RNA_def_property_enum_items(prop, node_socket_in_out_items);
-	RNA_def_property_enum_default(prop, SOCK_IN);
+	prop = RNA_def_property(srna, "is_output", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_funcs(prop, "rna_NodeSocket_is_output_get", NULL);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Input or Output", "Input or Output type");
+	RNA_def_property_ui_text(prop, "Is Output", "True if the socket is an output, otherwise input");
 
 	prop = RNA_def_property(srna, "hide", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SOCK_HIDDEN);
@@ -6421,12 +6428,10 @@ static void rna_def_node_socket_interface(BlenderRNA *brna)
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Identifier", "Unique identifier for mapping sockets");
 
-	prop = RNA_def_property(srna, "in_out", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_sdna(prop, NULL, "in_out");
-	RNA_def_property_enum_items(prop, node_socket_in_out_items);
-	RNA_def_property_enum_default(prop, SOCK_IN);
+	prop = RNA_def_property(srna, "is_output", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_funcs(prop, "rna_NodeSocket_is_output_get", NULL);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Input or Output", "Input or Output type");
+	RNA_def_property_ui_text(prop, "Is Output", "True if the socket is an output, otherwise input");
 
 	/* registration */
 	prop = RNA_def_property(srna, "bl_socket_idname", PROP_STRING, PROP_NONE);

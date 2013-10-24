@@ -402,6 +402,7 @@ extern bool ui_is_but_unit(uiBut *but);
 extern bool ui_is_but_rna_valid(uiBut *but);
 extern bool ui_is_but_utf8(uiBut *but);
 extern bool ui_is_but_interactive(uiBut *but);
+extern bool ui_is_but_search_unlink_visible(uiBut *but);
 
 extern int  ui_is_but_push_ex(uiBut *but, double *value);
 extern int  ui_is_but_push(uiBut *but);
@@ -522,6 +523,7 @@ extern void ui_button_active_free(const struct bContext *C, uiBut *but);
 extern bool ui_button_is_active(struct ARegion *ar);
 extern int ui_button_open_menu_direction(uiBut *but);
 extern void ui_button_text_password_hide(char password_str[UI_MAX_DRAW_STR], uiBut *but, int restore);
+void ui_button_clipboard_free(void);
 
 /* interface_widgets.c */
 void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3);

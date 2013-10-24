@@ -639,7 +639,7 @@ static unsigned char *prefetch_read_file_to_memory(MovieClip *clip, int current_
 
 	BKE_movieclip_filename_for_frame(clip, &user, name);
 
-	file = open(name, O_BINARY | O_RDONLY, 0);
+	file = BLI_open(name, O_BINARY | O_RDONLY, 0);
 	if (file < 0) {
 		return NULL;
 	}
@@ -710,8 +710,14 @@ static unsigned char *prefetch_thread_next_frame(PrefetchQueue *queue, MovieClip
 		if (queue->direction > 0) {
 			current_frame = prefetch_find_uncached_frame(clip, queue->current_frame + 1, queue->end_frame,
 			                                             queue->render_size, queue->render_flag, 1);
+			/* switch direction if read frames from current up to scene end frames */
+			if (current_frame > queue->end_frame) {
+				queue->current_frame = queue->initial_frame;
+				queue->direction = -1;
+			}
 		}
-		else {
+
+		if (queue->direction < 0) {
 			current_frame = prefetch_find_uncached_frame(clip, queue->current_frame - 1, queue->start_frame,
 			                                             queue->render_size, queue->render_flag, -1);
 		}
@@ -736,12 +742,6 @@ static unsigned char *prefetch_thread_next_frame(PrefetchQueue *queue, MovieClip
 
 			*queue->do_update = 1;
 			*queue->progress = (float)frames_processed / (queue->end_frame - queue->start_frame);
-
-			/* switch direction if read frames from current up to scene end frames */
-			if (current_frame == queue->end_frame) {
-				queue->current_frame = queue->initial_frame;
-				queue->direction = -1;
-			}
 		}
 	}
 	BLI_spin_unlock(&queue->spin);
@@ -752,6 +752,7 @@ static unsigned char *prefetch_thread_next_frame(PrefetchQueue *queue, MovieClip
 static void *do_prefetch_thread(void *data_v)
 {
 	PrefetchThread *data = (PrefetchThread *) data_v;
+	MovieClip *clip = data->clip;
 	unsigned char *mem;
 	size_t size;
 	int current_frame;
@@ -766,7 +767,7 @@ static void *do_prefetch_thread(void *data_v)
 		user.render_size = data->queue->render_size;
 		user.render_flag = data->queue->render_flag;
 
-		ibuf = IMB_ibImageFromMemory(mem, size, flag, NULL, "prefetch frame");
+		ibuf = IMB_ibImageFromMemory(mem, size, flag, clip->colorspace_settings.name, "prefetch frame");
 
 		result = BKE_movieclip_put_frame_if_possible(data->clip, &user, ibuf);
 

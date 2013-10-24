@@ -51,6 +51,7 @@ struct Main;
 struct Mesh;
 struct MetaElem;
 struct ModifierData;
+struct HookModifierData;
 struct Nurb;
 struct Object;
 struct ReportList;

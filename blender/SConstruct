@@ -290,13 +290,13 @@ if env['OURPLATFORM']=='darwin':
     print B.bc.OKGREEN + "Detected Xcode version: -- " + B.bc.ENDC + env['XCODE_CUR_VER'] + " --"
     print "Available " + env['MACOSX_SDK_CHECK']
     if not 'Mac OS X 10.6' in env['MACOSX_SDK_CHECK']:
-        print  B.bc.OKGREEN + "Auto-setting available MacOSX SDK -> " + B.bc.ENDC + "MacOSX10.7.sdk"
+        print  B.bc.OKGREEN + "Building with user-defined OS X SDK ( Xcode 4.4 or newer )"
     elif not 'Mac OS X 10.5' in env['MACOSX_SDK_CHECK']:
         print  B.bc.OKGREEN + "Auto-setting available MacOSX SDK -> " + B.bc.ENDC + "MacOSX10.6.sdk"
     else:
         print B.bc.OKGREEN + "Found recommended sdk :" + B.bc.ENDC + " using MacOSX10.5.sdk"
 		
-    if env['CXX'].startswith('clang') and env['XCODE_CUR_VER'] >= '5':
+    if env['XCODE_CUR_VER'] >= '5' and not (env['CXX'][:-2].endswith('4.6') or env['CXX'][:-2].endswith('4.8')):
         env['CCFLAGS'].append('-ftemplate-depth=1024') # only valid for clang bundled with xcode 5
 
     # for now, Mac builders must download and install the 3DxWare 10 Beta 4 driver framework from 3Dconnexion

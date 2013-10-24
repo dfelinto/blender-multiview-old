@@ -85,6 +85,7 @@ struct MetaBall;
 struct ModifierData;
 struct MovieClip;
 struct MultiresModifierData;
+struct HookModifierData;
 struct NodeBlurData;
 struct Nurb;
 struct Object;
@@ -290,6 +291,7 @@ void WM_keymap_restore_item_to_default(struct bContext *C, struct wmKeyMap *keym
 void WM_keymap_properties_reset(struct wmKeyMapItem *kmi) {STUB_ASSERT(0);}
 void WM_keyconfig_update_tag(struct wmKeyMap *keymap, struct wmKeyMapItem *kmi) {STUB_ASSERT(0);}
 int WM_keymap_item_compare(struct wmKeyMapItem *k1, struct wmKeyMapItem *k2) {STUB_ASSERT(0); return 0;}
+int	WM_keymap_map_type_get(struct wmKeyMapItem *kmi) {STUB_ASSERT(0); return 0;}
 
 
 /* rna editors */
