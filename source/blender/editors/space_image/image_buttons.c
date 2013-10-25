@@ -415,7 +415,7 @@ static void ui_imageuser_pass_menu(bContext *UNUSED(C), uiLayout *layout, void *
 
 final:
 		uiDefButS(block, BUTM, B_NOP, IFACE_(rpass->internal_name), 0, 0,
-		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->pass, (float) nr, 0.0, 0, -1, "");
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->pass, (float) rpass->passtype, 0.0, 0, -1, "");
 	}
 
 	if (fake_name) {
@@ -456,88 +456,28 @@ static void ui_imageuser_view_menu(bContext *UNUSED(C), uiLayout *layout, void *
 	BLI_assert(nr == -1);
 }
 
-/* get the view for the current eye */
-static int get_view_from_renderesult(RenderResult *rr, const char *viewname)
+/* store the real pass id */
+/* real values used in image_draw::stereo_pass */
+static void update_stereo_pass(RenderResult *rr, ImageUser *iuser)
 {
-	RenderView *rv;
-	int nr;
-
-	for (nr=0, rv = (RenderView *)rr->views.first; rv; rv=rv->next, nr++) {
-
-		if (strcmp(rv->name, viewname) == 0)
-			return nr;
-	}
-
-	return 0;
-}
-
-/* return the real pass id */
-/* similar to get_multiview_pass_id in image_ops.c */
-static int get_pass_id(RenderResult *rr, ImageUser *iuser)
-{
-	RenderLayer *rl;
 	RenderPass *rpass = NULL;
-	int passtype;
-	short rl_index = 0, rp_index;
 	int view_id = iuser->view;
 
-	int view_left, view_right;
-	int show_stereo3d = FALSE;
-
 	if (rr == NULL || iuser == NULL)
-		return 0;
+		return;
 
-	if (BLI_countlist(&rr->views) < 2)
-		return iuser->pass_tmp;
+	iuser->view = STEREO_LEFT_ID;
+	rpass = BKE_image_multilayer_index(rr, iuser);
+	iuser->stereo.left_pass = iuser->pass;
+	iuser->stereo.left_multi_index = iuser->multi_index;
 
-	/* view == 0 shows stereo */
-	if ((iuser->flag & IMA_STEREO3D)) {
-		if(view_id-- == 0)
-			show_stereo3d = TRUE;
-	}
+	iuser->view = STEREO_RIGHT_ID;
+	rpass = BKE_image_multilayer_index(rr, iuser);
+	iuser->stereo.right_pass = iuser->pass;
+	iuser->stereo.right_multi_index = iuser->multi_index;
 
-	if (show_stereo3d) {
-		view_right = get_view_from_renderesult(rr, STEREO_RIGHT_NAME);
-		view_left = get_view_from_renderesult(rr, STEREO_LEFT_NAME);
-	}
-
-	if (RE_HasFakeLayer(rr))
-		rl_index ++; /* fake compo/sequencer layer */
-
-	rl = BLI_findlink(&rr->layers, rl_index);
-	if (!rl) return iuser->pass_tmp;
-
-	rp_index = 0;
-	passtype = 0;
-	for (rpass = rl->passes.first; rpass; rpass = rpass->next, rp_index++) {
-		if (iuser->pass_tmp == rp_index)
-			passtype = rpass->passtype;
-
-		if (rpass->passtype == passtype) {
-			if (show_stereo3d == FALSE) {
-				if (rpass->view_id == view_id)
-					return rp_index;
-			}
-			else {
-				if (rpass->view_id == view_right)
-					iuser->pass_right = rp_index;
-				else if (rpass->view_id == view_left)
-					iuser->pass_left = rp_index;
-			}
-		}
-	}
-
-	if (show_stereo3d == TRUE) {
-		iuser->pass = iuser->pass_right;
-		BKE_image_multilayer_index(rr, iuser);
-		iuser->multi_index_right = iuser->multi_index;
-
-		iuser->pass = iuser->pass_left;
-		BKE_image_multilayer_index(rr, iuser);
-		iuser->multi_index_left = iuser->multi_index;
-	}
-
-	return iuser->pass_tmp;
+	/* restore old settings */
+	iuser->view = view_id;
 }
 
 /* 5 layer button callbacks... */
@@ -545,7 +485,8 @@ static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v)
 {
 	ImageUser *iuser = iuser_v;
 
-	iuser->pass = get_pass_id(rr_v, iuser);
+	if ((iuser->flag & (IMA_IS_STEREO + IMA_SHOW_STEREO)))
+		update_stereo_pass(rr_v, iuser);
 
 	BKE_image_multilayer_index(rr_v, iuser); 
 	WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, NULL);
@@ -679,7 +620,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		uiButSetMenuFromPulldown(but);
 
 		/* view */
-		if (BLI_countlist(&rr->views) > 1) {
+		if (BLI_countlist(&rr->views) > 1 && ((iuser->flag & IMA_SHOW_STEREO) == 0)) {
 			rview = BLI_findlink(&rr->views, iuser->view);
 			display_name = rview ? rview->name : "";
 
@@ -687,8 +628,12 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
 			uiButSetMenuFromPulldown(but);
 		}
+
+		//XXX MV this should be around when we open the image/create the iuser
+		if (RE_HasStereo3D(rr))
+			iuser->flag |= IMA_IS_STEREO;
 		else
-			iuser->flag &= ~IMA_STEREO3D;
+			iuser->flag &= ~IMA_IS_STEREO;
 	}
 }
 

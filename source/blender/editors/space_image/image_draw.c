@@ -792,6 +792,19 @@ static void draw_image_paint_helpers(const bContext *C, ARegion *ar, Scene *scen
 	}
 }
 
+/* allocates the actual pass and multi_index for stereo mode */
+static void stereo_pass(ImageUser *iuser)
+{
+	if (iuser->eye == STEREO_LEFT_ID) {
+		iuser->pass = iuser->stereo.left_pass;
+		iuser->multi_index = iuser->stereo.left_multi_index;
+	}
+	else {
+		iuser->pass = iuser->stereo.right_pass;
+		iuser->multi_index = iuser->stereo.right_pass;
+	}
+}
+
 /* draw main image area */
 
 void draw_image_main(const bContext *C, ARegion *ar)
@@ -841,18 +854,9 @@ void draw_image_main(const bContext *C, ARegion *ar)
 		BLI_lock_thread(LOCK_DRAW_IMAGE);
 	}
 
-	/* view == 0 shows stereo */
-	if ((sima->iuser.flag & IMA_STEREO3D) &&
-		sima->iuser.view == 0) {
-		if (sima->iuser.eye == STEREO_LEFT_ID) {
-			sima->iuser.pass = sima->iuser.pass_left;
-			sima->iuser.multi_index = sima->iuser.multi_index_left;
-		}
-		else { //STEREO_RIGHT_ID
-			sima->iuser.pass = sima->iuser.pass_right;
-			sima->iuser.multi_index = sima->iuser.multi_index_right;
-		}
-	}
+	if ((sima->iuser.flag & IMA_SHOW_STEREO))
+		if ((sima->iuser.flag & IMA_IS_STEREO))
+			stereo_pass(&sima->iuser);
 
 	ibuf = ED_space_image_acquire_buffer(sima, &lock);
 

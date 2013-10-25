@@ -2373,17 +2373,22 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 
 		for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
 			rp_index = 0;
+
 			for (rpass = rl->passes.first; rpass; rpass = rpass->next, index++, rp_index++)
-				if (iuser->layer == rl_index && iuser->pass == rp_index)
+				if (iuser->layer == rl_index && iuser->passtype == rpass->passtype && iuser->view == rpass->view_id)
 					break;
 			if (rpass)
 				break;
 		}
 
-		if (rpass)
+		if (rpass) {
 			iuser->multi_index = index;
-		else
+			iuser->pass = rp_index;
+		}
+		else {
 			iuser->multi_index = 0;
+			iuser->pass = 0;
+		}
 	}
 	if (rpass == NULL) {
 		rl = rr->layers.first;
@@ -2773,7 +2778,7 @@ static ImBuf *image_get_render_result(Image *ima, ImageUser *iuser, void **lock_
 	pass = iuser->pass;
 	actview = iuser->view;
 
-	if (iuser->flag & IMA_STEREO3D) {
+	if (iuser && (iuser->flag & IMA_IS_STEREO)) {
 		/* view == 0 shows stereo */
 		if (actview == 0)
 			actview = iuser->eye;
