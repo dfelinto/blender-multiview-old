@@ -2623,8 +2623,7 @@ class VIEW3D_PT_view3d_stereo(Panel):
 
     @classmethod
     def poll(cls, context):
-        view = context.space_data
-        return (view)
+        return context.space_data
 
     def draw_header(self, context):
         view = context.space_data
@@ -2634,9 +2633,15 @@ class VIEW3D_PT_view3d_stereo(Panel):
     def draw(self, context):
         layout = self.layout
         view = context.space_data
+        multiview = context.scene.render.use_multiple_views
+
+        layout.active = view.show_stereoscopy
+
+        if not multiview:
+            layout.label(text="Enable Views Support in the Render Layer Panel",icon='ERROR')
 
         col = layout.column()
-        col.active = view.show_stereoscopy
+        col.active = view.show_stereoscopy and multiview
         if view.stereoscopy_camera == "3D":
             col.prop(view, "stereoscopy_camera", icon='CAMERA_STEREO')
         else:

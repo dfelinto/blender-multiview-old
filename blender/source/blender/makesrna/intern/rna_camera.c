@@ -318,11 +318,6 @@ void RNA_def_camera(BlenderRNA *brna)
 	RNA_def_property_enum_items(prop, prop_lens_unit_items);
 	RNA_def_property_ui_text(prop, "Lens Unit", "Unit to edit lens in for the user interface");
 
-	prop = RNA_def_property(srna, "use_stereoscopy", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flag", CAM_STEREOSCOPY);
-	RNA_def_property_ui_text(prop, "Stereoscopy 3D", "");
-	RNA_def_property_update(prop, NC_SCENE, NULL);
-
 	/* pointers */
 	rna_def_animdata_common(srna);
 

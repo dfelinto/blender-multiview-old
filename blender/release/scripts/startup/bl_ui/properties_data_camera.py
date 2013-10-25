@@ -123,20 +123,23 @@ class DATA_PT_camera_stereoscopy(CameraButtonsPanel, Panel):
     bl_label = "Stereoscopy"
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
-    def draw_header(self, context):
-        self.layout.prop(context.camera, "use_stereoscopy", text="")
-
     def draw(self, context):
         layout = self.layout
-        layout.active=context.camera.use_stereoscopy
+        multiview = context.scene.render.use_multiple_views
+
+        if not multiview:
+            layout.label(text="Enable Views Support in the Render Layer Panel",icon='ERROR')
+
+        col = layout.column()
+        col.active = multiview
 
         st = context.camera.stereo
-        row = layout.row(align=True)
+        row = col.row(align=True)
         row.prop(st, "interocular_distance")
         row.prop(st, "convergence_distance")
 
-        layout.prop(st, "convergence_mode", expand=True)
-        layout.separator()
+        row = col.row()
+        row.prop(st, "convergence_mode", expand=True)
 
 
 class DATA_PT_camera(CameraButtonsPanel, Panel):
