@@ -404,7 +404,7 @@ static bool wm_stereo_required(bScreen *screen)
 	return FALSE;
 }
 
-bool wm_stereo_enabled(wmWindow *win)
+bool WM_stereo_enabled(wmWindow *win)
 {
 	bScreen *screen = win->screen;
 
