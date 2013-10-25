@@ -455,10 +455,13 @@ class CyclesRender_PT_views(CyclesButtonsPanel, Panel):
 
         rv = rd.views.active
 
-        row = layout.row()
-        row.prop(rv, "camera")
+        col = layout.column()
+        col.prop(rv, "camera")
 
-        row = layout.row()
+        if rv.camera and rv.camera.data.use_stereoscopy:
+            col.prop(rv, "stereoscopy_camera")
+
+        row = col.row()
         row.prop(rv, "use_custom_suffix")
         sub = row.row()
         sub.active = rv.use_custom_suffix
@@ -1369,6 +1372,7 @@ def get_panels():
         types.DATA_PT_vertex_colors,
         types.DATA_PT_camera,
         types.DATA_PT_camera_display,
+        types.DATA_PT_camera_stereoscopy,
         types.DATA_PT_lens,
         types.DATA_PT_speaker,
         types.DATA_PT_distance,

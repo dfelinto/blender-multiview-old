@@ -2615,16 +2615,43 @@ class VIEW3D_PT_view3d_display(Panel):
             row.prop(region, "use_box_clip")
 
 
-class VIEW3D_PT_view3d_shading(Panel):
+class VIEW3D_PT_view3d_stereo(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
-    bl_label = "Shading"
+    bl_label = "Stereoscopy"
     bl_options = {'DEFAULT_CLOSED'}
 
     @classmethod
     def poll(cls, context):
         view = context.space_data
         return (view)
+
+    def draw_header(self, context):
+        view = context.space_data
+
+        self.layout.prop(view, "show_stereoscopy", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        view = context.space_data
+
+        col = layout.column()
+        col.active = view.show_stereoscopy
+        if view.stereoscopy_camera == "3D":
+            col.prop(view, "stereoscopy_camera", icon='CAMERA_STEREO')
+        else:
+            col.prop(view, "stereoscopy_camera", icon='SCENE')
+
+        col.label(text="Display:")
+        col.prop(view, "show_stereoscopy_cameras")
+        col.prop(view, "show_stereoscopy_planes")
+        col.prop(view, "show_stereoscopy_volume")
+
+
+class VIEW3D_PT_view3d_shading(Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Shading"
 
     def draw(self, context):
         layout = self.layout

@@ -251,7 +251,9 @@ typedef struct SceneRenderView {
 	char suffix[64];	/* MAX_NAME */
 
 	int viewflag;
-	int pad[3];
+	int pad[2];
+	char stereo_camera;
+	char pad2[3];
 
 	struct Object *camera;
 } SceneRenderView;
@@ -768,9 +770,10 @@ typedef struct GameData {
 #define STEREO_LEFT_NAME "left"
 
 typedef enum StereoViews {
-	STEREO_MONO_ID = -1,
 	STEREO_LEFT_ID = 0,
 	STEREO_RIGHT_ID = 1,
+	STEREO_CENTER_ID = 2,
+	STEREO_3D_ID = 3,
 } StereoViews;
 
 /* Markers */

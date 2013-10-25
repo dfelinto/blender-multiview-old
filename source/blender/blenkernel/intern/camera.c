@@ -65,6 +65,10 @@ void *BKE_camera_add(Main *bmain, const char *name)
 	cam->ortho_scale = 6.0;
 	cam->flag |= CAM_SHOWPASSEPARTOUT;
 	cam->passepartalpha = 0.5f;
+
+	/* stereoscopy 3d */
+	cam->stereo.interocular_distance = 0.065;
+	cam->stereo.convergence_distance = 30.f * 0.065;
 	
 	return cam;
 }
@@ -591,3 +595,81 @@ int BKE_camera_view_frame_fit_to_scene(Scene *scene, struct View3D *v3d, Object 
 		}
 	}
 }
+
+/* return the eye (left/right/center) for the given view
+   actview is numbered from a list of the active SceneRenderViews only */
+StereoViews BKE_getStereoView(RenderData *rd, int actview) {
+	SceneRenderView *srv;
+	int view_id;
+
+	/* check renderdata for amount of views */
+	view_id = 0;
+	for (srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (actview == view_id++)
+			return srv->stereo_camera;
+	}
+
+	return STEREO_CENTER_ID;
+}
+
+static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *shift, bool left)
+{
+	/* viewmat = MODELVIEW_MATRIX */
+	Camera *data = (Camera *)camera->data;
+	float interocular_distance, convergence_distance;
+	short convergence_mode;
+	float tmpviewmat[4][4];
+
+	interocular_distance = data->stereo.interocular_distance;
+	convergence_distance = data->stereo.convergence_distance;
+	convergence_mode = data->stereo.convergence_mode;
+
+	copy_m4_m4(tmpviewmat, camera->obmat);
+
+	/* move */
+	/* XXX pseudo math right now, only to show some difference.
+	   but here comes the real calculation later */
+	if (left) {
+		tmpviewmat[0][0] += interocular_distance * 0.5;
+	}
+	else {
+		tmpviewmat[0][0] -= interocular_distance * 0.5;
+	}
+
+	/* copy  */
+	normalize_m4(tmpviewmat);
+	invert_m4_m4(viewmat, tmpviewmat);
+
+	/* prepare the camera shift for the projection matrix */
+	if (convergence_mode == CAM_S3D_OFFAXIS) {
+		/* XXX pseudo math right now, only to show some difference.
+		   but here comes the real calculation later */
+		if (left)
+			*shift += interocular_distance * 0.5;
+		else
+			*shift -= interocular_distance * 0.5;
+	}
+}
+
+void BKE_camera_stereo_matrix_shift(Object *camera, float viewmat[4][4], float *shift, StereoViews view)
+{
+	/* set the modelview matrix and return the new camera shift */
+	*shift = ((Camera *)camera->data)->shiftx;
+
+	switch (view) {
+		case STEREO_LEFT_ID:
+			camera_stereo_matrices(camera, viewmat, shift, TRUE);
+			break;
+		case STEREO_RIGHT_ID:
+			camera_stereo_matrices(camera, viewmat, shift, FALSE);
+			break;
+		/* case STEREO_CENTER_ID: */
+		default:
+			break;
+	}
+}
+
