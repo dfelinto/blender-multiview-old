@@ -391,9 +391,27 @@ static bool wm_stereo_required(bScreen *screen)
 			}
 			if (sl->spacetype == SPACE_IMAGE) {
 				SpaceImage *sima = (SpaceImage *) sl;
-// XXX MV - waiting to image editor refactor, basically we will know if the image is 3d AND that it has 3d selected
-//					if (sima->iuser.view == STEREO_3D_ID)
+
+				/* XXX MV
+				 * 1) we need to make sure the iuser->flag IMAGE_IS_STEREO
+				 * is re-set to zero when a new image is open/created
+				 *
+				 * 2) we need to mmake sure we are only taking visible
+				 * spaces
+				 * */
+
+#if 0
+				if (sima->iuser.flag & IMA_IS_STEREO)
+					printf("IMA_IS_STEREO\n");
+				if (sima->iuser.flag & IMA_SHOW_STEREO)
+					printf("IMA_SHOW_STEREO\n");
+#endif
+
+
+				if ((sima->iuser.flag & IMA_IS_STEREO) &&
+						(sima->iuser.flag & IMA_SHOW_STEREO)) {
 					return TRUE;
+				}
 			}
 		}
 	}
