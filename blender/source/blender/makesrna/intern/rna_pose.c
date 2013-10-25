@@ -261,7 +261,7 @@ static int rna_PoseChannel_has_ik_get(PointerRNA *ptr)
 	Object *ob = (Object *)ptr->id.data;
 	bPoseChannel *pchan = (bPoseChannel *)ptr->data;
 
-	return ED_pose_channel_in_IK_chain(ob, pchan);
+	return BKE_pose_channel_in_IK_chain(ob, pchan);
 }
 
 static StructRNA *rna_IKParam_refine(PointerRNA *ptr)
@@ -382,7 +382,8 @@ static void rna_PoseChannel_bone_group_index_set(PointerRNA *ptr, int value)
 	pchan->agrp_index = value + 1;
 }
 
-static void rna_PoseChannel_bone_group_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void rna_PoseChannel_bone_group_index_range(PointerRNA *ptr, int *min, int *max,
+                                                   int *UNUSED(softmin), int *UNUSED(softmax))
 {
 	Object *ob = (Object *)ptr->id.data;
 	bPose *pose = (ob) ? ob->pose : NULL;
@@ -415,7 +416,8 @@ static void rna_Pose_active_bone_group_index_set(PointerRNA *ptr, int value)
 	pose->active_group = value + 1;
 }
 
-static void rna_Pose_active_bone_group_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void rna_Pose_active_bone_group_index_range(PointerRNA *ptr, int *min, int *max,
+                                                   int *UNUSED(softmin), int *UNUSED(softmax))
 {
 	bPose *pose = (bPose *)ptr->data;
 
@@ -740,9 +742,7 @@ static void rna_def_pose_channel(BlenderRNA *brna)
 	static float default_quat[4] = {1, 0, 0, 0};    /* default quaternion values */
 	static float default_axisAngle[4] = {0, 0, 1, 0};   /* default axis-angle rotation values */
 	static float default_scale[3] = {1, 1, 1}; /* default scale values */
-	
-	const int matrix_dimsize[] = {4, 4};
-	
+
 	StructRNA *srna;
 	PropertyRNA *prop;
 
@@ -839,13 +839,13 @@ static void rna_def_pose_channel(BlenderRNA *brna)
 	/* transform matrices - should be read-only since these are set directly by AnimSys evaluation */
 	prop = RNA_def_property(srna, "matrix_channel", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "chan_mat");
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Channel Matrix", "4x4 matrix, before constraints");
 
 	/* writable because it touches loc/scale/rot directly */
 	prop = RNA_def_property(srna, "matrix_basis", PROP_FLOAT, PROP_MATRIX);
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
 	RNA_def_property_ui_text(prop, "Basis Matrix",
 	                         "Alternative access to location/scale/rotation relative to the parent and own rest bone");
 	RNA_def_property_float_funcs(prop, "rna_PoseChannel_matrix_basis_get", "rna_PoseChannel_matrix_basis_set", NULL);
@@ -855,7 +855,7 @@ static void rna_def_pose_channel(BlenderRNA *brna)
 	/* final matrix */
 	prop = RNA_def_property(srna, "matrix", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "pose_mat");
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
 	RNA_def_property_float_funcs(prop, NULL, "rna_PoseChannel_matrix_set", NULL);
 	RNA_def_property_ui_text(prop, "Pose Matrix",
 	                         "Final 4x4 matrix after constraints and drivers are applied (object space)");

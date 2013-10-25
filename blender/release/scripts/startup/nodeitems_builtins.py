@@ -27,19 +27,22 @@ from nodeitems_utils import NodeCategory, NodeItem, NodeItemCustom
 class CompositorNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
-        return context.space_data.tree_type == 'CompositorNodeTree'
+        return (context.space_data.tree_type == 'CompositorNodeTree')
+
 
 class ShaderNewNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
-        return context.space_data.tree_type == 'ShaderNodeTree' and \
-               context.scene.render.use_shading_nodes
+        return (context.space_data.tree_type == 'ShaderNodeTree' and
+                context.scene.render.use_shading_nodes)
+
 
 class ShaderOldNodeCategory(NodeCategory):
     @classmethod
     def poll(cls, context):
-        return context.space_data.tree_type == 'ShaderNodeTree' and \
-               not context.scene.render.use_shading_nodes
+        return (context.space_data.tree_type == 'ShaderNodeTree' and
+                not context.scene.render.use_shading_nodes)
+
 
 class TextureNodeCategory(NodeCategory):
     @classmethod
@@ -54,10 +57,12 @@ def group_make_draw(self, layout, context):
 
 # maps node tree type to group node type
 node_tree_group_type = {
-    'CompositorNodeTree'    : 'CompositorNodeGroup',
-    'ShaderNodeTree'        : 'ShaderNodeGroup',
-    'TextureNodeTree'       : 'TextureNodeGroup',
+    'CompositorNodeTree': 'CompositorNodeGroup',
+    'ShaderNodeTree': 'ShaderNodeGroup',
+    'TextureNodeTree': 'TextureNodeGroup',
     }
+
+
 # generic node group items generator for shader, compositor and texture node groups
 def node_group_items(context):
     space = context.space_data
@@ -86,7 +91,10 @@ def node_group_items(context):
         if contains_group(group, ntree):
             continue
 
-        yield NodeItem(node_tree_group_type[group.bl_idname], group.name, { "node_tree" : "bpy.data.node_groups[%r]" % group.name })
+        yield NodeItem(node_tree_group_type[group.bl_idname],
+                       group.name,
+                       {"node_tree": "bpy.data.node_groups[%r]" % group.name})
+
 
 # only show input/output nodes inside node groups
 def group_input_output_item_poll(context):
@@ -178,6 +186,7 @@ shader_node_categories = [
         NodeItem("ShaderNodeBsdfToon"),
         NodeItem("ShaderNodeSubsurfaceScattering"),
         NodeItem("ShaderNodeEmission"),
+        NodeItem("ShaderNodeBsdfHair"),
         NodeItem("ShaderNodeBackground"),
         NodeItem("ShaderNodeAmbientOcclusion"),
         NodeItem("ShaderNodeHoldout"),
@@ -210,6 +219,7 @@ shader_node_categories = [
         NodeItem("ShaderNodeNormalMap"),
         NodeItem("ShaderNodeNormal"),
         NodeItem("ShaderNodeVectorCurve"),
+        NodeItem("ShaderNodeVectorTransform"),
         ]),
     ShaderNewNodeCategory("SH_NEW_CONVERTOR", "Converter", items=[
         NodeItem("ShaderNodeMath"),
@@ -218,7 +228,10 @@ shader_node_categories = [
         NodeItem("ShaderNodeVectorMath"),
         NodeItem("ShaderNodeSeparateRGB"),
         NodeItem("ShaderNodeCombineRGB"),
+        NodeItem("ShaderNodeSeparateHSV"),
+        NodeItem("ShaderNodeCombineHSV"),
         NodeItem("ShaderNodeWavelength"),
+        NodeItem("ShaderNodeBlackbody"),
         ]),
     ShaderNewNodeCategory("SH_NEW_SCRIPT", "Script", items=[
         NodeItem("ShaderNodeScript"),
@@ -231,8 +244,8 @@ shader_node_categories = [
     ]
 
 compositor_node_categories = [
-     # Compositor Nodes
-     CompositorNodeCategory("CMP_INPUT", "Input", items = [
+    # Compositor Nodes
+    CompositorNodeCategory("CMP_INPUT", "Input", items=[
         NodeItem("CompositorNodeRLayers"),
         NodeItem("CompositorNodeImage"),
         NodeItem("CompositorNodeMovieClip"),
@@ -245,7 +258,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeTrackPos"),
         NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
         ]),
-    CompositorNodeCategory("CMP_OUTPUT", "Output", items = [
+    CompositorNodeCategory("CMP_OUTPUT", "Output", items=[
         NodeItem("CompositorNodeComposite"),
         NodeItem("CompositorNodeViewer"),
         NodeItem("CompositorNodeSplitViewer"),
@@ -253,7 +266,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeLevels"),
         NodeItem("NodeGroupOutput", poll=group_input_output_item_poll),
         ]),
-    CompositorNodeCategory("CMP_OP_COLOR", "Color", items = [
+    CompositorNodeCategory("CMP_OP_COLOR", "Color", items=[
         NodeItem("CompositorNodeMixRGB"),
         NodeItem("CompositorNodeAlphaOver"),
         NodeItem("CompositorNodeInvert"),
@@ -267,7 +280,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeTonemap"),
         NodeItem("CompositorNodeZcombine"),
         ]),
-    CompositorNodeCategory("CMP_CONVERTOR", "Converter", items = [
+    CompositorNodeCategory("CMP_CONVERTOR", "Converter", items=[
         NodeItem("CompositorNodeMath"),
         NodeItem("CompositorNodeValToRGB"),
         NodeItem("CompositorNodeSetAlpha"),
@@ -284,7 +297,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeCombYCCA"),
         NodeItem("CompositorNodeSwitchView"),
         ]),
-    CompositorNodeCategory("CMP_OP_FILTER", "Filter", items = [
+    CompositorNodeCategory("CMP_OP_FILTER", "Filter", items=[
         NodeItem("CompositorNodeBlur"),
         NodeItem("CompositorNodeBilateralblur"),
         NodeItem("CompositorNodeDilateErode"),
@@ -298,14 +311,14 @@ compositor_node_categories = [
         NodeItem("CompositorNodeDBlur"),
         NodeItem("CompositorNodePixelate"),
         ]),
-    CompositorNodeCategory("CMP_OP_VECTOR", "Vector", items = [
+    CompositorNodeCategory("CMP_OP_VECTOR", "Vector", items=[
         NodeItem("CompositorNodeNormal"),
         NodeItem("CompositorNodeMapValue"),
         NodeItem("CompositorNodeMapRange"),
         NodeItem("CompositorNodeNormalize"),
         NodeItem("CompositorNodeCurveVec"),
         ]),
-    CompositorNodeCategory("CMP_MATTE", "Matte", items = [
+    CompositorNodeCategory("CMP_MATTE", "Matte", items=[
         NodeItem("CompositorNodeKeying"),
         NodeItem("CompositorNodeKeyingScreen"),
         NodeItem("CompositorNodeChannelMatte"),
@@ -319,7 +332,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeColorMatte"),
         NodeItem("CompositorNodeDoubleEdgeMask"),
         ]),
-    CompositorNodeCategory("CMP_DISTORT", "Distort", items = [
+    CompositorNodeCategory("CMP_DISTORT", "Distort", items=[
         NodeItem("CompositorNodeScale"),
         NodeItem("CompositorNodeLensdist"),
         NodeItem("CompositorNodeMovieDistortion"),
@@ -331,9 +344,10 @@ compositor_node_categories = [
         NodeItem("CompositorNodeMapUV"),
         NodeItem("CompositorNodeTransform"),
         NodeItem("CompositorNodeStabilize"),
+        NodeItem("CompositorNodePlaneTrackDeform"),
         ]),
     CompositorNodeCategory("CMP_GROUP", "Group", items=node_group_items),
-    CompositorNodeCategory("CMP_LAYOUT", "Layout", items = [
+    CompositorNodeCategory("CMP_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
         NodeItem("NodeReroute"),
         NodeItem("CompositorNodeSwitch"),
@@ -342,19 +356,19 @@ compositor_node_categories = [
 
 texture_node_categories = [
     # Texture Nodes
-    TextureNodeCategory("TEX_INPUT", "Input", items = [
+    TextureNodeCategory("TEX_INPUT", "Input", items=[
         NodeItem("TextureNodeCurveTime"),
         NodeItem("TextureNodeCoordinates"),
         NodeItem("TextureNodeTexture"),
         NodeItem("TextureNodeImage"),
         NodeItem("NodeGroupInput", poll=group_input_output_item_poll),
         ]),
-    TextureNodeCategory("TEX_OUTPUT", "Output", items = [
+    TextureNodeCategory("TEX_OUTPUT", "Output", items=[
         NodeItem("TextureNodeOutput"),
         NodeItem("TextureNodeViewer"),
         NodeItem("NodeGroupOutput", poll=group_input_output_item_poll),
         ]),
-    TextureNodeCategory("TEX_OP_COLOR", "Color", items = [
+    TextureNodeCategory("TEX_OP_COLOR", "Color", items=[
         NodeItem("TextureNodeMixRGB"),
         NodeItem("TextureNodeCurveRGB"),
         NodeItem("TextureNodeInvert"),
@@ -362,11 +376,11 @@ texture_node_categories = [
         NodeItem("TextureNodeCompose"),
         NodeItem("TextureNodeDecompose"),
         ]),
-    TextureNodeCategory("TEX_PATTERN", "Pattern", items = [
+    TextureNodeCategory("TEX_PATTERN", "Pattern", items=[
         NodeItem("TextureNodeChecker"),
         NodeItem("TextureNodeBricks"),
         ]),
-    TextureNodeCategory("TEX_TEXTURE", "Textures", items = [
+    TextureNodeCategory("TEX_TEXTURE", "Textures", items=[
         NodeItem("TextureNodeTexNoise"),
         NodeItem("TextureNodeTexDistNoise"),
         NodeItem("TextureNodeTexClouds"),
@@ -378,20 +392,20 @@ texture_node_categories = [
         NodeItem("TextureNodeTexMusgrave"),
         NodeItem("TextureNodeTexStucci"),
         ]),
-    TextureNodeCategory("TEX_CONVERTOR", "Converter", items = [
+    TextureNodeCategory("TEX_CONVERTOR", "Converter", items=[
         NodeItem("TextureNodeMath"),
         NodeItem("TextureNodeValToRGB"),
         NodeItem("TextureNodeRGBToBW"),
         NodeItem("TextureNodeValToNor"),
         NodeItem("TextureNodeDistance"),
         ]),
-    TextureNodeCategory("TEX_DISTORT", "Distort", items = [
+    TextureNodeCategory("TEX_DISTORT", "Distort", items=[
         NodeItem("TextureNodeScale"),
         NodeItem("TextureNodeTranslate"),
         NodeItem("TextureNodeRotate"),
         ]),
     TextureNodeCategory("TEX_GROUP", "Group", items=node_group_items),
-    TextureNodeCategory("TEX_LAYOUT", "Layout", items = [
+    TextureNodeCategory("TEX_LAYOUT", "Layout", items=[
         NodeItem("NodeFrame"),
         NodeItem("NodeReroute"),
         ]),
@@ -399,15 +413,15 @@ texture_node_categories = [
 
 
 def register():
-    nodeitems_utils.register_node_categories("SHADER", shader_node_categories)
-    nodeitems_utils.register_node_categories("COMPOSITING", compositor_node_categories)
-    nodeitems_utils.register_node_categories("TEXTURE", texture_node_categories)
+    nodeitems_utils.register_node_categories('SHADER', shader_node_categories)
+    nodeitems_utils.register_node_categories('COMPOSITING', compositor_node_categories)
+    nodeitems_utils.register_node_categories('TEXTURE', texture_node_categories)
 
 
 def unregister():
-    nodeitems_utils.unregister_node_categories("SHADER")
-    nodeitems_utils.unregister_node_categories("COMPOSITING")
-    nodeitems_utils.unregister_node_categories("TEXTURE")
+    nodeitems_utils.unregister_node_categories('SHADER')
+    nodeitems_utils.unregister_node_categories('COMPOSITING')
+    nodeitems_utils.unregister_node_categories('TEXTURE')
 
 
 if __name__ == "__main__":

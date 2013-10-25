@@ -120,7 +120,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
     def BEVEL(self, layout, ob, md):
         split = layout.split()
-        
+
         col = split.column()
         col.prop(md, "width")
         col.prop(md, "segments")
@@ -670,13 +670,17 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
         col = split.column()
         col.prop(md, "offset")
-        col.prop(md, "subsurf_levels")
 
         col = split.column()
         col.label(text="Mode:")
         col.prop(md, "wrap_method", text="")
 
         if md.wrap_method == 'PROJECT':
+            split = layout.split()
+            col = split.column()
+            col.prop(md, "subsurf_levels")
+            col = split.column()
+
             col.prop(md, "project_limit", text="Limit")
             split = layout.split(percentage=0.25)
 
@@ -715,9 +719,11 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         col = split.column()
         col.label(text="Origin:")
         col.prop(md, "origin", text="")
-        sub = col.column()
-        sub.active = (md.origin is not None)
-        sub.prop(md, "use_relative")
+
+        if md.deform_method in {'TAPER', 'STRETCH', 'TWIST'}:
+            col.label(text="Lock:")
+            col.prop(md, "lock_x")
+            col.prop(md, "lock_y")
 
         col = split.column()
         col.label(text="Deform:")
@@ -726,9 +732,6 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         else:
             col.prop(md, "angle")
         col.prop(md, "limits", slider=True)
-        if md.deform_method in {'TAPER', 'STRETCH', 'TWIST'}:
-            col.prop(md, "lock_x")
-            col.prop(md, "lock_y")
 
     def SMOKE(self, layout, ob, md):
         layout.label(text="Settings can be found inside the Physics context")
@@ -781,7 +784,7 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         sub = col.column()
         row = sub.split(align=True, percentage=0.4)
         row.prop(md, "material_offset", text="")
-        row = row.row()
+        row = row.row(align=True)
         row.active = md.use_rim
         row.prop(md, "material_offset_rim", text="Rim")
 
@@ -982,26 +985,26 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
     def VERTEX_WEIGHT_EDIT(self, layout, ob, md):
         split = layout.split()
-        
+
         col = split.column()
         col.label(text="Vertex Group:")
         col.prop_search(md, "vertex_group", ob, "vertex_groups", text="")
 
         col.label(text="Default Weight:")
         col.prop(md, "default_weight", text="")
-        
+
         col = split.column()
         col.prop(md, "use_add")
         sub = col.column()
         sub.active = md.use_add
         sub.prop(md, "add_threshold")
-        
+
         col = col.column()
         col.prop(md, "use_remove")
         sub = col.column()
         sub.active = md.use_remove
         sub.prop(md, "remove_threshold")
-        
+
         layout.separator()
 
         layout.prop(md, "falloff_type")
@@ -1047,20 +1050,20 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
         col = split.column()
         col.label(text="Target Object:")
         col.prop(md, "target", text="")
-        
+
         split = layout.split()
-        
+
         col = split.column()
         col.label(text="Distance:")
         col.prop(md, "proximity_mode", text="")
         if md.proximity_mode == 'GEOMETRY':
             col.row().prop(md, "proximity_geometry")
-            
+
         col = split.column()
         col.label()
         col.prop(md, "min_dist")
         col.prop(md, "max_dist")
-        
+
         layout.separator()
         layout.prop(md, "falloff_type")
 
@@ -1070,25 +1073,25 @@ class DATA_PT_modifiers(ModifierButtonsPanel, Panel):
 
     def SKIN(self, layout, ob, md):
         layout.operator("object.skin_armature_create", text="Create Armature")
-        
+
         layout.separator()
-        
+
         col = layout.column(align=True)
         col.prop(md, "branch_smoothing")
         col.prop(md, "use_smooth_shade")
-        
+
         split = layout.split()
-        
+
         col = split.column()
         col.label(text="Selected Vertices:")
         sub = col.column(align=True)
         sub.operator("object.skin_loose_mark_clear", text="Mark Loose").action = 'MARK'
         sub.operator("object.skin_loose_mark_clear", text="Clear Loose").action = 'CLEAR'
-        
+
         sub = col.column()
         sub.operator("object.skin_root_mark", text="Mark Root")
         sub.operator("object.skin_radii_equalize", text="Equalize Radii")
-        
+
         col = split.column()
         col.label(text="Symmetry Axes:")
         col.prop(md, "use_x_symmetry")

@@ -574,13 +574,13 @@ void RNA_define_free(BlenderRNA *UNUSED(brna))
 	DefRNA.error = 0;
 }
 
-void RNA_define_verify_sdna(int verify)
+void RNA_define_verify_sdna(bool verify)
 {
 	DefRNA.verify = verify;
 }
 
 #ifndef RNA_RUNTIME
-void RNA_define_animate_sdna(int animate)
+void RNA_define_animate_sdna(bool animate)
 {
 	DefRNA.animate = animate;
 }
@@ -1253,6 +1253,11 @@ void RNA_def_property_array(PropertyRNA *prop, int length)
 	}
 }
 
+/* common args for length */
+const int rna_matrix_dimsize_3x3[] = {3, 3};
+const int rna_matrix_dimsize_4x4[] = {4, 4};
+const int rna_matrix_dimsize_4x2[] = {4, 2};
+
 void RNA_def_property_multi_array(PropertyRNA *prop, int dimension, const int length[])
 {
 	StructRNA *srna = DefRNA.laststruct;
@@ -1321,6 +1326,26 @@ void RNA_def_property_ui_range(PropertyRNA *prop, double min, double max, double
 {
 	StructRNA *srna = DefRNA.laststruct;
 
+#ifdef DEBUG
+	if (min > max) {
+		fprintf(stderr, "%s: \"%s.%s\", min > max.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+
+	if (step < 0 || step > 100) {
+		fprintf(stderr, "%s: \"%s.%s\", step outside range.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+
+	if (precision < -1 || precision > 10) {
+		fprintf(stderr, "%s: \"%s.%s\", step outside range.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+#endif
+
 	switch (prop->type) {
 		case PROP_INT:
 		{
@@ -1365,6 +1390,14 @@ void RNA_def_property_ui_range(PropertyRNA *prop, double min, double max, double
 void RNA_def_property_range(PropertyRNA *prop, double min, double max)
 {
 	StructRNA *srna = DefRNA.laststruct;
+
+#ifdef DEBUG
+	if (min > max) {
+		fprintf(stderr, "%s: \"%s.%s\", min > max.\n",
+		        __func__, srna->identifier, prop->identifier);
+		DefRNA.error = 1;
+	}
+#endif
 
 	switch (prop->type) {
 		case PROP_INT:
@@ -2096,7 +2129,7 @@ void RNA_def_property_update(PropertyRNA *prop, int noteflag, const char *func)
 	prop->update = (UpdateFunc)func;
 }
 
-void RNA_def_property_update_runtime(PropertyRNA *prop, void *func)
+void RNA_def_property_update_runtime(PropertyRNA *prop, const void *func)
 {
 	prop->update = func;
 }
@@ -3039,13 +3072,13 @@ void RNA_def_function_ui_description(FunctionRNA *func, const char *description)
 int rna_parameter_size(PropertyRNA *parm)
 {
 	PropertyType ptype = parm->type;
-	int len = parm->totarraylength; /* only supports fixed length at the moment */
+	int len = parm->totarraylength;
+
+	/* XXX in other parts is mentioned that strings can be dynamic as well */
+	if (parm->flag & PROP_DYNAMIC)
+		return sizeof(ParameterDynAlloc);
 
 	if (len > 0) {
-		/* XXX in other parts is mentioned that strings can be dynamic as well */
-		if (parm->flag & PROP_DYNAMIC)
-			return sizeof(void *);
-
 		switch (ptype) {
 			case PROP_BOOLEAN:
 			case PROP_INT:
@@ -3104,18 +3137,6 @@ int rna_parameter_size(PropertyRNA *parm)
 	}
 
 	return sizeof(void *);
-}
-
-/* this function returns the size of the memory allocated for the parameter,
- * useful for instance for memory alignment or for storing additional information */
-int rna_parameter_size_alloc(PropertyRNA *parm)
-{
-	int size = rna_parameter_size(parm);
-
-	if (parm->flag & PROP_DYNAMIC)
-		size += sizeof(((ParameterDynAlloc *)NULL)->array_tot);
-
-	return size;
 }
 
 /* Dynamic Enums */
@@ -3219,9 +3240,8 @@ void RNA_def_property_duplicate_pointers(StructOrFunctionRNA *cont_, PropertyRNA
 	 * in the first place */
 	if (prop->identifier) {
 		if (cont->prophash) {
-			BLI_ghash_remove(cont->prophash, (void *)prop->identifier, NULL, NULL);
 			prop->identifier = BLI_strdup(prop->identifier);
-			BLI_ghash_insert(cont->prophash, (void *)prop->identifier, prop);
+			BLI_ghash_reinsert(cont->prophash, (void *)prop->identifier, prop, NULL, NULL);
 		}
 		else {
 			prop->identifier = BLI_strdup(prop->identifier);

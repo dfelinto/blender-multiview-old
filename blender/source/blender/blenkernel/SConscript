@@ -52,6 +52,7 @@ incs = [
     '#/intern/iksolver/extern',
     '#/intern/opennl/extern',
     '#/intern/smoke/extern',
+    '#/intern/atomic',
     '../avi',
     '../blenfont',
     '../blenlib',
@@ -99,6 +100,9 @@ if env['WITH_BF_QUICKTIME']:
 if env['WITH_BF_SDL']:
     incs += ' ' + env['BF_SDL_INC']
     defs.append('WITH_SDL')
+
+if env['WITH_BF_OIIO']:
+    defs.append('WITH_OPENIMAGEIO')
 
 if env['WITH_BF_OPENEXR']:
     defs.append('WITH_OPENEXR')

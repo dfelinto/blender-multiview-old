@@ -84,6 +84,9 @@ void GHOST_DropTargetX11::Initialize(void)
 void GHOST_DropTargetX11::Uninitialize(void)
 {
 	xdnd_shut(&m_dndClass);
+
+	delete[] m_dndActions;
+	delete[] m_dndTypes;
 }
 
 GHOST_DropTargetX11::GHOST_DropTargetX11(GHOST_WindowX11 *window, GHOST_SystemX11 *system)
@@ -188,7 +191,7 @@ void GHOST_DropTargetX11::UrlDecode(char *decodedOut, int bufferSize, const char
 
 char *GHOST_DropTargetX11::FileUrlDecode(char *fileUrl)
 {
-	if (!strncpy(fileUrl, "file://", 7) == 0) {
+	if (strncpy(fileUrl, "file://", 7) != 0) {
 		/* assume one character of encoded URL can be expanded to 4 chars max */
 		int decodedSize = 4 * strlen(fileUrl) + 1;
 		char *decodedPath = (char *)malloc(decodedSize);

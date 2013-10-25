@@ -46,9 +46,7 @@ import os
 import os.path
 import string
 import shutil
-import glob
 import re
-from tempfile import mkdtemp
 
 # store path to tools
 toolpath=os.path.join(".", "build_files", "scons", "tools")
@@ -58,7 +56,6 @@ sys.path.append(toolpath)
 
 import Blender
 import btools
-import bcolors
 
 EnsureSConsVersion(1,0,0)
 
@@ -121,7 +118,7 @@ if tempbitness in (32, 64): # only set if 32 or 64 has been given
 
 if bitness:
     B.bitness = bitness
-else: 
+else:
     B.bitness = tempbitness
 
 
@@ -140,6 +137,8 @@ else:
     B.quickie=[]
 
 toolset = B.arguments.get('BF_TOOLSET', None)
+vcver = B.arguments.get('MSVS_VERSION', '9.0')
+
 if toolset:
     print "Using " + toolset
     if toolset=='mstoolkit':
@@ -151,9 +150,9 @@ if toolset:
             btools.SetupSpawn(env)
 else:
     if bitness==64 and platform=='win32':
-        env = BlenderEnvironment(ENV = os.environ, MSVS_ARCH='amd64')
+        env = BlenderEnvironment(ENV = os.environ, MSVS_ARCH='amd64', TARGET_ARCH='x86_64', MSVC_VERSION=vcver)
     else:
-        env = BlenderEnvironment(ENV = os.environ)
+        env = BlenderEnvironment(ENV = os.environ, TARGET_ARCH='x86', MSVC_VERSION=vcver)
 
 if not env:
     print "Could not create a build environment"
@@ -171,6 +170,10 @@ if sys.platform=='win32':
         platform = 'win64-vc' if bitness == 64 else 'win32-vc'
     elif env['CC'] in ['gcc']:
         platform = 'win64-mingw' if bitness == 64 else 'win32-mingw'
+
+if 'mingw' in platform:
+    print "Setting custom spawn function"
+    btools.SetupSpawn(env)
 
 env.SConscriptChdir(0)
 
@@ -243,6 +246,7 @@ if 'blenderlite' in B.targets:
     target_env_defs['WITH_BF_CYCLES'] = False
     target_env_defs['WITH_BF_OPENAL'] = False
     target_env_defs['WITH_BF_OPENEXR'] = False
+    target_env_defs['WITH_BF_PSD'] = False
     target_env_defs['WITH_BF_OPENMP'] = False
     target_env_defs['WITH_BF_ICONV'] = False
     target_env_defs['WITH_BF_INTERNATIONAL'] = False
@@ -286,11 +290,14 @@ if env['OURPLATFORM']=='darwin':
     print B.bc.OKGREEN + "Detected Xcode version: -- " + B.bc.ENDC + env['XCODE_CUR_VER'] + " --"
     print "Available " + env['MACOSX_SDK_CHECK']
     if not 'Mac OS X 10.6' in env['MACOSX_SDK_CHECK']:
-        print  B.bc.OKGREEN + "Auto-setting available MacOSX SDK -> " + B.bc.ENDC + "MacOSX10.7.sdk"
+        print  B.bc.OKGREEN + "Building with user-defined OS X SDK ( Xcode 4.4 or newer )"
     elif not 'Mac OS X 10.5' in env['MACOSX_SDK_CHECK']:
         print  B.bc.OKGREEN + "Auto-setting available MacOSX SDK -> " + B.bc.ENDC + "MacOSX10.6.sdk"
     else:
         print B.bc.OKGREEN + "Found recommended sdk :" + B.bc.ENDC + " using MacOSX10.5.sdk"
+		
+    if env['XCODE_CUR_VER'] >= '5' and not (env['CXX'][:-2].endswith('4.6') or env['CXX'][:-2].endswith('4.8')):
+        env['CCFLAGS'].append('-ftemplate-depth=1024') # only valid for clang bundled with xcode 5
 
     # for now, Mac builders must download and install the 3DxWare 10 Beta 4 driver framework from 3Dconnexion
     # necessary header file lives here when installed:
@@ -303,7 +310,7 @@ if env['OURPLATFORM']=='darwin':
             env.Append(LINKFLAGS=['-F/Library/Frameworks','-Xlinker','-weak_framework','-Xlinker','3DconnexionClient'])
             env['BF_3DMOUSE_INC'] = '/Library/Frameworks/3DconnexionClient.framework/Headers'
 
-    # for now, Mac builders must download and install the JackOSX framework 
+    # for now, Mac builders must download and install the JackOSX framework
     # necessary header file lives here when installed:
     # /Library/Frameworks/Jackmp.framework/Versions/A/Headers/jack.h
     if env['WITH_BF_JACK'] == 1:
@@ -311,15 +318,18 @@ if env['OURPLATFORM']=='darwin':
             print "JackOSX install not found, disabling WITH_BF_JACK" # avoid build errors !
             env['WITH_BF_JACK'] = 0
         else:
-            env.Append(LINKFLAGS=['-L/Library/Frameworks','-Xlinker','-weak_framework','-Xlinker','Jackmp'])
+            env.Append(LINKFLAGS=['-F/Library/Frameworks','-Xlinker','-weak_framework','-Xlinker','Jackmp'])
 
-    if env['WITH_BF_CYCLES_OSL'] == 1:	
+    if env['WITH_BF_CYCLES_OSL'] == 1:
         OSX_OSL_LIBPATH = Dir(env.subst(env['BF_OSL_LIBPATH'])).abspath
         # we need 2 variants of passing the oslexec with the force_load option, string and list type atm
-        env.Append(LINKFLAGS=['-L'+OSX_OSL_LIBPATH,'-loslcomp','-force_load '+ OSX_OSL_LIBPATH +'/liboslexec.a','-loslquery'])
+        if env['CC'][:-2].endswith('4.8'):
+		    env.Append(LINKFLAGS=['-L'+OSX_OSL_LIBPATH,'-loslcomp','-loslexec','-loslquery'])
+        else:
+            env.Append(LINKFLAGS=['-L'+OSX_OSL_LIBPATH,'-loslcomp','-force_load '+ OSX_OSL_LIBPATH +'/liboslexec.a','-loslquery'])
         env.Append(BF_PROGRAM_LINKFLAGS=['-Xlinker','-force_load','-Xlinker',OSX_OSL_LIBPATH +'/liboslexec.a'])
 
-    # Trying to get rid of eventually clashes, we export some explicite as local symbols		
+    # Trying to get rid of eventually clashes, we export some explicite as local symbols
     env.Append(LINKFLAGS=['-Xlinker','-unexported_symbols_list','-Xlinker','./source/creator/osx_locals.map'])
 
 if env['WITH_BF_OPENMP'] == 1:
@@ -330,10 +340,10 @@ if env['WITH_BF_OPENMP'] == 1:
                 env.Append(LINKFLAGS=['-openmp', '-static-intel'])
                 env['CCFLAGS'].append('-openmp')
             else:
-                env.Append(CCFLAGS=['-fopenmp']) 
+                env.Append(CCFLAGS=['-fopenmp'])
 
 if env['WITH_GHOST_COCOA'] == True:
-    env.Append(CPPFLAGS=['-DGHOST_COCOA']) 
+    env.Append(CPPFLAGS=['-DGHOST_COCOA'])
 
 if env['USE_QTKIT'] == True:
     env.Append(CPPFLAGS=['-DUSE_QTKIT'])
@@ -370,7 +380,7 @@ if env['WITH_BF_FLUID'] == 1:
 
 # build with ocean sim?
 if env['WITH_BF_OCEANSIM'] == 1:
-    env['WITH_BF_FFTW3']  = 1  # ocean needs fftw3 so enable it 
+    env['WITH_BF_FFTW3']  = 1  # ocean needs fftw3 so enable it
     env['CPPFLAGS'].append('-DWITH_MOD_OCEANSIM')
 
 
@@ -383,6 +393,8 @@ else:
 env['CPPFLAGS'].append('-DWITH_AUDASPACE')
 env['CPPFLAGS'].append('-DWITH_AVI')
 env['CPPFLAGS'].append('-DWITH_BOOL_COMPAT')
+if env['OURPLATFORM'] in ('win32-vc', 'win64-vc') and env['MSVC_VERSION'] == '11.0':
+    env['CPPFLAGS'].append('-D_ALLOW_KEYWORD_MACROS')
 
 if env['OURPLATFORM'] not in ('win32-vc', 'win64-vc'):
     env['CPPFLAGS'].append('-DHAVE_STDBOOL_H')
@@ -517,9 +529,9 @@ def data_to_c_simple(FILE_FROM):
 	filename_only = os.path.basename(FILE_FROM)
 	FILE_TO = os.path.join(env['DATA_SOURCES'], filename_only + ".c")
 	VAR_NAME = "datatoc_" + filename_only.replace(".", "_")
-	
+
 	data_to_c(FILE_FROM, FILE_TO, VAR_NAME)
-	
+
 
 if B.targets != ['cudakernels']:
     data_to_c("source/blender/compositor/operations/COM_OpenCLKernels.cl",
@@ -540,6 +552,7 @@ if B.targets != ['cudakernels']:
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vertex.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vsm_store_frag.glsl")
     data_to_c_simple("source/blender/gpu/shaders/gpu_shader_vsm_store_vert.glsl")
+    data_to_c_simple("intern/opencolorio/gpu_shader_display_transform.glsl")
 
     # --- blender ---
     data_to_c_simple("release/datafiles/bfont.pfb")
@@ -898,6 +911,11 @@ for tp, tn, tf in os.walk('release/text'):
     for f in tf:
         textlist.append(tp+os.sep+f)
 
+# Font licenses
+textlist.append('release/datafiles/LICENSE-bfont.ttf.txt')
+if env['WITH_BF_INTERNATIONAL']:
+    textlist += ['release/datafiles/LICENSE-droidsans.ttf.txt', 'release/datafiles/LICENSE-bmonofont-i18n.ttf.txt']
+
 textinstall = env.Install(dir=env['BF_INSTALLDIR'], source=textlist)
 
 if  env['OURPLATFORM']=='darwin':
@@ -939,7 +957,10 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
 
     if env['WITH_BF_OPENAL']:
         dllsources.append('${LCGDIR}/openal/lib/OpenAL32.dll')
-        dllsources.append('${LCGDIR}/openal/lib/wrap_oal.dll')
+        if env['OURPLATFORM'] in ('win32-vc', 'win64-vc') and env['MSVC_VERSION'] == '11.0':
+            pass
+        else:
+            dllsources.append('${LCGDIR}/openal/lib/wrap_oal.dll')
 
     if env['WITH_BF_SNDFILE']:
         dllsources.append('${LCGDIR}/sndfile/lib/libsndfile-1.dll')
@@ -960,7 +981,7 @@ if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'win64-vc', 'linuxcross'):
 
         else:
             dllsources.append('${LCGDIR}/opencolorio/bin/libOpenColorIO.dll')
-			
+
     dllsources.append('#source/icons/blender.exe.manifest')
 
     windlls = env.Install(dir=env['BF_INSTALLDIR'], source = dllsources)
@@ -990,7 +1011,7 @@ if env['OURPLATFORM'] == 'win64-mingw':
 
     if(env['WITH_BF_OPENMP']):
         dllsources.append('${LCGDIR}/binaries/libgomp-1.dll')
-		
+
     if env['WITH_BF_OCIO']:
         dllsources.append('${LCGDIR}/opencolorio/bin/libOpenColorIO.dll')
 

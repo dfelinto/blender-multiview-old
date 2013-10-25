@@ -26,8 +26,6 @@
  * Connect verts across faces (splits faces) and bridge tool.
  */
 
-#include "MEM_guardedalloc.h"
-
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 #include "BLI_listbase.h"
@@ -121,7 +119,7 @@ static void bm_bridge_best_rotation(struct BMEdgeLoopStore *el_store_a, struct B
 	}
 
 	if (el_b_best) {
-		BLI_rotatelist(lb_b, el_b_best);
+		BLI_rotatelist_first(lb_b, el_b_best);
 	}
 }
 
@@ -142,13 +140,15 @@ static bool bm_edge_test_cb(BMEdge *e, void *bm_v)
 static void bridge_loop_pair(BMesh *bm,
                              struct BMEdgeLoopStore *el_store_a,
                              struct BMEdgeLoopStore *el_store_b,
-                             const bool use_merge, const float merge_factor)
+                             const bool use_merge, const float merge_factor, const int twist_offset)
 {
+	const float eps = 0.00001f;
 	LinkData *el_a_first, *el_b_first;
 	const bool is_closed = BM_edgeloop_is_closed(el_store_a) && BM_edgeloop_is_closed(el_store_b);
 	int el_store_a_len, el_store_b_len;
 	bool el_store_b_free = false;
 	float el_dir[3];
+	float dot_a, dot_b;
 	const bool use_edgeout = true;
 
 	el_store_a_len = BM_edgeloop_length_get((struct BMEdgeLoopStore *)el_store_a);
@@ -160,7 +160,7 @@ static void bridge_loop_pair(BMesh *bm,
 	}
 
 	if (use_merge) {
-		BLI_assert((el_store_a_len == el_store_a_len));
+		BLI_assert((el_store_a_len == el_store_b_len));
 	}
 
 	if (el_store_a_len != el_store_b_len) {
@@ -189,7 +189,10 @@ static void bridge_loop_pair(BMesh *bm,
 		            ((BMVert *)(((LinkData *)lb_b->first)->data))->co,
 		            ((BMVert *)(((LinkData *)lb_b->last)->data))->co);
 
-		/* this isnt totally reliable but works well in most cases */
+		/* make the directions point out from the normals, 'no' is used as a temp var */
+		cross_v3_v3v3(no, dir_a, el_dir); cross_v3_v3v3(dir_a, no, el_dir);
+		cross_v3_v3v3(no, dir_b, el_dir); cross_v3_v3v3(dir_b, no, el_dir);
+
 		if (dot_v3v3(dir_a, dir_b) < 0.0f) {
 			BM_edgeloop_flip(bm, el_store_b);
 		}
@@ -199,9 +202,22 @@ static void bridge_loop_pair(BMesh *bm,
 		BM_edgeloop_calc_normal_aligned(bm, el_store_b, no);
 	}
 
-	if ((dot_v3v3(BM_edgeloop_normal_get(el_store_a), el_dir) < 0.0f) !=
-		(dot_v3v3(BM_edgeloop_normal_get(el_store_b), el_dir) < 0.0f))
+	dot_a = dot_v3v3(BM_edgeloop_normal_get(el_store_a), el_dir);
+	dot_b = dot_v3v3(BM_edgeloop_normal_get(el_store_b), el_dir);
+
+	if (UNLIKELY((len_squared_v3(el_dir) < eps) ||
+	             ((fabsf(dot_a) < eps) && (fabsf(dot_b) < eps))))
 	{
+		/* in this case there is no depth between the two loops,
+		 * eg: 2x 2d circles, one scaled smaller,
+		 * in this case 'el_dir' cant be used, just ensure we have matching flipping. */
+		if (dot_v3v3(BM_edgeloop_normal_get(el_store_a),
+		             BM_edgeloop_normal_get(el_store_b)) < 0.0f)
+		{
+			BM_edgeloop_flip(bm, el_store_b);
+		}
+	}
+	else if ((dot_a < 0.0f) != (dot_b < 0.0f)) {
 		BM_edgeloop_flip(bm, el_store_b);
 	}
 
@@ -250,6 +266,14 @@ static void bridge_loop_pair(BMesh *bm,
 
 	if (is_closed) {
 		bm_bridge_best_rotation(el_store_a, el_store_b);
+
+		/* add twist */
+		if (twist_offset != 0) {
+			const int len_b = BM_edgeloop_length_get(el_store_b);
+			ListBase *lb_b = BM_edgeloop_verts_get(el_store_b);
+			LinkData *el_b = BLI_rfindlink(lb_b, mod_i(twist_offset, len_b));
+			BLI_rotatelist_first(lb_b, el_b);
+		}
 	}
 
 	/* Assign after flipping is finalized */
@@ -316,7 +340,7 @@ static void bridge_loop_pair(BMesh *bm,
 				BMVert *v_arr[4] = {v_a, v_b, v_b_next, v_a_next};
 				if (BM_face_exists(v_arr, 4, &f) == false) {
 					/* copy if loop data if its is missing on one ring */
-					f = BM_face_create_ngon_verts(bm, v_arr, 4, 0, false, true);
+					f = BM_face_create_verts(bm, v_arr, 4, NULL, BM_CREATE_NOP, true);
 
 					l_iter = BM_FACE_FIRST_LOOP(f);
 					if (l_b)      BM_elem_attrs_copy(bm, bm, l_b,      l_iter); l_iter = l_iter->next;
@@ -329,7 +353,7 @@ static void bridge_loop_pair(BMesh *bm,
 				BMVert *v_arr[3] = {v_a, v_b, v_a_next};
 				if (BM_face_exists(v_arr, 3, &f) == false) {
 					/* fan-fill a triangle */
-					f = BM_face_create_ngon_verts(bm, v_arr, 3, 0, false, true);
+					f = BM_face_create_verts(bm, v_arr, 3, NULL, BM_CREATE_NOP, true);
 
 					l_iter = BM_FACE_FIRST_LOOP(f);
 					if (l_b)      BM_elem_attrs_copy(bm, bm, l_b,      l_iter); l_iter = l_iter->next;
@@ -363,7 +387,7 @@ static void bridge_loop_pair(BMesh *bm,
 		int i;
 
 		BMOperator op_sub;
-		/* when we have to bridge betweeen different sized edge-loops,
+		/* when we have to bridge between different sized edge-loops,
 		 * be clever and post-process for best results */
 
 
@@ -371,6 +395,14 @@ static void bridge_loop_pair(BMesh *bm,
 		BMO_op_initf(bm, &op_sub, 0,
 		             "triangulate faces=%hf",
 		             BM_ELEM_TAG, true);
+		/* calc normals for input faces before executing */
+		{
+			BMOIter siter;
+			BMFace *f;
+			BMO_ITER (f, &siter, op_sub.slots_in, "faces", BM_FACE) {
+				BM_face_normal_update(f);
+			}
+		}
 		BMO_op_exec(bm, &op_sub);
 		BMO_slot_buffer_flag_enable(bm, op_sub.slots_out, "faces.out", BM_FACE, FACE_OUT);
 		BMO_slot_buffer_hflag_enable(bm, op_sub.slots_out, "faces.out", BM_FACE, BM_ELEM_TAG, false);
@@ -387,8 +419,8 @@ static void bridge_loop_pair(BMesh *bm,
 
 
 		BMO_op_initf(bm, &op_sub, 0,
-		             "beautify_fill faces=%hf edges=ae use_restrict_tag=%b",
-		             BM_ELEM_TAG, true);
+		             "beautify_fill faces=%hf edges=ae use_restrict_tag=%b method=%i",
+		             BM_ELEM_TAG, true, 1);
 
 		if (use_edgeout) {
 			BMOIter siter;
@@ -450,6 +482,7 @@ void bmo_bridge_loops_exec(BMesh *bm, BMOperator *op)
 	const bool  use_merge    = BMO_slot_bool_get(op->slots_in,  "use_merge");
 	const float merge_factor = BMO_slot_float_get(op->slots_in, "merge_factor");
 	const bool  use_cyclic   = BMO_slot_bool_get(op->slots_in,  "use_cyclic") && (use_merge == false);
+	const int   twist_offset = BMO_slot_int_get(op->slots_in,   "twist_offset");
 	int count;
 	bool change = false;
 
@@ -509,7 +542,7 @@ void bmo_bridge_loops_exec(BMesh *bm, BMOperator *op)
 		bridge_loop_pair(bm,
 		                 (struct BMEdgeLoopStore *)el_store,
 		                 (struct BMEdgeLoopStore *)el_store_next,
-		                 use_merge, merge_factor);
+		                 use_merge, merge_factor, twist_offset);
 		if (use_pairs) {
 			el_store = el_store->next;
 		}

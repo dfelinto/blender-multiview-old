@@ -40,6 +40,7 @@ class SpellChecker():
         "derivate",
         "doesn",  # doesn't
         "fader",
+        "globbing",
         "hasn",  # hasn't
         "hoc",  # ad-hoc
         "indices",
@@ -58,6 +59,8 @@ class SpellChecker():
         "arcsine", "arccosine", "arctangent",
         "autoclip",
         "autocomplete",
+        "autoexec",
+        "autoexecution",
         "autoname",
         "autosave",
         "autoscale",
@@ -68,7 +71,9 @@ class SpellChecker():
         "backscattered",
         "bandnoise",
         "bindcode",
+        "bitflag", "bitflags",
         "bitrate",
+        "blackbody",
         "blendfile",
         "blendin",
         "bonesize",
@@ -358,6 +363,7 @@ class SpellChecker():
         "timecode",
         "voronoi",
         "voxel", "voxels",
+        "vsync",
         "wireframe",
         "zmask",
         "ztransp",
@@ -427,6 +433,7 @@ class SpellChecker():
         "catrom",
         "chebychev",
         "courant",
+        "hosek",
         "kutta",
         "lennard",
         "minkowski",
@@ -435,9 +442,12 @@ class SpellChecker():
         "nayar",
         "netravali",
         "oren",
+        "preetham",
         "prewitt",
         "runge",
+        "sobol",
         "verlet",
+        "wilkie",
         "worley",
 
         # Acronyms

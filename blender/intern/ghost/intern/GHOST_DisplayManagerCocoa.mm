@@ -52,8 +52,6 @@ GHOST_TSuccess GHOST_DisplayManagerCocoa::getNumDisplays(GHOST_TUns8& numDisplay
 
 GHOST_TSuccess GHOST_DisplayManagerCocoa::getNumDisplaySettings(GHOST_TUns8 display, GHOST_TInt32& numSettings) const
 {
-	GHOST_ASSERT((display==kMainDisplay), "GHOST_DisplayManagerCocoa::getNumDisplaySettings(): only main display is supported");
-	
 	numSettings = (GHOST_TInt32)3; //Width, Height, BitsPerPixel
 	
 	return GHOST_kSuccess;
@@ -62,10 +60,7 @@ GHOST_TSuccess GHOST_DisplayManagerCocoa::getNumDisplaySettings(GHOST_TUns8 disp
 
 GHOST_TSuccess GHOST_DisplayManagerCocoa::getDisplaySetting(GHOST_TUns8 display, GHOST_TInt32 index, GHOST_DisplaySetting& setting) const
 {
-	//Note that only current display setting is available
 	NSScreen *askedDisplay;
-	
-	GHOST_ASSERT((display==kMainDisplay), "GHOST_DisplayManagerCocoa::getDisplaySetting(): only main display is supported");
 	
 	NSAutoreleasePool *pool = [[NSAutoreleasePool alloc] init];
 	
@@ -74,7 +69,7 @@ GHOST_TSuccess GHOST_DisplayManagerCocoa::getDisplaySetting(GHOST_TUns8 display,
 	else
 		askedDisplay = [[NSScreen screens] objectAtIndex:display];
 	
-	if(askedDisplay == nil) {
+	if (askedDisplay == nil) {
 		[pool drain];
 		return GHOST_kFailure;
 	}
@@ -109,7 +104,7 @@ GHOST_TSuccess GHOST_DisplayManagerCocoa::getCurrentDisplaySetting(GHOST_TUns8 d
 	else
 		askedDisplay = [[NSScreen screens] objectAtIndex:display];
 	
-	if(askedDisplay == nil) {
+	if (askedDisplay == nil) {
 		[pool drain];
 		return GHOST_kFailure;
 	}

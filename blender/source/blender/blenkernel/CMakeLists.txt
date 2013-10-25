@@ -45,6 +45,7 @@ set(INC
 	../../../intern/raskter
 	../../../intern/smoke/extern
 	../../../extern/libmv
+	../../../intern/atomic
 
 	# XXX - BAD LEVEL CALL WM_api.h
 	../windowmanager
@@ -63,6 +64,7 @@ set(SRC
 	intern/anim.c
 	intern/anim_sys.c
 	intern/armature.c
+	intern/autoexec.c
 	intern/blender.c
 	intern/bmfont.c
 	intern/boids.c
@@ -113,6 +115,7 @@ set(SRC
 	intern/material.c
 	intern/mball.c
 	intern/mesh.c
+	intern/mesh_evaluate.c
 	intern/mesh_validate.c
 	intern/modifier.c
 	intern/modifiers_bmesh.c
@@ -136,7 +139,6 @@ set(SRC
 	intern/sca.c
 	intern/scene.c
 	intern/screen.c
-	intern/script.c
 	intern/seqcache.c
 	intern/seqeffects.c
 	intern/seqmodifier.c
@@ -152,6 +154,7 @@ set(SRC
 	intern/text.c
 	intern/texture.c
 	intern/tracking.c
+	intern/treehash.c
 	intern/unit.c
 	intern/world.c
 	intern/writeavi.c
@@ -163,8 +166,8 @@ set(SRC
 	BKE_anim.h
 	BKE_animsys.h
 	BKE_armature.h
+	BKE_autoexec.h
 	BKE_blender.h
-	BKE_bmesh.h
 	BKE_bmfont.h
 	BKE_bmfont_types.h
 	BKE_boids.h
@@ -229,7 +232,6 @@ set(SRC
 	BKE_sca.h
 	BKE_scene.h
 	BKE_screen.h
-	BKE_script.h
 	BKE_sequencer.h
 	BKE_shrinkwrap.h
 	BKE_sketch.h
@@ -244,6 +246,7 @@ set(SRC
 	BKE_text.h
 	BKE_texture.h
 	BKE_tracking.h
+	BKE_treehash.h
 	BKE_unit.h
 	BKE_utildefines.h
 	BKE_world.h

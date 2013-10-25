@@ -116,7 +116,7 @@ void ED_region_pixelspace(ARegion *ar)
 }
 
 /* only exported for WM */
-void ED_region_do_listen(ARegion *ar, wmNotifier *note)
+void ED_region_do_listen(bScreen *sc, ScrArea *sa, ARegion *ar, wmNotifier *note)
 {
 	/* generic notes first */
 	switch (note->category) {
@@ -130,15 +130,15 @@ void ED_region_do_listen(ARegion *ar, wmNotifier *note)
 	}
 
 	if (ar->type && ar->type->listener)
-		ar->type->listener(ar, note);
+		ar->type->listener(sc, sa, ar, note);
 }
 
 /* only exported for WM */
-void ED_area_do_listen(ScrArea *sa, wmNotifier *note)
+void ED_area_do_listen(bScreen *sc, ScrArea *sa, wmNotifier *note)
 {
 	/* no generic notes? */
 	if (sa->type && sa->type->listener) {
-		sa->type->listener(sa, note);
+		sa->type->listener(sc, sa, note);
 	}
 }
 
@@ -387,7 +387,7 @@ void ED_region_set(const bContext *C, ARegion *ar)
 	ar->drawrct = ar->winrct;
 	
 	/* note; this sets state, so we can use wmOrtho and friends */
-	wmSubWindowScissorSet(win, ar->swinid, &ar->drawrct);
+	wmSubWindowScissorSet(win, ar->swinid, &ar->drawrct, true);
 	
 	UI_SetTheme(sa ? sa->spacetype : 0, ar->type ? ar->type->regionid : 0);
 	
@@ -401,26 +401,27 @@ void ED_region_do_draw(bContext *C, ARegion *ar)
 	wmWindow *win = CTX_wm_window(C);
 	ScrArea *sa = CTX_wm_area(C);
 	ARegionType *at = ar->type;
-	
+	bool scissor_pad;
+
 	/* see BKE_spacedata_draw_locks() */
 	if (at->do_lock)
 		return;
 	
 	/* if no partial draw rect set, full rect */
-	if (ar->drawrct.xmin == ar->drawrct.xmax)
+	if (ar->drawrct.xmin == ar->drawrct.xmax) {
 		ar->drawrct = ar->winrct;
+		scissor_pad = true;
+	}
 	else {
-		/* extra clip for safety (intersect the rects, could use API func) */
-		ar->drawrct.xmin = max_ii(ar->winrct.xmin, ar->drawrct.xmin);
-		ar->drawrct.ymin = max_ii(ar->winrct.ymin, ar->drawrct.ymin);
-		ar->drawrct.xmax = min_ii(ar->winrct.xmax, ar->drawrct.xmax);
-		ar->drawrct.ymax = min_ii(ar->winrct.ymax, ar->drawrct.ymax);
+		/* extra clip for safety */
+		BLI_rcti_isect(&ar->winrct, &ar->drawrct, &ar->drawrct);
+		scissor_pad = false;
 	}
 	
 	/* note; this sets state, so we can use wmOrtho and friends */
-	wmSubWindowScissorSet(win, ar->swinid, &ar->drawrct);
+	wmSubWindowScissorSet(win, ar->swinid, &ar->drawrct, scissor_pad);
 	
-	UI_SetTheme(sa ? sa->spacetype : 0, ar->type ? ar->type->regionid : 0);
+	UI_SetTheme(sa ? sa->spacetype : 0, at->regionid);
 	
 	/* optional header info instead? */
 	if (ar->headerstr) {
@@ -910,11 +911,19 @@ static void region_overlap_fix(ScrArea *sa, ARegion *ar)
 /* overlapping regions only in the following restricted cases */
 static int region_is_overlap(wmWindow *win, ScrArea *sa, ARegion *ar)
 {
-	if (U.uiflag2 & USER_REGION_OVERLAP)
-		if (WM_is_draw_triple(win))
-			if (ELEM4(sa->spacetype, SPACE_VIEW3D, SPACE_IMAGE, SPACE_SEQ, SPACE_CLIP))
+	if (U.uiflag2 & USER_REGION_OVERLAP) {
+		if (WM_is_draw_triple(win)) {
+			if (ELEM(sa->spacetype, SPACE_VIEW3D, SPACE_SEQ)) {
 				if (ELEM3(ar->regiontype, RGN_TYPE_TOOLS, RGN_TYPE_UI, RGN_TYPE_TOOL_PROPS))
 					return 1;
+			}
+			else if (ELEM(sa->spacetype, SPACE_IMAGE, SPACE_CLIP)) {
+				if (ELEM4(ar->regiontype, RGN_TYPE_TOOLS, RGN_TYPE_UI, RGN_TYPE_TOOL_PROPS, RGN_TYPE_PREVIEW))
+					return 1;
+			}
+		}
+	}
+
 	return 0;
 }
 
@@ -1439,7 +1448,6 @@ void ED_area_newspace(bContext *C, ScrArea *sa, int type)
 		}
 		
 		if (sl) {
-			
 			/* swap regions */
 			slold->regionbase = sa->regionbase;
 			sa->regionbase = sl->regionbase;
@@ -1689,8 +1697,10 @@ void ED_region_panels(const bContext *C, ARegion *ar, int vertical, const char *
 			/* Note: this code scales fine, but because of rounding differences, positions of elements
 			 * flip +1 or -1 pixel compared to redoing the entire layout again.
 			 * Leaving in commented code for future tests */
-			/* uiScalePanels(ar, BLI_rctf_size_x(&v2d->cur));
-			   break; */
+#if 0
+			uiScalePanels(ar, BLI_rctf_size_x(&v2d->cur));
+			break;
+#endif
 		}
 		else {
 			break;
@@ -1799,7 +1809,7 @@ void ED_region_header_init(ARegion *ar)
 /* UI_UNIT_Y is defined as U variable now, depending dpi */
 int ED_area_headersize(void)
 {
-	return (int)(1.3f * UI_UNIT_Y);
+	return (int)(HEADERY * UI_DPI_FAC);
 }
 
 void ED_region_info_draw(ARegion *ar, const char *text, int block, float fill_color[4])

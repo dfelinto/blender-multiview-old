@@ -15,11 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
  * Contributor(s): none yet.
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -544,7 +539,7 @@ float BKE_brush_sample_tex_3D(const Scene *scene, Brush *br,
 	else if (mtex->brush_map_mode == MTEX_MAP_MODE_STENCIL) {
 		float rotation = -mtex->rot;
 		float point_2d[2] = {point[0], point[1]};
-		float x = 0.0f, y = 0.0f; /* Quite warnings */
+		float x, y;
 		float co[3];
 
 		x = point_2d[0] - br->stencil_pos[0];
@@ -663,7 +658,7 @@ float BKE_brush_sample_masktex(const Scene *scene, Brush *br,
 	if (mtex->brush_map_mode == MTEX_MAP_MODE_STENCIL) {
 		float rotation = -mtex->rot;
 		float point_2d[2] = {point[0], point[1]};
-		float x = 0.0f, y = 0.0f; /* Quite warnings */
+		float x, y;
 		float co[3];
 
 		x = point_2d[0] - br->mask_stencil_pos[0];
@@ -956,7 +951,6 @@ float BKE_brush_curve_strength_clamp(Brush *br, float p, const float len)
 	if (p >= len) return 0;
 	else p = p / len;
 
-	curvemapping_initialize(br->curve);
 	strength = curvemapping_evaluateF(br->curve, 0, p);
 
 	CLAMP(strength, 0.0f, 1.0f);
@@ -972,15 +966,14 @@ float BKE_brush_curve_strength(Brush *br, float p, const float len)
 	else
 		p = p / len;
 
-	curvemapping_initialize(br->curve);
 	return curvemapping_evaluateF(br->curve, 0, p);
 }
 
 /* TODO: should probably be unified with BrushPainter stuff? */
-unsigned int *BKE_brush_gen_texture_cache(Brush *br, int half_side)
+unsigned int *BKE_brush_gen_texture_cache(Brush *br, int half_side, bool use_secondary)
 {
 	unsigned int *texcache = NULL;
-	MTex *mtex = &br->mtex;
+	MTex *mtex = (use_secondary) ? &br->mask_mtex : &br->mtex;
 	TexResult texres = {0};
 	int hasrgb, ix, iy;
 	int side = half_side * 2;
@@ -998,7 +991,8 @@ unsigned int *BKE_brush_gen_texture_cache(Brush *br, int half_side)
 				co[2] = 0.0f;
 
 				/* This is copied from displace modifier code */
-				hasrgb = multitex_ext(mtex->tex, co, NULL, NULL, 0, &texres, NULL);
+				/* TODO(sergey): brush are always cacheing with CM enabled for now. */
+				hasrgb = multitex_ext(mtex->tex, co, NULL, NULL, 0, &texres, NULL, true);
 
 				/* if the texture gave an RGB value, we assume it didn't give a valid
 				 * intensity, so calculate one (formula from do_material_tex).
@@ -1020,7 +1014,7 @@ unsigned int *BKE_brush_gen_texture_cache(Brush *br, int half_side)
 
 
 /**** Radial Control ****/
-struct ImBuf *BKE_brush_gen_radial_control_imbuf(Brush *br)
+struct ImBuf *BKE_brush_gen_radial_control_imbuf(Brush *br, bool secondary)
 {
 	ImBuf *im = MEM_callocN(sizeof(ImBuf), "radial control texture");
 	unsigned int *texcache;
@@ -1028,7 +1022,8 @@ struct ImBuf *BKE_brush_gen_radial_control_imbuf(Brush *br)
 	int half = side / 2;
 	int i, j;
 
-	texcache = BKE_brush_gen_texture_cache(br, half);
+	curvemapping_initialize(br->curve);
+	texcache = BKE_brush_gen_texture_cache(br, half, secondary);
 	im->rect_float = MEM_callocN(sizeof(float) * side * side, "radial control rect");
 	im->x = im->y = side;
 

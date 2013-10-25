@@ -44,12 +44,12 @@
 #include "BKE_modifier.h"
 
 #include "bmesh.h"
-#include "tools/bmesh_edgesplit.h"
+#include "bmesh_tools.h"
 
 #include "DNA_object_types.h"
 
 
-static DerivedMesh *doEdgeSplit(DerivedMesh *dm, EdgeSplitModifierData *emd, Object *UNUSED(ob))
+static DerivedMesh *doEdgeSplit(DerivedMesh *dm, EdgeSplitModifierData *emd)
 {
 	DerivedMesh *result;
 	BMesh *bm;
@@ -91,13 +91,14 @@ static DerivedMesh *doEdgeSplit(DerivedMesh *dm, EdgeSplitModifierData *emd, Obj
 		}
 	}
 	
-	BM_mesh_edgesplit(bm, FALSE, TRUE);
+	BM_mesh_edgesplit(bm, false, true, false);
 
 	/* BM_mesh_validate(bm); */ /* for troubleshooting */
 
 	result = CDDM_from_bmesh(bm, TRUE);
 	BM_mesh_free(bm);
-	
+
+	result->dirty |= DM_DIRTY_NORMALS;
 	return result;
 }
 
@@ -119,25 +120,16 @@ static void copyData(ModifierData *md, ModifierData *target)
 	temd->flags = emd->flags;
 }
 
-static DerivedMesh *edgesplitModifier_do(EdgeSplitModifierData *emd,
-                                         Object *ob, DerivedMesh *dm)
-{
-	if (!(emd->flags & (MOD_EDGESPLIT_FROMANGLE | MOD_EDGESPLIT_FROMFLAG)))
-		return dm;
-
-	return doEdgeSplit(dm, emd, ob);
-}
-
-static DerivedMesh *applyModifier(ModifierData *md, Object *ob, DerivedMesh *derivedData,
+static DerivedMesh *applyModifier(ModifierData *md, Object *UNUSED(ob), DerivedMesh *dm,
                                   ModifierApplyFlag UNUSED(flag))
 {
 	DerivedMesh *result;
 	EdgeSplitModifierData *emd = (EdgeSplitModifierData *) md;
 
-	result = edgesplitModifier_do(emd, ob, derivedData);
+	if (!(emd->flags & (MOD_EDGESPLIT_FROMANGLE | MOD_EDGESPLIT_FROMFLAG)))
+		return dm;
 
-	if (result != derivedData)
-		result->dirty |= DM_DIRTY_NORMALS;
+	result = doEdgeSplit(dm, emd);
 
 	return result;
 }

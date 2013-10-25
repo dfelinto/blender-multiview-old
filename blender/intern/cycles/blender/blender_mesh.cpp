@@ -1,19 +1,17 @@
 /*
- * Copyright 2011, Blender Foundation.
+ * Copyright 2011-2013 Blender Foundation
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
  */
 
  
@@ -212,13 +210,27 @@ static void mikk_compute_tangents(BL::Mesh b_mesh, BL::MeshTextureFaceLayer b_la
 
 static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<uint>& used_shaders)
 {
-	/* create vertices */
+	/* count vertices and faces */
+	int numverts = b_mesh.vertices.length();
+	int numfaces = b_mesh.tessfaces.length();
+	int numtris = 0;
+
 	BL::Mesh::vertices_iterator v;
+	BL::Mesh::tessfaces_iterator f;
 
-	for(b_mesh.vertices.begin(v); v != b_mesh.vertices.end(); ++v)
-		mesh->verts.push_back(get_float3(v->co()));
+	for(b_mesh.tessfaces.begin(f); f != b_mesh.tessfaces.end(); ++f) {
+		int4 vi = get_int4(f->vertices_raw());
+		numtris += (vi[3] == 0)? 1: 2;
+	}
 
-	/* create vertex normals */
+	/* reserve memory */
+	mesh->reserve(numverts, numtris, 0, 0);
+
+	/* create vertex coordinates and normals */
+	int i = 0;
+	for(b_mesh.vertices.begin(v); v != b_mesh.vertices.end(); ++v, ++i)
+		mesh->verts[i] = get_float3(v->co());
+
 	Attribute *attr_N = mesh->attributes.add(ATTR_STD_VERTEX_NORMAL);
 	float3 *N = attr_N->data_float3();
 
@@ -226,10 +238,10 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 		*N = get_float3(v->normal());
 
 	/* create faces */
-	BL::Mesh::tessfaces_iterator f;
-	vector<int> nverts;
+	vector<int> nverts(numfaces);
+	int fi = 0, ti = 0;
 
-	for(b_mesh.tessfaces.begin(f); f != b_mesh.tessfaces.end(); ++f) {
+	for(b_mesh.tessfaces.begin(f); f != b_mesh.tessfaces.end(); ++f, ++fi) {
 		int4 vi = get_int4(f->vertices_raw());
 		int n = (vi[3] == 0)? 3: 4;
 		int mi = clamp(f->material_index(), 0, used_shaders.size()-1);
@@ -239,18 +251,18 @@ static void create_mesh(Scene *scene, Mesh *mesh, BL::Mesh b_mesh, const vector<
 		if(n == 4) {
 			if(len_squared(cross(mesh->verts[vi[1]] - mesh->verts[vi[0]], mesh->verts[vi[2]] - mesh->verts[vi[0]])) == 0.0f ||
 				len_squared(cross(mesh->verts[vi[2]] - mesh->verts[vi[0]], mesh->verts[vi[3]] - mesh->verts[vi[0]])) == 0.0f) {
-				mesh->add_triangle(vi[0], vi[1], vi[3], shader, smooth);
-				mesh->add_triangle(vi[2], vi[3], vi[1], shader, smooth);
+				mesh->set_triangle(ti++, vi[0], vi[1], vi[3], shader, smooth);
+				mesh->set_triangle(ti++, vi[2], vi[3], vi[1], shader, smooth);
 			}
 			else {
-				mesh->add_triangle(vi[0], vi[1], vi[2], shader, smooth);
-				mesh->add_triangle(vi[0], vi[2], vi[3], shader, smooth);
+				mesh->set_triangle(ti++, vi[0], vi[1], vi[2], shader, smooth);
+				mesh->set_triangle(ti++, vi[0], vi[2], vi[3], shader, smooth);
 			}
 		}
 		else
-			mesh->add_triangle(vi[0], vi[1], vi[2], shader, smooth);
+			mesh->set_triangle(ti++, vi[0], vi[1], vi[2], shader, smooth);
 
-		nverts.push_back(n);
+		nverts[fi] = n;
 	}
 
 	/* create vertex color attributes */
@@ -448,7 +460,6 @@ Mesh *BlenderSync::sync_mesh(BL::Object b_ob, bool object_updated, bool hide_tri
 	mesh_synced.insert(mesh);
 
 	/* create derived mesh */
-	bool need_undeformed = mesh->need_attribute(scene, ATTR_STD_GENERATED);
 	PointerRNA cmesh = RNA_pointer_get(&b_ob_data.ptr, "cycles");
 
 	vector<Mesh::Triangle> oldtriangle = mesh->triangles;
@@ -462,18 +473,22 @@ Mesh *BlenderSync::sync_mesh(BL::Object b_ob, bool object_updated, bool hide_tri
 	mesh->name = ustring(b_ob_data.name().c_str());
 
 	if(render_layer.use_surfaces || render_layer.use_hair) {
+		if(preview)
+			b_ob.update_from_editmode();
+
+		bool need_undeformed = mesh->need_attribute(scene, ATTR_STD_GENERATED);
 		BL::Mesh b_mesh = object_to_mesh(b_data, b_ob, b_scene, true, !preview, need_undeformed);
 
 		if(b_mesh) {
-			if(render_layer.use_surfaces && !(hide_tris && experimental)) {
+			if(render_layer.use_surfaces && !hide_tris) {
 				if(cmesh.data && experimental && RNA_boolean_get(&cmesh, "use_subdivision"))
 					create_subd_mesh(mesh, b_mesh, &cmesh, used_shaders);
 				else
 					create_mesh(scene, mesh, b_mesh, used_shaders);
 			}
 
-			if(render_layer.use_hair && experimental)
-				sync_curves(mesh, b_mesh, b_ob, object_updated);
+			if(render_layer.use_hair)
+				sync_curves(mesh, b_mesh, b_ob, 0);
 
 			/* free derived mesh */
 			b_data.meshes.remove(b_mesh);
@@ -524,6 +539,12 @@ void BlenderSync::sync_mesh_motion(BL::Object b_ob, Mesh *mesh, int motion)
 	if(!size || !ccl::BKE_object_is_deform_modified(b_ob, b_scene, preview))
 		return;
 
+	/* ensure we only sync instanced meshes once */
+	if(mesh_motion_synced.find(mesh) != mesh_motion_synced.end())
+		return;
+
+	mesh_motion_synced.insert(mesh);
+
 	/* get derived mesh */
 	BL::Mesh b_mesh = object_to_mesh(b_data, b_ob, b_scene, true, !preview, false);
 
@@ -540,6 +561,10 @@ void BlenderSync::sync_mesh_motion(BL::Object b_ob, Mesh *mesh, int motion)
 		/* if number of vertices changed, or if coordinates stayed the same, drop it */
 		if(i != size || memcmp(M, &mesh->verts[0], sizeof(float3)*size) == 0)
 			mesh->attributes.remove(std);
+
+		/* hair motion */
+		if(render_layer.use_hair)
+			sync_curves(mesh, b_mesh, b_ob, motion);
 
 		/* free derived mesh */
 		b_data.meshes.remove(b_mesh);

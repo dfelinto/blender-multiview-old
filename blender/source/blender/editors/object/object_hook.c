@@ -65,6 +65,7 @@
 #include "ED_curve.h"
 #include "ED_mesh.h"
 #include "ED_screen.h"
+#include "ED_object.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
@@ -310,7 +311,7 @@ static bool object_hook_index_array(Scene *scene, Object *obedit, int *tot, int 
 			BMEditMesh *em;
 
 			EDBM_mesh_load(obedit);
-			EDBM_mesh_make(scene->toolsettings, scene, obedit);
+			EDBM_mesh_make(scene->toolsettings, obedit);
 
 			em = me->edit_btmesh;
 
@@ -318,12 +319,10 @@ static bool object_hook_index_array(Scene *scene, Object *obedit, int *tot, int 
 			BKE_editmesh_tessface_calc(em);
 
 			/* check selected vertices first */
-			if (return_editmesh_indexar(em, tot, indexar, cent_r)) {
-				return true;
-			}
-			else {
+			if (return_editmesh_indexar(em, tot, indexar, cent_r) == 0) {
 				return return_editmesh_vgroup(obedit, em, name, cent_r);
 			}
+			return true;
 		}
 		case OB_CURVE:
 		case OB_SURF:
@@ -460,6 +459,7 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	ModifierData *md = NULL;
 	HookModifierData *hmd = NULL;
 	float cent[3];
+	float pose_mat[4][4];
 	int tot, ok, *indexar;
 	char name[MAX_NAME];
 	
@@ -494,11 +494,20 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	hmd->totindex = tot;
 	BLI_strncpy(hmd->name, name, sizeof(hmd->name));
 	
+	unit_m4(pose_mat);
+
 	if (mode == OBJECT_ADDHOOK_SELOB_BONE) {
 		bArmature *arm = ob->data;
 		BLI_assert(ob->type == OB_ARMATURE);
 		if (arm->act_bone) {
+			bPoseChannel *pchan_act;
+
 			BLI_strncpy(hmd->subtarget, arm->act_bone->name, sizeof(hmd->subtarget));
+
+			pchan_act = BKE_pose_channel_active(ob);
+			if (LIKELY(pchan_act)) {
+				invert_m4_m4(pose_mat, pchan_act->pose_mat);
+			}
 		}
 		else {
 			BKE_report(reports, RPT_WARNING, "Armature has no active object bone");
@@ -512,7 +521,7 @@ static int add_hook_object(Main *bmain, Scene *scene, Object *obedit, Object *ob
 	
 	invert_m4_m4(ob->imat, ob->obmat);
 	/* apparently this call goes from right to left... */
-	mul_serie_m4(hmd->parentinv, ob->imat, obedit->obmat, NULL,
+	mul_serie_m4(hmd->parentinv, pose_mat, ob->imat, obedit->obmat,
 	             NULL, NULL, NULL, NULL, NULL);
 	
 	DAG_relations_tag_update(bmain);
@@ -561,7 +570,7 @@ void OBJECT_OT_hook_add_selob(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Hook to Selected Object";
-	ot->description = "Hook selected vertices to the first selected Object";
+	ot->description = "Hook selected vertices to the first selected object";
 	ot->idname = "OBJECT_OT_hook_add_selob";
 	
 	/* api callbacks */
@@ -595,7 +604,7 @@ void OBJECT_OT_hook_add_newob(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Hook to New Object";
-	ot->description = "Hook selected vertices to the first selected Object";
+	ot->description = "Hook selected vertices to a newly created object";
 	ot->idname = "OBJECT_OT_hook_add_newob";
 	
 	/* api callbacks */
@@ -693,26 +702,9 @@ static int object_hook_reset_exec(bContext *C, wmOperator *op)
 		BKE_report(op->reports, RPT_ERROR, "Could not find hook modifier");
 		return OPERATOR_CANCELLED;
 	}
-	
-	/* reset functionality */
-	if (hmd->object) {
-		bPoseChannel *pchan = BKE_pose_channel_find_name(hmd->object->pose, hmd->subtarget);
-		
-		if (hmd->subtarget[0] && pchan) {
-			float imat[4][4], mat[4][4];
-			
-			/* calculate the world-space matrix for the pose-channel target first, then carry on as usual */
-			mul_m4_m4m4(mat, hmd->object->obmat, pchan->pose_mat);
-			
-			invert_m4_m4(imat, mat);
-			mul_serie_m4(hmd->parentinv, imat, ob->obmat, NULL, NULL, NULL, NULL, NULL, NULL);
-		}
-		else {
-			invert_m4_m4(hmd->object->imat, hmd->object->obmat);
-			mul_serie_m4(hmd->parentinv, hmd->object->imat, ob->obmat, NULL, NULL, NULL, NULL, NULL, NULL);
-		}
-	}
-	
+
+	BKE_object_modifier_hook_reset(ob, hmd);
+
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
 	

@@ -54,6 +54,7 @@ struct wmOperator;
 struct wmOperatorType;
 struct ImagePaintState;
 struct wmWindowManager;
+struct DMCoNo;
 enum PaintMode;
 
 /* paint_stroke.c */
@@ -73,6 +74,7 @@ bool paint_space_stroke_enabled(struct Brush *br, enum PaintMode mode);
 bool paint_supports_dynamic_size(struct Brush *br, enum PaintMode mode);
 bool paint_supports_dynamic_tex_coords(struct Brush *br, enum PaintMode mode);
 bool paint_supports_smooth_stroke(struct Brush *br, enum PaintMode mode);
+bool paint_supports_texture(enum PaintMode mode);
 bool paint_supports_jitter(enum PaintMode mode);
 
 struct wmKeyMap *paint_stroke_modal_keymap(struct wmKeyConfig *keyconf);
@@ -85,6 +87,7 @@ void paint_stroke_set_mode_data(struct PaintStroke *stroke, void *mode_data);
 int paint_poll(struct bContext *C);
 void paint_cursor_start(struct bContext *C, int (*poll)(struct bContext *C));
 void paint_cursor_start_explicit(struct Paint *p, struct wmWindowManager *wm, int (*poll)(struct bContext *C));
+void paint_cursor_delete_textures(void);
 
 /* paint_vertex.c */
 int weight_paint_poll(struct bContext *C);
@@ -114,6 +117,20 @@ void PAINT_OT_vertex_paint_toggle(struct wmOperatorType *ot);
 void PAINT_OT_vertex_paint(struct wmOperatorType *ot);
 
 unsigned int vpaint_get_current_col(struct VPaint *vp);
+
+
+/* paint_vertex_proj.c */
+struct VertProjHandle;
+struct VertProjHandle *ED_vpaint_proj_handle_create(
+        struct Scene *scene, struct Object *ob,
+        struct DMCoNo **r_vcosnos);
+void  ED_vpaint_proj_handle_update(
+        struct VertProjHandle *vp_handle,
+        /* runtime vars */
+        struct ARegion *ar, const float mval_fl[2]);
+void  ED_vpaint_proj_handle_free(
+        struct VertProjHandle *vp_handle);
+
 
 /* paint_image.c */
 typedef struct ImagePaintPartialRedraw {

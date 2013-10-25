@@ -170,11 +170,11 @@ static void clear_global(void)
 	G.main = NULL;
 }
 
-static int clean_paths_visit_cb(void *UNUSED(userdata), char *path_dst, const char *path_src)
+static bool clean_paths_visit_cb(void *UNUSED(userdata), char *path_dst, const char *path_src)
 {
 	strcpy(path_dst, path_src);
 	BLI_clean(path_dst);
-	return (strcmp(path_dst, path_src) == 0) ? FALSE : TRUE;
+	return !STREQ(path_dst, path_src);
 }
 
 /* make sure path names are correct for OS */
@@ -416,6 +416,8 @@ void BKE_userdef_free(void)
 		MEM_freeN(addon);
 	}
 
+	BLI_freelistN(&U.autoexec_paths);
+
 	BLI_freelistN(&U.uistyles);
 	BLI_freelistN(&U.uifonts);
 	BLI_freelistN(&U.themes);
@@ -460,13 +462,16 @@ int BKE_read_file(bContext *C, const char *filepath, ReportList *reports)
 	return (bfd ? retval : BKE_READ_FILE_FAIL);
 }
 
-int BKE_read_file_from_memory(bContext *C, const void *filebuf, int filelength, ReportList *reports)
+int BKE_read_file_from_memory(bContext *C, const void *filebuf, int filelength, ReportList *reports, int update_defaults)
 {
 	BlendFileData *bfd;
 
 	bfd = BLO_read_from_memory(filebuf, filelength, reports);
-	if (bfd)
+	if (bfd) {
+		if (update_defaults)
+			BLO_update_defaults_startup_blend(bfd->main);
 		setup_app_data(C, bfd, "<memory2>");
+	}
 	else
 		BKE_reports_prepend(reports, "Loading failed: ");
 
@@ -814,7 +819,7 @@ int BKE_undo_save_file(const char *filename)
 	 * to avoid writing to a symlink - use 'O_EXCL' (CVE-2008-1103) */
 	errno = 0;
 	file = BLI_open(filename, flag, 0666);
-	if (file == -1) {
+	if (file < 0) {
 		if (errno == EEXIST) {
 			errno = 0;
 			file = BLI_open(filename, flag & ~O_CREAT, 0666);
@@ -922,9 +927,7 @@ int BKE_copybuffer_save(const char *filename, ReportList *reports)
 		ID *id;
 		ListBase *lb1 = lbarray[a], *lb2 = fromarray[a];
 		
-		while (lb2->first) {
-			id = lb2->first;
-			BLI_remlink(lb2, id);
+		while ((id = BLI_pophead(lb2))) {
 			BLI_addtail(lb1, id);
 			id_sort_by_name(lb1, id);
 		}

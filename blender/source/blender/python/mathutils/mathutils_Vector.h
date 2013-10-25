@@ -15,15 +15,9 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
  * Contributor(s): Willian P. Germano & Joseph Gilbert
  *
  * ***** END GPL LICENSE BLOCK *****
- *
  */
 
 /** \file blender/python/mathutils/mathutils_Vector.h
@@ -47,6 +41,6 @@ typedef struct {
 PyObject *Vector_CreatePyObject(float *vec, const int size, const int type, PyTypeObject *base_type);
 PyObject *Vector_CreatePyObject_cb(PyObject *user, int size,
                                    unsigned char cb_type, unsigned char subtype);
-PyObject *Vector_CreatePyObject_alloc(float *vec, const int size, PyTypeObject *base_type);
+PyObject *Vector_CreatePyObject_alloc(const float *vec, const int size, PyTypeObject *base_type);
 
-#endif				/* __MATHUTILS_VECTOR_H__ */
+#endif  /* __MATHUTILS_VECTOR_H__ */

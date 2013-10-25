@@ -75,6 +75,7 @@ typedef struct BevList {
 	struct BevList *next, *prev;
 	int nr, dupe_nr;
 	int poly, hole;
+	int charidx;
 } BevList;
 
 /* These two Lines with # tell makesdna this struct can be excluded. */
@@ -183,11 +184,8 @@ typedef struct Curve {
 	
 	struct Object *bevobj, *taperobj, *textoncurve;
 	struct Ipo *ipo    DNA_DEPRECATED;  /* old animation system, deprecated for 2.5 */
-	Path *path;
 	struct Key *key;
 	struct Material **mat;
-	
-	ListBase bev;
 	
 	/* texture space, copied as one block in editobject.c */
 	float loc[3];
@@ -215,6 +213,10 @@ typedef struct Curve {
 	void *lastsel;
 	
 	/* font part */
+	/* WARNING: cu->len is...
+	 * - strlen(cu->str) object-mode (bytes).
+	 * - BLI_strlen_utf8(cu->str) in edit-mode.
+	 * This should be cleaned up and some point, see 'write_curves' - campbell */
 	short len, lines, pos, spacemode;
 	float spacing, linedist, shear, fsize, wordspace, ulpos, ulheight;
 	float xof, yof;
@@ -362,6 +364,8 @@ typedef enum eBezTriple_KeyframeType {
 /* mixed with KEY_LINEAR but define here since only curve supports */
 #define KEY_CU_EASE			3
 
+/* indicates point has been seen during surface duplication */
+#define SURF_SEEN			4
 
 #endif
 

@@ -83,8 +83,11 @@ class TokStore:
         self.line = line
 
 
-def tk_range_to_str(a, b):
-    return "".join([tokens[i].text for i in range(a, b + 1)])
+def tk_range_to_str(a, b, expand_tabs=False):
+    txt = "".join([tokens[i].text for i in range(a, b + 1)])
+    if expand_tabs:
+        txt = txt.expandtabs(TAB_SIZE)
+    return txt
 
 
 def tk_item_is_newline(tok):
@@ -170,6 +173,21 @@ def tk_match_backet(index):
 def tk_index_is_linestart(index):
     index_prev = tk_advance_ws_newline(index, -1)
     return tokens[index_prev].line < tokens[index].line
+
+
+def extract_to_linestart(index):
+    ls = []
+    line = tokens[index].line
+    index -= 1
+    while index > 0 and tokens[index].line == line:
+        ls.append(tokens[index].text)
+        index -= 1
+
+    if index != 0:
+        ls.append(tokens[index].text.rsplit("\n", 1)[1])
+
+    ls.reverse()
+    return "".join(ls)
 
 
 def extract_statement_if(index_kw):
@@ -288,7 +306,7 @@ def warning(message, index_kw_start, index_kw_end):
     else:
         print("%s:%d: warning: %s" % (filepath, tokens[index_kw_start].line, message))
         if WARN_TEXT:
-            print("".join([tokens[i].text for i in range(index_kw_start, index_kw_end + 1)]))
+            print(tk_range_to_str(index_kw_start, index_kw_end, expand_tabs=True))
 
 
 def warning_lineonly(message, line):
@@ -403,6 +421,113 @@ def blender_check_kw_else(index_kw):
     if tokens[i_prev].type == Token.Punctuation and tokens[i_prev].text == "}":
         if tokens[index_kw].line == tokens[i_prev].line:
             warning("else has no newline before the brace '} else'", i_prev, index_kw)
+
+
+def blender_check_kw_switch(index_kw_start, index_kw, index_kw_end):
+    # In this function we check the body of the switch
+
+    # switch (value) {
+    # ...
+    # }
+
+    # assert(tokens[index_kw].text == "switch")
+
+    index_next = tk_advance_ws_newline(index_kw_end, 1)
+
+    if tokens[index_next].type == Token.Punctuation and tokens[index_next].text == "{":
+        ws_switch_indent = extract_to_linestart(index_kw)
+
+        if ws_switch_indent.isspace():
+
+            # 'case' should have at least 1 indent.
+            # otherwise expect 2 indent (or more, for nested switches)
+            ws_test = {
+                "case": ws_switch_indent + "\t",
+                "default:": ws_switch_indent + "\t",
+
+                "break": ws_switch_indent + "\t\t",
+                "return": ws_switch_indent + "\t\t",
+                "continue": ws_switch_indent + "\t\t",
+                "goto": ws_switch_indent + "\t\t",
+                }
+
+            index_final = tk_match_backet(index_next)
+
+            case_ls = []
+
+            for i in range(index_next + 1, index_final):
+                # 'default' is seen as a label
+                # print(tokens[i].type, tokens[i].text)
+                if tokens[i].type in {Token.Keyword, Token.Name.Label}:
+                    if tokens[i].text in {"case", "default:", "break", "return", "comtinue", "goto"}:
+                        ws_other_indent = extract_to_linestart(i)
+                        # non ws start - we ignore for now, allow case A: case B: ...
+                        if ws_other_indent.isspace():
+                            ws_test_other = ws_test[tokens[i].text]
+                            if not ws_other_indent.startswith(ws_test_other):
+                                warning("%s is not indented enough" % tokens[i].text, i, i)
+
+                            # assumes correct indentation...
+                            if tokens[i].text in {"case", "default:"}:
+                                if ws_other_indent == ws_test_other:
+                                    case_ls.append(i)
+
+            case_ls.append(index_final - 1)
+
+            # detect correct use of break/return
+            for j in range(len(case_ls) - 1):
+                i_case = case_ls[j]
+                i_end = case_ls[j + 1]
+
+                # detect cascading cases, check there is one line inbetween at least
+                if tokens[i_case].line + 1 < tokens[i_end].line:
+                    ok = False
+
+                    # scan case body backwards
+                    for i in reversed(range(i_case, i_end)):
+                        if tokens[i].type == Token.Punctuation:
+                            if tokens[i].text == "}":
+                                ws_other_indent = extract_to_linestart(i)
+                                if ws_other_indent != ws_test["case"]:
+                                    # break/return _not_ found
+                                    break
+
+                        elif tokens[i].type in Token.Comment:
+                            if tokens[i].text == "/* fall-through */":
+                                ok = True
+                                break
+                            else:
+                                #~ print("Commment '%s'" % tokens[i].text)
+                                pass
+
+
+                        elif tokens[i].type == Token.Keyword:
+                            if tokens[i].text in {"break", "return", "continue", "goto"}:
+                                if tokens[i_case].line == tokens[i].line:
+                                    # Allow for...
+                                    #     case BLAH: var = 1; break;
+                                    # ... possible there is if statements etc, but assume not
+                                    ok = True
+                                    break
+                                else:
+                                    ws_other_indent = extract_to_linestart(i)
+                                    ws_other_indent = ws_other_indent[:len(ws_other_indent) - len(ws_other_indent.lstrip())]
+                                    ws_test_other = ws_test[tokens[i].text]
+                                    if ws_other_indent == ws_test_other:
+                                        ok = True
+                                        break
+                                    else:
+                                        pass
+                                        #~ print("indent mismatch...")
+                                        #~ print("'%s'" % ws_other_indent)
+                                        #~ print("'%s'" % ws_test_other)
+                    if not ok:
+                        warning("case/default statement has no break", i_case, i_end)
+                        #~ print(tk_range_to_str(i_case - 1, i_end - 1, expand_tabs=True))
+        else:
+            warning("switch isn't the first token in the line", index_kw_start, index_kw_end)
+    else:
+        warning("switch brace missing", index_kw_start, index_kw_end)
 
 
 def blender_check_kw_sizeof(index_kw):
@@ -574,9 +699,8 @@ def blender_check_operator(index_start, index_end, op_text, is_cpp):
 
 def blender_check_linelength(index_start, index_end, length):
     if length > LIN_SIZE:
-        text = "".join([tokens[i].text for i in range(index_start, index_end + 1)])
+        text = tk_range_to_str(index_start, index_end, expand_tabs=True)
         for l in text.split("\n"):
-            l = l.expandtabs(TAB_SIZE)
             if len(l) > LIN_SIZE:
                 warning("line length %d > %d" % (len(l), LIN_SIZE), index_start, index_end)
 
@@ -585,7 +709,7 @@ def blender_check_function_definition(i):
     # Warning, this is a fairly slow check and guesses
     # based on some fuzzy rules
 
-    # assert(tokens[index] == "{")
+    # assert(tokens[index].text == "{")
 
     # check function declaration is not:
     #  'void myfunc() {'
@@ -649,7 +773,29 @@ def blender_check_function_definition(i):
                     warning("function's '{' must be on a newline", i_begin, i)
 
 
-def quick_check_indentation(code):
+def blender_check_brace_indent(i):
+    # assert(tokens[index].text == "{")
+
+    i_match = tk_match_backet(i)
+
+    if tokens[i].line != tokens[i_match].line:
+        ws_i_match = extract_to_linestart(i_match)
+
+        # allow for...
+        # a[] = {1, 2,
+        #        3, 4}
+        # ... so only check braces which are the first text
+        if ws_i_match.isspace():
+            ws_i = extract_to_linestart(i)
+            ws_i_match_lstrip = ws_i_match.lstrip()
+
+            ws_i = ws_i[:len(ws_i) - len(ws_i.lstrip())]
+            ws_i_match = ws_i_match[:len(ws_i_match) - len(ws_i_match_lstrip)]
+            if ws_i != ws_i_match:
+                warning("indentation '{' does not match brace", i, i_match)
+
+
+def quick_check_indentation(lines):
     """
     Quick check for multiple tab indents.
     """
@@ -657,7 +803,7 @@ def quick_check_indentation(code):
     m_comment_prev = False
     ls_prev = ""
 
-    for i, l in enumerate(code.split("\n")):
+    for i, l in enumerate(lines):
         skip = False
 
         # skip blank lines
@@ -700,8 +846,66 @@ def quick_check_indentation(code):
                 warning_lineonly("indentation mis-match (indent of %d) '%s'" % (t - t_prev, tabs), i + 1)
             t_prev = t
 
+import re
+re_ifndef = re.compile("^\s*#\s*ifndef\s+([A-z0-9_]+).*$")
+re_define = re.compile("^\s*#\s*define\s+([A-z0-9_]+).*$")
 
-def scan_source(fp, args):
+def quick_check_include_guard(lines):
+    found = 0
+    def_value = ""
+    ok = False
+
+    def fn_as_guard(fn):
+        name = os.path.basename(fn).upper().replace(".", "_").replace("-", "_")
+        return "__%s__" % name
+
+    for i, l in enumerate(lines):
+        ndef_match = re_ifndef.match(l)
+        if ndef_match:
+            ndef_value = ndef_match.group(1).strip()
+            for j in range(i + 1, len(lines)):
+                l_next = lines[j]
+                def_match = re_define.match(l_next)
+                if def_match:
+                    def_value = def_match.group(1).strip()
+                    if def_value == ndef_value:
+                        ok = True
+                        break
+                elif l_next.strip():
+                    # print(filepath)
+                    # found non empty non ndef line. quit
+                    break
+                else:
+                    # allow blank lines
+                    pass
+            break
+
+    guard = fn_as_guard(filepath)
+
+    if ok:
+        # print("found:", def_value, "->", filepath)
+        if def_value != guard:
+            # print("%s: %s -> %s" % (filepath, def_value, guard))
+            warning_lineonly("non-conforming include guard (found %r, expected %r)" % (def_value, guard), i + 1)
+    else:
+        warning_lineonly("missing include guard %r" % guard, 1)
+
+def quick_check_source(fp, code, args):
+
+    global filepath
+
+    is_header = fp.endswith((".h", ".hxx", ".hpp"))
+
+    filepath = fp
+
+    lines = code.split("\n")
+
+    if is_header:
+        quick_check_include_guard(lines)
+
+    quick_check_indentation(lines)
+
+def scan_source(fp, code, args):
     # print("scanning: %r" % fp)
 
     global filepath
@@ -716,10 +920,6 @@ def scan_source(fp, args):
     filepath_base = os.path.basename(filepath)
 
     #print(highlight(code, CLexer(), RawTokenFormatter()).decode('utf-8'))
-    code = open(filepath, 'r', encoding="utf-8").read()
-
-    quick_check_indentation(code)
-    # return
 
     del tokens[:]
     line = 1
@@ -739,6 +939,8 @@ def scan_source(fp, args):
                 item_range = extract_statement_if(i)
                 if item_range is not None:
                     blender_check_kw_if(item_range[0], i, item_range[1])
+                if tok.text == "switch":
+                    blender_check_kw_switch(item_range[0], i, item_range[1])
             elif tok.text == "else":
                 blender_check_kw_else(i)
             elif tok.text == "sizeof":
@@ -764,6 +966,9 @@ def scan_source(fp, args):
                 if item_range is not None:
                     blender_check_cast(item_range[0], item_range[1])
             elif tok.text == "{":
+                # check matching brace is indented correctly (slow!)
+                blender_check_brace_indent(i)
+
                 # check previous character is either a '{' or whitespace.
                 if (tokens[i - 1].line == tok.line) and not (tokens[i - 1].text.isspace() or tokens[i - 1].text == "{"):
                     warning("no space before '{'", i, i)
@@ -834,7 +1039,13 @@ def scan_source_recursive(dirpath, args):
         #~ if not filepath.endswith("creator.c"):
         #~     continue
 
-        scan_source(filepath, args)
+        code = open(filepath, 'r', encoding="utf-8").read()
+
+        # fast checks which don't require full parsing
+        quick_check_source(filepath, code, args)
+
+        # use lexer
+        scan_source(filepath, code, args)
 
 
 if __name__ == "__main__":

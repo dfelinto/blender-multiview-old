@@ -31,6 +31,7 @@
 #include "DNA_texture_types.h"
 
 #include "RNA_define.h"
+#include "RNA_enum_types.h"
 
 #include "rna_internal.h"
 
@@ -92,33 +93,25 @@ EnumPropertyItem ramp_blend_items[] = {
 
 #include "ED_node.h"
 
-static void rna_Material_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *ptr)
+static void rna_Material_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	Material *ma = ptr->id.data;
 
 	DAG_id_tag_update(&ma->id, 0);
-	if (scene) {  /* can be NULL, see [#30025] */
-		if (scene->gm.matmode == GAME_MAT_GLSL) {
-			WM_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, ma);
-		}
-		else {
-			WM_main_add_notifier(NC_MATERIAL | ND_SHADING, ma);
-		}
-	}
+	WM_main_add_notifier(NC_MATERIAL | ND_SHADING, ma);
 }
 
-static void rna_Material_update_previews(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_Material_update_previews(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	Material *ma = ptr->id.data;
 	
 	if (ma->nodetree)
 		BKE_node_preview_clear_tree(ma->nodetree);
 		
-	WM_main_add_notifier(NC_MATERIAL | ND_SHADING, ma);
+	WM_main_add_notifier(NC_MATERIAL | ND_SHADING_PREVIEW, ma);
 }
 
-
-static void rna_Material_draw_update(Main *UNUSED(bmain), Scene *scene, PointerRNA *ptr)
+static void rna_Material_draw_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	Material *ma = ptr->id.data;
 
@@ -209,7 +202,8 @@ static void rna_Material_active_node_material_set(PointerRNA *ptr, PointerRNA va
 	nodeSetActiveID(ma->nodetree, ID_MA, &ma_act->id);
 }
 
-static void rna_MaterialStrand_start_size_range(PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void rna_MaterialStrand_start_size_range(PointerRNA *ptr, float *min, float *max,
+                                                float *UNUSED(softmin), float *UNUSED(softmax))
 {
 	Material *ma = (Material *)ptr->id.data;
 
@@ -223,7 +217,8 @@ static void rna_MaterialStrand_start_size_range(PointerRNA *ptr, float *min, flo
 	}
 }
 
-static void rna_MaterialStrand_end_size_range(PointerRNA *ptr, float *min, float *max, float *softmin, float *softmax)
+static void rna_MaterialStrand_end_size_range(PointerRNA *ptr, float *min, float *max,
+                                              float *UNUSED(softmin), float *UNUSED(softmax))
 {
 	Material *ma = (Material *)ptr->id.data;
 
@@ -1826,7 +1821,7 @@ void RNA_def_material(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "pass_index", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_sdna(prop, NULL, "index");
 	RNA_def_property_ui_text(prop, "Pass Index", "Index number for the IndexMA render pass");
-	RNA_def_property_update(prop, NC_OBJECT, NULL);
+	RNA_def_property_update(prop, NC_OBJECT, "rna_Material_update");
 
 	/* flags */
 	

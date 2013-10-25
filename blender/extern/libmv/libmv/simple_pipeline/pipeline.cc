@@ -51,10 +51,9 @@ struct EuclideanPipelineRoutines {
     EuclideanBundle(tracks, reconstruction);
   }
 
-  static bool Resect(const ReconstructionOptions &options,
-                     const vector<Marker> &markers,
+  static bool Resect(const vector<Marker> &markers,
                      EuclideanReconstruction *reconstruction, bool final_pass) {
-    return EuclideanResect(options, markers, reconstruction, final_pass);
+    return EuclideanResect(markers, reconstruction, final_pass);
   }
 
   static bool Intersect(const vector<Marker> &markers,
@@ -90,10 +89,8 @@ struct ProjectivePipelineRoutines {
     ProjectiveBundle(tracks, reconstruction);
   }
 
-  static bool Resect(const ReconstructionOptions &options,
-                     const vector<Marker> &markers,
+  static bool Resect(const vector<Marker> &markers,
                      ProjectiveReconstruction *reconstruction, bool final_pass) {
-    (void) options;  // Ignored.
     (void) final_pass;  // Ignored.
 
     return ProjectiveResect(markers, reconstruction);
@@ -124,7 +121,7 @@ struct ProjectivePipelineRoutines {
 
 }  // namespace
 
-static void CompleteReconstructionLogProress(
+static void CompleteReconstructionLogProgress(
     ProgressUpdateCallback *update_callback,
     double progress,
     const char *step = NULL) {
@@ -144,7 +141,6 @@ static void CompleteReconstructionLogProress(
 
 template<typename PipelineRoutines>
 void InternalCompleteReconstruction(
-    const ReconstructionOptions &options,
     const Tracks &tracks,
     typename PipelineRoutines::Reconstruction *reconstruction,
     ProgressUpdateCallback *update_callback = NULL) {
@@ -176,8 +172,8 @@ void InternalCompleteReconstruction(
       LG << "Got " << reconstructed_markers.size()
          << " reconstructed markers for track " << track;
       if (reconstructed_markers.size() >= 2) {
-        CompleteReconstructionLogProress(update_callback,
-                                         (double)tot_resects/(max_image));
+        CompleteReconstructionLogProgress(update_callback,
+                                          (double)tot_resects/(max_image));
         if (PipelineRoutines::Intersect(reconstructed_markers,
                                         reconstruction)) {
           num_intersects++;
@@ -188,9 +184,9 @@ void InternalCompleteReconstruction(
       }
     }
     if (num_intersects) {
-      CompleteReconstructionLogProress(update_callback,
-                                       (double)tot_resects/(max_image),
-                                       "Bundling...");
+      CompleteReconstructionLogProgress(update_callback,
+                                        (double)tot_resects/(max_image),
+                                        "Bundling...");
       PipelineRoutines::Bundle(tracks, reconstruction);
       LG << "Ran Bundle() after intersections.";
     }
@@ -215,9 +211,9 @@ void InternalCompleteReconstruction(
       LG << "Got " << reconstructed_markers.size()
          << " reconstructed markers for image " << image;
       if (reconstructed_markers.size() >= 5) {
-        CompleteReconstructionLogProress(update_callback,
-                                         (double)tot_resects/(max_image));
-        if (PipelineRoutines::Resect(options, reconstructed_markers,
+        CompleteReconstructionLogProgress(update_callback,
+                                          (double)tot_resects/(max_image));
+        if (PipelineRoutines::Resect(reconstructed_markers,
                                      reconstruction, false)) {
           num_resects++;
           tot_resects++;
@@ -228,9 +224,9 @@ void InternalCompleteReconstruction(
       }
     }
     if (num_resects) {
-      CompleteReconstructionLogProress(update_callback,
-                                       (double)tot_resects/(max_image),
-                                       "Bundling...");
+      CompleteReconstructionLogProgress(update_callback,
+                                        (double)tot_resects/(max_image),
+                                        "Bundling...");
       PipelineRoutines::Bundle(tracks, reconstruction);
     }
     LG << "Did " << num_resects << " resects.";
@@ -252,9 +248,9 @@ void InternalCompleteReconstruction(
       }
     }
     if (reconstructed_markers.size() >= 5) {
-      CompleteReconstructionLogProress(update_callback,
-                                       (double)tot_resects/(max_image));
-      if (PipelineRoutines::Resect(options, reconstructed_markers,
+      CompleteReconstructionLogProgress(update_callback,
+                                        (double)tot_resects/(max_image));
+      if (PipelineRoutines::Resect(reconstructed_markers,
                                    reconstruction, true)) {
         num_resects++;
         LG << "Ran final Resect() for image " << image;
@@ -264,9 +260,9 @@ void InternalCompleteReconstruction(
     }
   }
   if (num_resects) {
-    CompleteReconstructionLogProress(update_callback,
-                                     (double)tot_resects/(max_image),
-                                     "Bundling...");
+    CompleteReconstructionLogProgress(update_callback,
+                                      (double)tot_resects/(max_image),
+                                      "Bundling...");
     PipelineRoutines::Bundle(tracks, reconstruction);
   }
 }
@@ -341,21 +337,17 @@ double ProjectiveReprojectionError(
                                                                intrinsics);
 }
 
-void EuclideanCompleteReconstruction(const ReconstructionOptions &options,
-                                     const Tracks &tracks,
+void EuclideanCompleteReconstruction(const Tracks &tracks,
                                      EuclideanReconstruction *reconstruction,
                                      ProgressUpdateCallback *update_callback) {
-  InternalCompleteReconstruction<EuclideanPipelineRoutines>(options,
-                                                            tracks,
+  InternalCompleteReconstruction<EuclideanPipelineRoutines>(tracks,
                                                             reconstruction,
                                                             update_callback);
 }
 
-void ProjectiveCompleteReconstruction(const ReconstructionOptions &options,
-                                      const Tracks &tracks,
+void ProjectiveCompleteReconstruction(const Tracks &tracks,
                                       ProjectiveReconstruction *reconstruction) {
-  InternalCompleteReconstruction<ProjectivePipelineRoutines>(options,
-                                                             tracks,
+  InternalCompleteReconstruction<ProjectivePipelineRoutines>(tracks,
                                                              reconstruction);
 }
 

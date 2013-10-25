@@ -287,7 +287,7 @@ static void checker_board_text(unsigned char *rect, float *rect_float, int width
 	int x, y;
 	int pen_x, pen_y;
 	char text[3] = {'A', '1', '\0'};
-	const int mono = blf_mono_font;
+	const int mono = blf_mono_font_render;
 
 	BLF_size(mono, 54, 72); /* hard coded size! */
 
@@ -336,7 +336,7 @@ static void checker_board_text(unsigned char *rect, float *rect_float, int width
 	}
 
 	/* cleanup the buffer. */
-	BLF_buffer(mono, NULL, NULL, 0, 0, 0, FALSE);
+	BLF_buffer(mono, NULL, NULL, 0, 0, 0, NULL);
 }
 
 void BKE_image_buf_fill_checker_color(unsigned char *rect, float *rect_float, int width, int height)

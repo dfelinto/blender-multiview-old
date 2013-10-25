@@ -190,7 +190,7 @@ static int rna_ParticleEdit_hair_get(PointerRNA *ptr)
 	return 0;
 }
 
-static char *rna_ParticleEdit_path(PointerRNA *ptr)
+static char *rna_ParticleEdit_path(PointerRNA *UNUSED(ptr))
 {
 	return BLI_strdup("tool_settings.particle_edit");
 }
@@ -247,7 +247,7 @@ static void rna_Sculpt_ShowDiffuseColor_update(Main *UNUSED(bmain), Scene *scene
 	}
 }
 
-static char *rna_Sculpt_path(PointerRNA *ptr)
+static char *rna_Sculpt_path(PointerRNA *UNUSED(ptr))
 {
 	return BLI_strdup("tool_settings.sculpt");
 }
@@ -264,17 +264,17 @@ static char *rna_VertexPaint_path(PointerRNA *ptr)
 	}
 }
 
-static char *rna_ImagePaintSettings_path(PointerRNA *ptr)
+static char *rna_ImagePaintSettings_path(PointerRNA *UNUSED(ptr))
 {
 	return BLI_strdup("tool_settings.image_paint");
 }
 
-static char *rna_UvSculpt_path(PointerRNA *ptr)
+static char *rna_UvSculpt_path(PointerRNA *UNUSED(ptr))
 {
 	return BLI_strdup("tool_settings.uv_sculpt");
 }
 
-static char *rna_ParticleBrush_path(PointerRNA *ptr)
+static char *rna_ParticleBrush_path(PointerRNA *UNUSED(ptr))
 {
 	return BLI_strdup("tool_settings.particle_edit.brush");
 }
@@ -444,7 +444,7 @@ static void rna_def_vertex_paint(BlenderRNA *brna)
 	/* weight paint only */
 	prop = RNA_def_property(srna, "use_group_restrict", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", VP_ONLYVGROUP);
-	RNA_def_property_ui_text(prop, "Restrict", "Restrict painting to verts already apart of the vertex group");
+	RNA_def_property_ui_text(prop, "Restrict", "Restrict painting to vertices in the group");
 }
 
 static void rna_def_image_paint(BlenderRNA *brna)

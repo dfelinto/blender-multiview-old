@@ -299,7 +299,7 @@ static int insert_lorem_exec(bContext *C, wmOperator *UNUSED(op))
 	Object *obedit = CTX_data_edit_object(C);
 	const char *p, *p2;
 	int i;
-	static const char *lastlorem;
+	static const char *lastlorem = NULL;
 	
 	if (lastlorem)
 		p = lastlorem;
@@ -380,7 +380,7 @@ static int paste_file(bContext *C, ReportList *reports, const char *filename)
 
 	if (cu->len + filelen < MAXTEXT) {
 		int tmplen;
-		wchar_t *mem = MEM_callocN((sizeof(wchar_t) * filelen) + (4 * sizeof(wchar_t)), "temporary");
+		wchar_t *mem = MEM_mallocN((sizeof(wchar_t) * filelen) + (4 * sizeof(wchar_t)), "temporary");
 		tmplen = BLI_strncpy_wchar_from_utf8(mem, strp, filelen + 1);
 		wcscat(ef->textbuf, mem);
 		MEM_freeN(mem);
@@ -446,7 +446,9 @@ static void txt_add_object(bContext *C, TextLine *firstline, int totline, float 
 	Object *obedit;
 	Base *base;
 	struct TextLine *tmp;
-	int nchars = 0, a;
+	int nchars = 0, nbytes = 0;
+	char *s;
+	int a;
 	float rot[3] = {0.f, 0.f, 0.f};
 	
 	obedit = BKE_object_add(bmain, scene, OB_FONT);
@@ -463,26 +465,38 @@ static void txt_add_object(bContext *C, TextLine *firstline, int totline, float 
 	cu->vfont = BKE_vfont_builtin_get();
 	cu->vfont->id.us++;
 
-	for (tmp = firstline, a = 0; cu->len < MAXTEXT && a < totline; tmp = tmp->next, a++)
-		nchars += strlen(tmp->line) + 1;
+	for (tmp = firstline, a = 0; nbytes < MAXTEXT && a < totline; tmp = tmp->next, a++) {
+		size_t nchars_line, nbytes_line;
+		nchars_line = BLI_strlen_utf8_ex(tmp->line, &nbytes_line);
+		nchars += nchars_line + 1;
+		nbytes += nbytes_line + 1;
+	}
 
 	if (cu->str) MEM_freeN(cu->str);
 	if (cu->strinfo) MEM_freeN(cu->strinfo);
 
-	cu->str = MEM_callocN(nchars + 4, "str");
+	cu->str = MEM_mallocN(nbytes + 4, "str");
 	cu->strinfo = MEM_callocN((nchars + 4) * sizeof(CharInfo), "strinfo");
 
-	cu->str[0] = '\0';
 	cu->len = 0;
 	cu->pos = 0;
-	
+
+	s = cu->str;
+	*s = '\0';
+
 	for (tmp = firstline, a = 0; cu->len < MAXTEXT && a < totline; tmp = tmp->next, a++) {
-		strcat(cu->str, tmp->line);
-		cu->len += strlen(tmp->line);
+		size_t nbytes_line;
+
+		nbytes_line = BLI_strcpy_rlen(s, tmp->line);
+
+		s += nbytes_line;
+		cu->len += nbytes_line;
 
 		if (tmp->next) {
-			strcat(cu->str, "\n");
-			cu->len++;
+			nbytes_line = BLI_strcpy_rlen(s, "\n");
+
+			s += nbytes_line;
+			cu->len += nbytes_line;
 		}
 
 		cu->pos = cu->len;
@@ -967,7 +981,7 @@ void FONT_OT_move_select(wmOperatorType *ot)
 {
 	/* identifiers */
 	ot->name = "Move Select";
-	ot->description = "Make selection from current cursor position to new cursor position type";
+	ot->description = "Move the cursor while selecting";
 	ot->idname = "FONT_OT_move_select";
 	
 	/* api callbacks */
@@ -1273,7 +1287,7 @@ static int insert_text_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 				accentcode = 0;
 			}
 			else if (event->utf8_buf[0]) {
-				BLI_strncpy_wchar_from_utf8(inserted_text, event->utf8_buf, 1);
+				BLI_strncpy_wchar_from_utf8(inserted_text, event->utf8_buf, 2);
 				ascii = inserted_text[0];
 				insert_into_textbuf(obedit, ascii);
 				accentcode = 0;
