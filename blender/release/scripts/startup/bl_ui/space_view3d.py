@@ -237,8 +237,8 @@ class VIEW3D_MT_transform_armature(VIEW3D_MT_transform_base):
 
         obj = context.object
         if (obj.type == 'ARMATURE' and obj.mode in {'EDIT', 'POSE'} and
-                obj.data.draw_type in {'BBONE', 'ENVELOPE'}
-                ):
+            obj.data.draw_type in {'BBONE', 'ENVELOPE'}
+            ):
 
             layout.operator("transform.transform", text="Scale Envelope/BBone").mode = 'BONE_SIZE'
 
@@ -1748,12 +1748,12 @@ class BoneOptions:
         layout = self.layout
 
         options = [
-                "show_wire",
-                "use_deform",
-                "use_envelope_multiply",
-                "use_inherit_rotation",
-                "use_inherit_scale",
-                ]
+            "show_wire",
+            "use_deform",
+            "use_envelope_multiply",
+            "use_inherit_rotation",
+            "use_inherit_scale",
+        ]
 
         if context.mode == 'EDIT_ARMATURE':
             bone_props = bpy.types.EditBone.bl_rna.properties
@@ -1767,7 +1767,7 @@ class BoneOptions:
 
         for opt in options:
             props = layout.operator("wm.context_collection_boolean_set", text=bone_props[opt].name,
-                    text_ctxt=i18n_contexts.default)
+                                    text_ctxt=i18n_contexts.default)
             props.data_path_iter = data_path_iter
             props.data_path_item = opt_suffix + opt
             props.type = self.type
@@ -1909,17 +1909,17 @@ class VIEW3D_MT_edit_mesh_extrude(Menu):
     bl_label = "Extrude"
 
     _extrude_funcs = {
-            'VERT': lambda layout:
+        'VERT': lambda layout:
             layout.operator("mesh.extrude_vertices_move", text="Vertices Only"),
-            'EDGE': lambda layout:
+        'EDGE': lambda layout:
             layout.operator("mesh.extrude_edges_move", text="Edges Only"),
-            'FACE': lambda layout:
+        'FACE': lambda layout:
             layout.operator("mesh.extrude_faces_move", text="Individual Faces"),
-            'REGION': lambda layout:
+        'REGION': lambda layout:
             layout.operator("view3d.edit_mesh_extrude_move_normal", text="Region"),
-            'REGION_VERT_NORMAL': lambda layout:
+        'REGION_VERT_NORMAL': lambda layout:
             layout.operator("view3d.edit_mesh_extrude_move_shrink_fatten", text="Region (Vertex Normals)"),
-            }
+    }
 
     @staticmethod
     def extrude_options(context):
@@ -2477,7 +2477,7 @@ class VIEW3D_PT_view3d_properties(Panel):
 
         col = layout.column()
         col.active = bool(view.region_3d.view_perspective != 'CAMERA' or
-                view.region_quadview)
+                          view.region_quadview)
         col.prop(view, "lens")
         col.label(text="Lock to Object:")
         col.prop(view, "lock_object", text="")
@@ -2485,9 +2485,9 @@ class VIEW3D_PT_view3d_properties(Panel):
         if lock_object:
             if lock_object.type == 'ARMATURE':
                 col.prop_search(view, "lock_bone", lock_object.data,
-                        "edit_bones" if lock_object.mode == 'EDIT'
-                        else "bones",
-                        text="")
+                                "edit_bones" if lock_object.mode == 'EDIT'
+                                else "bones",
+                                text="")
         else:
             col.prop(view, "lock_cursor", text="Lock to Cursor")
 
