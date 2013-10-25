@@ -600,14 +600,11 @@ int BKE_camera_view_frame_fit_to_scene(Scene *scene, struct View3D *v3d, Object 
    actview is numbered from a list of the active SceneRenderViews only */
 StereoViews BKE_getStereoView(RenderData *rd, int actview) {
 	SceneRenderView *srv;
-	int nr, view_id;
+	int view_id;
 
 	/* check renderdata for amount of views */
 	view_id = 0;
-	for (nr = 0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
-
-		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
-			continue;
+	for (srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;

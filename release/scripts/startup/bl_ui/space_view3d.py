@@ -2638,7 +2638,7 @@ class VIEW3D_PT_view3d_stereo(Panel):
         col = layout.column()
         col.active = view.show_stereoscopy
         if view.stereoscopy_camera == "3D":
-            col.prop(view, "stereoscopy_camera", icon='RENDERVIEWS')
+            col.prop(view, "stereoscopy_camera", icon='CAMERA_STEREO')
         else:
             col.prop(view, "stereoscopy_camera", icon='SCENE')
 

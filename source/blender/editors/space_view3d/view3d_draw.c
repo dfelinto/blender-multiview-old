@@ -3232,7 +3232,7 @@ static bool view3d_stereo(const bContext *C, Scene *scene)
 	View3D *v3d = CTX_wm_view3d(C);
 	int has_left = FALSE, has_right = FALSE;
 
-	if (wm_stereo_enabled(win) == FALSE)
+	if (WM_stereo_enabled(win) == FALSE)
 		return FALSE;
 
 	if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) == FALSE)

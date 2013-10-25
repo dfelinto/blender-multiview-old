@@ -78,7 +78,6 @@ void wm_autosave_location(char *filepath);
 
 /* wm_stereo.c */
 void wm_method_draw_stereo(bContext *C, wmWindow *win);
-bool wm_stereo_enabled(wmWindow *win);
 
 /* hack to store circle select size - campbell, must replace with nice operator memory */
 #define GESTURE_MEMORY
