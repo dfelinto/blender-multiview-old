@@ -212,7 +212,7 @@ class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
         col = layout.column()
         col.prop(rv, "camera")
 
-        if rv.camera and rv.camera.data.use_stereoscopy:
+        if rv.camera:
             col.prop(rv, "stereoscopy_camera")
 
         row = col.row()

@@ -109,7 +109,6 @@ typedef struct Camera {
 #define CAM_DS_EXPAND		64
 #define CAM_PANORAMA		128 /* deprecated */
 #define CAM_SHOWSENSOR		256
-#define CAM_STEREOSCOPY		512
 
 /* yafray: dof sampling switch */
 /* #define CAM_YF_NO_QMC	512 */ /* deprecated */

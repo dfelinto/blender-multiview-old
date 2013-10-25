@@ -3303,8 +3303,7 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 
 		/* update the viewport matrices with the new camera */
 		if (srv->camera &&
-			  srv->stereo_camera != STEREO_CENTER_ID &&
-			  ((Camera *) srv->camera->data)->flag & CAM_STEREOSCOPY)
+			  srv->stereo_camera != STEREO_CENTER_ID)
 		{
 			data = (Camera *)srv->camera->data;
 			orig_shift = data->shiftx;
