@@ -9758,12 +9758,14 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 				BLI_strncpy(srv->suffix, "_L", sizeof(srv->suffix));
 				srv->stereo_camera = STEREO_LEFT_ID;
+				srv->camera = scene->camera;
 
 				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
 				srv = (SceneRenderView *)scene->r.views.last;
 				srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 				BLI_strncpy(srv->suffix, "_R", sizeof(srv->suffix));
 				srv->stereo_camera = STEREO_RIGHT_ID;
+				srv->camera = scene->camera;
 			}
 
 			for (screen = main->screen.first; screen; screen = screen->id.next) {
