@@ -33,7 +33,8 @@ class MESH_MT_vertex_group_specials(Menu):
         layout.operator("object.vertex_group_copy", icon='COPY_ID')
         layout.operator("object.vertex_group_copy_to_linked", icon='LINK_AREA')
         layout.operator("object.vertex_group_copy_to_selected", icon='LINK_AREA')
-        layout.operator("object.vertex_group_mirror", icon='ARROW_LEFTRIGHT')
+        layout.operator("object.vertex_group_mirror", icon='ARROW_LEFTRIGHT').use_topology = False
+        layout.operator("object.vertex_group_mirror", text="Mirror Vertex Group (Topology)", icon='ARROW_LEFTRIGHT').use_topology = True
         layout.operator("object.vertex_group_remove_from", icon='X', text="Remove from All Groups").use_all_groups = True
         layout.operator("object.vertex_group_remove_from", icon='X', text="Clear Active Group").use_all_verts = True
         layout.operator("object.vertex_group_remove", icon='X', text="Delete All Groups").all = True
@@ -52,7 +53,8 @@ class MESH_MT_shape_key_specials(Menu):
 
         layout.operator("object.shape_key_transfer", icon='COPY_ID')  # icon is not ideal
         layout.operator("object.join_shapes", icon='COPY_ID')  # icon is not ideal
-        layout.operator("object.shape_key_mirror", icon='ARROW_LEFTRIGHT')
+        layout.operator("object.shape_key_mirror", icon='ARROW_LEFTRIGHT').use_topology = False
+        layout.operator("object.shape_key_mirror", text="Mirror Shape Key (Topology)", icon='ARROW_LEFTRIGHT').use_topology = True
         layout.operator("object.shape_key_add", icon='ZOOMIN', text="New Shape From Mix").from_mix = True
         layout.operator("object.shape_key_remove", icon='X', text="Delete All Shapes").all = True
 
@@ -79,7 +81,7 @@ class MESH_UL_shape_keys(UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             split = layout.split(0.66, False)
             split.label(text=item.name, translate=False, icon_value=icon)
-            row = split.row(True)
+            row = split.row(align=True)
             if key_block.mute or (obj.mode == 'EDIT' and not (obj.use_shape_key_edit_mode and obj.type == 'MESH')):
                 row.active = False
             if not item.relative_key or index > 0:
@@ -189,9 +191,9 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
         ob = context.object
         group = ob.vertex_groups.active
 
-        rows = 2
+        rows = 1
         if group:
-            rows = 5
+            rows = 4
 
         row = layout.row()
         row.template_list("MESH_UL_vgroups", "", ob, "vertex_groups", ob.vertex_groups, "active_index", rows=rows)
@@ -205,7 +207,6 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
             col.operator("object.vertex_group_move", icon='TRIA_UP', text="").direction = 'UP'
             col.operator("object.vertex_group_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
 
-        if group:
             row = layout.row()
             row.prop(group, "name")
 
@@ -213,7 +214,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
             row = layout.row()
 
             sub = row.row(align=True)
-            sub.operator("object.vertex_group_assign", text="Assign").new = False
+            sub.operator("object.vertex_group_assign", text="Assign")
             sub.operator("object.vertex_group_remove_from", text="Remove")
 
             sub = row.row(align=True)
@@ -249,9 +250,9 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 
         row = layout.row()
 
-        rows = 2
+        rows = 1
         if kb:
-            rows = 5
+            rows = 4
         row.template_list("MESH_UL_shape_keys", "", key, "key_blocks", ob, "active_shape_key_index", rows=rows)
 
         col = row.column()
@@ -328,17 +329,17 @@ class DATA_PT_uv_texture(MeshButtonsPanel, Panel):
         layout = self.layout
 
         me = context.mesh
+        lay = me.uv_textures.active
 
         row = layout.row()
         col = row.column()
 
-        col.template_list("MESH_UL_uvmaps_vcols", "uvmaps", me, "uv_textures", me.uv_textures, "active_index", rows=2)
+        col.template_list("MESH_UL_uvmaps_vcols", "uvmaps", me, "uv_textures", me.uv_textures, "active_index", rows=1)
 
         col = row.column(align=True)
         col.operator("mesh.uv_texture_add", icon='ZOOMIN', text="")
         col.operator("mesh.uv_texture_remove", icon='ZOOMOUT', text="")
-
-        lay = me.uv_textures.active
+        
         if lay:
             layout.prop(lay, "name")
 
@@ -351,17 +352,17 @@ class DATA_PT_vertex_colors(MeshButtonsPanel, Panel):
         layout = self.layout
 
         me = context.mesh
+        lay = me.vertex_colors.active
 
         row = layout.row()
         col = row.column()
 
-        col.template_list("MESH_UL_uvmaps_vcols", "vcols", me, "vertex_colors", me.vertex_colors, "active_index", rows=2)
+        col.template_list("MESH_UL_uvmaps_vcols", "vcols", me, "vertex_colors", me.vertex_colors, "active_index", rows=1)
 
         col = row.column(align=True)
         col.operator("mesh.vertex_color_add", icon='ZOOMIN', text="")
         col.operator("mesh.vertex_color_remove", icon='ZOOMOUT', text="")
-
-        lay = me.vertex_colors.active
+        
         if lay:
             layout.prop(lay, "name")
 

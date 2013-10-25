@@ -122,11 +122,11 @@ protected:
 	float _viewplane_bottom;
 	float _viewplane_top;
 	float _z_near, _z_far;
+	float _z_offset;
 
 	RenderMonitor *_pRenderMonitor;
 
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
 	MEM_CXX_CLASS_ALLOC_FUNCS("Freestyle:BlenderFileLoader")
 #endif
 };

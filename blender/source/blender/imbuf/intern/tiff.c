@@ -315,7 +315,7 @@ int imb_is_a_tiff(unsigned char *mem)
 	         (memcmp(lil_endian, mem, IMB_TIFF_NCB) == 0) );
 }
 
-static void scanline_contig_16bit(float *rectf, unsigned short *sbuf, int scanline_w, int spp)
+static void scanline_contig_16bit(float *rectf, const unsigned short *sbuf, int scanline_w, int spp)
 {
 	int i;
 	for (i = 0; i < scanline_w; i++) {
@@ -326,7 +326,7 @@ static void scanline_contig_16bit(float *rectf, unsigned short *sbuf, int scanli
 	}
 }
 
-static void scanline_contig_32bit(float *rectf, float *fbuf, int scanline_w, int spp)
+static void scanline_contig_32bit(float *rectf, const float *fbuf, int scanline_w, int spp)
 {
 	int i;
 	for (i = 0; i < scanline_w; i++) {
@@ -337,14 +337,14 @@ static void scanline_contig_32bit(float *rectf, float *fbuf, int scanline_w, int
 	}
 }
 
-static void scanline_separate_16bit(float *rectf, unsigned short *sbuf, int scanline_w, int chan)
+static void scanline_separate_16bit(float *rectf, const unsigned short *sbuf, int scanline_w, int chan)
 {
 	int i;
 	for (i = 0; i < scanline_w; i++)
 		rectf[i * 4 + chan] = sbuf[i] / 65535.0;
 }
 
-static void scanline_separate_32bit(float *rectf, float *fbuf, int scanline_w, int chan)
+static void scanline_separate_32bit(float *rectf, const float *fbuf, int scanline_w, int chan)
 {
 	int i;
 	for (i = 0; i < scanline_w; i++)
@@ -532,6 +532,7 @@ ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags, char colorspace[
 	int level;
 	short spp;
 	int ib_depth;
+	int found;
 
 	/* check whether or not we have a TIFF file */
 	if (size < IMB_TIFF_NCB) {
@@ -575,10 +576,11 @@ ImBuf *imb_loadtiff(unsigned char *mem, size_t size, int flags, char colorspace[
 		if (spp == 4) {
 			unsigned short extra, *extraSampleTypes;
 
-			TIFFGetField(image, TIFFTAG_EXTRASAMPLES, &extra, &extraSampleTypes);
+			found = TIFFGetField(image, TIFFTAG_EXTRASAMPLES, &extra, &extraSampleTypes);
 
-			if (extraSampleTypes[0] == EXTRASAMPLE_ASSOCALPHA)
+			if (found && (extraSampleTypes[0] == EXTRASAMPLE_ASSOCALPHA)) {
 				ibuf->flags |= IB_alphamode_premul;
+			}
 		}
 	}
 

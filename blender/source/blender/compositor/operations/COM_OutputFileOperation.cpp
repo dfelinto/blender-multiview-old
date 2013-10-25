@@ -47,11 +47,11 @@ static char *view_name(const RenderData *rd, int actview)
 	int nr;
 	int numviews = 0;
 
+	if ((rd->scemode & R_MULTIVIEW) == 0)
+		return NULL;
+
 	/* check renderdata for amount of views */
 	for (nr = 0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
-
-		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
-			continue;
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
@@ -168,7 +168,7 @@ void OutputSingleLayerOperation::deinitExecution()
 		ibuf->mall |= IB_rectfloat; 
 		ibuf->dither = this->m_rd->dither_intensity;
 		
-		IMB_colormanagement_imbuf_for_write(ibuf, TRUE, FALSE, m_viewSettings, m_displaySettings,
+		IMB_colormanagement_imbuf_for_write(ibuf, true, false, m_viewSettings, m_displaySettings,
 		                                    this->m_format);
 
 		const char *view = view_name(this->m_rd, this->m_actview);
@@ -217,15 +217,21 @@ void OutputOpenExrMultiLayerOperation::add_layer(const char *name, DataType data
 void OutputOpenExrMultiLayerOperation::initExecution()
 {
 	for (unsigned int i = 0; i < this->m_layers.size(); ++i) {
-		this->m_layers[i].imageInput = getInputSocketReader(i);
-		this->m_layers[i].outputBuffer = init_buffer(this->getWidth(), this->getHeight(), this->m_layers[i].datatype);
+		SocketReader *reader = getInputSocketReader(i);
+		this->m_layers[i].imageInput = reader;
+		if (reader)
+			this->m_layers[i].outputBuffer = init_buffer(this->getWidth(), this->getHeight(), this->m_layers[i].datatype);
+		else
+			this->m_layers[i].outputBuffer = NULL;
 	}
 }
 
 void OutputOpenExrMultiLayerOperation::executeRegion(rcti *rect, unsigned int tileNumber)
 {
 	for (unsigned int i = 0; i < this->m_layers.size(); ++i) {
-		write_buffer_rect(rect, this->m_tree, this->m_layers[i].imageInput, this->m_layers[i].outputBuffer, this->getWidth(), this->m_layers[i].datatype);
+		OutputOpenExrLayer &layer = this->m_layers[i];
+		if (layer.imageInput)
+			write_buffer_rect(rect, this->m_tree, layer.imageInput, layer.outputBuffer, this->getWidth(), layer.datatype);
 	}
 }
 
@@ -245,6 +251,10 @@ void OutputOpenExrMultiLayerOperation::deinitExecution()
 		BLI_make_existing_file(filename);
 		
 		for (unsigned int i = 0; i < this->m_layers.size(); ++i) {
+			OutputOpenExrLayer &layer = this->m_layers[i];
+			if (!layer.imageInput)
+				continue; /* skip unconnected sockets */
+			
 			char channelname[EXR_TOT_MAXNAME];
 			BLI_strncpy(channelname, this->m_layers[i].name, sizeof(channelname) - 2);
 			char *channelname_ext = channelname + strlen(channelname);

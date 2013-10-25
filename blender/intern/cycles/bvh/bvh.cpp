@@ -295,16 +295,8 @@ void BVH::pack_curve_segment(int idx, float4 woop[3])
 	*	extra curve data <3>    , StrID,
 	*	nextkey, flags/tip?,    0, 0);
 	*/
-	Attribute *attr_tangent = mesh->curve_attributes.find(ATTR_STD_CURVE_TANGENT);
 	float3 tg0 = make_float3(1.0f, 0.0f, 0.0f);
 	float3 tg1 = make_float3(1.0f, 0.0f, 0.0f);
-
-	if(attr_tangent) {
-		const float3 *data_tangent = attr_tangent->data_float3();
-
-		tg0 = data_tangent[k0];
-		tg1 = data_tangent[k1];
-	}
 	
 	Transform tfm = make_transform(
 		tg0.x, tg0.y, tg0.z, l,
@@ -552,9 +544,9 @@ void RegularBVH::pack_node(int idx, const BoundBox& b0, const BoundBox& b1, int 
 {
 	int4 data[BVH_NODE_SIZE] =
 	{
-		make_int4(__float_as_int(b0.min.x), __float_as_int(b0.max.x), __float_as_int(b0.min.y), __float_as_int(b0.max.y)),
-		make_int4(__float_as_int(b1.min.x), __float_as_int(b1.max.x), __float_as_int(b1.min.y), __float_as_int(b1.max.y)),
-		make_int4(__float_as_int(b0.min.z), __float_as_int(b0.max.z), __float_as_int(b1.min.z), __float_as_int(b1.max.z)),
+		make_int4(__float_as_int(b0.min.x), __float_as_int(b1.min.x), __float_as_int(b0.max.x), __float_as_int(b1.max.x)),
+		make_int4(__float_as_int(b0.min.y), __float_as_int(b1.min.y), __float_as_int(b0.max.y), __float_as_int(b1.max.y)),
+		make_int4(__float_as_int(b0.min.z), __float_as_int(b1.min.z), __float_as_int(b0.max.z), __float_as_int(b1.max.z)),
 		make_int4(c0, c1, visibility0, visibility1)
 	};
 
@@ -579,6 +571,7 @@ void RegularBVH::pack_nodes(const array<int>& prims, const BVHNode *root)
 	int nextNodeIdx = 0;
 
 	vector<BVHStackEntry> stack;
+	stack.reserve(BVHParams::MAX_DEPTH*2);
 	stack.push_back(BVHStackEntry(root, nextNodeIdx++));
 
 	while(stack.size()) {
@@ -776,6 +769,7 @@ void QBVH::pack_nodes(const array<int>& prims, const BVHNode *root)
 	int nextNodeIdx = 0;
 
 	vector<BVHStackEntry> stack;
+	stack.reserve(BVHParams::MAX_DEPTH*2);
 	stack.push_back(BVHStackEntry(root, nextNodeIdx++));
 
 	while(stack.size()) {

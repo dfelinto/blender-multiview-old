@@ -67,10 +67,10 @@ class PHYSICS_PT_fluid(PhysicButtonsPanel, Panel):
             # odd formatting here so translation script can extract string
             layout.operator("fluid.bake", text=iface_("Bake (Req. Memory: %s)") % fluid.memory_estimate,
                             translate=False, icon='MOD_FLUIDSIM')
-            
+
             if bpy.app.build_options.openmp:
                 layout.prop(fluid, "threads", text="Simulation Threads")
-            
+
             split = layout.split()
 
             col = split.column()
@@ -246,9 +246,9 @@ class PHYSICS_PT_domain_gravity(PhysicButtonsPanel, Panel):
         sub.operator("fluid.preset_add", text="", icon='ZOOMIN')
         sub.operator("fluid.preset_add", text="", icon='ZOOMOUT').remove_active = True
 
-        subsub = col.column(align=True)
-        subsub.prop(fluid, "viscosity_base", text="Base")
-        subsub.prop(fluid, "viscosity_exponent", text="Exponent", slider=True)
+        sub = col.column(align=True)
+        sub.prop(fluid, "viscosity_base", text="Base")
+        sub.prop(fluid, "viscosity_exponent", text="Exponent", slider=True)
 
         col.label(text="Optimization:")
         col.prop(fluid, "grid_levels", slider=True)

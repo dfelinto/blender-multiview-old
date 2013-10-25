@@ -147,7 +147,7 @@ void geom(vec3 co, vec3 nor, mat4 viewinvmat, vec3 attorco, vec2 attuv, vec4 att
 	normal = -normalize(nor);	/* blender render normal is negated */
 	vcol_attribute(attvcol, vcol);
 	vcol_alpha = attvcol.a;
-	frontback = 1.0;
+	frontback = (gl_FrontFacing)? 1.0: 0.0;
 }
 
 void mapping(vec3 vec, mat4 mat, vec3 minvec, vec3 maxvec, float domin, float domax, out vec3 outvec)
@@ -1415,6 +1415,16 @@ void mtex_nspace_tangent(vec4 tangent, vec3 normal, vec3 texnormal, out vec3 out
 	outnormal = normalize(outnormal);
 }
 
+void mtex_nspace_world(mat4 viewmat, vec3 texnormal, out vec3 outnormal)
+{
+	outnormal = normalize((viewmat*vec4(texnormal, 0.0)).xyz);
+}
+
+void mtex_nspace_object(mat4 viewmat, mat4 obmat, vec3 texnormal, out vec3 outnormal)
+{
+	outnormal = normalize((viewmat*(obmat*vec4(texnormal, 0.0))).xyz);
+}
+
 void mtex_blend_normal(float norfac, vec3 normal, vec3 newnormal, out vec3 outnormal)
 {
 	outnormal = (1.0 - norfac)*normal + norfac*newnormal;
@@ -2087,9 +2097,14 @@ void node_bsdf_velvet(vec4 color, float sigma, vec3 N, out vec4 result)
 	node_bsdf_diffuse(color, 0.0, N, result);
 }
 
-void node_subsurface_scattering(vec4 color, float roughness, vec3 N, out vec4 result)
+void node_subsurface_scattering(vec4 color, float scale, vec3 radius, float sharpen, float texture_blur, vec3 N, out vec4 result)
 {
 	node_bsdf_diffuse(color, 0.0, N, result);
+}
+
+void node_bsdf_hair(vec4 color, float roughnessu, float roughnessv, out vec4 result)
+{
+	result = color;
 }
 
 /* emission */
@@ -2116,7 +2131,21 @@ void node_add_shader(vec4 shader1, vec4 shader2, out vec4 shader)
 void node_fresnel(float ior, vec3 N, vec3 I, out float result)
 {
 	float eta = max(ior, 0.00001);
-	result = fresnel_dielectric(I, N, eta); //backfacing() ? 1.0/eta: eta);
+	result = fresnel_dielectric(I, N, (gl_FrontFacing)? eta: 1.0/eta);
+}
+
+/* gamma */
+
+void node_gamma(vec4 col, float gamma, out vec4 outcol)
+{
+	outcol = col;
+
+	if(col.r > 0.0)
+		outcol.r = compatible_pow(col.r, gamma);
+	if(col.g > 0.0)
+		outcol.g = compatible_pow(col.g, gamma);
+	if(col.b > 0.0)
+		outcol.b = compatible_pow(col.b, gamma);
 }
 
 /* geometry */
@@ -2139,7 +2168,7 @@ void node_geometry(vec3 I, vec3 N, mat4 toworld,
 	true_normal = N;
 	incoming = I;
 	parametric = vec3(0.0);
-	backfacing = 0.0;
+	backfacing = (gl_FrontFacing)? 0.0: 1.0;
 }
 
 void node_tex_coord(vec3 I, vec3 N, mat4 viewinvmat, mat4 obinvmat,

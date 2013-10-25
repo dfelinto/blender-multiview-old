@@ -47,6 +47,8 @@
 #  pragma GCC diagnostic error "-Wsign-conversion"
 #endif
 
+// #define DEBUG_STRSIZE
+
 /**
  * Duplicates the first \a len bytes of cstring \a str
  * into a newly mallocN'd string and returns it. \a str
@@ -85,15 +87,18 @@ char *BLI_strdup(const char *str)
  */
 char *BLI_strdupcat(const char *__restrict str1, const char *__restrict str2)
 {
-	size_t len;
-	char *n;
+	/* include the NULL terminator of str2 only */
+	const size_t str1_len = strlen(str1);
+	const size_t str2_len = strlen(str2) + 1;
+	char *str, *s;
 	
-	len = strlen(str1) + strlen(str2);
-	n = MEM_mallocN(len + 1, "strdupcat");
-	strcpy(n, str1);
-	strcat(n, str2);
-	
-	return n;
+	str = MEM_mallocN(str1_len + str2_len, "strdupcat");
+	s = str;
+
+	memcpy(s, str1, str1_len); s += str1_len;
+	memcpy(s, str2, str2_len);
+
+	return str;
 }
 
 /**
@@ -110,6 +115,10 @@ char *BLI_strncpy(char *__restrict dst, const char *__restrict src, const size_t
 {
 	size_t srclen = BLI_strnlen(src, maxncpy - 1);
 	BLI_assert(maxncpy != 0);
+
+#ifdef DEBUG_STRSIZE
+	memset(dst, 0xff, sizeof(*dst) * maxncpy);
+#endif
 
 	memcpy(dst, src, srclen);
 	dst[srclen] = '\0';
@@ -134,29 +143,40 @@ size_t BLI_strncpy_rlen(char *__restrict dst, const char *__restrict src, const 
 	size_t srclen = BLI_strnlen(src, maxncpy - 1);
 	BLI_assert(maxncpy != 0);
 
+#ifdef DEBUG_STRSIZE
+	memset(dst, 0xff, sizeof(*dst) * maxncpy);
+#endif
+
 	memcpy(dst, src, srclen);
 	dst[srclen] = '\0';
+	return srclen;
+}
+
+size_t BLI_strcpy_rlen(char *__restrict dst, const char *__restrict src)
+{
+	size_t srclen = strlen(src);
+	memcpy(dst, src, srclen + 1);
 	return srclen;
 }
 
 /**
  * Portable replacement for #vsnprintf
  */
-size_t BLI_vsnprintf(char *__restrict buffer, size_t count, const char *__restrict format, va_list arg)
+size_t BLI_vsnprintf(char *__restrict buffer, size_t maxncpy, const char *__restrict format, va_list arg)
 {
 	size_t n;
 
 	BLI_assert(buffer != NULL);
-	BLI_assert(count > 0);
+	BLI_assert(maxncpy > 0);
 	BLI_assert(format != NULL);
 
-	n = (size_t)vsnprintf(buffer, count, format, arg);
+	n = (size_t)vsnprintf(buffer, maxncpy, format, arg);
 
-	if (n != -1 && n < count) {
+	if (n != -1 && n < maxncpy) {
 		buffer[n] = '\0';
 	}
 	else {
-		buffer[count - 1] = '\0';
+		buffer[maxncpy - 1] = '\0';
 	}
 
 	return n;
@@ -165,13 +185,17 @@ size_t BLI_vsnprintf(char *__restrict buffer, size_t count, const char *__restri
 /**
  * Portable replacement for #snprintf
  */
-size_t BLI_snprintf(char *__restrict buffer, size_t count, const char *__restrict format, ...)
+size_t BLI_snprintf(char *__restrict dst, size_t maxncpy, const char *__restrict format, ...)
 {
 	size_t n;
 	va_list arg;
 
+#ifdef DEBUG_STRSIZE
+	memset(dst, 0xff, sizeof(*dst) * maxncpy);
+#endif
+
 	va_start(arg, format);
-	n = BLI_vsnprintf(buffer, count, format, arg);
+	n = BLI_vsnprintf(dst, maxncpy, format, arg);
 	va_end(arg);
 
 	return n;
@@ -219,6 +243,7 @@ size_t BLI_strescape(char *__restrict dst, const char *__restrict src, const siz
 				goto escape_finish;
 			case '\\':
 			case '"':
+				/* fall-through */
 
 			/* less common but should also be support */
 			case '\t':
@@ -232,9 +257,10 @@ size_t BLI_strescape(char *__restrict dst, const char *__restrict src, const siz
 					/* not enough space to escape */
 					break;
 				}
-			/* intentionally pass through */
+				/* fall-through */
 			default:
 				*dst = *src;
+				break;
 		}
 		dst++;
 		src++;
@@ -279,34 +305,30 @@ char *BLI_str_quoted_substrN(const char *__restrict str, const char *__restrict 
 }
 
 /**
+ * string with all instances of substr_old replaced with substr_new,
  * Returns a copy of the cstring \a str into a newly mallocN'd
- * string with all instances of oldText replaced with newText,
  * and returns it.
  *
  * \note A rather wasteful string-replacement utility, though this shall do for now...
  * Feel free to replace this with an even safe + nicer alternative
  *
- * \param str The string to replace occurrences of oldText in
- * \param oldText The text in the string to find and replace
- * \param newText The text in the string to find and replace
+ * \param str The string to replace occurrences of substr_old in
+ * \param substr_old The text in the string to find and replace
+ * \param substr_new The text in the string to find and replace
  * \retval Returns the duplicated string
  */
-char *BLI_replacestr(char *__restrict str, const char *__restrict oldText, const char *__restrict newText)
+char *BLI_replacestrN(const char *__restrict str, const char *__restrict substr_old, const char *__restrict substr_new)
 {
 	DynStr *ds = NULL;
-	size_t lenOld = strlen(oldText);
-	char *match;
-	
-	/* sanity checks */
-	if ((str == NULL) || (str[0] == 0))
-		return NULL;
-	else if ((oldText == NULL) || (newText == NULL) || (oldText[0] == 0))
-		return BLI_strdup(str);
-	
+	size_t len_old = strlen(substr_old);
+	const char *match;
+
+	BLI_assert(substr_old[0] != '\0');
+
 	/* while we can still find a match for the old substring that we're searching for, 
 	 * keep dicing and replacing
 	 */
-	while ( (match = strstr(str, oldText)) ) {
+	while ((match = strstr(str, substr_old))) {
 		/* the assembly buffer only gets created when we actually need to rebuild the string */
 		if (ds == NULL)
 			ds = BLI_dynstr_new();
@@ -315,39 +337,35 @@ char *BLI_replacestr(char *__restrict str, const char *__restrict oldText, const
 		 * copy the text up to this position and advance the current position in the string
 		 */
 		if (str != match) {
-			/* replace the token at the 'match' position with \0 so that the copied string will be ok,
-			 * add the segment of the string from str to match to the buffer, then restore the value at match
+			/* add the segment of the string from str to match to the buffer, then restore the value at match
 			 */
-			match[0] = 0;
-			BLI_dynstr_append(ds, str);
-			match[0] = oldText[0];
+			BLI_dynstr_nappend(ds, str, (match - str));
 			
 			/* now our current position should be set on the start of the match */
 			str = match;
 		}
 		
 		/* add the replacement text to the accumulation buffer */
-		BLI_dynstr_append(ds, newText);
+		BLI_dynstr_append(ds, substr_new);
 		
 		/* advance the current position of the string up to the end of the replaced segment */
-		str += lenOld;
+		str += len_old;
 	}
 	
 	/* finish off and return a new string that has had all occurrences of */
 	if (ds) {
-		char *newStr;
+		char *str_new;
 		
 		/* add what's left of the string to the assembly buffer 
-		 *	- we've been adjusting str to point at the end of the replaced segments
+		 * - we've been adjusting str to point at the end of the replaced segments
 		 */
-		if (str != NULL)
-			BLI_dynstr_append(ds, str);
+		BLI_dynstr_append(ds, str);
 		
 		/* convert to new c-string (MEM_malloc'd), and free the buffer */
-		newStr = BLI_dynstr_get_cstring(ds);
+		str_new = BLI_dynstr_get_cstring(ds);
 		BLI_dynstr_free(ds);
 		
-		return newStr;
+		return str_new;
 	}
 	else {
 		/* just create a new copy of the entire string - we avoid going through the assembly buffer 
@@ -549,7 +567,7 @@ void BLI_timestr(double _time, char *str, size_t maxlen)
 }
 
 /* determine the length of a fixed-size string */
-size_t BLI_strnlen(const char *s, size_t maxlen)
+size_t BLI_strnlen(const char *s, const size_t maxlen)
 {
 	size_t len;
 

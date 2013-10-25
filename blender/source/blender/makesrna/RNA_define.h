@@ -42,8 +42,8 @@ extern "C" {
 BlenderRNA *RNA_create(void);
 void RNA_define_free(BlenderRNA *brna);
 void RNA_free(BlenderRNA *brna);
-void RNA_define_verify_sdna(int verify);
-void RNA_define_animate_sdna(int animate);
+void RNA_define_verify_sdna(bool verify);
+void RNA_define_animate_sdna(bool animate);
 
 void RNA_init(void);
 void RNA_exit(void);
@@ -164,7 +164,7 @@ void RNA_def_property_update(PropertyRNA *prop, int noteflag, const char *update
 void RNA_def_property_editable_func(PropertyRNA *prop, const char *editable);
 void RNA_def_property_editable_array_func(PropertyRNA *prop, const char *editable);
 
-void RNA_def_property_update_runtime(PropertyRNA *prop, void *func);
+void RNA_def_property_update_runtime(PropertyRNA *prop, const void *func);
 
 void RNA_def_property_dynamic_array_funcs(PropertyRNA *prop, const char *getlength);
 void RNA_def_property_boolean_funcs(PropertyRNA *prop, const char *get, const char *set);
@@ -224,6 +224,10 @@ const char *RNA_property_typename(PropertyType type);
 #define IS_DNATYPE_INT_COMPAT(_str) (strcmp(_str, "int") == 0 || strcmp(_str, "short") == 0 || strcmp(_str, "char") == 0)
 
 void RNA_identifier_sanitize(char *identifier, int property);
+
+extern const int rna_matrix_dimsize_3x3[];
+extern const int rna_matrix_dimsize_4x4[];
+extern const int rna_matrix_dimsize_4x2[];
 
 /* max size for dynamic defined type descriptors,
  * this value is arbitrary */

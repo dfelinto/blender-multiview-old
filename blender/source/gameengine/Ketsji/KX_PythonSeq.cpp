@@ -15,11 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: none of this file.
- *
  * Contributor(s): Campbell Barton
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -409,7 +404,8 @@ static PyObject *KX_PythonSeq_richcmp(PyObject *a, PyObject *b, int op)
 	
 	switch (op) {
 	case Py_NE:
-		ok = !ok; /* pass through */
+		ok = !ok;
+		/* fall-through */
 	case Py_EQ:
 		res = ok ? Py_False : Py_True;
 		break;

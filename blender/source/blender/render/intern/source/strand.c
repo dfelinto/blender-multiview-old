@@ -15,11 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: none of this file.
- *
  * Contributors: Brecht Van Lommel.
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -788,7 +783,7 @@ int zbuffer_strands_abuf(Render *re, RenderPart *pa, APixstrand *apixbuf, ListBa
 	ObjectRen *obr;
 	ObjectInstanceRen *obi;
 	ZSpan zspan;
-	StrandRen *strand=0;
+	StrandRen *strand = NULL;
 	StrandVert *svert;
 	StrandBound *sbound;
 	StrandPart spart;

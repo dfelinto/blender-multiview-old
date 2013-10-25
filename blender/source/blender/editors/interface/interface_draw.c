@@ -561,7 +561,7 @@ void ui_draw_but_HISTOGRAM(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wcol)
 
 	glColor4f(1.f, 1.f, 1.f, 0.08f);
 	/* draw grid lines here */
-	for (i = 1; i < (HISTOGRAM_TOT_GRID_LINES + 1); i++) {
+	for (i = 1; i <= HISTOGRAM_TOT_GRID_LINES; i++) {
 		const float fac = (float)i / (float)HISTOGRAM_TOT_GRID_LINES;
 
 		/* so we can tell the 1.0 color point */
@@ -1389,7 +1389,7 @@ void ui_draw_but_TRACKPREVIEW(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wc
 
 	if (scopes->track_disabled) {
 		glColor4f(0.7f, 0.3f, 0.3f, 0.3f);
-		uiSetRoundBox(15);
+		uiSetRoundBox(UI_CNR_ALL);
 		uiDrawBox(GL_POLYGON, rect.xmin - 1, rect.ymin, rect.xmax + 1, rect.ymax + 1, 3.0f);
 
 		ok = 1;
@@ -1437,7 +1437,7 @@ void ui_draw_but_TRACKPREVIEW(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wc
 
 			if (scopes->use_track_mask) {
 				glColor4f(0.0f, 0.0f, 0.0f, 0.3f);
-				uiSetRoundBox(15);
+				uiSetRoundBox(UI_CNR_ALL);
 				uiDrawBox(GL_POLYGON, rect.xmin - 1, rect.ymin, rect.xmax + 1, rect.ymax + 1, 3.0f);
 			}
 
@@ -1478,7 +1478,7 @@ void ui_draw_but_TRACKPREVIEW(ARegion *ar, uiBut *but, uiWidgetColors *UNUSED(wc
 
 	if (!ok) {
 		glColor4f(0.f, 0.f, 0.f, 0.3f);
-		uiSetRoundBox(15);
+		uiSetRoundBox(UI_CNR_ALL);
 		uiDrawBox(GL_POLYGON, rect.xmin - 1, rect.ymin, rect.xmax + 1, rect.ymax + 1, 3.0f);
 	}
 

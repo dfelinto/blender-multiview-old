@@ -220,10 +220,10 @@ const char *Node::RenderData_get_actview_name (const RenderData *rd, int actview
 	SceneRenderView *srv;
 	int view_id, nr;
 
-	for (view_id=0, nr=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next, nr++) {
+	if ((rd->scemode & R_MULTIVIEW) == 0)
+		return "";
 
-		if ((rd->scemode & R_SINGLE_VIEW) && nr != rd->actview)
-			continue;
+	for (view_id=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;

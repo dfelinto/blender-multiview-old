@@ -199,7 +199,7 @@ bool BLI_file_touch(const char *file)
 {
 	FILE *f = BLI_fopen(file, "r+b");
 	if (f != NULL) {
-		char c = getc(f);
+		int c = getc(f);
 		rewind(f);
 		putc(c, f);
 	}
@@ -214,6 +214,11 @@ bool BLI_file_touch(const char *file)
 }
 
 #ifdef WIN32
+
+static void callLocalErrorCallBack(const char *err)
+{
+	printf("%s\n", err);
+}
 
 static char str[MAXPATHLEN + 12];
 
@@ -251,7 +256,7 @@ void *BLI_gzopen(const char *filename, const char *mode)
 			fclose(ufopen(filename, "a"));
 
 		/* temporary #if until we update all libraries to 1.2.7
-		 * for  correct wide char path handling */
+		 * for correct wide char path handling */
 #if ZLIB_VERNUM >= 0x1270 && !defined(FREE_WINDOWS)
 		UTF16_ENCODE(filename);
 
@@ -445,7 +450,7 @@ static void join_dirfile_alloc(char **dst, size_t *alloc_len, const char *dir, c
 	size_t len = strlen(dir) + strlen(file) + 1;
 
 	if (*dst == NULL)
-		*dst = MEM_callocN(len + 1, "join_dirfile_alloc path");
+		*dst = MEM_mallocN(len + 1, "join_dirfile_alloc path");
 	else if (*alloc_len < len)
 		*dst = MEM_reallocN(*dst, len + 1);
 
@@ -911,18 +916,15 @@ void BLI_dir_create_recursive(const char *dirname)
 	char static_buf[MAXPATHLEN];
 #endif
 	char *tmp;
-	int needs_free;
 
 	if (BLI_exists(dirname)) return;
 
 #ifdef MAXPATHLEN
 	size = MAXPATHLEN;
 	tmp = static_buf;
-	needs_free = 0;
 #else
 	size = strlen(dirname) + 1;
-	tmp = MEM_callocN(size, "BLI_dir_create_recursive tmp");
-	needs_free = 1;
+	tmp = MEM_callocN(size, __func__);
 #endif
 
 	BLI_strncpy(tmp, dirname, size);
@@ -934,8 +936,9 @@ void BLI_dir_create_recursive(const char *dirname)
 		BLI_dir_create_recursive(tmp);
 	}
 
-	if (needs_free)
-		MEM_freeN(tmp);
+#ifndef MAXPATHLEN
+	MEM_freeN(tmp);
+#endif
 
 	mkdir(dirname, 0777);
 }

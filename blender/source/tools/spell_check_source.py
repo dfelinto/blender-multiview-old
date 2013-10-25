@@ -61,6 +61,7 @@ def words_from_text(text):
     text = text.replace("+", " ")
     text = text.replace("%", " ")
     text = text.replace(",", " ")
+    text = text.replace("=", " ")
     text = text.replace("|", " ")
     words = text.split()
 
@@ -70,6 +71,10 @@ def words_from_text(text):
     def word_ok(w):
         # check for empty string
         if not w:
+            return False
+
+        # ignore all uppercase words
+        if w.isupper():
             return False
 
         # check for string with no characters in it

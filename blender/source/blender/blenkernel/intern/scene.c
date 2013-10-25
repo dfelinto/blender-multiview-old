@@ -44,6 +44,7 @@
 
 #include "DNA_anim_types.h"
 #include "DNA_group_types.h"
+#include "DNA_linestyle_types.h"
 #include "DNA_node_types.h"
 #include "DNA_object_types.h"
 #include "DNA_rigidbody_types.h"
@@ -157,6 +158,7 @@ Scene *BKE_scene_copy(Scene *sce, int type)
 		rv = scen->r.views;
 		scen->r = sce->r;
 		scen->r.layers = rl;
+		scen->r.actlay = 0;
 		scen->r.views = rv;
 		scen->unit = sce->unit;
 		scen->physics_settings = sce->physics_settings;
@@ -434,7 +436,7 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	sce->r.filtertype = R_FILTER_MITCH;
 	sce->r.size = 50;
 
-	sce->r.im_format.planes = R_IMF_PLANES_RGB;
+	sce->r.im_format.planes = R_IMF_PLANES_RGBA;
 	sce->r.im_format.imtype = R_IMF_IMTYPE_PNG;
 	sce->r.im_format.depth = R_IMF_CHAN_DEPTH_8;
 	sce->r.im_format.quality = 90;
@@ -497,23 +499,10 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	sce->r.border.ymax = 1.0f;
 	
 	sce->toolsettings = MEM_callocN(sizeof(struct ToolSettings), "Tool Settings Struct");
-	sce->toolsettings->cornertype = 1;
-	sce->toolsettings->degr = 90; 
-	sce->toolsettings->step = 9;
-	sce->toolsettings->turn = 1;
-	sce->toolsettings->extr_offs = 1; 
 	sce->toolsettings->doublimit = 0.001;
-	sce->toolsettings->segments = 32;
-	sce->toolsettings->rings = 32;
-	sce->toolsettings->vertices = 32;
-	sce->toolsettings->uvcalc_radius = 1.0f;
-	sce->toolsettings->uvcalc_cubesize = 1.0f;
-	sce->toolsettings->uvcalc_mapdir = 1;
-	sce->toolsettings->uvcalc_mapalign = 1;
 	sce->toolsettings->uvcalc_margin = 0.001f;
 	sce->toolsettings->unwrapper = 1;
 	sce->toolsettings->select_thresh = 0.01f;
-	sce->toolsettings->jointrilimit = 0.8f;
 
 	sce->toolsettings->selectmode = SCE_SELECT_VERTEX;
 	sce->toolsettings->uv_selectmode = UV_SELECT_VERTEX;
@@ -702,12 +691,9 @@ void BKE_scene_set_background(Main *bmain, Scene *scene)
 		}
 	}
 
-	/* sort baselist */
-	DAG_scene_relations_rebuild(bmain, scene);
-	
-	/* ensure dags are built for sets */
+	/* sort baselist for scene and sets */
 	for (sce = scene; sce; sce = sce->set)
-		DAG_scene_relations_update(bmain, sce);
+		DAG_scene_relations_rebuild(bmain, sce);
 
 	/* copy layers and flags from bases to objects */
 	for (base = scene->base.first; base; base = base->next) {
@@ -764,17 +750,16 @@ void BKE_scene_unlink(Main *bmain, Scene *sce, Scene *newsce)
 /* used by metaballs
  * doesn't return the original duplicated object, only dupli's
  */
-int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
+int BKE_scene_base_iter_next(SceneBaseIter *iter, Scene **scene, int val, Base **base, Object **ob)
 {
-	static ListBase *duplilist = NULL;
-	static DupliObject *dupob;
-	static int fase = F_START, in_next_object = 0;
+	static int in_next_object = 0;
 	int run_again = 1;
 	
 	/* init */
 	if (val == 0) {
-		fase = F_START;
-		dupob = NULL;
+		iter->fase = F_START;
+		iter->dupob = NULL;
+		iter->duplilist = NULL;
 		
 		/* XXX particle systems with metas+dupligroups call this recursively */
 		/* see bug #18725 */
@@ -792,11 +777,11 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 			run_again = 0;
 
 			/* the first base */
-			if (fase == F_START) {
+			if (iter->fase == F_START) {
 				*base = (*scene)->base.first;
 				if (*base) {
 					*ob = (*base)->object;
-					fase = F_SCENE;
+					iter->fase = F_SCENE;
 				}
 				else {
 					/* exception: empty scene */
@@ -805,20 +790,20 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 						if ((*scene)->base.first) {
 							*base = (*scene)->base.first;
 							*ob = (*base)->object;
-							fase = F_SCENE;
+							iter->fase = F_SCENE;
 							break;
 						}
 					}
 				}
 			}
 			else {
-				if (*base && fase != F_DUPLI) {
+				if (*base && iter->fase != F_DUPLI) {
 					*base = (*base)->next;
 					if (*base) {
 						*ob = (*base)->object;
 					}
 					else {
-						if (fase == F_SCENE) {
+						if (iter->fase == F_SCENE) {
 							/* (*scene) is finished, now do the set */
 							while ((*scene)->set) {
 								(*scene) = (*scene)->set;
@@ -834,45 +819,45 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 			}
 			
 			if (*base == NULL) {
-				fase = F_START;
+				iter->fase = F_START;
 			}
 			else {
-				if (fase != F_DUPLI) {
+				if (iter->fase != F_DUPLI) {
 					if ( (*base)->object->transflag & OB_DUPLI) {
 						/* groups cannot be duplicated for mballs yet, 
 						 * this enters eternal loop because of 
 						 * makeDispListMBall getting called inside of group_duplilist */
 						if ((*base)->object->dup_group == NULL) {
-							duplilist = object_duplilist((*scene), (*base)->object, FALSE);
+							iter->duplilist = object_duplilist((*scene), (*base)->object, FALSE);
 							
-							dupob = duplilist->first;
+							iter->dupob = iter->duplilist->first;
 
-							if (!dupob)
-								free_object_duplilist(duplilist);
+							if (!iter->dupob)
+								free_object_duplilist(iter->duplilist);
 						}
 					}
 				}
 				/* handle dupli's */
-				if (dupob) {
+				if (iter->dupob) {
 					
-					copy_m4_m4(dupob->ob->obmat, dupob->mat);
+					copy_m4_m4(iter->dupob->ob->obmat, iter->dupob->mat);
 					
 					(*base)->flag |= OB_FROMDUPLI;
-					*ob = dupob->ob;
-					fase = F_DUPLI;
+					*ob = iter->dupob->ob;
+					iter->fase = F_DUPLI;
 					
-					dupob = dupob->next;
+					iter->dupob = iter->dupob->next;
 				}
-				else if (fase == F_DUPLI) {
-					fase = F_SCENE;
+				else if (iter->fase == F_DUPLI) {
+					iter->fase = F_SCENE;
 					(*base)->flag &= ~OB_FROMDUPLI;
 					
-					for (dupob = duplilist->first; dupob; dupob = dupob->next) {
-						copy_m4_m4(dupob->ob->obmat, dupob->omat);
+					for (iter->dupob = iter->duplilist->first; iter->dupob; iter->dupob = iter->dupob->next) {
+						copy_m4_m4(iter->dupob->ob->obmat, iter->dupob->omat);
 					}
 					
-					free_object_duplilist(duplilist);
-					duplilist = NULL;
+					free_object_duplilist(iter->duplilist);
+					iter->duplilist = NULL;
 					run_again = 1;
 				}
 			}
@@ -888,7 +873,7 @@ int BKE_scene_base_iter_next(Scene **scene, int val, Base **base, Object **ob)
 	/* reset recursion test */
 	in_next_object = 0;
 	
-	return fase;
+	return iter->fase;
 }
 
 Object *BKE_scene_camera_find(Scene *sc)
@@ -908,18 +893,35 @@ Object *BKE_scene_camera_switch_find(Scene *scene)
 	TimeMarker *m;
 	int cfra = scene->r.cfra;
 	int frame = -(MAXFRAME + 1);
+	int min_frame = MAXFRAME + 1;
 	Object *camera = NULL;
+	Object *first_camera = NULL;
 
 	for (m = scene->markers.first; m; m = m->next) {
-		if (m->camera && (m->camera->restrictflag & OB_RESTRICT_RENDER) == 0 && (m->frame <= cfra) && (m->frame > frame)) {
-			camera = m->camera;
-			frame = m->frame;
+		if (m->camera && (m->camera->restrictflag & OB_RESTRICT_RENDER) == 0) {
+			if ((m->frame <= cfra) && (m->frame > frame)) {
+				camera = m->camera;
+				frame = m->frame;
 
-			if (frame == cfra)
-				break;
+				if (frame == cfra)
+					break;
+			}
 
+			if (m->frame < min_frame) {
+				first_camera = m->camera;
+				min_frame = m->frame;
+			}
 		}
 	}
+
+	if (camera == NULL) {
+		/* If there's no marker to the left of current frame,
+		 * use camera from left-most marker to solve all sort
+		 * of Schrodinger uncertainties.
+		 */
+		return first_camera;
+	}
+
 	return camera;
 }
 #endif
@@ -1063,6 +1065,21 @@ float BKE_scene_frame_get_from_ctime(Scene *scene, const float frame)
 	return ctime;
 }
 
+/**
+ * Sets the frame int/float components.
+ */
+void BKE_scene_frame_set(struct Scene *scene, double cfra)
+{
+	double intpart;
+	scene->r.subframe = modf(cfra, &intpart);
+	scene->r.cfra = (int)intpart;
+
+	if (cfra < 0.0) {
+		scene->r.cfra -= 1;
+		scene->r.subframe = 1.0f + scene->r.subframe;
+	}
+}
+
 /* drivers support/hacks 
  *  - this method is called from scene_update_tagged_recursive(), so gets included in viewport + render
  *	- these are always run since the depsgraph can't handle non-object data
@@ -1071,6 +1088,7 @@ float BKE_scene_frame_get_from_ctime(Scene *scene, const float frame)
  */
 static void scene_update_drivers(Main *UNUSED(bmain), Scene *scene)
 {
+	SceneRenderLayer *srl;
 	float ctime = BKE_scene_frame_get(scene);
 	
 	/* scene itself */
@@ -1104,6 +1122,22 @@ static void scene_update_drivers(Main *UNUSED(bmain), Scene *scene)
 		
 		if (adt && adt->drivers.first)
 			BKE_animsys_evaluate_animdata(scene, nid, adt, ctime, ADT_RECALC_DRIVERS);
+	}
+
+	/* freestyle */
+	for (srl = scene->r.layers.first; srl; srl = srl->next) {
+		FreestyleConfig *config = &srl->freestyleConfig;
+		FreestyleLineSet *lineset;
+
+		for (lineset = config->linesets.first; lineset; lineset = lineset->next) {
+			if (lineset->linestyle) {
+				ID *lid = &lineset->linestyle->id;
+				AnimData *adt = BKE_animdata_from_id(lid);
+
+				if (adt && adt->drivers.first)
+					BKE_animsys_evaluate_animdata(scene, lid, adt, ctime, ADT_RECALC_DRIVERS);
+			}
+		}
 	}
 }
 

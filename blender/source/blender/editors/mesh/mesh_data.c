@@ -37,8 +37,8 @@
 #include "DNA_view3d_types.h"
 
 #include "BLI_utildefines.h"
+#include "BLI_alloca.h"
 #include "BLI_path_util.h"
-#include "BLI_array.h"
 #include "BLI_math.h"
 
 #include "BKE_context.h"
@@ -116,6 +116,7 @@ static CustomData *mesh_customdata_get_type(Mesh *me, const char htype, int *r_t
 			BLI_assert(0);
 			tot = 0;
 			data = NULL;
+			break;
 	}
 
 	*r_tot = tot;
@@ -125,97 +126,21 @@ static CustomData *mesh_customdata_get_type(Mesh *me, const char htype, int *r_t
 #define GET_CD_DATA(me, data) (me->edit_btmesh ? &me->edit_btmesh->bm->data : &me->data)
 static void delete_customdata_layer(Mesh *me, CustomDataLayer *layer)
 {
+	const int type = layer->type;
 	CustomData *data;
-	void *actlayerdata, *rndlayerdata, *clonelayerdata, *stencillayerdata, *layerdata = layer->data;
-	int type = layer->type;
-	int index;
-	int i, actindex, rndindex, cloneindex, stencilindex, tot;
+	int layer_index, tot, n;
 
-	if (layer->type == CD_MLOOPCOL || layer->type == CD_MLOOPUV) {
-		data = mesh_customdata_get_type(me, BM_LOOP, &tot);
-	}
-	else {
-		data = mesh_customdata_get_type(me, BM_FACE, &tot);
-	}
-	
-	index = CustomData_get_layer_index(data, type);
-
-	/* ok, deleting a non-active layer needs to preserve the active layer indices.
-	 * to do this, we store a pointer to the .data member of both layer and the active layer,
-	 * (to detect if we're deleting the active layer or not), then use the active
-	 * layer data pointer to find where the active layer has ended up.
-	 *
-	 * this is necessary because the deletion functions only support deleting the active
-	 * layer. */
-	actlayerdata = data->layers[CustomData_get_active_layer_index(data, type)].data;
-	rndlayerdata = data->layers[CustomData_get_render_layer_index(data, type)].data;
-	clonelayerdata = data->layers[CustomData_get_clone_layer_index(data, type)].data;
-	stencillayerdata = data->layers[CustomData_get_stencil_layer_index(data, type)].data;
-	CustomData_set_layer_active(data, type, layer - &data->layers[index]);
+	data = mesh_customdata_get_type(me, (ELEM(type, CD_MLOOPUV, CD_MLOOPCOL)) ? BM_LOOP : BM_FACE, &tot);
+	layer_index = CustomData_get_layer_index(data, type);
+	n = (layer - &data->layers[layer_index]);
+	BLI_assert(n >= 0 && (n + layer_index) < data->totlayer);
 
 	if (me->edit_btmesh) {
-		BM_data_layer_free(me->edit_btmesh->bm, data, type);
+		BM_data_layer_free_n(me->edit_btmesh->bm, data, type, n);
 	}
 	else {
-		CustomData_free_layer_active(data, type, tot);
+		CustomData_free_layer(data, type, tot, layer_index + n);
 		BKE_mesh_update_customdata_pointers(me, true);
-	}
-
-	/* reconstruct active layer */
-	if (actlayerdata != layerdata) {
-		/* find index */
-		actindex = CustomData_get_layer_index(data, type);
-		for (i = actindex; i < data->totlayer; i++) {
-			if (data->layers[i].data == actlayerdata) {
-				actindex = i - actindex;
-				break;
-			}
-		}
-		
-		/* set index */
-		CustomData_set_layer_active(data, type, actindex);
-	}
-	
-	if (rndlayerdata != layerdata) {
-		/* find index */
-		rndindex = CustomData_get_layer_index(data, type);
-		for (i = rndindex; i < data->totlayer; i++) {
-			if (data->layers[i].data == rndlayerdata) {
-				rndindex = i - rndindex;
-				break;
-			}
-		}
-		
-		/* set index */
-		CustomData_set_layer_render(data, type, rndindex);
-	}
-	
-	if (clonelayerdata != layerdata) {
-		/* find index */
-		cloneindex = CustomData_get_layer_index(data, type);
-		for (i = cloneindex; i < data->totlayer; i++) {
-			if (data->layers[i].data == clonelayerdata) {
-				cloneindex = i - cloneindex;
-				break;
-			}
-		}
-		
-		/* set index */
-		CustomData_set_layer_clone(data, type, cloneindex);
-	}
-	
-	if (stencillayerdata != layerdata) {
-		/* find index */
-		stencilindex = CustomData_get_layer_index(data, type);
-		for (i = stencilindex; i < data->totlayer; i++) {
-			if (data->layers[i].data == stencillayerdata) {
-				stencilindex = i - stencilindex;
-				break;
-			}
-		}
-		
-		/* set index */
-		CustomData_set_layer_stencil(data, type, stencilindex);
 	}
 }
 
@@ -642,7 +567,7 @@ static int drop_named_image_invoke(bContext *C, wmOperator *op, const wmEvent *e
 	obedit = base->object;
 	me = obedit->data;
 	if (me->edit_btmesh == NULL) {
-		EDBM_mesh_make(scene->toolsettings, scene, obedit);
+		EDBM_mesh_make(scene->toolsettings, obedit);
 		exitmode = 1;
 	}
 	if (me->edit_btmesh == NULL)
@@ -1244,12 +1169,30 @@ void ED_mesh_calc_tessface(Mesh *mesh)
 	}
 }
 
-void ED_mesh_report_mirror(wmOperator *op, int totmirr, int totfail)
+void ED_mesh_report_mirror_ex(wmOperator *op, int totmirr, int totfail,
+                              char selectmode)
 {
-	if (totfail) {
-		BKE_reportf(op->reports, RPT_WARNING, "%d vertices mirrored, %d failed", totmirr, totfail);
+	const char *elem_type;
+
+	if (selectmode & SCE_SELECT_VERTEX) {
+		elem_type = "vertices";
+	}
+	else if (selectmode & SCE_SELECT_EDGE) {
+		elem_type = "edges";
 	}
 	else {
-		BKE_reportf(op->reports, RPT_INFO, "%d vertices mirrored", totmirr);
+		elem_type = "faces";
 	}
+
+	if (totfail) {
+		BKE_reportf(op->reports, RPT_WARNING, "%d %s mirrored, %d failed", totmirr, elem_type, totfail);
+	}
+	else {
+		BKE_reportf(op->reports, RPT_INFO, "%d %s mirrored", totmirr, elem_type);
+	}
+}
+
+void ED_mesh_report_mirror(wmOperator *op, int totmirr, int totfail)
+{
+	ED_mesh_report_mirror_ex(op, totmirr, totfail, SCE_SELECT_VERTEX);
 }

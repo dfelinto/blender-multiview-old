@@ -36,7 +36,7 @@
  *  \ingroup bke
  */
 
-
+#include <stdlib.h>
 #include <stddef.h>
 #include <string.h>
 #include <stdarg.h>
@@ -60,6 +60,7 @@
 #include "BKE_cloth.h"
 #include "BKE_key.h"
 #include "BKE_multires.h"
+#include "BKE_DerivedMesh.h"
 
 /* may move these, only for modifier_path_relbase */
 #include "BKE_global.h" /* ugh, G.main->name only */
@@ -68,19 +69,44 @@
 
 #include "MOD_modifiertypes.h"
 
+static ModifierTypeInfo *modifier_types[NUM_MODIFIER_TYPES] = {NULL};
+static VirtualModifierData virtualModifierCommonData;
+
+void BKE_modifier_init(void)
+{
+	ModifierData *md;
+
+	/* Initialize modifier types */
+	modifier_type_init(modifier_types); /* MOD_utils.c */
+
+	/* Initialize global cmmon storage used for virtual modifier list */
+	md = modifier_new(eModifierType_Armature);
+	virtualModifierCommonData.amd = *((ArmatureModifierData *) md);
+	modifier_free(md);
+
+	md = modifier_new(eModifierType_Curve);
+	virtualModifierCommonData.cmd = *((CurveModifierData *) md);
+	modifier_free(md);
+
+	md = modifier_new(eModifierType_Lattice);
+	virtualModifierCommonData.lmd = *((LatticeModifierData *) md);
+	modifier_free(md);
+
+	md = modifier_new(eModifierType_ShapeKey);
+	virtualModifierCommonData.smd = *((ShapeKeyModifierData *) md);
+	modifier_free(md);
+
+	virtualModifierCommonData.amd.modifier.mode |= eModifierMode_Virtual;
+	virtualModifierCommonData.cmd.modifier.mode |= eModifierMode_Virtual;
+	virtualModifierCommonData.lmd.modifier.mode |= eModifierMode_Virtual;
+	virtualModifierCommonData.smd.modifier.mode |= eModifierMode_Virtual;
+}
+
 ModifierTypeInfo *modifierType_getInfo(ModifierType type)
 {
-	static ModifierTypeInfo *types[NUM_MODIFIER_TYPES] = {NULL};
-	static int types_init = 1;
-
-	if (types_init) {
-		modifier_type_init(types); /* MOD_utils.c */
-		types_init = 0;
-	}
-
 	/* type unsigned, no need to check < 0 */
-	if (type < NUM_MODIFIER_TYPES && types[type]->name[0] != '\0') {
-		return types[type];
+	if (type < NUM_MODIFIER_TYPES && modifier_types[type]->name[0] != '\0') {
+		return modifier_types[type];
 	}
 	else {
 		return NULL;
@@ -288,7 +314,8 @@ void modifier_setError(ModifierData *md, const char *_format, ...)
  */
 int modifiers_getCageIndex(struct Scene *scene, Object *ob, int *lastPossibleCageIndex_r, int virtual_)
 {
-	ModifierData *md = (virtual_) ? modifiers_getVirtualModifierList(ob) : ob->modifiers.first;
+	VirtualModifierData virtualModifierData;
+	ModifierData *md = (virtual_) ? modifiers_getVirtualModifierList(ob, &virtualModifierData) : ob->modifiers.first;
 	int i, cageIndex = -1;
 
 	if (lastPossibleCageIndex_r) {
@@ -363,7 +390,9 @@ bool modifier_isEnabled(struct Scene *scene, ModifierData *md, int required_mode
 	return 1;
 }
 
-CDMaskLink *modifiers_calcDataMasks(struct Scene *scene, Object *ob, ModifierData *md, CustomDataMask dataMask, int required_mode)
+CDMaskLink *modifiers_calcDataMasks(struct Scene *scene, Object *ob, ModifierData *md,
+                                    CustomDataMask dataMask, int required_mode,
+                                    ModifierData *previewmd, CustomDataMask previewmask)
 {
 	CDMaskLink *dataMasks = NULL;
 	CDMaskLink *curr, *prev;
@@ -374,9 +403,14 @@ CDMaskLink *modifiers_calcDataMasks(struct Scene *scene, Object *ob, ModifierDat
 
 		curr = MEM_callocN(sizeof(CDMaskLink), "CDMaskLink");
 		
-		if (modifier_isEnabled(scene, md, required_mode))
+		if (modifier_isEnabled(scene, md, required_mode)) {
 			if (mti->requiredDataMask)
 				curr->mask = mti->requiredDataMask(ob, md);
+
+			if (previewmd == md) {
+				curr->mask |= previewmask;
+			}
+		}
 
 		/* prepend new datamask */
 		curr->next = dataMasks;
@@ -413,7 +447,7 @@ ModifierData *modifiers_getLastPreview(struct Scene *scene, ModifierData *md, in
 {
 	ModifierData *tmp_md = NULL;
 
-	if (required_mode != eModifierMode_Realtime)
+	if ((required_mode & ~eModifierMode_Editmode) != eModifierMode_Realtime)
 		return tmp_md;
 
 	/* Find the latest modifier in stack generating preview. */
@@ -427,74 +461,43 @@ ModifierData *modifiers_getLastPreview(struct Scene *scene, ModifierData *md, in
 /* NOTE: This is to support old files from before Blender supported modifiers,
  * in some cases versioning code updates these so for new files this will
  * return an empty list. */
-ModifierData *modifiers_getVirtualModifierList(Object *ob)
+ModifierData *modifiers_getVirtualModifierList(Object *ob, VirtualModifierData *virtualModifierData)
 {
-	/* Kinda hacky, but should be fine since we are never
-	 * re-entrant and avoid free hassles.
-	 */
-	static ArmatureModifierData amd;
-	static CurveModifierData cmd;
-	static LatticeModifierData lmd;
-	static ShapeKeyModifierData smd;
-	static int init = 1;
 	ModifierData *md;
-
-	if (init) {
-		md = modifier_new(eModifierType_Armature);
-		amd = *((ArmatureModifierData *) md);
-		modifier_free(md);
-
-		md = modifier_new(eModifierType_Curve);
-		cmd = *((CurveModifierData *) md);
-		modifier_free(md);
-
-		md = modifier_new(eModifierType_Lattice);
-		lmd = *((LatticeModifierData *) md);
-		modifier_free(md);
-
-		md = modifier_new(eModifierType_ShapeKey);
-		smd = *((ShapeKeyModifierData *) md);
-		modifier_free(md);
-
-		amd.modifier.mode |= eModifierMode_Virtual;
-		cmd.modifier.mode |= eModifierMode_Virtual;
-		lmd.modifier.mode |= eModifierMode_Virtual;
-		smd.modifier.mode |= eModifierMode_Virtual;
-
-		init = 0;
-	}
 
 	md = ob->modifiers.first;
 
+	*virtualModifierData = virtualModifierCommonData;
+
 	if (ob->parent) {
 		if (ob->parent->type == OB_ARMATURE && ob->partype == PARSKEL) {
-			amd.object = ob->parent;
-			amd.modifier.next = md;
-			amd.deformflag = ((bArmature *)(ob->parent->data))->deformflag;
-			md = &amd.modifier;
+			virtualModifierData->amd.object = ob->parent;
+			virtualModifierData->amd.modifier.next = md;
+			virtualModifierData->amd.deformflag = ((bArmature *)(ob->parent->data))->deformflag;
+			md = &virtualModifierData->amd.modifier;
 		}
 		else if (ob->parent->type == OB_CURVE && ob->partype == PARSKEL) {
-			cmd.object = ob->parent;
-			cmd.defaxis = ob->trackflag + 1;
-			cmd.modifier.next = md;
-			md = &cmd.modifier;
+			virtualModifierData->cmd.object = ob->parent;
+			virtualModifierData->cmd.defaxis = ob->trackflag + 1;
+			virtualModifierData->cmd.modifier.next = md;
+			md = &virtualModifierData->cmd.modifier;
 		}
 		else if (ob->parent->type == OB_LATTICE && ob->partype == PARSKEL) {
-			lmd.object = ob->parent;
-			lmd.modifier.next = md;
-			md = &lmd.modifier;
+			virtualModifierData->lmd.object = ob->parent;
+			virtualModifierData->lmd.modifier.next = md;
+			md = &virtualModifierData->lmd.modifier;
 		}
 	}
 
 	/* shape key modifier, not yet for curves */
 	if (ELEM(ob->type, OB_MESH, OB_LATTICE) && BKE_key_from_object(ob)) {
 		if (ob->type == OB_MESH && (ob->shapeflag & OB_SHAPE_EDIT_MODE))
-			smd.modifier.mode |= eModifierMode_Editmode | eModifierMode_OnCage;
+			virtualModifierData->smd.modifier.mode |= eModifierMode_Editmode | eModifierMode_OnCage;
 		else
-			smd.modifier.mode &= ~eModifierMode_Editmode | eModifierMode_OnCage;
+			virtualModifierData->smd.modifier.mode &= ~eModifierMode_Editmode | eModifierMode_OnCage;
 
-		smd.modifier.next = md;
-		md = &smd.modifier;
+		virtualModifierData->smd.modifier.next = md;
+		md = &virtualModifierData->smd.modifier;
 	}
 
 	return md;
@@ -505,7 +508,8 @@ ModifierData *modifiers_getVirtualModifierList(Object *ob)
  */
 Object *modifiers_isDeformedByArmature(Object *ob)
 {
-	ModifierData *md = modifiers_getVirtualModifierList(ob);
+	VirtualModifierData virtualModifierData;
+	ModifierData *md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
 	ArmatureModifierData *amd = NULL;
 	
 	/* return the first selected armature, this lets us use multiple armatures */
@@ -528,7 +532,8 @@ Object *modifiers_isDeformedByArmature(Object *ob)
  */
 Object *modifiers_isDeformedByLattice(Object *ob)
 {
-	ModifierData *md = modifiers_getVirtualModifierList(ob);
+	VirtualModifierData virtualModifierData;
+	ModifierData *md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
 	LatticeModifierData *lmd = NULL;
 	
 	/* return the first selected lattice, this lets us use multiple lattices */
@@ -551,7 +556,8 @@ Object *modifiers_isDeformedByLattice(Object *ob)
  */
 Object *modifiers_isDeformedByCurve(Object *ob)
 {
-	ModifierData *md = modifiers_getVirtualModifierList(ob);
+	VirtualModifierData virtualModifierData;
+	ModifierData *md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
 	CurveModifierData *cmd = NULL;
 	
 	/* return the first selected curve, this lets us use multiple curves */
@@ -571,7 +577,8 @@ Object *modifiers_isDeformedByCurve(Object *ob)
 
 bool modifiers_usesArmature(Object *ob, bArmature *arm)
 {
-	ModifierData *md = modifiers_getVirtualModifierList(ob);
+	VirtualModifierData virtualModifierData;
+	ModifierData *md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
 
 	for (; md; md = md->next) {
 		if (md->type == eModifierType_Armature) {
@@ -586,20 +593,21 @@ bool modifiers_usesArmature(Object *ob, bArmature *arm)
 
 bool modifier_isCorrectableDeformed(ModifierData *md)
 {
-	if (md->type == eModifierType_Armature)
-		return true;
-	if (md->type == eModifierType_ShapeKey)
-		return true;
-	
-	return false;
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+	return (mti->deformMatricesEM != NULL);
 }
 
-bool modifiers_isCorrectableDeformed(Object *ob)
+bool modifiers_isCorrectableDeformed(struct Scene *scene, Object *ob)
 {
-	ModifierData *md = modifiers_getVirtualModifierList(ob);
+	VirtualModifierData virtualModifierData;
+	ModifierData *md = modifiers_getVirtualModifierList(ob, &virtualModifierData);
+	int required_mode = eModifierMode_Realtime;
+
+	if (ob->mode == OB_MODE_EDIT)
+		required_mode |= eModifierMode_Editmode;
 	
 	for (; md; md = md->next) {
-		if (ob->mode == OB_MODE_EDIT && (md->mode & eModifierMode_Editmode) == 0) {
+		if (!modifier_isEnabled(scene, md, required_mode)) {
 			/* pass */
 		}
 		else if (modifier_isCorrectableDeformed(md)) {
@@ -686,3 +694,65 @@ void modifier_path_init(char *path, int path_maxlen, const char *name)
 	                 G.relbase_valid ? "//" : BLI_temporary_dir(),
 	                 name);
 }
+
+
+/* wrapper around ModifierTypeInfo.applyModifier that ensures valid normals */
+
+struct DerivedMesh *modwrap_applyModifier(
+        ModifierData *md, Object *ob,
+        struct DerivedMesh *dm,
+        ModifierApplyFlag flag)
+{
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+	BLI_assert(CustomData_has_layer(&dm->polyData, CD_NORMAL) == false);
+
+	if (mti->dependsOnNormals && mti->dependsOnNormals(md)) {
+		DM_ensure_normals(dm);
+	}
+	return mti->applyModifier(md, ob, dm, flag);
+}
+
+struct DerivedMesh *modwrap_applyModifierEM(
+        ModifierData *md, Object *ob,
+        struct BMEditMesh *em,
+        DerivedMesh *dm,
+        ModifierApplyFlag flag)
+{
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+	BLI_assert(CustomData_has_layer(&dm->polyData, CD_NORMAL) == false);
+
+	if (mti->dependsOnNormals && mti->dependsOnNormals(md)) {
+		DM_ensure_normals(dm);
+	}
+	return mti->applyModifierEM(md, ob, em, dm, flag);
+}
+
+void modwrap_deformVerts(
+        ModifierData *md, Object *ob,
+        DerivedMesh *dm,
+        float (*vertexCos)[3], int numVerts,
+        ModifierApplyFlag flag)
+{
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+	BLI_assert(!dm || CustomData_has_layer(&dm->polyData, CD_NORMAL) == false);
+
+	if (dm && mti->dependsOnNormals && mti->dependsOnNormals(md)) {
+		DM_ensure_normals(dm);
+	}
+	mti->deformVerts(md, ob, dm, vertexCos, numVerts, flag);
+}
+
+void modwrap_deformVertsEM(
+        ModifierData *md, Object *ob,
+        struct BMEditMesh *em, DerivedMesh *dm,
+        float (*vertexCos)[3], int numVerts)
+{
+	ModifierTypeInfo *mti = modifierType_getInfo(md->type);
+	BLI_assert(!dm || CustomData_has_layer(&dm->polyData, CD_NORMAL) == false);
+
+	if (dm && mti->dependsOnNormals && mti->dependsOnNormals(md)) {
+		DM_ensure_normals(dm);
+	}
+	mti->deformVertsEM(md, ob, em, dm, vertexCos, numVerts);
+}
+/* end modifier callback wrappers */

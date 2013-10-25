@@ -76,12 +76,12 @@
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
 #include "BLI_callbacks.h"
+#include "BLI_blenlib.h"
+#include "BLI_mempool.h"
 
 #include "DNA_ID.h"
 #include "DNA_scene_types.h"
 #include "DNA_userdef_types.h"
-
-#include "BLI_blenlib.h"
 
 #include "BKE_blender.h"
 #include "BKE_brush.h"
@@ -92,6 +92,7 @@
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_material.h"
+#include "BKE_modifier.h"
 #include "BKE_packedFile.h"
 #include "BKE_scene.h"
 #include "BKE_node.h"
@@ -116,8 +117,6 @@
 
 #include "GPU_draw.h"
 #include "GPU_extensions.h"
-
-#include "BLI_scanfill.h" /* for BLI_setErrorCallBack, TODO, move elsewhere */
 
 #ifdef WITH_FREESTYLE
 #  include "FRS_freestyle.h"
@@ -173,11 +172,12 @@ static int print_version(int argc, const char **argv, void *data);
 #endif
 
 /* for the callbacks: */
-
+#ifndef WITH_PYTHON_MODULE
 #define BLEND_VERSION_FMT         "Blender %d.%02d (sub %d)"
 #define BLEND_VERSION_ARG         BLENDER_VERSION / 100, BLENDER_VERSION % 100, BLENDER_SUBVERSION
 /* pass directly to printf */
 #define BLEND_VERSION_STRING_FMT  BLEND_VERSION_FMT "\n", BLEND_VERSION_ARG
+#endif
 
 /* Initialize callbacks for the modules that need them */
 static void setCallbacks(void); 
@@ -249,12 +249,12 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	BLI_argsPrintArgDoc(ba, "--frame-jump");
 	BLI_argsPrintArgDoc(ba, "--render-output");
 	BLI_argsPrintArgDoc(ba, "--engine");
+	BLI_argsPrintArgDoc(ba, "--threads");
 	
 	printf("\n");
 	printf("Format Options:\n");
 	BLI_argsPrintArgDoc(ba, "--render-format");
 	BLI_argsPrintArgDoc(ba, "--use-extension");
-	BLI_argsPrintArgDoc(ba, "--threads");
 
 	printf("\n");
 	printf("Animation Playback Options:\n");
@@ -266,26 +266,53 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	BLI_argsPrintArgDoc(ba, "--window-borderless");
 	BLI_argsPrintArgDoc(ba, "--window-geometry");
 	BLI_argsPrintArgDoc(ba, "--start-console");
+	BLI_argsPrintArgDoc(ba, "--no-native-pixels");
+
 
 	printf("\n");
 	printf("Game Engine Specific Options:\n");
 	BLI_argsPrintArgDoc(ba, "-g");
 
 	printf("\n");
-	printf("Misc Options:\n");
-	BLI_argsPrintArgDoc(ba, "--debug");
-	BLI_argsPrintArgDoc(ba, "--debug-fpe");
-	BLI_argsPrintArgDoc(ba, "--disable-crash-handler");
+	printf("Python Options:\n");
+	BLI_argsPrintArgDoc(ba, "--enable-autoexec");
+	BLI_argsPrintArgDoc(ba, "--disable-autoexec");
 
+	printf("\n");
+
+	BLI_argsPrintArgDoc(ba, "--python");
+	BLI_argsPrintArgDoc(ba, "--python-text");
+	BLI_argsPrintArgDoc(ba, "--python-console");
+	BLI_argsPrintArgDoc(ba, "--addons");
+
+
+	printf("\n");
+	printf("Debug Options:\n");
+	BLI_argsPrintArgDoc(ba, "--debug");
+	BLI_argsPrintArgDoc(ba, "--debug-value");
+
+	printf("\n");
+	BLI_argsPrintArgDoc(ba, "--debug-events");
 #ifdef WITH_FFMPEG
 	BLI_argsPrintArgDoc(ba, "--debug-ffmpeg");
 #endif
-
+	BLI_argsPrintArgDoc(ba, "--debug-handlers");
 #ifdef WITH_LIBMV
 	BLI_argsPrintArgDoc(ba, "--debug-libmv");
 #endif
+	BLI_argsPrintArgDoc(ba, "--debug-memory");
+	BLI_argsPrintArgDoc(ba, "--debug-jobs");
+	BLI_argsPrintArgDoc(ba, "--debug-python");
+
+	BLI_argsPrintArgDoc(ba, "--debug-wm");
+	BLI_argsPrintArgDoc(ba, "--debug-all");
 
 	printf("\n");
+	BLI_argsPrintArgDoc(ba, "--debug-fpe");
+	BLI_argsPrintArgDoc(ba, "--disable-crash-handler");
+
+	printf("\n");
+	printf("Misc Options:\n");
 	BLI_argsPrintArgDoc(ba, "--factory-startup");
 	printf("\n");
 	BLI_argsPrintArgDoc(ba, "--env-system-config");
@@ -301,18 +328,6 @@ static int print_help(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	printf("\n");
 
 	BLI_argsPrintArgDoc(ba, "--help");
-
-	printf("\n");
-
-	BLI_argsPrintArgDoc(ba, "--enable-autoexec");
-	BLI_argsPrintArgDoc(ba, "--disable-autoexec");
-
-	printf("\n");
-
-	BLI_argsPrintArgDoc(ba, "--python");
-	BLI_argsPrintArgDoc(ba, "--python-text");
-	BLI_argsPrintArgDoc(ba, "--python-console");
-	BLI_argsPrintArgDoc(ba, "--addons");
 
 #ifdef WIN32
 	BLI_argsPrintArgDoc(ba, "-R");
@@ -398,10 +413,13 @@ static int debug_mode(int UNUSED(argc), const char **UNUSED(argv), void *data)
 	G.debug |= G_DEBUG;  /* std output printf's */
 	printf(BLEND_VERSION_STRING_FMT);
 	MEM_set_memory_debug();
+#ifdef DEBUG
+	BLI_mempool_set_memory_debug();
+#endif
 
 #ifdef WITH_BUILDINFO
 	printf("Build: %s %s %s %s\n", build_date, build_time, build_platform, build_type);
-#endif // WITH_BUILDINFO
+#endif
 
 	BLI_argsPrint(data);
 	return 0;
@@ -421,6 +439,12 @@ static int debug_mode_libmv(int UNUSED(argc), const char **UNUSED(argv), void *U
 	return 0;
 }
 #endif
+
+static int debug_mode_memory(int UNUSED(argc), const char **UNUSED(argv), void *UNUSED(data))
+{
+	MEM_set_memory_debug();
+	return 0;
+}
 
 static int set_debug_value(int argc, const char **argv, void *UNUSED(data))
 {
@@ -485,7 +509,7 @@ static void blender_crash_handler_backtrace(FILE *fp)
 #undef SIZE
 }
 
-#elif defined(_MSV_VER)
+#elif defined(_MSC_VER)
 
 static void blender_crash_handler_backtrace(FILE *fp)
 {
@@ -1262,6 +1286,7 @@ static int load_file(int UNUSED(argc), const char **argv, void *data)
 		 * a file - this should do everything a 'load file' does */
 		ReportList reports;
 		BKE_reports_init(&reports, RPT_PRINT);
+		WM_file_autoexec_init(filename);
 		WM_file_read(C, filename, &reports);
 		BKE_reports_clear(&reports);
 	}
@@ -1366,6 +1391,7 @@ static void setupArguments(bContext *C, bArgs *ba, SYS_SystemHandle *syshandle)
 #ifdef WITH_LIBMV
 	BLI_argsAdd(ba, 1, NULL, "--debug-libmv", "\n\tEnable debug messages from libmv library", debug_mode_libmv, NULL);
 #endif
+	BLI_argsAdd(ba, 1, NULL, "--debug-memory", "\n\tEnable fully guarded memory allocation and debugging", debug_mode_memory, NULL);
 
 	BLI_argsAdd(ba, 1, NULL, "--debug-value", "<value>\n\tSet debug value of <value> on startup\n", set_debug_value, NULL);
 	BLI_argsAdd(ba, 1, NULL, "--debug-jobs",  "\n\tEnable time profiling for background jobs.", debug_mode_generic, (void *)G_DEBUG_JOBS);
@@ -1436,22 +1462,49 @@ int main(int argc, const char **UNUSED(argv_c)) /* Do not mess with const */
 int main(int argc, const char **argv)
 #endif
 {
-	bContext *C = CTX_create();
+	bContext *C;
 	SYS_SystemHandle syshandle;
 
 #ifndef WITH_PYTHON_MODULE
 	bArgs *ba;
 #endif
 
-#ifdef WIN32
+#ifdef WIN32 /* Win32 Unicode Args */
+	/* NOTE: cannot use guardedalloc malloc here, as it's not yet initialised 
+	 *       (it depends on the args passed in, which is what we're getting here!)
+	 */
 	wchar_t **argv_16 = CommandLineToArgvW(GetCommandLineW(), &argc);
+	char **argv = malloc(argc * sizeof(char *));
 	int argci = 0;
-	char **argv = MEM_mallocN(argc * sizeof(char *), "argv array");
+	
 	for (argci = 0; argci < argc; argci++) {
 		argv[argci] = alloc_utf_8_from_16(argv_16[argci], 0);
 	}
+	
 	LocalFree(argv_16);
 #endif
+
+	/* NOTE: Special exception for guarded allocator type switch:
+	 *       we need to perform switch from lock-free to fully
+	 *       guarded allocator before any allocation happened.
+	 */
+	{
+		int i;
+		for (i = 0; i < argc; i++) {
+			if (STREQ(argv[i], "--debug") || STREQ(argv[i], "-d") ||
+			    STREQ(argv[i], "--debug-memory"))
+			{
+				printf("Switching to fully guarded memory allocator.\n");
+				MEM_use_guarded_allocator();
+				break;
+			}
+			else if (STREQ(argv[i], "--")) {
+				break;
+			}
+		}
+	}
+
+	C = CTX_create();
 
 #ifdef WITH_PYTHON_MODULE
 #ifdef __APPLE__
@@ -1502,6 +1555,7 @@ int main(int argc, const char **argv)
 
 	IMB_init();
 	BKE_images_init();
+	BKE_modifier_init();
 
 	BKE_brush_system_init();
 
@@ -1569,10 +1623,6 @@ int main(int argc, const char **argv)
 		/* this is properly initialized with user defs, but this is default */
 		/* call after loading the startup.blend so we can read U.tempdir */
 		BLI_init_temporary_dir(U.tempdir);
-
-#ifdef WITH_SDL
-		BLI_setenv("SDL_VIDEODRIVER", "dummy");
-#endif
 	}
 	else {
 #ifndef WITH_PYTHON_MODULE
@@ -1626,7 +1676,7 @@ int main(int argc, const char **argv)
 	while (argci) {
 		free(argv[--argci]);
 	}
-	MEM_freeN(argv);
+	free(argv);
 	argv = NULL;
 #endif
 
@@ -1671,12 +1721,6 @@ void main_python_exit(void)
 }
 #endif
 
-static void error_cb(const char *err)
-{
-	
-	printf("%s\n", err);    /* XXX do this in WM too */
-}
-
 static void mem_error_cb(const char *errorStr)
 {
 	fputs(errorStr, stderr);
@@ -1687,11 +1731,4 @@ static void setCallbacks(void)
 {
 	/* Error output from the alloc routines: */
 	MEM_set_error_callback(mem_error_cb);
-
-
-	/* BLI_blenlib: */
-
-	BLI_setErrorCallBack(error_cb); /* */
-// XXX	BLI_setInterruptCallBack(blender_test_break);
-
 }

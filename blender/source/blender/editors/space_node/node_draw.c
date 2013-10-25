@@ -91,18 +91,18 @@ static bNodeTree *node_tree_from_ID(ID *id)
 		short idtype = GS(id->name);
 	
 		switch (idtype) {
-		case ID_NT:
-			return (bNodeTree *)id;
-		case ID_MA:
-			return ((Material *)id)->nodetree;
-		case ID_LA:
-			return ((Lamp *)id)->nodetree;
-		case ID_WO:
-			return ((World *)id)->nodetree;
-		case ID_SCE:
-			return ((Scene *)id)->nodetree;
-		case ID_TE:
-			return ((Tex *)id)->nodetree;
+			case ID_NT:
+				return (bNodeTree *)id;
+			case ID_MA:
+				return ((Material *)id)->nodetree;
+			case ID_LA:
+				return ((Lamp *)id)->nodetree;
+			case ID_WO:
+				return ((World *)id)->nodetree;
+			case ID_SCE:
+				return ((Scene *)id)->nodetree;
+			case ID_TE:
+				return ((Tex *)id)->nodetree;
 		}
 	}
 	
@@ -119,11 +119,11 @@ void ED_node_tag_update_id(ID *id)
 		DAG_id_tag_update(id, 0);
 		
 		if (GS(id->name) == ID_MA)
-			WM_main_add_notifier(NC_MATERIAL | ND_SHADING_DRAW, id);
+			WM_main_add_notifier(NC_MATERIAL | ND_SHADING, id);
 		else if (GS(id->name) == ID_LA)
-			WM_main_add_notifier(NC_LAMP | ND_LIGHTING_DRAW, id);
+			WM_main_add_notifier(NC_LAMP | ND_LIGHTING, id);
 		else if (GS(id->name) == ID_WO)
-			WM_main_add_notifier(NC_WORLD | ND_WORLD_DRAW, id);
+			WM_main_add_notifier(NC_WORLD | ND_WORLD, id);
 	}
 	else if (ntree->type == NTREE_COMPOSIT) {
 		WM_main_add_notifier(NC_SCENE | ND_NODES, id);
@@ -351,7 +351,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		row = uiLayoutRow(layout, 1);
 		uiLayoutSetAlignment(row, UI_LAYOUT_ALIGN_RIGHT);
 		
-		node->typeinfo->drawoutputfunc((bContext *)C, row, &sockptr, &nodeptr);
+		nsock->typeinfo->draw((bContext *)C, row, &sockptr, &nodeptr, IFACE_(nsock->name));
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
@@ -402,7 +402,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 	}
 
 	/* buttons rect? */
-	if (node->typeinfo->uifunc && (node->flag & NODE_OPTIONS)) {
+	if (node->typeinfo->draw_buttons && (node->flag & NODE_OPTIONS)) {
 		dy -= NODE_DYS / 2;
 
 		/* set this for uifunc() that don't use layout engine yet */
@@ -416,7 +416,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		                       locx + NODE_DYS, dy, node->butr.xmax, 0, UI_GetStyle());
 		uiLayoutSetContextPointer(layout, "node", &nodeptr);
 		
-		node->typeinfo->uifunc(layout, (bContext *)C, &nodeptr);
+		node->typeinfo->draw_buttons(layout, (bContext *)C, &nodeptr);
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
@@ -437,7 +437,9 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 		uiLayoutSetContextPointer(layout, "node", &nodeptr);
 		uiLayoutSetContextPointer(layout, "socket", &sockptr);
 		
-		node->typeinfo->drawinputfunc((bContext *)C, layout, &sockptr, &nodeptr);
+		row = uiLayoutRow(layout, 1);
+		
+		nsock->typeinfo->draw((bContext *)C, row, &sockptr, &nodeptr, IFACE_(nsock->name));
 		
 		uiBlockEndAlign(node->block);
 		uiBlockLayoutResolve(node->block, NULL, &buty);
@@ -923,10 +925,13 @@ static void node_draw_basis(const bContext *C, ARegion *ar, SpaceNode *snode, bN
 	}
 	
 	/* preview */
-	if (node->flag & NODE_PREVIEW) {
-		bNodePreview *preview = previews ? BKE_node_instance_hash_lookup(previews, key) : NULL;
-		if (preview && preview->rect && !BLI_rctf_is_empty(&node->prvr))
-			node_draw_preview(preview, &node->prvr);
+	if (node->flag & NODE_PREVIEW && previews) {
+		bNodePreview *preview = BKE_node_instance_hash_lookup(previews, key);
+		if (preview && (preview->xsize && preview->ysize)) {
+			if (preview->rect && !BLI_rctf_is_empty(&node->prvr)) {
+				node_draw_preview(preview, &node->prvr);
+			}
+		}
 	}
 	
 	UI_ThemeClearColor(color_id);
@@ -1075,31 +1080,31 @@ int node_get_resize_cursor(int directions)
 		return CURSOR_EDIT;
 }
 
-void node_set_cursor(wmWindow *win, SpaceNode *snode)
+void node_set_cursor(wmWindow *win, SpaceNode *snode, float cursor[2])
 {
 	bNodeTree *ntree = snode->edittree;
 	bNode *node;
 	bNodeSocket *sock;
-	int cursor = CURSOR_STD;
+	int wmcursor = CURSOR_STD;
 	
 	if (ntree) {
-		if (node_find_indicated_socket(snode, &node, &sock, SOCK_IN | SOCK_OUT)) {
+		if (node_find_indicated_socket(snode, &node, &sock, cursor, SOCK_IN | SOCK_OUT)) {
 			/* pass */
 		}
 		else {
 			/* check nodes front to back */
 			for (node = ntree->nodes.last; node; node = node->prev) {
-				if (BLI_rctf_isect_pt(&node->totr, snode->cursor[0], snode->cursor[1]))
+				if (BLI_rctf_isect_pt(&node->totr, cursor[0], cursor[1]))
 					break;  /* first hit on node stops */
 			}
 			if (node) {
-				int dir = node->typeinfo->resize_area_func(node, snode->cursor[0], snode->cursor[1]);
-				cursor = node_get_resize_cursor(dir);
+				int dir = node->typeinfo->resize_area_func(node, cursor[0], cursor[1]);
+				wmcursor = node_get_resize_cursor(dir);
 			}
 		}
 	}
 	
-	WM_cursor_set(win, cursor);
+	WM_cursor_set(win, wmcursor);
 }
 
 void node_draw_default(const bContext *C, ARegion *ar, SpaceNode *snode, bNodeTree *ntree, bNode *node, bNodeInstanceKey key)
@@ -1112,8 +1117,8 @@ void node_draw_default(const bContext *C, ARegion *ar, SpaceNode *snode, bNodeTr
 
 static void node_update(const bContext *C, bNodeTree *ntree, bNode *node)
 {
-	if (node->typeinfo->drawupdatefunc)
-		node->typeinfo->drawupdatefunc(C, ntree, node);
+	if (node->typeinfo->draw_nodetype_prepare)
+		node->typeinfo->draw_nodetype_prepare(C, ntree, node);
 }
 
 void node_update_nodetree(const bContext *C, bNodeTree *ntree)
@@ -1128,8 +1133,8 @@ void node_update_nodetree(const bContext *C, bNodeTree *ntree)
 
 static void node_draw(const bContext *C, ARegion *ar, SpaceNode *snode, bNodeTree *ntree, bNode *node, bNodeInstanceKey key)
 {
-	if (node->typeinfo->drawfunc)
-		node->typeinfo->drawfunc(C, ar, snode, ntree, node, key);
+	if (node->typeinfo->draw_nodetype)
+		node->typeinfo->draw_nodetype(C, ar, snode, ntree, node, key);
 }
 
 #define USE_DRAW_TOT_UPDATE
@@ -1238,7 +1243,7 @@ static void draw_group_overlay(const bContext *C, ARegion *ar)
 	/* shade node groups to separate them visually */
 	UI_ThemeColorShadeAlpha(TH_NODE_GROUP, 0, -70);
 	glEnable(GL_BLEND);
-	uiSetRoundBox(0);
+	uiSetRoundBox(UI_CNR_NONE);
 	uiDrawBox(GL_POLYGON, rect.xmin, rect.ymin, rect.xmax, rect.ymax, 0);
 	glDisable(GL_BLEND);
 	
@@ -1251,6 +1256,7 @@ static void draw_group_overlay(const bContext *C, ARegion *ar)
 
 void drawnodespace(const bContext *C, ARegion *ar)
 {
+	wmWindow *win = CTX_wm_window(C);
 	View2DScrollers *scrollers;
 	SpaceNode *snode = CTX_wm_space_node(C);
 	View2D *v2d = &ar->v2d;
@@ -1259,7 +1265,13 @@ void drawnodespace(const bContext *C, ARegion *ar)
 	glClear(GL_COLOR_BUFFER_BIT);
 
 	UI_view2d_view_ortho(v2d);
-
+	
+	/* XXX snode->cursor set in coordspace for placing new nodes, used for drawing noodles too */
+	UI_view2d_region_to_view(&ar->v2d, win->eventstate->x - ar->winrct.xmin, win->eventstate->y - ar->winrct.ymin,
+	                         &snode->cursor[0], &snode->cursor[1]);
+	snode->cursor[0] /= UI_DPI_FAC;
+	snode->cursor[1] /= UI_DPI_FAC;
+	
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
 
 	/* only set once */

@@ -49,9 +49,14 @@ void BKE_lattice_free(struct Lattice *lt);
 void BKE_lattice_make_local(struct Lattice *lt);
 void calc_lat_fudu(int flag, int res, float *r_fu, float *r_du);
 
-void init_latt_deform(struct Object *oblatt, struct Object *ob);
-void calc_latt_deform(struct Object *, float co[3], float weight);
-void end_latt_deform(struct Object *);
+struct LatticeDeformData;
+struct LatticeDeformData *init_latt_deform(struct Object *oblatt, struct Object *ob)
+#ifdef __GNUC__
+__attribute__((warn_unused_result))
+#endif
+;
+void calc_latt_deform(struct LatticeDeformData *lattice_deform_data, float co[3], float weight);
+void end_latt_deform(struct LatticeDeformData *lattice_deform_data);
 
 int object_deform_mball(struct Object *ob, struct ListBase *dispbase);
 void outside_lattice(struct Lattice *lt);
@@ -81,6 +86,9 @@ void BKE_lattice_minmax(struct Lattice *lt, float min[3], float max[3]);
 void BKE_lattice_center_median(struct Lattice *lt, float cent[3]);
 void BKE_lattice_center_bounds(struct Lattice *lt, float cent[3]);
 void BKE_lattice_translate(struct Lattice *lt, float offset[3], int do_keys);
+
+int  BKE_lattice_index_from_uvw(struct Lattice *lt, const int u, const int v, const int w);
+void BKE_lattice_index_to_uvw(struct Lattice *lt, const int index, int *r_u, int *r_v, int *r_w);
 
 #endif
 

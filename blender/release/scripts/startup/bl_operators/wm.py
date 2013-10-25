@@ -27,34 +27,8 @@ from bpy.props import (StringProperty,
                        EnumProperty,
                        )
 
-from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
-
 from bpy.app.translations import pgettext_tip as tip_
 
-
-class MESH_OT_delete_edgeloop(Operator):
-    """Delete an edge loop by merging the faces on each side """ \
-    """to a single face loop"""
-    bl_idname = "mesh.delete_edgeloop"
-    bl_label = "Delete Edge Loop"
-    bl_options = {'UNDO', 'REGISTER'}
-
-    @classmethod
-    def poll(cls, context):
-        return bpy.ops.transform.edge_slide.poll()
-
-    def execute(self, context):
-        mesh = context.object.data
-        use_mirror_x = mesh.use_mirror_x
-        mesh.use_mirror_x = False
-        if 'FINISHED' in bpy.ops.transform.edge_slide(value=1.0, correct_uv=True):
-            bpy.ops.mesh.select_more()
-            bpy.ops.mesh.remove_doubles()
-            ret = {'FINISHED'}
-        else:
-            ret = {'CANCELLED'}
-        mesh.use_mirror_x = use_mirror_x
-        return ret
 
 rna_path_prop = StringProperty(
         name="Context Attributes",
@@ -497,24 +471,6 @@ class WM_OT_context_cycle_array(Operator):
         return operator_path_undo_return(context, data_path)
 
 
-class WM_MT_context_menu_enum(Menu):
-    bl_label = ""
-    data_path = ""  # BAD DESIGN, set from operator below.
-
-    def draw(self, context):
-        data_path = self.data_path
-        value = context_path_validate(context, data_path)
-        if value is Ellipsis:
-            return {'PASS_THROUGH'}
-        base_path, prop_string = data_path.rsplit(".", 1)
-        value_base = context_path_validate(context, base_path)
-        prop = value_base.bl_rna.properties[prop_string]
-
-        layout = self.layout
-        layout.label(prop.name, icon=prop.icon)
-        layout.prop(value_base, prop_string, expand=True)
-
-
 class WM_OT_context_menu_enum(Operator):
     bl_idname = "wm.context_menu_enum"
     bl_label = "Context Enum Menu"
@@ -523,13 +479,26 @@ class WM_OT_context_menu_enum(Operator):
 
     def execute(self, context):
         data_path = self.data_path
-        WM_MT_context_menu_enum.data_path = data_path
-        bpy.ops.wm.call_menu(name="WM_MT_context_menu_enum")
+        value = context_path_validate(context, data_path)
+
+        if value is Ellipsis:
+            return {'PASS_THROUGH'}
+
+        base_path, prop_string = data_path.rsplit(".", 1)
+        value_base = context_path_validate(context, base_path)
+        prop = value_base.bl_rna.properties[prop_string]
+
+        def draw_cb(self, context):
+            layout = self.layout
+            layout.prop(value_base, prop_string, expand=True)
+
+        context.window_manager.popup_menu(draw_func=draw_cb, title=prop.name, icon=prop.icon)
+
         return {'PASS_THROUGH'}
 
 
 class WM_OT_context_set_id(Operator):
-    """Toggle a context value"""
+    """Set a context value to an ID data-block"""
     bl_idname = "wm.context_set_id"
     bl_label = "Set Library ID"
     bl_options = {'UNDO', 'INTERNAL'}
@@ -934,8 +903,9 @@ class WM_OT_doc_view(Operator):
         return {'FINISHED'}
 
 
+'''
 class WM_OT_doc_edit(Operator):
-    """Load online reference docs"""
+    """Edit online reference docs"""
     bl_idname = "wm.doc_edit"
     bl_label = "Edit Documentation"
 
@@ -1003,6 +973,7 @@ class WM_OT_doc_edit(Operator):
     def invoke(self, context, event):
         wm = context.window_manager
         return wm.invoke_props_dialog(self, width=600)
+'''
 
 
 rna_path = StringProperty(
@@ -1053,6 +1024,8 @@ class WM_OT_properties_edit(Operator):
             )
 
     def execute(self, context):
+        from rna_prop_ui import rna_idprop_ui_prop_get, rna_idprop_ui_prop_clear
+
         data_path = self.data_path
         value = self.value
         prop = self.property
@@ -1104,6 +1077,8 @@ class WM_OT_properties_edit(Operator):
         return {'FINISHED'}
 
     def invoke(self, context, event):
+        from rna_prop_ui import rna_idprop_ui_prop_get
+
         data_path = self.data_path
 
         if not data_path:
@@ -1133,6 +1108,8 @@ class WM_OT_properties_add(Operator):
     data_path = rna_path
 
     def execute(self, context):
+        from rna_prop_ui import rna_idprop_ui_prop_get
+
         data_path = self.data_path
         item = eval("context.%s" % data_path)
 
@@ -1203,6 +1180,7 @@ class WM_OT_keyconfig_activate(Operator):
             return {'FINISHED'}
         else:
             return {'CANCELLED'}
+
 
 class WM_OT_appconfig_default(Operator):
     bl_idname = "wm.appconfig_default"
@@ -1296,6 +1274,8 @@ class WM_OT_blenderplayer_start(Operator):
         import sys
         import subprocess
 
+        gs = context.scene.game_settings
+
         # these remain the same every execution
         blender_bin_path = bpy.app.binary_path
         blender_bin_dir = os.path.dirname(blender_bin_path)
@@ -1310,9 +1290,25 @@ class WM_OT_blenderplayer_start(Operator):
             self.report({'ERROR'}, "Player path: %r not found" % player_path)
             return {'CANCELLED'}
 
-        filepath = os.path.join(bpy.app.tempdir, "game.blend")
+        filepath = bpy.data.filepath + '~' if bpy.data.is_saved else os.path.join(bpy.app.tempdir, "game.blend")
         bpy.ops.wm.save_as_mainfile('EXEC_DEFAULT', filepath=filepath, copy=True)
-        subprocess.call([player_path, filepath])
+
+        # start the command line call with the player path
+        args = [player_path]
+
+        # handle some UI options as command line arguments
+        args.extend([
+            "-g", "show_framerate", "=", "%d" % gs.show_framerate_profile,
+            "-g", "show_profile", "=", "%d" % gs.show_framerate_profile,
+            "-g", "show_properties", "=", "%d" % gs.show_debug_properties,
+            "-g", "ignore_deprecation_warnings", "=", "%d" % (not gs.use_deprecation_warnings),
+            ])
+
+        # finish the call with the path to the blend file
+        args.append(filepath)
+
+        subprocess.call(args)
+        os.remove(filepath)
         return {'FINISHED'}
 
 
@@ -1599,7 +1595,15 @@ class WM_OT_addon_enable(Operator):
     def execute(self, context):
         import addon_utils
 
-        mod = addon_utils.enable(self.module)
+        err_str = ""
+
+        def err_cb():
+            import traceback
+            nonlocal err_str
+            err_str = traceback.format_exc()
+            print(err_str)
+
+        mod = addon_utils.enable(self.module, handle_error=err_cb)
 
         if mod:
             info = addon_utils.module_bl_info(mod)
@@ -1607,13 +1611,18 @@ class WM_OT_addon_enable(Operator):
             info_ver = info.get("blender", (0, 0, 0))
 
             if info_ver > bpy.app.version:
-                self.report({'WARNING'}, ("This script was written Blender "
-                                          "version %d.%d.%d and might not "
-                                          "function (correctly), "
-                                          "though it is enabled") %
-                                         info_ver)
+                self.report({'WARNING'},
+                            ("This script was written Blender "
+                             "version %d.%d.%d and might not "
+                             "function (correctly), "
+                             "though it is enabled" %
+                             info_ver))
             return {'FINISHED'}
         else:
+
+            if err_str:
+                self.report({'ERROR'}, err_str)
+
             return {'CANCELLED'}
 
 
@@ -1630,7 +1639,19 @@ class WM_OT_addon_disable(Operator):
     def execute(self, context):
         import addon_utils
 
-        addon_utils.disable(self.module)
+        err_str = ""
+
+        def err_cb():
+            import traceback
+            nonlocal err_str
+            err_str = traceback.format_exc()
+            print(err_str)
+
+        addon_utils.disable(self.module, handle_error=err_cb)
+
+        if err_str:
+            self.report({'ERROR'}, err_str)
+
         return {'FINISHED'}
 
 
@@ -1691,6 +1712,19 @@ class WM_OT_theme_install(Operator):
         wm = context.window_manager
         wm.fileselect_add(self)
         return {'RUNNING_MODAL'}
+
+
+class WM_OT_addon_refresh(Operator):
+    "Scan addon directories for new modules"
+    bl_idname = "wm.addon_refresh"
+    bl_label = "Refresh"
+
+    def execute(self, context):
+        import addon_utils
+
+        addon_utils.modules_refresh()
+
+        return {'FINISHED'}
 
 
 class WM_OT_addon_install(Operator):
@@ -1762,12 +1796,12 @@ class WM_OT_addon_install(Operator):
             self.report({'ERROR'}, "Failed to get addons path")
             return {'CANCELLED'}
 
-        # create dir is if missing.
-        try:
-            os.makedirs(path_addons, exist_ok=True)
-        except:
-            import traceback
-            traceback.print_exc()
+        if not os.path.isdir(path_addons):
+            try:
+                os.makedirs(path_addons, exist_ok=True)
+            except:
+                import traceback
+                traceback.print_exc()
 
         # Check if we are installing from a target path,
         # doing so causes 2+ addons of same name or when the same from/to
@@ -1782,7 +1816,7 @@ class WM_OT_addon_install(Operator):
         del pyfile_dir
         # done checking for exceptional case
 
-        addons_old = {mod.__name__ for mod in addon_utils.modules(addon_utils.addons_fake_modules)}
+        addons_old = {mod.__name__ for mod in addon_utils.modules()}
 
         #check to see if the file is in compressed format (.zip)
         if zipfile.is_zipfile(pyfile):
@@ -1825,7 +1859,7 @@ class WM_OT_addon_install(Operator):
                 traceback.print_exc()
                 return {'CANCELLED'}
 
-        addons_new = {mod.__name__ for mod in addon_utils.modules(addon_utils.addons_fake_modules)} - addons_old
+        addons_new = {mod.__name__ for mod in addon_utils.modules()} - addons_old
         addons_new.discard("modules")
 
         # disable any addons we may have enabled previously and removed.
@@ -1835,7 +1869,7 @@ class WM_OT_addon_install(Operator):
 
         # possible the zip contains multiple addons, we could disallow this
         # but for now just use the first
-        for mod in addon_utils.modules(addon_utils.addons_fake_modules):
+        for mod in addon_utils.modules(refresh=False):
             if mod.__name__ in addons_new:
                 info = addon_utils.module_bl_info(mod)
 
@@ -1861,7 +1895,7 @@ class WM_OT_addon_install(Operator):
 
 
 class WM_OT_addon_remove(Operator):
-    "Disable an addon"
+    "Delete the addon from the file system"
     bl_idname = "wm.addon_remove"
     bl_label = "Remove Addon"
 
@@ -1875,7 +1909,7 @@ class WM_OT_addon_remove(Operator):
         import os
         import addon_utils
 
-        for mod in addon_utils.modules(addon_utils.addons_fake_modules):
+        for mod in addon_utils.modules():
             if mod.__name__ == module:
                 filepath = mod.__file__
                 if os.path.exists(filepath):
@@ -1902,6 +1936,8 @@ class WM_OT_addon_remove(Operator):
             shutil.rmtree(path)
         else:
             os.remove(path)
+
+        addon_utils.modules_refresh()
 
         context.area.tag_redraw()
         return {'FINISHED'}

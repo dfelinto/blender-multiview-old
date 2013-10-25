@@ -120,16 +120,14 @@ class VIEW3D_HT_header(Header):
         # OpenGL render
         row = layout.row(align=True)
         row.operator("render.opengl", text="", icon='RENDER_STILL')
-        props = row.operator("render.opengl", text="", icon='RENDER_ANIMATION')
-        props.animation = True
+        row.operator("render.opengl", text="", icon='RENDER_ANIMATION').animation = True
 
         # Pose
         if obj and mode == 'POSE':
             row = layout.row(align=True)
             row.operator("pose.copy", text="", icon='COPYDOWN')
             row.operator("pose.paste", text="", icon='PASTEDOWN')
-            props = row.operator("pose.paste", text="", icon='PASTEFLIPDOWN')
-            props.flipped = 1
+            row.operator("pose.paste", text="", icon='PASTEFLIPDOWN').flipped = 1
 
 
 # ********** Menu **********
@@ -238,8 +236,10 @@ class VIEW3D_MT_transform_armature(VIEW3D_MT_transform_base):
         layout.separator()
 
         obj = context.object
-        if     (obj.type == 'ARMATURE' and obj.mode in {'EDIT', 'POSE'} and
-                obj.data.draw_type in {'BBONE', 'ENVELOPE'}):
+        if (obj.type == 'ARMATURE' and obj.mode in {'EDIT', 'POSE'} and
+                obj.data.draw_type in {'BBONE', 'ENVELOPE'}
+                ):
+
             layout.operator("transform.transform", text="Scale Envelope/BBone").mode = 'BONE_SIZE'
 
         if context.edit_object and context.edit_object.type == 'ARMATURE':
@@ -291,7 +291,8 @@ class VIEW3D_MT_snap(Menu):
         layout = self.layout
 
         layout.operator("view3d.snap_selected_to_grid", text="Selection to Grid")
-        layout.operator("view3d.snap_selected_to_cursor", text="Selection to Cursor")
+        layout.operator("view3d.snap_selected_to_cursor", text="Selection to Cursor").use_offset = False
+        layout.operator("view3d.snap_selected_to_cursor", text="Selection to Cursor (Offset)").use_offset = True
 
         layout.separator()
 
@@ -398,9 +399,15 @@ class VIEW3D_MT_view_navigation(Menu):
     bl_label = "Navigation"
 
     def draw(self, context):
+        from math import pi
         layout = self.layout
 
         layout.operator_enum("view3d.view_orbit", "type")
+
+        layout.separator()
+
+        layout.operator("view3d.view_roll", text="Roll Left").angle = pi / -12.0
+        layout.operator("view3d.view_roll", text="Roll Right").angle = pi / 12.0
 
         layout.separator()
 
@@ -615,8 +622,8 @@ class VIEW3D_MT_select_edit_mesh(Menu):
 
         layout.separator()
 
-        layout.operator("mesh.select_less", text="Less")
         layout.operator("mesh.select_more", text="More")
+        layout.operator("mesh.select_less", text="Less")
 
         layout.separator()
 
@@ -721,6 +728,7 @@ class VIEW3D_MT_select_edit_lattice(Menu):
 
         layout.separator()
 
+        layout.operator("lattice.select_random")
         layout.operator("lattice.select_all").action = 'TOGGLE'
         layout.operator("lattice.select_all", text="Inverse").action = 'INVERT'
 
@@ -742,6 +750,11 @@ class VIEW3D_MT_select_edit_armature(Menu):
 
         layout.operator("armature.select_all").action = 'TOGGLE'
         layout.operator("armature.select_all", text="Inverse").action = 'INVERT'
+
+        layout.separator()
+
+        layout.operator("armature.select_more", text="More")
+        layout.operator("armature.select_less", text="Less")
 
         layout.separator()
 
@@ -966,26 +979,30 @@ class VIEW3D_MT_object_specials(Menu):
             if scene.render.use_shading_nodes:
                 try:
                     value = lamp.node_tree.nodes["Emission"].inputs["Strength"].default_value
+                except AttributeError:
+                    value = None
 
+                if value is not None:
                     props = layout.operator("wm.context_modal_mouse", text="Strength")
                     props.data_path_iter = "selected_editable_objects"
                     props.data_path_item = "data.node_tree.nodes[\"Emission\"].inputs[\"Strength\"].default_value"
                     props.header_text = "Lamp Strength: %.3f"
                     props.input_scale = 0.1
-                except AttributeError:
-                    pass
+                del value
 
-                if lamp.type == 'AREA' and lamp.shape == 'RECTANGLE':
+                if lamp.type == 'AREA':
                     props = layout.operator("wm.context_modal_mouse", text="Size X")
                     props.data_path_iter = "selected_editable_objects"
                     props.data_path_item = "data.size"
                     props.header_text = "Lamp Size X: %.3f"
 
-                    props = layout.operator("wm.context_modal_mouse", text="Size Y")
-                    props.data_path_iter = "selected_editable_objects"
-                    props.data_path_item = "data.size"
-                    props.header_text = "Lamp Size Y: %.3f"
-                elif lamp.type in  {'SPOT', 'AREA', 'POINT', 'SUN'}:
+                    if lamp.shape == 'RECTANGLE':
+                        props = layout.operator("wm.context_modal_mouse", text="Size Y")
+                        props.data_path_iter = "selected_editable_objects"
+                        props.data_path_item = "data.size_y"
+                        props.header_text = "Lamp Size Y: %.3f"
+
+                elif lamp.type in {'SPOT', 'POINT', 'SUN'}:
                     props = layout.operator("wm.context_modal_mouse", text="Size")
                     props.data_path_iter = "selected_editable_objects"
                     props.data_path_item = "data.shadow_soft_size"
@@ -1306,15 +1323,15 @@ class VIEW3D_MT_vertex_group(Menu):
         layout = self.layout
 
         layout.operator_context = 'EXEC_AREA'
-        layout.operator("object.vertex_group_assign", text="Assign to New Group").new = True
+        layout.operator("object.vertex_group_assign_new")
 
         ob = context.active_object
         if ob.mode == 'EDIT' or (ob.mode == 'WEIGHT_PAINT' and ob.type == 'MESH' and ob.data.use_paint_mask_vertex):
             if ob.vertex_groups.active:
                 layout.separator()
-                layout.operator("object.vertex_group_assign", text="Assign to Active Group").new = False
-                layout.operator("object.vertex_group_remove_from", text="Remove from Active Group").all = False
-                layout.operator("object.vertex_group_remove_from", text="Remove from All").all = True
+                layout.operator("object.vertex_group_assign", text="Assign to Active Group")
+                layout.operator("object.vertex_group_remove_from", text="Remove from Active Group").use_all_groups = False
+                layout.operator("object.vertex_group_remove_from", text="Remove from All").use_all_groups = True
                 layout.separator()
 
         if ob.vertex_groups.active:
@@ -1731,12 +1748,12 @@ class BoneOptions:
         layout = self.layout
 
         options = [
-            "show_wire",
-            "use_deform",
-            "use_envelope_multiply",
-            "use_inherit_rotation",
-            "use_inherit_scale",
-        ]
+                "show_wire",
+                "use_deform",
+                "use_envelope_multiply",
+                "use_inherit_rotation",
+                "use_inherit_scale",
+                ]
 
         if context.mode == 'EDIT_ARMATURE':
             bone_props = bpy.types.EditBone.bl_rna.properties
@@ -1750,7 +1767,7 @@ class BoneOptions:
 
         for opt in options:
             props = layout.operator("wm.context_collection_boolean_set", text=bone_props[opt].name,
-                                    text_ctxt=i18n_contexts.default)
+                    text_ctxt=i18n_contexts.default)
             props.data_path_iter = data_path_iter
             props.data_path_item = opt_suffix + opt
             props.type = self.type
@@ -1796,7 +1813,7 @@ class VIEW3D_MT_edit_mesh(Menu):
         layout.menu("VIEW3D_MT_uv_map", text="UV Unwrap...")
 
         layout.separator()
-        layout.operator("mesh.symmetrize")
+
         layout.operator("mesh.duplicate_move")
         layout.menu("VIEW3D_MT_edit_mesh_extrude")
         layout.menu("VIEW3D_MT_edit_mesh_delete")
@@ -1807,6 +1824,14 @@ class VIEW3D_MT_edit_mesh(Menu):
         layout.menu("VIEW3D_MT_edit_mesh_edges")
         layout.menu("VIEW3D_MT_edit_mesh_faces")
         layout.menu("VIEW3D_MT_edit_mesh_normals")
+        layout.menu("VIEW3D_MT_edit_mesh_clean")
+
+        layout.separator()
+
+        layout.operator("mesh.symmetrize")
+        layout.operator("mesh.symmetry_snap")
+        layout.operator("mesh.bisect")
+        layout.operator_menu_enum("mesh.sort_elements", "type", text="Sort Elements...")
 
         layout.separator()
 
@@ -1865,6 +1890,7 @@ class VIEW3D_MT_edit_mesh_specials(Menu):
         layout.operator("mesh.shortest_path_select")
         layout.operator("mesh.sort_elements")
         layout.operator("mesh.symmetrize")
+        layout.operator("mesh.symmetry_snap")
 
 
 class VIEW3D_MT_edit_mesh_select_mode(Menu):
@@ -1883,11 +1909,17 @@ class VIEW3D_MT_edit_mesh_extrude(Menu):
     bl_label = "Extrude"
 
     _extrude_funcs = {
-        'VERT': lambda layout: layout.operator("mesh.extrude_vertices_move", text="Vertices Only"),
-        'EDGE': lambda layout: layout.operator("mesh.extrude_edges_move", text="Edges Only"),
-        'FACE': lambda layout: layout.operator("mesh.extrude_faces_move", text="Individual Faces"),
-        'REGION': lambda layout: layout.operator("view3d.edit_mesh_extrude_move_normal", text="Region"),
-    }
+            'VERT': lambda layout:
+            layout.operator("mesh.extrude_vertices_move", text="Vertices Only"),
+            'EDGE': lambda layout:
+            layout.operator("mesh.extrude_edges_move", text="Edges Only"),
+            'FACE': lambda layout:
+            layout.operator("mesh.extrude_faces_move", text="Individual Faces"),
+            'REGION': lambda layout:
+            layout.operator("view3d.edit_mesh_extrude_move_normal", text="Region"),
+            'REGION_VERT_NORMAL': lambda layout:
+            layout.operator("view3d.edit_mesh_extrude_move_shrink_fatten", text="Region (Vertex Normals)"),
+            }
 
     @staticmethod
     def extrude_options(context):
@@ -1896,7 +1928,7 @@ class VIEW3D_MT_edit_mesh_extrude(Menu):
 
         menu = []
         if mesh.total_face_sel:
-            menu += ['REGION', 'FACE']
+            menu += ['REGION', 'REGION_VERT_NORMAL', 'FACE']
         if mesh.total_edge_sel and (select_mode[0] or select_mode[1]):
             menu += ['EDGE']
         if mesh.total_vert_sel and select_mode[0]:
@@ -1925,15 +1957,14 @@ class VIEW3D_MT_edit_mesh_vertices(Menu):
         layout.operator("mesh.rip_move_fill")
         layout.operator("mesh.split")
         layout.operator_menu_enum("mesh.separate", "type")
-        layout.operator("mesh.vert_connect")
-        layout.operator("transform.vert_slide")
+        layout.operator("mesh.vert_connect", text="Connect")
+        layout.operator("transform.vert_slide", text="Slide")
 
         layout.separator()
 
         layout.operator("mesh.bevel").vertex_only = True
         layout.operator("mesh.vertices_smooth")
         layout.operator("mesh.remove_doubles")
-        layout.operator("mesh.sort_elements", text="Sort Vertices").elements = {'VERT'}
 
         layout.operator("mesh.blend_from_shape")
 
@@ -1951,7 +1982,9 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
 
     def draw(self, context):
         layout = self.layout
+
         with_freestyle = bpy.app.build_options.freestyle
+        scene = context.scene
 
         layout.operator_context = 'INVOKE_REGION_WIN'
 
@@ -1976,11 +2009,10 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
 
         layout.separator()
 
-        if with_freestyle:
+        if with_freestyle and not scene.render.use_shading_nodes:
             layout.operator("mesh.mark_freestyle_edge").clear = False
             layout.operator("mesh.mark_freestyle_edge", text="Clear Freestyle Edge").clear = True
-
-        layout.separator()
+            layout.separator()
 
         layout.operator("mesh.edge_rotate", text="Rotate Edge CW").use_ccw = False
         layout.operator("mesh.edge_rotate", text="Rotate Edge CCW").use_ccw = True
@@ -1990,7 +2022,6 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
         layout.operator("mesh.bevel").vertex_only = False
         layout.operator("mesh.edge_split")
         layout.operator("mesh.bridge_edge_loops")
-        layout.operator("mesh.sort_elements", text="Sort Edges").elements = {'EDGE'}
 
         layout.separator()
 
@@ -2007,7 +2038,9 @@ class VIEW3D_MT_edit_mesh_faces(Menu):
 
     def draw(self, context):
         layout = self.layout
+
         with_freestyle = bpy.app.build_options.freestyle
+        scene = context.scene
 
         layout.operator_context = 'INVOKE_REGION_WIN'
 
@@ -2020,15 +2053,13 @@ class VIEW3D_MT_edit_mesh_faces(Menu):
         layout.operator("mesh.bevel").vertex_only = False
         layout.operator("mesh.solidify")
         layout.operator("mesh.wireframe")
-        layout.operator("mesh.sort_elements", text="Sort Faces").elements = {'FACE'}
 
         layout.separator()
 
-        if with_freestyle:
+        if with_freestyle and not scene.render.use_shading_nodes:
             layout.operator("mesh.mark_freestyle_face").clear = False
             layout.operator("mesh.mark_freestyle_face", text="Clear Freestyle Face").clear = True
-
-        layout.separator()
+            layout.separator()
 
         layout.operator("mesh.poke")
         layout.operator("mesh.quads_convert_to_tris")
@@ -2065,6 +2096,16 @@ class VIEW3D_MT_edit_mesh_normals(Menu):
         layout.operator("mesh.flip_normals")
 
 
+class VIEW3D_MT_edit_mesh_clean(Menu):
+    bl_label = "Clean up"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator("mesh.fill_holes")
+        layout.operator("mesh.vert_connect_nonplanar")
+
+
 class VIEW3D_MT_edit_mesh_delete(Menu):
     bl_label = "Delete"
 
@@ -2075,13 +2116,11 @@ class VIEW3D_MT_edit_mesh_delete(Menu):
 
         layout.separator()
 
-        mesh_select_mode = context.tool_settings.mesh_select_mode[:]
-        if mesh_select_mode[2]:
-            layout.operator("mesh.dissolve_faces")
-        elif mesh_select_mode[1]:
-            layout.operator("mesh.dissolve_edges")
-        elif mesh_select_mode[0]:
-            layout.operator("mesh.dissolve_verts")
+        layout.operator("mesh.dissolve_verts")
+        layout.operator("mesh.dissolve_edges")
+        layout.operator("mesh.dissolve_faces")
+
+        layout.separator()
 
         layout.operator("mesh.dissolve_limited")
 
@@ -2111,6 +2150,7 @@ def draw_curve(self, context):
 
     layout.operator("curve.extrude_move")
     layout.operator("curve.duplicate_move")
+    layout.operator("curve.split")
     layout.operator("curve.separate")
     layout.operator("curve.make_segment")
     layout.operator("curve.cyclic_toggle")
@@ -2180,7 +2220,9 @@ class VIEW3D_MT_edit_curve_specials(Menu):
         layout.operator("curve.spline_weight_set")
         layout.operator("curve.radius_set")
         layout.operator("curve.smooth")
+        layout.operator("curve.smooth_weight")
         layout.operator("curve.smooth_radius")
+        layout.operator("curve.smooth_tilt")
 
 
 class VIEW3D_MT_edit_curve_showhide(ShowHideMenu, Menu):
@@ -2211,6 +2253,10 @@ class VIEW3D_MT_edit_font(Menu):
         layout.operator("font.style_toggle", text="Toggle Italic").style = 'ITALIC'
         layout.operator("font.style_toggle", text="Toggle Underline").style = 'UNDERLINE'
         layout.operator("font.style_toggle", text="Toggle Small Caps").style = 'SMALL_CAPS'
+
+        layout.separator()
+
+        layout.operator("font.insert_lorem")
 
 
 class VIEW3D_MT_edit_text_chars(Menu):
@@ -2431,7 +2477,7 @@ class VIEW3D_PT_view3d_properties(Panel):
 
         col = layout.column()
         col.active = bool(view.region_3d.view_perspective != 'CAMERA' or
-                          view.region_quadview)
+                view.region_quadview)
         col.prop(view, "lens")
         col.label(text="Lock to Object:")
         col.prop(view, "lock_object", text="")
@@ -2439,9 +2485,9 @@ class VIEW3D_PT_view3d_properties(Panel):
         if lock_object:
             if lock_object.type == 'ARMATURE':
                 col.prop_search(view, "lock_bone", lock_object.data,
-                                "edit_bones" if lock_object.mode == 'EDIT'
-                                else "bones",
-                                text="")
+                        "edit_bones" if lock_object.mode == 'EDIT'
+                        else "bones",
+                        text="")
         else:
             col.prop(view, "lock_cursor", text="Lock to Cursor")
 
@@ -2453,7 +2499,7 @@ class VIEW3D_PT_view3d_properties(Panel):
         col.prop(view, "clip_start", text="Start")
         col.prop(view, "clip_end", text="End")
 
-        subcol = col.column()
+        subcol = col.column(align=True)
         subcol.enabled = not view.lock_camera_and_layers
         subcol.label(text="Local Camera:")
         subcol.prop(view, "camera", text="")
@@ -2522,7 +2568,7 @@ class VIEW3D_PT_view3d_display(Panel):
         view = context.space_data
         scene = context.scene
         gs = scene.game_settings
-        ob = context.object
+        obj = context.object
 
         col = layout.column()
         col.prop(view, "show_only_render")
@@ -2551,17 +2597,6 @@ class VIEW3D_PT_view3d_display(Panel):
         subsub = sub.column(align=True)
         subsub.active = scene.unit_settings.system == 'NONE'
         subsub.prop(view, "grid_subdivisions", text="Subdivisions")
-
-        if not scene.render.use_shading_nodes:
-            col = layout.column()
-            col.label(text="Shading:")
-            col.prop(gs, "material_mode", text="")
-            col.prop(view, "show_textured_solid")
-        if view.viewport_shade == 'SOLID':
-            col.prop(view, "use_matcap")
-            if view.use_matcap:
-                col.template_icon_view(view, "matcap_icon")
-        col.prop(view, "show_backface_culling")
 
         layout.separator()
 
@@ -2613,6 +2648,37 @@ class VIEW3D_PT_view3d_stereo(Panel):
         col.prop(view, "show_stereoscopy_volume")
 
 
+class VIEW3D_PT_view3d_shading(Panel):
+    bl_space_type = 'VIEW_3D'
+    bl_region_type = 'UI'
+    bl_label = "Shading"
+
+    def draw(self, context):
+        layout = self.layout
+
+        view = context.space_data
+        scene = context.scene
+        gs = scene.game_settings
+        obj = context.object
+
+        col = layout.column()
+
+        if not scene.render.use_shading_nodes:
+            col.prop(gs, "material_mode", text="")
+            col.prop(view, "show_textured_solid")
+        
+        if view.viewport_shade == 'SOLID':
+            col.prop(view, "use_matcap")
+            if view.use_matcap:
+                col.template_icon_view(view, "matcap_icon")
+        elif view.viewport_shade == 'TEXTURED':
+            col.prop(view, "show_textured_shadeless")
+
+        col.prop(view, "show_backface_culling")
+        if obj and obj.mode == 'EDIT' and view.viewport_shade not in {'BOUNDBOX', 'WIREFRAME'}:
+            col.prop(view, "show_occlude_wire")
+
+
 class VIEW3D_PT_view3d_motion_tracking(Panel):
     bl_space_type = 'VIEW_3D'
     bl_region_type = 'UI'
@@ -2658,6 +2724,7 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
         with_freestyle = bpy.app.build_options.freestyle
 
         mesh = context.active_object.data
+        scene = context.scene
 
         split = layout.split()
 
@@ -2677,7 +2744,7 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
             col.prop(mesh, "show_edge_seams", text="Seams")
         col.prop(mesh, "show_edge_sharp", text="Sharp", text_ctxt=i18n_contexts.plural)
         col.prop(mesh, "show_edge_bevel_weight", text="Bevel")
-        if with_freestyle:
+        if with_freestyle and not scene.render.use_shading_nodes:
             col.prop(mesh, "show_freestyle_edge_marks", text="Edge Marks")
             col.prop(mesh, "show_freestyle_face_marks", text="Face Marks")
 
@@ -2771,9 +2838,9 @@ class VIEW3D_PT_view3d_curvedisplay(Panel):
         curve = context.active_object.data
 
         col = layout.column()
-        col.label(text="Overlays:")
-        col.prop(curve, "show_handles", text="Handles")
-        col.prop(curve, "show_normal_face", text="Normals")
+        row = col.row()
+        row.prop(curve, "show_handles", text="Handles")
+        row.prop(curve, "show_normal_face", text="Normals")
         col.prop(context.scene.tool_settings, "normal_size", text="Normal Size")
 
 
@@ -2936,7 +3003,7 @@ class VIEW3D_PT_etch_a_ton(Panel):
 
             colsub = col.column(align=True)
             colsub.prop(toolsettings, "use_etch_autoname")
-            sub = colsub.column()
+            sub = colsub.column(align=True)
             sub.enabled = not toolsettings.use_etch_autoname
             sub.prop(toolsettings, "etch_number")
             sub.prop(toolsettings, "etch_side")
@@ -2993,6 +3060,3 @@ def unregister():
 
 if __name__ == "__main__":
     register()
-
-if __name__ == "__main__":  # only for live edit.
-    bpy.utils.register_module(__name__)

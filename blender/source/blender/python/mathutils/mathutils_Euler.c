@@ -15,10 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- *
  * Contributor(s): Joseph Gilbert
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -68,7 +64,7 @@ static PyObject *Euler_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 		case 2:
 			if ((order = euler_order_from_string(order_str, "mathutils.Euler()")) == -1)
 				return NULL;
-		/* intentionally pass through */
+			/* fall-through */
 		case 1:
 			if (mathutils_array_parse(eul, EULER_SIZE, EULER_SIZE, seq, "mathutils.Euler()") == -1)
 				return NULL;
@@ -360,7 +356,8 @@ static PyObject *Euler_richcmpr(PyObject *a, PyObject *b, int op)
 
 	switch (op) {
 		case Py_NE:
-			ok = !ok; /* pass through */
+			ok = !ok;
+			/* fall-through */
 		case Py_EQ:
 			res = ok ? Py_False : Py_True;
 			break;
@@ -710,7 +707,7 @@ PyTypeObject euler_Type = {
  * (i.e. it was allocated elsewhere by MEM_mallocN())
  * pass Py_NEW - if vector is not a WRAPPER and managed by PYTHON
  * (i.e. it must be created here with PyMEM_malloc())*/
-PyObject *Euler_CreatePyObject(float *eul, const short order, int type, PyTypeObject *base_type)
+PyObject *Euler_CreatePyObject(float eul[3], const short order, int type, PyTypeObject *base_type)
 {
 	EulerObject *self;
 

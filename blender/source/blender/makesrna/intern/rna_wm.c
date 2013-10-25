@@ -43,7 +43,8 @@
 
 #include "WM_types.h"
 
-EnumPropertyItem event_keymouse_value_items[] = {
+#ifdef RNA_RUNTIME
+static EnumPropertyItem event_keymouse_value_items[] = {
 	{KM_ANY, "ANY", 0, "Any", ""},
 	{KM_PRESS, "PRESS", 0, "Press", ""},
 	{KM_RELEASE, "RELEASE", 0, "Release", ""},
@@ -52,7 +53,7 @@ EnumPropertyItem event_keymouse_value_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem event_tweak_value_items[] = {
+static EnumPropertyItem event_tweak_value_items[] = {
 	{KM_ANY, "ANY", 0, "Any", ""},
 	{EVT_GESTURE_N, "NORTH", 0, "North", ""},
 	{EVT_GESTURE_NE, "NORTH_EAST", 0, "North-East", ""},
@@ -65,25 +66,7 @@ EnumPropertyItem event_tweak_value_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem event_value_items[] = {
-	{KM_ANY, "ANY", 0, "Any", ""},
-	{KM_NOTHING, "NOTHING", 0, "Nothing", ""},
-	{KM_PRESS, "PRESS", 0, "Press", ""},
-	{KM_RELEASE, "RELEASE", 0, "Release", ""},
-	{KM_CLICK, "CLICK", 0, "Click", ""},
-	{KM_DBL_CLICK, "DOUBLE_CLICK", 0, "Double Click", ""},
-	{EVT_GESTURE_N, "NORTH", 0, "North", ""},
-	{EVT_GESTURE_NE, "NORTH_EAST", 0, "North-East", ""},
-	{EVT_GESTURE_E, "EAST", 0, "East", ""},
-	{EVT_GESTURE_SE, "SOUTH_EAST", 0, "South-East", ""},
-	{EVT_GESTURE_S, "SOUTH", 0, "South", ""},
-	{EVT_GESTURE_SW, "SOUTH_WEST", 0, "South-West", ""},
-	{EVT_GESTURE_W, "WEST", 0, "West", ""},
-	{EVT_GESTURE_NW, "NORTH_WEST", 0, "North-West", ""},
-	{0, NULL, 0, NULL, NULL}
-};
-
-EnumPropertyItem event_tweak_type_items[] = {
+static EnumPropertyItem event_tweak_type_items[] = {
 	{EVT_TWEAK_L, "EVT_TWEAK_L", 0, "Left", ""},
 	{EVT_TWEAK_M, "EVT_TWEAK_M", 0, "Middle", ""},
 	{EVT_TWEAK_R, "EVT_TWEAK_R", 0, "Right", ""},
@@ -92,7 +75,7 @@ EnumPropertyItem event_tweak_type_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem event_mouse_type_items[] = {
+static EnumPropertyItem event_mouse_type_items[] = {
 	{LEFTMOUSE, "LEFTMOUSE", 0, "Left", ""},
 	{MIDDLEMOUSE, "MIDDLEMOUSE", 0, "Middle", ""},
 	{RIGHTMOUSE, "RIGHTMOUSE", 0, "Right", ""},
@@ -113,7 +96,7 @@ EnumPropertyItem event_mouse_type_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem event_timer_type_items[] = {
+static EnumPropertyItem event_timer_type_items[] = {
 	{TIMER, "TIMER", 0, "Timer", ""},
 	{TIMER0, "TIMER0", 0, "Timer 0", ""},
 	{TIMER1, "TIMER1", 0, "Timer 1", ""},
@@ -125,12 +108,12 @@ EnumPropertyItem event_timer_type_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem event_textinput_type_items[] = {
+static EnumPropertyItem event_textinput_type_items[] = {
 	{KM_TEXTINPUT, "TEXTINPUT", 0, "Text Input", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem event_ndof_type_items[] = {
+static EnumPropertyItem event_ndof_type_items[] = {
 	{NDOF_MOTION, "NDOF_MOTION", 0, "Motion", ""},
 	/* buttons on all 3dconnexion devices */
 	{NDOF_BUTTON_MENU, "NDOF_BUTTON_MENU", 0, "Menu", ""},
@@ -179,6 +162,7 @@ EnumPropertyItem event_ndof_type_items[] = {
 	{NDOF_BUTTON_C, "NDOF_BUTTON_C", 0, "Button C", ""},
 	{0, NULL, 0, NULL, NULL}
 };
+#endif
 
 /* not returned: CAPSLOCKKEY, UNKNOWNKEY */
 EnumPropertyItem event_type_items[] = {
@@ -386,6 +370,24 @@ EnumPropertyItem event_type_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
+EnumPropertyItem event_value_items[] = {
+	{KM_ANY, "ANY", 0, "Any", ""},
+	{KM_NOTHING, "NOTHING", 0, "Nothing", ""},
+	{KM_PRESS, "PRESS", 0, "Press", ""},
+	{KM_RELEASE, "RELEASE", 0, "Release", ""},
+	{KM_CLICK, "CLICK", 0, "Click", ""},
+	{KM_DBL_CLICK, "DOUBLE_CLICK", 0, "Double Click", ""},
+	{EVT_GESTURE_N, "NORTH", 0, "North", ""},
+	{EVT_GESTURE_NE, "NORTH_EAST", 0, "North-East", ""},
+	{EVT_GESTURE_E, "EAST", 0, "East", ""},
+	{EVT_GESTURE_SE, "SOUTH_EAST", 0, "South-East", ""},
+	{EVT_GESTURE_S, "SOUTH", 0, "South", ""},
+	{EVT_GESTURE_SW, "SOUTH_WEST", 0, "South-West", ""},
+	{EVT_GESTURE_W, "WEST", 0, "West", ""},
+	{EVT_GESTURE_NW, "NORTH_WEST", 0, "North-West", ""},
+	{0, NULL, 0, NULL, NULL}
+};
+
 EnumPropertyItem keymap_propvalue_items[] = {
 	{0, "NONE", 0, "", ""},
 	{0, NULL, 0, NULL, NULL}
@@ -401,7 +403,9 @@ static EnumPropertyItem keymap_modifiers_items[] = {
 };
 #endif
 
-EnumPropertyItem operator_flag_items[] = {
+
+#ifndef RNA_RUNTIME
+static EnumPropertyItem operator_flag_items[] = {
 	{OPTYPE_REGISTER, "REGISTER", 0, "Register", "Display in the info window and support the redo toolbar panel"},
 	{OPTYPE_UNDO, "UNDO", 0, "Undo", "Push an undo event (needed for operator redo)"},
 	{OPTYPE_BLOCKING, "BLOCKING", 0, "Blocking", "Block anything else from using the cursor"},
@@ -413,6 +417,7 @@ EnumPropertyItem operator_flag_items[] = {
 	{OPTYPE_INTERNAL, "INTERNAL", 0, "Internal", "Removes the operator from search results"},
 	{0, NULL, 0, NULL, NULL}
 };
+#endif
 
 EnumPropertyItem operator_return_items[] = {
 	{OPERATOR_RUNNING_MODAL, "RUNNING_MODAL", 0, "Running Modal", "Keep the operator running with blender"},
@@ -436,13 +441,6 @@ EnumPropertyItem wm_report_items[] = {
 	{RPT_ERROR_OUT_OF_MEMORY, "ERROR_OUT_OF_MEMORY", 0, "Out of Memory", ""},
 	{0, NULL, 0, NULL, NULL}
 };
-
-#define KMI_TYPE_KEYBOARD   0
-#define KMI_TYPE_MOUSE      1
-#define KMI_TYPE_TWEAK      2
-#define KMI_TYPE_TEXTINPUT  3
-#define KMI_TYPE_TIMER      4
-#define KMI_TYPE_NDOF       5
 
 #ifdef RNA_RUNTIME
 
@@ -585,7 +583,7 @@ static void rna_Window_screen_set(PointerRNA *ptr, PointerRNA value)
 	win->newscreen = value.data;
 }
 
-int rna_Window_screen_assign_poll(PointerRNA *ptr, PointerRNA value)
+int rna_Window_screen_assign_poll(PointerRNA *UNUSED(ptr), PointerRNA value)
 {
 	bScreen *screen = (bScreen *)value.id.data;
 
@@ -620,13 +618,7 @@ static int rna_wmKeyMapItem_map_type_get(PointerRNA *ptr)
 {
 	wmKeyMapItem *kmi = ptr->data;
 
-	if (ISTIMER(kmi->type)) return KMI_TYPE_TIMER;
-	if (ISKEYBOARD(kmi->type)) return KMI_TYPE_KEYBOARD;
-	if (ISTWEAK(kmi->type)) return KMI_TYPE_TWEAK;
-	if (ISMOUSE(kmi->type)) return KMI_TYPE_MOUSE;
-	if (ISNDOF(kmi->type)) return KMI_TYPE_NDOF;
-	if (kmi->type == KM_TEXTINPUT) return KMI_TYPE_TEXTINPUT;
-	return KMI_TYPE_KEYBOARD;
+	return WM_keymap_map_type_get(kmi);
 }
 
 static void rna_wmKeyMapItem_map_type_set(PointerRNA *ptr, int value)
@@ -770,10 +762,8 @@ static PointerRNA rna_WindowManager_active_keyconfig_get(PointerRNA *ptr)
 	wmWindowManager *wm = ptr->data;
 	wmKeyConfig *kc;
 
-	for (kc = wm->keyconfigs.first; kc; kc = kc->next)
-		if (strcmp(kc->idname, U.keyconfigstr) == 0)
-			break;
-	
+	kc = BLI_findstring(&wm->keyconfigs, U.keyconfigstr, offsetof(wmKeyConfig, idname));
+
 	if (!kc)
 		kc = wm->defaultconf;
 	
@@ -955,7 +945,7 @@ static int operator_execute(bContext *C, wmOperator *op)
 }
 
 /* same as execute() but no return value */
-static int operator_check(bContext *C, wmOperator *op)
+static bool operator_check(bContext *C, wmOperator *op)
 {
 	extern FunctionRNA rna_Operator_check_func;
 
@@ -963,7 +953,7 @@ static int operator_check(bContext *C, wmOperator *op)
 	ParameterList list;
 	FunctionRNA *func;
 	void *ret;
-	int result;
+	bool result;
 
 	RNA_pointer_create(NULL, op->type->ext.srna, op, &opr);
 	func = &rna_Operator_check_func; /* RNA_struct_find_function(&opr, "check"); */
@@ -973,7 +963,7 @@ static int operator_check(bContext *C, wmOperator *op)
 	op->type->ext.call(C, &opr, func, &list);
 
 	RNA_parameter_get_lookup(&list, "result", &ret);
-	result = *(int *)ret;
+	result = (*(int *)ret) != 0;
 
 	RNA_parameter_list_free(&list);
 
@@ -1598,32 +1588,32 @@ static void rna_def_event(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "mouse_x", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "x");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Mouse X Position", "The window relative vertical location of the mouse");
+	RNA_def_property_ui_text(prop, "Mouse X Position", "The window relative horizontal location of the mouse");
 	
 	prop = RNA_def_property(srna, "mouse_y", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "y");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Mouse Y Position", "The window relative horizontal location of the mouse");
+	RNA_def_property_ui_text(prop, "Mouse Y Position", "The window relative vertical location of the mouse");
 
 	prop = RNA_def_property(srna, "mouse_region_x", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "mval[0]");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Mouse X Position", "The region relative vertical location of the mouse");
+	RNA_def_property_ui_text(prop, "Mouse X Position", "The region relative horizontal location of the mouse");
 
 	prop = RNA_def_property(srna, "mouse_region_y", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "mval[1]");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Mouse Y Position", "The region relative horizontal location of the mouse");
+	RNA_def_property_ui_text(prop, "Mouse Y Position", "The region relative vertical location of the mouse");
 	
 	prop = RNA_def_property(srna, "mouse_prev_x", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "prevx");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Mouse Previous X Position", "The window relative vertical location of the mouse");
+	RNA_def_property_ui_text(prop, "Mouse Previous X Position", "The window relative horizontal location of the mouse");
 	
 	prop = RNA_def_property(srna, "mouse_prev_y", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "prevy");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Mouse Previous Y Position", "The window relative horizontal location of the mouse");
+	RNA_def_property_ui_text(prop, "Mouse Previous Y Position", "The window relative vertical location of the mouse");
 
 
 	/* modifiers */
@@ -1721,12 +1711,12 @@ static void rna_def_window(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "x", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "posx");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "X Position", "Vertical location of the window");
+	RNA_def_property_ui_text(prop, "X Position", "Horizontal location of the window");
 
 	prop = RNA_def_property(srna, "y", PROP_INT, PROP_NONE);
 	RNA_def_property_int_sdna(prop, NULL, "posy");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
-	RNA_def_property_ui_text(prop, "Y Position", "Horizontal location of the window");
+	RNA_def_property_ui_text(prop, "Y Position", "Vertical location of the window");
 
 	prop = RNA_def_property(srna, "width", PROP_INT, PROP_UNSIGNED);
 	RNA_def_property_int_sdna(prop, NULL, "sizex");
@@ -1737,6 +1727,8 @@ static void rna_def_window(BlenderRNA *brna)
 	RNA_def_property_int_sdna(prop, NULL, "sizey");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
 	RNA_def_property_ui_text(prop, "Height", "Window height");
+
+	RNA_api_window(srna);
 }
 
 /* curve.splines */

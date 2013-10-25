@@ -58,6 +58,7 @@
 #include "UI_view2d.h"
 
 #include "ED_anim_api.h"
+#include "ED_armature.h"
 #include "ED_keyframes_edit.h" // XXX move the select modes out of there!
 #include "ED_screen.h"
 
@@ -94,23 +95,22 @@ void ANIM_set_active_channel(bAnimContext *ac, void *data, short datatype, int f
 				bActionGroup *agrp = (bActionGroup *)ale->data;
 				
 				ACHANNEL_SET_FLAG(agrp, ACHANNEL_SETFLAG_CLEAR, AGRP_ACTIVE);
+				break;
 			}
-			break;
 			case ANIMTYPE_FCURVE:
 			{
 				FCurve *fcu = (FCurve *)ale->data;
 				
 				ACHANNEL_SET_FLAG(fcu, ACHANNEL_SETFLAG_CLEAR, FCURVE_ACTIVE);
+				break;
 			}
-			break;
 			case ANIMTYPE_NLATRACK:
 			{
 				NlaTrack *nlt = (NlaTrack *)ale->data;
 				
 				ACHANNEL_SET_FLAG(nlt, ACHANNEL_SETFLAG_CLEAR, NLATRACK_ACTIVE);
+				break;
 			}
-			break;
-			
 			case ANIMTYPE_FILLACTD: /* Action Expander */
 			case ANIMTYPE_DSMAT:    /* Datablock AnimData Expanders */
 			case ANIMTYPE_DSLAM:
@@ -131,8 +131,8 @@ void ANIM_set_active_channel(bAnimContext *ac, void *data, short datatype, int f
 				if (ale->adt) {
 					ACHANNEL_SET_FLAG(ale->adt, ACHANNEL_SETFLAG_CLEAR, ADT_UI_ACTIVE);
 				}
+				break;
 			}
-			break;
 		}
 	}
 	
@@ -143,21 +143,20 @@ void ANIM_set_active_channel(bAnimContext *ac, void *data, short datatype, int f
 			{
 				bActionGroup *agrp = (bActionGroup *)channel_data;
 				agrp->flag |= AGRP_ACTIVE;
+				break;
 			}
-			break;
 			case ANIMTYPE_FCURVE:
 			{
 				FCurve *fcu = (FCurve *)channel_data;
 				fcu->flag |= FCURVE_ACTIVE;
+				break;
 			}
-			break;
 			case ANIMTYPE_NLATRACK:
 			{
 				NlaTrack *nlt = (NlaTrack *)channel_data;
 				nlt->flag |= NLATRACK_ACTIVE;
+				break;
 			}
-			break;
-				
 			case ANIMTYPE_FILLACTD: /* Action Expander */
 			case ANIMTYPE_DSMAT:    /* Datablock AnimData Expanders */
 			case ANIMTYPE_DSLAM:
@@ -177,8 +176,8 @@ void ANIM_set_active_channel(bAnimContext *ac, void *data, short datatype, int f
 				if (ale && ale->adt) {
 					ale->adt->flag |= ADT_UI_ACTIVE;
 				}
+				break;
 			}
-			break;
 		}
 	}
 	
@@ -256,9 +255,8 @@ void ANIM_deselect_anim_channels(bAnimContext *ac, void *data, short datatype, s
 				{
 					if ((ale->adt) && (ale->adt->flag & ADT_UI_SELECTED))
 						sel = ACHANNEL_SETFLAG_CLEAR;
+					break;
 				}
-				break;
-					
 				case ANIMTYPE_GPLAYER:
 					if (ale->flag & GP_LAYER_SELECT)
 						sel = ACHANNEL_SETFLAG_CLEAR;
@@ -283,55 +281,54 @@ void ANIM_deselect_anim_channels(bAnimContext *ac, void *data, short datatype, s
 				if (scene->adt) {
 					ACHANNEL_SET_FLAG(scene, sel, ADT_UI_SELECTED);
 				}
+				break;
 			}
-			break;
 			case ANIMTYPE_OBJECT:
+			{
 			#if 0   /* for now, do not take object selection into account, since it gets too annoying */
-				{
-					Base *base = (Base *)ale->data;
-					Object *ob = base->object;
-					
-					ACHANNEL_SET_FLAG(base, sel, SELECT);
-					ACHANNEL_SET_FLAG(ob, sel, SELECT);
-					
-					if (ob->adt) {
-						ACHANNEL_SET_FLAG(ob, sel, ADT_UI_SELECTED);
-					}
+				Base *base = (Base *)ale->data;
+				Object *ob = base->object;
+
+				ACHANNEL_SET_FLAG(base, sel, SELECT);
+				ACHANNEL_SET_FLAG(ob, sel, SELECT);
+
+				if (ob->adt) {
+					ACHANNEL_SET_FLAG(ob, sel, ADT_UI_SELECTED);
 				}
 			#endif
 				break;
+			}
 			case ANIMTYPE_GROUP:
 			{
 				bActionGroup *agrp = (bActionGroup *)ale->data;
 				
 				ACHANNEL_SET_FLAG(agrp, sel, AGRP_SELECTED);
 				agrp->flag &= ~AGRP_ACTIVE;
+				break;
 			}
-			break;
 			case ANIMTYPE_FCURVE:
 			{
 				FCurve *fcu = (FCurve *)ale->data;
 				
 				ACHANNEL_SET_FLAG(fcu, sel, FCURVE_SELECTED);
 				fcu->flag &= ~FCURVE_ACTIVE;
+				break;
 			}
-			break;
 			case ANIMTYPE_SHAPEKEY:
 			{
 				KeyBlock *kb = (KeyBlock *)ale->data;
 				
 				ACHANNEL_SET_FLAG(kb, sel, KEYBLOCK_SEL);
+				break;
 			}
-			break;
 			case ANIMTYPE_NLATRACK:
 			{
 				NlaTrack *nlt = (NlaTrack *)ale->data;
 				
 				ACHANNEL_SET_FLAG(nlt, sel, NLATRACK_SELECTED);
 				nlt->flag &= ~NLATRACK_ACTIVE;
+				break;
 			}
-			break;
-				
 			case ANIMTYPE_FILLACTD: /* Action Expander */
 			case ANIMTYPE_DSMAT:    /* Datablock AnimData Expanders */
 			case ANIMTYPE_DSLAM:
@@ -354,24 +351,22 @@ void ANIM_deselect_anim_channels(bAnimContext *ac, void *data, short datatype, s
 					ACHANNEL_SET_FLAG(ale->adt, sel, ADT_UI_SELECTED);
 					ale->adt->flag &= ~ADT_UI_ACTIVE;
 				}
+				break;
 			}
-			break;
-				
 			case ANIMTYPE_GPLAYER:
 			{
 				bGPDlayer *gpl = (bGPDlayer *)ale->data;
 				
 				ACHANNEL_SET_FLAG(gpl, sel, GP_LAYER_SELECT);
+				break;
 			}
-			break;
-			
 			case ANIMTYPE_MASKLAYER:
 			{
 				MaskLayer *masklay = (MaskLayer *)ale->data;
 				
 				ACHANNEL_SET_FLAG(masklay, sel, MASK_LAYERFLAG_SELECT);
+				break;
 			}
-			break;
 		}
 	}
 	
@@ -801,23 +796,22 @@ static void rearrange_animchannel_add_to_islands(ListBase *islands, ListBase *sr
 			
 			is_sel = SEL_AGRP(agrp);
 			is_untouchable = (agrp->flag & AGRP_TEMP) != 0;
+			break;
 		}
-		break;
 		case ANIMTYPE_FCURVE:
 		{
 			FCurve *fcu = (FCurve *)channel;
 			
 			is_sel = SEL_FCU(fcu);
+			break;
 		}
-		break;
 		case ANIMTYPE_NLATRACK:
 		{
 			NlaTrack *nlt = (NlaTrack *)channel;
 			
 			is_sel = SEL_NLT(nlt);
+			break;
 		}
-		break;
-			
 		default:
 			printf("rearrange_animchannel_add_to_islands(): don't know how to handle channels of type %d\n", type);
 			return;
@@ -1113,7 +1107,6 @@ static int animchannels_rearrange_exec(bContext *C, wmOperator *op)
 					break;
 				
 				case ANIMCONT_SHAPEKEY: // DOUBLE CHECK ME...
-					
 				default: /* some collection of actions */
 					if (adt->action)
 						rearrange_action_channels(&ac, adt->action, mode);
@@ -1435,9 +1428,8 @@ static int animchannels_delete_exec(bContext *C, wmOperator *UNUSED(op))
 				
 				/* try to free F-Curve */
 				ANIM_fcurve_delete_from_animdata(&ac, adt, fcu);
+				break;
 			}
-			break;
-				
 			case ANIMTYPE_GPLAYER:
 			{
 				/* Grease Pencil layer */
@@ -1447,9 +1439,8 @@ static int animchannels_delete_exec(bContext *C, wmOperator *UNUSED(op))
 				/* try to delete the layer's data and the layer itself */
 				free_gpencil_frames(gpl);
 				BLI_freelinkN(&gpd->layers, gpl);
+				break;
 			}
-			break;
-			
 			case ANIMTYPE_MASKLAYER:
 			{
 				/* Mask layer */
@@ -1458,8 +1449,8 @@ static int animchannels_delete_exec(bContext *C, wmOperator *UNUSED(op))
 				
 				/* try to delete the layer's data and the layer itself */
 				BKE_mask_layer_remove(mask, masklay);
+				break;
 			}
-			break;
 		}
 	}
 	
@@ -2131,8 +2122,8 @@ static void borderselect_anim_channels(bAnimContext *ac, rcti *rect, short selec
 					
 					/* always clear active flag after doing this */
 					agrp->flag &= ~AGRP_ACTIVE;
+					break;
 				}
-				break;
 				case ANIMTYPE_NLATRACK:
 				{
 					NlaTrack *nlt = (NlaTrack *)ale->data;
@@ -2141,8 +2132,8 @@ static void borderselect_anim_channels(bAnimContext *ac, rcti *rect, short selec
 					 * currently adds complications when doing other stuff 
 					 */
 					ACHANNEL_SET_FLAG(nlt, selectmode, NLATRACK_SELECTED);
+					break;
 				}
-				break;
 			}
 		}
 		
@@ -2367,8 +2358,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			}
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
 		case ANIMTYPE_OBJECT:
 		{
 			bDopeSheet *ads = (bDopeSheet *)ac->data;
@@ -2406,9 +2397,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 				adt->flag |= ADT_UI_ACTIVE;
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
-		
 		case ANIMTYPE_FILLACTD: /* Action Expander */
 		case ANIMTYPE_DSMAT:    /* Datablock AnimData Expanders */
 		case ANIMTYPE_DSLAM:
@@ -2445,12 +2435,40 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			}
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
-		
 		case ANIMTYPE_GROUP: 
 		{
 			bActionGroup *agrp = (bActionGroup *)ale->data;
+			
+			Object *ob = NULL;
+			bPoseChannel *pchan = NULL;
+			
+			
+			/* Armatures-Specific Feature:
+			 * Since groups are used to collect F-Curves of the same Bone by default
+			 * (via Keying Sets) so that they can be managed better, we try to make
+			 * things here easier for animators by mapping group selection to bone
+			 * selection. 
+			 *
+			 * Only do this if "Only Selected" dopesheet filter is not active, or else it
+			 * becomes too unpredictable/tricky to manage
+			 */
+			if ((ac->ads->filterflag & ADS_FILTER_ONLYSEL) == 0) {
+				if ((ale->id) && (GS(ale->id->name) == ID_OB)) {
+					ob = (Object *)ale->id;
+					
+					if (ob->type == OB_ARMATURE) {
+						/* Assume for now that any group with corresponding name is what we want
+						 * (i.e. for an armature whose location is animated, things would break
+						 * if the user were to add a bone named "Location").
+						 *
+						 * TODO: check the first F-Curve or so to be sure...
+						 */
+						pchan = BKE_pose_channel_find_name(ob->pose, agrp->name);
+					}	
+				}
+			}
 			
 			/* select/deselect group */
 			if (selectmode == SELECT_INVERT) {
@@ -2463,6 +2481,7 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 				
 				/* deselect all other channels */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+				if (pchan) ED_pose_deselectall(ob, 0);
 				
 				/* only select channels in group and group itself */
 				for (fcu = agrp->channels.first; fcu && fcu->grp == agrp; fcu = fcu->next)
@@ -2472,18 +2491,24 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			else {
 				/* select group by itself */
 				ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+				if (pchan) ED_pose_deselectall(ob, 0);
+				
 				agrp->flag |= AGRP_SELECTED;
 			}
 			
 			/* if group is selected now, make group the 'active' one in the visible list */
-			if (agrp->flag & AGRP_SELECTED)
+			if (agrp->flag & AGRP_SELECTED) {
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, agrp, ANIMTYPE_GROUP);
-			else
+				if (pchan) ED_pose_bone_select(ob, pchan, true);
+			}
+			else {
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, NULL, ANIMTYPE_GROUP);
+				if (pchan) ED_pose_bone_select(ob, pchan, false);
+			}
 				
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
 		case ANIMTYPE_FCURVE: 
 		{
 			FCurve *fcu = (FCurve *)ale->data;
@@ -2504,8 +2529,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 				ANIM_set_active_channel(ac, ac->data, ac->datatype, filter, fcu, ANIMTYPE_FCURVE);
 				
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
 		case ANIMTYPE_SHAPEKEY: 
 		{
 			KeyBlock *kb = (KeyBlock *)ale->data;
@@ -2522,8 +2547,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			}
 				
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
 		case ANIMTYPE_GPDATABLOCK:
 		{
 			bGPdata *gpd = (bGPdata *)ale->data;
@@ -2534,8 +2559,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			gpd->flag ^= GP_DATA_EXPAND;
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_EDITED);
+			break;
 		}
-		break;
 		case ANIMTYPE_GPLAYER:
 		{
 			bGPDlayer *gpl = (bGPDlayer *)ale->data;
@@ -2552,8 +2577,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			}
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_EDITED);
+			break;
 		}
-		break;
 		case ANIMTYPE_MASKDATABLOCK:
 		{
 			Mask *mask = (Mask *)ale->data;
@@ -2564,8 +2589,8 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			mask->flag ^= MASK_ANIMF_EXPAND;
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_EDITED);
+			break;
 		}
-		break;
 		case ANIMTYPE_MASKLAYER:
 		{
 			MaskLayer *masklay = (MaskLayer *)ale->data;
@@ -2582,11 +2607,12 @@ static int mouse_anim_channels(bAnimContext *ac, float UNUSED(x), int channel_in
 			}
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_EDITED);
+			break;
 		}
-		break;
 		default:
 			if (G.debug & G_DEBUG)
 				printf("Error: Invalid channel type in mouse_anim_channels()\n");
+			break;
 	}
 	
 	/* free channels */

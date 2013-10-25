@@ -57,7 +57,6 @@ void *OutputOpenExrMultiViewOperation::get_handle(const char* filename)
 
 		void *exrhandle;
 		SceneRenderView *srv;
-		int nr;
 
 		exrhandle = IMB_exr_get_handle_name(filename);
 		if (this->m_actview > 0) return exrhandle;
@@ -67,10 +66,7 @@ void *OutputOpenExrMultiViewOperation::get_handle(const char* filename)
 		 * it could be an external shared function */
 
 		/* check renderdata for amount of views */
-		for (nr = 0, srv= (SceneRenderView *) this->m_rd->views.first; srv; srv = srv->next, nr++) {
-
-			if ((this->m_rd->scemode & R_SINGLE_VIEW) && nr != this->m_rd->actview)
-				continue;
+		for (srv= (SceneRenderView *) this->m_rd->views.first; srv; srv = srv->next) {
 
 			if (srv->viewflag & SCE_VIEW_DISABLE)
 				continue;

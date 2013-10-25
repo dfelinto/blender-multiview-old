@@ -25,7 +25,7 @@
 #include "COM_ExecutionSystem.h"
 #include "COM_ImageOperation.h"
 #include "COM_MultilayerImageOperation.h"
-#include "COM_ConvertPremulToStraightOperation.h"
+#include "COM_ConvertOperation.h"
 #include "BKE_node.h"
 #include "BLI_utildefines.h"
 
@@ -38,19 +38,19 @@ ImageNode::ImageNode(bNode *editorNode) : Node(editorNode)
 	/* pass */
 
 }
-NodeOperation *ImageNode::doMultilayerCheck(ExecutionSystem *system, RenderLayer *rl, Image *image, ImageUser *user, int framenumber, int outputsocketIndex, int pass, DataType datatype)
+NodeOperation *ImageNode::doMultilayerCheck(ExecutionSystem *system, RenderLayer *rl, Image *image, ImageUser *user, int framenumber, int outputsocketIndex, int passindex, DataType datatype)
 {
 	OutputSocket *outputSocket = this->getOutputSocket(outputsocketIndex);
 	MultilayerBaseOperation *operation = NULL;
 	switch (datatype) {
 		case COM_DT_VALUE:
-			operation = new MultilayerValueOperation(pass);
+			operation = new MultilayerValueOperation(passindex);
 			break;
 		case COM_DT_VECTOR:
-			operation = new MultilayerVectorOperation(pass);
+			operation = new MultilayerVectorOperation(passindex);
 			break;
 		case COM_DT_COLOR:
-			operation = new MultilayerColorOperation(pass);
+			operation = new MultilayerColorOperation(passindex);
 			break;
 		default:
 			break;
@@ -109,7 +109,7 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 	ImageUser *imageuser = (ImageUser *)editorNode->storage;
 	int framenumber = context->getFramenumber();
 	int numberOfOutputs = this->getNumberOfOutputSockets();
-	bool outputStraightAlpha = editorNode->custom1 & CMP_NODE_IMAGE_USE_STRAIGHT_OUTPUT;
+	bool outputStraightAlpha = (editorNode->custom1 & CMP_NODE_IMAGE_USE_STRAIGHT_OUTPUT) != 0;
 	BKE_image_user_frame_calc(imageuser, context->getFramenumber(), 0);
 
 	/* force a load, we assume iuser index will be set OK anyway */
@@ -129,10 +129,26 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 					socket = this->getOutputSocket(index);
 					if (socket->isConnected() || index == 0) {
 						bNodeSocket *bnodeSocket = socket->getbNodeSocket();
-						NodeImageLayer *storage = (NodeImageLayer *)bnodeSocket->storage;
+						/* Passes in the file can differ from passes stored in sockets (#36755).
+						 * Look up the correct file pass using the socket identifier instead.
+						 */
+						#if 0
+						NodeImageLayer *storage = (NodeImageLayer *)bnodeSocket->storage;*/
 						int passindex = getPassIndex(context, &rl->passes, &image->rr->views, storage->pass_index, imageuser->view);
-
 						RenderPass *rpass = (RenderPass *)BLI_findlink(&rl->passes, passindex);
+						#endif
+						int passindex;
+						RenderPass *rpass;
+						for (rpass = (RenderPass *)rl->passes.first, passindex = 0; rpass; rpass = rpass->next, ++passindex)
+							if (STREQ(rpass->name, bnodeSocket->identifier))
+								break;
+
+						if (BLI_countlist(&image->rr->views) > 1) {
+							NodeImageLayer *storage = (NodeImageLayer *)bnodeSocket->storage;
+							passindex = getPassIndex(context, &rl->passes, &image->rr->views, storage->pass_index, imageuser->view);
+							rpass = (RenderPass *)BLI_findlink(&rl->passes, passindex);
+						}
+
 						if (rpass) {
 							imageuser->pass = passindex;
 							switch (rpass->channels) {

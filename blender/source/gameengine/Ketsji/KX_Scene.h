@@ -324,6 +324,7 @@ public:
 		return (m_groupGameObjects.empty() || 
 				m_groupGameObjects.find(gameobj) != m_groupGameObjects.end());
 	}
+	void AddObjectDebugProperties(class KX_GameObject* gameobj);
 	SCA_IObject* AddReplicaObject(CValue* gameobj,
 	                              CValue* locationobj,
 	                              int lifespan=0);
@@ -381,10 +382,6 @@ public:
 	);
 
 	/** Font Routines */
-		
-		std::list<class KX_FontObject*>*
-	GetFonts(
-	);
 
 	/** Find a font in the scene by pointer. */
 		KX_FontObject*              
@@ -398,6 +395,10 @@ public:
 		KX_FontObject*
 	);
 
+	/** Render the fonts in this scene. */
+		void
+	RenderFonts(
+	);
 
 	/** Camera Routines */
 

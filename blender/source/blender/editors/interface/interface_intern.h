@@ -94,7 +94,8 @@ typedef enum {
 	UI_WTYPE_BOX,
 	UI_WTYPE_SCROLL,
 	UI_WTYPE_LISTITEM,
-	UI_WTYPE_PROGRESSBAR
+	UI_WTYPE_PROGRESSBAR,
+	UI_WTYPE_LISTLABEL,
 } uiWidgetTypeEnum;
 
 /* menu scrolling */
@@ -369,7 +370,7 @@ void ui_fontscale(short *points, float aspect);
 extern bool ui_block_is_menu(const uiBlock *block);
 extern void ui_block_to_window_fl(const struct ARegion *ar, uiBlock *block, float *x, float *y);
 extern void ui_block_to_window(const struct ARegion *ar, uiBlock *block, int *x, int *y);
-extern void ui_block_to_window_rct(const struct ARegion *ar, uiBlock *block, const rctf *graph, rcti *winr);
+extern void ui_block_to_window_rctf(const struct ARegion *ar, uiBlock *block, rctf *rct_dst, const rctf *rct_src);
 extern void ui_window_to_block_fl(const struct ARegion *ar, uiBlock *block, float *x, float *y);
 extern void ui_window_to_block(const struct ARegion *ar, uiBlock *block, int *x, int *y);
 extern void ui_window_to_region(const ARegion *ar, int *x, int *y);
@@ -392,7 +393,7 @@ extern bool ui_set_but_string(struct bContext *C, uiBut *but, const char *str);
 extern bool ui_set_but_string_eval_num(struct bContext *C, uiBut *but, const char *str, double *value);
 extern int  ui_get_but_string_max_length(uiBut *but);
 
-extern void ui_set_but_default(struct bContext *C, short all);
+extern void ui_set_but_default(struct bContext *C, const bool all);
 
 extern void ui_check_but(uiBut *but);
 extern bool ui_is_but_float(uiBut *but);
@@ -401,6 +402,7 @@ extern bool ui_is_but_unit(uiBut *but);
 extern bool ui_is_but_rna_valid(uiBut *but);
 extern bool ui_is_but_utf8(uiBut *but);
 extern bool ui_is_but_interactive(uiBut *but);
+extern bool ui_is_but_search_unlink_visible(uiBut *but);
 
 extern int  ui_is_but_push_ex(uiBut *but, double *value);
 extern int  ui_is_but_push(uiBut *but);
@@ -426,7 +428,9 @@ struct uiKeyNavLock {
 struct uiPopupBlockHandle {
 	/* internal */
 	struct ARegion *region;
-	int towardsx, towardsy;
+
+	/* use only for 'UI_BLOCK_MOVEMOUSE_QUIT' popups */
+	float towards_xy[2];
 	double towardstime;
 	bool dotowards;
 
@@ -471,7 +475,7 @@ ARegion *ui_searchbox_create(struct bContext *C, struct ARegion *butregion, uiBu
 bool ui_searchbox_inside(struct ARegion *ar, int x, int y);
 int  ui_searchbox_find_index(struct ARegion *ar, const char *name);
 void ui_searchbox_update(struct bContext *C, struct ARegion *ar, uiBut *but, const bool reset);
-void ui_searchbox_autocomplete(struct bContext *C, struct ARegion *ar, uiBut *but, char *str);
+bool ui_searchbox_autocomplete(struct bContext *C, struct ARegion *ar, uiBut *but, char *str);
 void ui_searchbox_event(struct bContext *C, struct ARegion *ar, uiBut *but, const struct wmEvent *event);
 bool ui_searchbox_apply(uiBut *but, struct ARegion *ar);
 void ui_searchbox_free(struct bContext *C, struct ARegion *ar);
@@ -519,6 +523,7 @@ extern void ui_button_active_free(const struct bContext *C, uiBut *but);
 extern bool ui_button_is_active(struct ARegion *ar);
 extern int ui_button_open_menu_direction(uiBut *but);
 extern void ui_button_text_password_hide(char password_str[UI_MAX_DRAW_STR], uiBut *but, int restore);
+void ui_button_clipboard_free(void);
 
 /* interface_widgets.c */
 void ui_draw_anti_tria(float x1, float y1, float x2, float y2, float x3, float y3);
@@ -535,7 +540,7 @@ extern void ui_draw_but(const struct bContext *C, ARegion *ar, struct uiStyle *s
 struct ThemeUI;
 void ui_widget_color_init(struct ThemeUI *tui);
 
-void ui_draw_menu_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
+void ui_draw_menu_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state, bool use_sep);
 void ui_draw_preview_item(struct uiFontStyle *fstyle, rcti *rect, const char *name, int iconid, int state);
 
 extern const unsigned char checker_stipple_sml[32 * 32 / 8];
@@ -563,6 +568,7 @@ void ui_layout_add_but(uiLayout *layout, uiBut *but);
 int ui_but_can_align(uiBut *but);
 void ui_but_add_search(uiBut *but, PointerRNA *ptr, PropertyRNA *prop, PointerRNA *searchptr, PropertyRNA *searchprop);
 void ui_but_add_shortcut(uiBut *but, const char *key_str, const bool do_strip);
+void ui_layout_list_set_labels_active(uiLayout *layout);
 
 /* interface_anim.c */
 void ui_but_anim_flag(uiBut *but, float cfra);
@@ -580,4 +586,8 @@ int ui_but_anim_expression_set(uiBut *but, const char *str);
 int ui_but_anim_expression_create(uiBut *but, const char *str);
 void ui_but_anim_autokey(struct bContext *C, uiBut *but, struct Scene *scene, float cfra);
 
-#endif
+/* interface_eyedropper.c */
+void UI_OT_eyedropper_color(struct wmOperatorType *ot);
+void UI_OT_eyedropper_id(struct wmOperatorType *ot);
+
+#endif  /* __INTERFACE_INTERN_H__ */

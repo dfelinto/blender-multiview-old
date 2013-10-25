@@ -57,7 +57,8 @@ class RENDERLAYER_PT_layers(RenderLayerButtonsPanel, Panel):
         rd = scene.render
 
         row = layout.row()
-        row.template_list("RENDERLAYER_UL_renderlayers", "", rd, "layers", rd.layers, "active_index", rows=2)
+        col = row.column()
+        col.template_list("RENDERLAYER_UL_renderlayers", "", rd, "layers", rd.layers, "active_index", rows=1)
 
         col = row.column(align=True)
         col.operator("scene.render_layer_add", icon='ZOOMIN', text="")
@@ -182,11 +183,17 @@ class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
     bl_label     = "Views"
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
+    def draw_header(self, context):
+        rd = context.scene.render
+        self.layout.prop(rd, "use_multiple_views", text="")
+
     def draw(self, context):
         layout = self.layout
 
         scene = context.scene
         rd = scene.render
+
+        layout.active = rd.use_multiple_views
 
         row = layout.row()
         row.template_list("RENDERLAYER_UL_renderviews", "", rd, "views", rd.views, "active_index", rows=2)
@@ -199,36 +206,20 @@ class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
         rv = rd.views.active
         if rv and rv.name not in ('left', 'right'):
             row.prop(rv, "name")
-        else:
-            row.label()
-        row.prop(rd, "use_single_view", text="", icon_only=True)
 
-
-class RENDERLAYER_PT_view_options(RenderLayerButtonsPanel, Panel):
-    bl_label = "View"
-    COMPAT_ENGINES = {'BLENDER_RENDER'}
-
-    def draw(self, context):
-        layout = self.layout
-
-        scene = context.scene
-        rd = scene.render
         rv = rd.views.active
 
-        split = layout.split()
-
-        col = split.column()
+        col = layout.column()
         col.prop(rv, "camera")
 
         if rv.camera and rv.camera.data.use_stereoscopy:
             col.prop(rv, "stereoscopy_camera")
 
-        col.separator()
-        col.prop(rv, "use_custom_suffix")
-
-        sub = col.column()
+        row = col.row()
+        row.prop(rv, "use_custom_suffix")
+        sub = row.row()
         sub.active = rv.use_custom_suffix
-        sub.prop(rv, "file_suffix")
+        sub.prop(rv, "file_suffix", text="")
 
 
 if __name__ == "__main__":  # only for live edit.

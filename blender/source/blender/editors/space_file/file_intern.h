@@ -65,7 +65,7 @@ void FILE_OT_select_all_toggle(struct wmOperatorType *ot);
 void FILE_OT_select_border(struct wmOperatorType *ot);
 void FILE_OT_select_bookmark(struct wmOperatorType *ot);
 void FILE_OT_bookmark_add(struct wmOperatorType *ot);
-void FILE_OT_delete_bookmark(struct wmOperatorType *ot);
+void FILE_OT_bookmark_delete(struct wmOperatorType *ot);
 void FILE_OT_reset_recent(wmOperatorType *ot);
 void FILE_OT_hidedot(struct wmOperatorType *ot);
 void FILE_OT_execute(struct wmOperatorType *ot);
@@ -105,8 +105,8 @@ float file_string_width(const char *str);
 float file_font_pointsize(void);
 void file_change_dir(bContext *C, int checkdir);
 int file_select_match(struct SpaceFile *sfile, const char *pattern, char *matched_file);
-void autocomplete_directory(struct bContext *C, char *str, void *arg_v);
-void autocomplete_file(struct bContext *C, char *str, void *arg_v);
+bool autocomplete_directory(struct bContext *C, char *str, void *arg_v);
+bool autocomplete_file(struct bContext *C, char *str, void *arg_v);
 
 /* file_panels.c */
 void file_panels_register(struct ARegionType *art);

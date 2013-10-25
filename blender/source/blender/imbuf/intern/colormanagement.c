@@ -28,6 +28,10 @@
  *
  */
 
+/** \file blender/imbuf/intern/colormanagement.c
+ *  \ingroup imbuf
+ */
+
 #include "IMB_colormanagement.h"
 #include "IMB_colormanagement_intern.h"
 
@@ -81,13 +85,15 @@ static char global_role_default_byte[MAX_COLORSPACE_NAME];
 static char global_role_default_float[MAX_COLORSPACE_NAME];
 static char global_role_default_sequencer[MAX_COLORSPACE_NAME];
 
-static ListBase global_colorspaces = {NULL};
-static ListBase global_displays = {NULL};
-static ListBase global_views = {NULL};
+static ListBase global_colorspaces = {NULL, NULL};
+static ListBase global_displays = {NULL, NULL};
+static ListBase global_views = {NULL, NULL};
+static ListBase global_looks = {NULL, NULL};
 
 static int global_tot_colorspace = 0;
 static int global_tot_display = 0;
 static int global_tot_view = 0;
+static int global_tot_looks = 0;
 
 /* lock used by pre-cached processors getters, so processor wouldn't
  * be created several times
@@ -99,7 +105,7 @@ static pthread_mutex_t processor_lock = BLI_MUTEX_INITIALIZER;
 typedef struct ColormanageProcessor {
 	OCIO_ConstProcessorRcPtr *processor;
 	CurveMapping *curve_mapping;
-	int is_data_result;
+	bool is_data_result;
 } ColormanageProcessor;
 
 static struct global_glsl_state {
@@ -107,10 +113,16 @@ static struct global_glsl_state {
 	OCIO_ConstProcessorRcPtr *processor;
 
 	/* Settings of processor for comparison. */
+	char look[MAX_COLORSPACE_NAME];
 	char view[MAX_COLORSPACE_NAME];
 	char display[MAX_COLORSPACE_NAME];
 	char input[MAX_COLORSPACE_NAME];
 	float exposure, gamma;
+
+	CurveMapping *curve_mapping, *orig_curve_mapping;
+	bool use_curve_mapping;
+	int curve_mapping_timestamp;
+	OCIO_CurveMappingSettings curve_mapping_settings;
 
 	/* Container for GLSL state needed for OCIO module. */
 	struct OCIO_GLSLDrawState *ocio_glsl_state;
@@ -185,9 +197,11 @@ static struct global_glsl_state {
  */
 typedef struct ColormanageCacheViewSettings {
 	int flag;
+	int look;
 	int view;
 	float exposure;
 	float gamma;
+	float dither;
 	CurveMapping *curve_mapping;
 } ColormanageCacheViewSettings;
 
@@ -202,8 +216,10 @@ typedef struct ColormanageCacheKey {
 
 typedef struct ColormnaageCacheData {
 	int flag;        /* view flags of cached buffer */
+	int look;        /* Additional artistics transform */
 	float exposure;  /* exposure value cached buffer is calculated with */
 	float gamma;     /* gamma value cached buffer is calculated with */
+	float dither;    /* dither value cached buffer is calculated with */
 	CurveMapping *curve_mapping;  /* curve mapping used for cached buffer */
 	int curve_mapping_timestamp;  /* time stamp of curve mapping used for cached buffer */
 } ColormnaageCacheData;
@@ -282,14 +298,18 @@ static void colormanage_cachedata_set(ImBuf *ibuf, ColormnaageCacheData *data)
 	ibuf->colormanage_cache->data = data;
 }
 
-static void colormanage_view_settings_to_cache(ColormanageCacheViewSettings *cache_view_settings,
+static void colormanage_view_settings_to_cache(ImBuf *ibuf,
+                                               ColormanageCacheViewSettings *cache_view_settings,
                                                const ColorManagedViewSettings *view_settings)
 {
+	int look = IMB_colormanagement_look_get_named_index(view_settings->look);
 	int view = IMB_colormanagement_view_get_named_index(view_settings->view_transform);
 
+	cache_view_settings->look = look;
 	cache_view_settings->view = view;
 	cache_view_settings->exposure = view_settings->exposure;
 	cache_view_settings->gamma = view_settings->gamma;
+	cache_view_settings->dither = ibuf->dither;
 	cache_view_settings->flag = view_settings->flag;
 	cache_view_settings->curve_mapping = view_settings->curve_mapping;
 }
@@ -364,8 +384,10 @@ static unsigned char *colormanage_cache_get(ImBuf *ibuf, const ColormanageCacheV
 		 */
 		cache_data = colormanage_cachedata_get(cache_ibuf);
 
-		if (cache_data->exposure != view_settings->exposure ||
+		if (cache_data->look != view_settings->look ||
+		    cache_data->exposure != view_settings->exposure ||
 		    cache_data->gamma != view_settings->gamma ||
+		    cache_data->dither != view_settings->dither ||
 		    cache_data->flag != view_settings->flag ||
 		    cache_data->curve_mapping != curve_mapping ||
 		    cache_data->curve_mapping_timestamp != curve_mapping_timestamp)
@@ -409,8 +431,10 @@ static void colormanage_cache_put(ImBuf *ibuf, const ColormanageCacheViewSetting
 
 	/* store data which is needed to check whether cached buffer could be used for color managed display settings */
 	cache_data = MEM_callocN(sizeof(ColormnaageCacheData), "color manage cache imbuf data");
+	cache_data->look = view_settings->look;
 	cache_data->exposure = view_settings->exposure;
 	cache_data->gamma = view_settings->gamma;
+	cache_data->dither = view_settings->dither;
 	cache_data->flag = view_settings->flag;
 	cache_data->curve_mapping = curve_mapping;
 	cache_data->curve_mapping_timestamp = curve_mapping_timestamp;
@@ -454,7 +478,8 @@ static void colormanage_role_color_space_name_get(OCIO_ConstConfigRcPtr *config,
 
 static void colormanage_load_config(OCIO_ConstConfigRcPtr *config)
 {
-	int tot_colorspace, tot_display, tot_display_view, index, viewindex, viewindex2;
+	int tot_colorspace, tot_display, tot_display_view, tot_looks;
+	int index, viewindex, viewindex2;
 	const char *name;
 
 	/* get roles */
@@ -470,7 +495,7 @@ static void colormanage_load_config(OCIO_ConstConfigRcPtr *config)
 	for (index = 0 ; index < tot_colorspace; index++) {
 		OCIO_ConstColorSpaceRcPtr *ocio_colorspace;
 		const char *description;
-		int is_invertible, is_data;
+		bool is_invertible, is_data;
 
 		name = OCIO_configGetColorSpaceNameByIndex(config, index);
 
@@ -519,6 +544,21 @@ static void colormanage_load_config(OCIO_ConstConfigRcPtr *config)
 	}
 
 	global_tot_display = tot_display;
+
+	/* load looks */
+	tot_looks = OCIO_configGetNumLooks(config);
+	colormanage_look_add("None", "", true);
+	for (index = 0; index < tot_looks; index++) {
+		OCIO_ConstLookRcPtr *ocio_look;
+		const char *process_space;
+
+		name = OCIO_configGetLookNameByIndex(config, index);
+		ocio_look = OCIO_configGetLook(config, name);
+		process_space = OCIO_lookGetProcessSpace(ocio_look);
+		OCIO_lookRelease(ocio_look);
+
+		colormanage_look_add(name, process_space, false);
+	}
 }
 
 static void colormanage_free_config(void)
@@ -565,6 +605,9 @@ static void colormanage_free_config(void)
 
 	/* free views */
 	BLI_freelistN(&global_views);
+
+	/* free looks */
+	BLI_freelistN(&global_looks);
 
 	OCIO_exit();
 }
@@ -624,6 +667,12 @@ void colormanagement_exit(void)
 {
 	if (global_glsl_state.processor)
 		OCIO_processorRelease(global_glsl_state.processor);
+
+	if (global_glsl_state.curve_mapping)
+		curvemapping_free(global_glsl_state.curve_mapping);
+
+	if (global_glsl_state.curve_mapping_settings.lut)
+		MEM_freeN(global_glsl_state.curve_mapping_settings.lut);
 
 	if (global_glsl_state.ocio_glsl_state)
 		OCIO_freeOGLState(global_glsl_state.ocio_glsl_state);
@@ -705,7 +754,8 @@ static ColorSpace *display_transform_get_colorspace(const ColorManagedViewSettin
 	return NULL;
 }
 
-static OCIO_ConstProcessorRcPtr *create_display_buffer_processor(const char *view_transform,
+static OCIO_ConstProcessorRcPtr *create_display_buffer_processor(const char *look,
+                                                                 const char *view_transform,
                                                                  const char *display,
                                                                  float exposure, float gamma,
                                                                  const char *from_colorspace)
@@ -713,12 +763,18 @@ static OCIO_ConstProcessorRcPtr *create_display_buffer_processor(const char *vie
 	OCIO_ConstConfigRcPtr *config = OCIO_getCurrentConfig();
 	OCIO_DisplayTransformRcPtr *dt;
 	OCIO_ConstProcessorRcPtr *processor;
+	ColorManagedLook *look_descr = colormanage_look_get_named(look);
 
 	dt = OCIO_createDisplayTransform();
 
 	OCIO_displayTransformSetInputColorSpaceName(dt, from_colorspace);
 	OCIO_displayTransformSetView(dt, view_transform);
 	OCIO_displayTransformSetDisplay(dt, display);
+
+	if (look_descr->is_noop == false) {
+		OCIO_displayTransformSetLooksOverrideEnabled(dt, true);
+		OCIO_displayTransformSetLooksOverride(dt, look);
+	}
 
 	/* fstop exposure control */
 	if (exposure != 0.0f) {
@@ -871,6 +927,7 @@ static void init_default_view_settings(const ColorManagedDisplaySettings *displa
 	else
 		view_settings->view_transform[0] = '\0';
 
+	BLI_strncpy(view_settings->look, "None", sizeof(view_settings->look));
 	view_settings->flag = 0;
 	view_settings->gamma = 1.0f;
 	view_settings->exposure = 0.0f;
@@ -923,7 +980,7 @@ void colormanage_imbuf_make_linear(ImBuf *ibuf, const char *from_colorspace)
 			imb_freerectImBuf(ibuf);
 
 		IMB_colormanagement_transform(ibuf->rect_float, ibuf->x, ibuf->y, ibuf->channels,
-		                              from_colorspace, to_colorspace, TRUE);
+		                              from_colorspace, to_colorspace, true);
 	}
 }
 
@@ -953,6 +1010,7 @@ static void colormanage_check_view_settings(ColorManagedDisplaySettings *display
 {
 	ColorManagedDisplay *display;
 	ColorManagedView *default_view = NULL;
+	ColorManagedLook *default_look = (ColorManagedLook *) global_looks.first;
 
 	if (view_settings->view_transform[0] == '\0') {
 		display = colormanage_display_get_named(display_settings->display_device);
@@ -978,6 +1036,19 @@ static void colormanage_check_view_settings(ColorManagedDisplaySettings *display
 
 				BLI_strncpy(view_settings->view_transform, default_view->name, sizeof(view_settings->view_transform));
 			}
+		}
+	}
+
+	if (view_settings->look[0] == '\0') {
+		BLI_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
+	}
+	else {
+		ColorManagedLook *look = colormanage_look_get_named(view_settings->look);
+		if (look == NULL) {
+			printf("Color management: %s look \"%s\" not found, setting default \"%s\".\n",
+			       what, view_settings->look, default_look->name);
+
+			BLI_strncpy(view_settings->look, default_look->name, sizeof(view_settings->look));
 		}
 	}
 
@@ -1094,6 +1165,7 @@ const char *IMB_colormanagement_role_colorspace_name_get(int role)
 		default:
 			printf("Unknown role was passed to %s\n", __func__);
 			BLI_assert(0);
+			break;
 	}
 
 	return NULL;
@@ -1133,6 +1205,21 @@ void IMB_colormanagement_assign_rect_colorspace(ImBuf *ibuf, const char *name)
 		ibuf->colormanage_flag &= ~IMB_COLORMANAGE_IS_DATA;
 }
 
+const char *IMB_colormanagement_get_float_colorspace(ImBuf *ibuf)
+{
+	if (ibuf->float_colorspace) {
+		return ibuf->float_colorspace->name;
+	}
+	else {
+		return IMB_colormanagement_role_colorspace_name_get(COLOR_ROLE_SCENE_LINEAR);
+	}
+}
+
+const char *IMB_colormanagement_get_rect_colorspace(ImBuf *ibuf)
+{
+	return ibuf->rect_colorspace->name;
+}
+
 /*********************** Threaded display buffer transform routines *************************/
 
 typedef struct DisplayBufferThread {
@@ -1150,7 +1237,7 @@ typedef struct DisplayBufferThread {
 
 	int channels;
 	float dither;
-	int is_data;
+	bool is_data;
 
 	const char *byte_colorspace;
 	const char *float_colorspace;
@@ -1179,7 +1266,7 @@ static void display_buffer_init_handle(void *handle_v, int start_line, int tot_l
 
 	int channels = ibuf->channels;
 	float dither = ibuf->dither;
-	int is_data = ibuf->colormanage_flag & IMB_COLORMANAGE_IS_DATA;
+	bool is_data = (ibuf->colormanage_flag & IMB_COLORMANAGE_IS_DATA) != 0;
 
 	int offset = channels * start_line * ibuf->x;
 	int display_buffer_byte_offset = DISPLAY_BUFFER_CHANNELS * start_line * ibuf->x;
@@ -1223,8 +1310,8 @@ static float *display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle
 
 	int buffer_size = channels * width * height;
 
-	int is_data = handle->is_data;
-	int is_data_display = handle->cm_processor->is_data_result;
+	bool is_data = handle->is_data;
+	bool is_data_display = handle->cm_processor->is_data_result;
 
 	linear_buffer = MEM_callocN(buffer_size * sizeof(float), "color conversion linear buffer");
 
@@ -1257,7 +1344,7 @@ static float *display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle
 		if (!is_data && !is_data_display) {
 			/* convert float buffer to scene linear space */
 			IMB_colormanagement_transform(linear_buffer, width, height, channels,
-			                              from_colorspace, to_colorspace, FALSE);
+			                              from_colorspace, to_colorspace, false);
 		}
 
 		*is_straight_alpha = true;
@@ -1276,7 +1363,7 @@ static float *display_buffer_apply_get_linear_buffer(DisplayBufferThread *handle
 
 		if (!is_data && !is_data_display) {
 			IMB_colormanagement_transform(linear_buffer, width, height, channels,
-			                              from_colorspace, to_colorspace, TRUE);
+			                              from_colorspace, to_colorspace, true);
 		}
 
 		*is_straight_alpha = false;
@@ -1309,7 +1396,7 @@ static void *do_display_buffer_apply_thread(void *handle_v)
 	int width = handle->width;
 	int height = handle->tot_line;
 	float dither = handle->dither;
-	int is_data = handle->is_data;
+	bool is_data = handle->is_data;
 
 	if (cm_processor == NULL) {
 		if (display_buffer_byte) {
@@ -1402,8 +1489,8 @@ static void display_buffer_apply_threaded(ImBuf *ibuf, float *buffer, unsigned c
 	                             display_buffer_init_handle, do_display_buffer_apply_thread);
 }
 
-static int is_ibuf_rect_in_display_space(ImBuf *ibuf, const ColorManagedViewSettings *view_settings,
-                                         const ColorManagedDisplaySettings *display_settings)
+static bool is_ibuf_rect_in_display_space(ImBuf *ibuf, const ColorManagedViewSettings *view_settings,
+                                          const ColorManagedDisplaySettings *display_settings)
 {
 	if ((view_settings->flag & COLORMANAGE_VIEW_USE_CURVES) == 0 &&
 	    view_settings->exposure == 0.0f &&
@@ -1413,10 +1500,10 @@ static int is_ibuf_rect_in_display_space(ImBuf *ibuf, const ColorManagedViewSett
 		const char *to_colorspace = display_transform_get_colorspace_name(view_settings, display_settings);
 
 		if (to_colorspace && !strcmp(from_colorspace, to_colorspace))
-			return TRUE;
+			return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 static void colormanage_display_buffer_process_ex(ImBuf *ibuf, float *display_buffer, unsigned char *display_buffer_byte,
@@ -1424,7 +1511,7 @@ static void colormanage_display_buffer_process_ex(ImBuf *ibuf, float *display_bu
                                                   const ColorManagedDisplaySettings *display_settings)
 {
 	ColormanageProcessor *cm_processor = NULL;
-	int skip_transform = FALSE;
+	bool skip_transform = false;
 
 	/* if we're going to transform byte buffer, check whether transformation would
 	 * happen to the same color space as byte buffer itself is
@@ -1435,7 +1522,7 @@ static void colormanage_display_buffer_process_ex(ImBuf *ibuf, float *display_bu
 		skip_transform = is_ibuf_rect_in_display_space(ibuf, view_settings, display_settings);
 	}
 
-	if (skip_transform == FALSE)
+	if (skip_transform == false)
 		cm_processor = IMB_colormanagement_display_processor_new(view_settings, display_settings);
 
 	display_buffer_apply_threaded(ibuf, ibuf->rect_float, (unsigned char *) ibuf->rect,
@@ -1461,7 +1548,7 @@ typedef struct ProcessorTransformThread {
 	int start_line;
 	int tot_line;
 	int channels;
-	int predivide;
+	bool predivide;
 } ProcessorTransformThread;
 
 typedef struct ProcessorTransformInit {
@@ -1470,7 +1557,7 @@ typedef struct ProcessorTransformInit {
 	int width;
 	int height;
 	int channels;
-	int predivide;
+	bool predivide;
 } ProcessorTransformInitData;
 
 static void processor_transform_init_handle(void *handle_v, int start_line, int tot_line, void *init_data_v)
@@ -1480,7 +1567,7 @@ static void processor_transform_init_handle(void *handle_v, int start_line, int 
 
 	int channels = init_data->channels;
 	int width = init_data->width;
-	int predivide = init_data->predivide;
+	bool predivide = init_data->predivide;
 
 	int offset = channels * start_line * width;
 
@@ -1506,7 +1593,7 @@ static void *do_processor_transform_thread(void *handle_v)
 	int channels = handle->channels;
 	int width = handle->width;
 	int height = handle->tot_line;
-	int predivide = handle->predivide;
+	bool predivide = handle->predivide;
 
 	IMB_colormanagement_processor_apply(handle->cm_processor, buffer, width, height, channels, predivide);
 
@@ -1514,7 +1601,7 @@ static void *do_processor_transform_thread(void *handle_v)
 }
 
 static void processor_transform_apply_threaded(float *buffer, int width, int height, int channels,
-                                               ColormanageProcessor *cm_processor, int predivide)
+                                               ColormanageProcessor *cm_processor, bool predivide)
 {
 	ProcessorTransformInitData init_data;
 
@@ -1533,7 +1620,7 @@ static void processor_transform_apply_threaded(float *buffer, int width, int hei
 
 /* convert the whole buffer from specified by name color space to another - internal implementation */
 static void colormanagement_transform_ex(float *buffer, int width, int height, int channels, const char *from_colorspace,
-                                         const char *to_colorspace, int predivide, int do_threaded)
+                                         const char *to_colorspace, bool predivide, bool do_threaded)
 {
 	ColormanageProcessor *cm_processor;
 
@@ -1560,18 +1647,18 @@ static void colormanagement_transform_ex(float *buffer, int width, int height, i
 
 /* convert the whole buffer from specified by name color space to another */
 void IMB_colormanagement_transform(float *buffer, int width, int height, int channels,
-                                   const char *from_colorspace, const char *to_colorspace, int predivide)
+                                   const char *from_colorspace, const char *to_colorspace, bool predivide)
 {
-	colormanagement_transform_ex(buffer, width, height, channels, from_colorspace, to_colorspace, predivide, FALSE);
+	colormanagement_transform_ex(buffer, width, height, channels, from_colorspace, to_colorspace, predivide, false);
 }
 
 /* convert the whole buffer from specified by name color space to another
  * will do threaded conversion
  */
 void IMB_colormanagement_transform_threaded(float *buffer, int width, int height, int channels,
-                                            const char *from_colorspace, const char *to_colorspace, int predivide)
+                                            const char *from_colorspace, const char *to_colorspace, bool predivide)
 {
-	colormanagement_transform_ex(buffer, width, height, channels, from_colorspace, to_colorspace, predivide, TRUE);
+	colormanagement_transform_ex(buffer, width, height, channels, from_colorspace, to_colorspace, predivide, true);
 }
 
 void IMB_colormanagement_transform_v4(float pixel[4], const char *from_colorspace, const char *to_colorspace)
@@ -1632,7 +1719,7 @@ void IMB_colormanagement_scene_linear_to_colorspace_v3(float pixel[3], ColorSpac
 		OCIO_processorApplyRGB(processor, pixel);
 }
 
-void IMB_colormanagement_colorspace_to_scene_linear_v4(float pixel[4], int predivide, ColorSpace *colorspace)
+void IMB_colormanagement_colorspace_to_scene_linear_v4(float pixel[4], bool predivide, ColorSpace *colorspace)
 {
 	OCIO_ConstProcessorRcPtr *processor;
 
@@ -1652,7 +1739,7 @@ void IMB_colormanagement_colorspace_to_scene_linear_v4(float pixel[4], int predi
 	}
 }
 
-void IMB_colormanagement_colorspace_to_scene_linear(float *buffer, int width, int height, int channels, struct ColorSpace *colorspace, int predivide)
+void IMB_colormanagement_colorspace_to_scene_linear(float *buffer, int width, int height, int channels, struct ColorSpace *colorspace, bool predivide)
 {
 	OCIO_ConstProcessorRcPtr *processor;
 
@@ -1731,7 +1818,7 @@ void IMB_colormanagement_pixel_to_display_space_v3(float result[3], const float 
 }
 
 static void colormanagement_imbuf_make_display_space(ImBuf *ibuf, const ColorManagedViewSettings *view_settings,
-                                                     const ColorManagedDisplaySettings *display_settings, int make_byte)
+                                                     const ColorManagedDisplaySettings *display_settings, bool make_byte)
 {
 	if (!ibuf->rect && make_byte)
 		imb_addrectImBuf(ibuf);
@@ -1749,7 +1836,7 @@ static void colormanagement_imbuf_make_display_space(ImBuf *ibuf, const ColorMan
 void IMB_colormanagement_imbuf_make_display_space(ImBuf *ibuf, const ColorManagedViewSettings *view_settings,
                                                   const ColorManagedDisplaySettings *display_settings)
 {
-	colormanagement_imbuf_make_display_space(ibuf, view_settings, display_settings, FALSE);
+	colormanagement_imbuf_make_display_space(ibuf, view_settings, display_settings, false);
 }
 
 /* prepare image buffer to be saved on disk, applying color management if needed
@@ -1763,14 +1850,14 @@ void IMB_colormanagement_imbuf_make_display_space(ImBuf *ibuf, const ColorManage
  * in image format write callback and if float_colorspace is not NULL, no color
  * space transformation should be applied on this buffer.
  */
-ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, int save_as_render, int allocate_result, const ColorManagedViewSettings *view_settings,
+ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, bool save_as_render, bool allocate_result, const ColorManagedViewSettings *view_settings,
                                            const ColorManagedDisplaySettings *display_settings, ImageFormatData *image_format_data)
 {
 	ImBuf *colormanaged_ibuf = ibuf;
-	int do_colormanagement;
+	bool do_colormanagement;
 	bool is_movie = BKE_imtype_is_movie(image_format_data->imtype);
-	int requires_linear_float = BKE_imtype_requires_linear_float(image_format_data->imtype);
-	int do_alpha_under = image_format_data->planes != R_IMF_PLANES_RGBA;
+	bool requires_linear_float = BKE_imtype_requires_linear_float(image_format_data->imtype);
+	bool do_alpha_under = image_format_data->planes != R_IMF_PLANES_RGBA;
 
 	do_colormanagement = save_as_render && (is_movie || !requires_linear_float);
 
@@ -1826,7 +1913,7 @@ ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, int save_as_render, int 
 	}
 
 	if (do_colormanagement) {
-		int make_byte = FALSE;
+		bool make_byte = false;
 		ImFileType *type;
 
 		/* for proper check whether byte buffer is required by a format or not
@@ -1839,10 +1926,10 @@ ImBuf *IMB_colormanagement_imbuf_for_write(ImBuf *ibuf, int save_as_render, int 
 		 * we need to allocate byte buffer and store color managed
 		 * image there
 		 */
-		for (type = IMB_FILE_TYPES; type->is_a; type++) {
+		for (type = IMB_FILE_TYPES; type < IMB_FILE_TYPES_LAST; type++) {
 			if (type->save && type->ftype(type, colormanaged_ibuf)) {
 				if ((type->flag & IM_FTYPE_FLOAT) == 0)
-					make_byte = TRUE;
+					make_byte = true;
 
 				break;
 			}
@@ -1877,7 +1964,7 @@ void IMB_colormanagement_buffer_make_display_space(float *buffer, unsigned char 
 	cm_processor = IMB_colormanagement_display_processor_new(view_settings, display_settings);
 
 	processor_transform_apply_threaded(display_buffer_float, width, height, channels,
-	                                   cm_processor, TRUE);
+	                                   cm_processor, true);
 
 	IMB_buffer_byte_from_float(display_buffer, display_buffer_float,
 	                           channels, dither, IB_PROFILE_SRGB, IB_PROFILE_SRGB,
@@ -1954,7 +2041,7 @@ unsigned char *IMB_display_buffer_acquire(ImBuf *ibuf, const ColorManagedViewSet
 				return (unsigned char *) ibuf->rect;
 		}
 
-		colormanage_view_settings_to_cache(&cache_view_settings, applied_view_settings);
+		colormanage_view_settings_to_cache(ibuf, &cache_view_settings, applied_view_settings);
 		colormanage_display_settings_to_cache(&cache_display_settings, display_settings);
 
 		if (ibuf->invalid_rect.xmin != ibuf->invalid_rect.xmax) {
@@ -1963,7 +2050,7 @@ unsigned char *IMB_display_buffer_acquire(ImBuf *ibuf, const ColorManagedViewSet
 				                                  ibuf->x, 0, 0, applied_view_settings, display_settings,
 				                                  ibuf->invalid_rect.xmin, ibuf->invalid_rect.ymin,
 				                                  ibuf->invalid_rect.xmax, ibuf->invalid_rect.ymax,
-				                                  FALSE);
+				                                  false);
 			}
 
 			BLI_rcti_init(&ibuf->invalid_rect, 0, 0, 0, 0);
@@ -2018,7 +2105,7 @@ unsigned char *IMB_display_buffer_acquire_ctx(const bContext *C, ImBuf *ibuf, vo
 
 void IMB_display_buffer_transform_apply(unsigned char *display_buffer, float *linear_buffer, int width, int height,
                                         int channels, const ColorManagedViewSettings *view_settings,
-                                        const ColorManagedDisplaySettings *display_settings, int predivide)
+                                        const ColorManagedDisplaySettings *display_settings, bool predivide)
 {
 	if (global_tot_display == 0 || global_tot_view == 0) {
 		IMB_buffer_byte_from_float(display_buffer, linear_buffer, channels, 0.0f, IB_PROFILE_SRGB, IB_PROFILE_LINEAR_RGB, FALSE,
@@ -2280,7 +2367,7 @@ static void colormanage_description_strip(char *description)
 	}
 }
 
-ColorSpace *colormanage_colorspace_add(const char *name, const char *description, int is_invertible, int is_data)
+ColorSpace *colormanage_colorspace_add(const char *name, const char *description, bool is_invertible, bool is_data)
 {
 	ColorSpace *colorspace, *prev_space;
 	int counter = 1;
@@ -2341,7 +2428,7 @@ ColorSpace *colormanage_colorspace_get_roled(int role)
 
 ColorSpace *colormanage_colorspace_get_indexed(int index)
 {
-	/* display indices are 1-based */
+	/* color space indices are 1-based */
 	return BLI_findlink(&global_colorspaces, index - 1);
 }
 
@@ -2375,7 +2462,7 @@ void IMB_colormanagment_colorspace_from_ibuf_ftype(ColorManagedColorspaceSetting
 {
 	ImFileType *type;
 
-	for (type = IMB_FILE_TYPES; type->is_a; type++) {
+	for (type = IMB_FILE_TYPES; type < IMB_FILE_TYPES_LAST; type++) {
 		if (type->save && type->ftype(type, ibuf)) {
 			const char *role_colorspace;
 
@@ -2384,6 +2471,71 @@ void IMB_colormanagment_colorspace_from_ibuf_ftype(ColorManagedColorspaceSetting
 			BLI_strncpy(colorspace_settings->name, role_colorspace, sizeof(colorspace_settings->name));
 		}
 	}
+}
+
+/*********************** Looks functions *************************/
+
+ColorManagedLook *colormanage_look_add(const char *name, const char *process_space, bool is_noop)
+{
+	ColorManagedLook *look;
+	int index = global_tot_looks;
+
+	look = MEM_callocN(sizeof(ColorManagedLook), "ColorManagedLook");
+	look->index = index + 1;
+	BLI_strncpy(look->name, name, sizeof(look->name));
+	BLI_strncpy(look->process_space, process_space, sizeof(look->process_space));
+	look->is_noop = is_noop;
+
+	BLI_addtail(&global_looks, look);
+
+	global_tot_looks++;
+
+	return look;
+}
+
+ColorManagedLook *colormanage_look_get_named(const char *name)
+{
+	ColorManagedLook *look;
+
+	for (look = global_looks.first; look; look = look->next) {
+		if (!strcmp(look->name, name)) {
+			return look;
+		}
+	}
+
+	return NULL;
+}
+
+ColorManagedLook *colormanage_look_get_indexed(int index)
+{
+	/* look indices are 1-based */
+	return BLI_findlink(&global_looks, index - 1);
+}
+
+int IMB_colormanagement_look_get_named_index(const char *name)
+{
+	ColorManagedLook *look;
+
+	look = colormanage_look_get_named(name);
+
+	if (look) {
+		return look->index;
+	}
+
+	return 0;
+}
+
+const char *IMB_colormanagement_look_get_indexed_name(int index)
+{
+	ColorManagedLook *look;
+
+	look = colormanage_look_get_indexed(index);
+
+	if (look) {
+		return look->name;
+	}
+
+	return NULL;
 }
 
 /*********************** RNA helper functions *************************/
@@ -2434,6 +2586,23 @@ void IMB_colormanagement_view_items_add(EnumPropertyItem **items, int *totitem, 
 	}
 }
 
+void IMB_colormanagement_look_items_add(struct EnumPropertyItem **items, int *totitem)
+{
+	ColorManagedLook *look;
+
+	for (look = global_looks.first; look; look = look->next) {
+		EnumPropertyItem item;
+
+		item.value = look->index;
+		item.name = look->name;
+		item.identifier = look->name;
+		item.icon = 0;
+		item.description = "";
+
+		RNA_enum_item_add(items, totitem, &item);
+	}
+}
+
 void IMB_colormanagement_colorspace_items_add(EnumPropertyItem **items, int *totitem)
 {
 	ColorSpace *colorspace;
@@ -2448,11 +2617,7 @@ void IMB_colormanagement_colorspace_items_add(EnumPropertyItem **items, int *tot
 		item.name = colorspace->name;
 		item.identifier = colorspace->name;
 		item.icon = 0;
-
-		if (colorspace->description)
-			item.description = colorspace->description;
-		else
-			item.description = "";
+		item.description = colorspace->description;
 
 		RNA_enum_item_add(items, totitem, &item);
 	}
@@ -2483,7 +2648,7 @@ static void partial_buffer_update_rect(ImBuf *ibuf, unsigned char *display_buffe
 	float *display_buffer_float = NULL;
 	const int width = xmax - xmin;
 	const int height = ymax - ymin;
-	int is_data = ibuf->colormanage_flag & IMB_COLORMANAGE_IS_DATA;
+	bool is_data = (ibuf->colormanage_flag & IMB_COLORMANAGE_IS_DATA) != 0;
 
 	if (dither != 0.0f) {
 		/* cm_processor is NULL in cases byte_buffer's space matches display
@@ -2564,7 +2729,7 @@ static void partial_buffer_update_rect(ImBuf *ibuf, unsigned char *display_buffe
 void IMB_partial_display_buffer_update(ImBuf *ibuf, const float *linear_buffer, const unsigned char *byte_buffer,
                                        int stride, int offset_x, int offset_y, const ColorManagedViewSettings *view_settings,
                                        const ColorManagedDisplaySettings *display_settings,
-                                       int xmin, int ymin, int xmax, int ymax, int update_orig_byte_buffer)
+                                       int xmin, int ymin, int xmax, int ymax, bool update_orig_byte_buffer)
 {
 	if ((ibuf->rect && ibuf->rect_float) || update_orig_byte_buffer) {
 		/* update byte buffer created by legacy color management */
@@ -2587,7 +2752,7 @@ void IMB_partial_display_buffer_update(ImBuf *ibuf, const float *linear_buffer, 
 		unsigned char *display_buffer = NULL;
 		int view_flag, display_index, buffer_width;
 
-		colormanage_view_settings_to_cache(&cache_view_settings, view_settings);
+		colormanage_view_settings_to_cache(ibuf, &cache_view_settings, view_settings);
 		colormanage_display_settings_to_cache(&cache_display_settings, display_settings);
 
 		view_flag = 1 << (cache_view_settings.view - 1);
@@ -2611,7 +2776,7 @@ void IMB_partial_display_buffer_update(ImBuf *ibuf, const float *linear_buffer, 
 
 		if (display_buffer) {
 			ColormanageProcessor *cm_processor = NULL;
-			int skip_transform = 0;
+			bool skip_transform = false;
 
 			/* byte buffer is assumed to be in imbuf's rect space, so if byte buffer
 			 * is known we could skip display->linear->display conversion in case
@@ -2670,13 +2835,16 @@ ColormanageProcessor *IMB_colormanagement_display_processor_new(const ColorManag
 	if (display_space)
 		cm_processor->is_data_result = display_space->is_data;
 
-	cm_processor->processor = create_display_buffer_processor(applied_view_settings->view_transform, display_settings->display_device,
-	                                                          applied_view_settings->exposure, applied_view_settings->gamma,
+	cm_processor->processor = create_display_buffer_processor(applied_view_settings->look,
+	                                                          applied_view_settings->view_transform,
+	                                                          display_settings->display_device,
+	                                                          applied_view_settings->exposure,
+	                                                          applied_view_settings->gamma,
 	                                                          global_role_scene_linear);
 
 	if (applied_view_settings->flag & COLORMANAGE_VIEW_USE_CURVES) {
 		cm_processor->curve_mapping = curvemapping_copy(applied_view_settings->curve_mapping);
-		curvemapping_premultiply(cm_processor->curve_mapping, FALSE);
+		curvemapping_premultiply(cm_processor->curve_mapping, false);
 	}
 
 	return cm_processor;
@@ -2725,7 +2893,7 @@ void IMB_colormanagement_processor_apply_v3(ColormanageProcessor *cm_processor, 
 }
 
 void IMB_colormanagement_processor_apply(ColormanageProcessor *cm_processor, float *buffer, int width, int height,
-                                         int channels, int predivide)
+                                         int channels, bool predivide)
 {
 	/* apply curve mapping */
 	if (cm_processor->curve_mapping) {
@@ -2774,27 +2942,103 @@ static bool check_glsl_display_processor_changed(const ColorManagedViewSettings 
 {
 	return !(global_glsl_state.exposure == view_settings->exposure &&
 	         global_glsl_state.gamma == view_settings->gamma &&
+	         STREQ(global_glsl_state.look, view_settings->look) &&
 	         STREQ(global_glsl_state.view, view_settings->view_transform) &&
 	         STREQ(global_glsl_state.display, display_settings->display_device) &&
 	         STREQ(global_glsl_state.input, from_colorspace));
+}
+
+static void curve_mapping_to_ocio_settings(CurveMapping *curve_mapping,
+                                           OCIO_CurveMappingSettings *curve_mapping_settings)
+{
+	int i;
+
+	curvemapping_initialize(curve_mapping);
+	curvemapping_premultiply(curve_mapping, false);
+	curvemapping_table_RGBA(curve_mapping,
+	                        &curve_mapping_settings->lut,
+	                        &curve_mapping_settings->lut_size);
+
+	for (i = 0; i < 4; i++) {
+		CurveMap *cuma = curve_mapping->cm + i;
+		curve_mapping_settings->use_extend_extrapolate[i] = (cuma->flag & CUMA_EXTEND_EXTRAPOLATE) != 0;
+		curve_mapping_settings->range[i] = cuma->range;
+		curve_mapping_settings->mintable[i] = cuma->mintable;
+		curve_mapping_settings->ext_in_x[i] = cuma->ext_in[0];
+		curve_mapping_settings->ext_in_y[i] = cuma->ext_in[1];
+		curve_mapping_settings->ext_out_x[i] = cuma->ext_out[0];
+		curve_mapping_settings->ext_out_y[i] = cuma->ext_out[1];
+		curve_mapping_settings->first_x[i] = cuma->table[0].x;
+		curve_mapping_settings->first_y[i] = cuma->table[0].y;
+		curve_mapping_settings->last_x[i] = cuma->table[CM_TABLE].x;
+		curve_mapping_settings->last_y[i] = cuma->table[CM_TABLE].y;
+	}
+
+	copy_v3_v3(curve_mapping_settings->black, curve_mapping->black);
+	copy_v3_v3(curve_mapping_settings->bwmul, curve_mapping->bwmul);
+
+	curve_mapping_settings->cache_id = (size_t) curve_mapping;
 }
 
 static void update_glsl_display_processor(const ColorManagedViewSettings *view_settings,
                                           const ColorManagedDisplaySettings *display_settings,
                                           const char *from_colorspace)
 {
+	bool use_curve_mapping = (view_settings->flag & COLORMANAGE_VIEW_USE_CURVES) != 0;
+	bool need_update = false;
+
+	need_update = global_glsl_state.processor == NULL ||
+	              check_glsl_display_processor_changed(view_settings, display_settings, from_colorspace) ||
+	              use_curve_mapping != global_glsl_state.use_curve_mapping;
+
+	if (use_curve_mapping && need_update == false) {
+		need_update |= view_settings->curve_mapping->changed_timestamp != global_glsl_state.curve_mapping_timestamp ||
+		               view_settings->curve_mapping != global_glsl_state.orig_curve_mapping;
+	}
+
 	/* Update state if there's no processor yet or
 	 * processor settings has been changed.
 	 */
-	if (global_glsl_state.processor == NULL ||
-	    check_glsl_display_processor_changed(view_settings, display_settings, from_colorspace))
-	{
+	if (need_update) {
+		OCIO_CurveMappingSettings *curve_mapping_settings = &global_glsl_state.curve_mapping_settings;
+		CurveMapping *new_curve_mapping = NULL;
+
 		/* Store settings of processor for further comparison. */
-		strcpy(global_glsl_state.view, view_settings->view_transform);
-		strcpy(global_glsl_state.display, display_settings->display_device);
-		strcpy(global_glsl_state.input, from_colorspace);
+		BLI_strncpy(global_glsl_state.look, view_settings->look, MAX_COLORSPACE_NAME);
+		BLI_strncpy(global_glsl_state.view, view_settings->view_transform, MAX_COLORSPACE_NAME);
+		BLI_strncpy(global_glsl_state.display, display_settings->display_device, MAX_COLORSPACE_NAME);
+		BLI_strncpy(global_glsl_state.input, from_colorspace, MAX_COLORSPACE_NAME);
 		global_glsl_state.exposure = view_settings->exposure;
 		global_glsl_state.gamma = view_settings->gamma;
+
+		/* We're using curve mapping's address as a acache ID,
+		 * so we need to make sure re-allocation gives new address here.
+		 * We do this by allocating new curve mapping before freeing ol one.
+		 */
+		if (use_curve_mapping) {
+			new_curve_mapping = curvemapping_copy(view_settings->curve_mapping);
+		}
+
+		if (global_glsl_state.curve_mapping) {
+			curvemapping_free(global_glsl_state.curve_mapping);
+			MEM_freeN(curve_mapping_settings->lut);
+			global_glsl_state.curve_mapping = NULL;
+			curve_mapping_settings->lut = NULL;
+		}
+
+		/* Fill in OCIO's curve mapping settings. */
+		if (use_curve_mapping) {
+			curve_mapping_to_ocio_settings(new_curve_mapping, &global_glsl_state.curve_mapping_settings);
+
+			global_glsl_state.curve_mapping = new_curve_mapping;
+			global_glsl_state.curve_mapping_timestamp = view_settings->curve_mapping->changed_timestamp;
+			global_glsl_state.orig_curve_mapping = view_settings->curve_mapping;
+			global_glsl_state.use_curve_mapping = true;
+		}
+		else {
+			global_glsl_state.orig_curve_mapping = NULL;
+			global_glsl_state.use_curve_mapping = false;
+		}
 
 		/* Free old processor, if any. */
 		if (global_glsl_state.processor)
@@ -2802,12 +3046,18 @@ static void update_glsl_display_processor(const ColorManagedViewSettings *view_s
 
 		/* We're using display OCIO processor, no RGB curves yet. */
 		global_glsl_state.processor =
-			create_display_buffer_processor(global_glsl_state.view,
+			create_display_buffer_processor(global_glsl_state.look,
+			                                global_glsl_state.view,
 			                                global_glsl_state.display,
 			                                global_glsl_state.exposure,
 			                                global_glsl_state.gamma,
 			                                global_glsl_state.input);
 	}
+}
+
+bool IMB_colormanagement_support_glsl_draw(const ColorManagedViewSettings *UNUSED(view_settings))
+{
+	return OCIO_supportGLSLDraw();
 }
 
 /**
@@ -2823,9 +3073,9 @@ static void update_glsl_display_processor(const ColorManagedViewSettings *view_s
  * This is low-level function, use glaDrawImBuf_glsl_ctx if you
  * only need to display given image buffer
  */
-int IMB_colormanagement_setup_glsl_draw_from_space(const ColorManagedViewSettings *view_settings,
-                                                   const ColorManagedDisplaySettings *display_settings,
-                                                   struct ColorSpace *from_colorspace, int predivide)
+bool IMB_colormanagement_setup_glsl_draw_from_space(const ColorManagedViewSettings *view_settings,
+                                                    const ColorManagedDisplaySettings *display_settings,
+                                                    struct ColorSpace *from_colorspace, bool predivide)
 {
 	ColorManagedViewSettings default_view_settings;
 	const ColorManagedViewSettings *applied_view_settings;
@@ -2842,28 +3092,26 @@ int IMB_colormanagement_setup_glsl_draw_from_space(const ColorManagedViewSetting
 		applied_view_settings = &default_view_settings;
 	}
 
-	/* RGB curves mapping is not supported on GPU yet. */
-	if (applied_view_settings->flag & COLORMANAGE_VIEW_USE_CURVES)
-		return FALSE;
-
 	/* Make sure OCIO processor is up-to-date. */
 	update_glsl_display_processor(applied_view_settings, display_settings,
 	                              from_colorspace ? from_colorspace->name : global_role_scene_linear);
 
-	return OCIO_setupGLSLDraw(&global_glsl_state.ocio_glsl_state, global_glsl_state.processor, predivide);
+	return OCIO_setupGLSLDraw(&global_glsl_state.ocio_glsl_state, global_glsl_state.processor,
+	                          global_glsl_state.use_curve_mapping ? &global_glsl_state.curve_mapping_settings : NULL,
+	                          predivide);
 }
 
 /* Configures GLSL shader for conversion from scene linear to display space */
-int IMB_colormanagement_setup_glsl_draw(const ColorManagedViewSettings *view_settings,
-                                        const ColorManagedDisplaySettings *display_settings,
-                                        int predivide)
+bool IMB_colormanagement_setup_glsl_draw(const ColorManagedViewSettings *view_settings,
+                                         const ColorManagedDisplaySettings *display_settings,
+                                         bool predivide)
 {
 	return IMB_colormanagement_setup_glsl_draw_from_space(view_settings, display_settings,
 	                                                      NULL, predivide);
 }
 
 /* Same as setup_glsl_draw_from_space, but color management settings are guessing from a given context */
-int IMB_colormanagement_setup_glsl_draw_from_space_ctx(const struct bContext *C, struct ColorSpace *from_colorspace, int predivide)
+bool IMB_colormanagement_setup_glsl_draw_from_space_ctx(const struct bContext *C, struct ColorSpace *from_colorspace, bool predivide)
 {
 	ColorManagedViewSettings *view_settings;
 	ColorManagedDisplaySettings *display_settings;
@@ -2874,7 +3122,7 @@ int IMB_colormanagement_setup_glsl_draw_from_space_ctx(const struct bContext *C,
 }
 
 /* Same as setup_glsl_draw, but color management settings are guessing from a given context */
-int IMB_colormanagement_setup_glsl_draw_ctx(const bContext *C, int predivide)
+bool IMB_colormanagement_setup_glsl_draw_ctx(const bContext *C, bool predivide)
 {
 	return IMB_colormanagement_setup_glsl_draw_from_space_ctx(C, NULL, predivide);
 }
@@ -2900,7 +3148,7 @@ void IMB_colormanagement_finish_glsl_draw(void)
  * When there's no need to apply transform on 2D textures, use
  * IMB_colormanagement_finish_glsl_transform().
  */
-int IMB_colormanagement_setup_transform_from_role_glsl(int role, int predivide)
+bool IMB_colormanagement_setup_transform_from_role_glsl(int role, bool predivide)
 {
 	OCIO_ConstProcessorRcPtr *processor;
 	ColorSpace *colorspace;
@@ -2909,7 +3157,7 @@ int IMB_colormanagement_setup_transform_from_role_glsl(int role, int predivide)
 
 	processor = colorspace_to_scene_linear_processor(colorspace);
 
-	return OCIO_setupGLSLDraw(&global_glsl_state.transform_ocio_glsl_state, processor, predivide);
+	return OCIO_setupGLSLDraw(&global_glsl_state.transform_ocio_glsl_state, processor, NULL, predivide);
 }
 
 /* Finish GLSL-based color space conversion */

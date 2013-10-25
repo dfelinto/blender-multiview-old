@@ -379,6 +379,7 @@ static bool wm_stereo_need_fullscreen(eStereoDisplayMode stereo_display)
 
 static bool wm_stereo_required(bScreen *screen)
 {
+	/* where there is no */
 	ScrArea *sa;
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
 		SpaceLink *sl;
@@ -387,14 +388,13 @@ static bool wm_stereo_required(bScreen *screen)
 			if (sl->spacetype == SPACE_VIEW3D) {
 				View3D *v3d = (View3D*) sl;
 				if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) &&
-						(v3d->stereo_camera == STEREO_3D_ID))
+				    (v3d->stereo_camera == STEREO_3D_ID))
 					return TRUE;
 			}
-
 #if 0 // waiting to image editor refactor
 			if (sl->spacetype == SPACE_IMAGE) {
 				SpaceImage *sima = (SpaceImage *) sl;
-				if (sima->iuser.view == STEREO_3D_ID)
+//					if (sima->iuser.view == STEREO_3D_ID)
 					return TRUE;
 			}
 #endif

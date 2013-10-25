@@ -209,34 +209,37 @@ typedef struct SceneRenderLayer {
 #define SCE_LAY_NEG_ZMASK	0x80000
 
 /* srl->passflag */
-#define SCE_PASS_COMBINED			(1<<0)
-#define SCE_PASS_Z					(1<<1)
-#define SCE_PASS_RGBA				(1<<2)
-#define SCE_PASS_DIFFUSE			(1<<3)
-#define SCE_PASS_SPEC				(1<<4)
-#define SCE_PASS_SHADOW				(1<<5)
-#define SCE_PASS_AO					(1<<6)
-#define SCE_PASS_REFLECT			(1<<7)
-#define SCE_PASS_NORMAL				(1<<8)
-#define SCE_PASS_VECTOR				(1<<9)
-#define SCE_PASS_REFRACT			(1<<10)
-#define SCE_PASS_INDEXOB			(1<<11)
-#define SCE_PASS_UV					(1<<12)
-#define SCE_PASS_INDIRECT			(1<<13)
-#define SCE_PASS_MIST				(1<<14)
-#define SCE_PASS_RAYHITS			(1<<15)
-#define SCE_PASS_EMIT				(1<<16)
-#define SCE_PASS_ENVIRONMENT		(1<<17)
-#define SCE_PASS_INDEXMA			(1<<18)
-#define SCE_PASS_DIFFUSE_DIRECT		(1<<19)
-#define SCE_PASS_DIFFUSE_INDIRECT	(1<<20)
-#define SCE_PASS_DIFFUSE_COLOR		(1<<21)
-#define SCE_PASS_GLOSSY_DIRECT		(1<<22)
-#define SCE_PASS_GLOSSY_INDIRECT	(1<<23)
-#define SCE_PASS_GLOSSY_COLOR		(1<<24)
-#define SCE_PASS_TRANSM_DIRECT		(1<<25)
-#define SCE_PASS_TRANSM_INDIRECT	(1<<26)
-#define SCE_PASS_TRANSM_COLOR		(1<<27)
+#define SCE_PASS_COMBINED				(1<<0)
+#define SCE_PASS_Z						(1<<1)
+#define SCE_PASS_RGBA					(1<<2)
+#define SCE_PASS_DIFFUSE				(1<<3)
+#define SCE_PASS_SPEC					(1<<4)
+#define SCE_PASS_SHADOW					(1<<5)
+#define SCE_PASS_AO						(1<<6)
+#define SCE_PASS_REFLECT				(1<<7)
+#define SCE_PASS_NORMAL					(1<<8)
+#define SCE_PASS_VECTOR					(1<<9)
+#define SCE_PASS_REFRACT				(1<<10)
+#define SCE_PASS_INDEXOB				(1<<11)
+#define SCE_PASS_UV						(1<<12)
+#define SCE_PASS_INDIRECT				(1<<13)
+#define SCE_PASS_MIST					(1<<14)
+#define SCE_PASS_RAYHITS				(1<<15)
+#define SCE_PASS_EMIT					(1<<16)
+#define SCE_PASS_ENVIRONMENT			(1<<17)
+#define SCE_PASS_INDEXMA				(1<<18)
+#define SCE_PASS_DIFFUSE_DIRECT			(1<<19)
+#define SCE_PASS_DIFFUSE_INDIRECT		(1<<20)
+#define SCE_PASS_DIFFUSE_COLOR			(1<<21)
+#define SCE_PASS_GLOSSY_DIRECT			(1<<22)
+#define SCE_PASS_GLOSSY_INDIRECT		(1<<23)
+#define SCE_PASS_GLOSSY_COLOR			(1<<24)
+#define SCE_PASS_TRANSM_DIRECT			(1<<25)
+#define SCE_PASS_TRANSM_INDIRECT		(1<<26)
+#define SCE_PASS_TRANSM_COLOR			(1<<27)
+#define SCE_PASS_SUBSURFACE_DIRECT		(1<<28)
+#define SCE_PASS_SUBSURFACE_INDIRECT	(1<<29)
+#define SCE_PASS_SUBSURFACE_COLOR		(1<<30)
 
 /* note, srl->passflag is treestore element 'nr' in outliner, short still... */
 
@@ -333,6 +336,7 @@ typedef struct ImageFormatData {
 #define R_IMF_IMTYPE_XVID           32
 #define R_IMF_IMTYPE_THEORA         33
 #define R_IMF_IMTYPE_MULTIVIEW      34
+#define R_IMF_IMTYPE_PSD            35
 
 #define R_IMF_IMTYPE_INVALID        255
 
@@ -527,6 +531,7 @@ typedef struct RenderData {
 	short bake_normal_space, bake_quad_split;
 	float bake_maxdist, bake_biasdist;
 	short bake_samples, bake_pad;
+	float bake_user_scale, bake_pad1;
 
 	/* path to render output */
 	char pic[1024]; /* 1024 = FILE_MAX */
@@ -677,7 +682,8 @@ typedef struct GameData {
 	short mode, matmode;
 	short occlusionRes;		/* resolution of occlusion Z buffer in pixel */
 	short physicsEngine;
-	short exitkey, pad;
+	short exitkey;
+	short vsync; /* Controls vsync: off, on, or adaptive (if supported) */
 	short ticrate, maxlogicstep, physubstep, maxphystep;
 	short obstacleSimulation;
 	short raster_storage;
@@ -712,6 +718,11 @@ typedef struct GameData {
 #define RAS_STORE_IMMEDIATE	1
 #define RAS_STORE_VA		2
 #define RAS_STORE_VBO		3
+
+/* vsync */
+#define VSYNC_ON	0
+#define VSYNC_OFF	1
+#define VSYNC_ADAPTIVE	2
 
 /* GameData.flag */
 #define GAME_RESTRICT_ANIM_UPDATES			(1 << 0)
@@ -1008,17 +1019,6 @@ typedef struct ToolSettings {
 	 * paint */
 	float vgroup_weight;
 
-	/* Subdivide Settings */
-	short cornertype;
-	short pad1;
-	/*Triangle to Quad conversion threshold*/
-	float jointrilimit;
-	/* Editmode Tools */
-	float degr; 
-	short step;
-	short turn; 
-	
-	float extr_offs; 	/* extrude offset */
 	float doublimit;	/* remove doubles limit */
 	float normalsize;	/* size of normals */
 	short automerge;
@@ -1026,30 +1026,21 @@ typedef struct ToolSettings {
 	/* Selection Mode for Mesh */
 	short selectmode;
 
-	/* Primitive Settings */
-	/* UV Sphere */
-	short segments;
-	short rings;
-	
-	/* Cylinder - Tube - Circle */
-	short vertices;
-
 	/* UV Calculation */
-	short unwrapper;
-	float uvcalc_radius;
-	float uvcalc_cubesize;
+	char unwrapper;
+	char uvcalc_flag;
+	char uv_flag;
+	char uv_selectmode;
+
 	float uvcalc_margin;
-	short uvcalc_mapdir;
-	short uvcalc_mapalign;
-	short uvcalc_flag;
-	short uv_flag, uv_selectmode;
-	short pad2;
-	
-	/* Grease Pencil */
-	short gpencil_flags;
-	
+
 	/* Auto-IK */
-	short autoik_chainlen;
+	short autoik_chainlen;  /* runtime only */
+
+	/* Grease Pencil */
+	char gpencil_flags;
+
+	char pad[5];
 
 	/* Image Paint (8 byttse aligned please!) */
 	struct ImagePaintSettings imapaint;
@@ -1062,16 +1053,13 @@ typedef struct ToolSettings {
 
 	/* Select Group Threshold */
 	float select_thresh;
-	
-	/* Graph Editor */
-	float clean_thresh;
 
 	/* Auto-Keying Mode */
 	short autokey_mode, autokey_flag;	/* defines in DNA_userdef_types.h */
 
 	/* Multires */
 	char multires_subdiv_type;
-	char pad3[5];
+	char pad3[1];
 
 	/* Skeleton generation */
 	short skgen_resolution;
@@ -1112,11 +1100,11 @@ typedef struct ToolSettings {
 	short proportional, prop_mode;
 	char proportional_objects; /* proportional edit, object mode */
 	char proportional_mask; /* proportional edit, object mode */
-	char pad4[1];
 
 	char auto_normalize; /*auto normalizing mode in wpaint*/
 	char multipaint; /* paint multiple bones in wpaint */
 	char weightuser;
+	char vgroupsubset; /* subset selection filter in wpaint */
 
 	/* UV painting */
 	int use_uv_sculpt;
@@ -1260,6 +1248,7 @@ typedef struct Scene {
 /* flag */
 	/* use preview range */
 #define SCER_PRV_RANGE	(1<<0)
+#define SCER_LOCK_FRAME_SELECTION	(1<<1)
 
 /* mode (int now) */
 #define R_OSA			0x0001
@@ -1353,7 +1342,7 @@ typedef struct Scene {
 /* #define R_RECURS_PROTECTION	0x20000 */
 #define R_TEXNODE_PREVIEW	0x40000
 #define R_VIEWPORT_PREVIEW	0x80000
-#define R_SINGLE_VIEW		0x160000
+#define R_MULTIVIEW			0x160000
 
 /* r->stamp */
 #define R_STAMP_TIME 	0x0001
@@ -1403,6 +1392,7 @@ typedef struct Scene {
 #define R_BAKE_MULTIRES		16
 #define R_BAKE_LORES_MESH	32
 #define R_BAKE_VCOL			64
+#define R_BAKE_USERSCALE	128
 
 /* bake_normal_space */
 #define R_BAKE_SPACE_CAMERA	 0
@@ -1538,7 +1528,8 @@ typedef struct Scene {
 /* toolsettings->proportional */
 #define PROP_EDIT_OFF			0
 #define PROP_EDIT_ON			1
-#define PROP_EDIT_CONNECTED	2
+#define PROP_EDIT_CONNECTED		2
+#define PROP_EDIT_PROJECTED		3
 
 /* toolsettings->weightuser */
 enum {
@@ -1546,6 +1537,24 @@ enum {
 	OB_DRAW_GROUPUSER_ACTIVE    = 1,
 	OB_DRAW_GROUPUSER_ALL       = 2
 };
+
+/* toolsettings->vgroupsubset */
+/* object_vgroup.c */
+typedef enum eVGroupSelect {
+	WT_VGROUP_ALL = 0,
+	WT_VGROUP_ACTIVE = 1,
+	WT_VGROUP_BONE_SELECT = 2,
+	WT_VGROUP_BONE_DEFORM = 3,
+	WT_VGROUP_BONE_DEFORM_OFF = 4
+} eVGroupSelect;
+
+#define WT_VGROUP_MASK_ALL \
+	((1 << WT_VGROUP_ACTIVE) | \
+	 (1 << WT_VGROUP_BONE_SELECT) | \
+	 (1 << WT_VGROUP_BONE_DEFORM) | \
+	 (1 << WT_VGROUP_BONE_DEFORM_OFF) | \
+	 (1 << WT_VGROUP_ALL))
+
 
 /* sce->flag */
 #define SCE_DS_SELECTED			(1<<0)

@@ -25,12 +25,17 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/blenlib/intern/smallhash.c
+ *  \ingroup bli
+ */
+
 #include <string.h>
 
 #include "MEM_guardedalloc.h"
 #include "BLI_utildefines.h"
 
 #include "BLI_smallhash.h"
+#include "BLI_strict_flags.h"
 
 /* SMHASH_CELL_UNUSED means this cell is inside a key series,
  * while SMHASH_CELL_FREE means this cell terminates a key series.
@@ -43,23 +48,18 @@
 #define SMHASH_CELL_UNUSED  ((void *)0x7FFFFFFF)
 #define SMHASH_CELL_FREE    ((void *)0x7FFFFFFD)
 
-#ifdef __GNUC__
-#  pragma GCC diagnostic ignored "-Wstrict-overflow"
-#  pragma GCC diagnostic error "-Wsign-conversion"
-#endif
-
 /* typically this re-assigns 'h' */
 #define SMHASH_NEXT(h, hoff)  ( \
-	CHECK_TYPE_INLINE(&(h),    unsigned int), \
-	CHECK_TYPE_INLINE(&(hoff), unsigned int), \
+	CHECK_TYPE_INLINE(&(h),    unsigned int *), \
+	CHECK_TYPE_INLINE(&(hoff), unsigned int *), \
 	((h) + (((hoff) = ((hoff) * 2) + 1), (hoff))) \
 	)
 
-extern unsigned int hashsizes[];
+extern const unsigned int hashsizes[];
 
 void BLI_smallhash_init(SmallHash *hash)
 {
-	int i;
+	unsigned int i;
 
 	memset(hash, 0, sizeof(*hash));
 
@@ -90,7 +90,7 @@ void BLI_smallhash_insert(SmallHash *hash, uintptr_t key, void *item)
 	if (hash->size < hash->used * 3) {
 		unsigned int newsize = hashsizes[++hash->curhash];
 		SmallHashEntry *tmp;
-		int i = 0;
+		unsigned int i = 0;
 
 		if (hash->table != hash->stacktable || newsize > SMSTACKSIZE) {
 			tmp = MEM_callocN(sizeof(*hash->table) * newsize, __func__);

@@ -51,6 +51,7 @@
 #include "BLI_listbase.h"
 #include "BLI_path_util.h"
 #include "BLI_string.h"
+#include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_blender.h"
@@ -227,7 +228,7 @@ void WM_init(bContext *C, int argc, const char **argv)
 		/* normally 'wm_homefile_read' will do this,
 		 * however python is not initialized when called from this function.
 		 *
-		 * unlikey any handlers are set but its possible,
+		 * unlikely any handlers are set but its possible,
 		 * note that recovering the last session does its own callbacks. */
 		BLI_callback_exec(CTX_data_main(C), NULL, BLI_CB_EVT_LOAD_POST);
 	}
@@ -509,6 +510,8 @@ void WM_exit_ext(bContext *C, const short do_python)
 #endif
 	
 	GHOST_DisposeSystemPaths();
+
+	BLI_threadapi_exit();
 
 	if (MEM_get_memory_blocks_in_use() != 0) {
 		printf("Error: Not freed memory blocks: %d\n", MEM_get_memory_blocks_in_use());

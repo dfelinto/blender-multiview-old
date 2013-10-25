@@ -28,7 +28,9 @@
 #ifndef __BKE_DERIVEDMESH_H__
 #define __BKE_DERIVEDMESH_H__
 
-/**
+/** \file BKE_DerivedMesh.h
+ *  \ingroup bke
+ *
  * Basic design of the DerivedMesh system:
  *
  * DerivedMesh is a common set of interfaces for mesh systems.
@@ -72,6 +74,8 @@
 #include "DNA_customdata_types.h"
 #include "DNA_meshdata_types.h"
 
+#include "BLI_compiler_attrs.h"
+
 #include "BKE_customdata.h"
 #include "BKE_bvhutils.h"
 
@@ -94,8 +98,6 @@ struct GPUDrawObject;
 struct BMEditMesh;
 struct ListBase;
 struct PBVH;
-
-#define DM_OMP_LIMIT 10000  /* setting zero so we can catch bugs in OpenMP/BMesh */
 
 /* number of sub-elements each mesh element has (for interpolation) */
 #define SUB_ELEMS_VERT 0
@@ -151,6 +153,11 @@ typedef enum DMDrawFlag {
 	DM_DRAW_USE_COLORS = 1,
 	DM_DRAW_ALWAYS_SMOOTH = 2
 } DMDrawFlag;
+
+typedef enum DMForeachFlag {
+	DM_FOREACH_NOP = 0,
+	DM_FOREACH_USE_NORMAL = (1 << 0),  /* foreachMappedVert, foreachMappedFaceCenter */
+} DMForeachFlag;
 
 typedef enum DMDirtyFlag {
 	/* dm has valid tessellated faces, but tessellated CDDATA need to be updated. */
@@ -285,7 +292,8 @@ struct DerivedMesh {
 	void (*foreachMappedVert)(DerivedMesh *dm,
 	                          void (*func)(void *userData, int index, const float co[3],
 	                                       const float no_f[3], const short no_s[3]),
-	                          void *userData);
+	                          void *userData,
+	                          DMForeachFlag flag);
 
 	/** Iterate over each mapped edge in the derived mesh, calling the
 	 * given function with the original edge and the mapped edge's new
@@ -303,7 +311,8 @@ struct DerivedMesh {
 	void (*foreachMappedFaceCenter)(DerivedMesh *dm,
 	                                void (*func)(void *userData, int index,
 	                                             const float cent[3], const float no[3]),
-	                                void *userData);
+	                                void *userData,
+	                                DMForeachFlag flag);
 
 	/** Iterate over all vertex points, calling DO_MINMAX with given args.
 	 *
@@ -323,6 +332,7 @@ struct DerivedMesh {
 
 	/** Get smooth vertex normal, undefined if index is not valid */
 	void (*getVertNo)(DerivedMesh *dm, int index, float no_r[3]);
+	void (*getPolyNo)(DerivedMesh *dm, int index, float no_r[3]);
 
 	/** Get a map of vertices to faces
 	 */
@@ -437,7 +447,7 @@ struct DerivedMesh {
 	 */
 	void (*drawMappedFacesMat)(DerivedMesh *dm,
 	                           void (*setMaterial)(void *userData, int, void *attribs),
-	                           int (*setFace)(void *userData, int index), void *userData);
+	                           bool (*setFace)(void *userData, int index), void *userData);
 
 	/** Release reference to the DerivedMesh. This function decides internally
 	 * if the DerivedMesh will be freed, or cached for later use. */
@@ -615,10 +625,13 @@ void DM_interp_poly_data(struct DerivedMesh *source, struct DerivedMesh *dest,
 /* Temporary? A function to give a colorband to derivedmesh for vertexcolor ranges */
 void vDM_ColorBand_store(const struct ColorBand *coba, const char alert_color[4]);
 
+/* UNUSED */
+#if 0
 /** Simple function to get me->totvert amount of vertices/normals,
  * correctly deformed and subsurfered. Needed especially when vertexgroups are involved.
  * In use now by vertex/weight paint and particles */
 DMCoNo *mesh_get_mapped_verts_nors(struct Scene *scene, struct Object *ob);
+#endif
 
 /* */
 DerivedMesh *mesh_get_derived_final(struct Scene *scene, struct Object *ob,
@@ -722,13 +735,11 @@ void DM_init_origspace(DerivedMesh *dm);
 char *DM_debug_info(DerivedMesh *dm);
 void DM_debug_print(DerivedMesh *dm);
 void DM_debug_print_cdlayers(CustomData *cdata);
+
+bool DM_is_valid(DerivedMesh *dm);
 #endif
 
-#ifdef __GNUC__
-BLI_INLINE int DM_origindex_mface_mpoly(const int *index_mf_to_mpoly, const int *index_mp_to_orig, const int i)
-	__attribute__((nonnull(1)))
-;
-#endif
+BLI_INLINE int DM_origindex_mface_mpoly(const int *index_mf_to_mpoly, const int *index_mp_to_orig, const int i) ATTR_NONNULL(1);
 
 BLI_INLINE int DM_origindex_mface_mpoly(const int *index_mf_to_mpoly, const int *index_mp_to_orig, const int i)
 {

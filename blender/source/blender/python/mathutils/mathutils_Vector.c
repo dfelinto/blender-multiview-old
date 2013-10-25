@@ -15,10 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- *
  * Contributor(s): Willian P. Germano, Joseph Gilbert, Ken Hughes, Alex Fraser, Campbell Barton
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -1169,7 +1165,7 @@ static PyObject *Vector_lerp(VectorObject *self, PyObject *args)
 PyDoc_STRVAR(Vector_rotate_doc,
 ".. function:: rotate(other)\n"
 "\n"
-"   Return vector by a rotation value.\n"
+"   Rotate the vector by a rotation value.\n"
 "\n"
 "   :arg other: rotation component of mathutils value\n"
 "   :type other: :class:`Euler`, :class:`Quaternion` or :class:`Matrix`\n"
@@ -1290,7 +1286,7 @@ static PyObject *vector_item_internal(VectorObject *self, int i, const int is_at
 
 static PyObject *Vector_item(VectorObject *self, int i)
 {
-	return vector_item_internal(self, i, FALSE);
+	return vector_item_internal(self, i, false);
 }
 /* sequence accessor (set): vector[index] = value */
 static int vector_ass_item_internal(VectorObject *self, int i, PyObject *value, const int is_attr)
@@ -1327,7 +1323,7 @@ static int vector_ass_item_internal(VectorObject *self, int i, PyObject *value, 
 
 static int Vector_ass_item(VectorObject *self, int i, PyObject *value)
 {
-	return vector_ass_item_internal(self, i, value, FALSE);
+	return vector_ass_item_internal(self, i, value, false);
 }
 
 /* sequence slice (get): vector[a:b] */
@@ -1857,7 +1853,7 @@ static PyObject *Vector_neg(VectorObject *self)
 }
 
 /*------------------------vec_magnitude_nosqrt (internal) - for comparing only */
-static double vec_magnitude_nosqrt(float *data, int size)
+static double vec_magnitude_nosqrt(const float *data, int size)
 {
 	/* return (double)sqrt(dot);*/
 	/* warning, line above removed because we are not using the length,
@@ -2090,12 +2086,12 @@ PyDoc_STRVAR(Vector_axis_w_doc, "Vector W axis (4D Vectors only).\n\n:type: floa
 
 static PyObject *Vector_axis_get(VectorObject *self, void *type)
 {
-	return vector_item_internal(self, GET_INT_FROM_POINTER(type), TRUE);
+	return vector_item_internal(self, GET_INT_FROM_POINTER(type), true);
 }
 
 static int Vector_axis_set(VectorObject *self, PyObject *value, void *type)
 {
-	return vector_ass_item_internal(self, GET_INT_FROM_POINTER(type), value, TRUE);
+	return vector_ass_item_internal(self, GET_INT_FROM_POINTER(type), value, true);
 }
 
 /* vector.length */
@@ -2944,10 +2940,10 @@ PyObject *Vector_CreatePyObject_cb(PyObject *cb_user, int size, unsigned char cb
 	return (PyObject *)self;
 }
 
-PyObject *Vector_CreatePyObject_alloc(float *vec, const int size, PyTypeObject *base_type)
+PyObject *Vector_CreatePyObject_alloc(const float *vec, const int size, PyTypeObject *base_type)
 {
 	VectorObject *vect_ob;
-	vect_ob = (VectorObject *)Vector_CreatePyObject(vec, size, Py_WRAP, base_type);
+	vect_ob = (VectorObject *)Vector_CreatePyObject((float *)vec, size, Py_WRAP, base_type);
 	vect_ob->wrapped = Py_NEW;
 
 	return (PyObject *)vect_ob;

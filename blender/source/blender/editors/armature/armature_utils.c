@@ -156,6 +156,25 @@ bool ED_armature_ebone_is_child_recursive(EditBone *ebone_parent, EditBone *ebon
 	return false;
 }
 
+void ED_armature_ebone_to_mat3(EditBone *ebone, float mat[3][3])
+{
+	float delta[3];
+
+	/* Find the current bone matrix */
+	sub_v3_v3v3(delta, ebone->tail, ebone->head);
+	vec_roll_to_mat3(delta, ebone->roll, mat);
+}
+
+void ED_armature_ebone_to_mat4(EditBone *ebone, float mat[4][4])
+{
+	float m3[3][3];
+
+	ED_armature_ebone_to_mat3(ebone, m3);
+
+	copy_m4_m3(mat, m3);
+	copy_v3_v3(mat[3], ebone->head);
+}
+
 /* *************************************************************** */
 /* Mirroring */
 
@@ -337,18 +356,9 @@ EditBone *make_boneList(ListBase *edbo, ListBase *bones, EditBone *parent, Bone 
 		}
 		else {
 			/* if the bone is not selected, but connected to its parent
-			 *  copy the parents tip selection state */
+			 * always use the parents tip selection state */
 			if (eBone->parent && (eBone->flag & BONE_CONNECTED)) {
-				/* selecting with the mouse gives this behavior */
-				if (eBone->parent->flag & BONE_TIPSEL) {
-					eBone->flag |= BONE_ROOTSEL;
-				}
-				else {
-					eBone->flag &= ~BONE_ROOTSEL;
-				}
-				
-				/* probably not selected but just in case */
-				eBone->flag &= ~BONE_TIPSEL;
+				eBone->flag &= ~BONE_ROOTSEL;
 			}
 		}
 		
@@ -398,7 +408,6 @@ static void fix_bonelist_roll(ListBase *bonelist, ListBase *editbonelist)
 	float postmat[3][3];
 	float difmat[3][3];
 	float imat[3][3];
-	float delta[3];
 	
 	for (curBone = bonelist->first; curBone; curBone = curBone->next) {
 		/* sets local matrix and arm_mat (restpos) */
@@ -411,8 +420,7 @@ static void fix_bonelist_roll(ListBase *bonelist, ListBase *editbonelist)
 		
 		if (ebone) {
 			/* Get the ebone premat */
-			sub_v3_v3v3(delta, ebone->tail, ebone->head);
-			vec_roll_to_mat3(delta, ebone->roll, premat);
+			ED_armature_ebone_to_mat3(ebone, premat);
 			
 			/* Get the bone postmat */
 			copy_m3_m4(postmat, curBone->arm_mat);
@@ -480,7 +488,6 @@ void ED_armature_from_edit(Object *obedit)
 			/* don't change active selection, this messes up separate which uses
 			 * editmode toggle and can separate active bone which is de-selected originally */
 			/* newBone->flag |= BONE_SELECTED; */ /* important, editbones can be active with only 1 point selected */
-			arm->act_edbone = NULL;
 			arm->act_bone = newBone;
 		}
 		newBone->roll = 0.0f;
@@ -512,11 +519,9 @@ void ED_armature_from_edit(Object *obedit)
 			{
 				float M_parentRest[3][3];
 				float iM_parentRest[3][3];
-				float delta[3];
 				
 				/* Get the parent's  matrix (rotation only) */
-				sub_v3_v3v3(delta, eBone->parent->tail, eBone->parent->head);
-				vec_roll_to_mat3(delta, eBone->parent->roll, M_parentRest);
+				ED_armature_ebone_to_mat3(eBone->parent, M_parentRest);
 				
 				/* Invert the parent matrix */
 				invert_m3_m3(iM_parentRest, M_parentRest);
@@ -569,6 +574,7 @@ void ED_armature_edit_free(struct Object *ob)
 		}
 		MEM_freeN(arm->edbo);
 		arm->edbo = NULL;
+		arm->act_edbone = NULL;
 	}
 }
 
@@ -588,6 +594,60 @@ void ED_armature_to_edit(Object *ob)
 /* *************************************************************** */
 /* Undo for Armature EditMode*/
 
+/* free's bones and their properties */
+
+static void ED_armature_ebone_listbase_free(ListBase *lb)
+{
+	EditBone *ebone, *ebone_next;
+
+	for (ebone = lb->first; ebone; ebone = ebone_next) {
+		ebone_next = ebone->next;
+
+		if (ebone->prop) {
+			IDP_FreeProperty(ebone->prop);
+			MEM_freeN(ebone->prop);
+		}
+
+		MEM_freeN(ebone);
+	}
+
+	lb->first = NULL;
+	lb->last = NULL;
+}
+
+static void ED_armature_ebone_listbase_copy(ListBase *lb_dst, ListBase *lb_src)
+{
+	EditBone *ebone_src;
+	EditBone *ebone_dst;
+
+	BLI_assert(lb_dst->first == NULL);
+
+	for (ebone_src = lb_src->first; ebone_src; ebone_src = ebone_src->next) {
+		ebone_dst = MEM_dupallocN(ebone_src);
+		if (ebone_dst->prop) {
+			ebone_dst->prop = IDP_CopyProperty(ebone_dst->prop);
+		}
+		ebone_src->temp = ebone_dst;
+		BLI_addtail(lb_dst, ebone_dst);
+	}
+
+	/* set pointers */
+	for (ebone_dst = lb_dst->first; ebone_dst; ebone_dst = ebone_dst->next) {
+		if (ebone_dst->parent) {
+			ebone_dst->parent = ebone_dst->parent->temp;
+		}
+	}
+}
+
+static void ED_armature_ebone_listbase_temp_clear(ListBase *lb)
+{
+	EditBone *ebone;
+	/* be sure they don't hang ever */
+	for (ebone = lb->first; ebone; ebone = ebone->next) {
+		ebone->temp = NULL;
+	}
+}
+
 typedef struct UndoArmature {
 	EditBone *act_edbone;
 	ListBase lb;
@@ -597,60 +657,40 @@ static void undoBones_to_editBones(void *uarmv, void *armv, void *UNUSED(data))
 {
 	UndoArmature *uarm = uarmv;
 	bArmature *arm = armv;
-	EditBone *ebo, *newebo;
+	EditBone *ebone;
 	
-	BLI_freelistN(arm->edbo);
-	
-	/* copy  */
-	for (ebo = uarm->lb.first; ebo; ebo = ebo->next) {
-		newebo = MEM_dupallocN(ebo);
-		ebo->temp = newebo;
-		BLI_addtail(arm->edbo, newebo);
-	}
+	ED_armature_ebone_listbase_free(arm->edbo);
+	ED_armature_ebone_listbase_copy(arm->edbo, &uarm->lb);
 	
 	/* active bone */
 	if (uarm->act_edbone) {
-		ebo = uarm->act_edbone;
-		arm->act_edbone = ebo->temp;
+		ebone = uarm->act_edbone;
+		arm->act_edbone = ebone->temp;
 	}
-	else
+	else {
 		arm->act_edbone = NULL;
+	}
 
-	/* set pointers */
-	for (newebo = arm->edbo->first; newebo; newebo = newebo->next) {
-		if (newebo->parent) newebo->parent = newebo->parent->temp;
-	}
-	/* be sure they don't hang ever */
-	for (newebo = arm->edbo->first; newebo; newebo = newebo->next) {
-		newebo->temp = NULL;
-	}
+	ED_armature_ebone_listbase_temp_clear(arm->edbo);
 }
 
 static void *editBones_to_undoBones(void *armv, void *UNUSED(obdata))
 {
 	bArmature *arm = armv;
 	UndoArmature *uarm;
-	EditBone *ebo, *newebo;
+	EditBone *ebone;
 	
 	uarm = MEM_callocN(sizeof(UndoArmature), "listbase undo");
 	
-	/* copy */
-	for (ebo = arm->edbo->first; ebo; ebo = ebo->next) {
-		newebo = MEM_dupallocN(ebo);
-		ebo->temp = newebo;
-		BLI_addtail(&uarm->lb, newebo);
-	}
+	ED_armature_ebone_listbase_copy(&uarm->lb, arm->edbo);
 	
 	/* active bone */
 	if (arm->act_edbone) {
-		ebo = arm->act_edbone;
-		uarm->act_edbone = ebo->temp;
+		ebone = arm->act_edbone;
+		uarm->act_edbone = ebone->temp;
 	}
 
-	/* set pointers */
-	for (newebo = uarm->lb.first; newebo; newebo = newebo->next) {
-		if (newebo->parent) newebo->parent = newebo->parent->temp;
-	}
+	ED_armature_ebone_listbase_temp_clear(&uarm->lb);
 	
 	return uarm;
 }
@@ -659,7 +699,8 @@ static void free_undoBones(void *uarmv)
 {
 	UndoArmature *uarm = uarmv;
 	
-	BLI_freelistN(&uarm->lb);
+	ED_armature_ebone_listbase_free(&uarm->lb);
+
 	MEM_freeN(uarm);
 }
 
@@ -677,4 +718,63 @@ void undo_push_armature(bContext *C, const char *name)
 {
 	// XXX solve getdata()
 	undo_editmode_push(C, name, get_armature_edit, free_undoBones, undoBones_to_editBones, editBones_to_undoBones, NULL);
+}
+
+/* *************************************************************** */
+/* Low level selection functions which hide connected-parent
+ * flag behavior which gets tricky to handle in selection operators.
+ * (no flushing in ED_armature_ebone_select.*, that should be explicit) */
+
+int ED_armature_ebone_selectflag_get(const EditBone *ebone)
+{
+	if (ebone->parent && (ebone->flag & BONE_CONNECTED)) {
+		return ((ebone->flag & (BONE_SELECTED | BONE_TIPSEL)) |
+		        ((ebone->parent->flag & BONE_TIPSEL) ? BONE_ROOTSEL : 0));
+	}
+	else {
+		return (ebone->flag & (BONE_SELECTED | BONE_ROOTSEL | BONE_TIPSEL));
+	}
+}
+
+void ED_armature_ebone_selectflag_set(EditBone *ebone, int flag)
+{
+	flag = flag & (BONE_SELECTED | BONE_ROOTSEL | BONE_TIPSEL);
+
+	if (ebone->parent && (ebone->flag & BONE_CONNECTED)) {
+		ebone->flag &= ~(BONE_SELECTED | BONE_ROOTSEL | BONE_TIPSEL);
+		ebone->parent->flag &= ~BONE_TIPSEL;
+
+		ebone->flag |= flag;
+		ebone->parent->flag |= (flag & BONE_ROOTSEL) ? BONE_TIPSEL : 0;
+	}
+	else {
+		ebone->flag &= ~(BONE_SELECTED | BONE_ROOTSEL | BONE_TIPSEL);
+		ebone->flag |= flag;
+	}
+}
+
+void ED_armature_ebone_selectflag_enable(EditBone *ebone, int flag)
+{
+	BLI_assert((flag & (BONE_SELECTED | BONE_ROOTSEL | BONE_TIPSEL)) != 0);
+	ED_armature_ebone_selectflag_set(ebone, ebone->flag | flag);
+}
+
+void ED_armature_ebone_selectflag_disable(EditBone *ebone, int flag)
+{
+	BLI_assert((flag & (BONE_SELECTED | BONE_ROOTSEL | BONE_TIPSEL)) != 0);
+	ED_armature_ebone_selectflag_set(ebone, ebone->flag & ~flag);
+}
+
+/* could be used in more places */
+void ED_armature_ebone_select_set(EditBone *ebone, bool select)
+{
+	int flag;
+	if (select) {
+		BLI_assert((ebone->flag & BONE_UNSELECTABLE) == 0);
+		flag = (BONE_SELECTED | BONE_TIPSEL | BONE_ROOTSEL);
+	}
+	else {
+		flag = 0;
+	}
+	ED_armature_ebone_selectflag_set(ebone, flag);
 }

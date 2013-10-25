@@ -15,11 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
  * Contributor(s): Joseph Gilbert
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -45,7 +40,7 @@ typedef struct {
  * blender (stored in blend_data). This is an either/or struct not both */
 
 /* prototypes */
-PyObject *Quaternion_CreatePyObject(float *quat, int type, PyTypeObject *base_type);
+PyObject *Quaternion_CreatePyObject(float quat[4], int type, PyTypeObject *base_type);
 PyObject *Quaternion_CreatePyObject_cb(PyObject *cb_user,
                                        unsigned char cb_type, unsigned char cb_subtype);
 

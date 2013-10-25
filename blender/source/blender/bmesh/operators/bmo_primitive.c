@@ -36,7 +36,7 @@
 
 /* ************************ primitives ******************* */
 
-static float icovert[12][3] = {
+static const float icovert[12][3] = {
 	{0.0f, 0.0f, -200.0f},
 	{144.72f, -105.144f, -89.443f},
 	{-55.277f, -170.128, -89.443f},
@@ -51,7 +51,7 @@ static float icovert[12][3] = {
 	{0.0f, 0.0f, 200.0f}
 };
 
-static short icoface[20][3] = {
+static const short icoface[20][3] = {
 	{0, 1, 2},
 	{1, 0, 5},
 	{0, 2, 3},
@@ -78,10 +78,10 @@ static short icoface[20][3] = {
  * this hack is only used so that scons & mingw + split-sources hack works
  * ------------------------------- start copied code */
 /* these are not the monkeys you are looking for */
-static int monkeyo = 4;
-static int monkeynv = 271;
-static int monkeynf = 250;
-static signed char monkeyv[271][3] = {
+static const int monkeyo = 4;
+static const int monkeynv = 271;
+static const int monkeynf = 250;
+static const signed char monkeyv[271][3] = {
 	{-71, 21, 98}, {-63, 12, 88}, {-57, 7, 74}, {-82, -3, 79}, {-82, 4, 92},
 	{-82, 17, 100}, {-92, 21, 102}, {-101, 12, 95}, {-107, 7, 83},
 	{-117, 31, 84}, {-109, 31, 95}, {-96, 31, 102}, {-92, 42, 102},
@@ -249,7 +249,7 @@ void bmo_create_grid_exec(BMesh *bm, BMOperator *op)
 		vec[2] = 0.0f;
 		mul_m4_v3(mat, vec);
 
-		eve = BM_vert_create(bm, vec, NULL, 0);
+		eve = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 		BMO_elem_flag_enable(bm, eve, VERT_MARK);
 
 		if (a != 0) {
@@ -318,11 +318,11 @@ void bmo_create_uvsphere_exec(BMesh *bm, BMOperator *op)
 		vec[0] = -dia * sinf(phi);
 		vec[1] = 0.0;
 		vec[2] = dia * cosf(phi);
-		eve = BM_vert_create(bm, vec, NULL, 0);
+		eve = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 		BMO_elem_flag_enable(bm, eve, VERT_MARK);
 
 		if (a != 0) {
-			e = BM_edge_create(bm, preveve, eve, NULL, 0);
+			e = BM_edge_create(bm, preveve, eve, NULL, BM_CREATE_NOP);
 			BMO_elem_flag_enable(bm, e, EDGE_ORIG);
 		}
 
@@ -408,7 +408,7 @@ void bmo_create_icosphere_exec(BMesh *bm, BMOperator *op)
 		vec[0] = dia_div * icovert[a][0];
 		vec[1] = dia_div * icovert[a][1];
 		vec[2] = dia_div * icovert[a][2];
-		eva[a] = BM_vert_create(bm, vec, NULL, 0);
+		eva[a] = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 
 		BMO_elem_flag_enable(bm, eva[a], VERT_MARK);
 	}
@@ -471,12 +471,12 @@ void bmo_create_monkey_exec(BMesh *bm, BMOperator *op)
 
 		v[0] = (monkeyv[i][0] + 127) / 128.0, v[1] = monkeyv[i][1] / 128.0, v[2] = monkeyv[i][2] / 128.0;
 
-		tv[i] = BM_vert_create(bm, v, NULL, 0);
+		tv[i] = BM_vert_create(bm, v, NULL, BM_CREATE_NOP);
 		BMO_elem_flag_enable(bm, tv[i], VERT_MARK);
 
 		tv[monkeynv + i] = (fabsf(v[0] = -v[0]) < 0.001f) ?
 		                   tv[i] :
-		                   (eve = BM_vert_create(bm, v, NULL, 0), mul_m4_v3(mat, eve->co), eve);
+		                   (eve = BM_vert_create(bm, v, NULL, BM_CREATE_NOP), mul_m4_v3(mat, eve->co), eve);
 
 		BMO_elem_flag_enable(bm, tv[monkeynv + i], VERT_MARK);
 
@@ -528,7 +528,7 @@ void bmo_create_circle_exec(BMesh *bm, BMOperator *op)
 		zero_v3(vec);
 		mul_m4_v3(mat, vec);
 		
-		cent1 = BM_vert_create(bm, vec, NULL, 0);
+		cent1 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 		BMO_elem_flag_enable(bm, cent1, VERT_MARK);
 	}
 
@@ -538,12 +538,12 @@ void bmo_create_circle_exec(BMesh *bm, BMOperator *op)
 		vec[1] = dia * cosf(phi);
 		vec[2] = 0.0f;
 		mul_m4_v3(mat, vec);
-		v1 = BM_vert_create(bm, vec, NULL, 0);
+		v1 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 
 		BMO_elem_flag_enable(bm, v1, VERT_MARK);
 		
 		if (lastv1)
-			BM_edge_create(bm, v1, lastv1, NULL, 0);
+			BM_edge_create(bm, v1, lastv1, NULL, BM_CREATE_NOP);
 		
 		if (a && cap_ends) {
 			BMFace *f;
@@ -603,13 +603,13 @@ void bmo_create_cone_exec(BMesh *bm, BMOperator *op)
 		vec[2] = -depth;
 		mul_m4_v3(mat, vec);
 		
-		cent1 = BM_vert_create(bm, vec, NULL, 0);
+		cent1 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 
 		vec[0] = vec[1] = 0.0f;
 		vec[2] = depth;
 		mul_m4_v3(mat, vec);
 		
-		cent2 = BM_vert_create(bm, vec, NULL, 0);
+		cent2 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 
 		BMO_elem_flag_enable(bm, cent1, VERT_MARK);
 		BMO_elem_flag_enable(bm, cent2, VERT_MARK);
@@ -620,13 +620,13 @@ void bmo_create_cone_exec(BMesh *bm, BMOperator *op)
 		vec[1] = dia1 * cosf(phi);
 		vec[2] = -depth;
 		mul_m4_v3(mat, vec);
-		v1 = BM_vert_create(bm, vec, NULL, 0);
+		v1 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 
 		vec[0] = dia2 * sinf(phi);
 		vec[1] = dia2 * cosf(phi);
 		vec[2] = depth;
 		mul_m4_v3(mat, vec);
-		v2 = BM_vert_create(bm, vec, NULL, 0);
+		v2 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 
 		BMO_elem_flag_enable(bm, v1, VERT_MARK);
 		BMO_elem_flag_enable(bm, v2, VERT_MARK);
@@ -686,56 +686,56 @@ void bmo_create_cube_exec(BMesh *bm, BMOperator *op)
 	vec[1] = -off;
 	vec[2] = -off;
 	mul_m4_v3(mat, vec);
-	v1 = BM_vert_create(bm, vec, NULL, 0);
+	v1 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v1, VERT_MARK);
 
 	vec[0] = -off;
 	vec[1] = off;
 	vec[2] = -off;
 	mul_m4_v3(mat, vec);
-	v2 = BM_vert_create(bm, vec, NULL, 0);
+	v2 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v2, VERT_MARK);
 
 	vec[0] = off;
 	vec[1] = off;
 	vec[2] = -off;
 	mul_m4_v3(mat, vec);
-	v3 = BM_vert_create(bm, vec, NULL, 0);
+	v3 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v3, VERT_MARK);
 
 	vec[0] = off;
 	vec[1] = -off;
 	vec[2] = -off;
 	mul_m4_v3(mat, vec);
-	v4 = BM_vert_create(bm, vec, NULL, 0);
+	v4 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v4, VERT_MARK);
 
 	vec[0] = -off;
 	vec[1] = -off;
 	vec[2] = off;
 	mul_m4_v3(mat, vec);
-	v5 = BM_vert_create(bm, vec, NULL, 0);
+	v5 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v5, VERT_MARK);
 
 	vec[0] = -off;
 	vec[1] = off;
 	vec[2] = off;
 	mul_m4_v3(mat, vec);
-	v6 = BM_vert_create(bm, vec, NULL, 0);
+	v6 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v6, VERT_MARK);
 
 	vec[0] = off;
 	vec[1] = off;
 	vec[2] = off;
 	mul_m4_v3(mat, vec);
-	v7 = BM_vert_create(bm, vec, NULL, 0);
+	v7 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v7, VERT_MARK);
 
 	vec[0] = off;
 	vec[1] = -off;
 	vec[2] = off;
 	mul_m4_v3(mat, vec);
-	v8 = BM_vert_create(bm, vec, NULL, 0);
+	v8 = BM_vert_create(bm, vec, NULL, BM_CREATE_NOP);
 	BMO_elem_flag_enable(bm, v8, VERT_MARK);
 
 	/* the four sides */

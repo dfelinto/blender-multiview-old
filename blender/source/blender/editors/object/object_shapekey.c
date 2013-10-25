@@ -57,6 +57,7 @@
 #include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_object.h"
+#include "BKE_lattice.h"
 #include "BKE_curve.h"
 
 #include "BLI_sys_types.h" // for intptr_t support
@@ -167,7 +168,7 @@ static bool ED_object_shape_key_remove(Main *bmain, Object *ob)
 }
 
 static bool object_shape_key_mirror(bContext *C, Object *ob,
-                                    int *r_totmirr, int *r_totfail)
+                                    int *r_totmirr, int *r_totfail, bool use_topology)
 {
 	KeyBlock *kb;
 	Key *key;
@@ -195,7 +196,7 @@ static bool object_shape_key_mirror(bContext *C, Object *ob,
 			mesh_octree_table(ob, NULL, NULL, 's');
 
 			for (i1 = 0, mv = me->mvert; i1 < me->totvert; i1++, mv++) {
-				i2 = mesh_get_x_mirror_vert(ob, i1);
+				i2 = mesh_get_x_mirror_vert(ob, i1, use_topology);
 				if (i2 == i1) {
 					fp1 = ((float *)kb->data) + i1 * 3;
 					fp1[0] = -fp1[0];
@@ -244,14 +245,14 @@ static bool object_shape_key_mirror(bContext *C, Object *ob,
 						int u_inv = (lt->pntsu - 1) - u;
 						float tvec[3];
 						if (u == u_inv) {
-							i1 = LT_INDEX(lt, u, v, w);
+							i1 = BKE_lattice_index_from_uvw(lt, u, v, w);
 							fp1 = ((float *)kb->data) + i1 * 3;
 							fp1[0] = -fp1[0];
 							totmirr++;
 						}
 						else {
-							i1 = LT_INDEX(lt, u, v, w);
-							i2 = LT_INDEX(lt, u_inv, v, w);
+							i1 = BKE_lattice_index_from_uvw(lt, u, v, w);
+							i2 = BKE_lattice_index_from_uvw(lt, u_inv, v, w);
 
 							fp1 = ((float *)kb->data) + i1 * 3;
 							fp2 = ((float *)kb->data) + i2 * 3;
@@ -287,6 +288,17 @@ static int shape_key_mode_poll(bContext *C)
 	Object *ob = ED_object_context(C);
 	ID *data = (ob) ? ob->data : NULL;
 	return (ob && !ob->id.lib && data && !data->lib && ob->mode != OB_MODE_EDIT);
+}
+
+static int shape_key_mode_exists_poll(bContext *C)
+{
+	Object *ob = ED_object_context(C);
+	ID *data = (ob) ? ob->data : NULL;
+
+	/* same as shape_key_mode_poll */
+	return (ob && !ob->id.lib && data && !data->lib && ob->mode != OB_MODE_EDIT) &&
+	       /* check a keyblock exists */
+	       (BKE_keyblock_from_object(ob) != NULL);
 }
 
 static int shape_key_poll(bContext *C)
@@ -358,6 +370,7 @@ void OBJECT_OT_shape_key_remove(wmOperatorType *ot)
 	
 	/* api callbacks */
 	ot->poll = shape_key_mode_poll;
+	ot->poll = shape_key_mode_exists_poll;
 	ot->exec = shape_key_remove_exec;
 
 	/* flags */
@@ -439,8 +452,9 @@ static int shape_key_mirror_exec(bContext *C, wmOperator *op)
 {
 	Object *ob = ED_object_context(C);
 	int totmirr = 0, totfail = 0;
+	bool use_topology = RNA_boolean_get(op->ptr, "use_topology");
 
-	if (!object_shape_key_mirror(C, ob, &totmirr, &totfail))
+	if (!object_shape_key_mirror(C, ob, &totmirr, &totfail, use_topology))
 		return OPERATOR_CANCELLED;
 
 	ED_mesh_report_mirror(op, totmirr, totfail);
@@ -461,6 +475,10 @@ void OBJECT_OT_shape_key_mirror(wmOperatorType *ot)
 
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
+
+	/* properties */
+	RNA_def_boolean(ot->srna, "use_topology", 0, "Topology Mirror",
+	                "Use topology based mirroring (for when both sides of mesh have matching, unique topology)");
 }
 
 
