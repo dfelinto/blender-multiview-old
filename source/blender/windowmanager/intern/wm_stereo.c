@@ -391,13 +391,12 @@ static bool wm_stereo_required(bScreen *screen)
 				    (v3d->stereo_camera == STEREO_3D_ID))
 					return TRUE;
 			}
-#if 0 // waiting to image editor refactor
 			if (sl->spacetype == SPACE_IMAGE) {
 				SpaceImage *sima = (SpaceImage *) sl;
+// XXX MV - waiting to image editor refactor, basically we will know if the image is 3d AND that it has 3d selected
 //					if (sima->iuser.view == STEREO_3D_ID)
 					return TRUE;
 			}
-#endif
 		}
 	}
 
