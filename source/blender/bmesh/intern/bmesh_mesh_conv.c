@@ -84,7 +84,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_listbase.h"
-#include "BLI_array.h"
+#include "BLI_alloca.h"
 #include "BLI_math_vector.h"
 
 #include "BKE_mesh.h"
@@ -97,6 +97,42 @@
 
 #include "bmesh.h"
 #include "intern/bmesh_private.h" /* for element checking */
+
+/**
+ * Currently this is only used for Python scripts
+ * which may fail to keep matching UV/TexFace layers.
+ *
+ * \note This should only perform any changes in exceptional cases,
+ * if we need this to be faster we could inline #BM_data_layer_add and only
+ * call #update_data_blocks once at the end.
+ */
+void BM_mesh_cd_validate(BMesh *bm)
+{
+	int totlayer_mtex = CustomData_number_of_layers(&bm->pdata, CD_MTEXPOLY);
+	int totlayer_uv = CustomData_number_of_layers(&bm->ldata, CD_MLOOPUV);
+
+	if (LIKELY(totlayer_mtex == totlayer_uv)) {
+		/* pass */
+	}
+	else if (totlayer_mtex < totlayer_uv) {
+		const int uv_index_first = CustomData_get_layer_index(&bm->ldata, CD_MLOOPUV);
+		do {
+			const char *from_name =  bm->ldata.layers[uv_index_first + totlayer_mtex].name;
+			BM_data_layer_add_named(bm, &bm->pdata, CD_MTEXPOLY, from_name);
+			CustomData_set_layer_unique_name(&bm->pdata, totlayer_mtex);
+		} while (totlayer_uv != ++totlayer_mtex);
+	}
+	else if (totlayer_uv < totlayer_mtex) {
+		const int mtex_index_first = CustomData_get_layer_index(&bm->pdata, CD_MTEXPOLY);
+		do {
+			const char *from_name = bm->pdata.layers[mtex_index_first + totlayer_uv].name;
+			BM_data_layer_add_named(bm, &bm->ldata, CD_MLOOPUV, from_name);
+			CustomData_set_layer_unique_name(&bm->ldata, totlayer_uv);
+		} while (totlayer_mtex != ++totlayer_uv);
+	}
+
+	BLI_assert(totlayer_mtex == totlayer_uv);
+}
 
 void BM_mesh_cd_flag_ensure(BMesh *bm, Mesh *mesh, const char cd_flag)
 {
@@ -176,7 +212,7 @@ static BMFace *bm_face_create_from_mpoly(MPoly *mp, MLoop *ml,
 		edges[j] = etable[ml->e];
 	}
 
-	return BM_face_create(bm, verts, edges, mp->totloop, BM_CREATE_SKIP_CD);
+	return BM_face_create(bm, verts, edges, mp->totloop, NULL, BM_CREATE_SKIP_CD);
 }
 
 
@@ -547,9 +583,8 @@ void BM_mesh_bm_to_me(BMesh *bm, Mesh *me, bool do_tessface)
 	MEdge *med, *medge;
 	BMVert *v, *eve;
 	BMEdge *e;
-	BMLoop *l;
 	BMFace *f;
-	BMIter iter, liter;
+	BMIter iter;
 	int i, j, ototvert;
 
 	const int cd_vert_bweight_offset = CustomData_get_offset(&bm->vdata, CD_BWEIGHT);
@@ -663,22 +698,26 @@ void BM_mesh_bm_to_me(BMesh *bm, Mesh *me, bool do_tessface)
 	i = 0;
 	j = 0;
 	BM_ITER_MESH (f, &iter, bm, BM_FACES_OF_MESH) {
+		BMLoop *l_iter, *l_first;
 		mpoly->loopstart = j;
 		mpoly->totloop = f->len;
 		mpoly->mat_nr = f->mat_nr;
 		mpoly->flag = BM_face_flag_to_mflag(f);
 
-		l = BM_iter_new(&liter, bm, BM_LOOPS_OF_FACE, f);
-		for ( ; l; l = BM_iter_step(&liter), j++, mloop++) {
-			mloop->e = BM_elem_index_get(l->e);
-			mloop->v = BM_elem_index_get(l->v);
+		l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+		do {
+			mloop->e = BM_elem_index_get(l_iter->e);
+			mloop->v = BM_elem_index_get(l_iter->v);
 
-			/* copy over customdat */
-			CustomData_from_bmesh_block(&bm->ldata, &me->ldata, l->head.data, j);
-			BM_CHECK_ELEMENT(l);
-			BM_CHECK_ELEMENT(l->e);
-			BM_CHECK_ELEMENT(l->v);
-		}
+			/* copy over customdata */
+			CustomData_from_bmesh_block(&bm->ldata, &me->ldata, l_iter->head.data, j);
+
+			j++;
+			mloop++;
+			BM_CHECK_ELEMENT(l_iter);
+			BM_CHECK_ELEMENT(l_iter->e);
+			BM_CHECK_ELEMENT(l_iter->v);
+		} while ((l_iter = l_iter->next) != l_first);
 
 		if (f == bm->act_face) me->act_face = i;
 

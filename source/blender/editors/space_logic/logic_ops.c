@@ -34,6 +34,7 @@
 #include "DNA_sensor_types.h"
 #include "DNA_controller_types.h"
 #include "DNA_actuator_types.h"
+#include "DNA_scene_types.h"
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
@@ -738,16 +739,17 @@ static void LOGIC_OT_texface_convert(wmOperatorType *ot)
 
 /* ************************ view ********************* */
 
-static int logic_view_all_exec(bContext *C, wmOperator *UNUSED(op))
+static int logic_view_all_exec(bContext *C, wmOperator *op)
 {
 	ARegion *ar = CTX_wm_region(C);
 	rctf cur_new = ar->v2d.tot;
 	float aspect = BLI_rctf_size_y(&ar->v2d.cur) / BLI_rctf_size_x(&ar->v2d.cur);
+	const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
 	
 	/* force the view2d code to zoom to width, not height */
 	cur_new.ymin = cur_new.ymax - BLI_rctf_size_x(&cur_new) * aspect;
 	
-	UI_view2d_smooth_view(C, ar, &cur_new);
+	UI_view2d_smooth_view(C, ar, &cur_new, smooth_viewtx);
 
 	return OPERATOR_FINISHED;
 }

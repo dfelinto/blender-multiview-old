@@ -109,13 +109,15 @@ static EnumPropertyItem transform_orientation_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-EnumPropertyItem autosnap_items[] = {
+#ifndef RNA_RUNTIME
+static EnumPropertyItem autosnap_items[] = {
 	{SACTSNAP_OFF, "NONE", 0, "No Auto-Snap", ""},
 	{SACTSNAP_STEP, "STEP", 0, "Time Step", "Snap to 1.0 frame/second intervals"},
 	{SACTSNAP_FRAME, "FRAME", 0, "Nearest Frame", "Snap to actual frames/seconds (nla-action time)"},
 	{SACTSNAP_MARKER, "MARKER", 0, "Nearest Marker", "Snap to nearest marker"},
 	{0, NULL, 0, NULL, NULL}
 };
+#endif
 
 EnumPropertyItem viewport_shade_items[] = {
 	{OB_BOUNDBOX, "BOUNDBOX", ICON_BBOX, "Bounding Box", "Display the object's local bounding boxes only"},
@@ -138,6 +140,25 @@ EnumPropertyItem clip_editor_mode_items[] = {
 };
 
 /* Actually populated dynamically trough a function, but helps for context-less access (e.g. doc, i18n...). */
+static EnumPropertyItem buttons_context_items[] = {
+	{BCONTEXT_SCENE, "SCENE", ICON_SCENE_DATA, "Scene", "Scene"},
+	{BCONTEXT_RENDER, "RENDER", ICON_SCENE, "Render", "Render"},
+	{BCONTEXT_RENDER_LAYER, "RENDER_LAYER", ICON_RENDERLAYERS, "Render Layers", "Render layers"},
+	{BCONTEXT_WORLD, "WORLD", ICON_WORLD, "World", "World"},
+	{BCONTEXT_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Object"},
+	{BCONTEXT_CONSTRAINT, "CONSTRAINT", ICON_CONSTRAINT, "Constraints", "Object constraints"},
+	{BCONTEXT_MODIFIER, "MODIFIER", ICON_MODIFIER, "Modifiers", "Object modifiers"},
+	{BCONTEXT_DATA, "DATA", ICON_NONE, "Data", "Object data"},
+	{BCONTEXT_BONE, "BONE", ICON_BONE_DATA, "Bone", "Bone"},
+	{BCONTEXT_BONE_CONSTRAINT, "BONE_CONSTRAINT", ICON_CONSTRAINT_BONE, "Bone Constraints", "Bone constraints"},
+	{BCONTEXT_MATERIAL, "MATERIAL", ICON_MATERIAL, "Material", "Material"},
+	{BCONTEXT_TEXTURE, "TEXTURE", ICON_TEXTURE, "Texture", "Texture"},
+	{BCONTEXT_PARTICLE, "PARTICLES", ICON_PARTICLES, "Particles", "Particle"},
+	{BCONTEXT_PHYSICS, "PHYSICS", ICON_PHYSICS, "Physics", "Physics"},
+	{0, NULL, 0, NULL, NULL}
+};
+
+/* Actually populated dynamically trough a function, but helps for context-less access (e.g. doc, i18n...). */
 static EnumPropertyItem buttons_texture_context_items[] = {
 	{SB_TEXC_MATERIAL, "MATERIAL", ICON_MATERIAL, "", "Show material textures"},
 	{SB_TEXC_WORLD, "WORLD", ICON_WORLD, "", "Show world textures"},
@@ -153,6 +174,7 @@ static EnumPropertyItem buttons_texture_context_items[] = {
 #include "DNA_mask_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
+#include "DNA_userdef_types.h"
 
 #include "BLI_math.h"
 
@@ -177,6 +199,9 @@ static EnumPropertyItem buttons_texture_context_items[] = {
 #include "GPU_material.h"
 
 #include "IMB_imbuf_types.h"
+
+#include "UI_interface.h"
+#include "UI_view2d.h"
 
 static StructRNA *rna_Space_refine(struct PointerRNA *ptr)
 {
@@ -381,23 +406,12 @@ static void rna_SpaceView3D_layer_update(Main *bmain, Scene *UNUSED(scene), Poin
 	DAG_on_visible_update(bmain, FALSE);
 }
 
-static void rna_SpaceView3D_viewport_shade_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
+static void rna_SpaceView3D_viewport_shade_update(Main *bmain, Scene *UNUSED(scene), PointerRNA *ptr)
 {
 	View3D *v3d = (View3D *)(ptr->data);
 	ScrArea *sa = rna_area_from_space(ptr);
 
-	if (v3d->drawtype != OB_RENDER) {
-		ARegion *ar;
-
-		for (ar = sa->regionbase.first; ar; ar = ar->next) {
-			RegionView3D *rv3d = ar->regiondata;
-
-			if (rv3d && rv3d->render_engine) {
-				RE_engine_free(rv3d->render_engine);
-				rv3d->render_engine = NULL;
-			}
-		}
-	}
+	ED_view3d_shade_update(bmain, v3d, sa);
 }
 
 static void rna_SpaceView3D_matcap_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *ptr)
@@ -603,7 +617,7 @@ static PointerRNA rna_SpaceImageEditor_uvedit_get(PointerRNA *ptr)
 	return rna_pointer_inherit_refine(ptr, &RNA_SpaceUVEditor, ptr->data);
 }
 
-static void rna_SpaceImageEditor_mode_update(Main *bmain, Scene *scene, PointerRNA *ptr)
+static void rna_SpaceImageEditor_mode_update(Main *bmain, Scene *scene, PointerRNA *UNUSED(ptr))
 {
 	ED_space_image_paint_update(bmain->wm.first, scene->toolsettings);
 }
@@ -831,12 +845,121 @@ static void rna_SpaceProperties_context_set(PointerRNA *ptr, int value)
 	sbuts->mainbuser = value;
 }
 
+static EnumPropertyItem *rna_SpaceProperties_context_itemf(bContext *UNUSED(C), PointerRNA *ptr,
+                                                           PropertyRNA *UNUSED(prop), int *free)
+{
+	SpaceButs *sbuts = (SpaceButs *)(ptr->data);
+	EnumPropertyItem *item = NULL;
+	int totitem = 0;
+
+	if (sbuts->pathflag & (1 << BCONTEXT_RENDER)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_RENDER);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_RENDER_LAYER)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_RENDER_LAYER);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_SCENE)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_SCENE);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_WORLD)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_WORLD);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_OBJECT)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_OBJECT);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_CONSTRAINT)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_CONSTRAINT);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_MODIFIER)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_MODIFIER);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_DATA)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_DATA);
+		(item + totitem - 1)->icon = sbuts->dataicon;
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_BONE)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_BONE);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_BONE_CONSTRAINT)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_BONE_CONSTRAINT);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_MATERIAL)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_MATERIAL);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_TEXTURE)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_TEXTURE);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_PARTICLE)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_PARTICLE);
+	}
+
+	if (sbuts->pathflag & (1 << BCONTEXT_PHYSICS)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_context_items, BCONTEXT_PHYSICS);
+	}
+
+	RNA_enum_item_end(&item, &totitem);
+	*free = 1;
+
+	return item;
+}
+
 static void rna_SpaceProperties_align_set(PointerRNA *ptr, int value)
 {
 	SpaceButs *sbuts = (SpaceButs *)(ptr->data);
 
 	sbuts->align = value;
 	sbuts->re_align = 1;
+}
+
+static EnumPropertyItem *rna_SpaceProperties_texture_context_itemf(bContext *C, PointerRNA *UNUSED(ptr),
+                                                                   PropertyRNA *UNUSED(prop), int *free)
+{
+	EnumPropertyItem *item = NULL;
+	int totitem = 0;
+
+	if (ED_texture_context_check_world(C)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_WORLD);
+	}
+
+	if (ED_texture_context_check_lamp(C)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_LAMP);
+	}
+	else if (ED_texture_context_check_material(C)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_MATERIAL);
+	}
+
+	if (ED_texture_context_check_particles(C)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_PARTICLES);
+	}
+
+	if (ED_texture_context_check_others(C)) {
+		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_OTHER);
+	}
+
+	RNA_enum_item_end(&item, &totitem);
+	*free = 1;
+
+	return item;
+}
+
+static void rna_SpaceProperties_texture_context_set(PointerRNA *ptr, int value)
+{
+	SpaceButs *sbuts = (SpaceButs *)(ptr->data);
+
+	/* User action, no need to keep "better" value in prev here! */
+	sbuts->texture_context = sbuts->texture_context_prev = value;
 }
 
 /* Space Console */
@@ -869,7 +992,8 @@ static void rna_ConsoleLine_body_set(PointerRNA *ptr, const char *value)
 		ci->cursor = len;
 }
 
-static void rna_ConsoleLine_cursor_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void rna_ConsoleLine_cursor_index_range(PointerRNA *ptr, int *min, int *max,
+                                               int *UNUSED(softmin), int *UNUSED(softmax))
 {
 	ConsoleLine *ci = (ConsoleLine *)ptr->data;
 
@@ -1129,35 +1253,19 @@ void rna_SpaceNodeEditor_path_pop(SpaceNode *snode, bContext *C)
 	ED_node_tree_update(C);
 }
 
-static EnumPropertyItem *rna_SpaceProperties_texture_context_itemf(bContext *C, PointerRNA *UNUSED(ptr),
-                                                                   PropertyRNA *UNUSED(prop), int *free)
+static void rna_SpaceNodeEditor_show_backdrop_update(Main *UNUSED(bmain), Scene *UNUSED(scene), PointerRNA *UNUSED(ptr))
 {
-	EnumPropertyItem *item = NULL;
-	int totitem = 0;
+	WM_main_add_notifier(NC_NODE | NA_EDITED, NULL);
+	WM_main_add_notifier(NC_SCENE | ND_NODES, NULL);
+}
 
-	if (ED_texture_context_check_world(C)) {
-		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_WORLD);
-	}
-
-	if (ED_texture_context_check_lamp(C)) {
-		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_LAMP);
-	}
-	else if (ED_texture_context_check_material(C)) {
-		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_MATERIAL);
-	}
-
-	if (ED_texture_context_check_particles(C)) {
-		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_PARTICLES);
-	}
-
-	if (ED_texture_context_check_others(C)) {
-		RNA_enum_items_add_value(&item, &totitem, buttons_texture_context_items, SB_TEXC_OTHER);
-	}
-
-	RNA_enum_item_end(&item, &totitem);
-	*free = 1;
-
-	return item;
+static void rna_SpaceNodeEditor_cursor_location_from_region(SpaceNode *snode, bContext *C, int x, int y)
+{
+	ARegion *ar = CTX_wm_region(C);
+	
+	UI_view2d_region_to_view(&ar->v2d, x, y, &snode->cursor[0], &snode->cursor[1]);
+	snode->cursor[0] /= UI_DPI_FAC;
+	snode->cursor[1] /= UI_DPI_FAC;
 }
 
 static void rna_SpaceClipEditor_clip_set(PointerRNA *ptr, PointerRNA value)
@@ -1228,6 +1336,12 @@ static void rna_def_space_mask_info(StructRNA *srna, int noteflag, const char *m
 {
 	PropertyRNA *prop;
 
+	static EnumPropertyItem overlay_mode_items[] = {
+		{MASK_OVERLAY_ALPHACHANNEL, "ALPHACHANNEL", ICON_NONE, "Alpha Channel", "Show alpha channel of the mask"},
+		{MASK_OVERLAY_COMBINED,     "COMBINED",     ICON_NONE, "Combined",      "Combine space background image with the mask"},
+		{0, NULL, 0, NULL, NULL}
+	};
+
 	prop = RNA_def_property(srna, "mask", PROP_POINTER, PROP_NONE);
 	RNA_def_property_pointer_sdna(prop, NULL, "mask_info.mask");
 	RNA_def_property_flag(prop, PROP_EDITABLE);
@@ -1245,6 +1359,17 @@ static void rna_def_space_mask_info(StructRNA *srna, int noteflag, const char *m
 	prop = RNA_def_property(srna, "show_mask_smooth", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "mask_info.draw_flag", MASK_DRAWFLAG_SMOOTH);
 	RNA_def_property_ui_text(prop, "Draw Smooth Splines", "");
+	RNA_def_property_update(prop, noteflag, NULL);
+
+	prop = RNA_def_property(srna, "show_mask_overlay", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "mask_info.draw_flag", MASK_DRAWFLAG_OVERLAY);
+	RNA_def_property_ui_text(prop, "Show Mask Overlay", "");
+	RNA_def_property_update(prop, noteflag, NULL);
+
+	prop = RNA_def_property(srna, "mask_overlay_mode", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "mask_info.overlay_mode");
+	RNA_def_property_enum_items(prop, overlay_mode_items);
+	RNA_def_property_ui_text(prop, "Overlay Mode", "Overlay mode of rasterized mask");
 	RNA_def_property_update(prop, noteflag, NULL);
 }
 
@@ -1365,7 +1490,6 @@ static void rna_def_space_outliner(BlenderRNA *brna)
 		{SO_LIBRARIES, "LIBRARIES", 0, "Blender File", "Display data of current file and linked libraries"},
 		{SO_DATABLOCKS, "DATABLOCKS", 0, "Datablocks", "Display all raw datablocks"},
 		{SO_USERDEF, "USER_PREFERENCES", 0, "User Preferences", "Display the user preference datablocks"},
-		{SO_KEYMAP, "KEYMAPS", 0, "Key Maps", "Display keymap datablocks"},
 		{0, NULL, 0, NULL, NULL}
 	};
 	
@@ -1576,7 +1700,6 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 {
 	StructRNA *srna;
 	PropertyRNA *prop;
-	const int matrix_dimsize[] = {4, 4};
 
 	static EnumPropertyItem pivot_items[] = {
 		{V3D_CENTER, "BOUNDING_BOX_CENTER", ICON_ROTATE, "Bounding Box Center",
@@ -1826,6 +1949,16 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Backface Culling", "Use back face culling to hide the back side of faces");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
 
+	prop = RNA_def_property(srna, "show_textured_shadeless", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag2", V3D_SHADELESS_TEX);
+	RNA_def_property_ui_text(prop, "Shadeless", "Show shadeless texture without lighting in textured draw mode");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
+
+	prop = RNA_def_property(srna, "show_occlude_wire", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "flag2", V3D_OCCLUDE_WIRE);
+	RNA_def_property_ui_text(prop, "Hidden Wire", "Use hidden wireframe display");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
+
 	prop = RNA_def_property(srna, "lock_camera", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag2", V3D_LOCK_CAMERA);
 	RNA_def_property_ui_text(prop, "Lock Camera to View", "Enable view navigation within the camera view");
@@ -1991,12 +2124,12 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "perspective_matrix", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "persmat");
 	RNA_def_property_clear_flag(prop, PROP_EDITABLE); /* XXX: for now, it's too risky for users to do this */
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
 	RNA_def_property_ui_text(prop, "Perspective Matrix", "Current perspective matrix of the 3D region");
 	
 	prop = RNA_def_property(srna, "view_matrix", PROP_FLOAT, PROP_MATRIX);
 	RNA_def_property_float_sdna(prop, NULL, "viewmat");
-	RNA_def_property_multi_array(prop, 2, matrix_dimsize);
+	RNA_def_property_multi_array(prop, 2, rna_matrix_dimsize_4x4);
 	RNA_def_property_float_funcs(prop, NULL, "rna_RegionView3D_view_matrix_set", NULL);
 	RNA_def_property_ui_text(prop, "View Matrix", "Current view matrix of the 3D region");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
@@ -2068,24 +2201,6 @@ static void rna_def_space_buttons(BlenderRNA *brna)
 	StructRNA *srna;
 	PropertyRNA *prop;
 
-	static EnumPropertyItem buttons_context_items[] = {
-		{BCONTEXT_SCENE, "SCENE", ICON_SCENE, "Scene", "Scene"},
-		{BCONTEXT_RENDER, "RENDER", ICON_SCENE_DATA, "Render", "Render"},
-		{BCONTEXT_RENDER_LAYER, "RENDER_LAYER", ICON_RENDERLAYERS, "Render Layers", "Render Layers"},
-		{BCONTEXT_WORLD, "WORLD", ICON_WORLD, "World", "World"},
-		{BCONTEXT_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Object"},
-		{BCONTEXT_CONSTRAINT, "CONSTRAINT", ICON_CONSTRAINT, "Constraints", "Constraints"},
-		{BCONTEXT_MODIFIER, "MODIFIER", ICON_MODIFIER, "Modifiers", "Modifiers"},
-		{BCONTEXT_DATA, "DATA", 0, "Data", "Data"},
-		{BCONTEXT_BONE, "BONE", ICON_BONE_DATA, "Bone", "Bone"},
-		{BCONTEXT_BONE_CONSTRAINT, "BONE_CONSTRAINT", ICON_CONSTRAINT, "Bone Constraints", "Bone Constraints"},
-		{BCONTEXT_MATERIAL, "MATERIAL", ICON_MATERIAL, "Material", "Material"},
-		{BCONTEXT_TEXTURE, "TEXTURE", ICON_TEXTURE, "Texture", "Texture"},
-		{BCONTEXT_PARTICLE, "PARTICLES", ICON_PARTICLES, "Particles", "Particle"},
-		{BCONTEXT_PHYSICS, "PHYSICS", ICON_PHYSICS, "Physics", "Physics"},
-		{0, NULL, 0, NULL, NULL}
-	};
-		
 	static EnumPropertyItem align_items[] = {
 		{BUT_HORIZONTAL, "HORIZONTAL", 0, "Horizontal", ""},
 		{BUT_VERTICAL, "VERTICAL", 0, "Vertical", ""},
@@ -2099,7 +2214,7 @@ static void rna_def_space_buttons(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "context", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "mainb");
 	RNA_def_property_enum_items(prop, buttons_context_items);
-	RNA_def_property_enum_funcs(prop, NULL, "rna_SpaceProperties_context_set", NULL);
+	RNA_def_property_enum_funcs(prop, NULL, "rna_SpaceProperties_context_set", "rna_SpaceProperties_context_itemf");
 	RNA_def_property_ui_text(prop, "Context", "Type of active data to display and edit");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES, NULL);
 	
@@ -2112,7 +2227,8 @@ static void rna_def_space_buttons(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "texture_context", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, buttons_texture_context_items);
-	RNA_def_property_enum_funcs(prop, NULL, NULL, "rna_SpaceProperties_texture_context_itemf");
+	RNA_def_property_enum_funcs(prop, NULL, "rna_SpaceProperties_texture_context_set",
+	                            "rna_SpaceProperties_texture_context_itemf");
 	RNA_def_property_ui_text(prop, "Texture Context", "Type of texture data to display and edit");
 	RNA_def_property_update(prop, NC_TEXTURE, NULL);
 
@@ -2490,6 +2606,16 @@ static void rna_def_space_text(BlenderRNA *brna)
 	RNA_def_property_range(prop, 0, 1024);
 	RNA_def_property_ui_text(prop, "Margin Column", "Column number to show right margin at");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_TEXT, NULL);
+
+	prop = RNA_def_property(srna, "top", PROP_INT, PROP_NONE);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_int_sdna(prop, NULL, "top");
+	RNA_def_property_ui_text(prop, "Top Line", "Top line visible");
+
+	prop = RNA_def_property(srna, "visible_lines", PROP_INT, PROP_NONE);
+	RNA_def_property_clear_flag(prop, PROP_EDITABLE);
+	RNA_def_property_int_sdna(prop, NULL, "viewlines");
+	RNA_def_property_ui_text(prop, "Top Line", "Amount of lines that can be visible in current editor");
 
 	/* functionality options */
 	prop = RNA_def_property(srna, "use_overwrite", PROP_BOOLEAN, PROP_NONE);
@@ -3210,7 +3336,8 @@ static void rna_def_space_node_path_api(BlenderRNA *brna, PropertyRNA *cprop)
 static void rna_def_space_node(BlenderRNA *brna)
 {
 	StructRNA *srna;
-	PropertyRNA *prop;
+	PropertyRNA *prop, *parm;
+	FunctionRNA *func;
 
 	static EnumPropertyItem texture_type_items[] = {
 		{SNODE_TEX_OBJECT, "OBJECT", ICON_OBJECT_DATA, "Object", "Edit texture nodes from Object"},
@@ -3298,7 +3425,7 @@ static void rna_def_space_node(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "show_backdrop", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SNODE_BACKDRAW);
 	RNA_def_property_ui_text(prop, "Backdrop", "Use active Viewer Node output as backdrop for compositing nodes");
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_NODE_VIEW, NULL);
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_NODE_VIEW, "rna_SpaceNodeEditor_show_backdrop_update");
 
 	prop = RNA_def_property(srna, "show_grease_pencil", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "flag", SNODE_SHOW_GPENCIL);
@@ -3351,6 +3478,14 @@ static void rna_def_space_node(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "cursor");
 	RNA_def_property_ui_text(prop, "Cursor Location", "Location for adding new nodes");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_NODE_VIEW, NULL);
+
+	func = RNA_def_function(srna, "cursor_location_from_region", "rna_SpaceNodeEditor_cursor_location_from_region");
+	RNA_def_function_ui_description(func, "Set the cursor location using region coordinates");
+	RNA_def_function_flag(func, FUNC_USE_CONTEXT);
+	parm = RNA_def_int(func, "x", 0, INT_MIN, INT_MAX, "x", "Region x coordinate", -10000, 10000);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
+	parm = RNA_def_int(func, "y", 0, INT_MIN, INT_MAX, "y", "Region y coordinate", -10000, 10000);
+	RNA_def_property_flag(parm, PROP_REQUIRED);
 }
 
 static void rna_def_space_logic(BlenderRNA *brna)
@@ -3443,6 +3578,7 @@ static void rna_def_space_clip(BlenderRNA *brna)
 	static EnumPropertyItem pivot_items[] = {
 		{V3D_CENTER, "BOUNDING_BOX_CENTER", ICON_ROTATE, "Bounding Box Center",
 		             "Pivot around bounding box center of selected object(s)"},
+		{V3D_CURSOR, "CURSOR", ICON_CURSOR, "2D Cursor", "Pivot around the 2D cursor"},
 		{V3D_LOCAL, "INDIVIDUAL_ORIGINS", ICON_ROTATECOLLECTION,
 		            "Individual Origins", "Pivot around each object's own origin"},
 		{V3D_CENTROID, "MEDIAN_POINT", ICON_ROTATECENTER, "Median Point",

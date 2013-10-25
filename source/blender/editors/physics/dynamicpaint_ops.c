@@ -18,6 +18,10 @@
  * ***** END GPL LICENSE BLOCK *****
  */
 
+/** \file blender/editors/physics/dynamicpaint_ops.c
+ *  \ingroup edphys
+ */
+
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
@@ -294,7 +298,7 @@ static int dynamicPaint_bakeImageSequence(bContext *C, DynamicPaintSurface *surf
 	ED_update_for_newframe(CTX_data_main(C), scene, 1);
 
 	/* Init surface	*/
-	if (!dynamicPaint_createUVSurface(surface)) return 0;
+	if (!dynamicPaint_createUVSurface(scene, surface)) return 0;
 
 	/* Loop through selected frames */
 	for (frame = surface->start_frame; frame <= surface->end_frame; frame++) {
@@ -384,7 +388,7 @@ static int dynamicPaint_initBake(struct bContext *C, struct wmOperator *op)
 	/* Clear bake */
 	canvas->flags &= ~MOD_DPAINT_BAKING;
 	if (!G.background) {
-		WM_cursor_restore(win);
+		WM_cursor_modal_restore(win);
 	}
 	dynamicPaint_freeSurfaceData(surface);
 

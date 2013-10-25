@@ -355,7 +355,7 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 	PropertyType type;
 	PropertySubType subtype;
 	uiLayout *sub;
-	int a, b;
+	unsigned int a, b;
 
 	/* retrieve type and subtype */
 	type = RNA_property_type(prop);
@@ -373,8 +373,8 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 		/* special check for layer layout */
 		int butw, buth, unit;
 		int cols = (len >= 20) ? 2 : 1;
-		int colbuts = len / (2 * cols);
-		int layer_used = 0;
+		const unsigned int colbuts = len / (2 * cols);
+		unsigned int layer_used = 0;
 
 		uiBlockSetCurLayout(block, uiLayoutAbsolute(layout, FALSE));
 
@@ -471,6 +471,8 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 					but->type = NUMSLI;
 				if (toggle && but->type == OPTION)
 					but->type = TOG;
+				if ((a == 0) && (subtype == PROP_AXISANGLE))
+					uiButSetUnitType(but, PROP_UNIT_ROTATION);
 			}
 
 			if (boolarr) {
@@ -503,6 +505,14 @@ static void ui_item_enum_expand_handle(bContext *C, void *arg1, void *arg2)
 static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *ptr, PropertyRNA *prop,
                                 const char *uiname, int h, int icon_only)
 {
+	/* XXX The way this function currently handles uiname parameter is insane and inconsistent with general UI API:
+	 *     * uiname is the *enum property* label.
+	 *     * when it is NULL or empty, we do not draw *enum items* labels, this doubles the icon_only parameter.
+	 *     * we *never* draw (i.e. really use) the enum label uiname, it is just used as a mere flag!
+	 *     Unfortunately, fixing this implies an API "soft break", so better to defer it for later... :/
+	 *     --mont29
+	 */
+
 	uiBut *but;
 	EnumPropertyItem *item, *item_array;
 	const char *name;
@@ -525,7 +535,7 @@ static void ui_item_enum_expand(uiLayout *layout, uiBlock *block, PointerRNA *pt
 		name = (!uiname || uiname[0]) ? item->name : "";
 		icon = item->icon;
 		value = item->value;
-		itemw = ui_text_icon_width(block->curlayout, name, icon, 0);
+		itemw = ui_text_icon_width(block->curlayout, icon_only ? "" : name, icon, 0);
 
 		if (icon && name[0] && !icon_only)
 			but = uiDefIconTextButR_prop(block, ROW, 0, icon, name, 0, 0, itemw, h, ptr, prop, -1, 0, value, -1, -1, NULL);
@@ -568,7 +578,7 @@ static uiBut *ui_item_with_label(uiLayout *layout, uiBlock *block, const char *n
 	PropertySubType subtype;
 	int labelw;
 
-	sub = uiLayoutRow(layout, FALSE);
+	sub = uiLayoutRow(layout, layout->align);
 	uiBlockSetCurLayout(block, sub);
 
 	if (name[0]) {
@@ -1465,6 +1475,7 @@ void uiItemPointerR(uiLayout *layout, struct PointerRNA *ptr, const char *propna
 	uiBlock *block;
 	StructRNA *icontype;
 	int w, h;
+	char namestr[UI_MAX_NAME_STR];
 	
 	/* validate arguments */
 	prop = RNA_struct_find_property(ptr, propname);
@@ -1506,6 +1517,8 @@ void uiItemPointerR(uiLayout *layout, struct PointerRNA *ptr, const char *propna
 	}
 	if (!name)
 		name = RNA_property_ui_name(prop);
+
+	name = ui_item_name_add_colon(name, namestr);
 
 	/* create button */
 	block = uiLayoutGetBlock(layout);
@@ -1632,7 +1645,7 @@ static uiBut *uiItemL_(uiLayout *layout, const char *name, int icon)
 		but = uiDefIconBut(block, LABEL, 0, icon, 0, 0, w, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
 	else
 		but = uiDefBut(block, LABEL, 0, name, 0, 0, w, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
-	
+
 	/* to compensate for string size padding in ui_text_icon_width,
 	 * make text aligned right if the layout is aligned right.
 	 */
@@ -1640,7 +1653,12 @@ static uiBut *uiItemL_(uiLayout *layout, const char *name, int icon)
 		but->flag &= ~UI_TEXT_LEFT;	/* default, needs to be unset */
 		but->flag |= UI_TEXT_RIGHT;
 	}
-	
+
+	/* Mark as a label inside a listbox. */
+	if (block->flag & UI_BLOCK_LIST_ITEM) {
+		but->type = LISTLABEL;
+	}
+
 	return but;
 }
 
@@ -1749,7 +1767,7 @@ void uiItemMenuEnumO(uiLayout *layout, bContext *C, const char *opname, const ch
 
 	/* add hotkey here, lower UI code can't detect it */
 	if (layout->root->block->flag & UI_BLOCK_LOOP) {
-		if (ot->prop &&
+		if (ot->prop && ot->invoke &&
 		    WM_key_event_operator_string(C, ot->idname, layout->root->opcontext, NULL, false, keybuf, sizeof(keybuf)))
 		{
 			namestr += BLI_snprintf(namestr, sizeof(namestr_buf) - (namestr - namestr_buf), "|%s", keybuf);
@@ -2399,6 +2417,18 @@ uiLayout *uiLayoutBox(uiLayout *layout)
 	return (uiLayout *)ui_layout_box(layout, ROUNDBOX);
 }
 
+/* Check all buttons defined in this layout, and set labels as active/selected.
+ * Needed to handle correctly text colors of list items. */
+void ui_layout_list_set_labels_active(uiLayout *layout)
+{
+	uiButtonItem *bitem;
+	for (bitem = layout->items.first; bitem; bitem = bitem->item.next) {
+		if (bitem->item.type == ITEM_BUTTON && bitem->but->type == LISTLABEL) {
+			uiButSetFlag(bitem->but, UI_SELECT);
+		}
+	}
+}
+
 uiLayout *uiLayoutListBox(uiLayout *layout, uiList *ui_list, PointerRNA *ptr, PropertyRNA *prop, PointerRNA *actptr,
                           PropertyRNA *actprop)
 {
@@ -2411,6 +2441,20 @@ uiLayout *uiLayoutListBox(uiLayout *layout, uiList *ui_list, PointerRNA *ptr, Pr
 	but->rnasearchprop = prop;
 	but->rnapoin = *actptr;
 	but->rnaprop = actprop;
+
+	/* Resizing data. */
+	/* Note: we can't use usual "num button" value handling, as it only tries rnapoin when it is non-NULL... :/
+	 *       So just setting but->poin, not but->pointype.
+	 */
+	but->poin = (void *)&ui_list->list_grip;
+	but->hardmin = but->softmin = 0.0f;
+	but->hardmax = but->softmax = 1000.0f; /* Should be more than enough! */
+	but->a1 = 0.0f;
+
+	/* only for the undo string */
+	if (but->flag & UI_BUT_UNDO) {
+		but->tip = RNA_property_description(actprop);
+	}
 
 	return (uiLayout *)box;
 }
@@ -2656,8 +2700,9 @@ static void ui_item_align(uiLayout *litem, short nr)
 			BLI_remlink(&litem->root->block->buttons, box->roundbox);
 			BLI_addhead(&litem->root->block->buttons, box->roundbox);
 		}
-		else
+		else if (((uiLayout *)item)->align) {
 			ui_item_align((uiLayout *)item, nr);
+		}
 	}
 }
 
@@ -3054,17 +3099,24 @@ void uiLayoutOperatorButs(const bContext *C, uiLayout *layout, wmOperator *op,
 
 	/* set various special settings for buttons */
 	{
+		uiBlock *block = uiLayoutGetBlock(layout);
+		const bool is_popup = (block->flag & UI_BLOCK_KEEP_OPEN) != 0;
 		uiBut *but;
+
 		
-		for (but = uiLayoutGetBlock(layout)->buttons.first; but; but = but->next) {
+		for (but = block->buttons.first; but; but = but->next) {
 			/* no undo for buttons for operator redo panels */
 			uiButClearFlag(but, UI_BUT_UNDO);
 			
+			/* only for popups, see [#36109] */
+
 			/* if button is operator's default property, and a text-field, enable focus for it
 			 *	- this is used for allowing operators with popups to rename stuff with fewer clicks
 			 */
-			if ((but->rnaprop == op->type->prop) && (but->type == TEX)) {
-				uiButSetFocusOnEnter(CTX_wm_window(C), but);
+			if (is_popup) {
+				if ((but->rnaprop == op->type->prop) && (but->type == TEX)) {
+					uiButSetFocusOnEnter(CTX_wm_window(C), but);
+				}
 			}
 		}
 	}

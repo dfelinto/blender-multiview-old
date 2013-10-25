@@ -575,11 +575,11 @@ void RAS_OpenGLRasterizer::SetEye(const StereoEye eye)
 			break;
 		case RAS_STEREO_ANAGLYPH:
 			if (m_curreye == RAS_STEREO_LEFTEYE) {
-				glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
+				glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
 			}
 			else {
 				//glAccum(GL_LOAD, 1.0);
-				glColorMask(GL_TRUE, GL_FALSE, GL_FALSE, GL_FALSE);
+				glColorMask(GL_FALSE, GL_TRUE, GL_TRUE, GL_FALSE);
 				ClearDepthBuffer();
 			}
 			break;
@@ -1010,7 +1010,11 @@ void RAS_OpenGLRasterizer::DisableMotionBlur()
 
 void RAS_OpenGLRasterizer::SetAlphaBlend(int alphablend)
 {
-	GPU_set_material_alpha_blend(alphablend);
+	/* Variance shadow maps don't handle alpha well, best to not allow it for now  */
+	if (m_drawingmode == KX_SHADOW && m_usingoverrideshader)
+		GPU_set_material_alpha_blend(GPU_BLEND_SOLID);
+	else
+		GPU_set_material_alpha_blend(alphablend);
 /*
 	if (alphablend == m_last_alphablend)
 		return;

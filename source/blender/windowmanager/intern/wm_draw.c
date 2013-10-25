@@ -565,7 +565,7 @@ static void wm_draw_region_blend(wmWindow *win, ARegion *ar, wmDrawTriple *tripl
 	
 	/* region blend always is 1, except when blend timer is running */
 	if (fac < 1.0f) {
-		wmSubWindowScissorSet(win, win->screen->mainwin, &ar->winrct);
+		wmSubWindowScissorSet(win, win->screen->mainwin, &ar->winrct, true);
 
 		glEnable(GL_BLEND);
 		wm_triple_draw_textures(win, triple, 1.0f - fac);

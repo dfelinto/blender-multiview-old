@@ -174,12 +174,6 @@ static int text_new_exec(bContext *C, wmOperator *UNUSED(op))
 	uiIDContextProperty(C, &ptr, &prop);
 
 	if (prop) {
-		/* when creating new ID blocks, use is already 1, but RNA
-		 * pointer se also increases user, so this compensates it */
-		/* doesnt always seem to happen... (ton) */
-		if (text->id.us > 1)
-			text->id.us--;
-
 		RNA_id_pointer_create(&text->id, &idptr);
 		RNA_property_pointer_set(&ptr, prop, idptr);
 		RNA_property_update(C, &ptr, prop);
@@ -252,10 +246,6 @@ static int text_open_exec(bContext *C, wmOperator *op)
 	pprop = op->customdata;
 
 	if (pprop->prop) {
-		/* when creating new ID blocks, use is already 1, but RNA
-		 * pointer se also increases user, so this compensates it */
-		text->id.us--;
-
 		RNA_id_pointer_create(&text->id, &idptr);
 		RNA_property_pointer_set(&pprop->ptr, pprop->prop, idptr);
 		RNA_property_update(C, &pprop->ptr, pprop->prop);
@@ -486,7 +476,7 @@ static void txt_write_file(Text *text, ReportList *reports)
 	
 	fclose(fp);
 
-	if (stat(filepath, &st) == 0) {
+	if (BLI_stat(filepath, &st) == 0) {
 		text->mtime = st.st_mtime;
 	}
 	else {
@@ -949,7 +939,7 @@ static int text_indent_exec(bContext *C, wmOperator *UNUSED(op))
 	text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
 	if (txt_has_sel(text)) {
-		txt_order_cursors(text);
+		txt_order_cursors(text, false);
 		txt_indent(text);
 	}
 	else
@@ -983,7 +973,7 @@ static int text_unindent_exec(bContext *C, wmOperator *UNUSED(op))
 
 	text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
-	txt_order_cursors(text);
+	txt_order_cursors(text, false);
 	txt_unindent(text);
 
 	text_update_edited(text);
@@ -1063,7 +1053,7 @@ static int text_comment_exec(bContext *C, wmOperator *UNUSED(op))
 	if (txt_has_sel(text)) {
 		text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
-		txt_order_cursors(text);
+		txt_order_cursors(text, false);
 		txt_comment(text);
 		text_update_edited(text);
 
@@ -1096,7 +1086,7 @@ static int text_uncomment_exec(bContext *C, wmOperator *UNUSED(op))
 	if (txt_has_sel(text)) {
 		text_drawcache_tag_update(CTX_wm_space_text(C), 0);
 
-		txt_order_cursors(text);
+		txt_order_cursors(text, false);
 		txt_uncomment(text);
 		text_update_edited(text);
 
@@ -1861,11 +1851,23 @@ static int text_move_cursor(bContext *C, int type, int select)
 			break;
 
 		case PREV_CHAR:
-			txt_move_left(text, select);
+			if (txt_has_sel(text) && !select) {
+				txt_order_cursors(text, false);
+				txt_pop_sel(text);
+			}
+			else {
+				txt_move_left(text, select);
+			}
 			break;
 
 		case NEXT_CHAR:
-			txt_move_right(text, select);
+			if (txt_has_sel(text) && !select) {
+				txt_order_cursors(text, true);
+				txt_pop_sel(text);
+			}
+			else {
+				txt_move_right(text, select);
+			}
 			break;
 
 		case PREV_LINE:
@@ -1931,7 +1933,7 @@ void TEXT_OT_move_select(wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "Move Select";
 	ot->idname = "TEXT_OT_move_select";
-	ot->description = "Make selection from current cursor position to new cursor position type";
+	ot->description = "Move the cursor while selecting";
 	
 	/* api callbacks */
 	ot->exec = text_move_select_exec;
@@ -2086,10 +2088,17 @@ void TEXT_OT_overwrite_toggle(wmOperatorType *ot)
 
 static void txt_screen_clamp(SpaceText *st, ARegion *ar)
 {
-	int last;
-	last = text_get_total_lines(st, ar);
-	last = last - (st->viewlines / 2);
-	CLAMP(st->top, 0, last);
+	if (st->top <= 0) {
+		st->top = 0;
+	}
+	else {
+		int last;
+		last = text_get_total_lines(st, ar);
+		last = last - (st->viewlines / 2);
+		if (last > 0 && st->top > last) {
+			st->top = last;
+		}
+	}
 }
 
 /* Moves the view vertically by the specified number of lines */
@@ -2272,7 +2281,7 @@ void TEXT_OT_scroll(wmOperatorType *ot)
 	 * scroll_bar. Both do basically the same thing (aside 
 	 * from keymaps).*/
 	ot->idname = "TEXT_OT_scroll";
-	ot->description = "Scroll text screen";
+	ot->description = "";
 	
 	/* api callbacks */
 	ot->exec = text_scroll_exec;
@@ -2282,7 +2291,7 @@ void TEXT_OT_scroll(wmOperatorType *ot)
 	ot->poll = text_scroll_poll;
 
 	/* flags */
-	ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_POINTER;
+	ot->flag = OPTYPE_BLOCKING | OPTYPE_GRAB_POINTER | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_int(ot->srna, "lines", 1, INT_MIN, INT_MAX, "Lines", "Number of lines to scroll", -100, 100);
@@ -2366,7 +2375,7 @@ void TEXT_OT_scroll_bar(wmOperatorType *ot)
 	 * scroll. Both do basically the same thing (aside 
 	 * from keymaps).*/
 	ot->idname = "TEXT_OT_scroll_bar";
-	ot->description = "Scroll text screen";
+	ot->description = "";
 	
 	/* api callbacks */
 	ot->invoke = text_scroll_bar_invoke;
@@ -2375,7 +2384,7 @@ void TEXT_OT_scroll_bar(wmOperatorType *ot)
 	ot->poll = text_region_scroll_poll;
 
 	/* flags */
-	ot->flag = OPTYPE_BLOCKING;
+	ot->flag = OPTYPE_BLOCKING | OPTYPE_INTERNAL;
 
 	/* properties */
 	RNA_def_int(ot->srna, "lines", 1, INT_MIN, INT_MAX, "Lines", "Number of lines to scroll", -100, 100);
@@ -3107,7 +3116,7 @@ int text_file_modified(Text *text)
 	if (!BLI_exists(file))
 		return 2;
 
-	result = stat(file, &st);
+	result = BLI_stat(file, &st);
 	
 	if (result == -1)
 		return -1;
@@ -3134,7 +3143,7 @@ static void text_ignore_modified(Text *text)
 
 	if (!BLI_exists(file)) return;
 
-	result = stat(file, &st);
+	result = BLI_stat(file, &st);
 	
 	if (result == -1 || (st.st_mode & S_IFMT) != S_IFREG)
 		return;

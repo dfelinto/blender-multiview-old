@@ -36,8 +36,6 @@ cflags = ''
 defines = []
 root_build_dir=normpath(env['BF_BUILDDIR'])
 
-defines.append('WITH_GUARDEDALLOC')
-
 source_files = ['makesdna.c']
 header_files = env.Glob('../*.h')
 
@@ -46,7 +44,9 @@ dna = env.Clone()
 makesdna_tool.Append(CCFLAGS = '-DBASE_HEADER="\\"source/blender/makesdna/\\"" ')
 
 makesdna_tool.Append (CPPPATH = ['#/intern/guardedalloc',
-                                 '../../makesdna', '../../bmesh'])
+                                 '#/intern/atomic',
+                                 '../../makesdna', '../../bmesh',
+                                 '../../blenlib'])
 
 if env['OURPLATFORM'] == 'linuxcross':
     USE_WINE = True # when cross compiling on linux 64bit this is useful

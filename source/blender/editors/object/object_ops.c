@@ -175,6 +175,7 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_vertex_group_add);
 	WM_operatortype_append(OBJECT_OT_vertex_group_remove);
 	WM_operatortype_append(OBJECT_OT_vertex_group_assign);
+	WM_operatortype_append(OBJECT_OT_vertex_group_assign_new);
 	WM_operatortype_append(OBJECT_OT_vertex_group_remove_from);
 	WM_operatortype_append(OBJECT_OT_vertex_group_select);
 	WM_operatortype_append(OBJECT_OT_vertex_group_deselect);
@@ -195,6 +196,11 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_vertex_group_set_active);
 	WM_operatortype_append(OBJECT_OT_vertex_group_sort);
 	WM_operatortype_append(OBJECT_OT_vertex_group_move);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_paste);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_delete);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_set_active);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_normalize_active_vertex);
+	WM_operatortype_append(OBJECT_OT_vertex_weight_copy);
 
 	WM_operatortype_append(OBJECT_OT_game_property_new);
 	WM_operatortype_append(OBJECT_OT_game_property_remove);
@@ -211,7 +217,10 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_shape_key_move);
 
 	WM_operatortype_append(LATTICE_OT_select_all);
+	WM_operatortype_append(LATTICE_OT_select_more);
+	WM_operatortype_append(LATTICE_OT_select_less);
 	WM_operatortype_append(LATTICE_OT_select_ungrouped);
+	WM_operatortype_append(LATTICE_OT_select_random);
 	WM_operatortype_append(LATTICE_OT_make_regular);
 	WM_operatortype_append(LATTICE_OT_flip);
 
@@ -421,6 +430,8 @@ void ED_keymap_object(wmKeyConfig *keyconf)
 	RNA_enum_set(kmi->ptr, "action", SEL_TOGGLE);
 	kmi = WM_keymap_add_item(keymap, "LATTICE_OT_select_all", IKEY, KM_PRESS, KM_CTRL, 0);
 	RNA_enum_set(kmi->ptr, "action", SEL_INVERT);
+	WM_keymap_add_item(keymap, "LATTICE_OT_select_more", PADPLUSKEY, KM_PRESS, KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "LATTICE_OT_select_less", PADMINUS, KM_PRESS, KM_CTRL, 0);
 
 	WM_keymap_add_item(keymap, "OBJECT_OT_vertex_parent_set", PKEY, KM_PRESS, KM_CTRL, 0);
 	

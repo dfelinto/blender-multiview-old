@@ -94,15 +94,15 @@ typedef struct EditBone {
 
 /* useful macros */
 #define EBONE_VISIBLE(arm, ebone) ( \
-	CHECK_TYPE_INLINE(arm, bArmature), \
-	CHECK_TYPE_INLINE(ebone, EditBone), \
+	CHECK_TYPE_INLINE(arm, bArmature *), \
+	CHECK_TYPE_INLINE(ebone, EditBone *), \
 	(((arm)->layer & (ebone)->layer) && !((ebone)->flag & BONE_HIDDEN_A)) \
 	)
 
 #define EBONE_SELECTABLE(arm, ebone) (EBONE_VISIBLE(arm, ebone) && !(ebone->flag & BONE_UNSELECTABLE))
 
 #define EBONE_EDITABLE(ebone) ( \
-	CHECK_TYPE_INLINE(ebone, EditBone), \
+	CHECK_TYPE_INLINE(ebone, EditBone *), \
 	(((ebone)->flag & BONE_SELECTED) && !((ebone)->flag & BONE_EDITMODE_LOCKED)) \
 	)
 
@@ -132,10 +132,14 @@ EditBone *ED_armature_bone_get_mirrored(struct ListBase *edbo, EditBone *ebo); /
 void ED_armature_sync_selection(struct ListBase *edbo);
 void ED_armature_validate_active(struct bArmature *arm);
 
-void add_primitive_bone(struct Scene *scene, struct View3D *v3d, struct RegionView3D *rv3d);
+void add_primitive_bone(struct Object *obedit_arm, bool view_aligned);
 struct EditBone *ED_armature_edit_bone_add(struct bArmature *arm, const char *name);
 void ED_armature_edit_bone_remove(struct bArmature *arm, EditBone *exBone);
+
 bool ED_armature_ebone_is_child_recursive(EditBone *ebone_parent, EditBone *ebone_child);
+
+void ED_armature_ebone_to_mat3(EditBone *ebone, float mat[3][3]);
+void ED_armature_ebone_to_mat4(EditBone *ebone, float mat[4][4]);
 
 void transform_armature_mirror_update(struct Object *obedit);
 void ED_armature_origin_set(struct Scene *scene, struct Object *ob, float cursor[3], int centermode, int around);
@@ -153,11 +157,18 @@ void ED_armature_bone_rename(struct bArmature *arm, const char *oldnamep, const 
 
 void undo_push_armature(struct bContext *C, const char *name);
 
+/* low level selection functions which handle */
+int  ED_armature_ebone_selectflag_get(const EditBone *ebone);
+void ED_armature_ebone_selectflag_set(EditBone *ebone, int flag);
+void ED_armature_ebone_select_set(EditBone *ebone, bool select);
+void ED_armature_ebone_selectflag_enable(EditBone *ebone, int flag);
+void ED_armature_ebone_selectflag_disable(EditBone *ebone, int flag);
+
 /* poseobject.c */
 void ED_armature_exit_posemode(struct bContext *C, struct Base *base);
 void ED_armature_enter_posemode(struct bContext *C, struct Base *base);
-int ED_pose_channel_in_IK_chain(struct Object *ob, struct bPoseChannel *pchan);
 void ED_pose_deselectall(struct Object *ob, int test);
+void ED_pose_bone_select(struct Object *ob, struct bPoseChannel *pchan, bool select);
 void ED_pose_recalculate_paths(struct Scene *scene, struct Object *ob);
 struct Object *ED_pose_object_from_context(struct bContext *C);
 

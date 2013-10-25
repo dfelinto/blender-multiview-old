@@ -54,6 +54,7 @@
 #include "WM_api.h"
 #include "WM_types.h"
 
+#include "UI_interface.h"
 #include "UI_resources.h"
 #include "UI_view2d.h"
 
@@ -318,7 +319,7 @@ static SpaceLink *sequencer_duplicate(SpaceLink *sl)
 	return (SpaceLink *)sseqn;
 }
 
-static void sequencer_listener(ScrArea *sa, wmNotifier *wmn)
+static void sequencer_listener(bScreen *UNUSED(sc), ScrArea *sa, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -480,7 +481,7 @@ static void sequencer_header_area_draw(const bContext *C, ARegion *ar)
 	ED_region_header(C, ar);
 }
 
-static void sequencer_main_area_listener(ARegion *ar, wmNotifier *wmn)
+static void sequencer_main_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -491,6 +492,7 @@ static void sequencer_main_area_listener(ARegion *ar, wmNotifier *wmn)
 				case ND_MARKERS:
 				case ND_RENDER_OPTIONS: /* for FPS and FPS Base */
 				case ND_SEQUENCER:
+				case ND_RENDER_RESULT:
 					ED_region_tag_redraw(ar);
 					break;
 			}
@@ -533,8 +535,9 @@ static void sequencer_preview_area_draw(const bContext *C, ARegion *ar)
 	ScrArea *sa = CTX_wm_area(C);
 	SpaceSeq *sseq = sa->spacedata.first;
 	Scene *scene = CTX_data_scene(C);
+	wmWindowManager *wm = CTX_wm_manager(C);
 	int show_split = scene->ed && scene->ed->over_flag & SEQ_EDIT_OVERLAY_SHOW && sseq->mainb == SEQ_DRAW_IMG_IMBUF;
-	
+
 	/* XXX temp fix for wrong setting in sseq->mainb */
 	if (sseq->mainb == SEQ_DRAW_SEQUENCE) sseq->mainb = SEQ_DRAW_IMG_IMBUF;
 
@@ -553,9 +556,14 @@ static void sequencer_preview_area_draw(const bContext *C, ARegion *ar)
 			draw_image_seq(C, scene, ar, sseq, scene->r.cfra, over_cfra - scene->r.cfra, TRUE);
 	}
 
+	if ((U.uiflag & USER_SHOW_FPS) && ED_screen_animation_playing(wm)) {
+		rcti rect;
+		ED_region_visible_rect(ar, &rect);
+		ED_scene_draw_fps(scene, &rect);
+	}
 }
 
-static void sequencer_preview_area_listener(ARegion *ar, wmNotifier *wmn)
+static void sequencer_preview_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
@@ -612,7 +620,7 @@ static void sequencer_buttons_area_draw(const bContext *C, ARegion *ar)
 	ED_region_panels(C, ar, 1, NULL, -1);
 }
 
-static void sequencer_buttons_area_listener(ARegion *ar, wmNotifier *wmn)
+static void sequencer_buttons_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {

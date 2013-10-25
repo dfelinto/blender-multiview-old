@@ -90,22 +90,20 @@ enum TfmMode {
 
 /* TRANSFORM CONTEXTS */
 #define CTX_NONE            0
-#define CTX_TEXTURE         1
-#define CTX_EDGE            2
-#define CTX_NO_PET          4
-#define CTX_TWEAK           8
-#define CTX_NO_MIRROR       16
-#define CTX_AUTOCONFIRM     32
-#define CTX_BMESH           64
-#define CTX_NDOF            128
-#define CTX_MOVIECLIP       256
-#define CTX_MASK            512
+#define CTX_TEXTURE         (1 << 0)
+#define CTX_EDGE            (1 << 1)
+#define CTX_NO_PET          (1 << 2)
+#define CTX_NO_MIRROR       (1 << 3)
+#define CTX_AUTOCONFIRM     (1 << 4)
+#define CTX_NDOF            (1 << 5)
+#define CTX_MOVIECLIP       (1 << 6)
+#define CTX_MASK            (1 << 7)
 
 /* Standalone call to get the transformation center corresponding to the current situation
  * returns 1 if successful, 0 otherwise (usually means there's no selection)
  * (if 0 is returns, *vec is unmodified)
  * */
-int calculateTransformCenter(struct bContext *C, int centerMode, float cent3d[3], int cent2d[2]);
+int calculateTransformCenter(struct bContext *C, int centerMode, float cent3d[3], float cent2d[2]);
 
 struct TransInfo;
 struct ScrArea;
@@ -132,11 +130,10 @@ void ED_getTransformOrientationMatrix(const struct bContext *C, float orientatio
 
 int BIF_countTransformOrientation(const struct bContext *C);
 
-void BIF_TransformSetUndo(const char *str);
-
 /* to be able to add operator properties to other operators */
 
 #define P_MIRROR        (1 << 0)
+#define P_MIRROR_DUMMY  (P_MIRROR | (1 << 9))
 #define P_PROPORTIONAL  (1 << 1)
 #define P_AXIS          (1 << 2)
 #define P_SNAP          (1 << 3)
@@ -145,6 +142,7 @@ void BIF_TransformSetUndo(const char *str);
 #define P_CONSTRAINT    (1 << 6)
 #define P_OPTIONS       (1 << 7)
 #define P_CORRECT_UV    (1 << 8)
+#define P_NO_DEFAULTS   (1 << 10)
 
 void Transform_Properties(struct wmOperatorType *ot, int flags);
 

@@ -8,7 +8,6 @@ try:
 except ImportError:
     pass
 import string
-import glob
 import shutil
 import sys
 
@@ -58,7 +57,7 @@ def get_version():
 
 def get_revision():
     build_rev = os.popen('svnversion').read()[:-1] # remove \n
-    if build_rev == '' or build_rev==None: 
+    if build_rev == '' or build_rev==None:
         build_rev = 'UNKNOWN'
 
     return 'r' + build_rev
@@ -142,6 +141,8 @@ def validate_arguments(args, bc):
             'WITH_GHOST_COCOA',
             'WITH_GHOST_SDL',
             'WITH_GHOST_XDND',
+            'WITH_X11_XINPUT',
+            'WITH_X11_XF86VMODE',
             'BF_GHOST_DEBUG',
             'USE_QTKIT',
             'BF_FANCY', 'BF_QUIET', 'BF_LINE_OVERWRITE',
@@ -169,7 +170,7 @@ def validate_arguments(args, bc):
             'WITH_BF_CYCLES_OSL', 'WITH_BF_STATICOSL', 'BF_OSL', 'BF_OSL_INC', 'BF_OSL_LIB', 'BF_OSL_LIBPATH', 'BF_OSL_LIB_STATIC', 'BF_OSL_COMPILER',
             'WITH_BF_LLVM', 'WITH_BF_STATICLLVM', 'BF_LLVM', 'BF_LLVM_LIB', 'BF_LLVM_LIBPATH', 'BF_LLVM_LIB_STATIC', 'BF_PROGRAM_LINKFLAGS'
             ]
-    
+
     # Have options here that scons expects to be lists
     opts_list_split = [
             'BF_PYTHON_LINKFLAGS',
@@ -183,15 +184,15 @@ def validate_arguments(args, bc):
             'LLIBS', 'PLATFORM_LINKFLAGS','MACOSX_ARCHITECTURE', 'MACOSX_SDK_CHECK', 'XCODE_CUR_VER',
             'BF_CYCLES_CUDA_BINARIES_ARCH', 'BF_PROGRAM_LINKFLAGS', 'MACOSX_DEPLOYMENT_TARGET'
     ]
-    
-    
+
+
     arg_list = ['BF_DEBUG', 'BF_QUIET', 'BF_CROSS', 'BF_UPDATE',
             'BF_INSTALLDIR', 'BF_TOOLSET', 'BF_BINNAME',
             'BF_BUILDDIR', 'BF_FANCY', 'BF_QUICK', 'BF_PROFILE', 'BF_LINE_OVERWRITE',
             'BF_BSC', 'BF_CONFIG',
             'BF_PRIORITYLIST', 'BF_BUILDINFO','CC', 'CXX', 'BF_QUICKDEBUG',
             'BF_LISTDEBUG', 'LCGDIR', 'BF_X264_CONFIG', 'BF_XVIDCORE_CONFIG',
-            'BF_UNIT_TEST', 'BF_BITNESS']
+            'BF_UNIT_TEST', 'BF_BITNESS', 'MSVS_VERSION']
 
     okdict = {}
 
@@ -225,25 +226,21 @@ def validate_targets(targs, bc):
             print '\t'+bc.WARNING+'Invalid target: '+bc.ENDC+t
     return oklist
 
-class ourSpawn:
+class OurSpawn:
     def ourspawn(self, sh, escape, cmd, args, env):
-        newargs = string.join(args[1:], ' ')
+        newargs = " ".join(args[1:])
         cmdline = cmd + " " + newargs
         startupinfo = subprocess.STARTUPINFO()
-        #startupinfo.dwFlags |= subprocess.STARTF_USESHOWWINDOW
         proc = subprocess.Popen(cmdline, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE, startupinfo=startupinfo, shell = False)
+            stderr=subprocess.PIPE, startupinfo=startupinfo, shell = False, env=env)
         data, err = proc.communicate()
         rv = proc.wait()
-        if data:
-            print(data)
         if err:
             print(err)
         return rv
 
 def SetupSpawn( env ):
-    buf = ourSpawn()
-    buf.ourenv = env
+    buf = OurSpawn()
     env['SPAWN'] = buf.ourspawn
 
 
@@ -322,7 +319,7 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_CINEON', 'Support CINEON and DPX image formats if true', True)),
 
         (BoolVariable('WITH_BF_HDR', 'Support HDR image formats if true', True)),
-        
+
         (BoolVariable('WITH_BF_FRAMESERVER', 'Support export to a frameserver', True)),
 
         (BoolVariable('WITH_BF_FFMPEG', 'Use FFMPEG if true', False)),
@@ -335,7 +332,7 @@ def read_opts(env, cfg, args):
         ('BF_FFMPEG_LIBPATH', 'FFMPEG library path', ''),
         (BoolVariable('WITH_BF_STATICFFMPEG', 'Use static FFMPEG if true', False)),
         ('BF_FFMPEG_LIB_STATIC', 'Static FFMPEG libraries', ''),
-        
+
         (BoolVariable('WITH_BF_OGG', 'Link OGG, THEORA, VORBIS with FFMPEG if true',
                     False)),
         ('BF_OGG', 'OGG base path', ''),
@@ -392,7 +389,7 @@ def read_opts(env, cfg, args):
         ('BF_ICONV_INC', 'iconv include path', ''),
         ('BF_ICONV_LIB', 'iconv library', ''),
         ('BF_ICONV_LIBPATH', 'iconv library path', ''),
-        
+
         (BoolVariable('WITH_BF_FREESTYLE', 'Compile with freestyle', True)),
 
         (BoolVariable('WITH_BF_GAMEENGINE', 'Build with gameengine' , False)),
@@ -404,11 +401,11 @@ def read_opts(env, cfg, args):
         ('BF_LAPACK_LIB_STATIC', 'LAPACK library', ''),
         ('BF_LAPACK_LIBPATH', 'LAPACK library path', ''),
         (BoolVariable('WITH_BF_STATICLAPACK', 'Staticly link to LAPACK', False)),
-        
+
         ('BF_BULLET', 'Bullet base dir', ''),
         ('BF_BULLET_INC', 'Bullet include path', ''),
         ('BF_BULLET_LIB', 'Bullet library', ''),
-        
+
         ('BF_WINTAB', 'WinTab base dir', ''),
         ('BF_WINTAB_INC', 'WinTab include dir', ''),
         ('BF_CXX', 'c++ base path for libstdc++, only used when static linking', ''),
@@ -429,6 +426,8 @@ def read_opts(env, cfg, args):
         ('BF_OPENMP_LIBPATH', 'Path to OpenMP libraries (used when cross-compiling with older versions of WinGW)', ''),
         (BoolVariable('WITH_GHOST_COCOA', 'Use Cocoa-framework if true', False)),
         (BoolVariable('WITH_GHOST_SDL', 'Enable building blender against SDL for windowing rather then the native APIs', False)),
+        (BoolVariable('WITH_X11_XINPUT', 'Enable X11 Xinput (tablet support and unicode input)', True)),
+        (BoolVariable('WITH_X11_XF86VMODE', 'Enable X11 video mode switching', True)),
         (BoolVariable('USE_QTKIT', 'Use QTKIT if true', False)),
         ('BF_OPENMP_LIB_STATIC', 'OpenMP static library', ''),
 
@@ -437,7 +436,7 @@ def read_opts(env, cfg, args):
         ('BF_QUICKTIME_INC', 'QuickTime include path', ''),
         ('BF_QUICKTIME_LIB', 'QuickTime library', ''),
         ('BF_QUICKTIME_LIBPATH', 'QuickTime library path', ''),
-        
+
         (BoolVariable('WITH_BF_FFTW3', 'Use FFTW3 if true', False)),
         ('BF_FFTW3', 'FFTW3 base path', ''),
         ('BF_FFTW3_INC', 'FFTW3 include path', ''),
@@ -470,7 +469,7 @@ def read_opts(env, cfg, args):
         ('BF_EXPAT_LIB', 'Expat library', ''),
         ('BF_EXPAT_LIBPATH', 'Expat library path', ''),
         ('BF_OPENCOLLADA_LIB_STATIC', 'OpenCollada static library', ''),
-        
+
         (BoolVariable('WITH_BF_JEMALLOC', 'Use jemalloc if true', False)),
         (BoolVariable('WITH_BF_STATICJEMALLOC', 'Staticly link to jemalloc', False)),
         ('BF_JEMALLOC', 'jemalloc base path', ''),
@@ -542,12 +541,12 @@ def read_opts(env, cfg, args):
         (BoolVariable('BF_QUIET', 'Enable silent output if true', True)),
         (BoolVariable('BF_LINE_OVERWRITE', 'Enable overwriting of compile line in BF_QUIET mode if true', False)),
         (BoolVariable('WITH_BF_BINRELOC', 'Enable relocatable binary (linux only)', False)),
-        
+
         (BoolVariable('WITH_BF_LZO', 'Enable fast LZO pointcache compression', True)),
         (BoolVariable('WITH_BF_LZMA', 'Enable best LZMA pointcache compression', True)),
-        
+
         (BoolVariable('WITH_BF_LIBMV', 'Enable libmv structure from motion library', True)),
-        
+
         (BoolVariable('WITH_BF_COMPOSITOR', 'Enable the tile based nodal compositor', True)),
     ) # end of opts.AddOptions()
 
@@ -555,15 +554,15 @@ def read_opts(env, cfg, args):
         ('BF_X264_CONFIG', 'configuration flags for x264', ''),
         ('BF_XVIDCORE_CONFIG', 'configuration flags for xvidcore', ''),
 #        (BoolVariable('WITH_BF_DOCS', 'Generate API documentation', False)),
-        
+
         ('BF_CONFIG', 'SCons python config file used to set default options', 'user_config.py'),
         ('BF_NUMJOBS', 'Number of build processes to spawn', '1'),
         ('BF_MSVS', 'Generate MSVS project files and solution', False),
 
         (BoolVariable('BF_UNIT_TEST', 'Build with unit test support.', False)),
-        
+
         (BoolVariable('BF_GHOST_DEBUG', 'Make GHOST print events and info to stdout. (very verbose)', False)),
-        
+
         (BoolVariable('WITH_BF_RAYOPTIMIZATION', 'Enable raytracer SSE/SIMD optimization.', False)),
         ('BF_RAYOPTIMIZATION_SSE_FLAGS', 'SSE flags', ''),
         (BoolVariable('WITH_BF_CXX_GUARDEDALLOC', 'Enable GuardedAlloc for C++ memory allocation tracking.', False)),
@@ -577,7 +576,7 @@ def read_opts(env, cfg, args):
         ('BF_CYCLES_CUDA_BINARIES_ARCH', 'CUDA architectures to compile binaries for', []),
 
         (BoolVariable('WITH_BF_OIIO', 'Build with OpenImageIO', False)),
-        (BoolVariable('WITH_BF_STATICOIIO', 'Staticly link to OpenImageIO', False)),
+        (BoolVariable('WITH_BF_STATICOIIO', 'Statically link to OpenImageIO', False)),
         ('BF_OIIO', 'OIIO root path', ''),
         ('BF_OIIO_INC', 'OIIO include path', ''),
         ('BF_OIIO_LIB', 'OIIO library', ''),
@@ -679,10 +678,10 @@ def buildslave(target=None, source=None, env=None):
     if platform == 'linux':
         import platform
 
-        if env['BF_INSTALLDIR'].find('glibc27') != -1:
-            glibc="glibc27"
-        elif env['BF_INSTALLDIR'].find('glibc211') != -1:
-            glibc="glibc211"
+        if "glibc27" in env['BF_INSTALLDIR']:
+            glibc = "glibc27"
+        elif "glibc211" in env['BF_INSTALLDIR']:
+            glibc = "glibc211"
 
         bitness = platform.architecture()[0]
         if bitness == '64bit':
@@ -691,6 +690,9 @@ def buildslave(target=None, source=None, env=None):
             platform = 'linux-' + glibc + '-i686'
     if platform == 'darwin':
         platform = 'OSX-' + env['MACOSX_DEPLOYMENT_TARGET'] + '-' + env['MACOSX_ARCHITECTURE']
+
+    if env['MSVC_VERSION'] == '11.0':
+        platform = env['OURPLATFORM'] + '11'
 
     branch = env['BUILDBOT_BRANCH']
 
@@ -722,7 +724,7 @@ def NSIS_Installer(target=None, source=None, env=None):
 
     if env['OURPLATFORM'] not in ('win32-vc', 'win32-mingw', 'win64-vc', 'win64-mingw'):
         print "NSIS installer is only available on Windows."
-        Exit()
+        exit()
     if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw'):
         bitness = '32'
     elif env['OURPLATFORM'] in ('win64-vc', 'win64-mingw'):
@@ -741,7 +743,7 @@ def NSIS_Installer(target=None, source=None, env=None):
     deldatafiles = ''
     deldatadirs = ''
     l = len(bf_installdir)
-    
+
     for dp,dn,df in os.walk(bf_installdir):
         # install
         if not doneroot:
@@ -750,7 +752,6 @@ def NSIS_Installer(target=None, source=None, env=None):
             doneroot = True
         else:
             if len(df)>0:
-                dp_tmp = dp[l:]
                 datafiles += "\n" +r'SetOutPath $INSTDIR'+dp[l:]+"\n\n"
 
                 for f in df:
@@ -769,7 +770,7 @@ def NSIS_Installer(target=None, source=None, env=None):
 
     #### change to suit install dir ####
     inst_dir = install_base_dir + env['BF_INSTALLDIR']
-    
+
     os.chdir(rel_dir)
 
     ns = open("00.sconsblender.nsi","r")

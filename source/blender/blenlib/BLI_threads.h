@@ -45,11 +45,15 @@ extern "C" {
 #define BLENDER_MAX_THREADS     64
 
 struct ListBase;
+struct TaskScheduler;
 
 /* Threading API */
 
 /*this is run once at startup*/
 void BLI_threadapi_init(void);
+void BLI_threadapi_exit(void);
+
+struct TaskScheduler *BLI_task_scheduler_get(void);
 
 void    BLI_init_threads(struct ListBase *threadbase, void *(*do_thread)(void *), int tot);
 int     BLI_available_threads(struct ListBase *threadbase);
@@ -100,6 +104,7 @@ ThreadMutex *BLI_mutex_alloc(void);
 void BLI_mutex_free(ThreadMutex *mutex);
 
 void BLI_mutex_lock(ThreadMutex *mutex);
+bool BLI_mutex_trylock(ThreadMutex *mutex);
 void BLI_mutex_unlock(ThreadMutex *mutex);
 
 /* Spin Lock */
@@ -131,27 +136,27 @@ void BLI_rw_mutex_free(ThreadRWMutex *mutex);
 void BLI_rw_mutex_lock(ThreadRWMutex *mutex, int mode);
 void BLI_rw_mutex_unlock(ThreadRWMutex *mutex);
 
-/* ThreadedWorker
+/* Ticket Mutex Lock
  *
- * A simple tool for dispatching work to a limited number of threads
- * in a transparent fashion from the caller's perspective. */
+ * This is a 'fair' mutex in that it will grant the lock to the first thread
+ * that requests it. */
 
-struct ThreadedWorker;
+typedef struct TicketMutex TicketMutex;
 
-/* Create a new worker supporting tot parallel threads.
- * When new work in inserted and all threads are busy, sleep(sleep_time) before checking again
- */
-struct ThreadedWorker *BLI_create_worker(void *(*do_thread)(void *), int tot, int sleep_time);
+TicketMutex *BLI_ticket_mutex_alloc(void);
+void BLI_ticket_mutex_free(TicketMutex *ticket);
+void BLI_ticket_mutex_lock(TicketMutex *ticket);
+void BLI_ticket_mutex_unlock(TicketMutex *ticket);
 
-/* join all working threads */
-void BLI_end_worker(struct ThreadedWorker *worker);
+/* Condition */
+ 
+typedef pthread_cond_t ThreadCondition;
 
-/* also ends all working threads */
-void BLI_destroy_worker(struct ThreadedWorker *worker);
-
-/* Spawns a new work thread if possible, sleeps until one is available otherwise
- * NOTE: inserting work is NOT thread safe, so make sure it is only done from one thread */
-void BLI_insert_work(struct ThreadedWorker *worker, void *param);
+void BLI_condition_init(ThreadCondition *cond);
+void BLI_condition_wait(ThreadCondition *cond, ThreadMutex *mutex);
+void BLI_condition_notify_one(ThreadCondition *cond);
+void BLI_condition_notify_all(ThreadCondition *cond);
+void BLI_condition_end(ThreadCondition *cond);
 
 /* ThreadWorkQueue
  *

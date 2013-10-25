@@ -1,10 +1,27 @@
+/*
+ * ***** BEGIN GPL LICENSE BLOCK *****
+ *
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ *
+ * ***** END GPL LICENSE BLOCK *****
+ */
+
 /** \file gameengine/Ketsji/KX_BlenderMaterial.cpp
  *  \ingroup ketsji
  */
 
-// ------------------------------------
-// ...
-// ------------------------------------
 #include "GL/glew.h"
 
 #include "KX_BlenderMaterial.h"
@@ -138,6 +155,11 @@ void KX_BlenderMaterial::GetMaterialRGBAColor(unsigned char *rgba) const
 Material *KX_BlenderMaterial::GetBlenderMaterial() const
 {
 	return mMaterial->material;
+}
+
+Image *KX_BlenderMaterial::GetBlenderImage() const
+{
+	return mMaterial->tface.tpage;
 }
 
 Scene* KX_BlenderMaterial::GetBlenderScene() const
@@ -786,9 +808,7 @@ void KX_BlenderMaterial::UpdateIPO(
 void KX_BlenderMaterial::Replace_IScene(SCA_IScene *val)
 {
 	mScene= static_cast<KX_Scene *>(val);
-	if (mBlenderShader)
-		mBlenderShader->SetScene(mScene);
-	
+
 	OnConstruction();
 }
 
@@ -948,7 +968,7 @@ KX_PYMETHODDEF_DOC( KX_BlenderMaterial, setTexture , "setTexture( index, tex)")
 	return NULL;
 }
 
-static unsigned int GL_array[11] = {
+static const unsigned int GL_array[11] = {
 	GL_ZERO,
 	GL_ONE,
 	GL_SRC_COLOR,

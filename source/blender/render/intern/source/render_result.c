@@ -353,6 +353,24 @@ static const char *name_from_passtype(int passtype, int channel)
 		if (channel == 1) return "TransCol.G";
 		return "TransCol.B";
 	}
+	if (passtype == SCE_PASS_SUBSURFACE_DIRECT) {
+		if (channel == -1) return "SubsurfaceDir";
+		if (channel == 0) return "SubsurfaceDir.R";
+		if (channel == 1) return "SubsurfaceDir.G";
+		return "SubsurfaceDir.B";
+	}
+	if (passtype == SCE_PASS_SUBSURFACE_INDIRECT) {
+		if (channel == -1) return "SubsurfaceInd";
+		if (channel == 0) return "SubsurfaceInd.R";
+		if (channel == 1) return "SubsurfaceInd.G";
+		return "SubsurfaceInd.B";
+	}
+	if (passtype == SCE_PASS_SUBSURFACE_COLOR) {
+		if (channel == -1) return "SubsurfaceCol";
+		if (channel == 0) return "SubsurfaceCol.R";
+		if (channel == 1) return "SubsurfaceCol.G";
+		return "SubsurfaceCol.B";
+	}
 	return "Unknown";
 }
 
@@ -442,6 +460,15 @@ static int passtype_from_name(const char *str)
 
 	if (strstr(str, "TransCol") == str)
 		return SCE_PASS_TRANSM_COLOR;
+		
+	if (strcmp(str, "SubsurfaceDir") == 0)
+		return SCE_PASS_SUBSURFACE_DIRECT;
+
+	if (strcmp(str, "SubsurfaceInd") == 0)
+		return SCE_PASS_SUBSURFACE_INDIRECT;
+
+	if (strcmp(str, "SubsurfaceCol") == 0)
+		return SCE_PASS_SUBSURFACE_COLOR;
 
 	return 0;
 }
@@ -670,6 +697,12 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 				render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_INDIRECT, nr);
 			if (srl->passflag  & SCE_PASS_TRANSM_COLOR)
 				render_layer_add_pass(rr, rl, 3, SCE_PASS_TRANSM_COLOR, nr);
+			if (srl->passflag  & SCE_PASS_SUBSURFACE_DIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_SUBSURFACE_DIRECT, nr);
+			if (srl->passflag  & SCE_PASS_SUBSURFACE_INDIRECT)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_SUBSURFACE_INDIRECT, nr);
+			if (srl->passflag  & SCE_PASS_SUBSURFACE_COLOR)
+				render_layer_add_pass(rr, rl, 3, SCE_PASS_SUBSURFACE_COLOR, nr);
 		}
 	}
 	/* sss, previewrender and envmap don't do layers, so we make a default one */
@@ -1344,7 +1377,7 @@ void render_result_rect_get_pixels(RenderResult *rr, unsigned int *rect, int rec
 	}
 	else if (rr->rectf) {
 		IMB_display_buffer_transform_apply((unsigned char *) rect, rr->rectf, rr->rectx, rr->recty, 4,
-		                                   view_settings, display_settings, TRUE);
+		                                   view_settings, display_settings, true);
 	}
 	else
 		/* else fill with black */

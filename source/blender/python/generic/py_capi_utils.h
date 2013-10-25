@@ -56,7 +56,7 @@ void PyC_MainModule_Restore(PyObject *main_mod);
 
 void PyC_SetHomePath(const char *py_path_bundle);
 
-#define PYC_INTERPRETER_ACTIVE (((PyThreadState *)_Py_atomic_load_relaxed(&_PyThreadState_Current)) != NULL)
+bool PyC_IsInterpreterActive(void);
 
 void *PyC_RNA_AsPointer(PyObject *value, const char *type_name);
 
@@ -71,5 +71,9 @@ int       PyC_FlagSet_ValueFromID_int(PyC_FlagSet *item, const char *identifier,
 int       PyC_FlagSet_ValueFromID(PyC_FlagSet *item, const char *identifier, int *value, const char *error_prefix);
 int       PyC_FlagSet_ToBitfield(PyC_FlagSet *items, PyObject *value, int *r_value, const char *error_prefix);
 PyObject *PyC_FlagSet_FromBitfield(PyC_FlagSet *items, int flag);
+
+#if PY_VERSION_HEX <  0x03030200
+int _PyLong_AsInt(PyObject *obj);
+#endif
 
 #endif  /* __PY_CAPI_UTILS_H__ */

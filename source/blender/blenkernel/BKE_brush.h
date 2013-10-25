@@ -15,15 +15,7 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
- * Contributor(s): none yet.
- *
  * ***** END GPL LICENSE BLOCK *****
- * General operations for brushes.
  */
 
 #ifndef __BKE_BRUSH_H__
@@ -31,6 +23,8 @@
 
 /** \file BKE_brush.h
  *  \ingroup bke
+ *
+ * General operations for brushes.
  */
 
 struct ID;
@@ -82,10 +76,10 @@ float BKE_brush_sample_masktex(const Scene *scene, struct Brush *br, const float
                                const int thread, struct ImagePool *pool);
 
 /* texture */
-unsigned int *BKE_brush_gen_texture_cache(struct Brush *br, int half_side);
+unsigned int *BKE_brush_gen_texture_cache(struct Brush *br, int half_side, bool use_secondary);
 
 /* radial control */
-struct ImBuf *BKE_brush_gen_radial_control_imbuf(struct Brush *br);
+struct ImBuf *BKE_brush_gen_radial_control_imbuf(struct Brush *br, bool secondary);
 
 /* unified strength and size */
 

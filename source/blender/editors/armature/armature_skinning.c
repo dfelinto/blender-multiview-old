@@ -199,10 +199,11 @@ static void envelope_bone_weighting(Object *ob, Mesh *mesh, float (*verts)[3], i
 	bDeformGroup *dgroup;
 	float distance;
 	int i, iflip, j;
+	bool use_topology = (mesh->editflag & ME_EDIT_MIRROR_TOPO) != 0;
 
 	/* for each vertex in the mesh */
 	for (i = 0; i < mesh->totvert; i++) {
-		iflip = (dgroupflip) ? mesh_get_x_mirror_vert(ob, i) : 0;
+		iflip = (dgroupflip) ? mesh_get_x_mirror_vert(ob, i, use_topology) : 0;
 		
 		/* for each skinnable bone */
 		for (j = 0; j < numbones; ++j) {
@@ -254,7 +255,7 @@ static void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, 
 	bDeformGroup *dgroup;
 	bPoseChannel *pchan;
 	Mesh *mesh;
-	Mat4 *bbone = NULL;
+	Mat4 bbone_array[MAX_BBONE_SUBDIV], *bbone = NULL;
 	float (*root)[3], (*tip)[3], (*verts)[3];
 	int *selected;
 	int numbones, vertsfilled = 0, i, j, segments = 0;
@@ -308,7 +309,8 @@ static void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, 
 				if ((par->pose) && (pchan = BKE_pose_channel_find_name(par->pose, bone->name))) {
 					if (bone->segments > 1) {
 						segments = bone->segments;
-						bbone = b_bone_spline_setup(pchan, 1);
+						b_bone_spline_setup(pchan, 1, bbone_array);
+						bbone = bbone_array;
 					}
 				}
 			}
@@ -361,7 +363,7 @@ static void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, 
 		DerivedMesh *dm = mesh_get_derived_final(scene, ob, CD_MASK_BAREMESH);
 		
 		if (dm->foreachMappedVert) {
-			dm->foreachMappedVert(dm, add_vgroups__mapFunc, (void *)verts);
+			dm->foreachMappedVert(dm, add_vgroups__mapFunc, (void *)verts, DM_FOREACH_NOP);
 			vertsfilled = 1;
 		}
 		

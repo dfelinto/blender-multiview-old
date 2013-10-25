@@ -50,7 +50,11 @@ static const char *bc_get_joint_name(T *node)
 }
 
 ArmatureImporter::ArmatureImporter(UnitConverter *conv, MeshImporterBase *mesh, Scene *sce) :
-	TransformReader(conv), scene(sce), empty(NULL), mesh_importer(mesh) {
+	unit_converter(conv),
+	TransformReader(conv), 
+	scene(sce), 
+	empty(NULL), 
+	mesh_importer(mesh) {
 }
 
 ArmatureImporter::~ArmatureImporter()
@@ -82,17 +86,15 @@ JointData *ArmatureImporter::get_joint_data(COLLADAFW::Node *node);
 void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBone *parent, int totchild,
                                    float parent_mat[4][4], bArmature *arm)
 {
+	float mat[4][4];
+	float joint_inv_bind_mat[4][4];
+
 	//Checking if bone is already made.
 	std::vector<COLLADAFW::Node *>::iterator it;
 	it = std::find(finished_joints.begin(), finished_joints.end(), node);
 	if (it != finished_joints.end()) return;
 
-	float joint_inv_bind_mat[4][4];
-
 	// JointData* jd = get_joint_data(node);
-
-	float mat[4][4];
-	float obmat[4][4];
 	
 	// TODO rename from Node "name" attrs later
 	EditBone *bone = ED_armature_edit_bone_add(arm, (char *)bc_get_joint_name(node));
@@ -101,9 +103,18 @@ void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBo
 	if (skin && skin->get_joint_inv_bind_matrix(joint_inv_bind_mat, node)) {
 		// get original world-space matrix
 		invert_m4_m4(mat, joint_inv_bind_mat);
+
+		// And make local to armature
+		Object *ob_arm = skin->BKE_armature_from_object();
+		if (ob_arm) {
+			float invmat[4][4];
+			invert_m4_m4(invmat, ob_arm->obmat);
+			mul_m4_m4m4(mat, invmat, mat);
+		}
 	}
 	// create a bone even if there's no joint data for it (i.e. it has no influence)
 	else {
+		float obmat[4][4];
 		// bone-space
 		get_node_mat(obmat, node, NULL, NULL);
 
@@ -133,24 +144,28 @@ void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBo
 	add_v3_v3v3(bone->tail, bone->head, vec);
 
 	// set parent tail
-	if (parent && totchild == 1) {
-		copy_v3_v3(parent->tail, bone->head);
-
-		// not setting BONE_CONNECTED because this would lock child bone location with respect to parent
-		bone->flag |= BONE_CONNECTED;
+	if (parent) {
 
 		// XXX increase this to prevent "very" small bones?
 		const float epsilon = 0.000001f;
 
 		// derive leaf bone length
-		float length = len_v3v3(parent->head, parent->tail);
+		float length = len_v3v3(parent->head, bone->head);
 		if ((length < leaf_bone_length || totbone == 0) && length > epsilon) {
 			leaf_bone_length = length;
 		}
 
-		// treat zero-sized bone like a leaf bone
-		if (length <= epsilon) {
-			add_leaf_bone(parent_mat, parent, node);
+		if (totchild == 1) {
+			copy_v3_v3(parent->tail, bone->head);
+
+			// not setting BONE_CONNECTED because this would lock child bone location with respect to parent
+			bone->flag |= BONE_CONNECTED;
+
+
+			// treat zero-sized bone like a leaf bone
+			if (length <= epsilon) {
+				add_leaf_bone(parent_mat, parent, node);
+			}
 		}
 
 	}
@@ -166,7 +181,7 @@ void ArmatureImporter::create_bone(SkinInfo *skin, COLLADAFW::Node *node, EditBo
 	}
 
 	bone->length = len_v3v3(bone->head, bone->tail);
-
+	joint_by_uid[node->getUniqueId()] = node;
 	finished_joints.push_back(node);
 }
 
@@ -200,16 +215,21 @@ void ArmatureImporter::add_leaf_bone(float mat[4][4], EditBone *bone,  COLLADAFW
 
 void ArmatureImporter::fix_leaf_bones( )
 {
+	// Collada only knows Joints, Here we guess a reasonable
+	// leaf bone length
+	float leaf_length = (leaf_bone_length == FLT_MAX) ? 1.0:leaf_bone_length;
+
 	// just setting tail for leaf bones here
 	std::vector<LeafBone>::iterator it;
 	for (it = leaf_bones.begin(); it != leaf_bones.end(); it++) {
+
 		LeafBone& leaf = *it;
 
 		// pointing up
 		float vec[3] = {0.0f, 0.0f, 0.1f};
 		
 		sub_v3_v3v3(vec, leaf.bone->tail , leaf.bone->head);
-		mul_v3_fl(vec, leaf_bone_length);
+		mul_v3_fl(vec, leaf_length);
 		add_v3_v3v3(leaf.bone->tail, leaf.bone->head , vec);
 
 	}
@@ -517,16 +537,11 @@ void ArmatureImporter::set_pose(Object *ob_arm,  COLLADAFW::Node *root_node, con
 // root - if this joint is the top joint in hierarchy, if a joint
 // is a child of a node (not joint), root should be true since
 // this is where we build armature bones from
-void ArmatureImporter::add_joint(COLLADAFW::Node *node, bool root, Object *parent, Scene *sce)
+void ArmatureImporter::add_root_joint(COLLADAFW::Node *node, Object *parent)
 {
-	joint_by_uid[node->getUniqueId()] = node;
-	if (root) {
-		root_joints.push_back(node);
-
-		if (parent) {
-					
-			joint_parent_map[node->getUniqueId()] = parent;
-		}
+	root_joints.push_back(node);
+	if (parent) {
+		joint_parent_map[node->getUniqueId()] = parent;
 	}
 }
 

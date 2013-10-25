@@ -236,7 +236,6 @@ struct Render
 	struct Object *excludeob;
 	ListBase render_volumes_inside;
 	ListBase volumes;
-	ListBase volume_precache_parts;
 
 #ifdef WITH_FREESTYLE
 	struct Main freestyle_bmain;
@@ -623,6 +622,7 @@ typedef struct LampRen {
 #define R_BAKE_TRACE	32
 #define R_BAKING		64
 #define R_ANIMATION		128
+#define R_NEED_VCOL		256
 
 /* vlakren->flag (vlak = face in dutch) char!!! */
 #define R_SMOOTH		1

@@ -15,9 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
  * Contributor(s): Blender Foundation (2008).
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -37,6 +34,7 @@ extern "C" {
 #include <stdio.h>
 
 #include "DNA_windowmanager_types.h"
+#include "BLI_compiler_attrs.h"
 #include "BLI_utildefines.h"
 
 /* Reporting Information and Errors
@@ -50,18 +48,10 @@ void BKE_reports_init(ReportList *reports, int flag);
 void BKE_reports_clear(ReportList *reports);
 
 void BKE_report(ReportList *reports, ReportType type, const char *message);
-void BKE_reportf(ReportList *reports, ReportType type, const char *format, ...)
-#ifdef __GNUC__
-__attribute__ ((format(printf, 3, 4)))
-#endif
-;
+void BKE_reportf(ReportList *reports, ReportType type, const char *format, ...) ATTR_PRINTF_FORMAT(3, 4);
 
 void BKE_reports_prepend(ReportList *reports, const char *prepend);
-void BKE_reports_prependf(ReportList *reports, const char *prepend, ...)
-#ifdef __GNUC__
-__attribute__ ((format(printf, 2, 3)))
-#endif
-;
+void BKE_reports_prependf(ReportList *reports, const char *prepend, ...) ATTR_PRINTF_FORMAT(2, 3);
 
 ReportType BKE_report_print_level(ReportList *reports);
 void BKE_report_print_level_set(ReportList *reports, ReportType level);

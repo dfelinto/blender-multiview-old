@@ -191,7 +191,7 @@ void ED_object_base_init_transform(bContext *C, Base *base, const float loc[3], 
  * Returns standard diameter. */
 float ED_object_new_primitive_matrix(bContext *C, Object *obedit,
                                      const float loc[3], const float rot[3], float primmat[4][4],
-                                     int apply_diameter)
+                                     bool apply_diameter)
 {
 	Scene *scene = CTX_data_scene(C);
 	View3D *v3d = CTX_wm_view3d(C);
@@ -226,7 +226,7 @@ float ED_object_new_primitive_matrix(bContext *C, Object *obedit,
 		return dia;
 	}
 
-	return 1.0f;
+	// return 1.0f;
 }
 
 /********************* Add Object Operator ********************/
@@ -236,7 +236,15 @@ static void view_align_update(struct Main *UNUSED(main), struct Scene *UNUSED(sc
 	RNA_struct_idprops_unset(ptr, "rotation");
 }
 
-void ED_object_add_generic_props(wmOperatorType *ot, int do_editmode)
+void ED_object_add_unit_props(wmOperatorType *ot)
+{
+	PropertyRNA *prop;
+
+	prop = RNA_def_float(ot->srna, "radius", 1.0f, 0.0, FLT_MAX, "Radius", "", 0.001, 100.00);
+	RNA_def_property_subtype(prop, PROP_DISTANCE);
+}
+
+void ED_object_add_generic_props(wmOperatorType *ot, bool do_editmode)
 {
 	PropertyRNA *prop;
 
@@ -261,10 +269,11 @@ void ED_object_add_generic_props(wmOperatorType *ot, int do_editmode)
 	RNA_def_property_flag(prop, PROP_HIDDEN | PROP_SKIP_SAVE);
 }
 
-int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], float rot[3],
-                                   bool *enter_editmode, unsigned int *layer, bool *is_view_aligned)
+bool ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], float rot[3],
+                                    bool *enter_editmode, unsigned int *layer, bool *is_view_aligned)
 {
 	View3D *v3d = CTX_wm_view3d(C);
+	unsigned int _layer;
 
 	/* Switch to Edit mode? */
 	if (RNA_struct_find_property(op->ptr, "enter_editmode")) { /* optional */
@@ -283,7 +292,6 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
 	/* Get layers! */
 	{
 		int a, layer_values[20];
-		unsigned int _layer;
 		if (!layer)
 			layer = &_layer;
 
@@ -342,7 +350,7 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
 		else if (RNA_struct_property_is_set(op->ptr, "view_align"))
 			*is_view_aligned = RNA_boolean_get(op->ptr, "view_align");
 		else {
-			*is_view_aligned = U.flag & USER_ADD_VIEWALIGNED;
+			*is_view_aligned = (U.flag & USER_ADD_VIEWALIGNED) != 0;
 			RNA_boolean_set(op->ptr, "view_align", *is_view_aligned);
 		}
 
@@ -356,16 +364,16 @@ int ED_object_add_generic_get_opts(bContext *C, wmOperator *op, float loc[3], fl
 
 	if (layer && *layer == 0) {
 		BKE_report(op->reports, RPT_ERROR, "Property 'layer' has no values set");
-		return 0;
+		return false;
 	}
 
-	return 1;
+	return true;
 }
 
 /* For object add primitive operators.
  * Do not call undo push in this function (users of this function have to). */
 Object *ED_object_add_type(bContext *C, int type, const float loc[3], const float rot[3],
-                           int enter_editmode, unsigned int layer)
+                           bool enter_editmode, unsigned int layer)
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
@@ -570,6 +578,7 @@ static int object_metaball_add_exec(bContext *C, wmOperator *op)
 	float mat[4][4];
 	float dia;
 
+	WM_operator_view3d_unit_defaults(C, op);
 	if (!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
 
@@ -577,12 +586,14 @@ static int object_metaball_add_exec(bContext *C, wmOperator *op)
 		obedit = ED_object_add_type(C, OB_MBALL, loc, rot, TRUE, layer);
 		newob = true;
 	}
-	else
+	else {
 		DAG_id_tag_update(&obedit->id, OB_RECALC_DATA);
+	}
 
-	dia = ED_object_new_primitive_matrix(C, obedit, loc, rot, mat, FALSE);
+	ED_object_new_primitive_matrix(C, obedit, loc, rot, mat, false);
+	dia = RNA_float_get(op->ptr, "radius");
 
-	add_metaball_primitive(C, obedit, mat, dia, RNA_enum_get(op->ptr, "type"), newob);
+	add_metaball_primitive(C, obedit, mat, dia, RNA_enum_get(op->ptr, "type"));
 
 	/* userdef */
 	if (newob && !enter_editmode) {
@@ -602,7 +613,7 @@ void OBJECT_OT_metaball_add(wmOperatorType *ot)
 	ot->idname = "OBJECT_OT_metaball_add";
 
 	/* api callbacks */
-	ot->invoke = WM_menu_invoke;/* object_metaball_add_invoke; */
+	ot->invoke = WM_menu_invoke;
 	ot->exec = object_metaball_add_exec;
 	ot->poll = ED_operator_scene_editable;
 
@@ -611,6 +622,7 @@ void OBJECT_OT_metaball_add(wmOperatorType *ot)
 
 	ot->prop = RNA_def_enum(ot->srna, "type", metaelem_type_items, 0, "Primitive", "");
 
+	ED_object_add_unit_props(ot);
 	ED_object_add_generic_props(ot, TRUE);
 }
 
@@ -657,12 +669,12 @@ void OBJECT_OT_text_add(wmOperatorType *ot)
 static int object_armature_add_exec(bContext *C, wmOperator *op)
 {
 	Object *obedit = CTX_data_edit_object(C);
-	View3D *v3d = CTX_wm_view3d(C);
 	RegionView3D *rv3d = CTX_wm_region_view3d(C);
 	bool newob = false;
 	bool enter_editmode;
 	unsigned int layer;
 	float loc[3], rot[3];
+	bool view_aligned = rv3d && (U.flag & USER_ADD_VIEWALIGNED);
 
 	if (!ED_object_add_generic_get_opts(C, op, loc, rot, &enter_editmode, &layer, NULL))
 		return OPERATOR_CANCELLED;
@@ -681,8 +693,7 @@ static int object_armature_add_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
-	/* v3d and rv3d are allowed to be NULL */
-	add_primitive_bone(CTX_data_scene(C), v3d, rv3d);
+	add_primitive_bone(obedit, view_aligned);
 
 	/* userdef */
 	if (newob && !enter_editmode)
@@ -1209,9 +1220,11 @@ static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base,
                                        const short use_base_parent,
                                        const short use_hierarchy)
 {
+	Main *bmain = CTX_data_main(C);
 	ListBase *lb;
 	DupliObject *dob;
 	GHash *dupli_gh = NULL, *parent_gh = NULL;
+	Object *object;
 
 	if (!(base->object->transflag & OB_DUPLI))
 		return;
@@ -1226,6 +1239,7 @@ static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base,
 	for (dob = lb->first; dob; dob = dob->next) {
 		Base *basen;
 		Object *ob = BKE_object_copy(dob->ob);
+
 		/* font duplis can have a totcol without material, we get them from parent
 		 * should be implemented better...
 		 */
@@ -1244,7 +1258,7 @@ static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base,
 
 		ob->parent = NULL;
 		ob->constraints.first = ob->constraints.last = NULL;
-		ob->disp.first = ob->disp.last = NULL;
+		ob->curve_cache = NULL;
 		ob->transflag &= ~OB_DUPLI;
 		ob->lay = base->lay;
 
@@ -1319,6 +1333,17 @@ static void make_object_duplilist_real(bContext *C, Scene *scene, Base *base,
 		}
 	}
 
+	/* The same how BKE_object_unlink detects which object proxies to clear. */
+	if (base->object->transflag & OB_DUPLIGROUP && base->object->dup_group) {
+		for (object = bmain->object.first; object; object = object->id.next) {
+			if (object->proxy_group == base->object) {
+				object->proxy = NULL;
+				object->proxy_from = NULL;
+				DAG_id_tag_update(&object->id, OB_RECALC_OB);
+			}
+		}
+	}
+
 	if (dupli_gh)
 		BLI_ghash_free(dupli_gh, NULL, NULL);
 	if (parent_gh)
@@ -1386,7 +1411,7 @@ static EnumPropertyItem convert_target_items[] = {
 
 static void curvetomesh(Scene *scene, Object *ob) 
 {
-	if (ob->disp.first == NULL)
+	if (ELEM(NULL, ob->curve_cache, ob->curve_cache->disp.first))
 		BKE_displist_make_curveTypes(scene, ob, 0);  /* force creation */
 
 	BKE_mesh_from_nurbs(ob); /* also does users */
@@ -1432,7 +1457,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
-	Base *basen = NULL, *basact = NULL, *basedel = NULL;
+	Base *basen = NULL, *basact = NULL;
 	Object *ob, *ob1, *newob, *obact = CTX_data_active_object(C);
 	DerivedMesh *dm;
 	Curve *cu;
@@ -1554,7 +1579,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 
 			cu = newob->data;
 
-			if (!newob->disp.first)
+			if ( !newob->curve_cache || !newob->curve_cache->disp.first)
 				BKE_displist_make_curveTypes(scene, newob, 0);
 
 			newob->type = OB_CURVE;
@@ -1596,7 +1621,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 				curvetomesh(scene, newob);
 
 				/* meshes doesn't use displist */
-				BKE_displist_free(&newob->disp);
+				BKE_object_free_curve_cache(newob);
 			}
 		}
 		else if (ELEM(ob->type, OB_CURVE, OB_SURF)) {
@@ -1617,7 +1642,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 					newob = ob;
 
 					/* meshes doesn't use displist */
-					BKE_displist_free(&newob->disp);
+					BKE_object_free_curve_cache(newob);
 				}
 
 				curvetomesh(scene, newob);
@@ -1636,7 +1661,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 				ob->flag |= OB_DONE;
 			}
 
-			if (!baseob->disp.first) {
+			if (!baseob->curve_cache || !baseob->curve_cache->disp.first) {
 				BKE_displist_make_mball(scene, baseob);
 			}
 
@@ -1659,7 +1684,7 @@ static int convert_exec(bContext *C, wmOperator *op)
 					for (a = 0; a < newob->totcol; a++) id_us_plus((ID *)me->mat[a]);
 				}
 
-				BKE_mesh_from_metaball(&baseob->disp, newob->data);
+				BKE_mesh_from_metaball(&baseob->curve_cache->disp, newob->data);
 
 				if (obact->type == OB_MBALL) {
 					basact = basen;
@@ -1687,14 +1712,6 @@ static int convert_exec(bContext *C, wmOperator *op)
 		if (!keep_original && (ob->flag & OB_DONE)) {
 			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 			((ID *)ob->data)->flag &= ~LIB_DOIT; /* flag not to convert this datablock again */
-		}
-
-		/* delete original if needed */
-		if (basedel) {
-			if (!keep_original)
-				ED_base_object_free_and_unlink(bmain, scene, basedel);
-
-			basedel = NULL;
 		}
 	}
 	CTX_DATA_END;
@@ -1762,7 +1779,7 @@ void OBJECT_OT_convert(wmOperatorType *ot)
 
 /* 
  * dupflag: a flag made from constants declared in DNA_userdef_types.h
- * The flag tells adduplicate() weather to copy data linked to the object, or to reference the existing data.
+ * The flag tells adduplicate() whether to copy data linked to the object, or to reference the existing data.
  * U.dupflag for default operations or you can construct a flag as python does
  * if the dupflag is 0 then no data will be copied (linked duplicate) */
 
@@ -2038,7 +2055,7 @@ static int duplicate_exec(bContext *C, wmOperator *op)
 	clear_id_newpoins();
 	clear_sca_new_poins();  /* sensor/contr/act */
 
-	CTX_DATA_BEGIN (C, Base *, base, selected_editable_bases)
+	CTX_DATA_BEGIN (C, Base *, base, selected_bases)
 	{
 		Base *basen = object_add_duplicate_internal(bmain, scene, base, dupflag);
 

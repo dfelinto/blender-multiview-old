@@ -50,6 +50,7 @@
 #include "BKE_main.h"
 #include "BKE_screen.h"
 
+#include "BLF_translation.h"
 
 #include "RNA_access.h"
 #include "RNA_enum_types.h"
@@ -101,7 +102,7 @@ static int wm_keymap_item_equals_result(wmKeyMapItem *a, wmKeyMapItem *b)
 	if (strcmp(a->idname, b->idname) != 0)
 		return 0;
 	
-	if (!RNA_struct_equals(a->ptr, b->ptr, true))
+	if (!RNA_struct_equals(a->ptr, b->ptr, RNA_EQ_UNSET_MATCH_NONE))
 		return 0;
 	
 	if ((a->flag & KMI_INACTIVE) != (b->flag & KMI_INACTIVE))
@@ -137,6 +138,30 @@ void WM_keymap_properties_reset(wmKeyMapItem *kmi, struct IDProperty *properties
 
 	wm_keymap_item_properties_set(kmi);
 }
+
+int WM_keymap_map_type_get(wmKeyMapItem *kmi)
+{
+	if (ISTIMER(kmi->type)) {
+		return KMI_TYPE_TIMER;
+	}
+	if (ISKEYBOARD(kmi->type)) {
+		return KMI_TYPE_KEYBOARD;
+	}
+	if (ISTWEAK(kmi->type)) {
+		return KMI_TYPE_TWEAK;
+	}
+	if (ISMOUSE(kmi->type)) {
+		return KMI_TYPE_MOUSE;
+	}
+	if (ISNDOF(kmi->type)) {
+		return KMI_TYPE_NDOF;
+	}
+	if (kmi->type == KM_TEXTINPUT) {
+		return KMI_TYPE_TEXTINPUT;
+	}
+	return KMI_TYPE_KEYBOARD;
+}
+
 
 /**************************** Keymap Diff Item *********************************
  * Item in a diff keymap, used for saving diff of keymaps in user preferences */
@@ -190,7 +215,7 @@ wmKeyConfig *WM_keyconfig_new_user(wmWindowManager *wm, const char *idname)
 	return keyconf;
 }
 
-int WM_keyconfig_remove(wmWindowManager *wm, wmKeyConfig *keyconf)
+bool WM_keyconfig_remove(wmWindowManager *wm, wmKeyConfig *keyconf)
 {
 	if (BLI_findindex(&wm->keyconfigs, keyconf) != -1) {
 		if (strncmp(U.keyconfigstr, keyconf->idname, sizeof(U.keyconfigstr)) == 0) {
@@ -201,10 +226,10 @@ int WM_keyconfig_remove(wmWindowManager *wm, wmKeyConfig *keyconf)
 		BLI_remlink(&wm->keyconfigs, keyconf);
 		WM_keyconfig_free(keyconf);
 
-		return TRUE;
+		return true;
 	}
 	else {
-		return FALSE;
+		return false;
 	}
 }
 
@@ -299,6 +324,21 @@ void WM_keymap_free(wmKeyMap *keymap)
 	BLI_freelistN(&keymap->items);
 }
 
+bool WM_keymap_remove(wmKeyConfig *keyconf, wmKeyMap *keymap)
+{
+	if (BLI_findindex(&keyconf->keymaps, keymap) != -1) {
+
+		WM_keymap_free(keymap);
+		BLI_remlink(&keyconf->keymaps, keymap);
+		MEM_freeN(keymap);
+
+		return true;
+	}
+	else {
+		return false;
+	}
+}
+
 static void keymap_event_set(wmKeyMapItem *kmi, short type, short val, int modifier, short keymodifier)
 {
 	kmi->type = type;
@@ -375,7 +415,7 @@ wmKeyMapItem *WM_keymap_add_menu(wmKeyMap *keymap, const char *idname, int type,
 	return kmi;
 }
 
-int WM_keymap_remove_item(wmKeyMap *keymap, wmKeyMapItem *kmi)
+bool WM_keymap_remove_item(wmKeyMap *keymap, wmKeyMapItem *kmi)
 {
 	if (BLI_findindex(&keymap->items, kmi) != -1) {
 		if (kmi->ptr) {
@@ -385,10 +425,10 @@ int WM_keymap_remove_item(wmKeyMap *keymap, wmKeyMapItem *kmi)
 		BLI_freelinkN(&keymap->items, kmi);
 
 		WM_keyconfig_update_tag(keymap, NULL);
-		return TRUE;
+		return true;
 	}
 	else {
-		return FALSE;
+		return false;
 	}
 }
 
@@ -792,9 +832,10 @@ const char *WM_key_event_string(short type)
 	return "";
 }
 
-int WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, int len)
+int WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, const int len)
 {
 	char buf[128];
+	char *p = buf;
 
 	buf[0] = 0;
 
@@ -803,28 +844,28 @@ int WM_keymap_item_to_string(wmKeyMapItem *kmi, char *str, int len)
 	    kmi->alt == KM_ANY &&
 	    kmi->oskey == KM_ANY)
 	{
-		strcat(buf, "Any ");
+		p += BLI_strcpy_rlen(p, "Any ");
 	}
 	else {
 		if (kmi->shift)
-			strcat(buf, "Shift ");
+			p += BLI_strcpy_rlen(p, "Shift ");
 
 		if (kmi->ctrl)
-			strcat(buf, "Ctrl ");
+			p += BLI_strcpy_rlen(p, "Ctrl ");
 
 		if (kmi->alt)
-			strcat(buf, "Alt ");
+			p += BLI_strcpy_rlen(p, "Alt ");
 
 		if (kmi->oskey)
-			strcat(buf, "Cmd ");
+			p += BLI_strcpy_rlen(p, "Cmd ");
 	}
 		
 	if (kmi->keymodifier) {
-		strcat(buf, WM_key_event_string(kmi->keymodifier));
-		strcat(buf, " ");
+		p += BLI_strcpy_rlen(p, WM_key_event_string(kmi->keymodifier));
+		p += BLI_strcpy_rlen(p, " ");
 	}
 
-	strcat(buf, WM_key_event_string(kmi->type));
+	p += BLI_strcpy_rlen(p, WM_key_event_string(kmi->type));
 	return BLI_strncpy_rlen(str, buf, len);
 }
 
@@ -1297,7 +1338,11 @@ wmKeyMap *WM_keymap_guess_opname(const bContext *C, const char *opname)
 		km = WM_keymap_find_all(C, "3D View", sl->spacetype, 0);
 	}
 	else if (strstr(opname, "OBJECT_OT")) {
-		km = WM_keymap_find_all(C, "Object Mode", 0, 0);
+		/* exception, this needs to work outside object mode too */
+		if (strstr(opname, "OBJECT_OT_mode_set"))
+			km = WM_keymap_find_all(C, "Object Non-modal", 0, 0);
+		else
+			km = WM_keymap_find_all(C, "Object Mode", 0, 0);
 	}
 
 	
@@ -1459,3 +1504,7 @@ wmKeyMap *WM_keymap_guess_opname(const bContext *C, const char *opname)
 	return km;
 }
 
+const char *WM_bool_as_string(bool test)
+{
+	return test ? IFACE_("ON") : IFACE_("OFF");
+}

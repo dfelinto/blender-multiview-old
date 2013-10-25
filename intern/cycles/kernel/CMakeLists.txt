@@ -22,6 +22,7 @@ set(SRC_HEADERS
 	kernel.h
 	kernel_accumulate.h
 	kernel_bvh.h
+	kernel_bvh_subsurface.h
 	kernel_bvh_traversal.h
 	kernel_camera.h
 	kernel_compat_cpu.h
@@ -40,6 +41,7 @@ set(SRC_HEADERS
 	kernel_object.h
 	kernel_passes.h
 	kernel_path.h
+	kernel_path_state.h
 	kernel_primitive.h
 	kernel_projection.h
 	kernel_random.h
@@ -65,6 +67,7 @@ set(SRC_CLOSURE_HEADERS
 	closure/bsdf_util.h
 	closure/bsdf_ward.h
 	closure/bsdf_westin.h
+	closure/bsdf_hair.h
 	closure/bssrdf.h
 	closure/emissive.h
 	closure/volume.h
@@ -72,6 +75,7 @@ set(SRC_CLOSURE_HEADERS
 set(SRC_SVM_HEADERS
 	svm/svm.h
 	svm/svm_attribute.h
+	svm/svm_blackbody.h
 	svm/svm_camera.h
 	svm/svm_closure.h
 	svm/svm_convert.h
@@ -99,11 +103,13 @@ set(SRC_SVM_HEADERS
 	svm/svm_normal.h
 	svm/svm_ramp.h
 	svm/svm_sepcomb_rgb.h
+	svm/svm_sepcomb_hsv.h
 	svm/svm_sky.h
 	svm/svm_tex_coord.h
 	svm/svm_texture.h
 	svm/svm_types.h
 	svm/svm_value.h
+	svm/svm_vector_transform.h
 	svm/svm_voronoi.h
 	svm/svm_wave.h
 )
@@ -117,36 +123,56 @@ set(SRC_UTIL_HEADERS
 # CUDA module
 
 if(WITH_CYCLES_CUDA_BINARIES)
+	# 32 bit or 64 bit
 	if("${CMAKE_SIZEOF_VOID_P}" EQUAL "8")
 		set(CUDA_BITS 64)
 	else()
 		set(CUDA_BITS 32)
 	endif()
 
+	# CUDA version
+	execute_process (COMMAND ${CUDA_NVCC_EXECUTABLE} "--version" OUTPUT_VARIABLE NVCC_OUT)
+	string(REGEX REPLACE ".*release ([0-9]+)\\.([0-9]+).*" "\\1" CUDA_VERSION_MAJOR ${NVCC_OUT})
+	string(REGEX REPLACE ".*release ([0-9]+)\\.([0-9]+).*" "\\2" CUDA_VERSION_MINOR ${NVCC_OUT})
+	set(CUDA_VERSION "${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}")
+
+	# warn for other versions
+	if(CUDA_VERSION MATCHES "50")
+	else()
+		message(WARNING "CUDA version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} detected, build may succeed but only CUDA 5.0 is officially supported")
+	endif()
+
+	# build for each arch
 	set(cuda_sources kernel.cu ${SRC_HEADERS} ${SRC_SVM_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_UTIL_HEADERS})
 	set(cuda_cubins)
 
 	foreach(arch ${CYCLES_CUDA_BINARIES_ARCH})
 		set(cuda_cubin kernel_${arch}.cubin)
 
-		if(${arch} MATCHES "sm_1[0-9]")
-			# sm_1x
-			set(cuda_arch_flags "--maxrregcount=24 --opencc-options -OPT:Olimit=0")
-		elseif(${arch} MATCHES "sm_2[0-9]")
+		set(cuda_version_flags "-D__KERNEL_CUDA_VERSION__=${CUDA_VERSION}")
+
+		# CUDA 5.x build flags for different archs
+		if(${arch} MATCHES "sm_2[0-9]")
 			# sm_2x
-			set(cuda_arch_flags "--maxrregcount=24")
-		else()
+			set(cuda_arch_flags "--maxrregcount=32")
+		elseif(${arch} MATCHES "sm_3[0-9]")
 			# sm_3x
 			set(cuda_arch_flags "--maxrregcount=32")
 		endif()
-		
-		add_custom_command(
-			OUTPUT ${cuda_cubin}
-			COMMAND ${CUDA_NVCC_EXECUTABLE} -arch=${arch} -m${CUDA_BITS} --cubin ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cu -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_cubin} --ptxas-options="-v" ${cuda_arch_flags} -I${CMAKE_CURRENT_SOURCE_DIR}/../util -I${CMAKE_CURRENT_SOURCE_DIR}/svm -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DNVCC
-			DEPENDS ${cuda_sources})
 
-		delayed_install("${CMAKE_CURRENT_BINARY_DIR}" "${cuda_cubin}" ${CYCLES_INSTALL_PATH}/lib)
-		list(APPEND cuda_cubins ${cuda_cubin})
+		set(cuda_math_flags "--use_fast_math")
+		
+		if(CUDA_VERSION LESS 50 AND ${arch} MATCHES "sm_35")
+			message(WARNING "Can't build kernel for CUDA sm_35 architecture, skipping")
+		else()
+			add_custom_command(
+				OUTPUT ${cuda_cubin}
+				COMMAND ${CUDA_NVCC_EXECUTABLE} -arch=${arch} -m${CUDA_BITS} --cubin ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cu -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_cubin} --ptxas-options="-v" ${cuda_arch_flags} ${cuda_version_flags} ${cuda_math_flags} -I${CMAKE_CURRENT_SOURCE_DIR}/../util -I${CMAKE_CURRENT_SOURCE_DIR}/svm -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DNVCC
+				DEPENDS ${cuda_sources})
+
+			delayed_install("${CMAKE_CURRENT_BINARY_DIR}" "${cuda_cubin}" ${CYCLES_INSTALL_PATH}/lib)
+			list(APPEND cuda_cubins ${cuda_cubin})
+		endif()
 	endforeach()
 
 	add_custom_target(cycles_kernel_cuda ALL DEPENDS ${cuda_cubins})

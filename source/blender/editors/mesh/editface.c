@@ -15,9 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
  * Contributor(s): Blender Foundation, Campbell Barton
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -33,6 +30,7 @@
 #include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
+#include "BLI_bitmap.h"
 
 #include "BLF_translation.h"
 
@@ -47,6 +45,7 @@
 #include "BKE_mesh.h"
 #include "BKE_context.h"
 #include "BKE_editmesh.h"
+#include "BKE_utildefines.h"
 
 #include "BIF_gl.h"
 
@@ -74,6 +73,8 @@ void paintface_flush_flags(Object *ob)
 	if (me == NULL)
 		return;
 
+	/* note, call #BKE_mesh_flush_hidden_from_verts_ex first when changing hidden flags */
+
 	/* we could call this directly in all areas that change selection,
 	 * since this could become slow for realtime updates (circle-select for eg) */
 	BKE_mesh_flush_select_from_polys(me);
@@ -94,9 +95,11 @@ void paintface_flush_flags(Object *ob)
 		
 		/* loop over tessfaces */
 		for (i = 0; i < totface; i++) {
-			/* Copy flags onto the original tessface from its original poly */
-			mp_orig = me->mpoly + index_array[i];
-			faces[i].flag = mp_orig->flag;
+			if (index_array[i] != ORIGINDEX_NONE) {
+				/* Copy flags onto the original tessface from its original poly */
+				mp_orig = me->mpoly + index_array[i];
+				faces[i].flag = mp_orig->flag;
+			}
 		}
 	}
 
@@ -106,9 +109,11 @@ void paintface_flush_flags(Object *ob)
 
 		/* loop over final derived polys */
 		for (i = 0; i < totpoly; i++) {
-			/* Copy flags onto the final derived poly from the original mesh poly */
-			mp_orig = me->mpoly + index_array[i];
-			polys[i].flag = mp_orig->flag;
+			if (index_array[i] != ORIGINDEX_NONE) {
+				/* Copy flags onto the final derived poly from the original mesh poly */
+				mp_orig = me->mpoly + index_array[i];
+				polys[i].flag = mp_orig->flag;
+			}
 		}
 	}
 
@@ -119,9 +124,11 @@ void paintface_flush_flags(Object *ob)
 
 		/* loop over tessfaces */
 		for (i = 0; i < totface; i++) {
-			/* Copy flags onto the final tessface from its final poly */
-			mp_orig = polys + index_array[i];
-			faces[i].flag = mp_orig->flag;
+			if (index_array[i] != ORIGINDEX_NONE) {
+				/* Copy flags onto the final tessface from its final poly */
+				mp_orig = polys + index_array[i];
+				faces[i].flag = mp_orig->flag;
+			}
 		}
 	}
 }
@@ -139,18 +146,20 @@ void paintface_hide(Object *ob, const bool unselected)
 	a = me->totpoly;
 	while (a--) {
 		if ((mpoly->flag & ME_HIDE) == 0) {
-			if (unselected) {
-				if ((mpoly->flag & ME_FACE_SEL) == 0) mpoly->flag |= ME_HIDE;
-			}
-			else {
-				if ((mpoly->flag & ME_FACE_SEL)) mpoly->flag |= ME_HIDE;
+			if (((mpoly->flag & ME_FACE_SEL) == 0) == unselected) {
+				mpoly->flag |= ME_HIDE;
 			}
 		}
-		if (mpoly->flag & ME_HIDE) mpoly->flag &= ~ME_FACE_SEL;
+
+		if (mpoly->flag & ME_HIDE) {
+			mpoly->flag &= ~ME_FACE_SEL;
+		}
 		
 		mpoly++;
 	}
 	
+	BKE_mesh_flush_hidden_from_polys(me);
+
 	paintface_flush_flags(ob);
 }
 
@@ -174,34 +183,29 @@ void paintface_reveal(Object *ob)
 		mpoly++;
 	}
 
+	BKE_mesh_flush_hidden_from_polys(me);
+
 	paintface_flush_flags(ob);
 }
 
 /* Set tface seams based on edge data, uses hash table to find seam edges. */
 
-static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int index)
+static void select_linked_tfaces_with_seams(Mesh *me, const unsigned int index, const bool select)
 {
-	EdgeHash *ehash, *seamhash;
 	MPoly *mp;
 	MLoop *ml;
-	MEdge *med;
-	char *linkflag;
-	int a, b, mark = 0;
+	int a, b;
 	bool do_it = true;
+	bool mark = false;
 
-	ehash = BLI_edgehash_new();
-	seamhash = BLI_edgehash_new();
-	linkflag = MEM_callocN(sizeof(char) * me->totpoly, "linkflaguv");
+	BLI_bitmap *edge_tag = BLI_BITMAP_NEW(me->totedge, __func__);
+	BLI_bitmap *poly_tag = BLI_BITMAP_NEW(me->totpoly, __func__);
 
-	for (med = me->medge, a = 0; a < me->totedge; a++, med++)
-		if (med->flag & ME_SEAM)
-			BLI_edgehash_insert(seamhash, med->v1, med->v2, NULL);
-
-	if (mode == 0 || mode == 1) {
+	if (index != (unsigned int)-1) {
 		/* only put face under cursor in array */
-		mp = ((MPoly *)me->mpoly) + index;
-		BKE_mesh_poly_edgehash_insert(ehash, mp, me->mloop + mp->loopstart);
-		linkflag[index] = 1;
+		mp = &me->mpoly[index];
+		BKE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
+		BLI_BITMAP_SET(poly_tag, index);
 	}
 	else {
 		/* fill array by selection */
@@ -211,8 +215,8 @@ static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int ind
 				/* pass */
 			}
 			else if (mp->flag & ME_FACE_SEL) {
-				BKE_mesh_poly_edgehash_insert(ehash, mp, me->mloop + mp->loopstart);
-				linkflag[a] = 1;
+				BKE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
+				BLI_BITMAP_SET(poly_tag, a);
 			}
 		}
 	}
@@ -226,75 +230,54 @@ static void select_linked_tfaces_with_seams(int mode, Mesh *me, unsigned int ind
 			if (mp->flag & ME_HIDE)
 				continue;
 
-			if (!linkflag[a]) {
-				MLoop *mnextl;
-				mark = 0;
+			if (!BLI_BITMAP_GET(poly_tag, a)) {
+				mark = false;
 
 				ml = me->mloop + mp->loopstart;
 				for (b = 0; b < mp->totloop; b++, ml++) {
-					mnextl = b < mp->totloop - 1 ? ml - 1 : me->mloop + mp->loopstart;
-					if (!BLI_edgehash_haskey(seamhash, ml->v, mnextl->v))
-						if (!BLI_edgehash_haskey(ehash, ml->v, mnextl->v))
-							mark = 1;
+					if ((me->medge[ml->e].flag & ME_SEAM) == 0) {
+						if (BLI_BITMAP_GET(edge_tag, ml->e)) {
+							mark = true;
+							break;
+						}
+					}
 				}
 
 				if (mark) {
-					linkflag[a] = 1;
-					BKE_mesh_poly_edgehash_insert(ehash, mp, me->mloop + mp->loopstart);
+					BLI_BITMAP_SET(poly_tag, a);
+					BKE_mesh_poly_edgebitmap_insert(edge_tag, mp, me->mloop + mp->loopstart);
 					do_it = true;
 				}
 			}
 		}
-
 	}
 
-	BLI_edgehash_free(ehash, NULL);
-	BLI_edgehash_free(seamhash, NULL);
+	MEM_freeN(edge_tag);
 
-	if (mode == 0 || mode == 2) {
-		for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++)
-			if (linkflag[a])
-				mp->flag |= ME_FACE_SEL;
-			else
-				mp->flag &= ~ME_FACE_SEL;
-	}
-	else if (mode == 1) {
-		for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++)
-			if (linkflag[a] && (mp->flag & ME_FACE_SEL))
-				break;
-
-		if (a < me->totpoly) {
-			for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++)
-				if (linkflag[a])
-					mp->flag &= ~ME_FACE_SEL;
-		}
-		else {
-			for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++)
-				if (linkflag[a])
-					mp->flag |= ME_FACE_SEL;
+	for (a = 0, mp = me->mpoly; a < me->totpoly; a++, mp++) {
+		if (BLI_BITMAP_GET(poly_tag, a)) {
+			BKE_BIT_TEST_SET(mp->flag, select, ME_FACE_SEL);
 		}
 	}
 
-	MEM_freeN(linkflag);
+	MEM_freeN(poly_tag);
 }
 
-void paintface_select_linked(bContext *UNUSED(C), Object *ob, const int UNUSED(mval[2]), int mode)
+void paintface_select_linked(bContext *C, Object *ob, const int mval[2], const bool select)
 {
 	Mesh *me;
-	unsigned int index = 0;
+	unsigned int index = (unsigned int)-1;
 
 	me = BKE_mesh_from_object(ob);
 	if (me == NULL || me->totpoly == 0) return;
 
-	if (mode == 0 || mode == 1) {
-		/* XXX - Causes glitches, not sure why */
-#if 0
-		if (!ED_mesh_pick_face(C, me, mval, &index, ED_MESH_PICK_DEFAULT_FACE_SIZE))
+	if (mval) {
+		if (!ED_mesh_pick_face(C, ob, mval, &index, ED_MESH_PICK_DEFAULT_FACE_SIZE)) {
 			return;
-#endif
+		}
 	}
 
-	select_linked_tfaces_with_seams(mode, me, index);
+	select_linked_tfaces_with_seams(me, index, select);
 
 	paintface_flush_flags(ob);
 }
@@ -308,49 +291,37 @@ void paintface_deselect_all_visible(Object *ob, int action, bool flush_flags)
 	me = BKE_mesh_from_object(ob);
 	if (me == NULL) return;
 	
-	if (action == SEL_INVERT) {
+	if (action == SEL_TOGGLE) {
+		action = SEL_SELECT;
+
 		mpoly = me->mpoly;
 		a = me->totpoly;
 		while (a--) {
-			if ((mpoly->flag & ME_HIDE) == 0) {
-				mpoly->flag ^= ME_FACE_SEL;
+			if ((mpoly->flag & ME_HIDE) == 0 && mpoly->flag & ME_FACE_SEL) {
+				action = SEL_DESELECT;
+				break;
 			}
 			mpoly++;
 		}
 	}
-	else {
-		if (action == SEL_TOGGLE) {
-			action = SEL_SELECT;
 
-			mpoly = me->mpoly;
-			a = me->totpoly;
-			while (a--) {
-				if ((mpoly->flag & ME_HIDE) == 0 && mpoly->flag & ME_FACE_SEL) {
-					action = SEL_DESELECT;
+	mpoly = me->mpoly;
+	a = me->totpoly;
+	while (a--) {
+		if ((mpoly->flag & ME_HIDE) == 0) {
+			switch (action) {
+				case SEL_SELECT:
+					mpoly->flag |= ME_FACE_SEL;
 					break;
-				}
-				mpoly++;
+				case SEL_DESELECT:
+					mpoly->flag &= ~ME_FACE_SEL;
+					break;
+				case SEL_INVERT:
+					mpoly->flag ^= ME_FACE_SEL;
+					break;
 			}
 		}
-
-		mpoly = me->mpoly;
-		a = me->totpoly;
-		while (a--) {
-			if ((mpoly->flag & ME_HIDE) == 0) {
-				switch (action) {
-					case SEL_SELECT:
-						mpoly->flag |= ME_FACE_SEL;
-						break;
-					case SEL_DESELECT:
-						mpoly->flag &= ~ME_FACE_SEL;
-						break;
-					case SEL_INVERT:
-						mpoly->flag ^= ME_FACE_SEL;
-						break;
-				}
-			}
-			mpoly++;
-		}
+		mpoly++;
 	}
 
 	if (flush_flags) {
@@ -574,49 +545,48 @@ void paintvert_deselect_all_visible(Object *ob, int action, bool flush_flags)
 	me = BKE_mesh_from_object(ob);
 	if (me == NULL) return;
 	
-	if (action == SEL_INVERT) {
+	if (action == SEL_TOGGLE) {
+		action = SEL_SELECT;
+
 		mvert = me->mvert;
 		a = me->totvert;
 		while (a--) {
-			if ((mvert->flag & ME_HIDE) == 0) {
-				mvert->flag ^= SELECT;
+			if ((mvert->flag & ME_HIDE) == 0 && mvert->flag & SELECT) {
+				action = SEL_DESELECT;
+				break;
 			}
 			mvert++;
 		}
 	}
-	else {
-		if (action == SEL_TOGGLE) {
-			action = SEL_SELECT;
 
-			mvert = me->mvert;
-			a = me->totvert;
-			while (a--) {
-				if ((mvert->flag & ME_HIDE) == 0 && mvert->flag & SELECT) {
-					action = SEL_DESELECT;
+	mvert = me->mvert;
+	a = me->totvert;
+	while (a--) {
+		if ((mvert->flag & ME_HIDE) == 0) {
+			switch (action) {
+				case SEL_SELECT:
+					mvert->flag |= SELECT;
 					break;
-				}
-				mvert++;
+				case SEL_DESELECT:
+					mvert->flag &= ~SELECT;
+					break;
+				case SEL_INVERT:
+					mvert->flag ^= SELECT;
+					break;
 			}
 		}
+		mvert++;
+	}
 
-		mvert = me->mvert;
-		a = me->totvert;
-		while (a--) {
-			if ((mvert->flag & ME_HIDE) == 0) {
-				switch (action) {
-					case SEL_SELECT:
-						mvert->flag |= SELECT;
-						break;
-					case SEL_DESELECT:
-						mvert->flag &= ~SELECT;
-						break;
-					case SEL_INVERT:
-						mvert->flag ^= SELECT;
-						break;
-				}
-			}
-			mvert++;
-		}
+	/* handle mselect */
+	if (action == SEL_SELECT) {
+		/* pass */
+	}
+	else if (ELEM(action, SEL_DESELECT, SEL_INVERT)) {
+		BKE_mesh_mselect_clear(me);
+	}
+	else {
+		BKE_mesh_mselect_validate(me);
 	}
 
 	if (flush_flags) {
@@ -721,6 +691,7 @@ void ED_mesh_mirrtopo_init(Mesh *me, const int ob_mode, MirrTopoStore_t *mesh_to
 	int a, last;
 	int totvert, totedge;
 	int tot_unique = -1, tot_unique_prev = -1;
+	int tot_unique_edges = 0, tot_unique_edges_prev;
 
 	MirrTopoHash_t *topo_hash = NULL;
 	MirrTopoHash_t *topo_hash_prev = NULL;
@@ -750,36 +721,45 @@ void ED_mesh_mirrtopo_init(Mesh *me, const int ob_mode, MirrTopoStore_t *mesh_to
 		totedge = me->edit_btmesh->bm->totedge;
 
 		BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
-			topo_hash[BM_elem_index_get(eed->v1)]++;
-			topo_hash[BM_elem_index_get(eed->v2)]++;
+			const int i1 = BM_elem_index_get(eed->v1), i2 = BM_elem_index_get(eed->v2);
+			topo_hash[i1]++;
+			topo_hash[i2]++;
 		}
 	}
 	else {
 		totedge = me->totedge;
 
 		for (a = 0, medge = me->medge; a < me->totedge; a++, medge++) {
-			topo_hash[medge->v1]++;
-			topo_hash[medge->v2]++;
+			const unsigned int i1 = medge->v1, i2 = medge->v2;
+			topo_hash[i1]++;
+			topo_hash[i2]++;
 		}
 	}
 
 	topo_hash_prev = MEM_dupallocN(topo_hash);
 
 	tot_unique_prev = -1;
+	tot_unique_edges_prev = -1;
 	while (1) {
 		/* use the number of edges per vert to give verts unique topology IDs */
 
+		tot_unique_edges = 0;
+
+		/* This can make really big numbers, wrapping around here is fine */
 		if (em) {
 			BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
-				topo_hash[BM_elem_index_get(eed->v1)] += topo_hash_prev[BM_elem_index_get(eed->v2)] * topo_pass;
-				topo_hash[BM_elem_index_get(eed->v2)] += topo_hash_prev[BM_elem_index_get(eed->v1)] * topo_pass;
+				const int i1 = BM_elem_index_get(eed->v1), i2 = BM_elem_index_get(eed->v2);
+				topo_hash[i1] += topo_hash_prev[i2] * topo_pass;
+				topo_hash[i2] += topo_hash_prev[i1] * topo_pass;
+				tot_unique_edges += (topo_hash[i1] != topo_hash[i2]);
 			}
 		}
 		else {
 			for (a = 0, medge = me->medge; a < me->totedge; a++, medge++) {
-				/* This can make really big numbers, wrapping around here is fine */
-				topo_hash[medge->v1] += topo_hash_prev[medge->v2] * topo_pass;
-				topo_hash[medge->v2] += topo_hash_prev[medge->v1] * topo_pass;
+				const unsigned int i1 = medge->v1, i2 = medge->v2;
+				topo_hash[i1] += topo_hash_prev[i2] * topo_pass;
+				topo_hash[i2] += topo_hash_prev[i1] * topo_pass;
+				tot_unique_edges += (topo_hash[i1] != topo_hash[i2]);
 			}
 		}
 		memcpy(topo_hash_prev, topo_hash, sizeof(MirrTopoHash_t) * totvert);
@@ -794,13 +774,14 @@ void ED_mesh_mirrtopo_init(Mesh *me, const int ob_mode, MirrTopoStore_t *mesh_to
 			}
 		}
 
-		if (tot_unique <= tot_unique_prev) {
+		if ((tot_unique <= tot_unique_prev) && (tot_unique_edges <= tot_unique_edges_prev)) {
 			/* Finish searching for unique values when 1 loop dosnt give a
 			 * higher number of unique values compared to the previous loop */
 			break;
 		}
 		else {
 			tot_unique_prev = tot_unique;
+			tot_unique_edges_prev = tot_unique_edges;
 		}
 		/* Copy the hash calculated this iter, so we can use them next time */
 		memcpy(topo_hash_prev, topo_hash, sizeof(MirrTopoHash_t) * totvert);

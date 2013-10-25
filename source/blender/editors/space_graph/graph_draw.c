@@ -214,7 +214,7 @@ static void draw_fcurve_vertices_handles(FCurve *fcu, SpaceIpo *sipo, View2D *v2
 	int i;
 	
 	/* get view settings */
-	hsize = UI_GetThemeValuef(TH_HANDLE_VERTEX_SIZE);
+	hsize = UI_GetThemeValuef(TH_HANDLE_VERTEX_SIZE) * U.pixelsize;
 	UI_view2d_getscale(v2d, &xscale, &yscale);
 	
 	/* set handle color */
@@ -951,7 +951,7 @@ void graph_draw_curves(bAnimContext *ac, SpaceIpo *sipo, ARegion *ar, View2DGrid
 		/* 1) draw curve line */
 		{
 			/* set color/drawing style for curve itself */
-			if (((fcu->grp) && (fcu->grp->flag & AGRP_PROTECTED)) || (fcu->flag & FCURVE_PROTECTED)) {
+			if (BKE_fcurve_is_protected(fcu)) {
 				/* protected curves (non editable) are drawn with dotted lines */
 				setlinestyle(2);
 			}

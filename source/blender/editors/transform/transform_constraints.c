@@ -569,7 +569,7 @@ void setConstraint(TransInfo *t, float space[3][3], int mode, const char text[])
 	t->con.applyVec = applyAxisConstraintVec;
 	t->con.applySize = applyAxisConstraintSize;
 	t->con.applyRot = applyAxisConstraintRot;
-	t->redraw = 1;
+	t->redraw = TREDRAW_HARD;
 }
 
 /* applies individual td->axismtx constraints */
@@ -590,7 +590,7 @@ void setAxisMatrixConstraint(TransInfo *t, int mode, const char text[])
 		t->con.applyVec = applyObjectConstraintVec;
 		t->con.applySize = applyObjectConstraintSize;
 		t->con.applyRot = applyObjectConstraintRot;
-		t->redraw = 1;
+		t->redraw = TREDRAW_HARD;
 	}
 }
 
@@ -621,8 +621,8 @@ void setUserConstraint(TransInfo *t, short orientation, int mode, const char fte
 			float mtx[3][3] = MAT3_UNITY;
 			BLI_snprintf(text, sizeof(text), ftext, IFACE_("global"));
 			setConstraint(t, mtx, mode, text);
+			break;
 		}
-		break;
 		case V3D_MANIP_LOCAL:
 			BLI_snprintf(text, sizeof(text), ftext, IFACE_("local"));
 			setLocalConstraint(t, mode, text);
@@ -727,6 +727,7 @@ void drawPropCircle(const struct bContext *C, TransInfo *t)
 		RegionView3D *rv3d = CTX_wm_region_view3d(C);
 		float tmat[4][4], imat[4][4];
 		float center[3];
+		int depth_test_enabled;
 
 		UI_ThemeColor(TH_GRID);
 
@@ -759,9 +760,16 @@ void drawPropCircle(const struct bContext *C, TransInfo *t)
 			glScalef(1.0f / aspx, 1.0f / aspy, 1.0);
 		}
 
+		depth_test_enabled = glIsEnabled(GL_DEPTH_TEST);
+		if (depth_test_enabled)
+			glDisable(GL_DEPTH_TEST);
+
 		set_inverted_drawing(1);
 		drawcircball(GL_LINE_LOOP, center, t->prop_size, imat);
 		set_inverted_drawing(0);
+
+		if (depth_test_enabled)
+			glEnable(GL_DEPTH_TEST);
 
 		glPopMatrix();
 	}
@@ -783,6 +791,13 @@ static void drawObjectConstraint(TransInfo *t)
 	for (i = 0; i < t->total; i++, td++) {
 		float co[3];
 		float (*axismtx)[3];
+
+		if (t->flag & T_PROP_EDIT) {
+			/* we're sorted, so skip the rest */
+			if (td->factor == 0.0f) {
+				break;
+			}
+		}
 
 		if (t->flag & T_OBJECT) {
 			copy_v3_v3(co, td->ob->obmat[3]);
@@ -896,7 +911,7 @@ void postSelectConstraint(TransInfo *t)
 	setNearestAxis(t);
 
 	startConstraint(t);
-	t->redraw = 1;
+	t->redraw = TREDRAW_HARD;
 }
 
 static void setNearestAxis2d(TransInfo *t)

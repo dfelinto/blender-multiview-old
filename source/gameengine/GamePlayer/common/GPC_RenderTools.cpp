@@ -37,6 +37,7 @@
 #include "RAS_LightObject.h"
 #include "RAS_ICanvas.h"
 #include "RAS_GLExtensionManager.h"
+#include "RAS_MeshObject.h"
 
 #include "KX_GameObject.h"
 #include "KX_PolygonMaterial.h"
@@ -65,9 +66,7 @@ unsigned int GPC_RenderTools::m_numgllights;
 
 GPC_RenderTools::GPC_RenderTools()
 {
-// XXX	m_font = BMF_GetFont(BMF_kHelvetica10);
-
-	glGetIntegerv(GL_MAX_LIGHTS, (GLint*) &m_numgllights);
+	glGetIntegerv(GL_MAX_LIGHTS, (GLint *) &m_numgllights);
 	if (m_numgllights < 8)
 		m_numgllights = 8;
 }
@@ -166,6 +165,11 @@ void GPC_RenderTools::SetClientObject(RAS_IRasterizer *rasty, void* obj)
 bool GPC_RenderTools::RayHit(KX_ClientObjectInfo *client, KX_RayCast *result, void * const data)
 {
 	double* const oglmatrix = (double* const) data;
+
+	RAS_Polygon* poly = result->m_hitMesh->GetPolygon(result->m_hitPolygon);
+	if (!poly->IsVisible())
+		return false;
+
 	MT_Point3 resultpoint(result->m_hitPoint);
 	MT_Vector3 resultnormal(result->m_hitNormal);
 	MT_Vector3 left(oglmatrix[0],oglmatrix[1],oglmatrix[2]);
@@ -214,9 +218,9 @@ void GPC_RenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmatrix,in
 		MT_Vector3 dir = (campos - objpos).safe_normalized();
 		MT_Vector3 up(0,0,1.0);
 
-		KX_GameObject* gameobj = (KX_GameObject*) this->m_clientobject;
+		KX_GameObject* gameobj = (KX_GameObject *)this->m_clientobject;
 		// get scaling of halo object
-		MT_Vector3  size = gameobj->GetSGNode()->GetLocalScale();
+		MT_Vector3  size = gameobj->GetSGNode()->GetWorldScaling();
 		
 		bool screenaligned = (objectdrawmode & RAS_IPolyMaterial::BILLBOARD_SCREENALIGNED)!=0;//false; //either screen or axisaligned
 		if (screenaligned)
@@ -250,7 +254,7 @@ void GPC_RenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmatrix,in
 		{
 			// shadow must be cast to the ground, physics system needed here!
 			MT_Point3 frompoint(oglmatrix[12],oglmatrix[13],oglmatrix[14]);
-			KX_GameObject *gameobj = (KX_GameObject*) this->m_clientobject;
+			KX_GameObject *gameobj = (KX_GameObject *)this->m_clientobject;
 			MT_Vector3 direction = MT_Vector3(0,0,-1);
 
 			direction.normalize();
@@ -273,6 +277,12 @@ void GPC_RenderTools::applyTransform(RAS_IRasterizer* rasty,double* oglmatrix,in
 			{
 				// couldn't find something to cast the shadow on...
 				glMultMatrixd(oglmatrix);
+			}
+			else
+			{ // we found the "ground", but the cast matrix doesn't take
+			  // scaling in consideration, so we must apply the object scale
+				MT_Vector3  size = gameobj->GetSGNode()->GetLocalScale();
+				glScalef(size[0], size[1], size[2]);
 			}
 		} else
 		{
@@ -363,6 +373,8 @@ void GPC_RenderTools::RenderText3D(	int fontid,
 									double* mat,
 									float aspect)
 {
+	glPolygonMode(GL_FRONT_AND_BACK, GL_FILL); /* needed for texture fonts otherwise they render as wireframe */
+
 	if (GLEW_ARB_multitexture) {
 		for (int i=0; i<MAXTEX; i++) {
 			glActiveTextureARB(GL_TEXTURE0_ARB+i);
@@ -482,7 +494,7 @@ void GPC_RenderTools::RenderText(
 	RAS_IPolyMaterial* polymat,
 	float v1[3], float v2[3], float v3[3], float v4[3], int glattrib)
 {
-	STR_String mytext = ((CValue*)m_clientobject)->GetPropertyText("Text");
+	const STR_String &mytext = ((CValue *)m_clientobject)->GetPropertyText("Text");
 	
 	const unsigned int flag = polymat->GetFlag();
 	struct MTFace* tface = 0;
@@ -554,8 +566,7 @@ void GPC_RenderTools::MotionBlur(RAS_IRasterizer* rasterizer)
 			glAccum(GL_LOAD, 1.0);
 			rasterizer->SetMotionBlurState(2);
 		}
-		else if (motionblurvalue>=0.0 && motionblurvalue<=1.0)
-		{
+		else if (motionblurvalue >= 0.0f && motionblurvalue <= 1.0f) {
 			glAccum(GL_MULT, motionblurvalue);
 			glAccum(GL_ACCUM, 1-motionblurvalue);
 			glAccum(GL_RETURN, 1.0);

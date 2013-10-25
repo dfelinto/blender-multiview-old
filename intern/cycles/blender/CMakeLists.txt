@@ -10,6 +10,7 @@ set(INC
 	../../mikktspace
 	../../../source/blender/makesdna
 	../../../source/blender/makesrna
+	../../../source/blender/blenlib
 	${CMAKE_BINARY_DIR}/source/blender/makesrna/intern
 )
 
@@ -43,6 +44,8 @@ set(ADDON_FILES
 	addon/properties.py
 	addon/ui.py
 )
+
+add_definitions(-DGLEW_STATIC)
 
 blender_add_lib(bf_intern_cycles "${SRC}" "${INC}" "${INC_SYS}")
 

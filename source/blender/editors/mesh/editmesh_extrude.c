@@ -46,6 +46,7 @@
 
 #include "ED_mesh.h"
 #include "ED_screen.h"
+#include "ED_transform.h"
 #include "ED_view3d.h"
 
 #include "mesh_intern.h"  /* own include */
@@ -289,7 +290,7 @@ static int edbm_extrude_repeat_exec(bContext *C, wmOperator *op)
 		//BMO_op_callf(em->bm, BMO_FLAG_DEFAULTS, "extrude_face_region geom=%hef", BM_ELEM_SELECT);
 		BMO_op_callf(em->bm, BMO_FLAG_DEFAULTS,
 		             "translate vec=%v verts=%hv",
-		             (float *)dvec, BM_ELEM_SELECT);
+		             dvec, BM_ELEM_SELECT);
 		//extrudeflag(obedit, em, SELECT, nor);
 		//translateflag(em, SELECT, dvec);
 	}
@@ -376,7 +377,6 @@ static int edbm_extrude_mesh(Scene *scene, Object *obedit, BMEditMesh *em, wmOpe
 		BKE_object_handle_update(scene, obedit);
 
 		/* individual faces? */
-//		BIF_TransformSetUndo("Extrude");
 		if (nr == 2) {
 //			initTransform(TFM_SHRINKFATTEN, CTX_NO_PET|CTX_NO_MIRROR);
 //			Transform();
@@ -429,7 +429,7 @@ void MESH_OT_extrude_region(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 static int edbm_extrude_verts_exec(bContext *C, wmOperator *op)
@@ -460,7 +460,7 @@ void MESH_OT_extrude_verts_indiv(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* to give to transform */
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 static int edbm_extrude_edges_exec(bContext *C, wmOperator *op)
@@ -491,7 +491,7 @@ void MESH_OT_extrude_edges_indiv(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
 	/* to give to transform */
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 static int edbm_extrude_faces_exec(bContext *C, wmOperator *op)
@@ -521,7 +521,7 @@ void MESH_OT_extrude_faces_indiv(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_boolean(ot->srna, "mirror", 0, "Mirror Editing", "");
+	Transform_Properties(ot, P_NO_DEFAULTS | P_MIRROR_DUMMY);
 }
 
 /* *************** add-click-mesh (extrude) operator ************** */
@@ -712,7 +712,7 @@ static int edbm_spin_exec(bContext *C, wmOperator *op)
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	BMesh *bm = em->bm;
 	BMOperator spinop;
-	float cent[3], axis[3], imat[3][3];
+	float cent[3], axis[3];
 	float d[3] = {0.0f, 0.0f, 0.0f};
 	int steps, dupli;
 	float angle;
@@ -725,15 +725,10 @@ static int edbm_spin_exec(bContext *C, wmOperator *op)
 	angle = -angle;
 	dupli = RNA_boolean_get(op->ptr, "dupli");
 
-	/* undo object transformation */
-	copy_m3_m4(imat, obedit->imat);
-	sub_v3_v3(cent, obedit->obmat[3]);
-	mul_m3_v3(imat, cent);
-	mul_m3_v3(imat, axis);
-
+	/* keep the values in worldspace since we're passing the obmat */
 	if (!EDBM_op_init(em, &spinop, op,
-	                  "spin geom=%hvef cent=%v axis=%v dvec=%v steps=%i angle=%f use_duplicate=%b",
-	                  BM_ELEM_SELECT, cent, axis, d, steps, angle, dupli))
+	                  "spin geom=%hvef cent=%v axis=%v dvec=%v steps=%i angle=%f space=%m4 use_duplicate=%b",
+	                  BM_ELEM_SELECT, cent, axis, d, steps, angle, obedit->obmat, dupli))
 	{
 		return OPERATOR_CANCELLED;
 	}
@@ -799,8 +794,7 @@ static int edbm_screw_exec(bContext *C, wmOperator *op)
 	BMVert *eve, *v1, *v2;
 	BMIter iter, eiter;
 	BMOperator spinop;
-	float dvec[3], nor[3], cent[3], axis[3];
-	float imat[3][3];
+	float dvec[3], nor[3], cent[3], axis[3], v1_co_global[3], v2_co_global[3];
 	int steps, turns;
 	int valence;
 
@@ -809,13 +803,6 @@ static int edbm_screw_exec(bContext *C, wmOperator *op)
 	steps = RNA_int_get(op->ptr, "steps");
 	RNA_float_get_array(op->ptr, "center", cent);
 	RNA_float_get_array(op->ptr, "axis", axis);
-
-	/* undo object transformation */
-	copy_m3_m4(imat, obedit->imat);
-	sub_v3_v3(cent, obedit->obmat[3]);
-	mul_m3_v3(imat, cent);
-	mul_m3_v3(imat, axis);
-
 
 	/* find two vertices with valence count == 1, more or less is wrong */
 	v1 = NULL;
@@ -848,16 +835,20 @@ static int edbm_screw_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 	}
 
+	copy_v3_v3(nor, obedit->obmat[2]);
+
 	/* calculate dvec */
-	sub_v3_v3v3(dvec, v1->co, v2->co);
+	mul_v3_m4v3(v1_co_global, obedit->obmat, v1->co);
+	mul_v3_m4v3(v2_co_global, obedit->obmat, v2->co);
+	sub_v3_v3v3(dvec, v1_co_global, v2_co_global);
 	mul_v3_fl(dvec, 1.0f / steps);
 
-	if (dot_v3v3(nor, dvec) > 0.000f)
+	if (dot_v3v3(nor, dvec) > 0.0f)
 		negate_v3(dvec);
 
 	if (!EDBM_op_init(em, &spinop, op,
-	                  "spin geom=%hvef cent=%v axis=%v dvec=%v steps=%i angle=%f use_duplicate=%b",
-	                  BM_ELEM_SELECT, cent, axis, dvec, turns * steps, DEG2RADF(360.0f * turns), false))
+	                  "spin geom=%hvef cent=%v axis=%v dvec=%v steps=%i angle=%f space=%m4 use_duplicate=%b",
+	                  BM_ELEM_SELECT, cent, axis, dvec, turns * steps, DEG2RADF(360.0f * turns), obedit->obmat, false))
 	{
 		return OPERATOR_CANCELLED;
 	}

@@ -89,7 +89,7 @@ public:
 
 	/*! Returns the number of the SVM to which a FEdge belongs most.
 	 *  \param id
-	 *    The First element of the Id struct of the FEdge we're intersted in.
+	 *    The First element of the Id struct of the FEdge we're interested in.
 	 */
 	unsigned getSVMNumber(unsigned id);
 
@@ -99,7 +99,7 @@ public:
 	 *  \param copy
 	 *    If false, the data is not duplicated, and Canvas deals with the memory management of these
 	 *    _nbOrientations+1 images. If true, data is copied, and it's up to the caller to delete the images.
-	 *  \params iNbLevels
+	 *  \param iNbLevels
 	 *    The number of levels desired for each pyramid.
 	 *    If iNbLevels == 0, the complete pyramid is built.
 	 *  \param iSigma
@@ -150,7 +150,6 @@ protected:
 	void Build();
 
 #ifdef WITH_CXX_GUARDEDALLOC
-public:
 	MEM_CXX_CLASS_ALLOC_FUNCS("Freestyle:SteerableViewMap")
 #endif
 };
