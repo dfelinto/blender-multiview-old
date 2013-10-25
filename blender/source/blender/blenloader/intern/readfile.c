@@ -9747,18 +9747,44 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 
 	{
 		Scene *scene;
+		bScreen *screen;
 		SceneRenderView *srv;
+		Camera *cam;
+
 		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
 			for (scene = main->scene.first; scene; scene = scene->id.next) {
 				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
 				srv = (SceneRenderView *)scene->r.views.first;
 				srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 				BLI_strncpy(srv->suffix, "_L", sizeof(srv->suffix));
+				srv->stereo_camera = STEREO_LEFT_ID;
 
 				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
 				srv = (SceneRenderView *)scene->r.views.last;
 				srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 				BLI_strncpy(srv->suffix, "_R", sizeof(srv->suffix));
+				srv->stereo_camera = STEREO_RIGHT_ID;
+			}
+
+			for (screen = main->screen.first; screen; screen = screen->id.next) {
+				ScrArea *sa;
+				for (sa = screen->areabase.first; sa; sa = sa->next) {
+					SpaceLink *sl;
+
+					for (sl = sa->spacedata.first; sl; sl= sl->next) {
+						if (sl->spacetype == SPACE_VIEW3D) {
+							View3D *v3d = (View3D*) sl;
+							v3d->stereo_camera = STEREO_3D_ID;
+						}
+					}
+				}
+			}
+		}
+
+		if (!DNA_struct_elem_find(fd->filesdna, "Camera", "CameraStereoSettings", "stereo")) {
+			for (cam = main->camera.first; cam; cam = cam->id.next) {
+				cam->stereo.interocular_distance = 0.065;
+				cam->stereo.convergence_distance = 30.f * 0.065;
 			}
 		}
 	}

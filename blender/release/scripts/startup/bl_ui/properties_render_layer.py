@@ -209,10 +209,13 @@ class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
 
         rv = rd.views.active
 
-        row = layout.row()
-        row.prop(rv, "camera")
+        col = layout.column()
+        col.prop(rv, "camera")
 
-        row = layout.row()
+        if rv.camera and rv.camera.data.use_stereoscopy:
+            col.prop(rv, "stereoscopy_camera")
+
+        row = col.row()
         row.prop(rv, "use_custom_suffix")
         sub = row.row()
         sub.active = rv.use_custom_suffix

@@ -119,6 +119,26 @@ class DATA_PT_lens(CameraButtonsPanel, Panel):
         col.prop(cam, "clip_end", text="End")
 
 
+class DATA_PT_camera_stereoscopy(CameraButtonsPanel, Panel):
+    bl_label = "Stereoscopy"
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
+
+    def draw_header(self, context):
+        self.layout.prop(context.camera, "use_stereoscopy", text="")
+
+    def draw(self, context):
+        layout = self.layout
+        layout.active=context.camera.use_stereoscopy
+
+        st = context.camera.stereo
+        row = layout.row(align=True)
+        row.prop(st, "interocular_distance")
+        row.prop(st, "convergence_distance")
+
+        layout.prop(st, "convergence_mode", expand=True)
+        layout.separator()
+
+
 class DATA_PT_camera(CameraButtonsPanel, Panel):
     bl_label = "Camera"
     COMPAT_ENGINES = {'BLENDER_RENDER', 'BLENDER_GAME'}

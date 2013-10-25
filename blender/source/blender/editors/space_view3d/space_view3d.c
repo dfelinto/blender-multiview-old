@@ -316,6 +316,9 @@ static SpaceLink *view3d_new(const bContext *C)
 	
 	v3d->bundle_size = 0.2f;
 	v3d->bundle_drawtype = OB_PLAINAXES;
+
+	/* stereo */
+	v3d->stereo_camera = STEREO_3D_ID;
 	
 	/* header */
 	ar = MEM_callocN(sizeof(ARegion), "header for view3d");

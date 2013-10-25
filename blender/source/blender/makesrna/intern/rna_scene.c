@@ -3695,6 +3695,13 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	StructRNA *srna;
 	PropertyRNA *prop;
 
+	static EnumPropertyItem stereoscopy_camera_items[] = {
+		{STEREO_CENTER_ID, "CENTER", 0, "Center", ""},
+		{STEREO_LEFT_ID, "LEFT", 0, "Left", ""},
+		{STEREO_RIGHT_ID, "RIGHT", 0, "Right", ""},
+		{0, NULL, 0, NULL, NULL}
+	};
+
 	srna = RNA_def_struct(brna, "SceneRenderView", NULL);
 	RNA_def_struct_ui_text(srna, "Scene Render View", "Render viewpoint for 3D stereo and multiview rendering");
 	RNA_def_struct_ui_icon(srna, ICON_RESTRICT_RENDER_OFF);
@@ -3728,6 +3735,11 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Custom Suffix", "Use the view name as label when saving individual view files (it replaces the special char % in the file string)");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
+	prop = RNA_def_property(srna, "stereoscopy_camera", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_sdna(prop, NULL, "stereo_camera");
+	RNA_def_property_enum_items(prop, stereoscopy_camera_items);
+	RNA_def_property_ui_text(prop, "Stereoscopy Camera", "");
+	RNA_def_property_update(prop, ND_SPACE_VIEW3D, NULL);
 }
 
 static void rna_def_render_views(BlenderRNA *brna, PropertyRNA *cprop)

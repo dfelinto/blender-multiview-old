@@ -120,6 +120,9 @@ void BKE_camera_view_frame(struct Scene *scene, struct Camera *camera, float r_v
 int BKE_camera_view_frame_fit_to_scene(struct Scene *scene, struct View3D *v3d, struct Object *camera_ob,
                                        float r_co[3]);
 
+void BKE_camera_stereo_matrix_shift(struct Object *camera, float viewmat[4][4], float *shift, StereoViews view);
+enum StereoViews BKE_getStereoView(struct RenderData *rd, int actview);
+
 #ifdef __cplusplus
 }
 #endif

@@ -385,27 +385,25 @@ static bool wm_stereo_required(bScreen *screen)
 		SpaceLink *sl;
 		for (sl = sa->spacedata.first; sl; sl= sl->next) {
 
-#if 0 // waiting for multiview_s3d merge
 			if (sl->spacetype == SPACE_VIEW3D) {
 				View3D *v3d = (View3D*) sl;
-				if (v3d->stereo_camera == STEREO_3D_ID)
+				if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) &&
+				    (v3d->stereo_camera == STEREO_3D_ID))
 					return TRUE;
 			}
-#endif
-#if 0 // waiting to image editor refactor
 			if (sl->spacetype == SPACE_IMAGE) {
 				SpaceImage *sima = (SpaceImage *) sl;
+// XXX MV - waiting to image editor refactor, basically we will know if the image is 3d AND that it has 3d selected
 //					if (sima->iuser.view == STEREO_3D_ID)
 					return TRUE;
 			}
-#endif
 		}
 	}
 
-	return TRUE;
+	return FALSE;
 }
 
-bool wm_stereo_enabled(wmWindow *win)
+bool WM_stereo_enabled(wmWindow *win)
 {
 	bScreen *screen = win->screen;
 
