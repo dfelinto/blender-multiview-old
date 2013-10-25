@@ -27,16 +27,23 @@
 #include <stdlib.h> /* for qsort */
 
 #include "MEM_guardedalloc.h"
-#include "BLI_boxpack2d.h"
+#include "BLI_strict_flags.h"
+
+#include "BLI_boxpack2d.h"  /* own include */
+
+#ifdef __GNUC__
+#  pragma GCC diagnostic error "-Wpadded"
+#endif
 
 /* BoxPacker for backing 2D rectangles into a square
  * 
  * The defined Below are for internal use only */
-
 typedef struct BoxVert {
 	float x;
 	float y;
-	short free;
+
+	int free;  /* could be a char */
+	unsigned int index;
 
 	struct BoxPack *trb; /* top right box */
 	struct BoxPack *blb; /* bottom left box */
@@ -46,8 +53,6 @@ typedef struct BoxVert {
 	/* Store last intersecting boxes here
 	 * speedup intersection testing */
 	struct BoxPack *isect_cache[4];
-
-	int index;
 } BoxVert;
 
 /* free vert flags */
@@ -154,13 +159,15 @@ static int vertex_sort(const void *p1, const void *p2)
  *  len - the number of boxes in the array.
  *	tot_width and tot_height are set so you can normalize the data.
  *  */
-void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *tot_height)
+void BLI_box_pack_2d(BoxPack *boxarray, const unsigned int len, float *tot_width, float *tot_height)
 {
-	BoxVert *vert; /* the current vert */
-	int box_index, verts_pack_len, i, j, k, isect;
-	int quad_flags[4] = {BLF, TRF, TLF, BRF}; /* use for looping */
+	const int quad_flags[4] = {BLF, TRF, TLF, BRF};  /* use for looping */
+	unsigned int box_index, verts_pack_len, i, j, k;
+	unsigned int *vertex_pack_indices;  /* an array of indices used for sorting verts */
+	bool isect;
+
 	BoxPack *box, *box_test; /*current box and another for intersection tests*/
-	int *vertex_pack_indices; /*an array of indices used for sorting verts*/
+	BoxVert *vert; /* the current vert */
 
 	if (!len) {
 		*tot_width = 0.0f;
@@ -169,11 +176,11 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 	}
 
 	/* Sort boxes, biggest first */
-	qsort(boxarray, len, sizeof(BoxPack), box_areasort);
+	qsort(boxarray, (size_t)len, sizeof(BoxPack), box_areasort);
 
 	/* add verts to the boxes, these are only used internally  */
-	vert = vertarray = MEM_mallocN(len * 4 * sizeof(BoxVert), "BoxPack Verts");
-	vertex_pack_indices = MEM_mallocN(len * 3 * sizeof(int), "BoxPack Indices");
+	vert = vertarray = MEM_mallocN((size_t)len * 4 * sizeof(BoxVert), "BoxPack Verts");
+	vertex_pack_indices = MEM_mallocN((size_t)len * 3 * sizeof(int), "BoxPack Indices");
 
 	for (box = boxarray, box_index = 0, i = 0; box_index < len; box_index++, box++) {
 
@@ -182,7 +189,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 		            vert->isect_cache[2] = vert->isect_cache[3] = NULL;
 		vert->free = CORNERFLAGS & ~TRF;
 		vert->trb = box;
-		vert->index = i; i++;
+		vert->index = i++;
 		box->v[BL] = vert; vert++;
 		
 		vert->trb = vert->brb = vert->tlb =
@@ -190,7 +197,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 		            vert->isect_cache[2] = vert->isect_cache[3] = NULL;
 		vert->free = CORNERFLAGS & ~BLF;
 		vert->blb = box;
-		vert->index = i; i++;
+		vert->index = i++;
 		box->v[TR] = vert; vert++;
 		
 		vert->trb = vert->blb = vert->tlb =
@@ -198,7 +205,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 		            vert->isect_cache[2] = vert->isect_cache[3] = NULL;
 		vert->free = CORNERFLAGS & ~BRF;
 		vert->brb = box;
-		vert->index = i; i++;
+		vert->index = i++;
 		box->v[TL] = vert; vert++;
 		
 		vert->trb = vert->blb = vert->brb =
@@ -206,7 +213,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 		            vert->isect_cache[2] = vert->isect_cache[3] = NULL;
 		vert->free = CORNERFLAGS & ~TLF;
 		vert->tlb = box; 
-		vert->index = i; i++;
+		vert->index = i++;
 		box->v[BR] = vert; vert++;
 	}
 	vert = NULL;
@@ -241,11 +248,11 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 		box_width = box->w;
 		box_height = box->h;
 
-		qsort(vertex_pack_indices, verts_pack_len, sizeof(int), vertex_sort);
+		qsort(vertex_pack_indices, (size_t)verts_pack_len, sizeof(int), vertex_sort);
 
 		/* Pack the box in with the others */
 		/* sort the verts */
-		isect = 1;
+		isect = true;
 
 		for (i = 0; i < verts_pack_len && isect; i++) {
 			vert = vertarray + vertex_pack_indices[i];
@@ -281,7 +288,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 					/* Now we need to check that the box intersects
 					 * with any other boxes
 					 * Assume no intersection... */
-					isect = 0;
+					isect = false;
 					
 					if ( /* Constrain boxes to positive X/Y values */
 					    BOXLEFT(box) < 0.0f || BOXBOTTOM(box) < 0.0f ||
@@ -294,7 +301,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 						 * isect_cache that can store a pointer to a
 						 * box for each quadrant
 						 * big speedup */
-						isect = 1;
+						isect = true;
 					}
 					else {
 						/* do a full search for colliding box
@@ -305,7 +312,7 @@ void BLI_box_pack_2D(BoxPack *boxarray, const int len, float *tot_width, float *
 								/* Store the last intersecting here as cache
 								 * for faster checking next time around */
 								vert->isect_cache[j] = box_test;
-								isect = 1;
+								isect = true;
 								break;
 							}
 						}

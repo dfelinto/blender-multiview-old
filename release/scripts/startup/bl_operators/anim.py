@@ -190,6 +190,11 @@ class BakeAction(Operator):
             description="Only key selected object/bones",
             default=True,
             )
+    visual_keying = BoolProperty(
+            name="Visual Keying",
+            description="Keyframe from the final transformations (with constraints applied)",
+            default=False,
+            )
     clear_constraints = BoolProperty(
             name="Clear Constraints",
             description="Remove all constraints from keyed object/bones, and do 'visual' keying",
@@ -220,6 +225,7 @@ class BakeAction(Operator):
                                         only_selected=self.only_selected,
                                         do_pose='POSE' in self.bake_types,
                                         do_object='OBJECT' in self.bake_types,
+                                        do_visual_keying=self.visual_keying,
                                         do_constraint_clear=self.clear_constraints,
                                         do_parents_clear=self.clear_parents,
                                         do_clean=True,
@@ -261,8 +267,8 @@ class ClearUselessActions(Operator):
 
         for action in bpy.data.actions:
             # if only user is "fake" user...
-            if     ((self.only_unused is False) or
-                    (action.use_fake_user and action.users == 1)):
+            if ((self.only_unused is False) or
+                (action.use_fake_user and action.users == 1)):
 
                 # if it has F-Curves, then it's a "action library"
                 # (i.e. walk, wave, jump, etc.)

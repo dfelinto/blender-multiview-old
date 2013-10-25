@@ -366,7 +366,7 @@ static void init_laplacian_matrix(LaplacianSystem *sys)
 		v1 = sys->vertexCos[idv1];
 		v2 = sys->vertexCos[idv2];
 		v3 = sys->vertexCos[idv3];
-		v4 = has_4_vert ? sys->vertexCos[idv4] : 0;
+		v4 = has_4_vert ? sys->vertexCos[idv4] : NULL;
 
 		if (has_4_vert) {
 			areaf = area_quad_v3(v1, v2, v3, sys->vertexCos[sys->mfaces[i].v4]);
@@ -669,7 +669,7 @@ static void laplaciansmoothModifier_do(
 static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData,
                         float (*vertexCos)[3], int numVerts, ModifierApplyFlag UNUSED(flag))
 {
-	DerivedMesh *dm = get_dm(ob, NULL, derivedData, NULL, 0);
+	DerivedMesh *dm = get_dm(ob, NULL, derivedData, NULL, false, false);
 
 	laplaciansmoothModifier_do((LaplacianSmoothModifierData *)md, ob, dm,
 	                           vertexCos, numVerts);
@@ -682,7 +682,7 @@ static void deformVertsEM(
         ModifierData *md, Object *ob, struct BMEditMesh *editData,
         DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
-	DerivedMesh *dm = get_dm(ob, editData, derivedData, NULL, 0);
+	DerivedMesh *dm = get_dm(ob, editData, derivedData, NULL, false, false);
 
 	laplaciansmoothModifier_do((LaplacianSmoothModifierData *)md, ob, dm,
 	                           vertexCos, numVerts);

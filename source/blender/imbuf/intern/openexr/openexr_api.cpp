@@ -115,7 +115,8 @@ class Mem_IStream : public Imf::IStream
 public:
 
 	Mem_IStream (unsigned char *exrbuf, size_t exrsize) :
-		IStream("dummy"), _exrpos(0), _exrsize(exrsize) {
+		IStream("dummy"), _exrpos(0), _exrsize(exrsize)
+	{
 		_exrbuf = exrbuf;
 	}
 
@@ -837,9 +838,7 @@ void IMB_exrtile_begin_write(void *handle, const char *filename, int mipmap, int
 		data->ofile_stream = new OFileStream(filename);
 		data->mpofile = new MultiPartOutputFile(*(data->ofile_stream), &headers[0], headers.size());
 	}
-	catch (const std::exception &exc) {
-		std::cerr << exc.what() << std::endl;
-
+	catch (const std::exception &) {
 		delete data->mpofile;
 		delete data->ofile_stream;
 
@@ -989,7 +988,7 @@ int IMB_exr_begin_read(void *handle, const char *filename, int *width, int *heig
 			data->ifile_stream = new IFileStream(filename);
 			data->ifile = new MultiPartInputFile(*(data->ifile_stream));
 		}
-		catch (const std::exception &exc) {
+		catch (const std::exception &) {
 			delete data->ifile;
 			delete data->ifile_stream;
 

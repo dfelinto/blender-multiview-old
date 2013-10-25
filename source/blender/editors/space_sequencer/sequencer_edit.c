@@ -551,12 +551,14 @@ int seq_effect_find_selected(Scene *scene, Sequence *activeseq, int type, Sequen
 			}
 			if (seq1 == NULL) seq1 = seq2;
 			if (seq3 == NULL) seq3 = seq2;
+			/* fall-through */
 		case 2:
 			if (seq1 == NULL || seq2 == NULL) {
 				*error_str = N_("2 selected sequence strips are needed");
 				return 0;
 			}
 			if (seq3 == NULL) seq3 = seq2;
+			break;
 	}
 	
 	if (seq1 == NULL && seq2 == NULL && seq3 == NULL) {
@@ -866,7 +868,7 @@ static int cut_seq_list(Scene *scene, ListBase *slist, int cutframe,
 	return (seq_first_new != NULL);
 }
 
-static bool insert_gap(Scene *scene, int gap, int cfra)
+static bool sequence_offset_after_frame(Scene *scene, const int delta, const int cfra)
 {
 	Sequence *seq;
 	Editing *ed = BKE_sequencer_editing_get(scene, FALSE);
@@ -876,15 +878,13 @@ static bool insert_gap(Scene *scene, int gap, int cfra)
 	
 	if (ed == NULL) return 0;
 
-	SEQP_BEGIN (ed, seq)
-	{
+	for (seq = ed->seqbasep->first; seq; seq = seq->next) {
 		if (seq->startdisp >= cfra) {
-			seq->start += gap;
+			BKE_sequence_translate(scene, seq, delta);
 			BKE_sequence_calc(scene, seq);
 			done = true;
 		}
 	}
-	SEQ_END
 
 	return done;
 }
@@ -1017,7 +1017,7 @@ static int sequencer_gap_remove_exec(bContext *C, wmOperator *op)
 		else if (BKE_sequencer_evaluate_frame(scene, cfra) == 0) {
 			done = true;
 			while (BKE_sequencer_evaluate_frame(scene, cfra) == 0) {
-				done = insert_gap(scene, -1, cfra);
+				done = sequence_offset_after_frame(scene, -1, cfra);
 				if (done == false) break;
 			}
 			if (done == false || do_all == false) break;
@@ -1054,7 +1054,7 @@ static int sequencer_gap_insert_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	int frames = RNA_int_get(op->ptr, "frames");
 	
-	insert_gap(scene, frames, CFRA);
+	sequence_offset_after_frame(scene, frames, CFRA);
 	
 	WM_event_add_notifier(C, NC_SCENE | ND_SEQUENCER, scene);
 	
@@ -2155,12 +2155,13 @@ void SEQUENCER_OT_meta_separate(wmOperatorType *ot)
 }
 
 /* view_all operator */
-static int sequencer_view_all_exec(bContext *C, wmOperator *UNUSED(op))
+static int sequencer_view_all_exec(bContext *C, wmOperator *op)
 {
 	ARegion *ar = CTX_wm_region(C);
 	View2D *v2d = UI_view2d_fromcontext(C);
+	const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
 
-	UI_view2d_smooth_view(C, ar, &v2d->tot);
+	UI_view2d_smooth_view(C, ar, &v2d->tot, smooth_viewtx);
 	return OPERATOR_FINISHED;
 }
 
@@ -2322,7 +2323,7 @@ void SEQUENCER_OT_view_toggle(wmOperatorType *ot)
 
 
 /* view_selected operator */
-static int sequencer_view_selected_exec(bContext *C, wmOperator *UNUSED(op))
+static int sequencer_view_selected_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
 	View2D *v2d = UI_view2d_fromcontext(C);
@@ -2355,6 +2356,7 @@ static int sequencer_view_selected_exec(bContext *C, wmOperator *UNUSED(op))
 	}
 
 	if (ymax != 0) {
+		const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
 		
 		xmax += xmargin;
 		xmin -= xmargin;
@@ -2377,7 +2379,7 @@ static int sequencer_view_selected_exec(bContext *C, wmOperator *UNUSED(op))
 			cur_new.ymax = ymid + (orig_height / 2);
 		}
 
-		UI_view2d_smooth_view(C, ar, &cur_new);
+		UI_view2d_smooth_view(C, ar, &cur_new, smooth_viewtx);
 
 		return OPERATOR_FINISHED;
 	}
@@ -2721,7 +2723,6 @@ static void seq_copy_del_sound(Scene *scene, Sequence *seq)
 	}
 }
 
-/* TODO, validate scenes */
 static int sequencer_copy_exec(bContext *C, wmOperator *op)
 {
 	Scene *scene = CTX_data_scene(C);
@@ -2766,6 +2767,11 @@ static int sequencer_copy_exec(bContext *C, wmOperator *op)
 		for (seq = seqbase_clipboard.first; seq; seq = seq->next) {
 			seq_copy_del_sound(scene, seq);
 		}
+
+		/* duplicate pointers */
+		for (seq = seqbase_clipboard.first; seq; seq = seq->next) {
+			BKE_sequence_clipboard_pointers_store(seq);
+		}
 	}
 
 	return OPERATOR_FINISHED;
@@ -2790,11 +2796,12 @@ void SEQUENCER_OT_copy(wmOperatorType *ot)
 
 static int sequencer_paste_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	Editing *ed = BKE_sequencer_editing_get(scene, TRUE); /* create if needed */
 	ListBase nseqbase = {NULL, NULL};
 	int ofs;
-	Sequence *iseq;
+	Sequence *iseq, *iseq_first;
 
 	ED_sequencer_deselect_all(scene);
 	ofs = scene->r.cfra - seqbase_clipboard_frame;
@@ -2805,17 +2812,31 @@ static int sequencer_paste_exec(bContext *C, wmOperator *UNUSED(op))
 	if (ofs) {
 		for (iseq = nseqbase.first; iseq; iseq = iseq->next) {
 			BKE_sequence_translate(scene, iseq, ofs);
-			BKE_sequence_sound_init(scene, iseq);
 		}
 	}
 
-	iseq = nseqbase.first;
+	for (iseq = nseqbase.first; iseq; iseq = iseq->next) {
+		BKE_sequence_clipboard_pointers_restore(iseq, bmain);
+	}
+
+	for (iseq = nseqbase.first; iseq; iseq = iseq->next) {
+		BKE_sequence_sound_init(scene, iseq);
+	}
+
+	iseq_first = nseqbase.first;
 
 	BLI_movelisttolist(ed->seqbasep, &nseqbase);
 
 	/* make sure the pasted strips have unique names between them */
-	for (; iseq; iseq = iseq->next) {
+	for (iseq = iseq_first; iseq; iseq = iseq->next) {
 		BKE_sequencer_recursive_apply(iseq, apply_unique_name_cb, scene);
+	}
+
+	/* ensure pasted strips don't overlap */
+	for (iseq = iseq_first; iseq; iseq = iseq->next) {
+		if (BKE_sequence_test_overlap(ed->seqbasep, iseq)) {
+			BKE_sequence_base_shuffle(ed->seqbasep, iseq, scene);
+		}
 	}
 
 	WM_event_add_notifier(C, NC_SCENE | ND_SEQUENCER, scene);
@@ -2939,7 +2960,7 @@ void SEQUENCER_OT_view_ghost_border(wmOperatorType *ot)
 	/* identifiers */
 	ot->name = "Border Offset View";
 	ot->idname = "SEQUENCER_OT_view_ghost_border";
-	ot->description = "Enable border select mode";
+	ot->description = "Set the boundaries of the border used for offset-view";
 
 	/* api callbacks */
 	ot->invoke = WM_border_select_invoke;

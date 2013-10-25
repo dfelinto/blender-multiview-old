@@ -13,7 +13,7 @@
  *
  * You should have received a copy of the GNU General Public License
  * along with this program; if not, write to the Free Software Foundation,
- * Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
  * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
  * All rights reserved.
@@ -940,6 +940,7 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
 		}
 	}
 	else if (!IMB_ispic(filepath)) {
+		printf("%s: '%s' not an image file\n", __func__, filepath);
 		exit(1);
 	}
 
@@ -949,7 +950,7 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
 	}
 
 	if (ibuf == NULL) {
-		printf("couldn't open %s\n", filepath);
+		printf("%s: '%s' couldn't open\n", __func__, filepath);
 		exit(1);
 	}
 
@@ -1190,7 +1191,7 @@ static char *wm_main_playanim_intern(int argc, const char **argv)
 	GHOST_DisposeWindow(g_WS.ghost_system, g_WS.ghost_window);
 
 	/* early exit, IMB and BKE should be exited only in end */
-	if (ps.dropped_file) {
+	if (ps.dropped_file[0]) {
 		BLI_strncpy(filepath, ps.dropped_file, sizeof(filepath));
 		return filepath;
 	}

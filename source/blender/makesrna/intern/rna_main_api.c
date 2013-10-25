@@ -335,6 +335,8 @@ Mesh *rna_Main_meshes_new_from_object(
 				return NULL;
 			}
 
+			BKE_mesh_texspace_copy_from_object(tmpmesh, ob);
+
 			BKE_libblock_free_us(&bmain->object, tmpobj);
 			break;
 		}
@@ -359,8 +361,15 @@ Mesh *rna_Main_meshes_new_from_object(
 				BKE_mesh_from_metaball(&disp, tmpmesh);
 				BKE_displist_free(&disp);
 			}
-			else
-				BKE_mesh_from_metaball(&ob->disp, tmpmesh);
+			else {
+				ListBase disp = {NULL, NULL};
+				if (ob->curve_cache) {
+					disp = ob->curve_cache->disp;
+				}
+				BKE_mesh_from_metaball(&disp, tmpmesh);
+			}
+
+			BKE_mesh_texspace_copy_from_object(tmpmesh, ob);
 
 			break;
 
@@ -823,7 +832,7 @@ static Mask *rna_Main_mask_new(Main *bmain, const char *name)
 {
 	Mask *mask;
 
-	mask = BKE_mask_new(bmain, "Mask");
+	mask = BKE_mask_new(bmain, name);
 
 	return mask;
 }

@@ -15,9 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
  * Contributor(s): Michel Selten & Joseph Gilbert
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -374,6 +371,7 @@ static PyObject *Matrix_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 					}
 				}
 			}
+			break;
 		}
 	}
 
@@ -524,18 +522,12 @@ static PyObject *C_Matrix_Rotation(PyObject *cls, PyObject *args)
 		axis_angle_to_mat3((float (*)[3])mat, tvec, angle);
 	}
 	else if (matSize == 2) {
-		const float angle_cos = cosf(angle);
-		const float angle_sin = sinf(angle);
+		angle_to_mat2((float (*)[2])mat, angle);
 
-		/* 2D rotation matrix */
-		mat[0] =  angle_cos;
-		mat[1] =  angle_sin;
-		mat[2] = -angle_sin;
-		mat[3] =  angle_cos;
 	}
 	else {
 		/* valid axis checked above */
-		single_axis_angle_to_mat3((float (*)[3])mat, axis[0], angle);
+		axis_angle_to_mat3_single((float (*)[3])mat, axis[0], angle);
 	}
 
 	if (matSize == 4) {
@@ -1755,7 +1747,8 @@ static PyObject *Matrix_richcmpr(PyObject *a, PyObject *b, int op)
 
 	switch (op) {
 		case Py_NE:
-			ok = !ok; /* pass through */
+			ok = !ok;
+			/* fall-through */
 		case Py_EQ:
 			res = ok ? Py_False : Py_True;
 			break;

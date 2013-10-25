@@ -135,6 +135,7 @@ void weightvg_do_mask(int num, const int *indices, float *org_w, const float *ne
 		/* See mapping note below... */
 		MappingInfoModifierData t_map;
 		float (*v_co)[3];
+		int numVerts = dm->getNumVerts(dm);
 
 		/* Use new generic get_texture_coords, but do not modify our DNA struct for it...
 		 * XXX Why use a ModifierData stuff here ? Why not a simple, generic struct for parameters ?
@@ -145,9 +146,9 @@ void weightvg_do_mask(int num, const int *indices, float *org_w, const float *ne
 		t_map.map_object = tex_map_object;
 		BLI_strncpy(t_map.uvlayer_name, tex_uvlayer_name, sizeof(t_map.uvlayer_name));
 		t_map.texmapping = tex_mapping;
-		v_co = MEM_mallocN(sizeof(*v_co) * num, "WeightVG Modifier, TEX mode, v_co");
+		v_co = MEM_mallocN(sizeof(*v_co) * numVerts, "WeightVG Modifier, TEX mode, v_co");
 		dm->getVertCos(dm, v_co);
-		tex_co = MEM_callocN(sizeof(*tex_co) * num, "WeightVG Modifier, TEX mode, tex_co");
+		tex_co = MEM_callocN(sizeof(*tex_co) * numVerts, "WeightVG Modifier, TEX mode, tex_co");
 		get_texture_coords(&t_map, ob, dm, v_co, tex_co, num);
 		MEM_freeN(v_co);
 
@@ -158,9 +159,12 @@ void weightvg_do_mask(int num, const int *indices, float *org_w, const float *ne
 			int idx = indices ? indices[i] : i;
 			TexResult texres;
 			float hsv[3]; /* For HSV color space. */
+			bool do_color_manage;
+
+			do_color_manage = tex_use_channel != MOD_WVG_MASK_TEX_USE_INT;
 
 			texres.nor = NULL;
-			get_texture_value(texture, tex_co[idx], &texres);
+			BKE_texture_get_value(scene, texture, tex_co[idx], &texres, do_color_manage);
 			/* Get the good channel value... */
 			switch (tex_use_channel) {
 				case MOD_WVG_MASK_TEX_USE_INT:

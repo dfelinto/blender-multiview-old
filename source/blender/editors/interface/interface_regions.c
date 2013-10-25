@@ -196,7 +196,7 @@ static MenuData *decompose_menu_string(const char *str)
 				s++;
 			}
 		}
-		else if (c == '|' || c == '\n' || c == '\0') {
+		else if (c == UI_SEP_CHAR || c == '\n' || c == '\0') {
 			if (nitem) {
 				*s = '\0';
 
@@ -439,6 +439,7 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 	uiStringInfo enum_label = {BUT_GET_RNAENUM_LABEL, NULL};
 	uiStringInfo enum_tip = {BUT_GET_RNAENUM_TIP, NULL};
 	uiStringInfo op_keymap = {BUT_GET_OP_KEYMAP, NULL};
+	uiStringInfo prop_keymap = {BUT_GET_PROP_KEYMAP, NULL};
 	uiStringInfo rna_struct = {BUT_GET_RNASTRUCT_IDENTIFIER, NULL};
 	uiStringInfo rna_prop = {BUT_GET_RNAPROP_IDENTIFIER, NULL};
 
@@ -448,7 +449,7 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 	/* create tooltip data */
 	data = MEM_callocN(sizeof(uiTooltipData), "uiTooltipData");
 
-	uiButGetStrInfo(C, but, &but_tip, &enum_label, &enum_tip, &op_keymap, &rna_struct, &rna_prop, NULL);
+	uiButGetStrInfo(C, but, &but_tip, &enum_label, &enum_tip, &op_keymap, &prop_keymap, &rna_struct, &rna_prop, NULL);
 
 	/* special case, enum rna buttons only have enum item description,
 	 * use general enum description too before the specific one */
@@ -477,6 +478,13 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 	/* Op shortcut */
 	if (op_keymap.strinfo) {
 		BLI_snprintf(data->lines[data->totline], sizeof(data->lines[0]), TIP_("Shortcut: %s"), op_keymap.strinfo);
+		data->color_id[data->totline] = UI_TIP_LC_NORMAL;
+		data->totline++;
+	}
+	
+	/* Property context-toggle shortcut */
+	if (prop_keymap.strinfo) {
+		BLI_snprintf(data->lines[data->totline], sizeof(data->lines[0]), TIP_("Shortcut: %s"), prop_keymap.strinfo);
 		data->color_id[data->totline] = UI_TIP_LC_NORMAL;
 		data->totline++;
 	}
@@ -516,7 +524,7 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 
 		if (but->rnapoin.id.data) {
 			ID *id = but->rnapoin.id.data;
-			if (id->lib && id->lib->name) {
+			if (id->lib) {
 				BLI_snprintf(data->lines[data->totline], sizeof(data->lines[0]), TIP_("Library: %s"), id->lib->name);
 				data->color_id[data->totline] = UI_TIP_LC_NORMAL;
 				data->totline++;
@@ -582,7 +590,7 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 			/* never fails */
 			id_path = RNA_path_full_ID_py(id);
 
-			if (ptr->id.data && ptr->data && prop) {
+			if (ptr->data && prop) {
 				data_path = RNA_path_from_ID_to_property(ptr, prop);
 			}
 
@@ -614,6 +622,8 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 		MEM_freeN(enum_tip.strinfo);
 	if (op_keymap.strinfo)
 		MEM_freeN(op_keymap.strinfo);
+	if (prop_keymap.strinfo)
+		MEM_freeN(prop_keymap.strinfo);
 	if (rna_struct.strinfo)
 		MEM_freeN(rna_struct.strinfo);
 	if (rna_prop.strinfo)
@@ -632,6 +642,7 @@ ARegion *ui_tooltip_create(bContext *C, ARegion *butregion, uiBut *but)
 	memset(&type, 0, sizeof(ARegionType));
 	type.draw = ui_tooltip_region_draw_cb;
 	type.free = ui_tooltip_region_free_cb;
+	type.regionid = RGN_TYPE_TEMPORARY;
 	ar->type = &type;
 	
 	/* set font, get bb */
@@ -759,6 +770,7 @@ typedef struct uiSearchboxData {
 	int active;     /* index in items array */
 	bool noback;    /* when menu opened with enough space for this */
 	bool preview;   /* draw thumbnail previews, rather than list */
+	bool use_sep;   /* use the UI_SEP_CHAR char for splitting shortcuts (good for operators, bad for data) */
 	int prv_rows, prv_cols;
 } uiSearchboxData;
 
@@ -835,25 +847,27 @@ static void ui_searchbox_select(bContext *C, ARegion *ar, uiBut *but, int step)
 	/* apply step */
 	data->active += step;
 	
-	if (data->items.totitem == 0)
-		data->active = 0;
-	else if (data->active > data->items.totitem) {
+	if (data->items.totitem == 0) {
+		data->active = -1;
+	}
+	else if (data->active >= data->items.totitem) {
 		if (data->items.more) {
 			data->items.offset++;
-			data->active = data->items.totitem;
+			data->active = data->items.totitem - 1;
 			ui_searchbox_update(C, ar, but, false);
 		}
-		else
-			data->active = data->items.totitem;
+		else {
+			data->active = data->items.totitem - 1;
+		}
 	}
-	else if (data->active < 1) {
+	else if (data->active < 0) {
 		if (data->items.offset) {
 			data->items.offset--;
-			data->active = 1;
+			data->active = 0;
 			ui_searchbox_update(C, ar, but, false);
 		}
-		else if (data->active < 0)
-			data->active = 0;
+		else if (data->active < -1)
+			data->active = -1;
 	}
 	
 	ED_region_tag_redraw(ar);
@@ -913,15 +927,13 @@ bool ui_searchbox_apply(uiBut *but, ARegion *ar)
 
 	but->func_arg2 = NULL;
 	
-	if (data->active) {
-		char *name = data->items.names[data->active - 1];
-		char *cpoin = strchr(name, '|');
+	if (data->active != -1) {
+		const char *name = data->items.names[data->active];
+		const char *name_sep = data->use_sep ? strchr(name, UI_SEP_CHAR) : NULL;
+
+		BLI_strncpy(but->editstr, name, name_sep ? (name_sep - name) : data->items.maxstrlen);
 		
-		if (cpoin) cpoin[0] = 0;
-		BLI_strncpy(but->editstr, name, data->items.maxstrlen);
-		if (cpoin) cpoin[0] = '|';
-		
-		but->func_arg2 = data->items.pointers[data->active - 1];
+		but->func_arg2 = data->items.pointers[data->active];
 
 		return true;
 	}
@@ -955,8 +967,8 @@ void ui_searchbox_event(bContext *C, ARegion *ar, uiBut *but, const wmEvent *eve
 				for (a = 0; a < data->items.totitem; a++) {
 					ui_searchbox_butrect(&rect, data, a);
 					if (BLI_rcti_isect_pt(&rect, event->x - ar->winrct.xmin, event->y - ar->winrct.ymin)) {
-						if (data->active != a + 1) {
-							data->active = a + 1;
+						if (data->active != a) {
+							data->active = a;
 							ui_searchbox_select(C, ar, but, 0);
 							break;
 						}
@@ -980,7 +992,7 @@ void ui_searchbox_update(bContext *C, ARegion *ar, uiBut *but, const bool reset)
 	}
 	else {
 		data->items.offset_i = data->items.offset = 0;
-		data->active = 0;
+		data->active = -1;
 		
 		/* handle active */
 		if (but->search_func && but->func_arg2) {
@@ -992,19 +1004,19 @@ void ui_searchbox_update(bContext *C, ARegion *ar, uiBut *but, const bool reset)
 			if (data->items.totitem) {
 				/* first case, begin of list */
 				if (data->items.offset_i < data->items.maxitem) {
-					data->active = data->items.offset_i + 1;
+					data->active = data->items.offset_i;
 					data->items.offset_i = 0;
 				}
 				else {
 					/* second case, end of list */
 					if (data->items.totitem - data->items.offset_i <= data->items.maxitem) {
-						data->active = 1 + data->items.offset_i - data->items.totitem + data->items.maxitem;
+						data->active = data->items.offset_i - data->items.totitem + data->items.maxitem;
 						data->items.offset_i = data->items.totitem - data->items.maxitem;
 					}
 					else {
 						/* center active item */
 						data->items.offset_i -= data->items.maxitem / 2;
-						data->active = 1 + data->items.maxitem / 2;
+						data->active = data->items.maxitem / 2;
 					}
 				}
 			}
@@ -1018,19 +1030,19 @@ void ui_searchbox_update(bContext *C, ARegion *ar, uiBut *but, const bool reset)
 		but->search_func(C, but->search_arg, but->editstr, &data->items);
 	
 	/* handle case where editstr is equal to one of items */
-	if (reset && data->active == 0) {
+	if (reset && data->active == -1) {
 		int a;
 		
 		for (a = 0; a < data->items.totitem; a++) {
-			char *cpoin = strchr(data->items.names[a], '|');
-			
-			if (cpoin) cpoin[0] = 0;
-			if (0 == strcmp(but->editstr, data->items.names[a]))
-				data->active = a + 1;
-			if (cpoin) cpoin[0] = '|';
+			const char *name = data->items.names[a];
+			const char *name_sep = data->use_sep ? strchr(name, UI_SEP_CHAR) : NULL;
+			if (STREQLEN(but->editstr, name, name_sep ? (name_sep - name) : data->items.maxstrlen)) {
+				data->active = a;
+				break;
+			}
 		}
 		if (data->items.totitem == 1 && but->editstr[0])
-			data->active = 1;
+			data->active = 0;
 	}
 
 	/* validate selected item */
@@ -1039,18 +1051,20 @@ void ui_searchbox_update(bContext *C, ARegion *ar, uiBut *but, const bool reset)
 	ED_region_tag_redraw(ar);
 }
 
-void ui_searchbox_autocomplete(bContext *C, ARegion *ar, uiBut *but, char *str)
+bool ui_searchbox_autocomplete(bContext *C, ARegion *ar, uiBut *but, char *str)
 {
 	uiSearchboxData *data = ar->regiondata;
+	bool changed = false;
 
 	if (str[0]) {
 		data->items.autocpl = autocomplete_begin(str, ui_get_but_string_max_length(but));
 
 		but->search_func(C, but->search_arg, but->editstr, &data->items);
 
-		autocomplete_end(data->items.autocpl, str);
+		changed = autocomplete_end(data->items.autocpl, str);
 		data->items.autocpl = NULL;
 	}
+	return changed;
 }
 
 static void ui_searchbox_region_draw_cb(const bContext *UNUSED(C), ARegion *ar)
@@ -1074,10 +1088,14 @@ static void ui_searchbox_region_draw_cb(const bContext *UNUSED(C), ARegion *ar)
 				ui_searchbox_butrect(&rect, data, a);
 				
 				/* widget itself */
-				if (data->preview)
-					ui_draw_preview_item(&data->fstyle, &rect, data->items.names[a], data->items.icons[a], (a + 1) == data->active ? UI_ACTIVE : 0);
-				else 
-					ui_draw_menu_item(&data->fstyle, &rect, data->items.names[a], data->items.icons[a], (a + 1) == data->active ? UI_ACTIVE : 0);
+				if (data->preview) {
+					ui_draw_preview_item(&data->fstyle, &rect, data->items.names[a], data->items.icons[a],
+					                     (a == data->active) ? UI_ACTIVE : 0);
+				}
+				else {
+					ui_draw_menu_item(&data->fstyle, &rect, data->items.names[a], data->items.icons[a],
+					                  (a == data->active) ? UI_ACTIVE : 0, data->use_sep);
+				}
 			}
 			
 			/* indicate more */
@@ -1101,7 +1119,8 @@ static void ui_searchbox_region_draw_cb(const bContext *UNUSED(C), ARegion *ar)
 				ui_searchbox_butrect(&rect, data, a);
 				
 				/* widget itself */
-				ui_draw_menu_item(&data->fstyle, &rect, data->items.names[a], data->items.icons[a], (a + 1) == data->active ? UI_ACTIVE : 0);
+				ui_draw_menu_item(&data->fstyle, &rect, data->items.names[a], data->items.icons[a],
+				                  (a == data->active) ? UI_ACTIVE : 0, data->use_sep);
 				
 			}
 			/* indicate more */
@@ -1157,6 +1176,7 @@ ARegion *ui_searchbox_create(bContext *C, ARegion *butregion, uiBut *but)
 	memset(&type, 0, sizeof(ARegionType));
 	type.draw = ui_searchbox_region_draw_cb;
 	type.free = ui_searchbox_region_free_cb;
+	type.regionid = RGN_TYPE_TEMPORARY;
 	ar->type = &type;
 	
 	/* create searchbox data */
@@ -1179,6 +1199,11 @@ ARegion *ui_searchbox_create(bContext *C, ARegion *butregion, uiBut *but)
 		data->preview = true;
 		data->prv_rows = but->a1;
 		data->prv_cols = but->a2;
+	}
+
+	/* only show key shortcuts when needed (not rna buttons) [#36699] */
+	if (but->rnaprop == NULL) {
+		data->use_sep = true;
 	}
 	
 	/* compute position */
@@ -1249,8 +1274,11 @@ ARegion *ui_searchbox_create(bContext *C, ARegion *butregion, uiBut *but)
 		}
 
 		if (rect_i.ymin < 0) {
-			int newy1;
-			UI_view2d_to_region_no_clip(&butregion->v2d, 0, but->rect.ymax + ofsy, NULL, &newy1);
+			int newy1 = but->rect.ymax + ofsy;
+
+			if (butregion->v2d.cur.xmin != butregion->v2d.cur.xmax)
+				UI_view2d_to_region_no_clip(&butregion->v2d, 0, newy1, NULL, &newy1);
+
 			newy1 += butregion->winrct.ymin;
 
 			rect_i.ymax = BLI_rcti_size_y(&rect_i) + newy1;
@@ -1667,6 +1695,7 @@ uiPopupBlockHandle *ui_popup_block_create(bContext *C, ARegion *butregion, uiBut
 
 	memset(&type, 0, sizeof(ARegionType));
 	type.draw = ui_block_region_draw;
+	type.regionid = RGN_TYPE_TEMPORARY;
 	ar->type = &type;
 
 	UI_add_region_handlers(&ar->handlers);
@@ -2090,7 +2119,7 @@ static void square_picker(uiBlock *block, PointerRNA *ptr, PropertyRNA *prop, in
 
 
 /* a HS circle, V slider, rgb/hsv/hex sliders */
-static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, PropertyRNA *prop, int show_picker)
+static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, PropertyRNA *prop, bool show_picker)
 {
 	static short colormode = 0;  /* temp? 0=rgb, 1=hsv, 2=hex */
 	uiBut *bt;
@@ -2098,7 +2127,7 @@ static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, Proper
 	static char tip[50];
 	static char hexcol[128];
 	float rgb_gamma[3];
-	float min, max, step, precision;
+	float softmin, softmax, hardmin, hardmax, step, precision;
 	float *hsv = ui_block_hsv_get(block);
 	int yco;
 	
@@ -2124,7 +2153,8 @@ static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, Proper
 	/* sneaky way to check for alpha */
 	rgba[3] = FLT_MAX;
 
-	RNA_property_float_ui_range(ptr, prop, &min, &max, &step, &precision);
+	RNA_property_float_ui_range(ptr, prop, &softmin, &softmax, &step, &precision);
+	RNA_property_float_range(ptr, prop, &hardmin, &hardmax);
 	RNA_property_float_get_array(ptr, prop, rgba);
 
 	switch (U.color_picker_type) {
@@ -2155,7 +2185,7 @@ static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, Proper
 
 	yco = -3.0f * UI_UNIT_Y;
 	if (show_picker) {
-		bt = uiDefIconButO(block, BUT, "UI_OT_eyedropper", WM_OP_INVOKE_DEFAULT, ICON_EYEDROPPER, butwidth + 10, yco, UI_UNIT_X, UI_UNIT_Y, NULL);
+		bt = uiDefIconButO(block, BUT, "UI_OT_eyedropper_color", WM_OP_INVOKE_DEFAULT, ICON_EYEDROPPER, butwidth + 10, yco, UI_UNIT_X, UI_UNIT_Y, NULL);
 		uiButSetFunc(bt, close_popup_cb, bt, NULL);
 	}
 	
@@ -2178,7 +2208,8 @@ static void uiBlockPicker(uiBlock *block, float rgba[4], PointerRNA *ptr, Proper
 	uiButSetFunc(bt, do_hsv_rna_cb, bt, hsv);
 	bt = uiDefButF(block, NUMSLI, 0, IFACE_("S "),   0, yco -= UI_UNIT_Y, butwidth, UI_UNIT_Y, hsv + 1, 0.0, 1.0, 10, 3, TIP_("Saturation"));
 	uiButSetFunc(bt, do_hsv_rna_cb, bt, hsv);
-	bt = uiDefButF(block, NUMSLI, 0, IFACE_("V "),   0, yco -= UI_UNIT_Y, butwidth, UI_UNIT_Y, hsv + 2, 0.0, max, 10, 3, TIP_("Value"));
+	bt = uiDefButF(block, NUMSLI, 0, IFACE_("V "),   0, yco -= UI_UNIT_Y, butwidth, UI_UNIT_Y, hsv + 2, 0.0, softmax, 10, 3, TIP_("Value"));
+	bt->hardmax = hardmax;  /* not common but rgb  may be over 1.0 */
 	uiButSetFunc(bt, do_hsv_rna_cb, bt, hsv);
 	uiBlockEndAlign(block);
 
@@ -2248,10 +2279,8 @@ uiBlock *ui_block_func_COLOR(bContext *C, uiPopupBlockHandle *handle, void *arg_
 	
 	block = uiBeginBlock(C, handle->region, __func__, UI_EMBOSS);
 	
-	if (but->rnaprop) {
-		if (RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
-			block->color_profile = FALSE;
-		}
+	if (RNA_property_subtype(but->rnaprop) == PROP_COLOR_GAMMA) {
+		block->color_profile = false;
 	}
 
 	if (but->block) {
@@ -2283,11 +2312,11 @@ static int ui_popup_string_hash(const char *str)
 {
 	/* sometimes button contains hotkey, sometimes not, strip for proper compare */
 	int hash;
-	char *delimit = strchr(str, '|');
+	char *delimit = strchr(str, UI_SEP_CHAR);
 
-	if (delimit) *delimit = 0;
+	if (delimit) *delimit = '\0';
 	hash = BLI_ghashutil_strhash(str);
-	if (delimit) *delimit = '|';
+	if (delimit) *delimit = UI_SEP_CHAR;
 
 	return hash;
 }
@@ -2508,7 +2537,7 @@ uiPopupMenu *uiPupMenuBegin(bContext *C, const char *title, int icon)
 	uiStyle *style = UI_GetStyleDraw();
 	uiPopupMenu *pup = MEM_callocN(sizeof(uiPopupMenu), "popup menu");
 	uiBut *but;
-	
+
 	pup->block = uiBeginBlock(C, NULL, __func__, UI_EMBOSSP);
 	pup->block->flag |= UI_BLOCK_POPUP_MEMORY;
 	pup->block->puphash = ui_popup_menu_hash(title);
@@ -2522,7 +2551,7 @@ uiPopupMenu *uiPupMenuBegin(bContext *C, const char *title, int icon)
 	pup->block->handle = MEM_callocN(sizeof(uiPopupBlockHandle), "uiPopupBlockHandle");
 	
 	/* create title button */
-	if (title && title[0]) {
+	if (title[0]) {
 		char titlestr[256];
 		
 		if (icon) {
@@ -2587,12 +2616,10 @@ static void confirm_cancel_operator(bContext *UNUSED(C), void *opv)
 	WM_operator_free(opv);
 }
 
-static void vconfirm_opname(bContext *C, const char *opname, const char *title, const char *itemfmt, va_list ap)
-#ifdef __GNUC__
-__attribute__ ((format(printf, 4, 0)))
-#endif
-;
-static void vconfirm_opname(bContext *C, const char *opname, const char *title, const char *itemfmt, va_list ap)
+static void vconfirm_opname(bContext *C, const char *opname, const char *title,
+                            const char *itemfmt, va_list ap) ATTR_PRINTF_FORMAT(4, 0);
+static void vconfirm_opname(bContext *C, const char *opname, const char *title,
+                            const char *itemfmt, va_list ap)
 {
 	uiPopupBlockHandle *handle;
 	char *s, buf[512];

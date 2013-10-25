@@ -49,6 +49,8 @@
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
 
+#include "RNA_access.h"
+
 #ifdef WITH_PYTHON
 #include "BPY_extern.h"
 #endif
@@ -158,9 +160,6 @@ void RE_engine_free(RenderEngine *engine)
 		BLI_end_threaded_malloc();
 	}
 
-	if (engine->text)
-		MEM_freeN(engine->text);
-
 	MEM_freeN(engine);
 }
 
@@ -253,8 +252,14 @@ void RE_engine_end_result(RenderEngine *engine, RenderResult *result, int cancel
 		/* for exr tile render, detect tiles that are done */
 		RenderPart *pa = get_part_from_result(re, result);
 
-		if (pa)
+		if (pa) {
 			pa->status = PART_STATUS_READY;
+		}
+		else if (re->result->do_exr_tile) {
+			/* if written result does not match any tile and we are using save
+			 * buffers, we are going to get openexr save errors */
+			fprintf(stderr, "RenderEngine.end_result: dimensions do not match any OpenEXR tile.\n");
+		}
 
 		if (re->result->do_exr_tile)
 			render_result_exr_file_merge(re->result, result, re->actview);
@@ -301,17 +306,14 @@ void RE_engine_update_stats(RenderEngine *engine, const char *stats, const char 
 	}
 
 	/* set engine text */
-	if (engine->text) {
-		MEM_freeN(engine->text);
-		engine->text = NULL;
-	}
+	engine->text[0] = '\0';
 
 	if (stats && stats[0] && info && info[0])
-		engine->text = BLI_sprintfN("%s | %s", stats, info);
+		BLI_snprintf(engine->text, sizeof(engine->text), "%s | %s", stats, info);
 	else if (info && info[0])
-		engine->text = BLI_strdup(info);
+		BLI_strncpy(engine->text, info, sizeof(engine->text));
 	else if (stats && stats[0])
-		engine->text = BLI_strdup(stats);
+		BLI_strncpy(engine->text, stats, sizeof(engine->text));
 }
 
 void RE_engine_update_progress(RenderEngine *engine, float progress)
@@ -398,6 +400,17 @@ RenderData *RE_engine_get_render_data(Render *re)
 
 /* Render */
 
+static bool render_layer_exclude_animated(Scene *scene, SceneRenderLayer *srl)
+{
+	PointerRNA ptr;
+	PropertyRNA *prop;
+
+	RNA_pointer_create(&scene->id, &RNA_SceneRenderLayer, srl, &ptr);
+	prop = RNA_struct_find_property(&ptr, "layers_exclude");
+
+	return RNA_property_animated(&ptr, prop);
+}
+
 int RE_engine_render(Render *re, int do_all)
 {
 	RenderEngineType *type = RE_engines_find(re->r.engine);
@@ -426,13 +439,25 @@ int RE_engine_render(Render *re, int do_all)
 
 			if (re->r.scemode & R_SINGLE_LAYER) {
 				srl = BLI_findlink(&re->r.layers, re->r.actlay);
-				if (srl)
+				if (srl) {
 					non_excluded_lay |= ~srl->lay_exclude;
+
+					/* in this case we must update all because animation for
+					 * the scene has not been updated yet, and so may not be
+					 * up to date until after BKE_scene_update_for_newframe */
+					if (render_layer_exclude_animated(re->scene, srl))
+						non_excluded_lay |= ~0;
+				}
 			}
 			else {
-				for (srl = re->r.layers.first; srl; srl = srl->next)
-					if (!(srl->layflag & SCE_LAY_DISABLE))
+				for (srl = re->r.layers.first; srl; srl = srl->next) {
+					if (!(srl->layflag & SCE_LAY_DISABLE)) {
 						non_excluded_lay |= ~srl->lay_exclude;
+
+						if (render_layer_exclude_animated(re->scene, srl))
+							non_excluded_lay |= ~0;
+					}
+				}
 			}
 
 			lay &= non_excluded_lay;
@@ -444,12 +469,13 @@ int RE_engine_render(Render *re, int do_all)
 	/* create render result */
 	BLI_rw_mutex_lock(&re->resultmutex, THREAD_LOCK_WRITE);
 	if (re->result == NULL || !(re->r.scemode & R_BUTS_PREVIEW)) {
-		int savebuffers;
+		int savebuffers = RR_USE_MEM;
 
 		if (re->result)
 			render_result_free(re->result);
 
-		savebuffers = (re->r.scemode & R_EXR_TILE_FILE) ? RR_USE_EXR : RR_USE_MEM;
+		if ((type->flag & RE_USE_SAVE_BUFFERS) && (re->r.scemode & R_EXR_TILE_FILE))
+			savebuffers = RR_USE_EXR;
 		re->result = render_result_new(re, &re->disprect, 0, savebuffers, RR_ALL_LAYERS, -1);
 	}
 	BLI_rw_mutex_unlock(&re->resultmutex);

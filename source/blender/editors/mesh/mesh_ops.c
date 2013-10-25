@@ -28,6 +28,8 @@
  *  \ingroup edmesh
  */
 
+#include "DNA_scene_types.h"
+
 #include "BLI_math.h"
 
 #include "RNA_access.h"
@@ -100,13 +102,16 @@ void ED_operatortypes_mesh(void)
 	
 	WM_operatortype_append(MESH_OT_fill);
 	WM_operatortype_append(MESH_OT_fill_grid);
+	WM_operatortype_append(MESH_OT_fill_holes);
 	WM_operatortype_append(MESH_OT_beautify_fill);
 	WM_operatortype_append(MESH_OT_quads_convert_to_tris);
 	WM_operatortype_append(MESH_OT_tris_convert_to_quads);
 	WM_operatortype_append(MESH_OT_dissolve_verts);
 	WM_operatortype_append(MESH_OT_dissolve_edges);
 	WM_operatortype_append(MESH_OT_dissolve_faces);
+	WM_operatortype_append(MESH_OT_dissolve_mode);
 	WM_operatortype_append(MESH_OT_dissolve_limited);
+	WM_operatortype_append(MESH_OT_delete_edgeloop);
 	WM_operatortype_append(MESH_OT_faces_shade_smooth);
 	WM_operatortype_append(MESH_OT_faces_shade_flat);
 	WM_operatortype_append(MESH_OT_sort_elements);
@@ -116,7 +121,6 @@ void ED_operatortypes_mesh(void)
 
 	WM_operatortype_append(MESH_OT_delete);
 	WM_operatortype_append(MESH_OT_edge_collapse);
-	WM_operatortype_append(MESH_OT_edge_collapse_loop);
 
 	WM_operatortype_append(MESH_OT_separate);
 	WM_operatortype_append(MESH_OT_dupli_extrude_cursor);
@@ -153,6 +157,7 @@ void ED_operatortypes_mesh(void)
 	WM_operatortype_append(MESH_OT_solidify);
 	WM_operatortype_append(MESH_OT_select_nth);
 	WM_operatortype_append(MESH_OT_vert_connect);
+	WM_operatortype_append(MESH_OT_vert_connect_nonplanar);
 	WM_operatortype_append(MESH_OT_knife_tool);
 	WM_operatortype_append(MESH_OT_knife_project);
 
@@ -170,7 +175,9 @@ void ED_operatortypes_mesh(void)
 	WM_operatortype_append(MESH_OT_convex_hull);
 #endif
 
+	WM_operatortype_append(MESH_OT_bisect);
 	WM_operatortype_append(MESH_OT_symmetrize);
+	WM_operatortype_append(MESH_OT_symmetry_snap);
 
 #ifdef WITH_GAMEENGINE
 	WM_operatortype_append(MESH_OT_navmesh_make);
@@ -234,6 +241,13 @@ void ED_operatormacros_mesh(void)
 	                                  "Extrude region and move result", OPTYPE_UNDO | OPTYPE_REGISTER);
 	otmacro = WM_operatortype_macro_define(ot, "MESH_OT_extrude_region");
 	otmacro = WM_operatortype_macro_define(ot, "TRANSFORM_OT_translate");
+	RNA_enum_set(otmacro->ptr, "proportional", 0);
+	RNA_boolean_set(otmacro->ptr, "mirror", false);
+
+	ot = WM_operatortype_append_macro("MESH_OT_extrude_region_shrink_fatten", "Extrude Region and Shrink/Fatten",
+	                                  "Extrude region and move result", OPTYPE_UNDO | OPTYPE_REGISTER);
+	otmacro = WM_operatortype_macro_define(ot, "MESH_OT_extrude_region");
+	otmacro = WM_operatortype_macro_define(ot, "TRANSFORM_OT_shrink_fatten");
 	RNA_enum_set(otmacro->ptr, "proportional", 0);
 	RNA_boolean_set(otmacro->ptr, "mirror", false);
 
@@ -379,6 +393,9 @@ void ED_keymap_mesh(wmKeyConfig *keyconf)
 
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_edit_mesh_delete", XKEY, KM_PRESS, 0, 0);
 	WM_keymap_add_menu(keymap, "VIEW3D_MT_edit_mesh_delete", DELKEY, KM_PRESS, 0, 0);
+
+	WM_keymap_add_item(keymap, "MESH_OT_dissolve_mode", XKEY, KM_PRESS, KM_CTRL, 0);
+	WM_keymap_add_item(keymap, "MESH_OT_dissolve_mode", DELKEY, KM_PRESS, KM_CTRL, 0);
 	
 	kmi = WM_keymap_add_item(keymap, "MESH_OT_knife_tool", KKEY, KM_PRESS, 0, 0);
 	RNA_boolean_set(kmi->ptr, "use_occlude_geometry", true);

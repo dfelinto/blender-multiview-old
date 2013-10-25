@@ -23,31 +23,21 @@
 
 #include "COM_WrapOperation.h"
 
-WrapOperation::WrapOperation() : NodeOperation()
+WrapOperation::WrapOperation() : ReadBufferOperation()
 {
-	this->addInputSocket(COM_DT_COLOR);
-	this->addOutputSocket(COM_DT_COLOR);
-	this->setResolutionInputSocketIndex(0);
-	this->m_inputOperation = NULL;
-}
-void WrapOperation::initExecution()
-{
-	this->m_inputOperation = this->getInputSocketReader(0);
-}
-
-void WrapOperation::deinitExecution()
-{
-	this->m_inputOperation = NULL;
+	this->m_wrappingType = CMP_NODE_WRAP_NONE;
 }
 
 inline float WrapOperation::getWrappedOriginalXPos(float x)
 {
+	if (this->getWidth() == 0) return 0;
 	while (x < 0) x += this->m_width;
 	return fmodf(x, this->getWidth());
 }
 
 inline float WrapOperation::getWrappedOriginalYPos(float y)
 {
+	if (this->getHeight() == 0) return 0;
 	while (y < 0) y += this->m_height;
 	return fmodf(y, this->getHeight());
 }
@@ -57,6 +47,7 @@ void WrapOperation::executePixel(float output[4], float x, float y, PixelSampler
 	float nx, ny;
 	nx = x;
 	ny = y;
+	MemoryBufferExtend extend_x = COM_MB_CLIP, extend_y = COM_MB_CLIP;
 	switch (m_wrappingType) {
 		case CMP_NODE_WRAP_NONE:
 			//Intentionally empty, originalXPos and originalYPos have been set before
@@ -64,20 +55,23 @@ void WrapOperation::executePixel(float output[4], float x, float y, PixelSampler
 		case CMP_NODE_WRAP_X:
 			// wrap only on the x-axis
 			nx = this->getWrappedOriginalXPos(x);
+			extend_x = COM_MB_REPEAT;
 			break;
 		case CMP_NODE_WRAP_Y:
 			// wrap only on the y-axis
 			ny = this->getWrappedOriginalYPos(y);
+			extend_y = COM_MB_REPEAT;
 			break;
 		case CMP_NODE_WRAP_XY:
 			// wrap on both
 			nx = this->getWrappedOriginalXPos(x);
 			ny = this->getWrappedOriginalYPos(y);
+			extend_x = COM_MB_REPEAT;
+			extend_y = COM_MB_REPEAT;
 			break;
 	}
 
-	this->m_inputOperation->read(output, nx, ny, sampler);
-
+	executePixelExtend(output, nx, ny, sampler, extend_x, extend_y);
 }
 
 bool WrapOperation::determineDependingAreaOfInterest(rcti *input, ReadBufferOperation *readOperation, rcti *output)
@@ -108,7 +102,7 @@ bool WrapOperation::determineDependingAreaOfInterest(rcti *input, ReadBufferOper
 		}
 	}
 
-	return NodeOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
+	return ReadBufferOperation::determineDependingAreaOfInterest(&newInput, readOperation, output);
 }
 
 void WrapOperation::setWrapping(int wrapping_type)

@@ -119,8 +119,8 @@ static int mouse_nla_channels(bAnimContext *ac, float x, int channel_index, shor
 			}
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
 		case ANIMTYPE_OBJECT:
 		{
 			bDopeSheet *ads = (bDopeSheet *)ac->data;
@@ -161,9 +161,8 @@ static int mouse_nla_channels(bAnimContext *ac, float x, int channel_index, shor
 				/* notifiers - channel was selected */
 				notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
 			}
+			break;
 		}
-		break;
-			
 		case ANIMTYPE_FILLACTD: /* Action Expander */
 		case ANIMTYPE_DSMAT:    /* Datablock AnimData Expanders */
 		case ANIMTYPE_DSLAM:
@@ -200,9 +199,8 @@ static int mouse_nla_channels(bAnimContext *ac, float x, int channel_index, shor
 			}
 			
 			notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
+			break;
 		}
-		break;
-			
 		case ANIMTYPE_NLATRACK:
 		{
 			NlaTrack *nlt = (NlaTrack *)ale->data;
@@ -260,8 +258,8 @@ static int mouse_nla_channels(bAnimContext *ac, float x, int channel_index, shor
 				/* notifier flags - channel was selected */
 				notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
 			}
+			break;
 		}
-		break;
 		case ANIMTYPE_NLAACTION:
 		{
 			AnimData *adt = BKE_animdata_from_id(ale->id);
@@ -287,31 +285,41 @@ static int mouse_nla_channels(bAnimContext *ac, float x, int channel_index, shor
 				/* NOTE: rest of NLA-Action name doubles for operating on the AnimData block 
 				 * - this is useful when there's no clear divider, and makes more sense in
 				 *   the case of users trying to use this to change actions
+				 * - in tweakmode, clicking here gets us out of tweakmode, as changing selection
+				 *   while in tweakmode is really evil!
 				 */
-				
-				/* select/deselect */
-				if (selectmode == SELECT_INVERT) {
-					/* inverse selection status of this AnimData block only */
-					adt->flag ^= ADT_UI_SELECTED;
+				if (nlaedit_is_tweakmode_on(ac)) {
+					/* exit tweakmode immediately */
+					nlaedit_disable_tweakmode(ac);
+					
+					/* changes to NLA-Action occurred */
+					notifierFlags |= ND_NLA_ACTCHANGE;
 				}
 				else {
-					/* select AnimData block by itself */
-					ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
-					adt->flag |= ADT_UI_SELECTED;
+					/* select/deselect */
+					if (selectmode == SELECT_INVERT) {
+						/* inverse selection status of this AnimData block only */
+						adt->flag ^= ADT_UI_SELECTED;
+					}
+					else {
+						/* select AnimData block by itself */
+						ANIM_deselect_anim_channels(ac, ac->data, ac->datatype, 0, ACHANNEL_SETFLAG_CLEAR);
+						adt->flag |= ADT_UI_SELECTED;
+					}
+					
+					/* set active? */
+					if (adt->flag & ADT_UI_SELECTED)
+						adt->flag |= ADT_UI_ACTIVE;
+					
+					notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
 				}
-				
-				/* set active? */
-				if (adt->flag & ADT_UI_SELECTED)
-					adt->flag |= ADT_UI_ACTIVE;
-				
-				notifierFlags |= (ND_ANIMCHAN | NA_SELECTED);
 			}
+			break;
 		}
-		break;
-			
 		default:
 			if (G.debug & G_DEBUG)
 				printf("Error: Invalid channel type in mouse_nla_channels()\n");
+			break;
 	}
 	
 	/* free channels */

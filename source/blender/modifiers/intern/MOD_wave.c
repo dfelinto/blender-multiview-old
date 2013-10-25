@@ -48,6 +48,7 @@
 #include "BKE_library.h"
 #include "BKE_object.h"
 #include "BKE_scene.h"
+#include "BKE_texture.h"
 
 #include "depsgraph_private.h"
 
@@ -306,7 +307,7 @@ static void waveModifier_do(WaveModifierData *md,
 				if (wmd->texture) {
 					TexResult texres;
 					texres.nor = NULL;
-					get_texture_value(wmd->texture, tex_co[i], &texres);
+					BKE_texture_get_value(wmd->modifier.scene, wmd->texture, tex_co[i], &texres, false);
 					amplit *= texres.tin;
 				}
 
@@ -346,9 +347,9 @@ static void deformVerts(ModifierData *md, Object *ob,
 	WaveModifierData *wmd = (WaveModifierData *)md;
 
 	if (wmd->flag & MOD_WAVE_NORM)
-		dm = get_cddm(ob, NULL, dm, vertexCos);
+		dm = get_cddm(ob, NULL, dm, vertexCos, false);
 	else if (wmd->texture || wmd->defgrp_name[0])
-		dm = get_dm(ob, NULL, dm, NULL, 0);
+		dm = get_dm(ob, NULL, dm, NULL, false, false);
 
 	waveModifier_do(wmd, md->scene, ob, dm, vertexCos, numVerts);
 
@@ -364,9 +365,9 @@ static void deformVertsEM(
 	WaveModifierData *wmd = (WaveModifierData *)md;
 
 	if (wmd->flag & MOD_WAVE_NORM)
-		dm = get_cddm(ob, editData, dm, vertexCos);
+		dm = get_cddm(ob, editData, dm, vertexCos, false);
 	else if (wmd->texture || wmd->defgrp_name[0])
-		dm = get_dm(ob, editData, dm, NULL, 0);
+		dm = get_dm(ob, editData, dm, NULL, false, false);
 
 	waveModifier_do(wmd, md->scene, ob, dm, vertexCos, numVerts);
 

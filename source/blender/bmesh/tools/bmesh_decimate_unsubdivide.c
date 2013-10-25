@@ -32,8 +32,7 @@
 #include "BLI_math.h"
 
 #include "bmesh.h"
-
-#include "intern/bmesh_operators_private.h" /* own include */
+#include "bmesh_decimate.h"  /* own include */
 
 
 static bool bm_vert_dissolve_fan_test(BMVert *v)
@@ -79,7 +78,7 @@ static bool bm_vert_dissolve_fan(BMesh *bm, BMVert *v)
 {
 	/* collapse under 2 conditions.
 	 * - vert connects to 4 manifold edges (and 4 faces).
-	 * - vert connecrs to 1 manifold edge, 2 boundary edges (and 2 faces).
+	 * - vert connects to 1 manifold edge, 2 boundary edges (and 2 faces).
 	 *
 	 * This covers boundary verts of a quad grid and center verts.
 	 * note that surrounding faces dont have to be quads.
@@ -198,7 +197,7 @@ void BM_mesh_decimate_unsubdivide_ex(BMesh *bm, const int iterations, const bool
 	}
 
 	for (iter_step = 0; iter_step < iterations; iter_step++) {
-		BMVert *v;
+		BMVert *v, *v_next;
 		bool iter_done;
 
 		BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
@@ -319,7 +318,7 @@ void BM_mesh_decimate_unsubdivide_ex(BMesh *bm, const int iterations, const bool
 
 		/* now we tagged all verts -1 for removal, lets loop over and rebuild faces */
 		iter_done = false;
-		BM_ITER_MESH (v, &iter, bm, BM_VERTS_OF_MESH) {
+		BM_ITER_MESH_MUTABLE (v, v_next, &iter, bm, BM_VERTS_OF_MESH) {
 			if (BM_elem_index_get(v) == VERT_INDEX_DO_COLLAPSE) {
 				if (bm_vert_dissolve_fan(bm, v)) {
 					iter_done = true;

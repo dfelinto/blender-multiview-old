@@ -162,12 +162,7 @@ static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[
 			break;
 
 		case SEQ_TYPE_COLOR:
-			if (colvars->col) {
-				rgb_float_to_uchar(col, colvars->col);
-			}
-			else {
-				col[0] = col[1] = col[2] = 128;
-			}
+			rgb_float_to_uchar(col, colvars->col);
 			break;
 
 		case SEQ_TYPE_SOUND_RAM:
@@ -178,6 +173,7 @@ static void get_seq_color3ubv(Scene *curscene, Sequence *seq, unsigned char col[
 		
 		default:
 			col[0] = 10; col[1] = 255; col[2] = 40;
+			break;
 	}
 }
 
@@ -403,7 +399,7 @@ static void draw_seq_handle(View2D *v2d, Sequence *seq, const float handsize_cla
 		glDisable(GL_BLEND);
 	}
 	
-	if (G.moving || (seq->flag & whichsel)) {
+	if ((G.moving & G_TRANSFORM_SEQ) || (seq->flag & whichsel)) {
 		const char col[4] = {255, 255, 255, 255};
 		if (direction == SEQ_LEFTHANDLE) {
 			BLI_snprintf(numstr, sizeof(numstr), "%d", seq->startdisp);
@@ -760,7 +756,7 @@ static void draw_seq_strip(Scene *scene, ARegion *ar, Sequence *seq, int outline
 	}
 
 	get_seq_color3ubv(scene, seq, col);
-	if (G.moving && (seq->flag & SELECT)) {
+	if ((G.moving & G_TRANSFORM_SEQ) && (seq->flag & SELECT)) {
 		if (seq->flag & SEQ_OVERLAP) {
 			col[0] = 255; col[1] = col[2] = 40;
 		}
@@ -930,13 +926,13 @@ void draw_image_seq(const bContext *C, Scene *scene, ARegion *ar, SpaceSeq *sseq
 		/* stop all running jobs, except screen one. currently previews frustrate Render
 		 * needed to make so sequencer's rendering doesn't conflict with compositor
 		 */
-		WM_jobs_kill_type(CTX_wm_manager(C), WM_JOB_TYPE_COMPOSITE);
+		WM_jobs_kill_type(CTX_wm_manager(C), NULL, WM_JOB_TYPE_COMPOSITE);
 
 		if ((scene->r.seq_flag & R_SEQ_GL_PREV) == 0) {
 			/* in case of final rendering used for preview, kill all previews,
 			 * otherwise threading conflict will happen in rendering module
 			 */
-			WM_jobs_kill_type(CTX_wm_manager(C), WM_JOB_TYPE_RENDER_PREVIEW);
+			WM_jobs_kill_type(CTX_wm_manager(C), NULL, WM_JOB_TYPE_RENDER_PREVIEW);
 		}
 	}
 
@@ -1090,10 +1086,10 @@ void draw_image_seq(const bContext *C, Scene *scene, ARegion *ar, SpaceSeq *sseq
 			type = GL_FLOAT;
 
 			if (ibuf->float_colorspace) {
-				glsl_used = IMB_colormanagement_setup_glsl_draw_from_space_ctx(C, ibuf->float_colorspace, TRUE);
+				glsl_used = IMB_colormanagement_setup_glsl_draw_from_space_ctx(C, ibuf->float_colorspace, true);
 			}
 			else {
-				glsl_used = IMB_colormanagement_setup_glsl_draw_ctx(C, TRUE);
+				glsl_used = IMB_colormanagement_setup_glsl_draw_ctx(C, true);
 			}
 		}
 		else if (ibuf->rect) {
@@ -1101,7 +1097,7 @@ void draw_image_seq(const bContext *C, Scene *scene, ARegion *ar, SpaceSeq *sseq
 			format = GL_RGBA;
 			type = GL_UNSIGNED_BYTE;
 
-			glsl_used = IMB_colormanagement_setup_glsl_draw_from_space_ctx(C, ibuf->rect_colorspace, FALSE);
+			glsl_used = IMB_colormanagement_setup_glsl_draw_from_space_ctx(C, ibuf->rect_colorspace, false);
 		}
 		else {
 			format = GL_RGBA;
@@ -1255,7 +1251,7 @@ void draw_image_seq(const bContext *C, Scene *scene, ARegion *ar, SpaceSeq *sseq
 			height = (scene->r.size * scene->r.ysch) / 100;
 
 			ED_mask_draw_region(mask, ar,
-			                    0, 0,  /* TODO */
+			                    0, 0, 0,  /* TODO */
 			                    width, height,
 			                    aspx, aspy,
 			                    FALSE, TRUE,

@@ -15,11 +15,6 @@
  * along with this program; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  *
- * The Original Code is Copyright (C) 2001-2002 by NaN Holding BV.
- * All rights reserved.
- *
- * The Original Code is: all of this file.
- *
  * Contributor(s): Jonathan Smith
  *
  * ***** END GPL LICENSE BLOCK *****
@@ -114,20 +109,21 @@ void outputNumInput(NumInput *n, char *str)
 					break;
 				default:
 					BLI_snprintf(&str[j * ln], ln, "%s%.4e%c", inv, n->val[i], cur);
+					break;
 			}
 	}
 }
 
-short hasNumInput(NumInput *n)
+bool hasNumInput(const NumInput *n)
 {
 	short i;
 
 	for (i = 0; i <= n->idx_max; i++) {
 		if (n->ctrl[i])
-			return 1;
+			return true;
 	}
 
-	return 0;
+	return false;
 }
 
 /**
@@ -163,7 +159,7 @@ void applyNumInput(NumInput *n, float *vec)
 	}
 }
 
-char handleNumInput(NumInput *n, const wmEvent *event)
+bool handleNumInput(NumInput *n, const wmEvent *event)
 {
 	float Val = 0;
 	short idx = n->idx, idx_max = n->idx_max;
@@ -206,8 +202,7 @@ char handleNumInput(NumInput *n, const wmEvent *event)
 					n->inv[idx] = 0;
 				}
 				break;
-			case PERIODKEY:
-			case PADPERIOD:
+			case PERIODKEY: case PADPERIOD:
 				if (n->flag & NUM_NO_FRACTION)
 					return 0;
 
@@ -218,11 +213,13 @@ char handleNumInput(NumInput *n, const wmEvent *event)
 						break;
 					case -1:
 						n->ctrl[idx] = -10;
+						break;
 				}
 				break;
 			case PADMINUS:
 				if (event->alt)
 					break;
+				/* fall-through */
 			case MINUSKEY:
 				if (n->flag & NUM_NO_NEGATIVE)
 					return 0;
@@ -234,8 +231,7 @@ char handleNumInput(NumInput *n, const wmEvent *event)
 				else
 					n->ctrl[idx] = -1;
 				break;
-			case PADSLASHKEY:
-			case SLASHKEY:
+			case PADSLASHKEY: case SLASHKEY:
 				if (n->flag & NUM_NO_FRACTION)
 					return 0;
 
@@ -250,35 +246,34 @@ char handleNumInput(NumInput *n, const wmEvent *event)
 					idx = 0;
 				n->idx = idx;
 				break;
-			case PAD9:
-			case NINEKEY:
+			case PAD9: case NINEKEY:
 				Val += 1.0f;
-			case PAD8:
-			case EIGHTKEY:
+				/* fall-through */
+			case PAD8: case EIGHTKEY:
 				Val += 1.0f;
-			case PAD7:
-			case SEVENKEY:
+				/* fall-through */
+			case PAD7: case SEVENKEY:
 				Val += 1.0f;
-			case PAD6:
-			case SIXKEY:
+				/* fall-through */
+			case PAD6: case SIXKEY:
 				Val += 1.0f;
-			case PAD5:
-			case FIVEKEY:
+				/* fall-through */
+			case PAD5: case FIVEKEY:
 				Val += 1.0f;
-			case PAD4:
-			case FOURKEY:
+				/* fall-through */
+			case PAD4: case FOURKEY:
 				Val += 1.0f;
-			case PAD3:
-			case THREEKEY:
+				/* fall-through */
+			case PAD3: case THREEKEY:
 				Val += 1.0f;
-			case PAD2:
-			case TWOKEY:
+				/* fall-through */
+			case PAD2: case TWOKEY:
 				Val += 1.0f;
-			case PAD1:
-			case ONEKEY:
+				/* fall-through */
+			case PAD1: case ONEKEY:
 				Val += 1.0f;
-			case PAD0:
-			case ZEROKEY:
+				/* fall-through */
+			case PAD0: case ZEROKEY:
 				if (!n->ctrl[idx])
 					n->ctrl[idx] = 1;
 

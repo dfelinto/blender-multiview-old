@@ -173,6 +173,7 @@ typedef struct RenderStats {
 	int cfra;
 	int totface, totvert, totstrand, tothalo, totlamp, totpart;
 	short curfield, curblur, curpart, partsdone, convertdone, curfsa;
+	bool localview;
 	double starttime, lastframetime;
 	const char *infostr, *statstr;
 	char scene_name[MAX_ID_NAME - 2];
@@ -244,6 +245,7 @@ void RE_GetViewPlane(struct Render *re, rctf *viewplane, rcti *disprect);
 
 /* make or free the dbase */
 void RE_Database_FromScene(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, int use_camera_view);
+void RE_Database_Preprocess(struct Render *re);
 void RE_Database_Free(struct Render *re);
 
 /* project dbase again, when viewplane/perspective changed */
@@ -261,9 +263,8 @@ void RE_init_threadcount(Render *re);
 void RE_TileProcessor(struct Render *re);
 
 /* only RE_NewRender() needed, main Blender render calls */
-void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, struct Object *camera_override, unsigned int lay, int frame, const short write_still);
-void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay, int sfra, int efra, int tfra);
-
+void RE_BlenderFrame(struct Render *re, struct Main *bmain, struct Scene *scene, struct SceneRenderLayer *srl, struct Object *camera_override, unsigned int lay_override, int frame, const short write_still);
+void RE_BlenderAnim(struct Render *re, struct Main *bmain, struct Scene *scene, struct Object *camera_override, unsigned int lay_override, int sfra, int efra, int tfra);
 #ifdef WITH_FREESTYLE
 void RE_RenderFreestyleStrokes(struct Render *re, struct Main *bmain, struct Scene *scene, int render);
 #endif
@@ -286,7 +287,7 @@ void RE_MergeFullSample(struct Render *re, struct Main *bmain, struct Scene *sce
 
 /* ancient stars function... go away! */
 void RE_make_stars(struct Render *re, struct Scene *scenev3d, void (*initfunc)(void),
-                   void (*vertexfunc)(float *),  void (*termfunc)(void));
+                   void (*vertexfunc)(const float *),  void (*termfunc)(void));
 
 /* display and event callbacks */
 void RE_display_init_cb	(struct Render *re, void *handle, void (*f)(void *handle, RenderResult *rr));
@@ -320,6 +321,8 @@ int RE_layers_have_name(struct RenderResult *result);
 #define RE_BAKE_MIRROR_INTENSITY	10
 #define RE_BAKE_ALPHA				11
 #define RE_BAKE_EMIT				12
+#define RE_BAKE_DERIVATIVE			13
+#define RE_BAKE_VERTEX_COLORS		14
 
 void RE_Database_Baking(struct Render *re, struct Main *bmain, struct Scene *scene, unsigned int lay, const int type, struct Object *actob);
 

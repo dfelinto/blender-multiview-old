@@ -1,19 +1,17 @@
 /*
- * Copyright 2011, Blender Foundation.
+ * Copyright 2011-2013 Blender Foundation
  *
- * This program is free software; you can redistribute it and/or
- * modify it under the terms of the GNU General Public License
- * as published by the Free Software Foundation; either version 2
- * of the License, or (at your option) any later version.
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * http://www.apache.org/licenses/LICENSE-2.0
  *
- * You should have received a copy of the GNU General Public License
- * along with this program; if not, write to the Free Software Foundation,
- * Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License
  */
 
 #ifndef __BLENDER_SYNC_H__
@@ -83,7 +81,7 @@ private:
 
 	void sync_nodes(Shader *shader, BL::ShaderNodeTree b_ntree);
 	Mesh *sync_mesh(BL::Object b_ob, bool object_updated, bool hide_tris);
-	void sync_curves(Mesh *mesh, BL::Mesh b_mesh, BL::Object b_ob, bool object_updated);
+	void sync_curves(Mesh *mesh, BL::Mesh b_mesh, BL::Object b_ob, int motion);
 	Object *sync_object(BL::Object b_parent, int persistent_id[OBJECT_PERSISTENT_ID_SIZE], BL::DupliObject b_dupli_object, Transform& tfm, uint layer_flag, int motion, bool hide_tris);
 	void sync_light(BL::Object b_parent, int persistent_id[OBJECT_PERSISTENT_ID_SIZE], BL::Object b_ob, Transform& tfm);
 	void sync_background_light();
@@ -110,6 +108,7 @@ private:
 	id_map<ObjectKey, Light> light_map;
 	id_map<ParticleSystemKey, ParticleSystem> particle_system_map;
 	set<Mesh*> mesh_synced;
+	set<Mesh*> mesh_motion_synced;
 	void *world_map;
 	bool world_recalc;
 
@@ -127,6 +126,7 @@ private:
 		  use_surfaces(true),
 		  use_hair(true),
 		  use_viewport_visibility(false),
+		  use_localview(false),
 		  samples(0), bound_samples(false)
 		{}
 

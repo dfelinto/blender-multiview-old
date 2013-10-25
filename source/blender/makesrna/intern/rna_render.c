@@ -50,6 +50,9 @@
 #include "BKE_context.h"
 #include "BKE_report.h"
 
+#include "IMB_colormanagement.h"
+#include "GPU_extensions.h"
+
 /* RenderEngine Callbacks */
 
 static void engine_tag_redraw(RenderEngine *engine)
@@ -60,6 +63,23 @@ static void engine_tag_redraw(RenderEngine *engine)
 static void engine_tag_update(RenderEngine *engine)
 {
 	engine->flag |= RE_ENGINE_DO_UPDATE;
+}
+
+static int engine_support_display_space_shader(RenderEngine *UNUSED(engine), Scene *scene)
+{
+	return IMB_colormanagement_support_glsl_draw(&scene->view_settings);
+}
+
+static void engine_bind_display_space_shader(RenderEngine *UNUSED(engine), Scene *scene)
+{
+	IMB_colormanagement_setup_glsl_draw(&scene->view_settings,
+	                                    &scene->display_settings,
+	                                    false);
+}
+
+static void engine_unbind_display_space_shader(RenderEngine *UNUSED(engine))
+{
+	IMB_colormanagement_finish_glsl_draw();
 }
 
 static void engine_update(RenderEngine *engine, Main *bmain, Scene *scene)
@@ -374,14 +394,15 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	RNA_def_property_flag(prop, PROP_RNAPTR);
 
 	/* tag for redraw */
-	RNA_def_function(srna, "tag_redraw", "engine_tag_redraw");
+	func = RNA_def_function(srna, "tag_redraw", "engine_tag_redraw");
 	RNA_def_function_ui_description(func, "Request redraw for viewport rendering");
 
 	/* tag for update */
-	RNA_def_function(srna, "tag_update", "engine_tag_update");
+	func = RNA_def_function(srna, "tag_update", "engine_tag_update");
 	RNA_def_function_ui_description(func, "Request update call for viewport rendering");
 
 	func = RNA_def_function(srna, "begin_result", "RE_engine_begin_result");
+	RNA_def_function_ui_description(func, "Create render result to write linear floating point render layers and passes");
 	prop = RNA_def_int(func, "x", 0, 0, INT_MAX, "X", "", 0, INT_MAX);
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 	prop = RNA_def_int(func, "y", 0, 0, INT_MAX, "Y", "", 0, INT_MAX);
@@ -398,15 +419,18 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	RNA_def_function_return(func, prop);
 
 	func = RNA_def_function(srna, "update_result", "RE_engine_update_result");
+	RNA_def_function_ui_description(func, "Signal that pixels have been updated and can be redrawn in the user interface");
 	prop = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 
 	func = RNA_def_function(srna, "end_result", "RE_engine_end_result");
+	RNA_def_function_ui_description(func, "All pixels in the render result have been set and are final");
 	prop = RNA_def_pointer(func, "result", "RenderResult", "Result", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 	RNA_def_boolean(func, "cancel", 0, "Cancel", "Don't merge back results");
 
 	func = RNA_def_function(srna, "test_break", "RE_engine_test_break");
+	RNA_def_function_ui_description(func, "Test if the render operation should been cancelled, this is a fast call that should be used regularly for responsiveness");
 	prop = RNA_def_boolean(func, "do_break", 0, "Break", "");
 	RNA_def_function_return(func, prop);
 
@@ -416,25 +440,44 @@ static void rna_def_render_engine(BlenderRNA *brna)
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 
 	func = RNA_def_function(srna, "update_stats", "RE_engine_update_stats");
+	RNA_def_function_ui_description(func, "Update and signal to redraw render status text");
 	prop = RNA_def_string(func, "stats", "", 0, "Stats", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 	prop = RNA_def_string(func, "info", "", 0, "Info", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 
 	func = RNA_def_function(srna, "update_progress", "RE_engine_update_progress");
+	RNA_def_function_ui_description(func, "Update progress percentage of render");
 	prop = RNA_def_float(func, "progress", 0, 0.0f, 1.0f, "", "Percentage of render that's done", 0.0f, 1.0f);
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 
 	func = RNA_def_function(srna, "update_memory_stats", "RE_engine_update_memory_stats");
+	RNA_def_function_ui_description(func, "Update memory usage statistics");
 	RNA_def_float(func, "memory_used", 0, 0.0f, FLT_MAX, "", "Current memory usage in megabytes", 0.0f, FLT_MAX);
 	RNA_def_float(func, "memory_peak", 0, 0.0f, FLT_MAX, "", "Peak memory usage in megabytes", 0.0f, FLT_MAX);
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 
 	func = RNA_def_function(srna, "report", "RE_engine_report");
+	RNA_def_function_ui_description(func, "Report info, warning or error messages");
 	prop = RNA_def_enum_flag(func, "type", wm_report_items, 0, "Type", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
 	prop = RNA_def_string(func, "message", "", 0, "Report Message", "");
 	RNA_def_property_flag(prop, PROP_REQUIRED);
+
+	func = RNA_def_function(srna, "bind_display_space_shader", "engine_bind_display_space_shader");
+	RNA_def_function_ui_description(func, "Bind GLSL fragment shader that converts linear colors to display space colors using scene color management settings");
+	prop = RNA_def_pointer(func, "scene", "Scene", "", "");
+	RNA_def_property_flag(prop, PROP_REQUIRED);
+
+	func = RNA_def_function(srna, "unbind_display_space_shader", "engine_unbind_display_space_shader");
+	RNA_def_function_ui_description(func, "Unbind GLSL display space shader, must always be called after binding the shader");
+
+	func = RNA_def_function(srna, "support_display_space_shader", "engine_support_display_space_shader");
+	RNA_def_function_ui_description(func, "Test if GLSL display space shader is supported for the combination of graphics card and scene settings");
+	prop = RNA_def_pointer(func, "scene", "Scene", "", "");
+	RNA_def_property_flag(prop, PROP_REQUIRED);
+	prop = RNA_def_boolean(func, "supported", 0, "Supported", "");
+	RNA_def_function_return(func, prop);
 
 	RNA_define_verify_sdna(0);
 
@@ -494,6 +537,10 @@ static void rna_def_render_engine(BlenderRNA *brna)
 
 	prop = RNA_def_property(srna, "bl_use_exclude_layers", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_EXCLUDE_LAYERS);
+	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
+
+	prop = RNA_def_property(srna, "bl_use_save_buffers", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "type->flag", RE_USE_SAVE_BUFFERS);
 	RNA_def_property_flag(prop, PROP_REGISTER_OPTIONAL);
 
 	RNA_define_verify_sdna(1);
@@ -626,6 +673,9 @@ static void rna_def_render_pass(BlenderRNA *brna)
 		{SCE_PASS_TRANSM_DIRECT, "TRANSMISSION_DIRECT", 0, "Transmission Direct", ""},
 		{SCE_PASS_TRANSM_INDIRECT, "TRANSMISSION_INDIRECT", 0, "Transmission Indirect", ""},
 		{SCE_PASS_TRANSM_COLOR, "TRANSMISSION_COLOR", 0, "Transmission Color", ""},
+		{SCE_PASS_SUBSURFACE_DIRECT, "SUBSURFACE_DIRECT", 0, "Subsurface Direct", ""},
+		{SCE_PASS_SUBSURFACE_INDIRECT, "SUBSURFACE_INDIRECT", 0, "Subsurface Indirect", ""},
+		{SCE_PASS_SUBSURFACE_COLOR, "SUBSURFACE_COLOR", 0, "Subsurface Color", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 	

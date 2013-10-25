@@ -50,16 +50,16 @@ set(INC
 	../../blender/python/mathutils
 	../../../intern/container
 	../../../intern/guardedalloc
-	../../../intern/moto/include
 	../../../intern/string
 )
 
 set(INC_SYS
+	../../../intern/moto/include
+	../../../extern/recastnavigation/Recast/Include
+	../../../extern/recastnavigation/Detour/Include
 	${PTHREADS_INCLUDE_DIRS}
 	${GLEW_INCLUDE_PATH}
 	${BOOST_INCLUDE_DIR}
-	../../../extern/recastnavigation/Recast/Include
-	../../../extern/recastnavigation/Detour/Include
 )
 
 set(SRC
@@ -185,7 +185,6 @@ set(SRC
 	KX_OrientationInterpolator.h
 	KX_ParentActuator.h
 	KX_PhysicsEngineEnums.h
-	KX_PhysicsPropertiesobsolete.h
 	KX_PolyProxy.h
 	KX_PolygonMaterial.h
 	KX_PositionInterpolator.h

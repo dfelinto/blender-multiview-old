@@ -30,6 +30,7 @@
 #include "DNA_mesh_types.h"
 #include "DNA_armature_types.h"
 #include "DNA_object_types.h"
+#include "DNA_scene_types.h"
 
 #include "BLI_utildefines.h"
 #include "BLI_listbase.h"
@@ -123,7 +124,7 @@ void meshobject_foreachScreenVert(
 		ED_view3d_clipping_local(vc->rv3d, vc->obedit->obmat);  /* for local clipping lookups */
 	}
 
-	dm->foreachMappedVert(dm, meshobject_foreachScreenVert__mapFunc, &data);
+	dm->foreachMappedVert(dm, meshobject_foreachScreenVert__mapFunc, &data, DM_FOREACH_NOP);
 
 	dm->release(dm);
 }
@@ -165,7 +166,7 @@ void mesh_foreachScreenVert(
 	}
 
 	EDBM_index_arrays_ensure(vc->em, BM_VERT);
-	dm->foreachMappedVert(dm, mesh_foreachScreenVert__mapFunc, &data);
+	dm->foreachMappedVert(dm, mesh_foreachScreenVert__mapFunc, &data, DM_FOREACH_NOP);
 
 	dm->release(dm);
 }
@@ -237,7 +238,7 @@ static void mesh_foreachScreenFace__mapFunc(void *userData, int index, const flo
 	foreachScreenFace_userData *data = userData;
 	BMFace *efa = EDBM_face_at_index(data->vc.em, index);
 
-	if (efa && !BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
+	if (!BM_elem_flag_test(efa, BM_ELEM_HIDDEN)) {
 		float screen_co[2];
 		if (ED_view3d_project_float_object(data->vc.ar, cent, screen_co, data->clip_flag) == V3D_PROJ_RET_OK) {
 			data->func(data->userData, efa, screen_co, index);
@@ -261,7 +262,7 @@ void mesh_foreachScreenFace(
 	data.clip_flag = clip_flag;
 
 	EDBM_index_arrays_ensure(vc->em, BM_FACE);
-	dm->foreachMappedFaceCenter(dm, mesh_foreachScreenFace__mapFunc, &data);
+	dm->foreachMappedFaceCenter(dm, mesh_foreachScreenFace__mapFunc, &data, DM_FOREACH_NOP);
 
 	dm->release(dm);
 }
@@ -367,7 +368,7 @@ void lattice_foreachScreenVert(
 	Object *obedit = vc->obedit;
 	Lattice *lt = obedit->data;
 	BPoint *bp = lt->editlatt->latt->def;
-	DispList *dl = BKE_displist_find(&obedit->disp, DL_VERTS);
+	DispList *dl = obedit->curve_cache ? BKE_displist_find(&obedit->curve_cache->disp, DL_VERTS) : NULL;
 	float *co = dl ? dl->verts : NULL;
 	int i, N = lt->editlatt->latt->pntsu * lt->editlatt->latt->pntsv * lt->editlatt->latt->pntsw;
 

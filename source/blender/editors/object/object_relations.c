@@ -55,6 +55,7 @@
 #include "BLI_listbase.h"
 #include "BLI_linklist.h"
 #include "BLI_string.h"
+#include "BLI_kdtree.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -136,7 +137,7 @@ static int vertex_parent_set_exec(bContext *C, wmOperator *op)
 		BMEditMesh *em;
 
 		EDBM_mesh_load(obedit);
-		EDBM_mesh_make(scene->toolsettings, scene, obedit);
+		EDBM_mesh_make(scene->toolsettings, obedit);
 
 		em = me->edit_btmesh;
 
@@ -494,23 +495,21 @@ void ED_object_parent_clear(Object *ob, int type)
 			
 			/* clear parenting relationship completely */
 			ob->parent = NULL;
+			break;
 		}
-		break;
-		
 		case CLEAR_PARENT_KEEP_TRANSFORM:
 		{
 			/* remove parent, and apply the parented transform result as object's local transforms */
 			ob->parent = NULL;
 			BKE_object_apply_mat4(ob, ob->obmat, TRUE, FALSE);
+			break;
 		}
-		break;
-		
 		case CLEAR_PARENT_INVERSE:
 		{
 			/* object stays parented, but the parent inverse (i.e. offset from parent to retain binding state) is cleared */
 			unit_m4(ob->parentinv);
+			break;
 		}
-		break;
 	}
 	
 	DAG_id_tag_update(&ob->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
@@ -586,12 +585,12 @@ EnumPropertyItem prop_make_parent_types[] = {
 	{PAR_PATH_CONST, "PATH_CONST", 0, "Path Constraint", ""},
 	{PAR_LATTICE, "LATTICE", 0, "Lattice Deform", ""},
 	{PAR_VERTEX, "VERTEX", 0, "Vertex", ""},
-	{PAR_TRIA, "TRIA", 0, "Triangle", ""},
+	{PAR_VERTEX_TRI, "VERTEX_TRI", 0, "Vertex (Triangle)", ""},
 	{0, NULL, 0, NULL, NULL}
 };
 
 int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object *ob, Object *par,
-                         int partype, int xmirror, int keep_transform)
+                         int partype, bool xmirror, bool keep_transform, const int vert_par[3])
 {
 	bPoseChannel *pchan = NULL;
 	int pararm = ELEM4(partype, PAR_ARMATURE, PAR_ARMATURE_NAME, PAR_ARMATURE_ENVELOPE, PAR_ARMATURE_AUTO);
@@ -720,8 +719,17 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 				if (pchan->bone)
 					pchan->bone->flag |= BONE_RELATIVE_PARENTING;
 			}
-			else
+			else if (partype == PAR_VERTEX) {
+				ob->partype = PARVERT1;
+				ob->par1 = vert_par[0];
+			}
+			else if (partype == PAR_VERTEX_TRI) {
+				ob->partype = PARVERT3;
+				copy_v3_v3_int(&ob->par1, vert_par);
+			}
+			else {
 				ob->partype = PAROBJECT;  /* note, dna define, not operator property */
+			}
 			
 			/* constraint */
 			if (partype == PAR_PATH_CONST) {
@@ -768,24 +776,82 @@ int ED_object_parent_set(ReportList *reports, Main *bmain, Scene *scene, Object 
 	return 1;
 }
 
+
+
+static void parent_set_vert_find(KDTree *tree, Object *child, int vert_par[3], bool is_tri)
+{
+	const float *co_find = child->obmat[3];
+	if (is_tri) {
+		KDTreeNearest nearest[3];
+		int tot;
+
+		tot = BLI_kdtree_find_nearest_n(tree, co_find, NULL, nearest, 3);
+		BLI_assert(tot == 3);
+
+		vert_par[0] = nearest[0].index;
+		vert_par[1] = nearest[1].index;
+		vert_par[2] = nearest[2].index;
+
+		BLI_assert(min_iii(UNPACK3(vert_par)) >= 0);
+	}
+	else {
+		vert_par[0] = BLI_kdtree_find_nearest(tree, co_find, NULL, NULL);
+		BLI_assert(vert_par[0] >= 0);
+		vert_par[1] = 0;
+		vert_par[2] = 0;
+	}
+}
+
 static int parent_set_exec(bContext *C, wmOperator *op)
 {
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	Object *par = ED_object_active_context(C);
 	int partype = RNA_enum_get(op->ptr, "type");
-	int xmirror = RNA_boolean_get(op->ptr, "xmirror");
-	int keep_transform = RNA_boolean_get(op->ptr, "keep_transform");
-	int ok = 1;
+	bool xmirror = RNA_boolean_get(op->ptr, "xmirror");
+	bool keep_transform = RNA_boolean_get(op->ptr, "keep_transform");
+	bool ok = true;
 
+	/* vertex parent (kdtree) */
+	const bool is_vert_par = ELEM(partype, PAR_VERTEX, PAR_VERTEX_TRI);
+	const bool is_tri = partype == PAR_VERTEX_TRI;
+	int tree_tot;
+	struct KDTree *tree = NULL;
+	int vert_par[3] = {0, 0, 0};
+	int *vert_par_p = is_vert_par ? vert_par : NULL;
+
+
+	if (is_vert_par) {
+		tree = BKE_object_as_kdtree(par, &tree_tot);
+		BLI_assert(tree != NULL);
+
+		if (tree_tot < (is_tri ? 3 : 1)) {
+			BKE_report(op->reports, RPT_ERROR, "Not enough vertices for vertex-parent");
+			ok = false;
+			goto cleanup;
+		}
+	}
+
+
+	/* Non vertex-parent */
 	CTX_DATA_BEGIN (C, Object *, ob, selected_editable_objects)
 	{
-		if (!ED_object_parent_set(op->reports, bmain, scene, ob, par, partype, xmirror, keep_transform)) {
-			ok = 0;
+		if (is_vert_par) {
+			parent_set_vert_find(tree, ob, vert_par, is_tri);
+		}
+
+		if (!ED_object_parent_set(op->reports, bmain, scene, ob, par, partype, xmirror, keep_transform, vert_par_p)) {
+			ok = false;
 			break;
 		}
 	}
 	CTX_DATA_END;
+
+
+cleanup:
+	if (is_vert_par) {
+		BLI_kdtree_free(tree);
+	}
 
 	if (!ok)
 		return OPERATOR_CANCELLED;
@@ -837,6 +903,12 @@ static int parent_set_invoke(bContext *C, wmOperator *UNUSED(op), const wmEvent 
 		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_LATTICE);
 	}
 	
+	/* vertex parenting */
+	if (OB_TYPE_SUPPORT_PARVERT(ob->type)) {
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_VERTEX);
+		uiItemEnumO_ptr(layout, ot, NULL, 0, "type", PAR_VERTEX_TRI);
+	}
+
 	uiPupMenuEnd(C, pup);
 	
 	return OPERATOR_CANCELLED;
@@ -1430,12 +1502,13 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 	Scene *scene = CTX_data_scene(C);
 	const int type = RNA_enum_get(op->ptr, "type");
 	Object *ob_src;
-	ID *id;
+	ID *obdata_id;
 	int a;
 
 	/* group */
 	LinkNode *ob_groups = NULL;
-	int is_cycle = FALSE;
+	bool is_cycle = false;
+	bool is_lib = false;
 
 	ob_src = ED_object_active_context(C);
 
@@ -1450,14 +1523,15 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 
 		if (ob_src != ob_dst) {
 			if (allow_make_links_data(type, ob_src, ob_dst)) {
+				obdata_id = ob_dst->data;
+
 				switch (type) {
 					case MAKE_LINKS_OBDATA: /* obdata */
-						id = ob_dst->data;
-						id->us--;
+						obdata_id->us--;
 
-						id = ob_src->data;
-						id_us_plus(id);
-						ob_dst->data = id;
+						obdata_id = ob_src->data;
+						id_us_plus(obdata_id);
+						ob_dst->data = obdata_id;
 
 						/* if amount of material indices changed: */
 						test_object_materials(bmain, ob_dst->data);
@@ -1470,10 +1544,18 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 							Material *ma = give_current_material(ob_src, a + 1);
 							assign_material(ob_dst, ma, a + 1, BKE_MAT_ASSIGN_USERPREF); /* also works with ma==NULL */
 						}
+						DAG_id_tag_update(&ob_dst->id, 0);
 						break;
 					case MAKE_LINKS_ANIMDATA:
 						BKE_copy_animdata_id((ID *)ob_dst, (ID *)ob_src, FALSE);
-						BKE_copy_animdata_id((ID *)ob_dst->data, (ID *)ob_src->data, FALSE);
+						if (ob_dst->data && ob_src->data) {
+							if (obdata_id->lib) {
+								is_lib = true;
+								break;
+							}
+							BKE_copy_animdata_id((ID *)ob_dst->data, (ID *)ob_src->data, FALSE);
+						}
+						DAG_id_tag_update(&ob_dst->id, OB_RECALC_OB | OB_RECALC_DATA | OB_RECALC_TIME);
 						break;
 					case MAKE_LINKS_GROUP:
 					{
@@ -1491,6 +1573,7 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 								is_cycle = TRUE;
 							}
 						}
+						break;
 					}
 					case MAKE_LINKS_DUPLIGROUP:
 						ob_dst->dup_group = ob_src->dup_group;
@@ -1507,6 +1590,11 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 					{
 						Curve *cu_src = ob_src->data;
 						Curve *cu_dst = ob_dst->data;
+
+						if (obdata_id->lib) {
+							is_lib = true;
+							break;
+						}
 
 						if (cu_dst->vfont) cu_dst->vfont->id.us--;
 						cu_dst->vfont = cu_src->vfont;
@@ -1538,6 +1626,10 @@ static int make_links_data_exec(bContext *C, wmOperator *op)
 		if (is_cycle) {
 			BKE_report(op->reports, RPT_WARNING, "Skipped some groups because of cycle detected");
 		}
+	}
+
+	if (is_lib) {
+		BKE_report(op->reports, RPT_WARNING, "Skipped editing library object data");
 	}
 
 	DAG_relations_tag_update(bmain);
@@ -2031,7 +2123,7 @@ static int make_local_exec(bContext *C, wmOperator *op)
 			if (adt) BKE_animdata_make_local(adt);
 			
 			/* tag indirect data direct */
-			matarar = (Material ***)give_matarar(ob);
+			matarar = give_matarar(ob);
 			if (matarar) {
 				for (a = 0; a < ob->totcol; a++) {
 					ma = (*matarar)[a];
@@ -2119,6 +2211,8 @@ static int make_single_user_exec(bContext *C, wmOperator *op)
 	int flag = RNA_enum_get(op->ptr, "type"); /* 0==ALL, SELECTED==selected objecs */
 	bool copy_groups = false;
 
+	clear_id_newpoins();
+
 	if (RNA_boolean_get(op->ptr, "object"))
 		single_object_users(bmain, scene, v3d, flag, copy_groups);
 
@@ -2135,6 +2229,11 @@ static int make_single_user_exec(bContext *C, wmOperator *op)
 	if (RNA_boolean_get(op->ptr, "animation"))
 		single_object_action_users(scene, flag);
 
+	/* TODO(sergey): This should not be needed, however some tool still could rely
+	 *               on the fact, that id->newid is kept NULL by default.
+	 *               Need to make sure all the guys are learing newid before they're
+	 *               using it, not after.
+	 */
 	clear_id_newpoins();
 
 	WM_event_add_notifier(C, NC_WINDOW, NULL);

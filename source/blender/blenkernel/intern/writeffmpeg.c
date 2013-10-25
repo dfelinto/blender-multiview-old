@@ -747,7 +747,7 @@ static AVStream *alloc_audio_stream(RenderData *rd, int codec_id, AVFormatContex
 #endif
 
 	if (c->frame_size == 0)
-		// used to be if((c->codec_id >= CODEC_ID_PCM_S16LE) && (c->codec_id <= CODEC_ID_PCM_DVD))
+		// used to be if ((c->codec_id >= CODEC_ID_PCM_S16LE) && (c->codec_id <= CODEC_ID_PCM_DVD))
 		// not sure if that is needed anymore, so let's try out if there are any
 		// complaints regarding some ffmpeg versions users might have
 		audio_input_samples = FF_MIN_BUFFER_SIZE * 8 / c->bits_per_coded_sample / c->channels;
@@ -877,6 +877,7 @@ static int start_ffmpeg_impl(struct RenderData *rd, int rectx, int recty, Report
 			break;
 		case FFMPEG_MP3:
 			fmt->audio_codec = CODEC_ID_MP3;
+			/* fall-through */
 		case FFMPEG_WAV:
 			fmt->video_codec = CODEC_ID_NONE;
 			break;
@@ -1072,23 +1073,23 @@ int BKE_ffmpeg_start(struct Scene *scene, RenderData *rd, int rectx, int recty, 
 		specs.channels = c->channels;
 
 		switch (av_get_packed_sample_fmt(c->sample_fmt)) {
-		case AV_SAMPLE_FMT_U8:
-			specs.format = AUD_FORMAT_U8;
-			break;
-		case AV_SAMPLE_FMT_S16:
-			specs.format = AUD_FORMAT_S16;
-			break;
-		case AV_SAMPLE_FMT_S32:
-			specs.format = AUD_FORMAT_S32;
-			break;
-		case AV_SAMPLE_FMT_FLT:
-			specs.format = AUD_FORMAT_FLOAT32;
-			break;
-		case AV_SAMPLE_FMT_DBL:
-			specs.format = AUD_FORMAT_FLOAT64;
-			break;
-		default:
-			return -31415;
+			case AV_SAMPLE_FMT_U8:
+				specs.format = AUD_FORMAT_U8;
+				break;
+			case AV_SAMPLE_FMT_S16:
+				specs.format = AUD_FORMAT_S16;
+				break;
+			case AV_SAMPLE_FMT_S32:
+				specs.format = AUD_FORMAT_S32;
+				break;
+			case AV_SAMPLE_FMT_FLT:
+				specs.format = AUD_FORMAT_FLOAT32;
+				break;
+			case AV_SAMPLE_FMT_DBL:
+				specs.format = AUD_FORMAT_FLOAT64;
+				break;
+			default:
+				return -31415;
 		}
 
 		specs.rate = rd->ffcodecdata.audio_mixrate;
@@ -1253,9 +1254,7 @@ void BKE_ffmpeg_property_del(RenderData *rd, void *type, void *prop_)
 
 	group = IDP_GetPropertyFromGroup(rd->ffcodecdata.properties, type);
 	if (group && prop) {
-		IDP_RemFromGroup(group, prop);
-		IDP_FreeProperty(prop);
-		MEM_freeN(prop);
+		IDP_FreeFromGroup(group, prop);
 	}
 }
 
