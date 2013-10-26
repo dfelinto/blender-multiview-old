@@ -9861,6 +9861,31 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				srv = (SceneRenderView *)scene->r.views.last;
 				BLI_strncpy(srv->suffix, "_R", sizeof(srv->suffix));
 			}
+
+			for (screen = main->screen.first; screen; screen = screen->id.next) {
+				ScrArea *sa;
+				for (sa = screen->areabase.first; sa; sa = sa->next) {
+					SpaceLink *sl;
+
+					for (sl = sa->spacedata.first; sl; sl= sl->next) {
+						switch (sl->spacetype) {
+							case SPACE_VIEW3D:
+							{
+								View3D *v3d = (View3D*) sl;
+								v3d->stereo_camera = STEREO_3D_ID;
+								v3d->flag2 |= V3D_SHOW_STEREOSCOPY;
+								break;
+							}
+							case SPACE_IMAGE:
+							{
+								SpaceImage *sima = (SpaceImage *) sl;
+								sima->iuser.flag |= IMA_SHOW_STEREO;
+								break;
+							}
+						}
+					}
+				}
+			}
 		}
 
 		if (!DNA_struct_elem_find(fd->filesdna, "Camera", "CameraStereoSettings", "stereo")) {
