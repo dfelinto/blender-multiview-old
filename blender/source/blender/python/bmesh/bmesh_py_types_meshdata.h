@@ -51,6 +51,9 @@ PyObject *BPy_BMTexPoly_CreatePyObject(struct MTexPoly *mloopuv);
 int       BPy_BMLoopUV_AssignPyObject(struct MLoopUV *data, PyObject *value);
 PyObject *BPy_BMLoopUV_CreatePyObject(struct MLoopUV *data);
 
+int       BPy_BMVertSkin_AssignPyObject(struct MVertSkin *data, PyObject *value);
+PyObject *BPy_BMVertSkin_CreatePyObject(struct MVertSkin *data);
+
 int       BPy_BMLoopColor_AssignPyObject(struct MLoopCol *data, PyObject *value);
 PyObject *BPy_BMLoopColor_CreatePyObject(struct MLoopCol *data);
 
