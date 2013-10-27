@@ -44,6 +44,7 @@ struct MTexPoly;
 struct MLoopUV;
 struct MLoopCol;
 struct MDeformVert;
+struct MVertSkin;
 
 int       BPy_BMTexPoly_AssignPyObject(struct MTexPoly *mloopuv, PyObject *value);
 PyObject *BPy_BMTexPoly_CreatePyObject(struct MTexPoly *mloopuv);
