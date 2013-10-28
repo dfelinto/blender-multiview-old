@@ -370,8 +370,7 @@ void wm_method_draw_stereo(bContext *UNUSED(C), wmWindow *win)
 
 static bool wm_stereo_need_fullscreen(eStereoDisplayMode stereo_display)
 {
-	return ELEM4(stereo_display,
-	             S3D_DISPLAY_INTERLACE,
+	return ELEM3(stereo_display,
 	             S3D_DISPLAY_SIDEBYSIDE,
 	             S3D_DISPLAY_TOPBOTTOM,
 	             S3D_DISPLAY_PAGEFLIP);
