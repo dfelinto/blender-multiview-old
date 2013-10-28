@@ -2354,9 +2354,9 @@ static void draw_dm_edges_freestyle(BMEditMesh *em, DerivedMesh *dm)
 	dm->drawMappedEdges(dm, draw_dm_edges_freestyle__setDrawOptions, em->bm);
 }
 
-static int draw_dm_test_freestyle_face_mark(BMEditMesh *em, BMFace *efa)
+static int draw_dm_test_freestyle_face_mark(BMesh *bm, BMFace *efa)
 {
-	FreestyleFace *ffa = CustomData_bmesh_get(&em->bm->pdata, efa->head.data, CD_FREESTYLE_FACE);
+	FreestyleFace *ffa = CustomData_bmesh_get(&bm->pdata, efa->head.data, CD_FREESTYLE_FACE);
 	if (!ffa)
 		return 0;
 	return (ffa->flag & FREESTYLE_FACE_MARK) != 0;
@@ -2379,7 +2379,7 @@ static DMDrawOption draw_dm_faces_sel__setDrawOptions(void *userData, int index)
 		}
 		else {
 #ifdef WITH_FREESTYLE
-			col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->em, efa) ? 3 : 0];
+			col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->bm, efa) ? 3 : 0];
 #else
 			col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : 0];
 #endif
@@ -2420,8 +2420,8 @@ static int draw_dm_faces_sel__compareDrawOptions(void *userData, int index, int 
 		return 0;
 
 #ifdef WITH_FREESTYLE
-	col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->em, efa) ? 3 : 0];
-	next_col = data->cols[BM_elem_flag_test(next_efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->em, efa) ? 3 : 0];
+	col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->bm, efa) ? 3 : 0];
+	next_col = data->cols[BM_elem_flag_test(next_efa, BM_ELEM_SELECT) ? 1 : draw_dm_test_freestyle_face_mark(data->bm, efa) ? 3 : 0];
 #else
 	col = data->cols[BM_elem_flag_test(efa, BM_ELEM_SELECT) ? 1 : 0];
 	next_col = data->cols[BM_elem_flag_test(next_efa, BM_ELEM_SELECT) ? 1 : 0];
