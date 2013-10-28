@@ -714,7 +714,7 @@ void BM_mesh_elem_table_ensure(BMesh *bm, const char htype)
 		bm->elem_table_dirty &= ~BM_FACE;
 	}
 
-#pragma omp parallel sections if (em->bm->totvert + em->bm->totedge + em->bm->totface >= BM_OMP_LIMIT)
+#pragma omp parallel sections if (bm->totvert + bm->totedge + bm->totface >= BM_OMP_LIMIT)
 	{
 #pragma omp section
 		{
