@@ -214,7 +214,7 @@ static void set_mapped_co(void *vuserdata, int index, const float co[3],
 	void **userdata = vuserdata;
 	BMEditMesh *em = userdata[0];
 	TransVert *tv = userdata[1];
-	BMVert *eve = EDBM_vert_at_index(em, index);
+	BMVert *eve = BM_vert_at_index(em->bm, index);
 	
 	if (BM_elem_index_get(eve) != TM_INDEX_SKIP) {
 		tv = &tv[BM_elem_index_get(eve)];
@@ -342,7 +342,7 @@ static void make_trans_verts(Object *obedit, float min[3], float max[3], int mod
 		}
 		
 		if (transvmain && em->derivedCage) {
-			EDBM_index_arrays_ensure(em, BM_VERT);
+			BM_mesh_elem_table_ensure(bm, BM_VERT);
 			em->derivedCage->foreachMappedVert(em->derivedCage, set_mapped_co, userdata, DM_FOREACH_NOP);
 		}
 	}
@@ -687,7 +687,7 @@ static int snap_sel_to_curs_exec(bContext *C, wmOperator *op)
 
 	const bool use_offset = RNA_boolean_get(op->ptr, "use_offset");
 
-	cursor_global = give_cursor(scene, v3d);
+	cursor_global = ED_view3d_cursor3d_get(scene, v3d);
 
 	if (use_offset) {
 		snap_curs_to_sel_ex(C, center_global);
@@ -852,7 +852,7 @@ static int snap_curs_to_grid_exec(bContext *C, wmOperator *UNUSED(op))
 	float gridf, *curs;
 
 	gridf = rv3d->gridview;
-	curs = give_cursor(scene, v3d);
+	curs = ED_view3d_cursor3d_get(scene, v3d);
 
 	curs[0] = gridf * floorf(0.5f + curs[0] / gridf);
 	curs[1] = gridf * floorf(0.5f + curs[1] / gridf);
@@ -1035,7 +1035,7 @@ static int snap_curs_to_sel_exec(bContext *C, wmOperator *UNUSED(op))
 	View3D *v3d = CTX_wm_view3d(C);
 	float *curs;
 
-	curs = give_cursor(scene, v3d);
+	curs = ED_view3d_cursor3d_get(scene, v3d);
 
 	if (snap_curs_to_sel_ex(C, curs)) {
 		WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
@@ -1072,7 +1072,7 @@ static int snap_curs_to_active_exec(bContext *C, wmOperator *UNUSED(op))
 	View3D *v3d = CTX_wm_view3d(C);
 	float *curs;
 	
-	curs = give_cursor(scene, v3d);
+	curs = ED_view3d_cursor3d_get(scene, v3d);
 
 	if (obedit) {
 		if (obedit->type == OB_MESH) {
@@ -1127,7 +1127,7 @@ static int snap_curs_to_center_exec(bContext *C, wmOperator *UNUSED(op))
 	Scene *scene = CTX_data_scene(C);
 	View3D *v3d = CTX_wm_view3d(C);
 	float *curs;
-	curs = give_cursor(scene, v3d);
+	curs = ED_view3d_cursor3d_get(scene, v3d);
 
 	zero_v3(curs);
 	

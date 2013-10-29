@@ -36,6 +36,7 @@
 
 #include "MEM_guardedalloc.h"
 
+#include "DNA_anim_types.h"
 #include "DNA_gpencil_types.h"
 #include "DNA_camera_types.h"
 #include "DNA_movieclip_types.h"
@@ -53,6 +54,7 @@
 
 #include "BLF_translation.h"
 
+#include "BKE_fcurve.h"
 #include "BKE_global.h"
 #include "BKE_tracking.h"
 #include "BKE_movieclip.h"
@@ -61,6 +63,8 @@
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
+
+#include "RNA_access.h"
 
 #include "raskter.h"
 
@@ -590,6 +594,7 @@ MovieTrackingTrack *BKE_tracking_track_add(MovieTracking *tracking, ListBase *tr
 	track->frames_limit = settings->default_frames_limit;
 	track->flag = settings->default_flag;
 	track->algorithm_flag = settings->default_algorithm_flag;
+	track->weight = 1.0f;
 
 	memset(&marker, 0, sizeof(marker));
 	marker.pos[0] = x;
@@ -3324,7 +3329,7 @@ static void track_plane_from_existing_motion(MovieTrackingPlaneTrack *plane_trac
 
 		libmv_homography2DFromCorrespondencesEuc(x1, x2, num_correspondences, H_double);
 
-		copt_m3_m3d(H, H_double);
+		copy_m3_m3d(H, H_double);
 
 		for (i = 0; i < 4; i++) {
 			float vec[3] = {0.0f, 0.0f, 1.0f}, vec2[3];
@@ -3428,7 +3433,7 @@ void BKE_tracking_homography_between_two_quads(/*const*/ float reference_corners
 
 	libmv_homography2DFromCorrespondencesEuc(x1, x2, 4, H_double);
 
-	copt_m3_m3d(H, H_double);
+	copy_m3_m3d(H, H_double);
 }
 
 /*********************** Camera solving *************************/
@@ -3467,7 +3472,7 @@ typedef struct ReconstructProgressData {
 } ReconstructProgressData;
 
 /* Create new libmv Tracks structure from blender's tracks list. */
-static struct libmv_Tracks *libmv_tracks_new(ListBase *tracksbase, int width, int height)
+static struct libmv_Tracks *libmv_tracks_new(MovieClip *clip, ListBase *tracksbase, int width, int height)
 {
 	int tracknr = 0;
 	MovieTrackingTrack *track;
@@ -3475,15 +3480,28 @@ static struct libmv_Tracks *libmv_tracks_new(ListBase *tracksbase, int width, in
 
 	track = tracksbase->first;
 	while (track) {
+		FCurve *weight_fcurve;
 		int a = 0;
+
+		weight_fcurve = id_data_find_fcurve(&clip->id, track, &RNA_MovieTrackingTrack,
+		                                    "weight", 0, NULL);
 
 		for (a = 0; a < track->markersnr; a++) {
 			MovieTrackingMarker *marker = &track->markers[a];
 
 			if ((marker->flag & MARKER_DISABLED) == 0) {
+				float weight = track->weight;
+
+				if (weight_fcurve) {
+					int scene_framenr =
+						BKE_movieclip_remap_clip_to_scene_frame(clip, marker->framenr);
+					weight = evaluate_fcurve(weight_fcurve, scene_framenr);
+				}
+
 				libmv_tracksInsert(tracks, marker->framenr, tracknr,
 				                   (marker->pos[0] + track->offset[0]) * width,
-				                   (marker->pos[1] + track->offset[1]) * height);
+				                   (marker->pos[1] + track->offset[1]) * height,
+				                   weight);
 			}
 		}
 
@@ -3730,9 +3748,10 @@ bool BKE_tracking_reconstruction_check(MovieTracking *tracking, MovieTrackingObj
  * clip datablock, so editing this clip is safe during
  * reconstruction job is in progress.
  */
-MovieReconstructContext *BKE_tracking_reconstruction_context_new(MovieTracking *tracking, MovieTrackingObject *object,
+MovieReconstructContext *BKE_tracking_reconstruction_context_new(MovieClip *clip, MovieTrackingObject *object,
                                                                  int keyframe1, int keyframe2, int width, int height)
 {
+	MovieTracking *tracking = &clip->tracking;
 	MovieReconstructContext *context = MEM_callocN(sizeof(MovieReconstructContext), "MovieReconstructContext data");
 	MovieTrackingCamera *camera = &tracking->camera;
 	ListBase *tracksbase = BKE_tracking_object_get_tracks(tracking, object);
@@ -3793,7 +3812,7 @@ MovieReconstructContext *BKE_tracking_reconstruction_context_new(MovieTracking *
 	context->sfra = sfra;
 	context->efra = efra;
 
-	context->tracks = libmv_tracks_new(tracksbase, width, height * aspy);
+	context->tracks = libmv_tracks_new(clip, tracksbase, width, height * aspy);
 	context->keyframe1 = keyframe1;
 	context->keyframe2 = keyframe2;
 	context->refine_flags = reconstruct_refine_intrinsics_get_flags(tracking, object);

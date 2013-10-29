@@ -60,8 +60,9 @@ void RenderLayersBaseProg::initExecution()
 			if (rl) {
 				this->m_inputBuffer = RE_RenderLayerGetPass(rl, this->m_renderpass, getViewId());
 
-				if (this->m_inputBuffer == NULL)
+				if (this->m_inputBuffer == NULL && this->m_renderpass == SCE_PASS_COMBINED) {
 					this->m_inputBuffer = RE_RenderLayerGetPass(rl, SCE_PASS_COMBINED, getViewId());
+				}
 			}
 		}
 	}

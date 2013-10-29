@@ -248,6 +248,23 @@ static CurveMapping but_copypaste_curve = {0};
 static bool but_copypaste_curve_alive = false;
 
 /* ******************** menu navigation helpers ************** */
+enum eSnapType {
+	SNAP_OFF = 0,
+	SNAP_ON,
+	SNAP_ON_SMALL,
+};
+
+static enum eSnapType ui_event_to_snap(const wmEvent *event)
+{
+	return (event->ctrl) ? (event->shift) ? SNAP_ON_SMALL : SNAP_ON : SNAP_OFF;
+}
+
+static void ui_color_snap_hue(const enum eSnapType snap, float *r_hue)
+{
+	const float snap_increment = (snap == SNAP_ON_SMALL) ? 24 : 12;
+	BLI_assert(snap != SNAP_OFF);
+	*r_hue = floorf(0.5f + ((*r_hue) * snap_increment)) / snap_increment;
+}
 
 /* assumes event type is MOUSEPAN */
 void ui_pan_to_scroll(const wmEvent *event, int *type, int *val)
@@ -340,7 +357,7 @@ static bool ui_is_a_warp_but(uiBut *but)
 	return false;
 }
 
-static float ui_mouse_scale_warp_factor(const short shift)
+static float ui_mouse_scale_warp_factor(const bool shift)
 {
 	return shift ? 0.05f : 1.0f;
 }
@@ -348,7 +365,7 @@ static float ui_mouse_scale_warp_factor(const short shift)
 static void ui_mouse_scale_warp(uiHandleButtonData *data,
                                 const float mx, const float my,
                                 float *r_mx, float *r_my,
-                                const short shift)
+                                const bool shift)
 {
 	const float fac = ui_mouse_scale_warp_factor(shift);
 	
@@ -1768,7 +1785,7 @@ static bool ui_textedit_type_ascii(uiBut *but, uiHandleButtonData *data, char as
 }
 
 static void ui_textedit_move(uiBut *but, uiHandleButtonData *data, strCursorJumpDirection direction,
-                             int select, strCursorJumpType jump)
+                             const bool select, strCursorJumpType jump)
 {
 	const char *str = data->str;
 	const int len = strlen(str);
@@ -2189,7 +2206,7 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 			
 			/* only select a word in button if there was no selection before */
 			if (event->val == KM_DBL_CLICK && had_selection == false) {
-				ui_textedit_move(but, data, STRCUR_DIR_PREV, 0, STRCUR_JUMP_DELIM);
+				ui_textedit_move(but, data, STRCUR_DIR_PREV, false, STRCUR_JUMP_DELIM);
 				ui_textedit_move(but, data, STRCUR_DIR_NEXT, true, STRCUR_JUMP_DELIM);
 				retval = WM_UI_HANDLER_BREAK;
 				changed = true;
@@ -2223,12 +2240,12 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 				break;
 			case RIGHTARROWKEY:
 				ui_textedit_move(but, data, STRCUR_DIR_NEXT,
-				                 event->shift, event->ctrl ? STRCUR_JUMP_DELIM : STRCUR_JUMP_NONE);
+				                 event->shift != 0, event->ctrl ? STRCUR_JUMP_DELIM : STRCUR_JUMP_NONE);
 				retval = WM_UI_HANDLER_BREAK;
 				break;
 			case LEFTARROWKEY:
 				ui_textedit_move(but, data, STRCUR_DIR_PREV,
-				                 event->shift, event->ctrl ? STRCUR_JUMP_DELIM : STRCUR_JUMP_NONE);
+				                 event->shift != 0, event->ctrl ? STRCUR_JUMP_DELIM : STRCUR_JUMP_NONE);
 				retval = WM_UI_HANDLER_BREAK;
 				break;
 			case WHEELDOWNMOUSE:
@@ -2243,7 +2260,7 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 				/* fall-through */
 			case ENDKEY:
 				ui_textedit_move(but, data, STRCUR_DIR_NEXT,
-				                 event->shift, STRCUR_JUMP_ALL);
+				                 event->shift != 0, STRCUR_JUMP_ALL);
 				retval = WM_UI_HANDLER_BREAK;
 				break;
 			case WHEELUPMOUSE:
@@ -2258,7 +2275,7 @@ static void ui_do_but_textedit(bContext *C, uiBlock *block, uiBut *but, uiHandle
 				/* fall-through */
 			case HOMEKEY:
 				ui_textedit_move(but, data, STRCUR_DIR_PREV,
-				                 event->shift, STRCUR_JUMP_ALL);
+				                 event->shift != 0, STRCUR_JUMP_ALL);
 				retval = WM_UI_HANDLER_BREAK;
 				break;
 			case PADENTER:
@@ -2817,9 +2834,10 @@ static int ui_do_but_EXIT(bContext *C, uiBut *but, uiHandleButtonData *data, con
 }
 
 /* var names match ui_numedit_but_NUM */
-static float ui_numedit_apply_snapf(uiBut *but, float tempf, float softmin, float softmax, float softrange, int snap)
+static float ui_numedit_apply_snapf(uiBut *but, float tempf, float softmin, float softmax, float softrange,
+                                    const enum eSnapType snap)
 {
-	if (tempf == softmin || tempf == softmax || snap == 0) {
+	if (tempf == softmin || tempf == softmax || snap == SNAP_OFF) {
 		/* pass */
 	}
 	else {
@@ -2845,15 +2863,18 @@ static float ui_numedit_apply_snapf(uiBut *but, float tempf, float softmin, floa
 			softrange /= fac;
 		}
 
-		if (snap == 1) {
+		if (snap == SNAP_ON) {
 			if      (softrange < 2.10f) tempf = 0.1f  * floorf(10.0f * tempf);
 			else if (softrange < 21.0f) tempf = floorf(tempf);
 			else                        tempf = 10.0f * floorf(tempf / 10.0f);
 		}
-		else if (snap == 2) {
+		else if (snap == SNAP_ON_SMALL) {
 			if      (softrange < 2.10f) tempf = 0.01f * floorf(100.0f * tempf);
 			else if (softrange < 21.0f) tempf = 0.1f  * floorf(10.0f * tempf);
 			else                        tempf = floor(tempf);
+		}
+		else {
+			BLI_assert(0);
 		}
 		
 		if (fac != 1.0f)
@@ -2863,18 +2884,19 @@ static float ui_numedit_apply_snapf(uiBut *but, float tempf, float softmin, floa
 	return tempf;
 }
 
-static float ui_numedit_apply_snap(int temp, float softmin, float softmax, int snap)
+static float ui_numedit_apply_snap(int temp, float softmin, float softmax,
+                                   const enum eSnapType snap)
 {
 	if (temp == softmin || temp == softmax)
 		return temp;
 
 	switch (snap) {
-		case 0:
+		case SNAP_OFF:
 			break;
-		case 1:
+		case SNAP_ON:
 			temp = 10 * (temp / 10);
 			break;
-		case 2:
+		case SNAP_ON_SMALL:
 			temp = 100 * (temp / 100);
 			break;
 	}
@@ -2882,7 +2904,9 @@ static float ui_numedit_apply_snap(int temp, float softmin, float softmax, int s
 	return temp;
 }
 
-static bool ui_numedit_but_NUM(uiBut *but, uiHandleButtonData *data, float fac, int snap, int mx)
+static bool ui_numedit_but_NUM(uiBut *but, uiHandleButtonData *data,
+                               int mx,
+                               const enum eSnapType snap, float fac)
 {
 	float deler, tempf, softmin, softmax, softrange;
 	int lvalue, temp;
@@ -3091,16 +3115,14 @@ static int ui_do_but_NUM(bContext *C, uiBlock *block, uiBut *but, uiHandleButton
 				click = 1;
 		}
 		else if (event->type == MOUSEMOVE) {
+			const enum eSnapType snap = ui_event_to_snap(event);
 			float fac;
-			int snap;
 
 			fac = 1.0f;
 			if (event->shift) fac /= 10.0f;
 			if (event->alt)   fac /= 20.0f;
-			
-			snap = (event->ctrl) ? (event->shift) ? 2 : 1 : 0;
 
-			if (ui_numedit_but_NUM(but, data, fac, snap, (ui_is_a_warp_but(but) ? screen_mx : mx)))
+			if (ui_numedit_but_NUM(but, data, (ui_is_a_warp_but(but) ? screen_mx : mx), snap, fac))
 				ui_numedit_apply(C, block, but, data);
 		}
 		retval = WM_UI_HANDLER_BREAK;
@@ -3181,7 +3203,8 @@ static int ui_do_but_NUM(bContext *C, uiBlock *block, uiBut *but, uiHandleButton
 }
 
 static bool ui_numedit_but_SLI(uiBut *but, uiHandleButtonData *data,
-                               const bool is_horizontal, const bool shift, const bool ctrl, int mx)
+                               int mx, const bool is_horizontal,
+                               const bool snap, const bool shift)
 {
 	float deler, f, tempf, softmin, softmax, softrange;
 	int temp, lvalue;
@@ -3236,7 +3259,7 @@ static bool ui_numedit_but_SLI(uiBut *but, uiHandleButtonData *data,
 	tempf = softmin + f * softrange;
 	temp = floorf(tempf + 0.5f);
 
-	if (ctrl) {
+	if (snap) {
 		if (tempf == softmin || tempf == softmax) {
 			/* pass */
 		}
@@ -3357,7 +3380,7 @@ static int ui_do_but_SLI(bContext *C, uiBlock *block, uiBut *but, uiHandleButton
 				click = 1;
 		}
 		else if (event->type == MOUSEMOVE) {
-			if (ui_numedit_but_SLI(but, data, true, event->shift, event->ctrl, mx))
+			if (ui_numedit_but_SLI(but, data, mx, true, event->ctrl != 0, event->shift != 0))
 				ui_numedit_apply(C, block, but, data);
 		}
 		retval = WM_UI_HANDLER_BREAK;
@@ -3473,7 +3496,7 @@ static int ui_do_but_SCROLL(bContext *C, uiBlock *block, uiBut *but, uiHandleBut
 			button_activate_state(C, but, BUTTON_STATE_EXIT);
 		}
 		else if (event->type == MOUSEMOVE) {
-			if (ui_numedit_but_SLI(but, data, horizontal, false, false, (horizontal) ? mx : my))
+			if (ui_numedit_but_SLI(but, data, (horizontal) ? mx : my, horizontal, false, false))
 				ui_numedit_apply(C, block, but, data);
 		}
 
@@ -3664,7 +3687,9 @@ static int ui_do_but_BLOCK(bContext *C, uiBut *but, uiHandleButtonData *data, co
 	return WM_UI_HANDLER_CONTINUE;
 }
 
-static bool ui_numedit_but_NORMAL(uiBut *but, uiHandleButtonData *data, int mx, int my)
+static bool ui_numedit_but_NORMAL(uiBut *but, uiHandleButtonData *data,
+                                  int mx, int my,
+                                  const enum eSnapType snap)
 {
 	float dx, dy, rad, radsq, mrad, *fp;
 	int mdx, mdy;
@@ -3720,6 +3745,23 @@ static bool ui_numedit_but_NORMAL(uiBut *but, uiHandleButtonData *data, int mx, 
 	}
 	normalize_v3(fp);
 
+	if (snap != SNAP_OFF) {
+		const int snap_steps = (snap == SNAP_ON) ? 4 : 12;  /* 45 or 15 degree increments */
+		const float snap_steps_angle = M_PI / snap_steps;
+		float angle, angle_snap;
+		int i;
+
+		/* round each axis of 'fp' to the next increment
+		 * do this in "angle" space - this gives increments of same size */
+		for (i = 0; i < 3; i++) {
+			angle = asinf(fp[i]);
+			angle_snap = floorf(0.5f + (angle / snap_steps_angle)) * snap_steps_angle;
+			fp[i] = sinf(angle_snap);
+		}
+		normalize_v3(fp);
+		changed = !compare_v3v3(fp, data->origvec, FLT_EPSILON);
+	}
+
 	data->draglastx = mx;
 	data->draglasty = my;
 
@@ -3771,6 +3813,7 @@ static int ui_do_but_NORMAL(bContext *C, uiBlock *block, uiBut *but, uiHandleBut
 
 	if (data->state == BUTTON_STATE_HIGHLIGHT) {
 		if (event->type == LEFTMOUSE && event->val == KM_PRESS) {
+			const enum eSnapType snap = ui_event_to_snap(event);
 			data->dragstartx = mx;
 			data->dragstarty = my;
 			data->draglastx = mx;
@@ -3778,7 +3821,7 @@ static int ui_do_but_NORMAL(bContext *C, uiBlock *block, uiBut *but, uiHandleBut
 			button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 
 			/* also do drag the first time */
-			if (ui_numedit_but_NORMAL(but, data, mx, my))
+			if (ui_numedit_but_NORMAL(but, data, mx, my, snap))
 				ui_numedit_apply(C, block, but, data);
 			
 			return WM_UI_HANDLER_BREAK;
@@ -3787,7 +3830,8 @@ static int ui_do_but_NORMAL(bContext *C, uiBlock *block, uiBut *but, uiHandleBut
 	else if (data->state == BUTTON_STATE_NUM_EDITING) {
 		if (event->type == MOUSEMOVE) {
 			if (mx != data->draglastx || my != data->draglasty) {
-				if (ui_numedit_but_NORMAL(but, data, mx, my))
+				const enum eSnapType snap = ui_event_to_snap(event);
+				if (ui_numedit_but_NORMAL(but, data, mx, my, snap))
 					ui_numedit_apply(C, block, but, data);
 			}
 		}
@@ -3814,7 +3858,9 @@ static void clamp_axis_max_v3(float v[3], const float max)
 	}
 }
 
-static bool ui_numedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data, int mx, int my, const short shift)
+static bool ui_numedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data,
+                                   int mx, int my,
+                                   const enum eSnapType snap, const bool shift)
 {
 	float rgb[3];
 	float *hsv = ui_block_hsv_get(but->block);
@@ -3908,6 +3954,12 @@ static bool ui_numedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data, int mx,
 			break;
 	}
 
+	if (snap != SNAP_OFF) {
+		if (ELEM3((int)but->a1, UI_GRAD_HV, UI_GRAD_HS, UI_GRAD_H)) {
+			ui_color_snap_hue(snap, &hsv[0]);
+		}
+	}
+
 	hsv_to_rgb_v(hsv, rgb);
 
 	if (color_profile && ((int)but->a1 != UI_GRAD_SV))
@@ -3926,7 +3978,9 @@ static bool ui_numedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data, int mx,
 	return changed;
 }
 
-static void ui_ndofedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data, wmNDOFMotionData *ndof, const short shift)
+static void ui_ndofedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data,
+                                    wmNDOFMotionData *ndof,
+                                    const enum eSnapType snap, const bool shift)
 {
 	float *hsv = ui_block_hsv_get(but->block);
 	float rgb[3];
@@ -3981,6 +4035,12 @@ static void ui_ndofedit_but_HSVCUBE(uiBut *but, uiHandleButtonData *data, wmNDOF
 			break;
 	}
 
+	if (snap != SNAP_OFF) {
+		if (ELEM3((int)but->a1, UI_GRAD_HV, UI_GRAD_HS, UI_GRAD_H)) {
+			ui_color_snap_hue(snap, &hsv[0]);
+		}
+	}
+
 	hsv_to_rgb_v(hsv, rgb);
 
 	if (color_profile && (int)but->a1 != UI_GRAD_SV)
@@ -4000,6 +4060,8 @@ static int ui_do_but_HSVCUBE(bContext *C, uiBlock *block, uiBut *but, uiHandleBu
 
 	if (data->state == BUTTON_STATE_HIGHLIGHT) {
 		if (event->type == LEFTMOUSE && event->val == KM_PRESS) {
+			const enum eSnapType snap = ui_event_to_snap(event);
+
 			data->dragstartx = mx;
 			data->dragstarty = my;
 			data->draglastx = mx;
@@ -4007,15 +4069,16 @@ static int ui_do_but_HSVCUBE(bContext *C, uiBlock *block, uiBut *but, uiHandleBu
 			button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 
 			/* also do drag the first time */
-			if (ui_numedit_but_HSVCUBE(but, data, mx, my, event->shift))
+			if (ui_numedit_but_HSVCUBE(but, data, mx, my, snap, event->shift != 0))
 				ui_numedit_apply(C, block, but, data);
 			
 			return WM_UI_HANDLER_BREAK;
 		}
 		else if (event->type == NDOF_MOTION) {
 			wmNDOFMotionData *ndof = (wmNDOFMotionData *) event->customdata;
+			const enum eSnapType snap = ui_event_to_snap(event);
 			
-			ui_ndofedit_but_HSVCUBE(but, data, ndof, event->shift);
+			ui_ndofedit_but_HSVCUBE(but, data, ndof, snap, event->shift != 0);
 			
 			button_activate_state(C, but, BUTTON_STATE_EXIT);
 			ui_apply_button(C, but->block, but, data, true);
@@ -4066,7 +4129,9 @@ static int ui_do_but_HSVCUBE(bContext *C, uiBlock *block, uiBut *but, uiHandleBu
 		}
 		else if (event->type == MOUSEMOVE) {
 			if (mx != data->draglastx || my != data->draglasty) {
-				if (ui_numedit_but_HSVCUBE(but, data, mx, my, event->shift))
+				const enum eSnapType snap = ui_event_to_snap(event);
+
+				if (ui_numedit_but_HSVCUBE(but, data, mx, my, snap, event->shift != 0))
 					ui_numedit_apply(C, block, but, data);
 			}
 		}
@@ -4080,7 +4145,9 @@ static int ui_do_but_HSVCUBE(bContext *C, uiBlock *block, uiBut *but, uiHandleBu
 	return WM_UI_HANDLER_CONTINUE;
 }
 
-static bool ui_numedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data, float mx, float my, int shift)
+static bool ui_numedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data,
+                                     float mx, float my,
+                                     const enum eSnapType snap, const bool shift)
 {
 	rcti rect;
 	bool changed = true;
@@ -4138,6 +4205,10 @@ static bool ui_numedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data, float
 	if (but->flag & UI_BUT_COLOR_CUBIC)
 		hsv[1] = 1.0f - sqrt3f(1.0f - hsv[1]);
 
+	if (snap != SNAP_OFF) {
+		ui_color_snap_hue(snap, &hsv[0]);
+	}
+
 	hsv_to_rgb_v(hsv, rgb);
 
 	if ((but->flag & UI_BUT_VEC_SIZE_LOCK) && (rgb[0] || rgb[1] || rgb[2])) {
@@ -4153,7 +4224,9 @@ static bool ui_numedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data, float
 	return changed;
 }
 
-static void ui_ndofedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data, wmNDOFMotionData *ndof, const short shift)
+static void ui_ndofedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data,
+                                      wmNDOFMotionData *ndof,
+                                      const enum eSnapType snap, const bool shift)
 {
 	float *hsv = ui_block_hsv_get(but->block);
 	float rgb[3];
@@ -4194,7 +4267,11 @@ static void ui_ndofedit_but_HSVCIRCLE(uiBut *but, uiHandleButtonData *data, wmND
 	if (but->flag & UI_BUT_COLOR_LOCK) { // lock
 		if (hsv[2] == 0.0f) hsv[2] = 0.0001f;
 	}
-	
+
+	if (snap != SNAP_OFF) {
+		ui_color_snap_hue(snap, &hsv[0]);
+	}
+
 	hsv_to_rgb_v(hsv, data->vec);
 	
 	if ((but->flag & UI_BUT_VEC_SIZE_LOCK) && (data->vec[0] || data->vec[1] || data->vec[2])) {
@@ -4215,6 +4292,7 @@ static int ui_do_but_HSVCIRCLE(bContext *C, uiBlock *block, uiBut *but, uiHandle
 	
 	if (data->state == BUTTON_STATE_HIGHLIGHT) {
 		if (event->type == LEFTMOUSE && event->val == KM_PRESS) {
+			const enum eSnapType snap = ui_event_to_snap(event);
 			data->dragstartx = mx;
 			data->dragstarty = my;
 			data->draglastx = mx;
@@ -4222,15 +4300,16 @@ static int ui_do_but_HSVCIRCLE(bContext *C, uiBlock *block, uiBut *but, uiHandle
 			button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 			
 			/* also do drag the first time */
-			if (ui_numedit_but_HSVCIRCLE(but, data, mx, my, event->shift))
+			if (ui_numedit_but_HSVCIRCLE(but, data, mx, my, snap, event->shift != 0))
 				ui_numedit_apply(C, block, but, data);
 			
 			return WM_UI_HANDLER_BREAK;
 		}
 		else if (event->type == NDOF_MOTION) {
+			const enum eSnapType snap = ui_event_to_snap(event);
 			wmNDOFMotionData *ndof = (wmNDOFMotionData *) event->customdata;
 			
-			ui_ndofedit_but_HSVCIRCLE(but, data, ndof, event->shift);
+			ui_ndofedit_but_HSVCIRCLE(but, data, ndof, snap, event->shift != 0);
 
 			button_activate_state(C, but, BUTTON_STATE_EXIT);
 			ui_apply_button(C, but->block, but, data, true);
@@ -4292,8 +4371,11 @@ static int ui_do_but_HSVCIRCLE(bContext *C, uiBlock *block, uiBut *but, uiHandle
 		}
 		else if (event->type == MOUSEMOVE) {
 			if (mx != data->draglastx || my != data->draglasty) {
-				if (ui_numedit_but_HSVCIRCLE(but, data, mx, my, event->shift))
+				const enum eSnapType snap = ui_event_to_snap(event);
+
+				if (ui_numedit_but_HSVCIRCLE(but, data, mx, my, snap, event->shift != 0)) {
 					ui_numedit_apply(C, block, but, data);
+				}
 			}
 		}
 		else if (event->type == LEFTMOUSE && event->val != KM_PRESS) {
@@ -4388,8 +4470,9 @@ static int ui_do_but_COLORBAND(bContext *C, uiBlock *block, uiBut *but, uiHandle
 	return WM_UI_HANDLER_CONTINUE;
 }
 
-static bool ui_numedit_but_CURVE(uiBlock *block, uiBut *but, uiHandleButtonData *data, int snap,
-                                int evtx, int evty, const short shift)
+static bool ui_numedit_but_CURVE(uiBlock *block, uiBut *but, uiHandleButtonData *data,
+                                 int evtx, int evty,
+                                 bool snap, const bool shift)
 {
 	CurveMapping *cumap = (CurveMapping *)but->poin;
 	CurveMap *cuma = cumap->cm + cumap->cur;
@@ -4417,7 +4500,7 @@ static bool ui_numedit_but_CURVE(uiBlock *block, uiBut *but, uiHandleButtonData 
 		d[1] = my - data->dragstarty;
 
 		if (len_v2(d) < 3.0f)
-			snap = 0;
+			snap = false;
 	}
 
 	if (data->dragsel != -1) {
@@ -4612,7 +4695,7 @@ static int ui_do_but_CURVE(bContext *C, uiBlock *block, uiBut *but, uiHandleButt
 		if (event->type == MOUSEMOVE) {
 			if (event->x != data->draglastx || event->y != data->draglasty) {
 				
-				if (ui_numedit_but_CURVE(block, but, data, event->ctrl, event->x, event->y, event->shift))
+				if (ui_numedit_but_CURVE(block, but, data, event->x, event->y, event->ctrl != 0, event->shift != 0))
 					ui_numedit_apply(C, block, but, data);
 			}
 		}
@@ -4921,7 +5004,8 @@ static int ui_do_but_LINK(bContext *C, uiBut *but, uiHandleButtonData *data, con
 }
 
 static bool ui_numedit_but_TRACKPREVIEW(bContext *C, uiBut *but, uiHandleButtonData *data,
-                                        int mx, int my, const short shift)
+                                        int mx, int my,
+                                        const bool shift)
 {
 	MovieClipScopes *scopes = (MovieClipScopes *)but->poin;
 	bool changed = true;
@@ -4977,7 +5061,7 @@ static int ui_do_but_TRACKPREVIEW(bContext *C, uiBlock *block, uiBut *but, uiHan
 			button_activate_state(C, but, BUTTON_STATE_NUM_EDITING);
 
 			/* also do drag the first time */
-			if (ui_numedit_but_TRACKPREVIEW(C, but, data, mx, my, event->shift))
+			if (ui_numedit_but_TRACKPREVIEW(C, but, data, mx, my, event->shift != 0))
 				ui_numedit_apply(C, block, but, data);
 
 			return WM_UI_HANDLER_BREAK;
@@ -4993,7 +5077,7 @@ static int ui_do_but_TRACKPREVIEW(bContext *C, uiBlock *block, uiBut *but, uiHan
 		}
 		else if (event->type == MOUSEMOVE) {
 			if (mx != data->draglastx || my != data->draglasty) {
-				if (ui_numedit_but_TRACKPREVIEW(C, but, data, mx, my, event->shift))
+				if (ui_numedit_but_TRACKPREVIEW(C, but, data, mx, my, event->shift != 0))
 					ui_numedit_apply(C, block, but, data);
 			}
 		}
