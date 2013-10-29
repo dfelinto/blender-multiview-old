@@ -1615,7 +1615,7 @@ static bool merge_target(BMEditMesh *em, Scene *scene, View3D *v3d, Object *ob,
 	const float *vco = NULL;
 
 	if (use_cursor) {
-		vco = give_cursor(scene, v3d);
+		vco = ED_view3d_cursor3d_get(scene, v3d);
 		copy_v3_v3(co, vco);
 		mul_m4_v3(ob->imat, co);
 	}
@@ -3100,7 +3100,7 @@ void MESH_OT_fill_holes(wmOperatorType *ot)
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 
-	RNA_def_int(ot->srna, "sides", 4, 0, INT_MAX, "Sides", "Number of sides (zero disables)", 0, 100);
+	RNA_def_int(ot->srna, "sides", 4, 0, INT_MAX, "Sides", "Number of sides in hole required to fill (zero fills all holes)", 0, 100);
 }
 
 static int edbm_beautify_fill_exec(bContext *C, wmOperator *op)
@@ -4712,7 +4712,7 @@ static int mesh_symmetry_snap_exec(bContext *C, wmOperator *op)
 
 	EDBM_verts_mirror_cache_begin_ex(em, axis, true, true, use_topology, thresh, index);
 
-	EDBM_index_arrays_ensure(em, BM_VERT);
+	BM_mesh_elem_table_ensure(bm, BM_VERT);
 
 	BM_mesh_elem_hflag_disable_all(bm, BM_VERT, BM_ELEM_TAG, false);
 
@@ -4724,7 +4724,7 @@ static int mesh_symmetry_snap_exec(bContext *C, wmOperator *op)
 			int i_mirr = index[i];
 			if (i_mirr != -1) {
 
-				BMVert *v_mirr = EDBM_vert_at_index(em, index[i]);
+				BMVert *v_mirr = BM_vert_at_index(bm, index[i]);
 
 				if (v != v_mirr) {
 					float co[3], co_mirr[3];

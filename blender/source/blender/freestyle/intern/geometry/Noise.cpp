@@ -62,7 +62,7 @@ namespace Freestyle {
 #define SETUP(i, b0, b1, r0, r1) \
 	{                            \
 		(t) = (i) + (N);         \
-		(r0) = modf((t), &(u));  \
+		(r0) = modff((t), &(u));  \
 		(r1) = (r0) - 1.0;       \
 		(b0) = ((int)(u)) & BM;  \
 		(b1) = ((b0) + 1) & BM;  \
