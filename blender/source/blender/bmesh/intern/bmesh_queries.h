@@ -37,7 +37,6 @@ bool    BM_edge_in_loop(BMEdge *e, BMLoop *l);
 bool    BM_vert_in_edge(const BMEdge *e, const BMVert *v);
 bool    BM_verts_in_edge(BMVert *v1, BMVert *v2, BMEdge *e);
 
-float   BM_verts_calc_length(BMVert *v1, BMVert *v2);
 float   BM_edge_calc_length(BMEdge *e);
 float   BM_edge_calc_length_squared(BMEdge *e);
 bool    BM_edge_face_pair(BMEdge *e, BMFace **r_fa, BMFace **r_fb);
