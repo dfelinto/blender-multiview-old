@@ -127,6 +127,7 @@ dict_custom = {
     "lacunarity",
     "musgrave",
     "normals",
+    "kerning",
 
     # blender terms
     "bmain",
