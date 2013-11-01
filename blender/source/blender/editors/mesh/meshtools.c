@@ -1278,10 +1278,6 @@ bool ED_mesh_pick_face_vert(bContext *C, Object *ob, const int mval[2], unsigned
 		const float mval_f[2] = {UNPACK2(mval)};
 		float len_best = FLT_MAX;
 
-		/* we need to be clever here
-		 * - tag all vertes from all faces that match this faces orig-index
-		 * - loop over all tagged verts and find closest
-		 */
 		MPoly *dm_mpoly;
 		MLoop *dm_mloop;
 		unsigned int dm_mpoly_tot;
