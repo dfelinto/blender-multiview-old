@@ -80,7 +80,7 @@ bool paint_supports_jitter(enum PaintMode mode);
 struct wmKeyMap *paint_stroke_modal_keymap(struct wmKeyConfig *keyconf);
 int paint_stroke_modal(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
 int paint_stroke_exec(struct bContext *C, struct wmOperator *op);
-int paint_stroke_cancel(struct bContext *C, struct wmOperator *op);
+void paint_stroke_cancel(struct bContext *C, struct wmOperator *op);
 struct ViewContext *paint_stroke_view_context(struct PaintStroke *stroke);
 void *paint_stroke_mode_data(struct PaintStroke *stroke);
 void paint_stroke_set_mode_data(struct PaintStroke *stroke, void *mode_data);
@@ -265,5 +265,6 @@ typedef enum {
 
 void PAINT_OT_mask_flood_fill(struct wmOperatorType *ot);
 void PAINT_OT_mask_box_fill(struct wmOperatorType *ot);
+void PAINT_OT_mask_lasso_gesture(struct wmOperatorType *ot);
 
 #endif /* __PAINT_INTERN_H__ */

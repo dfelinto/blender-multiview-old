@@ -711,13 +711,11 @@ static void ed_marker_move_apply(bContext *C, wmOperator *op)
 }
 
 /* only for modal */
-static int ed_marker_move_cancel(bContext *C, wmOperator *op)
+static void ed_marker_move_cancel(bContext *C, wmOperator *op)
 {
 	RNA_int_set(op->ptr, "frames", 0);
 	ed_marker_move_apply(C, op);
 	ed_marker_move_exit(C, op);
-
-	return OPERATOR_CANCELLED;
 }
 
 
@@ -734,7 +732,6 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, const wmEvent *even
 		case ESCKEY:
 			ed_marker_move_cancel(C, op);
 			return OPERATOR_CANCELLED;
-		
 		case RIGHTMOUSE:
 			/* press = user manually demands transform to be canceled */
 			if (event->val == KM_PRESS) {

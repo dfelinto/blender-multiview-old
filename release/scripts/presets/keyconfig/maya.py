@@ -697,8 +697,10 @@ km = kc.keymaps.new('Knife Tool Modal Map', space_type='EMPTY', region_type='WIN
 
 kmi = km.keymap_items.new_modal('CANCEL', 'ESC', 'ANY', any=True)
 kmi = km.keymap_items.new_modal('PANNING', 'LEFTMOUSE', 'ANY', alt=True)
+kmi = km.keymap_items.new_modal('PANNING', 'MIDDLEMOUSE', 'ANY', alt=True)
+kmi = km.keymap_items.new_modal('PANNING', 'RIGHTMOUSE', 'ANY', alt=True)
 kmi = km.keymap_items.new_modal('ADD_CUT', 'LEFTMOUSE', 'PRESS', any=True)
-kmi = km.keymap_items.new_modal('CANCEL', 'RIGHTMOUSE', 'ANY', any=True)
+kmi = km.keymap_items.new_modal('CANCEL', 'RIGHTMOUSE', 'ANY')
 kmi = km.keymap_items.new_modal('CONFIRM', 'RET', 'PRESS', any=True)
 kmi = km.keymap_items.new_modal('CONFIRM', 'NUMPAD_ENTER', 'PRESS', any=True)
 kmi = km.keymap_items.new_modal('CONFIRM', 'SPACE', 'PRESS', any=True)
@@ -1587,8 +1589,11 @@ kmi = km.keymap_items.new('action.view_all', 'A', 'PRESS')
 kmi = km.keymap_items.new('action.view_selected', 'F', 'PRESS')
 kmi = km.keymap_items.new('anim.channels_editable_toggle', 'TAB', 'PRESS')
 kmi = km.keymap_items.new('transform.transform', 'W', 'PRESS')
+kmi.properties.mode = 'TIME_TRANSLATE'
 kmi = km.keymap_items.new('transform.transform', 'EVT_TWEAK_M', 'ANY')
+kmi.properties.mode = 'TIME_TRANSLATE'
 kmi = km.keymap_items.new('transform.transform', 'S', 'PRESS')
+kmi.properties.mode = 'TIME_SCALE'
 kmi = km.keymap_items.new('transform.transform', 'T', 'PRESS', shift=True)
 kmi = km.keymap_items.new('marker.add', 'M', 'PRESS')
 kmi = km.keymap_items.new('marker.rename', 'M', 'PRESS', ctrl=True)
@@ -1662,6 +1667,7 @@ kmi = km.keymap_items.new('nla.fmodifier_add', 'M', 'PRESS', shift=True, ctrl=Tr
 kmi = km.keymap_items.new('transform.transform', 'W', 'PRESS')
 kmi = km.keymap_items.new('transform.transform', 'EVT_TWEAK_M', 'ANY')
 kmi = km.keymap_items.new('transform.transform', 'R', 'PRESS')
+kmi.properties.mode = 'TIME_SCALE'
 kmi = km.keymap_items.new('marker.add', 'M', 'PRESS')
 kmi = km.keymap_items.new('marker.rename', 'M', 'PRESS', ctrl=True)
 kmi = km.keymap_items.new('nla.select_all_toggle', 'LEFTMOUSE', 'DOUBLE_CLICK')

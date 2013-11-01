@@ -295,20 +295,20 @@ void                WM_menutype_free(void);
 			/* default operator callbacks for border/circle/lasso */
 int			WM_border_select_invoke	(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
 int			WM_border_select_modal	(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
-int			WM_border_select_cancel(struct bContext *C, struct wmOperator *op);
+void		WM_border_select_cancel(struct bContext *C, struct wmOperator *op);
 int			WM_gesture_circle_invoke(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
 int			WM_gesture_circle_modal(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
-int			WM_gesture_circle_cancel(struct bContext *C, struct wmOperator *op);
+void		WM_gesture_circle_cancel(struct bContext *C, struct wmOperator *op);
 int			WM_gesture_lines_invoke(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
 int			WM_gesture_lines_modal(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
-int			WM_gesture_lines_cancel(struct bContext *C, struct wmOperator *op);
+void		WM_gesture_lines_cancel(struct bContext *C, struct wmOperator *op);
 int			WM_gesture_lasso_invoke(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
 int			WM_gesture_lasso_modal(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
-int			WM_gesture_lasso_cancel(struct bContext *C, struct wmOperator *op);
+void		WM_gesture_lasso_cancel(struct bContext *C, struct wmOperator *op);
 const int (*WM_gesture_lasso_path_to_array(struct bContext *C, struct wmOperator *op, int *mcords_tot))[2];
 int			WM_gesture_straightline_invoke(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
 int			WM_gesture_straightline_modal(struct bContext *C, struct wmOperator *op, const struct wmEvent *event);
-int			WM_gesture_straightline_cancel(struct bContext *C, struct wmOperator *op);
+void		WM_gesture_straightline_cancel(struct bContext *C, struct wmOperator *op);
 
 			/* Gesture manager API */
 struct wmGesture *WM_gesture_new(struct bContext *C, const struct wmEvent *event, int type);
@@ -379,6 +379,7 @@ int			WM_jobs_test(struct wmWindowManager *wm, void *owner, int job_type);
 float		WM_jobs_progress(struct wmWindowManager *wm, void *owner);
 char       *WM_jobs_name(struct wmWindowManager *wm, void *owner);
 void       *WM_jobs_customdata(struct wmWindowManager *wm, void *owner);
+void       *WM_jobs_customdata_from_type(struct wmWindowManager *wm, int job_type);
 
 int         WM_jobs_is_running(struct wmJob *);
 void       *WM_jobs_customdata_get(struct wmJob *);

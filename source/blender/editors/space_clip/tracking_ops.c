@@ -1341,7 +1341,7 @@ static int track_markers_exec(bContext *C, wmOperator *op)
 		if (clip == NULL) {
 			return OPERATOR_CANCELLED;
 		}
-        framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, CFRA);
+		framenr = BKE_movieclip_remap_scene_to_clip_frame(clip, CFRA);
 		fake_user.framenr = framenr;
 		user = &fake_user;
 	}
@@ -1421,7 +1421,7 @@ static int track_markers_invoke(bContext *C, wmOperator *op, const wmEvent *UNUS
 	int framenr;
 
 	if (sc == NULL) {
-		/* TODO(sergey): Support clip for invokaction as well. */
+		/* TODO(sergey): Support clip for invoke as well. */
 		BKE_report(op->reports, RPT_ERROR,
 		           "Invoking this operator only supported from Clip Editor space.");
 		return OPERATOR_CANCELLED;

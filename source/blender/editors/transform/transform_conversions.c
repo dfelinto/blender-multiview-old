@@ -3714,12 +3714,14 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 	float mtx[3][3], smtx[3][3];
 	const bool use_handle = !(sipo->flag & SIPO_NOHANDLES);
 	const bool use_local_center = checkUseLocalCenter_GraphEdit(t);
-	const short anim_map_flag = ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS;
+	short anim_map_flag = ANIM_UNITCONV_ONLYSEL | ANIM_UNITCONV_SELVERTS;
 	
 	/* determine what type of data we are operating on */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return;
-	
+
+	anim_map_flag |= ANIM_get_normalization_flags(&ac);
+
 	/* filter data */
 	filter = (ANIMFILTER_DATA_VISIBLE | ANIMFILTER_FOREDIT | ANIMFILTER_CURVE_VISIBLE);
 	ANIM_animdata_filter(&ac, &anim_data, filter, ac.data, ac.datatype);
@@ -3835,7 +3837,9 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 		AnimData *adt = ANIM_nla_mapping_get(&ac, ale);
 		FCurve *fcu = (FCurve *)ale->key_data;
 		short intvals = (fcu->flag & FCURVE_INT_VALUES);
-		
+		float unit_scale;
+		float scaled_mtx[3][3], scaled_smtx[3][3];
+
 		/* convert current-frame to action-time (slightly less accurate, especially under
 		 * higher scaling ratios, but is faster than converting all points)
 		 */
@@ -3848,8 +3852,13 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 		if (fcu->bezt == NULL)
 			continue;
 		
-		ANIM_unit_mapping_apply_fcurve(ac.scene, ale->id, ale->key_data, anim_map_flag);
-		
+		unit_scale = ANIM_unit_mapping_get_factor(ac.scene, ale->id, ale->key_data, anim_map_flag);
+
+		copy_m3_m3(scaled_mtx, mtx);
+		copy_m3_m3(scaled_smtx, smtx);
+		mul_v3_fl(scaled_mtx[1], unit_scale);
+		mul_v3_fl(scaled_smtx[1],  1.0f / unit_scale);
+
 		/* only include BezTriples whose 'keyframe' occurs on the same side of the current frame as mouse (if applicable) */
 		for (i = 0, bezt = fcu->bezt; i < fcu->totvert; i++, bezt++) {
 			if (FrameOnMouseSide(t->frame_side, bezt->vec[1][0], cfra)) {
@@ -3866,7 +3875,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 				if (!ELEM3(t->mode, TFM_TRANSLATION, TFM_TIME_TRANSLATE, TFM_TIME_SLIDE) || !(sel2)) {
 					if (sel1) {
 						hdata = initTransDataCurveHandles(td, bezt);
-						bezt_to_transdata(td++, td2d++, adt, bezt, 0, 1, 1, intvals, mtx, smtx);
+						bezt_to_transdata(td++, td2d++, adt, bezt, 0, 1, 1, intvals, scaled_mtx, scaled_smtx);
 					}
 					else {
 						/* h1 = 0; */ /* UNUSED */
@@ -3875,7 +3884,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 					if (sel3) {
 						if (hdata == NULL)
 							hdata = initTransDataCurveHandles(td, bezt);
-						bezt_to_transdata(td++, td2d++, adt, bezt, 2, 1, 1, intvals, mtx, smtx);
+						bezt_to_transdata(td++, td2d++, adt, bezt, 2, 1, 1, intvals, scaled_mtx, scaled_smtx);
 					}
 					else {
 						/* h2 = 0; */ /* UNUSED */
@@ -3897,7 +3906,7 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 							hdata = initTransDataCurveHandles(td, bezt);
 					}
 				
-					bezt_to_transdata(td++, td2d++, adt, bezt, 1, 1, 0, intvals, mtx, smtx);
+					bezt_to_transdata(td++, td2d++, adt, bezt, 1, 1, 0, intvals, scaled_mtx, scaled_smtx);
 					
 				}
 				/* special hack (must be done after initTransDataCurveHandles(), as that stores handle settings to restore...):
@@ -3919,13 +3928,6 @@ static void createTransGraphEditData(bContext *C, TransInfo *t)
 		
 		/* Sets handles based on the selection */
 		testhandles_fcurve(fcu, use_handle);
-
-		/* even though transform values are written back right after during transform,
-		 * using individual center's with rotation means the center point wont
-		 * be touched again see: [#34303] */
-		if (use_local_center) {
-			ANIM_unit_mapping_apply_fcurve(ac.scene, ale->id, ale->key_data, anim_map_flag | ANIM_UNITCONV_RESTORE);
-		}
 	}
 	
 	/* cleanup temp list */
@@ -5861,6 +5863,9 @@ int special_transform_moving(TransInfo *t)
 	if (t->spacetype == SPACE_SEQ) {
 		return G_TRANSFORM_SEQ;
 	}
+	else if (t->spacetype == SPACE_IPO) {
+		return G_TRANSFORM_FCURVES;
+	}
 	else if (t->obedit || ((t->flag & T_POSE) && (t->poseobj))) {
 		return G_TRANSFORM_EDIT;
 	}
@@ -6819,8 +6824,11 @@ void flushTransMasking(TransInfo *t)
 		td->loc2d[1] = td->loc[1] * inv[1];
 		mul_m3_v2(tdm->parent_inverse_matrix, td->loc2d);
 
-		if (tdm->is_handle)
-			BKE_mask_point_set_handle(tdm->point, td->loc2d, t->flag & T_ALT_TRANSFORM, tdm->orig_handle, tdm->vec);
+		if (tdm->is_handle) {
+			BKE_mask_point_set_handle(tdm->point, td->loc2d,
+			                          (t->flag & T_ALT_TRANSFORM) != 0,
+			                          tdm->orig_handle, tdm->vec);
+		}
 	}
 }
 

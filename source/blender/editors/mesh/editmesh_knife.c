@@ -3195,11 +3195,10 @@ static void knifetool_init(bContext *C, KnifeTool_OpData *kcd,
 	}
 }
 
-static int knifetool_cancel(bContext *C, wmOperator *op)
+static void knifetool_cancel(bContext *C, wmOperator *op)
 {
 	/* this is just a wrapper around exit() */
 	knifetool_exit(C, op);
-	return OPERATOR_CANCELLED;
 }
 
 static int knifetool_invoke(bContext *C, wmOperator *op, const wmEvent *event)
@@ -3540,7 +3539,7 @@ static bool edbm_mesh_knife_face_isect(ARegion *ar, LinkNode *polys, BMFace *f, 
 /**
  * \param use_tag  When set, tag all faces inside the polylines.
  */
-void EDBM_mesh_knife(bContext *C, LinkNode *polys, bool use_tag)
+void EDBM_mesh_knife(bContext *C, LinkNode *polys, bool use_tag, bool cut_through)
 {
 	KnifeTool_OpData *kcd;
 
@@ -3549,7 +3548,6 @@ void EDBM_mesh_knife(bContext *C, LinkNode *polys, bool use_tag)
 	/* init */
 	{
 		const bool only_select = false;
-		const bool cut_through = false;
 		const bool is_interactive = false;  /* can enable for testing */
 
 		kcd = MEM_callocN(sizeof(KnifeTool_OpData), __func__);

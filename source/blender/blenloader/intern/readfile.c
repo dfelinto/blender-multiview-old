@@ -3816,6 +3816,7 @@ static void lib_link_particlesystems(FileData *fd, Object *ob, ID *id, ListBase 
 				psys->clmd->point_cache = psys->pointcache;
 				psys->clmd->ptcaches.first = psys->clmd->ptcaches.last= NULL;
 				psys->clmd->coll_parms->group = newlibadr(fd, id->lib, psys->clmd->coll_parms->group);
+				psys->clmd->modifier.error = NULL;
 			}
 		}
 		else {
@@ -9809,6 +9810,26 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			for (cam = main->camera.first; cam; cam = cam->id.next) {
 				cam->stereo.interocular_distance = 0.065;
 				cam->stereo.convergence_distance = 30.f * 0.065;
+			}
+		}
+	}
+
+	if (!DNA_struct_elem_find(fd->filesdna, "TriangulateModifierData", "int", "quad_method")) {
+		Object *ob;
+		for (ob = main->object.first; ob; ob = ob->id.next) {
+			ModifierData *md;
+			for (md = ob->modifiers.first; md; md = md->next) {
+				if (md->type == eModifierType_Triangulate) {
+					TriangulateModifierData *tmd = (TriangulateModifierData *)md;
+					if ((tmd->flag & MOD_TRIANGULATE_BEAUTY)) {
+						tmd->quad_method = MOD_TRIANGULATE_QUAD_BEAUTY;
+						tmd->ngon_method = MOD_TRIANGULATE_NGON_BEAUTY;
+					}
+					else {
+						tmd->quad_method = MOD_TRIANGULATE_QUAD_FIXED;
+						tmd->ngon_method = MOD_TRIANGULATE_NGON_SCANFILL;
+					}
+				}
 			}
 		}
 	}

@@ -564,15 +564,13 @@ static int screen_render_modal(bContext *C, wmOperator *op, const wmEvent *event
 	return OPERATOR_PASS_THROUGH;
 }
 
-static int screen_render_cancel(bContext *C, wmOperator *op)
+static void screen_render_cancel(bContext *C, wmOperator *op)
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	Scene *scene = (Scene *) op->customdata;
 
 	/* kill on cancel, because job is using op->reports */
 	WM_jobs_kill_type(wm, scene, WM_JOB_TYPE_RENDER);
-
-	return OPERATOR_CANCELLED;
 }
 
 /* using context, starts job */
@@ -1240,3 +1238,13 @@ void ED_viewport_render_kill_jobs(const bContext *C, bool free_database)
 	}
 }
 
+Scene *ED_render_job_get_scene(const bContext *C)
+{
+	wmWindowManager *wm = CTX_wm_manager(C);
+	RenderJob *rj = (RenderJob *)WM_jobs_customdata_from_type(wm, WM_JOB_TYPE_RENDER);
+	
+	if (rj)
+		return rj->scene;
+	
+	return NULL;
+}
