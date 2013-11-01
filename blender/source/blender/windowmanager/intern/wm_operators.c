@@ -341,14 +341,14 @@ static int wm_macro_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	return wm_macro_end(op, retval);
 }
 
-static int wm_macro_cancel(bContext *C, wmOperator *op)
+static void wm_macro_cancel(bContext *C, wmOperator *op)
 {
 	/* call cancel on the current modal operator, if any */
 	if (op->opm && op->opm->type->cancel) {
 		op->opm->type->cancel(C, op->opm);
 	}
 
-	return wm_macro_end(op, OPERATOR_CANCELLED);
+	wm_macro_end(op, OPERATOR_CANCELLED);
 }
 
 /* Names have to be static for now */
@@ -1396,12 +1396,19 @@ static uiBlock *wm_operator_ui_create(bContext *C, ARegion *ar, void *userData)
 	return block;
 }
 
-static void wm_operator_ui_popup_cancel(struct bContext *UNUSED(C), void *userData)
+static void wm_operator_ui_popup_cancel(struct bContext *C, void *userData)
 {
 	wmOpPopUp *data = userData;
-	if (data->free_op && data->op) {
-		wmOperator *op = data->op;
-		WM_operator_free(op);
+	wmOperator *op = data->op;
+
+	if (op) {
+		if (op->type->cancel) {
+			op->type->cancel(C, op);
+		}
+
+		if (data->free_op) {
+			WM_operator_free(op);
+		}
 	}
 
 	MEM_freeN(data);
@@ -2844,11 +2851,9 @@ int WM_border_select_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
-int WM_border_select_cancel(bContext *C, wmOperator *op)
+void WM_border_select_cancel(bContext *C, wmOperator *op)
 {
 	wm_gesture_end(C, op);
-
-	return OPERATOR_CANCELLED;
 }
 
 /* **************** circle gesture *************** */
@@ -2961,11 +2966,9 @@ int WM_gesture_circle_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	return OPERATOR_RUNNING_MODAL;
 }
 
-int WM_gesture_circle_cancel(bContext *C, wmOperator *op)
+void WM_gesture_circle_cancel(bContext *C, wmOperator *op)
 {
 	wm_gesture_end(C, op);
-
-	return OPERATOR_CANCELLED;
 }
 
 #if 0
@@ -3188,18 +3191,14 @@ int WM_gesture_lines_modal(bContext *C, wmOperator *op, const wmEvent *event)
 	return WM_gesture_lasso_modal(C, op, event);
 }
 
-int WM_gesture_lasso_cancel(bContext *C, wmOperator *op)
+void WM_gesture_lasso_cancel(bContext *C, wmOperator *op)
 {
 	wm_gesture_end(C, op);
-
-	return OPERATOR_CANCELLED;
 }
 
-int WM_gesture_lines_cancel(bContext *C, wmOperator *op)
+void WM_gesture_lines_cancel(bContext *C, wmOperator *op)
 {
 	wm_gesture_end(C, op);
-
-	return OPERATOR_CANCELLED;
 }
 
 /**
@@ -3365,11 +3364,9 @@ int WM_gesture_straightline_modal(bContext *C, wmOperator *op, const wmEvent *ev
 	return OPERATOR_RUNNING_MODAL;
 }
 
-int WM_gesture_straightline_cancel(bContext *C, wmOperator *op)
+void WM_gesture_straightline_cancel(bContext *C, wmOperator *op)
 {
 	wm_gesture_end(C, op);
-
-	return OPERATOR_CANCELLED;
 }
 
 #if 0
@@ -3803,7 +3800,7 @@ static void radial_control_set_value(RadialControl *rc, float val)
 	}
 }
 
-static int radial_control_cancel(bContext *C, wmOperator *op)
+static void radial_control_cancel(bContext *C, wmOperator *op)
 {
 	RadialControl *rc = op->customdata;
 	wmWindowManager *wm = CTX_wm_manager(C);
@@ -3821,8 +3818,6 @@ static int radial_control_cancel(bContext *C, wmOperator *op)
 	glDeleteTextures(1, &rc->gltex);
 
 	MEM_freeN(rc);
-
-	return OPERATOR_CANCELLED;
 }
 
 static int radial_control_modal(bContext *C, wmOperator *op, const wmEvent *event)

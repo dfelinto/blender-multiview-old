@@ -174,12 +174,12 @@ def extract_c_comments(filepath):
     SINGLE_LINE = False
     STRIP_DOXY = True
     STRIP_DOXY_DIRECTIVES = (
-        "\section",
-        "\subsection",
-        "\subsubsection",
-        "\ingroup",
-        "\param",
-        "\page",
+        r"\section",
+        r"\subsection",
+        r"\subsubsection",
+        r"\ingroup",
+        r"\param",
+        r"\page",
         )
     SKIP_COMMENTS = (
         "BEGIN GPL LICENSE BLOCK",
@@ -200,6 +200,9 @@ def extract_c_comments(filepath):
                 if directive in l:
                     l_split = l.split()
                     l_split[l_split.index(directive) + 1] = " "
+                    l = " ".join(l_split)
+                    del l_split
+                    break
             block_split[i] = l
 
     comments = []

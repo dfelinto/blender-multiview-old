@@ -60,6 +60,9 @@ extern EnumPropertyItem constraint_type_items[];
 extern EnumPropertyItem boidrule_type_items[];
 extern EnumPropertyItem sequence_modifier_type_items[];
 
+extern EnumPropertyItem modifier_triangulate_quad_method_items[];
+extern EnumPropertyItem modifier_triangulate_ngon_method_items[];
+
 extern EnumPropertyItem image_type_items[];
 extern EnumPropertyItem image_color_mode_items[];
 extern EnumPropertyItem image_depth_mode_items[];
@@ -68,7 +71,6 @@ extern EnumPropertyItem image_generated_type_items[];
 extern EnumPropertyItem color_sets_items[];
 
 extern EnumPropertyItem beztriple_keyframe_type_items[];
-extern EnumPropertyItem beztriple_handle_type_items[];
 extern EnumPropertyItem beztriple_interpolation_mode_items[];
 extern EnumPropertyItem keyframe_handle_type_items[];
 

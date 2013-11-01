@@ -1445,6 +1445,9 @@ class VIEW3D_MT_hide_mask(Menu):
         props = layout.operator("paint.mask_flood_fill", text="Clear Mask")
         props.mode = 'VALUE'
         props.value = 0
+        
+        props = layout.operator("view3d.select_border", text="Box Mask")
+        props = layout.operator("paint.mask_lasso_gesture", text="Lasso Mask")
 
 
 # ********** Particle menu **********
@@ -2389,6 +2392,7 @@ class VIEW3D_MT_edit_armature(Menu):
         layout.operator("armature.merge")
         layout.operator("armature.fill")
         layout.operator("armature.delete")
+        layout.operator("armature.split")
         layout.operator("armature.separate")
 
         layout.separator()
