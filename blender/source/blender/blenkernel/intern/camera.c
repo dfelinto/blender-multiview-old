@@ -634,10 +634,10 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
 	/* XXX pseudo math right now, only to show some difference.
 	   but here comes the real calculation later */
 	if (left) {
-		tmpviewmat[0][0] += interocular_distance * 0.5;
+		tmpviewmat[3][0] -= interocular_distance * 0.5;
 	}
 	else {
-		tmpviewmat[0][0] -= interocular_distance * 0.5;
+		tmpviewmat[3][0] += interocular_distance * 0.5;
 	}
 
 	/* copy  */
@@ -645,13 +645,11 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
 	invert_m4_m4(viewmat, tmpviewmat);
 
 	/* prepare the camera shift for the projection matrix */
-	if (convergence_mode == CAM_S3D_OFFAXIS) {
-		/* XXX pseudo math right now, only to show some difference.
-		   but here comes the real calculation later */
+	if (convergence_mode == CAM_S3D_OFFAXIS || convergence_mode == CAM_S3D_PARALLEL) {
 		if (left)
-			*shift += interocular_distance * 0.5;
+			*shift += ((interocular_distance / data->sensor_x) * (data->lens / convergence_distance) ) * .5;
 		else
-			*shift -= interocular_distance * 0.5;
+			*shift -= ((interocular_distance / data->sensor_x) * (data->lens / convergence_distance) ) * .5;
 	}
 }
 
