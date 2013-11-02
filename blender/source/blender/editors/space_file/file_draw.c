@@ -251,11 +251,9 @@ static int get_file_icon(struct direntry *file)
 		if (strcmp(file->relname, "..") == 0) {
 			return ICON_FILE_PARENT;
 		}
-#ifdef __APPLE__
-		if (strcmp(&file->relname[strlen(file->relname) - 4], ".app") == 0) {
+		if (file->flags & APPLICATIONBUNDLE) {
 			return ICON_UGLYPACKAGE;
 		}
-#endif
 		if (file->flags & BLENDERFILE) {
 			return ICON_FILE_BLEND;
 		}
