@@ -624,25 +624,49 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
 	short convergence_mode;
 	float tmpviewmat[4][4];
 
+    float transmat[4][4] ;
+
 	interocular_distance = data->stereo.interocular_distance;
 	convergence_distance = data->stereo.convergence_distance;
 	convergence_mode = data->stereo.convergence_mode;
 
-	copy_m4_m4(tmpviewmat, camera->obmat);
+	invert_m4_m4(tmpviewmat, camera->obmat);
+    
+	/* XXX Right way to make a Transformation Matrix? */
+    
+    transmat[0][0] = 1 ;
+    transmat[0][1] = 0 ;
+    transmat[0][2] = 0 ;
+    transmat[0][3] = 0 ; //trans
+    
+    transmat[1][0] = 0 ;
+    transmat[1][1] = 1 ;
+    transmat[1][2] = 0 ;
+    transmat[1][3] = 0 ; //trans
+    
+    transmat[2][0] = 0 ;
+    transmat[2][1] = 0 ;
+    transmat[2][2] = 1 ;
+    transmat[2][3] = 0 ; //trans
+    
+    transmat[3][0] = 0 ;
+    transmat[3][1] = 0 ;
+    transmat[3][2] = 0 ;
+    transmat[3][3] = 1 ;
 
 	/* move */
-	/* XXX pseudo math right now, only to show some difference.
-	   but here comes the real calculation later */
+
 	if (left) {
-		tmpviewmat[3][0] -= interocular_distance * 0.5;
+		transmat[3][0] = interocular_distance * 0.5 ;
+		mul_m4_m4m4( tmpviewmat, transmat, tmpviewmat) ;
 	}
 	else {
-		tmpviewmat[3][0] += interocular_distance * 0.5;
+		transmat[3][0] = interocular_distance * -0.5 ;
+		mul_m4_m4m4( tmpviewmat, transmat, tmpviewmat) ;
 	}
 
 	/* copy  */
-	normalize_m4(tmpviewmat);
-	invert_m4_m4(viewmat, tmpviewmat);
+	copy_m4_m4(viewmat, tmpviewmat);
 
 	/* prepare the camera shift for the projection matrix */
 	if (convergence_mode == CAM_S3D_OFFAXIS || convergence_mode == CAM_S3D_PARALLEL) {
