@@ -620,7 +620,7 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
 {
 	/* viewmat = MODELVIEW_MATRIX */
 	Camera *data = (Camera *)camera->data;
-	float interocular_distance, convergence_distance;
+	float interocular_distance, convergence_distance, ang;
 	short convergence_mode;
 	float tmpviewmat[4][4];
 
@@ -654,16 +654,27 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
     transmat[3][2] = 0 ;
     transmat[3][3] = 1 ;
 
-	/* move */
+    /* rotate */
+	if (convergence_mode == CAM_S3D_TOE) {
+        ang = atan ( (interocular_distance * 0.5) / convergence_distance ) ;
+        if (left)
+            ang = -ang;
+        transmat[0][0] = cos ( ang ) ;
+        transmat[2][0] = -sin ( ang ) ;
+        transmat[0][2] = sin ( ang ) ;
+        transmat[2][2] = cos ( ang ) ;
+	}
 
+	/* move */
 	if (left) {
 		transmat[3][0] = interocular_distance * 0.5 ;
-		mul_m4_m4m4( tmpviewmat, transmat, tmpviewmat) ;
 	}
 	else {
 		transmat[3][0] = interocular_distance * -0.5 ;
-		mul_m4_m4m4( tmpviewmat, transmat, tmpviewmat) ;
 	}
+	
+	/* apply */
+    mul_m4_m4m4( tmpviewmat, transmat, tmpviewmat) ;
 
 	/* copy  */
 	copy_m4_m4(viewmat, tmpviewmat);
