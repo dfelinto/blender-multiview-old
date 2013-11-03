@@ -158,6 +158,13 @@ EnumPropertyItem snap_uv_element_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
+static EnumPropertyItem views_setup_items[] = {
+	{SCE_VIEWS_SETUP_BASIC, "SETUP_BASIC", 0, "Basic Stereo", "Single stereo camera system, adjust the stereo settings in the camera panel"},
+	{SCE_VIEWS_SETUP_ADVANCED, "SETUP_ADVANCED", 0, "Advanced Stereo", "Multi camera system, adjust the cameras individually"},
+	{0, NULL, 0, NULL, NULL}
+};
+
+
 /* workaround for duplicate enums,
  * have each enum line as a define then conditionally set it or not
  */
@@ -681,6 +688,24 @@ static void rna_Scene_all_keyingsets_next(CollectionPropertyIterator *iter)
 		internal->link = (Link *)ks->next;
 		
 	iter->valid = (internal->link != NULL);
+}
+
+static IteratorSkipFunc rna_RenderSettings_stereoViews_skip(CollectionPropertyIterator *iter, void *data)
+{
+	ListBaseIterator *internal = iter->internal;
+	SceneRenderView *srv = (SceneRenderView *)internal->link;
+
+	if ((strcmp(srv->name, STEREO_LEFT_NAME )==0) ||
+	    (strcmp(srv->name, STEREO_RIGHT_NAME)==0))
+		return 0;
+
+	return 1;
+};
+
+static void rna_RenderSettings_stereoViews_begin(CollectionPropertyIterator *iter, PointerRNA *ptr)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+	rna_iterator_listbase_begin(iter, &rd->views, rna_RenderSettings_stereoViews_skip);
 }
 
 static char *rna_RenderSettings_path(PointerRNA *UNUSED(ptr))
@@ -1254,6 +1279,20 @@ static char *rna_SceneRenderView_path(PointerRNA *ptr)
 {
 	SceneRenderView *srv = (SceneRenderView *)ptr->data;
 	return BLI_sprintfN("render.views[\"%s\"]", srv->name);
+}
+
+static void rna_RenderSettings_views_setup_set(PointerRNA *ptr, int value)
+{
+	RenderData *rd = (RenderData *)ptr->data;
+
+	if (rd->views_setup == SCE_VIEWS_SETUP_ADVANCED &&
+	              value == SCE_VIEWS_SETUP_BASIC) {
+
+		/* make sure the actview is visible */
+		if (rd->actview > 1) rd->actview = 1;
+	}
+
+	rd->views_setup = value;
 }
 
 static int rna_RenderSettings_multiple_engines_get(PointerRNA *UNUSED(ptr))
@@ -3695,13 +3734,6 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	StructRNA *srna;
 	PropertyRNA *prop;
 
-	static EnumPropertyItem stereoscopy_camera_items[] = {
-		{STEREO_CENTER_ID, "CENTER", 0, "Center", ""},
-		{STEREO_LEFT_ID, "LEFT", 0, "Left", ""},
-		{STEREO_RIGHT_ID, "RIGHT", 0, "Right", ""},
-		{0, NULL, 0, NULL, NULL}
-	};
-
 	srna = RNA_def_struct(brna, "SceneRenderView", NULL);
 	RNA_def_struct_ui_text(srna, "Scene Render View", "Render viewpoint for 3D stereo and multiview rendering");
 	RNA_def_struct_ui_icon(srna, ICON_RESTRICT_RENDER_OFF);
@@ -3716,30 +3748,17 @@ static void rna_def_scene_render_view(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "file_suffix", PROP_STRING, PROP_NONE);
 	RNA_def_property_string_sdna(prop, NULL, "suffix");
 	RNA_def_property_ui_text(prop, "File Suffix", "Suffix added to the render images for this view");
-	RNA_def_struct_name_property(srna, prop);
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
-	prop = RNA_def_property(srna, "camera", PROP_POINTER, PROP_NONE);
-	RNA_def_property_flag(prop, PROP_EDITABLE);
-	RNA_def_property_pointer_funcs(prop, NULL, NULL, NULL, "rna_Camera_object_poll");
-	RNA_def_property_ui_text(prop, "Camera", "Camera to use for rendering this view, leave empty to use the scene camera");
+	prop = RNA_def_property(srna, "camera_suffix", PROP_STRING, PROP_NONE);
+	RNA_def_property_string_sdna(prop, NULL, "suffix");
+	RNA_def_property_ui_text(prop, "Camera Suffix", "Suffix to identify the cameras to use, and added to the render images for this view");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
 
 	prop = RNA_def_property(srna, "use", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_negative_sdna(prop, NULL, "viewflag", SCE_VIEW_DISABLE);
 	RNA_def_property_ui_text(prop, "Enabled", "Disable or enable the render view");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-	prop = RNA_def_property(srna, "use_custom_suffix", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "viewflag", SCE_VIEW_CUSTOMSUFFIX);
-	RNA_def_property_ui_text(prop, "Custom Suffix", "Use the view name as label when saving individual view files (it replaces the special char % in the file string)");
-	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
-
-	prop = RNA_def_property(srna, "stereoscopy_camera", PROP_ENUM, PROP_NONE);
-	RNA_def_property_enum_sdna(prop, NULL, "stereo_camera");
-	RNA_def_property_enum_items(prop, stereoscopy_camera_items);
-	RNA_def_property_ui_text(prop, "Stereoscopy Camera", "");
-	RNA_def_property_update(prop, ND_SPACE_VIEW3D, NULL);
 }
 
 static void rna_def_render_views(BlenderRNA *brna, PropertyRNA *cprop)
@@ -4998,15 +5017,38 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 
 	/* views (stereoscopy et al) */
 	prop = RNA_def_property(srna, "views", PROP_COLLECTION, PROP_NONE);
-	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
 	RNA_def_property_struct_type(prop, "SceneRenderView");
 	RNA_def_property_ui_text(prop, "Render Views", "");
 	rna_def_render_views(brna, prop);
+
+	prop = RNA_def_property(srna, "stereo_views", PROP_COLLECTION, PROP_NONE);
+	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
+	RNA_def_property_collection_funcs(prop, "rna_RenderSettings_stereoViews_begin", "rna_iterator_listbase_next",
+	                                        "rna_iterator_listbase_end", "rna_iterator_listbase_get",
+	                                        NULL, NULL, NULL, NULL);
+	RNA_def_property_struct_type(prop, "SceneRenderView");
+	RNA_def_property_ui_text(prop, "Render Views", "");
+#if 0
+	prop = RNA_def_property(srna, "stereo_views", PROP_COLLECTION, PROP_NONE);
+	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
+	RNA_def_property_collection_funcs(prop, "rna_iterator_listbase_begin", "rna_iterator_listbase_next",
+	                                  "rna_iterator_listbase_end", "rna_iterator_listbase_get",
+	                                  "rna_RenderSettings_stereoViews_length", NULL, NULL, NULL);
+	RNA_def_property_struct_type(prop, "SceneRenderView");
+	RNA_def_property_ui_text(prop, "Render Views", "");
+	rna_def_render_views(brna, prop);
+#endif
 
 	prop = RNA_def_property(srna, "use_multiple_views", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_MULTIVIEW);
 	RNA_def_property_ui_text(prop, "Multiple Views", "Use multiple views in the scene");
 	RNA_def_property_update(prop, NC_SCENE | ND_RENDER_OPTIONS, NULL);
+
+	prop = RNA_def_property(srna, "views_setup", PROP_ENUM, PROP_NONE);
+	RNA_def_property_enum_items(prop, views_setup_items);
+	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
+	RNA_def_property_ui_text(prop, "Setup Stereo Mode", "");
+	RNA_def_property_enum_funcs(prop, NULL, "rna_RenderSettings_views_setup_set", NULL);
 
 	/* engine */
 	prop = RNA_def_property(srna, "engine", PROP_ENUM, PROP_NONE);

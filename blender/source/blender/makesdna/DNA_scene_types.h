@@ -252,15 +252,22 @@ typedef struct SceneRenderView {
 
 	int viewflag;
 	int pad[2];
-	char stereo_camera;
+	char stereo_camera; //toremove
 	char pad2[3];
 
-	struct Object *camera;
+	struct Object *camera;//toremove
 } SceneRenderView;
 
 /* srv->viewflag */
 #define SCE_VIEW_DISABLE		(1<<0)
 #define SCE_VIEW_CUSTOMSUFFIX	(1<<1)
+
+/* scene.render.views_setup */
+enum {
+	SCE_VIEWS_SETUP_BASIC = 0,
+	SCE_VIEWS_SETUP_ADVANCED = 1
+};
+
 
 /* *************************************************************** */
 
@@ -585,7 +592,8 @@ typedef struct RenderData {
 	/* MultiView */
 	ListBase views;
 	short actview;
-	short pad8[3];
+	short views_setup;
+	short pad8[2];
 } RenderData;
 
 /* *************************************************************** */
