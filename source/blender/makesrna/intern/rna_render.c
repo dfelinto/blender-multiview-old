@@ -591,8 +591,6 @@ static void rna_def_render_result(BlenderRNA *brna)
 static void rna_def_render_view(BlenderRNA *brna)
 {
 	StructRNA *srna;
-	PropertyRNA *prop;
-	FunctionRNA *func;
 
 	srna = RNA_def_struct(brna, "RenderView", NULL);
 	RNA_def_struct_ui_text(srna, "Render View", "");

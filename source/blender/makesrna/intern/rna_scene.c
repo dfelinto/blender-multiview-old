@@ -158,13 +158,6 @@ EnumPropertyItem snap_uv_element_items[] = {
 	{0, NULL, 0, NULL, NULL}
 };
 
-static EnumPropertyItem views_setup_items[] = {
-	{SCE_VIEWS_SETUP_BASIC, "SETUP_BASIC", 0, "Basic Stereo", "Single stereo camera system, adjust the stereo settings in the camera panel"},
-	{SCE_VIEWS_SETUP_ADVANCED, "SETUP_ADVANCED", 0, "Advanced Stereo", "Multi camera system, adjust the cameras individually"},
-	{0, NULL, 0, NULL, NULL}
-};
-
-
 /* workaround for duplicate enums,
  * have each enum line as a define then conditionally set it or not
  */
@@ -4360,6 +4353,16 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 		                            "resolution to 480 pixels"},
 		{0, NULL, 0, NULL, NULL}};
 
+	static EnumPropertyItem views_setup_items[] = {
+		{SCE_VIEWS_SETUP_BASIC, "SETUP_BASIC", 0, "Basic Stereo",
+		                        "Single stereo camera system, adjust the stereo settings in the camera panel"},
+		{SCE_VIEWS_SETUP_ADVANCED, "SETUP_ADVANCED", 0, "Advanced Stereo",
+		                        "Multi camera system, adjust the cameras individually"},
+		{0, NULL, 0, NULL, NULL}
+	};
+
+
+
 	rna_def_scene_ffmpeg_settings(brna);
 #ifdef WITH_QUICKTIME
 	rna_def_scene_quicktime_settings(brna);
@@ -5028,16 +5031,6 @@ static void rna_def_scene_render_data(BlenderRNA *brna)
 	                                        NULL, NULL, NULL, NULL);
 	RNA_def_property_struct_type(prop, "SceneRenderView");
 	RNA_def_property_ui_text(prop, "Render Views", "");
-#if 0
-	prop = RNA_def_property(srna, "stereo_views", PROP_COLLECTION, PROP_NONE);
-	RNA_def_property_collection_sdna(prop, NULL, "views", NULL);
-	RNA_def_property_collection_funcs(prop, "rna_iterator_listbase_begin", "rna_iterator_listbase_next",
-	                                  "rna_iterator_listbase_end", "rna_iterator_listbase_get",
-	                                  "rna_RenderSettings_stereoViews_length", NULL, NULL, NULL);
-	RNA_def_property_struct_type(prop, "SceneRenderView");
-	RNA_def_property_ui_text(prop, "Render Views", "");
-	rna_def_render_views(brna, prop);
-#endif
 
 	prop = RNA_def_property(srna, "use_multiple_views", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "scemode", R_MULTIVIEW);
