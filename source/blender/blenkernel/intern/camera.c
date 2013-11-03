@@ -620,38 +620,53 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
 {
 	/* viewmat = MODELVIEW_MATRIX */
 	Camera *data = (Camera *)camera->data;
-	float interocular_distance, convergence_distance;
+	float interocular_distance, convergence_distance, ang;
 	short convergence_mode;
 	float tmpviewmat[4][4];
+
+    float transmat[4][4] = {
+        {1,0,0,0},
+        {0,1,0,0},
+        {0,0,1,0},
+        {0,0,0,1} };
 
 	interocular_distance = data->stereo.interocular_distance;
 	convergence_distance = data->stereo.convergence_distance;
 	convergence_mode = data->stereo.convergence_mode;
 
-	copy_m4_m4(tmpviewmat, camera->obmat);
+	invert_m4_m4(tmpviewmat, camera->obmat);
+
+    /* rotate */
+	if (convergence_mode == CAM_S3D_TOE) {
+        ang = atan ( (interocular_distance * 0.5) / convergence_distance ) ;
+        if (left)
+            ang = -ang;
+        transmat[0][0] = cos ( ang ) ;
+        transmat[2][0] = -sin ( ang ) ;
+        transmat[0][2] = sin ( ang ) ;
+        transmat[2][2] = cos ( ang ) ;
+	}
 
 	/* move */
-	/* XXX pseudo math right now, only to show some difference.
-	   but here comes the real calculation later */
 	if (left) {
-		tmpviewmat[0][0] += interocular_distance * 0.5;
+		transmat[3][0] = interocular_distance * 0.5 ;
 	}
 	else {
-		tmpviewmat[0][0] -= interocular_distance * 0.5;
+		transmat[3][0] = interocular_distance * -0.5 ;
 	}
+	
+	/* apply */
+    mul_m4_m4m4( tmpviewmat, transmat, tmpviewmat) ;
 
 	/* copy  */
-	normalize_m4(tmpviewmat);
-	invert_m4_m4(viewmat, tmpviewmat);
+	copy_m4_m4(viewmat, tmpviewmat);
 
 	/* prepare the camera shift for the projection matrix */
-	if (convergence_mode == CAM_S3D_OFFAXIS) {
-		/* XXX pseudo math right now, only to show some difference.
-		   but here comes the real calculation later */
+	if (convergence_mode == CAM_S3D_OFFAXIS || convergence_mode == CAM_S3D_PARALLEL) {
 		if (left)
-			*shift += interocular_distance * 0.5;
+			*shift += ((interocular_distance / data->sensor_x) * (data->lens / convergence_distance) ) * .5;
 		else
-			*shift -= interocular_distance * 0.5;
+			*shift -= ((interocular_distance / data->sensor_x) * (data->lens / convergence_distance) ) * .5;
 	}
 }
 
