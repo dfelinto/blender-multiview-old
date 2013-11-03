@@ -123,15 +123,16 @@ class DATA_PT_camera_stereoscopy(CameraButtonsPanel, Panel):
     bl_label = "Stereoscopy"
     COMPAT_ENGINES = {'BLENDER_RENDER'}
 
+    @classmethod
+    def poll(cls, context):
+        multiview = context.scene.render.use_multiple_views
+        return multiview
+
     def draw(self, context):
         layout = self.layout
-        multiview = context.scene.render.use_multiple_views
-
-        if not multiview:
-            layout.label(text="Enable Views Support in the Render Layer Panel",icon='ERROR')
+        layout.active = context.scene.render.views_setup == 'SETUP_BASIC'
 
         col = layout.column()
-        col.active = multiview
 
         st = context.camera.stereo
         row = col.row(align=True)

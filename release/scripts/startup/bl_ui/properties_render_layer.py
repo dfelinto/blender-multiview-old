@@ -192,34 +192,38 @@ class RENDERLAYER_PT_views(RenderLayerButtonsPanel, Panel):
 
         scene = context.scene
         rd = scene.render
+        rv = rd.views.active
+
 
         layout.active = rd.use_multiple_views
+        basic_stereo = rd.views_setup == 'SETUP_BASIC'
 
         row = layout.row()
-        row.template_list("RENDERLAYER_UL_renderviews", "", rd, "views", rd.views, "active_index", rows=2)
+        row.prop(rd, "views_setup", expand=True)
 
-        col = row.column(align=True)
-        col.operator("scene.render_view_add", icon='ZOOMIN', text="")
-        col.operator("scene.render_view_remove", icon='ZOOMOUT', text="")
+        if basic_stereo:
+            row = layout.row()
+            row.template_list("RENDERLAYER_UL_renderviews", "", rd, "stereo_views", rd.views, "active_index", rows=2)
 
-        row = layout.row()
-        rv = rd.views.active
-        if rv and rv.name not in ('left', 'right'):
-            row.prop(rv, "name")
+            row = layout.row()
+            row.label(text="File Suffix:")
+            row.prop(rv, "file_suffix", text="")
 
-        rv = rd.views.active
+        else:
+            row = layout.row()
+            row.template_list("RENDERLAYER_UL_renderviews", "", rd, "views", rd.views, "active_index", rows=2)
 
-        col = layout.column()
-        col.prop(rv, "camera")
+            col = row.column(align=True)
+            col.operator("scene.render_view_add", icon='ZOOMIN', text="")
+            col.operator("scene.render_view_remove", icon='ZOOMOUT', text="")
 
-        if rv.camera:
-            col.prop(rv, "stereoscopy_camera")
+            row = layout.row()
+            if rv and rv.name not in ('left', 'right'):
+                row.prop(rv, "name")
 
-        row = col.row()
-        row.prop(rv, "use_custom_suffix")
-        sub = row.row()
-        sub.active = rv.use_custom_suffix
-        sub.prop(rv, "file_suffix", text="")
+            row = layout.row()
+            row.label(text="Camera Suffix:")
+            row.prop(rv, "camera_suffix", text="")
 
 
 if __name__ == "__main__":  # only for live edit.
