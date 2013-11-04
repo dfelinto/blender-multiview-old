@@ -3235,9 +3235,6 @@ static bool view3d_stereo(const bContext *C, Scene *scene)
 	if (WM_stereo_enabled(win) == FALSE)
 		return FALSE;
 
-	if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) == FALSE)
-		return FALSE;
-
 	if ((scene->r.scemode & R_MULTIVIEW) == 0)
 		return FALSE;
 
