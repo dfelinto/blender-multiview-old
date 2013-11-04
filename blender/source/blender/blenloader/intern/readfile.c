@@ -9797,32 +9797,11 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			for (scene = main->scene.first; scene; scene = scene->id.next) {
 				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
 				srv = (SceneRenderView *)scene->r.views.first;
-				srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 				BLI_strncpy(srv->suffix, "_L", sizeof(srv->suffix));
-				srv->stereo_camera = STEREO_LEFT_ID;
-				srv->camera = scene->camera;
 
 				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
 				srv = (SceneRenderView *)scene->r.views.last;
-				srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 				BLI_strncpy(srv->suffix, "_R", sizeof(srv->suffix));
-				srv->stereo_camera = STEREO_RIGHT_ID;
-				srv->camera = scene->camera;
-			}
-
-			for (screen = main->screen.first; screen; screen = screen->id.next) {
-				ScrArea *sa;
-				for (sa = screen->areabase.first; sa; sa = sa->next) {
-					SpaceLink *sl;
-
-					for (sl = sa->spacedata.first; sl; sl= sl->next) {
-						if (sl->spacetype == SPACE_VIEW3D) {
-							View3D *v3d = (View3D*) sl;
-							v3d->stereo_camera = STEREO_3D_ID;
-							v3d->flag2 |= V3D_SHOW_STEREOSCOPY;
-						}
-					}
-				}
 			}
 		}
 

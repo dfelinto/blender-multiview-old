@@ -1478,11 +1478,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
 						BLI_strncpy(view, srv->name, sizeof(view));
-
-						if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
-							BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
-						else
-							BLI_strncpy(suffix, srv->name, sizeof(suffix));
+						BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 
 						BLI_strncpy(filepath, simopts->filepath, sizeof(filepath));
 						BLI_path_view(filepath, suffix);
@@ -1519,10 +1515,7 @@ static void save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 
 				srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
-				if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
-					BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
-				else
-					BLI_strncpy(suffix, srv->name, sizeof(suffix));
+				BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 
 				BLI_strncpy(filepath, simopts->filepath, sizeof(filepath));
 				BLI_path_view(filepath, suffix);

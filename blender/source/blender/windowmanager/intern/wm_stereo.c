@@ -386,8 +386,7 @@ static bool wm_stereo_required(bScreen *screen)
 
 			if (sl->spacetype == SPACE_VIEW3D) {
 				View3D *v3d = (View3D*) sl;
-				if ((v3d->flag2 & V3D_SHOW_STEREOSCOPY) &&
-				    (v3d->stereo_camera == STEREO_3D_ID))
+				if (v3d->stereo_camera == STEREO_3D_ID)
 					return TRUE;
 			}
 			if (sl->spacetype == SPACE_IMAGE) {

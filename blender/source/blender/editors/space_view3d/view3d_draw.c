@@ -3299,9 +3299,7 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 			srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
 
 		/* update the viewport matrices with the new camera */
-		if (srv->camera &&
-			  srv->stereo_camera != STEREO_CENTER_ID)
-		{
+		if (scene->r.views_setup == SCE_VIEWS_SETUP_BASIC) {
 			data = (Camera *)srv->camera->data;
 			orig_shift = data->shiftx;
 
@@ -3311,6 +3309,12 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 			/* restore the original shift */
 			data->shiftx = orig_shift;
 		}
+#if 0
+		else { // SCE_VIEWS_SETUP_ADVANCED
+			BKE_get_multicamera(scene);
+			//XXX return camera for suffix
+		}
+#endif
 		else {
 			v3d->camera = (srv->camera ? srv->camera : orig_cam);
 			view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);

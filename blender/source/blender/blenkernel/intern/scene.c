@@ -584,15 +584,11 @@ Scene *BKE_scene_add(Main *bmain, const char *name)
 	/* multiview - stereo */
 	BKE_scene_add_render_view(sce, STEREO_LEFT_NAME);
 	srv = (SceneRenderView *)sce->r.views.first;
-	srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 	BLI_strncpy(srv->suffix, "_L", sizeof(srv->suffix));
-	srv->stereo_camera = STEREO_LEFT_ID;
 
 	BKE_scene_add_render_view(sce, STEREO_RIGHT_NAME);
 	srv = (SceneRenderView *)sce->r.views.last;
-	srv->viewflag |= SCE_VIEW_CUSTOMSUFFIX;
 	BLI_strncpy(srv->suffix, "_R", sizeof(srv->suffix));
-	srv->stereo_camera = STEREO_RIGHT_ID;
 
 	/* game data */
 	sce->gm.stereoflag = STEREO_NOSTEREO;
