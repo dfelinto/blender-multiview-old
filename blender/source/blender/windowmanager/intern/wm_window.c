@@ -249,7 +249,6 @@ wmWindow *wm_window_copy(bContext *C, wmWindow *winorig)
 	win->posy = winorig->posy;
 	win->sizex = winorig->sizex;
 	win->sizey = winorig->sizey;
-	win->flag = winorig->flag;
 	
 	/* duplicate assigns to window */
 	win->screen = ED_screen_duplicate(win, winorig->screen);
@@ -362,7 +361,7 @@ static void wm_window_add_ghostwindow(const char *title, wmWindow *win)
 		multisamples = U.ogl_multisamples;
 	
 	/* a new window is created when pageflip mode is required for a window */
-	stereo = (win->flag & WM_STEREO) && U.stereo_display == S3D_DISPLAY_PAGEFLIP;
+	stereo = U.stereo_display == S3D_DISPLAY_PAGEFLIP;
 
 	wm_get_screensize(&scr_w, &scr_h);
 	posy = (scr_h - win->posy - win->sizey);

@@ -9789,7 +9789,6 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 
 	{
 		Scene *scene;
-		bScreen *screen;
 		SceneRenderView *srv;
 		Camera *cam;
 
