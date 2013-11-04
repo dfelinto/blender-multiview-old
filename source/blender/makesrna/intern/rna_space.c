@@ -1770,9 +1770,9 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	};
 
 	static EnumPropertyItem stereo_camera_items[] = {
-		{STEREO_3D_ID, "3D", 0, "3D", ""},
-		{STEREO_LEFT_ID, "LEFT", 0, "Left", ""},
-		{STEREO_RIGHT_ID, "RIGHT", 0, "Right", ""},
+		{STEREO_LEFT_ID, "LEFT", ICON_RESTRICT_RENDER_OFF, "Left", ""},
+		{STEREO_RIGHT_ID, "RIGHT", ICON_RESTRICT_RENDER_OFF, "Right", ""},
+		{STEREO_3D_ID, "3D", ICON_CAMERA_STEREO, "3D", ""},
 		{0, NULL, 0, NULL, NULL}
 	};
 
@@ -2107,11 +2107,6 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, "rna_SpaceView3D_matcap_update");
 
 	/* Stereo Settings */
-	prop = RNA_def_property(srna, "show_stereoscopy", PROP_BOOLEAN, PROP_NONE);
-	RNA_def_property_boolean_sdna(prop, NULL, "flag2", V3D_SHOW_STEREOSCOPY);
-	RNA_def_property_ui_text(prop, "Show Reconstruction", "Display stereoscopy cameras and elements");
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
-
 	prop = RNA_def_property(srna, "stereoscopy_camera", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "stereo_camera");
 	RNA_def_property_enum_items(prop, stereo_camera_items);

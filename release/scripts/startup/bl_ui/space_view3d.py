@@ -2628,35 +2628,30 @@ class VIEW3D_PT_view3d_stereo(Panel):
     bl_region_type = 'UI'
     bl_label = "Stereoscopy"
     bl_options = {'DEFAULT_CLOSED'}
+    COMPAT_ENGINES = {'BLENDER_RENDER'}
 
     @classmethod
     def poll(cls, context):
-        return context.space_data
+        scene = context.scene
 
-    def draw_header(self, context):
-        view = context.space_data
+        multiview = scene.render.use_multiple_views
+        engine = scene.render.engine
 
-        self.layout.prop(view, "show_stereoscopy", text="")
+        return context.space_data and multiview and (engine in cls.COMPAT_ENGINES)
 
     def draw(self, context):
         layout = self.layout
         view = context.space_data
-        multiview = context.scene.render.use_multiple_views
 
-        layout.active = view.show_stereoscopy
-
-        if not multiview:
-            layout.label(text="Enable Views Support in the Render Layer Panel",icon='ERROR')
+        basic_stereo = context.scene.render.views_setup == 'SETUP_BASIC'
 
         col = layout.column()
-        col.active = view.show_stereoscopy and multiview
-        if view.stereoscopy_camera == "3D":
-            col.prop(view, "stereoscopy_camera", icon='CAMERA_STEREO')
-        else:
-            col.prop(view, "stereoscopy_camera", icon='SCENE')
+        col.row().prop(view, "stereoscopy_camera", expand=True)
 
         col.label(text="Display:")
-        col.prop(view, "show_stereoscopy_cameras")
+        row = col.row()
+        row.active = basic_stereo
+        row.prop(view, "show_stereoscopy_cameras")
         col.prop(view, "show_stereoscopy_planes")
         col.prop(view, "show_stereoscopy_volume")
 
