@@ -596,7 +596,7 @@ int BKE_camera_view_frame_fit_to_scene(Scene *scene, struct View3D *v3d, Object 
 	}
 }
 
-static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *shift, bool left)
+void BKE_camera_stereo_matrices(Object *camera, float viewmat[4][4], float *shift, bool left)
 {
 	/* viewmat = MODELVIEW_MATRIX */
 	Camera *data = (Camera *)camera->data;
@@ -653,20 +653,9 @@ static void camera_stereo_matrices(Object *camera, float viewmat[4][4], float *s
 	}
 }
 
-void BKE_camera_stereo_matrix_shift(Object *camera, float viewmat[4][4], float *shift, StereoViews view)
+Object *BKE_camera_multiview_advanced(Scene *scene, Object *camera, const char *name)
 {
-	/* set the modelview matrix and return the new camera shift */
-	*shift = ((Camera *)camera->data)->shiftx;
-
-	switch (view) {
-		case STEREO_LEFT_ID:
-			camera_stereo_matrices(camera, viewmat, shift, TRUE);
-			break;
-		case STEREO_RIGHT_ID:
-			camera_stereo_matrices(camera, viewmat, shift, FALSE);
-			break;
-		default:
-			break;
-	}
+	//XXX MV return the camera for the view given the suffix
+	return camera;
 }
 

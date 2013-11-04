@@ -3229,7 +3229,6 @@ static bool view3d_stereo(const bContext *C, Scene *scene)
 {
 	SceneRenderView *srv;
 	wmWindow *win = CTX_wm_window(C);
-	View3D *v3d = CTX_wm_view3d(C);
 	int has_left = FALSE, has_right = FALSE;
 
 	if (WM_stereo_enabled(win) == FALSE)
@@ -3283,45 +3282,40 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 
 	/* change view */
 	if (view3d_stereo(C, scene)) {
-		SceneRenderView *srv;
-		float viewmat[4][4];
-		Camera *data;
-		Object *orig_cam = v3d->camera;
-		float orig_shift;
+		bool left;
 
 		/* show only left or right camera */
 		if (v3d->stereo_camera != STEREO_3D_ID)
 			v3d->eye = v3d->stereo_camera;
 
-		if (v3d->eye == STEREO_LEFT_ID)
-			srv = BLI_findstring(&scene->r.views, STEREO_LEFT_NAME, offsetof(SceneRenderView, name));
-		else
-			srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
+		left = v3d->eye == STEREO_LEFT_ID;
 
 		/* update the viewport matrices with the new camera */
 		if (scene->r.views_setup == SCE_VIEWS_SETUP_BASIC) {
-			data = (Camera *)srv->camera->data;
+			Camera *data;
+			float viewmat[4][4];
+			float orig_shift;
+
+			data = (Camera *)v3d->camera->data;
 			orig_shift = data->shiftx;
 
-			BKE_camera_stereo_matrix_shift(srv->camera, viewmat, &data->shiftx, srv->stereo_camera);
+			BKE_camera_stereo_matrices(v3d->camera, viewmat, &data->shiftx,
+			                           (left ? true : false));
 			view3d_main_area_setup_view(scene, v3d, ar, viewmat, NULL);
 
 			/* restore the original shift */
 			data->shiftx = orig_shift;
 		}
-#if 0
-		else { // SCE_VIEWS_SETUP_ADVANCED
-			BKE_get_multicamera(scene);
-			//XXX return camera for suffix
-		}
-#endif
-		else {
-			v3d->camera = (srv->camera ? srv->camera : orig_cam);
-			view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
-		}
+		else { /* SCE_VIEWS_SETUP_ADVANCED */
+			Object *orig_cam = v3d->camera;
 
-		/* restore the original camera */
-		v3d->camera = orig_cam;
+			v3d->camera = BKE_camera_multiview_advanced(scene, v3d->camera,
+			              (left ? STEREO_LEFT_NAME : STEREO_RIGHT_NAME));
+			view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
+
+			/* restore the original camera */
+			v3d->camera = orig_cam;
+		}
 	}
 
 	if (rv3d->rflag & RV3D_CLIPPING)
