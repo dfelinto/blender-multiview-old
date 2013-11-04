@@ -252,8 +252,7 @@ typedef struct SceneRenderView {
 
 	int viewflag;
 	int pad[2];
-	char stereo_camera; //toremove
-	char pad2[3];
+	char pad2[4];
 
 	struct Object *camera;//toremove
 } SceneRenderView;
