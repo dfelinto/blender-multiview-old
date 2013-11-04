@@ -5086,7 +5086,6 @@ static void lib_link_scene(FileData *fd, Main *main)
 	Base *base, *next;
 	Sequence *seq;
 	SceneRenderLayer *srl;
-	SceneRenderView *srv;
 	TimeMarker *marker;
 	FreestyleModuleConfig *fmc;
 	FreestyleLineSet *fls;
@@ -5212,10 +5211,6 @@ static void lib_link_scene(FileData *fd, Main *main)
 					fls->linestyle = newlibadr_us(fd, sce->id.lib, fls->linestyle);
 					fls->group = newlibadr_us(fd, sce->id.lib, fls->group);
 				}
-			}
-
-			for (srv = sce->r.views.first; srv; srv = srv->next) {
-				srv->camera = newlibadr_us(fd, sce->id.lib, srv->camera);
 			}
 
 			/*Game Settings: Dome Warp Text*/
@@ -10800,7 +10795,6 @@ static void expand_scene(FileData *fd, Main *mainvar, Scene *sce)
 {
 	Base *base;
 	SceneRenderLayer *srl;
-	SceneRenderView *srv;
 	FreestyleModuleConfig *module;
 	FreestyleLineSet *lineset;
 	
@@ -10832,10 +10826,6 @@ static void expand_scene(FileData *fd, Main *mainvar, Scene *sce)
 				expand_doit(fd, mainvar, lineset->group);
 			expand_doit(fd, mainvar, lineset->linestyle);
 		}
-	}
-	
-	for (srv = sce->r.views.first; srv; srv = srv->next) {
-		expand_doit(fd, mainvar, srv->camera);
 	}
 
 	if (sce->r.dometext)

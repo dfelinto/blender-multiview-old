@@ -3299,8 +3299,7 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 			data = (Camera *)v3d->camera->data;
 			orig_shift = data->shiftx;
 
-			BKE_camera_stereo_matrices(v3d->camera, viewmat, &data->shiftx,
-			                           (left ? true : false));
+			BKE_camera_stereo_matrices(v3d->camera, viewmat, &data->shiftx, left);
 			view3d_main_area_setup_view(scene, v3d, ar, viewmat, NULL);
 
 			/* restore the original shift */
@@ -3308,9 +3307,14 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 		}
 		else { /* SCE_VIEWS_SETUP_ADVANCED */
 			Object *orig_cam = v3d->camera;
+			SceneRenderView *srv;
 
-			v3d->camera = BKE_camera_multiview_advanced(scene, v3d->camera,
-			              (left ? STEREO_LEFT_NAME : STEREO_RIGHT_NAME));
+			if (left)
+				srv = BLI_findstring(&scene->r.views, STEREO_LEFT_NAME, offsetof(SceneRenderView, name));
+			else
+				srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
+
+			v3d->camera = BKE_camera_multiview_advanced(&scene->r, v3d->camera, srv->suffix);
 			view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
 
 			/* restore the original camera */

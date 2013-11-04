@@ -653,7 +653,7 @@ void BKE_camera_stereo_matrices(Object *camera, float viewmat[4][4], float *shif
 	}
 }
 
-Object *BKE_camera_multiview_advanced(Scene *scene, Object *camera, const char *name)
+Object *BKE_camera_multiview_advanced(RenderData *rd, Object *camera, const char *suffix)
 {
 	//XXX MV return the camera for the view given the suffix
 	return camera;
