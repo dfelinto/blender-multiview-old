@@ -2155,21 +2155,21 @@ float evaluate_fcurve(FCurve *fcu, float evaltime)
 			for (fcm = fcu->modifiers.first; fcm; fcm = fcm->next) {
 				/* if there are range-restrictions, we must definitely block [#36950] */
 				if ((fcm->flag & FMODIFIER_FLAG_RANGERESTRICT) == 0 ||
-		    		((fcm->sfra <= evaltime) && (fcm->efra >= evaltime)) )
-		    	{
-		    		/* within range: here it probably doesn't matter, though we'd want to check on additive... */	
-		    	}
-		    	else {
-		    		/* outside range: modifier shouldn't contribute to the curve here, though it does in other areas,
+				    ((fcm->sfra <= evaltime) && (fcm->efra >= evaltime)) )
+				{
+					/* within range: here it probably doesn't matter, though we'd want to check on additive... */
+				}
+				else {
+					/* outside range: modifier shouldn't contribute to the curve here, though it does in other areas,
 					 * so neither should the driver!
 					 */
 					do_linear = false;
-		    	}
+				}
 			}
 			
 			/* only copy over results if none of the modifiers disagreed with this */
 			if (do_linear) {
-				cvalue = evaltime;	
+				cvalue = evaltime;
 			}
 		}
 	}
