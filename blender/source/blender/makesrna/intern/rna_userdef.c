@@ -3753,6 +3753,11 @@ static void rna_def_userdef_system(BlenderRNA *brna)
 	RNA_def_property_ui_text(prop, "Cross-Eyed", "Right eye should see left image and vice-versa");
 	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
 
+	prop = RNA_def_property(srna, "use_stereo_sidebyside_fullwidth", PROP_BOOLEAN, PROP_NONE);
+	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", S3D_SIDEBYSIDE_FULLWIDTH);
+	RNA_def_property_ui_text(prop, "Full Width", "Useful for freeviewing in small window or viewing in full-screen with prismatic glasses or one-eye stereoscope");
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
+
 #ifdef WITH_CYCLES
 	prop = RNA_def_property(srna, "compute_device_type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_flag(prop, PROP_ENUM_NO_CONTEXT);

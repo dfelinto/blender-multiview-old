@@ -227,8 +227,8 @@ void wm_subwindow_position(wmWindow *win, int swinid, rcti *winrct)
 		 * fixed it). - zr  (2001!)
 		 */
 		
-		if (swin->winrct.xmax > WM_window_pixels_x(win))
-			swin->winrct.xmax = WM_window_pixels_x(win);
+		if (swin->winrct.xmax > WM_stereo_window_pixels_x(win) )
+			swin->winrct.xmax = WM_stereo_window_pixels_x(win);
 		if (swin->winrct.ymax > WM_window_pixels_y(win))
 			swin->winrct.ymax = WM_window_pixels_y(win);
 		

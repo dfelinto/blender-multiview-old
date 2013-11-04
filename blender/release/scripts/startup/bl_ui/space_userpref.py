@@ -418,6 +418,7 @@ class USERPREF_PT_system(Panel):
             col.prop(system, "use_stereo_interlace_swap")
 
         if system.stereo_display == 'SIDEBYSIDE':
+            col.prop(system, "use_stereo_sidebyside_fullwidth")
             col.prop(system, "use_stereo_sidebyside_crosseyed")
 
         # 2. Column

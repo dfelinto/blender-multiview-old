@@ -1407,6 +1407,14 @@ float WM_cursor_pressure(const struct wmWindow *win)
 /* mac retina opens window in size X, but it has up to 2 x more pixels */
 int WM_window_pixels_x(wmWindow *win)
 {
+	if( (U.stereo_flag & S3D_SIDEBYSIDE_FULLWIDTH) && (win->flag & WM_STEREO) )
+		return WM_stereo_window_pixels_x(win) / 2;
+	else
+		return WM_stereo_window_pixels_x(win);
+}
+
+int WM_stereo_window_pixels_x(wmWindow *win)
+{
 	float f = GHOST_GetNativePixelSize(win->ghostwin);
 	
 	return (int)(f * (float)win->sizex);

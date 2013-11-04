@@ -797,6 +797,7 @@ typedef enum eStereoDisplayMode {
 typedef enum eStereoFlag {
 	S3D_INTERLACE_SWAP        = (1 << 0),
 	S3D_SIDEBYSIDE_CROSSEYED  = (1 << 1),
+	S3D_SIDEBYSIDE_FULLWIDTH  = (1 << 2),
 } eStereoFlag;
 
 /* UserDef.stereo_anaglyph_type */

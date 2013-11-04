@@ -90,6 +90,7 @@ void		WM_check			(struct bContext *C);
 struct wmWindow	*WM_window_open	(struct bContext *C, struct rcti *rect);
 
 int			WM_window_pixels_x		(struct wmWindow *win);
+int			WM_stereo_window_pixels_x	(struct wmWindow *win);
 int			WM_window_pixels_y		(struct wmWindow *win);
 
 /* defines for 'type' WM_window_open_temp */

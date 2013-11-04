@@ -1109,7 +1109,7 @@ void ED_screen_refresh(wmWindowManager *wm, wmWindow *win)
 		rcti winrct;
 	
 		winrct.xmin = 0;
-		winrct.xmax = WM_window_pixels_x(win) - 1;
+		winrct.xmax = WM_stereo_window_pixels_x(win) - 1;
 		winrct.ymin = 0;
 		winrct.ymax = WM_window_pixels_y(win) - 1;
 		
