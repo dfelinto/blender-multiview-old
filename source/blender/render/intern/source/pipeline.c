@@ -2759,11 +2759,7 @@ void RE_BlenderFrame(Render *re, Main *bmain, Scene *scene, SceneRenderLayer *sr
 					for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
 						srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
-						if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
-							BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
-						else
-							BLI_strncpy(suffix, srv->name, sizeof(suffix));
-
+						BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 						BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, suffix);
 
 						/* reports only used for Movie */
@@ -2953,11 +2949,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 						for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
 							srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
-							if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
-								BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
-							else
-								BLI_strncpy(suffix, srv->name, sizeof(suffix));
-
+							BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 							BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, suffix);
 
 							/* reports only used for Movie */
@@ -3051,11 +3043,7 @@ void RE_BlenderAnim(Render *re, Main *bmain, Scene *scene, Object *camera_overri
 						for (rv = (RenderView *) re->result->views.first; rv; rv = rv->next) {
 							srv = BLI_findstring(&scene->r.views, rv->name, offsetof(SceneRenderView, name));
 
-							if ((srv->viewflag & SCE_VIEW_CUSTOMSUFFIX))
-								BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
-							else
-								BLI_strncpy(suffix, srv->name, sizeof(suffix));
-
+							BLI_strncpy(suffix, srv->suffix, sizeof(suffix));
 							BKE_makepicstring(name, scene->r.pic, bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, suffix);
 
 							/* Touch/NoOverwrite options are only valid for image's */
