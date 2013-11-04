@@ -254,7 +254,6 @@ typedef struct SceneRenderView {
 	int pad[2];
 	char pad2[4];
 
-	struct Object *camera;//toremove
 } SceneRenderView;
 
 /* srv->viewflag */

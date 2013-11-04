@@ -412,7 +412,6 @@ void BKE_object_unlink(Object *ob)
 	bScreen *sc;
 	Scene *sce;
 	SceneRenderLayer *srl;
-	SceneRenderView *srv;
 	FreestyleLineSet *lineset;
 	Curve *cu;
 	Tex *tex;
@@ -678,11 +677,6 @@ void BKE_object_unlink(Object *ob)
 						BKE_unlink_linestyle_target_object(lineset->linestyle, ob);
 					}
 				}
-			}
-
-			for (srv = sce->r.views.first; srv; srv = srv->next) {
-				if (srv->camera == ob)
-					srv->camera = NULL;
 			}
 		}
 

@@ -48,6 +48,7 @@
 #include "BKE_main.h"
 #include "BKE_report.h"
 #include "BKE_freestyle.h"
+#include "BKE_camera.h"
 
 #include "IMB_imbuf.h"
 #include "IMB_imbuf_types.h"
@@ -554,6 +555,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 	SceneRenderView *srv;
 	int rectx, recty;
 	int nr, i;
+	bool basic_stereo = re->r.views_setup == SCE_VIEWS_SETUP_BASIC;
 	
 	rectx = BLI_rcti_size_x(partrct);
 	recty = BLI_rcti_size_y(partrct);
@@ -585,12 +587,20 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 			if (srv->viewflag & SCE_VIEW_DISABLE)
 				continue;
 
+			if (basic_stereo &&
+			    (strcmp(srv->name, STEREO_LEFT_NAME)  != 0) &&
+			    (strcmp(srv->name, STEREO_RIGHT_NAME) != 0))
+				continue;
+
 			rv = MEM_callocN(sizeof(RenderView), "new render view");
 			BLI_addtail(&rr->views, rv);
 
 			BLI_strncpy(rv->name, srv->name, sizeof(rv->name));
 
-			rv->camera = (srv->camera)?srv->camera:RE_GetCamera(re);
+			if (re->r.views_setup == SCE_VIEWS_SETUP_BASIC)
+				rv->camera = RE_GetCamera(re);
+			else
+				rv->camera = BKE_camera_multiview_advanced(&re->r, RE_GetCamera(re), srv->suffix);
 		}
 	}
 
