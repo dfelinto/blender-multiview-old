@@ -401,17 +401,17 @@ static bool wm_stereo_required(bScreen *screen)
 	return FALSE;
 }
 
-bool WM_stereo_enabled(wmWindow *win)
+bool WM_stereo_enabled(wmWindow *win, bool only_fullscreen_test)
 {
 	bScreen *screen = win->screen;
 
-	if (wm_stereo_required(screen) == FALSE)
-		return FALSE;
+	if ((only_fullscreen_test == false) && wm_stereo_required(screen) == FALSE)
+		return false;
 
 	if (wm_stereo_need_fullscreen(U.stereo_display))
 		return (GHOST_GetWindowState(win->ghostwin) == GHOST_kWindowStateFullScreen);
 
-	return TRUE;
+	return true;
 }
 
 int wm_stereo_toggle_exec(bContext *C, wmOperator *op)
