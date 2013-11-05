@@ -30,15 +30,18 @@
  */
 
 #include <stdlib.h>
+#include <stddef.h>
 
 #include "DNA_camera_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_view3d_types.h"
+#include "DNA_ID.h"
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_string.h"
 
 #include "BKE_animsys.h"
 #include "BKE_camera.h"
@@ -653,9 +656,38 @@ void BKE_camera_stereo_matrices(Object *camera, float viewmat[4][4], float *shif
 	}
 }
 
-Object *BKE_camera_multiview_advanced(RenderData *rd, Object *camera, const char *suffix)
+Object *BKE_camera_multiview_advanced(Scene *scene, RenderData *rd, Object *camera, const char *suffix)
 {
-	//XXX MV return the camera for the view given the suffix
+	SceneRenderView *srv;
+	char name[MAX_NAME];
+	int len_name, len_suffix;
+
+	len_name = BLI_strnlen(camera->id.name, sizeof(camera->id.name));
+
+	for (srv = rd->views.first; srv; srv = srv->next)
+	{
+		len_suffix = BLI_strnlen(srv->suffix, sizeof(srv->suffix));
+
+		if (len_name < len_suffix)
+			continue;
+
+		if (strcmp(camera->id.name + (len_name - len_suffix), srv->suffix) == 0) {
+			BLI_snprintf(name, sizeof(name), "%.*s%s", (len_name - len_suffix), camera->id.name, suffix);
+			break;
+		}
+	}
+
+	if (name[0] != '\0') {
+		Base *base;
+		Object *ob;
+		for (base = scene->base.first; base; base = base->next) {
+			ob = base->object;
+			if (strcmp(ob->id.name, name) == 0) {
+				return ob;
+			}
+		}
+	}
+
 	return camera;
 }
 

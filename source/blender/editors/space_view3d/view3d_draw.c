@@ -3225,17 +3225,20 @@ static void view3d_main_area_clear(Scene *scene, View3D *v3d, ARegion *ar)
 	}
 }
 
-static bool view3d_stereo(const bContext *C, Scene *scene)
+static bool view3d_stereo(const bContext *C, Scene *scene, View3D *v3d)
 {
 	SceneRenderView *srv;
 	wmWindow *win = CTX_wm_window(C);
 	int has_left = FALSE, has_right = FALSE;
 
-	if (WM_stereo_enabled(win) == FALSE)
-		return FALSE;
+	if (v3d->camera == false)
+		return false;
+
+	if (WM_stereo_enabled(win) == false)
+		return false;
 
 	if ((scene->r.scemode & R_MULTIVIEW) == 0)
-		return FALSE;
+		return false;
 
 	/* check renderdata for amount of views */
 	for (srv= (SceneRenderView *) scene->r.views.first; srv; srv = srv->next) {
@@ -3244,10 +3247,10 @@ static bool view3d_stereo(const bContext *C, Scene *scene)
 			continue;
 
 		if (BLI_strcasecmp(srv->name, STEREO_LEFT_NAME))
-			has_left = TRUE;
+			has_left = true;
 
-		if (BLI_strcasecmp(srv->name, STEREO_RIGHT_NAME))
-			has_right = TRUE;
+		else if (BLI_strcasecmp(srv->name, STEREO_RIGHT_NAME))
+			has_right = true;
 	}
 
 	return has_left && has_right;
@@ -3281,7 +3284,7 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
 
 	/* change view */
-	if (view3d_stereo(C, scene)) {
+	if (view3d_stereo(C, scene, v3d)) {
 		bool left;
 
 		/* show only left or right camera */
@@ -3314,7 +3317,7 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 			else
 				srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
 
-			v3d->camera = BKE_camera_multiview_advanced(&scene->r, v3d->camera, srv->suffix);
+			v3d->camera = BKE_camera_multiview_advanced(scene, &scene->r, v3d->camera, srv->suffix);
 			view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
 
 			/* restore the original camera */
