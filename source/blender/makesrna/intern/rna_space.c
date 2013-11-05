@@ -2111,7 +2111,7 @@ static void rna_def_space_view3d(BlenderRNA *brna)
 	RNA_def_property_enum_sdna(prop, NULL, "stereo_camera");
 	RNA_def_property_enum_items(prop, stereo_camera_items);
 	RNA_def_property_ui_text(prop, "Camera", "");
-	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_PROPERTIES | NC_IMAGE, NULL);
+	RNA_def_property_update(prop, NC_SPACE | ND_SPACE_VIEW3D, NULL);
 
 	prop = RNA_def_property(srna, "show_stereoscopy_cameras", PROP_BOOLEAN, PROP_NONE);
 	RNA_def_property_boolean_sdna(prop, NULL, "stereo_flag", V3D_S3D_DISPCAMERAS);
