@@ -1012,6 +1012,20 @@ def scan_source(fp, code, args):
     #    #print(value, end="")
 
 
+def scan_source_filepath(filepath, args):
+    # for quick tests
+    #~ if not filepath.endswith("creator.c"):
+    #~     return
+
+    code = open(filepath, 'r', encoding="utf-8").read()
+
+    # fast checks which don't require full parsing
+    quick_check_source(filepath, code, args)
+
+    # use lexer
+    scan_source(filepath, code, args)
+
+
 def scan_source_recursive(dirpath, args):
     import os
     from os.path import join, splitext
@@ -1035,17 +1049,8 @@ def scan_source_recursive(dirpath, args):
     for filepath in sorted(source_list(dirpath, is_source)):
         if is_ignore(filepath):
             continue
-        # for quick tests
-        #~ if not filepath.endswith("creator.c"):
-        #~     continue
 
-        code = open(filepath, 'r', encoding="utf-8").read()
-
-        # fast checks which don't require full parsing
-        quick_check_source(filepath, code, args)
-
-        # use lexer
-        scan_source(filepath, code, args)
+        scan_source_filepath(filepath, args)
 
 
 if __name__ == "__main__":
@@ -1071,4 +1076,4 @@ if __name__ == "__main__":
             scan_source_recursive(filepath, args)
         else:
             # single file
-            scan_source(filepath, args)
+            scan_source_filepath(filepath, args)
