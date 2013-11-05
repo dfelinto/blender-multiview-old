@@ -3237,20 +3237,7 @@ static bool view3d_stereo(const bContext *C, Scene *scene)
 	if ((scene->r.scemode & R_MULTIVIEW) == 0)
 		return false;
 
-	/* check renderdata for amount of views */
-	for (srv= (SceneRenderView *) scene->r.views.first; srv; srv = srv->next) {
-
-		if (srv->viewflag & SCE_VIEW_DISABLE)
-			continue;
-
-		if (BLI_strcasecmp(srv->name, STEREO_LEFT_NAME))
-			has_left = true;
-
-		else if (BLI_strcasecmp(srv->name, STEREO_RIGHT_NAME))
-			has_right = true;
-	}
-
-	return has_left && has_right;
+	return true;
 }
 
 /* warning: this function has duplicate drawing in ED_view3d_draw_offscreen() */
