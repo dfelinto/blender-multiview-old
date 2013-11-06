@@ -600,7 +600,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 			if (re->r.views_setup == SCE_VIEWS_SETUP_BASIC)
 				rv->camera = RE_GetCamera(re);
 			else
-				rv->camera = BKE_camera_multiview_advanced(&re->scene ,&re->r, RE_GetCamera(re), srv->suffix);
+				rv->camera = BKE_camera_multiview_advanced(re->scene ,&re->r, RE_GetCamera(re), srv->suffix);
 		}
 	}
 
