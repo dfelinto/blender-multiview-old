@@ -3227,9 +3227,7 @@ static void view3d_main_area_clear(Scene *scene, View3D *v3d, ARegion *ar)
 
 static bool view3d_stereo(const bContext *C, Scene *scene)
 {
-	SceneRenderView *srv;
 	wmWindow *win = CTX_wm_window(C);
-	int has_left = FALSE, has_right = FALSE;
 
 	if (WM_stereo_enabled(win, TRUE) == FALSE)
 		return false;
