@@ -141,7 +141,11 @@ class DATA_PT_camera_stereoscopy(CameraButtonsPanel, Panel):
         st = context.camera.stereo
         row = col.row(align=True)
         row.prop(st, "interocular_distance")
-        row.prop(st, "convergence_distance")
+
+        if st.convergence_mode == 'PARALLEL':
+            row.prop(st, "convergence_distance", text="Viewport Convergence")
+        else:
+            row.prop(st, "convergence_distance")
 
         row = col.row()
         row.prop(st, "convergence_mode", expand=True)
