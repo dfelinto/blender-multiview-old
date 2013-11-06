@@ -35,7 +35,6 @@
 #include "STR_HashedString.h"
 
 #include "MT_Vector3.h"
-#include "STR_HashedString.h"
 
 #ifdef WITH_CXX_GUARDEDALLOC
 #include "MEM_guardedalloc.h"
@@ -167,6 +166,8 @@ public:
 
 	virtual Material*   GetBlenderMaterial() const;
 	virtual Image*      GetBlenderImage() const;
+	virtual MTFace*		GetMTFace() const;
+	virtual unsigned int* GetMCol() const;
 	virtual Scene*		GetBlenderScene() const;
 	virtual void		ReleaseMaterial();
 	virtual void		GetMaterialRGBAColor(unsigned char *rgba) const;

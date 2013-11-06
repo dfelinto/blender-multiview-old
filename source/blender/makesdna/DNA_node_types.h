@@ -678,19 +678,15 @@ typedef struct NodeLensDist {
 } NodeLensDist;
 
 typedef struct NodeColorBalance {
-	/* for processing */
+	/* ASC CDL parameters */
 	float slope[3];
 	float offset[3];
 	float power[3];
 	
-	/* for ui representation */
+	/* LGG parameters */
 	float lift[3];
 	float gamma[3];
 	float gain[3];
-
-	/* temp storage for inverted lift */
-	float lift_lgg[3];
-	float gamma_inv[3];
 } NodeColorBalance;
 
 typedef struct NodeColorspill {

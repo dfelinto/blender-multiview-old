@@ -7295,7 +7295,8 @@ static BHead *read_global(BlendFileData *bfd, FileData *fd, BHead *bhead)
 	bfd->main->subversionfile = fg->subversion;
 	bfd->main->minversionfile = fg->minversion;
 	bfd->main->minsubversionfile = fg->minsubversion;
-	bfd->main->revision = fg->revision;
+	BLI_strncpy(bfd->main->build_change, fg->build_change, sizeof(bfd->main->build_change));
+	BLI_strncpy(bfd->main->build_hash, fg->build_hash, sizeof(bfd->main->build_hash));
 	
 	bfd->winpos = fg->winpos;
 	bfd->fileflags = fg->fileflags;
@@ -7929,8 +7930,11 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 {
 	/* WATCH IT!!!: pointers from libdata have not been converted */
 	
-	if (G.debug & G_DEBUG)
-		printf("read file %s\n  Version %d sub %d svn r%d\n", fd->relabase, main->versionfile, main->subversionfile, main->revision);
+	if (G.debug & G_DEBUG) {
+		printf("read file %s\n  Version %d sub %d change %s hash %s\n",
+		       fd->relabase, main->versionfile, main->subversionfile,
+		       main->build_change, main->build_hash);
+	}
 	
 	blo_do_versions_pre250(fd, lib, main);
 	blo_do_versions_250(fd, lib, main);
@@ -9782,6 +9786,49 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		}
 	}
 
+	if (!MAIN_VERSION_ATLEAST(main, 269, 2)) {
+		/* Initialize CDL settings for Color Balance nodes */
+		FOREACH_NODETREE(main, ntree, id) {
+			if (ntree->type == NTREE_COMPOSIT) {
+				bNode *node;
+				for (node = ntree->nodes.first; node; node = node->next) {
+					if (node->type == CMP_NODE_COLORBALANCE) {
+						NodeColorBalance *n = node->storage;
+						if (node->custom1 == 0) {
+							/* LGG mode stays the same, just init CDL settings */
+							ntreeCompositColorBalanceSyncFromLGG(ntree, node);
+						}
+						else if (node->custom1 == 1) {
+							/* CDL previously used same variables as LGG, copy them over
+							 * and then sync LGG for comparable results in both modes.
+							 */
+							copy_v3_v3(n->offset, n->lift);
+							copy_v3_v3(n->power, n->gamma);
+							copy_v3_v3(n->slope, n->gain);
+							ntreeCompositColorBalanceSyncFromCDL(ntree, node);
+						}
+					}
+				}
+			}
+		} FOREACH_NODETREE_END
+	}
+
+	{
+		Scene *scene;
+
+		for (scene = main->scene.first; scene; scene = scene->id.next) {
+			if (scene->gm.matmode == GAME_MAT_TEXFACE) {
+				scene->gm.matmode = GAME_MAT_MULTITEX;
+			}
+		}
+
+		/* 'Increment' mode disabled for nodes, use true grid snapping instead */
+		for (scene = main->scene.first; scene; scene = scene->id.next) {
+			if (scene->toolsettings->snap_node_mode == SCE_SNAP_MODE_INCREMENT)
+				scene->toolsettings->snap_node_mode = SCE_SNAP_MODE_GRID;
+		}
+	}
+
 	{
 		Scene *scene;
 		SceneRenderView *srv;
@@ -9806,7 +9853,6 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			}
 		}
 	}
-
 
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
 	/* WATCH IT 2!: Userdef struct init see do_versions_userdef() above! */

@@ -42,11 +42,9 @@
 
 #include "GL/glew.h"
 
-#include "KX_BlenderGL.h"
 #include "KX_BlenderCanvas.h"
 #include "KX_BlenderKeyboardDevice.h"
 #include "KX_BlenderMouseDevice.h"
-#include "KX_BlenderRenderTools.h"
 #include "KX_BlenderSystem.h"
 #include "BL_Material.h"
 
@@ -276,7 +274,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 
 		if (animation_record) usefixed= false; /* override since you don't want to run full-speed for sim recording */
 
-		// create the canvas, rasterizer and rendertools
+		// create the canvas and rasterizer
 		RAS_ICanvas* canvas = new KX_BlenderCanvas(wm, win, area_rect, ar);
 		
 		// default mouse state set on render panel
@@ -292,7 +290,6 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		else
 			canvas->SetSwapInterval((startscene->gm.vsync == VSYNC_ON) ? 1 : 0);
 
-		RAS_IRenderTools* rendertools = new KX_BlenderRenderTools();
 		RAS_IRasterizer* rasterizer = NULL;
 		//Don't use displaylists with VBOs
 		//If auto starts using VBOs, make sure to check for that here
@@ -324,7 +321,6 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		ketsjiengine->SetMouseDevice(mousedevice);
 		ketsjiengine->SetNetworkDevice(networkdevice);
 		ketsjiengine->SetCanvas(canvas);
-		ketsjiengine->SetRenderTools(rendertools);
 		ketsjiengine->SetRasterizer(rasterizer);
 		ketsjiengine->SetUseFixedTime(usefixed);
 		ketsjiengine->SetTimingDisplay(frameRate, profile, properties);
@@ -474,7 +470,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 			else if (gs.matmode == GAME_MAT_GLSL)
 				usemat = false;
 
-			if (usemat && (gs.matmode != GAME_MAT_TEXFACE))
+			if (usemat)
 				sceneconverter->SetMaterials(true);
 			if (useglslmat && (gs.matmode == GAME_MAT_GLSL))
 				sceneconverter->SetGLSLMaterials(true);
@@ -518,7 +514,7 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 				// convert and add scene
 				sceneconverter->ConvertScene(
 					startscene,
-					rendertools,
+				    rasterizer,
 					canvas);
 				ketsjiengine->AddScene(startscene);
 				
@@ -663,11 +659,6 @@ extern "C" void StartKetsjiShell(struct bContext *C, struct ARegion *ar, rcti *c
 		{
 			delete rasterizer;
 			rasterizer = NULL;
-		}
-		if (rendertools)
-		{
-			delete rendertools;
-			rendertools = NULL;
 		}
 		if (canvas)
 		{

@@ -33,8 +33,6 @@
 #include "RAS_IPolygonMaterial.h"
 #include "RAS_IRasterizer.h"
 
-#include "DNA_image_types.h"
-#include "DNA_meshdata_types.h"
 #include "DNA_material_types.h"
 
 void  RAS_IPolyMaterial::Initialize( 
@@ -232,6 +230,15 @@ Material *RAS_IPolyMaterial::GetBlenderMaterial() const
 }
 
 Image *RAS_IPolyMaterial::GetBlenderImage() const
+{
+	return NULL;
+}
+MTFace *RAS_IPolyMaterial::GetMTFace() const
+{
+	return NULL;
+}
+
+unsigned int *RAS_IPolyMaterial::GetMCol() const
 {
 	return NULL;
 }
