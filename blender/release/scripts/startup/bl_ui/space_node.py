@@ -105,7 +105,7 @@ class NODE_HT_header(Header):
         row = layout.row(align=True)
         row.prop(toolsettings, "use_snap", text="")
         row.prop(toolsettings, "snap_node_element", text="", icon_only=True)
-        if toolsettings.snap_node_element != 'INCREMENT':
+        if toolsettings.snap_node_element != 'GRID':
             row.prop(toolsettings, "snap_target", text="")
 
         row = layout.row(align=True)
@@ -169,6 +169,7 @@ class NODE_MT_select(Menu):
         layout = self.layout
 
         layout.operator("node.select_border")
+        layout.operator("node.select_circle")
 
         layout.separator()
         layout.operator("node.select_all").action = 'TOGGLE'
@@ -233,7 +234,6 @@ class NODE_MT_node(Menu):
 
         layout.separator()
 
-        layout.operator("node.show_cyclic_dependencies")
         layout.operator("node.read_renderlayers")
         layout.operator("node.read_fullsamplelayers")
 

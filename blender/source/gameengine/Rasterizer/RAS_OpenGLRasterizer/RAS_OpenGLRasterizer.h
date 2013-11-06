@@ -41,12 +41,21 @@
 using namespace std;
 
 #include "RAS_IRasterizer.h"
-#include "RAS_IStorage.h"
 #include "RAS_MaterialBucket.h"
-#include "RAS_ICanvas.h"
+#include "RAS_IPolygonMaterial.h"
+
+class RAS_IStorage;
+class RAS_ICanvas;
 
 #define RAS_MAX_TEXCO	8	// match in BL_Material
 #define RAS_MAX_ATTRIB	16	// match in BL_BlenderShader
+
+enum RAS_STORAGE_TYPE	{
+	RAS_AUTO_STORAGE,
+	RAS_IMMEDIATE,
+	RAS_VA,
+	RAS_VBO
+};
 
 struct	OglDebugShape
 {
@@ -104,6 +113,15 @@ class RAS_OpenGLRasterizer : public RAS_IRasterizer
 	float	m_motionblurvalue;
 
 	bool m_usingoverrideshader;
+
+	// Render tools
+	void*	m_clientobject;
+	void*	m_auxilaryClientInfo;
+	std::vector<struct	RAS_LightObject*> m_lights;
+	int		m_lastlightlayer;
+	bool	m_lastlighting;
+	void	*m_lastauxinfo;
+	unsigned int m_numgllights;
 
 protected:
 	int				m_drawingmode;
@@ -171,10 +189,8 @@ public:
 
 	virtual void	IndexPrimitives(class RAS_MeshSlot& ms);
 	virtual void	IndexPrimitivesMulti(class RAS_MeshSlot& ms);
-	virtual void	IndexPrimitives_3DText(
-						class RAS_MeshSlot& ms,
-						class RAS_IPolyMaterial* polymat,
-						class RAS_IRenderTools* rendertools);
+	virtual void	IndexPrimitives_3DText(class RAS_MeshSlot& ms,
+						class RAS_IPolyMaterial* polymat);
 
 	virtual void	SetProjectionMatrix(MT_CmMatrix4x4 & mat);
 	virtual void	SetProjectionMatrix(const MT_Matrix4x4 & mat);
@@ -329,6 +345,56 @@ public:
 
 	virtual void	SetUsingOverrideShader(bool val);
 	virtual bool	GetUsingOverrideShader();
+
+	/**
+	 * Render Tools
+	 */
+	void	EnableOpenGLLights();
+	void	DisableOpenGLLights();
+	void	ProcessLighting(bool uselights, const MT_Transform& viewmat);
+
+	void	RenderBox2D(int xco,
+						int yco,
+						int width,
+						int height,
+						float percentage);
+
+
+	void	RenderText3D(int fontid,
+						 const char* text,
+						 int size,
+						 int dpi,
+						 float* color,
+						 double* mat,
+						 float aspect);
+
+	void	RenderText2D(RAS_TEXT_RENDER_MODE mode,
+						 const char* text,
+						 int xco,
+						 int yco,
+						 int width,
+						 int height);
+
+	void	applyTransform(double* oglmatrix, int objectdrawmode);
+
+	void	PushMatrix();
+	void	PopMatrix();
+
+	bool RayHit(class KX_ClientObjectInfo* client, class KX_RayCast* result, void * const data);
+	bool NeedRayCast(class KX_ClientObjectInfo*) { return true; }
+
+
+	void AddLight(struct RAS_LightObject* lightobject);
+
+	void RemoveLight(struct RAS_LightObject* lightobject);
+	int ApplyLights(int objectlayer, const MT_Transform& viewmat);
+
+	void MotionBlur();
+
+	void SetClientObject(void* obj);
+
+	void SetAuxilaryClientInfo(void* inf);
+
 
 #ifdef WITH_CXX_GUARDEDALLOC
 	MEM_CXX_CLASS_ALLOC_FUNCS("GE:RAS_OpenGLRasterizer")

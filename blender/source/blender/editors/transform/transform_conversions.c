@@ -2381,16 +2381,16 @@ void flushTransNodes(TransInfo *t)
 	int a;
 	TransData *td;
 	TransData2D *td2d;
-
+	
+	applyGridAbsolute(t);
+	
 	/* flush to 2d vector from internally used 3d vector */
 	for (a = 0, td = t->data, td2d = t->data2d; a < t->total; a++, td++, td2d++) {
 		bNode *node = td->extra;
-		float vec[2];
 		
 		/* weirdo - but the node system is a mix of free 2d elements and dpi sensitive UI */
-		add_v2_v2v2(vec, td2d->loc, td2d->ih1);
-		node->locx = vec[0] / UI_DPI_FAC;
-		node->locy = vec[1] / UI_DPI_FAC;
+		node->locx = td2d->loc[0] / UI_DPI_FAC;
+		node->locy = td2d->loc[1] / UI_DPI_FAC;
 	}
 	
 	/* handle intersection with noodles */
@@ -4715,13 +4715,12 @@ static bool constraints_list_needinv(TransInfo *t, ListBase *list)
 			if ((con->flag & CONSTRAINT_DISABLE) == 0 && (con->enforce != 0.0f)) {
 				/* (affirmative) returns for specific constraints here... */
 				/* constraints that require this regardless  */
-				if (ELEM6(con->type,
+				if (ELEM5(con->type,
 				          CONSTRAINT_TYPE_CHILDOF,
 				          CONSTRAINT_TYPE_FOLLOWPATH,
 				          CONSTRAINT_TYPE_CLAMPTO,
 				          CONSTRAINT_TYPE_OBJECTSOLVER,
-				          CONSTRAINT_TYPE_FOLLOWTRACK,
-				          CONSTRAINT_TYPE_TRANSFORM))
+				          CONSTRAINT_TYPE_FOLLOWTRACK))
 				{
 					return true;
 				}
@@ -4733,6 +4732,15 @@ static bool constraints_list_needinv(TransInfo *t, ListBase *list)
 					
 					if ((data->flag & ROTLIKE_OFFSET) && (t->mode == TFM_ROTATION))
 						return true;
+				}
+				else if (con->type == CONSTRAINT_TYPE_TRANSFORM) {
+					/* Transform constraint needs it for rotation at least (r.57309),
+					 * but doing so when translating may also mess things up [#36203]
+					 */
+					
+					if (t->mode == TFM_ROTATION)
+						return true;
+					/* ??? (t->mode == TFM_SCALE) ? */
 				}
 			}
 		}
@@ -5954,12 +5962,9 @@ static void createTransObject(bContext *C, TransInfo *t)
 /* transcribe given node into TransData2D for Transforming */
 static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
 {
-	/* hold original location */
-	float locxy[2] = {BLI_rctf_cent_x(&node->totr),
-	                  BLI_rctf_cent_y(&node->totr)};
-	float nodeloc[2];
-	
-	copy_v2_v2(td2d->loc, locxy);
+	/* use top-left corner as the transform origin for nodes */
+	td2d->loc[0] = node->totr.xmin;
+	td2d->loc[1] = node->totr.ymax;
 	td2d->loc[2] = 0.0f;
 	td2d->loc2d = td2d->loc; /* current location */
 
@@ -5968,8 +5973,8 @@ static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
 	td->loc = td2d->loc;
 	copy_v3_v3(td->iloc, td->loc);
 	/* use node center instead of origin (top-left corner) */
-	td->center[0] = locxy[0];
-	td->center[1] = locxy[1];
+	td->center[0] = BLI_rctf_cent_x(&node->totr);
+	td->center[1] = BLI_rctf_cent_y(&node->totr);
 	td->center[2] = 0.0f;
 
 	memset(td->axismtx, 0, sizeof(td->axismtx));
@@ -5982,11 +5987,6 @@ static void NodeToTransData(TransData *td, TransData2D *td2d, bNode *node)
 
 	unit_m3(td->mtx);
 	unit_m3(td->smtx);
-
-	/* weirdo - but the node system is a mix of free 2d elements and dpi sensitive UI */
-	nodeloc[0] = UI_DPI_FAC * node->locx;
-	nodeloc[1] = UI_DPI_FAC * node->locy;
-	sub_v2_v2v2(td2d->ih1, nodeloc, locxy);
 
 	td->extra = node;
 }

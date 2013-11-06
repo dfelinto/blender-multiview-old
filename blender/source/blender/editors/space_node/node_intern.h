@@ -116,6 +116,7 @@ void NODE_OT_select_all(struct wmOperatorType *ot);
 void NODE_OT_select_linked_to(struct wmOperatorType *ot);
 void NODE_OT_select_linked_from(struct wmOperatorType *ot);
 void NODE_OT_select_border(struct wmOperatorType *ot);
+void NODE_OT_select_circle(struct wmOperatorType *ot);
 void NODE_OT_select_lasso(struct wmOperatorType *ot);
 void NODE_OT_select_same_type(struct wmOperatorType *ot);
 void NODE_OT_select_same_type_step(struct wmOperatorType *ot);
@@ -169,7 +170,6 @@ void NODE_OT_join(struct wmOperatorType *ot);
 void NODE_OT_attach(struct wmOperatorType *ot);
 void NODE_OT_detach(struct wmOperatorType *ot);
 
-void NODE_OT_show_cyclic_dependencies(struct wmOperatorType *ot);
 void NODE_OT_link_viewer(struct wmOperatorType *ot);
 
 /* node_edit.c */

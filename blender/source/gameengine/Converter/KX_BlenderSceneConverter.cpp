@@ -42,11 +42,9 @@
 #include "PHY_IPhysicsEnvironment.h"
 #include "KX_KetsjiEngine.h"
 #include "KX_PythonInit.h" // So we can handle adding new text datablocks for Python to import
-#include "KX_IPhysicsController.h"
 #include "BL_Material.h"
 #include "BL_ActionActuator.h"
 #include "KX_BlenderMaterial.h"
-#include "KX_PolygonMaterial.h"
 
 
 #include "BL_System.h"
@@ -313,7 +311,7 @@ struct	BlenderDebugDraw : public btIDebugDraw
 #endif
 
 void KX_BlenderSceneConverter::ConvertScene(class KX_Scene* destinationscene,
-											class RAS_IRenderTools* rendertools,
+											class RAS_IRasterizer* rendertools,
 											class RAS_ICanvas* canvas,
 											bool libloading)
 {
@@ -356,15 +354,15 @@ void KX_BlenderSceneConverter::ConvertScene(class KX_Scene* destinationscene,
 		case UseBullet:
 			{
 				CcdPhysicsEnvironment* ccdPhysEnv = new CcdPhysicsEnvironment(useDbvtCulling);
-				ccdPhysEnv->setDebugDrawer(new BlenderDebugDraw());
-				ccdPhysEnv->setDeactivationLinearTreshold(blenderscene->gm.lineardeactthreshold);
-				ccdPhysEnv->setDeactivationAngularTreshold(blenderscene->gm.angulardeactthreshold);
-				ccdPhysEnv->setDeactivationTime(blenderscene->gm.deactivationtime);
+				ccdPhysEnv->SetDebugDrawer(new BlenderDebugDraw());
+				ccdPhysEnv->SetDeactivationLinearTreshold(blenderscene->gm.lineardeactthreshold);
+				ccdPhysEnv->SetDeactivationAngularTreshold(blenderscene->gm.angulardeactthreshold);
+				ccdPhysEnv->SetDeactivationTime(blenderscene->gm.deactivationtime);
 
 				SYS_SystemHandle syshandle = SYS_GetSystem(); /*unused*/
 				int visualizePhysics = SYS_GetCommandLineInt(syshandle,"show_physics",0);
 				if (visualizePhysics)
-					ccdPhysEnv->setDebugMode(btIDebugDraw::DBG_DrawWireframe|btIDebugDraw::DBG_DrawAabb|btIDebugDraw::DBG_DrawContactPoints|btIDebugDraw::DBG_DrawText|btIDebugDraw::DBG_DrawConstraintLimits|btIDebugDraw::DBG_DrawConstraints);
+					ccdPhysEnv->SetDebugMode(btIDebugDraw::DBG_DrawWireframe|btIDebugDraw::DBG_DrawAabb|btIDebugDraw::DBG_DrawContactPoints|btIDebugDraw::DBG_DrawText|btIDebugDraw::DBG_DrawConstraintLimits|btIDebugDraw::DBG_DrawConstraints);
 		
 				//todo: get a button in blender ?
 				//disable / enable debug drawing (contact points, aabb's etc)
@@ -710,7 +708,6 @@ void	KX_BlenderSceneConverter::ResetPhysicsObjectsAnimationIpo(bool clearIpo)
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
 			if (gameObj->IsDynamic())
 			{
-				//KX_IPhysicsController* physCtrl = gameObj->GetPhysicsController();
 				
 				Object* blenderObject = gameObj->GetBlenderObject();
 				if (blenderObject)
@@ -826,7 +823,6 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 			Object* blenderObject = gameObj->GetBlenderObject();
 			if (blenderObject && blenderObject->parent==NULL && gameObj->IsDynamic())
 			{
-				//KX_IPhysicsController* physCtrl = gameObj->GetPhysicsController();
 
 				if (blenderObject->adt==NULL)
 					BKE_id_add_animdata(&blenderObject->id);
@@ -945,7 +941,6 @@ void	KX_BlenderSceneConverter::TestHandlesPhysicsObjectToAnimationIpo()
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
 			if (gameObj->IsDynamic())
 			{
-				//KX_IPhysicsController* physCtrl = gameObj->GetPhysicsController();
 				
 #if 0
 				Object* blenderObject = gameObj->GetBlenderObject();
@@ -1419,15 +1414,8 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 		RAS_IPolyMaterial *mat= (*polymit).second;
 		Material *bmat= NULL;
 
-		/* Why do we need to check for RAS_BLENDERMAT if both are cast to a (PyObject *)? - Campbell */
-		if (mat->GetFlag() & RAS_BLENDERMAT) {
-			KX_BlenderMaterial *bl_mat = static_cast<KX_BlenderMaterial*>(mat);
-			bmat= bl_mat->GetBlenderMaterial();
-
-		} else {
-			KX_PolygonMaterial *kx_mat = static_cast<KX_PolygonMaterial*>(mat);
-			bmat= kx_mat->GetBlenderMaterial();
-		}
+		KX_BlenderMaterial *bl_mat = static_cast<KX_BlenderMaterial*>(mat);
+		bmat= bl_mat->GetBlenderMaterial();
 
 		if (IS_TAGGED(bmat)) {
 			/* only remove from bucket */
@@ -1444,15 +1432,8 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 		RAS_IPolyMaterial *mat= (*polymit).second;
 		Material *bmat= NULL;
 
-		/* Why do we need to check for RAS_BLENDERMAT if both are cast to a (PyObject *)? - Campbell */
-		if (mat->GetFlag() & RAS_BLENDERMAT) {
-			KX_BlenderMaterial *bl_mat = static_cast<KX_BlenderMaterial*>(mat);
-			bmat= bl_mat->GetBlenderMaterial();
-
-		} else {
-			KX_PolygonMaterial *kx_mat = static_cast<KX_PolygonMaterial*>(mat);
-			bmat= kx_mat->GetBlenderMaterial();
-		}
+		KX_BlenderMaterial *bl_mat = static_cast<KX_BlenderMaterial*>(mat);
+		bmat= bl_mat->GetBlenderMaterial();
 
 		if (bmat) {
 			//printf("FOUND MAT '%s' !!! ", ((ID*)bmat)->name+2);
