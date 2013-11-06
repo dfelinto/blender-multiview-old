@@ -109,19 +109,19 @@ static void rna_def_camera_stereo_data(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "convergence_mode", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_items(prop, convergence_mode_items);
 	RNA_def_property_ui_text(prop, "Mode", "");
-	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW | NC_SPACE | ND_SPACE_VIEW3D, NULL);
+	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
 	prop = RNA_def_property(srna, "interocular_distance", PROP_FLOAT, PROP_DISTANCE);
 	RNA_def_property_range(prop, 0.0f, 100.0f);
 	RNA_def_property_ui_range(prop, 0.0f, 1.f, 1, 2);
 	RNA_def_property_ui_text(prop, "Interocular Distance", "Set the distance between the eyes - the stereo plane distance / 30 should be fine");
-	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW | NC_SPACE | ND_SPACE_VIEW3D, NULL);
+	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 
 	prop = RNA_def_property(srna, "convergence_distance", PROP_FLOAT, PROP_DISTANCE);
 	RNA_def_property_range(prop, 0.00001f, FLT_MAX);
 	RNA_def_property_ui_range(prop, 0.0f, 15.f, 1, 2);
 	RNA_def_property_ui_text(prop, "Convergence Plane Distance", "The converge point for the stereo cameras (often the distance between a projector and the projection screen)");
-	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW | NC_SPACE | ND_SPACE_VIEW3D, NULL);
+	RNA_def_property_update(prop, NC_OBJECT | ND_DRAW, NULL);
 }
 
 void RNA_def_camera(BlenderRNA *brna)
