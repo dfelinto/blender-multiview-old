@@ -725,7 +725,7 @@ typedef struct GameData {
 #define GAME_PLAYER_DESKTOP_RESOLUTION		(1 << 1)
 
 /* GameData.matmode */
-#define GAME_MAT_TEXFACE	0
+#define GAME_MAT_TEXFACE	0 /* deprecated */
 #define GAME_MAT_MULTITEX	1
 #define GAME_MAT_GLSL		2
 
@@ -1457,6 +1457,7 @@ typedef struct Scene {
 #define SCE_SNAP_MODE_NODE_X	5
 #define SCE_SNAP_MODE_NODE_Y	6
 #define SCE_SNAP_MODE_NODE_XY	7
+#define SCE_SNAP_MODE_GRID		8
 
 /* toolsettings->selectmode */
 #define SCE_SELECT_VERTEX	1 /* for mesh */
