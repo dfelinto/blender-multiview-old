@@ -330,6 +330,7 @@ static void node_update_basis(const bContext *C, bNodeTree *ntree, bNode *node)
 	
 	/* get "global" coords */
 	node_to_view(node, 0.0f, 0.0f, &locx, &locy);
+	printf("DRAW: %s at (%f, %f)\n", node->name, locx, locy);
 	dy = locy;
 	
 	/* header */
