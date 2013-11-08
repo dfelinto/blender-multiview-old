@@ -2,7 +2,7 @@
 // Added support for contexts
 //
 // Based on Python script msgfmt.py from Python source
-// code tree, which wes weitten by Written by
+// code tree, which was written by Written by
 // Martin v. Löwis <loewis@informatik.hu-berlin.de>
 //
 // Generate binary message catalog from textual translation description.
