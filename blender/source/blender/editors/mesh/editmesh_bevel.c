@@ -289,11 +289,9 @@ static float edbm_bevel_mval_factor(wmOperator *op, const wmEvent *event)
 		if (factor < 0.0f) factor = 0.0f;
 	}
 	else {
-		printf("factor %f, is_percent=%d\n", factor, is_percent);
 		if (is_percent) {
 			factor *= 100.0f;
 			CLAMP(factor, 0.0f, 100.0f);
-			printf("  clamp %f\n", factor);
 		}
 		else {
 			CLAMP(factor, 0.0f, 1.0f);
