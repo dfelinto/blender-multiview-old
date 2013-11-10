@@ -633,8 +633,6 @@ bool BKE_mesh_uv_cdlayer_rename_index(Mesh *me, const int poly_index, const int 
 	const int step = do_tessface ? 3 : 2;
 	int i;
 
-	printf("%s: %d, %d, %d\n", __func__, poly_index, loop_index, face_index);
-
 	if (me->edit_btmesh) {
 		pdata = &me->edit_btmesh->bm->pdata;
 		ldata = &me->edit_btmesh->bm->ldata;
