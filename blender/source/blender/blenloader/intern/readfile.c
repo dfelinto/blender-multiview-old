@@ -153,6 +153,7 @@
 #include "BKE_tracking.h"
 #include "BKE_treehash.h"
 #include "BKE_sound.h"
+#include "BKE_writeffmpeg.h"
 
 #include "IMB_imbuf.h"  // for proxy / timecode versioning stuff
 
@@ -9701,7 +9702,7 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			}
 		}
 	}
-	
+
 	if (!MAIN_VERSION_ATLEAST(main, 269, 1)) {
 		/* Removal of Cycles SSS Compatible falloff */
 		FOREACH_NODETREE(main, ntree, id) {
@@ -9718,10 +9719,38 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 		} FOREACH_NODETREE_END
 	}
 
+	if (!MAIN_VERSION_ATLEAST(main, 269, 2)) {
+		/* Initialize CDL settings for Color Balance nodes */
+		FOREACH_NODETREE(main, ntree, id) {
+			if (ntree->type == NTREE_COMPOSIT) {
+				bNode *node;
+				for (node = ntree->nodes.first; node; node = node->next) {
+					if (node->type == CMP_NODE_COLORBALANCE) {
+						NodeColorBalance *n = node->storage;
+						if (node->custom1 == 0) {
+							/* LGG mode stays the same, just init CDL settings */
+							ntreeCompositColorBalanceSyncFromLGG(ntree, node);
+						}
+						else if (node->custom1 == 1) {
+							/* CDL previously used same variables as LGG, copy them over
+							 * and then sync LGG for comparable results in both modes.
+							 */
+							copy_v3_v3(n->offset, n->lift);
+							copy_v3_v3(n->power, n->gamma);
+							copy_v3_v3(n->slope, n->gain);
+							ntreeCompositColorBalanceSyncFromCDL(ntree, node);
+						}
+					}
+				}
+			}
+		} FOREACH_NODETREE_END
+	}
+
 	{
 		bScreen *sc;
 		ScrArea *sa;
 		SpaceLink *sl;
+		Scene *scene;
 
 		/* Update files using invalid (outdated) outlinevis Outliner values. */
 		for (sc = main->screen.first; sc; sc = sc->id.next) {
@@ -9761,57 +9790,26 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 				}
 			}
 		}
-	}
 
-	if (!DNA_struct_elem_find(fd->filesdna, "TriangulateModifierData", "int", "quad_method")) {
-		Object *ob;
-		for (ob = main->object.first; ob; ob = ob->id.next) {
-			ModifierData *md;
-			for (md = ob->modifiers.first; md; md = md->next) {
-				if (md->type == eModifierType_Triangulate) {
-					TriangulateModifierData *tmd = (TriangulateModifierData *)md;
-					if ((tmd->flag & MOD_TRIANGULATE_BEAUTY)) {
-						tmd->quad_method = MOD_TRIANGULATE_QUAD_BEAUTY;
-						tmd->ngon_method = MOD_TRIANGULATE_NGON_BEAUTY;
-					}
-					else {
-						tmd->quad_method = MOD_TRIANGULATE_QUAD_FIXED;
-						tmd->ngon_method = MOD_TRIANGULATE_NGON_SCANFILL;
+		if (!DNA_struct_elem_find(fd->filesdna, "TriangulateModifierData", "int", "quad_method")) {
+			Object *ob;
+			for (ob = main->object.first; ob; ob = ob->id.next) {
+				ModifierData *md;
+				for (md = ob->modifiers.first; md; md = md->next) {
+					if (md->type == eModifierType_Triangulate) {
+						TriangulateModifierData *tmd = (TriangulateModifierData *)md;
+						if ((tmd->flag & MOD_TRIANGULATE_BEAUTY)) {
+							tmd->quad_method = MOD_TRIANGULATE_QUAD_BEAUTY;
+							tmd->ngon_method = MOD_TRIANGULATE_NGON_BEAUTY;
+						}
+						else {
+							tmd->quad_method = MOD_TRIANGULATE_QUAD_FIXED;
+							tmd->ngon_method = MOD_TRIANGULATE_NGON_SCANFILL;
+						}
 					}
 				}
 			}
 		}
-	}
-
-	if (!MAIN_VERSION_ATLEAST(main, 269, 2)) {
-		/* Initialize CDL settings for Color Balance nodes */
-		FOREACH_NODETREE(main, ntree, id) {
-			if (ntree->type == NTREE_COMPOSIT) {
-				bNode *node;
-				for (node = ntree->nodes.first; node; node = node->next) {
-					if (node->type == CMP_NODE_COLORBALANCE) {
-						NodeColorBalance *n = node->storage;
-						if (node->custom1 == 0) {
-							/* LGG mode stays the same, just init CDL settings */
-							ntreeCompositColorBalanceSyncFromLGG(ntree, node);
-						}
-						else if (node->custom1 == 1) {
-							/* CDL previously used same variables as LGG, copy them over
-							 * and then sync LGG for comparable results in both modes.
-							 */
-							copy_v3_v3(n->offset, n->lift);
-							copy_v3_v3(n->power, n->gamma);
-							copy_v3_v3(n->slope, n->gain);
-							ntreeCompositColorBalanceSyncFromCDL(ntree, node);
-						}
-					}
-				}
-			}
-		} FOREACH_NODETREE_END
-	}
-
-	{
-		Scene *scene;
 
 		for (scene = main->scene.first; scene; scene = scene->id.next) {
 			if (scene->gm.matmode == GAME_MAT_TEXFACE) {
@@ -9824,6 +9822,15 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 			if (scene->toolsettings->snap_node_mode == SCE_SNAP_MODE_INCREMENT)
 				scene->toolsettings->snap_node_mode = SCE_SNAP_MODE_GRID;
 		}
+
+		/* Update for removed "sound-only" option in FFMPEG export settings. */
+#ifdef WITH_FFMPEG
+		for (scene = main->scene.first; scene; scene = scene->id.next) {
+			if (scene->r.ffcodecdata.type >= FFMPEG_INVALID) {
+				scene->r.ffcodecdata.type = FFMPEG_AVI;
+			}
+		}
+#endif
 	}
 
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */

@@ -395,38 +395,28 @@ void NODE_OT_link_viewer(wmOperatorType *ot)
 
 /* *************************** add link op ******************** */
 
-static void node_remove_extra_links(SpaceNode *snode, bNodeSocket *tsock, bNodeLink *link)
+static void node_remove_extra_links(SpaceNode *snode, bNodeLink *link)
 {
+	bNodeTree *ntree = snode->edittree;
+	bNodeSocket *from = link->fromsock, *to = link->tosock;
+	int max_from = from->limit, max_to = to->limit;
+	int count_from = 1, count_to = 1; /* start at 1, link is included */
 	bNodeLink *tlink;
-	bNodeSocket *sock;
-
-	if (tsock && nodeCountSocketLinks(snode->edittree, link->tosock) > tsock->limit) {
-
-		for (tlink = snode->edittree->links.first; tlink; tlink = tlink->next) {
-			if (link != tlink && tlink->tosock == link->tosock)
-				break;
+	
+	for (tlink = ntree->links.first; tlink; tlink = tlink->next) {
+		if (tlink == link)
+			continue;
+		
+		if (tlink->fromsock == from) {
+			++count_from;
+			if (count_from > max_from)
+				nodeRemLink(ntree, tlink);
 		}
-		if (tlink) {
-			/* try to move the existing link to the next available socket */
-			if (tlink->tonode) {
-				/* is there a free input socket with the target type? */
-				for (sock = tlink->tonode->inputs.first; sock; sock = sock->next) {
-					if (sock->type == tlink->tosock->type)
-						if (nodeCountSocketLinks(snode->edittree, sock) < sock->limit)
-							break;
-				}
-				if (sock) {
-					tlink->tosock = sock;
-					sock->flag &= ~SOCK_HIDDEN;
-				}
-				else {
-					nodeRemLink(snode->edittree, tlink);
-				}
-			}
-			else
-				nodeRemLink(snode->edittree, tlink);
-
-			snode->edittree->update |= NTREE_UPDATE_LINKS;
+		
+		if (tlink->tosock == to) {
+			++count_to;
+			if (count_to > max_to)
+				nodeRemLink(ntree, tlink);
 		}
 	}
 }
@@ -527,8 +517,7 @@ static int node_link_modal(bContext *C, wmOperator *op, const wmEvent *event)
 					link->tonode->update |= NODE_UPDATE;
 					
 					/* we might need to remove a link */
-					if (in_out == SOCK_OUT)
-						node_remove_extra_links(snode, link->tosock, link);
+					node_remove_extra_links(snode, link);
 				}
 				else
 					nodeRemLink(ntree, link);
@@ -1184,52 +1173,62 @@ void NODE_OT_detach(wmOperatorType *ot)
 
 
 /* prevent duplicate testing code below */
-static SpaceNode *ed_node_link_conditions(ScrArea *sa, bNode **select)
+static bool ed_node_link_conditions(ScrArea *sa, bool test, SpaceNode **r_snode, bNode **r_select)
 {
 	SpaceNode *snode = sa ? sa->spacedata.first : NULL;
-	bNode *node;
+	bNode *node, *select = NULL;
 	bNodeLink *link;
 
-	/* no unlucky accidents */
-	if (sa == NULL || sa->spacetype != SPACE_NODE) return NULL;
+	*r_snode = snode;
+	*r_select = NULL;
 
-	*select = NULL;
+	/* no unlucky accidents */
+	if (sa == NULL || sa->spacetype != SPACE_NODE)
+		return false;
+
+	if (!test) {
+		/* no need to look for a node */
+		return true;
+	}
 
 	for (node = snode->edittree->nodes.first; node; node = node->next) {
 		if (node->flag & SELECT) {
-			if (*select)
+			if (select)
 				break;
 			else
-				*select = node;
+				select = node;
 		}
 	}
 	/* only one selected */
-	if (node || *select == NULL) return NULL;
+	if (node || select == NULL)
+		return false;
 
 	/* correct node */
-	if ((*select)->inputs.first == NULL || (*select)->outputs.first == NULL) return NULL;
+	if (select->inputs.first == NULL || select->outputs.first == NULL)
+		return false;
 
 	/* test node for links */
 	for (link = snode->edittree->links.first; link; link = link->next) {
 		if (nodeLinkIsHidden(link))
 			continue;
 		
-		if (link->tonode == *select || link->fromnode == *select)
-			return NULL;
+		if (link->tonode == select || link->fromnode == select)
+			return false;
 	}
 
-	return snode;
+	*r_select = select;
+	return true;
 }
 
 /* test == 0, clear all intersect flags */
 void ED_node_link_intersect_test(ScrArea *sa, int test)
 {
 	bNode *select;
-	SpaceNode *snode = ed_node_link_conditions(sa, &select);
+	SpaceNode *snode;
 	bNodeLink *link, *selink = NULL;
 	float mcoords[6][2];
 
-	if (snode == NULL) return;
+	if (!ed_node_link_conditions(sa, test, &snode, &select)) return;
 
 	/* clear flags */
 	for (link = snode->edittree->links.first; link; link = link->next)
@@ -1304,11 +1303,11 @@ static bNodeSocket *socket_best_match(ListBase *sockets)
 void ED_node_link_insert(ScrArea *sa)
 {
 	bNode *node, *select;
-	SpaceNode *snode = ed_node_link_conditions(sa, &select);
+	SpaceNode *snode;
 	bNodeLink *link;
 	bNodeSocket *sockto;
 
-	if (snode == NULL) return;
+	if (!ed_node_link_conditions(sa, true, &snode, &select)) return;
 
 	/* get the link */
 	for (link = snode->edittree->links.first; link; link = link->next)
@@ -1325,7 +1324,7 @@ void ED_node_link_insert(ScrArea *sa)
 			
 			link->tonode = select;
 			link->tosock = best_input;
-			node_remove_extra_links(snode, link->tosock, link);
+			node_remove_extra_links(snode, link);
 			link->flag &= ~NODE_LINKFLAG_HILITE;
 			
 			nodeAddLink(snode->edittree, select, best_output, node, sockto);

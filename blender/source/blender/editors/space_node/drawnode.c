@@ -384,18 +384,20 @@ static void node_draw_frame_prepare(const bContext *UNUSED(C), bNodeTree *ntree,
 	node->totr = rect;
 }
 
-static void node_draw_frame_label(bNode *node, const float aspect)
+static void node_draw_frame_label(bNodeTree *ntree, bNode *node, const float aspect)
 {
 	/* XXX font id is crap design */
 	const int fontid = UI_GetStyle()->widgetlabel.uifont_id;
 	NodeFrame *data = (NodeFrame *)node->storage;
 	rctf *rct = &node->totr;
 	int color_id = node_get_colorid(node);
-	const char *label = nodeLabel(node);
+	char label[MAX_NAME];
 	/* XXX a bit hacky, should use separate align values for x and y */
 	float width, ascender;
 	float x, y;
 	const int font_size = data->label_size / aspect;
+
+	nodeLabel(ntree, node, label, sizeof(label));
 
 	BLF_enable(fontid, BLF_ASPECT);
 	BLF_aspect(fontid, aspect, aspect, 1.0f);
@@ -418,7 +420,7 @@ static void node_draw_frame_label(bNode *node, const float aspect)
 }
 
 static void node_draw_frame(const bContext *C, ARegion *ar, SpaceNode *snode,
-                            bNodeTree *UNUSED(ntree), bNode *node, bNodeInstanceKey UNUSED(key))
+                            bNodeTree *ntree, bNode *node, bNodeInstanceKey UNUSED(key))
 {
 	rctf *rct = &node->totr;
 	int color_id = node_get_colorid(node);
@@ -467,7 +469,7 @@ static void node_draw_frame(const bContext *C, ARegion *ar, SpaceNode *snode,
 	}
 	
 	/* label */
-	node_draw_frame_label(node, snode->aspect);
+	node_draw_frame_label(ntree, node, snode->aspect);
 	
 	UI_ThemeClearColor(color_id);
 		
