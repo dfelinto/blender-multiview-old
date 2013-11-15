@@ -393,9 +393,19 @@ void set_rgb_zero(out vec3 outval)
 	outval = vec3(0.0);
 }
 
+void set_rgb_one(out vec3 outval)
+{
+	outval = vec3(1.0);
+}
+
 void set_rgba_zero(out vec4 outval)
 {
 	outval = vec4(0.0);
+}
+
+void set_rgba_one(out vec4 outval)
+{
+	outval = vec4(1.0);
 }
 
 void brightness_contrast(vec4 col, float brightness, float contrast, out vec4 outcol)
@@ -2131,7 +2141,7 @@ void node_add_shader(vec4 shader1, vec4 shader2, out vec4 shader)
 void node_fresnel(float ior, vec3 N, vec3 I, out float result)
 {
 	float eta = max(ior, 0.00001);
-	result = fresnel_dielectric(I, N, (gl_FrontFacing)? eta: 1.0/eta);
+	result = fresnel_dielectric(normalize(I), N, (gl_FrontFacing)? eta: 1.0/eta);
 }
 
 /* gamma */

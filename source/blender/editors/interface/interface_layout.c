@@ -2423,7 +2423,10 @@ void ui_layout_list_set_labels_active(uiLayout *layout)
 {
 	uiButtonItem *bitem;
 	for (bitem = layout->items.first; bitem; bitem = bitem->item.next) {
-		if (bitem->item.type == ITEM_BUTTON && bitem->but->type == LISTLABEL) {
+		if (bitem->item.type != ITEM_BUTTON) {
+			ui_layout_list_set_labels_active((uiLayout *)(&bitem->item));
+		}
+		else if (bitem->but->type == LISTLABEL) {
 			uiButSetFlag(bitem->but, UI_SELECT);
 		}
 	}
@@ -2931,7 +2934,7 @@ static void ui_intro_button(DynStr *ds, uiButtonItem *bitem)
 	BLI_dynstr_appendf(ds, "'tip':'''%s''', ", but->tip ? but->tip : "");  /* not exactly needed, rna has this */
 
 	if (but->optype) {
-		char *opstr = WM_operator_pystring(but->block->evil_C, but->optype, but->opptr, 0);
+		char *opstr = WM_operator_pystring_ex(but->block->evil_C, NULL, false, but->optype, but->opptr);
 		BLI_dynstr_appendf(ds, "'operator':'''%s''', ", opstr ? opstr : "");
 		MEM_freeN(opstr);
 	}
