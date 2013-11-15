@@ -248,13 +248,14 @@ void *COM_linker_hack = NULL;
 
 void ntreeCompositExecTree(bNodeTree *ntree, RenderData *rd, int rendering, int do_preview,
                            const ColorManagedViewSettings *view_settings,
-                           const ColorManagedDisplaySettings *display_settings)
+                           const ColorManagedDisplaySettings *display_settings,
+						   int view_id)
 {
 #ifdef WITH_COMPOSITOR
-	COM_execute(rd, ntree, rendering, view_settings, display_settings);
+	COM_execute(rd, ntree, rendering, view_settings, display_settings, view_id);
 #else
 	(void)ntree, (void)rd, (void)rendering, (void)do_preview;
-	(void)view_settings, (void)display_settings;
+	(void)view_settings, (void)display_settings, (void)view_id;
 #endif
 
 	(void)do_preview;

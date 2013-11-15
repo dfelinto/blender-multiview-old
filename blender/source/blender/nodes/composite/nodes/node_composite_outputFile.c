@@ -130,7 +130,7 @@ bNodeSocket *ntreeCompositOutputFileAddSocket(bNodeTree *ntree, bNode *node, con
 		BKE_imformat_defaults(&sockdata->format);
 	/* use node data format by default */
 	sockdata->use_node_format = TRUE;
-	
+
 	nimf->active_input = BLI_findindex(&node->inputs, sock);
 	
 	return sock;
@@ -194,7 +194,7 @@ static void init_output_file(const bContext *C, PointerRNA *ptr)
 	}
 	else
 		BKE_imformat_defaults(&nimf->format);
-	
+
 	/* add one socket by default */
 	ntreeCompositOutputFileAddSocket(ntree, node, "Image", format);
 }

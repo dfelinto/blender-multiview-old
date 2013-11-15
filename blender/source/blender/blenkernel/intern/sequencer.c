@@ -2536,7 +2536,8 @@ static ImBuf *seq_render_scene_strip(SeqRenderData context, Sequence *seq, float
 			G.is_rendering = is_rendering;
 		}
 		
-		RE_AcquireResultImage(re, &rres);
+		/* XXX MV SEQ */
+		RE_AcquireResultImage(re, &rres, 0);
 		
 		if (rres.rectf) {
 			ibuf = IMB_allocImBuf(rres.rectx, rres.recty, 32, IB_rectfloat);

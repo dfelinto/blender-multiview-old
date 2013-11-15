@@ -108,6 +108,7 @@
 #include "wm_files.h"
 #include "wm_subwindow.h"
 #include "wm_window.h"
+#include "wm_stereo.h"
 
 static GHash *global_ops_hash = NULL;
 
@@ -4013,8 +4014,10 @@ static int redraw_timer_exec(bContext *C, wmOperator *op)
 
 	for (a = 0; a < iter; a++) {
 		if (type == 0) {
-			if (ar)
+			if (ar) {
 				ED_region_do_draw(C, ar);
+				ar->do_draw = FALSE;
+			}
 		}
 		else if (type == 1) {
 			wmWindow *win = CTX_wm_window(C);
@@ -4039,6 +4042,7 @@ static int redraw_timer_exec(bContext *C, wmOperator *op)
 					if (ar_iter->swinid) {
 						CTX_wm_region_set(C, ar_iter);
 						ED_region_do_draw(C, ar_iter);
+						ar->do_draw = FALSE;
 					}
 				}
 			}
@@ -4208,6 +4212,18 @@ static void operatortype_ghash_free_cb(wmOperatorType *ot)
 }
 
 /* ******************************************************* */
+/* toggle 3D for current window, turning it fullscreen if needed */
+static void WM_OT_stereo_toggle(wmOperatorType *ot)
+{
+	ot->name = "Toggle 3D Stereo";
+	ot->idname = "WM_OT_stereo_toggle";
+	ot->description = "Toggle 3D stereo support for current window";
+
+	ot->exec = wm_stereo_toggle_exec;
+	ot->poll = WM_operator_winactive;
+}
+
+/* ******************************************************* */
 /* called on initialize WM_exit() */
 void wm_operatortype_free(void)
 {
@@ -4247,6 +4263,7 @@ void wm_operatortype_init(void)
 	WM_operatortype_append(WM_OT_call_menu);
 	WM_operatortype_append(WM_OT_radial_control);
 	WM_operatortype_append(WM_OT_ndof_sensitivity_change);
+	WM_operatortype_append(WM_OT_stereo_toggle);
 #if defined(WIN32)
 	WM_operatortype_append(WM_OT_console_toggle);
 #endif
@@ -4542,6 +4559,8 @@ void wm_window_keymap(wmKeyConfig *keyconf)
 	kmi = WM_keymap_add_item(keymap, "WM_OT_ndof_sensitivity_change", NDOF_BUTTON_MINUS, KM_PRESS, KM_SHIFT, 0);
 	RNA_boolean_set(kmi->ptr, "decrease", TRUE);
 	RNA_boolean_set(kmi->ptr, "fast", TRUE);
+
+	WM_keymap_add_item(keymap, "WM_OT_stereo_toggle", DKEY, KM_PRESS, 0, 0);
 
 	gesture_circle_modal_keymap(keyconf);
 	gesture_border_modal_keymap(keyconf);

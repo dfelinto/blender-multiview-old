@@ -315,7 +315,7 @@ static void screen_opengl_render_apply(OGLRender *oglrender)
 				IMB_color_to_bw(ibuf);
 			}
 
-			BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE);
+			BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, FALSE, "");
 			ok = BKE_imbuf_write_as(ibuf, name, &scene->r.im_format, TRUE); /* no need to stamp here */
 			if (ok) printf("OpenGL Render written to '%s'\n", name);
 			else printf("OpenGL Render failed to write '%s'\n", name);
@@ -544,7 +544,7 @@ static bool screen_opengl_render_anim_step(bContext *C, wmOperator *op)
 	is_movie = BKE_imtype_is_movie(scene->r.im_format.imtype);
 
 	if (!is_movie) {
-		BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE);
+		BKE_makepicstring(name, scene->r.pic, oglrender->bmain->name, scene->r.cfra, &scene->r.im_format, scene->r.scemode & R_EXTENSION, TRUE, "");
 
 		if ((scene->r.mode & R_NO_OVERWRITE) && BLI_exists(name)) {
 			BKE_reportf(op->reports, RPT_INFO, "Skipping existing frame \"%s\"", name);

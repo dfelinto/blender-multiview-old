@@ -39,7 +39,7 @@ void CompositorNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 	InputSocket *alphaSocket = this->getInputSocket(1);
 	InputSocket *depthSocket = this->getInputSocket(2);
 
-	CompositorOperation *compositorOperation = new CompositorOperation();
+	CompositorOperation *compositorOperation = new CompositorOperation(context->getViewId());
 	compositorOperation->setSceneName(editorNode->id->name);
 	compositorOperation->setRenderData(context->getRenderData());
 	compositorOperation->setbNodeTree(context->getbNodeTree());

@@ -514,8 +514,6 @@ static int buttons_context_path(const bContext *C, ButsContextPath *path, int ma
 		case BCONTEXT_SCENE:
 		case BCONTEXT_RENDER:
 		case BCONTEXT_RENDER_LAYER:
-			found = buttons_context_path_scene(path);
-			break;
 		case BCONTEXT_WORLD:
 			found = buttons_context_path_world(path);
 			break;

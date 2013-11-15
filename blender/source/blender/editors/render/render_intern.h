@@ -54,6 +54,9 @@ void MATERIAL_OT_paste(struct wmOperatorType *ot);
 void SCENE_OT_render_layer_add(struct wmOperatorType *ot);
 void SCENE_OT_render_layer_remove(struct wmOperatorType *ot);
 
+void SCENE_OT_render_view_add(struct wmOperatorType *ot);
+void SCENE_OT_render_view_remove(struct wmOperatorType *ot);
+
 #ifdef WITH_FREESTYLE
 void SCENE_OT_freestyle_module_add(struct wmOperatorType *ot);
 void SCENE_OT_freestyle_module_remove(struct wmOperatorType *ot);
@@ -87,7 +90,7 @@ void render_view3d_update(struct RenderEngine *engine, const struct bContext *C)
 void render_view3d_draw(struct RenderEngine *engine, const struct bContext *C);
 
 /* render_opengl.c uses this */
-void image_buffer_rect_update(struct Scene *scene, struct RenderResult *rr, struct ImBuf *ibuf, volatile struct rcti *renrect);
+void image_buffer_rect_update(struct Scene *scene, struct RenderResult *rr, struct ImBuf *ibuf, volatile struct rcti *renrect, int view_id);
 
 /* render_view.c */
 void render_view_open(struct bContext *C, int mx, int my);

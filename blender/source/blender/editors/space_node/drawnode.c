@@ -676,7 +676,8 @@ static void node_buts_image_user(uiLayout *layout, bContext *C, PointerRNA *ptr,
 
 	col = uiLayoutColumn(layout, FALSE);
 
-	if (RNA_enum_get(imaptr, "type") == IMA_TYPE_MULTILAYER)
+	if (RNA_enum_get(imaptr, "type") == IMA_TYPE_MULTILAYER &&
+		RNA_boolean_get(ptr, "has_layers"))
 		uiItemR(col, ptr, "layer", 0, NULL, ICON_NONE);
 }
 
@@ -1071,6 +1072,24 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 
 /* ****************** BUTTON CALLBACKS FOR COMPOSITE NODES ***************** */
 
+static void node_buts_image_views(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr,
+                                 PointerRNA *imaptr)
+{
+	uiLayout *col;
+
+	if (!imaptr->data)
+		return;
+
+	col = uiLayoutColumn(layout, FALSE);
+
+	if (RNA_boolean_get(ptr, "has_views")) {
+		if(RNA_enum_get(ptr, "view") == 0)
+			uiItemR(col, ptr, "view", 0, NULL, ICON_CAMERA_STEREO);
+		else
+			uiItemR(col, ptr, "view", 0, NULL, ICON_SCENE);
+	}
+}
+
 static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	bNode *node = ptr->data;
@@ -1084,6 +1103,8 @@ static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *
 	RNA_pointer_create((ID *)ptr->id.data, &RNA_ImageUser, node->storage, &iuserptr);
 	
 	node_buts_image_user(layout, C, ptr, &imaptr, &iuserptr);
+
+	node_buts_image_views(layout, C, ptr, &imaptr);
 }
 
 static void node_composit_buts_image_ex(uiLayout *layout, bContext *C, PointerRNA *ptr)
@@ -1571,7 +1592,7 @@ static void node_composit_buts_id_mask(uiLayout *layout, bContext *UNUSED(C), Po
 static void node_composit_buts_file_output(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	PointerRNA imfptr = RNA_pointer_get(ptr, "format");
-	int multilayer = (RNA_enum_get(&imfptr, "file_format") == R_IMF_IMTYPE_MULTILAYER);
+	int multilayer = (ELEM(RNA_enum_get(&imfptr, "file_format"), R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW));
 	
 	if (multilayer)
 		uiItemL(layout, IFACE_("Path:"), ICON_NONE);
@@ -1585,7 +1606,7 @@ static void node_composit_buts_file_output_ex(uiLayout *layout, bContext *C, Poi
 	PointerRNA active_input_ptr, op_ptr;
 	uiLayout *row, *col;
 	int active_index;
-	int multilayer = (RNA_enum_get(&imfptr, "file_format") == R_IMF_IMTYPE_MULTILAYER);
+	int multilayer = (ELEM(RNA_enum_get(&imfptr, "file_format"), R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW));
 	
 	node_composit_buts_file_output(layout, C, ptr);
 	uiTemplateImageSettings(layout, &imfptr, FALSE);
@@ -1942,6 +1963,18 @@ static void node_composit_buts_colorcorrection_ex(uiLayout *layout, bContext *UN
 static void node_composit_buts_switch(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "check", 0, NULL, ICON_NONE);
+}
+
+static void node_composit_buts_switch_view(uiLayout *layout, bContext *UNUSED(C), PointerRNA *UNUSED(ptr))
+{
+	PointerRNA op_ptr;
+	wmOperatorType *ot = WM_operatortype_find("NODE_OT_switch_view_update", 1);
+
+	BLI_assert(ot != 0);
+
+	WM_operator_properties_create_ptr(&op_ptr, ot);
+
+	uiItemFullO_ptr(layout, ot, "Update Views", ICON_FILE_REFRESH, op_ptr.data, WM_OP_INVOKE_DEFAULT, 0);
 }
 
 static void node_composit_buts_boxmask(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -2424,6 +2457,9 @@ static void node_composit_set_butfunc(bNodeType *ntype)
 		case CMP_NODE_SWITCH:
 			ntype->draw_buttons = node_composit_buts_switch;
 			break;
+		case CMP_NODE_SWITCH_VIEW:
+			ntype->draw_buttons = node_composit_buts_switch_view;
+			break;
 		case CMP_NODE_MASK_BOX:
 			ntype->draw_buttons = node_composit_buts_boxmask;
 			ntype->draw_backdrop = node_composit_backdrop_boxmask;
@@ -2790,7 +2826,7 @@ static void node_file_output_socket_draw(bContext *C, uiLayout *layout, PointerR
 	
 	imfptr = RNA_pointer_get(node_ptr, "format");
 	imtype = RNA_enum_get(&imfptr, "file_format");
-	if (imtype == R_IMF_IMTYPE_MULTILAYER) {
+	if (ELEM(imtype, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		NodeImageMultiFileSocket *input = sock->storage;
 		RNA_pointer_create(&ntree->id, &RNA_NodeOutputFileSlotLayer, input, &inputptr);
 		

@@ -549,7 +549,8 @@ static int ed_preview_draw_rect(ScrArea *sa, int split, int first, rcti *rect, r
 
 	/* test if something rendered ok */
 	re = RE_GetRender(name);
-	RE_AcquireResultImage(re, &rres);
+	/* XXX MV to investigate when this is called */
+	RE_AcquireResultImage(re, &rres, 0);
 
 	if (rres.rectf) {
 		

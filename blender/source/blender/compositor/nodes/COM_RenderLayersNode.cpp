@@ -39,6 +39,11 @@ void RenderLayersNode::testSocketConnection(ExecutionSystem *system, CompositorC
 	Scene *scene = (Scene *)this->getbNode()->id;
 	short layerId = this->getbNode()->custom1;
 
+	/* MV: we need a better place for this
+	 * (so says atmind/Jeroen Bakker),
+	 * but it will do for now. */
+	operation->setViewId(context->getViewId());
+
 	if (outputSocket->isConnected()) {
 		operation->setScene(scene);
 		operation->setLayerId(layerId);

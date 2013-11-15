@@ -243,6 +243,7 @@ typedef struct OldNewMap {
 static void *read_struct(FileData *fd, BHead *bh, const char *blockname);
 static void direct_link_modifiers(FileData *fd, ListBase *lb);
 static void convert_tface_mt(FileData *fd, Main *main);
+static void direct_link_scene(FileData *fd, Scene *sce);
 
 /* this function ensures that reports are printed,
  * in the case of libraray linking errors this is important!
@@ -5212,6 +5213,7 @@ static void lib_link_scene(FileData *fd, Main *main)
 					fls->group = newlibadr_us(fd, sce->id.lib, fls->group);
 				}
 			}
+
 			/*Game Settings: Dome Warp Text*/
 			sce->gm.dome.warptext = newlibadr(fd, sce->id.lib, sce->gm.dome.warptext);
 			
@@ -5455,6 +5457,7 @@ static void direct_link_scene(FileData *fd, Scene *sce)
 	link_list(fd, &(sce->markers));
 	link_list(fd, &(sce->transform_spaces));
 	link_list(fd, &(sce->r.layers));
+	link_list(fd, &(sce->r.views));
 
 	for (srl = sce->r.layers.first; srl; srl = srl->next) {
 		link_list(fd, &(srl->freestyleConfig.modules));
@@ -5515,8 +5518,8 @@ static void direct_link_windowmanager(FileData *fd, wmWindowManager *wm)
 		win->modalhandlers.first = win->modalhandlers.last = NULL;
 		win->subwindows.first = win->subwindows.last = NULL;
 		win->gesture.first = win->gesture.last = NULL;
-		
-		win->drawdata = NULL;
+		win->drawdata.first = win->drawdata.last = NULL;
+
 		win->drawmethod = -1;
 		win->drawfail = 0;
 		win->active = 0;
@@ -9833,6 +9836,31 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 #endif
 	}
 
+	{
+		Scene *scene;
+		SceneRenderView *srv;
+		Camera *cam;
+
+		if (!DNA_struct_elem_find(fd->filesdna, "RenderData", "ListBase", "views")) {
+			for (scene = main->scene.first; scene; scene = scene->id.next) {
+				BKE_scene_add_render_view(scene, STEREO_LEFT_NAME);
+				srv = (SceneRenderView *)scene->r.views.first;
+				BLI_strncpy(srv->suffix, "_L", sizeof(srv->suffix));
+
+				BKE_scene_add_render_view(scene, STEREO_RIGHT_NAME);
+				srv = (SceneRenderView *)scene->r.views.last;
+				BLI_strncpy(srv->suffix, "_R", sizeof(srv->suffix));
+			}
+		}
+
+		if (!DNA_struct_elem_find(fd->filesdna, "Camera", "CameraStereoSettings", "stereo")) {
+			for (cam = main->camera.first; cam; cam = cam->id.next) {
+				cam->stereo.interocular_distance = 0.065;
+				cam->stereo.convergence_distance = 30.f * 0.065;
+			}
+		}
+	}
+
 	/* WATCH IT!!!: pointers from libdata have not been converted yet here! */
 	/* WATCH IT 2!: Userdef struct init see do_versions_userdef() above! */
 
@@ -10852,7 +10880,7 @@ static void expand_scene(FileData *fd, Main *mainvar, Scene *sce)
 			expand_doit(fd, mainvar, lineset->linestyle);
 		}
 	}
-	
+
 	if (sce->r.dometext)
 		expand_doit(fd, mainvar, sce->gm.dome.warptext);
 	

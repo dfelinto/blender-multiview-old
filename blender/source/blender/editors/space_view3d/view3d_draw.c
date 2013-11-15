@@ -3225,6 +3225,19 @@ static void view3d_main_area_clear(Scene *scene, View3D *v3d, ARegion *ar)
 	}
 }
 
+static bool view3d_stereo(const bContext *C, Scene *scene)
+{
+	wmWindow *win = CTX_wm_window(C);
+
+	if (WM_stereo_enabled(win, TRUE) == FALSE)
+		return false;
+
+	if ((scene->r.scemode & R_MULTIVIEW) == 0)
+		return false;
+
+	return true;
+}
+
 /* warning: this function has duplicate drawing in ED_view3d_draw_offscreen() */
 static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const char **grid_unit)
 {
@@ -3251,6 +3264,50 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 	view3d_main_area_clear(scene, v3d, ar);
 
 	ED_region_draw_cb_draw(C, ar, REGION_DRAW_PRE_VIEW);
+
+	/* change view */
+	if (v3d->camera && (rv3d->persp == RV3D_CAMOB) &&
+		view3d_stereo(C, scene))
+	{
+		bool left;
+
+		/* show only left or right camera */
+		if (v3d->stereo_camera != STEREO_3D_ID)
+			v3d->eye = v3d->stereo_camera;
+
+		left = v3d->eye == STEREO_LEFT_ID;
+
+		/* update the viewport matrices with the new camera */
+		if (scene->r.views_setup == SCE_VIEWS_SETUP_BASIC) {
+			Camera *data;
+			float viewmat[4][4];
+			float orig_shift;
+
+			data = (Camera *)v3d->camera->data;
+			orig_shift = data->shiftx;
+
+			BKE_camera_stereo_matrices(v3d->camera, viewmat, &data->shiftx, left);
+			view3d_main_area_setup_view(scene, v3d, ar, viewmat, NULL);
+
+			/* restore the original shift */
+			data->shiftx = orig_shift;
+		}
+		else { /* SCE_VIEWS_SETUP_ADVANCED */
+			Object *orig_cam = v3d->camera;
+			SceneRenderView *srv;
+
+			if (left)
+				srv = BLI_findstring(&scene->r.views, STEREO_LEFT_NAME, offsetof(SceneRenderView, name));
+			else
+				srv = BLI_findstring(&scene->r.views, STEREO_RIGHT_NAME, offsetof(SceneRenderView, name));
+
+			v3d->camera = BKE_camera_multiview_advanced(scene, &scene->r, v3d->camera, srv->suffix);
+			view3d_main_area_setup_view(scene, v3d, ar, NULL, NULL);
+
+			/* restore the original camera */
+			v3d->camera = orig_cam;
+		}
+	}
 
 	if (rv3d->rflag & RV3D_CLIPPING)
 		view3d_draw_clipping(rv3d);

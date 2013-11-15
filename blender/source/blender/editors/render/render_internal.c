@@ -94,7 +94,7 @@
 static int render_break(void *rjv);
 
 /* called inside thread! */
-void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect)
+void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volatile rcti *renrect, int view_id)
 {
 	float *rectf = NULL;
 	int ymin, ymax, xmin, xmax;
@@ -139,10 +139,9 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 	if (xmax < 1 || ymax < 1) return;
 
 	/* find current float rect for display, first case is after composite... still weak */
-	if (rr->rectf)
-		rectf = rr->rectf;
-	else {
-		if (rr->rect32) {
+	rectf = RE_RenderViewGetRectf(rr, view_id);
+	if (rectf == NULL) {
+		if (RE_RenderViewGetRect32(rr, view_id)) {
 			/* special case, currently only happens with sequencer rendering,
 			 * which updates the whole frame, so we can only mark display buffer
 			 * as invalid here (sergey)
@@ -151,10 +150,11 @@ void image_buffer_rect_update(Scene *scene, RenderResult *rr, ImBuf *ibuf, volat
 			return;
 		}
 		else {
-			if (rr->renlay == NULL || rr->renlay->rectf == NULL) return;
-			rectf = rr->renlay->rectf;
+			if (rr->renlay == NULL) return;
+			rectf = RE_RenderLayerGetPass(rr->renlay, SCE_PASS_COMBINED, view_id);
 		}
 	}
+
 	if (rectf == NULL) return;
 
 	if (ibuf->rect == NULL)
@@ -402,7 +402,7 @@ static void render_progress_update(void *rjv, float progress)
 	}
 }
 
-static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect)
+static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrect, int view_id)
 {
 	RenderJob *rj = rjv;
 	Image *ima = rj->image;
@@ -425,7 +425,7 @@ static void image_rect_update(void *rjv, RenderResult *rr, volatile rcti *renrec
 	/* update part of render */
 	ibuf = BKE_image_acquire_ibuf(ima, &rj->iuser, &lock);
 	if (ibuf) {
-		image_buffer_rect_update(rj->scene, rr, ibuf, renrect);
+		image_buffer_rect_update(rj->scene, rr, ibuf, renrect, view_id);
 
 		/* make jobs timer to send notifier */
 		*(rj->do_update) = TRUE;
@@ -1134,7 +1134,8 @@ void render_view3d_draw(RenderEngine *engine, const bContext *C)
 		if (re == NULL) return;
 	}
 	
-	RE_AcquireResultImage(re, &rres);
+	/* XXX MV to investigate when this is called */
+	RE_AcquireResultImage(re, &rres, 0);
 	
 	if (rres.rectf) {
 		Scene *scene = CTX_data_scene(C);
