@@ -416,7 +416,7 @@ if env['OURPLATFORM']=='darwin':
     if env['WITH_BF_CYCLES_OSL'] == 1:
         OSX_OSL_LIBPATH = Dir(env.subst(env['BF_OSL_LIBPATH'])).abspath
         # we need 2 variants of passing the oslexec with the force_load option, string and list type atm
-        if env['CC'][:-2].endswith('4.8'):
+        if env['CC'].split('/')[len(env['CC'].split('/'))-1][4:] >= '4.8':
             env.Append(LINKFLAGS=['-L'+OSX_OSL_LIBPATH,'-loslcomp','-loslexec','-loslquery'])
         else:
             env.Append(LINKFLAGS=['-L'+OSX_OSL_LIBPATH,'-loslcomp','-force_load '+ OSX_OSL_LIBPATH +'/liboslexec.a','-loslquery'])
@@ -784,6 +784,8 @@ if  env['OURPLATFORM']=='darwin':
                 dn.remove('.svn')
             if '_svn' in dn:
                 dn.remove('_svn')
+            if '.git' in df:
+                df.remove('.git')
             dir=env['BF_INSTALLDIR']+dp[len(bundledir):]
             source=[dp+os.sep+f for f in df]
             blenderinstall.append(env.Install(dir=dir,source=source))
@@ -813,10 +815,8 @@ if env['OURPLATFORM']!='darwin':
         scriptpaths=['release/scripts']
         for scriptpath in scriptpaths:
             for dp, dn, df in os.walk(scriptpath):
-                if '.svn' in dn:
-                    dn.remove('.svn')
-                if '_svn' in dn:
-                    dn.remove('_svn')
+                if '.git' in df:
+                    df.remove('.git')
                 if '__pycache__' in dn:  # py3.2 cache dir
                     dn.remove('__pycache__')
 
@@ -840,8 +840,6 @@ if env['OURPLATFORM']!='darwin':
             # cycles python code
             dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles')
             source=os.listdir('intern/cycles/blender/addon')
-            if '.svn' in source: source.remove('.svn')
-            if '_svn' in source: source.remove('_svn')
             if '__pycache__' in source: source.remove('__pycache__')
             source=['intern/cycles/blender/addon/'+s for s in source]
             scriptinstall.append(env.Install(dir=dir,source=source))
@@ -849,8 +847,6 @@ if env['OURPLATFORM']!='darwin':
             # cycles kernel code
             dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'kernel')
             source=os.listdir('intern/cycles/kernel')
-            if '.svn' in source: source.remove('.svn')
-            if '_svn' in source: source.remove('_svn')
             if '__pycache__' in source: source.remove('__pycache__')
             source.remove('kernel.cpp')
             source.remove('CMakeLists.txt')
@@ -867,16 +863,12 @@ if env['OURPLATFORM']!='darwin':
             # svm
             dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'kernel', 'svm')
             source=os.listdir('intern/cycles/kernel/svm')
-            if '.svn' in source: source.remove('.svn')
-            if '_svn' in source: source.remove('_svn')
             if '__pycache__' in source: source.remove('__pycache__')
             source=['intern/cycles/kernel/svm/'+s for s in source]
             scriptinstall.append(env.Install(dir=dir,source=source))
             # closure
             dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'kernel', 'closure')
             source=os.listdir('intern/cycles/kernel/closure')
-            if '.svn' in source: source.remove('.svn')
-            if '_svn' in source: source.remove('_svn')
             if '__pycache__' in source: source.remove('__pycache__')
             source=['intern/cycles/kernel/closure/'+s for s in source]
             scriptinstall.append(env.Install(dir=dir,source=source))
@@ -884,8 +876,6 @@ if env['OURPLATFORM']!='darwin':
             # licenses
             dir=os.path.join(env['BF_INSTALLDIR'], VERSION, 'scripts', 'addons','cycles', 'license')
             source=os.listdir('intern/cycles/doc/license')
-            if '.svn' in source: source.remove('.svn')
-            if '_svn' in source: source.remove('_svn')
             if '__pycache__' in source: source.remove('__pycache__')
             source.remove('CMakeLists.txt')
             source=['intern/cycles/doc/license/'+s for s in source]
@@ -920,11 +910,6 @@ if env['OURPLATFORM']!='darwin':
         colormanagement = os.path.join('release', 'datafiles', 'colormanagement')
 
         for dp, dn, df in os.walk(colormanagement):
-            if '.svn' in dn:
-                dn.remove('.svn')
-            if '_svn' in dn:
-                dn.remove('_svn')
-
             dir = os.path.join(env['BF_INSTALLDIR'], VERSION, 'datafiles')
             dir += os.sep + os.path.basename(colormanagement) + dp[len(colormanagement):]
 
@@ -943,20 +928,14 @@ if env['OURPLATFORM']!='darwin':
             return (member in path.split(os.sep))
 
         po_dir = os.path.join("release", "datafiles", "locale", "po")
-        need_compile_mo = os.path.exists(po_dir)
 
         for intpath in internationalpaths:
             for dp, dn, df in os.walk(intpath):
-                if '.svn' in dn:
-                    dn.remove('.svn')
-                if '_svn' in dn:
-                    dn.remove('_svn')
+                if '.git' in df:
+                    df.remove('.git')
 
                 # we only care about release/datafiles/fonts, release/datafiles/locales
-                if check_path(dp, "locale"):
-                    if need_compile_mo and check_path(dp, "po"):
-                        continue
-                elif check_path(dp, "fonts"):
+                if check_path(dp, "fonts"):
                     pass
                 else:
                     continue
@@ -970,18 +949,17 @@ if env['OURPLATFORM']!='darwin':
                     env.Execute(Mkdir(dir))
                 scriptinstall.append(env.Install(dir=dir,source=source))
 
-        if need_compile_mo:
-            for f in os.listdir(po_dir):
-                if not f.endswith(".po"):
-                    continue
+        for f in os.listdir(po_dir):
+            if not f.endswith(".po"):
+                continue
 
-                locale_name = os.path.splitext(f)[0]
+            locale_name = os.path.splitext(f)[0]
 
-                mo_file = os.path.join(B.root_build_dir, "locale", locale_name + ".mo")
+            mo_file = os.path.join(B.root_build_dir, "locale", locale_name + ".mo")
 
-                dir = os.path.join(env['BF_INSTALLDIR'], VERSION)
-                dir = os.path.join(dir, "datafiles", "locale", locale_name, "LC_MESSAGES")
-                scriptinstall.append(env.InstallAs(os.path.join(dir, "blender.mo"), mo_file))
+            dir = os.path.join(env['BF_INSTALLDIR'], VERSION)
+            dir = os.path.join(dir, "datafiles", "locale", locale_name, "LC_MESSAGES")
+            scriptinstall.append(env.InstallAs(os.path.join(dir, "blender.mo"), mo_file))
 
 #-- icons
 if env['OURPLATFORM']=='linux':
@@ -989,10 +967,6 @@ if env['OURPLATFORM']=='linux':
     icontargetlist = []
 
     for tp, tn, tf in os.walk('release/freedesktop/icons'):
-        if '.svn' in tn:
-            tn.remove('.svn')
-        if '_svn' in tn:
-            tn.remove('_svn')
         for f in tf:
             iconlist.append(os.path.join(tp, f))
             icontargetlist.append( os.path.join(*([env['BF_INSTALLDIR']] + tp.split(os.sep)[2:] + [f])) )
@@ -1018,10 +992,6 @@ if env['OURPLATFORM']=='linuxcross':
 textlist = []
 texttargetlist = []
 for tp, tn, tf in os.walk('release/text'):
-    if '.svn' in tn:
-        tn.remove('.svn')
-    if '_svn' in tn:
-        tn.remove('_svn')
     for f in tf:
         textlist.append(tp+os.sep+f)
 

@@ -54,9 +54,17 @@ class VIEW3D_HT_header(Header):
             elif mode_string not in {'EDIT_TEXT', 'SCULPT'}:
                 sub.menu("VIEW3D_MT_select_%s" % mode_string.lower())
 
-            if mode_string in {'OBJECT', 'EDIT_MESH', 'EDIT_CURVE', 'EDIT_SURFACE', 'EDIT_METABALL'}:
-                sub.menu("INFO_MT_add")
-                
+            if mode_string == 'OBJECT':
+                sub.menu("INFO_MT_add", text="Add")
+            elif mode_string == 'EDIT_MESH':
+                sub.menu("INFO_MT_mesh_add", text="Add")
+            elif mode_string == 'EDIT_CURVE':
+                sub.menu("INFO_MT_curve_add", text="Add")
+            elif mode_string == 'EDIT_SURFACE':
+                sub.menu("INFO_MT_surface_add", text="Add")
+            elif mode_string == 'EDIT_METABALL':
+                sub.menu("INFO_MT_metaball_add", text="Add")
+
             if edit_object:
                 sub.menu("VIEW3D_MT_edit_%s" % edit_object.type.lower())
             elif obj:
@@ -532,7 +540,7 @@ class VIEW3D_MT_select_pose(Menu):
 
         layout.operator("pose.select_all").action = 'TOGGLE'
         layout.operator("pose.select_all", text="Inverse").action = 'INVERT'
-        layout.operator("pose.select_flip_active", text="Flip Active")
+        layout.operator("pose.select_mirror", text="Flip Active")
         layout.operator("pose.select_constraint_target", text="Constraint Target")
         layout.operator("pose.select_linked", text="Linked")
 
@@ -877,6 +885,17 @@ class INFO_MT_surface_add(Menu):
         layout.operator("surface.primitive_nurbs_surface_torus_add", icon='SURFACE_NTORUS', text="NURBS Torus")
 
 
+class INFO_MT_metaball_add(Menu):
+    bl_idname = "INFO_MT_metaball_add"
+    bl_label = "Metaball"
+
+    def draw(self, context):
+        layout = self.layout
+
+        layout.operator_context = 'INVOKE_REGION_WIN'
+        layout.operator_enum("object.metaball_add", "type")
+
+
 class INFO_MT_edit_curve_add(Menu):
     bl_idname = "INFO_MT_edit_curve_add"
     bl_label = "Add"
@@ -923,9 +942,7 @@ class INFO_MT_add(Menu):
         layout.menu("INFO_MT_curve_add", icon='OUTLINER_OB_CURVE')
         #layout.operator_menu_enum("object.surface_add", "type", text="Surface", icon='OUTLINER_OB_SURFACE')
         layout.menu("INFO_MT_surface_add", icon='OUTLINER_OB_SURFACE')
-        layout.operator_context = 'INVOKE_REGION_WIN'
-        layout.operator_menu_enum("object.metaball_add", "type", text="Metaball", icon='OUTLINER_OB_META')
-        layout.operator_context = 'EXEC_REGION_WIN'
+        layout.menu("INFO_MT_metaball_add", text="Metaball", icon='OUTLINER_OB_META')
         layout.operator("object.text_add", text="Text", icon='OUTLINER_OB_FONT')
         layout.separator()
 
@@ -1502,6 +1519,7 @@ class VIEW3D_MT_paint_weight(Menu):
         layout.operator("object.vertex_group_mirror", text="Mirror")
         layout.operator("object.vertex_group_invert", text="Invert")
         layout.operator("object.vertex_group_clean", text="Clean")
+        layout.operator("object.vertex_group_quantize", text="Quantize")
         layout.operator("object.vertex_group_levels", text="Levels")
         layout.operator("object.vertex_group_blend", text="Blend")
         layout.operator("object.vertex_group_transfer_weight", text="Transfer Weights")

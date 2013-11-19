@@ -1678,24 +1678,19 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 
 #ifdef WITH_BUILDINFO
 	int label_delta = 0;
-	int hash_width, change_width;
-	char change_buf[128] = "\0";
+	int hash_width, date_width;
+	char date_buf[128] = "\0";
 	char hash_buf[128] = "\0";
-	extern char build_hash[], build_change[], build_branch[];
+	extern unsigned long build_commit_timestamp;
+	extern char build_hash[], build_commit_date[], build_commit_time[], build_branch[];
 
-	/* TODO(sergey): As soon as we fully switched to GIT, no need to check build_hash. */
-	if (build_hash[0] != '\0') {
-		/* Builds made from tag only shows tag sha */
-		BLI_snprintf(hash_buf, sizeof(hash_buf), "Hash: %s", build_hash);
-		BLI_snprintf(change_buf, sizeof(change_buf), "Change: %s", build_change);
-	}
-	else {
-		BLI_snprintf(change_buf, sizeof(change_buf), "r%s", build_change);
-	}
+	/* Builds made from tag only shows tag sha */
+	BLI_snprintf(hash_buf, sizeof(hash_buf), "Hash: %s", build_hash);
+	BLI_snprintf(date_buf, sizeof(date_buf), "Date: %s %s", build_commit_date, build_commit_time);
 	
 	BLF_size(style->widgetlabel.uifont_id, style->widgetlabel.points, U.pixelsize * U.dpi);
 	hash_width = (int)BLF_width(style->widgetlabel.uifont_id, hash_buf) + 0.5f * U.widget_unit;
-	change_width = (int)BLF_width(style->widgetlabel.uifont_id, change_buf) + 0.5f * U.widget_unit;
+	date_width = (int)BLF_width(style->widgetlabel.uifont_id, date_buf) + 0.5f * U.widget_unit;
 #endif  /* WITH_BUILDINFO */
 
 	block = uiBeginBlock(C, ar, "_popup", UI_EMBOSS);
@@ -1711,16 +1706,13 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	uiBlockSetFunc(block, wm_block_splash_refreshmenu, block, NULL);
 	
 #ifdef WITH_BUILDINFO
-	if (!STREQ(build_change, "0")) {
-		uiDefBut(block, LABEL, 0, change_buf, U.pixelsize * 494 - change_width, U.pixelsize * 270, change_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
+	if (build_commit_timestamp != 0) {
+		uiDefBut(block, LABEL, 0, date_buf, U.pixelsize * 494 - date_width, U.pixelsize * 270, date_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
 		label_delta = 12;
 	}
 	uiDefBut(block, LABEL, 0, hash_buf, U.pixelsize * 494 - hash_width, U.pixelsize * (270 - label_delta), hash_width, UI_UNIT_Y, NULL, 0, 0, 0, 0, NULL);
 
-	/* TODO(sergey): As soon as we fully switched to GIT, no need to check
-	 *               whether branch is empty or not.
-	 */
-	if (build_branch[0] != '\0' && !STREQ(build_branch, "master")) {
+	if (!STREQ(build_branch, "master")) {
 		char branch_buf[128] = "\0";
 		int branch_width;
 		BLI_snprintf(branch_buf, sizeof(branch_buf), "Branch: %s", build_branch);
@@ -1750,11 +1742,11 @@ static uiBlock *wm_block_create_splash(bContext *C, ARegion *ar, void *UNUSED(ar
 	col = uiLayoutColumn(split, FALSE);
 	uiItemL(col, IFACE_("Links"), ICON_NONE);
 	uiItemStringO(col, IFACE_("Donations"), ICON_URL, "WM_OT_url_open", "url",
-	              "http://www.blender.org/blenderorg/blender-foundation/donation-payment");
+	              "http://www.blender.org/foundation/donation-payment/");
 	uiItemStringO(col, IFACE_("Credits"), ICON_URL, "WM_OT_url_open", "url",
-	              "http://www.blender.org/development/credits");
+	              "http://www.blender.org/about/credits/");
 	uiItemStringO(col, IFACE_("Release Log"), ICON_URL, "WM_OT_url_open", "url",
-	              "http://www.blender.org/development/release-logs/blender-269");
+	              "http://wiki.blender.org/index.php/Dev:Ref/Release_Notes/2.70");
 	uiItemStringO(col, IFACE_("Manual"), ICON_URL, "WM_OT_url_open", "url",
 	              "http://wiki.blender.org/index.php/Doc:2.6/Manual");
 	uiItemStringO(col, IFACE_("Blender Website"), ICON_URL, "WM_OT_url_open", "url", "http://www.blender.org");
@@ -1809,7 +1801,7 @@ static void WM_OT_splash(wmOperatorType *ot)
 {
 	ot->name = "Splash Screen";
 	ot->idname = "WM_OT_splash";
-	ot->description = "Opens a blocking popup region with release info";
+	ot->description = "Opens the splash screen with release info";
 	
 	ot->invoke = wm_splash_invoke;
 	ot->poll = WM_operator_winactive;

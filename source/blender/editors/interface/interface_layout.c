@@ -54,6 +54,8 @@
 
 #include "UI_interface.h"
 
+#include "ED_armature.h"
+
 
 #include "WM_api.h"
 #include "WM_types.h"
@@ -375,6 +377,7 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 		int cols = (len >= 20) ? 2 : 1;
 		const unsigned int colbuts = len / (2 * cols);
 		unsigned int layer_used = 0;
+		unsigned int layer_active = 0;
 
 		uiBlockSetCurLayout(block, uiLayoutAbsolute(layout, FALSE));
 
@@ -384,27 +387,55 @@ static void ui_item_array(uiLayout *layout, uiBlock *block, const char *name, in
 
 		if (ptr->type == &RNA_Armature) {
 			bArmature *arm = (bArmature *)ptr->data;
+			
 			layer_used = arm->layer_used;
+			
+			if (arm->edbo && arm->act_edbone) {
+				layer_active |= arm->act_edbone->layer;
+			}
+			else if (arm->act_bone) {
+				layer_active |= arm->act_bone->layer;
+			}
 		}
 
 		for (b = 0; b < cols; b++) {
 			uiBlockBeginAlign(block);
 
 			for (a = 0; a < colbuts; a++) {
-				if (layer_used & (1 << (a + b * colbuts))) icon = ICON_LAYER_USED;
-				else icon = ICON_BLANK1;
+				int layer_num  = a + b * colbuts;
+				int layer_flag = 1 << layer_num;
+				
+				if (layer_used & layer_flag) {
+					if (layer_active & layer_flag)
+						icon = ICON_LAYER_ACTIVE;
+					else
+						icon = ICON_LAYER_USED;
+				}
+				else {
+					icon = ICON_BLANK1;
+				}
 
-				but = uiDefAutoButR(block, ptr, prop, a + b * colbuts, "", icon, x + butw * a, y + buth, butw, buth);
+				but = uiDefAutoButR(block, ptr, prop, layer_num, "", icon, x + butw * a, y + buth, butw, buth);
 				if (subtype == PROP_LAYER_MEMBER)
-					uiButSetFunc(but, ui_layer_but_cb, but, SET_INT_IN_POINTER(a + b * colbuts));
+					uiButSetFunc(but, ui_layer_but_cb, but, SET_INT_IN_POINTER(layer_num));
 			}
 			for (a = 0; a < colbuts; a++) {
-				if (layer_used & (1 << (a + len / 2 + b * colbuts))) icon = ICON_LAYER_USED;
-				else icon = ICON_BLANK1;
+				int layer_num  = a + len / 2 + b * colbuts;
+				int layer_flag = 1 << layer_num;
+				
+				if (layer_used & layer_flag) {
+					if (layer_active & layer_flag)
+						icon = ICON_LAYER_ACTIVE;
+					else
+						icon = ICON_LAYER_USED;
+				}
+				else {
+					icon = ICON_BLANK1;
+				}
 
-				but = uiDefAutoButR(block, ptr, prop, a + len / 2 + b * colbuts, "", icon, x + butw * a, y, butw, buth);
+				but = uiDefAutoButR(block, ptr, prop, layer_num, "", icon, x + butw * a, y, butw, buth);
 				if (subtype == PROP_LAYER_MEMBER)
-					uiButSetFunc(but, ui_layer_but_cb, but, SET_INT_IN_POINTER(a + len / 2 + b * colbuts));
+					uiButSetFunc(but, ui_layer_but_cb, but, SET_INT_IN_POINTER(layer_num));
 			}
 			uiBlockEndAlign(block);
 

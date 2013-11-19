@@ -131,7 +131,9 @@ if(WITH_BUILDINFO)
 		# # define in header now, else these get out of date on rebuilds.
 		# -DBUILD_DATE="${BUILD_DATE}"
 		# -DBUILD_TIME="${BUILD_TIME}"
-		# -DBUILD_CHANGE="${BUILD_CHANGE}"
+		# -DBUILD_COMMIT_TIMESTAMP="${BUILD_COMMIT_TIMESTAMP}"
+		# -DBUILD_COMMIT_TIME="${BUILD_COMMIT_TIME}"
+		# -DBUILD_COMMIT_DATE="${BUILD_COMMIT_DATE}"
 		# -DBUILD_HASH="${BUILD_HASH}"
 		# -DBUILD_BRANCH="${BUILD_BRANCH}"
 		-DWITH_BUILDINFO_HEADER # alternative to lines above
@@ -304,7 +306,7 @@ if(WITH_PYTHON)
 	install(
 		DIRECTORY ${CMAKE_SOURCE_DIR}/release/scripts
 		DESTINATION ${TARGETDIR_VER}
-		PATTERN ".svn" EXCLUDE
+		PATTERN ".git" EXCLUDE
 		PATTERN "__pycache__" EXCLUDE
 		PATTERN "${ADDON_EXCLUDE_CONDITIONAL}" EXCLUDE
 		PATTERN "${FREESTYLE_EXCLUDE_CONDITIONAL}" EXCLUDE
@@ -320,55 +322,44 @@ if(WITH_INTERNATIONAL)
 		DIRECTORY
 			${CMAKE_SOURCE_DIR}/release/datafiles/fonts
 		DESTINATION ${TARGETDIR_VER}/datafiles
-		PATTERN ".svn" EXCLUDE
 	)
 
 	set(_locale_dir "${CMAKE_SOURCE_DIR}/release/datafiles/locale")
+	set(_locale_target_dir ${TARGETDIR_VER}/datafiles/locale)
 
-	if(EXISTS "${_locale_dir}/po")
-		set(_locale_target_dir ${TARGETDIR_VER}/datafiles/locale)
+	file(GLOB _po_files "${_locale_dir}/po/*.po")
+	foreach(_po_file ${_po_files})
+		msgfmt_simple(${_po_file} _all_mo_files)
+	endforeach()
 
-		file(GLOB _po_files "${_locale_dir}/po/*.po")
-		foreach(_po_file ${_po_files})
-			msgfmt_simple(${_po_file} _all_mo_files)
-		endforeach()
+	# Create a custom target which will compile all po to mo
+	add_custom_target(
+		locales
+		DEPENDS ${_all_mo_files})
 
-		# Create a custom target which will compile all po to mo
-		add_custom_target(
-			locales
-			DEPENDS ${_all_mo_files})
+	add_dependencies(blender locales)
 
-		add_dependencies(blender locales)
+	# Generate INSTALL rules
+	install(
+		FILES ${_locale_dir}/languages
+		DESTINATION ${_locale_target_dir}
+	)
 
-		# Generate INSTALL rules
+	foreach(_mo_file ${_all_mo_files})
+		get_filename_component(_locale_name ${_mo_file} NAME_WE)
 		install(
-			FILES ${_locale_dir}/languages
-			DESTINATION ${_locale_target_dir}
+			FILES ${_mo_file}
+			DESTINATION ${_locale_target_dir}/${_locale_name}/LC_MESSAGES
+			RENAME blender.mo
 		)
+		unset(_locale_name)
+	endforeach()
 
-		foreach(_mo_file ${_all_mo_files})
-			get_filename_component(_locale_name ${_mo_file} NAME_WE)
-			install(
-				FILES ${_mo_file}
-				DESTINATION ${_locale_target_dir}/${_locale_name}/LC_MESSAGES
-				RENAME blender.mo
-			)
-			unset(_locale_name)
-		endforeach()
-
-		unset(_all_mo_files)
-		unset(_po_files)
-		unset(_po_file)
-		unset(_mo_file)
-		unset(_locale_target_dir)
-	else()
-		install(
-			DIRECTORY
-				${_locale_dir}
-			DESTINATION ${TARGETDIR_VER}/datafiles
-			PATTERN ".svn" EXCLUDE
-		)
-	endif()
+	unset(_all_mo_files)
+	unset(_po_files)
+	unset(_po_file)
+	unset(_mo_file)
+	unset(_locale_target_dir)
 
 	unset(_locale_dir)
 endif()
@@ -378,7 +369,6 @@ if(WITH_OPENCOLORIO)
 	install(
 		DIRECTORY ${CMAKE_SOURCE_DIR}/release/datafiles/colormanagement
 		DESTINATION ${TARGETDIR_VER}/datafiles
-		PATTERN ".svn" EXCLUDE
 	)
 endif()
 
@@ -455,7 +445,6 @@ if(UNIX AND NOT APPLE)
 				${CMAKE_SOURCE_DIR}/release/freedesktop/icons/48x48
 				${CMAKE_SOURCE_DIR}/release/freedesktop/icons/256x256
 			DESTINATION ${CMAKE_INSTALL_PREFIX}/share/icons/hicolor
-			PATTERN ".svn" EXCLUDE
 			PATTERN "*.svg" EXCLUDE
 		)
 		install(
@@ -745,6 +734,7 @@ elseif(APPLE)
 		install(
 			DIRECTORY ${from}
 			DESTINATION ${to}
+			PATTERN ".git" EXCLUDE
 			PATTERN ".svn" EXCLUDE
 			PATTERN "*.pyc" EXCLUDE
 			PATTERN "*.pyo" EXCLUDE

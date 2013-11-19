@@ -67,17 +67,11 @@
 /* ************************************************** */
 /* EditBone Names */
 
-/* checks if an EditBone with a matching name already, returning the matching bone if it exists */
-EditBone *editbone_name_exists(ListBase *edbo, const char *name)
-{
-	return BLI_findstring(edbo, name, offsetof(EditBone, name));
-}
-
 /* note: there's a unique_bone_name() too! */
 static bool editbone_unique_check(void *arg, const char *name)
 {
 	struct {ListBase *lb; void *bone; } *data = arg;
-	EditBone *dupli = editbone_name_exists(data->lb, name);
+	EditBone *dupli = ED_armature_bone_find_name(data->lb, name);
 	return dupli && dupli != data->bone;
 }
 
@@ -155,7 +149,7 @@ void ED_armature_bone_rename(bArmature *arm, const char *oldnamep, const char *n
 		
 		/* now check if we're in editmode, we need to find the unique name */
 		if (arm->edbo) {
-			EditBone *eBone = editbone_name_exists(arm->edbo, oldname);
+			EditBone *eBone = ED_armature_bone_find_name(arm->edbo, oldname);
 			
 			if (eBone) {
 				unique_editbone_name(arm->edbo, newname, NULL);
@@ -289,7 +283,6 @@ static int armature_flip_names_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob = CTX_data_edit_object(C);
 	bArmature *arm;
-	char newname[MAXBONENAME];
 	
 	/* paranoia checks */
 	if (ELEM(NULL, ob, ob->pose)) 
@@ -299,8 +292,9 @@ static int armature_flip_names_exec(bContext *C, wmOperator *UNUSED(op))
 	/* loop through selected bones, auto-naming them */
 	CTX_DATA_BEGIN(C, EditBone *, ebone, selected_editable_bones)
 	{
-		flip_side_name(newname, ebone->name, TRUE); // 1 = do strip off number extensions
-		ED_armature_bone_rename(arm, ebone->name, newname);
+		char name_flip[MAXBONENAME];
+		BKE_deform_flip_side_name(name_flip, ebone->name, true);
+		ED_armature_bone_rename(arm, ebone->name, name_flip);
 	}
 	CTX_DATA_END;
 	

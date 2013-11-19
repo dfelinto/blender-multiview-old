@@ -7296,7 +7296,7 @@ static BHead *read_global(BlendFileData *bfd, FileData *fd, BHead *bhead)
 	bfd->main->subversionfile = fg->subversion;
 	bfd->main->minversionfile = fg->minversion;
 	bfd->main->minsubversionfile = fg->minsubversion;
-	BLI_strncpy(bfd->main->build_change, fg->build_change, sizeof(bfd->main->build_change));
+	bfd->main->build_commit_timestamp = fg->build_commit_timestamp;
 	BLI_strncpy(bfd->main->build_hash, fg->build_hash, sizeof(bfd->main->build_hash));
 	
 	bfd->winpos = fg->winpos;
@@ -7932,9 +7932,19 @@ static void do_versions(FileData *fd, Library *lib, Main *main)
 	/* WATCH IT!!!: pointers from libdata have not been converted */
 	
 	if (G.debug & G_DEBUG) {
-		printf("read file %s\n  Version %d sub %d change %s hash %s\n",
+		char build_commit_datetime[32];
+		time_t temp_time = main->build_commit_timestamp;
+		struct tm *tm = gmtime(&temp_time);
+		if (LIKELY(tm)) {
+			strftime(build_commit_datetime, sizeof(build_commit_datetime), "%Y-%m-%d %H:%M", tm);
+		}
+		else {
+			BLI_strncpy(build_commit_datetime, "date-unknown", sizeof(build_commit_datetime));
+		}
+
+		printf("read file %s\n  Version %d sub %d date %s hash %s\n",
 		       fd->relabase, main->versionfile, main->subversionfile,
-		       main->build_change, main->build_hash);
+		       build_commit_datetime, main->build_hash);
 	}
 	
 	blo_do_versions_pre250(fd, lib, main);

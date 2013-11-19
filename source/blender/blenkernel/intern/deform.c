@@ -335,9 +335,10 @@ void defvert_normalize_lock_single(MDeformVert *dvert,
 }
 
 /* Same as defvert_normalize() if no locked vgroup is a member of the subset */
-void defvert_normalize_lock_map(MDeformVert *dvert,
-				const bool *vgroup_subset, const int vgroup_tot,
-				const bool *lock_flags, const int defbase_tot)
+void defvert_normalize_lock_map(
+        MDeformVert *dvert,
+        const bool *vgroup_subset, const int vgroup_tot,
+        const bool *lock_flags, const int defbase_tot)
 {
 	if (dvert->totweight == 0) {
 		/* nothing */
@@ -447,7 +448,7 @@ int *defgroup_flip_map(Object *ob, int *flip_map_len, const bool use_default)
 	}
 	else {
 		bDeformGroup *dg;
-		char name[sizeof(dg->name)];
+		char name_flip[sizeof(dg->name)];
 		int i, flip_num, *map = MEM_mallocN(defbase_tot * sizeof(int), __func__);
 
 		for (i = 0; i < defbase_tot; i++) {
@@ -461,9 +462,10 @@ int *defgroup_flip_map(Object *ob, int *flip_map_len, const bool use_default)
 				if (use_default)
 					map[i] = i;
 
-				flip_side_name(name, dg->name, FALSE);
-				if (strcmp(name, dg->name)) {
-					flip_num = defgroup_name_index(ob, name);
+				BKE_deform_flip_side_name(name_flip, dg->name, false);
+
+				if (!STREQ(name_flip, dg->name)) {
+					flip_num = defgroup_name_index(ob, name_flip);
 					if (flip_num >= 0) {
 						map[i] = flip_num;
 						map[flip_num] = i; /* save an extra lookup */
@@ -485,7 +487,7 @@ int *defgroup_flip_map_single(Object *ob, int *flip_map_len, const bool use_defa
 	}
 	else {
 		bDeformGroup *dg;
-		char name[sizeof(dg->name)];
+		char name_flip[sizeof(dg->name)];
 		int i, flip_num, *map = MEM_mallocN(defbase_tot * sizeof(int), __func__);
 
 		for (i = 0; i < defbase_tot; i++) {
@@ -494,9 +496,9 @@ int *defgroup_flip_map_single(Object *ob, int *flip_map_len, const bool use_defa
 
 		dg = BLI_findlink(&ob->defbase, defgroup);
 
-		flip_side_name(name, dg->name, FALSE);
-		if (strcmp(name, dg->name)) {
-			flip_num = defgroup_name_index(ob, name);
+		BKE_deform_flip_side_name(name_flip, dg->name, false);
+		if (!STREQ(name_flip, dg->name)) {
+			flip_num = defgroup_name_index(ob, name_flip);
 
 			if (flip_num != -1) {
 				map[defgroup] = flip_num;
@@ -514,11 +516,12 @@ int defgroup_flip_index(Object *ob, int index, const bool use_default)
 	int flip_index = -1;
 
 	if (dg) {
-		char name[sizeof(dg->name)];
-		flip_side_name(name, dg->name, 0);
+		char name_flip[sizeof(dg->name)];
+		BKE_deform_flip_side_name(name_flip, dg->name, false);
 
-		if (strcmp(name, dg->name))
-			flip_index = defgroup_name_index(ob, name);
+		if (!STREQ(name_flip, dg->name)) {
+			flip_index = defgroup_name_index(ob, name_flip);
+		}
 	}
 
 	return (flip_index == -1 && use_default) ? index : flip_index;
@@ -602,7 +605,8 @@ void BKE_deform_split_prefix(const char string[MAX_VGROUP_NAME], char pre[MAX_VG
 /* finds the best possible flipped name. For renaming; check for unique names afterwards */
 /* if strip_number: removes number extensions
  * note: don't use sizeof() for 'name' or 'from_name' */
-void flip_side_name(char name[MAX_VGROUP_NAME], const char from_name[MAX_VGROUP_NAME], int strip_number)
+void BKE_deform_flip_side_name(char name[MAX_VGROUP_NAME], const char from_name[MAX_VGROUP_NAME],
+                               const bool strip_number)
 {
 	int     len;
 	char    prefix[MAX_VGROUP_NAME]  = "";   /* The part before the facing */
@@ -624,7 +628,7 @@ void flip_side_name(char name[MAX_VGROUP_NAME], const char from_name[MAX_VGROUP_
 	if (isdigit(name[len - 1])) {
 		index = strrchr(name, '.'); // last occurrence
 		if (index && isdigit(index[1])) { // doesnt handle case bone.1abc2 correct..., whatever!
-			if (strip_number == 0) {
+			if (strip_number == false) {
 				BLI_strncpy(number, index, sizeof(number));
 			}
 			*index = 0;

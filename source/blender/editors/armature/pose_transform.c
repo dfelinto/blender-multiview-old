@@ -118,7 +118,7 @@ static int apply_armature_pose2bones_exec(bContext *C, wmOperator *op)
 	pose = ob->pose;
 	
 	for (pchan = pose->chanbase.first; pchan; pchan = pchan->next) {
-		curbone = editbone_name_exists(arm->edbo, pchan->name);
+		curbone = ED_armature_bone_find_name(arm->edbo, pchan->name);
 		
 		/* simply copy the head/tail values from pchan over to curbone */
 		copy_v3_v3(curbone->head, pchan->pose_head);
@@ -302,7 +302,7 @@ static bPoseChannel *pose_bone_do_paste(Object *ob, bPoseChannel *chan, short se
 	
 	/* get the name - if flipping, we must flip this first */
 	if (flip)
-		flip_side_name(name, chan->name, 0);        /* 0 = don't strip off number extensions */
+		BKE_deform_flip_side_name(name, chan->name, false);
 	else
 		BLI_strncpy(name, chan->name, sizeof(name));
 	

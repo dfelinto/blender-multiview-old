@@ -315,7 +315,8 @@ kmi.properties.direction = 'CHILD'
 kmi.properties.extend = True
 kmi = km.keymap_items.new('pose.select_linked', 'L', 'PRESS')
 kmi = km.keymap_items.new('pose.select_grouped', 'G', 'PRESS', shift=True)
-kmi = km.keymap_items.new('pose.select_flip_active', 'F', 'PRESS', shift=True)
+kmi = km.keymap_items.new('pose.select_mirror', 'F', 'PRESS', shift=True)
+kmi.properties.only_active = True
 kmi = km.keymap_items.new('pose.constraint_add_with_targets', 'C', 'PRESS', shift=True, ctrl=True)
 kmi = km.keymap_items.new('pose.constraints_clear', 'C', 'PRESS', ctrl=True, alt=True)
 kmi = km.keymap_items.new('pose.ik_add', 'I', 'PRESS', shift=True)
@@ -1476,7 +1477,6 @@ kmi = km.keymap_items.new('node.hide_toggle', 'H', 'PRESS', ctrl=True)
 kmi = km.keymap_items.new('node.mute_toggle', 'M', 'PRESS')
 kmi = km.keymap_items.new('node.preview_toggle', 'H', 'PRESS', shift=True)
 kmi = km.keymap_items.new('node.hide_socket_toggle', 'H', 'PRESS', shift=True, ctrl=True)
-kmi = km.keymap_items.new('node.show_cyclic_dependencies', 'C', 'PRESS')
 kmi = km.keymap_items.new('node.view_all', 'A', 'PRESS')
 kmi = km.keymap_items.new('node.delete', 'BACK_SPACE', 'PRESS')
 kmi = km.keymap_items.new('node.delete', 'DEL', 'PRESS')

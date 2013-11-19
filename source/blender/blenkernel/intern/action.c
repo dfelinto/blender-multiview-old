@@ -53,6 +53,7 @@
 #include "BKE_anim.h"
 #include "BKE_animsys.h"
 #include "BKE_constraint.h"
+#include "BKE_deform.h"
 #include "BKE_fcurve.h"
 #include "BKE_global.h"
 #include "BKE_idprop.h"
@@ -539,6 +540,22 @@ bPoseChannel *BKE_pose_channel_active(Object *ob)
 	return NULL;
 }
 
+/**
+ * \see #ED_armature_bone_get_mirrored (edit-mode, matching function)
+ */
+bPoseChannel *BKE_pose_channel_get_mirrored(const bPose *pose, const char *name)
+{
+	char name_flip[MAXBONENAME];
+
+	BKE_deform_flip_side_name(name_flip, name, false);
+
+	if (!STREQ(name_flip, name)) {
+		return BKE_pose_channel_find_name(pose, name_flip);
+	}
+
+	return NULL;
+}
+
 const char *BKE_pose_ikparam_get_name(bPose *pose)
 {
 	if (pose) {
@@ -572,7 +589,15 @@ void BKE_pose_copy_data(bPose **dst, bPose *src, const bool copy_constraints)
 	outPose = MEM_callocN(sizeof(bPose), "pose");
 	
 	BLI_duplicatelist(&outPose->chanbase, &src->chanbase);
-	
+	if (outPose->chanbase.first) {
+		bPoseChannel *pchan;
+		for (pchan = outPose->chanbase.first; pchan; pchan = pchan->next) {
+			if (pchan->custom) {
+				id_us_plus(&pchan->custom->id);
+			}
+		}
+	}
+
 	outPose->iksolver = src->iksolver;
 	outPose->ikdata = NULL;
 	outPose->ikparam = MEM_dupallocN(src->ikparam);

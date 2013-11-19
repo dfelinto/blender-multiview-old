@@ -410,23 +410,21 @@ def buildinfo(lenv, build_type):
     """
     build_date = time.strftime ("%Y-%m-%d")
     build_time = time.strftime ("%H:%M:%S")
-    if os.path.isdir(os.path.abspath('.git')):
-        latest_version_tag = os.popen('git describe --match "v[0-9]*" --abbrev=0').read().strip()
-        if latest_version_tag:
-            build_change = os.popen('git rev-list HEAD ' + latest_version_tag + ' --count').read().strip()
-        else:
-            build_change = os.popen('git rev-list HEAD --count').read().strip()
 
-        build_hash = os.popen('git rev-parse --short HEAD').read().strip()
-        build_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().strip()
-    elif os.path.isdir(os.path.abspath('.svn')):
-        build_hash = ''
-        build_change = os.popen('svnversion').read()[:-1] # remove \n
-        build_branch = ''
+    if os.path.isdir(os.path.abspath('.git')):
+        build_commit_timestamp = os.popen('git log -1 --format=%ct').read().strip()
+        if not build_commit_timestamp:
+            # Git command not found
+            build_hash = 'unknown'
+            build_commit_timestamp = '0'
+            build_branch = 'unknown'
+        else:
+            build_hash = os.popen('git rev-parse --short HEAD').read().strip()
+            build_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().strip()
     else:
-        build_hash = ''
-        build_change = 'unknown'
-        build_branch = ''
+        build_hash = 'unknown'
+        build_commit_timestamp = '0'
+        build_branch = 'unknown'
 
     if lenv['BF_DEBUG']:
         build_type = "Debug"
@@ -445,7 +443,7 @@ def buildinfo(lenv, build_type):
                                     'BUILD_DATE=\\"%s\\"'%(build_date),
                                     'BUILD_TYPE=\\"%s\\"'%(build_type),
                                     'BUILD_HASH=\\"%s\\"'%(build_hash),
-                                    'BUILD_CHANGE=\\"%s\\"'%(build_change),
+                                    'BUILD_COMMIT_TIMESTAMP=%s'%(build_commit_timestamp),
                                     'BUILD_BRANCH=\\"%s\\"'%(build_branch),
                                     'WITH_BUILDINFO',
                                     'BUILD_PLATFORM=\\"%s:%s\\"'%(platform.system(), platform.architecture()[0]),
@@ -643,13 +641,19 @@ def AppIt(target=None, source=None, env=None):
     if binary == 'blender':
         cmd = 'mkdir %s/%s.app/Contents/MacOS/%s/datafiles'%(installdir, binary, VERSION)
         commands.getoutput(cmd)
-        cmd = 'cp -R %s/release/datafiles/locale %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
-        commands.getoutput(cmd)
         cmd = 'cp -R %s/release/datafiles/fonts %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
+        cmd = 'cp -R %s/release/datafiles/locale/languages %s/%s.app/Contents/MacOS/%s/datafiles/locale/'%(bldroot, installdir, binary, VERSION)
+        commands.getoutput(cmd)
+        mo_dir = os.path.join(builddir[:-4], "locale")
+        for f in os.listdir(mo_dir):
+            cmd = 'ditto %s/%s %s/%s.app/Contents/MacOS/%s/datafiles/locale/%s/LC_MESSAGES/blender.mo'%(mo_dir, f, installdir, binary, VERSION, f[:-3])
+            commands.getoutput(cmd)
+
         if env['WITH_BF_OCIO']:
             cmd = 'cp -R %s/release/datafiles/colormanagement %s/%s.app/Contents/MacOS/%s/datafiles/'%(bldroot,installdir,binary,VERSION)
             commands.getoutput(cmd)
+        
         cmd = 'cp -R %s/release/scripts %s/%s.app/Contents/MacOS/%s/'%(bldroot,installdir,binary,VERSION)
         commands.getoutput(cmd)
 
@@ -702,8 +706,6 @@ def AppIt(target=None, source=None, env=None):
     commands.getoutput(cmd)
     if env['CC'].split('/')[len(env['CC'].split('/'))-1][4:] >= '4.6.1': # for correct errorhandling with gcc <= 4.6.1 we need the gcc.dylib and gomp.dylib to link, thus distribute in app-bundle
         print "Bundling libgcc and libgomp"
-        cmd = 'mkdir %s/%s.app/Contents/MacOS/lib'%(installdir, binary)
-        commands.getoutput(cmd)
         instname = env['BF_CXX']
         cmd = 'ditto --arch %s %s/lib/libgcc_s.1.dylib %s/%s.app/Contents/MacOS/lib/'%(osxarch, instname, installdir, binary) # copy libgcc
         commands.getoutput(cmd)
