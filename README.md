@@ -1,6 +1,6 @@
 Multi View
 ==========
-clone from https://gitorious.org/blenderprojects/blender
+clone from git://git.blender.org/blender.git
 
 ![BMW model by Mike Pan](http://wiki.blender.org/uploads/0/0d/Dev-Stereoscopy-MirroredSample.png "BMW model by Mike Pan")
 
@@ -8,6 +8,7 @@ This branch contains the code for the "stereoscopy support in Blender" journey.
 
 Beta Builds
 -----------
+(outdated)
 * [OSX](http://graphicall.org/1047) by [Francesco Siddi](http://twitter.com/fsiddi)
 * [Linux](http://graphicall.org/1048) by [Alexey Akishin](https://github.com/Alexey-Akishin)
 * [Windows 1](http://graphicall.org/1045)
@@ -95,29 +96,31 @@ Roadmap
 
 How to build it
 ---------------
-UPDATE: you know need OpenEXR 2.0 to use this branch.
-(so you need to recompile openexr and openimageio and openshadinglanguage [or disable OSL])
-UPDATE2: Blender already has exr2.0 libs for OSX, windows following shortly, linux will be the last one.
-UPDATE3: Blender svn OpenEXR for windows are buggy, they will only work if you build a debug Blender.
+Note: Blender svn OpenEXR for windows may be buggy, they used to only work if you build a debug Blender.
 
-This code is mirrored (not often) into Blender svn branch system. If you have troubles building from git you can fallback to it:
-https://svn.blender.org/svnroot/bf-blender/branches/multiview/
+For tips in building Blender for your system refer to the Blender Wiki:
+* [Building Blender](http://wiki.blender.org/index.php/Dev:Doc/Building_Blender)
+* [Git for Blender](http://wiki.blender.org/index.php/Dev:Doc/Tools/Git)
 
 
-Rough guide, basically you need to manually copy the addons and addons_contrib folders inside the checkout blender code.
+Following instructions are for OSX with git 1.8.3.4. Don't use them literally try to make sense of them first.
 
-For tips in building Blender for your system refer to to Blender Wiki.
-
-Following instructions are for OSX. Don't use them literally, try to make sense of them first.
-
- 1. $git clone https://github.com/dfelinto/blender.git --single-branch -b multiview
+ 1. mkdir multiview
  2. cd multiview
- 3. $svn checkout https://svn.blender.org/svnroot/bf-extensions/trunk/py/scripts/addons addons
- 4. $svn checkout https://svn.blender.org/svnroot/bf-extensions/contrib/py/scripts/addons addons_contrib
- 5. $rsync -rv --exclude=.svn addons blender/release/scripts/
- 6. $rsync -rv --exclude=.svn addons_contrib blender/release/scripts/
- 7. $ln -s ~/blender/lib lib; #HARDCODED folder to match my system, good luck
+ 3. git clone https://github.com/dfelinto/blender.git --single-branch -b multiview blender
+ 4. cd blender
+ 5. git submodule update --init --recursive --remote
+ 6. cd ..
+ 7. ln -s ~/blender/lib lib; #HARDCODED folder to match my system
  8. mkdir release
  9. cd release
  10. ccmake ../blender
  11. make -j7 install
+
+To update:
+ 1. cd multiview
+ 2. cd blender
+ 3. git pull --rebase
+ 4. git submodule update --recursive --remote
+ 5. cd ../release
+ 6. make -j7 install
