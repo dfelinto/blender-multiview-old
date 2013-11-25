@@ -800,7 +800,7 @@ bool BLI_path_view(char *path, const char *view)
 bool BLI_path_frame_check_chars(const char *path)
 {
 	int ch_sta, ch_end;  /* dummy args */
-	return stringframe_chars(path, &ch_sta, &ch_end);
+	return stringspecial_chars(path, &ch_sta, &ch_end, '#');
 }
 
 /**
