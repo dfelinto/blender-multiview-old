@@ -103,6 +103,13 @@ For tips in building Blender for your system refer to the Blender Wiki:
 * [Git for Blender](http://wiki.blender.org/index.php/Dev:Doc/Tools/Git)
 
 
+If you have a Blender building environment setup with arcanist, you can build with:
+```
+arc patch D43 
+```
+I'll keep that [patch](http://developer.blender.org/D43) updated from time to time.
+But you can always check the github repository with the following instructions.
+
 Following instructions are for OSX with git 1.8.3.4. Don't use them literally try to make sense of them first.
 ```
 mkdir multiview
