@@ -104,27 +104,30 @@ For tips in building Blender for your system refer to the Blender Wiki:
 
 
 Following instructions are for OSX with git 1.8.3.4. Don't use them literally try to make sense of them first.
-
- 1. mkdir multiview
- 2. cd multiview
- 3. git clone https://github.com/dfelinto/blender.git --single-branch -b multiview blender
- 4. cd blender
- 5. git config submodule.scons.url git://git.blender.org/scons.git
- 6. git config submodule.release/scripts/addons_contrib.url git://git.blender.org/blender-addons-contrib.git
- 7. git config submodule.release/scripts/addons.url git://git.blender.org/blender-addons.git
- 8. git config submodule.release/datafiles/locale.url git://git.blender.org/blender-translations.git
- 9. git submodule update --init --recursive --remote
- 10. cd ..
- 11. ln -s ~/blender/lib lib; #HARDCODED folder to match my system
- 12. mkdir release
- 13. cd release
- 14. ccmake ../blender
- 15. make -j7 install
+```
+mkdir multiview
+cd multiview
+git clone https://github.com/dfelinto/blender.git --single-branch -b multiview blender
+cd blender
+git config submodule.scons.url git://git.blender.org/scons.git
+git config submodule.release/scripts/addons_contrib.url git://git.blender.org/blender-addons-contrib.git
+git config submodule.release/scripts/addons.url git://git.blender.org/blender-addons.git
+git config submodule.release/datafiles/locale.url git://git.blender.org/blender-translations.git
+git submodule update --init --recursive --remote
+cd ..
+ln -s ~/blender/lib lib; #HARDCODED folder to match my system
+mkdir release
+cd release
+ccmake ../blender
+make -j7 install
+```
 
 To update:
- 1. cd multiview
- 2. cd blender
- 3. git pull --rebase
- 4. git submodule update --recursive --remote
- 5. cd ../release
- 6. make -j7 install
+```
+ cd multiview
+ cd blender
+ git pull --rebase
+ git submodule update --recursive --remote
+ cd ../release
+ make -j7 install
+ ```
