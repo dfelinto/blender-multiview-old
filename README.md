@@ -109,13 +109,17 @@ Following instructions are for OSX with git 1.8.3.4. Don't use them literally tr
  2. cd multiview
  3. git clone https://github.com/dfelinto/blender.git --single-branch -b multiview blender
  4. cd blender
- 5. git submodule update --init --recursive --remote
- 6. cd ..
- 7. ln -s ~/blender/lib lib; #HARDCODED folder to match my system
- 8. mkdir release
- 9. cd release
- 10. ccmake ../blender
- 11. make -j7 install
+ 5. git config submodule.scons.url git://git.blender.org/scons.git
+ 6. git config submodule.release/scripts/addons_contrib.url git://git.blender.org/blender-addons-contrib.git
+ 7. git config submodule.release/scripts/addons.url git://git.blender.org/blender-addons.git
+ 8. git config submodule.release/datafiles/locale.url git://git.blender.org/blender-translations.git
+ 9. git submodule update --init --recursive --remote
+ 10. cd ..
+ 11. ln -s ~/blender/lib lib; #HARDCODED folder to match my system
+ 12. mkdir release
+ 13. cd release
+ 14. ccmake ../blender
+ 15. make -j7 install
 
 To update:
  1. cd multiview
