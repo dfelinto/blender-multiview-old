@@ -64,7 +64,6 @@
 #include "BKE_movieclip.h"
 
 #include "RE_engine.h"
-#include "RE_pipeline.h"  /* make_stars */
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -106,21 +105,6 @@ extern void bl_debug_draw_quad_clear(void);
 extern void bl_debug_draw_quad_add(const float v0[3], const float v1[3], const float v2[3], const float v3[3]);
 extern void bl_debug_draw_edge_add(const float v0[3], const float v1[3]);
 #endif
-
-static void star_stuff_init_func(void)
-{
-	cpack(0xFFFFFF);
-	glPointSize(1.0);
-	glBegin(GL_POINTS);
-}
-static void star_stuff_vertex_func(const float vec[3])
-{
-	glVertex3fv(vec);
-}
-static void star_stuff_term_func(void)
-{
-	glEnd();
-}
 
 void circf(float x, float y, float rad)
 {
@@ -599,7 +583,9 @@ static void draw_view_axis(RegionView3D *rv3d, rcti *rect)
 	float ydisp = 0.0;          /* vertical displacement to allow obj info text */
 	int bright = - 20 * (10 - U.rvibright); /* axis alpha offset (rvibright has range 0-10) */
 	float vec[3];
+	char axis_text[2] = "x";
 	float dx, dy;
+	int i;
 	
 	startx += rect->xmin;
 	starty += rect->ymin;
@@ -610,60 +596,27 @@ static void draw_view_axis(RegionView3D *rv3d, rcti *rect)
 	glEnable(GL_BLEND);
 	glBlendFunc(GL_SRC_ALPHA, GL_ONE_MINUS_SRC_ALPHA);
 
-	/* X */
-	vec[0] = 1;
-	vec[1] = vec[2] = 0;
-	mul_qt_v3(rv3d->viewquat, vec);
-	dx = vec[0] * k;
-	dy = vec[1] * k;
-	
-	UI_ThemeColorShadeAlpha(TH_AXIS_X, 0, bright);
-	glBegin(GL_LINES);
-	glVertex2f(startx, starty + ydisp);
-	glVertex2f(startx + dx, starty + dy + ydisp);
-	glEnd();
+	for (i = 0; i < 3; i++) {
+		zero_v3(vec);
+		vec[i] = 1.0f;
+		mul_qt_v3(rv3d->viewquat, vec);
+		dx = vec[0] * k;
+		dy = vec[1] * k;
 
-	if (fabsf(dx) > toll || fabsf(dy) > toll) {
-		BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, "x", 1);
-	}
-	
-	/* BLF_draw_default disables blending */
-	glEnable(GL_BLEND);
+		UI_ThemeColorShadeAlpha(TH_AXIS_X + i, 0, bright);
+		glBegin(GL_LINES);
+		glVertex2f(startx, starty + ydisp);
+		glVertex2f(startx + dx, starty + dy + ydisp);
+		glEnd();
 
-	/* Y */
-	vec[1] = 1;
-	vec[0] = vec[2] = 0;
-	mul_qt_v3(rv3d->viewquat, vec);
-	dx = vec[0] * k;
-	dy = vec[1] * k;
-	
-	UI_ThemeColorShadeAlpha(TH_AXIS_Y, 0, bright);
-	glBegin(GL_LINES);
-	glVertex2f(startx, starty + ydisp);
-	glVertex2f(startx + dx, starty + dy + ydisp);
-	glEnd();
+		if (fabsf(dx) > toll || fabsf(dy) > toll) {
+			BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, axis_text, 1);
+		}
 
-	if (fabsf(dx) > toll || fabsf(dy) > toll) {
-		BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, "y", 1);
-	}
+		axis_text[0]++;
 
-	glEnable(GL_BLEND);
-	
-	/* Z */
-	vec[2] = 1;
-	vec[1] = vec[0] = 0;
-	mul_qt_v3(rv3d->viewquat, vec);
-	dx = vec[0] * k;
-	dy = vec[1] * k;
-
-	UI_ThemeColorShadeAlpha(TH_AXIS_Z, 0, bright);
-	glBegin(GL_LINES);
-	glVertex2f(startx, starty + ydisp);
-	glVertex2f(startx + dx, starty + dy + ydisp);
-	glEnd();
-
-	if (fabsf(dx) > toll || fabsf(dy) > toll) {
-		BLF_draw_default_ascii(startx + dx + 2, starty + dy + ydisp + 2, 0.0f, "z", 1);
+		/* BLF_draw_default disables blending */
+		glEnable(GL_BLEND);
 	}
 
 	/* restore line-width */
@@ -3335,14 +3288,6 @@ static void view3d_main_area_draw_objects(const bContext *C, ARegion *ar, const 
 	if ((rv3d->view == RV3D_VIEW_USER) || (rv3d->persp != RV3D_ORTHO)) {
 		if ((v3d->flag2 & V3D_RENDER_OVERRIDE) == 0) {
 			drawfloor(scene, v3d, grid_unit);
-		}
-		if (rv3d->persp == RV3D_CAMOB) {
-			if (scene->world) {
-				if (scene->world->mode & WO_STARS) {
-					RE_make_stars(NULL, scene, star_stuff_init_func, star_stuff_vertex_func,
-					              star_stuff_term_func);
-				}
-			}
 		}
 	}
 	else {

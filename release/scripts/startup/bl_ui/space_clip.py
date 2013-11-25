@@ -29,9 +29,9 @@ class CLIP_UL_tracking_objects(UIList):
         # assert(isinstance(item, bpy.types.MovieTrackingObject)
         tobj = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(text=tobj.name, translate=False,
-                         icon='CAMERA_DATA' if tobj.is_camera
-                         else 'OBJECT_DATA')
+            layout.prop(tobj, "name", text="", emboss=False,
+                        icon='CAMERA_DATA' if tobj.is_camera
+                        else 'OBJECT_DATA')
         elif self.layout_type in {'GRID'}:
             layout.alignment = 'CENTER'
             layout.label(text="",
@@ -505,10 +505,6 @@ class CLIP_PT_objects(CLIP_PT_clip_view_panel, Panel):
 
         sub.operator("clip.tracking_object_new", icon='ZOOMIN', text="")
         sub.operator("clip.tracking_object_remove", icon='ZOOMOUT', text="")
-
-        active = tracking.objects.active
-        if active:
-            layout.prop(active, "name")
 
 
 class CLIP_PT_track(CLIP_PT_tracking_panel, Panel):

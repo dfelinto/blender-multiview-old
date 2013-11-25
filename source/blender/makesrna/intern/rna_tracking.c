@@ -962,7 +962,8 @@ static void rna_def_trackingCamera(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "focal_length", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "focal");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_range(prop, 0.0001f, 5000.0f);
+	RNA_def_property_range(prop, 0.0001f, FLT_MAX);
+	RNA_def_property_ui_range(prop, 0.0001f, 5000.0f, 1, 2);
 	RNA_def_property_float_funcs(prop, "rna_trackingCamera_focal_mm_get", "rna_trackingCamera_focal_mm_set", NULL);
 	RNA_def_property_ui_text(prop, "Focal Length", "Camera's focal length");
 	RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
@@ -971,7 +972,8 @@ static void rna_def_trackingCamera(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "focal_length_pixels", PROP_FLOAT, PROP_NONE);
 	RNA_def_property_float_sdna(prop, NULL, "focal");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_range(prop, 0.0f, 5000.0f);
+	RNA_def_property_range(prop, 0.0f, FLT_MAX);
+	RNA_def_property_ui_range(prop, 0.0f, 5000.f, 1, 2);
 	RNA_def_property_ui_text(prop, "Focal Length", "Camera's focal length");
 	RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 
@@ -1017,7 +1019,7 @@ static void rna_def_trackingCamera(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "pixel_aspect", PROP_FLOAT, PROP_XYZ);
 	RNA_def_property_float_sdna(prop, NULL, "pixel_aspect");
 	RNA_def_property_clear_flag(prop, PROP_ANIMATABLE);
-	RNA_def_property_range(prop, 0.1f, 5000.0f);
+	RNA_def_property_range(prop, 0.1f, FLT_MAX);
 	RNA_def_property_ui_range(prop, 0.1f, 5000.0f, 1, 2);
 	RNA_def_property_float_default(prop, 1.0f);
 	RNA_def_property_ui_text(prop, "Pixel Aspect Ratio", "Pixel aspect ratio");
@@ -1354,6 +1356,14 @@ static void rna_def_trackingTrack(BlenderRNA *brna)
 	RNA_def_property_float_sdna(prop, NULL, "weight");
 	RNA_def_property_range(prop, 0.0f, 1.0f);
 	RNA_def_property_ui_text(prop, "Weight", "Influence of this track on a final solution");
+
+	/* offset */
+	prop = RNA_def_property(srna, "offset", PROP_FLOAT, PROP_TRANSLATION);
+	RNA_def_property_array(prop, 2);
+	RNA_def_property_ui_range(prop, -FLT_MAX, FLT_MAX, 1, RNA_TRANSLATION_PREC_DEFAULT);
+	RNA_def_property_float_sdna(prop, NULL, "offset");
+	RNA_def_property_ui_text(prop, "Offset", "Offset of track from the parenting point");
+	RNA_def_property_update(prop, NC_MOVIECLIP | NA_EDITED, NULL);
 }
 
 static void rna_def_trackingPlaneMarker(BlenderRNA *brna)

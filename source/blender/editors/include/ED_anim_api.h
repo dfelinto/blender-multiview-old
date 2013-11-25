@@ -396,15 +396,15 @@ typedef struct bAnimChannelType {
 	/* get name (for channel lists) */
 	void (*name)(bAnimListElem *ale, char *name);
 	/* get RNA property+pointer for editing the name */
-	short (*name_prop)(bAnimListElem *ale, struct PointerRNA *ptr, struct PropertyRNA **prop);
+	bool (*name_prop)(bAnimListElem *ale, struct PointerRNA *ptr, struct PropertyRNA **prop);
 	/* get icon (for channel lists) */
 	int (*icon)(bAnimListElem *ale);
 	
 	/* settings */
 	/* check if the given setting is valid in the current context */
-	short (*has_setting)(bAnimContext *ac, bAnimListElem *ale, int setting);
+	bool (*has_setting)(bAnimContext *ac, bAnimListElem *ale, int setting);
 	/* get the flag used for this setting */
-	int (*setting_flag)(bAnimContext *ac, int setting, short *neg);
+	int (*setting_flag)(bAnimContext *ac, int setting, bool *neg);
 	/* get the pointer to int/short where data is stored,
 	 * with type being  sizeof(ptr_data) which should be fine for runtime use...
 	 *	- assume that setting has been checked to be valid for current context

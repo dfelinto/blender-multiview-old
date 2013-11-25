@@ -12,7 +12,7 @@ if(EXISTS ${SOURCE_DIR}/.git/)
 	# The FindSubversion.cmake module is part of the standard distribution
 	include(FindGit)
 	if(GIT_FOUND)
-		execute_process(COMMAND git rev-parse --short HEAD
+		execute_process(COMMAND git rev-parse --short @{u}
 		                WORKING_DIRECTORY ${SOURCE_DIR}
 		                OUTPUT_VARIABLE MY_WC_HASH
 		                OUTPUT_STRIP_TRAILING_WHITESPACE)
@@ -20,12 +20,6 @@ if(EXISTS ${SOURCE_DIR}/.git/)
 		execute_process(COMMAND git rev-parse --abbrev-ref HEAD
 		                WORKING_DIRECTORY ${SOURCE_DIR}
 		                OUTPUT_VARIABLE MY_WC_BRANCH
-		                OUTPUT_STRIP_TRAILING_WHITESPACE)
-
-		# Get latest version tag
-		execute_process(COMMAND git describe --match "v[0-9]*" --abbrev=0
-		                WORKING_DIRECTORY ${SOURCE_DIR}
-		                OUTPUT_VARIABLE _git_latest_version_tag
 		                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 		execute_process(COMMAND git log -1 --format=%ct
@@ -44,11 +38,20 @@ if(EXISTS ${SOURCE_DIR}/.git/)
 		                OUTPUT_STRIP_TRAILING_WHITESPACE)
 
 		if(NOT _git_changed_files STREQUAL "")
-			set(MY_WC_CHANGE "${MY_WC_CHANGE}M")
+			set(MY_WC_BRANCH "${MY_WC_BRANCH} (modified)")
+		else()
+			# Unpushed commits are also considered local odifications
+			execute_process(COMMAND git log @{u}..
+			                WORKING_DIRECTORY ${SOURCE_DIR}
+			                OUTPUT_VARIABLE _git_unpushed_log
+			                OUTPUT_STRIP_TRAILING_WHITESPACE)
+			if(NOT _git_unpushed_log STREQUAL "")
+				set(MY_WC_BRANCH "${MY_WC_BRANCH} (modified)")
+			endif()
+			unset(_git_unpushed_log)
 		endif()
 
 		unset(_git_changed_files)
-		unset(_git_latest_version_tag)
 	endif()
 endif()
 

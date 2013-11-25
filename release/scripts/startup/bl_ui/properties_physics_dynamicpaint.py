@@ -33,7 +33,7 @@ class PHYSICS_UL_dynapaint_surfaces(UIList):
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             row = layout.row(align=True)
             row.label(text="", icon_value=icon)
-            row.label(text=surf.name, translate=False, icon_value=sticon)
+            row.prop(surf, "name", text="", emboss=False, icon_value=sticon)
             row = layout.row(align=True)
             if surf.use_color_preview:
                 row.prop(surf, "show_preview", text="", emboss=False,
@@ -87,7 +87,6 @@ class PHYSICS_PT_dynamic_paint(PhysicButtonsPanel, Panel):
                 col.operator("dpaint.surface_slot_remove", icon='ZOOMOUT', text="")
 
                 if surface:
-                    layout.prop(surface, "name")
                     layout.prop(surface, "surface_format")
 
                     col = layout.column()

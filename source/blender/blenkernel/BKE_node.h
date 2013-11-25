@@ -413,8 +413,8 @@ void			nodeRegisterSocketType(struct bNodeSocketType *stype);
 void			nodeUnregisterSocketType(struct bNodeSocketType *stype);
 bool			nodeSocketIsRegistered(struct bNodeSocket *sock);
 struct GHashIterator *nodeSocketTypeGetIterator(void);
-const char *	nodeStaticSocketType(int type, int subtype);
-const char *	nodeStaticSocketInterfaceType(int type, int subtype);
+const char *nodeStaticSocketType(int type, int subtype);
+const char *nodeStaticSocketInterfaceType(int type, int subtype);
 
 /* helper macros for iterating over node types */
 #define NODE_SOCKET_TYPES_BEGIN(stype) \
@@ -740,6 +740,7 @@ struct ShadeResult;
 #define SH_NODE_SEPHSV					183
 #define SH_NODE_COMBHSV					184
 #define SH_NODE_BSDF_HAIR				185
+#define SH_NODE_LAMP					186
 
 /* custom defines options for Material node */
 #define SH_NODE_MAT_DIFF   1

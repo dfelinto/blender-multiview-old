@@ -64,7 +64,7 @@ class MESH_UL_vgroups(UIList):
         # assert(isinstance(item, bpy.types.VertexGroup)
         vgroup = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(text=vgroup.name, translate=False, icon_value=icon)
+            layout.prop(vgroup, "name", text="", emboss=False, icon_value=icon)
             icon = 'LOCKED' if vgroup.lock_weight else 'UNLOCKED'
             layout.prop(vgroup, "lock_weight", text="", icon=icon, emboss=False)
         elif self.layout_type in {'GRID'}:
@@ -80,7 +80,7 @@ class MESH_UL_shape_keys(UIList):
         key_block = item
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
             split = layout.split(0.66, False)
-            split.label(text=item.name, translate=False, icon_value=icon)
+            split.prop(key_block, "name", text="", emboss=False, icon_value=icon)
             row = split.row(align=True)
             if key_block.mute or (obj.mode == 'EDIT' and not (obj.use_shape_key_edit_mode and obj.type == 'MESH')):
                 row.active = False
@@ -98,7 +98,7 @@ class MESH_UL_uvmaps_vcols(UIList):
     def draw_item(self, context, layout, data, item, icon, active_data, active_propname, index):
         # assert(isinstance(item, (bpy.types.MeshTexturePolyLayer, bpy.types.MeshLoopColorLayer))
         if self.layout_type in {'DEFAULT', 'COMPACT'}:
-            layout.label(text=item.name, translate=False, icon_value=icon)
+            layout.prop(item, "name", text="", emboss=False, icon_value=icon)
             icon = 'RESTRICT_RENDER_OFF' if item.active_render else 'RESTRICT_RENDER_ON'
             layout.prop(item, "active_render", text="", icon=icon, emboss=False)
         elif self.layout_type in {'GRID'}:
@@ -191,7 +191,7 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
         ob = context.object
         group = ob.vertex_groups.active
 
-        rows = 1
+        rows = 2
         if group:
             rows = 4
 
@@ -206,9 +206,6 @@ class DATA_PT_vertex_groups(MeshButtonsPanel, Panel):
             col.separator()
             col.operator("object.vertex_group_move", icon='TRIA_UP', text="").direction = 'UP'
             col.operator("object.vertex_group_move", icon='TRIA_DOWN', text="").direction = 'DOWN'
-
-            row = layout.row()
-            row.prop(group, "name")
 
         if ob.vertex_groups and (ob.mode == 'EDIT' or (ob.mode == 'WEIGHT_PAINT' and ob.type == 'MESH' and ob.data.use_paint_mask_vertex)):
             row = layout.row()
@@ -250,7 +247,7 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
 
         row = layout.row()
 
-        rows = 1
+        rows = 2
         if kb:
             rows = 4
         row.template_list("MESH_UL_shape_keys", "", key, "key_blocks", ob, "active_shape_key_index", rows=rows)
@@ -289,9 +286,6 @@ class DATA_PT_shape_keys(MeshButtonsPanel, Panel):
                 sub.operator("object.shape_key_clear", icon='X', text="")
             else:
                 sub.operator("object.shape_key_retime", icon='RECOVER_LAST', text="")
-
-            row = layout.row()
-            row.prop(kb, "name")
 
             if key.use_relative:
                 if ob.active_shape_key_index != 0:
@@ -339,9 +333,6 @@ class DATA_PT_uv_texture(MeshButtonsPanel, Panel):
         col = row.column(align=True)
         col.operator("mesh.uv_texture_add", icon='ZOOMIN', text="")
         col.operator("mesh.uv_texture_remove", icon='ZOOMOUT', text="")
-        
-        if lay:
-            layout.prop(lay, "name")
 
 
 class DATA_PT_vertex_colors(MeshButtonsPanel, Panel):
@@ -362,9 +353,6 @@ class DATA_PT_vertex_colors(MeshButtonsPanel, Panel):
         col = row.column(align=True)
         col.operator("mesh.vertex_color_add", icon='ZOOMIN', text="")
         col.operator("mesh.vertex_color_remove", icon='ZOOMOUT', text="")
-        
-        if lay:
-            layout.prop(lay, "name")
 
 
 class DATA_PT_customdata(MeshButtonsPanel, Panel):

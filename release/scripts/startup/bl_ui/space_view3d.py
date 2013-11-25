@@ -179,8 +179,9 @@ class VIEW3D_MT_transform_base(Menu):
 
         layout.operator("transform.tosphere", text="To Sphere")
         layout.operator("transform.shear", text="Shear")
-        layout.operator("transform.warp", text="Warp")
+        layout.operator("transform.bend", text="Bend")
         layout.operator("transform.push_pull", text="Push/Pull")
+        layout.operator("object.vertex_warp", text="Warp")
 
 
 # Generic transform menu - geometry types
@@ -832,6 +833,7 @@ class VIEW3D_MT_select_paint_mask_vertex(Menu):
 # ********** Add menu **********
 
 # XXX: INFO_MT_ names used to keep backwards compatibility (Addons etc that hook into the menu)
+
 
 class INFO_MT_mesh_add(Menu):
     bl_idname = "INFO_MT_mesh_add"
@@ -1597,7 +1599,7 @@ class VIEW3D_MT_hide_mask(Menu):
         props = layout.operator("paint.mask_flood_fill", text="Clear Mask")
         props.mode = 'VALUE'
         props.value = 0
-        
+
         props = layout.operator("view3d.select_border", text="Box Mask")
         props = layout.operator("paint.mask_lasso_gesture", text="Lasso Mask")
 
@@ -2826,7 +2828,7 @@ class VIEW3D_PT_view3d_shading(Panel):
         if not scene.render.use_shading_nodes:
             col.prop(gs, "material_mode", text="")
             col.prop(view, "show_textured_solid")
-        
+
         if view.viewport_shade == 'SOLID':
             col.prop(view, "use_matcap")
             if view.use_matcap:

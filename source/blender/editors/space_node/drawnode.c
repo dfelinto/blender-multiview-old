@@ -754,6 +754,11 @@ static void node_shader_buts_geometry(uiLayout *layout, bContext *C, PointerRNA 
 	}
 }
 
+static void node_shader_buts_lamp(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+{
+	uiItemR(layout, ptr, "lamp_object", 0, IFACE_("Lamp Object"), ICON_NONE);
+}
+
 static void node_shader_buts_attribute(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
 	uiItemR(layout, ptr, "attribute_name", 0, IFACE_("Name"), ICON_NONE);
@@ -1002,6 +1007,9 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 			break; 
 		case SH_NODE_GEOMETRY:
 			ntype->draw_buttons = node_shader_buts_geometry;
+			break;
+		case SH_NODE_LAMP:
+			ntype->draw_buttons = node_shader_buts_lamp;
 			break;
 		case SH_NODE_ATTRIBUTE:
 			ntype->draw_buttons = node_shader_buts_attribute;
@@ -1656,7 +1664,7 @@ static void node_composit_buts_file_output_ex(uiLayout *layout, bContext *C, Poi
 		else {
 			col = uiLayoutColumn(layout, TRUE);
 			
-			uiItemL(col, IFACE_("File Path:"), ICON_NONE);
+			uiItemL(col, IFACE_("File Subpath:"), ICON_NONE);
 			row = uiLayoutRow(col, FALSE);
 			uiItemR(row, &active_input_ptr, "path", 0, "", ICON_NONE);
 			uiItemFullO(row, "NODE_OT_output_file_remove_active_socket", "",

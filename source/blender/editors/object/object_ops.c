@@ -203,6 +203,8 @@ void ED_operatortypes_object(void)
 	WM_operatortype_append(OBJECT_OT_vertex_weight_normalize_active_vertex);
 	WM_operatortype_append(OBJECT_OT_vertex_weight_copy);
 
+	WM_operatortype_append(OBJECT_OT_vertex_warp);
+
 	WM_operatortype_append(OBJECT_OT_game_property_new);
 	WM_operatortype_append(OBJECT_OT_game_property_remove);
 	WM_operatortype_append(OBJECT_OT_game_property_copy);
@@ -239,6 +241,7 @@ void ED_operatortypes_object(void)
 
 	WM_operatortype_append(OBJECT_OT_bake_image);
 	WM_operatortype_append(OBJECT_OT_drop_named_material);
+	WM_operatortype_append(OBJECT_OT_laplaciandeform_bind);
 }
 
 void ED_operatormacros_object(void)

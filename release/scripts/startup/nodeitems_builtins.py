@@ -111,6 +111,7 @@ shader_node_categories = [
     ShaderOldNodeCategory("SH_INPUT", "Input", items=[
         NodeItem("ShaderNodeMaterial"),
         NodeItem("ShaderNodeCameraData"),
+        NodeItem("ShaderNodeLampData"),
         NodeItem("ShaderNodeValue"),
         NodeItem("ShaderNodeRGB"),
         NodeItem("ShaderNodeTexture"),
@@ -141,6 +142,8 @@ shader_node_categories = [
         NodeItem("ShaderNodeSqueeze"),
         NodeItem("ShaderNodeSeparateRGB"),
         NodeItem("ShaderNodeCombineRGB"),
+        NodeItem("ShaderNodeSeparateHSV"),
+        NodeItem("ShaderNodeCombineHSV"),
         ]),
     ShaderOldNodeCategory("SH_GROUP", "Group", items=node_group_items),
     ShaderOldNodeCategory("SH_LAYOUT", "Layout", items=[

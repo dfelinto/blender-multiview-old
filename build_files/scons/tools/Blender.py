@@ -419,8 +419,24 @@ def buildinfo(lenv, build_type):
             build_commit_timestamp = '0'
             build_branch = 'unknown'
         else:
-            build_hash = os.popen('git rev-parse --short HEAD').read().strip()
+            build_hash = os.popen('git rev-parse --short @{u}').read().strip()
             build_branch = os.popen('git rev-parse --abbrev-ref HEAD').read().strip()
+
+            # ## Check for local modifications
+            has_local_changes = False
+
+            # Update GIT index before getting dirty files
+            os.system('git update-index -q --refresh')
+            changed_files = os.popen('git diff-index --name-only HEAD --').read().strip()
+
+            if changed_files:
+                has_local_changes = True
+            else:
+                unpushed_log = os.popen('git log @{u}..').read().strip()
+                has_local_changes = unpushed_log != ''
+
+            if has_local_changes:
+                build_branch += ' (modified)'
     else:
         build_hash = 'unknown'
         build_commit_timestamp = '0'

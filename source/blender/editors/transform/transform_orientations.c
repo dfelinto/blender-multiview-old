@@ -26,6 +26,7 @@
 
 
 #include <string.h>
+#include <stddef.h>
 #include <ctype.h>
 
 #include "MEM_guardedalloc.h"
@@ -40,7 +41,9 @@
 #include "DNA_view3d_types.h"
 
 #include "BLI_math.h"
-#include "BLI_blenlib.h"
+#include "BLI_listbase.h"
+#include "BLI_string.h"
+#include "BLI_path_util.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_action.h"
@@ -49,6 +52,8 @@
 #include "BKE_context.h"
 #include "BKE_editmesh.h"
 #include "BKE_report.h"
+#include "BKE_main.h"
+#include "BKE_screen.h"
 
 #include "BLF_translation.h"
 
@@ -78,15 +83,7 @@ void BIF_clearTransformOrientation(bContext *C)
 
 static TransformOrientation *findOrientationName(ListBase *lb, const char *name)
 {
-	TransformOrientation *ts = NULL;
-
-	for (ts = lb->first; ts; ts = ts->next) {
-		if (strncmp(ts->name, name, sizeof(ts->name) - 1) == 0) {
-			return ts;
-		}
-	}
-	
-	return NULL;
+	return BLI_findstring(lb, name, offsetof(TransformOrientation, name));
 }
 
 static bool uniqueOrientationNameCheck(void *arg, const char *name)
@@ -100,7 +97,8 @@ static void uniqueOrientationName(ListBase *lb, char *name)
 	                  sizeof(((TransformOrientation *)NULL)->name));
 }
 
-static TransformOrientation *createViewSpace(bContext *C, ReportList *UNUSED(reports), char *name, int overwrite)
+static TransformOrientation *createViewSpace(bContext *C, ReportList *UNUSED(reports),
+                                             const char *name, const bool overwrite)
 {
 	RegionView3D *rv3d = CTX_wm_region_view3d(C);
 	float mat[3][3];
@@ -111,21 +109,22 @@ static TransformOrientation *createViewSpace(bContext *C, ReportList *UNUSED(rep
 	copy_m3_m4(mat, rv3d->viewinv);
 	normalize_m3(mat);
 
-	if (!name[0]) {
+	if (name[0] == 0) {
 		View3D *v3d = CTX_wm_view3d(C);
 		if (rv3d->persp == RV3D_CAMOB && v3d->camera) {
 			/* If an object is used as camera, then this space is the same as object space! */
-			BLI_strncpy(name, v3d->camera->id.name + 2, MAX_NAME);
+			name = v3d->camera->id.name + 2;
 		}
 		else {
-			strcpy(name, "Custom View");
+			name = "Custom View";
 		}
 	}
 
 	return addMatrixSpace(C, mat, name, overwrite);
 }
 
-static TransformOrientation *createObjectSpace(bContext *C, ReportList *UNUSED(reports), char *name, int overwrite)
+static TransformOrientation *createObjectSpace(bContext *C, ReportList *UNUSED(reports),
+                                               const char *name, const bool overwrite)
 {
 	Base *base = CTX_data_active_base(C);
 	Object *ob;
@@ -141,13 +140,14 @@ static TransformOrientation *createObjectSpace(bContext *C, ReportList *UNUSED(r
 
 	/* use object name if no name is given */
 	if (name[0] == 0) {
-		BLI_strncpy(name, ob->id.name + 2, MAX_ID_NAME - 2);
+		name = ob->id.name + 2;
 	}
 
 	return addMatrixSpace(C, mat, name, overwrite);
 }
 
-static TransformOrientation *createBoneSpace(bContext *C, ReportList *reports, char *name, int overwrite)
+static TransformOrientation *createBoneSpace(bContext *C, ReportList *reports,
+                                             const char *name, const bool overwrite)
 {
 	float mat[3][3];
 	float normal[3], plane[3];
@@ -160,13 +160,14 @@ static TransformOrientation *createBoneSpace(bContext *C, ReportList *reports, c
 	}
 
 	if (name[0] == 0) {
-		strcpy(name, "Bone");
+		name = "Bone";
 	}
 
 	return addMatrixSpace(C, mat, name, overwrite);
 }
 
-static TransformOrientation *createCurveSpace(bContext *C, ReportList *reports, char *name, int overwrite)
+static TransformOrientation *createCurveSpace(bContext *C, ReportList *reports,
+                                              const char *name, const bool overwrite)
 {
 	float mat[3][3];
 	float normal[3], plane[3];
@@ -179,14 +180,15 @@ static TransformOrientation *createCurveSpace(bContext *C, ReportList *reports, 
 	}
 
 	if (name[0] == 0) {
-		strcpy(name, "Curve");
+		name = "Curve";
 	}
 
 	return addMatrixSpace(C, mat, name, overwrite);
 }
 
 
-static TransformOrientation *createMeshSpace(bContext *C, ReportList *reports, char *name, int overwrite)
+static TransformOrientation *createMeshSpace(bContext *C, ReportList *reports,
+                                             const char *name, const bool overwrite)
 {
 	float mat[3][3];
 	float normal[3], plane[3];
@@ -202,7 +204,7 @@ static TransformOrientation *createMeshSpace(bContext *C, ReportList *reports, c
 			}
 	
 			if (name[0] == 0) {
-				strcpy(name, "Vertex");
+				name = "Vertex";
 			}
 			break;
 		case ORIENTATION_EDGE:
@@ -212,7 +214,7 @@ static TransformOrientation *createMeshSpace(bContext *C, ReportList *reports, c
 			}
 	
 			if (name[0] == 0) {
-				strcpy(name, "Edge");
+				name = "Edge";
 			}
 			break;
 		case ORIENTATION_FACE:
@@ -222,7 +224,7 @@ static TransformOrientation *createMeshSpace(bContext *C, ReportList *reports, c
 			}
 	
 			if (name[0] == 0) {
-				strcpy(name, "Face");
+				name = "Face";
 			}
 			break;
 		default:
@@ -288,8 +290,9 @@ bool createSpaceNormalTangent(float mat[3][3], const float normal[3], const floa
 	return true;
 }
 
-/* name must be a MAX_NAME length string! */
-void BIF_createTransformOrientation(bContext *C, ReportList *reports, char *name, int use_view, int use, int overwrite)
+void BIF_createTransformOrientation(bContext *C, ReportList *reports,
+                                    const char *name, const bool use_view,
+                                    const bool activate, const bool overwrite)
 {
 	TransformOrientation *ts = NULL;
 
@@ -315,21 +318,25 @@ void BIF_createTransformOrientation(bContext *C, ReportList *reports, char *name
 		}
 	}
 
-	if (use && ts != NULL) {
+	if (activate && ts != NULL) {
 		BIF_selectTransformOrientation(C, ts);
 	}
 }
 
-TransformOrientation *addMatrixSpace(bContext *C, float mat[3][3], char name[], int overwrite)
+TransformOrientation *addMatrixSpace(bContext *C, float mat[3][3],
+                                     const char *name, const bool overwrite)
 {
 	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
 	TransformOrientation *ts = NULL;
+	char name_unique[sizeof(ts->name)];
 
 	if (overwrite) {
 		ts = findOrientationName(transform_spaces, name);
 	}
 	else {
-		uniqueOrientationName(transform_spaces, name);
+		BLI_strncpy(name_unique, name, sizeof(name_unique));
+		uniqueOrientationName(transform_spaces, name_unique);
+		name = name_unique;
 	}
 
 	/* if not, create a new one */
@@ -347,29 +354,15 @@ TransformOrientation *addMatrixSpace(bContext *C, float mat[3][3], char name[], 
 
 void BIF_removeTransformOrientation(bContext *C, TransformOrientation *target)
 {
-	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
+	Scene *scene = CTX_data_scene(C);
+	ListBase *transform_spaces = &scene->transform_spaces;
 	TransformOrientation *ts;
-	int i;
-	
-	for (i = 0, ts = transform_spaces->first; ts; ts = ts->next, i++) {
-		if (ts == target) {
-			View3D *v3d = CTX_wm_view3d(C);
-			if (v3d) {
-				int selected_index = (v3d->twmode - V3D_MANIP_CUSTOM);
-				
-				// Transform_fix_me NEED TO DO THIS FOR ALL VIEW3D
-				if (selected_index == i) {
-					v3d->twmode = V3D_MANIP_GLOBAL; /* fallback to global	*/
-				}
-				else if (selected_index > i) {
-					v3d->twmode--;
-				}
-				
-			}
+	const int i = BLI_findindex(transform_spaces, target);
 
-			BLI_freelinkN(transform_spaces, ts);
-			break;
-		}
+	if (i != -1) {
+		Main *bmain = CTX_data_main(C);
+		BKE_screen_view3d_main_twmode_remove(&bmain->screen, scene, i);
+		BLI_freelinkN(transform_spaces, ts);
 	}
 }
 
@@ -379,36 +372,18 @@ void BIF_removeTransformOrientationIndex(bContext *C, int index)
 	TransformOrientation *ts = BLI_findlink(transform_spaces, index);
 
 	if (ts) {
-		View3D *v3d = CTX_wm_view3d(C);
-		if (v3d) {
-			int selected_index = (v3d->twmode - V3D_MANIP_CUSTOM);
-			
-			// Transform_fix_me NEED TO DO THIS FOR ALL VIEW3D
-			if (selected_index == index) {
-				v3d->twmode = V3D_MANIP_GLOBAL; /* fallback to global	*/
-			}
-			else if (selected_index > index) {
-				v3d->twmode--;
-			}
-			
-		}
-
-		BLI_freelinkN(transform_spaces, ts);
+		BIF_removeTransformOrientation(C, ts);
 	}
 }
 
 void BIF_selectTransformOrientation(bContext *C, TransformOrientation *target)
 {
 	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
-	View3D *v3d = CTX_wm_view3d(C);
-	TransformOrientation *ts;
-	int i;
-	
-	for (i = 0, ts = transform_spaces->first; ts; ts = ts->next, i++) {
-		if (ts == target) {
-			v3d->twmode = V3D_MANIP_CUSTOM + i;
-			break;
-		}
+	const int i = BLI_findindex(transform_spaces, target);
+
+	if (i != -1) {
+		View3D *v3d = CTX_wm_view3d(C);
+		v3d->twmode = V3D_MANIP_CUSTOM + i;
 	}
 }
 
@@ -422,42 +397,37 @@ void BIF_selectTransformOrientationValue(bContext *C, int orientation)
 int BIF_countTransformOrientation(const bContext *C)
 {
 	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
-	TransformOrientation *ts;
-	int count = 0;
-
-	for (ts = transform_spaces->first; ts; ts = ts->next) {
-		count++;
-	}
-	
-	return count;
+	return BLI_countlist(transform_spaces);
 }
 
-void applyTransformOrientation(const bContext *C, float mat[3][3], char name[MAX_NAME])
+bool applyTransformOrientation(const bContext *C, float mat[3][3], char *r_name)
 {
-	TransformOrientation *ts;
 	View3D *v3d = CTX_wm_view3d(C);
 	int selected_index = (v3d->twmode - V3D_MANIP_CUSTOM);
-	int i;
-	
-	if (selected_index >= 0) {
-		for (i = 0, ts = CTX_data_scene(C)->transform_spaces.first; ts; ts = ts->next, i++) {
-			if (selected_index == i) {
-				
-				if (name) {
-					BLI_strncpy(name, ts->name, MAX_NAME);
-				}
-				
-				copy_m3_m3(mat, ts->mat);
-				break;
-			}
+
+	ListBase *transform_spaces = &CTX_data_scene(C)->transform_spaces;
+	TransformOrientation *ts = BLI_findlink(transform_spaces, selected_index);
+
+	BLI_assert(selected_index >= 0);
+
+	if (ts) {
+		if (r_name) {
+			BLI_strncpy(r_name, ts->name, MAX_NAME);
 		}
+
+		copy_m3_m3(mat, ts->mat);
+		return true;
+	}
+	else {
+		/* invalid index, can happen sometimes */
+		return false;
 	}
 }
 
-static int count_bone_select(bArmature *arm, ListBase *lb, int do_it) 
+static int count_bone_select(bArmature *arm, ListBase *lb, const bool do_it)
 {
 	Bone *bone;
-	int do_next;
+	bool do_next;
 	int total = 0;
 	
 	for (bone = lb->first; bone; bone = bone->next) {
@@ -468,7 +438,9 @@ static int count_bone_select(bArmature *arm, ListBase *lb, int do_it)
 				if (bone->flag & BONE_SELECTED) {
 					bone->flag |= BONE_TRANSFORM;
 					total++;
-					do_next = FALSE;    // no transform on children if one parent bone is selected
+
+					/* no transform on children if one parent bone is selected */
+					do_next = false;
 				}
 			}
 		}
@@ -532,12 +504,17 @@ void initTransformOrientation(bContext *C, TransInfo *t)
 			}
 			break;
 		default: /* V3D_MANIP_CUSTOM */
-			applyTransformOrientation(C, t->spacemtx, t->spacename);
+			if (applyTransformOrientation(C, t->spacemtx, t->spacename)) {
+				/* pass */
+			}
+			else {
+				unit_m3(t->spacemtx);
+			}
 			break;
 	}
 }
 
-int getTransformOrientation(const bContext *C, float normal[3], float plane[3], int activeOnly)
+int getTransformOrientation(const bContext *C, float normal[3], float plane[3], const bool activeOnly)
 {
 	Scene *scene = CTX_data_scene(C);
 	View3D *v3d = CTX_wm_view3d(C);
@@ -864,7 +841,7 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 		else {
 			int totsel;
 
-			totsel = count_bone_select(arm, &arm->bonebase, 1);
+			totsel = count_bone_select(arm, &arm->bonebase, true);
 			if (totsel) {
 				/* use channels to get stats */
 				for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {

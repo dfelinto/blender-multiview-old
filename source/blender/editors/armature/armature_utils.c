@@ -156,6 +156,47 @@ bool ED_armature_ebone_is_child_recursive(EditBone *ebone_parent, EditBone *ebon
 	return false;
 }
 
+/**
+ * Finds the first parent shared by \a ebone_child
+ *
+ * \param ebone_child  Children bones to search
+ * \param ebone_child_tot  Size of the ebone_child array
+ * \return The shared parent or NULL.
+ */
+EditBone *ED_armature_bone_find_shared_parent(EditBone *ebone_child[], const unsigned int ebone_child_tot)
+{
+	unsigned int i;
+	EditBone *ebone_iter;
+
+#define EBONE_TEMP_UINT(ebone) (*((unsigned int *)(&((ebone)->temp))))
+
+	/* clear all */
+	for (i = 0; i < ebone_child_tot; i++) {
+		for (ebone_iter = ebone_child[i]; ebone_iter; ebone_iter = ebone_iter->parent) {
+			EBONE_TEMP_UINT(ebone_iter) = 0;
+		}
+	}
+
+	/* accumulate */
+	for (i = 0; i < ebone_child_tot; i++) {
+		ebone_iter = ebone_child[i];
+		for (ebone_iter = ebone_child[i]->parent; ebone_iter; ebone_iter = ebone_iter->parent) {
+			EBONE_TEMP_UINT(ebone_iter) += 1;
+		}
+	}
+
+	/* only need search the first chain */
+	for (ebone_iter = ebone_child[0]->parent; ebone_iter; ebone_iter = ebone_iter->parent) {
+		if (EBONE_TEMP_UINT(ebone_iter) == ebone_child_tot) {
+			return ebone_iter;
+		}
+	}
+
+#undef EBONE_TEMP_UINT
+
+	return NULL;
+}
+
 void ED_armature_ebone_to_mat3(EditBone *ebone, float mat[3][3])
 {
 	float delta[3];
@@ -460,6 +501,7 @@ void ED_armature_from_edit(Object *obedit)
 	
 	/* armature bones */
 	BKE_armature_bonelist_free(&arm->bonebase);
+	arm->act_bone = NULL;
 	
 	/* remove zero sized bones, this gives unstable restposes */
 	for (eBone = arm->edbo->first; eBone; eBone = neBone) {
@@ -593,7 +635,6 @@ void ED_armature_to_edit(Object *ob)
 	ED_armature_edit_free(ob);
 	arm->edbo = MEM_callocN(sizeof(ListBase), "edbo armature");
 	arm->act_edbone = make_boneList(arm->edbo, &arm->bonebase, NULL, arm->act_bone);
-	arm->act_bone = NULL;
 
 //	BIF_freeTemplates(); /* force template update when entering editmode */
 }

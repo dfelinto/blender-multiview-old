@@ -364,7 +364,7 @@ class NODE_PT_backdrop(Panel):
         col.prop(snode, "backdrop_x", text="X")
         col.prop(snode, "backdrop_y", text="Y")
         col.operator("node.backimage_move", text="Move")
-        
+
         layout.operator("node.backimage_fit", text="Fit")
 
 
@@ -410,7 +410,7 @@ class NODE_UL_interface_sockets(bpy.types.UIList):
             if not socket.is_output:
                 row.template_node_socket(color)
 
-            row.label(text=socket.name, icon_value=icon)
+            row.prop(socket, "name", text="", emboss=False, icon_value=icon)
 
             # outputs get icon on the right
             if socket.is_output:

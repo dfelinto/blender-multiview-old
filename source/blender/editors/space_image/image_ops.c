@@ -1916,6 +1916,8 @@ static int image_new_exec(bContext *C, wmOperator *op)
 	else {
 		Tex *tex = CTX_data_pointer_get_type(C, "texture", &RNA_Texture).data;
 		if (tex && tex->type == TEX_IMAGE) {
+			if (tex->ima)
+				tex->ima->id.us--;
 			tex->ima = ima;
 			ED_area_tag_redraw(CTX_wm_area(C));
 		}

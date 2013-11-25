@@ -1210,18 +1210,16 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 		/* skip drawing extra info */
 	}
 	else if ((la->type == LA_SPOT) || (la->type == LA_YF_PHOTON)) {
-		lvec[0] = lvec[1] = 0.0;
-		lvec[2] = 1.0;
-		x = rv3d->persmat[0][2];
-		y = rv3d->persmat[1][2];
-		z = rv3d->persmat[2][2];
-		vvec[0] = x * ob->obmat[0][0] + y * ob->obmat[0][1] + z * ob->obmat[0][2];
-		vvec[1] = x * ob->obmat[1][0] + y * ob->obmat[1][1] + z * ob->obmat[1][2];
-		vvec[2] = x * ob->obmat[2][0] + y * ob->obmat[2][1] + z * ob->obmat[2][2];
 
-		y = cosf(la->spotsize * (float)(M_PI / 360.0));
-		spotvolume(lvec, vvec, y);
+		copy_v3_fl3(lvec, 0.0f, 0.0f, 1.0f);
+		copy_v3_fl3(vvec, rv3d->persmat[0][2], rv3d->persmat[1][2], rv3d->persmat[2][2]);
+		mul_mat3_m4_v3(ob->obmat, vvec);
+
 		x = -la->dist;
+		y = cosf(la->spotsize * (float)(M_PI / 360.0));
+		z = x * sqrtf(1.0f - y * y);
+
+		spotvolume(lvec, vvec, y);
 		mul_v3_fl(lvec, x);
 		mul_v3_fl(vvec, x);
 
@@ -1232,7 +1230,6 @@ static void drawlamp(Scene *scene, View3D *v3d, RegionView3D *rv3d, Base *base,
 		glVertex3fv(lvec);
 		glEnd();
 		
-		z = x * sqrtf(1.0f - y * y);
 		x *= y;
 
 		/* draw the circle/square at the end of the cone */
@@ -4058,7 +4055,7 @@ static bool drawDispList_nobackface(Scene *scene, View3D *v3d, RegionView3D *rv3
 
 			if (BKE_mball_is_basis(ob)) {
 				lb = ob->curve_cache ? &ob->curve_cache->disp : NULL;
-				if (ELEM(lb, lb->first, NULL)) {
+				if (ELEM(NULL, lb, lb->first)) {
 					BKE_displist_make_mball(scene, ob);
 					lb = &ob->curve_cache->disp;
 				}

@@ -40,6 +40,7 @@
 #include <string.h> // for strrchr strncmp strstr
 #include <math.h> // for fabs
 #include <stdarg.h> /* for va_start/end */
+#include <time.h> /* for gmtime */
 
 #include "BLI_utildefines.h"
 #ifndef WIN32
@@ -3361,6 +3362,8 @@ static void lib_link_curve(FileData *fd, Main *main)
 			
 			cu->ipo = newlibadr_us(fd, cu->id.lib, cu->ipo); // XXX deprecated - old animation system
 			cu->key = newlibadr_us(fd, cu->id.lib, cu->key);
+
+			cu->selboxes = NULL;  /* runtime, clear */
 			
 			cu->id.flag -= LIB_NEED_LINK;
 		}
@@ -4823,6 +4826,15 @@ static void direct_link_modifiers(FileData *fd, ListBase *lb)
 			if (wmd->cmap_curve)
 				direct_link_curvemapping(fd, wmd->cmap_curve);
 		}
+		else if (md->type == eModifierType_LaplacianDeform) {
+			LaplacianDeformModifierData *lmd = (LaplacianDeformModifierData *)md;
+
+			lmd->vertexco = newdataadr(fd, lmd->vertexco);
+			if (fd->flags & FD_FLAGS_SWITCH_ENDIAN) {
+				BLI_endian_switch_float_array(lmd->vertexco, lmd->total_verts * 3);
+			}
+			lmd->cache_system = NULL;
+		}
 	}
 }
 
@@ -5935,7 +5947,7 @@ void blo_lib_link_screen_restore(Main *newmain, bScreen *curscreen, Scene *cursc
 					
 					/* not very nice, but could help */
 					if ((v3d->layact & v3d->lay) == 0) v3d->layact = v3d->lay;
-					
+
 					/* free render engines for now */
 					for (ar = sa->regionbase.first; ar; ar = ar->next) {
 						RegionView3D *rv3d= ar->regiondata;
