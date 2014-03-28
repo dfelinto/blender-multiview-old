@@ -229,7 +229,6 @@ static TransformOrientation *createMeshSpace(bContext *C, ReportList *reports,
 			break;
 		default:
 			return NULL;
-			break;
 	}
 
 	return addMatrixSpace(C, mat, name, overwrite);
@@ -356,13 +355,12 @@ void BIF_removeTransformOrientation(bContext *C, TransformOrientation *target)
 {
 	Scene *scene = CTX_data_scene(C);
 	ListBase *transform_spaces = &scene->transform_spaces;
-	TransformOrientation *ts;
 	const int i = BLI_findindex(transform_spaces, target);
 
 	if (i != -1) {
 		Main *bmain = CTX_data_main(C);
 		BKE_screen_view3d_main_twmode_remove(&bmain->screen, scene, i);
-		BLI_freelinkN(transform_spaces, ts);
+		BLI_freelinkN(transform_spaces, target);
 	}
 }
 
@@ -459,25 +457,25 @@ void initTransformOrientation(bContext *C, TransInfo *t)
 	switch (t->current_orientation) {
 		case V3D_MANIP_GLOBAL:
 			unit_m3(t->spacemtx);
-			strcpy(t->spacename, IFACE_("global"));
+			BLI_strncpy(t->spacename, IFACE_("global"), sizeof(t->spacename));
 			break;
 
 		case V3D_MANIP_GIMBAL:
 			unit_m3(t->spacemtx);
 			if (gimbal_axis(ob, t->spacemtx)) {
-				strcpy(t->spacename, IFACE_("gimbal"));
+				BLI_strncpy(t->spacename, IFACE_("gimbal"), sizeof(t->spacename));
 				break;
 			}
 			/* fall-through */  /* no gimbal fallthrough to normal */
 		case V3D_MANIP_NORMAL:
 			if (obedit || (ob && ob->mode & OB_MODE_POSE)) {
-				strcpy(t->spacename, IFACE_("normal"));
+				BLI_strncpy(t->spacename, IFACE_("normal"), sizeof(t->spacename));
 				ED_getTransformOrientationMatrix(C, t->spacemtx, (v3d->around == V3D_ACTIVE));
 				break;
 			}
 			/* fall-through */  /* we define 'normal' as 'local' in Object mode */
 		case V3D_MANIP_LOCAL:
-			strcpy(t->spacename, IFACE_("local"));
+			BLI_strncpy(t->spacename, IFACE_("local"), sizeof(t->spacename));
 		
 			if (ob) {
 				copy_m3_m4(t->spacemtx, ob->obmat);
@@ -494,7 +492,7 @@ void initTransformOrientation(bContext *C, TransInfo *t)
 				RegionView3D *rv3d = t->ar->regiondata;
 				float mat[3][3];
 
-				strcpy(t->spacename, IFACE_("view"));
+				BLI_strncpy(t->spacename, IFACE_("view"), sizeof(t->spacename));
 				copy_m3_m4(mat, rv3d->viewinv);
 				normalize_m3(mat);
 				copy_m3_m3(t->spacemtx, mat);
@@ -578,7 +576,6 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 				else if (em->bm->totvertsel == 3) {
 					BMVert *v1 = NULL, *v2 = NULL, *v3 = NULL;
 					BMIter iter;
-					float cotangent[3];
 					
 					BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
 						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
@@ -589,11 +586,37 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 								v2 = eve;
 							}
 							else {
-								v3 = eve;
+								float no_test[3];
 
-								sub_v3_v3v3(plane, v2->co, v1->co);
-								sub_v3_v3v3(cotangent, v3->co, v2->co);
-								cross_v3_v3v3(normal, cotangent, plane);
+								float tan_a[3], tan_b[3], tan_c[3];
+								float len_a, len_b, len_c;
+								const float *tan_best;
+
+
+								v3 = eve;
+								sub_v3_v3v3(tan_a, v2->co, v1->co);
+								sub_v3_v3v3(tan_b, v3->co, v2->co);
+								sub_v3_v3v3(tan_c, v1->co, v3->co);
+								cross_v3_v3v3(normal, tan_b, tan_a);
+
+								/* check if the normal is pointing opposite to vert normals */
+								no_test[0] = v1->no[0] + v2->no[0] + v3->no[0];
+								no_test[1] = v1->no[1] + v2->no[1] + v3->no[1];
+								no_test[2] = v1->no[2] + v2->no[2] + v3->no[2];
+								if (dot_v3v3(no_test, normal) < 0.0f) {
+									negate_v3(normal);
+								}
+
+								/* always give the plane to the 2 most distant verts */
+								len_a = len_squared_v3(tan_a);
+								len_b = len_squared_v3(tan_b);
+								len_c = len_squared_v3(tan_c);
+
+								tan_best = MAX3_PAIR(len_a, len_b, len_c,
+								                     tan_a, tan_b, tan_c);
+
+								copy_v3_v3(plane, tan_best);
+
 								break;
 							}
 						}
@@ -613,40 +636,56 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 
 					result = ORIENTATION_FACE;
 				}
-				else if (em->bm->totedgesel == 1) {
-					BMEdge *eed = NULL;
-					BMIter iter;
-					
-					BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
-						if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
-							/* use average vert normals as plane and edge vector as normal */
-							copy_v3_v3(plane, eed->v1->no);
-							add_v3_v3(plane, eed->v2->no);
-							sub_v3_v3v3(normal, eed->v2->co, eed->v1->co);
-							break;
-						}
-					}
-					result = ORIENTATION_EDGE;
-				}
-				else if (em->bm->totvertsel == 2) {
+				else if (em->bm->totedgesel == 1 || em->bm->totvertsel == 2) {
 					BMVert *v1 = NULL, *v2 = NULL;
 					BMIter iter;
-
-					BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
-						if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
-							if (v1 == NULL) {
-								v1 = eve; 
-							}
-							else {
-								v2 = eve;
-								
-								copy_v3_v3(plane, v1->no);
-								add_v3_v3(plane, v2->no);
-								sub_v3_v3v3(normal, v2->co, v1->co);
-								break; 
+					
+					if (em->bm->totedgesel == 1) {
+						BMEdge *eed = NULL;
+						BM_ITER_MESH (eed, &iter, em->bm, BM_EDGES_OF_MESH) {
+							if (BM_elem_flag_test(eed, BM_ELEM_SELECT)) {
+								v1 = eed->v1;
+								v2 = eed->v2;
 							}
 						}
 					}
+					else {
+						BM_ITER_MESH (eve, &iter, em->bm, BM_VERTS_OF_MESH) {
+							if (BM_elem_flag_test(eve, BM_ELEM_SELECT)) {
+								if (v1 == NULL) {
+									v1 = eve;
+								}
+								else {
+									v2 = eve;
+									break;
+								}
+							}
+						}
+					}
+
+					/* should never fail */
+					if (LIKELY(v1 && v2)) {
+						/* Logic explained:
+						 *
+						 * - Edges and vert-pairs treated the same way.
+						 * - Point the Z axis along the edge vector (towards the active vertex).
+						 * - Point the Y axis outwards (the same direction as the normals).
+						 *
+						 * Note that this is at odds a little with face select (and 3 vertices)
+						 * which point the Z axis along the normal, however in both cases Z is the dominant axis.
+						 */
+
+						/* be deterministic where possible and ensure v1 is active */
+						if (BM_mesh_active_vert_get(em->bm) == v2) {
+							SWAP(BMVert *, v1, v2);
+						}
+
+						add_v3_v3v3(plane, v1->no, v2->no);
+						sub_v3_v3v3(normal, v1->co, v2->co);
+						/* flip the plane normal so we point outwards */
+						negate_v3(plane);
+					}
+
 					result = ORIENTATION_EDGE;
 				}
 				else if (em->bm->totvertsel == 1) {
@@ -681,27 +720,15 @@ int getTransformOrientation(const bContext *C, float normal[3], float plane[3], 
 		} /* end editmesh */
 		else if (ELEM(obedit->type, OB_CURVE, OB_SURF)) {
 			Curve *cu = obedit->data;
-			Nurb *nu;
-			BezTriple *bezt;
+			Nurb *nu = NULL;
+			BezTriple *bezt = NULL;
 			int a;
 			ListBase *nurbs = BKE_curve_editNurbs_get(cu);
 
-			if (activeOnly && cu->lastsel) {
-				for (nu = nurbs->first; nu; nu = nu->next) {
-					if (nu->type == CU_BEZIER) {
-						if (ARRAY_HAS_ITEM((BezTriple *)cu->lastsel, nu->bezt, nu->pntsu)) {
-							bezt = cu->lastsel;
-							BKE_nurb_bezt_calc_normal(nu, bezt, normal);
-							BKE_nurb_bezt_calc_plane(nu, bezt, plane);
-							break;
-						}
-					}
-					else {
-						if (ARRAY_HAS_ITEM((BPoint *)cu->lastsel, nu->bp, nu->pntsu)) {
-							/* do nothing */
-							break;
-						}
-					}
+			if (activeOnly && BKE_curve_nurb_vert_active_get(cu, &nu, (void *)&bezt)) {
+				if (nu->type == CU_BEZIER) {
+					BKE_nurb_bezt_calc_normal(nu, bezt, normal);
+					BKE_nurb_bezt_calc_plane(nu, bezt, plane);
 				}
 			}
 			else {

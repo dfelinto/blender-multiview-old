@@ -285,7 +285,7 @@ static void init_laplacian_matrix(LaplacianSystem *sys)
 	float areaf;
 	int i, j;
 	unsigned int idv1, idv2, idv3, idv4, idv[4];
-	int has_4_vert;
+	bool has_4_vert;
 	for (i = 0; i < sys->numEdges; i++) {
 		idv1 = sys->medges[i].v1;
 		idv2 = sys->medges[i].v2;
@@ -405,7 +405,7 @@ static void fill_laplacian_matrix(LaplacianSystem *sys)
 	float *v1, *v2, *v3, *v4;
 	float w2, w3, w4;
 	int i, j;
-	int has_4_vert;
+	bool has_4_vert;
 	unsigned int idv1, idv2, idv3, idv4, idv[4];
 
 	for (i = 0; i < sys->numFaces; i++) {
@@ -534,6 +534,11 @@ static void laplaciansmoothModifier_do(
 	sys->vert_centroid[1] = 0.0f;
 	sys->vert_centroid[2] = 0.0f;
 	memset_laplacian_system(sys, 0);
+
+#ifdef OPENNL_THREADING_HACK
+	modifier_opennl_lock();
+#endif
+
 	nlNewContext();
 	sys->context = nlGetCurrent();
 	nlSolverParameteri(NL_NB_VARIABLES, numVerts);
@@ -618,6 +623,11 @@ static void laplaciansmoothModifier_do(
 	}
 	nlDeleteContext(sys->context);
 	sys->context = NULL;
+
+#ifdef OPENNL_THREADING_HACK
+	modifier_opennl_unlock();
+#endif
+
 	delete_laplacian_system(sys);
 }
 
@@ -642,14 +652,12 @@ static void init_data(ModifierData *md)
 
 static void copy_data(ModifierData *md, ModifierData *target)
 {
+#if 0
 	LaplacianSmoothModifierData *smd = (LaplacianSmoothModifierData *) md;
 	LaplacianSmoothModifierData *tsmd = (LaplacianSmoothModifierData *) target;
+#endif
 
-	tsmd->lambda = smd->lambda;
-	tsmd->lambda_border = smd->lambda_border;
-	tsmd->repeat = smd->repeat;
-	tsmd->flag = smd->flag;
-	BLI_strncpy(tsmd->defgrp_name, smd->defgrp_name, sizeof(tsmd->defgrp_name));
+	modifier_copyData_generic(md, target);
 }
 
 static bool is_disabled(ModifierData *md, int UNUSED(useRenderParams))
@@ -679,7 +687,12 @@ static CustomDataMask required_data_mask(Object *UNUSED(ob), ModifierData *md)
 static void deformVerts(ModifierData *md, Object *ob, DerivedMesh *derivedData,
                         float (*vertexCos)[3], int numVerts, ModifierApplyFlag UNUSED(flag))
 {
-	DerivedMesh *dm = get_dm(ob, NULL, derivedData, NULL, false, false);
+	DerivedMesh *dm;
+
+	if (numVerts == 0)
+		return;
+
+	dm = get_dm(ob, NULL, derivedData, NULL, false, false);
 
 	laplaciansmoothModifier_do((LaplacianSmoothModifierData *)md, ob, dm,
 	                           vertexCos, numVerts);
@@ -692,7 +705,12 @@ static void deformVertsEM(
         ModifierData *md, Object *ob, struct BMEditMesh *editData,
         DerivedMesh *derivedData, float (*vertexCos)[3], int numVerts)
 {
-	DerivedMesh *dm = get_dm(ob, editData, derivedData, NULL, false, false);
+	DerivedMesh *dm;
+
+	if (numVerts == 0)
+		return;
+
+	dm = get_dm(ob, editData, derivedData, NULL, false, false);
 
 	laplaciansmoothModifier_do((LaplacianSmoothModifierData *)md, ob, dm,
 	                           vertexCos, numVerts);

@@ -70,6 +70,8 @@
 
 #include "image_intern.h"
 
+#define B_NOP -1
+
 /* proto */
 
 static void image_info(Scene *scene, ImageUser *iuser, Image *ima, ImBuf *ibuf, char *str, size_t len)
@@ -241,7 +243,7 @@ static void preview_cb(ScrArea *sa, struct uiBlock *block)
 
 }
 
-static int is_preview_allowed(ScrArea *cur)
+static bool is_preview_allowed(ScrArea *cur)
 {
 	SpaceImage *sima = cur->spacedata.first;
 	ScrArea *sa;
@@ -289,113 +291,169 @@ static void image_panel_preview(ScrArea *sa, short cntrl)   // IMAGE_HANDLER_PRE
 
 /* ********************* callbacks for standard image buttons *************** */
 
-static char *slot_menu(void)
+static void ui_imageuser_slot_menu(bContext *UNUSED(C), uiLayout *layout, void *render_slot_p)
 {
-	char *str;
-	int a, slot;
-	
-	str = MEM_callocN(IMA_MAX_RENDER_SLOT * 32, "menu slots");
-	
-	strcpy(str, IFACE_("Slot %t"));
-	a = strlen(str);
+	uiBlock *block = uiLayoutGetBlock(layout);
+	short *render_slot = render_slot_p;
+	int slot;
 
-	for (slot = 0; slot < IMA_MAX_RENDER_SLOT; slot++)
-		a += sprintf(str + a, IFACE_("|Slot %d %%x%d"), slot + 1, slot);
-	
-	return str;
+	uiDefBut(block, LABEL, 0, IFACE_("Slot"),
+	         0, 0, UI_UNIT_X * 5, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+	uiItemS(layout);
+
+	slot = IMA_MAX_RENDER_SLOT;
+	while (slot--) {
+		char str[32];
+		BLI_snprintf(str, sizeof(str), IFACE_("Slot %d"), slot + 1);
+		uiDefButS(block, BUTM, B_NOP, str, 0, 0,
+		          UI_UNIT_X * 5, UI_UNIT_X, render_slot, (float) slot, 0.0, 0, -1, "");
+	}
 }
 
-/* TODO, curlay should be removed? */
-static char *layer_menu(RenderResult *rr, short *UNUSED(curlay))
+static const char *ui_imageuser_layer_fake_name(RenderResult *rr)
 {
-	RenderLayer *rl;
-	int len = 64 + RE_MAXNAME * BLI_countlist(&rr->layers);
-	short a, nr = 0;
-	char *str = MEM_callocN(len, "menu layers");
-	
-	strcpy(str, IFACE_("Layer %t"));
-	a = strlen(str);
-	
-	/* compo result */
 	if (RE_RenderViewGetRectf(rr, 0)){
-		a += sprintf(str + a, "|%s %%x0", IFACE_("Composite"));
-		nr = 1;
+		return IFACE_("Composite");
 	}
 	else if (RE_RenderViewGetRect32(rr, 0)) {
-		a += sprintf(str + a, "|%s %%x0", IFACE_("Sequence"));
-		nr = 1;
+		return IFACE_("Sequence");
 	}
-	for (rl = rr->layers.first; rl; rl = rl->next, nr++) {
-		a += sprintf(str + a, "|%s %%x%d", rl->name, nr);
+	else {
+		return NULL;
 	}
-	
-	/* no curlay clip here, on render (redraws) the amount of layers can be 1 fir single-layer render */
-	
-	return str;
 }
 
-/* rl==NULL means composite result */
-static char *pass_menu(RenderLayer *rl, short *curpass)
+static void ui_imageuser_layer_menu(bContext *UNUSED(C), uiLayout *layout, void *rnd_pt)
 {
-	RenderPass *rpass;
-	int len = 64 + 32 * (rl ? BLI_countlist(&rl->passes) : 1);
-	short a, nr = 0;
-	char *str = MEM_callocN(len, "menu passes");
-	
-	strcpy(str, IFACE_("Pass %t"));
-	a = strlen(str);
-	
+	void **rnd_data = rnd_pt;
+	uiBlock *block = uiLayoutGetBlock(layout);
+	RenderResult *rr = rnd_data[0];
+	ImageUser *iuser = rnd_data[1];
+	RenderLayer *rl;
+	RenderLayer rl_fake = {NULL};
+	const char *fake_name;
+	int nr;
+
+	uiBlockSetCurLayout(block, layout);
+	uiLayoutColumn(layout, false);
+
+	uiDefBut(block, LABEL, 0, IFACE_("Layer"),
+	         0, 0, UI_UNIT_X * 5, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+	uiItemS(layout);
+
+	nr = BLI_countlist(&rr->layers) - 1;
+	fake_name = ui_imageuser_layer_fake_name(rr);
+
+	if (fake_name) {
+		BLI_strncpy(rl_fake.name, fake_name, sizeof(rl_fake.name));
+		nr += 1;
+	}
+
+	for (rl = rr->layers.last; rl; rl = rl->prev, nr--) {
+final:
+		uiDefButS(block, BUTM, B_NOP, IFACE_(rl->name), 0, 0,
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->layer, (float) nr, 0.0, 0, -1, "");
+	}
+
+	if (fake_name) {
+		fake_name = NULL;
+		rl = &rl_fake;
+		goto final;
+	}
+
+	BLI_assert(nr == -1);
+}
+
+static const char *ui_imageuser_pass_fake_name(RenderLayer *rl)
+{
 	if (rl == NULL) {
-		a += sprintf(str + a, "|%s %%x0", IFACE_("Combined"));
-		nr = 1;
+		return IFACE_("Combined");
 	}
-
-	if (rl) {
-		int passflag = 0;
-		for (rpass = rl->passes.first; rpass; rpass = rpass->next, nr++) {
-
-			if (passflag & rpass->passtype)
-				continue;
-
-			passflag |= rpass->passtype;
-
-			a += sprintf(str + a, "|%s %%x%d", IFACE_(rpass->internal_name), nr);
-		}
+	else {
+		return NULL;
 	}
-	
-	if (*curpass >= nr)
-		*curpass = 0;
-	
-	return str;
 }
 
-static char *view_menu(RenderResult *rr, ImageUser *iuser)
+static void ui_imageuser_pass_menu(bContext *UNUSED(C), uiLayout *layout, void *ptrpair_p)
 {
-	RenderView *rv;
-	int len = 64 + 32 * (rr ? BLI_countlist(&rr->views) : 1);
-	short a, nr = 0;
-	char *str = MEM_callocN(len, "menu views");
+	void **ptrpair = ptrpair_p;
+	uiBlock *block = uiLayoutGetBlock(layout);
+	// RenderResult *rr = ptrpair[0];
+	ImageUser *iuser = ptrpair[1];
+	/* rl==NULL means composite result */
+	RenderLayer *rl = ptrpair[2];
+	RenderPass rpass_fake = {NULL};
+	RenderPass *rpass;
+	const char *fake_name;
+	int nr;
+	int passflag = 0;
 
-	strcpy(str, IFACE_("View %t"));
-	a = strlen(str);
+	uiBlockSetCurLayout(block, layout);
+	uiLayoutColumn(layout, false);
 
-	if (RE_HasStereo3D(rr)) {
-		/* option to show all views at once (3d) */
-		a += sprintf(str + a, "|%s %%x0", IFACE_("3D"));
-		nr = 1;
-		iuser->flag |= IMA_STEREO3D;
+	uiDefBut(block, LABEL, 0, IFACE_("Pass"),
+	         0, 0, UI_UNIT_X * 5, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+
+	uiItemS(layout);
+
+	nr = (rl ? BLI_countlist(&rl->passes) : 0) - 1;
+	fake_name = ui_imageuser_pass_fake_name(rl);
+
+	if (fake_name) {
+		BLI_strncpy(rpass_fake.internal_name, fake_name, sizeof(rpass_fake.name));
+		nr += 1;
 	}
-	else
-		iuser->flag &= ~IMA_STEREO3D;
 
-	if (rr)
-		for (rv = rr->views.first; rv; rv = rv->next, nr++)
-			a += sprintf(str + a, "|%s %%x%d", IFACE_(rv->name), nr);
+	/* rendered results don't have a Combined pass */
+	for (rpass = rl ? rl->passes.last : NULL; rpass; rpass = rpass->prev, nr--) {
+
+		/* just show one pass of each kind */
+		if (passflag & rpass->passtype)
+			continue;
+
+		passflag |= rpass->passtype;
+
+final:
+		uiDefButS(block, BUTM, B_NOP, IFACE_(rpass->internal_name), 0, 0,
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->pass, (float) nr, 0.0, 0, -1, "");
+	}
+
+	if (fake_name) {
+		fake_name = NULL;
+		rpass = &rpass_fake;
+		goto final;
+	}
+
+	BLI_assert(nr == -1);
+}
+
+static void ui_imageuser_view_menu(bContext *UNUSED(C), uiLayout *layout, void *ptrpair_p)
+{
+	void **ptrpair = ptrpair_p;
+	uiBlock *block = uiLayoutGetBlock(layout);
+	RenderResult *rr = ptrpair[0];
+	ImageUser *iuser = ptrpair[1];
+	RenderView *rview;
+	int nr;
+
+	uiBlockSetCurLayout(block, layout);
+	uiLayoutColumn(layout, false);
+
+	uiDefBut(block, LABEL, 0, IFACE_("View"),
+	         0, 0, UI_UNIT_X * 5, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+
+	uiItemS(layout);
+
+	nr = (rr ? BLI_countlist(&rr->views) : 0) - 1;
+	for (rview = rr ? rr->views.last : NULL; rview; rview = rview->prev, nr--) {
+		uiDefButS(block, BUTM, B_NOP, IFACE_(rview->name), 0, 0,
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->view, (float) nr, 0.0, 0, -1, "");
+	}
 
 	if (iuser->view >= nr)
 		iuser->view = 0;
 
-	return str;
+	BLI_assert(nr == -1);
 }
 
 /* get the view for the current eye */
@@ -566,11 +624,13 @@ static void image_user_change(bContext *C, void *iuser_v, void *unused)
 
 static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, ImageUser *iuser, int w, short *render_slot)
 {
+	static void *rnd_pt[3];  /* XXX, workaround */
 	uiBlock *block = uiLayoutGetBlock(layout);
 	uiBut *but;
 	RenderLayer *rl = NULL;
-	int wmenu1, wmenu2, wmenu3, wmenu4, layer;
-	char *strp;
+	int wmenu1, wmenu2, wmenu3, wmenu4;
+	const char *fake_name;
+	const char *display_name;
 
 	uiLayoutRow(layout, TRUE);
 
@@ -580,37 +640,52 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	wmenu3 = (3 * w) / 6;
 	wmenu4 = (3 * w) / 6;
 	
+	rnd_pt[0] = rr;
+	rnd_pt[1] = iuser;
+	rnd_pt[2] = NULL;
+
 	/* menu buts */
 	if (render_slot) {
-		strp = slot_menu();
-		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu1, UI_UNIT_Y, render_slot, 0, 0, 0, 0, TIP_("Select Slot"));
+		char str[64];
+		BLI_snprintf(str, sizeof(str), IFACE_("Slot %d"), *render_slot + 1);
+		but = uiDefMenuBut(block, ui_imageuser_slot_menu, render_slot, str, 0, 0, wmenu1, UI_UNIT_Y, TIP_("Select Slot"));
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
-		MEM_freeN(strp);
+		uiButSetMenuFromPulldown(but);
 	}
 
 	if (rr) {
+		RenderPass *rpass;
+		RenderView *rview;
+
+		/* layer */
+		fake_name = ui_imageuser_layer_fake_name(rr);
+		rl = BLI_findlink(&rr->layers, iuser->layer  - (fake_name ? 1 : 0));
+		rnd_pt[2] = rl;
+
 		if (RE_layers_have_name(rr)) {
-			strp = layer_menu(rr, &iuser->layer);
-			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu2, UI_UNIT_Y, &iuser->layer, 0, 0, 0, 0, TIP_("Select Layer"));
+			display_name = rl ? rl->name : (fake_name ? fake_name : "");
+			but = uiDefMenuBut(block, ui_imageuser_layer_menu, rnd_pt, display_name, 0, 0, wmenu2, UI_UNIT_Y, TIP_("Select Layer"));
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);
+			uiButSetMenuFromPulldown(but);
 		}
 
-		layer = iuser->layer;
-		if (RE_HasFakeLayer(rr))
-			layer--;  /* fake compo/sequencer layer */
-		
-		rl = BLI_findlink(&rr->layers, layer); /* return NULL is meant to be */
-		strp = pass_menu(rl, &iuser->pass_tmp);
-		but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu3, UI_UNIT_Y, &iuser->pass_tmp, 0, 0, 0, 0, TIP_("Select Pass"));
-		uiButSetFunc(but, image_multi_cb, rr, iuser);
-		MEM_freeN(strp);
+		/* pass */
+		fake_name = ui_imageuser_pass_fake_name(rl);
+		rpass = (rl ? BLI_findlink(&rl->passes, iuser->pass  - (fake_name ? 1 : 0)) : NULL);
 
+		display_name = rpass ? rpass->name : (fake_name ? fake_name : "");
+		but = uiDefMenuBut(block, ui_imageuser_pass_menu, rnd_pt, display_name, 0, 0, wmenu3, UI_UNIT_Y, TIP_("Select Pass"));
+		uiButSetFunc(but, image_multi_cb, rr, iuser);
+		uiButSetMenuFromPulldown(but);
+
+		/* view */
 		if (BLI_countlist(&rr->views) > 1) {
-			strp = view_menu(rr, iuser);
-			but = uiDefButS(block, MENU, 0, strp, 0, 0, wmenu4, UI_UNIT_Y, &iuser->view, 0, 0, 0, 0, TIP_("Select View"));
+			rview = BLI_findlink(&rr->views, iuser->view);
+			display_name = rview ? rview->name : "";
+
+			but = uiDefMenuBut(block, ui_imageuser_view_menu, rnd_pt, display_name, 0, 0, wmenu4, UI_UNIT_Y, TIP_("Select View"));
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
-			MEM_freeN(strp);
+			uiButSetMenuFromPulldown(but);
 		}
 		else
 			iuser->flag &= ~IMA_STEREO3D;
@@ -628,7 +703,7 @@ static void uiblock_layer_pass_arrow_buttons(uiLayout *layout, RenderResult *rr,
 
 	if (rr == NULL || iuser == NULL)
 		return;
-	if (rr->layers.first == NULL) {
+	if (BLI_listbase_is_empty(&rr->layers)) {
 		uiItemL(row, IFACE_("No Layers in Render Result"), ICON_NONE);
 		return;
 	}
@@ -812,13 +887,13 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 			if (ima->source != IMA_SRC_GENERATED) {
 				if (compact == 0) { /* background image view doesnt need these */
 					ImBuf *ibuf = BKE_image_acquire_ibuf(ima, iuser, NULL);
-					int has_alpha = TRUE;
+					bool has_alpha = true;
 
 					if (ibuf) {
 						int imtype = BKE_ftype_to_imtype(ibuf->ftype);
 						char valid_channels = BKE_imtype_valid_channels(imtype);
 
-						has_alpha = valid_channels & IMA_CHAN_FLAG_ALPHA;
+						has_alpha = (valid_channels & IMA_CHAN_FLAG_ALPHA) != 0;
 
 						BKE_image_release_ibuf(ima, ibuf, NULL);
 					}
@@ -836,7 +911,7 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 					col = uiLayoutColumn(split, FALSE);
 					/* XXX Why only display fields_per_frame only for video image types?
 					 *     And why allow fields for non-video image types at all??? */
-					if (ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
+					if (BKE_image_is_animated(ima)) {
 						uiLayout *subsplit = uiLayoutSplit(col, 0.0f, FALSE);
 						uiLayout *subcol = uiLayoutColumn(subsplit, FALSE);
 						uiItemR(subcol, &imaptr, "use_fields", 0, NULL, ICON_NONE);
@@ -852,7 +927,7 @@ void uiTemplateImage(uiLayout *layout, bContext *C, PointerRNA *ptr, const char 
 				}
 			}
 
-			if (ELEM(ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
+			if (BKE_image_is_animated(ima)) {
 				uiItemS(layout);
 
 				split = uiLayoutSplit(layout, 0.0f, FALSE);
@@ -899,7 +974,7 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 	PropertyRNA *prop;
 	const int depth_ok = BKE_imtype_valid_depths(imf->imtype);
 	/* some settings depend on this being a scene thats rendered */
-	const short is_render_out = (id && GS(id->name) == ID_SCE);
+	const bool is_render_out = (id && GS(id->name) == ID_SCE);
 
 	uiLayout *col, *row, *split, *sub;
 	int show_preview = FALSE;
@@ -1011,6 +1086,7 @@ void uiTemplateImageLayers(uiLayout *layout, bContext *C, Image *ima, ImageUser 
 void image_buttons_register(ARegionType *art)
 {
 	PanelType *pt;
+	const char *category = "Grease Pencil";
 
 	pt = MEM_callocN(sizeof(PanelType), "spacetype image panel gpencil");
 	strcpy(pt->idname, "IMAGE_PT_gpencil");
@@ -1018,6 +1094,7 @@ void image_buttons_register(ARegionType *art)
 	strcpy(pt->translation_context, BLF_I18NCONTEXT_DEFAULT_BPYRNA);
 	pt->draw_header = gpencil_panel_standard_header;
 	pt->draw = gpencil_panel_standard;
+	BLI_strncpy(pt->category, category, BLI_strlen_utf8(category));
 	BLI_addtail(&art->paneltypes, pt);
 }
 
@@ -1048,7 +1125,7 @@ void IMAGE_OT_properties(wmOperatorType *ot)
 static int image_scopes_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ScrArea *sa = CTX_wm_area(C);
-	ARegion *ar = image_has_scope_region(sa);
+	ARegion *ar = image_has_tools_region(sa);
 	
 	if (ar)
 		ED_region_toggle_hidden(C, ar);
@@ -1056,12 +1133,12 @@ static int image_scopes_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 	return OPERATOR_FINISHED;
 }
 
-void IMAGE_OT_scopes(wmOperatorType *ot)
+void IMAGE_OT_toolshelf(wmOperatorType *ot)
 {
-	ot->name = "Scopes";
-	ot->idname = "IMAGE_OT_scopes";
-	ot->description = "Toggle display scopes panel";
-	
+	ot->name = "Tool Shelf";
+	ot->idname = "IMAGE_OT_toolshelf";
+	ot->description = "Toggles tool shelf display";
+
 	ot->exec = image_scopes_toggle_exec;
 	ot->poll = ED_operator_image_active;
 	

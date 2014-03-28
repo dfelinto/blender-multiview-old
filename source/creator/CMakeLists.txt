@@ -522,7 +522,19 @@ if(UNIX AND NOT APPLE)
 					PATTERN "*.a" EXCLUDE                   # ./core/lib/libnpymath.a - for linking, we dont need.
 				)
 			endif()
-			
+
+			# Copy requests, we need to generalize site-packages
+			if(WITH_PYTHON_INSTALL_REQUESTS)
+				install(
+					DIRECTORY ${PYTHON_LIBPATH}/python${PYTHON_VERSION}/site-packages/requests
+					DESTINATION ${TARGETDIR_VER}/python/${_target_LIB}/python${PYTHON_VERSION}/site-packages
+					PATTERN ".svn" EXCLUDE
+					PATTERN "__pycache__" EXCLUDE           # * any cache *
+					PATTERN "*.pyc" EXCLUDE                 # * any cache *
+					PATTERN "*.pyo" EXCLUDE                 # * any cache *
+					PATTERN "cacert.pem" EXCLUDE            # for now we don't deal with security
+				)
+			endif()
 			unset(_target_LIB)
 			
 		endif()
@@ -575,6 +587,27 @@ elseif(WIN32)
 				endif()
 				"
 			)
+
+			if(WITH_PYTHON_INSTALL_NUMPY)
+				install(
+					CODE
+					"
+					execute_process(COMMAND \"${CMAKE_COMMAND}\" -E chdir \"${TARGETDIR_VER}/python/lib/site-packages\"
+						\"${CMAKE_COMMAND}\" -E tar xzfv \"${LIBDIR}/release/python${_PYTHON_VERSION_NO_DOTS}_numpy_1.8.tar.gz\")
+					"
+				)
+			endif()
+
+			# release/site-packages
+			install(
+				CODE
+				"
+				execute_process(COMMAND \"${CMAKE_COMMAND}\" -E copy_directory
+					${LIBDIR}/release/site-packages
+					\"${TARGETDIR_VER}/python/lib/site-packages\")
+				"
+			)
+
 
 			# doesnt work, todo
 			# install(CODE "execute_process(COMMAND find ${TARGETDIR}/${BLENDER_VERSION}/python/lib/ -name '*.so' -exec strip -s {} '\;')")
@@ -630,10 +663,10 @@ elseif(WIN32)
 		else()
 			install(
 				FILES
-					${LIBDIR}/ffmpeg/lib/avcodec-53.dll
-					${LIBDIR}/ffmpeg/lib/avformat-53.dll
-					${LIBDIR}/ffmpeg/lib/avdevice-53.dll
-					${LIBDIR}/ffmpeg/lib/avutil-51.dll
+					${LIBDIR}/ffmpeg/lib/avcodec-55.dll
+					${LIBDIR}/ffmpeg/lib/avformat-55.dll
+					${LIBDIR}/ffmpeg/lib/avdevice-55.dll
+					${LIBDIR}/ffmpeg/lib/avutil-52.dll
 					${LIBDIR}/ffmpeg/lib/swscale-2.dll
 				DESTINATION ${TARGETDIR}
 			)
@@ -773,6 +806,13 @@ elseif(APPLE)
 		\${TARGETDIR}/blender.app/Contents/
 	)
 
+	if(WITH_OPENMP AND CMAKE_C_COMPILER_ID MATCHES "Clang" AND NOT ${CMAKE_C_COMPILER_VERSION} VERSION_LESS '3.4')
+		install(
+			FILES ${LIBDIR}/openmp/lib/libiomp5.dylib
+			DESTINATION ${TARGETDIR}/blender.app/Contents/MacOS
+		)
+	endif()
+
 	# python
 	if(WITH_PYTHON AND NOT WITH_PYTHON_MODULE AND NOT WITH_PYTHON_FRAMEWORK)
 		# the python zip is first extract as part of the build process,
@@ -798,6 +838,11 @@ elseif(APPLE)
 		install_dir(
 			${CMAKE_CURRENT_BINARY_DIR}/python
 			\${TARGETDIR_VER}
+		)
+		# copy site-packages files
+		install_dir(
+			${LIBDIR}/release/site-packages
+			${CMAKE_CURRENT_BINARY_DIR}/python/lib/python${PYTHON_VERSION}/site-packages
 		)
 
 	endif()
@@ -843,7 +888,7 @@ elseif(APPLE)
 		endif()
 
 	endif()
-		
+
 endif()
 
 # -----------------------------------------------------------------------------
@@ -905,12 +950,12 @@ endif()
 		bf_editor_space_outliner
 		bf_editor_space_script
 		bf_editor_space_sequencer
+		bf_editor_space_text
 		bf_editor_space_time
 		bf_editor_space_userpref
 		bf_editor_space_view3d
 		bf_editor_space_clip
 
-		bf_editor_text
 		bf_editor_transform
 		bf_editor_util
 		bf_editor_uvedit
@@ -954,7 +999,6 @@ endif()
 		bf_imbuf_openimageio
 		bf_imbuf_dds
 		bf_collada
-		bf_intern_bsp
 		bf_intern_elbeem
 		bf_intern_memutil
 		bf_intern_guardedalloc

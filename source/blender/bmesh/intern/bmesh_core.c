@@ -23,6 +23,7 @@
 /** \file blender/bmesh/intern/bmesh_core.c
  *  \ingroup bmesh
  *
+ * Core BMesh functions for adding, removing BMesh elements.
  */
 
 #include "MEM_guardedalloc.h"
@@ -862,7 +863,7 @@ static bool bm_loop_reverse_loop(BMesh *bm, BMFace *f
 		for (i = 0, l_iter = l_first; i < len; i++, l_iter = l_iter->next) {
 			edok = 0;
 			for (j = 0; j < len; j++) {
-				edok = bmesh_verts_in_edge(l_iter->v, l_iter->next->v, edar[j]);
+				edok = BM_verts_in_edge(l_iter->v, l_iter->next->v, edar[j]);
 				if (edok) {
 					l_iter->e = edar[j];
 					break;
@@ -1258,7 +1259,7 @@ static BMFace *bm_face_create__sfme(BMesh *bm, BMFace *UNUSED(example))
  *
  * \return A BMFace pointer
  */
-BMFace *bmesh_sfme(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2,
+BMFace *bmesh_sfme(BMesh *bm, BMFace *f, BMLoop *l_v1, BMLoop *l_v2,
                    BMLoop **r_l,
 #ifdef USE_BMESH_HOLES
                    ListBase *holes,
@@ -1275,21 +1276,12 @@ BMFace *bmesh_sfme(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2,
 
 	BMFace *f2;
 	BMLoop *l_iter, *l_first;
-	BMLoop *l_v1 = NULL, *l_v2 = NULL, *l_f1 = NULL, *l_f2 = NULL;
+	BMLoop *l_f1 = NULL, *l_f2 = NULL;
 	BMEdge *e;
-	int i, len, f1len, f2len;
+	BMVert *v1 = l_v1->v, *v2 = l_v2->v;
+	int f1len, f2len;
 
-	/* verify that v1 and v2 are in face */
-	len = f->len;
-	for (i = 0, l_iter = BM_FACE_FIRST_LOOP(f); i < len; i++, l_iter = l_iter->next) {
-		if (l_iter->v == v1) l_v1 = l_iter;
-		else if (l_iter->v == v2) l_v2 = l_iter;
-	}
-
-	if (!l_v1 || !l_v2) {
-		BLI_assert(0);
-		return NULL;
-	}
+	BLI_assert(f == l_v1->f && f == l_v2->f);
 
 	/* allocate new edge between v1 and v2 */
 	e = BM_edge_create(bm, v1, v2, example, no_double ? BM_CREATE_NO_DOUBLE : BM_CREATE_NOP);
@@ -1424,9 +1416,9 @@ BMVert *bmesh_semv(BMesh *bm, BMVert *tv, BMEdge *e, BMEdge **r_e)
 	int i;
 #endif
 
-	BLI_assert(bmesh_vert_in_edge(e, tv) != false);
+	BLI_assert(BM_vert_in_edge(e, tv) != false);
 
-	v_old = bmesh_edge_other_vert_get(e, tv);
+	v_old = BM_edge_other_vert(e, tv);
 
 #ifndef NDEBUG
 	valence1 = bmesh_disk_count(v_old);
@@ -1489,7 +1481,7 @@ BMVert *bmesh_semv(BMesh *bm, BMVert *tv, BMEdge *e, BMEdge **r_e)
 			l_new->v = v_new;
 
 			/* assign the correct edge to the correct loop */
-			if (bmesh_verts_in_edge(l_new->v, l_new->next->v, e)) {
+			if (BM_verts_in_edge(l_new->v, l_new->next->v, e)) {
 				l_new->e = e;
 				l->e = e_new;
 
@@ -1507,7 +1499,7 @@ BMVert *bmesh_semv(BMesh *bm, BMVert *tv, BMEdge *e, BMEdge **r_e)
 				bmesh_radial_append(l_new->e, l_new);
 				bmesh_radial_append(l->e, l);
 			}
-			else if (bmesh_verts_in_edge(l_new->v, l_new->next->v, e_new)) {
+			else if (BM_verts_in_edge(l_new->v, l_new->next->v, e_new)) {
 				l_new->e = e_new;
 				l->e = e;
 
@@ -1541,7 +1533,7 @@ BMVert *bmesh_semv(BMesh *bm, BMVert *tv, BMEdge *e, BMEdge **r_e)
 			//BMESH_ASSERT(l->radial_next == l);
 			BMESH_ASSERT(!(l->prev->e != e_new && l->next->e != e_new));
 
-			edok = bmesh_verts_in_edge(l->v, l->next->v, e);
+			edok = BM_verts_in_edge(l->v, l->next->v, e);
 			BMESH_ASSERT(edok != false);
 			BMESH_ASSERT(l->v != l->next->v);
 			BMESH_ASSERT(l->e != l->next->e);
@@ -1557,7 +1549,7 @@ BMVert *bmesh_semv(BMesh *bm, BMVert *tv, BMEdge *e, BMEdge **r_e)
 			BMESH_ASSERT(l->e == e_new);
 			// BMESH_ASSERT(l->radial_next == l);
 			BMESH_ASSERT(!(l->prev->e != e && l->next->e != e));
-			edok = bmesh_verts_in_edge(l->v, l->next->v, e_new);
+			edok = BM_verts_in_edge(l->v, l->next->v, e_new);
 			BMESH_ASSERT(edok != false);
 			BMESH_ASSERT(l->v != l->next->v);
 			BMESH_ASSERT(l->e != l->next->e);
@@ -1617,9 +1609,12 @@ BMEdge *bmesh_jekv(BMesh *bm, BMEdge *e_kill, BMVert *v_kill, const bool check_e
 	BMVert *v_old, *tv;
 	BMLoop *l_kill;
 	int len, radlen = 0, i;
-	bool edok, halt = false;
+	bool halt = false;
+#ifndef NDEBUG
+	bool edok;
+#endif
 
-	if (bmesh_vert_in_edge(e_kill, v_kill) == 0) {
+	if (BM_vert_in_edge(e_kill, v_kill) == 0) {
 		return NULL;
 	}
 
@@ -1632,9 +1627,9 @@ BMEdge *bmesh_jekv(BMesh *bm, BMEdge *e_kill, BMVert *v_kill, const bool check_e
 #endif
 
 		e_old = bmesh_disk_edge_next(e_kill, v_kill);
-		tv = bmesh_edge_other_vert_get(e_kill, v_kill);
-		v_old = bmesh_edge_other_vert_get(e_old, v_kill);
-		halt = bmesh_verts_in_edge(v_kill, tv, e_old); /* check for double edges */
+		tv = BM_edge_other_vert(e_kill, v_kill);
+		v_old = BM_edge_other_vert(e_old, v_kill);
+		halt = BM_verts_in_edge(v_kill, tv, e_old); /* check for double edges */
 		
 		if (halt) {
 			return NULL;
@@ -1700,12 +1695,12 @@ BMEdge *bmesh_jekv(BMesh *bm, BMEdge *e_kill, BMVert *v_kill, const bool check_e
 						BLI_mempool_free(bm->lpool, loops[i]);
 					}
 				}
-
+#ifndef NDEBUG
 				/* Validate radial cycle of e_old */
 				edok = bmesh_radial_validate(radlen, e_old->l);
 				BMESH_ASSERT(edok != false);
+#endif
 			}
-
 			/* deallocate edge */
 			bm_kill_only_edge(bm, e_kill);
 
@@ -1722,7 +1717,7 @@ BMEdge *bmesh_jekv(BMesh *bm, BMEdge *e_kill, BMVert *v_kill, const bool check_e
 			/* Validate loop cycle of all faces attached to 'e_old' */
 			for (i = 0, l = e_old->l; i < radlen; i++, l = l->radial_next) {
 				BMESH_ASSERT(l->e == e_old);
-				edok = bmesh_verts_in_edge(l->v, l->next->v, e_old);
+				edok = BM_verts_in_edge(l->v, l->next->v, e_old);
 				BMESH_ASSERT(edok != false);
 				edok = bmesh_loop_validate(l->f);
 				BMESH_ASSERT(edok != false);
@@ -1979,7 +1974,7 @@ void bmesh_vert_separate(BMesh *bm, BMVert *v, BMVert ***r_vout, int *r_vout_len
 	int i, maxindex;
 	BMLoop *l_new;
 
-	BLI_smallhash_init(&visithash);
+	BLI_smallhash_init_ex(&visithash, v_edgetot);
 
 	STACK_INIT(stack);
 
@@ -2294,7 +2289,7 @@ BMVert *bmesh_urmv(BMesh *bm, BMFace *f_sep, BMVert *v_sep)
  * low level function so both face pointers remain intact but point to swapped data.
  * \note must be from the same bmesh.
  */
-void bmesh_face_swap_data(BMesh *bm, BMFace *f_a, BMFace *f_b)
+void bmesh_face_swap_data(BMFace *f_a, BMFace *f_b)
 {
 	BMLoop *l_iter, *l_first;
 
@@ -2311,5 +2306,8 @@ void bmesh_face_swap_data(BMesh *bm, BMFace *f_a, BMFace *f_b)
 	} while ((l_iter = l_iter->next) != l_first);
 
 	SWAP(BMFace, (*f_a), (*f_b));
-	bm->elem_index_dirty |= BM_FACE;
+
+	/* swap back */
+	SWAP(void *, f_a->head.data, f_b->head.data);
+	SWAP(int, f_a->head.index, f_b->head.index);
 }

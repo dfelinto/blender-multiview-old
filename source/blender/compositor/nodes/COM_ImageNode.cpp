@@ -132,11 +132,11 @@ void ImageNode::convertToOperations(ExecutionSystem *graph, CompositorContext *c
 						/* Passes in the file can differ from passes stored in sockets (#36755).
 						 * Look up the correct file pass using the socket identifier instead.
 						 */
-						#if 0
+#if 0
 						NodeImageLayer *storage = (NodeImageLayer *)bnodeSocket->storage;*/
 						int passindex = getPassIndex(context, &rl->passes, &image->rr->views, storage->pass_index, imageuser->view);
 						RenderPass *rpass = (RenderPass *)BLI_findlink(&rl->passes, passindex);
-						#endif
+#endif
 						int passindex;
 						RenderPass *rpass;
 						for (rpass = (RenderPass *)rl->passes.first, passindex = 0; rpass; rpass = rpass->next, ++passindex)

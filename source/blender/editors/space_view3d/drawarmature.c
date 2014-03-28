@@ -1667,6 +1667,7 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 	short do_dashed = 3;
 	bool draw_wire = false;
 	int flag;
+	bool is_cull_enabled;
 	
 	/* being set below */
 	arm->layer_used = 0;
@@ -1714,9 +1715,15 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 	}
 	
 	/* little speedup, also make sure transparent only draws once */
-	glCullFace(GL_BACK); 
-	glEnable(GL_CULL_FACE);
-	
+	glCullFace(GL_BACK);
+	if (v3d->flag2 & V3D_BACKFACE_CULLING) {
+		glEnable(GL_CULL_FACE);
+		is_cull_enabled = true;
+	}
+	else {
+		is_cull_enabled = false;
+	}
+
 	/* if solid we draw that first, with selection codes, but without names, axes etc */
 	if (dt > OB_WIRE) {
 		if (arm->flag & ARM_POSEMODE) 
@@ -1765,26 +1772,38 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 							draw_wire = true;
 						}
 						else {
+							if (is_cull_enabled && (v3d->flag2 & V3D_BACKFACE_CULLING) == 0) {
+								is_cull_enabled = false;
+								glDisable(GL_CULL_FACE);
+							}
+
 							draw_custom_bone(scene, v3d, rv3d, pchan->custom,
 							                 OB_SOLID, arm->flag, flag, index, bone->length);
 						}
 					}
-					else if (arm->drawtype == ARM_LINE) {
-						/* nothing in solid */
-					}
-					else if (arm->drawtype == ARM_WIRE) {
-						/* nothing in solid */
-					}
-					else if (arm->drawtype == ARM_ENVELOPE) {
-						draw_sphere_bone(OB_SOLID, arm->flag, flag, 0, index, pchan, NULL);
-					}
-					else if (arm->drawtype == ARM_B_BONE) {
-						draw_b_bone(OB_SOLID, arm->flag, flag, 0, index, pchan, NULL);
-					}
 					else {
-						draw_bone(OB_SOLID, arm->flag, flag, 0, index, bone->length);
+						if (is_cull_enabled == false) {
+							is_cull_enabled = true;
+							glEnable(GL_CULL_FACE);
+						}
+
+						if (arm->drawtype == ARM_LINE) {
+							/* nothing in solid */
+						}
+						else if (arm->drawtype == ARM_WIRE) {
+							/* nothing in solid */
+						}
+						else if (arm->drawtype == ARM_ENVELOPE) {
+							draw_sphere_bone(OB_SOLID, arm->flag, flag, 0, index, pchan, NULL);
+						}
+						else if (arm->drawtype == ARM_B_BONE) {
+							draw_b_bone(OB_SOLID, arm->flag, flag, 0, index, pchan, NULL);
+						}
+						else {
+							draw_bone(OB_SOLID, arm->flag, flag, 0, index, bone->length);
+						}
 					}
-						
+
 					glPopMatrix();
 				}
 			}
@@ -1878,14 +1897,19 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 		}
 		/* if solid && posemode, we draw again with polygonoffset */
 		else if ((dt > OB_WIRE) && (arm->flag & ARM_POSEMODE)) {
-			bglPolygonOffset(rv3d->dist, 1.0);
+			ED_view3d_polygon_offset(rv3d, 1.0);
 		}
 		else {
 			/* and we use selection indices if not done yet */
 			if (arm->flag & ARM_POSEMODE) 
 				index = base->selcol;
 		}
-		
+
+		if (is_cull_enabled == false) {
+			is_cull_enabled = true;
+			glEnable(GL_CULL_FACE);
+		}
+
 		for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
 			bone = pchan->bone;
 			arm->layer_used |= bone->layer;
@@ -1986,11 +2010,13 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 		}
 		/* restore things */
 		if (!ELEM(arm->drawtype, ARM_WIRE, ARM_LINE) && (dt > OB_WIRE) && (arm->flag & ARM_POSEMODE))
-			bglPolygonOffset(rv3d->dist, 0.0);
+			ED_view3d_polygon_offset(rv3d, 0.0);
 	}
 	
 	/* restore */
-	glDisable(GL_CULL_FACE);
+	if (is_cull_enabled) {
+		glDisable(GL_CULL_FACE);
+	}
 	
 	/* draw DoFs */
 	if (arm->flag & ARM_POSEMODE) {
@@ -2154,7 +2180,7 @@ static void draw_ebones(View3D *v3d, ARegion *ar, Object *ob, const short dt)
 			index = 0;
 	}
 	else if (dt > OB_WIRE) 
-		bglPolygonOffset(rv3d->dist, 1.0f);
+		ED_view3d_polygon_offset(rv3d, 1.0);
 	else if (arm->flag & ARM_EDITMODE) 
 		index = 0;  /* do selection codes */
 	
@@ -2221,7 +2247,7 @@ static void draw_ebones(View3D *v3d, ARegion *ar, Object *ob, const short dt)
 		/* pass */
 	}
 	else if (dt > OB_WIRE) {
-		bglPolygonOffset(rv3d->dist, 0.0f);
+		ED_view3d_polygon_offset(rv3d, 0.0);
 	}
 	
 	/* finally names and axes */

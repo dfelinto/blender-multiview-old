@@ -44,8 +44,6 @@
 #include "ED_space_api.h"
 #include "ED_image.h"
 
-#include "UI_view2d.h"
-
 #include "RNA_access.h"
 #include "RNA_define.h"
 
@@ -74,7 +72,7 @@ int space_node_view_flag(bContext *C, SpaceNode *snode, ARegion *ar,
 	float oldwidth, oldheight, width, height;
 	float oldasp, asp;
 	int tot = 0;
-	int has_frame = FALSE;
+	bool has_frame = false;
 	
 	oldwidth  = BLI_rctf_size_x(&ar->v2d.cur);
 	oldheight = BLI_rctf_size_y(&ar->v2d.cur);

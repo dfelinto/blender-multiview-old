@@ -6,6 +6,9 @@ float exp_blender(float f)
 
 float compatible_pow(float x, float y)
 {
+	if(y == 0.0) /* x^0 -> 1, including 0^0 */
+		return 1.0;
+
 	/* glsl pow doesn't accept negative x */
 	if(x < 0.0) {
 		if(mod(-y, 2.0) == 0.0)
@@ -2358,7 +2361,8 @@ void node_light_path(
 	out float is_singular_ray,
 	out float is_reflection_ray,
 	out float is_transmission_ray,
-	out float ray_length)
+	out float ray_length,
+	out float ray_depth)
 {
 	is_camera_ray = 1.0;
 	is_shadow_ray = 0.0;
@@ -2368,6 +2372,7 @@ void node_light_path(
 	is_reflection_ray = 0.0;
 	is_transmission_ray = 0.0;
 	ray_length = 1.0;
+	ray_depth = 1.0;
 }
 
 void node_light_falloff(float strength, float tsmooth, out float quadratic, out float linear, out float constant)

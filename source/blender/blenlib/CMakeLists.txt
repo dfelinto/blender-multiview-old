@@ -57,6 +57,7 @@ set(SRC
 	intern/convexhull2d.c
 	intern/cpu.c
 	intern/dynlib.c
+	intern/easing.c
 	intern/edgehash.c
 	intern/endian_switch.c
 	intern/fileops.c
@@ -82,10 +83,12 @@ set(SRC
 	intern/md5.c
 	intern/noise.c
 	intern/path_util.c
+	intern/polyfill2d.c
 	intern/quadric.c
 	intern/rand.c
 	intern/rct.c
 	intern/scanfill.c
+	intern/scanfill_utils.c
 	intern/smallhash.c
 	intern/sort.c
 	intern/sort_utils.c
@@ -97,10 +100,12 @@ set(SRC
 	intern/task.c
 	intern/threads.c
 	intern/time.c
+	intern/timecode.c
 	intern/uvproject.c
 	intern/voronoi.c
 	intern/voxel.c
 	intern/winstuff.c
+	intern/winstuff_dir.c
 
 	BLI_alloca.h
 	BLI_args.h
@@ -116,6 +121,7 @@ set(SRC
 	BLI_dlrbTree.h
 	BLI_dynlib.h
 	BLI_dynstr.h
+	BLI_easing.h
 	BLI_edgehash.h
 	BLI_endian_switch.h
 	BLI_endian_switch_inline.h
@@ -148,6 +154,7 @@ set(SRC
 	BLI_mempool.h
 	BLI_noise.h
 	BLI_path_util.h
+	BLI_polyfill2d.h
 	BLI_quadric.h
 	BLI_rand.h
 	BLI_rect.h
@@ -163,6 +170,7 @@ set(SRC
 	BLI_sys_types.h
 	BLI_task.h
 	BLI_threads.h
+	BLI_timecode.h
 	BLI_utildefines.h
 	BLI_uvproject.h
 	BLI_vfontdata.h

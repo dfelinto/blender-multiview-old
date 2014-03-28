@@ -71,6 +71,7 @@ void render_result_free(RenderResult *res)
 		/* acolrect and scolrect are optionally allocated in shade_tile, only free here since it can be used for drawing */
 		if (rl->acolrect) MEM_freeN(rl->acolrect);
 		if (rl->scolrect) MEM_freeN(rl->scolrect);
+		if (rl->display_buffer) MEM_freeN(rl->display_buffer);
 		
 		while (rl->passes.first) {
 			RenderPass *rpass = rl->passes.first;
@@ -638,9 +639,11 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		rl->mat_override = srl->mat_override;
 		rl->rectx = rectx;
 		rl->recty = recty;
-
-		if (rr->do_exr_tile)
+		
+		if (rr->do_exr_tile) {
+			rl->display_buffer = MEM_mapallocN(rectx * recty * sizeof(unsigned int), "Combined display space rgba");
 			rl->exrhandle = IMB_exr_get_handle();
+		}
 
 		for (nr = 0, rv = (RenderView *)(&rr->views)->first; rv; rv=rv->next, nr++) {
 
@@ -716,7 +719,7 @@ RenderResult *render_result_new(Render *re, rcti *partrct, int crop, int savebuf
 		}
 	}
 	/* sss, previewrender and envmap don't do layers, so we make a default one */
-	if (rr->layers.first == NULL && !(layername && layername[0])) {
+	if (BLI_listbase_is_empty(&rr->layers) && !(layername && layername[0])) {
 		rl = MEM_callocN(sizeof(RenderLayer), "new render layer");
 		BLI_addtail(&rr->layers, rl);
 		
@@ -790,7 +793,7 @@ static void *ml_addlayer_cb(void *base, const char *str)
 	return rl;
 }
 
-static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id, const char *view, int view_id)
+static void ml_addpass_cb(void *UNUSED(base), void *lay, const char *str, float *rect, int totchan, const char *chan_id, const char *view, const int view_id)
 {
 	RenderLayer *rl = lay;
 	RenderPass *rpass = MEM_callocN(sizeof(RenderPass), "loaded pass");
@@ -1068,7 +1071,7 @@ void render_result_single_layer_end(Render *re)
 		BLI_remlink(&re->result->layers, rl);
 		
 		/* reconstruct render result layers */
-		for (nr = 0, srl = re->scene->r.layers.first; srl; srl = srl->next, nr++) {
+		for (nr = 0, srl = re->r.layers.first; srl; srl = srl->next, nr++) {
 			if (nr == re->r.actlay) {
 				BLI_addtail(&re->result->layers, rl);
 			}

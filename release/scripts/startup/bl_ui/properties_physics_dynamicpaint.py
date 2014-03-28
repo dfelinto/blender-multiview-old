@@ -107,7 +107,7 @@ class PHYSICS_PT_dynamic_paint(PhysicButtonsPanel, Panel):
 
         elif md.ui_type == 'BRUSH':
             brush = md.brush_settings
-            engine = context.scene.render.engine
+            use_shading_nodes = context.scene.render.use_shading_nodes
 
             if brush is None:
                 layout.operator("dpaint.type_toggle", text="Add Brush").type = 'BRUSH'
@@ -122,11 +122,11 @@ class PHYSICS_PT_dynamic_paint(PhysicButtonsPanel, Panel):
                 col.prop(brush, "paint_wetness", text="Wetness")
 
                 col = split.column()
-                if engine == 'BLENDER_RENDER':
+                if not use_shading_nodes:
                     sub = col.column()
                     sub.active = (brush.paint_source != 'PARTICLE_SYSTEM')
                     sub.prop(brush, "use_material")
-                if brush.use_material and brush.paint_source != 'PARTICLE_SYSTEM' and engine == 'BLENDER_RENDER':
+                if brush.use_material and brush.paint_source != 'PARTICLE_SYSTEM' and not use_shading_nodes:
                     col.prop(brush, "material", text="")
                     col.prop(brush, "paint_alpha", text="Alpha Factor")
                 else:
@@ -241,7 +241,7 @@ class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
 
                 # paint-map output
                 row = layout.row()
-                row.prop_search(surface, "output_name_a", ob.data, "vertex_colors", text="Paintmap layer:")
+                row.prop_search(surface, "output_name_a", ob.data, "vertex_colors", text="Paintmap layer")
                 if surface.output_exists(object=ob, index=0):
                     ic = 'ZOOMOUT'
                 else:
@@ -251,7 +251,7 @@ class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
 
                 # wet-map output
                 row = layout.row()
-                row.prop_search(surface, "output_name_b", ob.data, "vertex_colors", text="Wetmap layer:")
+                row.prop_search(surface, "output_name_b", ob.data, "vertex_colors", text="Wetmap layer")
                 if surface.output_exists(object=ob, index=1):
                     ic = 'ZOOMOUT'
                 else:
@@ -261,7 +261,7 @@ class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
 
             elif surface_type == 'WEIGHT':
                 row = layout.row()
-                row.prop_search(surface, "output_name_a", ob, "vertex_groups", text="Vertex Group:")
+                row.prop_search(surface, "output_name_a", ob, "vertex_groups", text="Vertex Group")
                 if surface.output_exists(object=ob, index=0):
                     ic = 'ZOOMOUT'
                 else:
@@ -272,7 +272,7 @@ class PHYSICS_PT_dp_canvas_output(PhysicButtonsPanel, Panel):
         # image format outputs
         if surface.surface_format == 'IMAGE':
             layout.operator("dpaint.bake", text="Bake Image Sequence", icon='MOD_DYNAMICPAINT')
-            layout.prop_search(surface, "uv_layer", ob.data, "uv_textures", text="UV Map:")
+            layout.prop_search(surface, "uv_layer", ob.data, "uv_textures", text="UV Map")
             layout.separator()
 
             layout.prop(surface, "image_output_path", text="")
@@ -323,7 +323,8 @@ class PHYSICS_PT_dp_canvas_initial_color(PhysicButtonsPanel, Panel):
         ob = context.object
 
         layout.prop(surface, "init_color_type", expand=False)
-        layout.separator()
+        if surface.init_color_type != 'NONE':
+            layout.separator()
 
         # dissolve
         if surface.init_color_type == 'COLOR':
@@ -331,10 +332,10 @@ class PHYSICS_PT_dp_canvas_initial_color(PhysicButtonsPanel, Panel):
 
         elif surface.init_color_type == 'TEXTURE':
             layout.prop(surface, "init_texture")
-            layout.prop_search(surface, "init_layername", ob.data, "uv_textures", text="UV Map:")
+            layout.prop_search(surface, "init_layername", ob.data, "uv_textures", text="UV Map")
 
         elif surface.init_color_type == 'VERTEX_COLOR':
-            layout.prop_search(surface, "init_layername", ob.data, "vertex_colors", text="Color Layer:")
+            layout.prop_search(surface, "init_layername", ob.data, "vertex_colors", text="Color Layer")
 
 
 class PHYSICS_PT_dp_effects(PhysicButtonsPanel, Panel):

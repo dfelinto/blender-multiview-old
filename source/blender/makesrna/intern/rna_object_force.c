@@ -523,6 +523,24 @@ static void rna_FieldSettings_shape_update(Main *bmain, Scene *scene, PointerRNA
 	}
 }
 
+static void rna_FieldSettings_type_set(PointerRNA *ptr, int value)
+{
+	PartDeflect *part_deflect = (PartDeflect *) ptr->data;
+
+	part_deflect->forcefield = value;
+
+	if (!particle_id_check(ptr)) {
+		Object *ob = (Object *)ptr->id.data;
+		ob->pd->forcefield = value;
+		if (ELEM(value, PFIELD_WIND, PFIELD_VORTEX)) {
+			ob->empty_drawtype = OB_SINGLE_ARROW;
+		}
+		else {
+			ob->empty_drawtype = OB_PLAINAXES;
+		}
+	}
+}
+
 static void rna_FieldSettings_dependency_update(Main *bmain, Scene *scene, PointerRNA *ptr)
 {
 	if (particle_id_check(ptr)) {
@@ -700,7 +718,7 @@ static void rna_softbody_update(Main *UNUSED(bmain), Scene *UNUSED(scene), Point
 
 
 static EnumPropertyItem *rna_Effector_shape_itemf(bContext *UNUSED(C), PointerRNA *ptr,
-                                                  PropertyRNA *UNUSED(prop), int *UNUSED(free))
+                                                  PropertyRNA *UNUSED(prop), bool *UNUSED(r_free))
 {
 	Object *ob = NULL;
 
@@ -1159,6 +1177,7 @@ static void rna_def_field(BlenderRNA *brna)
 	prop = RNA_def_property(srna, "type", PROP_ENUM, PROP_NONE);
 	RNA_def_property_enum_sdna(prop, NULL, "forcefield");
 	RNA_def_property_enum_items(prop, field_type_items);
+	RNA_def_property_enum_funcs(prop, NULL, "rna_FieldSettings_type_set", NULL);
 	RNA_def_property_ui_text(prop, "Type", "Type of field");
 	RNA_def_property_update(prop, 0, "rna_FieldSettings_dependency_update");
 

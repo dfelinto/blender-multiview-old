@@ -149,9 +149,9 @@ static void acf_generic_dataexpand_backdrop(bAnimContext *ac, bAnimListElem *ale
 }
 
 /* helper method to test if group colors should be drawn */
-static short acf_show_channel_colors(bAnimContext *ac)
+static bool acf_show_channel_colors(bAnimContext *ac)
 {
-	short showGroupColors = 0;
+	bool showGroupColors = false;
 	
 	if (ac->sl) {
 		switch (ac->spacetype) {
@@ -179,7 +179,7 @@ static void acf_generic_channel_color(bAnimContext *ac, bAnimListElem *ale, floa
 	bAnimChannelType *acf = ANIM_channel_get_typeinfo(ale);
 	bActionGroup *grp = NULL;
 	short indent = (acf->get_indent_level) ? acf->get_indent_level(ac, ale) : 0;
-	short showGroupColors = acf_show_channel_colors(ac);
+	bool showGroupColors = acf_show_channel_colors(ac);
 	
 	if (ale->type == ANIMTYPE_FCURVE) {
 		FCurve *fcu = (FCurve *)ale->data;
@@ -751,7 +751,7 @@ static bAnimChannelType ACF_OBJECT =
 static void acf_group_color(bAnimContext *ac, bAnimListElem *ale, float r_color[3])
 {
 	bActionGroup *agrp = (bActionGroup *)ale->data;
-	short showGroupColors = acf_show_channel_colors(ac);
+	bool showGroupColors = acf_show_channel_colors(ac);
 	
 	if (showGroupColors && agrp->customCol) {
 		unsigned char cp[3];
@@ -2034,7 +2034,7 @@ static bAnimChannelType ACF_DSNTREE =
 /* TODO: just get this from RNA? */
 static int acf_dslinestyle_icon(bAnimListElem *UNUSED(ale))
 {
-	return ICON_BRUSH_DATA; /* FIXME */
+	return ICON_LINE_DATA;
 }
 
 /* get the appropriate flag(s) for the setting when it is valid  */
@@ -3049,7 +3049,6 @@ short ANIM_channel_setting_get(bAnimContext *ac, bAnimListElem *ale, int setting
 						return ((*val) & flag) == 0;
 					else
 						return ((*val) & flag) != 0;
-					break;
 				}
 				case sizeof(short): /* short pointer for setting */
 				{
@@ -3059,7 +3058,6 @@ short ANIM_channel_setting_get(bAnimContext *ac, bAnimListElem *ale, int setting
 						return ((*val) & flag) == 0;
 					else
 						return ((*val) & flag) != 0;
-					break;
 				}
 				case sizeof(char):  /* char pointer for setting */
 				{
@@ -3069,7 +3067,6 @@ short ANIM_channel_setting_get(bAnimContext *ac, bAnimListElem *ale, int setting
 						return ((*val) & flag) == 0;
 					else
 						return ((*val) & flag) != 0;
-					break;
 				}
 			}
 		}

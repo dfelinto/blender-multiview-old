@@ -134,6 +134,7 @@ struct ImBuf;
 								 * and don't make sense to be accessed from the
 								 * search menu, even if poll() returns TRUE.
 								 * currently only used for the search toolbox */
+#define OPTYPE_LOCK_BYPASS		128	/* Allow operator to run when interface is locked */
 
 /* context to call operator in for WM_operator_name_call */
 /* rna_ui.c contains EnumPropertyItem's of these, keep in sync */
@@ -297,6 +298,7 @@ typedef struct wmNotifier {
 #define ND_PARTICLE			(27<<16)
 #define ND_POINTCACHE		(28<<16)
 #define ND_PARENT			(29<<16)
+#define ND_LOD				(30<<16)
 
 	/* NC_MATERIAL Material */
 #define	ND_SHADING			(30<<16)
@@ -479,14 +481,8 @@ typedef struct wmNDOFMotionData {
 	/* awfully similar to GHOST_TEventNDOFMotionData... */
 	/* Each component normally ranges from -1 to +1, but can exceed that.
 	 * These use blender standard view coordinates, with positive rotations being CCW about the axis. */
-	union {
-		float tvec[3]; /* translation */
-		struct { float tx, ty, tz; };
-	};
-	union {
-		float rvec[3]; /* rotation: */
-		struct { float rx, ry, rz; };
-	};
+	float tvec[3]; /* translation */
+	float rvec[3]; /* rotation: */
 	/* axis = (rx,ry,rz).normalized */
 	/* amount = (rx,ry,rz).magnitude [in revolutions, 1.0 = 360 deg] */
 	float dt; /* time since previous NDOF Motion event */

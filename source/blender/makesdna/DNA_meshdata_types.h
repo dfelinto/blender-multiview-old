@@ -303,7 +303,6 @@ enum {
 /* mvert->flag */
 enum {
 /*	SELECT              = (1 << 0), */
-	ME_SPHERETEST       = (1 << 1),
 	ME_VERT_TMP_TAG     = (1 << 2),
 	ME_HIDE             = (1 << 4),
 	ME_VERT_MERGED      = (1 << 6),
@@ -315,7 +314,6 @@ enum {
 /*	SELECT              = (1 << 0), */
 	ME_EDGEDRAW         = (1 << 1),
 	ME_SEAM             = (1 << 2),
-	ME_FGON             = (1 << 3),  /* no longer used (now we have ngons), only defined so we can clear it */
 /*	ME_HIDE             = (1 << 4), */
 	ME_EDGERENDER       = (1 << 5),
 	ME_LOOSEEDGE        = (1 << 7),
@@ -358,8 +356,8 @@ enum {
 
 /* mtface->flag */
 enum {
-	TF_SELECT = (1 << 0),  /* use MFace hide flag (after 2.43), should be able to reuse after 2.44 */
-	TF_ACTIVE = (1 << 1),  /* deprecated! */
+	// TF_SELECT = (1 << 0),  /* use MFace hide flag (after 2.43), should be able to reuse after 2.44 */
+	// TF_ACTIVE = (1 << 1),  /* deprecated! */
 	TF_SEL1   = (1 << 2),
 	TF_SEL2   = (1 << 3),
 	TF_SEL3   = (1 << 4),
@@ -377,7 +375,7 @@ enum {
 	TF_CONVERTED  = (1 << 5),  /* tface converted to material */
 
 	TF_SHAREDCOL  = (1 << 6),
-	TF_TILES      = (1 << 7),  /* deprecated */
+	// TF_TILES      = (1 << 7),  /* deprecated */
 	TF_BILLBOARD  = (1 << 8),
 	TF_TWOSIDE    = (1 << 9),
 	TF_INVISIBLE  = (1 << 10),

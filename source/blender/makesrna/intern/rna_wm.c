@@ -81,6 +81,8 @@ static EnumPropertyItem event_mouse_type_items[] = {
 	{RIGHTMOUSE, "RIGHTMOUSE", 0, "Right", ""},
 	{BUTTON4MOUSE, "BUTTON4MOUSE", 0, "Button4", ""},
 	{BUTTON5MOUSE, "BUTTON5MOUSE", 0, "Button5", ""},
+	{BUTTON6MOUSE, "BUTTON6MOUSE", 0, "Button6", ""},
+	{BUTTON7MOUSE, "BUTTON7MOUSE", 0, "Button7", ""},
 	{ACTIONMOUSE, "ACTIONMOUSE", 0, "Action", ""},
 	{SELECTMOUSE, "SELECTMOUSE", 0, "Select", ""},
 	{0, "", 0, NULL, NULL},
@@ -173,6 +175,8 @@ EnumPropertyItem event_type_items[] = {
 	{RIGHTMOUSE, "RIGHTMOUSE", 0, "Right Mouse", ""},
 	{BUTTON4MOUSE, "BUTTON4MOUSE", 0, "Button4 Mouse", ""},
 	{BUTTON5MOUSE, "BUTTON5MOUSE", 0, "Button5 Mouse", ""},
+	{BUTTON6MOUSE, "BUTTON6MOUSE", 0, "Button6 Mouse", ""},
+	{BUTTON7MOUSE, "BUTTON7MOUSE", 0, "Button7 Mouse", ""},
 	{ACTIONMOUSE, "ACTIONMOUSE", 0, "Action Mouse", ""},
 	{SELECTMOUSE, "SELECTMOUSE", 0, "Select Mouse", ""},
 	{0, "", 0, NULL, NULL},
@@ -319,7 +323,7 @@ EnumPropertyItem event_type_items[] = {
 	{TIMERJOBS, "TIMER_JOBS", 0, "Timer Jobs", ""},
 	{TIMERAUTOSAVE, "TIMER_AUTOSAVE", 0, "Timer Autosave", ""},
 	{TIMERREPORT, "TIMER_REPORT", 0, "Timer Report", ""},
-	{TIMERREGION, "TIMER_REGION", 0, "Timer Region", ""},
+	{TIMERREGION, "TIMERREGION", 0, "Timer Region", ""},
 	{0, "", 0, NULL, NULL},
 	{NDOF_MOTION, "NDOF_MOTION", 0, "NDOF Motion", ""},
 	/* buttons on all 3dconnexion devices */
@@ -678,7 +682,7 @@ static void rna_wmKeyMapItem_keymodifier_set(PointerRNA *ptr, int value)
 
 
 static EnumPropertyItem *rna_KeyMapItem_type_itemf(bContext *UNUSED(C), PointerRNA *ptr, PropertyRNA *UNUSED(prop),
-                                                   int *UNUSED(free))
+                                                   bool *UNUSED(r_free))
 {
 	int map_type = rna_wmKeyMapItem_map_type_get(ptr);
 
@@ -691,7 +695,7 @@ static EnumPropertyItem *rna_KeyMapItem_type_itemf(bContext *UNUSED(C), PointerR
 }
 
 static EnumPropertyItem *rna_KeyMapItem_value_itemf(bContext *UNUSED(C), PointerRNA *ptr, PropertyRNA *UNUSED(prop),
-                                                    int *UNUSED(free))
+                                                    bool *UNUSED(r_free))
 {
 	int map_type = rna_wmKeyMapItem_map_type_get(ptr);
 
@@ -704,7 +708,7 @@ static EnumPropertyItem *rna_KeyMapItem_value_itemf(bContext *UNUSED(C), Pointer
 }
 
 static EnumPropertyItem *rna_KeyMapItem_propvalue_itemf(bContext *C, PointerRNA *ptr, PropertyRNA *UNUSED(prop),
-                                                        int *UNUSED(free))
+                                                        bool *UNUSED(r_free))
 {
 	wmWindowManager *wm = CTX_wm_manager(C);
 	wmKeyConfig *kc;
@@ -831,10 +835,11 @@ static int rna_KeyMapItem_userdefined_get(PointerRNA *ptr)
 static void rna_wmClipboard_get(PointerRNA *UNUSED(ptr), char *value)
 {
 	char *pbuf;
+	int pbuf_len;
 
-	pbuf = WM_clipboard_text_get(FALSE);
+	pbuf = WM_clipboard_text_get(false, &pbuf_len);
 	if (pbuf) {
-		strcpy(value, pbuf);
+		memcpy(value, pbuf, pbuf_len + 1);
 		MEM_freeN(pbuf);
 	}
 	else {
@@ -845,19 +850,14 @@ static void rna_wmClipboard_get(PointerRNA *UNUSED(ptr), char *value)
 static int rna_wmClipboard_length(PointerRNA *UNUSED(ptr))
 {
 	char *pbuf;
-	int length;
+	int pbuf_len;
 
-	pbuf = WM_clipboard_text_get(FALSE);
+	pbuf = WM_clipboard_text_get(false, &pbuf_len);
 	if (pbuf) {
-		length = strlen(pbuf);
 		MEM_freeN(pbuf);
 	}
-	else {
-		length = 0;
-	}
-	
 
-	return length;
+	return pbuf_len;
 }
 
 static void rna_wmClipboard_set(PointerRNA *UNUSED(ptr), const char *value)
@@ -887,7 +887,7 @@ static void rna_Operator_unregister(struct Main *bmain, StructRNA *type)
 	RNA_struct_free_extension(type, &ot->ext);
 
 	idname = ot->idname;
-	WM_operatortype_remove(ot->idname);
+	WM_operatortype_remove_ptr(ot);
 	MEM_freeN((void *)idname);
 
 	/* not to be confused with the RNA_struct_free that WM_operatortype_remove calls, they are 2 different srna's */
@@ -1378,7 +1378,7 @@ static void rna_def_operator(BlenderRNA *brna)
 	RNA_def_property_string_maxlength(prop, OP_MAX_TYPENAME - 3);
 	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Operator_bl_idname_set");
 	/* RNA_def_property_clear_flag(prop, PROP_EDITABLE); */
-	RNA_def_property_flag(prop, PROP_REGISTER | PROP_NEVER_CLAMP);
+	RNA_def_property_flag(prop, PROP_REGISTER);
 	RNA_def_struct_name_property(srna, prop);
 
 	prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);
@@ -1451,7 +1451,7 @@ static void rna_def_macro_operator(BlenderRNA *brna)
 	RNA_def_property_string_maxlength(prop, OP_MAX_TYPENAME); /* else it uses the pointer size! */
 	RNA_def_property_string_funcs(prop, NULL, NULL, "rna_Operator_bl_idname_set");
 	/* RNA_def_property_clear_flag(prop, PROP_EDITABLE); */
-	RNA_def_property_flag(prop, PROP_REGISTER | PROP_NEVER_CLAMP);
+	RNA_def_property_flag(prop, PROP_REGISTER);
 	RNA_def_struct_name_property(srna, prop);
 
 	prop = RNA_def_property(srna, "bl_label", PROP_STRING, PROP_NONE);

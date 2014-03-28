@@ -206,7 +206,7 @@ static int delete_orientation_exec(bContext *C, wmOperator *UNUSED(op))
 
 	BIF_removeTransformOrientationIndex(C, selected_index);
 	
-	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, CTX_wm_view3d(C));
+	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
 	WM_event_add_notifier(C, NC_SCENE | NA_EDITED, CTX_data_scene(C));
 
 	return OPERATOR_FINISHED;
@@ -250,20 +250,21 @@ static void TRANSFORM_OT_delete_orientation(struct wmOperatorType *ot)
 static int create_orientation_exec(bContext *C, wmOperator *op)
 {
 	char name[MAX_NAME];
-	int use = RNA_boolean_get(op->ptr, "use");
-	int overwrite = RNA_boolean_get(op->ptr, "overwrite");
-	int use_view = RNA_boolean_get(op->ptr, "use_view");
+	const bool use = RNA_boolean_get(op->ptr, "use");
+	const bool overwrite = RNA_boolean_get(op->ptr, "overwrite");
+	const bool use_view = RNA_boolean_get(op->ptr, "use_view");
+	View3D *v3d = CTX_wm_view3d(C);
 
 	RNA_string_get(op->ptr, "name", name);
 
-	if (use && !CTX_wm_view3d(C)) {
+	if (use && !v3d) {
 		BKE_report(op->reports, RPT_ERROR, "Create Orientation's 'use' parameter only valid in a 3DView context");
 		return OPERATOR_CANCELLED;
 	}
 
 	BIF_createTransformOrientation(C, op->reports, name, use_view, use, overwrite);
 
-	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, CTX_wm_view3d(C));
+	WM_event_add_notifier(C, NC_SPACE | ND_SPACE_VIEW3D, v3d);
 	WM_event_add_notifier(C, NC_SCENE | NA_EDITED, CTX_data_scene(C));
 	
 	return OPERATOR_FINISHED;
@@ -281,7 +282,7 @@ static void TRANSFORM_OT_create_orientation(struct wmOperatorType *ot)
 	ot->exec   = create_orientation_exec;
 	ot->poll   = ED_operator_areaactive;
 
-	RNA_def_string(ot->srna, "name", "", MAX_NAME, "Name", "Name of the new custom orientation");
+	RNA_def_string(ot->srna, "name", NULL, MAX_NAME, "Name", "Name of the new custom orientation");
 	RNA_def_boolean(ot->srna, "use_view", FALSE, "Use View",
 	                "Use the current view instead of the active object to create the new orientation");
 	RNA_def_boolean(ot->srna, "use", FALSE, "Use after creation", "Select orientation after its creation");
@@ -404,7 +405,7 @@ static int transform_modal(bContext *C, wmOperator *op, const wmEvent *event)
 		if (mode_prev != t->mode) {
 			/* WARNING: this is not normal to switch operator types
 			 * normally it would not be supported but transform happens
-			 * to share callbacks between differernt operators. */
+			 * to share callbacks between different operators. */
 			wmOperatorType *ot_new = NULL;
 			TransformModeItem *item = transform_modes;
 			while (item->idname) {
@@ -533,7 +534,7 @@ void Transform_Properties(struct wmOperatorType *ot, int flags)
 		}
 	}
 
-	if (flags & P_OPTIONS) {
+	if ((flags & P_OPTIONS) && !(flags & P_NO_TEXSPACE)) {
 		RNA_def_boolean(ot->srna, "texture_space", 0, "Edit Texture Space", "Edit Object data texture space");
 		prop = RNA_def_boolean(ot->srna, "remove_on_cancel", 0, "Remove on Cancel", "Remove elements on cancel");
 		RNA_def_property_flag(prop, PROP_HIDDEN);
@@ -617,7 +618,7 @@ static void TRANSFORM_OT_skin_resize(struct wmOperatorType *ot)
 
 	RNA_def_float_vector(ot->srna, "value", 3, VecOne, -FLT_MAX, FLT_MAX, "Vector", "", -FLT_MAX, FLT_MAX);
 
-	Transform_Properties(ot, P_CONSTRAINT | P_PROPORTIONAL | P_MIRROR | P_GEO_SNAP | P_OPTIONS);
+	Transform_Properties(ot, P_CONSTRAINT | P_PROPORTIONAL | P_MIRROR | P_GEO_SNAP | P_OPTIONS | P_NO_TEXSPACE);
 }
 
 static void TRANSFORM_OT_trackball(struct wmOperatorType *ot)
@@ -703,7 +704,7 @@ static void TRANSFORM_OT_bend(struct wmOperatorType *ot)
 
 	/* api callbacks */
 	ot->invoke = transform_invoke;
-	ot->exec   = transform_exec;
+	// ot->exec   = transform_exec;  // unsupported
 	ot->modal  = transform_modal;
 	ot->cancel = transform_cancel;
 	ot->poll   = ED_operator_region_view3d_active;

@@ -228,7 +228,7 @@ static void spothalo(struct LampRen *lar, ShadeInput *shi, float *intens)
 		maxz*= lar->sh_zfac;
 		maxy= lar->imat[0][1]*p1[0]+lar->imat[1][1]*p1[1]+lar->imat[2][1]*p1[2];
 
-		if (fabsf(nray[2]) < FLT_EPSILON) {
+		if (fabs(nray[2]) < FLT_EPSILON) {
 			use_yco = TRUE;
 		}
 	}
@@ -937,6 +937,8 @@ void shade_color(ShadeInput *shi, ShadeResult *shr)
 		shr->diff[2] *= obcol[2];
 		if (shi->mode & MA_TRANSP) shr->alpha *= obcol[3];
 	}
+
+	copy_v3_v3(shr->diffshad, shr->diff);
 }
 
 /* ramp for at end of shade */
@@ -1874,9 +1876,11 @@ void shade_lamp_loop(ShadeInput *shi, ShadeResult *shr)
 		}
 		
 		if (shi->combinedflag & SCE_PASS_SHADOW)
-			copy_v3_v3(shr->combined, shr->shad); 	/* note, no ';' ! */
+			copy_v3_v3(shr->diffshad, shr->shad); 	/* note, no ';' ! */
 		else
-			copy_v3_v3(shr->combined, shr->diff);
+			copy_v3_v3(shr->diffshad, shr->diff);
+
+		copy_v3_v3(shr->combined, shr->diffshad);
 			
 		/* calculate shadow pass, we use a multiplication mask */
 		/* if diff = 0,0,0 it doesn't matter what the shadow pass is, so leave it as is */

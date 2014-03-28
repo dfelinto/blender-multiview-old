@@ -46,6 +46,8 @@ set(SRC
 	intern/runtime.c
 	intern/undofile.c
 	intern/versioning_250.c
+	intern/versioning_260.c
+	intern/versioning_270.c
 	intern/versioning_defaults.c
 	intern/versioning_legacy.c
 	intern/writefile.c

@@ -756,7 +756,7 @@ static int mesh_customdata_clear_mask_exec(bContext *C, wmOperator *UNUSED(op))
 	int ret_b = mesh_customdata_clear_exec__internal(C, BM_LOOP, CD_GRID_PAINT_MASK);
 
 	if (ret_a == OPERATOR_FINISHED ||
-		ret_b == OPERATOR_FINISHED)
+	    ret_b == OPERATOR_FINISHED)
 	{
 		return OPERATOR_FINISHED;
 	}
@@ -880,13 +880,13 @@ static void mesh_add_verts(Mesh *mesh, int len)
 	mesh->totvert = totvert;
 }
 
-void ED_mesh_transform(Mesh *me, float *mat)
+void ED_mesh_transform(Mesh *me, float mat[4][4])
 {
 	int i;
 	MVert *mvert = me->mvert;
 
 	for (i = 0; i < me->totvert; i++, mvert++)
-		mul_m4_v3((float (*)[4])mat, mvert->co);
+		mul_m4_v3(mat, mvert->co);
 
 	/* don't update normals, caller can do this explicitly */
 }

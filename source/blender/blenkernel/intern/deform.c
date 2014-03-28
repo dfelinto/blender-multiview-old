@@ -71,7 +71,7 @@ void defgroup_copy_list(ListBase *outbase, ListBase *inbase)
 {
 	bDeformGroup *defgroup, *defgroupn;
 
-	outbase->first = outbase->last = NULL;
+	BLI_listbase_clear(outbase);
 
 	for (defgroup = inbase->first; defgroup; defgroup = defgroup->next) {
 		defgroupn = defgroup_duplicate(defgroup);
@@ -557,7 +557,7 @@ void defgroup_unique_name(bDeformGroup *dg, Object *ob)
 	BLI_uniquename_cb(defgroup_unique_check, &data, DATA_("Group"), '.', dg->name, sizeof(dg->name));
 }
 
-static int is_char_sep(const char c)
+static bool is_char_sep(const char c)
 {
 	return ELEM4(c, '.', ' ', '-', '_');
 }

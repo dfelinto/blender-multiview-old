@@ -33,6 +33,7 @@
  *
  */
 
+#include <limits>
 #include <sstream>
 #include <string.h>
 
@@ -62,11 +63,17 @@ typedef struct OCIO_GLSLDrawState {
 
 	float *lut3d;  /* 3D LUT table */
 
+	bool dither_used;
+
 	bool curve_mapping_used;
 	bool curve_mapping_texture_allocated;
 	bool curve_mapping_texture_valid;
 	GLuint curve_mapping_texture;
 	size_t curve_mapping_cache_id;
+
+	bool predivide_used;
+
+	bool texture_size_used;
 
 	/* Cache */
 	std::string lut3dcacheid;
@@ -218,6 +225,17 @@ bool OCIOImpl::supportGLSLDraw()
 	return GLEW_VERSION_2_0 && (GLEW_VERSION_3_0 || GLEW_ARB_texture_float);
 }
 
+static bool supportGLSL13()
+{
+	const char *version = (const char*)glGetString(GL_SHADING_LANGUAGE_VERSION);
+	int major = 1, minor = 0;
+
+	if (version && sscanf(version, "%d.%d", &major, &minor) == 2)
+		return (major > 1 || (major == 1 && minor >= 30));
+
+	return false;
+}
+
 /**
  * Setup OpenGL contexts for a transform defined by processor using GLSL
  * All LUT allocating baking and shader compilation happens here.
@@ -229,10 +247,12 @@ bool OCIOImpl::supportGLSLDraw()
  * restore OpenGL context to it's pre-GLSL draw state.
  */
 bool OCIOImpl::setupGLSLDraw(OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRcPtr *processor,
-                             OCIO_CurveMappingSettings *curve_mapping_settings, bool predivide)
+                             OCIO_CurveMappingSettings *curve_mapping_settings,
+                             float dither, bool use_predivide)
 {
 	ConstProcessorRcPtr ocio_processor = *(ConstProcessorRcPtr *) processor;
 	bool use_curve_mapping = curve_mapping_settings != NULL;
+	bool use_dither = dither > std::numeric_limits<float>::epsilon();
 
 	/* Create state if needed. */
 	OCIO_GLSLDrawState *state;
@@ -267,7 +287,7 @@ bool OCIOImpl::setupGLSLDraw(OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRc
 
 	/* Step 1: Create a GPU Shader Description */
 	GpuShaderDesc shaderDesc;
-	shaderDesc.setLanguage(GPU_LANGUAGE_GLSL_1_0);
+	shaderDesc.setLanguage(GPU_LANGUAGE_GLSL_1_3);
 	shaderDesc.setFunctionName("OCIODisplay");
 	shaderDesc.setLut3DEdgeLen(LUT3D_EDGE_SIZE);
 
@@ -297,7 +317,9 @@ bool OCIOImpl::setupGLSLDraw(OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRc
 	std::string shaderCacheID = ocio_processor->getGpuShaderTextCacheID(shaderDesc);
 	if (state->program == 0 ||
 	    shaderCacheID != state->shadercacheid ||
-	    use_curve_mapping != state->curve_mapping_used)
+	    use_predivide != state->predivide_used ||
+	    use_curve_mapping != state->curve_mapping_used ||
+	    use_dither != state->dither_used)
 	{
 		state->shadercacheid = shaderCacheID;
 
@@ -310,6 +332,22 @@ bool OCIOImpl::setupGLSLDraw(OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRc
 		}
 
 		std::ostringstream os;
+
+		if (supportGLSL13()) {
+			os << "#version 130\n";
+		}
+		else {
+			os << "#define USE_TEXTURE_SIZE\n";
+			state->texture_size_used = use_dither;
+		}
+
+		if (use_predivide) {
+			os << "#define USE_PREDIVIDE\n";
+		}
+
+		if (use_dither) {
+			os << "#define USE_DITHER\n";
+		}
 
 		if (use_curve_mapping) {
 			os << "#define USE_CURVE_MAPPING\n";
@@ -325,6 +363,8 @@ bool OCIOImpl::setupGLSLDraw(OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRc
 		}
 
 		state->curve_mapping_used = use_curve_mapping;
+		state->dither_used = use_dither;
+		state->predivide_used = use_predivide;
 	}
 
 	if (state->program) {
@@ -342,7 +382,22 @@ bool OCIOImpl::setupGLSLDraw(OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRc
 
 		glUniform1i(glGetUniformLocation(state->program, "image_texture"), 0);
 		glUniform1i(glGetUniformLocation(state->program, "lut3d_texture"), 1);
-		glUniform1i(glGetUniformLocation(state->program, "predivide"), predivide);
+
+		if (state->texture_size_used) {
+			/* we use textureSize() if possible for best performance, if not
+			 * supported we query the size and pass it as uniform variables */
+			GLint width, height;
+
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+			glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+			glUniform1f(glGetUniformLocation(state->program, "image_texture_width"), (float)width);
+			glUniform1f(glGetUniformLocation(state->program, "image_texture_height"), (float)height);
+		}
+
+		if (use_dither) {
+			glUniform1f(glGetUniformLocation(state->program, "dither"), dither);
+		}
 
 		if (use_curve_mapping) {
 			glUniform1i(glGetUniformLocation(state->program, "curve_mapping_texture"), 2);

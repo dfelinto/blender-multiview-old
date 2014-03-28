@@ -32,10 +32,10 @@
 #include "BLI_math_vector.h"
 
 extern "C" {
-	#include "MEM_guardedalloc.h"
-	#include "IMB_imbuf.h"
-	#include "IMB_imbuf_types.h"
-	#include "IMB_colormanagement.h"
+#  include "MEM_guardedalloc.h"
+#  include "IMB_imbuf.h"
+#  include "IMB_imbuf_types.h"
+#  include "IMB_colormanagement.h"
 }
 
 
@@ -143,7 +143,9 @@ void ViewerOperation::initImage()
 		IMB_freezbuffloatImBuf(ibuf);
 		ibuf->x = getWidth();
 		ibuf->y = getHeight();
-		imb_addrectfloatImBuf(ibuf);
+		/* zero size can happen if no image buffers exist to define a sensible resolution */
+		if (ibuf->x > 0 && ibuf->y > 0)
+			imb_addrectfloatImBuf(ibuf);
 		ima->ok = IMA_OK_LOADED;
 
 		ibuf->userflags |= IB_DISPLAY_BUFFER_INVALID;

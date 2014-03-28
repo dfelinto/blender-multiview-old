@@ -50,9 +50,10 @@ typedef struct ShadeResult {
 	float col[4];
 	float alpha, mist, z;
 	float emit[3];
-	float diff[3];		/* no ramps, shadow, etc */
-	float spec[3];
-	float shad[4];		/* shad[3] is shadow intensity */
+	float diff[3];			/* diffuse with no ramps, shadow, etc */
+	float diffshad[3];		/* diffuse with shadow */
+	float spec[3];			/* specular with shadow */
+	float shad[4];			/* shad[3] is shadow intensity */
 	float ao[3];
 	float env[3];
 	float indirect[3];
@@ -168,8 +169,8 @@ typedef struct ShadeInput {
 	float surfnor[3], surfdist;
 
 	/* from initialize, part or renderlayer */
-	short do_preview;		/* for nodes, in previewrender */
-	short do_manage;		/* color management flag */
+	bool do_preview;		/* for nodes, in previewrender */
+	bool do_manage;			/* color management flag */
 	short thread, sample;	/* sample: ShadeSample array index */
 	short nodes;			/* indicate node shading, temp hack to prevent recursion */
 	

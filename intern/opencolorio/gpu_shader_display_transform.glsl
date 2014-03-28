@@ -1,6 +1,14 @@
 uniform sampler2D image_texture;
 uniform sampler3D lut3d_texture;
-uniform bool predivide;
+
+#ifdef USE_DITHER
+uniform float dither;
+#endif
+
+#ifdef USE_TEXTURE_SIZE
+uniform float image_texture_width;
+uniform float image_texture_height;
+#endif
 
 #ifdef USE_CURVE_MAPPING
 /* Curve mapping parameters
@@ -102,22 +110,63 @@ vec4 curvemapping_evaluate_premulRGBF(vec4 col)
 }
 #endif
 
+#ifdef USE_DITHER
+float dither_random_value(vec2 co)
+{
+	return fract(sin(dot(co.xy, vec2(12.9898, 78.233))) * 43758.5453) * 0.005 * dither;
+}
+
+vec2 round_to_pixel(vec2 st)
+{
+	vec2 result;
+#ifdef USE_TEXTURE_SIZE
+	vec2 size = vec2(image_texture_width, image_texture_height);
+#else
+	vec2 size = textureSize(image_texture, 0);
+#endif
+	result.x = float(int(st.x * size.x)) / size.x;
+	result.y = float(int(st.y * size.y)) / size.y;
+	return result;
+}
+
+vec4 apply_dither(vec2 st, vec4 col)
+{
+	vec4 result;
+	float random_value = dither_random_value(round_to_pixel(st));
+	result.r = col.r + random_value;
+	result.g = col.g + random_value;
+	result.b = col.b + random_value;
+	result.a = col.a;
+	return result;
+}
+#endif
+
 void main()
 {
 	vec4 col = texture2D(image_texture, gl_TexCoord[0].st);
 #ifdef USE_CURVE_MAPPING
 	col = curvemapping_evaluate_premulRGBF(col);
 #endif
-	if (predivide && col[3] > 0.0 && col[3] < 1.0) {
+
+#ifdef USE_PREDIVIDE
+	if (col[3] > 0.0 && col[3] < 1.0) {
 		float inv_alpha = 1.0 / col[3];
 		col[0] *= inv_alpha;
 		col[1] *= inv_alpha;
 		col[2] *= inv_alpha;
 	}
+#endif
 
 	/* NOTE: This is true we only do de-premul here and NO premul
 	 *       and the reason is simple -- opengl is always configured
 	 *       for straight alpha at this moment
 	 */
-	gl_FragColor = OCIODisplay(col, lut3d_texture);
+
+	vec4 result = OCIODisplay(col, lut3d_texture);
+
+#ifdef USE_DITHER
+	result = apply_dither(gl_TexCoord[0].st, result);
+#endif
+
+	gl_FragColor = result;
 }

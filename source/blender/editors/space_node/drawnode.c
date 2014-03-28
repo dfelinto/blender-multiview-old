@@ -49,12 +49,9 @@
 #include "BLF_api.h"
 #include "BLF_translation.h"
 
-#include "NOD_texture.h"
-
 #include "BIF_gl.h"
 #include "BIF_glutil.h"
 
-#include "BLF_translation.h"
 #include "MEM_guardedalloc.h"
 
 #include "RNA_access.h"
@@ -153,7 +150,7 @@ static void node_buts_rgb(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr
 	
 	col = uiLayoutColumn(layout, FALSE);
 	uiTemplateColorPicker(col, &sockptr, "default_value", 1, 0, 0, 0);
-	uiItemR(col, &sockptr, "default_value", 0, "", ICON_NONE);
+	uiItemR(col, &sockptr, "default_value", UI_ITEM_R_SLIDER, "", ICON_NONE);
 }
 
 static void node_buts_mix_rgb(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -404,9 +401,9 @@ static void node_draw_frame_label(bNodeTree *ntree, bNode *node, const float asp
 	BLF_size(fontid, MIN2(24, font_size), U.dpi); /* clamp otherwise it can suck up a LOT of memory */
 	
 	/* title color */
-	UI_ThemeColorBlendShade(TH_TEXT, color_id, 0.8f, 10);
+	UI_ThemeColorBlendShade(TH_TEXT, color_id, 0.4f, 10);
 
-	width = BLF_width(fontid, label);
+	width = BLF_width(fontid, label, sizeof(label));
 	ascender = BLF_ascender(fontid);
 	
 	/* 'x' doesn't need aspect correction */
@@ -659,6 +656,8 @@ static void node_buts_image_user(uiLayout *layout, bContext *C, PointerRNA *ptr,
 		/* don't use iuser->framenr directly because it may not be updated if auto-refresh is off */
 		Scene *scene = CTX_data_scene(C);
 		ImageUser *iuser = iuserptr->data;
+		/* Image *ima = imaptr->data; */  /* UNUSED */
+
 		char numstr[32];
 		const int framenr = BKE_image_user_frame_get(iuser, CFRA, 0, NULL);
 		BLI_snprintf(numstr, sizeof(numstr), IFACE_("Frame: %d"), framenr);
@@ -671,7 +670,7 @@ static void node_buts_image_user(uiLayout *layout, bContext *C, PointerRNA *ptr,
 		uiItemR(col, ptr, "frame_start", 0, NULL, ICON_NONE);
 		uiItemR(col, ptr, "frame_offset", 0, NULL, ICON_NONE);
 		uiItemR(col, ptr, "use_cyclic", 0, NULL, ICON_NONE);
-		uiItemR(col, ptr, "use_auto_refresh", UI_ITEM_R_ICON_ONLY, NULL, ICON_NONE);
+		uiItemR(col, ptr, "use_auto_refresh", 0, NULL, ICON_NONE);
 	}
 
 	col = uiLayoutColumn(layout, FALSE);
@@ -698,29 +697,37 @@ static void node_shader_buts_material(uiLayout *layout, bContext *C, PointerRNA 
 
 static void node_shader_buts_mapping(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
 {
-	uiLayout *row;
-	
+	uiLayout *row, *col, *sub;
+
 	uiItemR(layout, ptr, "vector_type", UI_ITEM_R_EXPAND, NULL, ICON_NONE);
 
-	uiItemL(layout, IFACE_("Location:"), ICON_NONE);
-	row = uiLayoutRow(layout, TRUE);
-	uiItemR(row, ptr, "translation", 0, "", ICON_NONE);
-	
-	uiItemL(layout, IFACE_("Rotation:"), ICON_NONE);
-	row = uiLayoutRow(layout, TRUE);
-	uiItemR(row, ptr, "rotation", 0, "", ICON_NONE);
-	
-	uiItemL(layout, IFACE_("Scale:"), ICON_NONE);
-	row = uiLayoutRow(layout, TRUE);
-	uiItemR(row, ptr, "scale", 0, "", ICON_NONE);
-	
-	row = uiLayoutRow(layout, TRUE);
-	uiItemR(row, ptr, "use_min", 0, IFACE_("Min"), ICON_NONE);
-	uiItemR(row, ptr, "min", 0, "", ICON_NONE);
-	
-	row = uiLayoutRow(layout, TRUE);
-	uiItemR(row, ptr, "use_max", 0, IFACE_("Max"), ICON_NONE);
-	uiItemR(row, ptr, "max", 0, "", ICON_NONE);
+	row = uiLayoutRow(layout, FALSE);
+
+	col = uiLayoutColumn(row, TRUE);
+	uiItemL(col, IFACE_("Location:"), ICON_NONE);
+	uiItemR(col, ptr, "translation", 0, "", ICON_NONE);
+
+	col = uiLayoutColumn(row, TRUE);
+	uiItemL(col, IFACE_("Rotation:"), ICON_NONE);
+	uiItemR(col, ptr, "rotation", 0, "", ICON_NONE);
+
+	col = uiLayoutColumn(row, TRUE);
+	uiItemL(col, IFACE_("Scale:"), ICON_NONE);
+	uiItemR(col, ptr, "scale", 0, "", ICON_NONE);
+
+	row = uiLayoutRow(layout, FALSE);
+
+	col = uiLayoutColumn(row, TRUE);
+	uiItemR(col, ptr, "use_min", 0, IFACE_("Min"), ICON_NONE);
+	sub = uiLayoutColumn(col, TRUE);
+	uiLayoutSetActive(sub, RNA_boolean_get(ptr, "use_min"));
+	uiItemR(sub, ptr, "min", 0, "", ICON_NONE);
+
+	col = uiLayoutColumn(row, TRUE);
+	uiItemR(col, ptr, "use_max", 0, IFACE_("Max"), ICON_NONE);
+	sub = uiLayoutColumn(col, TRUE);
+	uiLayoutSetActive(sub, RNA_boolean_get(ptr, "use_max"));
+	uiItemR(sub, ptr, "max", 0, "", ICON_NONE);
 }
 
 static void node_shader_buts_vect_math(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -774,9 +781,11 @@ static void node_shader_buts_tex_image(uiLayout *layout, bContext *C, PointerRNA
 	PointerRNA imaptr = RNA_pointer_get(ptr, "image");
 	PointerRNA iuserptr = RNA_pointer_get(ptr, "image_user");
 
+	uiLayoutSetContextPointer(layout, "image_user", &iuserptr);
 	uiTemplateID(layout, C, ptr, "image", NULL, "IMAGE_OT_open", NULL);
 	uiItemR(layout, ptr, "color_space", 0, "", ICON_NONE);
 	uiItemR(layout, ptr, "projection", 0, "", ICON_NONE);
+	uiItemR(layout, ptr, "interpolation", 0, "", ICON_NONE);
 
 	if (RNA_enum_get(ptr, "projection") == SHD_PROJ_BOX) {
 		uiItemR(layout, ptr, "projection_blend", 0, "Blend", ICON_NONE);
@@ -799,6 +808,7 @@ static void node_shader_buts_tex_environment(uiLayout *layout, bContext *C, Poin
 	PointerRNA imaptr = RNA_pointer_get(ptr, "image");
 	PointerRNA iuserptr = RNA_pointer_get(ptr, "image_user");
 
+	uiLayoutSetContextPointer(layout, "image_user", &iuserptr);
 	uiTemplateID(layout, C, ptr, "image", NULL, "IMAGE_OT_open", NULL);
 	uiItemR(layout, ptr, "color_space", 0, "", ICON_NONE);
 	uiItemR(layout, ptr, "projection", 0, "", ICON_NONE);
@@ -831,7 +841,7 @@ static void node_shader_buts_tex_brick(uiLayout *layout, bContext *UNUSED(C), Po
 	uiLayout *col;
 	
 	col = uiLayoutColumn(layout, TRUE);
-	uiItemR(col, ptr, "offset", 0, IFACE_("Offset"), ICON_NONE);
+	uiItemR(col, ptr, "offset", UI_ITEM_R_SLIDER, IFACE_("Offset"), ICON_NONE);
 	uiItemR(col, ptr, "offset_frequency", 0, IFACE_("Frequency"), ICON_NONE);
 	
 	col = uiLayoutColumn(layout, TRUE);
@@ -920,6 +930,19 @@ static void node_shader_buts_subsurface(uiLayout *layout, bContext *C, PointerRN
 	}
 
 	uiItemR(layout, ptr, "falloff", 0, "", ICON_NONE);
+}
+
+
+static void node_shader_buts_volume(uiLayout *layout, bContext *C, PointerRNA *UNUSED(ptr))
+{
+	/* SSS does not work on GPU yet */
+	PointerRNA scene = CTX_data_pointer_get(C, "scene");
+	if (scene.data) {
+		PointerRNA cscene = RNA_pointer_get(&scene, "cycles");
+
+		if (cscene.data && RNA_enum_get(&cscene, "device") == 1)
+			uiItemL(layout, IFACE_("Volumes not supported on GPU"), ICON_ERROR);
+	}
 }
 
 static void node_shader_buts_toon(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
@@ -1065,6 +1088,12 @@ static void node_shader_set_butfunc(bNodeType *ntype)
 		case SH_NODE_SUBSURFACE_SCATTERING:
 			ntype->draw_buttons = node_shader_buts_subsurface;
 			break;
+		case SH_NODE_VOLUME_SCATTER:
+			ntype->draw_buttons = node_shader_buts_volume;
+			break;
+		case SH_NODE_VOLUME_ABSORPTION:
+			ntype->draw_buttons = node_shader_buts_volume;
+			break;
 		case SH_NODE_BSDF_TOON:
 			ntype->draw_buttons = node_shader_buts_toon;
 			break;
@@ -1103,13 +1132,13 @@ static void node_composit_buts_image(uiLayout *layout, bContext *C, PointerRNA *
 	bNode *node = ptr->data;
 	PointerRNA imaptr, iuserptr;
 	
+	RNA_pointer_create((ID *)ptr->id.data, &RNA_ImageUser, node->storage, &iuserptr);
+	uiLayoutSetContextPointer(layout, "image_user", &iuserptr);
 	uiTemplateID(layout, C, ptr, "image", NULL, "IMAGE_OT_open", NULL);
-	
 	if (!node->id) return;
 	
 	imaptr = RNA_pointer_get(ptr, "image");
-	RNA_pointer_create((ID *)ptr->id.data, &RNA_ImageUser, node->storage, &iuserptr);
-	
+
 	node_buts_image_user(layout, C, ptr, &imaptr, &iuserptr);
 
 	node_buts_image_views(layout, C, ptr, &imaptr);
@@ -1121,6 +1150,7 @@ static void node_composit_buts_image_ex(uiLayout *layout, bContext *C, PointerRN
 	PointerRNA iuserptr;
 
 	RNA_pointer_create((ID *)ptr->id.data, &RNA_ImageUser, node->storage, &iuserptr);
+	uiLayoutSetContextPointer(layout, "image_user", &iuserptr);
 	uiTemplateImage(layout, C, ptr, "image", &iuserptr, 0);
 }
 
@@ -1231,7 +1261,7 @@ static void node_composit_buts_bilateralblur(uiLayout *layout, bContext *UNUSED(
 	uiItemR(col, ptr, "sigma_space", 0, NULL, ICON_NONE);
 }
 
-static void node_composit_buts_defocus(uiLayout *layout, bContext *UNUSED(C), PointerRNA *ptr)
+static void node_composit_buts_defocus(uiLayout *layout, bContext *C, PointerRNA *ptr)
 {
 	uiLayout *sub, *col;
 	
@@ -1251,7 +1281,9 @@ static void node_composit_buts_defocus(uiLayout *layout, bContext *UNUSED(C), Po
 
 	col = uiLayoutColumn(layout, FALSE);
 	uiItemR(col, ptr, "use_preview", 0, NULL, ICON_NONE);
-	
+
+	uiTemplateID(layout, C, ptr, "scene", NULL, NULL, NULL);
+
 	col = uiLayoutColumn(layout, FALSE);
 	uiItemR(col, ptr, "use_zbuffer", 0, NULL, ICON_NONE);
 	sub = uiLayoutColumn(col, FALSE);
@@ -2043,7 +2075,7 @@ static void node_composit_backdrop_boxmask(SpaceNode *snode, ImBuf *backdrop, bN
 	const float backdropWidth = backdrop->x;
 	const float backdropHeight = backdrop->y;
 	const float aspect = backdropWidth / backdropHeight;
-	const float rad = DEG2RADF(-boxmask->rotation);
+	const float rad = -boxmask->rotation;
 	const float cosine = cosf(rad);
 	const float sine = sinf(rad);
 	const float halveBoxWidth = backdropWidth * (boxmask->width / 2.0f);
@@ -2081,7 +2113,7 @@ static void node_composit_backdrop_ellipsemask(SpaceNode *snode, ImBuf *backdrop
 	const float backdropWidth = backdrop->x;
 	const float backdropHeight = backdrop->y;
 	const float aspect = backdropWidth / backdropHeight;
-	const float rad = DEG2RADF(-ellipsemask->rotation);
+	const float rad = -ellipsemask->rotation;
 	const float cosine = cosf(rad);
 	const float sine = sinf(rad);
 	const float halveBoxWidth = backdropWidth * (ellipsemask->width / 2.0f);
@@ -2279,6 +2311,10 @@ static void node_composit_buts_planetrackdeform(uiLayout *layout, bContext *C, P
 			uiItemR(layout, ptr, "plane_track_name", 0, "", ICON_ANIM_DATA);
 		}
 	}
+}
+
+static void node_composit_buts_cornerpin(uiLayout *UNUSED(layout), bContext *UNUSED(C), PointerRNA *UNUSED(ptr))
+{
 }
 
 /* only once called */
@@ -2505,6 +2541,9 @@ static void node_composit_set_butfunc(bNodeType *ntype)
 		case CMP_NODE_PLANETRACKDEFORM:
 			ntype->draw_buttons = node_composit_buts_planetrackdeform;
 			break;
+		case CMP_NODE_CORNERPIN:
+			ntype->draw_buttons = node_composit_buts_cornerpin;
+			break;
 	}
 }
 
@@ -2515,7 +2554,7 @@ static void node_texture_buts_bricks(uiLayout *layout, bContext *UNUSED(C), Poin
 	uiLayout *col;
 	
 	col = uiLayoutColumn(layout, TRUE);
-	uiItemR(col, ptr, "offset", 0, IFACE_("Offset"), ICON_NONE);
+	uiItemR(col, ptr, "offset", UI_ITEM_R_SLIDER, IFACE_("Offset"), ICON_NONE);
 	uiItemR(col, ptr, "offset_frequency", 0, IFACE_("Frequency"), ICON_NONE);
 	
 	col = uiLayoutColumn(layout, TRUE);
@@ -2872,6 +2911,7 @@ static void std_node_socket_draw(bContext *C, uiLayout *layout, PointerRNA *ptr,
 	/* XXX not nice, eventually give this node its own socket type ... */
 	if (node->type == CMP_NODE_OUTPUT_FILE) {
 		node_file_output_socket_draw(C, layout, ptr, node_ptr);
+		return;
 	}
 	
 	if ((sock->in_out == SOCK_OUT) || (sock->flag & SOCK_IN_USE) || (sock->flag & SOCK_HIDE_VALUE)) {
@@ -3159,7 +3199,7 @@ int node_link_bezier_points(View2D *v2d, SpaceNode *snode, bNodeLink *link, floa
 		toreroute = 0;
 	}
 
-	dist = UI_GetThemeValue(TH_NODE_CURVING) * 0.10f * ABS(vec[0][0] - vec[3][0]);
+	dist = UI_GetThemeValue(TH_NODE_CURVING) * 0.10f * fabsf(vec[0][0] - vec[3][0]);
 	deltax = vec[3][0] - vec[0][0];
 	deltay = vec[3][1] - vec[0][1];
 	/* check direction later, for top sockets */
@@ -3214,7 +3254,7 @@ int node_link_bezier_points(View2D *v2d, SpaceNode *snode, bNodeLink *link, floa
 #define LINK_ARROW  12  /* position of arrow on the link, LINK_RESOL/2 */
 #define ARROW_SIZE 7
 void node_draw_link_bezier(View2D *v2d, SpaceNode *snode, bNodeLink *link,
-                           int th_col1, int do_shaded, int th_col2, int do_triple, int th_col3)
+                           int th_col1, bool do_shaded, int th_col2, bool do_triple, int th_col3)
 {
 	float coord_array[LINK_RESOL + 1][2];
 	
@@ -3400,8 +3440,9 @@ void node_draw_link_straight(View2D *v2d, SpaceNode *snode, bNodeLink *link,
 /* note; this is used for fake links in groups too */
 void node_draw_link(View2D *v2d, SpaceNode *snode, bNodeLink *link)
 {
-	int do_shaded = FALSE, th_col1 = TH_HEADER, th_col2 = TH_HEADER;
-	int do_triple = FALSE, th_col3 = TH_WIRE;
+	bool do_shaded = false;
+	bool do_triple = false;
+	int th_col1 = TH_HEADER, th_col2 = TH_HEADER, th_col3 = TH_WIRE;
 	
 	if (link->fromsock == NULL && link->tosock == NULL)
 		return;

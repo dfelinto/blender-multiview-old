@@ -136,12 +136,15 @@ static void bm_face_bisect_verts(BMesh *bm, BMFace *f, const float plane[4], con
 	if ((STACK_SIZE(vert_split_arr) > 1) &&
 	    (use_dirs[0] && use_dirs[2]))
 	{
-		BMLoop *l_new;
-
 		if (LIKELY(STACK_SIZE(vert_split_arr) == 2)) {
+			BMLoop *l_new;
+			BMLoop *l_a, *l_b;
+
+			l_a = BM_face_vert_share_loop(f, vert_split_arr[0]);
+			l_b = BM_face_vert_share_loop(f, vert_split_arr[1]);
+
 			/* common case, just cut the face once */
-			l_new = NULL;
-			BM_face_split(bm, f, vert_split_arr[0], vert_split_arr[1], &l_new, NULL, true);
+			BM_face_split(bm, f, l_a, l_b, &l_new, NULL, true);
 			if (l_new) {
 				if (oflag_center) {
 					BMO_elem_flag_enable(bm, l_new->e, oflag_center);
@@ -243,7 +246,7 @@ static void bm_face_bisect_verts(BMesh *bm, BMFace *f, const float plane[4], con
 						/* would be nice to avoid loop lookup here,
 						 * but we need to know which face the verts are in */
 						if ((l_a = BM_face_vert_share_loop(face_split_arr[j], v_a)) &&
-							(l_b = BM_face_vert_share_loop(face_split_arr[j], v_b)))
+						    (l_b = BM_face_vert_share_loop(face_split_arr[j], v_b)))
 						{
 							found = true;
 							break;
@@ -254,9 +257,9 @@ static void bm_face_bisect_verts(BMesh *bm, BMFace *f, const float plane[4], con
 
 					/* in fact this simple test is good enough,
 					 * test if the loops are adjacent */
-					if (found && (l_a->next != l_b && l_a->prev != l_b)) {
+					if (found && !BM_loop_is_adjacent(l_a, l_b)) {
 						BMFace *f_tmp;
-						f_tmp = BM_face_split(bm, face_split_arr[j], l_a->v, l_b->v, NULL, NULL, true);
+						f_tmp = BM_face_split(bm, face_split_arr[j], l_a, l_b, NULL, NULL, true);
 						if (f_tmp) {
 							if (f_tmp != face_split_arr[j]) {
 								STACK_PUSH(face_split_arr, f_tmp);

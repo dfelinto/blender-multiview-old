@@ -193,6 +193,8 @@ shader_node_categories = [
         NodeItem("ShaderNodeBackground"),
         NodeItem("ShaderNodeAmbientOcclusion"),
         NodeItem("ShaderNodeHoldout"),
+        NodeItem("ShaderNodeVolumeAbsorption"),
+        NodeItem("ShaderNodeVolumeScatter"),
         ]),
     ShaderNewNodeCategory("SH_NEW_TEXTURE", "Texture", items=[
         NodeItem("ShaderNodeTexImage"),
@@ -348,6 +350,7 @@ compositor_node_categories = [
         NodeItem("CompositorNodeTransform"),
         NodeItem("CompositorNodeStabilize"),
         NodeItem("CompositorNodePlaneTrackDeform"),
+        NodeItem("CompositorNodeCornerPin"),
         ]),
     CompositorNodeCategory("CMP_GROUP", "Group", items=node_group_items),
     CompositorNodeCategory("CMP_LAYOUT", "Layout", items=[
@@ -406,6 +409,7 @@ texture_node_categories = [
         NodeItem("TextureNodeScale"),
         NodeItem("TextureNodeTranslate"),
         NodeItem("TextureNodeRotate"),
+        NodeItem("TextureNodeAt"),
         ]),
     TextureNodeCategory("TEX_GROUP", "Group", items=node_group_items),
     TextureNodeCategory("TEX_LAYOUT", "Layout", items=[

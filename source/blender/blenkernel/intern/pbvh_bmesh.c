@@ -91,12 +91,9 @@ static void pbvh_bmesh_node_finalize(PBVH *bvh, int node_index)
 
 	n->orig_vb = n->vb;
 
-	/* Build GPU buffers */
-	if (!G.background) {
-		int smooth = bvh->flags & PBVH_DYNTOPO_SMOOTH_SHADING;
-		n->draw_buffers = GPU_build_bmesh_buffers(smooth);
-		n->flag |= PBVH_UpdateDrawBuffers | PBVH_UpdateNormals;
-	}
+	/* Build GPU buffers for new node and update vertex normals */
+	BKE_pbvh_node_mark_rebuild_draw(n);
+	n->flag |= PBVH_UpdateNormals;
 }
 
 /* Recursively split the node if it exceeds the leaf_limit */
@@ -207,7 +204,7 @@ static void pbvh_bmesh_node_split(PBVH *bvh, GHash *prim_bbc, int node_index)
 	n->layer_disp = NULL;
 	
 	if (n->draw_buffers) {
-		GPU_free_buffers(n->draw_buffers);
+		GPU_free_pbvh_buffers(n->draw_buffers);
 		n->draw_buffers = NULL;
 	}
 	n->flag &= ~PBVH_Leaf;
@@ -497,7 +494,7 @@ typedef struct {
 	int cd_vert_mask_offset;
 } EdgeQueueContext;
 
-static int edge_queue_tri_in_sphere(const EdgeQueue *q, BMFace *f)
+static bool edge_queue_tri_in_sphere(const EdgeQueue *q, BMFace *f)
 {
 	BMVert *v_tri[3];
 	float c[3];
@@ -608,7 +605,7 @@ static void long_edge_queue_create(EdgeQueueContext *eq_ctx,
 
 		/* Check leaf nodes marked for topology update */
 		if ((node->flag & PBVH_Leaf) &&
-			(node->flag & PBVH_UpdateTopology))
+		    (node->flag & PBVH_UpdateTopology))
 		{
 			GHashIterator gh_iter;
 
@@ -647,7 +644,7 @@ static void short_edge_queue_create(EdgeQueueContext *eq_ctx,
 
 		/* Check leaf nodes marked for topology update */
 		if ((node->flag & PBVH_Leaf) &&
-			(node->flag & PBVH_UpdateTopology))
+		    (node->flag & PBVH_UpdateTopology))
 		{
 			GHashIterator gh_iter;
 
@@ -750,7 +747,7 @@ static void pbvh_bmesh_split_edge(EdgeQueueContext *eq_ctx, PBVH *bvh,
 
 		/* Ensure new vertex is in the node */
 		if (!BLI_gset_haskey(bvh->nodes[ni].bm_unique_verts, v_new) &&
-			!BLI_gset_haskey(bvh->nodes[ni].bm_other_verts, v_new))
+		    !BLI_gset_haskey(bvh->nodes[ni].bm_other_verts, v_new))
 		{
 			BLI_gset_insert(bvh->nodes[ni].bm_other_verts, v_new);
 		}
@@ -791,7 +788,7 @@ static int pbvh_bmesh_subdivide_long_edges(EdgeQueueContext *eq_ctx, PBVH *bvh,
 		 * and the node has been split, thus leaving wire edges and
 		 * associated vertices. */
 		if (!BLI_ghash_haskey(bvh->bm_vert_to_node, e->v1) ||
-			!BLI_ghash_haskey(bvh->bm_vert_to_node, e->v2))
+		    !BLI_ghash_haskey(bvh->bm_vert_to_node, e->v2))
 		{
 			continue;
 		}
@@ -977,7 +974,7 @@ static int pbvh_bmesh_collapse_short_edges(EdgeQueueContext *eq_ctx,
 		 * and the node has been split, thus leaving wire edges and
 		 * associated vertices. */
 		if (!BLI_ghash_haskey(bvh->bm_vert_to_node, e->v1) ||
-			!BLI_ghash_haskey(bvh->bm_vert_to_node, e->v2))
+		    !BLI_ghash_haskey(bvh->bm_vert_to_node, e->v2))
 		{
 			continue;
 		}
@@ -1033,6 +1030,55 @@ int pbvh_bmesh_node_raycast(PBVHNode *node, const float ray_start[3],
 				                             NULL, dist);
 			}
 		}
+	}
+
+	return hit;
+}
+
+bool BKE_pbvh_bmesh_node_raycast_detail(
+        PBVHNode *node,
+        const float ray_start[3], const float ray_normal[3],
+        float *detail, float *dist)
+{
+	GHashIterator gh_iter;
+	bool hit = false;
+	BMFace *f_hit = NULL;
+
+	if (node->flag & PBVH_FullyHidden)
+		return 0;
+
+	GHASH_ITER (gh_iter, node->bm_faces) {
+		BMFace *f = BLI_ghashIterator_getKey(&gh_iter);
+
+		BLI_assert(f->len == 3);
+		if (f->len == 3 && !paint_is_bmesh_face_hidden(f)) {
+			BMVert *v_tri[3];
+			bool hit_local;
+			BM_face_as_array_vert_tri(f, v_tri);
+			hit_local = ray_face_intersection(
+			        ray_start, ray_normal,
+			        v_tri[0]->co,
+			        v_tri[1]->co,
+			        v_tri[2]->co,
+			        NULL, dist);
+
+			if (hit_local) {
+				f_hit = f;
+				hit = true;
+			}
+		}
+	}
+
+	if (hit) {
+		float len1, len2, len3;
+		BMVert *v_tri[3];
+		BM_face_as_array_vert_tri(f_hit, v_tri);
+		len1 = len_squared_v3v3(v_tri[0]->co, v_tri[1]->co);
+		len2 = len_squared_v3v3(v_tri[1]->co, v_tri[2]->co);
+		len3 = len_squared_v3v3(v_tri[2]->co, v_tri[0]->co);
+
+		/* detail returned will be set to the maximum allowed size, so take max here */
+		*detail = sqrtf(max_fff(len1, len2, len3));
 	}
 
 	return hit;
@@ -1107,7 +1153,7 @@ void BKE_pbvh_build_bmesh(PBVH *bvh, BMesh *bm, int smooth_shading,
 }
 
 /* Collapse short edges, subdivide long edges */
-int BKE_pbvh_bmesh_update_topology(PBVH *bvh, PBVHTopologyUpdateMode mode,
+bool BKE_pbvh_bmesh_update_topology(PBVH *bvh, PBVHTopologyUpdateMode mode,
                                    const float center[3], float radius)
 {
 	/* 2 is enough for edge faces - manifold edge */
@@ -1115,7 +1161,7 @@ int BKE_pbvh_bmesh_update_topology(PBVH *bvh, PBVHTopologyUpdateMode mode,
 	BLI_buffer_declare_static(BMFace *, deleted_faces, BLI_BUFFER_NOP, 32);
 	const int cd_vert_mask_offset = CustomData_get_offset(&bvh->bm->vdata, CD_PAINT_MASK);
 
-	int modified = FALSE;
+	bool modified = false;
 	int n;
 
 	if (mode & PBVH_Collapse) {
@@ -1125,6 +1171,7 @@ int BKE_pbvh_bmesh_update_topology(PBVH *bvh, PBVHTopologyUpdateMode mode,
 		EdgeQueueContext eq_ctx = {&q, queue_pool, bvh->bm, cd_vert_mask_offset};
 
 		short_edge_queue_create(&eq_ctx, bvh, center, radius);
+		modified |= !BLI_heap_is_empty(q.heap);
 		pbvh_bmesh_collapse_short_edges(&eq_ctx, bvh, &edge_loops,
 		                                &deleted_faces);
 		BLI_heap_free(q.heap, NULL);
@@ -1138,6 +1185,7 @@ int BKE_pbvh_bmesh_update_topology(PBVH *bvh, PBVHTopologyUpdateMode mode,
 		EdgeQueueContext eq_ctx = {&q, queue_pool, bvh->bm, cd_vert_mask_offset};
 
 		long_edge_queue_create(&eq_ctx, bvh, center, radius);
+		modified |= !BLI_heap_is_empty(q.heap);
 		pbvh_bmesh_subdivide_long_edges(&eq_ctx, bvh, &edge_loops);
 		BLI_heap_free(q.heap, NULL);
 		BLI_mempool_destroy(queue_pool);
@@ -1148,7 +1196,7 @@ int BKE_pbvh_bmesh_update_topology(PBVH *bvh, PBVHTopologyUpdateMode mode,
 		PBVHNode *node = &bvh->nodes[n];
 
 		if (node->flag & PBVH_Leaf &&
-			node->flag & PBVH_UpdateTopology)
+		    node->flag & PBVH_UpdateTopology)
 		{
 			node->flag &= ~PBVH_UpdateTopology;
 		}
@@ -1496,7 +1544,7 @@ void pbvh_bmesh_verify(PBVH *bvh)
 		}
 		BLI_assert(found);
 
-		#if 1
+#if 1
 		/* total freak stuff, check if node exists somewhere else */
 		/* Slow */
 		for (i = 0; i < bvh->totnode; i++) {
@@ -1505,10 +1553,10 @@ void pbvh_bmesh_verify(PBVH *bvh)
 				BLI_assert(!BLI_gset_haskey(n->bm_unique_verts, v));
 		}
 
-		#endif
+#endif
 	}
 
-	#if 0
+#if 0
 	/* check that every vert belongs somewhere */
 	/* Slow */
 	BM_ITER_MESH (vi, &iter, bvh->bm, BM_VERTS_OF_MESH) {
@@ -1524,7 +1572,7 @@ void pbvh_bmesh_verify(PBVH *bvh)
 
 	/* if totvert differs from number of verts inside the hash. hash-totvert is checked above  */
 	BLI_assert(vert_count == bvh->bm->totvert);
-	#endif
+#endif
 
 	/* Check that node elements are recorded in the top level */
 	for (i = 0; i < bvh->totnode; i++) {
@@ -1532,11 +1580,11 @@ void pbvh_bmesh_verify(PBVH *bvh)
 		if (n->flag & PBVH_Leaf) {
 			/* Check for duplicate entries */
 			/* Slow */
-			#if 0
+#if 0
 			bli_ghash_duplicate_key_check(n->bm_faces);
 			bli_gset_duplicate_key_check(n->bm_unique_verts);
 			bli_gset_duplicate_key_check(n->bm_other_verts);
-			#endif
+#endif
 
 			GHASH_ITER (gh_iter, n->bm_faces) {
 				BMFace *f = BLI_ghashIterator_getKey(&gh_iter);

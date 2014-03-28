@@ -2210,8 +2210,9 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 				sce->r.yparts = 4;
 
 			/* adds default layer */
-			if (sce->r.layers.first == NULL)
+			if (BLI_listbase_is_empty(&sce->r.layers)) {
 				BKE_scene_add_render_layer(sce, NULL);
+			}
 			else {
 				SceneRenderLayer *srl;
 				/* new layer flag for sky, was default for solid */
@@ -2781,8 +2782,10 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 			for (md = ob->modifiers.first; md; md = md->next) {
 				if (md->type == eModifierType_Cloth) {
 					ClothModifierData *clmd = (ClothModifierData*) md;
-					if (!clmd->point_cache)
+					if (!clmd->point_cache) {
 						clmd->point_cache = BKE_ptcache_add(&clmd->ptcaches);
+						clmd->point_cache->step = 1;
+					}
 				}
 			}
 		}
@@ -3079,7 +3082,7 @@ void blo_do_versions_pre250(FileData *fd, Library *lib, Main *main)
 				part->id.flag |= (ob->id.flag & LIB_NEED_LINK);
 
 				psys->totpart = 0;
-				psys->flag = PSYS_ENABLED|PSYS_CURRENT;
+				psys->flag = PSYS_CURRENT;
 
 				BLI_addtail(&ob->particlesystem, psys);
 

@@ -95,7 +95,7 @@ Session::~Session()
 		wait();
 	}
 
-	if(display && params.output_path != "") {
+	if(display && !params.output_path.empty()) {
 		tonemap();
 
 		progress.set_status("Writing Image", params.output_path);
@@ -151,7 +151,7 @@ void Session::reset_gpu(BufferParams& buffer_params, int samples)
 	pause_cond.notify_all();
 }
 
-bool Session::draw_gpu(BufferParams& buffer_params)
+bool Session::draw_gpu(BufferParams& buffer_params, DeviceDrawParams& draw_params)
 {
 	/* block for buffer access */
 	thread_scoped_lock display_lock(display_mutex);
@@ -170,7 +170,7 @@ bool Session::draw_gpu(BufferParams& buffer_params)
 				gpu_need_tonemap_cond.notify_all();
 			}
 
-			display->draw(device);
+			display->draw(device, draw_params);
 
 			if(display_outdated && (time_dt() - reset_time) > params.text_timeout)
 				return false;
@@ -242,7 +242,7 @@ void Session::run_gpu()
 			/* update scene */
 			update_scene();
 
-			if(device->error_message() != "")
+			if(!device->error_message().empty())
 				progress.set_cancel(device->error_message());
 
 			if(progress.get_cancel())
@@ -263,7 +263,7 @@ void Session::run_gpu()
 
 			device->task_wait();
 
-			if(device->error_message() != "")
+			if(!device->error_message().empty())
 				progress.set_cancel(device->error_message());
 
 			/* update status and timing */
@@ -283,7 +283,7 @@ void Session::run_gpu()
 				}
 			}
 
-			if(device->error_message() != "")
+			if(!device->error_message().empty())
 				progress.set_cancel(device->error_message());
 
 			tiles_written = update_progressive_refine(progress.get_cancel());
@@ -315,7 +315,7 @@ void Session::reset_cpu(BufferParams& buffer_params, int samples)
 	pause_cond.notify_all();
 }
 
-bool Session::draw_cpu(BufferParams& buffer_params)
+bool Session::draw_cpu(BufferParams& buffer_params, DeviceDrawParams& draw_params)
 {
 	thread_scoped_lock display_lock(display_mutex);
 
@@ -324,7 +324,7 @@ bool Session::draw_cpu(BufferParams& buffer_params)
 		/* then verify the buffers have the expected size, so we don't
 		 * draw previous results in a resized window */
 		if(!buffer_params.modified(display->params)) {
-			display->draw(device);
+			display->draw(device, draw_params);
 
 			if(display_outdated && (time_dt() - reset_time) > params.text_timeout)
 				return false;
@@ -531,7 +531,7 @@ void Session::run_cpu()
 			/* update scene */
 			update_scene();
 
-			if(device->error_message() != "")
+			if(!device->error_message().empty())
 				progress.set_cancel(device->error_message());
 
 			if(progress.get_cancel())
@@ -549,7 +549,7 @@ void Session::run_cpu()
 			if(!params.background)
 				need_tonemap = true;
 
-			if(device->error_message() != "")
+			if(!device->error_message().empty())
 				progress.set_cancel(device->error_message());
 		}
 
@@ -571,7 +571,7 @@ void Session::run_cpu()
 				tonemap();
 			}
 
-			if(device->error_message() != "")
+			if(!device->error_message().empty())
 				progress.set_cancel(device->error_message());
 
 			tiles_written = update_progressive_refine(progress.get_cancel());
@@ -592,7 +592,7 @@ void Session::run()
 
 		if(!device->load_kernels(params.experimental)) {
 			string message = device->error_message();
-			if(message == "")
+			if(message.empty())
 				message = "Failed loading render kernel, see console for errors";
 
 			progress.set_status("Error", message);
@@ -624,12 +624,12 @@ void Session::run()
 		progress.set_update();
 }
 
-bool Session::draw(BufferParams& buffer_params)
+bool Session::draw(BufferParams& buffer_params, DeviceDrawParams &draw_params)
 {
 	if(device_use_gl)
-		return draw_gpu(buffer_params);
+		return draw_gpu(buffer_params, draw_params);
 	else
-		return draw_cpu(buffer_params);
+		return draw_cpu(buffer_params, draw_params);
 }
 
 void Session::reset_(BufferParams& buffer_params, int samples)
@@ -796,7 +796,7 @@ void Session::update_status_time(bool show_pause, bool show_done)
 	}
 	else {
 		status = substatus;
-		substatus = "";
+		substatus.clear();
 	}
 
 	progress.set_status(status, substatus);

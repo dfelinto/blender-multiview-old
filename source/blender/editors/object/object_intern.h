@@ -142,6 +142,7 @@ void LATTICE_OT_select_more(struct wmOperatorType *ot);
 void LATTICE_OT_select_less(struct wmOperatorType *ot);
 void LATTICE_OT_select_ungrouped(struct wmOperatorType *ot);
 void LATTICE_OT_select_random(struct wmOperatorType *ot);
+void LATTICE_OT_select_mirror(struct wmOperatorType *ot);
 void LATTICE_OT_make_regular(struct wmOperatorType *ot);
 void LATTICE_OT_flip(struct wmOperatorType *ot);
 
@@ -253,6 +254,10 @@ void OBJECT_OT_group_remove(struct wmOperatorType *ot);
 
 /* object_bake.c */
 void OBJECT_OT_bake_image(wmOperatorType *ot);
+
+/* object_lod.c */
+void OBJECT_OT_lod_add(struct wmOperatorType *ot);
+void OBJECT_OT_lod_remove(struct wmOperatorType *ot);
 
 #endif /* __OBJECT_INTERN_H__ */
 

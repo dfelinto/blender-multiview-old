@@ -211,8 +211,21 @@ ccl_device_inline void curvebounds(float *lower, float *upper, float *extremta, 
 	}
 }
 
+#ifdef __KERNEL_SSE2__
+ccl_device_inline __m128 transform_point_T3(const __m128 t[3], const __m128 &a)
+{
+	return fma(broadcast<0>(a), t[0], fma(broadcast<1>(a), t[1], _mm_mul_ps(broadcast<2>(a), t[2])));
+}
+#endif
+
+#ifdef __KERNEL_SSE2__
+/* Pass P and idir by reference to aligned vector */
+ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersection *isect,
+	const float3 &P, const float3 &idir, uint visibility, int object, int curveAddr, int segment, uint *lcg_state, float difl, float extmax)
+#else
 ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersection *isect,
 	float3 P, float3 idir, uint visibility, int object, int curveAddr, int segment, uint *lcg_state, float difl, float extmax)
+#endif
 {
 	float epsilon = 0.0f;
 	float r_st, r_en;
@@ -220,7 +233,60 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 	int depth = kernel_data.curve.subdivisions;
 	int flags = kernel_data.curve.curveflags;
 	int prim = kernel_tex_fetch(__prim_index, curveAddr);
+
+#ifdef __KERNEL_SSE2__
+	__m128 vdir = _mm_div_ps(_mm_set1_ps(1.0f), load_m128(idir));
+	__m128 vcurve_coef[4];
+	const float3 *curve_coef = (float3 *)vcurve_coef;
 	
+	{
+		__m128 dtmp = _mm_mul_ps(vdir, vdir);
+		__m128 d_ss = _mm_sqrt_ss(_mm_add_ss(dtmp, broadcast<2>(dtmp)));
+		__m128 rd_ss = _mm_div_ss(_mm_set_ss(1.0f), d_ss);
+
+		__m128i v00vec = _mm_load_si128((__m128i *)&kg->__curves.data[prim]);
+		int2 &v00 = (int2 &)v00vec;
+
+		int k0 = v00.x + segment;
+		int k1 = k0 + 1;
+		int ka = max(k0 - 1, v00.x);
+		int kb = min(k1 + 1, v00.x + v00.y - 1);
+
+		__m128 P0 = _mm_load_ps(&kg->__curve_keys.data[ka].x);
+		__m128 P1 = _mm_load_ps(&kg->__curve_keys.data[k0].x);
+		__m128 P2 = _mm_load_ps(&kg->__curve_keys.data[k1].x);
+		__m128 P3 = _mm_load_ps(&kg->__curve_keys.data[kb].x);
+
+		__m128 rd_sgn = set_sign_bit<0, 1, 1, 1>(broadcast<0>(rd_ss));
+		__m128 mul_zxxy = _mm_mul_ps(shuffle<2, 0, 0, 1>(vdir), rd_sgn);
+		__m128 mul_yz = _mm_mul_ps(shuffle<1, 2, 1, 2>(vdir), mul_zxxy);
+		__m128 mul_shuf = shuffle<0, 1, 2, 3>(mul_zxxy, mul_yz);
+		__m128 vdir0 = _mm_and_ps(vdir, _mm_castsi128_ps(_mm_setr_epi32(0xFFFFFFFF, 0xFFFFFFFF, 0xFFFFFFFF, 0)));
+
+		__m128 htfm0 = shuffle<0, 2, 0, 3>(mul_shuf, vdir0);
+		__m128 htfm1 = shuffle<1, 0, 1, 3>(_mm_set_ss(_mm_cvtss_f32(d_ss)), vdir0);
+		__m128 htfm2 = shuffle<1, 3, 2, 3>(mul_shuf, vdir0);
+
+		__m128 htfm[] = { htfm0, htfm1, htfm2 };
+		__m128 vP = load_m128(P);
+		__m128 p0 = transform_point_T3(htfm, _mm_sub_ps(P0, vP));
+		__m128 p1 = transform_point_T3(htfm, _mm_sub_ps(P1, vP));
+		__m128 p2 = transform_point_T3(htfm, _mm_sub_ps(P2, vP));
+		__m128 p3 = transform_point_T3(htfm, _mm_sub_ps(P3, vP));
+
+		float fc = 0.71f;
+		__m128 vfc = _mm_set1_ps(fc);
+		__m128 vfcxp3 = _mm_mul_ps(vfc, p3);
+
+		vcurve_coef[0] = p1;
+		vcurve_coef[1] = _mm_mul_ps(vfc, _mm_sub_ps(p2, p0));
+		vcurve_coef[2] = fma(_mm_set1_ps(fc * 2.0f), p0, fma(_mm_set1_ps(fc - 3.0f), p1, fms(_mm_set1_ps(3.0f - 2.0f * fc), p2, vfcxp3)));
+		vcurve_coef[3] = fms(_mm_set1_ps(fc - 2.0f), _mm_sub_ps(p2, p1), fms(vfc, p0, vfcxp3));
+
+		r_st = ((float4 &)P1).w;
+		r_en = ((float4 &)P2).w;
+	}
+#else
 	float3 curve_coef[4];
 
 	/* curve Intersection check */
@@ -263,7 +329,7 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 		r_st = P1.w;
 		r_en = P2.w;
 	}
-	
+#endif
 
 	float r_curr = max(r_st, r_en);
 
@@ -302,6 +368,19 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 	while(!(tree >> (depth))) {
 		float i_st = tree * resol;
 		float i_en = i_st + (level * resol);
+#ifdef __KERNEL_SSE2__
+		__m128 vi_st = _mm_set1_ps(i_st), vi_en = _mm_set1_ps(i_en);
+		__m128 vp_st = fma(fma(fma(vcurve_coef[3], vi_st, vcurve_coef[2]), vi_st, vcurve_coef[1]), vi_st, vcurve_coef[0]);
+		__m128 vp_en = fma(fma(fma(vcurve_coef[3], vi_en, vcurve_coef[2]), vi_en, vcurve_coef[1]), vi_en, vcurve_coef[0]);
+
+		__m128 vbmin = _mm_min_ps(vp_st, vp_en);
+		__m128 vbmax = _mm_max_ps(vp_st, vp_en);
+
+		float3 &bmin = (float3 &)vbmin, &bmax = (float3 &)vbmax;
+		float &bminx = bmin.x, &bminy = bmin.y, &bminz = bmin.z;
+		float &bmaxx = bmax.x, &bmaxy = bmax.y, &bmaxz = bmax.z;
+		float3 &p_st = (float3 &)vp_st, &p_en = (float3 &)vp_en;
+#else
 		float3 p_st = ((curve_coef[3] * i_st + curve_coef[2]) * i_st + curve_coef[1]) * i_st + curve_coef[0];
 		float3 p_en = ((curve_coef[3] * i_en + curve_coef[2]) * i_en + curve_coef[1]) * i_en + curve_coef[0];
 		
@@ -311,6 +390,7 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 		float bmaxy = max(p_st.y, p_en.y);
 		float bminz = min(p_st.z, p_en.z);
 		float bmaxz = max(p_st.z, p_en.z);
+#endif
 
 		if(xextrem[0] >= i_st && xextrem[0] <= i_en) {
 			bminx = min(bminx,xextrem[1]);
@@ -406,17 +486,12 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 						coverage = (min(d1 / mw_extension, 1.0f) + min(-d0 / mw_extension, 1.0f)) * 0.5f;
 				}
 				
-				if (p_curr.x * p_curr.x + p_curr.y * p_curr.y >= r_ext * r_ext || p_curr.z <= epsilon) {
+				if (p_curr.x * p_curr.x + p_curr.y * p_curr.y >= r_ext * r_ext || p_curr.z <= epsilon || isect->t < p_curr.z) {
 					tree++;
 					level = tree & -tree;
 					continue;
 				}
-				/* compare z distances */
-				if (isect->t < p_curr.z) {
-					tree++;
-					level = tree & -tree;
-					continue;
-				}
+
 				t = p_curr.z;
 			}
 			else {
@@ -453,7 +528,6 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 				float rootd = sqrtf(td);
 				float correction = ((-tb - rootd)/(2*cyla));
 				t = tcentre + correction;
-				float w = (zcentre + (tg.z * correction))/l;
 
 				float3 dp_st = (3 * curve_coef[3] * i_st + 2 * curve_coef[2]) * i_st + curve_coef[1];
 				if (dot(tg, dp_st)< 0)
@@ -462,11 +536,9 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 				if (dot(tg, dp_en) < 0)
 					dp_en *= -1;
 
-
 				if(flags & CURVE_KN_BACKFACING && (dot(dp_st, -p_st) + t * dp_st.z < 0 || dot(dp_en, p_en) - t * dp_en.z < 0 || isect->t < t || t <= 0.0f)) {
 					correction = ((-tb + rootd)/(2*cyla));
 					t = tcentre + correction;
-					w = (zcentre + (tg.z * correction))/l;
 				}			
 
 				if (dot(dp_st, -p_st) + t * dp_st.z < 0 || dot(dp_en, p_en) - t * dp_en.z < 0 || isect->t < t || t <= 0.0f) {
@@ -475,6 +547,7 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 					continue;
 				}
 
+				float w = (zcentre + (tg.z * correction))/l;
 				w = clamp((float)w, 0.0f, 1.0f);
 				/* compute u on the curve segment */
 				u = i_st * (1 - w) + i_en * w;
@@ -523,6 +596,13 @@ ccl_device_inline bool bvh_cardinal_curve_intersect(KernelGlobals *kg, Intersect
 ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isect,
 	float3 P, float3 idir, uint visibility, int object, int curveAddr, int segment, uint *lcg_state, float difl, float extmax)
 {
+	/* define few macros to minimize code duplication for SSE */
+#ifndef __KERNEL_SSE2__
+#define len3_squared(x) len_squared(x)
+#define len3(x) len(x)
+#define dot3(x, y) dot(x, y)
+#endif
+
 	/* curve Intersection check */
 	int flags = kernel_data.curve.curveflags;
 
@@ -533,6 +613,7 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 	int k0 = cnum + segment;
 	int k1 = k0 + 1;
 
+#ifndef __KERNEL_SSE2__
 	float4 P1 = kernel_tex_fetch(__curve_keys, k0);
 	float4 P2 = kernel_tex_fetch(__curve_keys, k1);
 
@@ -544,36 +625,72 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 	/* minimum width extension */
 	float r1 = or1;
 	float r2 = or2;
+	float3 dif = P - p1;
+	float3 dif_second = P - p2;
 	if(difl != 0.0f) {
-		float pixelsize = min(len(p1 - P) * difl, extmax);
+		float pixelsize = min(len3(dif) * difl, extmax);
 		r1 = or1 < pixelsize ? pixelsize : or1;
-		pixelsize = min(len(p2 - P) * difl, extmax);
+		pixelsize = min(len3(dif_second) * difl, extmax);
 		r2 = or2 < pixelsize ? pixelsize : or2;
 	}
 	/* --- */
 
-	float mr = max(r1,r2);
-	float3 dif = P - p1;
-	float3 dir = 1.0f/idir;
-	float l = len(p2 - p1);
+	float3 dir = 1.0f / idir;
+	float3 p21_diff = p2 - p1;
+	float3 sphere_dif1 = (dif + dif_second) * 0.5f;
+	float sphere_b_tmp = dot3(dir, sphere_dif1);
+	float3 sphere_dif2 = sphere_dif1 - sphere_b_tmp * dir;
+#else
+	const __m128 p1 = _mm_load_ps(&kg->__curve_keys.data[k0].x);
+	const __m128 p2 = _mm_load_ps(&kg->__curve_keys.data[k1].x);
+	const __m128 or12 = shuffle<3, 3, 3, 3>(p1, p2);
 
+	__m128 r12 = or12;
+	const __m128 vP = load_m128(P);
+	const __m128 dif = _mm_sub_ps(vP, p1);
+	const __m128 dif_second = _mm_sub_ps(vP, p2);
+	if(difl != 0.0f) {
+		const __m128 len1_sq = len3_squared_splat(dif);
+		const __m128 len2_sq = len3_squared_splat(dif_second);
+		const __m128 len12 = _mm_sqrt_ps(shuffle<0, 0, 0, 0>(len1_sq, len2_sq));
+		const __m128 pixelsize12 = _mm_min_ps(_mm_mul_ps(len12, _mm_set1_ps(difl)), _mm_set1_ps(extmax));
+		r12 = _mm_max_ps(or12, pixelsize12);
+	}
+	float or1 = _mm_cvtss_f32(or12), or2 = _mm_cvtss_f32(broadcast<2>(or12));
+	float r1 = _mm_cvtss_f32(r12), r2 = _mm_cvtss_f32(broadcast<2>(r12));
+
+	const __m128 dir = _mm_div_ps(_mm_set1_ps(1.0f), load_m128(idir));
+	const __m128 p21_diff = _mm_sub_ps(p2, p1);
+	const __m128 sphere_dif1 = _mm_mul_ps(_mm_add_ps(dif, dif_second), _mm_set1_ps(0.5f));
+	const __m128 sphere_b_tmp = dot3_splat(dir, sphere_dif1);
+	const __m128 sphere_dif2 = fnma(sphere_b_tmp, dir, sphere_dif1);
+#endif
+
+	float mr = max(r1, r2);
+	float l = len3(p21_diff);
+	float invl = 1.0f / l;
 	float sp_r = mr + 0.5f * l;
-	float3 sphere_dif = P - ((p1 + p2) * 0.5f);
-	float sphere_b = dot(dir,sphere_dif);
-	sphere_dif = sphere_dif - sphere_b * dir;
-	sphere_b = dot(dir,sphere_dif);
-	float sdisc = sphere_b * sphere_b - len_squared(sphere_dif) + sp_r * sp_r;
+
+	float sphere_b = dot3(dir, sphere_dif2);
+	float sdisc = sphere_b * sphere_b - len3_squared(sphere_dif2) + sp_r * sp_r;
+
 	if(sdisc < 0.0f)
 		return false;
 
 	/* obtain parameters and test midpoint distance for suitable modes */
-	float3 tg = (p2 - p1) / l;
-	float gd = (r2 - r1) / l;
-	float dirz = dot(dir,tg);
-	float difz = dot(dif,tg);
+#ifndef __KERNEL_SSE2__
+	float3 tg = p21_diff * invl;
+#else
+	const __m128 tg = _mm_mul_ps(p21_diff, _mm_set1_ps(invl));
+#endif
+	float gd = (r2 - r1) * invl;
+
+	float dirz = dot3(dir, tg);
+	float difz = dot3(dif, tg);
 
 	float a = 1.0f - (dirz*dirz*(1 + gd*gd));
-	float halfb = dot(dir,dif) - dirz*(difz + gd*(difz*gd + r1));
+
+	float halfb = dot3(dir, dif) - dirz*(difz + gd*(difz*gd + r1));
 
 	float tcentre = -halfb/a;
 	float zcentre = difz + (dirz * tcentre);
@@ -584,11 +701,15 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 		return false;
 
 	/* test minimum separation */
+#ifndef __KERNEL_SSE2__
 	float3 cprod = cross(tg, dir);
-	float3 cprod2 = cross(tg, dif);
-	float cprodsq = len_squared(cprod);
-	float cprod2sq = len_squared(cprod2);
-	float distscaled = dot(cprod,dif);
+	float cprod2sq = len3_squared(cross(tg, dif));
+#else
+	const __m128 cprod = cross(tg, dir);
+	float cprod2sq = len3_squared(cross_zxy(tg, dif));
+#endif
+	float cprodsq = len3_squared(cprod);
+	float distscaled = dot3(cprod, dif);
 
 	if(cprodsq == 0)
 		distscaled = cprod2sq;
@@ -599,10 +720,15 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 		return false;
 
 	/* calculate true intersection */
-	float3 tdif = P - p1 + tcentre * dir;
-	float tdifz = dot(tdif,tg);
-	float tb = 2*(dot(dir,tdif) - dirz*(tdifz + gd*(tdifz*gd + r1)));
-	float tc = dot(tdif,tdif) - tdifz * tdifz * (1 + gd*gd) - r1*r1 - 2*r1*tdifz*gd;
+#ifndef __KERNEL_SSE2__
+	float3 tdif = dif + tcentre * dir;
+#else
+	const __m128 tdif = fma(_mm_set1_ps(tcentre), dir, dif);
+#endif
+	float tdifz = dot3(tdif, tg);
+	float tdifma = tdifz*gd + r1;
+	float tb = 2*(dot3(dir, tdif) - dirz*(tdifz + gd*tdifma));
+	float tc = dot3(tdif, tdif) - tdifz*tdifz - tdifma*tdifma;
 	float td = tb*tb - 4*a*tc;
 
 	if (td < 0.0f)
@@ -636,7 +762,7 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 		}
 
 		/* stochastic fade from minimum width */
-		float adjradius = or1 + z * (or2 - or1) / l;
+		float adjradius = or1 + z * (or2 - or1) * invl;
 		adjradius = adjradius / (r1 + z * gd);
 		if(lcg_state && adjradius != 1.0f) {
 			if(lcg_step_float(lcg_state) > adjradius)
@@ -647,11 +773,10 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 		if(t > 0.0f && t < isect->t && z >= 0 && z <= l) {
 
 			if (flags & CURVE_KN_ENCLOSEFILTER) {
-
-				float enc_ratio = kernel_data.curve.encasing_ratio;
-				if((dot(P - p1, tg) > -r1 * enc_ratio) && (dot(P - p2, tg) < r2 * enc_ratio)) {
+				float enc_ratio = 1.01f;
+				if((difz > -r1 * enc_ratio) && (dot3(dif_second, tg) < r2 * enc_ratio)) {
 					float a2 = 1.0f - (dirz*dirz*(1 + gd*gd*enc_ratio*enc_ratio));
-					float c2 = dot(dif,dif) - difz * difz * (1 + gd*gd*enc_ratio*enc_ratio) - r1*r1*enc_ratio*enc_ratio - 2*r1*difz*gd*enc_ratio;
+					float c2 = dot3(dif, dif) - difz * difz * (1 + gd*gd*enc_ratio*enc_ratio) - r1*r1*enc_ratio*enc_ratio - 2*r1*difz*gd*enc_ratio;
 					if(a2*c2 < 0.0f)
 						return false;
 				}
@@ -667,7 +792,7 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 				isect->prim = curveAddr;
 				isect->segment = segment;
 				isect->object = object;
-				isect->u = z/l;
+				isect->u = z*invl;
 				isect->v = td/(4*a*a);
 				/*isect->v = 1.0f - adjradius;*/
 				isect->t = t;
@@ -681,6 +806,12 @@ ccl_device_inline bool bvh_curve_intersect(KernelGlobals *kg, Intersection *isec
 	}
 
 	return false;
+
+#ifndef __KERNEL_SSE2__
+#undef len3_squared
+#undef len3
+#undef dot3
+#endif
 }
 #endif
 
@@ -1051,10 +1182,10 @@ ccl_device_inline float3 curvetangent(float t, float3 p0, float3 p1, float3 p2, 
 	float fc = 0.71f;
 	float data[4];
 	float t2 = t * t;
-    data[0] = -3.0f * fc          * t2  + 4.0f * fc * t                  - fc;
-    data[1] =  3.0f * (2.0f - fc) * t2  + 2.0f * (fc - 3.0f) * t;
-    data[2] =  3.0f * (fc - 2.0f) * t2  + 2.0f * (3.0f - 2.0f * fc) * t  + fc;
-    data[3] =  3.0f * fc          * t2  - 2.0f * fc * t;
+	data[0] = -3.0f * fc          * t2  + 4.0f * fc * t                  - fc;
+	data[1] =  3.0f * (2.0f - fc) * t2  + 2.0f * (fc - 3.0f) * t;
+	data[2] =  3.0f * (fc - 2.0f) * t2  + 2.0f * (3.0f - 2.0f * fc) * t  + fc;
+	data[3] =  3.0f * fc          * t2  - 2.0f * fc * t;
 	return data[0] * p0 + data[1] * p1 + data[2] * p2 + data[3] * p3;
 }
 
@@ -1071,9 +1202,10 @@ ccl_device_inline float3 curvepoint(float t, float3 p0, float3 p1, float3 p2, fl
 	return data[0] * p0 + data[1] * p1 + data[2] * p2 + data[3] * p3;
 }
 
-ccl_device_inline float3 bvh_curve_refine(KernelGlobals *kg, ShaderData *sd, const Intersection *isect, const Ray *ray, float t)
+ccl_device_inline float3 bvh_curve_refine(KernelGlobals *kg, ShaderData *sd, const Intersection *isect, const Ray *ray)
 {
 	int flag = kernel_data.curve.curveflags;
+	float t = isect->t;
 	float3 P = ray->P;
 	float3 D = ray->D;
 
@@ -1098,7 +1230,7 @@ ccl_device_inline float3 bvh_curve_refine(KernelGlobals *kg, ShaderData *sd, con
 	float4 P1 = kernel_tex_fetch(__curve_keys, k0);
 	float4 P2 = kernel_tex_fetch(__curve_keys, k1);
 	float l = 1.0f;
-	float3 tg = normalize_len(float4_to_float3(P2 - P1),&l);
+	float3 tg = normalize_len(float4_to_float3(P2 - P1), &l);
 	float r1 = P1.w;
 	float r2 = P2.w;
 	float gd = ((r2 - r1)/l);
@@ -1118,17 +1250,17 @@ ccl_device_inline float3 bvh_curve_refine(KernelGlobals *kg, ShaderData *sd, con
 		p[2] = float4_to_float3(P2);
 		p[3] = float4_to_float3(P3);
 
-		tg = normalize(curvetangent(isect->u,p[0],p[1],p[2],p[3]));
-		float3 p_curr = curvepoint(isect->u,p[0],p[1],p[2],p[3]);
-
 #ifdef __UV__
 		sd->u = isect->u;
 		sd->v = 0.0f;
 #endif
+	
+		tg = normalize(curvetangent(isect->u, p[0], p[1], p[2], p[3]));
 
 		if(kernel_data.curve.curveflags & CURVE_KN_RIBBONS)
-			sd->Ng = normalize(-(D - tg * (dot(tg,D))));
+			sd->Ng = normalize(-(D - tg * (dot(tg, D))));
 		else {
+			float3 p_curr = curvepoint(isect->u, p[0], p[1], p[2], p[3]);	
 			sd->Ng = normalize(P - p_curr);
 			sd->Ng = sd->Ng - gd * tg;
 			sd->Ng = normalize(sd->Ng);
@@ -1144,7 +1276,7 @@ ccl_device_inline float3 bvh_curve_refine(KernelGlobals *kg, ShaderData *sd, con
 #endif
 
 		if (flag & CURVE_KN_TRUETANGENTGNORMAL) {
-			sd->Ng = -(D - tg * dot(tg,D));
+			sd->Ng = -(D - tg * dot(tg, D));
 			sd->Ng = normalize(sd->Ng);
 		}
 		else {
@@ -1156,24 +1288,12 @@ ccl_device_inline float3 bvh_curve_refine(KernelGlobals *kg, ShaderData *sd, con
 		}
 
 		sd->N = sd->Ng;
-
-		if (flag & CURVE_KN_TANGENTGNORMAL && !(flag & CURVE_KN_TRUETANGENTGNORMAL)) {
-			sd->N = -(D - tg * dot(tg,D));
-			sd->N = normalize(sd->N);
-		}
-		if (!(flag & CURVE_KN_TANGENTGNORMAL) && flag & CURVE_KN_TRUETANGENTGNORMAL) {
-			sd->N = (dif - tg * sd->u * l) / (P1.w + sd->u * l * gd);
-			if (gd != 0.0f) {
-				sd->N = sd->N - gd * tg ;
-				sd->N = normalize(sd->N);
-			}
-		}
 	}
 
 #ifdef __DPDU__
 	/* dPdu/dPdv */
 	sd->dPdu = tg;
-	sd->dPdv = cross(tg,sd->Ng);
+	sd->dPdv = cross(tg, sd->Ng);
 #endif
 
 	/*add fading parameter for minimum pixel width with transparency bsdf*/

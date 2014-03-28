@@ -174,11 +174,6 @@ void EDBM_select_swap(struct BMEditMesh *em); /* exported for UV */
 bool EDBM_select_interior_faces(struct BMEditMesh *em);
 void em_setup_viewcontext(struct bContext *C, struct ViewContext *vc);  /* rename? */
 
-/* editmesh_statvis.c */
-void EDBM_statvis_calc(struct BMEditMesh *em, struct MeshStatVis *statvis,
-                       unsigned char (*r_face_colors)[4]);
-
-
 extern unsigned int bm_vertoffs, bm_solidoffs, bm_wireoffs;
 
 /* mesh_ops.c */
@@ -269,7 +264,7 @@ void ED_mesh_faces_remove(struct Mesh *mesh, struct ReportList *reports, int cou
 void ED_mesh_edges_remove(struct Mesh *mesh, struct ReportList *reports, int count);
 void ED_mesh_vertices_remove(struct Mesh *mesh, struct ReportList *reports, int count);
 
-void ED_mesh_transform(struct Mesh *me, float *mat);
+void ED_mesh_transform(struct Mesh *me, float mat[4][4]);
 void ED_mesh_calc_tessface(struct Mesh *mesh);
 void ED_mesh_update(struct Mesh *mesh, struct bContext *C, int calc_edges, int calc_tessface);
 
@@ -305,8 +300,9 @@ void EDBM_redo_state_free(struct BMBackup *, struct BMEditMesh *em, int recalcte
 int         join_mesh_exec(struct bContext *C, struct wmOperator *op);
 int         join_mesh_shapes_exec(struct bContext *C, struct wmOperator *op);
 
-intptr_t    mesh_octree_table(struct Object *ob, struct BMEditMesh *em, const float co[3], char mode);
-int         mesh_mirrtopo_table(struct Object *ob, char mode);
+/* mirror lookup api */
+int         ED_mesh_mirror_spatial_table(struct Object *ob, struct BMEditMesh *em, const float co[3], char mode);
+int         ED_mesh_mirror_topo_table(struct Object *ob, char mode);
 
 /* retrieves mirrored cache vert, or NULL if there isn't one.
  * note: calling this without ensuring the mirror cache state

@@ -131,16 +131,17 @@ typedef struct bNodeSocket {
 } bNodeSocket;
 
 /* sock->type */
-#define SOCK_CUSTOM			-1	/* socket has no integer type */
-#define SOCK_FLOAT			0
-#define SOCK_VECTOR			1
-#define SOCK_RGBA			2
-#define SOCK_SHADER			3
-#define SOCK_BOOLEAN		4
-#define __SOCK_MESH			5	/* deprecated */
-#define SOCK_INT			6
-#define SOCK_STRING			7
-#define NUM_SOCKET_TYPES	8	/* must be last! */
+typedef enum eNodeSocketDatatype {
+	SOCK_CUSTOM			= -1,	/* socket has no integer type */
+	SOCK_FLOAT			= 0,
+	SOCK_VECTOR			= 1,
+	SOCK_RGBA			= 2,
+	SOCK_SHADER			= 3,
+	SOCK_BOOLEAN		= 4,
+	__SOCK_MESH			= 5,	/* deprecated */
+	SOCK_INT			= 6,
+	SOCK_STRING			= 7
+} eNodeSocketDatatype;
 
 /* socket side (input/output) */
 typedef enum eNodeSocketInOut {
@@ -153,11 +154,12 @@ typedef enum eNodeSocketFlag {
 	SOCK_HIDDEN = 2,					/* hidden is user defined, to hide unused */
 	SOCK_IN_USE = 4,					/* for quick check if socket is linked */
 	SOCK_UNAVAIL = 8,					/* unavailable is for dynamic sockets */
-	__SOCK_DYNAMIC = 16,				/* DEPRECATED  dynamic socket (can be modified by user) */
-	__SOCK_INTERNAL = 32,				/* DEPRECATED  group socket should not be exposed */
+	// SOCK_DYNAMIC = 16,				/* DEPRECATED  dynamic socket (can be modified by user) */
+	// SOCK_INTERNAL = 32,				/* DEPRECATED  group socket should not be exposed */
 	SOCK_COLLAPSED = 64,				/* socket collapsed in UI */
 	SOCK_HIDE_VALUE = 128,				/* hide socket value, if it gets auto default */
-	SOCK_AUTO_HIDDEN__DEPRECATED = 256	/* socket hidden automatically, to distinguish from manually hidden */
+	SOCK_AUTO_HIDDEN__DEPRECATED = 256,	/* socket hidden automatically, to distinguish from manually hidden */
+	SOCK_NO_INTERNAL_LINK = 512
 } eNodeSocketFlag;
 
 /* limit data in bNode to what we want to see saved? */
@@ -227,7 +229,7 @@ typedef struct bNode {
 #define NODE_TEST			256
 	/* node is disabled */
 #define NODE_MUTED			512
-#define NODE_CUSTOM_NAME	1024	/* deprecated! */
+// #define NODE_CUSTOM_NAME	1024	/* deprecated! */
 	/* group node types: use const outputs by default */
 #define NODE_CONST_OUTPUT	(1<<11)
 	/* node is always behind others */
@@ -723,7 +725,7 @@ typedef struct NodeTexImage {
 	int color_space;
 	int projection;
 	float projection_blend;
-	int pad;
+	int interpolation;
 } NodeTexImage;
 
 typedef struct NodeTexChecker {
@@ -950,6 +952,12 @@ typedef struct NodeShaderNormalMap {
 #define SHD_PROJ_FLAT				0
 #define SHD_PROJ_BOX				1
 
+/* image texture interpolation */
+#define SHD_INTERP_LINEAR		0
+#define SHD_INTERP_CLOSEST		1
+#define SHD_INTERP_CUBIC			2
+#define SHD_INTERP_SMART			3
+
 /* tangent */
 #define SHD_TANGENT_RADIAL			0
 #define SHD_TANGENT_UVMAP			1
@@ -967,9 +975,15 @@ typedef struct NodeShaderNormalMap {
 #define SHD_NORMAL_MAP_BLENDER_WORLD	4
 
 /* subsurface */
-#define SHD_SUBSURFACE_COMPATIBLE		0 // Deprecated
-#define SHD_SUBSURFACE_CUBIC			1
-#define SHD_SUBSURFACE_GAUSSIAN			2
+enum {
+	SHD_SUBSURFACE_COMPATIBLE		= 0, // Deprecated
+	SHD_SUBSURFACE_CUBIC			= 1,
+	SHD_SUBSURFACE_GAUSSIAN			= 2,
+};
+
+#if (DNA_DEPRECATED_GCC_POISON == 1)
+#pragma GCC poison SHD_SUBSURFACE_COMPATIBLE
+#endif
 
 /* blur node */
 #define CMP_NODE_BLUR_ASPECT_NONE		0

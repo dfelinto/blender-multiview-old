@@ -291,7 +291,26 @@ static void graph_panel_key_properties(const bContext *C, Panel *pa)
 		/* interpolation */
 		col = uiLayoutColumn(layout, FALSE);
 		uiItemR(col, &bezt_ptr, "interpolation", 0, NULL, ICON_NONE);
-			
+		
+		/* easing type */
+		if (bezt->ipo > BEZT_IPO_BEZ)
+			uiItemR(col, &bezt_ptr, "easing", 0, NULL, 0);
+
+		/* easing extra */
+		switch (bezt->ipo) {
+			case BEZT_IPO_BACK:
+				col = uiLayoutColumn(layout, 1);
+				uiItemR(col, &bezt_ptr, "back", 0, NULL, 0);
+				break;
+			case BEZT_IPO_ELASTIC:
+				col = uiLayoutColumn(layout, 1);
+				uiItemR(col, &bezt_ptr, "amplitude", 0, NULL, 0);
+				uiItemR(col, &bezt_ptr, "period", 0, NULL, 0);
+				break;
+			default:
+				break;
+		}
+		
 		/* numerical coordinate editing 
 		 *  - we use the button-versions of the calls so that we can attach special update handlers
 		 *    and unit conversion magic that cannot be achieved using a purely RNA-approach
@@ -301,11 +320,11 @@ static void graph_panel_key_properties(const bContext *C, Panel *pa)
 		{
 			uiItemL(col, IFACE_("Key:"), ICON_NONE);
 			
-			but = uiDefButR(block, NUM, B_REDR, IFACE_("Frame"), 0, 0, UI_UNIT_X, UI_UNIT_Y,
+			but = uiDefButR(block, NUM, B_REDR, IFACE_("Frame:"), 0, 0, UI_UNIT_X, UI_UNIT_Y,
 			                &bezt_ptr, "co", 0, 0, 0, -1, -1, NULL);
 			uiButSetFunc(but, graphedit_activekey_update_cb, fcu, bezt);
 			
-			but = uiDefButR(block, NUM, B_REDR, IFACE_("Value"), 0, 0, UI_UNIT_X, UI_UNIT_Y,
+			but = uiDefButR(block, NUM, B_REDR, IFACE_("Value:"), 0, 0, UI_UNIT_X, UI_UNIT_Y,
 			                &bezt_ptr, "co", 1, 0, 0, -1, -1, NULL);
 			uiButSetFunc(but, graphedit_activekey_update_cb, fcu, bezt);
 			uiButSetUnitType(but, unit);
@@ -315,11 +334,11 @@ static void graph_panel_key_properties(const bContext *C, Panel *pa)
 		if ((prevbezt) && (prevbezt->ipo == BEZT_IPO_BEZ)) {
 			uiItemL(col, IFACE_("Left Handle:"), ICON_NONE);
 			
-			but = uiDefButR(block, NUM, B_REDR, "X", 0, 0, UI_UNIT_X, UI_UNIT_Y,
+			but = uiDefButR(block, NUM, B_REDR, "X:", 0, 0, UI_UNIT_X, UI_UNIT_Y,
 			                &bezt_ptr, "handle_left", 0, 0, 0, -1, -1, NULL);
 			uiButSetFunc(but, graphedit_activekey_handles_cb, fcu, bezt);
 			
-			but = uiDefButR(block, NUM, B_REDR, "Y", 0, 0, UI_UNIT_X, UI_UNIT_Y,
+			but = uiDefButR(block, NUM, B_REDR, "Y:", 0, 0, UI_UNIT_X, UI_UNIT_Y,
 			                &bezt_ptr, "handle_left", 1, 0, 0, -1, -1, NULL);
 			uiButSetFunc(but, graphedit_activekey_handles_cb, fcu, bezt);
 			uiButSetUnitType(but, unit);
@@ -329,11 +348,11 @@ static void graph_panel_key_properties(const bContext *C, Panel *pa)
 		if (bezt->ipo == BEZT_IPO_BEZ) {
 			uiItemL(col, IFACE_("Right Handle:"), ICON_NONE);
 			
-			but = uiDefButR(block, NUM, B_REDR, "X", 0, 0, UI_UNIT_X, UI_UNIT_Y,
+			but = uiDefButR(block, NUM, B_REDR, "X:", 0, 0, UI_UNIT_X, UI_UNIT_Y,
 			                &bezt_ptr, "handle_right", 0, 0, 0, -1, -1, NULL);
 			uiButSetFunc(but, graphedit_activekey_handles_cb, fcu, bezt);
 			
-			but = uiDefButR(block, NUM, B_REDR, "Y", 0, 0, UI_UNIT_X, UI_UNIT_Y,
+			but = uiDefButR(block, NUM, B_REDR, "Y:", 0, 0, UI_UNIT_X, UI_UNIT_Y,
 			                &bezt_ptr, "handle_right", 1, 0, 0, -1, -1, NULL);
 			uiButSetFunc(but, graphedit_activekey_handles_cb, fcu, bezt);
 			uiButSetUnitType(but, unit);
@@ -600,12 +619,16 @@ static void graph_panel_drivers(const bContext *C, Panel *pa)
 	/* general actions - management */
 	col = uiLayoutColumn(pa->layout, FALSE);
 	block = uiLayoutGetBlock(col);
-	but = uiDefBut(block, BUT, B_IPO_DEPCHANGE, IFACE_("Update Dependencies"), 0, 0, 10 * UI_UNIT_X, 22,
-	               NULL, 0.0, 0.0, 0, 0, TIP_("Force updates of dependencies"));
+	but = uiDefIconTextBut(block, BUT, B_IPO_DEPCHANGE, ICON_FILE_REFRESH, IFACE_("Update Dependencies"),
+	               0, 0, 10 * UI_UNIT_X, 22,
+	               NULL, 0.0, 0.0, 0, 0,
+	               TIP_("Force updates of dependencies"));
 	uiButSetFunc(but, driver_update_flags_cb, fcu, NULL);
 
-	but = uiDefBut(block, BUT, B_IPO_DEPCHANGE, IFACE_("Remove Driver"), 0, 0, 10 * UI_UNIT_X, 18,
-	               NULL, 0.0, 0.0, 0, 0, TIP_("Remove this driver"));
+	but = uiDefIconTextBut(block, BUT, B_IPO_DEPCHANGE, ICON_ZOOMOUT, IFACE_("Remove Driver"),
+	               0, 0, 10 * UI_UNIT_X, 18,
+	               NULL, 0.0, 0.0, 0, 0,
+	               TIP_("Remove this driver"));
 	uiButSetNFunc(but, driver_remove_cb, MEM_dupallocN(ale), NULL);
 		
 	/* driver-level settings - type, expressions, and errors */
@@ -617,21 +640,52 @@ static void graph_panel_drivers(const bContext *C, Panel *pa)
 
 	/* show expression box if doing scripted drivers, and/or error messages when invalid drivers exist */
 	if (driver->type == DRIVER_TYPE_PYTHON) {
+		bool bpy_data_expr_error = (strstr(driver->expression, "bpy.data.") != NULL);
+		bool bpy_ctx_expr_error  = (strstr(driver->expression, "bpy.context.") != NULL);
+		
 		/* expression */
 		uiItemR(col, &driver_ptr, "expression", 0, IFACE_("Expr"), ICON_NONE);
 		
 		/* errors? */
 		if ((G.f & G_SCRIPT_AUTOEXEC) == 0) {
-			uiItemL(col, IFACE_("ERROR: Python auto-execution disabled"), ICON_ERROR);
+			uiItemL(col, IFACE_("ERROR: Python auto-execution disabled"), ICON_CANCEL);
 		}
 		else if (driver->flag & DRIVER_FLAG_INVALID) {
-			uiItemL(col, IFACE_("ERROR: Invalid Python expression"), ICON_ERROR);
+			uiItemL(col, IFACE_("ERROR: Invalid Python expression"), ICON_CANCEL);
+		}
+		
+		/* Explicit bpy-references are evil. Warn about these to prevent errors */
+		/* TODO: put these in a box? */
+		if (bpy_data_expr_error || bpy_ctx_expr_error) {
+			uiItemL(col, IFACE_("WARNING: Driver expression may not work correctly"), ICON_HELP);
+			
+			if (bpy_data_expr_error) {
+				uiItemL(col, IFACE_("TIP: Use variables instead of bpy.data paths (see below)"), ICON_ERROR);
+			}
+			if (bpy_ctx_expr_error) {
+				uiItemL(col, IFACE_("TIP: bpy.context is not safe for renderfarm usage"), ICON_ERROR);
+			}
 		}
 	}
 	else {
 		/* errors? */
 		if (driver->flag & DRIVER_FLAG_INVALID)
 			uiItemL(col, IFACE_("ERROR: Invalid target channel(s)"), ICON_ERROR);
+			
+		/* Warnings about a lack of variables
+		 * NOTE: The lack of variables is generally a bad thing, since it indicates
+		 *       that the driver doesn't work at all. This particular scenario arises
+		 *       primarily when users mistakenly try to use drivers for procedural
+		 *       property animation
+		 */
+		if (BLI_listbase_is_empty(&driver->variables)) {
+			uiItemL(col, IFACE_("ERROR: Driver is useless without any inputs"), ICON_ERROR);
+			
+			if (!BLI_listbase_is_empty(&fcu->modifiers)) {
+				uiItemL(col, IFACE_("TIP: Use F-Curves for procedural animation instead"), ICON_INFO);
+				uiItemL(col, IFACE_("F-Modifiers can generate curves for those too"), ICON_INFO);
+			}
+		}
 	}
 		
 	col = uiLayoutColumn(pa->layout, TRUE);
@@ -652,8 +706,10 @@ static void graph_panel_drivers(const bContext *C, Panel *pa)
 	/* add driver variables */
 	col = uiLayoutColumn(pa->layout, FALSE);
 	block = uiLayoutGetBlock(col);
-	but = uiDefBut(block, BUT, B_IPO_DEPCHANGE, IFACE_("Add Variable"), 0, 0, 10 * UI_UNIT_X, UI_UNIT_Y,
-	               NULL, 0.0, 0.0, 0, 0, TIP_("Add a new target variable for this Driver"));
+	but = uiDefIconTextBut(block, BUT, B_IPO_DEPCHANGE, ICON_ZOOMIN, IFACE_("Add Variable"),
+	               0, 0, 10 * UI_UNIT_X, UI_UNIT_Y,
+	               NULL, 0.0, 0.0, 0, 0,
+	               TIP_("Driver variables ensure that all dependencies will be accounted for and that drivers will update correctly"));
 	uiButSetFunc(but, driver_add_var_cb, driver, NULL);
 	
 	/* loop over targets, drawing them */

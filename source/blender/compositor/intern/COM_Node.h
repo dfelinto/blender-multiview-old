@@ -32,6 +32,7 @@
 #include "COM_ExecutionSystem.h"
 #include <vector>
 #include <string>
+#include <algorithm>
 
 using namespace std;
 
@@ -154,7 +155,7 @@ protected:
 	bNodeSocket *getEditorInputSocket(int editorNodeInputSocketIndex);
 	bNodeSocket *getEditorOutputSocket(int editorNodeOutputSocketIndex);
 
-	const char *RenderData_get_actview_name (const RenderData *rd, int actview);
+	const char *RenderData_get_actview_name (const RenderData *rd, const int actview);
 private:
 };
 

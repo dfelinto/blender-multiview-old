@@ -315,8 +315,8 @@ extern "C" {
  *            should be checked further, probably it'll be also needed for preview
  *            generation in display space
  */
-void COM_execute(RenderData *rd, bNodeTree *editingtree, int rendering,
-                 const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, int view_id);
+void COM_execute(RenderData *rd, Scene *scene, bNodeTree *editingtree, int rendering,
+                 const ColorManagedViewSettings *viewSettings, const ColorManagedDisplaySettings *displaySettings, const int view_id);
 
 /**
  * @brief Deinitialize the compositor caches and allocated memory.

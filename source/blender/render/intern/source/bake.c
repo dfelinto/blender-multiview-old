@@ -223,10 +223,14 @@ static void bake_shade(void *handle, Object *ob, ShadeInput *shi, int UNUSED(qua
 			 * It needs to be done because in Blender
 			 * the normal used in the renderer points inward. It is generated
 			 * this way in calc_vertexnormals(). Should this ever change
-			 * this negate must be removed. */
-			shr.combined[0] = (-nor[0]) / 2.0f + 0.5f;
-			shr.combined[1] = nor[1]    / 2.0f + 0.5f;
-			shr.combined[2] = nor[2]    / 2.0f + 0.5f;
+			 * this negate must be removed.
+			 *
+			 * there is also a small 1e-5f bias for precision issues. otherwise
+			 * we randomly get 127 or 128 for neutral colors. we choose 128
+			 * because it is the convention flat color. * */
+			shr.combined[0] = (-nor[0]) / 2.0f + 0.5f + 1e-5f;
+			shr.combined[1] = nor[1]    / 2.0f + 0.5f + 1e-5f;
+			shr.combined[2] = nor[2]    / 2.0f + 0.5f + 1e-5f;
 		}
 		else if (bs->type == RE_BAKE_TEXTURE) {
 			copy_v3_v3(shr.combined, &shi->r);
@@ -977,6 +981,7 @@ int RE_bake_shade_all_selected(Render *re, int type, Object *actob, short *do_up
 	int a, vdone = false, result = BAKE_RESULT_OK;
 	bool use_mask = false;
 	bool use_displacement_buffer = false;
+	bool do_manage = BKE_scene_check_color_management_enabled(re->scene);
 	
 	re->scene_color_manage = BKE_scene_check_color_management_enabled(re->scene);
 	
@@ -1016,7 +1021,7 @@ int RE_bake_shade_all_selected(Render *re, int type, Object *actob, short *do_up
 
 	if (R.r.bake_flag & R_BAKE_VCOL) {
 		/* untag all meshes */
-		tag_main_lb(&G.main->mesh, false);
+		BKE_main_id_tag_listbase(&G.main->mesh, false);
 	}
 
 	BLI_init_threads(&threads, do_bake_thread, re->r.threads);
@@ -1036,6 +1041,7 @@ int RE_bake_shade_all_selected(Render *re, int type, Object *actob, short *do_up
 		}
 		handles[a].ssamp.shi[0].combinedflag = ~(SCE_PASS_SPEC);
 		handles[a].ssamp.shi[0].thread = a;
+		handles[a].ssamp.shi[0].do_manage = do_manage;
 		handles[a].ssamp.tot = 1;
 
 		handles[a].type = type;

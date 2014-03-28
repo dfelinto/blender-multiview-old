@@ -697,7 +697,7 @@ static int RIG_parentControl(RigControl *ctrl, EditBone *link)
 static void RIG_reconnectControlBones(RigGraph *rg)
 {
 	RigControl *ctrl;
-	int change = 1;
+	bool changed = true;
 	
 	/* first pass, link to deform bones */
 	for (ctrl = rg->controls.first; ctrl; ctrl = ctrl->next) {
@@ -812,8 +812,8 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 	
 	
 	/* second pass, make chains in control bones */
-	while (change) {
-		change = 0;
+	while (changed) {
+		changed = false;
 		
 		for (ctrl = rg->controls.first; ctrl; ctrl = ctrl->next) {
 			/* if control is not linked yet */
@@ -865,7 +865,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 					/* check if parent is already linked */
 					if (ctrl_parent && ctrl_parent->link) {
 						RIG_parentControl(ctrl, ctrl_parent->bone);
-						change = 1;
+						changed = true;
 					}
 					else {
 						/* check childs */
@@ -873,7 +873,7 @@ static void RIG_reconnectControlBones(RigGraph *rg)
 							/* if a child is linked, link to that one */
 							if (ctrl_child->link && ctrl_child->bone->parent == ctrl->bone) {
 								RIG_parentControl(ctrl, ctrl_child->bone);
-								change = 1;
+								changed = true;
 								break;
 							}
 						}
@@ -944,7 +944,7 @@ static void RIG_joinArcs(RigGraph *rg, RigNode *node, RigArc *joined_arc1, RigAr
 	
 	joined_arc1->tail = joined_arc2->tail;
 	
-	joined_arc2->edges.first = joined_arc2->edges.last = NULL;
+	BLI_listbase_clear(&joined_arc2->edges);
 	
 	BLI_removeArc((BGraph *)rg, (BArc *)joined_arc2);
 	
@@ -2416,7 +2416,7 @@ static void adjustGraphs(bContext *C, RigGraph *rigg)
 
 	/* Turn the list into an armature */
 	arm->edbo = rigg->editbones;
-	ED_armature_from_edit(rigg->ob);
+	ED_armature_from_edit(arm);
 	
 	ED_undo_push(C, "Retarget Skeleton");
 }
@@ -2443,7 +2443,7 @@ static void retargetGraphs(bContext *C, RigGraph *rigg)
 
 	/* Turn the list into an armature */
 	arm->edbo = rigg->editbones;
-	ED_armature_from_edit(rigg->ob);
+	ED_armature_from_edit(arm);
 }
 
 const char *RIG_nameBone(RigGraph *rg, int arc_index, int bone_index)
@@ -2593,7 +2593,7 @@ void BIF_retargetArc(bContext *C, ReebArc *earc, RigGraph *template_rigg)
 		template_rigg = armatureSelectedToGraph(C, ob, ob->data);
 	}
 	
-	if (template_rigg->arcs.first == NULL) {
+	if (BLI_listbase_is_empty(&template_rigg->arcs)) {
 //		XXX
 //		error("No Template and no deforming bones selected");
 		return;

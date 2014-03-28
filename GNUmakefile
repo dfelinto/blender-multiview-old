@@ -56,6 +56,10 @@ ifneq "$(findstring lite, $(MAKECMDGOALS))" ""
 	BUILD_DIR:=$(BUILD_DIR)_lite
 	BUILD_CMAKE_ARGS:=$(BUILD_CMAKE_ARGS) -C"$(BLENDER_DIR)/build_files/cmake/config/blender_lite.cmake"
 endif
+ifneq "$(findstring cycles, $(MAKECMDGOALS))" ""
+	BUILD_DIR:=$(BUILD_DIR)_cycles
+	BUILD_CMAKE_ARGS:=$(BUILD_CMAKE_ARGS) -C"$(BLENDER_DIR)/build_files/cmake/config/cycles_standalone.cmake"
+endif
 ifneq "$(findstring headless, $(MAKECMDGOALS))" ""
 	BUILD_DIR:=$(BUILD_DIR)_bpy
 	BUILD_CMAKE_ARGS:=$(BUILD_CMAKE_ARGS) -C"$(BLENDER_DIR)/build_files/cmake/config/blender_headless.cmake"
@@ -70,7 +74,7 @@ endif
 # Get the number of cores for threaded build
 NPROCS:=1
 ifeq ($(OS), Linux)
-	NPROCS:=$(shell grep -c ^processor /proc/cpuinfo)
+	NPROCS:=$(shell nproc)
 endif
 ifeq ($(OS), Darwin)
 	NPROCS:=$(shell sysctl -a | grep "hw.ncpu " | cut -d" " -f3)
@@ -126,6 +130,7 @@ all:
 
 debug: all
 lite: all
+cycles: all
 headless: all
 bpy: all
 
@@ -144,6 +149,7 @@ help:
 	@echo "  * debug     - build a debug binary"
 	@echo "  * lite      - disable non essential features for a smaller binary and faster build"
 	@echo "  * headless  - build without an interface (renderfarm or server automation)"
+	@echo "  * cycles    - build Cycles standalone only, without Blender"
 	@echo "  * bpy       - build as a python module which can be loaded from python directly"
 	@echo ""
 	@echo "  * config    - run cmake configuration tool to set build options"
@@ -243,13 +249,13 @@ test_style_c_qtc:
 
 test_style_osl:
 	# run our own checks on C/C++ style
-	PYTHONIOENCODING=utf_8 python3 "$(BLENDER_DIR)/source/tools/check_source/check_style_c.py" "$(BLENDER_DIR)/intern/cycles/kernel/shaders"
+	PYTHONIOENCODING=utf_8 python3 "$(BLENDER_DIR)/source/tools/check_source/check_style_c.py" "$(BLENDER_DIR)/intern/cycles/kernel/shaders" "$(BLENDER_DIR)/release/scripts/templates_osl"
 
 
 test_style_osl_qtc:
 	# run our own checks on C/C++ style
 	USE_QTC_TASK=1 \
-	PYTHONIOENCODING=utf_8 python3 "$(BLENDER_DIR)/source/tools/check_source/check_style_c.py" "$(BLENDER_DIR)/intern/cycles/kernel/shaders" > \
+	PYTHONIOENCODING=utf_8 python3 "$(BLENDER_DIR)/source/tools/check_source/check_style_c.py" "$(BLENDER_DIR)/intern/cycles/kernel/shaders" "$(BLENDER_DIR)/release/scripts/templates_osl" > \
 	test_style.tasks
 	@echo "written: test_style.tasks"
 
@@ -328,8 +334,8 @@ tbz:
 	@echo "blender_archive.tar.bz2 written"
 
 icons:
-	"$(BLENDER_DIR)/release/datafiles/blender_icons.sh"
-	"$(BLENDER_DIR)/release/datafiles/prvicons.sh"
+	"$(BLENDER_DIR)/release/datafiles/blender_icons_update.py"
+	"$(BLENDER_DIR)/release/datafiles/prvicons_update.py"
 
 
 # -----------------------------------------------------------------------------

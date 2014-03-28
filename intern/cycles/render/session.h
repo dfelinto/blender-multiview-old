@@ -69,7 +69,7 @@ public:
 
 		progressive = false;
 		experimental = false;
-		samples = INT_MAX;
+		samples = USHRT_MAX;
 		tile_size = make_int2(64, 64);
 		start_resolution = INT_MAX;
 		threads = 0;
@@ -128,7 +128,7 @@ public:
 	~Session();
 
 	void start();
-	bool draw(BufferParams& params);
+	bool draw(BufferParams& params, DeviceDrawParams& draw_params);
 	void wait();
 
 	bool ready_to_reset();
@@ -155,11 +155,11 @@ protected:
 	void reset_(BufferParams& params, int samples);
 
 	void run_cpu();
-	bool draw_cpu(BufferParams& params);
+	bool draw_cpu(BufferParams& params, DeviceDrawParams& draw_params);
 	void reset_cpu(BufferParams& params, int samples);
 
 	void run_gpu();
-	bool draw_gpu(BufferParams& params);
+	bool draw_gpu(BufferParams& params, DeviceDrawParams& draw_params);
 	void reset_gpu(BufferParams& params, int samples);
 
 	bool acquire_tile(Device *tile_device, RenderTile& tile);

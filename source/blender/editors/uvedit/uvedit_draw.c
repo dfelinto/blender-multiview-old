@@ -140,8 +140,8 @@ static void draw_uvs_shadow(Object *obedit)
 
 	const int cd_loop_uv_offset = CustomData_get_offset(&bm->ldata, CD_MLOOPUV);
 
-	/* draws the gray mesh when painting */
-	glColor3ub(112, 112, 112);
+	/* draws the mesh when painting */
+	UI_ThemeColor(TH_UV_SHADOW);
 
 	BM_ITER_MESH (efa, &iter, bm, BM_FACES_OF_MESH) {
 		glBegin(GL_LINE_LOOP);
@@ -205,7 +205,7 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, BMEditMesh *em, MTe
 				uv_poly_copy_aspect(tf_uvorig, tf_uv, aspx, aspy, efa->len);
 
 				totarea += BM_face_calc_area(efa);
-				totuvarea += area_poly_v2(efa->len, tf_uv);
+				totuvarea += area_poly_v2((const float (*)[2])tf_uv, efa->len);
 				
 				if (uvedit_face_visible_test(scene, ima, efa, tf)) {
 					BM_elem_flag_enable(efa, BM_ELEM_TAG);
@@ -248,7 +248,7 @@ static void draw_uvs_stretch(SpaceImage *sima, Scene *scene, BMEditMesh *em, MTe
 
 						uv_poly_copy_aspect(tf_uvorig, tf_uv, aspx, aspy, efa->len);
 
-						uvarea = area_poly_v2(efa->len, tf_uv) / totuvarea;
+						uvarea = area_poly_v2((const float (*)[2])tf_uv, efa->len) / totuvarea;
 						
 						if (area < FLT_EPSILON || uvarea < FLT_EPSILON)
 							areadiff = 1.0f;
@@ -694,12 +694,12 @@ static void draw_uvs(SpaceImage *sima, Scene *scene, Object *obedit)
 			}
 			
 			glLineWidth(1);
-			col2[0] = col2[1] = col2[2] = 192; col2[3] = 255;
-			glColor4ubv((unsigned char *)col2); 
-			
+			UI_GetThemeColor4ubv(TH_WIRE_EDIT, col2);
+			glColor4ubv((unsigned char *)col2);
+
 			if (me->drawflag & ME_DRAWEDGES) {
 				int sel, lastsel = -1;
-				UI_GetThemeColor4ubv(TH_VERTEX_SELECT, col1);
+				UI_GetThemeColor4ubv(TH_EDGE_SELECT, col1);
 
 				if (interpedges) {
 					glShadeModel(GL_SMOOTH);

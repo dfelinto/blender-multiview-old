@@ -209,7 +209,7 @@ static DerivedMesh *multiresbake_create_loresdm(Scene *scene, Object *ob, int *l
 	MultiresModifierData *mmd = get_multires_modifier(scene, ob, 0);
 	Mesh *me = (Mesh *)ob->data;
 	MultiresModifierData tmp_mmd = *mmd;
-	DerivedMesh *cddm = CDDM_from_mesh(me, ob);
+	DerivedMesh *cddm = CDDM_from_mesh(me);
 
 	if (mmd->lvl > 0) {
 		*lvl = mmd->lvl;
@@ -234,7 +234,7 @@ static DerivedMesh *multiresbake_create_hiresdm(Scene *scene, Object *ob, int *l
 	Mesh *me = (Mesh *)ob->data;
 	MultiresModifierData *mmd = get_multires_modifier(scene, ob, 0);
 	MultiresModifierData tmp_mmd = *mmd;
-	DerivedMesh *cddm = CDDM_from_mesh(me, ob);
+	DerivedMesh *cddm = CDDM_from_mesh(me);
 	DerivedMesh *dm;
 
 	DM_set_only_copy(cddm, CD_MASK_BAREMESH);
@@ -765,12 +765,11 @@ static int objects_bake_render_modal(bContext *C, wmOperator *UNUSED(op), const 
 	switch (event->type) {
 		case ESCKEY:
 			return OPERATOR_RUNNING_MODAL;
-			break;
 	}
 	return OPERATOR_PASS_THROUGH;
 }
 
-static int is_multires_bake(Scene *scene)
+static bool is_multires_bake(Scene *scene)
 {
 	if (ELEM4(scene->r.bake_mode, RE_BAKE_NORMALS, RE_BAKE_DISPLACEMENT, RE_BAKE_DERIVATIVE, RE_BAKE_AO))
 		return scene->r.bake_flag & R_BAKE_MULTIRES;

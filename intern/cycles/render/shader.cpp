@@ -43,7 +43,7 @@ Shader::Shader()
 
 	use_mis = true;
 	use_transparent_shadow = true;
-	homogeneous_volume = false;
+	heterogeneous_volume = true;
 
 	has_surface = false;
 	has_surface_transparent = false;
@@ -93,15 +93,24 @@ void Shader::tag_update(Scene *scene)
 	if(use_mis && has_surface_emission)
 		scene->light_manager->need_update = true;
 
+	/* quick detection of which kind of shaders we have to avoid loading
+	 * e.g. surface attributes when there is only a volume shader. this could
+	 * be more fine grained but it's better than nothing */
+	OutputNode *output = graph->output();
+	has_surface = has_surface || output->input("Surface")->link;
+	has_volume = has_volume || output->input("Volume")->link;
+	has_displacement = has_displacement || output->input("Displacement")->link;
+
 	/* get requested attributes. this could be optimized by pruning unused
 	 * nodes here already, but that's the job of the shader manager currently,
 	 * and may not be so great for interactive rendering where you temporarily
 	 * disconnect a node */
+
 	AttributeRequestSet prev_attributes = attributes;
 
 	attributes.clear();
 	foreach(ShaderNode *node, graph->nodes)
-		node->attributes(&attributes);
+		node->attributes(this, &attributes);
 	
 	/* compare if the attributes changed, mesh manager will check
 	 * need_update_attributes, update the relevant meshes and clear it. */
@@ -218,6 +227,7 @@ void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Sc
 	uint *shader_flag = dscene->shader_flag.resize(shader_flag_size);
 	uint i = 0;
 	bool has_converter_blackbody = false;
+	bool has_volumes = false;
 
 	foreach(Shader *shader, scene->shaders) {
 		uint flag = 0;
@@ -226,10 +236,21 @@ void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Sc
 			flag |= SD_USE_MIS;
 		if(shader->has_surface_transparent && shader->use_transparent_shadow)
 			flag |= SD_HAS_TRANSPARENT_SHADOW;
-		if(shader->has_volume)
+		if(shader->has_volume) {
 			flag |= SD_HAS_VOLUME;
-		if(shader->homogeneous_volume)
-			flag |= SD_HOMOGENEOUS_VOLUME;
+			has_volumes = true;
+
+			/* in this case we can assume transparent surface */
+			if(!shader->has_surface)
+				flag |= SD_HAS_ONLY_VOLUME;
+
+			/* todo: this could check more fine grained, to skip useless volumes
+			 * enclosed inside an opaque bsdf, although we still need to handle
+			 * the case with camera inside volumes too */
+			flag |= SD_HAS_TRANSPARENT_SHADOW;
+		}
+		if(shader->heterogeneous_volume)
+			flag |= SD_HETEROGENEOUS_VOLUME;
 		if(shader->has_bssrdf_bump)
 			flag |= SD_HAS_BSSRDF_BUMP;
 		if(shader->has_converter_blackbody)
@@ -263,6 +284,9 @@ void ShaderManager::device_update_common(Device *device, DeviceScene *dscene, Sc
 		blackbody_table_offset = TABLE_OFFSET_INVALID;
 	}
 
+	/* volumes */
+	KernelIntegrator *kintegrator = &dscene->data.integrator;
+	kintegrator->use_volumes = has_volumes;
 }
 
 void ShaderManager::device_free_common(Device *device, DeviceScene *dscene, Scene *scene)

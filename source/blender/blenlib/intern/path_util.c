@@ -268,7 +268,7 @@ bool BLI_uniquename_cb(bool (*unique_check)(void *arg, const char *name),
 
 /* little helper macro for BLI_uniquename */
 #ifndef GIVE_STRADDR
-	#define GIVE_STRADDR(data, offset) ( ((char *)data) + offset)
+#  define GIVE_STRADDR(data, offset) ( ((char *)data) + offset)
 #endif
 
 /* Generic function to set a unique name. It is only designed to be used in situations
@@ -576,31 +576,12 @@ void BLI_path_rel(char *file, const char *relfile)
 }
 
 /**
- * Cleans path and makes sure it ends with a slash.
- * \return  true if \a path has more than one other path separator in it.
- */
-bool BLI_has_parent(char *path)
-{
-	int len;
-	int slashes = 0;
-	BLI_clean(path);
-	len = BLI_add_slash(path) - 1;
-
-	while (len >= 0) {
-		if ((path[len] == '\\') || (path[len] == '/'))
-			slashes++;
-		len--;
-	}
-	return slashes > 1;
-}
-
-/**
  * Replaces path with the path of its parent directory, returning true if
  * it was able to find a parent directory within the pathname.
  */
 bool BLI_parent_dir(char *path)
 {
-	static char parent_dir[] = {'.', '.', SEP, '\0'}; /* "../" or "..\\" */
+	const char parent_dir[] = {'.', '.', SEP, '\0'}; /* "../" or "..\\" */
 	char tmp[FILE_MAX + 4];
 
 	BLI_join_dirfile(tmp, sizeof(tmp), path, parent_dir);
@@ -1618,20 +1599,53 @@ void BLI_make_file_string(const char *relabase, char *string, const char *dir, c
 	BLI_clean(string);
 }
 
+static bool testextensie_ex(const char *str, const size_t str_len,
+                            const char *ext, const size_t ext_len)
+{
+	BLI_assert(strlen(str) == str_len);
+	BLI_assert(strlen(ext) == ext_len);
+
+	return  (((str_len == 0 || ext_len == 0 || ext_len >= str_len) == 0) &&
+	         (BLI_strcasecmp(ext, str + str_len - ext_len) == 0));
+}
+
 /* does str end with ext. */
 bool BLI_testextensie(const char *str, const char *ext)
 {
-	const size_t a = strlen(str);
-	const size_t b = strlen(ext);
-	return !(a == 0 || b == 0 || b >= a) && (BLI_strcasecmp(ext, str + a - b) == 0);
+	return testextensie_ex(str, strlen(str), ext, strlen(ext));
+}
+
+bool BLI_testextensie_n(const char *str, ...)
+{
+	const size_t str_len = strlen(str);
+
+	va_list args;
+	const char *ext;
+	bool ret = false;
+
+	va_start(args, str);
+
+	while ((ext = (const char *) va_arg(args, void *))) {
+		if (testextensie_ex(str, str_len, ext, strlen(ext))) {
+			ret = true;
+			goto finally;
+		}
+	}
+
+finally:
+	va_end(args);
+
+	return ret;
 }
 
 /* does str end with any of the suffixes in *ext_array. */
 bool BLI_testextensie_array(const char *str, const char **ext_array)
 {
+	const size_t str_len = strlen(str);
 	int i = 0;
+
 	while (ext_array[i]) {
-		if (BLI_testextensie(str, ext_array[i])) {
+		if (testextensie_ex(str, str_len, ext_array[i], strlen(ext_array[i]))) {
 			return true;
 		}
 
@@ -2129,7 +2143,7 @@ static void bli_where_am_i(char *fullname, const size_t maxlen, const char *name
 	if (GetModuleFileNameW(0, fullname_16, maxlen)) {
 		conv_utf_16_to_8(fullname_16, fullname, maxlen);
 		if (!BLI_exists(fullname)) {
-			printf("path can't be found: \"%.*s\"\n", maxlen, fullname);
+			printf("path can't be found: \"%.*s\"\n", (int)maxlen, fullname);
 			MessageBox(NULL, "path contains invalid characters or is too long (see console)", "Error", MB_OK);
 		}
 		MEM_freeN(fullname_16);

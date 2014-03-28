@@ -178,8 +178,7 @@ bool BM_disk_dissolve(BMesh *bm, BMVert *v)
 			e = v->e;
 			do {
 				f = NULL;
-				len = bmesh_radial_length(e->l);
-				if (len == 2 && (e != baseedge) && (e != keepedge)) {
+				if (BM_edge_is_manifold(e) && (e != baseedge) && (e != keepedge)) {
 					f = BM_faces_join_pair(bm, e->l->f, e->l->radial_next->f, e, true);
 					/* return if couldn't join faces in manifold
 					 * conditions */
@@ -205,14 +204,16 @@ bool BM_disk_dissolve(BMesh *bm, BMVert *v)
 			return false;
 		}
 		
-		/* get remaining two faces */
-		f = e->l->f;
-		f2 = e->l->radial_next->f;
+		if (e->l) {
+			/* get remaining two faces */
+			f = e->l->f;
+			f2 = e->l->radial_next->f;
 
-		if (f != f2) {
-			/* join two remaining faces */
-			if (!BM_faces_join_pair(bm, f, f2, e, true)) {
-				return false;
+			if (f != f2) {
+				/* join two remaining faces */
+				if (!BM_faces_join_pair(bm, f, f2, e, true)) {
+					return false;
+				}
 			}
 		}
 	}
@@ -252,48 +253,6 @@ BMFace *BM_faces_join_pair(BMesh *bm, BMFace *f_a, BMFace *f_b, BMEdge *e, const
 }
 
 /**
- * \brief Connect Verts, Split Face
- *
- * connects two verts together, automatically (if very naively) finding the
- * face they both share (if there is one) and splitting it.  Use this at your
- * own risk, as it doesn't handle the many complex cases it should (like zero-area faces,
- * multiple faces, etc).
- *
- * this is really only meant for cases where you don't know before hand the face
- * the two verts belong to for splitting (e.g. the subdivision operator).
- *
- * \return The newly created edge.
- */
-BMEdge *BM_verts_connect(BMesh *bm, BMVert *v1, BMVert *v2, BMFace **r_f)
-{
-	BMIter fiter;
-	BMIter viter;
-	BMVert *v_iter;
-	BMFace *f_iter;
-
-	/* be warned: this can do weird things in some ngon situation, see BM_face_legal_splits */
-	BM_ITER_ELEM (f_iter, &fiter, v1, BM_FACES_OF_VERT) {
-		BM_ITER_ELEM (v_iter, &viter, f_iter, BM_FACES_OF_VERT) {
-			if (v_iter == v2) {
-				BMLoop *l_new;
-
-				f_iter = BM_face_split(bm, f_iter, v1, v2, &l_new, NULL, false);
-
-				if (r_f) {
-					*r_f = f_iter;
-				}
-				return l_new->e;
-			}
-		}
-	}
-
-	if (r_f) {
-		*r_f = NULL;
-	}
-	return NULL;
-}
-
-/**
  * \brief Face Split
  *
  * Split a face along two vertices. returns the newly made face, and sets
@@ -310,13 +269,27 @@ BMEdge *BM_verts_connect(BMesh *bm, BMVert *v1, BMVert *v2, BMFace **r_f)
  * if the split is successful (and the original original face will be the
  * other side). NULL if the split fails.
  */
-BMFace *BM_face_split(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, BMLoop **r_l,
-                      BMEdge *example, const bool no_double)
+BMFace *BM_face_split(BMesh *bm, BMFace *f,
+                      BMLoop *l_a, BMLoop *l_b,
+                      BMLoop **r_l, BMEdge *example,
+                      const bool no_double)
 {
 	const bool has_mdisp = CustomData_has_layer(&bm->ldata, CD_MDISPS);
 	BMFace *f_new, *f_tmp;
 
-	BLI_assert(v1 != v2);
+	BLI_assert(l_a != l_b);
+	BLI_assert(f == l_a->f && f == l_b->f);
+	BLI_assert(!BM_loop_is_adjacent(l_a, l_b));
+
+	/* could be an assert */
+	if (UNLIKELY(BM_loop_is_adjacent(l_a, l_b)) ||
+	    UNLIKELY((f != l_a->f || f != l_b->f)))
+	{
+		if (r_l) {
+			*r_l = NULL;
+		}
+		return NULL;
+	}
 
 	/* do we have a multires layer? */
 	if (has_mdisp) {
@@ -324,9 +297,9 @@ BMFace *BM_face_split(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, BMLoop **r_l
 	}
 	
 #ifdef USE_BMESH_HOLES
-	f_new = bmesh_sfme(bm, f, v1, v2, r_l, NULL, example, no_double);
+	f_new = bmesh_sfme(bm, f, l_a, l_b, r_l, NULL, example, no_double);
 #else
-	f_new = bmesh_sfme(bm, f, v1, v2, r_l, example, no_double);
+	f_new = bmesh_sfme(bm, f, l_a, l_b, r_l, example, no_double);
 #endif
 	
 	if (f_new) {
@@ -369,7 +342,7 @@ BMFace *BM_face_split(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, BMLoop **r_l
  *
  * \param bm The bmesh
  * \param f the original face
- * \param v1, v2 vertices which define the split edge, must be different
+ * \param l_a, l_b vertices which define the split edge, must be different
  * \param cos Array of coordinates for intermediate points
  * \param n Length of \a cos (must be > 0)
  * \param r_l pointer which will receive the BMLoop for the first split edge (from \a v1) in the new face
@@ -379,16 +352,32 @@ BMFace *BM_face_split(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, BMLoop **r_l
  * if the split is successful (and the original original face will be the
  * other side). NULL if the split fails.
  */
-BMFace *BM_face_split_n(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, float cos[][3], int n,
+BMFace *BM_face_split_n(BMesh *bm, BMFace *f,
+                        BMLoop *l_a, BMLoop *l_b,
+                        float cos[][3], int n,
                         BMLoop **r_l, BMEdge *example)
 {
 	BMFace *f_new, *f_tmp;
 	BMLoop *l_dummy;
 	BMEdge *e, *e_new;
 	BMVert *v_new;
+	// BMVert *v_a = l_a->v; /* UNUSED */
+	BMVert *v_b = l_b->v;
 	int i, j;
 
-	BLI_assert(v1 != v2);
+	BLI_assert(l_a != l_b);
+	BLI_assert(f == l_a->f && f == l_b->f);
+	BLI_assert(!((n == 0) && BM_loop_is_adjacent(l_a, l_b)));
+
+	/* could be an assert */
+	if (UNLIKELY((n == 0) && BM_loop_is_adjacent(l_a, l_b)) ||
+	    UNLIKELY(l_a->f != l_b->f))
+	{
+		if (r_l) {
+			*r_l = NULL;
+		}
+		return NULL;
+	}
 
 	f_tmp = BM_face_copy(bm, bm, f, true, true);
 
@@ -396,12 +385,12 @@ BMFace *BM_face_split_n(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, float cos[
 		r_l = &l_dummy;
 	
 #ifdef USE_BMESH_HOLES
-	f_new = bmesh_sfme(bm, f, v1, v2, r_l, NULL, example, false);
+	f_new = bmesh_sfme(bm, f, l_a, l_b, r_l, NULL, example, false);
 #else
-	f_new = bmesh_sfme(bm, f, v1, v2, r_l, example, false);
+	f_new = bmesh_sfme(bm, f, l_a, l_b, r_l, example, false);
 #endif
-	/* bmesh_sfme returns in r_l a Loop for f_new going from v1 to v2.
-	 * The radial_next is for f and goes from v2 to v1  */
+	/* bmesh_sfme returns in r_l a Loop for f_new going from v_a to v_b.
+	 * The radial_next is for f and goes from v_b to v_a  */
 
 	if (f_new) {
 		BM_elem_attrs_copy(bm, bm, f, f_new);
@@ -409,7 +398,7 @@ BMFace *BM_face_split_n(BMesh *bm, BMFace *f, BMVert *v1, BMVert *v2, float cos[
 
 		e = (*r_l)->e;
 		for (i = 0; i < n; i++) {
-			v_new = bmesh_semv(bm, v2, e, &e_new);
+			v_new = bmesh_semv(bm, v_b, e, &e_new);
 			BLI_assert(v_new != NULL);
 			/* bmesh_semv returns in e_new the edge going from v_new to tv */
 			copy_v3_v3(v_new->co, cos[i]);
@@ -461,7 +450,7 @@ BMEdge *BM_vert_collapse_faces(BMesh *bm, BMEdge *e_kill, BMVert *v_kill, float 
                                const bool join_faces, const bool kill_degenerate_faces)
 {
 	BMEdge *e_new = NULL;
-	BMVert *tv = bmesh_edge_other_vert_get(e_kill, v_kill);
+	BMVert *tv = BM_edge_other_vert(e_kill, v_kill);
 
 	BMEdge *e2;
 	BMVert *tv2;
@@ -509,9 +498,16 @@ BMEdge *BM_vert_collapse_faces(BMesh *bm, BMEdge *e_kill, BMVert *v_kill, float 
 		if (BLI_array_count(faces) >= 2) {
 			BMFace *f2 = BM_faces_join(bm, faces, BLI_array_count(faces), true);
 			if (f2) {
-				BMLoop *l_new = NULL;
-				if (BM_face_split(bm, f2, tv, tv2, &l_new, NULL, false)) {
-					e_new = l_new->e;
+				BMLoop *l_a, *l_b;
+
+				if ((l_a = BM_face_vert_share_loop(f2, tv)) &&
+				    (l_b = BM_face_vert_share_loop(f2, tv2)))
+				{
+					BMLoop *l_new;
+
+					if (BM_face_split(bm, f2, l_a, l_b, &l_new, NULL, false)) {
+						e_new = l_new->e;
+					}
 				}
 			}
 		}
@@ -575,7 +571,7 @@ BMEdge *BM_vert_collapse_edge(BMesh *bm, BMEdge *e_kill, BMVert *v_kill,
 
 	/* in this case we want to keep all faces and not join them,
 	 * rather just get rid of the vertex - see bug [#28645] */
-	BMVert *tv  = bmesh_edge_other_vert_get(e_kill, v_kill);
+	BMVert *tv  = BM_edge_other_vert(e_kill, v_kill);
 	if (tv) {
 		BMEdge *e2 = bmesh_disk_edge_next(e_kill, v_kill);
 		if (e2) {
@@ -642,7 +638,7 @@ BMVert *BM_edge_split(BMesh *bm, BMEdge *e, BMVert *v, BMEdge **r_e, float perce
 		}
 	}
 
-	v2 = bmesh_edge_other_vert_get(e, v);
+	v2 = BM_edge_other_vert(e, v);
 	v_new = bmesh_semv(bm, v, e, r_e);
 
 	BLI_assert(v_new != NULL);
@@ -1058,10 +1054,10 @@ BMEdge *BM_edge_rotate(BMesh *bm, BMEdge *e, const bool ccw, const short check_f
 	/* note, this assumes joining the faces _didnt_ also remove the verts.
 	 * the #BM_edge_rotate_check will ensure this, but its possibly corrupt state or future edits
 	 * break this */
-	if (!BM_face_split(bm, f, v1, v2, NULL, NULL, true)) {
-		return NULL;
-	}
-	else {
+	if ((l1 = BM_face_vert_share_loop(f, v1)) &&
+	    (l2 = BM_face_vert_share_loop(f, v2)) &&
+	    BM_face_split(bm, f, l1, l2, NULL, NULL, true))
+	{
 		/* we should really be able to know the faces some other way,
 		 * rather then fetching them back from the edge, but this is predictable
 		 * where using the return values from face split isn't. - campbell */
@@ -1070,6 +1066,9 @@ BMEdge *BM_edge_rotate(BMesh *bm, BMEdge *e, const bool ccw, const short check_f
 			fa->head.hflag = f_hflag_prev_1;
 			fb->head.hflag = f_hflag_prev_2;
 		}
+	}
+	else {
+		return NULL;
 	}
 
 	return e_new;

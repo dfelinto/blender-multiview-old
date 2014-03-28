@@ -231,10 +231,10 @@ void bmo_create_grid_exec(BMesh *bm, BMOperator *op)
 	BMOpSlot *slot_verts_out = BMO_slot_get(op->slots_out, "verts.out");
 
 	const float dia = BMO_slot_float_get(op->slots_in, "size");
-	const unsigned int xtot = max_ii(2, BMO_slot_int_get(op->slots_in, "x_segments")) + 1;
-	const unsigned int ytot = max_ii(2, BMO_slot_int_get(op->slots_in, "y_segments")) + 1;
-	float xtot_inv2 = 2.0f / (xtot - 1);
-	float ytot_inv2 = 2.0f / (ytot - 1);
+	const unsigned int xtot = max_ii(2, BMO_slot_int_get(op->slots_in, "x_segments"));
+	const unsigned int ytot = max_ii(2, BMO_slot_int_get(op->slots_in, "y_segments"));
+	const float xtot_inv2 = 2.0f / (xtot - 1);
+	const float ytot_inv2 = 2.0f / (ytot - 1);
 
 	BMVert **varr;
 	BMVert *vquad[4];
@@ -265,10 +265,10 @@ void bmo_create_grid_exec(BMesh *bm, BMOperator *op)
 
 	for (y = 1; y < ytot; y++) {
 		for (x = 1; x < xtot; x++) {
-			vquad[0] = varr[XY(x - 1,     y)];
-			vquad[1] = varr[XY(x - 1, y - 1)];
-			vquad[2] = varr[XY(x,     y - 1)];
-			vquad[3] = varr[XY(x,         y)];
+			vquad[0] = varr[XY(x - 1, y - 1)];
+			vquad[1] = varr[XY(x,     y - 1)];
+			vquad[2] = varr[XY(x,         y)];
+			vquad[3] = varr[XY(x - 1,     y)];
 
 			BM_face_create_verts(bm, vquad, 4, NULL, BM_CREATE_NOP, true);
 		}
@@ -453,7 +453,10 @@ void bmo_create_monkey_exec(BMesh *bm, BMOperator *op)
 	for (i = 0; i < monkeynv; i++) {
 		float v[3];
 
-		v[0] = (monkeyv[i][0] + 127) / 128.0, v[1] = monkeyv[i][1] / 128.0, v[2] = monkeyv[i][2] / 128.0;
+		/* rotate to face in the -Y axis */
+		v[0] = (monkeyv[i][0] + 127) / 128.0;
+		v[2] = monkeyv[i][1] / 128.0;
+		v[1] = monkeyv[i][2] / -128.0;
 
 		tv[i] = BM_vert_create(bm, v, NULL, BM_CREATE_NOP);
 		BMO_elem_flag_enable(bm, tv[i], VERT_MARK);

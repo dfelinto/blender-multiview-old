@@ -50,6 +50,17 @@
 
 /* ********************** general blender movie support ***************************** */
 
+static int start_stub(Scene *UNUSED(scene), RenderData *UNUSED(rd), int UNUSED(rectx), int UNUSED(recty),
+                      ReportList *UNUSED(reports))
+{ return 0; }
+
+static void end_stub(void)
+{}
+
+static int append_stub(RenderData *UNUSED(rd), int UNUSED(start_frame), int UNUSED(frame), int *UNUSED(pixels),
+                       int UNUSED(rectx), int UNUSED(recty), ReportList *UNUSED(reports))
+{ return 0; }
+
 #ifdef WITH_AVI
 #  include "AVI_avi.h"
 
@@ -74,13 +85,18 @@ static void filepath_avi(char *string, RenderData *rd);
 bMovieHandle *BKE_movie_handle_get(const char imtype)
 {
 	static bMovieHandle mh = {NULL};
+	/* stub callbacks in case none of the movie formats is supported */
+	mh.start_movie = start_stub;
+	mh.append_movie = append_stub;
+	mh.end_movie = end_stub;
+	mh.get_next_frame = NULL;
+	mh.get_movie_path = NULL;
 	
 	/* set the default handle, as builtin */
 #ifdef WITH_AVI
 	mh.start_movie = start_avi;
 	mh.append_movie = append_avi;
 	mh.end_movie = end_avi;
-	mh.get_next_frame = NULL;
 	mh.get_movie_path = filepath_avi;
 #endif
 
@@ -220,7 +236,7 @@ static int append_avi(RenderData *UNUSED(rd), int start_frame, int frame, int *p
 	}
 	
 	AVI_write_frame(avi, (frame - start_frame), AVI_FORMAT_RGB32, rectot, rectx * recty * 4);
-//	printf ("added frame %3d (frame %3d in avi): ", frame, frame-start_frame);
+//	printf("added frame %3d (frame %3d in avi): ", frame, frame-start_frame);
 
 	return 1;
 }

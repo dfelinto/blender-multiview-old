@@ -61,25 +61,23 @@
 #include "BLI_math.h"
 
 #include "BKE_global.h"
+#include "BKE_scene.h"
 /* end of blender include block */
 
 
-BlenderWorldInfo::BlenderWorldInfo(struct Scene *blenderscene, struct World* blenderworld)
+BlenderWorldInfo::BlenderWorldInfo(struct Scene *blenderscene, struct World *blenderworld)
 {
-	if (blenderworld)
-	{
+	if (blenderworld) {
 		m_hasworld = true;
 
 		// do we have mist?
-		if ((blenderworld->mode) & WO_MIST)
-		{
+		if ((blenderworld->mode) & WO_MIST) {
 			m_hasmist = true;
 			m_miststart = blenderworld->miststa;
 			m_mistdistance = blenderworld->mistdist;
 			copy_v3_v3(m_mistcolor, &blenderworld->horr);
 		}
-		else
-		{
+		else {
 			m_hasmist = false;
 			m_miststart = 0.0;
 			m_mistdistance = 0.0;
@@ -89,59 +87,45 @@ BlenderWorldInfo::BlenderWorldInfo(struct Scene *blenderscene, struct World* ble
 		copy_v3_v3(m_backgroundcolor, &blenderworld->horr);
 		copy_v3_v3(m_ambientcolor, &blenderworld->ambr);
 
-		if (blenderscene->r.color_mgt_flag & R_COLOR_MANAGEMENT) {
+		if (BKE_scene_check_color_management_enabled(blenderscene)) {
 			linearrgb_to_srgb_v3_v3(m_mistcolor, m_mistcolor);
 			linearrgb_to_srgb_v3_v3(m_backgroundcolor, m_backgroundcolor);
 			linearrgb_to_srgb_v3_v3(m_ambientcolor, m_ambientcolor);
 		}
 	}
-	else
-	{
+	else {
 		m_hasworld = false;
 	}
 }
 
-
-
 BlenderWorldInfo::~BlenderWorldInfo()
 {
-
 }
-
 
 bool BlenderWorldInfo::hasWorld()
 {
 	return m_hasworld;
 }
 
-
-
 bool BlenderWorldInfo::hasMist()
 {
 	return m_hasmist;
 }
-
-
 
 float BlenderWorldInfo::getBackColorRed()
 {
 	return m_backgroundcolor[0];
 }
 
-
-
 float BlenderWorldInfo::getBackColorGreen()
 {
 	return m_backgroundcolor[1];
-}  
-
-
+}
 
 float BlenderWorldInfo::getBackColorBlue()
 {
 	return m_backgroundcolor[2];
-}  
-
+}
 
 float BlenderWorldInfo::getAmbientColorRed()
 {
@@ -163,28 +147,20 @@ float BlenderWorldInfo::getMistStart()
 	return m_miststart;
 }
 
-
-
 float BlenderWorldInfo::getMistDistance()
 {
 	return m_mistdistance;
 }
-
-
 
 float BlenderWorldInfo::getMistColorRed()
 {
 	return m_mistcolor[0];
 }
 
-
-
 float BlenderWorldInfo::getMistColorGreen()
 {
 	return m_mistcolor[1];
-}   
-
-
+}
 
 float BlenderWorldInfo::getMistColorBlue()
 {
@@ -198,41 +174,27 @@ void BlenderWorldInfo::setBackColor(float r, float g, float b)
 	m_backgroundcolor[2] = b;
 }
 
-	void
-BlenderWorldInfo::setMistStart(
-	float d
-) {
+void BlenderWorldInfo::setMistStart(float d)
+{
 	m_miststart = d;
 }
 
-
-	void
-BlenderWorldInfo::setMistDistance(
-	float d
-) {
+void BlenderWorldInfo::setMistDistance(float d)
+{
 	m_mistdistance = d;
 }
 
-
-	void
-BlenderWorldInfo::setMistColorRed(
-	float d
-) {
+void BlenderWorldInfo::setMistColorRed(float d)
+{
 	m_mistcolor[0] = d;
 }
 
-
-	void
-BlenderWorldInfo::setMistColorGreen(
-	float d
-) {
+void BlenderWorldInfo::setMistColorGreen(float d)
+{
 	m_mistcolor[1] = d;
 }
 
-
-	void
-BlenderWorldInfo::setMistColorBlue(
-	float d
-) {
+void BlenderWorldInfo::setMistColorBlue(float d)
+{
 	m_mistcolor[2] = d;
 }

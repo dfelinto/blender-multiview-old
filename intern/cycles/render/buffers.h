@@ -23,6 +23,7 @@
 
 #include "kernel_types.h"
 
+#include "util_half.h"
 #include "util_string.h"
 #include "util_thread.h"
 #include "util_types.h"
@@ -30,6 +31,7 @@
 CCL_NAMESPACE_BEGIN
 
 class Device;
+struct DeviceDrawParams;
 struct float4;
 
 /* Buffer Parameters
@@ -113,7 +115,7 @@ public:
 	void write(Device *device, const string& filename);
 
 	void draw_set(int width, int height);
-	void draw(Device *device);
+	void draw(Device *device, const DeviceDrawParams& draw_params);
 	bool draw_ready();
 
 	device_memory& rgba_data();

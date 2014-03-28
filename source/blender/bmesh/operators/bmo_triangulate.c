@@ -65,12 +65,13 @@ void bmo_triangle_fill_exec(BMesh *bm, BMOperator *op)
 	BMEdge *e;
 	ScanFillContext sf_ctx;
 	/* ScanFillEdge *sf_edge; */ /* UNUSED */
-	ScanFillVert *sf_vert, *sf_vert_1, *sf_vert_2;
+	ScanFillVert *sf_vert_1, *sf_vert_2;
 	ScanFillFace *sf_tri;
 	SmallHash hash;
 	float normal[3], *normal_pt;
+	const int scanfill_flag = BLI_SCANFILL_CALC_HOLES | BLI_SCANFILL_CALC_POLYS | BLI_SCANFILL_CALC_LOOSE;
 
-	BLI_smallhash_init(&hash);
+	BLI_smallhash_init_ex(&hash, BMO_slot_buffer_count(op->slots_in, "edges"));
 
 	BMO_slot_vec_get(op->slots_in, "normal", normal);
 	
@@ -79,20 +80,19 @@ void bmo_triangle_fill_exec(BMesh *bm, BMOperator *op)
 	BMO_ITER (e, &siter, op->slots_in, "edges", BM_EDGE) {
 		BMO_elem_flag_enable(bm, e, EDGE_MARK);
 		
-		if (!BLI_smallhash_haskey(&hash, (uintptr_t)e->v1)) {
-			sf_vert = BLI_scanfill_vert_add(&sf_ctx, e->v1->co);
-			sf_vert->tmp.p = e->v1;
-			BLI_smallhash_insert(&hash, (uintptr_t)e->v1, sf_vert);
+		if ((sf_vert_1 = BLI_smallhash_lookup(&hash, (uintptr_t)e->v1)) == NULL) {
+			sf_vert_1 = BLI_scanfill_vert_add(&sf_ctx, e->v1->co);
+			sf_vert_1->tmp.p = e->v1;
+			BLI_smallhash_insert(&hash, (uintptr_t)e->v1, sf_vert_1);
 		}
 		
-		if (!BLI_smallhash_haskey(&hash, (uintptr_t)e->v2)) {
-			sf_vert = BLI_scanfill_vert_add(&sf_ctx, e->v2->co);
-			sf_vert->tmp.p = e->v2;
-			BLI_smallhash_insert(&hash, (uintptr_t)e->v2, sf_vert);
+		if ((sf_vert_2 = BLI_smallhash_lookup(&hash, (uintptr_t)e->v2)) == NULL) {
+			sf_vert_2 = BLI_scanfill_vert_add(&sf_ctx, e->v2->co);
+			sf_vert_2->tmp.p = e->v2;
+			BLI_smallhash_insert(&hash, (uintptr_t)e->v2, sf_vert_2);
 		}
 		
-		sf_vert_1 = BLI_smallhash_lookup(&hash, (uintptr_t)e->v1);
-		sf_vert_2 = BLI_smallhash_lookup(&hash, (uintptr_t)e->v2);
+
 		/* sf_edge = */ BLI_scanfill_edge_add(&sf_ctx, sf_vert_1, sf_vert_2);
 		/* sf_edge->tmp.p = e; */ /* UNUSED */
 	}
@@ -105,7 +105,7 @@ void bmo_triangle_fill_exec(BMesh *bm, BMOperator *op)
 		normal_pt = normal;
 	}
 
-	BLI_scanfill_calc_ex(&sf_ctx, BLI_SCANFILL_CALC_HOLES, normal_pt);
+	BLI_scanfill_calc_ex(&sf_ctx, scanfill_flag, normal_pt);
 	
 	for (sf_tri = sf_ctx.fillfacebase.first; sf_tri; sf_tri = sf_tri->next) {
 		BMFace *f = BM_face_create_quad_tri(bm,

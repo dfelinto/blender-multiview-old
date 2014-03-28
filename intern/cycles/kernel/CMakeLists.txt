@@ -12,8 +12,6 @@ set(INC_SYS
 
 set(SRC
 	kernel.cpp
-	kernel_sse2.cpp
-	kernel_sse3.cpp
 	kernel.cl
 	kernel.cu
 )
@@ -46,10 +44,12 @@ set(SRC_HEADERS
 	kernel_projection.h
 	kernel_random.h
 	kernel_shader.h
+	kernel_shadow.h
 	kernel_subsurface.h
 	kernel_textures.h
 	kernel_triangle.h
 	kernel_types.h
+	kernel_volume.h
 )
 
 set(SRC_CLOSURE_HEADERS
@@ -116,6 +116,7 @@ set(SRC_SVM_HEADERS
 
 set(SRC_UTIL_HEADERS
 	../util/util_color.h
+	../util/util_half.h
 	../util/util_math.h
 	../util/util_transform.h
 	../util/util_types.h
@@ -139,7 +140,9 @@ if(WITH_CYCLES_CUDA_BINARIES)
 	# warn for other versions
 	if(CUDA_VERSION MATCHES "50")
 	else()
-		message(WARNING "CUDA version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} detected, build may succeed but only CUDA 5.0 is officially supported")
+		message(WARNING
+			"CUDA version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} detected, "
+			"build may succeed but only CUDA 5.0 is officially supported")
 	endif()
 
 	# build for each arch
@@ -167,7 +170,21 @@ if(WITH_CYCLES_CUDA_BINARIES)
 		else()
 			add_custom_command(
 				OUTPUT ${cuda_cubin}
-				COMMAND ${CUDA_NVCC_EXECUTABLE} -arch=${arch} -m${CUDA_BITS} --cubin ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cu -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_cubin} --ptxas-options="-v" ${cuda_arch_flags} ${cuda_version_flags} ${cuda_math_flags} -I${CMAKE_CURRENT_SOURCE_DIR}/../util -I${CMAKE_CURRENT_SOURCE_DIR}/svm -DCCL_NAMESPACE_BEGIN= -DCCL_NAMESPACE_END= -DNVCC
+				COMMAND ${CUDA_NVCC_EXECUTABLE}
+				        -arch=${arch}
+				        -m${CUDA_BITS}
+				        --cubin ${CMAKE_CURRENT_SOURCE_DIR}/kernel.cu
+				        -o ${CMAKE_CURRENT_BINARY_DIR}/${cuda_cubin}
+				        --ptxas-options="-v"
+				        ${cuda_arch_flags}
+				        ${cuda_version_flags}
+				        ${cuda_math_flags}
+				        -I${CMAKE_CURRENT_SOURCE_DIR}/../util
+				        -I${CMAKE_CURRENT_SOURCE_DIR}/svm
+				        -DCCL_NAMESPACE_BEGIN=
+				        -DCCL_NAMESPACE_END=
+				        -DNVCC
+
 				DEPENDS ${cuda_sources})
 
 			delayed_install("${CMAKE_CURRENT_BINARY_DIR}" "${cuda_cubin}" ${CYCLES_INSTALL_PATH}/lib)
@@ -190,15 +207,20 @@ endif()
 include_directories(${INC})
 include_directories(SYSTEM ${INC_SYS})
 
-if(WITH_CYCLES_OPTIMIZED_KERNEL)
+if(CXX_HAS_SSE)
+	list(APPEND SRC
+		kernel_sse2.cpp
+		kernel_sse3.cpp
+		kernel_sse41.cpp
+		kernel_avx.cpp
+	)
+
 	set_source_files_properties(kernel_sse2.cpp PROPERTIES COMPILE_FLAGS "${CYCLES_SSE2_KERNEL_FLAGS}")
 	set_source_files_properties(kernel_sse3.cpp PROPERTIES COMPILE_FLAGS "${CYCLES_SSE3_KERNEL_FLAGS}")
+	set_source_files_properties(kernel_sse41.cpp PROPERTIES COMPILE_FLAGS "${CYCLES_SSE41_KERNEL_FLAGS}")
+	set_source_files_properties(kernel_avx.cpp PROPERTIES COMPILE_FLAGS "${CYCLES_AVX_KERNEL_FLAGS}")
 endif()
 
-if(WITH_CYCLES_OPTIMIZED_KERNEL_SSE41)
-	set_source_files_properties(kernel_sse41.cpp PROPERTIES COMPILE_FLAGS "${CYCLES_SSE41_KERNEL_FLAGS}")
-	list(APPEND SRC kernel_sse41.cpp)
-endif()
 
 add_library(cycles_kernel ${SRC} ${SRC_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_SVM_HEADERS})
 

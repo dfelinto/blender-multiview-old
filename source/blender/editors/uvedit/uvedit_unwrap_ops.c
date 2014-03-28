@@ -48,8 +48,8 @@
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
 #include "BLI_uvproject.h"
-#include "BLI_utildefines.h"
 #include "BLI_string.h"
+#include "BLI_scanfill.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_subsurf.h"
@@ -62,11 +62,6 @@
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_editmesh.h"
-
-#include "BLI_math.h"
-#include "BLI_edgehash.h"
-#include "BLI_scanfill.h"
-#include "BLI_uvproject.h"
 
 #include "PIL_time.h"
 
@@ -86,10 +81,10 @@
 #include "uvedit_intern.h"
 #include "uvedit_parametrizer.h"
 
-static void modifier_unwrap_state(Object *obedit, Scene *scene, short *use_subsurf)
+static void modifier_unwrap_state(Object *obedit, Scene *scene, bool *r_use_subsurf)
 {
 	ModifierData *md;
-	short subsurf = scene->toolsettings->uvcalc_flag & UVCALC_USESUBSURF;
+	bool subsurf = (scene->toolsettings->uvcalc_flag & UVCALC_USESUBSURF) != 0;
 
 	md = obedit->modifiers.first;
 
@@ -101,7 +96,7 @@ static void modifier_unwrap_state(Object *obedit, Scene *scene, short *use_subsu
 			subsurf = FALSE;
 	}
 
-	*use_subsurf = subsurf;
+	*r_use_subsurf = subsurf;
 }
 
 static bool ED_uvedit_ensure_uvs(bContext *C, Scene *scene, Object *obedit)
@@ -256,8 +251,8 @@ static void construct_param_handle_face_add(ParamHandle *handle, Scene *scene,
 }
 
 static ParamHandle *construct_param_handle(Scene *scene, Object *ob, BMEditMesh *em,
-                                           short implicit, short fill, short sel,
-                                           short correct_aspect)
+                                           const bool implicit, const bool fill, const bool sel,
+                                           const bool correct_aspect)
 {
 	BMesh *bm = em->bm;
 	ParamHandle *handle;
@@ -399,7 +394,7 @@ static ParamHandle *construct_param_handle_subsurfed(Scene *scene, Object *ob, B
 	smd.levels = smd_real->levels;
 	smd.subdivType = smd_real->subdivType;
 		
-	initialDerived = CDDM_from_editbmesh(em, FALSE, FALSE);
+	initialDerived = CDDM_from_editbmesh(em, false, false);
 	derivedMesh = subsurf_make_derived_from_derived(initialDerived, &smd,
 	                                                NULL, SUBSURF_IN_EDIT_MODE);
 
@@ -516,7 +511,7 @@ static bool minimize_stretch_init(bContext *C, wmOperator *op)
 	Object *obedit = CTX_data_edit_object(C);
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	MinStretch *ms;
-	int fill_holes = RNA_boolean_get(op->ptr, "fill_holes");
+	const bool fill_holes = RNA_boolean_get(op->ptr, "fill_holes");
 	bool implicit = true;
 
 	if (!uvedit_have_selection(scene, em, implicit)) {
@@ -802,9 +797,9 @@ static ParamHandle *liveHandle = NULL;
 void ED_uvedit_live_unwrap_begin(Scene *scene, Object *obedit)
 {
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
-	short abf = scene->toolsettings->unwrapper == 0;
-	short fillholes = scene->toolsettings->uvcalc_flag & UVCALC_FILLHOLES;
-	short use_subsurf;
+	const bool abf = (scene->toolsettings->unwrapper == 0);
+	const bool fillholes = (scene->toolsettings->uvcalc_flag & UVCALC_FILLHOLES) != 0;
+	bool use_subsurf;
 
 	modifier_unwrap_state(obedit, scene, &use_subsurf);
 
@@ -1068,9 +1063,9 @@ static void uv_map_clip_correct(Scene *scene, Object *ob, BMEditMesh *em, wmOper
 	BMIter iter, liter;
 	MLoopUV *luv;
 	float dx, dy, min[2], max[2];
-	int correct_aspect = RNA_boolean_get(op->ptr, "correct_aspect");
-	int clip_to_bounds = RNA_boolean_get(op->ptr, "clip_to_bounds");
-	int scale_to_bounds = RNA_boolean_get(op->ptr, "scale_to_bounds");
+	const bool correct_aspect = RNA_boolean_get(op->ptr, "correct_aspect");
+	const bool clip_to_bounds = RNA_boolean_get(op->ptr, "clip_to_bounds");
+	const bool scale_to_bounds = RNA_boolean_get(op->ptr, "scale_to_bounds");
 
 	const int cd_loop_uv_offset = CustomData_get_offset(&em->bm->ldata, CD_MLOOPUV);
 
@@ -1135,9 +1130,9 @@ void ED_unwrap_lscm(Scene *scene, Object *obedit, const short sel)
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	ParamHandle *handle;
 
-	const short fill_holes = scene->toolsettings->uvcalc_flag & UVCALC_FILLHOLES;
-	const short correct_aspect = !(scene->toolsettings->uvcalc_flag & UVCALC_NO_ASPECT_CORRECT);
-	short use_subsurf;
+	const bool fill_holes = (scene->toolsettings->uvcalc_flag & UVCALC_FILLHOLES) != 0;
+	const bool correct_aspect = (scene->toolsettings->uvcalc_flag & UVCALC_NO_ASPECT_CORRECT) != 0;
+	bool use_subsurf;
 
 	modifier_unwrap_state(obedit, scene, &use_subsurf);
 
@@ -1164,10 +1159,10 @@ static int unwrap_exec(bContext *C, wmOperator *op)
 	Object *obedit = CTX_data_edit_object(C);
 	BMEditMesh *em = BKE_editmesh_from_object(obedit);
 	int method = RNA_enum_get(op->ptr, "method");
-	int fill_holes = RNA_boolean_get(op->ptr, "fill_holes");
-	int correct_aspect = RNA_boolean_get(op->ptr, "correct_aspect");
-	int use_subsurf = RNA_boolean_get(op->ptr, "use_subsurf_data");
-	short use_subsurf_final;
+	const bool fill_holes = RNA_boolean_get(op->ptr, "fill_holes");
+	const bool correct_aspect = RNA_boolean_get(op->ptr, "correct_aspect");
+	const bool use_subsurf = RNA_boolean_get(op->ptr, "use_subsurf_data");
+	bool use_subsurf_final;
 	float obsize[3];
 	bool implicit = false;
 
@@ -1254,18 +1249,6 @@ void UV_OT_unwrap(wmOperatorType *ot)
 	RNA_def_float_factor(ot->srna, "margin", 0.001f, 0.0f, 1.0f, "Margin", "Space between islands", 0.0f, 1.0f);
 }
 
-/* NOTE: could be generic function */
-static Camera *view3d_camera_get(View3D *v3d, RegionView3D *rv3d)
-{
-	/* establish the camera object, so we can default to view mapping if anything is wrong with it */
-	if ((rv3d->persp == RV3D_CAMOB) && (v3d->camera) && (v3d->camera->type == OB_CAMERA)) {
-		return v3d->camera->data;
-	}
-	else {
-		return NULL;
-	}
-}
-
 /**************** Project From View operator **************/
 static int uv_from_view_exec(bContext *C, wmOperator *op);
 
@@ -1273,7 +1256,7 @@ static int uv_from_view_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSE
 {
 	View3D *v3d = CTX_wm_view3d(C);
 	RegionView3D *rv3d = CTX_wm_region_view3d(C);
-	Camera *camera = view3d_camera_get(v3d, rv3d);
+	Camera *camera = ED_view3d_camera_data_get(v3d, rv3d);
 	PropertyRNA *prop;
 
 	prop = RNA_struct_find_property(op->ptr, "camera_bounds");
@@ -1292,7 +1275,7 @@ static int uv_from_view_exec(bContext *C, wmOperator *op)
 	ARegion *ar = CTX_wm_region(C);
 	View3D *v3d = CTX_wm_view3d(C);
 	RegionView3D *rv3d = CTX_wm_region_view3d(C);
-	Camera *camera = view3d_camera_get(v3d, rv3d);
+	Camera *camera = ED_view3d_camera_data_get(v3d, rv3d);
 	BMFace *efa;
 	BMLoop *l;
 	BMIter iter, liter;
@@ -1326,9 +1309,6 @@ static int uv_from_view_exec(bContext *C, wmOperator *op)
 		struct ProjCameraInfo *uci = BLI_uvproject_camera_info(v3d->camera, obedit->obmat,
 		                                                       camera_bounds ? (scene->r.xsch * scene->r.xasp) : 1.0f,
 		                                                       camera_bounds ? (scene->r.ysch * scene->r.yasp) : 1.0f);
-		
-
-		// BLI_uvproject_camera_info_scale
 
 		if (uci) {
 			BM_ITER_MESH (efa, &iter, em->bm, BM_FACES_OF_MESH) {

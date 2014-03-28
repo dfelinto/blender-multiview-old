@@ -37,6 +37,7 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
+#include "BLI_math_base.h"
 
 #include "BKE_context.h"
 #include "BKE_global.h"
@@ -123,7 +124,7 @@ static void graphview_cursor_setprops(bContext *C, wmOperator *op, const wmEvent
 	
 	/* store the values in the operator properties */
 	/* frame is rounded to the nearest int, since frames are ints */
-	RNA_int_set(op->ptr, "frame", (int)floor(viewx + 0.5f));
+	RNA_int_set(op->ptr, "frame", iroundf(viewx));
 	RNA_float_set(op->ptr, "value", viewy);
 }
 
@@ -212,6 +213,7 @@ void graphedit_operatortypes(void)
 	WM_operatortype_append(GRAPH_OT_clickselect);
 	WM_operatortype_append(GRAPH_OT_select_all_toggle);
 	WM_operatortype_append(GRAPH_OT_select_border);
+	WM_operatortype_append(GRAPH_OT_select_lasso);
 	WM_operatortype_append(GRAPH_OT_select_column);
 	WM_operatortype_append(GRAPH_OT_select_linked);
 	WM_operatortype_append(GRAPH_OT_select_more);
@@ -225,6 +227,7 @@ void graphedit_operatortypes(void)
 	WM_operatortype_append(GRAPH_OT_handle_type);
 	WM_operatortype_append(GRAPH_OT_interpolation_type);
 	WM_operatortype_append(GRAPH_OT_extrapolation_type);
+	WM_operatortype_append(GRAPH_OT_easing_type);
 	WM_operatortype_append(GRAPH_OT_sample);
 	WM_operatortype_append(GRAPH_OT_bake);
 	WM_operatortype_append(GRAPH_OT_sound_bake);
@@ -343,7 +346,12 @@ static void graphedit_keymap_keyframes(wmKeyConfig *keyconf, wmKeyMap *keymap)
 	kmi = WM_keymap_add_item(keymap, "GRAPH_OT_select_border", BKEY, KM_PRESS, KM_CTRL | KM_ALT, 0);
 	RNA_boolean_set(kmi->ptr, "axis_range", TRUE);
 	RNA_boolean_set(kmi->ptr, "include_handles", TRUE);
-		
+
+	kmi = WM_keymap_add_item(keymap, "GRAPH_OT_select_lasso", EVT_TWEAK_A, KM_ANY, KM_CTRL, 0);
+	RNA_boolean_set(kmi->ptr, "deselect", false);
+	kmi = WM_keymap_add_item(keymap, "GRAPH_OT_select_lasso", EVT_TWEAK_A, KM_ANY, KM_CTRL | KM_SHIFT, 0);
+	RNA_boolean_set(kmi->ptr, "deselect", true);
+
 	/* column select */
 	RNA_enum_set(WM_keymap_add_item(keymap, "GRAPH_OT_select_column", KKEY, KM_PRESS, 0, 0)->ptr, "mode", GRAPHKEYS_COLUMNSEL_KEYS);
 	RNA_enum_set(WM_keymap_add_item(keymap, "GRAPH_OT_select_column", KKEY, KM_PRESS, KM_CTRL, 0)->ptr, "mode", GRAPHKEYS_COLUMNSEL_CFRA);
@@ -369,6 +377,7 @@ static void graphedit_keymap_keyframes(wmKeyConfig *keyconf, wmKeyMap *keymap)
 	WM_keymap_add_item(keymap, "GRAPH_OT_handle_type", VKEY, KM_PRESS, 0, 0);
 
 	WM_keymap_add_item(keymap, "GRAPH_OT_interpolation_type", TKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "GRAPH_OT_easing_type", EKEY, KM_PRESS, KM_CTRL, 0);
 	
 	/* destructive */
 	WM_keymap_add_item(keymap, "GRAPH_OT_clean", OKEY, KM_PRESS, 0, 0);
@@ -397,6 +406,7 @@ static void graphedit_keymap_keyframes(wmKeyConfig *keyconf, wmKeyMap *keymap)
 	/* auto-set range */
 	WM_keymap_add_item(keymap, "GRAPH_OT_previewrange_set", PKEY, KM_PRESS, KM_CTRL | KM_ALT, 0);
 	WM_keymap_add_item(keymap, "GRAPH_OT_view_all", HOMEKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "GRAPH_OT_view_all", NDOF_BUTTON_FIT, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "GRAPH_OT_view_selected", PADPERIOD, KM_PRESS, 0, 0);
 	
 	/* F-Modifiers */

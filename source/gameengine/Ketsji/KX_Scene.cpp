@@ -1726,6 +1726,19 @@ void KX_Scene::RenderFonts()
 	}
 }
 
+void KX_Scene::UpdateObjectLods(void)
+{
+	KX_GameObject* gameobj;
+	MT_Vector3 cam_pos = this->m_active_camera->NodeGetWorldPosition();
+
+	for (int i = 0; i < this->GetObjectList()->GetCount(); i++) {
+		gameobj = (KX_GameObject*) GetObjectList()->GetValue(i);
+		if (!gameobj->GetCulled()){
+			gameobj->UpdateLod(cam_pos);
+		}
+	}
+}
+
 void KX_Scene::UpdateObjectActivity(void) 
 {
 	if (m_activity_culling) {
@@ -1866,7 +1879,6 @@ static void MergeScene_LogicBrick(SCA_ILogicBrick* brick, KX_Scene *to)
 
 #ifdef WITH_BULLET
 #include "CcdGraphicController.h" // XXX  ctrl->SetPhysicsEnvironment(to->GetPhysicsEnvironment());
-#include "CcdPhysicsEnvironment.h" // XXX  ctrl->SetPhysicsEnvironment(to->GetPhysicsEnvironment());
 #endif
 
 static void MergeScene_GameObject(KX_GameObject* gameobj, KX_Scene *to, KX_Scene *from)
@@ -2398,7 +2410,6 @@ PyAttributeDef KX_Scene::Attributes[] = {
 	KX_PYATTRIBUTE_RO_FUNCTION("objectsInactive",	KX_Scene, pyattr_get_objects_inactive),
 	KX_PYATTRIBUTE_RO_FUNCTION("lights",			KX_Scene, pyattr_get_lights),
 	KX_PYATTRIBUTE_RO_FUNCTION("cameras",			KX_Scene, pyattr_get_cameras),
-	KX_PYATTRIBUTE_RO_FUNCTION("lights",			KX_Scene, pyattr_get_lights),
 	KX_PYATTRIBUTE_RW_FUNCTION("active_camera",		KX_Scene, pyattr_get_active_camera, pyattr_set_active_camera),
 	KX_PYATTRIBUTE_RW_FUNCTION("pre_draw",			KX_Scene, pyattr_get_drawing_callback_pre, pyattr_set_drawing_callback_pre),
 	KX_PYATTRIBUTE_RW_FUNCTION("post_draw",			KX_Scene, pyattr_get_drawing_callback_post, pyattr_set_drawing_callback_post),

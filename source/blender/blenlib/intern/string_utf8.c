@@ -115,7 +115,7 @@ int BLI_utf8_invalid_byte(const char *str, int length)
 			 * and then for 1111 1100, xx00 00xx */
 		case 5:
 			if (c == 0xfe || c == 0xff ||
-				(c == 0xfc && (*p & 0x3c) == 0)) goto utf8_error;
+			    (c == 0xfc && (*p & 0x3c) == 0)) goto utf8_error;
 			break;
 		}
 
@@ -136,6 +136,8 @@ utf8_error:
 int BLI_utf8_invalid_strip(char *str, int length)
 {
 	int bad_char, tot = 0;
+
+	BLI_assert(str[length] == '\0');
 
 	while ((bad_char = BLI_utf8_invalid_byte(str, length)) != -1) {
 		str += bad_char;
@@ -193,7 +195,7 @@ static const size_t utf8_skip_data[256] = {
 
 char *BLI_strncpy_utf8(char *__restrict dst, const char *__restrict src, size_t maxncpy)
 {
-	char *dst_r = dst;
+	char *r_dst = dst;
 
 	BLI_assert(maxncpy != 0);
 
@@ -204,7 +206,7 @@ char *BLI_strncpy_utf8(char *__restrict dst, const char *__restrict src, size_t 
 	/* note: currently we don't attempt to deal with invalid utf8 chars */
 	BLI_STR_UTF8_CPY(dst, src, maxncpy);
 
-	return dst_r;
+	return r_dst;
 }
 
 char *BLI_strncat_utf8(char *__restrict dst, const char *__restrict src, size_t maxncpy)
@@ -437,7 +439,7 @@ int BLI_str_utf8_size(const char *p)
 	int mask = 0, len;
 	const unsigned char c = (unsigned char) *p;
 
-	UTF8_COMPUTE (c, mask, len, -1);
+	UTF8_COMPUTE(c, mask, len, -1);
 
 	(void)mask; /* quiet warning */
 
@@ -450,7 +452,7 @@ int BLI_str_utf8_size_safe(const char *p)
 	int mask = 0, len;
 	const unsigned char c = (unsigned char) *p;
 
-	UTF8_COMPUTE (c, mask, len, 1);
+	UTF8_COMPUTE(c, mask, len, 1);
 
 	(void)mask; /* quiet warning */
 
@@ -477,10 +479,10 @@ unsigned int BLI_str_utf8_as_unicode(const char *p)
 	unsigned int result;
 	const unsigned char c = (unsigned char) *p;
 
-	UTF8_COMPUTE (c, mask, len, -1);
+	UTF8_COMPUTE(c, mask, len, -1);
 	if (UNLIKELY(len == -1))
 		return BLI_UTF8_ERR;
-	UTF8_GET (result, p, i, mask, len, BLI_UTF8_ERR);
+	UTF8_GET(result, p, i, mask, len, BLI_UTF8_ERR);
 
 	return result;
 }
@@ -493,10 +495,10 @@ unsigned int BLI_str_utf8_as_unicode_and_size(const char *__restrict p, size_t *
 	unsigned int result;
 	const unsigned char c = (unsigned char) *p;
 
-	UTF8_COMPUTE (c, mask, len, -1);
+	UTF8_COMPUTE(c, mask, len, -1);
 	if (UNLIKELY(len == -1))
 		return BLI_UTF8_ERR;
-	UTF8_GET (result, p, i, mask, len, BLI_UTF8_ERR);
+	UTF8_GET(result, p, i, mask, len, BLI_UTF8_ERR);
 	*index += (size_t)len;
 	return result;
 }
@@ -508,12 +510,12 @@ unsigned int BLI_str_utf8_as_unicode_and_size_safe(const char *__restrict p, siz
 	unsigned int result;
 	const unsigned char c = (unsigned char) *p;
 
-	UTF8_COMPUTE (c, mask, len, -1);
+	UTF8_COMPUTE(c, mask, len, -1);
 	if (UNLIKELY(len == -1)) {
 		*index += 1;
 		return c;
 	}
-	UTF8_GET (result, p, i, mask, len, BLI_UTF8_ERR);
+	UTF8_GET(result, p, i, mask, len, BLI_UTF8_ERR);
 	*index += (size_t)len;
 	return result;
 }
@@ -530,7 +532,7 @@ unsigned int BLI_str_utf8_as_unicode_step(const char *__restrict p, size_t *__re
 	p += *index;
 	c = (unsigned char) *p;
 
-	UTF8_COMPUTE (c, mask, len, -1);
+	UTF8_COMPUTE(c, mask, len, -1);
 	if (UNLIKELY(len == -1)) {
 		/* when called with NULL end, result will never be NULL,
 		 * checks for a NULL character */
@@ -544,12 +546,12 @@ unsigned int BLI_str_utf8_as_unicode_step(const char *__restrict p, size_t *__re
 	/* this is tricky since there are a few ways we can bail out of bad unicode
 	 * values, 3 possible solutions. */
 #if 0
-	UTF8_GET (result, p, i, mask, len, BLI_UTF8_ERR);
+	UTF8_GET(result, p, i, mask, len, BLI_UTF8_ERR);
 #elif 1
 	/* WARNING: this is NOT part of glib, or supported by similar functions.
 	 * this is added for text drawing because some filepaths can have latin1
 	 * characters */
-	UTF8_GET (result, p, i, mask, len, BLI_UTF8_ERR);
+	UTF8_GET(result, p, i, mask, len, BLI_UTF8_ERR);
 	if (result == BLI_UTF8_ERR) {
 		len = 1;
 		result = *p;
@@ -557,7 +559,7 @@ unsigned int BLI_str_utf8_as_unicode_step(const char *__restrict p, size_t *__re
 	/* end warning! */
 #else
 	/* without a fallback like '?', text drawing will stop on this value */
-	UTF8_GET (result, p, i, mask, len, '?');
+	UTF8_GET(result, p, i, mask, len, '?');
 #endif
 
 	*index += (size_t)len;

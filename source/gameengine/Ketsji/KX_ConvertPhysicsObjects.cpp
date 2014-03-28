@@ -49,7 +49,6 @@
 #include "CTR_HashedPtr.h"
 
 #include "KX_PhysicsEngineEnums.h"
-#include "PHY_Pro.h"
 
 #include "KX_MotionState.h" // bridge between motionstate and scenegraph node
 
@@ -435,6 +434,11 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 		shapeInfo->Release();
 
 	gameobj->SetPhysicsController(physicscontroller,isbulletdyna);
+
+	// record animation for dynamic objects
+	if (isbulletdyna)
+		gameobj->SetRecordAnimation(true);
+
 	// don't add automatically sensor object, they are added when a collision sensor is registered
 	if (!isbulletsensor && objprop->m_in_active_layer)
 	{
@@ -493,6 +497,11 @@ void	KX_ConvertBulletObject(	class	KX_GameObject* gameobj,
 	gameobj->getClientInfo()->m_type = 
 		(isbulletsensor) ? ((isActor) ? KX_ClientObjectInfo::OBACTORSENSOR : KX_ClientObjectInfo::OBSENSOR) :
 		(isActor) ? KX_ClientObjectInfo::ACTOR : KX_ClientObjectInfo::STATIC;
+
+	// should we record animation for this object?
+	if (objprop->m_record_animation)
+		gameobj->SetRecordAnimation(true);
+
 	// store materialname in auxinfo, needed for touchsensors
 	if (meshobj)
 	{

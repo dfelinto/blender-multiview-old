@@ -127,7 +127,7 @@ int imagewrap(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], TexResul
 	if (ima) {
 		
 		/* hack for icon render */
-		if (ima->ibufs.first==NULL && (R.r.scemode & R_NO_IMAGE_LOAD))
+		if ((R.r.scemode & R_NO_IMAGE_LOAD) && !BKE_image_has_loaded_ibuf(ima))
 			return retval;
 
 		ibuf = BKE_image_pool_acquire_ibuf(ima, &tex->iuser, pool);
@@ -1094,7 +1094,9 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 	if (ibuf==NULL && ima==NULL) return retval;
 
 	if (ima) {	/* hack for icon render */
-		if ((ima->ibufs.first == NULL) && (R.r.scemode & R_NO_IMAGE_LOAD)) return retval;
+		if ((R.r.scemode & R_NO_IMAGE_LOAD) && !BKE_image_has_loaded_ibuf(ima)) {
+			return retval;
+		}
 		ibuf = BKE_image_pool_acquire_ibuf(ima, &tex->iuser, pool);
 	}
 
@@ -1315,7 +1317,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 			a = max_ff(a, 1.0f);
 			b = max_ff(b, 1.0f);
 			fProbes = 2.f*(a / b) - 1.f;
-			AFD.iProbes = (int)floorf(fProbes + 0.5f);
+			AFD.iProbes = iroundf(fProbes);
 			AFD.iProbes = MIN2(AFD.iProbes, tex->afmax);
 			if (AFD.iProbes < fProbes)
 				b = 2.f*a / (float)(AFD.iProbes + 1);
@@ -1418,7 +1420,7 @@ static int imagewraposa_aniso(Tex *tex, Image *ima, ImBuf *ibuf, const float tex
 			b = max_ff(b, 1.0f);
 			fProbes = 2.f*(a / b) - 1.f;
 			/* no limit to number of Probes here */
-			AFD.iProbes = (int)floorf(fProbes + 0.5f);
+			AFD.iProbes = iroundf(fProbes);
 			if (AFD.iProbes < fProbes) b = 2.f*a / (float)(AFD.iProbes + 1);
 			AFD.majrad = a/ff;
 			AFD.minrad = b/ff;
@@ -1515,7 +1517,7 @@ int imagewraposa(Tex *tex, Image *ima, ImBuf *ibuf, const float texvec[3], const
 	if (ima) {
 
 		/* hack for icon render */
-		if (ima->ibufs.first==NULL && (R.r.scemode & R_NO_IMAGE_LOAD))
+		if ((R.r.scemode & R_NO_IMAGE_LOAD) && !BKE_image_has_loaded_ibuf(ima))
 			return retval;
 		
 		ibuf = BKE_image_pool_acquire_ibuf(ima, &tex->iuser, pool);

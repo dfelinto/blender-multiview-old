@@ -78,7 +78,7 @@ static int sort_nodes_locx(void *a, void *b)
 		return 0;
 }
 
-static int socket_is_available(bNodeTree *UNUSED(ntree), bNodeSocket *sock, int allow_used)
+static bool socket_is_available(bNodeTree *UNUSED(ntree), bNodeSocket *sock, const bool allow_used)
 {
 	if (nodeSocketIsHidden(sock))
 		return 0;
@@ -89,7 +89,7 @@ static int socket_is_available(bNodeTree *UNUSED(ntree), bNodeSocket *sock, int 
 	return 1;
 }
 
-static bNodeSocket *best_socket_output(bNodeTree *ntree, bNode *node, bNodeSocket *sock_target, int allow_multiple)
+static bNodeSocket *best_socket_output(bNodeTree *ntree, bNode *node, bNodeSocket *sock_target, const bool allow_multiple)
 {
 	bNodeSocket *sock;
 
@@ -184,7 +184,7 @@ static int snode_autoconnect_input(SpaceNode *snode, bNode *node_fr, bNodeSocket
 	return 1;
 }
 
-static void snode_autoconnect(SpaceNode *snode, int allow_multiple, int replace)
+static void snode_autoconnect(SpaceNode *snode, const bool allow_multiple, const bool replace)
 {
 	bNodeTree *ntree = snode->edittree;
 	ListBase *nodelist = MEM_callocN(sizeof(ListBase), "items_list");
@@ -274,7 +274,7 @@ static int node_link_viewer(const bContext *C, bNode *tonode)
 	bNodeSocket *sock;
 
 	/* context check */
-	if (tonode == NULL || tonode->outputs.first == NULL)
+	if (tonode == NULL || BLI_listbase_is_empty(&tonode->outputs))
 		return OPERATOR_CANCELLED;
 	if (ELEM(tonode->type, CMP_NODE_VIEWER, CMP_NODE_SPLITVIEWER))
 		return OPERATOR_CANCELLED;
@@ -545,7 +545,7 @@ static int node_link_modal(bContext *C, wmOperator *op, const wmEvent *event)
 }
 
 /* return 1 when socket clicked */
-static bNodeLinkDrag *node_link_init(SpaceNode *snode, float cursor[2], int detach)
+static bNodeLinkDrag *node_link_init(SpaceNode *snode, float cursor[2], const bool detach)
 {
 	bNode *node;
 	bNodeSocket *sock;
@@ -641,7 +641,7 @@ static int node_link_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 	bNodeLinkDrag *nldrag;
 	float cursor[2];
 	
-	int detach = RNA_boolean_get(op->ptr, "detach");
+	const bool detach = RNA_boolean_get(op->ptr, "detach");
 
 	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1],
 	                         &cursor[0], &cursor[1]);
@@ -700,7 +700,7 @@ void NODE_OT_link(wmOperatorType *ot)
 static int node_make_link_exec(bContext *C, wmOperator *op)
 {
 	SpaceNode *snode = CTX_wm_space_node(C);
-	int replace = RNA_boolean_get(op->ptr, "replace");
+	const bool replace = RNA_boolean_get(op->ptr, "replace");
 
 	ED_preview_kill_jobs(C);
 
@@ -1209,7 +1209,7 @@ static bool ed_node_link_conditions(ScrArea *sa, bool test, SpaceNode **r_snode,
 		return false;
 
 	/* correct node */
-	if (select->inputs.first == NULL || select->outputs.first == NULL)
+	if (BLI_listbase_is_empty(&select->inputs) || BLI_listbase_is_empty(&select->outputs))
 		return false;
 
 	/* test node for links */

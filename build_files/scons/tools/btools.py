@@ -63,19 +63,8 @@ def get_hash():
     return build_hash
 
 
-# copied from: http://www.scons.org/wiki/AutoconfRecipes
 def checkEndian():
-    import struct
-    array = struct.pack('cccc', '\x01', '\x02', '\x03', '\x04')
-    i = struct.unpack('i', array)
-    # Little Endian
-    if i == struct.unpack('<i', array):
-        return "little"
-    # Big Endian
-    elif i == struct.unpack('>i', array):
-        return "big"
-    else:
-        raise Exception("cant find endian")
+    return sys.byteorder
 
 
 # This is used in creating the local config directories
@@ -135,7 +124,8 @@ def validate_arguments(args, bc):
             'BF_CXX', 'WITH_BF_STATICCXX', 'BF_CXX_LIB_STATIC',
             'BF_TWEAK_MODE', 'BF_SPLIT_SRC',
             'WITHOUT_BF_INSTALL',
-            'WITHOUT_BF_PYTHON_INSTALL', 'WITHOUT_BF_PYTHON_UNPACK', 'WITH_BF_PYTHON_INSTALL_NUMPY',
+            'WITHOUT_BF_PYTHON_INSTALL', 'WITHOUT_BF_PYTHON_UNPACK',
+            'WITH_BF_PYTHON_INSTALL_NUMPY', 'WITH_BF_PYTHON_INSTALL_REQUESTS',
             'WITHOUT_BF_OVERWRITE_INSTALL',
             'WITH_BF_OPENMP', 'BF_OPENMP', 'BF_OPENMP_LIBPATH', 'WITH_BF_STATICOPENMP', 'BF_OPENMP_STATIC_STATIC',
             'WITH_GHOST_SDL',
@@ -160,7 +150,7 @@ def validate_arguments(args, bc):
             'WITH_BF_JEMALLOC', 'WITH_BF_STATICJEMALLOC', 'BF_JEMALLOC', 'BF_JEMALLOC_INC', 'BF_JEMALLOC_LIBPATH', 'BF_JEMALLOC_LIB', 'BF_JEMALLOC_LIB_STATIC',
             'BUILDBOT_BRANCH',
             'WITH_BF_3DMOUSE', 'WITH_BF_STATIC3DMOUSE', 'BF_3DMOUSE', 'BF_3DMOUSE_INC', 'BF_3DMOUSE_LIB', 'BF_3DMOUSE_LIBPATH', 'BF_3DMOUSE_LIB_STATIC',
-            'WITH_BF_CYCLES', 'WITH_BF_CYCLES_CUDA_BINARIES', 'BF_CYCLES_CUDA_NVCC', 'BF_CYCLES_CUDA_NVCC', 'WITH_BF_CYCLES_CUDA_THREADED_COMPILE',
+            'WITH_BF_CYCLES', 'WITH_BF_CYCLES_CUDA_BINARIES', 'BF_CYCLES_CUDA_NVCC', 'BF_CYCLES_CUDA_NVCC', 'WITH_BF_CYCLES_CUDA_THREADED_COMPILE', 'BF_CYCLES_CUDA_ENV',
             'WITH_BF_OIIO', 'WITH_BF_STATICOIIO', 'BF_OIIO', 'BF_OIIO_INC', 'BF_OIIO_LIB', 'BF_OIIO_LIB_STATIC', 'BF_OIIO_LIBPATH',
             'WITH_BF_OCIO', 'WITH_BF_STATICOCIO', 'BF_OCIO', 'BF_OCIO_INC', 'BF_OCIO_LIB', 'BF_OCIO_LIB_STATIC', 'BF_OCIO_LIBPATH',
             'WITH_BF_BOOST', 'WITH_BF_STATICBOOST', 'BF_BOOST', 'BF_BOOST_INC', 'BF_BOOST_LIB', 'BF_BOOST_LIB_INTERNATIONAL', 'BF_BOOST_LIB_STATIC', 'BF_BOOST_LIBPATH',
@@ -179,7 +169,7 @@ def validate_arguments(args, bc):
             'BF_PROFILE_CFLAGS', 'BF_PROFILE_CCFLAGS', 'BF_PROFILE_CXXFLAGS', 'BF_PROFILE_LINKFLAGS',
             'BF_DEBUG_CFLAGS', 'BF_DEBUG_CCFLAGS', 'BF_DEBUG_CXXFLAGS',
             'C_WARN', 'CC_WARN', 'CXX_WARN',
-            'LLIBS', 'PLATFORM_LINKFLAGS', 'MACOSX_ARCHITECTURE', 'MACOSX_SDK', 'XCODE_CUR_VER',
+            'LLIBS', 'PLATFORM_LINKFLAGS', 'MACOSX_ARCHITECTURE', 'MACOSX_SDK', 'XCODE_CUR_VER', 'C_COMPILER_ID',
             'BF_CYCLES_CUDA_BINARIES_ARCH', 'BF_PROGRAM_LINKFLAGS', 'MACOSX_DEPLOYMENT_TARGET'
     ]
 
@@ -504,6 +494,7 @@ def read_opts(env, cfg, args):
         ('MACOSX_SDK', 'Set OS X SDK', ''),
         ('XCODE_CUR_VER', 'Detect XCode version', ''),
         ('MACOSX_DEPLOYMENT_TARGET', 'Detect OS X target version', ''),
+        ('C_COMPILER_ID', 'Detect the resolved compiler', ''),
 
         (BoolVariable('BF_PROFILE', 'Add profiling information if true', False)),
         ('BF_PROFILE_CFLAGS', 'C only profiling flags', []),
@@ -530,7 +521,8 @@ def read_opts(env, cfg, args):
         (BoolVariable('BF_SPLIT_SRC', 'Split src lib into several chunks if true', False)),
         (BoolVariable('WITHOUT_BF_INSTALL', 'dont install if true', False)),
         (BoolVariable('WITHOUT_BF_PYTHON_INSTALL', 'dont install Python modules if true', False)),
-        (BoolVariable('WITH_BF_PYTHON_INSTALL_NUMPY', 'install Python mumpy module', False)),
+        (BoolVariable('WITH_BF_PYTHON_INSTALL_NUMPY', 'install Python numpy module', False)),
+        (BoolVariable('WITH_BF_PYTHON_INSTALL_REQUESTS', 'install Python requests module', False)),
         (BoolVariable('WITHOUT_BF_PYTHON_UNPACK', 'dont remove and unpack Python modules everytime if true', False)),
         (BoolVariable('WITHOUT_BF_OVERWRITE_INSTALL', 'dont remove existing files before breating the new install directory (set to False when making packages for others)', False)),
         (BoolVariable('BF_FANCY', 'Enable fancy output if true', True)),
@@ -569,6 +561,7 @@ def read_opts(env, cfg, args):
         (BoolVariable('WITH_BF_CYCLES_CUDA_BINARIES', 'Build with precompiled CUDA binaries', False)),
         (BoolVariable('WITH_BF_CYCLES_CUDA_THREADED_COMPILE', 'Build several render kernels at once (using BF_NUMJOBS)', False)),
         ('BF_CYCLES_CUDA_NVCC', 'CUDA nvcc compiler path', ''),
+        ('BF_CYCLES_CUDA_ENV', 'preset environement nvcc will execute in', ''),
         ('BF_CYCLES_CUDA_BINARIES_ARCH', 'CUDA architectures to compile binaries for', []),
 
         (BoolVariable('WITH_BF_OIIO', 'Build with OpenImageIO', False)),
@@ -689,6 +682,8 @@ def buildslave(target=None, source=None, env=None):
 
     if env['MSVC_VERSION'] == '11.0':
         platform = env['OURPLATFORM'] + '11'
+    if env['MSVC_VERSION'] == '12.0':
+        platform = env['OURPLATFORM'] + '12'
 
     branch = env['BUILDBOT_BRANCH']
 

@@ -18,8 +18,6 @@
 
 CCL_NAMESPACE_BEGIN
 
-typedef uint RNG;
-
 #ifdef __SOBOL__
 
 /* skip initial numbers that are not as well distributed, especially the
@@ -122,6 +120,9 @@ ccl_device_inline float path_rng_1D(KernelGlobals *kg, RNG *rng, int sample, int
 	/* Cranly-Patterson rotation using rng seed */
 	float shift;
 
+	/* using the same *rng value to offset seems to give correlation issues,
+	 * we could hash it with the dimension but this has a performance impact,
+	 * we need to find a solution for this */
 	if(dimension & 1)
 		shift = (*rng >> 16) * (1.0f/(float)0xFFFF);
 	else
@@ -192,10 +193,6 @@ ccl_device void path_rng_end(KernelGlobals *kg, ccl_global uint *rng_state, RNG 
 
 /* Linear Congruential Generator */
 
-ccl_device float path_rng(KernelGlobals *kg, RNG& rng, int sample, int dimension)
-{
-}
-
 ccl_device_inline float path_rng_1D(KernelGlobals *kg, RNG& rng, int sample, int num_samples, int dimension)
 {
 	/* implicit mod 2^32 */
@@ -233,6 +230,8 @@ ccl_device void path_rng_end(KernelGlobals *kg, ccl_global uint *rng_state, RNG 
 
 #endif
 
+/* Linear Congruential Generator */
+
 ccl_device uint lcg_step_uint(uint *rng)
 {
 	/* implicit mod 2^32 */
@@ -252,6 +251,48 @@ ccl_device uint lcg_init(uint seed)
 	uint rng = seed;
 	lcg_step_uint(&rng);
 	return rng;
+}
+
+/* Path Tracing Utility Functions
+ *
+ * For each random number in each step of the path we must have a unique
+ * dimension to avoid using the same sequence twice.
+ *
+ * For branches in the path we must be careful not to reuse the same number
+ * in a sequence and offset accordingly. */
+
+ccl_device_inline float path_state_rng_1D(KernelGlobals *kg, RNG *rng, PathState *state, int dimension)
+{
+	return path_rng_1D(kg, rng, state->sample, state->num_samples, state->rng_offset + dimension);
+}
+
+ccl_device_inline void path_state_rng_2D(KernelGlobals *kg, RNG *rng, PathState *state, int dimension, float *fx, float *fy)
+{
+	path_rng_2D(kg, rng, state->sample, state->num_samples, state->rng_offset + dimension, fx, fy);
+}
+
+ccl_device_inline float path_branched_rng_1D(KernelGlobals *kg, RNG *rng, PathState *state, int branch, int num_branches, int dimension)
+{
+	return path_rng_1D(kg, rng, state->sample*num_branches + branch, state->num_samples*num_branches, state->rng_offset + dimension);
+}
+
+ccl_device_inline void path_branched_rng_2D(KernelGlobals *kg, RNG *rng, PathState *state, int branch, int num_branches, int dimension, float *fx, float *fy)
+{
+	path_rng_2D(kg, rng, state->sample*num_branches + branch, state->num_samples*num_branches, state->rng_offset + dimension, fx, fy);
+}
+
+ccl_device_inline void path_state_branch(PathState *state, int branch, int num_branches)
+{
+	/* path is splitting into a branch, adjust so that each branch
+	 * still gets a unique sample from the same sequence */
+	state->rng_offset += PRNG_BOUNCE_NUM;
+	state->sample = state->sample*num_branches + branch;
+	state->num_samples = state->num_samples*num_branches;
+}
+
+ccl_device_inline uint lcg_state_init(RNG *rng, PathState *state, uint scramble)
+{
+	return lcg_init(*rng + state->rng_offset + state->sample*scramble);
 }
 
 CCL_NAMESPACE_END

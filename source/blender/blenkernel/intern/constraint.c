@@ -81,7 +81,6 @@
 #include "BKE_idprop.h"
 #include "BKE_mesh.h"
 #include "BKE_shrinkwrap.h"
-#include "BKE_mesh.h"
 #include "BKE_editmesh.h"
 #include "BKE_tracking.h"
 #include "BKE_movieclip.h"
@@ -89,6 +88,11 @@
 #ifdef WITH_PYTHON
 #  include "BPY_extern.h"
 #endif
+
+/* Workaround for cyclic depenndnecy with curves.
+ * In such case curve_cache might not be ready yet,
+ */
+#define CYCLIC_DEPENDENCY_WORKAROUND
 
 /* ************************ Constraints - General Utilities *************************** */
 /* These functions here don't act on any specific constraints, and are therefore should/will
@@ -166,7 +170,7 @@ bConstraintOb *BKE_constraints_make_evalob(Scene *scene, Object *ob, void *subda
 			unit_m4(cob->startmat);
 			break;
 	}
-	
+
 	return cob;
 }
 
@@ -308,7 +312,7 @@ void BKE_constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[
 			if (ob->parent) {
 				/* 'subtract' parent's effects from owner */
 				mul_m4_m4m4(diff_mat, ob->parent->obmat, ob->parentinv);
-				invert_m4_m4(imat, diff_mat);
+				invert_m4_m4_safe(imat, diff_mat);
 				mul_m4_m4m4(mat, imat, mat);
 			}
 			else {
@@ -319,7 +323,7 @@ void BKE_constraint_mat_convertspace(Object *ob, bPoseChannel *pchan, float mat[
 				normalize_m4(diff_mat);
 				zero_v3(diff_mat[3]);
 				
-				invert_m4_m4(imat, diff_mat);
+				invert_m4_m4_safe(imat, diff_mat);
 				mul_m4_m4m4(mat, imat, mat);
 			}
 		}
@@ -366,7 +370,7 @@ static void contarget_get_mesh_mat(Object *ob, const char *substring, float mat[
 	/* get DerivedMesh */
 	if (em) {
 		/* target is in editmode, so get a special derived mesh */
-		dm = CDDM_from_editbmesh(em, FALSE, FALSE);
+		dm = CDDM_from_editbmesh(em, false, false);
 		freeDM = 1;
 	}
 	else {
@@ -1151,7 +1155,7 @@ static void followpath_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 {
 	bFollowPathConstraint *data = con->data;
 	
-	if (VALID_CONS_TARGET(ct)) {
+	if (VALID_CONS_TARGET(ct) && (ct->tar->type == OB_CURVE)) {
 		Curve *cu = ct->tar->data;
 		float vec[4], dir[3], radius;
 		float totmat[4][4] = MAT4_UNITY;
@@ -1162,11 +1166,13 @@ static void followpath_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 		/* note: when creating constraints that follow path, the curve gets the CU_PATH set now,
 		 *		currently for paths to work it needs to go through the bevlist/displist system (ton) 
 		 */
-		
-		/* only happens on reload file, but violates depsgraph still... fix! */
-		if (ct->tar->curve_cache == NULL || ct->tar->curve_cache->path == NULL || ct->tar->curve_cache->path->data == NULL)
-			BKE_displist_make_curveTypes(cob->scene, ct->tar, 0);
-		
+
+#ifdef CYCLIC_DEPENDENCY_WORKAROUND
+		if (ct->tar->curve_cache == NULL) {
+			BKE_displist_make_curveTypes(cob->scene, ct->tar, FALSE);
+		}
+#endif
+
 		if (ct->tar->curve_cache->path && ct->tar->curve_cache->path->data) {
 			float quat[4];
 			if ((data->followflag & FOLLOWPATH_STATIC) == 0) {
@@ -1932,13 +1938,15 @@ static void pycon_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstraintTa
 #endif
 
 	if (VALID_CONS_TARGET(ct)) {
+#ifdef CYCLIC_DEPENDENCY_WORKAROUND
 		/* special exception for curves - depsgraph issues */
 		if (ct->tar->type == OB_CURVE) {
-			/* this check is to make sure curve objects get updated on file load correctly.*/
-			if (ct->tar->curve_cache == NULL || ct->tar->curve_cache->path == NULL || ct->tar->curve_cache->path->data == NULL) /* only happens on reload file, but violates depsgraph still... fix! */
-				BKE_displist_make_curveTypes(cob->scene, ct->tar, 0);
+			if (ct->tar->curve_cache == NULL) {
+				BKE_displist_make_curveTypes(cob->scene, ct->tar, FALSE);
+			}
 		}
-		
+#endif
+
 		/* firstly calculate the matrix the normal way, then let the py-function override
 		 * this matrix if it needs to do so
 		 */
@@ -3007,16 +3015,14 @@ static void clampto_flush_tars(bConstraint *con, ListBase *list, short nocopy)
 
 static void clampto_get_tarmat(bConstraint *UNUSED(con), bConstraintOb *cob, bConstraintTarget *ct, float UNUSED(ctime))
 {
+#ifdef CYCLIC_DEPENDENCY_WORKAROUND
 	if (VALID_CONS_TARGET(ct)) {
-		/* note: when creating constraints that follow path, the curve gets the CU_PATH set now,
-		 *		currently for paths to work it needs to go through the bevlist/displist system (ton) 
-		 */
-		
-		/* only happens on reload file, but violates depsgraph still... fix! */
-		if (ct->tar->curve_cache == NULL || ct->tar->curve_cache->path == NULL || ct->tar->curve_cache->path->data == NULL)
-			BKE_displist_make_curveTypes(cob->scene, ct->tar, 0);
+		if (ct->tar->curve_cache == NULL) {
+			BKE_displist_make_curveTypes(cob->scene, ct->tar, FALSE);
+		}
 	}
-	
+#endif
+
 	/* technically, this isn't really needed for evaluation, but we don't know what else
 	 * might end up calling this...
 	 */
@@ -3351,7 +3357,8 @@ static void shrinkwrap_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 		float co[3] = {0.0f, 0.0f, 0.0f};
 		
 		SpaceTransform transform;
-		DerivedMesh *target = object_get_derived_final(ct->tar);
+		/* TODO(sergey): use proper for_render flag here when known. */
+		DerivedMesh *target = object_get_derived_final(ct->tar, false);
 		
 		BVHTreeFromMesh treeData = {NULL};
 		
@@ -3368,7 +3375,7 @@ static void shrinkwrap_get_tarmat(bConstraint *con, bConstraintOb *cob, bConstra
 					float dist;
 
 					nearest.index = -1;
-					nearest.dist = FLT_MAX;
+					nearest.dist_sq = FLT_MAX;
 
 					if (scon->shrinkType == MOD_SHRINKWRAP_NEAREST_VERTEX)
 						bvhtree_from_mesh_verts(&treeData, target, 0.0, 2, 6);
@@ -3671,16 +3678,14 @@ static void splineik_flush_tars(bConstraint *con, ListBase *list, short nocopy)
 
 static void splineik_get_tarmat(bConstraint *UNUSED(con), bConstraintOb *cob, bConstraintTarget *ct, float UNUSED(ctime))
 {
+#ifdef CYCLIC_DEPENDENCY_WORKAROUND
 	if (VALID_CONS_TARGET(ct)) {
-		/* note: when creating constraints that follow path, the curve gets the CU_PATH set now,
-		 *		currently for paths to work it needs to go through the bevlist/displist system (ton) 
-		 */
-		
-		/* only happens on reload file, but violates depsgraph still... fix! */
-		if (ct->tar->curve_cache == NULL || ct->tar->curve_cache->path == NULL || ct->tar->curve_cache->path->data == NULL)
-			BKE_displist_make_curveTypes(cob->scene, ct->tar, 0);
+		if (ct->tar->curve_cache == NULL) {
+			BKE_displist_make_curveTypes(cob->scene, ct->tar, FALSE);
+		}
 	}
-	
+#endif
+
 	/* technically, this isn't really needed for evaluation, but we don't know what else
 	 * might end up calling this...
 	 */
@@ -4014,7 +4019,8 @@ static void followtrack_evaluate(bConstraint *con, bConstraintOb *cob, ListBase 
 
 			if (data->depth_ob) {
 				Object *depth_ob = data->depth_ob;
-				DerivedMesh *target = object_get_derived_final(depth_ob);
+				/* TODO(sergey): use proper for_render flag here when known. */
+				DerivedMesh *target = object_get_derived_final(depth_ob, false);
 				if (target) {
 					BVHTreeFromMesh treeData = NULL_BVHTreeFromMesh;
 					BVHTreeRayHit hit;
@@ -4519,7 +4525,7 @@ void BKE_copy_constraints(ListBase *dst, const ListBase *src, int do_extern)
 {
 	bConstraint *con, *srccon;
 	
-	dst->first = dst->last = NULL;
+	BLI_listbase_clear(dst);
 	BLI_duplicatelist(dst, src);
 	
 	for (con = dst->first, srccon = src->first; con && srccon; srccon = srccon->next, con = con->next) {

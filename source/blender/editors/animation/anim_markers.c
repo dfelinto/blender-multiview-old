@@ -45,6 +45,7 @@
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_screen.h"
+#include "BKE_unit.h"
 
 #include "RNA_access.h"
 #include "RNA_define.h"
@@ -125,11 +126,11 @@ int ED_markers_post_apply_transform(ListBase *markers, Scene *scene, int mode, f
 {
 	TimeMarker *marker;
 	float cfra = (float)CFRA;
-	int changed = 0;
+	int changed_tot = 0;
 	
 	/* sanity check */
 	if (markers == NULL)
-		return changed;
+		return changed_tot;
 	
 	/* affect selected markers - it's unlikely that we will want to affect all in this way? */
 	for (marker = markers->first; marker; marker = marker->next) {
@@ -143,23 +144,23 @@ int ED_markers_post_apply_transform(ListBase *markers, Scene *scene, int mode, f
 					    (side == 'L' && marker->frame < cfra) ||
 					    (side == 'R' && marker->frame >= cfra))
 					{
-						marker->frame += (int)floorf(value + 0.5f);
-						changed++;
+						marker->frame += iroundf(value);
+						changed_tot++;
 					}
 					break;
 				}
 				case TFM_TIME_SCALE:
 				{
 					/* rescale the distance between the marker and the current frame */
-					marker->frame = cfra + (int)floorf(((float)(marker->frame - cfra) * value) + 0.5f);
-					changed++;
+					marker->frame = cfra + iroundf((float)(marker->frame - cfra) * value);
+					changed_tot++;
 					break;
 				}
 			}
 		}
 	}
 	
-	return changed;
+	return changed_tot;
 }
 
 /* --------------------------------- */
@@ -173,7 +174,7 @@ TimeMarker *ED_markers_find_nearest_marker(ListBase *markers, float x)
 	
 	if (markers) {
 		for (marker = markers->first; marker; marker = marker->next) {
-			dist = ABS((float)marker->frame - x);
+			dist = fabsf((float)marker->frame - x);
 			
 			if (dist < min_dist) {
 				min_dist = dist;
@@ -189,7 +190,7 @@ TimeMarker *ED_markers_find_nearest_marker(ListBase *markers, float x)
 int ED_markers_find_nearest_marker_time(ListBase *markers, float x)
 {
 	TimeMarker *nearest = ED_markers_find_nearest_marker(markers, x);
-	return (nearest) ? (nearest->frame) : (int)floor(x + 0.5f);
+	return (nearest) ? (nearest->frame) : iroundf(x);
 }
 
 
@@ -603,6 +604,7 @@ typedef struct MarkerMove {
 /* return 0 if not OK */
 static int ed_marker_move_init(bContext *C, wmOperator *op)
 {
+	Scene *scene = CTX_data_scene(C);
 	ListBase *markers = ED_context_get_markers(C);
 	MarkerMove *mm;
 	TimeMarker *marker;
@@ -623,8 +625,10 @@ static int ed_marker_move_init(bContext *C, wmOperator *op)
 
 	initNumInput(&mm->num);
 	mm->num.idx_max = 0; /* one axis */
-	mm->num.flag |= NUM_NO_FRACTION;
-	mm->num.increment = 1.0f;
+	mm->num.val_flag[0] |= NUM_NO_FRACTION;
+	mm->num.unit_sys = scene->unit.system;
+	/* No time unit supporting frames currently... */
+	mm->num.unit_type[0] = B_UNIT_NONE;
 	
 	for (a = 0, marker = markers->first; marker; marker = marker->next) {
 		if (marker->flag & SELECT) {
@@ -832,7 +836,7 @@ static int ed_marker_move_modal(bContext *C, wmOperator *op, const wmEvent *even
 	}
 
 	if (event->val == KM_PRESS) {
-		if (handleNumInput(&mm->num, event)) {
+		if (handleNumInput(C, &mm->num, event)) {
 			char str_tx[NUM_STR_REP_LEN];
 			float value = RNA_int_get(op->ptr, "frames");
 			applyNumInput(&mm->num, &value);
@@ -1083,7 +1087,7 @@ static int ed_marker_select(bContext *C, const wmEvent *event, bool extend, bool
 
 static int ed_marker_select_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	bool extend = RNA_boolean_get(op->ptr, "extend");
+	const bool extend = RNA_boolean_get(op->ptr, "extend");
 	bool camera = false;
 #ifdef DURIAN_CAMERA_SWITCH
 	camera = RNA_boolean_get(op->ptr, "camera");
@@ -1148,7 +1152,7 @@ static int ed_marker_border_select_exec(bContext *C, wmOperator *op)
 	TimeMarker *marker;
 	float xminf, xmaxf, yminf, ymaxf;
 	int gesture_mode = RNA_int_get(op->ptr, "gesture_mode");
-	int extend = RNA_boolean_get(op->ptr, "extend");
+	bool extend = RNA_boolean_get(op->ptr, "extend");
 	rcti rect;
 	
 	WM_operator_properties_border_to_rcti(op, &rect);
@@ -1270,7 +1274,7 @@ static int ed_marker_delete_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	ListBase *markers = ED_context_get_markers(C);
 	TimeMarker *marker, *nmarker;
-	short changed = 0;
+	bool changed = false;
 	
 	if (markers == NULL)
 		return OPERATOR_CANCELLED;
@@ -1279,7 +1283,7 @@ static int ed_marker_delete_exec(bContext *C, wmOperator *UNUSED(op))
 		nmarker = marker->next;
 		if (marker->flag & SELECT) {
 			BLI_freelinkN(markers, marker);
-			changed = 1;
+			changed = true;
 		}
 	}
 	
@@ -1490,7 +1494,7 @@ void ED_operatortypes_marker(void)
 }
 
 /* called in screen_ops.c:ED_keymap_screen() */
-void ED_marker_keymap(wmKeyConfig *keyconf)
+void ED_keymap_marker(wmKeyConfig *keyconf)
 {
 	wmKeyMap *keymap = WM_keymap_find(keyconf, "Markers", 0, 0);
 	wmKeyMapItem *kmi;
@@ -1516,8 +1520,8 @@ void ED_marker_keymap(wmKeyConfig *keyconf)
 	
 	WM_keymap_verify_item(keymap, "MARKER_OT_select_border", BKEY, KM_PRESS, 0, 0);
 	WM_keymap_verify_item(keymap, "MARKER_OT_select_all", AKEY, KM_PRESS, 0, 0);
-	WM_keymap_verify_item(keymap, "MARKER_OT_delete", XKEY, KM_PRESS, 0, 0);
-	WM_keymap_verify_item(keymap, "MARKER_OT_delete", DELKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "MARKER_OT_delete", XKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "MARKER_OT_delete", DELKEY, KM_PRESS, 0, 0);
 	WM_keymap_verify_item(keymap, "MARKER_OT_rename", MKEY, KM_PRESS, KM_CTRL, 0);
 	
 	WM_keymap_add_item(keymap, "MARKER_OT_move", GKEY, KM_PRESS, 0, 0);

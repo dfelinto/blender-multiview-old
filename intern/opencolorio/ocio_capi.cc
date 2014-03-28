@@ -324,9 +324,9 @@ int OCIO_supportGLSLDraw(void)
 }
 
 int OCIO_setupGLSLDraw(struct OCIO_GLSLDrawState **state_r, OCIO_ConstProcessorRcPtr *processor,
-                       OCIO_CurveMappingSettings *curve_mapping_settings, bool predivide)
+                       OCIO_CurveMappingSettings *curve_mapping_settings, float dither, bool predivide)
 {
-	return (int) impl->setupGLSLDraw(state_r, processor, curve_mapping_settings, predivide);
+	return (int) impl->setupGLSLDraw(state_r, processor, curve_mapping_settings, dither, predivide);
 }
 
 void OCIO_finishGLSLDraw(struct OCIO_GLSLDrawState *state)
@@ -337,4 +337,14 @@ void OCIO_finishGLSLDraw(struct OCIO_GLSLDrawState *state)
 void OCIO_freeOGLState(struct OCIO_GLSLDrawState *state)
 {
 	impl->freeGLState(state);
+}
+
+const char *OCIO_getVersionString(void)
+{
+	return impl->getVersionString();
+}
+
+int OCIO_getVersionHex(void)
+{
+	return impl->getVersionHex();
 }

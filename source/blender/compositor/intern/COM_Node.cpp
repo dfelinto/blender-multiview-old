@@ -39,7 +39,7 @@
 //#include <stdio.h>
 #include "COM_defines.h"
 
-Node::Node(bNode *editorNode, bool create_sockets): NodeBase()
+Node::Node(bNode *editorNode, bool create_sockets) : NodeBase()
 {
 	setbNode(editorNode);
 	
@@ -216,9 +216,9 @@ OutputSocket *Node::findOutputSocketBybNodeSocket(bNodeSocket *socket)
 	return NULL;
 }
 
-const char *Node::RenderData_get_actview_name (const RenderData *rd, int actview) {
+const char *Node::RenderData_get_actview_name (const RenderData *rd, const int actview) {
 	SceneRenderView *srv;
-	int view_id, nr;
+	int view_id;
 
 	if ((rd->scemode & R_MULTIVIEW) == 0)
 		return "";

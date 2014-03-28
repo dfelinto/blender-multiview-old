@@ -312,11 +312,6 @@ static void text_keymap(struct wmKeyConfig *keyconf)
 		RNA_boolean_set(kmi->ptr, "selection", TRUE);
 	}
 
-	kmi = WM_keymap_add_item(keymap, "TEXT_OT_to_3d_object", MKEY, KM_PRESS, KM_ALT, 0);
-	RNA_boolean_set(kmi->ptr, "split_lines", FALSE);
-	kmi = WM_keymap_add_item(keymap, "TEXT_OT_to_3d_object", MKEY, KM_PRESS, KM_CTRL, 0);
-	RNA_boolean_set(kmi->ptr, "split_lines", TRUE);
-
 	WM_keymap_add_item(keymap, "TEXT_OT_select_all", AKEY, KM_PRESS, KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "TEXT_OT_select_line", AKEY, KM_PRESS, KM_SHIFT | KM_CTRL, 0);
 	WM_keymap_add_item(keymap, "TEXT_OT_select_word", LEFTMOUSE, KM_DBL_CLICK, 0, 0);
@@ -449,9 +444,16 @@ static void text_main_area_draw(const bContext *C, ARegion *ar)
 	/* scrollers? */
 }
 
-static void text_cursor(wmWindow *win, ScrArea *UNUSED(sa), ARegion *UNUSED(ar))
+static void text_cursor(wmWindow *win, ScrArea *sa, ARegion *ar)
 {
-	WM_cursor_set(win, BC_TEXTEDITCURSOR);
+	SpaceText *st = sa->spacedata.first;
+	int wmcursor = BC_TEXTEDITCURSOR;
+
+	if (st->text && BLI_rcti_isect_pt(&st->txtbar, win->eventstate->x - ar->winrct.xmin, st->txtbar.ymin)) {
+		wmcursor = CURSOR_STD;
+	}
+
+	WM_cursor_set(win, wmcursor);
 }
 
 
@@ -534,7 +536,7 @@ static void text_properties_area_draw(const bContext *C, ARegion *ar)
 	
 	/* this flag trick is make sure buttons have been added already */
 	if (st->flags & ST_FIND_ACTIVATE) {
-		if (UI_textbutton_activate_event(C, ar, st, "find_text")) {
+		if (UI_textbutton_activate_rna(C, ar, st, "find_text")) {
 			/* if the panel was already open we need to do another redraw */
 			ScrArea *sa = CTX_wm_area(C);
 			WM_event_add_notifier(C, NC_SPACE | ND_SPACE_TEXT, sa);
@@ -570,6 +572,7 @@ void ED_spacetype_text(void)
 	art->init = text_main_area_init;
 	art->draw = text_main_area_draw;
 	art->cursor = text_cursor;
+	art->event_cursor = TRUE;
 
 	BLI_addhead(&st->regiontypes, art);
 	

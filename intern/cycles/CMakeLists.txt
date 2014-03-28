@@ -1,27 +1,41 @@
 
-set(CYCLES_INSTALL_PATH "scripts/addons/cycles")
-set(WITH_CYCLES_BLENDER ON)
+# Standalone or with Blender
+if(NOT WITH_BLENDER AND WITH_CYCLES_STANDALONE)
+	set(CYCLES_INSTALL_PATH "")
+else()
+	set(WITH_CYCLES_BLENDER ON)
+	set(CYCLES_INSTALL_PATH "scripts/addons/cycles")
+endif()
 
 # External Libraries
 
 include(cmake/external_libs.cmake)
 
 # Build Flags
-
-if(WITH_RAYOPTIMIZATION AND SUPPORT_SSE_BUILD)
-	set(WITH_CYCLES_OPTIMIZED_KERNEL ON)
-endif()
+# todo: refactor this code to match scons
+# note: CXX_HAS_SSE is needed in case passing SSE flags fails altogether (gcc-arm)
 
 if(WIN32 AND MSVC)
+	set(CXX_HAS_SSE TRUE)
+
+	# /arch:AVX for VC2012 and above
+	if(NOT MSVC_VERSION LESS 1700)
+		set(CYCLES_AVX_ARCH_FLAGS "/arch:AVX")
+	elseif(NOT CMAKE_CL_64)
+		set(CYCLES_AVX_ARCH_FLAGS "/arch:SSE2")
+	endif()
+
 	# there is no /arch:SSE3, but intrinsics are available anyway
 	if(CMAKE_CL_64)
 		set(CYCLES_SSE2_KERNEL_FLAGS "/fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
 		set(CYCLES_SSE3_KERNEL_FLAGS "/fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
 		set(CYCLES_SSE41_KERNEL_FLAGS "/fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
+		set(CYCLES_AVX_KERNEL_FLAGS "${CYCLES_AVX_ARCH_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
 	else()
 		set(CYCLES_SSE2_KERNEL_FLAGS "/arch:SSE2 /fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
 		set(CYCLES_SSE3_KERNEL_FLAGS "/arch:SSE2 /fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
 		set(CYCLES_SSE41_KERNEL_FLAGS "/arch:SSE2 /fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
+		set(CYCLES_AVX_KERNEL_FLAGS "${CYCLES_AVX_ARCH_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-") 
 	endif()
 
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} /fp:fast -D_CRT_SECURE_NO_WARNINGS /Gs-")
@@ -29,15 +43,32 @@ if(WIN32 AND MSVC)
 	set(CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO} /Ox")
 	set(CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL} /Ox")
 elseif(CMAKE_COMPILER_IS_GNUCC)
-	set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2 -mfpmath=sse")
-	set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -mfpmath=sse")
-	set(CYCLES_SSE41_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mfpmath=sse")
+	check_cxx_compiler_flag(-msse CXX_HAS_SSE)
+	if(CXX_HAS_SSE)
+		set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2 -mfpmath=sse")
+		set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -mfpmath=sse")
+		set(CYCLES_SSE41_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mfpmath=sse")
+		set(CYCLES_AVX_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mavx -mfpmath=sse")
+	endif()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
 elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-	set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2")
-	set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3")
-	set(CYCLES_SSE41_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1")
+	check_cxx_compiler_flag(-msse CXX_HAS_SSE)
+	if(CXX_HAS_SSE)
+		set(CYCLES_SSE2_KERNEL_FLAGS "-ffast-math -msse -msse2")
+		set(CYCLES_SSE3_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3")
+		set(CYCLES_SSE41_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1")
+		set(CYCLES_AVX_KERNEL_FLAGS "-ffast-math -msse -msse2 -msse3 -mssse3 -msse4.1 -mavx")
+	endif()
 	set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -ffast-math")
+endif()
+
+if(CXX_HAS_SSE)
+	add_definitions(
+		-DWITH_KERNEL_SSE2
+		-DWITH_KERNEL_SSE3
+		-DWITH_KERNEL_SSE41
+		-DWITH_KERNEL_AVX
+	)
 endif()
 
 # for OSL
@@ -49,17 +80,30 @@ endif()
 
 # Definitions and Includes
 
-add_definitions(${BOOST_DEFINITIONS} ${OPENIMAGEIO_DEFINITIONS})
+add_definitions(
+	${BOOST_DEFINITIONS}
+	${OPENIMAGEIO_DEFINITIONS}
+)
 
-add_definitions(-DCCL_NAMESPACE_BEGIN=namespace\ ccl\ {)
-add_definitions(-DCCL_NAMESPACE_END=})
-
-if(WITH_CYCLES_OPTIMIZED_KERNEL)
-	add_definitions(-DWITH_OPTIMIZED_KERNEL)
-endif()
+add_definitions(
+	-DCCL_NAMESPACE_BEGIN=namespace\ ccl\ {
+	-DCCL_NAMESPACE_END=}
+)
 
 if(WITH_CYCLES_NETWORK)
 	add_definitions(-DWITH_NETWORK)
+endif()
+
+if(WITH_CYCLES_STANDALONE_GUI)
+	add_definitions(-DWITH_CYCLES_STANDALONE_GUI)
+endif()
+
+if(WITH_CYCLES_PTEX)
+	add_definitions(-DWITH_PTEX)
+endif()
+
+if(WITH_CYCLES_OPENSUBDIV)
+	add_definitions(-DWITH_OPENSUBDIV)
 endif()
 
 if(WITH_CYCLES_OSL)
@@ -68,16 +112,20 @@ if(WITH_CYCLES_OSL)
 	include_directories(${OSL_INCLUDES})
 endif()
 
-add_definitions(-DWITH_OPENCL)
-add_definitions(-DWITH_CUDA)
-add_definitions(-DWITH_MULTI)
+add_definitions(
+	-DWITH_OPENCL
+	-DWITH_CUDA
+	-DWITH_MULTI
+)
 
 include_directories(
 	SYSTEM
 	${BOOST_INCLUDE_DIR}
 	${OPENIMAGEIO_INCLUDE_DIRS}
 	${OPENIMAGEIO_INCLUDE_DIRS}/OpenImageIO
-	${OPENEXR_INCLUDE_DIR})
+	${OPENEXR_INCLUDE_DIR}
+	${OPENEXR_INCLUDE_DIRS}
+)
 
 # Subdirectories
 
@@ -96,4 +144,8 @@ add_subdirectory(kernel)
 add_subdirectory(render)
 add_subdirectory(subd)
 add_subdirectory(util)
+
+if(NOT WITH_BLENDER AND WITH_CYCLES_STANDALONE)
+	delayed_do_install(${CMAKE_BINARY_DIR}/bin)
+endif()
 

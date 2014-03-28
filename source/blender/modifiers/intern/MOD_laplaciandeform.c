@@ -35,6 +35,7 @@
 #include "MEM_guardedalloc.h"
 
 #include "BKE_mesh.h"
+#include "BKE_mesh_mapping.h"
 #include "BKE_cdderivedmesh.h"
 #include "BKE_particle.h"
 #include "BKE_deform.h"
@@ -451,6 +452,10 @@ static void laplacianDeformPreview(LaplacianSystem *sys, float (*vertexCos)[3])
 	n = sys->total_verts;
 	na = sys->total_anchors;
 
+#ifdef OPENNL_THREADING_HACK
+	modifier_opennl_lock();
+#endif
+
 	if (!sys->is_matrix_computed) {
 		nlNewContext();
 		sys->context = nlGetCurrent();
@@ -529,11 +534,10 @@ static void laplacianDeformPreview(LaplacianSystem *sys, float (*vertexCos)[3])
 			sys->has_solution = false;
 		}
 		sys->is_matrix_computed = true;
+
 	}
-	else {
-		if (!sys->has_solution) {
-			return;
-		}
+	else if (sys->has_solution) {
+		nlMakeCurrent(sys->context);
 
 		nlBegin(NL_SYSTEM);
 		nlBegin(NL_MATRIX);
@@ -588,6 +592,10 @@ static void laplacianDeformPreview(LaplacianSystem *sys, float (*vertexCos)[3])
 			sys->has_solution = false;
 		}
 	}
+
+#ifdef OPENNL_THREADING_HACK
+	modifier_opennl_unlock();
+#endif
 }
 
 static bool isValidVertexGroup(LaplacianDeformModifierData *lmd, Object *ob, DerivedMesh *dm)
@@ -721,10 +729,13 @@ static void LaplacianDeformModifier_do(
 				MEM_SAFE_FREE(lmd->vertexco);
 				lmd->total_verts = 0;
 				deleteLaplacianSystem(sys);
+				lmd->cache_system = NULL;
 				initSystem(lmd, ob, dm, filevertexCos, numVerts);
 				sys = lmd->cache_system; /* may have been reallocated */
 				MEM_SAFE_FREE(filevertexCos);
-				laplacianDeformPreview(sys, vertexCos);
+				if (sys) {
+					laplacianDeformPreview(sys, vertexCos);
+				}
 			}
 			else {
 				if (sysdif == LAPDEFORM_SYSTEM_CHANGE_VERTEXES) {
@@ -734,7 +745,7 @@ static void LaplacianDeformModifier_do(
 					modifier_setError(&lmd->modifier, "Edges changed from %d to %d", sys->total_edges, dm->getNumEdges(dm));
 				}
 				else if (sysdif == LAPDEFORM_SYSTEM_CHANGE_NOT_VALID_GROUP) {
-					modifier_setError(&lmd->modifier, "Vertex group  %s is not valid", sys->anchor_grp_name);
+					modifier_setError(&lmd->modifier, "Vertex group '%s' is not valid", sys->anchor_grp_name);
 				}
 			}
 		}
@@ -744,28 +755,28 @@ static void LaplacianDeformModifier_do(
 		}
 	}
 	else {
-		if (lmd->total_verts > 0 && lmd->total_verts == numVerts) {
-			if (isValidVertexGroup(lmd, ob, dm)) {
-				filevertexCos = MEM_mallocN(sizeof(float[3]) * numVerts, "TempDeformCoordinates");
-				memcpy(filevertexCos, lmd->vertexco, sizeof(float[3]) * numVerts);
-				MEM_SAFE_FREE(lmd->vertexco);
-				lmd->total_verts = 0;
-				initSystem(lmd, ob, dm, filevertexCos, numVerts);
-				sys = lmd->cache_system;
-				MEM_SAFE_FREE(filevertexCos);
-				laplacianDeformPreview(sys, vertexCos);
-			}
+		if (!isValidVertexGroup(lmd, ob, dm)) {
+			modifier_setError(&lmd->modifier, "Vertex group '%s' is not valid", lmd->anchor_grp_name);
+			lmd->flag &= ~MOD_LAPLACIANDEFORM_BIND;
+		}
+		else if (lmd->total_verts > 0 && lmd->total_verts == numVerts) {
+			filevertexCos = MEM_mallocN(sizeof(float[3]) * numVerts, "TempDeformCoordinates");
+			memcpy(filevertexCos, lmd->vertexco, sizeof(float[3]) * numVerts);
+			MEM_SAFE_FREE(lmd->vertexco);
+			lmd->total_verts = 0;
+			initSystem(lmd, ob, dm, filevertexCos, numVerts);
+			sys = lmd->cache_system;
+			MEM_SAFE_FREE(filevertexCos);
+			laplacianDeformPreview(sys, vertexCos);
 		}
 		else {
-			if (isValidVertexGroup(lmd, ob, dm)) {
-				initSystem(lmd, ob, dm, vertexCos, numVerts);
-				sys = lmd->cache_system;
-				laplacianDeformPreview(sys, vertexCos);
-			}
+			initSystem(lmd, ob, dm, vertexCos, numVerts);
+			sys = lmd->cache_system;
+			laplacianDeformPreview(sys, vertexCos);
 		}
 	}
-	if (sys->is_matrix_computed && !sys->has_solution) {
-		modifier_setError(&lmd->modifier, "The system did not find a solution.");
+	if (sys && sys->is_matrix_computed && !sys->has_solution) {
+		modifier_setError(&lmd->modifier, "The system did not find a solution");
 	}
 }
 
@@ -793,12 +804,11 @@ static void copyData(ModifierData *md, ModifierData *target)
 {
 	LaplacianDeformModifierData *lmd = (LaplacianDeformModifierData *)md;
 	LaplacianDeformModifierData *tlmd = (LaplacianDeformModifierData *)target;
-	tlmd->total_verts = lmd->total_verts;
-	tlmd->repeat = lmd->repeat;
-	BLI_strncpy(tlmd->anchor_grp_name, lmd->anchor_grp_name, sizeof(tlmd->anchor_grp_name));
+
+	modifier_copyData_generic(md, target);
+
 	tlmd->vertexco = MEM_dupallocN(lmd->vertexco);
-	tlmd->cache_system = MEM_dupallocN(lmd->cache_system);
-	tlmd->flag = lmd->flag;
+	tlmd->cache_system = NULL;
 }
 
 static bool isDisabled(ModifierData *md, int UNUSED(useRenderParams))

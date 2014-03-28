@@ -273,7 +273,7 @@ AnimData *BKE_copy_animdata(AnimData *adt, const bool do_action)
 	copy_fcurves(&dadt->drivers, &adt->drivers);
 	
 	/* don't copy overrides */
-	dadt->overrides.first = dadt->overrides.last = NULL;
+	BLI_listbase_clear(&dadt->overrides);
 	
 	/* return */
 	return dadt;
@@ -465,7 +465,7 @@ void action_move_fcurves_by_basepath(bAction *srcAct, bAction *dstAct, const cha
 				/* if group is empty and tagged, then we can remove as this operation
 				 * moved out all the channels that were formerly here
 				 */
-				if (agrp->channels.first == NULL)
+				if (BLI_listbase_is_empty(&agrp->channels))
 					BLI_freelinkN(&srcAct->groups, agrp);
 				else
 					agrp->flag &= ~AGRP_TEMP;
@@ -1382,8 +1382,13 @@ static short animsys_write_rna_setting(PointerRNA *ptr, char *path, int array_in
 			 * be run, it's for e.g. render engines to synchronize data */
 			if (written && new_ptr.id.data) {
 				ID *id = new_ptr.id.data;
-				id->flag |= LIB_ID_RECALC;
-				DAG_id_type_tag(G.main, GS(id->name));
+
+				/* for cases like duplifarmes it's only a temporary so don't
+				 * notify anyone of updates */
+				if (!(id->flag & LIB_ANIM_NO_RECALC)) {
+					id->flag |= LIB_ID_RECALC;
+					DAG_id_type_tag(G.main, GS(id->name));
+				}
 			}
 		}
 		
@@ -1793,7 +1798,7 @@ static void nlaevalchan_value_init(NlaEvalChannel *nec)
 }
 
 /* verify that an appropriate NlaEvalChannel for this F-Curve exists */
-static NlaEvalChannel *nlaevalchan_verify(PointerRNA *ptr, ListBase *channels, NlaEvalStrip *nes, FCurve *fcu)
+static NlaEvalChannel *nlaevalchan_verify(PointerRNA *ptr, ListBase *channels, NlaEvalStrip *nes, FCurve *fcu, bool *newChan)
 {
 	NlaEvalChannel *nec;
 	NlaStrip *strip = nes->strip;
@@ -1836,19 +1841,29 @@ static NlaEvalChannel *nlaevalchan_verify(PointerRNA *ptr, ListBase *channels, N
 		
 		/* initialise value using default value of property [#35856] */
 		nlaevalchan_value_init(nec);
+		*newChan = true;
 	}
+	else
+		*newChan = false;
 	
 	/* we can now return */
 	return nec;
 }
 
 /* accumulate (i.e. blend) the given value on to the channel it affects */
-static void nlaevalchan_accumulate(NlaEvalChannel *nec, NlaEvalStrip *nes, float value)
+static void nlaevalchan_accumulate(NlaEvalChannel *nec, NlaEvalStrip *nes, float value, bool newChan)
 {
 	NlaStrip *strip = nes->strip;
 	short blendmode = strip->blendmode;
 	float inf = strip->influence;
 	
+	/* for replace blend mode, and if this is the first strip,
+	 * just replace the value regardless of the influence */
+	if (newChan && blendmode == NLASTRIP_MODE_REPLACE) {
+		nec->value = value;
+		return;
+	}
+
 	/* if this is being performed as part of transition evaluation, incorporate
 	 * an additional weighting factor for the influence
 	 */
@@ -1895,7 +1910,7 @@ static void nlaevalchan_buffers_accumulate(ListBase *channels, ListBase *tmp_buf
 	NlaEvalChannel *nec, *necn, *necd;
 	
 	/* optimize - abort if no channels */
-	if (tmp_buffer->first == NULL)
+	if (BLI_listbase_is_empty(tmp_buffer))
 		return;
 	
 	/* accumulate results in tmp_channels buffer to the accumulation buffer */
@@ -1910,7 +1925,7 @@ static void nlaevalchan_buffers_accumulate(ListBase *channels, ListBase *tmp_buf
 		 * otherwise, add the current channel to the buffer for efficiency
 		 */
 		if (necd)
-			nlaevalchan_accumulate(necd, nes, nec->value);
+			nlaevalchan_accumulate(necd, nes, 0, nec->value);
 		else {
 			BLI_remlink(tmp_buffer, nec);
 			BLI_addtail(channels, nec);
@@ -1981,6 +1996,7 @@ static void nlaeval_fmodifiers_split_stacks(ListBase *list1, ListBase *list2)
 /* evaluate action-clip strip */
 static void nlastrip_evaluate_actionclip(PointerRNA *ptr, ListBase *channels, ListBase *modifiers, NlaEvalStrip *nes)
 {
+	FModifierStackStorage *storage;
 	ListBase tmp_modifiers = {NULL, NULL};
 	NlaStrip *strip = nes->strip;
 	FCurve *fcu;
@@ -2001,12 +2017,14 @@ static void nlastrip_evaluate_actionclip(PointerRNA *ptr, ListBase *channels, Li
 	nlaeval_fmodifiers_join_stacks(&tmp_modifiers, &strip->modifiers, modifiers);
 	
 	/* evaluate strip's modifiers which modify time to evaluate the base curves at */
-	evaltime = evaluate_time_fmodifiers(&tmp_modifiers, NULL, 0.0f, strip->strip_time);
+	storage = evaluate_fmodifiers_storage_new(&tmp_modifiers);
+	evaltime = evaluate_time_fmodifiers(storage, &tmp_modifiers, NULL, 0.0f, strip->strip_time);
 	
 	/* evaluate all the F-Curves in the action, saving the relevant pointers to data that will need to be used */
 	for (fcu = strip->act->curves.first; fcu; fcu = fcu->next) {
 		NlaEvalChannel *nec;
 		float value = 0.0f;
+		bool newChan;
 		
 		/* check if this curve should be skipped */
 		if (fcu->flag & (FCURVE_MUTED | FCURVE_DISABLED))
@@ -2022,17 +2040,20 @@ static void nlastrip_evaluate_actionclip(PointerRNA *ptr, ListBase *channels, Li
 		/* apply strip's F-Curve Modifiers on this value 
 		 * NOTE: we apply the strip's original evaluation time not the modified one (as per standard F-Curve eval)
 		 */
-		evaluate_value_fmodifiers(&tmp_modifiers, fcu, &value, strip->strip_time);
+		evaluate_value_fmodifiers(storage, &tmp_modifiers, fcu, &value, strip->strip_time);
 		
 		
 		/* get an NLA evaluation channel to work with, and accumulate the evaluated value with the value(s)
 		 * stored in this channel if it has been used already
 		 */
-		nec = nlaevalchan_verify(ptr, channels, nes, fcu);
+		nec = nlaevalchan_verify(ptr, channels, nes, fcu, &newChan);
 		if (nec)
-			nlaevalchan_accumulate(nec, nes, value);
+			nlaevalchan_accumulate(nec, nes, value, newChan);
 	}
-	
+
+	/* free temporary storage */
+	evaluate_fmodifiers_storage_free(storage);
+
 	/* unlink this strip's modifiers from the parent's modifiers again */
 	nlaeval_fmodifiers_split_stacks(&strip->modifiers, modifiers);
 }
@@ -2109,7 +2130,7 @@ static void nlastrip_evaluate_meta(PointerRNA *ptr, ListBase *channels, ListBase
 	 *
 	 * NOTE: keep this in sync with animsys_evaluate_nla()
 	 */
-	 
+
 	/* join this strip's modifiers to the parent's modifiers (own modifiers first) */
 	nlaeval_fmodifiers_join_stacks(&tmp_modifiers, &strip->modifiers, modifiers); 
 	
@@ -2223,7 +2244,7 @@ static void animsys_evaluate_nla(ListBase *echannels, PointerRNA *ptr, AnimData 
 {
 	NlaTrack *nlt;
 	short track_index = 0;
-	short has_strips = 0;
+	bool has_strips = false;
 	
 	ListBase estrips = {NULL, NULL};
 	NlaEvalStrip *nes;
@@ -2298,7 +2319,7 @@ static void animsys_evaluate_nla(ListBase *echannels, PointerRNA *ptr, AnimData 
 	}
 	
 	/* only continue if there are strips to evaluate */
-	if (estrips.first == NULL)
+	if (BLI_listbase_is_empty(&estrips))
 		return;
 	
 	
@@ -2514,7 +2535,7 @@ void BKE_animsys_evaluate_all_animation(Main *main, Scene *scene, float ctime)
 	 * however, if there are some curves, we will need to make sure that their 'ctime' property gets
 	 * set correctly, so this optimization must be skipped in that case...
 	 */
-	if ((main->action.first == NULL) && (main->curve.first == NULL)) {
+	if (BLI_listbase_is_empty(&main->action) && BLI_listbase_is_empty(&main->curve)) {
 		if (G.debug & G_DEBUG)
 			printf("\tNo Actions, so no animation needs to be evaluated...\n");
 			

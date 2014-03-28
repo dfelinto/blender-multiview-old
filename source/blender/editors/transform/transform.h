@@ -384,6 +384,7 @@ typedef struct TransInfo {
 #define T_EDIT			(1 << 1)
 #define T_POSE			(1 << 2)
 #define T_TEXTURE		(1 << 3)
+	/* transforming the camera while in camera view */
 #define T_CAMERA		(1 << 4)
 		 // trans on points, having no rotation/scale
 #define T_POINTS		(1 << 6)
@@ -431,6 +432,11 @@ typedef struct TransInfo {
 #define	MOD_SNAP				0x04
 #define	MOD_SNAP_INVERT			0x08
 #define	MOD_CONSTRAINT_PLANE	0x10
+
+/* use node center for transform instead of upper-left corner.
+ * disabled since it makes absolute snapping not work so nicely
+ */
+// #define USE_NODE_CENTER
 
 
 /* ******************************************************************************** */

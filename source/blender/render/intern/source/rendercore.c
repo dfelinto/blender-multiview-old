@@ -41,7 +41,6 @@
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
-#include "BLI_jitter.h"
 #include "BLI_rand.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
@@ -955,7 +954,7 @@ static void freeps(ListBase *lb)
 			MEM_freeN(psm->ps);
 		MEM_freeN(psm);
 	}
-	lb->first= lb->last= NULL;
+	BLI_listbase_clear(lb);
 }
 
 static void addps(ListBase *lb, intptr_t *rd, int obi, int facenr, int z, int maskz, unsigned short mask)
@@ -996,6 +995,25 @@ static void addps(ListBase *lb, intptr_t *rd, int obi, int facenr, int z, int ma
 	ps->shadfac= 0;
 }
 
+static void edge_enhance_add(RenderPart *pa, float *rectf, float *arect)
+{
+	float addcol[4];
+	int pix;
+	
+	if (arect==NULL)
+		return;
+	
+	for (pix= pa->rectx*pa->recty; pix>0; pix--, arect++, rectf+=4) {
+		if (*arect != 0.0f) {
+			addcol[0]= *arect * R.r.edgeR;
+			addcol[1]= *arect * R.r.edgeG;
+			addcol[2]= *arect * R.r.edgeB;
+			addcol[3]= *arect;
+			addAlphaOverFloat(rectf, addcol);
+		}
+	}
+}
+
 /* clamp alpha and RGB to 0..1 and 0..inf, can go outside due to filter */
 static void clamp_alpha_rgb_range(RenderPart *pa, RenderLayer *rl)
 {
@@ -1018,6 +1036,67 @@ static void clamp_alpha_rgb_range(RenderPart *pa, RenderLayer *rl)
 			CLAMP(rectf[3], 0.0f, 1.0f);
 		}
 	}
+}
+
+/* adds only alpha values */
+static void edge_enhance_tile(RenderPart *pa, float *rectf, int *rectz)
+{
+	/* use zbuffer to define edges, add it to the image */
+	int y, x, col, *rz, *rz1, *rz2, *rz3;
+	int zval1, zval2, zval3;
+	float *rf;
+	
+	/* shift values in zbuffer 4 to the right (anti overflows), for filter we need multiplying with 12 max */
+	rz= rectz;
+	if (rz==NULL) return;
+	
+	for (y=0; y<pa->recty; y++)
+		for (x=0; x<pa->rectx; x++, rz++) (*rz)>>= 4;
+	
+	rz1= rectz;
+	rz2= rz1+pa->rectx;
+	rz3= rz2+pa->rectx;
+	
+	rf= rectf+pa->rectx+1;
+	
+	for (y=0; y<pa->recty-2; y++) {
+		for (x=0; x<pa->rectx-2; x++, rz1++, rz2++, rz3++, rf++) {
+			
+			/* prevent overflow with sky z values */
+			zval1=   rz1[0] + 2*rz1[1] +   rz1[2];
+			zval2=  2*rz2[0]           + 2*rz2[2];
+			zval3=   rz3[0] + 2*rz3[1] +   rz3[2];
+			
+			col= ( 4*rz2[1] - (zval1 + zval2 + zval3)/3 );
+			if (col<0) col= -col;
+			
+			col >>= 5;
+			if (col > (1<<16)) col= (1<<16);
+			else col= (R.r.edgeint*col)>>8;
+			
+			if (col>0) {
+				float fcol;
+				
+				if (col>255) fcol= 1.0f;
+				else fcol= (float)col/255.0f;
+				
+				if (R.osa)
+					*rf+= fcol/(float)R.osa;
+				else
+					*rf= fcol;
+			}
+		}
+		rz1+= 2;
+		rz2+= 2;
+		rz3+= 2;
+		rf+= 2;
+	}
+	
+	/* shift back zbuf values, we might need it still */
+	rz= rectz;
+	for (y=0; y<pa->recty; y++)
+		for (x=0; x<pa->rectx; x++, rz++) (*rz)<<= 4;
+	
 }
 
 static void reset_sky_speed(RenderPart *pa, RenderLayer *rl)
@@ -1098,6 +1177,7 @@ static void addAlphaOverFloatMask(float *dest, float *source, unsigned short dma
 typedef struct ZbufSolidData {
 	RenderLayer *rl;
 	ListBase *psmlist;
+	float *edgerect;
 } ZbufSolidData;
 
 static void make_pixelstructs(RenderPart *pa, ZSpan *zspan, int sample, void *data)
@@ -1119,6 +1199,10 @@ static void make_pixelstructs(RenderPart *pa, ZSpan *zspan, int sample, void *da
 			}
 		}
 	}
+
+	if (sdata->rl->layflag & SCE_LAY_EDGE) 
+		if (R.r.mode & R_EDGE) 
+			edge_enhance_tile(pa, sdata->edgerect, zspan->rectz);
 }
 
 /* main call for shading Delta Accum, for OSA */
@@ -1128,6 +1212,7 @@ void zbufshadeDA_tile(RenderPart *pa)
 	RenderResult *rr= pa->result;
 	RenderLayer *rl;
 	ListBase psmlist= {NULL, NULL};
+	float *edgerect= NULL;
 	
 	/* allocate the necessary buffers */
 				/* zbuffer inits these rects */
@@ -1140,9 +1225,13 @@ void zbufshadeDA_tile(RenderPart *pa)
 		if ((rl->layflag & SCE_LAY_ZMASK) && (rl->layflag & SCE_LAY_NEG_ZMASK))
 			pa->rectmask= MEM_mallocN(sizeof(int)*pa->rectx*pa->recty, "rectmask");
 	
-		/* initialize pixelstructs */
+		/* initialize pixelstructs and edge buffer */
 		addpsmain(&psmlist);
 		pa->rectdaps= MEM_callocN(sizeof(intptr_t)*pa->rectx*pa->recty+4, "zbufDArectd");
+		
+		if (rl->layflag & SCE_LAY_EDGE) 
+			if (R.r.mode & R_EDGE) 
+				edgerect= MEM_callocN(sizeof(float)*pa->rectx*pa->recty, "rectedge");
 		
 		/* always fill visibility */
 		for (pa->sample=0; pa->sample<R.osa; pa->sample+=4) {
@@ -1150,6 +1239,7 @@ void zbufshadeDA_tile(RenderPart *pa)
 
 			sdata.rl= rl;
 			sdata.psmlist= &psmlist;
+			sdata.edgerect= edgerect;
 			zbuffer_solid(pa, rl, make_pixelstructs, &sdata);
 			if (R.test_break(R.tbh)) break; 
 		}
@@ -1218,12 +1308,18 @@ void zbufshadeDA_tile(RenderPart *pa)
 		}
 
 		/* sun/sky */
-		if (rl->layflag & SCE_LAY_SKY) {
+		if (rl->layflag & SCE_LAY_SKY)
 			atm_tile(pa, rl);
+		
+		/* sky before edge */
+		if (rl->layflag & SCE_LAY_SKY)
 			sky_tile(pa, rl);
-		}
 
-		/* extra layers */	
+		/* extra layers */
+		if (rl->layflag & SCE_LAY_EDGE) 
+			if (R.r.mode & R_EDGE) 
+				edge_enhance_add(pa, rect, edgerect);
+		
 		if (rl->passflag & SCE_PASS_VECTOR)
 			reset_sky_speed(pa, rl);
 
@@ -1233,6 +1329,9 @@ void zbufshadeDA_tile(RenderPart *pa)
 		/* free stuff within loop! */
 		MEM_freeN(pa->rectdaps); pa->rectdaps= NULL;
 		freeps(&psmlist);
+		
+		if (edgerect) MEM_freeN(edgerect);
+		edgerect= NULL;
 
 		if (pa->rectmask) {
 			MEM_freeN(pa->rectmask);
@@ -1261,6 +1360,7 @@ void zbufshade_tile(RenderPart *pa)
 	RenderResult *rr= pa->result;
 	RenderLayer *rl;
 	PixStr ps;
+	float *edgerect= NULL;
 	
 	/* fake pixel struct, to comply to osa render */
 	ps.next= NULL;
@@ -1282,6 +1382,14 @@ void zbufshade_tile(RenderPart *pa)
 		zbuffer_solid(pa, rl, NULL, NULL);
 		
 		if (!R.test_break(R.tbh)) {	/* NOTE: this if () is not consistent */
+			
+			/* edges only for solid part, ztransp doesn't support it yet anti-aliased */
+			if (rl->layflag & SCE_LAY_EDGE) {
+				if (R.r.mode & R_EDGE) {
+					edgerect= MEM_callocN(sizeof(float)*pa->rectx*pa->recty, "rectedge");
+					edge_enhance_tile(pa, edgerect, pa->rectz);
+				}
+			}
 			
 			/* initialize scanline updates for main thread */
 			rr->renrect.ymin = 0;
@@ -1363,13 +1471,24 @@ void zbufshade_tile(RenderPart *pa)
 		}
 		
 		/* sun/sky */
-		if (rl->layflag & SCE_LAY_SKY) {
+		if (rl->layflag & SCE_LAY_SKY)
 			atm_tile(pa, rl);
+		
+		/* sky before edge */
+		if (rl->layflag & SCE_LAY_SKY)
 			sky_tile(pa, rl);
+		
+		if (!R.test_break(R.tbh)) {
+			if (rl->layflag & SCE_LAY_EDGE) 
+				if (R.r.mode & R_EDGE)
+					edge_enhance_add(pa, rect, edgerect);
 		}
 		
 		if (rl->passflag & SCE_PASS_VECTOR)
 			reset_sky_speed(pa, rl);
+		
+		if (edgerect) MEM_freeN(edgerect);
+		edgerect= NULL;
 
 		if (pa->rectmask) {
 			MEM_freeN(pa->rectmask);
@@ -1904,7 +2023,7 @@ void add_halo_flare(Render *re)
 		if (do_draw) {
 			/* weak... the display callback wants an active renderlayer pointer... */
 			rr->renlay= rl;
-			re->display_draw(re->ddh, rr, NULL, re->actview);
+			re->display_update(re->duh, rr, NULL, re->actview);
 		}
 
 		R.r.mode= mode;

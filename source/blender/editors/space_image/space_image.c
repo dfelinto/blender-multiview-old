@@ -69,6 +69,7 @@
 #include "WM_types.h"
 
 #include "UI_resources.h"
+#include "UI_interface.h"
 #include "UI_view2d.h"
 
 #include "image_intern.h"
@@ -82,7 +83,7 @@ static void image_scopes_tag_refresh(ScrArea *sa)
 
 	/* only while histogram is visible */
 	for (ar = sa->regionbase.first; ar; ar = ar->next) {
-		if (ar->regiontype == RGN_TYPE_PREVIEW && ar->flag & RGN_FLAG_HIDDEN)
+		if (ar->regiontype == RGN_TYPE_TOOLS && ar->flag & RGN_FLAG_HIDDEN)
 			return;
 	}
 
@@ -109,18 +110,18 @@ ARegion *image_has_buttons_region(ScrArea *sa)
 	
 	BLI_insertlinkafter(&sa->regionbase, ar, arnew);
 	arnew->regiontype = RGN_TYPE_UI;
-	arnew->alignment = RGN_ALIGN_LEFT;
+	arnew->alignment = RGN_ALIGN_RIGHT;
 	
 	arnew->flag = RGN_FLAG_HIDDEN;
 	
 	return arnew;
 }
 
-ARegion *image_has_scope_region(ScrArea *sa)
+ARegion *image_has_tools_region(ScrArea *sa)
 {
 	ARegion *ar, *arnew;
 
-	ar = BKE_area_find_region_type(sa, RGN_TYPE_PREVIEW);
+	ar = BKE_area_find_region_type(sa, RGN_TYPE_TOOLS);
 	if (ar) return ar;
 
 	/* add subdiv level; after buttons */
@@ -132,8 +133,8 @@ ARegion *image_has_scope_region(ScrArea *sa)
 	arnew = MEM_callocN(sizeof(ARegion), "scopes for image");
 	
 	BLI_insertlinkafter(&sa->regionbase, ar, arnew);
-	arnew->regiontype = RGN_TYPE_PREVIEW;
-	arnew->alignment = RGN_ALIGN_RIGHT;
+	arnew->regiontype = RGN_TYPE_TOOLS;
+	arnew->alignment = RGN_ALIGN_LEFT;
 	
 	arnew->flag = RGN_FLAG_HIDDEN;
 
@@ -174,15 +175,15 @@ static SpaceLink *image_new(const bContext *UNUSED(C))
 	
 	BLI_addtail(&simage->regionbase, ar);
 	ar->regiontype = RGN_TYPE_UI;
-	ar->alignment = RGN_ALIGN_LEFT;
+	ar->alignment = RGN_ALIGN_RIGHT;
 	ar->flag = RGN_FLAG_HIDDEN;
 	
-	/* scopes */
+	/* scopes/uv sculpt/paint */
 	ar = MEM_callocN(sizeof(ARegion), "buttons for image");
 	
 	BLI_addtail(&simage->regionbase, ar);
-	ar->regiontype = RGN_TYPE_PREVIEW;
-	ar->alignment = RGN_ALIGN_RIGHT;
+	ar->regiontype = RGN_TYPE_TOOLS;
+	ar->alignment = RGN_ALIGN_LEFT;
 	ar->flag = RGN_FLAG_HIDDEN;
 
 	/* main area */
@@ -255,7 +256,7 @@ static void image_operatortypes(void)
 	WM_operatortype_append(IMAGE_OT_curves_point_set);
 
 	WM_operatortype_append(IMAGE_OT_properties);
-	WM_operatortype_append(IMAGE_OT_scopes);
+	WM_operatortype_append(IMAGE_OT_toolshelf);
 }
 
 static void image_keymap(struct wmKeyConfig *keyconf)
@@ -270,7 +271,7 @@ static void image_keymap(struct wmKeyConfig *keyconf)
 	WM_keymap_add_item(keymap, "IMAGE_OT_save", SKEY, KM_PRESS, KM_ALT, 0);
 	WM_keymap_add_item(keymap, "IMAGE_OT_save_as", F3KEY, KM_PRESS, 0, 0);
 	WM_keymap_add_item(keymap, "IMAGE_OT_properties", NKEY, KM_PRESS, 0, 0);
-	WM_keymap_add_item(keymap, "IMAGE_OT_scopes", TKEY, KM_PRESS, 0, 0);
+	WM_keymap_add_item(keymap, "IMAGE_OT_toolshelf", TKEY, KM_PRESS, 0, 0);
 
 	WM_keymap_add_item(keymap, "IMAGE_OT_cycle_render_slot", JKEY, KM_PRESS, 0, 0);
 	RNA_boolean_set(WM_keymap_add_item(keymap, "IMAGE_OT_cycle_render_slot", JKEY, KM_PRESS, KM_ALT, 0)->ptr, "reverse", TRUE);
@@ -420,8 +421,9 @@ static void image_refresh(const bContext *C, ScrArea *sa)
 	}
 }
 
-static void image_listener(bScreen *UNUSED(sc), ScrArea *sa, wmNotifier *wmn)
+static void image_listener(bScreen *sc, ScrArea *sa, wmNotifier *wmn)
 {
+	Scene *scene = sc->scene;
 	SpaceImage *sima = (SpaceImage *)sa->spacedata.first;
 	
 	/* context changes */
@@ -510,16 +512,21 @@ static void image_listener(bScreen *UNUSED(sc), ScrArea *sa, wmNotifier *wmn)
 		}
 		case NC_OBJECT:
 		{
-			Object *ob = (Object *)wmn->reference;
 			switch (wmn->data) {
 				case ND_TRANSFORM:
 				case ND_MODIFIER:
-					if (ob && (ob->mode & OB_MODE_EDIT) && sima->lock && (sima->flag & SI_DRAWSHADOW)) {
-						ED_area_tag_refresh(sa);
-						ED_area_tag_redraw(sa);
+				{
+					Object *ob = OBACT;
+					if (ob && (ob == wmn->reference) && (ob->mode & OB_MODE_EDIT)) {
+						if (sima->lock && (sima->flag & SI_DRAWSHADOW)) {
+							ED_area_tag_refresh(sa);
+							ED_area_tag_redraw(sa);
+						}
 					}
 					break;
+				}
 			}
+
 			break;
 		}
 	}
@@ -785,18 +792,26 @@ static void image_buttons_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa)
 {
 	/* context changes */
 	switch (wmn->category) {
-		case NC_GPENCIL:
-			if (wmn->data == ND_DATA)
-				ED_region_tag_redraw(ar);
-			break;
-		case NC_BRUSH:
-			if (wmn->action == NA_EDITED)
-				ED_region_tag_redraw(ar);
-			break;
 		case NC_TEXTURE:
 		case NC_MATERIAL:
 			/* sending by texture render job and needed to properly update displaying
 			 * brush texture icon */
+			ED_region_tag_redraw(ar);
+			break;
+		case NC_SCENE:
+			switch (wmn->data) {
+				case ND_MODE:
+				case ND_RENDER_RESULT:
+				case ND_COMPO_RESULT:
+					ED_region_tag_redraw(ar);
+					break;
+			}
+			break;
+		case NC_IMAGE:
+			if (wmn->action != NA_PAINTING)
+				ED_region_tag_redraw(ar);
+			break;
+		case NC_NODE:
 			ED_region_tag_redraw(ar);
 			break;
 	}
@@ -805,7 +820,7 @@ static void image_buttons_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa)
 /* *********************** scopes region ************************ */
 
 /* add handlers, stuff you only do once or on area/region changes */
-static void image_scope_area_init(wmWindowManager *wm, ARegion *ar)
+static void image_tools_area_init(wmWindowManager *wm, ARegion *ar)
 {
 	wmKeyMap *keymap;
 	
@@ -816,31 +831,44 @@ static void image_scope_area_init(wmWindowManager *wm, ARegion *ar)
 	WM_event_add_keymap_handler(&ar->handlers, keymap);
 }
 
-static void image_scope_area_draw(const bContext *C, ARegion *ar)
+static void image_tools_area_draw(const bContext *C, ARegion *ar)
 {
 	SpaceImage *sima = CTX_wm_space_image(C);
 	Scene *scene = CTX_data_scene(C);
 	void *lock;
 	ImBuf *ibuf = ED_space_image_acquire_buffer(sima, &lock);
-	
-	if (ibuf) {
-		if (!sima->scopes.ok) {
-			BKE_histogram_update_sample_line(&sima->sample_line_hist, ibuf, &scene->view_settings, &scene->display_settings);
+	/* XXX performance regression if name of scopes category changes! */
+	PanelCategoryStack *category = UI_panel_category_active_find(ar, "Scopes");
+
+	/* only update scopes if scope category is active */
+	if (category) {
+		if (ibuf) {
+			if (!sima->scopes.ok) {
+				BKE_histogram_update_sample_line(&sima->sample_line_hist, ibuf, &scene->view_settings, &scene->display_settings);
+			}
+			if (sima->image->flag & IMA_VIEW_AS_RENDER)
+				scopes_update(&sima->scopes, ibuf, &scene->view_settings, &scene->display_settings);
+			else
+				scopes_update(&sima->scopes, ibuf, NULL, &scene->display_settings);
 		}
-		if (sima->image->flag & IMA_VIEW_AS_RENDER)
-			scopes_update(&sima->scopes, ibuf, &scene->view_settings, &scene->display_settings);
-		else
-			scopes_update(&sima->scopes, ibuf, NULL, &scene->display_settings);
 	}
 	ED_space_image_release_buffer(sima, ibuf, lock);
 	
 	ED_region_panels(C, ar, 1, NULL, -1);
 }
 
-static void image_scope_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
+static void image_tools_area_listener(bScreen *UNUSED(sc), ScrArea *UNUSED(sa), ARegion *ar, wmNotifier *wmn)
 {
 	/* context changes */
 	switch (wmn->category) {
+		case NC_GPENCIL:
+			if (wmn->data == ND_DATA)
+				ED_region_tag_redraw(ar);
+			break;
+		case NC_BRUSH:
+			if (wmn->action == NA_EDITED)
+				ED_region_tag_redraw(ar);
+			break;
 		case NC_SCENE:
 			switch (wmn->data) {
 				case ND_MODE:
@@ -939,17 +967,17 @@ void ED_spacetype_image(void)
 	art->draw = image_buttons_area_draw;
 	BLI_addhead(&st->regiontypes, art);
 
-	image_buttons_register(art);
 	ED_uvedit_buttons_register(art);
-	
+	image_buttons_register(art);
+
 	/* regions: statistics/scope buttons */
 	art = MEM_callocN(sizeof(ARegionType), "spacetype image region");
-	art->regionid = RGN_TYPE_PREVIEW;
+	art->regionid = RGN_TYPE_TOOLS;
 	art->prefsizex = 220; // XXX
 	art->keymapflag = ED_KEYMAP_UI | ED_KEYMAP_FRAMES;
-	art->listener = image_scope_area_listener;
-	art->init = image_scope_area_init;
-	art->draw = image_scope_area_draw;
+	art->listener = image_tools_area_listener;
+	art->init = image_tools_area_init;
+	art->draw = image_tools_area_draw;
 	BLI_addhead(&st->regiontypes, art);
 
 	/* regions: header */

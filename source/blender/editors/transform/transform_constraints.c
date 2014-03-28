@@ -137,7 +137,7 @@ static void postConstraintChecks(TransInfo *t, float vec[3], float pvec[3])
 
 	snapGridIncrement(t, vec);
 
-	if (t->num.flag & T_NULL_ONE) {
+	if (t->flag & T_NULL_ONE) {
 		if (!(t->con.mode & CON_AXIS0))
 			vec[0] = 1.0f;
 
@@ -148,8 +148,7 @@ static void postConstraintChecks(TransInfo *t, float vec[3], float pvec[3])
 			vec[2] = 1.0f;
 	}
 
-	if (hasNumInput(&t->num)) {
-		applyNumInput(&t->num, vec);
+	if (applyNumInput(&t->num, vec)) {
 		constraintNumInput(t, vec);
 		removeAspectRatio(t, vec);
 	}
@@ -576,7 +575,15 @@ void setConstraint(TransInfo *t, float space[3][3], int mode, const char text[])
 void setAxisMatrixConstraint(TransInfo *t, int mode, const char text[])
 {
 	if (t->total == 1) {
-		setConstraint(t, t->data->axismtx, mode, text);
+		float axismtx[3][3];
+		if (t->flag & T_EDIT) {
+			mul_m3_m3m3(axismtx, t->obedit_mat, t->data->axismtx);
+		}
+		else {
+			copy_m3_m3(axismtx, t->data->axismtx);
+		}
+
+		setConstraint(t, axismtx, mode, text);
 	}
 	else {
 		BLI_strncpy(t->con.text + 1, text, sizeof(t->con.text) - 1);
@@ -917,7 +924,7 @@ void postSelectConstraint(TransInfo *t)
 static void setNearestAxis2d(TransInfo *t)
 {
 	/* no correction needed... just use whichever one is lower */
-	if (abs(t->mval[0] - t->con.imval[0]) < abs(t->mval[1] - t->con.imval[1]) ) {
+	if (abs(t->mval[0] - t->con.imval[0]) < abs(t->mval[1] - t->con.imval[1])) {
 		t->con.mode |= CON_AXIS1;
 		BLI_strncpy(t->con.text, IFACE_(" along Y axis"), sizeof(t->con.text));
 	}

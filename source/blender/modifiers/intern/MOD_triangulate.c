@@ -47,7 +47,7 @@ static DerivedMesh *triangulate_dm(DerivedMesh *dm, const int quad_method, const
 
 	BM_mesh_triangulate(bm, quad_method, ngon_method, false, NULL, NULL);
 
-	result = CDDM_from_bmesh(bm, FALSE);
+	result = CDDM_from_bmesh(bm, false);
 	BM_mesh_free(bm);
 
 	total_edges = result->getNumEdges(result);
@@ -76,10 +76,11 @@ static void initData(ModifierData *md)
 
 static void copyData(ModifierData *md, ModifierData *target)
 {
+#if 0
 	TriangulateModifierData *smd = (TriangulateModifierData *) md;
 	TriangulateModifierData *tsmd = (TriangulateModifierData *) target;
-
-	*tsmd = *smd;
+#endif
+	modifier_copyData_generic(md, target);
 }
 
 static DerivedMesh *applyModifier(ModifierData *md,

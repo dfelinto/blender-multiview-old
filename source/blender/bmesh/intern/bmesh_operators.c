@@ -238,6 +238,9 @@ void BMO_op_finish(BMesh *bm, BMOperator *op)
 
 #ifdef DEBUG
 	BM_ELEM_INDEX_VALIDATE(bm, "post bmo", bmo_opdefines[op->type]->opname);
+
+	/* avoid accidental re-use */
+	memset(op, 0xff, sizeof(*op));
 #else
 	(void)bm;
 #endif
@@ -1311,13 +1314,10 @@ static void bmo_flag_layer_free(BMesh *bm)
 
 static void bmo_flag_layer_clear(BMesh *bm)
 {
-	BMElemF *ele;
 	/* set the index values since we are looping over all data anyway,
 	 * may save time later on */
-	int i;
 	const BMFlagLayer zero_flag = {0};
 
-	BMIter iter;
 	const int totflags_offset = bm->totflags - 1;
 
 #pragma omp parallel sections if (bm->totvert + bm->totedge + bm->totface >= BM_OMP_LIMIT)
@@ -1325,6 +1325,9 @@ static void bmo_flag_layer_clear(BMesh *bm)
 		/* now go through and memcpy all the flag */
 #pragma omp section
 		{
+			BMIter iter;
+			BMElemF *ele;
+			int i;
 			BM_ITER_MESH_INDEX (ele, &iter, bm, BM_VERTS_OF_MESH, i) {
 				ele->oflags[totflags_offset] = zero_flag;
 				BM_elem_index_set(ele, i); /* set_inline */
@@ -1332,6 +1335,9 @@ static void bmo_flag_layer_clear(BMesh *bm)
 		}
 #pragma omp section
 		{
+			BMIter iter;
+			BMElemF *ele;
+			int i;
 			BM_ITER_MESH_INDEX (ele, &iter, bm, BM_EDGES_OF_MESH, i) {
 				ele->oflags[totflags_offset] = zero_flag;
 				BM_elem_index_set(ele, i); /* set_inline */
@@ -1339,6 +1345,9 @@ static void bmo_flag_layer_clear(BMesh *bm)
 		}
 #pragma omp section
 		{
+			BMIter iter;
+			BMElemF *ele;
+			int i;
 			BM_ITER_MESH_INDEX (ele, &iter, bm, BM_FACES_OF_MESH, i) {
 				ele->oflags[totflags_offset] = zero_flag;
 				BM_elem_index_set(ele, i); /* set_inline */
@@ -1463,7 +1472,7 @@ int BMO_iter_map_value_int(BMOIter *iter)
 bool BMO_iter_map_value_bool(BMOIter *iter)
 {
 	BLI_assert(iter->slot->slot_subtype.map == BMO_OP_SLOT_SUBTYPE_MAP_BOOL);
-	return **((int **)iter->val);
+	return **((bool **)iter->val);
 }
 
 /* error system */
@@ -1495,7 +1504,7 @@ void BMO_error_raise(BMesh *bm, BMOperator *owner, int errcode, const char *msg)
 
 bool BMO_error_occurred(BMesh *bm)
 {
-	return bm->errorstack.first != NULL;
+	return (BLI_listbase_is_empty(&bm->errorstack) == false);
 }
 
 /* returns error code or 0 if no error */

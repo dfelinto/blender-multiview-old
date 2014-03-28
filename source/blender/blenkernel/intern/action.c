@@ -84,7 +84,7 @@ bAction *add_empty_action(Main *bmain, const char name[])
 {
 	bAction *act;
 	
-	act = BKE_libblock_alloc(&bmain->action, ID_AC, name);
+	act = BKE_libblock_alloc(bmain, ID_AC, name);
 	
 	return act;
 }	
@@ -193,7 +193,7 @@ bAction *BKE_action_copy(bAction *src)
 	BLI_duplicatelist(&dst->markers, &src->markers);
 	
 	/* copy F-Curves, fixing up the links as we go */
-	dst->curves.first = dst->curves.last = NULL;
+	BLI_listbase_clear(&dst->curves);
 	
 	for (sfcu = src->curves.first; sfcu; sfcu = sfcu->next) {
 		/* duplicate F-Curve */
@@ -319,7 +319,7 @@ void action_groups_add_channel(bAction *act, bActionGroup *agrp, FCurve *fcurve)
 		return;
 	
 	/* if no channels anywhere, just add to two lists at the same time */
-	if (act->curves.first == NULL) {
+	if (BLI_listbase_is_empty(&act->curves)) {
 		fcurve->next = fcurve->prev = NULL;
 		
 		agrp->channels.first = agrp->channels.last = fcurve;
@@ -390,8 +390,7 @@ void action_groups_remove_channel(bAction *act, FCurve *fcu)
 		
 		if (agrp->channels.first == agrp->channels.last) {
 			if (agrp->channels.first == fcu) {
-				agrp->channels.first = NULL;
-				agrp->channels.last = NULL;
+				BLI_listbase_clear(&agrp->channels);
 			}
 		}
 		else if (agrp->channels.first == fcu) {
@@ -714,10 +713,12 @@ void BKE_pose_channels_hash_free(bPose *pose)
  * Deallocates a pose channel.
  * Does not free the pose channel itself.
  */
-void BKE_pose_channel_free(bPoseChannel *pchan)
+void BKE_pose_channel_free_ex(bPoseChannel *pchan, bool do_id_user)
 {
 	if (pchan->custom) {
-		id_us_min(&pchan->custom->id);
+		if (do_id_user) {
+			id_us_min(&pchan->custom->id);
+		}
 		pchan->custom = NULL;
 	}
 
@@ -734,17 +735,22 @@ void BKE_pose_channel_free(bPoseChannel *pchan)
 	}
 }
 
+void BKE_pose_channel_free(bPoseChannel *pchan)
+{
+	BKE_pose_channel_free_ex(pchan, true);
+}
+
 /**
  * Removes and deallocates all channels from a pose.
  * Does not free the pose itself.
  */
-void BKE_pose_channels_free(bPose *pose) 
+void BKE_pose_channels_free_ex(bPose *pose, bool do_id_user)
 {
 	bPoseChannel *pchan;
 	
 	if (pose->chanbase.first) {
 		for (pchan = pose->chanbase.first; pchan; pchan = pchan->next)
-			BKE_pose_channel_free(pchan);
+			BKE_pose_channel_free_ex(pchan, do_id_user);
 		
 		BLI_freelistN(&pose->chanbase);
 	}
@@ -752,14 +758,19 @@ void BKE_pose_channels_free(bPose *pose)
 	BKE_pose_channels_hash_free(pose);
 }
 
+void BKE_pose_channels_free(bPose *pose)
+{
+	BKE_pose_channels_free_ex(pose, true);
+}
+
 /**
  * Removes and deallocates all data from a pose, and also frees the pose.
  */
-void BKE_pose_free(bPose *pose)
+void BKE_pose_free_ex(bPose *pose, bool do_id_user)
 {
 	if (pose) {
 		/* free pose-channels */
-		BKE_pose_channels_free(pose);
+		BKE_pose_channels_free_ex(pose, do_id_user);
 		
 		/* free pose-groups */
 		if (pose->agroups.first)
@@ -775,6 +786,11 @@ void BKE_pose_free(bPose *pose)
 		/* free pose */
 		MEM_freeN(pose);
 	}
+}
+
+void BKE_pose_free(bPose *pose)
+{
+	BKE_pose_free_ex(pose, true);
 }
 
 static void copy_pose_channel_data(bPoseChannel *pchan, const bPoseChannel *chan)
@@ -981,7 +997,7 @@ void BKE_pose_remove_group(Object *ob)
 		/* now, remove it from the pose */
 		BLI_freelinkN(&pose->agroups, grp);
 		pose->active_group--;
-		if (pose->active_group < 0 || pose->agroups.first == NULL) {
+		if (pose->active_group < 0 || BLI_listbase_is_empty(&pose->agroups)) {
 			pose->active_group = 0;
 		}
 	}
@@ -990,7 +1006,7 @@ void BKE_pose_remove_group(Object *ob)
 /* ************** F-Curve Utilities for Actions ****************** */
 
 /* Check if the given action has any keyframes */
-short action_has_motion(const bAction *act)
+bool action_has_motion(const bAction *act)
 {
 	FCurve *fcu;
 	

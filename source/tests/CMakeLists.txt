@@ -22,6 +22,9 @@
 
 # Use '--write-blend=/tmp/test.blend' to view output
 
+# Some tests are interesting but take too long to run
+# and don't give deterministic results
+set(USE_EXPERIMENTAL_TESTS FALSE)
 
 set(TEST_SRC_DIR ${CMAKE_SOURCE_DIR}/../lib/tests)
 set(TEST_OUT_DIR ${CMAKE_BINARY_DIR}/tests)
@@ -35,7 +38,11 @@ execute_process(COMMAND ${CMAKE_COMMAND} -E make_directory ${TEST_OUT_DIR})
 
 # all calls to blender use this
 if(APPLE)
-	set(TEST_BLENDER_EXE ${EXECUTABLE_OUTPUT_PATH}/blender.app/Contents/MacOS/blender)
+	if(${CMAKE_GENERATOR} MATCHES "Xcode")
+		set(TEST_BLENDER_EXE ${EXECUTABLE_OUTPUT_PATH}/Debug/blender.app/Contents/MacOS/blender)
+	else()
+		set(TEST_BLENDER_EXE ${EXECUTABLE_OUTPUT_PATH}/blender.app/Contents/MacOS/blender)
+	endif()
 else()
 	set(TEST_BLENDER_EXE ${EXECUTABLE_OUTPUT_PATH}/blender)
 endif()
@@ -59,13 +66,22 @@ add_test(script_load_modules ${TEST_BLENDER_EXE}
 )
 
 # test running operators doesn't segfault under various conditions
-add_test(script_run_operators ${TEST_BLENDER_EXE}
-	--python ${CMAKE_CURRENT_LIST_DIR}/bl_run_operators.py
-)
+if(USE_EXPERIMENTAL_TESTS)
+	add_test(script_run_operators ${TEST_BLENDER_EXE}
+		--python ${CMAKE_CURRENT_LIST_DIR}/bl_run_operators.py
+	)
+endif()
 
 # test running mathutils testing script
 add_test(script_pyapi_mathutils ${TEST_BLENDER_EXE}
 	--python ${CMAKE_CURRENT_LIST_DIR}/bl_pyapi_mathutils.py
+)
+
+# ------------------------------------------------------------------------------
+# MODELING TESTS
+add_test(bevel ${TEST_BLENDER_EXE}
+	${TEST_SRC_DIR}/modeling/bevel_regression.blend
+	--python-text run_tests
 )
 
 # ------------------------------------------------------------------------------

@@ -61,6 +61,7 @@ void graph_draw_ghost_curves(struct bAnimContext *ac, struct SpaceIpo *sipo, str
 
 void GRAPH_OT_select_all_toggle(struct wmOperatorType *ot);
 void GRAPH_OT_select_border(struct wmOperatorType *ot);
+void GRAPH_OT_select_lasso(struct wmOperatorType *ot);
 void GRAPH_OT_select_column(struct wmOperatorType *ot);
 void GRAPH_OT_select_linked(struct wmOperatorType *ot);
 void GRAPH_OT_select_more(struct wmOperatorType *ot);
@@ -111,6 +112,7 @@ void GRAPH_OT_euler_filter(struct wmOperatorType *ot);
 void GRAPH_OT_handle_type(struct wmOperatorType *ot);
 void GRAPH_OT_interpolation_type(struct wmOperatorType *ot);
 void GRAPH_OT_extrapolation_type(struct wmOperatorType *ot);
+void GRAPH_OT_easing_type(struct wmOperatorType *ot);
 
 void GRAPH_OT_frame_jump(struct wmOperatorType *ot);
 void GRAPH_OT_snap(struct wmOperatorType *ot);

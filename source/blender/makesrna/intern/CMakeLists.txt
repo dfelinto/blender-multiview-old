@@ -103,8 +103,10 @@ set(APISRC
 	rna_armature_api.c
 	rna_camera_api.c
 	rna_controller_api.c
+	rna_curve_api.c
 	rna_fcurve_api.c
 	rna_image_api.c
+	rna_lattice_api.c
 	rna_main_api.c
 	rna_material_api.c
 	rna_mesh_api.c
@@ -115,6 +117,7 @@ set(APISRC
 	rna_scene_api.c
 	rna_sensor_api.c
 	rna_sequencer_api.c
+	rna_space_api.c
 	rna_text_api.c
 	rna_ui_api.c
 	rna_wm_api.c
@@ -156,6 +159,9 @@ endif()
 
 if(WITH_PYTHON)
 	add_definitions(-DWITH_PYTHON)
+	list(APPEND INC
+		../../python
+	)
 endif()
 
 if(WITH_GAMEENGINE)
@@ -206,6 +212,9 @@ if(WITH_CODEC_QUICKTIME)
 endif()
 
 if(WITH_CODEC_FFMPEG)
+	list(APPEND INC
+		../../../../intern/ffmpeg
+	)
 	list(APPEND INC_SYS
 		${FFMPEG_INCLUDE_DIRS}
 	)

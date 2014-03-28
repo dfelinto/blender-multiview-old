@@ -52,7 +52,6 @@ KM_HIERARCHY = [
         ('Image Paint', 'EMPTY', 'WINDOW', []),  # image and view3d
         ('Sculpt', 'EMPTY', 'WINDOW', []),
 
-        ('Armature Sketch', 'EMPTY', 'WINDOW', []),
         ('Particle', 'EMPTY', 'WINDOW', []),
 
         ('Knife Tool Modal Map', 'EMPTY', 'WINDOW', []),
@@ -60,6 +59,7 @@ KM_HIERARCHY = [
 
         ('Object Non-modal', 'EMPTY', 'WINDOW', []),  # mode change
 
+        ('View3D Walk Modal', 'EMPTY', 'WINDOW', []),
         ('View3D Fly Modal', 'EMPTY', 'WINDOW', []),
         ('View3D Rotate Modal', 'EMPTY', 'WINDOW', []),
         ('View3D Move Modal', 'EMPTY', 'WINDOW', []),
@@ -175,7 +175,7 @@ def _export_properties(prefix, properties, kmi_id, lines=None):
             elif properties.is_property_set(pname):
                 value = string_value(value)
                 if value != "":
-                    lines.append("set_kmi_prop(%s, '%s', %s, '%s')\n" % (prefix, pname, value, kmi_id))
+                    lines.append("kmi_props_setattr(%s, '%s', %s)\n" % (prefix, pname, value))
     return lines
 
 
@@ -209,6 +209,9 @@ def _kmistr(kmi, is_modal):
     if props is not None:
         _export_properties("kmi.properties", props, kmi_id, s)
 
+    if not kmi.active:
+        s.append("kmi.active = False\n")
+
     return "".join(s)
 
 
@@ -218,11 +221,14 @@ def keyconfig_export(wm, kc, filepath):
 
     f.write("import bpy\n")
     f.write("import os\n\n")
-    f.write("def set_kmi_prop(kmiprops, prop, value, kmiid):\n"
-            "    if hasattr(kmiprops, prop):\n"
-            "        setattr(kmiprops, prop, value)\n"
-            "    else:\n"
-            "        print(\"Warning: property '%s' not found in keymap item '%s'\" % (prop, kmiid))\n\n")
+    f.write("def kmi_props_setattr(kmi_props, attr, value):\n"
+            "    try:\n"
+            "        setattr(kmi_props, attr, value)\n"
+            "    except AttributeError:\n"
+            "        print(\"Warning: property '%s' not found in keymap item '%s'\" %\n"
+            "              (attr, kmi_props.__class__.__name__))\n"
+            "    except Exception as e:\n"
+            "        print(\"Warning: %r\" % e)\n\n")
     f.write("wm = bpy.context.window_manager\n")
     f.write("kc = wm.keyconfigs.new(os.path.splitext(os.path.basename(__file__))[0])\n\n")  # keymap must be created by caller
 

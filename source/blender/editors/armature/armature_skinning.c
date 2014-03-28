@@ -113,7 +113,7 @@ static int vgroup_add_unique_bone_cb(Object *ob, Bone *bone, void *UNUSED(ptr))
 {
 	/* This group creates a vertex group to ob that has the
 	 * same name as bone (provided the bone is skinnable). 
-	 * If such a vertex group aleady exist the routine exits.
+	 * If such a vertex group already exist the routine exits.
 	 */
 	if (!(bone->flag & BONE_NO_DEFORM)) {
 		if (!defgroup_find_name(ob, bone->name)) {
@@ -403,7 +403,7 @@ static void add_verts_to_dgroups(ReportList *reports, Scene *scene, Object *ob, 
 	}
 
 	/* only generated in some cases but can call anyway */
-	mesh_octree_table(ob, NULL, NULL, 'e');
+	ED_mesh_mirror_spatial_table(ob, NULL, NULL, 'e');
 
 	/* free the memory allocated */
 	MEM_freeN(bonelist);

@@ -236,6 +236,12 @@ MINLINE void swap_v4_v4(float a[4], float b[4])
 }
 
 /* float args -> vec */
+MINLINE void copy_v2_fl2(float v[2], float x, float y)
+{
+	v[0] = x;
+	v[1] = y;
+}
+
 MINLINE void copy_v3_fl3(float v[3], float x, float y, float z)
 {
 	v[0] = x;
@@ -574,9 +580,9 @@ MINLINE void negate_v4_v4(float r[4], const float a[4])
 /* could add more... */
 MINLINE void negate_v3_short(short r[3])
 {
-	r[0] = -r[0];
-	r[1] = -r[1];
-	r[2] = -r[2];
+	r[0] = (short)-r[0];
+	r[1] = (short)-r[1];
+	r[2] = (short)-r[2];
 }
 
 MINLINE float dot_v2v2(const float a[2], const float b[2])
@@ -587,6 +593,11 @@ MINLINE float dot_v2v2(const float a[2], const float b[2])
 MINLINE float dot_v3v3(const float a[3], const float b[3])
 {
 	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2];
+}
+
+MINLINE float dot_v4v4(const float a[4], const float b[4])
+{
+	return a[0] * b[0] + a[1] * b[1] + a[2] * b[2] + a[3] * b[3];
 }
 
 MINLINE float cross_v2v2(const float a[2], const float b[2])
@@ -643,7 +654,7 @@ MINLINE float len_manhattan_v2(const float v[2])
 
 MINLINE int len_manhattan_v2_int(const int v[2])
 {
-	return ABS(v[0]) + ABS(v[1]);
+	return abs(v[0]) + abs(v[1]);
 }
 
 MINLINE float len_manhattan_v3(const float v[3])

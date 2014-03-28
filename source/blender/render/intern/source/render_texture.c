@@ -65,7 +65,6 @@
 #include "BKE_scene.h"
 
 #include "BKE_library.h"
-#include "BKE_image.h"
 #include "BKE_texture.h"
 #include "BKE_key.h"
 #include "BKE_ipo.h"
@@ -98,7 +97,7 @@ extern struct Render R;
 static void init_render_texture(Render *re, Tex *tex)
 {
 	/* imap test */
-	if (tex->ima && ELEM(tex->ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
+	if (tex->ima && BKE_image_is_animated(tex->ima)) {
 		BKE_image_user_frame_calc(&tex->iuser, re ? re->r.cfra : 0, re ? re->flag & R_SEC_FIELD:0);
 	}
 	
@@ -2322,7 +2321,7 @@ void do_material_tex(ShadeInput *shi, Render *re)
 
 			/* texture output */
 
-			if ( (rgbnor & TEX_RGB) && (mtex->texflag & MTEX_RGBTOINT)) {
+			if ((rgbnor & TEX_RGB) && (mtex->texflag & MTEX_RGBTOINT)) {
 				texres.tin = rgb_to_grayscale(&texres.tr);
 				rgbnor -= TEX_RGB;
 			}
@@ -2756,11 +2755,11 @@ void do_volume_tex(ShadeInput *shi, const float *xyz, int mapto_flag, float col_
 				else texvec[2]= mtex->size[2]*(mtex->ofs[2]);
 			}
 			
-			rgbnor = multitex(tex, texvec, NULL, NULL, 0, &texres, 0, mtex->which_output, re->pool);	/* NULL = dxt/dyt, 0 = shi->osatex - not supported */
+			rgbnor = multitex(tex, texvec, NULL, NULL, 0, &texres, shi->thread, mtex->which_output, re->pool);	/* NULL = dxt/dyt, 0 = shi->osatex - not supported */
 			
 			/* texture output */
 
-			if ( (rgbnor & TEX_RGB) && (mtex->texflag & MTEX_RGBTOINT)) {
+			if ((rgbnor & TEX_RGB) && (mtex->texflag & MTEX_RGBTOINT)) {
 				texres.tin = rgb_to_grayscale(&texres.tr);
 				rgbnor -= TEX_RGB;
 			}
@@ -3622,7 +3621,7 @@ Material *RE_init_sample_material(Material *orig_mat, Scene *scene)
 			}
 
 			/* update image sequences and movies */
-			if (tex->ima && ELEM(tex->ima->source, IMA_SRC_MOVIE, IMA_SRC_SEQUENCE)) {
+			if (tex->ima && BKE_image_is_animated(tex->ima)) {
 				BKE_image_user_check_frame_calc(&tex->iuser, (int)scene->r.cfra, 0);
 			}
 		}

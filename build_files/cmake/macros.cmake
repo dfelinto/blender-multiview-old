@@ -483,6 +483,77 @@ macro(TEST_STDBOOL_SUPPORT)
 	HAVE_STDBOOL_H)
 endmacro()
 
+macro(TEST_UNORDERED_MAP_SUPPORT)
+	# - Detect unordered_map availability
+	# Test if a valid implementation of unordered_map exists
+	# and define the include path
+	# This module defines
+	#  HAVE_UNORDERED_MAP, whether unordered_map implementation was found
+	#  
+	#  HAVE_STD_UNORDERED_MAP_HEADER, <unordered_map.h> was found
+	#  HAVE_UNORDERED_MAP_IN_STD_NAMESPACE, unordered_map is in namespace std
+	#  HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE, unordered_map is in namespace std::tr1
+	#  
+	#  UNORDERED_MAP_INCLUDE_PREFIX, include path prefix for unordered_map, if found
+	#  UNORDERED_MAP_NAMESPACE, namespace for unordered_map, if found
+
+	include(CheckIncludeFileCXX)
+	CHECK_INCLUDE_FILE_CXX("unordered_map" HAVE_STD_UNORDERED_MAP_HEADER)
+	if(HAVE_STD_UNORDERED_MAP_HEADER)
+		# Even so we've found unordered_map header file it doesn't
+		# mean unordered_map and unordered_set will be declared in
+		# std namespace.
+		#
+		# Namely, MSVC 2008 have unordered_map header which declares
+		# unordered_map class in std::tr1 namespace. In order to support
+		# this, we do extra check to see which exactly namespace is
+		# to be used.
+
+		include(CheckCXXSourceCompiles)
+		CHECK_CXX_SOURCE_COMPILES("#include <unordered_map>
+		                          int main() {
+		                            std::unordered_map<int, int> map;
+		                            return 0;
+		                          }"
+		                          HAVE_UNORDERED_MAP_IN_STD_NAMESPACE)
+		if(HAVE_UNORDERED_MAP_IN_STD_NAMESPACE)
+			message(STATUS "Found unordered_map/set in std namespace.")
+
+			set(HAVE_UNORDERED_MAP "TRUE")
+			set(UNORDERED_MAP_INCLUDE_PREFIX "")
+			set(UNORDERED_MAP_NAMESPACE "std")
+		else()
+			CHECK_CXX_SOURCE_COMPILES("#include <unordered_map>
+			                          int main() {
+			                            std::tr1::unordered_map<int, int> map;
+			                            return 0;
+			                          }"
+			                          HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE)
+			if(HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE)
+				message(STATUS "Found unordered_map/set in std::tr1 namespace.")
+
+				set(HAVE_UNORDERED_MAP "TRUE")
+				set(UNORDERED_MAP_INCLUDE_PREFIX "")
+				set(UNORDERED_MAP_NAMESPACE "std::tr1")
+			else()
+				message(STATUS "Found <unordered_map> but cannot find either std::unordered_map "
+				        "or std::tr1::unordered_map.")
+			endif()
+		endif()
+	else()
+		CHECK_INCLUDE_FILE_CXX("tr1/unordered_map" HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE)
+		if(HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE)
+			message(STATUS "Found unordered_map/set in std::tr1 namespace.")
+
+			set(HAVE_UNORDERED_MAP "TRUE")
+			set(UNORDERED_MAP_INCLUDE_PREFIX "tr1")
+			set(UNORDERED_MAP_NAMESPACE "std::tr1")
+		else()
+			message(STATUS "Unable to find <unordered_map> or <tr1/unordered_map>. ")
+		endif()
+	endif()
+endmacro()
+
 # when we have warnings as errors applied globally this
 # needs to be removed for some external libs which we dont maintain.
 
@@ -530,7 +601,7 @@ macro(remove_strict_flags)
 		add_cc_flag("${CC_REMOVE_STRICT_FLAGS}")
 	endif()
 
-	if(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+	if(CMAKE_C_COMPILER_ID MATCHES "Clang")
 		remove_cc_flag("-Wunused-parameter")
 		remove_cc_flag("-Wunused-variable")
 		remove_cc_flag("-Werror=[^ ]+")
@@ -555,7 +626,7 @@ macro(remove_strict_flags_file
 	foreach(_SOURCE ${ARGV})
 
 		if(CMAKE_COMPILER_IS_GNUCC OR
-		  (CMAKE_CXX_COMPILER_ID MATCHES "Clang"))
+		  (CMAKE_C_COMPILER_ID MATCHES "Clang"))
 
 			set_source_files_properties(${_SOURCE}
 				PROPERTIES
@@ -829,6 +900,52 @@ macro(data_to_c_simple
 	unset(_file_from)
 	unset(_file_to)
 	unset(_file_to_path)
+endmacro()
+
+# macro for converting pixmap directory to a png and then a c file
+macro(data_to_c_simple_icons
+      path_from
+      list_to_add
+      )
+
+	# Conversion steps
+	#  path_from  ->  _file_from  ->  _file_to
+	#  foo/*.dat  ->  foo.png     ->  foo.png.c
+
+	get_filename_component(_path_from_abs ${path_from} ABSOLUTE)
+	# remove ../'s
+	get_filename_component(_file_from ${CMAKE_CURRENT_BINARY_DIR}/${path_from}.png   REALPATH)
+	get_filename_component(_file_to   ${CMAKE_CURRENT_BINARY_DIR}/${path_from}.png.c REALPATH)
+
+	list(APPEND ${list_to_add} ${_file_to})
+
+	get_filename_component(_file_to_path ${_file_to} PATH)
+
+	# ideally we wouldn't glob, but storing all names for all pixmaps is a bit heavy
+	file(GLOB _icon_files "${path_from}/*.dat")
+
+	add_custom_command(
+		OUTPUT  ${_file_from} ${_file_to}
+		COMMAND ${CMAKE_COMMAND} -E make_directory ${_file_to_path}
+		#COMMAND python3 ${CMAKE_SOURCE_DIR}/source/blender/datatoc/datatoc_icon.py ${_path_from_abs} ${_file_from}
+		COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/datatoc_icon ${_path_from_abs} ${_file_from}
+		COMMAND ${CMAKE_BINARY_DIR}/bin/${CMAKE_CFG_INTDIR}/datatoc ${_file_from} ${_file_to}
+		DEPENDS
+			${_icon_files}
+			datatoc_icon
+			datatoc
+			# could be an arg but for now we only create icons depending on UI_icons.h
+			${CMAKE_SOURCE_DIR}/source/blender/editors/include/UI_icons.h
+		)
+
+	set_source_files_properties(${_file_from} ${_file_to} PROPERTIES GENERATED TRUE)
+
+	unset(_path_from_abs)
+	unset(_file_from)
+	unset(_file_to)
+	unset(_file_to_path)
+	unset(_icon_files)
+
 endmacro()
 
 # XXX Not used for now...

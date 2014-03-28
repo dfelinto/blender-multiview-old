@@ -410,14 +410,16 @@ PyObject *BPy_AdjacencyIterator_from_AdjacencyIterator(AdjacencyIterator& a_it)
 	PyObject *py_a_it = AdjacencyIterator_Type.tp_new(&AdjacencyIterator_Type, 0, 0);
 	((BPy_AdjacencyIterator *)py_a_it)->a_it = new AdjacencyIterator(a_it);
 	((BPy_AdjacencyIterator *)py_a_it)->py_it.it = ((BPy_AdjacencyIterator *)py_a_it)->a_it;
+	((BPy_AdjacencyIterator *)py_a_it)->at_start = true;
 	return py_a_it;
 }
 
-PyObject *BPy_Interface0DIterator_from_Interface0DIterator(Interface0DIterator& if0D_it, int reversed)
+PyObject *BPy_Interface0DIterator_from_Interface0DIterator(Interface0DIterator& if0D_it, bool reversed)
 {
 	PyObject *py_if0D_it = Interface0DIterator_Type.tp_new(&Interface0DIterator_Type, 0, 0);
 	((BPy_Interface0DIterator *)py_if0D_it)->if0D_it = new Interface0DIterator(if0D_it);
 	((BPy_Interface0DIterator *)py_if0D_it)->py_it.it = ((BPy_Interface0DIterator *)py_if0D_it)->if0D_it;
+	((BPy_Interface0DIterator *)py_if0D_it)->at_start = true;
 	((BPy_Interface0DIterator *)py_if0D_it)->reversed = reversed;
 	return py_if0D_it;
 }
@@ -430,11 +432,12 @@ PyObject *BPy_CurvePointIterator_from_CurvePointIterator(CurveInternal::CurvePoi
 	return py_cp_it;
 }
 
-PyObject *BPy_StrokeVertexIterator_from_StrokeVertexIterator(StrokeInternal::StrokeVertexIterator& sv_it, int reversed)
+PyObject *BPy_StrokeVertexIterator_from_StrokeVertexIterator(StrokeInternal::StrokeVertexIterator& sv_it, bool reversed)
 {
 	PyObject *py_sv_it = StrokeVertexIterator_Type.tp_new(&StrokeVertexIterator_Type, 0, 0);
 	((BPy_StrokeVertexIterator *)py_sv_it)->sv_it = new StrokeInternal::StrokeVertexIterator(sv_it);
 	((BPy_StrokeVertexIterator *)py_sv_it)->py_it.it = ((BPy_StrokeVertexIterator *)py_sv_it)->sv_it;
+	((BPy_StrokeVertexIterator *)py_sv_it)->at_start = true;
 	((BPy_StrokeVertexIterator *)py_sv_it)->reversed = reversed;
 	return py_sv_it;
 }
@@ -447,11 +450,12 @@ PyObject *BPy_SVertexIterator_from_SVertexIterator(ViewEdgeInternal::SVertexIter
 	return py_sv_it;
 }
 
-PyObject *BPy_orientedViewEdgeIterator_from_orientedViewEdgeIterator(ViewVertexInternal::orientedViewEdgeIterator& ove_it, int reversed)
+PyObject *BPy_orientedViewEdgeIterator_from_orientedViewEdgeIterator(ViewVertexInternal::orientedViewEdgeIterator& ove_it, bool reversed)
 {
 	PyObject *py_ove_it = orientedViewEdgeIterator_Type.tp_new(&orientedViewEdgeIterator_Type, 0, 0);
 	((BPy_orientedViewEdgeIterator *)py_ove_it)->ove_it = new ViewVertexInternal::orientedViewEdgeIterator(ove_it);
 	((BPy_orientedViewEdgeIterator *)py_ove_it)->py_it.it = ((BPy_orientedViewEdgeIterator *)py_ove_it)->ove_it;
+	((BPy_orientedViewEdgeIterator *)py_ove_it)->at_start = true;
 	((BPy_orientedViewEdgeIterator *)py_ove_it)->reversed = reversed;
 	return py_ove_it;
 }
@@ -512,7 +516,7 @@ Nature::EdgeNature EdgeNature_from_BPy_Nature(PyObject *obj)
 	return static_cast<Nature::EdgeNature>(PyLong_AsLong(obj));
 }
 
-bool Vec2f_ptr_from_PyObject(PyObject *obj, Vec2f *vec)
+bool Vec2f_ptr_from_PyObject(PyObject *obj, Vec2f &vec)
 {
 	if (Vec2f_ptr_from_Vector(obj, vec))
 		return true;
@@ -523,7 +527,7 @@ bool Vec2f_ptr_from_PyObject(PyObject *obj, Vec2f *vec)
 	return false;
 }
 
-bool Vec3f_ptr_from_PyObject(PyObject *obj, Vec3f *vec)
+bool Vec3f_ptr_from_PyObject(PyObject *obj, Vec3f &vec)
 {
 	if (Vec3f_ptr_from_Vector(obj, vec))
 		return true;
@@ -536,7 +540,7 @@ bool Vec3f_ptr_from_PyObject(PyObject *obj, Vec3f *vec)
 	return false;
 }
 
-bool Vec3r_ptr_from_PyObject(PyObject *obj, Vec3r *vec)
+bool Vec3r_ptr_from_PyObject(PyObject *obj, Vec3r &vec)
 {
 	if (Vec3r_ptr_from_Vector(obj, vec))
 		return true;
@@ -549,7 +553,7 @@ bool Vec3r_ptr_from_PyObject(PyObject *obj, Vec3r *vec)
 	return false;
 }
 
-bool Vec2f_ptr_from_Vector(PyObject *obj, Vec2f *vec)
+bool Vec2f_ptr_from_Vector(PyObject *obj, Vec2f &vec)
 {
 	if (!VectorObject_Check(obj) || ((VectorObject *)obj)->size != 2)
 		return false;
@@ -560,7 +564,7 @@ bool Vec2f_ptr_from_Vector(PyObject *obj, Vec2f *vec)
 	return true;
 }
 
-bool Vec3f_ptr_from_Vector(PyObject *obj, Vec3f *vec)
+bool Vec3f_ptr_from_Vector(PyObject *obj, Vec3f &vec)
 {
 	if (!VectorObject_Check(obj) || ((VectorObject *)obj)->size != 3)
 		return false;
@@ -572,7 +576,7 @@ bool Vec3f_ptr_from_Vector(PyObject *obj, Vec3f *vec)
 	return true;
 }
 
-bool Vec3r_ptr_from_Vector(PyObject *obj, Vec3r *vec)
+bool Vec3r_ptr_from_Vector(PyObject *obj, Vec3r &vec)
 {
 	if (!VectorObject_Check(obj) || ((VectorObject *)obj)->size != 3)
 		return false;
@@ -584,7 +588,7 @@ bool Vec3r_ptr_from_Vector(PyObject *obj, Vec3r *vec)
 	return true;
 }
 
-bool Vec3f_ptr_from_Color(PyObject *obj, Vec3f *vec)
+bool Vec3f_ptr_from_Color(PyObject *obj, Vec3f &vec)
 {
 	if (!ColorObject_Check(obj))
 		return false;
@@ -596,7 +600,7 @@ bool Vec3f_ptr_from_Color(PyObject *obj, Vec3f *vec)
 	return true;
 }
 
-bool Vec3r_ptr_from_Color(PyObject *obj, Vec3r *vec)
+bool Vec3r_ptr_from_Color(PyObject *obj, Vec3r &vec)
 {
 	if (!ColorObject_Check(obj))
 		return false;
@@ -608,10 +612,10 @@ bool Vec3r_ptr_from_Color(PyObject *obj, Vec3r *vec)
 	return true;
 }
 
-static int float_array_from_PyList(PyObject *obj, float *v, int n)
+static bool float_array_from_PyList(PyObject *obj, float *v, int n)
 {
 	for (int i = 0; i < n; i++) {
-		v[i] = PyFloat_AsDouble(PyList_GetItem(obj, i));
+		v[i] = PyFloat_AsDouble(PyList_GET_ITEM(obj, i));
 		if (v[i] == -1.0f && PyErr_Occurred()) {
 			PyErr_SetString(PyExc_TypeError, "list elements must be a number");
 			return 0;
@@ -620,11 +624,11 @@ static int float_array_from_PyList(PyObject *obj, float *v, int n)
 	return 1;
 }
 
-bool Vec2f_ptr_from_PyList(PyObject *obj, Vec2f *vec)
+bool Vec2f_ptr_from_PyList(PyObject *obj, Vec2f &vec)
 {
 	float v[2];
 
-	if (!PyList_Check(obj) || PyList_Size(obj) != 2)
+	if (!PyList_Check(obj) || PyList_GET_SIZE(obj) != 2)
 		return false;
 	if (!float_array_from_PyList(obj, v, 2))
 		return false;
@@ -633,11 +637,11 @@ bool Vec2f_ptr_from_PyList(PyObject *obj, Vec2f *vec)
 	return true;
 }
 
-bool Vec3f_ptr_from_PyList(PyObject *obj, Vec3f *vec)
+bool Vec3f_ptr_from_PyList(PyObject *obj, Vec3f &vec)
 {
 	float v[3];
 
-	if (!PyList_Check(obj) || PyList_Size(obj) != 3)
+	if (!PyList_Check(obj) || PyList_GET_SIZE(obj) != 3)
 		return false;
 	if (!float_array_from_PyList(obj, v, 3))
 		return false;
@@ -647,11 +651,11 @@ bool Vec3f_ptr_from_PyList(PyObject *obj, Vec3f *vec)
 	return true;
 }
 
-bool Vec3r_ptr_from_PyList(PyObject *obj, Vec3r *vec)
+bool Vec3r_ptr_from_PyList(PyObject *obj, Vec3r &vec)
 {
 	float v[3];
 
-	if (!PyList_Check(obj) || PyList_Size(obj) != 3)
+	if (!PyList_Check(obj) || PyList_GET_SIZE(obj) != 3)
 		return false;
 	if (!float_array_from_PyList(obj, v, 3))
 		return false;
@@ -661,10 +665,10 @@ bool Vec3r_ptr_from_PyList(PyObject *obj, Vec3r *vec)
 	return true;
 }
 
-static int float_array_from_PyTuple(PyObject *obj, float *v, int n)
+static bool float_array_from_PyTuple(PyObject *obj, float *v, int n)
 {
 	for (int i = 0; i < n; i++) {
-		v[i] = PyFloat_AsDouble(PyTuple_GetItem(obj, i));
+		v[i] = PyFloat_AsDouble(PyTuple_GET_ITEM(obj, i));
 		if (v[i] == -1.0f && PyErr_Occurred()) {
 			PyErr_SetString(PyExc_TypeError, "tuple elements must be a number");
 			return 0;
@@ -673,11 +677,11 @@ static int float_array_from_PyTuple(PyObject *obj, float *v, int n)
 	return 1;
 }
 
-bool Vec2f_ptr_from_PyTuple(PyObject *obj, Vec2f *vec)
+bool Vec2f_ptr_from_PyTuple(PyObject *obj, Vec2f &vec)
 {
 	float v[2];
 
-	if (!PyTuple_Check(obj) || PyTuple_Size(obj) != 2)
+	if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != 2)
 		return false;
 	if (!float_array_from_PyTuple(obj, v, 2))
 		return false;
@@ -686,11 +690,11 @@ bool Vec2f_ptr_from_PyTuple(PyObject *obj, Vec2f *vec)
 	return true;
 }
 
-bool Vec3f_ptr_from_PyTuple(PyObject *obj, Vec3f *vec)
+bool Vec3f_ptr_from_PyTuple(PyObject *obj, Vec3f &vec)
 {
 	float v[3];
 
-	if (!PyTuple_Check(obj) || PyTuple_Size(obj) != 3)
+	if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != 3)
 		return false;
 	if (!float_array_from_PyTuple(obj, v, 3))
 		return false;
@@ -700,11 +704,11 @@ bool Vec3f_ptr_from_PyTuple(PyObject *obj, Vec3f *vec)
 	return true;
 }
 
-bool Vec3r_ptr_from_PyTuple(PyObject *obj, Vec3r *vec)
+bool Vec3r_ptr_from_PyTuple(PyObject *obj, Vec3r &vec)
 {
 	float v[3];
 
-	if (!PyTuple_Check(obj) || PyTuple_Size(obj) != 3)
+	if (!PyTuple_Check(obj) || PyTuple_GET_SIZE(obj) != 3)
 		return false;
 	if (!float_array_from_PyTuple(obj, v, 3))
 		return false;
@@ -716,7 +720,7 @@ bool Vec3r_ptr_from_PyTuple(PyObject *obj, Vec3r *vec)
 
 // helper for argument parsing
 
-int float_array_from_PyObject(PyObject *obj, float *v, int n)
+bool float_array_from_PyObject(PyObject *obj, float *v, int n)
 {
 	if (VectorObject_Check(obj) && ((VectorObject *)obj)->size == n) {
 		if (BaseMath_ReadCallback((BaseMathObject *)obj) == -1)
@@ -732,10 +736,10 @@ int float_array_from_PyObject(PyObject *obj, float *v, int n)
 			v[i] = ((ColorObject *)obj)->col[i];
 		return 1;
 	}
-	else if (PyList_Check(obj) && PyList_Size(obj) == n) {
+	else if (PyList_Check(obj) && PyList_GET_SIZE(obj) == n) {
 		return float_array_from_PyList(obj, v, n);
 	}
-	else if (PyTuple_Check(obj) && PyTuple_Size(obj) == n) {
+	else if (PyTuple_Check(obj) && PyTuple_GET_SIZE(obj) == n) {
 		return float_array_from_PyTuple(obj, v, n);
 	}
 	return 0;

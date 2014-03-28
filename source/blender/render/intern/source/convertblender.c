@@ -39,8 +39,8 @@
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
 #include "BLI_rand.h"
+#include "BLI_task.h"
 #include "BLI_memarena.h"
-#include "BLI_ghash.h"
 #include "BLI_linklist.h"
 #ifdef WITH_FREESTYLE
 #  include "BLI_edgehash.h"
@@ -79,6 +79,7 @@
 #include "BKE_constraint.h"
 #include "BKE_displist.h"
 #include "BKE_deform.h"
+#include "BKE_depsgraph.h"
 #include "BKE_DerivedMesh.h"
 #include "BKE_effect.h"
 #include "BKE_global.h"
@@ -119,7 +120,6 @@
 #include "texture.h"
 #include "volume_precache.h"
 #include "sss.h"
-#include "strand.h"
 #include "zbuf.h"
 #include "sunsky.h"
 
@@ -1350,6 +1350,9 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 	if (part->ren_as==PART_DRAW_OB || part->ren_as==PART_DRAW_GR || part->ren_as==PART_DRAW_NOT)
 		return 1;
 
+	if ((re->r.scemode & R_VIEWPORT_PREVIEW) && psys->edit)
+		return 0;
+
 /* 2. start initializing things */
 
 	/* last possibility to bail out! */
@@ -1576,8 +1579,8 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 
 			pa_size = pa->size;
 
-			r_tilt = 2.0f*(PSYS_FRAND(a) - 0.5f);
-			r_length = PSYS_FRAND(a+1);
+			r_tilt = 2.0f*(psys_frand(psys, a) - 0.5f);
+			r_length = psys_frand(psys, a+1);
 
 			if (path_nbr) {
 				cache = psys->pathcache[a];
@@ -1601,8 +1604,8 @@ static int render_new_particle_system(Render *re, ObjectRen *obr, ParticleSystem
 			pa_time = psys_get_child_time(psys, cpa, cfra, &pa_birthtime, &pa_dietime);
 			pa_size = psys_get_child_size(psys, cpa, cfra, &pa_time);
 
-			r_tilt = 2.0f*(PSYS_FRAND(a + 21) - 0.5f);
-			r_length = PSYS_FRAND(a + 22);
+			r_tilt = 2.0f*(psys_frand(psys, a + 21) - 0.5f);
+			r_length = psys_frand(psys, a + 22);
 
 			num = cpa->num;
 
@@ -2221,7 +2224,7 @@ static void init_render_mball(Render *re, ObjectRen *obr)
 		need_orco= 1;
 	}
 
-	BKE_displist_make_mball_forRender(re->scene, ob, &dispbase);
+	BKE_displist_make_mball_forRender(re->eval_ctx, re->scene, ob, &dispbase);
 	dl= dispbase.first;
 	if (dl == NULL) return;
 
@@ -2626,7 +2629,7 @@ static void init_render_surf(Render *re, ObjectRen *obr, int timeoffset)
 		if (need_orco) {
 			orco = get_object_orco(re, ob);
 			if (!orco) {
-				orco= BKE_displist_make_orco(re->scene, ob, dm, 1, 1);
+				orco= BKE_displist_make_orco(re->scene, ob, dm, true, true);
 				if (orco) {
 					set_object_orco(re, ob, orco);
 				}
@@ -2677,7 +2680,7 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 	if (ob->type==OB_FONT && cu->str==NULL) return;
 	else if (ob->type==OB_CURVE && cu->nurb.first==NULL) return;
 
-	BKE_displist_make_curveTypes_forRender(re->scene, ob, &disp, &dm, 0, 1);
+	BKE_displist_make_curveTypes_forRender(re->scene, ob, &disp, &dm, false, true);
 	dl= disp.first;
 	if (dl==NULL) return;
 	
@@ -2704,7 +2707,7 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 		if (need_orco) {
 			orco = get_object_orco(re, ob);
 			if (!orco) {
-				orco = BKE_displist_make_orco(re->scene, ob, dm, 1, 1);
+				orco = BKE_displist_make_orco(re->scene, ob, dm, true, true);
 				if (orco) {
 					set_object_orco(re, ob, orco);
 				}
@@ -2764,7 +2767,7 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 						vlr->v4= NULL;
 
 						/* to prevent float accuracy issues, we calculate normal in local object space (not world) */
-						if (area_tri_v3(co3, co2, co1)>FLT_EPSILON10) {
+						if (area_tri_v3(co3, co2, co1)>FLT_EPSILON) {
 							normal_tri_v3(tmp, co3, co2, co1);
 							add_v3_v3(n, tmp);
 						}
@@ -2819,6 +2822,19 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 						}
 					}
 
+					if (dl->flag & DL_CYCL_V && orco) {
+						fp = dl->verts;
+						nr = dl->nr;
+						while (nr--) {
+							ver = RE_findOrAddVert(obr, obr->totvert++);
+							copy_v3_v3(ver->co, fp);
+							mul_m4_v3(mat, ver->co);
+							ver->orco = orco;
+							fp += 3;
+							orco += 3;
+						}
+					}
+
 					if (dl->bevelSplitFlag || timeoffset==0) {
 						const int startvlak= obr->totvlak;
 
@@ -2831,6 +2847,11 @@ static void init_render_curve(Render *re, ObjectRen *obr, int timeoffset)
 							p2+= startvert;
 							p3+= startvert;
 							p4+= startvert;
+
+							if (dl->flag & DL_CYCL_V && orco && a == dl->parts - 1) {
+								p3 = p1 + dl->nr;
+								p4 = p2 + dl->nr;
+							}
 
 							for (; b<dl->nr; b++) {
 								vlr= RE_findOrAddVlak(obr, obr->totvlak++);
@@ -3110,7 +3131,7 @@ static EdgeHash *make_freestyle_edge_mark_hash(Mesh *me, DerivedMesh *dm)
 	return edge_hash;
 }
 
-static int has_freestyle_edge_mark(EdgeHash *edge_hash, int v1, int v2)
+static bool has_freestyle_edge_mark(EdgeHash *edge_hash, int v1, int v2)
 {
 	MEdge *medge= BLI_edgehash_lookup(edge_hash, v1, v2);
 	return (!medge) ? 0 : 1;
@@ -3775,9 +3796,9 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 	
 	lar->spotsi= la->spotsize;
 	if (lar->mode & LA_HALO) {
-		if (lar->spotsi>170.0f) lar->spotsi= 170.0f;
+		if (lar->spotsi > DEG2RADF(170.0f)) lar->spotsi = DEG2RADF(170.0f);
 	}
-	lar->spotsi= cosf( (float)M_PI*lar->spotsi/360.0f );
+	lar->spotsi= cosf(lar->spotsi * 0.5f);
 	lar->spotbl= (1.0f-lar->spotsi)*la->spotblend;
 
 	memcpy(lar->mtex, la->mtex, MAX_MTEX*sizeof(void *));
@@ -3905,6 +3926,14 @@ static GroupObject *add_render_lamp(Render *re, Object *ob)
 	return go;
 }
 
+static bool is_object_hidden(Render *re, Object *ob)
+{
+	if (re->r.scemode & R_VIEWPORT_PREVIEW)
+		return (ob->restrictflag & OB_RESTRICT_VIEW) != 0 || ELEM(ob->dt, OB_BOUNDBOX, OB_WIRE);
+	else
+		return (ob->restrictflag & OB_RESTRICT_RENDER) != 0;
+}
+
 /* layflag: allows material group to ignore layerflag */
 static void add_lightgroup(Render *re, Group *group, int exclusive)
 {
@@ -3917,7 +3946,7 @@ static void add_lightgroup(Render *re, Group *group, int exclusive)
 	for (go= group->gobject.first; go; go= go->next) {
 		go->lampren= NULL;
 
-		if (go->ob->restrictflag & OB_RESTRICT_RENDER)
+		if (is_object_hidden(re, go->ob))
 			continue;
 		
 		if (go->ob->lay & re->lay) {
@@ -4489,7 +4518,7 @@ static ObjectRen *find_dupligroup_dupli(Render *re, Object *ob, int psysindex)
 	return NULL;
 }
 
-static void set_dupli_tex_mat(Render *re, ObjectInstanceRen *obi, DupliObject *dob)
+static void set_dupli_tex_mat(Render *re, ObjectInstanceRen *obi, DupliObject *dob, float omat[4][4])
 {
 	/* For duplis we need to have a matrix that transform the coordinate back
 	 * to it's original position, without the dupli transforms. We also check
@@ -4527,7 +4556,7 @@ static void set_dupli_tex_mat(Render *re, ObjectInstanceRen *obi, DupliObject *d
 
 		obi->duplitexmat= BLI_memarena_alloc(re->memArena, sizeof(float)*4*4);
 		invert_m4_m4(imat, dob->mat);
-		mul_serie_m4(obi->duplitexmat, re->viewmat, dob->omat, imat, re->viewinv,
+		mul_serie_m4(obi->duplitexmat, re->viewmat, omat, imat, re->viewinv,
 		             NULL, NULL, NULL, NULL);
 	}
 
@@ -4577,7 +4606,7 @@ static void init_render_object_data(Render *re, ObjectRen *obr, int timeoffset)
 	re->totstrand += obr->totstrand;
 }
 
-static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *dob, int timeoffset)
+static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *dob, float omat[4][4], int timeoffset)
 {
 	ObjectRen *obr;
 	ObjectInstanceRen *obi;
@@ -4613,7 +4642,7 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 		/* only add instance for objects that have not been used for dupli */
 		if (!(ob->transflag & OB_RENDER_DUPLI)) {
 			obi= RE_addRenderInstance(re, obr, ob, par, index, 0, NULL, ob->lay);
-			if (dob) set_dupli_tex_mat(re, obi, dob);
+			if (dob) set_dupli_tex_mat(re, obi, dob, omat);
 		}
 		else
 			find_dupli_instances(re, obr, dob);
@@ -4647,7 +4676,7 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 			/* only add instance for objects that have not been used for dupli */
 			if (!(ob->transflag & OB_RENDER_DUPLI)) {
 				obi= RE_addRenderInstance(re, obr, ob, par, index, psysindex, NULL, ob->lay);
-				if (dob) set_dupli_tex_mat(re, obi, dob);
+				if (dob) set_dupli_tex_mat(re, obi, dob, omat);
 			}
 			else
 				find_dupli_instances(re, obr, dob);
@@ -4657,7 +4686,7 @@ static void add_render_object(Render *re, Object *ob, Object *par, DupliObject *
 
 /* par = pointer to duplicator parent, needed for object lookup table */
 /* index = when duplicater copies same object (particle), the counter */
-static void init_render_object(Render *re, Object *ob, Object *par, DupliObject *dob, int timeoffset)
+static void init_render_object(Render *re, Object *ob, Object *par, DupliObject *dob, float omat[4][4], int timeoffset)
 {
 	static double lasttime= 0.0;
 	double time;
@@ -4666,7 +4695,7 @@ static void init_render_object(Render *re, Object *ob, Object *par, DupliObject 
 	if (ob->type==OB_LAMP)
 		add_render_lamp(re, ob);
 	else if (render_object_type(ob->type))
-		add_render_object(re, ob, par, dob, timeoffset);
+		add_render_object(re, ob, par, dob, omat, timeoffset);
 	else {
 		mul_m4_m4m4(mat, re->viewmat, ob->obmat);
 		invert_m4_m4(ob->imat, mat);
@@ -4890,7 +4919,7 @@ static void add_group_render_dupli_obs(Render *re, Group *group, int nolamps, in
 		if (ob->flag & OB_DONE) {
 			if (ob->transflag & OB_RENDER_DUPLI) {
 				if (allow_render_object(re, ob, nolamps, onlyselected, actob)) {
-					init_render_object(re, ob, NULL, NULL, timeoffset);
+					init_render_object(re, ob, NULL, NULL, NULL, timeoffset);
 					ob->transflag &= ~OB_RENDER_DUPLI;
 
 					if (ob->dup_group)
@@ -4901,6 +4930,13 @@ static void add_group_render_dupli_obs(Render *re, Group *group, int nolamps, in
 	}
 }
 
+/* additional data for dupli objects outside
+ * of the main dupli list
+ */
+typedef struct DupliObjectExtra {
+	float omat[4][4];
+} DupliObjectExtra;
+
 static void database_init_objects(Render *re, unsigned int renderlay, int nolamps, int onlyselected, Object *actob, int timeoffset)
 {
 	Base *base;
@@ -4908,13 +4944,12 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 	Group *group;
 	ObjectInstanceRen *obi;
 	Scene *sce_iter;
-	float mat[4][4];
 	int lay, vectorlay;
 
 	/* for duplis we need the Object texture mapping to work as if
 	 * untransformed, set_dupli_tex_mat sets the matrix to allow that
 	 * NULL is just for init */
-	set_dupli_tex_mat(NULL, NULL, NULL);
+	set_dupli_tex_mat(NULL, NULL, NULL, NULL);
 
 	/* loop over all objects rather then using SETLOOPER because we may
 	 * reference an mtex-mapped object which isn't rendered or is an
@@ -4923,6 +4958,8 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 	 * 'imat' / 'imat_ren' on all and unlikely to be a performance hit
 	 * See bug: [#28744] - campbell */
 	for (ob= re->main->object.first; ob; ob= ob->id.next) {
+		float mat[4][4];
+		
 		/* imat objects has to be done here, since displace can have texture using Object map-input */
 		mul_m4_m4m4(mat, re->viewmat, ob->obmat);
 		invert_m4_m4(ob->imat_ren, mat);
@@ -4942,7 +4979,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 		lay= (timeoffset)? renderlay & vectorlay: renderlay;
 
 		/* if the object has been restricted from rendering in the outliner, ignore it */
-		if (ob->restrictflag & OB_RESTRICT_RENDER) continue;
+		if (is_object_hidden(re, ob)) continue;
 
 		/* OB_DONE means the object itself got duplicated, so was already converted */
 		if (ob->flag & OB_DONE) {
@@ -4950,7 +4987,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 			 * it still needs to create the ObjectRen containing the data */
 			if (ob->transflag & OB_RENDER_DUPLI) {
 				if (allow_render_object(re, ob, nolamps, onlyselected, actob)) {
-					init_render_object(re, ob, NULL, NULL, timeoffset);
+					init_render_object(re, ob, NULL, NULL, NULL, timeoffset);
 					ob->transflag &= ~OB_RENDER_DUPLI;
 				}
 			}
@@ -4958,24 +4995,34 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 		else if ((base->lay & lay) || (ob->type==OB_LAMP && (base->lay & re->lay)) ) {
 			if ((ob->transflag & OB_DUPLI) && (ob->type!=OB_MBALL)) {
 				DupliObject *dob;
-				ListBase *lb;
+				ListBase *duplilist;
+				DupliObjectExtra *duplilist_extra = NULL;
+				int totdob, i;
 
 				/* create list of duplis generated by this object, particle
 				 * system need to have render settings set for dupli particles */
 				dupli_render_particle_set(re, ob, timeoffset, 0, 1);
-				lb= object_duplilist(re->scene, ob, TRUE);
+				duplilist = object_duplilist(re->eval_ctx, re->scene, ob);
+				totdob = BLI_countlist(duplilist);
+				if (totdob > 0)
+					duplilist_extra = MEM_mallocN(sizeof(DupliObjectExtra) * totdob, "DupliObject extra data");
 				dupli_render_particle_set(re, ob, timeoffset, 0, 0);
 
-				for (dob= lb->first; dob; dob= dob->next) {
+				/* set dupli obmats */
+				for (dob= duplilist->first, i = 0; dob; dob= dob->next, ++i) {
+					copy_m4_m4(duplilist_extra[i].omat, dob->ob->obmat);
+					copy_m4_m4(dob->ob->obmat, dob->mat);
+				}
+
+				for (dob= duplilist->first, i = 0; dob; dob= dob->next, ++i) {
+					DupliObjectExtra *dob_extra = &duplilist_extra[i];
 					Object *obd= dob->ob;
-					
-					copy_m4_m4(obd->obmat, dob->mat);
 
 					/* group duplis need to set ob matrices correct, for deform. so no_draw is part handled */
 					if (!(obd->transflag & OB_RENDER_DUPLI) && dob->no_draw)
 						continue;
 
-					if (obd->restrictflag & OB_RESTRICT_RENDER)
+					if (is_object_hidden(re, obd))
 						continue;
 
 					if (obd->type==OB_MBALL)
@@ -4983,6 +5030,8 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 
 					if (!allow_render_object(re, obd, nolamps, onlyselected, actob))
 						continue;
+
+					copy_m4_m4(obd->obmat, dob->mat);
 
 					if (allow_render_dupli_instance(re, dob, obd)) {
 						ParticleSystem *psys;
@@ -5001,7 +5050,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 							obi= RE_addRenderInstance(re, NULL, obd, ob, dob->persistent_id[0], 0, mat, ob->lay); 
 
 							/* fill in instance variables for texturing */
-							set_dupli_tex_mat(re, obi, dob);
+							set_dupli_tex_mat(re, obi, dob, dob_extra->omat);
 							if (dob->type != OB_DUPLIGROUP) {
 								copy_v3_v3(obi->dupliorco, dob->orco);
 								obi->dupliuv[0]= dob->uv[0];
@@ -5027,7 +5076,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 									mul_m4_m4m4(mat, re->viewmat, dob->mat);
 								obi= RE_addRenderInstance(re, NULL, obd, ob, dob->persistent_id[0], psysindex++, mat, obd->lay);
 
-								set_dupli_tex_mat(re, obi, dob);
+								set_dupli_tex_mat(re, obi, dob, dob_extra->omat);
 								if (dob->type != OB_DUPLIGROUP) {
 									copy_v3_v3(obi->dupliorco, dob->orco);
 									obi->dupliuv[0]= dob->uv[0];
@@ -5043,7 +5092,7 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 
 						if (obi==NULL)
 							/* can't instance, just create the object */
-							init_render_object(re, obd, ob, dob, timeoffset);
+							init_render_object(re, obd, ob, dob, dob_extra->omat, timeoffset);
 						
 						if (dob->type != OB_DUPLIGROUP) {
 							obd->flag |= OB_DONE;
@@ -5051,17 +5100,28 @@ static void database_init_objects(Render *re, unsigned int renderlay, int nolamp
 						}
 					}
 					else
-						init_render_object(re, obd, ob, dob, timeoffset);
+						init_render_object(re, obd, ob, dob, dob_extra->omat, timeoffset);
 					
 					if (re->test_break(re->tbh)) break;
 				}
-				free_object_duplilist(lb);
+				
+				/* restore obmats
+				 * NOTE: this has to happen in reverse order, since nested
+				 * dupli objects can repeatedly override the obmat
+				 */
+				for (dob= duplilist->last, i = totdob - 1; dob; dob= dob->prev, --i) {
+					copy_m4_m4(dob->ob->obmat, duplilist_extra[i].omat);
+				}
+				
+				free_object_duplilist(duplilist);
+				if (duplilist_extra)
+					MEM_freeN(duplilist_extra);
 
 				if (allow_render_object(re, ob, nolamps, onlyselected, actob))
-					init_render_object(re, ob, NULL, NULL, timeoffset);
+					init_render_object(re, ob, NULL, NULL, NULL, timeoffset);
 			}
 			else if (allow_render_object(re, ob, nolamps, onlyselected, actob))
-				init_render_object(re, ob, NULL, NULL, timeoffset);
+				init_render_object(re, ob, NULL, NULL, NULL, timeoffset);
 		}
 
 		if (re->test_break(re->tbh)) break;
@@ -5115,7 +5175,7 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 	
 	/* applies changes fully */
 	if ((re->r.scemode & (R_NO_FRAME_UPDATE|R_BUTS_PREVIEW|R_VIEWPORT_PREVIEW))==0)
-		BKE_scene_update_for_newframe(re->main, re->scene, lay);
+		BKE_scene_update_for_newframe(re->eval_ctx, re->main, re->scene, lay);
 	
 	/* if no camera, viewmat should have been set! */
 	if (use_camera_view && camera) {
@@ -5127,7 +5187,9 @@ void RE_Database_FromScene(Render *re, Main *bmain, Scene *scene, unsigned int l
 		normalize_m4_m4(mat, camera->obmat);
 		invert_m4(mat);
 		RE_SetView(re, mat);
-		camera->recalc= OB_RECALC_OB; /* force correct matrix for scaled cameras */
+
+		/* force correct matrix for scaled cameras */
+		DAG_id_tag_update_ex(re->main, &camera->id, OB_RECALC_OB);
 	}
 	
 	/* store for incremental render, viewmat rotates dbase */
@@ -5250,6 +5312,8 @@ void RE_DataBase_IncrementalView(Render *re, float viewmat[4][4], int restore)
 	copy_m4_m4(re->viewmat, viewmat);
 	invert_m4_m4(re->viewinv, re->viewmat);
 	
+	init_camera_inside_volumes(re);
+
 	env_rotate_scene(re, tmat, !restore);
 
 	/* SSS points distribution depends on view */
@@ -5290,7 +5354,7 @@ static void database_fromscene_vectors(Render *re, Scene *scene, unsigned int la
 	
 	/* applies changes fully */
 	scene->r.cfra += timeoffset;
-	BKE_scene_update_for_newframe(re->main, re->scene, lay);
+	BKE_scene_update_for_newframe(re->eval_ctx, re->main, re->scene, lay);
 	
 	/* if no camera, viewmat should have been set! */
 	if (camera) {
@@ -5804,7 +5868,9 @@ void RE_Database_Baking(Render *re, Main *bmain, Scene *scene, unsigned int lay,
 	re->lay= lay;
 
 	/* renderdata setup and exceptions */
-	re->r= scene->r;
+	BLI_freelistN(&re->r.layers);
+	re->r = scene->r;
+	BLI_duplicatelist(&re->r.layers, &scene->r.layers);
 	
 	RE_init_threadcount(re);
 	

@@ -52,6 +52,7 @@
 
 #include "BLI_sys_types.h" // for intptr_t support
 
+struct EvaluationContext;
 struct Object;
 struct MemArena;
 struct VertTableNode;
@@ -131,7 +132,7 @@ struct Render
 	short flag, osa, ok, result_ok;
 	
 	/* due to performance issues, getting initialized from color management settings once on Render initialization */
-	short scene_color_manage;
+	bool scene_color_manage;
 	
 	/* result of rendering */
 	RenderResult *result;
@@ -252,8 +253,8 @@ struct Render
 	void *dih;
 	void (*display_clear)(void *handle, RenderResult *rr);
 	void *dch;
-	void (*display_draw)(void *handle, RenderResult *rr, volatile rcti *rect, int view_id);
-	void *ddh;
+	void (*display_update)(void *handle, RenderResult *rr, volatile rcti *rect, const int view_id);
+	void *duh;
 	
 	void (*stats_draw)(void *handle, RenderStats *ri);
 	void *sdh;
@@ -270,6 +271,7 @@ struct Render
 	struct ReportList *reports;
 
 	struct ImagePool *pool;
+	struct EvaluationContext *eval_ctx;
 
 	int actview;
 };

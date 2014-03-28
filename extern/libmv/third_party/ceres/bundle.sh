@@ -43,8 +43,11 @@ done
 
 rm -rf $tmp
 
-sources=`find ./include ./internal -type f -iname '*.cc' -or -iname '*.cpp' -or -iname '*.c' | sed -r 's/^\.\//\t/' | grep -v -E 'schur_eliminator_[0-9]_[0-9]_[0-9d].cc' | sort -d`
-generated_sources=`find ./include ./internal -type f -iname '*.cc' -or -iname '*.cpp' -or -iname '*.c' | sed -r 's/^\.\//#\t\t/' | grep -E 'schur_eliminator_[0-9]_[0-9]_[0-9d].cc' | sort -d`
+sources=`find ./include ./internal -type f -iname '*.cc' -or -iname '*.cpp' -or -iname '*.c' | sed -r 's/^\.\//\t/' | \
+  grep -v -E 'schur_eliminator_[0-9]_[0-9d]_[0-9d].cc' | \
+  grep -v -E 'partitioned_matrix_view_[0-9]_[0-9d]_[0-9d].cc' | sort -d`
+generated_sources=`find ./include ./internal -type f -iname '*.cc' -or -iname '*.cpp' -or -iname '*.c' | sed -r 's/^\.\//#\t\t/' | \
+  grep -E 'schur_eliminator_[0-9]_[0-9d]_[0-9d].cc|partitioned_matrix_view_[0-9]_[0-9d]_[0-9d].cc' | sort -d`
 headers=`find ./include ./internal -type f -iname '*.h' | sed -r 's/^\.\//\t/' | sort -d`
 
 src_dir=`find ./internal -type f -iname '*.cc' -exec dirname {} \; -or -iname '*.cpp' -exec dirname {} \; -or -iname '*.c' -exec dirname {} \; | sed -r 's/^\.\//\t/' | sort -d | uniq`
@@ -171,23 +174,24 @@ if(WITH_OPENMP)
 	)
 endif()
 
-if(MSVC10)
-	add_definitions(
-		-D"CERES_HASH_NAMESPACE_START=namespace std {"
-		-D"CERES_HASH_NAMESPACE_END=}"
-	)
+TEST_UNORDERED_MAP_SUPPORT()
+if(HAVE_STD_UNORDERED_MAP_HEADER)
+	if(HAVE_UNORDERED_MAP_IN_STD_NAMESPACE)
+		add_definitions(-DCERES_STD_UNORDERED_MAP)
+	else()
+		if(HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE)
+			add_definitions(-DCERES_STD_UNORDERED_MAP_IN_TR1_NAMESPACE)
+		else()
+			add_definitions(-DCERES_NO_UNORDERED_MAP)
+			message(STATUS "Replacing unordered_map/set with map/set (warning: slower!)")
+		endif()
+	endif()
 else()
-	add_definitions(
-		-D"CERES_HASH_NAMESPACE_START=namespace std { namespace tr1 {"
-		-D"CERES_HASH_NAMESPACE_END=}}"
-	)
-endif()
-
-if(APPLE)
-	if(CMAKE_OSX_DEPLOYMENT_TARGET STREQUAL "10.5")
-		add_definitions(
-			-DCERES_NO_TR1
-		)
+	if(HAVE_UNORDERED_MAP_IN_TR1_NAMESPACE)
+		add_definitions(-DCERES_TR1_UNORDERED_MAP)
+	else()
+		add_definitions(-DCERES_NO_UNORDERED_MAP)
+		message(STATUS "Replacing unordered_map/set with map/set (warning: slower!)")
 	endif()
 endif()
 
@@ -204,6 +208,8 @@ cat > SConscript << EOF
 import sys
 import os
 
+from unordered_map import test_unordered_map
+
 Import('env')
 
 src = []
@@ -211,11 +217,10 @@ defs = []
 
 $src
 src += env.Glob('internal/ceres/generated/schur_eliminator_d_d_d.cc')
+src += env.Glob('internal/ceres/generated/partitioned_matrix_view_d_d_d.cc')
 #src += env.Glob('internal/ceres/generated/*.cc')
 
 defs.append('CERES_HAVE_PTHREAD')
-defs.append('CERES_HASH_NAMESPACE_START=namespace std { namespace tr1 {')
-defs.append('CERES_HASH_NAMESPACE_END=}}')
 defs.append('CERES_NO_SUITESPARSE')
 defs.append('CERES_NO_CXSPARSE')
 defs.append('CERES_NO_LAPACK')
@@ -225,8 +230,27 @@ defs.append('CERES_HAVE_RWLOCK')
 if env['WITH_BF_OPENMP']:
     defs.append('CERES_USE_OPENMP')
 
-if 'Mac OS X 10.5' in env['MACOSX_SDK']:
-    defs.append('CERES_NO_TR1')
+def define_unordered_map(conf):
+    found, namespace, include_prefix = test_unordered_map(conf)
+    if found:
+        if not include_prefix:
+            if namespace == 'std':
+                defs.append('CERES_STD_UNORDERED_MAP')
+                return True
+            elif namespace == 'std::tr1':
+                defs.append('CERES_STD_UNORDERED_MAP_IN_TR1_NAMESPACE')
+                return True
+        else:
+            if namespace == 'std::tr1':
+                defs.append('CERES_TR1_UNORDERED_MAP')
+                return True
+    return False
+
+conf = Configure(env)
+if not define_unordered_map(conf):
+    print("-- Replacing unordered_map/set with map/set (warning: slower!)")
+    defs.append('CERES_NO_UNORDERED_MAP')
+env = conf.Finish()
 
 incs = '. ../../ ../../../Eigen3 ./include ./internal ../gflags'
 

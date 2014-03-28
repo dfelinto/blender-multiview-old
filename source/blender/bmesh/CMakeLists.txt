@@ -80,6 +80,8 @@ set(SRC
 	intern/bmesh_core.h
 	intern/bmesh_edgeloop.c
 	intern/bmesh_edgeloop.h
+	intern/bmesh_delete.c
+	intern/bmesh_delete.h
 	intern/bmesh_inline.h
 	intern/bmesh_interp.c
 	intern/bmesh_interp.h
@@ -108,8 +110,10 @@ set(SRC
 	intern/bmesh_private.h
 	intern/bmesh_queries.c
 	intern/bmesh_queries.h
+	intern/bmesh_queries_inline.h
 	intern/bmesh_structure.c
 	intern/bmesh_structure.h
+	intern/bmesh_structure_inline.h
 	intern/bmesh_walkers.c
 	intern/bmesh_walkers.h
 	intern/bmesh_walkers_impl.c
@@ -136,6 +140,8 @@ set(SRC
 	tools/bmesh_path.h
 	tools/bmesh_triangulate.c
 	tools/bmesh_triangulate.h
+	tools/bmesh_wireframe.c
+	tools/bmesh_wireframe.h
 
 	bmesh_class.h
 

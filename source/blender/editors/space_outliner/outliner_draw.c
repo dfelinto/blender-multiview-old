@@ -480,8 +480,8 @@ static void namebutton_cb(bContext *C, void *tsep, char *oldname)
 					Object *ob;
 					char newname[sizeof(bone->name)];
 					
-					// always make current object active
-					tree_element_active(C, scene, soops, te, 1); // was set_active_object()
+					/* always make current object active */
+					tree_element_active(C, scene, soops, te, OL_SETSEL_NORMAL, true);
 					ob = OBACT;
 					
 					/* restore bone name */
@@ -497,9 +497,11 @@ static void namebutton_cb(bContext *C, void *tsep, char *oldname)
 					Object *ob;
 					char newname[sizeof(pchan->name)];
 					
-					// always make current object active
-					tree_element_active(C, scene, soops, te, 1); // was set_active_object()
+					/* always make current pose-bone active */
+					tree_element_active(C, scene, soops, te, OL_SETSEL_NORMAL, true);
 					ob = OBACT;
+
+					BLI_assert(ob->type == OB_ARMATURE);
 					
 					/* restore bone name */
 					BLI_strncpy(newname, pchan->name, sizeof(pchan->name));
@@ -534,35 +536,44 @@ static void outliner_draw_restrictbuts(uiBlock *block, Scene *scene, ARegion *ar
 	Object *ob = NULL;
 	Group  *gr = NULL;
 
+	PropertyRNA *object_prop_hide, *object_prop_hide_select, *object_prop_hide_render;
+
+	/* get RNA properties (once) */
+	object_prop_hide = RNA_struct_type_find_property(&RNA_Object, "hide");
+	object_prop_hide_select = RNA_struct_type_find_property(&RNA_Object, "hide_select");
+	object_prop_hide_render = RNA_struct_type_find_property(&RNA_Object, "hide_render");
+	BLI_assert(object_prop_hide && object_prop_hide_select  && object_prop_hide_render);
+
+
 	for (te = lb->first; te; te = te->next) {
 		tselem = TREESTORE(te);
 		if (te->ys + 2 * UI_UNIT_Y >= ar->v2d.cur.ymin && te->ys <= ar->v2d.cur.ymax) {
 			/* objects have toggle-able restriction flags */
 			if (tselem->type == 0 && te->idcode == ID_OB) {
 				PointerRNA ptr;
-				
+
 				ob = (Object *)tselem->id;
 				RNA_pointer_create((ID *)ob, &RNA_Object, ob, &ptr);
-				
+
 				uiBlockSetEmboss(block, UI_EMBOSSN);
-				bt = uiDefIconButR(block, ICONTOG, 0, ICON_RESTRICT_VIEW_OFF,
-				                   (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_VIEWX), te->ys, UI_UNIT_X, UI_UNIT_Y,
-				                   &ptr, "hide", -1, 0, 0, -1, -1,
-				                   TIP_("Restrict viewport visibility (Ctrl - Recursive)"));
+				bt = uiDefIconButR_prop(block, ICONTOG, 0, ICON_RESTRICT_VIEW_OFF,
+				                        (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_VIEWX), te->ys, UI_UNIT_X, UI_UNIT_Y,
+				                        &ptr, object_prop_hide, -1, 0, 0, -1, -1,
+				                        TIP_("Restrict viewport visibility (Ctrl - Recursive)"));
 				uiButSetFunc(bt, restrictbutton_view_cb, scene, ob);
 				uiButSetFlag(bt, UI_BUT_DRAG_LOCK);
 				
-				bt = uiDefIconButR(block, ICONTOG, 0, ICON_RESTRICT_SELECT_OFF,
-				                   (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_SELECTX), te->ys, UI_UNIT_X, UI_UNIT_Y,
-				                   &ptr, "hide_select", -1, 0, 0, -1, -1,
-				                   TIP_("Restrict viewport selection (Ctrl - Recursive)"));
+				bt = uiDefIconButR_prop(block, ICONTOG, 0, ICON_RESTRICT_SELECT_OFF,
+				                        (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_SELECTX), te->ys, UI_UNIT_X, UI_UNIT_Y,
+				                        &ptr, object_prop_hide_select, -1, 0, 0, -1, -1,
+				                        TIP_("Restrict viewport selection (Ctrl - Recursive)"));
 				uiButSetFunc(bt, restrictbutton_sel_cb, scene, ob);
 				uiButSetFlag(bt, UI_BUT_DRAG_LOCK);
 				
-				bt = uiDefIconButR(block, ICONTOG, 0, ICON_RESTRICT_RENDER_OFF,
-				                   (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_RENDERX), te->ys, UI_UNIT_X, UI_UNIT_Y,
-				                   &ptr, "hide_render", -1, 0, 0, -1, -1,
-				                   TIP_("Restrict rendering (Ctrl - Recursive)"));
+				bt = uiDefIconButR_prop(block, ICONTOG, 0, ICON_RESTRICT_RENDER_OFF,
+				                        (int)(ar->v2d.cur.xmax - OL_TOG_RESTRICT_RENDERX), te->ys, UI_UNIT_X, UI_UNIT_Y,
+				                        &ptr, object_prop_hide_render, -1, 0, 0, -1, -1,
+				                        TIP_("Restrict rendering (Ctrl - Recursive)"));
 				uiButSetFunc(bt, restrictbutton_rend_cb, scene, ob);
 				uiButSetFlag(bt, UI_BUT_DRAG_LOCK);
 				
@@ -965,6 +976,8 @@ static void tselem_draw_icon(uiBlock *block, int xmax, float x, float y, TreeSto
 						UI_icon_draw(x, y, ICON_MOD_TRIANGULATE); break;
 					case eModifierType_MeshCache:
 						UI_icon_draw(x, y, ICON_MOD_MESHDEFORM); break;  /* XXX, needs own icon */
+					case eModifierType_Wireframe:
+						UI_icon_draw(x, y, ICON_MOD_WIREFRAME); break;
 					case eModifierType_LaplacianDeform:
 						UI_icon_draw(x, y, ICON_MOD_MESHDEFORM); break;  /* XXX, needs own icon */
 					/* Default */
@@ -1111,7 +1124,7 @@ static void tselem_draw_icon(uiBlock *block, int xmax, float x, float y, TreeSto
 			case ID_LI:
 				tselem_draw_icon_uibut(&arg, ICON_LIBRARY_DATA_DIRECT); break;
 			case ID_LS:
-				tselem_draw_icon_uibut(&arg, ICON_BRUSH_DATA); break; /* FIXME proper icon */
+				tselem_draw_icon_uibut(&arg, ICON_LINE_DATA); break;
 		}
 	}
 }
@@ -1121,7 +1134,7 @@ static void outliner_draw_iconrow(bContext *C, uiBlock *block, Scene *scene, Spa
 {
 	TreeElement *te;
 	TreeStoreElem *tselem;
-	int active;
+	eOLDrawState active;
 
 	for (te = lb->first; te; te = te->next) {
 		
@@ -1137,20 +1150,20 @@ static void outliner_draw_iconrow(bContext *C, uiBlock *block, Scene *scene, Spa
 			/* active blocks get white circle */
 			if (tselem->type == 0) {
 				if (te->idcode == ID_OB) {
-					active = (OBACT == (Object *)tselem->id);
+					active = (OBACT == (Object *)tselem->id) ? OL_DRAWSEL_NORMAL : OL_DRAWSEL_NONE;
 				}
 				else if (scene->obedit && scene->obedit->data == tselem->id) {
-					active = 1;  // XXX use context?
+					active = OL_DRAWSEL_NORMAL;
 				}
 				else {
-					active = tree_element_active(C, scene, soops, te, 0);
+					active = tree_element_active(C, scene, soops, te, OL_SETSEL_NONE, false);
 				}
 			}
 			else {
-				active = tree_element_type_active(NULL, scene, soops, te, tselem, 0, false);
+				active = tree_element_type_active(NULL, scene, soops, te, tselem, OL_SETSEL_NONE, false);
 			}
 
-			if (active) {
+			if (active != OL_DRAWSEL_NONE) {
 				float ufac = UI_UNIT_X / 20.0f;
 
 				uiSetRoundBox(UI_CNR_ALL);
@@ -1200,7 +1213,8 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 	TreeElement *ten;
 	TreeStoreElem *tselem;
 	float ufac = UI_UNIT_X / 20.0f;
-	int offsx = 0, active = 0; // active=1 active obj, else active data
+	int offsx = 0;
+	eOLDrawState active = OL_DRAWSEL_NONE;
 	
 	tselem = TREESTORE(te);
 
@@ -1238,7 +1252,7 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 			if (te->idcode == ID_SCE) {
 				if (tselem->id == (ID *)scene) {
 					glColor4ub(255, 255, 255, alpha);
-					active = 2;
+					active = OL_DRAWSEL_ACTIVE;
 				}
 			}
 			else if (te->idcode == ID_GR) {
@@ -1249,7 +1263,7 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 					col[3] = alpha;
 					glColor4ubv((GLubyte *)col);
 					
-					active = 2;
+					active = OL_DRAWSEL_ACTIVE;
 				}
 			}
 			else if (te->idcode == ID_OB) {
@@ -1260,14 +1274,14 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 					
 					/* outliner active ob: always white text, circle color now similar to view3d */
 					
-					active = 2; /* means it draws a color circle */
+					active = OL_DRAWSEL_ACTIVE;
 					if (ob == OBACT) {
 						if (ob->flag & SELECT) {
 							UI_GetThemeColorType4ubv(TH_ACTIVE, SPACE_VIEW3D, col);
 							col[3] = alpha;
 						}
 						
-						active = 1; /* means it draws white text */
+						active = OL_DRAWSEL_NORMAL;
 					}
 					else if (ob->flag & SELECT) {
 						UI_GetThemeColorType4ubv(TH_SELECT, SPACE_VIEW3D, col);
@@ -1280,22 +1294,24 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 			}
 			else if (scene->obedit && scene->obedit->data == tselem->id) {
 				glColor4ub(255, 255, 255, alpha);
-				active = 2;
+				active = OL_DRAWSEL_ACTIVE;
 			}
 			else {
-				if (tree_element_active(C, scene, soops, te, 0)) {
+				if (tree_element_active(C, scene, soops, te, OL_SETSEL_NONE, false)) {
 					glColor4ub(220, 220, 255, alpha);
-					active = 2;
+					active = OL_DRAWSEL_ACTIVE;
 				}
 			}
 		}
 		else {
-			if (tree_element_type_active(NULL, scene, soops, te, tselem, 0, false) ) active = 2;
+			if (tree_element_type_active(NULL, scene, soops, te, tselem, OL_SETSEL_NONE, false) != OL_DRAWSEL_NONE) {
+				active = OL_DRAWSEL_ACTIVE;
+			}
 			glColor4ub(220, 220, 255, alpha);
 		}
 		
 		/* active circle */
-		if (active) {
+		if (active != OL_DRAWSEL_NONE) {
 			uiSetRoundBox(UI_CNR_ALL);
 			uiRoundBox((float)startx + UI_UNIT_X,
 			           (float)*starty + 1.0f * ufac,
@@ -1346,7 +1362,7 @@ static void outliner_draw_tree_element(bContext *C, uiBlock *block, Scene *scene
 		glDisable(GL_BLEND);
 		
 		/* name */
-		if (active == 1) UI_ThemeColor(TH_TEXT_HI);
+		if (active == OL_DRAWSEL_NORMAL) UI_ThemeColor(TH_TEXT_HI);
 		else if (ELEM(tselem->type, TSE_RNA_PROPERTY, TSE_RNA_ARRAY_ELEM)) UI_ThemeColorBlend(TH_BACK, TH_TEXT, 0.75f);
 		else UI_ThemeColor(TH_TEXT);
 		
@@ -1408,7 +1424,7 @@ static void outliner_draw_hierarchy(SpaceOops *soops, ListBase *lb, int startx, 
 	TreeStoreElem *tselem;
 	int y1, y2;
 	
-	if (lb->first == NULL) return;
+	if (BLI_listbase_is_empty(lb)) return;
 	
 	y1 = y2 = *starty; /* for vertical lines between objects */
 	for (te = lb->first; te; te = te->next) {

@@ -35,7 +35,6 @@
 
 #include "KX_Scene.h"
 #include "KX_GameObject.h"
-#include "KX_BlenderSceneConverter.h"
 #include "KX_IpoConvert.h"
 #include "RAS_MeshObject.h"
 #include "KX_PhysicsEngineEnums.h"
@@ -57,12 +56,10 @@
 #include "CcdPhysicsEnvironment.h"
 #endif
 
-#include "KX_BlenderSceneConverter.h"
 #include "KX_LibLoadStatus.h"
 #include "KX_BlenderScalarInterpolator.h"
 #include "BL_BlenderDataConversion.h"
 #include "BlenderWorldInfo.h"
-#include "KX_Scene.h"
 
 /* This little block needed for linking to Blender... */
 #ifdef WIN32
@@ -98,9 +95,7 @@ extern "C"
 /* Only for dynamic loading and merging */
 #include "RAS_BucketManager.h" // XXX cant stay
 #include "KX_BlenderSceneConverter.h"
-#include "BL_BlenderDataConversion.h"
 #include "KX_MeshProxy.h"
-#include "RAS_MeshObject.h"
 extern "C" {
 	#include "PIL_time.h"
 	#include "BKE_context.h"
@@ -132,7 +127,7 @@ KX_BlenderSceneConverter::KX_BlenderSceneConverter(
 							m_useglslmat(false),
 							m_use_mat_cache(true)
 {
-	tag_main(maggie, 0); /* avoid re-tagging later on */
+	BKE_main_id_tag_all(maggie, false);  /* avoid re-tagging later on */
 	m_newfilename = "";
 	m_threadinfo = new ThreadInfo();
 	pthread_mutex_init(&m_threadinfo->merge_lock, NULL);
@@ -238,8 +233,7 @@ Scene *KX_BlenderSceneConverter::GetBlenderSceneForName(const STR_String& name)
 	Scene *sce;
 
 	/**
-	 * Find the specified scene by name, or the first
-	 * scene if nothing matches (shouldn't happen).
+	 * Find the specified scene by name, or NULL if nothing matches.
 	 */
 	if ((sce= (Scene *)BLI_findstring(&m_maggie->scene, name.ReadPtr(), offsetof(ID, name) + 2)))
 		return sce;
@@ -251,10 +245,9 @@ Scene *KX_BlenderSceneConverter::GetBlenderSceneForName(const STR_String& name)
 			return sce;
 	}
 
-	return (Scene*)m_maggie->scene.first;
+	return NULL;
 
 }
-#include "KX_PythonInit.h"
 
 #ifdef WITH_BULLET
 
@@ -706,8 +699,7 @@ void	KX_BlenderSceneConverter::ResetPhysicsObjectsAnimationIpo(bool clearIpo)
 		for (g=0;g<numObjects;g++)
 		{
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
-			if (gameObj->IsDynamic())
-			{
+			if (gameObj->IsRecordAnimation()) {
 				
 				Object* blenderObject = gameObj->GetBlenderObject();
 				if (blenderObject)
@@ -769,7 +761,7 @@ void	KX_BlenderSceneConverter::resetNoneDynamicObjectToIpo()
 			CListValue* parentList = scene->GetRootParentList();
 			for (int ix=0;ix<parentList->GetCount();ix++) {
 				KX_GameObject* gameobj = (KX_GameObject*)parentList->GetValue(ix);
-				if (!gameobj->IsDynamic()) {
+				if (!gameobj->IsRecordAnimation()) {
 					Object* blenderobject = gameobj->GetBlenderObject();
 					if (!blenderobject)
 						continue;
@@ -821,8 +813,7 @@ void	KX_BlenderSceneConverter::WritePhysicsObjectToAnimationIpo(int frameNumber)
 		{
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
 			Object* blenderObject = gameObj->GetBlenderObject();
-			if (blenderObject && blenderObject->parent==NULL && gameObj->IsDynamic())
-			{
+			if (blenderObject && blenderObject->parent==NULL && gameObj->IsRecordAnimation()) {
 
 				if (blenderObject->adt==NULL)
 					BKE_id_add_animdata(&blenderObject->id);
@@ -939,9 +930,7 @@ void	KX_BlenderSceneConverter::TestHandlesPhysicsObjectToAnimationIpo()
 		for (g=0;g<numObjects;g++)
 		{
 			KX_GameObject* gameObj = (KX_GameObject*)parentList->GetValue(g);
-			if (gameObj->IsDynamic())
-			{
-				
+			if (gameObj->IsRecordAnimation()) {
 #if 0
 				Object* blenderObject = gameObj->GetBlenderObject();
 				if (blenderObject && blenderObject->ipo)
@@ -1117,7 +1106,7 @@ KX_LibLoadStatus *KX_BlenderSceneConverter::LinkBlendFile(BlendHandle *bpy_openl
 		return NULL;
 	}
 	
-	main_newlib= (Main *)MEM_callocN( sizeof(Main), "BgeMain");
+	main_newlib = BKE_main_new();
 	BKE_reports_init(&reports, RPT_STORE);
 
 	load_datablocks(main_newlib, bpy_openlib, path, idcode);
@@ -1235,7 +1224,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 	for (vector<Main*>::iterator it=m_DynamicMaggie.begin(); !(it==m_DynamicMaggie.end()); it++) {
 		Main *main= *it;
 		if (main != maggie) {
-			tag_main(main, 0);
+			BKE_main_id_tag_all(main, false);
 		}
 		else {
 			maggie_index= i;
@@ -1248,7 +1237,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 		return false;
 
 	m_DynamicMaggie.erase(m_DynamicMaggie.begin() + maggie_index);
-	tag_main(maggie, 1);
+	BKE_main_id_tag_all(maggie, true);
 
 
 	/* free all tagged objects */
@@ -1494,7 +1483,7 @@ bool KX_BlenderSceneConverter::FreeBlendFile(struct Main *maggie)
 	delete m_status_map[maggie->name];
 	m_status_map.erase(maggie->name);
 
-	free_main(maggie);
+	BKE_main_free(maggie);
 
 	return true;
 }
