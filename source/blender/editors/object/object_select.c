@@ -33,8 +33,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "MEM_guardedalloc.h"
-
 #include "DNA_anim_types.h"
 #include "DNA_group_types.h"
 #include "DNA_material_types.h"
@@ -47,7 +45,6 @@
 #include "BLI_math.h"
 #include "BLI_listbase.h"
 #include "BLI_rand.h"
-#include "BLI_string.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -183,7 +180,7 @@ void OBJECT_OT_select_by_type(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop = RNA_def_enum(ot->srna, "type", object_type_items, 1, "Type", "");
 }
 
@@ -398,7 +395,7 @@ void ED_object_select_linked_by_id(bContext *C, ID *id)
 		changed = object_select_all_by_obdata(C, id);
 	}
 	else if (idtype == ID_MA) {
-		changed = object_select_all_by_material_texture(C, FALSE, (Material *)id, NULL);
+		changed = object_select_all_by_material_texture(C, false, (Material *)id, NULL);
 	}
 	else if (idtype == ID_LI) {
 		changed = object_select_all_by_library(C, (Library *) id);
@@ -447,12 +444,12 @@ static int object_select_linked_exec(bContext *C, wmOperator *op)
 	else if (nr == OBJECT_SELECT_LINKED_MATERIAL || nr == OBJECT_SELECT_LINKED_TEXTURE) {
 		Material *mat = NULL;
 		Tex *tex = NULL;
-		int use_texture = FALSE;
+		bool use_texture = false;
 
 		mat = give_current_material(ob, ob->actcol);
 		if (mat == NULL) return OPERATOR_CANCELLED;
 		if (nr == OBJECT_SELECT_LINKED_TEXTURE) {
-			use_texture = TRUE;
+			use_texture = true;
 
 			if (mat->mtex[(int)mat->texact]) tex = mat->mtex[(int)mat->texact]->tex;
 			if (tex == NULL) return OPERATOR_CANCELLED;
@@ -486,7 +483,7 @@ static int object_select_linked_exec(bContext *C, wmOperator *op)
 		return OPERATOR_CANCELLED;
 
 	if (changed) {
-		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, CTX_data_scene(C));
+		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 		return OPERATOR_FINISHED;
 	}
 	
@@ -509,7 +506,7 @@ void OBJECT_OT_select_linked(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop = RNA_def_enum(ot->srna, "type", prop_select_linked_types, 0, "Type", "");
 }
 
@@ -862,7 +859,7 @@ static int object_select_grouped_exec(bContext *C, wmOperator *op)
 	else if (nr == 14) changed |= select_similar_pass_index(C, ob);
 
 	if (changed) {
-		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, CTX_data_scene(C));
+		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 		return OPERATOR_FINISHED;
 	}
 	
@@ -885,7 +882,7 @@ void OBJECT_OT_select_grouped(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend selection instead of deselecting everything first");
 	ot->prop = RNA_def_enum(ot->srna, "type", prop_select_grouped_types, 0, "Type", "");
 }
 
@@ -951,7 +948,7 @@ void OBJECT_OT_select_by_layer(wmOperatorType *ot)
 	
 	/* properties */
 	RNA_def_enum(ot->srna, "match", match_items, 0, "Match", "");
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend selection instead of deselecting everything first");
 	RNA_def_int(ot->srna, "layers", 1, 1, 20, "Layer", "", 1, 20);
 }
 
@@ -1099,7 +1096,7 @@ static int object_select_mirror_exec(bContext *C, wmOperator *op)
 	CTX_DATA_END;
 	
 	/* undo? */
-	WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, CTX_data_scene(C));
+	WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 	
 	return OPERATOR_FINISHED;
 }

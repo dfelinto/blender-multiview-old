@@ -31,7 +31,6 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_lamp_types.h"
 #include "DNA_material_types.h"
@@ -43,7 +42,6 @@
 #include "DNA_world_types.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_math.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -55,13 +53,11 @@
 #include "BKE_font.h"
 #include "BKE_freestyle.h"
 #include "BKE_global.h"
-#include "BKE_icons.h"
 #include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_linestyle.h"
 #include "BKE_main.h"
 #include "BKE_material.h"
-#include "BKE_node.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_texture.h"
@@ -229,7 +225,7 @@ void OBJECT_OT_material_slot_assign(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 }
 
-static int material_slot_de_select(bContext *C, int select)
+static int material_slot_de_select(bContext *C, bool select)
 {
 	Object *ob = ED_object_context(C);
 
@@ -295,7 +291,7 @@ static int material_slot_de_select(bContext *C, int select)
 
 static int material_slot_select_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	return material_slot_de_select(C, 1);
+	return material_slot_de_select(C, true);
 }
 
 void OBJECT_OT_material_slot_select(wmOperatorType *ot)
@@ -314,7 +310,7 @@ void OBJECT_OT_material_slot_select(wmOperatorType *ot)
 
 static int material_slot_deselect_exec(bContext *C, wmOperator *UNUSED(op))
 {
-	return material_slot_de_select(C, 0);
+	return material_slot_de_select(C, false);
 }
 
 void OBJECT_OT_material_slot_deselect(wmOperatorType *ot)
@@ -392,7 +388,7 @@ static int new_material_exec(bContext *C, wmOperator *UNUSED(op))
 
 		if (BKE_scene_use_new_shading_nodes(scene)) {
 			ED_node_shader_default(C, &ma->id);
-			ma->use_nodes = TRUE;
+			ma->use_nodes = true;
 		}
 	}
 
@@ -496,7 +492,7 @@ static int new_world_exec(bContext *C, wmOperator *UNUSED(op))
 
 		if (BKE_scene_use_new_shading_nodes(scene)) {
 			ED_node_shader_default(C, &wo->id);
-			wo->use_nodes = TRUE;
+			wo->use_nodes = true;
 		}
 	}
 
@@ -807,7 +803,7 @@ static int freestyle_active_lineset_poll(bContext *C)
 	SceneRenderLayer *srl = BLI_findlink(&scene->r.layers, scene->r.actlay);
 
 	if (!srl) {
-		return FALSE;
+		return false;
 	}
 
 	return BKE_freestyle_lineset_get_active(&srl->freestyleConfig) != NULL;
@@ -1643,6 +1639,9 @@ static void copy_mtex_copybuf(ID *id)
 		case ID_PA:
 			mtex = &(((ParticleSettings *)id)->mtex[(int)((ParticleSettings *)id)->texact]);
 			break;
+		case ID_LS:
+			mtex = &(((FreestyleLineStyle *)id)->mtex[(int)((FreestyleLineStyle *)id)->texact]);
+			break;
 	}
 	
 	if (mtex && *mtex) {
@@ -1675,6 +1674,9 @@ static void paste_mtex_copybuf(ID *id)
 			break;
 		case ID_PA:
 			mtex = &(((ParticleSettings *)id)->mtex[(int)((ParticleSettings *)id)->texact]);
+			break;
+		case ID_LS:
+			mtex = &(((FreestyleLineStyle *)id)->mtex[(int)((FreestyleLineStyle *)id)->texact]);
 			break;
 		default:
 			BLI_assert("invalid id type");
@@ -1742,7 +1744,8 @@ static int paste_mtex_exec(bContext *C, wmOperator *UNUSED(op))
 		Lamp *la = CTX_data_pointer_get_type(C, "lamp", &RNA_Lamp).data;
 		World *wo = CTX_data_pointer_get_type(C, "world", &RNA_World).data;
 		ParticleSystem *psys = CTX_data_pointer_get_type(C, "particle_system", &RNA_ParticleSystem).data;
-		
+		FreestyleLineStyle *linestyle = CTX_data_pointer_get_type(C, "line_style", &RNA_FreestyleLineStyle).data;
+
 		if (ma)
 			id = &ma->id;
 		else if (la)
@@ -1751,6 +1754,8 @@ static int paste_mtex_exec(bContext *C, wmOperator *UNUSED(op))
 			id = &wo->id;
 		else if (psys)
 			id = &psys->part->id;
+		else if (linestyle)
+			id = &linestyle->id;
 		
 		if (id == NULL)
 			return OPERATOR_CANCELLED;

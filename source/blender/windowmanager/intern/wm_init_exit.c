@@ -39,12 +39,10 @@
 #endif
 
 #include "MEM_guardedalloc.h"
-#include "MEM_CacheLimiterC-Api.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
 
-#include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_userdef_types.h"
 #include "DNA_windowmanager_types.h"
@@ -59,10 +57,7 @@
 #include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_screen.h"
-#include "BKE_curve.h"
-#include "BKE_displist.h"
 #include "BKE_DerivedMesh.h"
-#include "BKE_font.h"
 #include "BKE_global.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
@@ -71,7 +66,6 @@
 #include "BKE_report.h"
 
 #include "BKE_addon.h"
-#include "BKE_packedFile.h"
 #include "BKE_sequencer.h" /* free seq clipboard */
 #include "BKE_material.h" /* clear_matcopybuf */
 #include "BKE_tracking.h" /* free tracking clipboard */
@@ -160,6 +154,9 @@ void WM_init(bContext *C, int argc, const char **argv)
 	
 	BLF_init(11, U.dpi); /* Please update source/gamengine/GamePlayer/GPG_ghost.cpp if you change this */
 	BLF_lang_init();
+
+	/* Enforce loading the UI for the initial homefile */
+	G.fileflags &= ~G_FILE_NO_UI;
 
 	/* get the default database, plus a wm */
 	wm_homefile_read(C, NULL, G.factory_startup, NULL);
@@ -538,5 +535,5 @@ void WM_exit(bContext *C)
 	}
 #endif
 
-	exit(G.is_break == TRUE);
+	exit(G.is_break == true);
 }

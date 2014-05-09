@@ -112,7 +112,8 @@ typedef struct bNodeSocket {
 	short stack_index;			/* local stack index */
 	/* XXX deprecated, kept for forward compatibility */
 	short stack_type  DNA_DEPRECATED;
-	int resizemode;				/* compositor resize mode of the socket */
+	int pad;
+	
 	void *cache;				/* cached data from execution */
 	
 	/* internal data to retrieve relations and groups
@@ -847,6 +848,10 @@ typedef struct NodeShaderNormalMap {
 	int space;
 	char uv_map[64];
 } NodeShaderNormalMap;
+
+typedef struct NodeShaderUVMap {
+	char uv_map[64];
+} NodeShaderUVMap;
 
 /* script node mode */
 #define NODE_SCRIPT_INTERNAL		0

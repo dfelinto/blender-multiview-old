@@ -201,7 +201,7 @@ static void bmo_face_inset_individual(
 		copy_v3_v3(v_new_co, l_iter->v->co);
 
 		if (use_even_offset) {
-			mul_v3_fl(tvec, shell_angle_to_dist(angle_normalized_v3v3(eno_prev,  eno_next) / 2.0f));
+			mul_v3_fl(tvec, shell_v3v3_mid_normalized_to_dist(eno_prev,  eno_next));
 		}
 
 		/* Modify vertices and their normals */
@@ -407,6 +407,11 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 	int          iface_array_len;
 	MemArena *interp_arena = NULL;
 
+	/* BMVert original location storage */
+	const bool use_vert_coords_orig = use_edge_rail;
+	MemArena *vert_coords_orig = NULL;
+	GHash *vert_coords = NULL;
+
 	BMVert *v;
 	BMEdge *e;
 	BMFace *f;
@@ -470,6 +475,22 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 			/* initialize no and e_new after */
 		}
 	}
+
+
+	if (use_vert_coords_orig) {
+		vert_coords_orig = BLI_memarena_new(BLI_MEMARENA_STD_BUFSIZE, __func__);
+		vert_coords = BLI_ghash_ptr_new(__func__);
+	}
+
+	/* util macros */
+#define VERT_ORIG_STORE(_v)  { \
+		float *_co = BLI_memarena_alloc(vert_coords_orig, sizeof(float[3])); \
+		copy_v3_v3(_co, (_v)->co); \
+		BLI_ghash_insert(vert_coords, _v, _co); \
+	} (void)0
+#define VERT_ORIG_GET(_v)  \
+	(const float *)BLI_ghash_lookup_default(vert_coords, (_v), (_v)->co)
+
 
 	for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
 		if ((es->l = bm_edge_is_mixed_face_tag(es->e_old->l))) {
@@ -564,6 +585,9 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 
 				/* in some cases the edge doesn't split off */
 				if (r_vout_len == 1) {
+					if (use_vert_coords_orig) {
+						VERT_ORIG_STORE(vout[0]);
+					}
 					MEM_freeN(vout);
 					continue;
 				}
@@ -574,6 +598,10 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 					/* need to check if this vertex is from a */
 					int vert_edge_tag_tot = 0;
 					int vecpair[2];
+
+					if (use_vert_coords_orig) {
+						VERT_ORIG_STORE(v_split);
+					}
 
 					/* find adjacent */
 					BM_ITER_ELEM (e, &iter, v_split, BM_EDGES_OF_VERT) {
@@ -628,9 +656,23 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 								if (l_other_a->v == l_other_b->v) {
 									/* both edges faces are adjacent, but we don't need to know the shared edge
 									 * having both verts is enough. */
-									sub_v3_v3v3(tvec, l_other_a->v->co, v_split->co);
+									const float *co_other;
+
+									/* note that we can't use 'l_other_a->v' directly since it
+									 * may be inset and give a feedback loop. */
+									if (use_vert_coords_orig) {
+										co_other = VERT_ORIG_GET(l_other_a->v);
+									}
+									else {
+										co_other = l_other_a->v->co;
+									}
+
+									sub_v3_v3v3(tvec, co_other, v_split->co);
 									is_mid = false;
 								}
+
+								/* distable gives odd results at times, see [#39288] */
+#if 0
 								else if (compare_v3v3(f_a->no, f_b->no, 0.001f) == false) {
 									/* epsilon increased to fix [#32329] */
 
@@ -645,20 +687,23 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 									copy_v3_v3(tvec, tno);
 									is_mid = false;
 								}
+#endif
 							}
 							normalize_v3(tvec);
 
 							/* scale by edge angle */
 							if (use_even_offset) {
 								if (is_mid) {
-									mul_v3_fl(tvec, shell_angle_to_dist(angle_normalized_v3v3(e_info_a->no,
-									                                                          e_info_b->no) / 2.0f));
+									mul_v3_fl(tvec, shell_v3v3_mid_normalized_to_dist(e_info_a->no,
+									                                                  e_info_b->no));
 								}
 								else {
-									mul_v3_fl(tvec, shell_angle_to_dist(max_ff(angle_normalized_v3v3(tvec,
-									                                                                 e_info_a->no),
-									                                           angle_normalized_v3v3(tvec,
-									                                                                 e_info_b->no))));
+									/* use the largest angle */
+									mul_v3_fl(tvec,
+									          shell_v3v3_normalized_to_dist(tvec,
+									                                        len_squared_v3v3(tvec, e_info_a->no) >
+									                                        len_squared_v3v3(tvec, e_info_b->no) ?
+									                                            e_info_a->no : e_info_b->no));
 								}
 							}
 
@@ -729,7 +774,7 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 								normalize_v3(tvec);
 
 								if (use_even_offset) {
-									mul_v3_fl(tvec, shell_angle_to_dist(angle_normalized_v3v3(e_no_a, tvec)));
+									mul_v3_fl(tvec, shell_v3v3_normalized_to_dist(e_no_a, tvec));
 								}
 							}
 							else {
@@ -779,6 +824,11 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 				MEM_freeN(vout);
 			}
 		}
+	}
+
+	if (use_vert_coords_orig) {
+		BLI_memarena_free(vert_coords_orig);
+		BLI_ghash_free(vert_coords, NULL, NULL);
 	}
 
 	if (use_interpolate) {
@@ -898,7 +948,7 @@ void bmo_inset_region_exec(BMesh *bm, BMOperator *op)
 			zero_v3(es->e_new->v2->no);
 		}
 		for (i = 0, es = edge_info; i < edge_info_len; i++, es++) {
-			float *no = es->l->f->no;
+			const float *no = es->l->f->no;
 			add_v3_v3(es->e_new->v1->no, no);
 			add_v3_v3(es->e_new->v2->no, no);
 		}

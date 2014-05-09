@@ -19,7 +19,7 @@
 bl_info = {
     "name": "Cycles Render Engine",
     "author": "",
-    "blender": (2, 67, 0),
+    "blender": (2, 70, 0),
     "location": "Info header, render engine menu",
     "description": "Cycles Render Engine integration",
     "warning": "",
@@ -66,6 +66,9 @@ class CyclesRender(bpy.types.RenderEngine):
 
     def render(self, scene):
         engine.render(self)
+
+    def bake(self, scene, obj, pass_type, pixel_array, num_pixels, depth, result):
+        engine.bake(self, obj, pass_type, pixel_array, num_pixels, depth, result)
 
     # viewport render
     def view_update(self, context):

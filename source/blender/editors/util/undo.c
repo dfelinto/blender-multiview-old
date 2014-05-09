@@ -37,12 +37,9 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
-#include "BLI_blenlib.h"
-#include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 
 #include "BLF_translation.h"
@@ -482,7 +479,7 @@ static EnumPropertyItem *rna_undo_itemf(bContext *C, int undosys, int *totitem)
 	EnumPropertyItem item_tmp = {0}, *item = NULL;
 	int active, i = 0;
 	
-	while (TRUE) {
+	while (true) {
 		const char *name = NULL;
 		
 		if (undosys == UNDOSYSTEM_PARTICLE) {
@@ -531,16 +528,22 @@ static int undo_history_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSE
 		if (totitem > 0) {
 			uiPopupMenu *pup = uiPupMenuBegin(C, RNA_struct_ui_name(op->type->srna), ICON_NONE);
 			uiLayout *layout = uiPupMenuLayout(pup);
-			uiLayout *split = uiLayoutSplit(layout, 0.0f, FALSE);
+			uiLayout *split = uiLayoutSplit(layout, 0.0f, false);
 			uiLayout *column = NULL;
+			const int col_size = 20 + totitem / 12;
 			int i, c;
+			bool add_col = true;
 			
-			for (c = 0, i = totitem - 1; i >= 0; i--, c++) {
-				if ( (c % 20) == 0)
-					column = uiLayoutColumn(split, FALSE);
-				if (item[i].identifier)
+			for (c = 0, i = totitem; i--;) {
+				if (add_col && !(c % col_size)) {
+					column = uiLayoutColumn(split, false);
+					add_col = false;
+				}
+				if (item[i].identifier) {
 					uiItemIntO(column, item[i].name, item[i].icon, op->type->idname, "item", item[i].value);
-				
+					++c;
+					add_col = true;
+				}
 			}
 			
 			MEM_freeN(item);

@@ -30,7 +30,6 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_scene_types.h"
 
 #include "BLI_math.h"
 #include "BLI_quadric.h"
@@ -146,8 +145,8 @@ static bool bm_edge_collapse_is_degenerate_flip(BMEdge *e, const float optimize_
 
 		BM_ITER_ELEM (l, &liter, v, BM_LOOPS_OF_VERT) {
 			if (l->e != e && l->prev->e != e) {
-				float *co_prev = l->prev->v->co;
-				float *co_next = l->next->v->co;
+				const float *co_prev = l->prev->v->co;
+				const float *co_next = l->next->v->co;
 				float cross_exist[3];
 				float cross_optim[3];
 
@@ -1006,7 +1005,7 @@ void BM_mesh_decimate_collapse(BMesh *bm, const float factor, float *vweights, c
 	bm_decim_build_edge_cost(bm, vquadrics, vweights, eheap, eheap_table);
 
 	face_tot_target = bm->totface * factor;
-	bm->elem_index_dirty |= BM_FACE | BM_EDGE | BM_VERT;
+	bm->elem_index_dirty |= BM_ALL;
 
 
 #ifdef USE_CUSTOMDATA

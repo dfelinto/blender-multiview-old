@@ -222,7 +222,7 @@ static void ruler_item_active_set(RulerInfo *ruler_info, RulerItem *ruler_item)
 static void ruler_item_as_string(RulerItem *ruler_item, UnitSettings *unit,
                                  char *numstr, size_t numstr_size, int prec)
 {
-	const int do_split = unit->flag & USER_UNIT_OPT_SPLIT;
+	const bool do_split = (unit->flag & USER_UNIT_OPT_SPLIT) != 0;
 
 	if (ruler_item->flag & RULERITEM_USE_ANGLE) {
 		const float ruler_angle = angle_v3v3v3(ruler_item->co[0],
@@ -282,9 +282,11 @@ static bool view3d_ruler_pick(RulerInfo *ruler_info, const float mval[2],
 				ruler_item_best = ruler_item;
 
 				{
-					float dist_points[3] = {len_squared_v2v2(co_ss[0], mval),
-					                        len_squared_v2v2(co_ss[1], mval),
-					                        len_squared_v2v2(co_ss[2], mval)};
+					const float dist_points[3] = {
+					    len_squared_v2v2(co_ss[0], mval),
+					    len_squared_v2v2(co_ss[1], mval),
+					    len_squared_v2v2(co_ss[2], mval),
+					};
 					if (min_fff(UNPACK3(dist_points)) < RULER_PICK_DIST_SQ) {
 						co_index_best = min_axis_v3(dist_points);
 					}
@@ -301,8 +303,10 @@ static bool view3d_ruler_pick(RulerInfo *ruler_info, const float mval[2],
 				ruler_item_best = ruler_item;
 
 				{
-					float dist_points[2] = {len_squared_v2v2(co_ss[0], mval),
-					                        len_squared_v2v2(co_ss[2], mval)};
+					const float dist_points[2] = {
+					    len_squared_v2v2(co_ss[0], mval),
+					    len_squared_v2v2(co_ss[2], mval),
+					};
 					if (min_ff(UNPACK2(dist_points)) < RULER_PICK_DIST_SQ) {
 						co_index_best = (dist_points[0] < dist_points[1]) ? 0 : 2;
 					}

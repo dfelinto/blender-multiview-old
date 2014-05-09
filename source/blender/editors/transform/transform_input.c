@@ -68,7 +68,7 @@ static void InputSpring(TransInfo *UNUSED(t), MouseInput *mi, const int mval[2],
 
 		dx = (float)(mi->center[0] - mval[0]);
 		dy = (float)(mi->center[1] - mval[1]);
-		precise_ratio = (float)sqrt(dx * dx + dy * dy);
+		precise_ratio = sqrtf(dx * dx + dy * dy);
 
 		ratio = (ratio + (precise_ratio - ratio) / 10.0f) / mi->factor;
 	}
@@ -183,7 +183,7 @@ static void InputCustomRatioFlip(TransInfo *UNUSED(t), MouseInput *mi, const int
 	double length;
 	double distance;
 	double dx, dy;
-	int *data = mi->data;
+	const int *data = mi->data;
 	
 	if (data) {
 		dx = data[2] - data[0];
@@ -232,7 +232,7 @@ static void InputAngle(TransInfo *UNUSED(t), MouseInput *mi, const int mval[2], 
 
 	double *angle = mi->data;
 
-	/* use doubles here, to make sure a "1.0" (no rotation) doesnt become 9.999999e-01, which gives 0.02 for acos */
+	/* use doubles here, to make sure a "1.0" (no rotation) doesn't become 9.999999e-01, which gives 0.02 for acos */
 	double deler = (((dx1 * dx1 + dy1 * dy1) +
 	                 (dx2 * dx2 + dy2 * dy2) -
 	                 (dx3 * dx3 + dy3 * dy3)) / (2.0 * ((A * B) ? (A * B) : 1.0)));

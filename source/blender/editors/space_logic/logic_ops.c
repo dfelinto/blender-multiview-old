@@ -42,7 +42,6 @@
 #include "BKE_context.h"
 #include "BKE_main.h"
 #include "BKE_sca.h"
-#include "BKE_material.h" //for texface convert
 
 #include "ED_logic.h"
 #include "ED_object.h"
@@ -58,11 +57,6 @@
 #include "UI_view2d.h"
 
 #include "logic_intern.h"
-
-// temporary new includes for texface functions
-#include "DNA_mesh_types.h"
-#include "DNA_material_types.h"
-#include "DNA_meshdata_types.h"
 
 /* ************* Generic Operator Helpers ************* */
 static int edit_sensor_poll(bContext *C)
@@ -228,9 +222,9 @@ static int logicbricks_move_property_get(wmOperator *op)
 	int type = RNA_enum_get(op->ptr, "direction");
 
 	if (type == 1)
-		return TRUE;
+		return true;
 	else
-		return FALSE;
+		return false;
 }
 
 /* ************* Add/Remove Sensor Operator ************* */

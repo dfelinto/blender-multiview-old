@@ -32,20 +32,16 @@
 
 #include <stdio.h>
 
-#include "DNA_anim_types.h"
 #include "DNA_color_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_node_types.h"
 
 #include "BLI_listbase.h"
-#include "BLI_threads.h"
 
 #include "BLF_translation.h"
 
-#include "BKE_animsys.h"
 #include "BKE_colortools.h"
 #include "BKE_context.h"
-#include "BKE_fcurve.h"
 #include "BKE_global.h"
 #include "BKE_main.h"
 #include "BKE_node.h"
@@ -72,10 +68,6 @@ static void composite_get_from_context(const bContext *C, bNodeTreeType *UNUSED(
 	*r_from = NULL;
 	*r_id = &scene->id;
 	*r_ntree = scene->nodetree;
-	
-	/* update output sockets based on available layers */
-	ntreeCompositForceHidden(scene->nodetree);
-	
 }
 
 static void foreach_nodeclass(Scene *UNUSED(scene), void *calldata, bNodeClassCallback func)

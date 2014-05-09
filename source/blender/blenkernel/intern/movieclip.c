@@ -41,11 +41,6 @@
 
 #include <time.h>
 
-#ifdef _WIN32
-#  define open _open
-#  define close _close
-#endif
-
 #include "MEM_guardedalloc.h"
 
 #include "DNA_constraint_types.h"
@@ -65,7 +60,6 @@
 #include "BLI_threads.h"
 
 #include "BKE_animsys.h"
-#include "BKE_constraint.h"
 #include "BKE_colortools.h"
 #include "BKE_library.h"
 #include "BKE_global.h"
@@ -74,7 +68,6 @@
 #include "BKE_node.h"
 #include "BKE_image.h"  /* openanim */
 #include "BKE_tracking.h"
-#include "BKE_sequencer.h"
 
 #include "IMB_colormanagement.h"
 #include "IMB_imbuf_types.h"
@@ -206,7 +199,8 @@ static ImBuf *movieclip_load_sequence_file(MovieClip *clip, MovieClipUser *user,
 {
 	struct ImBuf *ibuf;
 	char name[FILE_MAX];
-	int loadflag, use_proxy = FALSE;
+	int loadflag;
+	bool use_proxy = false;
 	char *colorspace;
 
 	use_proxy = (flag & MCLIP_USE_PROXY) && user->render_size != MCLIP_PROXY_RENDER_SIZE_FULL;
@@ -279,17 +273,7 @@ static ImBuf *movieclip_load_movie_file(MovieClip *clip, MovieClipUser *user, in
 	movieclip_open_anim_file(clip);
 
 	if (clip->anim) {
-		int dur;
-		int fra;
-
-		dur = IMB_anim_get_duration(clip->anim, tc);
-		fra = framenr - clip->start_frame + clip->frame_offset;
-
-		if (fra < 0)
-			fra = 0;
-
-		if (fra > (dur - 1))
-			fra = dur - 1;
+		int fra = framenr - clip->start_frame + clip->frame_offset;
 
 		ibuf = IMB_anim_absolute(clip->anim, fra, tc, proxy);
 	}
@@ -344,8 +328,10 @@ typedef struct MovieClipCache {
 
 		/* cache for undistorted shot */
 		float principal[2];
-		float k1, k2, k3;
-		short undistortion_used;
+		float polynomial_k1, polynomial_k2, polynomial_k3;
+		float division_k1, division_k2;
+		short distortion_model;
+		bool undistortion_used;
 
 		int proxy;
 		short render_flag;
@@ -510,7 +496,7 @@ static bool has_imbuf_cache(MovieClip *clip, MovieClipUser *user, int flag)
 		return IMB_moviecache_has_frame(clip->cache->moviecache, &key);
 	}
 
-	return FALSE;
+	return false;
 }
 
 static bool put_imbuf_cache(MovieClip *clip, MovieClipUser *user, ImBuf *ibuf, int flag, bool destructive)
@@ -633,7 +619,7 @@ MovieClip *BKE_movieclip_file_add(Main *bmain, const char *name)
 
 	/* exists? */
 	file = BLI_open(str, O_BINARY | O_RDONLY, 0);
-	if (file < 0)
+	if (file == -1)
 		return NULL;
 	close(file);
 
@@ -735,19 +721,29 @@ static int need_postprocessed_frame(MovieClipUser *user, int postprocess_flag)
 	return result;
 }
 
-static int check_undistortion_cache_flags(MovieClip *clip)
+static bool check_undistortion_cache_flags(MovieClip *clip)
 {
 	MovieClipCache *cache = clip->cache;
 	MovieTrackingCamera *camera = &clip->tracking.camera;
 
 	/* check for distortion model changes */
-	if (!equals_v2v2(camera->principal, cache->postprocessed.principal))
-		return FALSE;
+	if (!equals_v2v2(camera->principal, cache->postprocessed.principal)) {
+		return false;
+	}
 
-	if (!equals_v3v3(&camera->k1, &cache->postprocessed.k1))
-		return FALSE;
+	if (camera->distortion_model != cache->postprocessed.distortion_model) {
+		return false;
+	}
 
-	return TRUE;
+	if (!equals_v3v3(&camera->k1, &cache->postprocessed.polynomial_k1)) {
+		return false;
+	}
+
+	if (!equals_v2v2(&camera->division_k1, &cache->postprocessed.division_k1)) {
+		return false;
+	}
+
+	return true;
 }
 
 static ImBuf *get_postprocessed_cached_frame(MovieClip *clip, MovieClipUser *user, int flag, int postprocess_flag)
@@ -832,12 +828,14 @@ static void put_postprocessed_frame_to_cache(MovieClip *clip, MovieClipUser *use
 	}
 
 	if (need_undistortion_postprocess(user)) {
+		cache->postprocessed.distortion_model = camera->distortion_model;
 		copy_v2_v2(cache->postprocessed.principal, camera->principal);
-		copy_v3_v3(&cache->postprocessed.k1, &camera->k1);
-		cache->postprocessed.undistortion_used = TRUE;
+		copy_v3_v3(&cache->postprocessed.polynomial_k1, &camera->k1);
+		copy_v2_v2(&cache->postprocessed.division_k1, &camera->division_k1);
+		cache->postprocessed.undistortion_used = true;
 	}
 	else {
-		cache->postprocessed.undistortion_used = FALSE;
+		cache->postprocessed.undistortion_used = false;
 	}
 
 	IMB_refImBuf(ibuf);
@@ -852,7 +850,8 @@ static ImBuf *movieclip_get_postprocessed_ibuf(MovieClip *clip, MovieClipUser *u
                                                int postprocess_flag, int cache_flag)
 {
 	ImBuf *ibuf = NULL;
-	int framenr = user->framenr, need_postprocess = FALSE;
+	int framenr = user->framenr;
+	bool need_postprocess = false;
 
 	/* cache isn't threadsafe itself and also loading of movies
 	 * can't happen from concurent threads that's why we use lock here */
@@ -863,14 +862,14 @@ static ImBuf *movieclip_get_postprocessed_ibuf(MovieClip *clip, MovieClipUser *u
 		ibuf = get_postprocessed_cached_frame(clip, user, flag, postprocess_flag);
 
 		if (!ibuf)
-			need_postprocess = TRUE;
+			need_postprocess = true;
 	}
 
 	if (!ibuf)
 		ibuf = get_imbuf_cache(clip, user, flag);
 
 	if (!ibuf) {
-		int use_sequence = FALSE;
+		bool use_sequence = false;
 
 		/* undistorted proxies for movies should be read as image sequence */
 		use_sequence = (user->render_flag & MCLIP_PROXY_RENDER_UNDISTORT) &&
@@ -1073,10 +1072,10 @@ bool BKE_movieclip_has_frame(MovieClip *clip, MovieClipUser *user)
 
 	if (ibuf) {
 		IMB_freeImBuf(ibuf);
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 void BKE_movieclip_get_size(MovieClip *clip, MovieClipUser *user, int *width, int *height)
@@ -1189,7 +1188,7 @@ void BKE_movieclip_reload(MovieClip *clip)
 	/* clear cache */
 	free_buffers(clip);
 
-	clip->tracking.stabilization.ok = FALSE;
+	clip->tracking.stabilization.ok = false;
 
 	/* update clip source */
 	detect_clip_source(clip);
@@ -1229,7 +1228,7 @@ void BKE_movieclip_update_scopes(MovieClip *clip, MovieClipUser *user, MovieClip
 
 	scopes->marker = NULL;
 	scopes->track = NULL;
-	scopes->track_locked = TRUE;
+	scopes->track_locked = true;
 
 	if (clip) {
 		MovieTrackingTrack *act_track = BKE_tracking_track_get_active(&clip->tracking);
@@ -1243,15 +1242,14 @@ void BKE_movieclip_update_scopes(MovieClip *clip, MovieClipUser *user, MovieClip
 			scopes->track = track;
 
 			if (marker->flag & MARKER_DISABLED) {
-				scopes->track_disabled = TRUE;
+				scopes->track_disabled = true;
 			}
 			else {
 				ImBuf *ibuf = BKE_movieclip_get_ibuf(clip, user);
 
-				scopes->track_disabled = FALSE;
+				scopes->track_disabled = false;
 
 				if (ibuf && (ibuf->rect || ibuf->rect_float)) {
-					ImBuf *search_ibuf;
 					MovieTrackingMarker undist_marker = *marker;
 
 					if (user->render_flag & MCLIP_PROXY_RENDER_UNDISTORT) {
@@ -1269,16 +1267,7 @@ void BKE_movieclip_update_scopes(MovieClip *clip, MovieClipUser *user, MovieClip
 						undist_marker.pos[1] /= height * aspy;
 					}
 
-					search_ibuf = BKE_tracking_get_search_imbuf(ibuf, track, &undist_marker, TRUE, TRUE);
-
-					if (search_ibuf) {
-						if (!search_ibuf->rect_float) {
-							/* sampling happens in float buffer */
-							IMB_float_from_rect(search_ibuf);
-						}
-
-						scopes->track_search = search_ibuf;
-					}
+					scopes->track_search = BKE_tracking_get_search_imbuf(ibuf, track, &undist_marker, true, true);
 
 					scopes->undist_marker = undist_marker;
 
@@ -1294,7 +1283,7 @@ void BKE_movieclip_update_scopes(MovieClip *clip, MovieClipUser *user, MovieClip
 			if ((track->flag & TRACK_LOCKED) == 0) {
 				float pat_min[2], pat_max[2];
 
-				scopes->track_locked = FALSE;
+				scopes->track_locked = false;
 
 				/* XXX: would work fine with non-transformed patterns, but would likely fail
 				 *      with transformed patterns, but that would be easier to debug when
@@ -1308,7 +1297,7 @@ void BKE_movieclip_update_scopes(MovieClip *clip, MovieClipUser *user, MovieClip
 	}
 
 	scopes->framenr = user->framenr;
-	scopes->ok = TRUE;
+	scopes->ok = true;
 }
 
 static void movieclip_build_proxy_ibuf(MovieClip *clip, ImBuf *ibuf, int cfra, int proxy_render_size, bool undistorted, bool threaded)

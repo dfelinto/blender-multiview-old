@@ -65,7 +65,7 @@ ccl_device float4 svm_image_texture(KernelGlobals *kg, int id, float x, float y,
 
 	float4 r;
 	int ix, iy, nix, niy;
-	if (interpolation == INTERPOLATION_CLOSEST){
+	if (interpolation == INTERPOLATION_CLOSEST) {
 		svm_image_texture_frac(x*width, &ix);
 		svm_image_texture_frac(y*height, &iy);
 
@@ -322,7 +322,7 @@ ccl_device void svm_node_tex_image_box(KernelGlobals *kg, ShaderData *sd, float 
 	float3 N = sd->N;
 
 	N = sd->N;
-	if(sd->object != ~0)
+	if(sd->object != OBJECT_NONE)
 		object_inverse_normal_transform(kg, sd, &N);
 
 	/* project from direction vector to barycentric coordinates in triangles */

@@ -36,7 +36,8 @@ typedef enum NodeType {
 	NODE_CLOSURE_SET_WEIGHT,
 	NODE_CLOSURE_WEIGHT,
 	NODE_MIX_CLOSURE,
-	NODE_JUMP,
+	NODE_JUMP_IF_ZERO,
+	NODE_JUMP_IF_ONE,
 	NODE_TEX_IMAGE,
 	NODE_TEX_IMAGE_BOX,
 	NODE_TEX_SKY,
@@ -71,7 +72,6 @@ typedef enum NodeType {
 	NODE_TEX_COORD,
 	NODE_TEX_COORD_BUMP_DX,
 	NODE_TEX_COORD_BUMP_DY,
-	NODE_ADD_CLOSURE,
 	NODE_EMISSION_SET_WEIGHT_TOTAL,
 	NODE_ATTR_BUMP_DX,
 	NODE_ATTR_BUMP_DY,
@@ -102,7 +102,8 @@ typedef enum NodeType {
 	NODE_CLOSURE_AMBIENT_OCCLUSION,
 	NODE_TANGENT,
 	NODE_NORMAL_MAP,
-	NODE_HAIR_INFO
+	NODE_HAIR_INFO,
+	NODE_UVMAP
 } NodeType;
 
 typedef enum NodeAttributeType {
@@ -158,7 +159,8 @@ typedef enum NodeLightPath {
 	NODE_LP_volume_scatter,
 	NODE_LP_backfacing,
 	NODE_LP_ray_length,
-	NODE_LP_ray_depth
+	NODE_LP_ray_depth,
+	NODE_LP_ray_transparent
 } NodeLightPath;
 
 typedef enum NodeLightFalloff {
@@ -219,6 +221,7 @@ typedef enum NodeMath {
 	NODE_MATH_LESS_THAN,
 	NODE_MATH_GREATER_THAN,
 	NODE_MATH_MODULO,
+    NODE_MATH_ABSOLUTE,
 	NODE_MATH_CLAMP /* used for the clamp UI option */
 } NodeMath;
 
@@ -401,6 +404,8 @@ typedef enum ClosureType {
 #define CLOSURE_IS_BSDF_GLOSSY(type) (type >= CLOSURE_BSDF_GLOSSY_ID && type <= CLOSURE_BSDF_HAIR_REFLECTION_ID)
 #define CLOSURE_IS_BSDF_TRANSMISSION(type) (type >= CLOSURE_BSDF_TRANSMISSION_ID && type <= CLOSURE_BSDF_HAIR_TRANSMISSION_ID)
 #define CLOSURE_IS_BSDF_BSSRDF(type) (type == CLOSURE_BSDF_BSSRDF_ID)
+#define CLOSURE_IS_BSDF_ANISOTROPIC(type) (type == CLOSURE_BSDF_WARD_ID)
+#define CLOSURE_IS_BSDF_OR_BSSRDF(type) (type <= CLOSURE_BSSRDF_GAUSSIAN_ID)
 #define CLOSURE_IS_BSSRDF(type) (type >= CLOSURE_BSSRDF_CUBIC_ID && type <= CLOSURE_BSSRDF_GAUSSIAN_ID)
 #define CLOSURE_IS_VOLUME(type) (type >= CLOSURE_VOLUME_ID && type <= CLOSURE_VOLUME_HENYEY_GREENSTEIN_ID)
 #define CLOSURE_IS_EMISSION(type) (type == CLOSURE_EMISSION_ID)

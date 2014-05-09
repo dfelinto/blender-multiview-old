@@ -49,7 +49,6 @@
 #include "BLI_path_util.h"
 #include "BLI_math.h"
 #include "BLI_mempool.h"
-#include "BLI_alloca.h"
 
 #include "BLF_translation.h"
 
@@ -1059,6 +1058,19 @@ static void layerInterp_mvert_skin(void **sources, const float *weights,
 	vs->flag &= ~MVERT_SKIN_ROOT;
 }
 
+static void layerSwap_flnor(void *data, const int *corner_indices)
+{
+	short (*flnors)[4][3] = data;
+	short nors[4][3];
+	int i = 4;
+
+	while (i--) {
+		copy_v3_v3_short(nors[i], (*flnors)[corner_indices[i]]);
+	}
+
+	memcpy(flnors, nors, sizeof(nors));
+}
+
 static const LayerTypeInfo LAYERTYPEINFO[CD_NUMTYPES] = {
 	/* 0: CD_MVERT */
 	{sizeof(MVert), "MVert", 1, NULL, NULL, NULL, NULL, NULL, NULL},
@@ -1170,6 +1182,8 @@ static const LayerTypeInfo LAYERTYPEINFO[CD_NUMTYPES] = {
 	{sizeof(FreestyleFace), "FreestyleFace", 1, NULL, NULL, NULL, NULL, NULL, NULL},
 	/* 39: CD_MLOOPTANGENT */
 	{sizeof(float[4]), "", 0, NULL, NULL, NULL, NULL, NULL, NULL},
+	/* 40: CD_TESSLOOPNORMAL */
+	{sizeof(short[4][3]), "", 0, NULL, NULL, NULL, NULL, layerSwap_flnor, NULL},
 };
 
 /* note, numbers are from trunk and need updating for bmesh */
@@ -1185,7 +1199,7 @@ static const char *LAYERTYPENAMES[CD_NUMTYPES] = {
 	/* 25-29 */ "CDMPoly", "CDMLoop", "CDShapeKeyIndex", "CDShapeKey", "CDBevelWeight",
 	/* 30-34 */ "CDSubSurfCrease", "CDOrigSpaceLoop", "CDPreviewLoopCol", "CDBMElemPyPtr", "CDPaintMask",
 	/* 35-36 */ "CDGridPaintMask", "CDMVertSkin",
-	/* 37-38 */ "CDFreestyleEdge", "CDFreestyleFace", "CDMLoopTangent",
+	/* 37-40 */ "CDFreestyleEdge", "CDFreestyleFace", "CDMLoopTangent", "CDTessLoopNormal",
 };
 
 
@@ -1217,9 +1231,9 @@ const CustomDataMask CD_MASK_BMESH =
     CD_MASK_PROP_STR | CD_MASK_SHAPEKEY | CD_MASK_SHAPE_KEYINDEX | CD_MASK_MDISPS |
     CD_MASK_CREASE | CD_MASK_BWEIGHT | CD_MASK_RECAST | CD_MASK_PAINT_MASK |
     CD_MASK_GRID_PAINT_MASK | CD_MASK_MVERT_SKIN | CD_MASK_FREESTYLE_EDGE | CD_MASK_FREESTYLE_FACE;
-const CustomDataMask CD_MASK_FACECORNERS =
+const CustomDataMask CD_MASK_FACECORNERS =  /* XXX Not used anywhere! */
     CD_MASK_MTFACE | CD_MASK_MCOL | CD_MASK_MTEXPOLY | CD_MASK_MLOOPUV |
-    CD_MASK_MLOOPCOL;
+    CD_MASK_MLOOPCOL | CD_MASK_NORMAL | CD_MASK_MLOOPTANGENT;
 const CustomDataMask CD_MASK_EVERYTHING =
     CD_MASK_MVERT | CD_MASK_MSTICKY /* DEPRECATED */ | CD_MASK_MDEFORMVERT | CD_MASK_MEDGE | CD_MASK_MFACE |
     CD_MASK_MTFACE | CD_MASK_MCOL | CD_MASK_ORIGINDEX | CD_MASK_NORMAL /* | CD_MASK_POLYINDEX */ | CD_MASK_PROP_FLT |
@@ -1229,7 +1243,9 @@ const CustomDataMask CD_MASK_EVERYTHING =
     CD_MASK_MPOLY | CD_MASK_MLOOP | CD_MASK_SHAPE_KEYINDEX | CD_MASK_SHAPEKEY | CD_MASK_BWEIGHT | CD_MASK_CREASE |
     CD_MASK_ORIGSPACE_MLOOP | CD_MASK_PREVIEW_MLOOPCOL | CD_MASK_BM_ELEM_PYPTR |
     /* BMESH ONLY END */
-    CD_MASK_PAINT_MASK | CD_MASK_GRID_PAINT_MASK | CD_MASK_MVERT_SKIN | CD_MASK_FREESTYLE_EDGE | CD_MASK_FREESTYLE_FACE;
+    CD_MASK_PAINT_MASK | CD_MASK_GRID_PAINT_MASK | CD_MASK_MVERT_SKIN |
+    CD_MASK_FREESTYLE_EDGE | CD_MASK_FREESTYLE_FACE |
+    CD_MASK_MLOOPTANGENT | CD_MASK_TESSLOOPNORMAL;
 
 static const LayerTypeInfo *layerType_getInfo(int type)
 {
@@ -1970,7 +1986,7 @@ static void CustomData_copy_data_layer(const CustomData *source, CustomData *des
 	int src_offset;
 	int dest_offset;
 
-	char *src_data = source->layers[src_i].data;
+	const char *src_data = source->layers[src_i].data;
 	char *dest_data = dest->layers[dest_i].data;
 
 	typeInfo = layerType_getInfo(source->layers[src_i].type);
@@ -2283,6 +2299,9 @@ void CustomData_to_bmeshpoly(CustomData *fdata, CustomData *pdata, CustomData *l
 		else if (fdata->layers[i].type == CD_MDISPS) {
 			CustomData_add_layer_named(ldata, CD_MDISPS, CD_CALLOC, NULL, totloop, fdata->layers[i].name);
 		}
+		else if (fdata->layers[i].type == CD_TESSLOOPNORMAL) {
+			CustomData_add_layer_named(ldata, CD_NORMAL, CD_CALLOC, NULL, totloop, fdata->layers[i].name);
+		}
 	}
 }
 
@@ -2303,6 +2322,9 @@ void CustomData_from_bmeshpoly(CustomData *fdata, CustomData *pdata, CustomData 
 		}
 		else if (ldata->layers[i].type == CD_ORIGSPACE_MLOOP) {
 			CustomData_add_layer_named(fdata, CD_ORIGSPACE, CD_CALLOC, NULL, total, ldata->layers[i].name);
+		}
+		else if (ldata->layers[i].type == CD_NORMAL) {
+			CustomData_add_layer_named(fdata, CD_TESSLOOPNORMAL, CD_CALLOC, NULL, total, ldata->layers[i].name);
 		}
 	}
 
@@ -2408,7 +2430,7 @@ void CustomData_bmesh_init_pool(CustomData *data, int totelem, const char htype)
 
 	/* If there are no layers, no pool is needed just yet */
 	if (data->totlayer) {
-		data->pool = BLI_mempool_create(data->totsize, totelem, chunksize, BLI_MEMPOOL_SYSMALLOC);
+		data->pool = BLI_mempool_create(data->totsize, totelem, chunksize, BLI_MEMPOOL_NOP);
 	}
 }
 
@@ -2589,7 +2611,7 @@ void CustomData_bmesh_copy_data(const CustomData *source, CustomData *dest,
 		if (dest->layers[dest_i].type == source->layers[src_i].type &&
 		    strcmp(dest->layers[dest_i].name, source->layers[src_i].name) == 0)
 		{
-			char *src_data = (char *)src_block + source->layers[src_i].offset;
+			const char *src_data = (char *)src_block + source->layers[src_i].offset;
 			char *dest_data = (char *)*dest_block + dest->layers[dest_i].offset;
 
 			typeInfo = layerType_getInfo(source->layers[src_i].type);
@@ -2908,7 +2930,7 @@ void CustomData_to_bmesh_block(const CustomData *source, CustomData *dest,
 		/* if we found a matching layer, copy the data */
 		if (dest->layers[dest_i].type == source->layers[src_i].type) {
 			int offset = dest->layers[dest_i].offset;
-			char *src_data = source->layers[src_i].data;
+			const char *src_data = source->layers[src_i].data;
 			char *dest_data = (char *)*dest_block + offset;
 
 			typeInfo = layerType_getInfo(dest->layers[dest_i].type);
@@ -2958,7 +2980,7 @@ void CustomData_from_bmesh_block(const CustomData *source, CustomData *dest,
 		/* if we found a matching layer, copy the data */
 		if (dest->layers[dest_i].type == source->layers[src_i].type) {
 			int offset = source->layers[src_i].offset;
-			char *src_data = (char *)src_block + offset;
+			const char *src_data = (char *)src_block + offset;
 			char *dest_data = dest->layers[dest_i].data;
 
 			typeInfo = layerType_getInfo(dest->layers[dest_i].type);

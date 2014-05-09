@@ -46,7 +46,7 @@
 #include "BKE_global.h"
 #include "BKE_library.h"
 #include "BKE_linestyle.h"
-#include "BKE_main.h"
+#include "BKE_node.h"
 #include "BKE_texture.h"
 #include "BKE_colortools.h"
 #include "BKE_animsys.h"
@@ -81,7 +81,7 @@ static void default_linestyle_settings(FreestyleLineStyle *linestyle)
 	linestyle->thickness = 3.0f;
 	linestyle->thickness_position = LS_THICKNESS_CENTER;
 	linestyle->thickness_ratio = 0.5f;
-	linestyle->flag = LS_SAME_OBJECT;
+	linestyle->flag = LS_SAME_OBJECT | LS_NO_SORTING | LS_TEXTURE;
 	linestyle->chaining = LS_CHAINING_PLAIN;
 	linestyle->rounds = 3;
 	linestyle->min_angle = DEG2RADF(0.0f);
@@ -89,6 +89,10 @@ static void default_linestyle_settings(FreestyleLineStyle *linestyle)
 	linestyle->min_length = 0.0f;
 	linestyle->max_length = 10000.0f;
 	linestyle->split_length = 100;
+	linestyle->sort_key = LS_SORT_KEY_DISTANCE_FROM_CAMERA;
+	linestyle->integration_type = LS_INTEGRATION_MEAN;
+	linestyle->texstep = 1.0f;
+	linestyle->pr_texture = TEX_PR_TEXTURE;
 
 	BLI_listbase_clear(&linestyle->color_modifiers);
 	BLI_listbase_clear(&linestyle->alpha_modifiers);
@@ -118,6 +122,19 @@ void BKE_free_linestyle(FreestyleLineStyle *linestyle)
 {
 	LineStyleModifier *m;
 
+	MTex *mtex;
+	int a;
+
+	for (a = 0; a < MAX_MTEX; a++) {
+		mtex = linestyle->mtex[a];
+		if (mtex && mtex->tex) mtex->tex->id.us--;
+		if (mtex) MEM_freeN(mtex);
+	}
+	if (linestyle->nodetree) {
+		ntreeFreeTree(linestyle->nodetree);
+		MEM_freeN(linestyle->nodetree);
+	}
+
 	BKE_free_animdata(&linestyle->id);
 	while ((m = (LineStyleModifier *)linestyle->color_modifiers.first))
 		BKE_remove_linestyle_color_modifier(linestyle, m);
@@ -133,9 +150,21 @@ FreestyleLineStyle *BKE_copy_linestyle(FreestyleLineStyle *linestyle)
 {
 	FreestyleLineStyle *new_linestyle;
 	LineStyleModifier *m;
+	int a;
 
 	new_linestyle = BKE_new_linestyle(linestyle->id.name + 2, NULL);
 	BKE_free_linestyle(new_linestyle);
+
+	for (a = 0; a < MAX_MTEX; a++) {
+		if (linestyle->mtex[a]) {
+			new_linestyle->mtex[a] = MEM_mallocN(sizeof(MTex), "BKE_copy_linestyle");
+			memcpy(new_linestyle->mtex[a], linestyle->mtex[a], sizeof(MTex));
+			id_us_plus((ID *)new_linestyle->mtex[a]->tex);
+		}
+	}
+	if (linestyle->nodetree) {
+		linestyle->nodetree = ntreeCopyTree(linestyle->nodetree);
+	}
 
 	new_linestyle->r = linestyle->r;
 	new_linestyle->g = linestyle->g;
@@ -166,6 +195,8 @@ FreestyleLineStyle *BKE_copy_linestyle(FreestyleLineStyle *linestyle)
 	new_linestyle->dash3 = linestyle->dash3;
 	new_linestyle->gap3 = linestyle->gap3;
 	new_linestyle->panel = linestyle->panel;
+	new_linestyle->texstep = linestyle->texstep;
+	new_linestyle->pr_texture = linestyle->pr_texture;
 	for (m = (LineStyleModifier *)linestyle->color_modifiers.first; m; m = m->next)
 		BKE_copy_linestyle_color_modifier(new_linestyle, m);
 	for (m = (LineStyleModifier *)linestyle->alpha_modifiers.first; m; m = m->next)
@@ -1024,7 +1055,7 @@ void BKE_list_modifier_color_ramps(FreestyleLineStyle *linestyle, ListBase *list
 			default:
 				continue;
 		}
-		link = (LinkData *) MEM_callocN( sizeof(LinkData), "link to color ramp");
+		link = (LinkData *) MEM_callocN(sizeof(LinkData), "link to color ramp");
 		link->data = color_ramp;
 		BLI_addtail(listbase, link);
 	}

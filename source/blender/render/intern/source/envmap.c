@@ -31,7 +31,6 @@
 #include <string.h>
 
 /* external modules: */
-#include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
@@ -50,13 +49,9 @@
 #include "DNA_scene_types.h"
 #include "DNA_texture_types.h"
 
-#include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_image.h"   /* BKE_imbuf_write */
 #include "BKE_texture.h"
-
-
-
 
 /* this module */
 #include "render_types.h"
@@ -172,6 +167,8 @@ static Render *envmap_render_copy(Render *re, EnvMap *env)
 	envre->duh = re->duh;
 	envre->test_break = re->test_break;
 	envre->tbh = re->tbh;
+	envre->current_scene_update = re->current_scene_update;
+	envre->suh = re->suh;
 	
 	/* and for the evil stuff; copy the database... */
 	envre->totvlak = re->totvlak;
@@ -321,6 +318,10 @@ void env_rotate_scene(Render *re, float mat[4][4], int do_rotate)
 		
 			mul_m4_v3(tmat, har->co);
 		}
+
+		/* imat_ren is needed for correct texture coordinates */
+		mul_m4_m4m4(obr->ob->imat_ren, re->viewmat, obr->ob->obmat);
+		invert_m4(obr->ob->imat_ren);
 	}
 	
 	for (go = re->lights.first; go; go = go->next) {
@@ -534,7 +535,8 @@ static void render_envmap(Render *re, EnvMap *env)
 void make_envmaps(Render *re)
 {
 	Tex *tex;
-	int do_init = FALSE, depth = 0, trace;
+	bool do_init = false;
+	int depth = 0, trace;
 	
 	if (!(re->r.mode & R_ENVMAP)) return;
 	
@@ -588,7 +590,7 @@ void make_envmaps(Render *re)
 								if (env->ok == 0 && depth == 0) env->recalc = 1;
 								
 								if (env->ok == 0) {
-									do_init = TRUE;
+									do_init = true;
 									render_envmap(re, env);
 									
 									if (depth == env->depth) env->recalc = 0;

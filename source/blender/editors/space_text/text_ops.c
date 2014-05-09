@@ -38,7 +38,6 @@
 #include "DNA_text_types.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_math.h"
 
 #include "BLF_translation.h"
 
@@ -272,7 +271,7 @@ static int text_open_exec(bContext *C, wmOperator *op)
 static int text_open_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Text *text = CTX_data_edit_text(C);
-	char *path = (text && text->name) ? text->name : G.main->name;
+	const char *path = (text && text->name) ? text->name : G.main->name;
 
 	if (RNA_struct_property_is_set(op->ptr, "filepath"))
 		return text_open_exec(C, op);
@@ -472,18 +471,18 @@ static void txt_write_file(Text *text, ReportList *reports)
 		return;
 	}
 
-	tmp = text->lines.first;
-	while (tmp) {
-		if (tmp->next) fprintf(fp, "%s\n", tmp->line);
-		else fprintf(fp, "%s", tmp->line);
-		
-		tmp = tmp->next;
+	for (tmp = text->lines.first; tmp; tmp = tmp->next) {
+		fputs(tmp->line, fp);
+		fputc('\n', fp);
 	}
 	
 	fclose(fp);
 
 	if (BLI_stat(filepath, &st) == 0) {
 		text->mtime = st.st_mtime;
+
+		/* report since this can be called from key-shortcuts */
+		BKE_reportf(reports, RPT_INFO, "Saved Text '%s'", filepath);
 	}
 	else {
 		text->mtime = 0;
@@ -545,7 +544,7 @@ static int text_save_as_exec(bContext *C, wmOperator *op)
 static int text_save_as_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(event))
 {
 	Text *text = CTX_data_edit_text(C);
-	char *str;
+	const char *str;
 
 	if (RNA_struct_property_is_set(op->ptr, "filepath"))
 		return text_save_as_exec(C, op);
@@ -1571,7 +1570,7 @@ static int cursor_skip_find_line(SpaceText *st, ARegion *ar,
 	return 1;
 }
 
-static void txt_wrap_move_bol(SpaceText *st, ARegion *ar, short sel)
+static void txt_wrap_move_bol(SpaceText *st, ARegion *ar, const bool sel)
 {
 	Text *text = st->text;
 	TextLine **linep;
@@ -1643,7 +1642,7 @@ static void txt_wrap_move_bol(SpaceText *st, ARegion *ar, short sel)
 	if (!sel) txt_pop_sel(text);
 }
 
-static void txt_wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
+static void txt_wrap_move_eol(SpaceText *st, ARegion *ar, const bool sel)
 {
 	Text *text = st->text;
 	TextLine **linep;
@@ -1713,7 +1712,7 @@ static void txt_wrap_move_eol(SpaceText *st, ARegion *ar, short sel)
 	if (!sel) txt_pop_sel(text);
 }
 
-static void txt_wrap_move_up(SpaceText *st, ARegion *ar, short sel)
+static void txt_wrap_move_up(SpaceText *st, ARegion *ar, const bool sel)
 {
 	Text *text = st->text;
 	TextLine **linep;
@@ -1746,7 +1745,7 @@ static void txt_wrap_move_up(SpaceText *st, ARegion *ar, short sel)
 	if (!sel) txt_pop_sel(text);
 }
 
-static void txt_wrap_move_down(SpaceText *st, ARegion *ar, short sel)
+static void txt_wrap_move_down(SpaceText *st, ARegion *ar, const bool sel)
 {
 	Text *text = st->text;
 	TextLine **linep;
@@ -1783,7 +1782,7 @@ static void txt_wrap_move_down(SpaceText *st, ARegion *ar, short sel)
  *
  * This is to replace screen_skip for PageUp/Down operations.
  */
-static void cursor_skip(SpaceText *st, ARegion *ar, Text *text, int lines, int sel)
+static void cursor_skip(SpaceText *st, ARegion *ar, Text *text, int lines, const bool sel)
 {
 	TextLine **linep;
 	int *charp;
@@ -1814,7 +1813,7 @@ static void cursor_skip(SpaceText *st, ARegion *ar, Text *text, int lines, int s
 	if (!sel) txt_pop_sel(text);
 }
 
-static int text_move_cursor(bContext *C, int type, int select)
+static int text_move_cursor(bContext *C, int type, bool select)
 {
 	SpaceText *st = CTX_wm_space_text(C);
 	Text *text = CTX_data_edit_text(C);
@@ -2465,7 +2464,7 @@ static TextLine *get_first_visible_line(SpaceText *st, ARegion *ar, int *y)
 	return linep;
 }
 
-static void text_cursor_set_to_pos_wrapped(SpaceText *st, ARegion *ar, int x, int y, int sel)
+static void text_cursor_set_to_pos_wrapped(SpaceText *st, ARegion *ar, int x, int y, const bool sel)
 {
 	Text *text = st->text;
 	int max = wrap_width(st, ar); /* column */
@@ -2582,7 +2581,7 @@ static void text_cursor_set_to_pos_wrapped(SpaceText *st, ARegion *ar, int x, in
 	}
 }
 
-static void text_cursor_set_to_pos(SpaceText *st, ARegion *ar, int x, int y, int sel)
+static void text_cursor_set_to_pos(SpaceText *st, ARegion *ar, int x, int y, const bool sel)
 {
 	Text *text = st->text;
 	text_update_character_width(st);
@@ -2845,7 +2844,7 @@ static int text_insert_exec(bContext *C, wmOperator *op)
 	SpaceText *st = CTX_wm_space_text(C);
 	Text *text = CTX_data_edit_text(C);
 	char *str;
-	int done = FALSE;
+	bool done = false;
 	size_t i = 0;
 	unsigned int code;
 

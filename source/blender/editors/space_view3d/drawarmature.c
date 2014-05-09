@@ -271,7 +271,7 @@ static bool set_pchan_glColor(short colCode, int boneflag, short constflag)
 			}
 			else {
 				if (bcolor) {
-					char *cp = bcolor->solid;
+					const char *cp = bcolor->solid;
 					glColor4ub(cp[0], cp[1], cp[2], 204);
 				}
 				else
@@ -1456,7 +1456,7 @@ static void bgl_sphere_project(float ax, float az)
 	float dir[3], sine, q3;
 
 	sine = 1.0f - ax * ax - az * az;
-	q3 = (sine < 0.0f) ? 0.0f : (float)(2.0 * sqrt(sine));
+	q3 = (sine < 0.0f) ? 0.0f : (2.0f * sqrtf(sine));
 
 	dir[0] = -az * q3;
 	dir[1] = 1.0f - 2.0f * sine;
@@ -1467,7 +1467,7 @@ static void bgl_sphere_project(float ax, float az)
 
 static void draw_dof_ellipse(float ax, float az)
 {
-	static float staticSine[16] = {
+	const float staticSine[16] = {
 		0.0f, 0.104528463268f, 0.207911690818f, 0.309016994375f,
 		0.406736643076f, 0.5f, 0.587785252292f, 0.669130606359f,
 		0.743144825477f, 0.809016994375f, 0.866025403784f,
@@ -2065,7 +2065,7 @@ static void draw_pose_bones(Scene *scene, View3D *v3d, ARegion *ar, Base *base,
 						/*  Draw names of bone  */
 						if (arm->flag & ARM_DRAWNAMES) {
 							mid_v3_v3v3(vec, pchan->pose_head, pchan->pose_tail);
-							view3d_cached_text_draw_add(vec, pchan->name, 10, 0, col);
+							view3d_cached_text_draw_add(vec, pchan->name, strlen(pchan->name), 10, 0, col);
 						}
 						
 						/*	Draw additional axes on the bone tail  */
@@ -2270,7 +2270,7 @@ static void draw_ebones(View3D *v3d, ARegion *ar, Object *ob, const short dt)
 						if (arm->flag & ARM_DRAWNAMES) {
 							mid_v3_v3v3(vec, eBone->head, eBone->tail);
 							glRasterPos3fv(vec);
-							view3d_cached_text_draw_add(vec, eBone->name, 10, 0, col);
+							view3d_cached_text_draw_add(vec, eBone->name, strlen(eBone->name), 10, 0, col);
 						}
 						/*	Draw additional axes */
 						if (arm->flag & ARM_DRAWAXES) {
@@ -2393,7 +2393,7 @@ static void draw_ghost_poses_range(Scene *scene, View3D *v3d, ARegion *ar, Base 
 	/* draw from first frame of range to last */
 	for (CFRA = (int)start; CFRA < end; CFRA += (int)stepsize) {
 		colfac = (end - (float)CFRA) / range;
-		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0 * sqrt(colfac)));
+		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0f * sqrtf(colfac)));
 		
 		BKE_animsys_evaluate_animdata(scene, &ob->id, adt, (float)CFRA, ADT_RECALC_ALL);
 		BKE_pose_where_is(scene, ob);
@@ -2473,7 +2473,7 @@ static void draw_ghost_poses_keys(Scene *scene, View3D *v3d, ARegion *ar, Base *
 	/* draw from first frame of range to last */
 	for (ak = keys.first, i = 0; ak; ak = ak->next, i++) {
 		colfac = i / range;
-		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0 * sqrt(colfac)));
+		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0f * sqrtf(colfac)));
 		
 		CFRA = (int)ak->cfra;
 		
@@ -2543,7 +2543,7 @@ static void draw_ghost_poses(Scene *scene, View3D *v3d, ARegion *ar, Base *base)
 	for (cur = stepsize; cur < range; cur += stepsize) {
 		ctime = cur - (float)fmod(cfrao, stepsize);  /* ensures consistent stepping */
 		colfac = ctime / range;
-		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0 * sqrt(colfac)));
+		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0f * sqrtf(colfac)));
 		
 		/* only within action range */
 		if (actframe + ctime >= start && actframe + ctime <= end) {
@@ -2558,7 +2558,7 @@ static void draw_ghost_poses(Scene *scene, View3D *v3d, ARegion *ar, Base *base)
 		
 		ctime = cur + (float)fmod((float)cfrao, stepsize) - stepsize + 1.0f;   /* ensures consistent stepping */
 		colfac = ctime / range;
-		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0 * sqrt(colfac)));
+		UI_ThemeColorShadeAlpha(TH_WIRE, 0, -128 - (int)(120.0f * sqrtf(colfac)));
 		
 		/* only within action range */
 		if ((actframe - ctime >= start) && (actframe - ctime <= end)) {

@@ -31,11 +31,7 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_camera_types.h"
-#include "DNA_constraint_types.h"
-#include "DNA_gpencil_types.h"
 #include "DNA_movieclip_types.h"
-#include "DNA_object_types.h"   /* SELECT */
 #include "DNA_scene_types.h"
 
 #include "BLI_utildefines.h"
@@ -43,27 +39,15 @@
 #include "BLI_listbase.h"
 #include "BLI_rect.h"
 #include "BLI_lasso.h"
-#include "BLI_blenlib.h"
 
-#include "BKE_main.h"
 #include "BKE_context.h"
-#include "BKE_constraint.h"
-#include "BKE_movieclip.h"
 #include "BKE_tracking.h"
-#include "BKE_global.h"
-#include "BKE_depsgraph.h"
-#include "BKE_object.h"
-#include "BKE_report.h"
-#include "BKE_scene.h"
-#include "BKE_library.h"
-#include "BKE_sound.h"
 
 #include "WM_api.h"
 #include "WM_types.h"
 
 #include "ED_screen.h"
 #include "ED_clip.h"
-#include "ED_keyframing.h"
 
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
@@ -174,8 +158,8 @@ static float dist_to_crns(float co[2], float pos[2], float crns[4][2])
 {
 	float d1, d2, d3, d4;
 	float p[2] = {co[0] - pos[0], co[1] - pos[1]};
-	float *v1 = crns[0], *v2 = crns[1];
-	float *v3 = crns[2], *v4 = crns[3];
+	const float *v1 = crns[0], *v2 = crns[1];
+	const float *v3 = crns[2], *v4 = crns[3];
 
 	d1 = dist_squared_to_line_segment_v2(p, v1, v2);
 	d2 = dist_squared_to_line_segment_v2(p, v2, v3);
@@ -189,8 +173,8 @@ static float dist_to_crns(float co[2], float pos[2], float crns[4][2])
 static float dist_to_crns_abs(float co[2], float corners[4][2])
 {
 	float d1, d2, d3, d4;
-	float *v1 = corners[0], *v2 = corners[1];
-	float *v3 = corners[2], *v4 = corners[3];
+	const float *v1 = corners[0], *v2 = corners[1];
+	const float *v3 = corners[2], *v4 = corners[3];
 
 	d1 = dist_squared_to_line_segment_v2(co, v1, v2);
 	d2 = dist_squared_to_line_segment_v2(co, v2, v3);
@@ -382,7 +366,7 @@ static int select_poll(bContext *C)
 		return sc->clip && sc->view == SC_VIEW_CLIP;
 	}
 
-	return FALSE;
+	return false;
 }
 
 static int select_exec(bContext *C, wmOperator *op)
@@ -553,12 +537,12 @@ void CLIP_OT_select_border(wmOperatorType *ot)
 	ot->flag = OPTYPE_UNDO;
 
 	/* properties */
-	WM_operator_properties_gesture_border(ot, TRUE);
+	WM_operator_properties_gesture_border(ot, true);
 }
 
 /********************** lasso select operator *********************/
 
-static int do_lasso_select_marker(bContext *C, const int mcords[][2], const short moves, short select)
+static int do_lasso_select_marker(bContext *C, const int mcords[][2], const short moves, bool select)
 {
 	SpaceClip *sc = CTX_wm_space_clip(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -650,7 +634,7 @@ static int clip_lasso_select_exec(bContext *C, wmOperator *op)
 	const int (*mcords)[2] = WM_gesture_lasso_path_to_array(C, op, &mcords_tot);
 
 	if (mcords) {
-		short select;
+		bool select;
 
 		select = !RNA_boolean_get(op->ptr, "deselect");
 		do_lasso_select_marker(C, mcords, mcords_tot, select);

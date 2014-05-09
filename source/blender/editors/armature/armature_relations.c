@@ -40,7 +40,6 @@
 #include "BLF_translation.h"
 
 #include "BKE_action.h"
-#include "BKE_armature.h"
 #include "BKE_constraint.h"
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
@@ -73,7 +72,7 @@ static void joined_armature_fix_links_constraints(
 	bConstraint *con;
 
 	for (con = lb->first; con; con = con->next) {
-		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		ListBase targets = {NULL, NULL};
 		bConstraintTarget *ct;
 
@@ -300,7 +299,7 @@ static void separated_armature_fix_links(Object *origArm, Object *newArm)
 		if (ob->type == OB_ARMATURE) {
 			for (pchan = ob->pose->chanbase.first; pchan; pchan = pchan->next) {
 				for (con = pchan->constraints.first; con; con = con->next) {
-					bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+					bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 					ListBase targets = {NULL, NULL};
 					bConstraintTarget *ct;
 					
@@ -338,7 +337,7 @@ static void separated_armature_fix_links(Object *origArm, Object *newArm)
 		/* fix object-level constraints */
 		if (ob != origArm) {
 			for (con = ob->constraints.first; con; con = con->next) {
-				bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+				bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 				ListBase targets = {NULL, NULL};
 				bConstraintTarget *ct;
 				

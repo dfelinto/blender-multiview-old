@@ -36,12 +36,10 @@
 
 #include "DNA_anim_types.h"
 #include "DNA_armature_types.h"
-#include "DNA_constraint_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
 #include "BKE_anim.h"
-#include "BKE_action.h"
 #include "BKE_armature.h"
 #include "BKE_context.h"
 #include "BKE_deform.h"
@@ -124,7 +122,7 @@ void ED_armature_exit_posemode(bContext *C, Base *base)
 /* if a selected or active bone is protected, throw error (oonly if warn == 1) and return 1 */
 /* only_selected == 1: the active bone is allowed to be protected */
 #if 0 /* UNUSED 2.5 */
-static short pose_has_protected_selected(Object *ob, short warn)
+static bool pose_has_protected_selected(Object *ob, short warn)
 {
 	/* check protection */
 	if (ob->proxy) {
@@ -424,7 +422,7 @@ static void pose_copy_menu(Scene *scene)
 						/* copy constraints to tmpbase and apply 'local' tags before 
 						 * appending to list of constraints for this channel
 						 */
-						BKE_copy_constraints(&tmp_constraints, &pchanact->constraints, TRUE);
+						BKE_constraints_copy(&tmp_constraints, &pchanact->constraints, true);
 						if ((ob->proxy) && (pchan->bone->layer & arm->layer_protected)) {
 							bConstraint *con;
 							
@@ -536,7 +534,7 @@ static void pose_copy_menu(Scene *scene)
 				/* copy constraints to tmpbase and apply 'local' tags before 
 				 * appending to list of constraints for this channel
 				 */
-				BKE_copy_constraints(&tmp_constraints, &const_copy, TRUE);
+				BKE_constraints_copy(&tmp_constraints, &const_copy, true);
 				if ((ob->proxy) && (pchan->bone->layer & arm->layer_protected)) {
 					/* add proxy-local tags */
 					for (con = tmp_constraints.first; con; con = con->next)
@@ -707,17 +705,37 @@ void POSE_OT_rotation_mode_set(wmOperatorType *ot)
 
 /* ********************************************** */
 
-/* Show all armature layers */
-static int pose_armature_layers_showall_poll(bContext *C)
+static int armature_layers_poll(bContext *C)
 {
-	/* this single operator can be used in posemode OR editmode for armatures */
+	/* Armature layers operators can be used in posemode OR editmode for armatures */
 	return ED_operator_posemode(C) || ED_operator_editarmature(C);
 }
 
+static bArmature *armature_layers_get_data(Object **ob)
+{
+	bArmature *arm = NULL;
+
+	/* Sanity checking and handling of posemode. */
+	if (*ob) {
+		Object *tob = BKE_object_pose_armature_get(*ob);
+		if (tob) {
+			*ob = tob;
+			arm = (*ob)->data;
+		}
+		else if ((*ob)->type == OB_ARMATURE) {
+			arm = (*ob)->data;
+		}
+	}
+
+	return arm;
+}
+
+/* Show all armature layers */
+
 static int pose_armature_layers_showall_exec(bContext *C, wmOperator *op)
 {
-	Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-	bArmature *arm = (ob) ? ob->data : NULL;
+	Object *ob = CTX_data_active_object(C);
+	bArmature *arm = armature_layers_get_data(&ob);
 	PointerRNA ptr;
 	int maxLayers = (RNA_boolean_get(op->ptr, "all")) ? 32 : 16;
 	int layers[32] = {0}; /* hardcoded for now - we can only have 32 armature layers, so this should be fine... */
@@ -754,7 +772,7 @@ void ARMATURE_OT_layers_show_all(wmOperatorType *ot)
 	
 	/* callbacks */
 	ot->exec = pose_armature_layers_showall_exec;
-	ot->poll = pose_armature_layers_showall_poll;
+	ot->poll = armature_layers_poll;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
@@ -766,10 +784,10 @@ void ARMATURE_OT_layers_show_all(wmOperatorType *ot)
 /* ------------------- */
 
 /* Present a popup to get the layers that should be used */
-static int pose_armature_layers_invoke(bContext *C, wmOperator *op, const wmEvent *event)
+static int armature_layers_invoke(bContext *C, wmOperator *op, const wmEvent *event)
 {
-	Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
-	bArmature *arm = (ob) ? ob->data : NULL;
+	Object *ob = CTX_data_active_object(C);
+	bArmature *arm = armature_layers_get_data(&ob);
 	PointerRNA ptr;
 	int layers[32]; /* hardcoded for now - we can only have 32 armature layers, so this should be fine... */
 	
@@ -787,13 +805,14 @@ static int pose_armature_layers_invoke(bContext *C, wmOperator *op, const wmEven
 }
 
 /* Set the visible layers for the active armature (edit and pose modes) */
-static int pose_armature_layers_exec(bContext *C, wmOperator *op)
+static int armature_layers_exec(bContext *C, wmOperator *op)
 {
-	Object *ob = BKE_object_pose_armature_get(CTX_data_active_object(C));
+	Object *ob = CTX_data_active_object(C);
+	bArmature *arm = armature_layers_get_data(&ob);
 	PointerRNA ptr;
 	int layers[32]; /* hardcoded for now - we can only have 32 armature layers, so this should be fine... */
 
-	if (ELEM(NULL, ob, ob->data)) {
+	if (arm == NULL) {
 		return OPERATOR_CANCELLED;
 	}
 
@@ -801,33 +820,13 @@ static int pose_armature_layers_exec(bContext *C, wmOperator *op)
 	RNA_boolean_get_array(op->ptr, "layers", layers);
 
 	/* get pointer for armature, and write data there... */
-	RNA_id_pointer_create((ID *)ob->data, &ptr);
+	RNA_id_pointer_create((ID *)arm, &ptr);
 	RNA_boolean_set_array(&ptr, "layers", layers);
 
 	/* note, notifier might evolve */
 	WM_event_add_notifier(C, NC_OBJECT | ND_POSE, ob);
 
 	return OPERATOR_FINISHED;
-}
-
-
-void POSE_OT_armature_layers(wmOperatorType *ot)
-{
-	/* identifiers */
-	ot->name = "Change Armature Layers";
-	ot->idname = "POSE_OT_armature_layers";
-	ot->description = "Change the visible armature layers";
-	
-	/* callbacks */
-	ot->invoke = pose_armature_layers_invoke;
-	ot->exec = pose_armature_layers_exec;
-	ot->poll = ED_operator_posemode;
-	
-	/* flags */
-	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
-	
-	/* properties */
-	RNA_def_boolean_layer_member(ot->srna, "layers", 32, NULL, "Layer", "Armature layers to make visible");
 }
 
 void ARMATURE_OT_armature_layers(wmOperatorType *ot)
@@ -838,9 +837,9 @@ void ARMATURE_OT_armature_layers(wmOperatorType *ot)
 	ot->description = "Change the visible armature layers";
 	
 	/* callbacks */
-	ot->invoke = pose_armature_layers_invoke;
-	ot->exec = pose_armature_layers_exec;
-	ot->poll = ED_operator_editarmature;
+	ot->invoke = armature_layers_invoke;
+	ot->exec = armature_layers_exec;
+	ot->poll = armature_layers_poll;
 	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;

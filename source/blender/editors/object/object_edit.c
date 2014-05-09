@@ -45,7 +45,6 @@
 #include "DNA_armature_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_group_types.h"
-#include "DNA_lattice_types.h"
 #include "DNA_material_types.h"
 #include "DNA_meta_types.h"
 #include "DNA_property_types.h"
@@ -64,7 +63,6 @@
 #include "BKE_curve.h"
 #include "BKE_effect.h"
 #include "BKE_depsgraph.h"
-#include "BKE_font.h"
 #include "BKE_image.h"
 #include "BKE_library.h"
 #include "BKE_main.h"
@@ -72,7 +70,6 @@
 #include "BKE_mball.h"
 #include "BKE_mesh.h"
 #include "BKE_object.h"
-#include "BKE_paint.h"
 #include "BKE_pointcache.h"
 #include "BKE_property.h"
 #include "BKE_sca.h"
@@ -178,7 +175,7 @@ static int object_hide_view_set_exec(bContext *C, wmOperator *op)
 	Main *bmain = CTX_data_main(C);
 	Scene *scene = CTX_data_scene(C);
 	bool changed = false;
-	const int unselected = RNA_boolean_get(op->ptr, "unselected");
+	const bool unselected = RNA_boolean_get(op->ptr, "unselected");
 	
 	CTX_DATA_BEGIN(C, Base *, base, visible_bases)
 	{
@@ -209,7 +206,7 @@ static int object_hide_view_set_exec(bContext *C, wmOperator *op)
 		DAG_id_type_tag(bmain, ID_OB);
 		DAG_relations_tag_update(bmain);
 		
-		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, CTX_data_scene(C));
+		WM_event_add_notifier(C, NC_SCENE | ND_OB_SELECT, scene);
 		
 	}
 
@@ -273,7 +270,7 @@ void OBJECT_OT_hide_render_clear(wmOperatorType *ot)
 
 static int object_hide_render_set_exec(bContext *C, wmOperator *op)
 {
-	const int unselected = RNA_boolean_get(op->ptr, "unselected");
+	const bool unselected = RNA_boolean_get(op->ptr, "unselected");
 
 	CTX_DATA_BEGIN(C, Base *, base, visible_bases)
 	{
@@ -432,7 +429,7 @@ void ED_object_editmode_enter(bContext *C, int flag)
 	Object *ob;
 	ScrArea *sa = CTX_wm_area(C);
 	View3D *v3d = NULL;
-	int ok = 0;
+	bool ok = false;
 
 	if (scene->id.lib) return;
 
@@ -990,7 +987,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 				}
 				else if (event == 22) {
 					/* Copy the constraint channels over */
-					BKE_copy_constraints(&base->object->constraints, &ob->constraints, TRUE);
+					BKE_constraints_copy(&base->object->constraints, &ob->constraints, true);
 					
 					do_depgraph_update = true;
 				}
@@ -998,7 +995,7 @@ static void copy_attr(Main *bmain, Scene *scene, View3D *v3d, short event)
 					base->object->softflag = ob->softflag;
 					if (base->object->soft) sbFree(base->object->soft);
 					
-					base->object->soft = copy_softbody(ob->soft, FALSE);
+					base->object->soft = copy_softbody(ob->soft, false);
 
 					if (!modifiers_findByType(base->object, eModifierType_Softbody)) {
 						BLI_addhead(&base->object->modifiers, modifier_new(eModifierType_Softbody));
@@ -1130,8 +1127,7 @@ static int forcefield_toggle_exec(bContext *C, wmOperator *UNUSED(op))
 
 	if (ob->pd == NULL)
 		ob->pd = object_add_collision_fields(PFIELD_FORCE);
-
-	if (ob->pd->forcefield == 0)
+	else if (ob->pd->forcefield == 0)
 		ob->pd->forcefield = PFIELD_FORCE;
 	else
 		ob->pd->forcefield = 0;
@@ -1439,7 +1435,7 @@ static void UNUSED_FUNCTION(image_aspect) (Scene *scene, View3D *v3d)
 	for (base = FIRSTBASE; base; base = base->next) {
 		if (TESTBASELIB(v3d, base)) {
 			ob = base->object;
-			done = FALSE;
+			done = false;
 			
 			for (a = 1; a <= ob->totcol; a++) {
 				ma = give_current_material(ob, a);
@@ -1469,7 +1465,7 @@ static void UNUSED_FUNCTION(image_aspect) (Scene *scene, View3D *v3d)
 								if (x > y) ob->size[0] = ob->size[1] * x / y;
 								else ob->size[1] = ob->size[0] * y / x;
 								
-								done = TRUE;
+								done = true;
 								DAG_id_tag_update(&ob->id, OB_RECALC_OB);
 
 								BKE_image_release_ibuf(tex->ima, ibuf, NULL);
@@ -1867,7 +1863,7 @@ void OBJECT_OT_game_property_copy(wmOperatorType *ot)
 
 	RNA_def_enum(ot->srna, "operation", game_properties_copy_operations, 3, "Operation", "");
 	prop = RNA_def_enum(ot->srna, "property", DummyRNA_NULL_items, 0, "Property", "Properties to copy");
-	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
+	RNA_def_property_flag(prop, PROP_SKIP_SAVE | PROP_ENUM_NO_TRANSLATE);
 	RNA_def_enum_funcs(prop, gameprops_itemf);
 	ot->prop = prop;
 }

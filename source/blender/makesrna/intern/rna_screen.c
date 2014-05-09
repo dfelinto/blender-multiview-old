@@ -157,7 +157,7 @@ static void rna_Area_type_update(bContext *C, PointerRNA *ptr)
 
 			/* It is possible that new layers becomes visible. */
 			if (sa->spacetype == SPACE_VIEW3D) {
-				DAG_on_visible_update(CTX_data_main(C), FALSE);
+				DAG_on_visible_update(CTX_data_main(C), false);
 			}
 
 			CTX_wm_window_set(C, prevwin);
@@ -176,9 +176,9 @@ static void rna_View2D_region_to_view(struct View2D *v2d, int x, int y, float re
 static void rna_View2D_view_to_region(struct View2D *v2d, float x, float y, int clip, int result[2])
 {
 	if (clip)
-		UI_view2d_view_to_region(v2d, x, y, &result[0], &result[1]);
+		UI_view2d_view_to_region_clip(v2d, x, y, &result[0], &result[1]);
 	else
-		UI_view2d_to_region_no_clip(v2d, x, y, &result[0], &result[1]);
+		UI_view2d_view_to_region(v2d, x, y, &result[0], &result[1]);
 }
 
 #else

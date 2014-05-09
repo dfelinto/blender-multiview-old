@@ -40,16 +40,13 @@
 #include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 #include "DNA_brush_types.h"
-#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 
 #include "BKE_brush.h"
 #include "BKE_paint.h"
 #include "BKE_colortools.h"
 #include "BKE_context.h"
-#include "BKE_main.h"
 #include "BKE_depsgraph.h"
-#include "BKE_mesh.h"
 #include "BKE_mesh_mapping.h"
 #include "BKE_customdata.h"
 #include "BKE_editmesh.h"
@@ -67,6 +64,9 @@
 
 #include "paint_intern.h"
 #include "uvedit_intern.h"
+
+#include "BIF_gl.h"
+#include "BIF_glutil.h"
 
 #include "UI_view2d.h"
 
@@ -185,6 +185,45 @@ static int uv_sculpt_brush_poll(bContext *C)
 	return 0;
 }
 
+static void brush_drawcursor_uvsculpt(bContext *C, int x, int y, void *UNUSED(customdata))
+{
+#define PX_SIZE_FADE_MAX 12.0f
+#define PX_SIZE_FADE_MIN 4.0f
+
+	Scene *scene = CTX_data_scene(C);
+	//Brush *brush = image_paint_brush(C);
+	Paint *paint = BKE_paint_get_active_from_context(C);
+	Brush *brush = BKE_paint_brush(paint);
+
+	if (paint && brush && paint->flags & PAINT_SHOW_BRUSH) {
+		const float size = (float)BKE_brush_size_get(scene, brush);
+		float alpha = 0.5f;
+
+		/* fade out the brush (cheap trick to work around brush interfering with sampling [#])*/
+		if (size < PX_SIZE_FADE_MIN) {
+			return;
+		}
+		else if (size < PX_SIZE_FADE_MAX) {
+			alpha *= (size - PX_SIZE_FADE_MIN) / (PX_SIZE_FADE_MAX - PX_SIZE_FADE_MIN);
+		}
+
+		glPushMatrix();
+
+		glTranslatef((float)x, (float)y, 0.0f);
+
+		glColor4f(brush->add_col[0], brush->add_col[1], brush->add_col[2], alpha);
+		glEnable(GL_LINE_SMOOTH);
+		glEnable(GL_BLEND);
+		glutil_draw_lined_arc(0, (float)(M_PI * 2.0), size, 40);
+		glDisable(GL_BLEND);
+		glDisable(GL_LINE_SMOOTH);
+
+		glPopMatrix();
+	}
+#undef PX_SIZE_FADE_MAX
+#undef PX_SIZE_FADE_MIN
+}
+
 
 void ED_space_image_uv_sculpt_update(wmWindowManager *wm, ToolSettings *settings)
 {
@@ -201,7 +240,7 @@ void ED_space_image_uv_sculpt_update(wmWindowManager *wm, ToolSettings *settings
 		BKE_paint_init(&settings->uvsculpt->paint, PAINT_CURSOR_SCULPT);
 
 		WM_paint_cursor_activate(wm, uv_sculpt_brush_poll,
-		                         brush_drawcursor_texpaint_uvsculpt, NULL);
+		                         brush_drawcursor_uvsculpt, NULL);
 	}
 	else {
 		if (settings->uvsculpt)
@@ -518,8 +557,8 @@ static int uv_element_offset_from_face_get(UvElementMap *map, BMFace *efa, BMLoo
 static unsigned int uv_edge_hash(const void *key)
 {
 	UvEdge *edge = (UvEdge *)key;
-	return (BLI_ghashutil_inthash(SET_INT_IN_POINTER(edge->uv2)) +
-	        BLI_ghashutil_inthash(SET_INT_IN_POINTER(edge->uv1)));
+	return (BLI_ghashutil_uinthash(edge->uv2) +
+	        BLI_ghashutil_uinthash(edge->uv1));
 }
 
 static int uv_edge_compare(const void *a, const void *b)
@@ -630,7 +669,7 @@ static UvSculptData *uv_sculpt_stroke_init(bContext *C, wmOperator *op, const wm
 				MEM_freeN(uniqueUv);
 			}
 			if (edgeHash) {
-				MEM_freeN(edgeHash);
+				BLI_ghash_free(edgeHash, NULL, NULL);
 			}
 			uv_sculpt_stroke_exit(C, op);
 			return NULL;

@@ -21,8 +21,11 @@
  */
 
 #include "COM_MemoryBuffer.h"
+
 #include "MEM_guardedalloc.h"
-//#include "BKE_global.h"
+
+using std::min;
+using std::max;
 
 unsigned int MemoryBuffer::determineBufferSize()
 {
@@ -287,6 +290,20 @@ void MemoryBuffer::readEWA(float result[4], const float uv[2], const float deriv
 	if (u2 - U0 > EWA_MAXIDX) u2 = U0 + EWA_MAXIDX;
 	if (V0 - v1 > EWA_MAXIDX) v1 = V0 - EWA_MAXIDX;
 	if (v2 - V0 > EWA_MAXIDX) v2 = V0 + EWA_MAXIDX;
+
+	/* Early output check for cases the whole region is outside of the buffer. */
+	if ((u2 < m_rect.xmin || u1 >= m_rect.xmax) ||
+	    (v2 < m_rect.ymin || v1 >= m_rect.ymax))
+	{
+		zero_v4(result);
+		return;
+	}
+
+	/* Clamp sampling rectagle to the buffer dimensions. */
+	u1 = max_ii(u1, m_rect.xmin);
+	u2 = min_ii(u2, m_rect.xmax);
+	v1 = max_ii(v1, m_rect.ymin);
+	v2 = min_ii(v2, m_rect.ymax);
 
 	float DDQ = 2.0f * A;
 	float U = u1 - U0;

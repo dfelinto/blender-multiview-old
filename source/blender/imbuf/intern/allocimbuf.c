@@ -46,9 +46,21 @@
 #include "imbuf.h"
 
 #include "MEM_guardedalloc.h"
-#include "MEM_CacheLimiterC-Api.h"
 
+#include "BLI_threads.h"
 #include "BLI_utildefines.h"
+
+static SpinLock refcounter_spin;
+
+void imb_refcounter_lock_init(void)
+{
+	BLI_spin_init(&refcounter_spin);
+}
+
+void imb_refcounter_lock_exit(void)
+{
+	BLI_spin_end(&refcounter_spin);
+}
 
 void imb_freemipmapImBuf(ImBuf *ibuf)
 {
@@ -154,10 +166,18 @@ void IMB_freezbuffloatImBuf(ImBuf *ibuf)
 void IMB_freeImBuf(ImBuf *ibuf)
 {
 	if (ibuf) {
+		bool needs_free = false;
+
+		BLI_spin_lock(&refcounter_spin);
 		if (ibuf->refcounter > 0) {
 			ibuf->refcounter--;
 		}
 		else {
+			needs_free = true;
+		}
+		BLI_spin_unlock(&refcounter_spin);
+
+		if (needs_free) {
 			imb_freerectImBuf(ibuf);
 			imb_freerectfloatImBuf(ibuf);
 			imb_freetilesImBuf(ibuf);
@@ -177,7 +197,9 @@ void IMB_freeImBuf(ImBuf *ibuf)
 
 void IMB_refImBuf(ImBuf *ibuf)
 {
+	BLI_spin_lock(&refcounter_spin);
 	ibuf->refcounter++;
+	BLI_spin_unlock(&refcounter_spin);
 }
 
 ImBuf *IMB_makeSingleUser(ImBuf *ibuf)

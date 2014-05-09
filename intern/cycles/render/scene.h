@@ -51,6 +51,8 @@ class CurveSystemManager;
 class Shader;
 class ShaderManager;
 class Progress;
+class BakeManager;
+class BakeData;
 
 /* Scene Device Data */
 
@@ -60,7 +62,7 @@ public:
 	device_vector<float4> bvh_nodes;
 	device_vector<uint> object_node;
 	device_vector<float4> tri_woop;
-	device_vector<uint> prim_segment;
+	device_vector<uint> prim_type;
 	device_vector<uint> prim_visibility;
 	device_vector<uint> prim_index;
 	device_vector<uint> prim_object;
@@ -174,6 +176,7 @@ public:
 	ObjectManager *object_manager;
 	ParticleSystemManager *particle_system_manager;
 	CurveSystemManager *curve_system_manager;
+	BakeManager *bake_manager;
 
 	/* default shaders */
 	int default_surface;

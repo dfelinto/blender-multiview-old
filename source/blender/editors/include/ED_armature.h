@@ -90,7 +90,7 @@ typedef struct EditBone {
 #define BONESEL_BONE    (1 << 30)
 #define BONESEL_ANY     (BONESEL_TIP | BONESEL_ROOT | BONESEL_BONE)
 
-#define BONESEL_NOSEL   (1 << 31) /* Indicates a negative number */
+#define BONESEL_NOSEL   (1u << 31u)
 
 /* useful macros */
 #define EBONE_VISIBLE(arm, ebone) ( \
@@ -127,7 +127,7 @@ int ED_do_pose_selectbuffer(struct Scene *scene, struct Base *base, unsigned int
 bool mouse_armature(struct bContext *C, const int mval[2], bool extend, bool deselect, bool toggle);
 int join_armature_exec(struct bContext *C, struct wmOperator *op);
 struct Bone *get_indexed_bone(struct Object *ob, int index);
-float ED_rollBoneToVector(EditBone *bone, const float new_up_axis[3], const short axis_only);
+float ED_rollBoneToVector(EditBone *bone, const float new_up_axis[3], const bool axis_only);
 EditBone *ED_armature_bone_find_name(const ListBase *edbo, const char *name);
 EditBone *ED_armature_bone_get_mirrored(const struct ListBase *edbo, EditBone *ebo);
 void ED_armature_sync_selection(struct ListBase *edbo);
@@ -143,6 +143,9 @@ EditBone *ED_armature_bone_find_shared_parent(EditBone *ebone_child[], const uns
 void ED_armature_ebone_to_mat3(EditBone *ebone, float mat[3][3]);
 void ED_armature_ebone_to_mat4(EditBone *ebone, float mat[4][4]);
 
+void ED_armature_ebone_from_mat3(EditBone *ebone, float mat[3][3]);
+void ED_armature_ebone_from_mat4(EditBone *ebone, float mat[4][4]);
+
 void transform_armature_mirror_update(struct Object *obedit);
 void ED_armature_origin_set(struct Scene *scene, struct Object *ob, float cursor[3], int centermode, int around);
 
@@ -154,7 +157,7 @@ void ED_armature_transform(struct bArmature *arm, float mat[4][4]);
 #define ARM_GROUPS_ENVELOPE 2
 #define ARM_GROUPS_AUTO     3
 
-void create_vgroups_from_armature(struct ReportList *reports, struct Scene *scene, struct Object *ob, struct Object *par, int mode, int mirror);
+void create_vgroups_from_armature(struct ReportList *reports, struct Scene *scene, struct Object *ob, struct Object *par, int mode, bool mirror);
 
 void unique_editbone_name(struct ListBase *ebones, char *name, EditBone *bone); /* if bone is already in list, pass it as param to ignore it */
 void ED_armature_bone_rename(struct bArmature *arm, const char *oldnamep, const char *newnamep);

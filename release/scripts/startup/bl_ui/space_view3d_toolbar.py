@@ -329,6 +329,7 @@ class VIEW3D_PT_tools_meshedit(View3DPanel, Panel):
         row.operator("transform.vert_slide", text="Vertex")
         col.operator("mesh.noise")
         col.operator("mesh.vertices_smooth")
+        col.operator("object.vertex_random")
 
         col = layout.column(align=True)
         col.label(text="Add:")
@@ -384,10 +385,20 @@ class VIEW3D_PT_tools_shading(View3DPanel, Panel):
         layout = self.layout
 
         col = layout.column(align=True)
-        col.label(text="Shading:")
+        col.label(text="Faces:")
         row = col.row(align=True)
         row.operator("mesh.faces_shade_smooth", text="Smooth")
         row.operator("mesh.faces_shade_flat", text="Flat")
+        col.label(text="Edges:")
+        row = col.row(align=True)
+        row.operator("mesh.mark_sharp", text="Smooth").clear = True
+        row.operator("mesh.mark_sharp", text="Sharp")
+        col.label(text="Vertices:")
+        row = col.row(align=True)
+        op = row.operator("mesh.mark_sharp", text="Smooth")
+        op.use_verts = True
+        op.clear = True
+        row.operator("mesh.mark_sharp", text="Sharp").use_verts = True
 
         col = layout.column(align=True)
         col.label(text="Normals:")
@@ -500,6 +511,7 @@ class VIEW3D_PT_tools_curveedit(View3DPanel, Panel):
         col.operator("curve.extrude_move", text="Extrude")
         col.operator("curve.subdivide")
         col.operator("curve.smooth")
+        col.operator("object.vertex_random")
 
         draw_repeat_tools(context, layout)
 
@@ -553,6 +565,10 @@ class VIEW3D_PT_tools_surfaceedit(View3DPanel, Panel):
         col.operator("curve.extrude", text="Extrude")
         col.operator("curve.subdivide")
 
+        col = layout.column(align=True)
+        col.label(text="Deform:")
+        col.operator("object.vertex_random")
+
         draw_repeat_tools(context, layout)
 
 
@@ -597,18 +613,27 @@ class VIEW3D_PT_tools_textedit(View3DPanel, Panel):
 # ********** default tools for editmode_armature ****************
 
 
-class VIEW3D_PT_tools_armatureedit(View3DPanel, Panel):
+class VIEW3D_PT_tools_armatureedit_transform(View3DPanel, Panel):
+    bl_category = "Tools"
     bl_context = "armature_edit"
-    bl_label = "Armature Tools"
+    bl_label = "Transform"
 
     def draw(self, context):
         layout = self.layout
 
         col = layout.column(align=True)
-        col.label(text="Transform:")
         col.operator("transform.translate")
         col.operator("transform.rotate")
         col.operator("transform.resize", text="Scale")
+
+
+class VIEW3D_PT_tools_armatureedit(View3DPanel, Panel):
+    bl_category = "Tools"
+    bl_context = "armature_edit"
+    bl_label = "Armature Tools"
+
+    def draw(self, context):
+        layout = self.layout
 
         col = layout.column(align=True)
         col.label(text="Bones:")
@@ -621,10 +646,15 @@ class VIEW3D_PT_tools_armatureedit(View3DPanel, Panel):
         col.operator("armature.extrude_move")
         col.operator("armature.subdivide", text="Subdivide")
 
+        col = layout.column(align=True)
+        col.label(text="Deform:")
+        col.operator("object.vertex_random")
+
         draw_repeat_tools(context, layout)
 
 
 class VIEW3D_PT_tools_armatureedit_options(View3DPanel, Panel):
+    bl_category = "Options"
     bl_context = "armature_edit"
     bl_label = "Armature Options"
 
@@ -632,6 +662,7 @@ class VIEW3D_PT_tools_armatureedit_options(View3DPanel, Panel):
         arm = context.active_object.data
 
         self.layout.prop(arm, "use_mirror_x")
+
 
 # ********** default tools for editmode_mball ****************
 
@@ -649,6 +680,10 @@ class VIEW3D_PT_tools_mballedit(View3DPanel, Panel):
         col.operator("transform.translate")
         col.operator("transform.rotate")
         col.operator("transform.resize", text="Scale")
+
+        col = layout.column(align=True)
+        col.label(text="Deform:")
+        col.operator("object.vertex_random")
 
         draw_repeat_tools(context, layout)
 
@@ -685,6 +720,10 @@ class VIEW3D_PT_tools_latticeedit(View3DPanel, Panel):
 
         col = layout.column(align=True)
         col.operator("lattice.make_regular")
+
+        col = layout.column(align=True)
+        col.label(text="Deform:")
+        col.operator("object.vertex_random")
 
         draw_repeat_tools(context, layout)
 
@@ -1061,7 +1100,6 @@ class VIEW3D_PT_tools_brush_texture(Panel, View3DPaintPanel):
 
         settings = self.paint_settings(context)
         brush = settings.brush
-        tex_slot = brush.texture_slot
 
         col = layout.column()
 
@@ -1085,7 +1123,6 @@ class VIEW3D_PT_tools_mask_texture(View3DPanel, Panel):
         layout = self.layout
 
         brush = context.tool_settings.image_paint.brush
-        tex_slot_alpha = brush.mask_texture_slot
 
         col = layout.column()
 
@@ -1248,7 +1285,7 @@ class VIEW3D_PT_sculpt_dyntopo(Panel, View3DPaintPanel):
         col.prop(sculpt, "use_smooth_shading")
         col.operator("sculpt.optimize")
         if (sculpt.detail_type_method == 'CONSTANT'):
-           col.operator("sculpt.detail_flood_fill")
+            col.operator("sculpt.detail_flood_fill")
         col.separator()
         col.prop(sculpt, "symmetrize_direction")
         col.operator("sculpt.symmetrize")
@@ -1265,6 +1302,7 @@ class VIEW3D_PT_sculpt_options(Panel, View3DPaintPanel):
 
     def draw(self, context):
         layout = self.layout
+        scene = context.scene
 
         toolsettings = context.tool_settings
         sculpt = toolsettings.sculpt
@@ -1275,6 +1313,7 @@ class VIEW3D_PT_sculpt_options(Panel, View3DPaintPanel):
         col.label(text="Gravity:")
         col.prop(sculpt, "gravity", slider=True, text="Factor")
         col.prop(sculpt, "gravity_object")
+        col.separator()
 
         layout.prop(sculpt, "use_threaded", text="Threaded Sculpt")
         layout.prop(sculpt, "show_low_resolution")

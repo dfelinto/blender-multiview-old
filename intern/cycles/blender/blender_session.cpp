@@ -14,6 +14,8 @@
  * limitations under the License
  */
 
+#include <stdlib.h>
+
 #include "background.h"
 #include "buffers.h"
 #include "camera.h"
@@ -21,6 +23,8 @@
 #include "integrator.h"
 #include "film.h"
 #include "light.h"
+#include "mesh.h"
+#include "object.h"
 #include "scene.h"
 #include "session.h"
 #include "shader.h"
@@ -93,6 +97,11 @@ void BlenderSession::create_session()
 	/* create scene */
 	scene = new Scene(scene_params, session_params.device);
 
+	/* setup callbacks for builtin image support */
+	scene->image_manager->builtin_image_info_cb = function_bind(&BlenderSession::builtin_image_info, this, _1, _2, _3, _4, _5, _6, _7);
+	scene->image_manager->builtin_image_pixels_cb = function_bind(&BlenderSession::builtin_image_pixels, this, _1, _2, _3);
+	scene->image_manager->builtin_image_float_pixels_cb = function_bind(&BlenderSession::builtin_image_float_pixels, this, _1, _2, _3);
+
 	/* create session */
 	session = new Session(session_params);
 	session->scene = scene;
@@ -121,11 +130,6 @@ void BlenderSession::create_session()
 	session->reset(buffer_params, session_params.samples);
 
 	b_engine.use_highlight_tiles(session_params.progressive_refine == false);
-
-	/* setup callbacks for builtin image support */
-	scene->image_manager->builtin_image_info_cb = function_bind(&BlenderSession::builtin_image_info, this, _1, _2, _3, _4, _5, _6);
-	scene->image_manager->builtin_image_pixels_cb = function_bind(&BlenderSession::builtin_image_pixels, this, _1, _2, _3);
-	scene->image_manager->builtin_image_float_pixels_cb = function_bind(&BlenderSession::builtin_image_float_pixels, this, _1, _2, _3);
 }
 
 void BlenderSession::reset_session(BL::BlendData b_data_, BL::Scene b_scene_)
@@ -257,6 +261,58 @@ static PassType get_pass_type(BL::RenderPass b_pass)
 	}
 	
 	return PASS_NONE;
+}
+
+static ShaderEvalType get_shader_type(const string& pass_type)
+{
+	const char *shader_type = pass_type.c_str();
+
+	/* data passes */
+	if(strcmp(shader_type, "NORMAL")==0)
+		return SHADER_EVAL_NORMAL;
+	else if(strcmp(shader_type, "UV")==0)
+		return SHADER_EVAL_UV;
+	else if(strcmp(shader_type, "DIFFUSE_COLOR")==0)
+		return SHADER_EVAL_DIFFUSE_COLOR;
+	else if(strcmp(shader_type, "GLOSSY_COLOR")==0)
+		return SHADER_EVAL_GLOSSY_COLOR;
+	else if(strcmp(shader_type, "TRANSMISSION_COLOR")==0)
+		return SHADER_EVAL_TRANSMISSION_COLOR;
+	else if(strcmp(shader_type, "SUBSURFACE_COLOR")==0)
+		return SHADER_EVAL_SUBSURFACE_COLOR;
+	else if(strcmp(shader_type, "EMIT")==0)
+		return SHADER_EVAL_EMISSION;
+
+	/* light passes */
+	else if(strcmp(shader_type, "AO")==0)
+		return SHADER_EVAL_AO;
+	else if(strcmp(shader_type, "COMBINED")==0)
+		return SHADER_EVAL_COMBINED;
+	else if(strcmp(shader_type, "SHADOW")==0)
+		return SHADER_EVAL_SHADOW;
+	else if(strcmp(shader_type, "DIFFUSE_DIRECT")==0)
+		return SHADER_EVAL_DIFFUSE_DIRECT;
+	else if(strcmp(shader_type, "GLOSSY_DIRECT")==0)
+		return SHADER_EVAL_GLOSSY_DIRECT;
+	else if(strcmp(shader_type, "TRANSMISSION_DIRECT")==0)
+		return SHADER_EVAL_TRANSMISSION_DIRECT;
+	else if(strcmp(shader_type, "SUBSURFACE_DIRECT")==0)
+		return SHADER_EVAL_SUBSURFACE_DIRECT;
+	else if(strcmp(shader_type, "DIFFUSE_INDIRECT")==0)
+		return SHADER_EVAL_DIFFUSE_INDIRECT;
+	else if(strcmp(shader_type, "GLOSSY_INDIRECT")==0)
+		return SHADER_EVAL_GLOSSY_INDIRECT;
+	else if(strcmp(shader_type, "TRANSMISSION_INDIRECT")==0)
+		return SHADER_EVAL_TRANSMISSION_INDIRECT;
+	else if(strcmp(shader_type, "SUBSURFACE_INDIRECT")==0)
+		return SHADER_EVAL_SUBSURFACE_INDIRECT;
+
+	/* extra */
+	else if(strcmp(shader_type, "ENVIRONMENT")==0)
+		return SHADER_EVAL_ENVIRONMENT;
+
+	else
+		return SHADER_EVAL_BAKE;
 }
 
 static BL::RenderResult begin_render_result(BL::RenderEngine b_engine, int x, int y, int w, int h, const char *layername, int view)
@@ -426,6 +482,105 @@ void BlenderSession::render()
 	/* clear callback */
 	session->write_render_tile_cb = NULL;
 	session->update_render_tile_cb = NULL;
+
+	/* free all memory used (host and device), so we wouldn't leave render
+	 * engine with extra memory allocated
+	 */
+
+	session->device_free();
+
+	delete sync;
+	sync = NULL;
+}
+
+static void populate_bake_data(BakeData *data, BL::BakePixel pixel_array, const int num_pixels)
+{
+	BL::BakePixel bp = pixel_array;
+
+	int i;
+	for(i=0; i < num_pixels; i++) {
+		data->set(i, bp.primitive_id(), bp.uv(), bp.du_dx(), bp.du_dy(), bp.dv_dx(), bp.dv_dy());
+		bp = bp.next();
+	}
+}
+
+static bool is_light_pass(ShaderEvalType type)
+{
+	switch (type) {
+		case SHADER_EVAL_AO:
+		case SHADER_EVAL_COMBINED:
+		case SHADER_EVAL_SHADOW:
+		case SHADER_EVAL_DIFFUSE_DIRECT:
+		case SHADER_EVAL_GLOSSY_DIRECT:
+		case SHADER_EVAL_TRANSMISSION_DIRECT:
+		case SHADER_EVAL_SUBSURFACE_DIRECT:
+		case SHADER_EVAL_DIFFUSE_INDIRECT:
+		case SHADER_EVAL_GLOSSY_INDIRECT:
+		case SHADER_EVAL_TRANSMISSION_INDIRECT:
+		case SHADER_EVAL_SUBSURFACE_INDIRECT:
+			return true;
+		default:
+			return false;
+	}
+}
+
+void BlenderSession::bake(BL::Object b_object, const string& pass_type, BL::BakePixel pixel_array, int num_pixels, int depth, float result[])
+{
+	ShaderEvalType shader_type = get_shader_type(pass_type);
+	size_t object_index = OBJECT_NONE;
+	int tri_offset = 0;
+
+	if(shader_type == SHADER_EVAL_UV) {
+		/* force UV to be available */
+		Pass::add(PASS_UV, scene->film->passes);
+	}
+
+	if(is_light_pass(shader_type)) {
+		/* force use_light_pass to be true */
+		Pass::add(PASS_LIGHT, scene->film->passes);
+	}
+
+	/* create device and update scene */
+	scene->film->tag_update(scene);
+	scene->integrator->tag_update(scene);
+
+	/* update scene */
+	sync->sync_camera(b_render, b_engine.camera_override(), width, height);
+	sync->sync_data(b_v3d, b_engine.camera_override(), &python_thread_state);
+
+	/* get buffer parameters */
+	SessionParams session_params = BlenderSync::get_session_params(b_engine, b_userpref, b_scene, background);
+	BufferParams buffer_params = BlenderSync::get_buffer_params(b_render, b_scene, b_v3d, b_rv3d, scene->camera, width, height);
+
+	scene->bake_manager->set_baking(true);
+
+	/* set number of samples */
+	session->tile_manager.set_samples(session_params.samples);
+	session->reset(buffer_params, session_params.samples);
+	session->update_scene();
+
+	/* find object index. todo: is arbitrary - copied from mesh_displace.cpp */
+	for(size_t i = 0; i < scene->objects.size(); i++) {
+		if(strcmp(scene->objects[i]->name.c_str(), b_object.name().c_str()) == 0) {
+			object_index = i;
+			tri_offset = scene->objects[i]->mesh->tri_offset;
+			break;
+		}
+	}
+
+	/* when used, non-instanced convention: object = ~object */
+	int object = ~object_index;
+
+	BakeData *bake_data = scene->bake_manager->init(object, tri_offset, num_pixels);
+
+	populate_bake_data(bake_data, pixel_array, num_pixels);
+
+	/* set number of samples */
+	session->tile_manager.set_samples(session_params.samples);
+	session->reset(buffer_params, session_params.samples);
+	session->update_scene();
+
+	scene->bake_manager->bake(scene->device, &scene->dscene, scene, session->progress, shader_type, bake_data, result);
 
 	/* free all memory used (host and device), so we wouldn't leave render
 	 * engine with extra memory allocated
@@ -732,85 +887,123 @@ int BlenderSession::builtin_image_frame(const string &builtin_name)
 	return atoi(builtin_name.substr(last + 1, builtin_name.size() - last - 1).c_str());
 }
 
-void BlenderSession::builtin_image_info(const string &builtin_name, void *builtin_data, bool &is_float, int &width, int &height, int &channels)
+void BlenderSession::builtin_image_info(const string &builtin_name, void *builtin_data, bool &is_float, int &width, int &height, int &depth, int &channels)
 {
+	/* empty image */
+	is_float = false;
+	width = 0;
+	height = 0;
+	depth = 0;
+	channels = 0;
+
+	if(!builtin_data)
+		return;
+
+	/* recover ID pointer */
 	PointerRNA ptr;
 	RNA_id_pointer_create((ID*)builtin_data, &ptr);
-	BL::Image b_image(ptr);
+	BL::ID b_id(ptr);
 
-	if(b_image) {
+	if(b_id.is_a(&RNA_Image)) {
+		/* image data */
+		BL::Image b_image(b_id);
+
 		is_float = b_image.is_float();
 		width = b_image.size()[0];
 		height = b_image.size()[1];
+		depth = 1;
 		channels = b_image.channels();
 	}
-	else {
-		is_float = false;
-		width = 0;
-		height = 0;
-		channels = 0;
+	else if(b_id.is_a(&RNA_Object)) {
+		/* smoke volume data */
+		BL::Object b_ob(b_id);
+		BL::SmokeDomainSettings b_domain = object_smoke_domain_find(b_ob);
+
+		if(!b_domain)
+			return;
+
+		if(builtin_name == Attribute::standard_name(ATTR_STD_VOLUME_DENSITY) ||
+		   builtin_name == Attribute::standard_name(ATTR_STD_VOLUME_FLAME))
+			channels = 1;
+		else if(builtin_name == Attribute::standard_name(ATTR_STD_VOLUME_COLOR))
+			channels = 4;
+		else
+			return;
+
+		int3 resolution = get_int3(b_domain.domain_resolution());
+		int amplify = (b_domain.use_high_resolution())? b_domain.amplify() + 1: 1;
+
+		width = resolution.x * amplify;
+		height = resolution.y * amplify;
+		depth = resolution.z * amplify;
+
+		is_float = true;
 	}
 }
 
 bool BlenderSession::builtin_image_pixels(const string &builtin_name, void *builtin_data, unsigned char *pixels)
 {
+	if(!builtin_data)
+		return false;
+
 	int frame = builtin_image_frame(builtin_name);
 
 	PointerRNA ptr;
 	RNA_id_pointer_create((ID*)builtin_data, &ptr);
 	BL::Image b_image(ptr);
 
-	if(b_image) {
-		int width = b_image.size()[0];
-		int height = b_image.size()[1];
-		int channels = b_image.channels();
+	int width = b_image.size()[0];
+	int height = b_image.size()[1];
+	int channels = b_image.channels();
 
-		unsigned char *image_pixels;
-		image_pixels = image_get_pixels_for_frame(b_image, frame);
+	unsigned char *image_pixels;
+	image_pixels = image_get_pixels_for_frame(b_image, frame);
 
-		if(image_pixels) {
-			memcpy(pixels, image_pixels, width * height * channels * sizeof(unsigned char));
-			MEM_freeN(image_pixels);
+	if(image_pixels) {
+		memcpy(pixels, image_pixels, width * height * channels * sizeof(unsigned char));
+		MEM_freeN(image_pixels);
+	}
+	else {
+		if(channels == 1) {
+			memset(pixels, 0, width * height * sizeof(unsigned char));
 		}
 		else {
-			if(channels == 1) {
-				memset(pixels, 0, width * height * sizeof(unsigned char));
-			}
-			else {
-				unsigned char *cp = pixels;
-				for(int i = 0; i < width * height; i++, cp += channels) {
-					cp[0] = 255;
-					cp[1] = 0;
-					cp[2] = 255;
-					if(channels == 4)
-						cp[3] = 255;
-				}
+			unsigned char *cp = pixels;
+			for(int i = 0; i < width * height; i++, cp += channels) {
+				cp[0] = 255;
+				cp[1] = 0;
+				cp[2] = 255;
+				if(channels == 4)
+					cp[3] = 255;
 			}
 		}
-
-		/* premultiply, byte images are always straight for blender */
-		unsigned char *cp = pixels;
-		for(int i = 0; i < width * height; i++, cp += channels) {
-			cp[0] = (cp[0] * cp[3]) >> 8;
-			cp[1] = (cp[1] * cp[3]) >> 8;
-			cp[2] = (cp[2] * cp[3]) >> 8;
-		}
-
-		return true;
 	}
 
-	return false;
+	/* premultiply, byte images are always straight for blender */
+	unsigned char *cp = pixels;
+	for(int i = 0; i < width * height; i++, cp += channels) {
+		cp[0] = (cp[0] * cp[3]) >> 8;
+		cp[1] = (cp[1] * cp[3]) >> 8;
+		cp[2] = (cp[2] * cp[3]) >> 8;
+	}
+
+	return true;
 }
 
 bool BlenderSession::builtin_image_float_pixels(const string &builtin_name, void *builtin_data, float *pixels)
 {
-	int frame = builtin_image_frame(builtin_name);
+	if(!builtin_data)
+		return false;
 
 	PointerRNA ptr;
 	RNA_id_pointer_create((ID*)builtin_data, &ptr);
-	BL::Image b_image(ptr);
+	BL::ID b_id(ptr);
 
-	if(b_image) {
+	if(b_id.is_a(&RNA_Image)) {
+		/* image data */
+		BL::Image b_image(b_id);
+		int frame = builtin_image_frame(builtin_name);
+
 		int width = b_image.size()[0];
 		int height = b_image.size()[1];
 		int channels = b_image.channels();
@@ -839,6 +1032,51 @@ bool BlenderSession::builtin_image_float_pixels(const string &builtin_name, void
 		}
 
 		return true;
+	}
+	else if(b_id.is_a(&RNA_Object)) {
+		/* smoke volume data */
+		BL::Object b_ob(b_id);
+		BL::SmokeDomainSettings b_domain = object_smoke_domain_find(b_ob);
+
+		if(!b_domain)
+			return false;
+
+		int3 resolution = get_int3(b_domain.domain_resolution());
+		int length, amplify = (b_domain.use_high_resolution())? b_domain.amplify() + 1: 1;
+
+		int width = resolution.x * amplify;
+		int height = resolution.y * amplify;
+		int depth = resolution.z * amplify;
+
+		if(builtin_name == Attribute::standard_name(ATTR_STD_VOLUME_DENSITY)) {
+			SmokeDomainSettings_density_grid_get_length(&b_domain.ptr, &length);
+
+			if(length == width*height*depth) {
+				SmokeDomainSettings_density_grid_get(&b_domain.ptr, pixels);
+				return true;
+			}
+		}
+		else if(builtin_name == Attribute::standard_name(ATTR_STD_VOLUME_FLAME)) {
+			/* this is in range 0..1, and interpreted by the OpenGL smoke viewer
+			 * as 1500..3000 K with the first part faded to zero density */
+			SmokeDomainSettings_flame_grid_get_length(&b_domain.ptr, &length);
+
+			if(length == width*height*depth) {
+				SmokeDomainSettings_flame_grid_get(&b_domain.ptr, pixels);
+				return true;
+			}
+		}
+		else if(builtin_name == Attribute::standard_name(ATTR_STD_VOLUME_COLOR)) {
+			/* the RGB is "premultiplied" by density for better interpolation results */
+			SmokeDomainSettings_color_grid_get_length(&b_domain.ptr, &length);
+
+			if(length == width*height*depth*4) {
+				SmokeDomainSettings_color_grid_get(&b_domain.ptr, pixels);
+				return true;
+			}
+		}
+
+		fprintf(stderr, "Cycles error: unexpected smoke volume resolution, skipping\n");
 	}
 
 	return false;

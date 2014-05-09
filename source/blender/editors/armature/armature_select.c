@@ -80,13 +80,15 @@ void *get_bone_from_selectbuffer(Scene *scene, Base *base, unsigned int *buffer,
 	EditBone *ebone;
 	void *firstunSel = NULL, *firstSel = NULL, *data;
 	unsigned int hitresult;
-	short i, takeNext = 0, sel;
+	short i;
+	bool takeNext = false;
 	
 	for (i = 0; i < hits; i++) {
 		hitresult = buffer[3 + (i * 4)];
 		
-		if (!(hitresult & BONESEL_NOSEL)) { // -1
-			if (hitresult & BONESEL_ANY) {  // to avoid including objects in selection
+		if (!(hitresult & BONESEL_NOSEL)) {
+			if (hitresult & BONESEL_ANY) {  /* to avoid including objects in selection */
+				bool sel;
 				
 				hitresult &= ~(BONESEL_ANY);
 				/* Determine what the current bone is */
@@ -256,7 +258,7 @@ void ARMATURE_OT_select_linked(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* properties */
-	RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
+	RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend selection instead of deselecting everything first");
 }
 
 /* does bones and points */
@@ -305,7 +307,7 @@ static EditBone *get_nearest_editbonepoint(ViewContext *vc, const int mval[2],
 	if (hits > 0) {
 		
 		if (hits == 1) {
-			if (!(buffer[3] & BONESEL_NOSEL)) 
+			if (!(buffer[3] & BONESEL_NOSEL))
 				besthitresult = buffer[3];
 		}
 		else {

@@ -36,10 +36,8 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_object_types.h"
-#include "DNA_screen_types.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_blender.h"
@@ -212,9 +210,9 @@ static void undo_clean_stack(bContext *C)
 		if (uel->type == obedit->type) {
 			if (strcmp(uel->id.name, obedit->id.name) == 0) {
 				if (uel->validate_undo == NULL)
-					is_valid = TRUE;
+					is_valid = true;
 				else if (uel->validate_undo(uel->undodata, editdata))
-					is_valid = TRUE;
+					is_valid = true;
 			}
 		}
 		if (is_valid)

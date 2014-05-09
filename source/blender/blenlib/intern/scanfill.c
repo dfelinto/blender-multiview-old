@@ -42,9 +42,10 @@
 #include "BLI_math.h"
 #include "BLI_memarena.h"
 #include "BLI_utildefines.h"
-#include "BLI_strict_flags.h"
 
 #include "BLI_scanfill.h"  /* own include */
+
+#include "BLI_strict_flags.h"
 
 /* local types */
 typedef struct PolyFill {
@@ -864,7 +865,7 @@ unsigned int BLI_scanfill_calc_ex(ScanFillContext *sf_ctx, const int flag, const
 			/* Newell's Method */
 			/* Similar code used elsewhere, but this checks for double ups
 			 * which historically this function supports so better not change */
-			float *v_prev;
+			const float *v_prev;
 
 			zero_v3(n);
 			eve = sf_ctx->fillvertbase.last;

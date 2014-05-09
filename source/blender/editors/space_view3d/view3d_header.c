@@ -34,9 +34,6 @@
 
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
-#include "DNA_mesh_types.h"
-
-#include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
@@ -46,11 +43,8 @@
 
 #include "BKE_context.h"
 #include "BKE_depsgraph.h"
-#include "BKE_effect.h"
 #include "BKE_main.h"
-#include "BKE_mesh.h"
 #include "BKE_modifier.h"
-#include "BKE_paint.h"
 #include "BKE_screen.h"
 #include "BKE_editmesh.h"
 
@@ -64,8 +58,6 @@
 #include "ED_mesh.h"
 #include "ED_util.h"
 #include "ED_screen.h"
-#include "ED_transform.h"
-#include "ED_types.h"
 
 #include "UI_interface.h"
 #include "UI_resources.h"
@@ -197,7 +189,7 @@ static int view3d_layers_invoke(bContext *C, wmOperator *op, const wmEvent *even
 		return OPERATOR_PASS_THROUGH;
 	
 	if (event->shift)
-		RNA_boolean_set(op->ptr, "extend", TRUE);
+		RNA_boolean_set(op->ptr, "extend", true);
 	else
 		RNA_boolean_set(op->ptr, "extend", false);
 	
@@ -274,14 +266,14 @@ void uiTemplateEditModeSelection(uiLayout *layout, struct bContext *C)
 		BMEditMesh *em = BKE_editmesh_from_object(obedit);
 		uiLayout *row;
 
-		row = uiLayoutRow(layout, TRUE);
+		row = uiLayoutRow(layout, true);
 		block = uiLayoutGetBlock(row);
 		uiDefIconButBitS(block, TOG, SCE_SELECT_VERTEX, B_SEL_VERT, ICON_VERTEXSEL,
 		                 0, 0, UI_UNIT_X, UI_UNIT_Y, &em->selectmode, 1.0, 0.0, 0, 0,
-		                 TIP_("Vertex select - Shift-Click for multiple modes"));
+		                 TIP_("Vertex select - Shift-Click for multiple modes, Ctrl-Click contracts selection"));
 		uiDefIconButBitS(block, TOG, SCE_SELECT_EDGE, B_SEL_EDGE, ICON_EDGESEL,
 		                 0, 0, UI_UNIT_X, UI_UNIT_Y, &em->selectmode, 1.0, 0.0, 0, 0,
-		                 TIP_("Edge select - Shift-Click for multiple modes, Ctrl-Click expands selection"));
+		                 TIP_("Edge select - Shift-Click for multiple modes, Ctrl-Click expands/contracts selection"));
 		uiDefIconButBitS(block, TOG, SCE_SELECT_FACE, B_SEL_FACE, ICON_FACESEL,
 		                 0, 0, UI_UNIT_X, UI_UNIT_Y, &em->selectmode, 1.0, 0.0, 0, 0,
 		                 TIP_("Face select - Shift-Click for multiple modes, Ctrl-Click expands selection"));
@@ -322,7 +314,7 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 		modeselect = OB_MODE_OBJECT;
 	}
 
-	row = uiLayoutRow(layout, FALSE);
+	row = uiLayoutRow(layout, false);
 	{
 		EnumPropertyItem *item = object_mode_items;
 		const char *name = "";
@@ -347,7 +339,7 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 
 		if (ob->mode & OB_MODE_WEIGHT_PAINT) {
 			/* Only for Weight Paint. makes no sense in other paint modes. */
-			row = uiLayoutRow(layout, TRUE);
+			row = uiLayoutRow(layout, true);
 			uiItemR(row, &v3dptr, "pivot_point", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 		}
 
@@ -361,14 +353,14 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 				uiItemR(layout, &meshptr, "use_paint_mask", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 			}
 			else {
-				row = uiLayoutRow(layout, TRUE);
+				row = uiLayoutRow(layout, true);
 				uiItemR(row, &meshptr, "use_paint_mask", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 				uiItemR(row, &meshptr, "use_paint_mask_vertex", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 			}
 		}
 	}
 	else {
-		row = uiLayoutRow(layout, TRUE);
+		row = uiLayoutRow(layout, true);
 		uiItemR(row, &v3dptr, "pivot_point", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 
 		/* pose/object only however we want to allow in weight paint mode too
@@ -380,7 +372,7 @@ void uiTemplateHeader3D(uiLayout *layout, struct bContext *C)
 		}
 
 		/* Transform widget / manipulators */
-		row = uiLayoutRow(layout, TRUE);
+		row = uiLayoutRow(layout, true);
 		uiItemR(row, &v3dptr, "show_manipulator", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);
 		if (v3d->twflag & V3D_USE_MANIPULATOR) {
 			uiItemR(row, &v3dptr, "transform_manipulators", UI_ITEM_R_ICON_ONLY, "", ICON_NONE);

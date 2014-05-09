@@ -546,6 +546,7 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 			}
 
 			image->animated = b_image_node.image_user().use_auto_refresh();
+			image->use_alpha = b_image.use_alpha();
 		}
 		image->color_space = ImageTextureNode::color_space_enum[(int)b_image_node.color_space()];
 		image->projection = ImageTextureNode::projection_enum[(int)b_image_node.projection()];
@@ -574,6 +575,8 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 				env->animated = b_env_node.image_user().use_auto_refresh();
 				env->builtin_data = NULL;
 			}
+
+			env->use_alpha = b_image.use_alpha();
 		}
 		env->color_space = EnvironmentTextureNode::color_space_enum[(int)b_env_node.color_space()];
 		env->projection = EnvironmentTextureNode::projection_enum[(int)b_env_node.projection()];
@@ -667,6 +670,13 @@ static ShaderNode *add_node(Scene *scene, BL::BlendData b_data, BL::Scene b_scen
 		tangent->axis = TangentNode::axis_enum[(int)b_tangent_node.axis()];
 		tangent->attribute = b_tangent_node.uv_map();
 		node = tangent;
+	}
+	else if (b_node.is_a(&RNA_ShaderNodeUVMap)) {
+		BL::ShaderNodeUVMap b_uvmap_node(b_node);
+		UVMapNode *uvm = new UVMapNode();
+		uvm->attribute = b_uvmap_node.uv_map();
+		uvm->from_dupli = b_uvmap_node.from_dupli();
+		node = uvm;
 	}
 
 	if(node)

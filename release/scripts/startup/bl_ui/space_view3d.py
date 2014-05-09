@@ -30,8 +30,7 @@ class VIEW3D_HT_header(Header):
         layout = self.layout
 
         view = context.space_data
-        mode_string = context.mode
-        edit_object = context.edit_object
+        # mode_string = context.mode
         obj = context.active_object
         toolsettings = context.tool_settings
 
@@ -127,7 +126,7 @@ class VIEW3D_MT_editor_menus(Menu):
                 layout.menu("VIEW3D_MT_select_paint_mask")
             elif mesh.use_paint_mask_vertex and mode_string == 'PAINT_WEIGHT':
                 layout.menu("VIEW3D_MT_select_paint_mask_vertex")
-        elif mode_string not in {'EDIT_TEXT', 'SCULPT'}:
+        elif mode_string != 'SCULPT':
             layout.menu("VIEW3D_MT_select_%s" % mode_string.lower())
 
         if mode_string == 'OBJECT':
@@ -197,6 +196,7 @@ class VIEW3D_MT_transform_base(Menu):
         layout.operator("transform.bend", text="Bend")
         layout.operator("transform.push_pull", text="Push/Pull")
         layout.operator("object.vertex_warp", text="Warp")
+        layout.operator("object.vertex_random", text="Randomize")
 
 
 # Generic transform menu - geometry types
@@ -900,7 +900,6 @@ class INFO_MT_curve_add(Menu):
         layout.operator_context = 'INVOKE_REGION_WIN'
 
         VIEW3D_PT_tools_add_object.draw_add_curve(layout)
-
 
 
 class INFO_MT_surface_add(Menu):
@@ -1787,7 +1786,7 @@ class VIEW3D_MT_pose(Menu):
         layout.separator()
 
         layout.operator_context = 'INVOKE_AREA'
-        layout.operator("pose.armature_layers", text="Change Armature Layers...")
+        layout.operator("armature.armature_layers", text="Change Armature Layers...")
         layout.operator("pose.bone_layers", text="Change Bone Layers...")
 
         layout.separator()
@@ -2168,6 +2167,13 @@ class VIEW3D_MT_edit_mesh_vertices(Menu):
 
         layout.separator()
 
+        op = layout.operator("mesh.mark_sharp", text="Shade Smooth")
+        op.use_verts = True
+        op.clear = True
+        layout.operator("mesh.mark_sharp", text="Shade Sharp").use_verts = True
+
+        layout.separator()
+
         layout.operator("mesh.bevel").vertex_only = True
         layout.operator("mesh.convex_hull")
         layout.operator("mesh.vertices_smooth")
@@ -2211,7 +2217,7 @@ class VIEW3D_MT_edit_mesh_edges(Menu):
 
         layout.separator()
 
-        layout.operator("mesh.mark_sharp").clear = False
+        layout.operator("mesh.mark_sharp")
         layout.operator("mesh.mark_sharp", text="Clear Sharp").clear = True
 
         layout.separator()
@@ -2777,8 +2783,6 @@ class VIEW3D_PT_view3d_display(Panel):
 
         view = context.space_data
         scene = context.scene
-        gs = scene.game_settings
-        obj = context.object
 
         col = layout.column()
         col.prop(view, "show_only_render")
@@ -2962,14 +2966,14 @@ class VIEW3D_PT_view3d_meshdisplay(Panel):
 
         col.separator()
         col.label(text="Normals:")
-        row = col.row()
+        row = col.row(align=True)
+
+        row.prop(mesh, "show_normal_vertex", text="", icon='VERTEXSEL')
+        row.prop(mesh, "show_normal_loop", text="", icon='VERTEXSEL')
+        row.prop(mesh, "show_normal_face", text="", icon='FACESEL')
 
         sub = row.row(align=True)
-        sub.prop(mesh, "show_normal_vertex", text="", icon='VERTEXSEL')
-        sub.prop(mesh, "show_normal_face", text="", icon='FACESEL')
-
-        sub = row.row(align=True)
-        sub.active = mesh.show_normal_vertex or mesh.show_normal_face
+        sub.active = mesh.show_normal_vertex or mesh.show_normal_face or mesh.show_normal_loop
         sub.prop(context.scene.tool_settings, "normal_size", text="Size")
 
         col.separator()

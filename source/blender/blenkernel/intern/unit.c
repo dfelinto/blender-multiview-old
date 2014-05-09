@@ -471,7 +471,7 @@ static const char *unit_find_str(const char *str, const char *substr)
 			/* previous char cannot be a letter */
 			if (str_found == str ||
 			    /* weak unicode support!, so "µm" won't match up be replaced by "m"
-			     * since non ascii utf8 values will NEVER return TRUE */
+			     * since non ascii utf8 values will NEVER return true */
 			    isalpha_or_utf8(*BLI_str_prev_char_utf8(str_found)) == 0)
 			{
 				/* next char cannot be alphanum */
@@ -680,7 +680,7 @@ int bUnit_ReplaceString(char *str, int len_max, const char *str_prev, double sca
 	 * */
 	{
 		char *str_found = str;
-		char *ch = str;
+		const char *ch = str;
 
 		while ((str_found = strchr(str_found, SEP_CHR))) {
 

@@ -37,18 +37,17 @@
 #include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
+#include "BLI_utildefines.h"
 #include "BLI_kdtree.h"
 #include "BLI_rand.h"
 #include "BLI_math.h"
 #include "BLI_edgehash.h"
-#include "BLI_utildefines.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_deform.h"
 #include "BKE_lattice.h"
 #include "BKE_mesh.h"
 #include "BKE_modifier.h"
-#include "BKE_object.h"
 #include "BKE_particle.h"
 #include "BKE_scene.h"
 
@@ -801,7 +800,7 @@ static DerivedMesh *explodeMesh(ExplodeModifierData *emd,
 	float rot[4];
 	float cfra;
 	/* float timestep; */
-	int *facepa = emd->facepa;
+	const int *facepa = emd->facepa;
 	int totdup = 0, totvert = 0, totface = 0, totpart = 0, delface = 0;
 	int i, v, u;
 	unsigned int ed_v1, ed_v2, mindex = 0;

@@ -127,6 +127,9 @@ bool BKE_mesh_uv_cdlayer_rename(struct Mesh *me, const char *old_name, const cha
 
 float (*BKE_mesh_vertexCos_get(struct Mesh *me, int *r_numVerts))[3];
 
+struct Mesh *BKE_mesh_new_from_object(struct Main *bmain, struct Scene *sce, struct Object *ob,
+                                      int apply_modifiers, int settings, int calc_tessface, int calc_undeformed);
+
 /* vertex level transformations & checks (no derived mesh) */
 
 bool BKE_mesh_minmax(struct Mesh *me, float r_min[3], float r_max[3]);
@@ -192,7 +195,7 @@ void BKE_mesh_calc_poly_center(
         struct MVert *mvarray, float cent[3]);
 float BKE_mesh_calc_poly_area(
         struct MPoly *mpoly, struct MLoop *loopstart,
-        struct MVert *mvarray, const float polynormal[3]);
+        struct MVert *mvarray);
 void BKE_mesh_calc_poly_angles(
         struct MPoly *mpoly, struct MLoop *loopstart,
         struct MVert *mvarray, float angles[]);
@@ -215,7 +218,7 @@ void BKE_mesh_loops_to_mface_corners(
         struct CustomData *pdata, unsigned int lindex[4], int findex,
         const int polyindex, const int mf_len,
         const int numTex, const int numCol,
-        const bool hasPCol, const bool hasOrigSpace);
+        const bool hasPCol, const bool hasOrigSpace, const bool hasLNor);
 void BKE_mesh_loops_to_tessdata(
         struct CustomData *fdata, struct CustomData *ldata, struct CustomData *pdata, struct MFace *mface,
         int *polyindices, unsigned int (*loopindices)[4], const int num_faces);

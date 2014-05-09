@@ -71,7 +71,7 @@ ccl_device_inline const __m128 shuffle_swap(const __m128& a, shuffle_swap_t shuf
 
 #ifdef __KERNEL_SSE41__
 ccl_device_inline void gen_idirsplat_swap(const __m128 &pn, const shuffle_swap_t &shuf_identity, const shuffle_swap_t &shuf_swap,
-										  const float3& idir, __m128 idirsplat[3], shuffle_swap_t shufflexyz[3])
+                                          const float3& idir, __m128 idirsplat[3], shuffle_swap_t shufflexyz[3])
 {
 	const __m128 idirsplat_raw[] = { _mm_set_ps1(idir.x), _mm_set_ps1(idir.y), _mm_set_ps1(idir.z) };
 	idirsplat[0] = _mm_xor_ps(idirsplat_raw[0], pn);
@@ -87,7 +87,7 @@ ccl_device_inline void gen_idirsplat_swap(const __m128 &pn, const shuffle_swap_t
 }
 #else
 ccl_device_inline void gen_idirsplat_swap(const __m128 &pn, const shuffle_swap_t &shuf_identity, const shuffle_swap_t &shuf_swap,
-										  const float3& idir, __m128 idirsplat[3], shuffle_swap_t shufflexyz[3])
+                                          const float3& idir, __m128 idirsplat[3], shuffle_swap_t shufflexyz[3])
 {
 	idirsplat[0] = _mm_xor_ps(_mm_set_ps1(idir.x), pn);
 	idirsplat[1] = _mm_xor_ps(_mm_set_ps1(idir.y), pn);
@@ -217,6 +217,18 @@ ccl_device_inline const __m128 dot3_splat(const __m128& a, const __m128& b)
 #else
 	__m128 t = _mm_mul_ps(a, b);
 	return _mm_set1_ps(((float*)&t)[0] + ((float*)&t)[1] + ((float*)&t)[2]);
+#endif
+}
+
+/* squared length taking only specified axes into account */
+template<size_t X, size_t Y, size_t Z, size_t W>
+ccl_device_inline float len_squared(const __m128& a)
+{
+#ifndef __KERNEL_SSE41__
+	float4& t = (float4 &)a;
+	return (X ? t.x * t.x : 0.0f) + (Y ? t.y * t.y : 0.0f) + (Z ? t.z * t.z : 0.0f) + (W ? t.w * t.w : 0.0f);
+#else
+	return _mm_cvtss_f32(_mm_dp_ps(a, a, (X << 4) | (Y << 5) | (Z << 6) | (W << 7) | 0xf));
 #endif
 }
 

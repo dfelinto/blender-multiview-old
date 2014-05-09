@@ -52,7 +52,6 @@
 #include "DNA_packedFile_types.h"
 #include "DNA_curve_types.h"
 #include "DNA_vfont_types.h"
-#include "DNA_scene_types.h"
 #include "DNA_object_types.h"
 
 #include "BKE_packedFile.h"
@@ -62,7 +61,6 @@
 #include "BKE_main.h"
 #include "BKE_anim.h"
 #include "BKE_curve.h"
-#include "BKE_displist.h"
 
 static ThreadRWMutex vfont_rwlock = BLI_RWLOCK_INITIALIZER;
 
@@ -217,14 +215,14 @@ VFont *BKE_vfont_load(Main *bmain, const char *name)
 		BLI_strncpy(filename, name, sizeof(filename));
 		
 		pf = get_builtin_packedfile();
-		is_builtin = TRUE;
+		is_builtin = true;
 	}
 	else {
 		BLI_split_file_part(name, filename, sizeof(filename));
 		pf = newPackedFile(NULL, name, bmain->name);
 		temp_pf = newPackedFile(NULL, name, bmain->name);
 		
-		is_builtin = FALSE;
+		is_builtin = false;
 	}
 
 	if (pf) {

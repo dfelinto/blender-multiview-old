@@ -33,7 +33,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_utildefines.h"
-#include "BLI_blenlib.h"
 #include "BLI_bitmap.h"
 #include "BLI_math.h"
 
@@ -46,10 +45,8 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_view3d_types.h"
-#include "DNA_windowmanager_types.h"
 
 #include "BKE_DerivedMesh.h"
-#include "BKE_effect.h"
 #include "BKE_global.h"
 #include "BKE_image.h"
 #include "BKE_material.h"
@@ -70,7 +67,6 @@
 
 #include "RE_engine.h"
 
-#include "ED_mesh.h"
 #include "ED_uvedit.h"
 
 #include "view3d_intern.h"  /* own include */
@@ -255,9 +251,9 @@ static bool set_draw_settings_cached(int clearcache, MTFace *texface, Material *
 	/* convert number of lights into boolean */
 	if (gtexdraw.is_lit) lit = 1;
 
+	backculled = gtexdraw.use_backface_culling;
 	if (ma) {
 		if (ma->mode & MA_SHLESS) lit = 0;
-		backculled = gtexdraw.use_backface_culling;
 		if (gtexdraw.use_game_mat) {
 			backculled = backculled || (ma->game.flag & GEMAT_BACKCULL);
 			alphablend = ma->game.alpha_blend;

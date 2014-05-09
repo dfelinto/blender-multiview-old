@@ -33,7 +33,6 @@
 #include "DNA_object_types.h"
 
 #include "BKE_context.h"
-#include "BKE_main.h"
 #include "BKE_object.h"
 
 #include "ED_screen.h"
@@ -51,7 +50,13 @@
 static int object_lod_add_exec(bContext *C, wmOperator *UNUSED(op))
 {
 	Object *ob = ED_object_context(C);
+
+#ifdef WITH_GAMEENGINE
 	BKE_object_lod_add(ob);
+#else
+	(void)ob;
+#endif
+
 	return OPERATOR_FINISHED;
 }
 
@@ -75,8 +80,13 @@ static int object_lod_remove_exec(bContext *C, wmOperator *op)
 	Object *ob = ED_object_context(C);
 	int index = RNA_int_get(op->ptr, "index");
 
+#ifdef WITH_GAMEENGINE
 	if (!BKE_object_lod_remove(ob, index))
 		return OPERATOR_CANCELLED;
+#else
+	(void)ob;
+	(void)index;
+#endif
 
 	WM_event_add_notifier(C, NC_OBJECT | ND_LOD, CTX_wm_view3d(C));
 	return OPERATOR_FINISHED;

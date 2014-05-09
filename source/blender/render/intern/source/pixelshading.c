@@ -39,7 +39,6 @@
 #include "IMB_imbuf_types.h"
 #include "IMB_imbuf.h"
 
-#include "DNA_camera_types.h"
 #include "DNA_group_types.h"
 #include "DNA_material_types.h"
 #include "DNA_object_types.h"
@@ -47,11 +46,7 @@
 #include "DNA_texture_types.h"
 #include "DNA_lamp_types.h"
 
-#include "BKE_colortools.h"
-#include "BKE_image.h"
-#include "BKE_global.h"
 #include "BKE_material.h"
-#include "BKE_texture.h"
 
 
 /* own module */
@@ -567,7 +562,7 @@ void shadeSunView(float col_r[3], const float view[3])
 	GroupObject *go;
 	LampRen *lar;
 	float sview[3];
-	int do_init = TRUE;
+	bool do_init = true;
 	
 	for (go=R.lights.first; go; go= go->next) {
 		lar= go->lampren;
@@ -582,11 +577,11 @@ void shadeSunView(float col_r[3], const float view[3])
 				if (sview[2] < 0.0f)
 					sview[2] = 0.0f;
 				normalize_v3(sview);
-				do_init = FALSE;
+				do_init = false;
 			}
 			
 			GetSkyXYZRadiancef(lar->sunsky, sview, colorxyz);
-			xyz_to_rgb(colorxyz[0], colorxyz[1], colorxyz[2], &sun_collector[0], &sun_collector[1], &sun_collector[2], 
+			xyz_to_rgb(colorxyz[0], colorxyz[1], colorxyz[2], &sun_collector[0], &sun_collector[1], &sun_collector[2],
 					   lar->sunsky->sky_colorspace);
 			
 			ramp_blend(lar->sunsky->skyblendtype, col_r, lar->sunsky->skyblendfac, sun_collector);

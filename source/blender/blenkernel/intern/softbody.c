@@ -75,7 +75,6 @@ variables on the UI for now
 #include "BKE_global.h"
 #include "BKE_modifier.h"
 #include "BKE_softbody.h"
-#include "BKE_DerivedMesh.h"
 #include "BKE_pointcache.h"
 #include "BKE_deform.h"
 #include "BKE_mesh.h"
@@ -1688,7 +1687,7 @@ static void sb_sfesf_threads_run(Scene *scene, struct Object *ob, float timenow,
 		else
 			sb_threads[i].ifirst  = 0;
 		sb_threads[i].do_effector = do_effector;
-		sb_threads[i].do_deflector = FALSE;// not used here
+		sb_threads[i].do_deflector = false;// not used here
 		sb_threads[i].fieldfactor = 0.0f;// not used here
 		sb_threads[i].windfactor  = 0.0f;// not used here
 		sb_threads[i].nr= i;

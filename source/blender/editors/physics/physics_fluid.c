@@ -37,41 +37,27 @@
 #include "MEM_guardedalloc.h"
 
 /* types */
-#include "DNA_anim_types.h"
 #include "DNA_action_types.h"
 #include "DNA_object_types.h"
 #include "DNA_object_fluidsim.h"	
 
 #include "BLI_blenlib.h"
-#include "BLI_threads.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
-#include "BKE_animsys.h"
-#include "BKE_armature.h"
-#include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_customdata.h"
-#include "BKE_DerivedMesh.h"
-#include "BKE_displist.h"
-#include "BKE_effect.h"
 #include "BKE_fluidsim.h"
 #include "BKE_global.h"
-#include "BKE_ipo.h"
-#include "BKE_key.h"
 #include "BKE_main.h"
 #include "BKE_modifier.h"
 #include "BKE_object.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
-#include "BKE_softbody.h"
-#include "BKE_unit.h"
-
 
 #include "LBM_fluidsim.h"
 
 #include "ED_screen.h"
-#include "ED_fluidsim.h"
 
 #include "WM_types.h"
 #include "WM_api.h"
@@ -84,7 +70,6 @@
 #include "WM_api.h"
 
 #include "DNA_scene_types.h"
-#include "DNA_ipo_types.h"
 #include "DNA_mesh_types.h"
 
 #include "PIL_time.h"
@@ -753,7 +738,7 @@ static void fluidbake_updatejob(void *customdata, float progress)
 {
 	FluidBakeJob *fb= (FluidBakeJob *)customdata;
 	
-	*(fb->do_update) = TRUE;
+	*(fb->do_update) = true;
 	*(fb->progress) = progress;
 }
 
@@ -765,10 +750,10 @@ static void fluidbake_startjob(void *customdata, short *stop, short *do_update, 
 	fb->do_update = do_update;
 	fb->progress = progress;
 	
-	G.is_break = FALSE;  /* XXX shared with render - replace with job 'stop' switch */
+	G.is_break = false;  /* XXX shared with render - replace with job 'stop' switch */
 	
 	elbeemSimulate();
-	*do_update = TRUE;
+	*do_update = true;
 	*stop = 0;
 }
 
@@ -1101,22 +1086,6 @@ static void UNUSED_FUNCTION(fluidsimFreeBake)(Object *UNUSED(ob))
 
 #else /* WITH_MOD_FLUID */
 
-/* compile dummy functions for disabled fluid sim */
-
-FluidsimSettings *fluidsimSettingsNew(Object *UNUSED(srcob))
-{
-	return NULL;
-}
-
-void fluidsimSettingsFree(FluidsimSettings *UNUSED(fss))
-{
-}
-
-FluidsimSettings *fluidsimSettingsCopy(FluidsimSettings *UNUSED(fss))
-{
-	return NULL;
-}
-
 /* only compile dummy functions */
 static int fluidsimBake(bContext *UNUSED(C), ReportList *UNUSED(reports), Object *UNUSED(ob), short UNUSED(do_job))
 {
@@ -1133,7 +1102,7 @@ static int fluid_bake_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(
 	if (WM_jobs_test(CTX_wm_manager(C), CTX_data_scene(C), WM_JOB_TYPE_OBJECT_SIM_FLUID))
 		return OPERATOR_CANCELLED;
 
-	if (!fluidsimBake(C, op->reports, CTX_data_active_object(C), TRUE))
+	if (!fluidsimBake(C, op->reports, CTX_data_active_object(C), true))
 		return OPERATOR_CANCELLED;
 
 	return OPERATOR_FINISHED;
@@ -1141,7 +1110,7 @@ static int fluid_bake_invoke(bContext *C, wmOperator *op, const wmEvent *UNUSED(
 
 static int fluid_bake_exec(bContext *C, wmOperator *op)
 {
-	if (!fluidsimBake(C, op->reports, CTX_data_active_object(C), FALSE))
+	if (!fluidsimBake(C, op->reports, CTX_data_active_object(C), false))
 		return OPERATOR_CANCELLED;
 
 	return OPERATOR_FINISHED;

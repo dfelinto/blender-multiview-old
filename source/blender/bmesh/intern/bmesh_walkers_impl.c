@@ -211,8 +211,7 @@ static void *bmw_ShellWalker_step(BMWalker *walker)
 				newState->curedge = curedge;
 			}
 		}
-		curedge = bmesh_disk_edge_next(curedge, shellWalk.base);
-	} while (curedge != shellWalk.curedge);
+	} while ((curedge = bmesh_disk_edge_next(curedge, shellWalk.base)) != shellWalk.curedge);
 	
 	return shellWalk.curedge;
 }
@@ -472,8 +471,10 @@ static void bmw_LoopWalker_begin(BMWalker *walker, void *data)
 	BMwLoopWalker *lwalk = NULL, owalk, *owalk_pt;
 	BMEdge *e = data;
 	BMVert *v;
-	int vert_edge_count[2] = {BM_vert_edge_count_nonwire(e->v1),
-	                          BM_vert_edge_count_nonwire(e->v2)};
+	const int vert_edge_count[2] = {
+	    BM_vert_edge_count_nonwire(e->v1),
+	    BM_vert_edge_count_nonwire(e->v2),
+	};
 
 	v = e->v1;
 

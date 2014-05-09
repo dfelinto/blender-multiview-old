@@ -30,18 +30,16 @@
 
 #include "kernel_compat_cpu.h"
 #include "kernel_globals.h"
-#include "kernel_montecarlo.h"
+#include "kernel_random.h"
 #include "kernel_projection.h"
 #include "kernel_differential.h"
-#include "kernel_object.h"
-#include "kernel_random.h"
-#include "kernel_bvh.h"
-#include "kernel_triangle.h"
-#include "kernel_curve.h"
-#include "kernel_primitive.h"
+#include "kernel_montecarlo.h"
+#include "kernel_camera.h"
+
+#include "geom/geom.h"
+
 #include "kernel_projection.h"
 #include "kernel_accumulate.h"
-#include "kernel_camera.h"
 #include "kernel_shader.h"
 
 #ifdef WITH_PTEX
@@ -52,11 +50,16 @@ CCL_NAMESPACE_BEGIN
 
 /* RenderServices implementation */
 
-#define COPY_MATRIX44(m1, m2) memcpy(m1, m2, sizeof(*m2))
+#define COPY_MATRIX44(m1, m2)  { \
+	CHECK_TYPE(m1, OSL::Matrix44*); \
+	CHECK_TYPE(m2, Transform*); \
+	memcpy(m1, m2, sizeof(*m2)); \
+} (void)0
 
 /* static ustrings */
 ustring OSLRenderServices::u_distance("distance");
 ustring OSLRenderServices::u_index("index");
+ustring OSLRenderServices::u_world("world");
 ustring OSLRenderServices::u_camera("camera");
 ustring OSLRenderServices::u_screen("screen");
 ustring OSLRenderServices::u_raster("raster");
@@ -87,6 +90,7 @@ ustring OSLRenderServices::u_curve_tangent_normal("geom:curve_tangent_normal");
 #endif
 ustring OSLRenderServices::u_path_ray_length("path:ray_length");
 ustring OSLRenderServices::u_path_ray_depth("path:ray_depth");
+ustring OSLRenderServices::u_path_transparent_depth("path:transparent_depth");
 ustring OSLRenderServices::u_trace("trace");
 ustring OSLRenderServices::u_hit("hit");
 ustring OSLRenderServices::u_hitdist("hitdist");
@@ -131,7 +135,7 @@ bool OSLRenderServices::get_matrix(OSL::Matrix44 &result, OSL::TransformationPtr
 		KernelGlobals *kg = sd->osl_globals;
 		int object = sd->object;
 
-		if (object != ~0) {
+		if (object != OBJECT_NONE) {
 #ifdef __OBJECT_MOTION__
 			Transform tfm;
 
@@ -161,7 +165,7 @@ bool OSLRenderServices::get_inverse_matrix(OSL::Matrix44 &result, OSL::Transform
 		KernelGlobals *kg = sd->osl_globals;
 		int object = sd->object;
 
-		if (object != ~0) {
+		if (object != OBJECT_NONE) {
 #ifdef __OBJECT_MOTION__
 			Transform itfm;
 
@@ -206,6 +210,10 @@ bool OSLRenderServices::get_matrix(OSL::Matrix44 &result, ustring from, float ti
 		COPY_MATRIX44(&result, &tfm);
 		return true;
 	}
+	else if (from == u_world) {
+		result.makeIdentity();
+		return true;
+	}
 
 	return false;
 }
@@ -234,6 +242,10 @@ bool OSLRenderServices::get_inverse_matrix(OSL::Matrix44 &result, ustring to, fl
 		COPY_MATRIX44(&result, &tfm);
 		return true;
 	}
+	else if (to == u_world) {
+		result.makeIdentity();
+		return true;
+	}
 
 	return false;
 }
@@ -246,7 +258,7 @@ bool OSLRenderServices::get_matrix(OSL::Matrix44 &result, OSL::TransformationPtr
 		const ShaderData *sd = (const ShaderData *)xform;
 		int object = sd->object;
 
-		if (object != ~0) {
+		if (object != OBJECT_NONE) {
 #ifdef __OBJECT_MOTION__
 			Transform tfm = sd->ob_tfm;
 #else
@@ -271,7 +283,7 @@ bool OSLRenderServices::get_inverse_matrix(OSL::Matrix44 &result, OSL::Transform
 		const ShaderData *sd = (const ShaderData *)xform;
 		int object = sd->object;
 
-		if (object != ~0) {
+		if (object != OBJECT_NONE) {
 #ifdef __OBJECT_MOTION__
 			Transform tfm = sd->ob_itfm;
 #else
@@ -525,7 +537,8 @@ static bool get_mesh_element_attribute(KernelGlobals *kg, const ShaderData *sd, 
                                const TypeDesc& type, bool derivatives, void *val)
 {
 	if (attr.type == TypeDesc::TypePoint || attr.type == TypeDesc::TypeVector ||
-	    attr.type == TypeDesc::TypeNormal || attr.type == TypeDesc::TypeColor) {
+	    attr.type == TypeDesc::TypeNormal || attr.type == TypeDesc::TypeColor)
+	{
 		float3 fval[3];
 		fval[0] = primitive_attribute_float3(kg, sd, attr.elem, attr.offset,
 		                                     (derivatives) ? &fval[1] : NULL, (derivatives) ? &fval[2] : NULL);
@@ -596,44 +609,44 @@ bool OSLRenderServices::get_object_standard_attribute(KernelGlobals *kg, ShaderD
 
 	/* Particle Attributes */
 	else if (name == u_particle_index) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float f = particle_index(kg, particle_id);
 		return set_attribute_float(f, type, derivatives, val);
 	}
 	else if (name == u_particle_age) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float f = particle_age(kg, particle_id);
 		return set_attribute_float(f, type, derivatives, val);
 	}
 	else if (name == u_particle_lifetime) {
-		uint particle_id = object_particle_id(kg, sd->object);
-		float f= particle_lifetime(kg, particle_id);
+		int particle_id = object_particle_id(kg, sd->object);
+		float f = particle_lifetime(kg, particle_id);
 		return set_attribute_float(f, type, derivatives, val);
 	}
 	else if (name == u_particle_location) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float3 f = particle_location(kg, particle_id);
 		return set_attribute_float3(f, type, derivatives, val);
 	}
 #if 0	/* unsupported */
 	else if (name == u_particle_rotation) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float4 f = particle_rotation(kg, particle_id);
 		return set_attribute_float4(f, type, derivatives, val);
 	}
 #endif
 	else if (name == u_particle_size) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float f = particle_size(kg, particle_id);
 		return set_attribute_float(f, type, derivatives, val);
 	}
 	else if (name == u_particle_velocity) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float3 f = particle_velocity(kg, particle_id);
 		return set_attribute_float3(f, type, derivatives, val);
 	}
 	else if (name == u_particle_angular_velocity) {
-		uint particle_id = object_particle_id(kg, sd->object);
+		int particle_id = object_particle_id(kg, sd->object);
 		float3 f = particle_angular_velocity(kg, particle_id);
 		return set_attribute_float3(f, type, derivatives, val);
 	}
@@ -644,12 +657,17 @@ bool OSLRenderServices::get_object_standard_attribute(KernelGlobals *kg, ShaderD
 	}
 	else if ((name == u_geom_trianglevertices || name == u_geom_polyvertices)
 #ifdef __HAIR__
-		     && sd->segment == ~0) {
+		     && sd->type & PRIMITIVE_ALL_TRIANGLE)
 #else
-		) {
+		)
 #endif
+	{
 		float3 P[3];
-		triangle_vertices(kg, sd->prim, P);
+
+		if(sd->type & PRIMITIVE_TRIANGLE)
+			triangle_vertices(kg, sd->prim, P);
+		else
+			motion_triangle_vertices(kg, sd->object, sd->prim, sd->time, P);
 
 		if(!(sd->flag & SD_TRANSFORM_APPLIED)) {
 			object_position_transform(kg, sd, &P[0]);
@@ -670,7 +688,7 @@ bool OSLRenderServices::get_object_standard_attribute(KernelGlobals *kg, ShaderD
 #ifdef __HAIR__
 	/* Hair Attributes */
 	else if (name == u_is_curve) {
-		float f = (sd->segment != ~0);
+		float f = (sd->type & PRIMITIVE_ALL_CURVE) != 0;
 		return set_attribute_float(f, type, derivatives, val);
 	}
 	else if (name == u_curve_thickness) {
@@ -699,13 +717,18 @@ bool OSLRenderServices::get_background_attribute(KernelGlobals *kg, ShaderData *
 		int f = sd->ray_depth;
 		return set_attribute_int(f, type, derivatives, val);
 	}
+	else if (name == u_path_transparent_depth) {
+		/* Ray Depth */
+		int f = sd->transparent_depth;
+		return set_attribute_int(f, type, derivatives, val);
+	}
 	else if (name == u_ndc) {
 		/* NDC coordinates with special exception for otho */
 		OSLThreadData *tdata = kg->osl_tdata;
 		OSL::ShaderGlobals *globals = &tdata->globals;
 		float3 ndc[3];
 
-		if((globals->raytype & PATH_RAY_CAMERA) && sd->object == ~0 && kernel_data.cam.type == CAMERA_ORTHOGRAPHIC) {
+		if((globals->raytype & PATH_RAY_CAMERA) && sd->object == OBJECT_NONE && kernel_data.cam.type == CAMERA_ORTHOGRAPHIC) {
 			ndc[0] = camera_world_to_ndc(kg, sd, sd->ray_P);
 
 			if(derivatives) {
@@ -733,7 +756,9 @@ bool OSLRenderServices::get_attribute(void *renderstate, bool derivatives, ustri
 {
 	ShaderData *sd = (ShaderData *)renderstate;
 	KernelGlobals *kg = sd->osl_globals;
-	int object, prim, segment;
+	bool is_curve;
+	int object;
+	// int prim;
 
 	/* lookup of attribute on another object */
 	if (object_name != u_empty) {
@@ -743,24 +768,20 @@ bool OSLRenderServices::get_attribute(void *renderstate, bool derivatives, ustri
 			return false;
 
 		object = it->second;
-		prim = ~0;
-		segment = ~0;
+		// prim = PRIM_NONE;
+		is_curve = false;
 	}
 	else {
 		object = sd->object;
-		prim = sd->prim;
-#ifdef __HAIR__
-		segment = sd->segment;
-#else
-		segment = ~0;
-#endif
+		// prim = sd->prim;
+		is_curve = (sd->type & PRIMITIVE_ALL_CURVE) != 0;
 
-		if (object == ~0)
+		if (object == OBJECT_NONE)
 			return get_background_attribute(kg, sd, name, type, derivatives, val);
 	}
 
 	/* find attribute on object */
-	object = object*ATTR_PRIM_TYPES + (segment != ~0);
+	object = object*ATTR_PRIM_TYPES + (is_curve == true);
 	OSLGlobals::AttributeMap& attribute_map = kg->osl->attribute_map[object];
 	OSLGlobals::AttributeMap::iterator it = attribute_map.find(name);
 
@@ -769,8 +790,8 @@ bool OSLRenderServices::get_attribute(void *renderstate, bool derivatives, ustri
 
 		if (attr.elem != ATTR_ELEMENT_OBJECT) {
 			/* triangle and vertex attributes */
-			if (prim != ~0)
-				return get_mesh_element_attribute(kg, sd, attr, type, derivatives, val);
+			if(get_mesh_element_attribute(kg, sd, attr, type, derivatives, val))
+				return true;
 			else
 				return get_mesh_attribute(kg, sd, attr, type, derivatives, val);
 		}
@@ -1005,9 +1026,9 @@ bool OSLRenderServices::trace(TraceOpt &options, OSL::ShaderGlobals *sg,
 
 	/* raytrace */
 #ifdef __HAIR__
-	return scene_intersect(sd->osl_globals, &ray, ~0, &tracedata->isect, NULL, 0.0f, 0.0f);
+	return scene_intersect(sd->osl_globals, &ray, PATH_RAY_ALL_VISIBILITY, &tracedata->isect, NULL, 0.0f, 0.0f);
 #else
-	return scene_intersect(sd->osl_globals, &ray, ~0, &tracedata->isect);
+	return scene_intersect(sd->osl_globals, &ray, PATH_RAY_ALL_VISIBILITY, &tracedata->isect);
 #endif
 }
 
@@ -1019,9 +1040,9 @@ bool OSLRenderServices::getmessage(OSL::ShaderGlobals *sg, ustring source, ustri
 
 	if(source == u_trace && tracedata->init) {
 		if(name == u_hit) {
-			return set_attribute_int((tracedata->isect.prim != ~0), type, derivatives, val);
+			return set_attribute_int((tracedata->isect.prim != PRIM_NONE), type, derivatives, val);
 		}
-		else if(tracedata->isect.prim != ~0) {
+		else if(tracedata->isect.prim != PRIM_NONE) {
 			if(name == u_hitdist) {
 				float f[3] = {tracedata->isect.t, 0.0f, 0.0f};
 				return set_attribute_float(f, type, derivatives, val);
@@ -1034,8 +1055,9 @@ bool OSLRenderServices::getmessage(OSL::ShaderGlobals *sg, ustring source, ustri
 					/* lazy shader data setup */
 					ShaderData *original_sd = (ShaderData *)(sg->renderstate);
 					int bounce = original_sd->ray_depth + 1;
+					int transparent_bounce = original_sd->transparent_depth;
 
-					shader_setup_from_ray(kg, sd, &tracedata->isect, &tracedata->ray, bounce);
+					shader_setup_from_ray(kg, sd, &tracedata->isect, &tracedata->ray, bounce, transparent_bounce);
 					tracedata->setup = true;
 				}
 

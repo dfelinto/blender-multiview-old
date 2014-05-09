@@ -19,14 +19,10 @@ set(SRC
 set(SRC_HEADERS
 	kernel.h
 	kernel_accumulate.h
-	kernel_bvh.h
-	kernel_bvh_subsurface.h
-	kernel_bvh_traversal.h
 	kernel_camera.h
 	kernel_compat_cpu.h
 	kernel_compat_cuda.h
 	kernel_compat_opencl.h
-	kernel_curve.h
 	kernel_differential.h
 	kernel_displace.h
 	kernel_emission.h
@@ -36,18 +32,15 @@ set(SRC_HEADERS
 	kernel_light.h
 	kernel_math.h
 	kernel_montecarlo.h
-	kernel_object.h
 	kernel_passes.h
 	kernel_path.h
 	kernel_path_state.h
-	kernel_primitive.h
 	kernel_projection.h
 	kernel_random.h
 	kernel_shader.h
 	kernel_shadow.h
 	kernel_subsurface.h
 	kernel_textures.h
-	kernel_triangle.h
 	kernel_types.h
 	kernel_volume.h
 )
@@ -114,6 +107,21 @@ set(SRC_SVM_HEADERS
 	svm/svm_wave.h
 )
 
+set(SRC_GEOM_HEADERS
+	geom/geom.h
+	geom/geom_attribute.h
+	geom/geom_bvh.h
+	geom/geom_bvh_subsurface.h
+	geom/geom_bvh_traversal.h
+	geom/geom_curve.h
+	geom/geom_motion_curve.h
+	geom/geom_motion_triangle.h
+	geom/geom_object.h
+	geom/geom_primitive.h
+	geom/geom_triangle.h
+	geom/geom_volume.h
+)
+
 set(SRC_UTIL_HEADERS
 	../util/util_color.h
 	../util/util_half.h
@@ -138,34 +146,26 @@ if(WITH_CYCLES_CUDA_BINARIES)
 	set(CUDA_VERSION "${CUDA_VERSION_MAJOR}${CUDA_VERSION_MINOR}")
 
 	# warn for other versions
-	if(CUDA_VERSION MATCHES "50")
+	if(CUDA_VERSION MATCHES "60")
 	else()
 		message(WARNING
 			"CUDA version ${CUDA_VERSION_MAJOR}.${CUDA_VERSION_MINOR} detected, "
-			"build may succeed but only CUDA 5.0 is officially supported")
+			"build may succeed but only CUDA 6.0 is officially supported")
 	endif()
 
 	# build for each arch
-	set(cuda_sources kernel.cu ${SRC_HEADERS} ${SRC_SVM_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_UTIL_HEADERS})
+	set(cuda_sources kernel.cu ${SRC_HEADERS} ${SRC_SVM_HEADERS} ${SRC_GEOM_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_UTIL_HEADERS})
 	set(cuda_cubins)
 
 	foreach(arch ${CYCLES_CUDA_BINARIES_ARCH})
 		set(cuda_cubin kernel_${arch}.cubin)
 
 		set(cuda_version_flags "-D__KERNEL_CUDA_VERSION__=${CUDA_VERSION}")
-
-		# CUDA 5.x build flags for different archs
-		if(${arch} MATCHES "sm_2[0-9]")
-			# sm_2x
-			set(cuda_arch_flags "--maxrregcount=32")
-		elseif(${arch} MATCHES "sm_3[0-9]")
-			# sm_3x
-			set(cuda_arch_flags "--maxrregcount=32")
-		endif()
-
 		set(cuda_math_flags "--use_fast_math")
-		
-		if(CUDA_VERSION LESS 50 AND ${arch} MATCHES "sm_35")
+
+		if(CUDA_VERSION LESS 60 AND ${arch} MATCHES "sm_50")
+			message(WARNING "Can't build kernel for CUDA sm_50 architecture, skipping")
+		elseif(CUDA_VERSION LESS 50 AND ${arch} MATCHES "sm_35")
 			message(WARNING "Can't build kernel for CUDA sm_35 architecture, skipping")
 		else()
 			add_custom_command(
@@ -222,7 +222,7 @@ if(CXX_HAS_SSE)
 endif()
 
 
-add_library(cycles_kernel ${SRC} ${SRC_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_SVM_HEADERS})
+add_library(cycles_kernel ${SRC} ${SRC_HEADERS} ${SRC_CLOSURE_HEADERS} ${SRC_SVM_HEADERS} ${SRC_GEOM_HEADERS})
 
 if(WITH_CYCLES_CUDA)
 	add_dependencies(cycles_kernel cycles_kernel_cuda)
@@ -243,5 +243,6 @@ delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "kernel.cu" ${CYCLES_INSTALL_PATH}/k
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_HEADERS}" ${CYCLES_INSTALL_PATH}/kernel)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_CLOSURE_HEADERS}" ${CYCLES_INSTALL_PATH}/kernel/closure)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_SVM_HEADERS}" ${CYCLES_INSTALL_PATH}/kernel/svm)
+delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_GEOM_HEADERS}" ${CYCLES_INSTALL_PATH}/kernel/geom)
 delayed_install(${CMAKE_CURRENT_SOURCE_DIR} "${SRC_UTIL_HEADERS}" ${CYCLES_INSTALL_PATH}/kernel)
 

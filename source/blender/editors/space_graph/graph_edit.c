@@ -46,7 +46,6 @@
 #include "BLI_utildefines.h"
 
 #include "DNA_anim_types.h"
-#include "DNA_object_types.h"
 #include "DNA_scene_types.h"
 
 #include "RNA_access.h"
@@ -85,7 +84,7 @@
 /* Get the min/max keyframes*/
 /* note: it should return total boundbox, filter for selection only can be argument... */
 void get_graph_keyframe_extents(bAnimContext *ac, float *xmin, float *xmax, float *ymin, float *ymax, 
-                                const short do_sel_only, const short include_handles)
+                                const bool do_sel_only, const bool include_handles)
 {
 	Scene *scene = ac->scene;
 	
@@ -105,7 +104,7 @@ void get_graph_keyframe_extents(bAnimContext *ac, float *xmin, float *xmax, floa
 	
 	/* check if any channels to set range with */
 	if (anim_data.first) {
-		short foundBounds = FALSE;
+		bool foundBounds = false;
 		
 		/* go through channels, finding max extents */
 		for (ale = anim_data.first; ale; ale = ale->next) {
@@ -135,7 +134,7 @@ void get_graph_keyframe_extents(bAnimContext *ac, float *xmin, float *xmax, floa
 				if ((ymin) && (tymin < *ymin)) *ymin = tymin;
 				if ((ymax) && (tymax > *ymax)) *ymax = tymax;
 				
-				foundBounds = TRUE;
+				foundBounds = true;
 			}
 		}
 		
@@ -187,7 +186,7 @@ static int graphkeys_previewrange_exec(bContext *C, wmOperator *UNUSED(op))
 		scene = ac.scene;
 	
 	/* set the range directly */
-	get_graph_keyframe_extents(&ac, &min, &max, NULL, NULL, FALSE, FALSE);
+	get_graph_keyframe_extents(&ac, &min, &max, NULL, NULL, false, false);
 	scene->r.flag |= SCER_PRV_RANGE;
 	scene->r.psfra = iroundf(min);
 	scene->r.pefra = iroundf(max);
@@ -216,16 +215,16 @@ void GRAPH_OT_previewrange_set(wmOperatorType *ot)
 
 /* ****************** View-All Operator ****************** */
 
-static int graphkeys_viewall(bContext *C, const short do_sel_only, const short include_handles,
+static int graphkeys_viewall(bContext *C, const bool do_sel_only, const bool include_handles,
                              const int smooth_viewtx)
 {
 	bAnimContext ac;
 	rctf cur_new;
-
+	
 	/* get editor data */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
 		return OPERATOR_CANCELLED;
-
+	
 	/* set the horizontal range, with an extra offset so that the extreme keys will be in view */
 	get_graph_keyframe_extents(&ac,
 	                           &cur_new.xmin, &cur_new.xmax,
@@ -233,9 +232,9 @@ static int graphkeys_viewall(bContext *C, const short do_sel_only, const short i
 	                           do_sel_only, include_handles);
 
 	BLI_rctf_scale(&cur_new, 1.1f);
-
+	
 	UI_view2d_smooth_view(C, ac.ar, &cur_new, smooth_viewtx);
-
+	
 	return OPERATOR_FINISHED;
 }
 
@@ -243,7 +242,7 @@ static int graphkeys_viewall(bContext *C, const short do_sel_only, const short i
 
 static int graphkeys_viewall_exec(bContext *C, wmOperator *op)
 {
-	const short include_handles = RNA_boolean_get(op->ptr, "include_handles");
+	const bool include_handles = RNA_boolean_get(op->ptr, "include_handles");
 	const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
 	
 	/* whole range */
@@ -252,7 +251,7 @@ static int graphkeys_viewall_exec(bContext *C, wmOperator *op)
  
 static int graphkeys_view_selected_exec(bContext *C, wmOperator *op)
 {
-	const short include_handles = RNA_boolean_get(op->ptr, "include_handles");
+	const bool include_handles = RNA_boolean_get(op->ptr, "include_handles");
 	const int smooth_viewtx = WM_operator_smooth_viewtx_get(op);
 	
 	/* only selected */
@@ -269,12 +268,12 @@ void GRAPH_OT_view_all(wmOperatorType *ot)
 	/* api callbacks */
 	ot->exec = graphkeys_viewall_exec;
 	ot->poll = ED_operator_graphedit_active; /* XXX: unchecked poll to get fsamples working too, but makes modifier damage trickier... */
-
+	
 	/* flags */
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* props */
-	ot->prop = RNA_def_boolean(ot->srna, "include_handles", TRUE, "Include Handles", 
+	ot->prop = RNA_def_boolean(ot->srna, "include_handles", true, "Include Handles", 
 	                           "Include handles of keyframes when calculating extents");
 }
 
@@ -293,7 +292,7 @@ void GRAPH_OT_view_selected(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* props */
-	ot->prop = RNA_def_boolean(ot->srna, "include_handles", TRUE, "Include Handles", 
+	ot->prop = RNA_def_boolean(ot->srna, "include_handles", true, "Include Handles", 
 	                           "Include handles of keyframes when calculating extents");
 }
 
@@ -334,7 +333,7 @@ static void create_ghost_curves(bAnimContext *ac, int start, int end)
 		int cfra;
 		SpaceIpo *sipo = (SpaceIpo *) ac->sl;
 		short mapping_flag = ANIM_get_normalization_flags(ac);
-
+		
 		/* disable driver so that it don't muck up the sampling process */
 		fcu->driver = NULL;
 		
@@ -532,7 +531,7 @@ static int graphkeys_insertkey_exec(bContext *C, wmOperator *op)
 	ANIM_editkeyframes_refresh(&ac);
 	
 	/* set notifier that keyframes have changed */
-	WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_ADDED, NULL);
 	
 	return OPERATOR_FINISHED;
 }
@@ -839,7 +838,7 @@ static int graphkeys_duplicate_exec(bContext *C, wmOperator *UNUSED(op))
 	ANIM_editkeyframes_refresh(&ac);
 	
 	/* set notifier that keyframes have changed */
-	WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_ADDED, NULL);
 	
 	return OPERATOR_FINISHED;
 }
@@ -924,7 +923,7 @@ static int graphkeys_delete_exec(bContext *C, wmOperator *UNUSED(op))
 	ANIM_editkeyframes_refresh(&ac);
 	
 	/* set notifier that keyframes have changed */
-	WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_EDITED, NULL);
+	WM_event_add_notifier(C, NC_ANIMATION | ND_KEYFRAME | NA_REMOVED, NULL);
 	
 	return OPERATOR_FINISHED;
 }
@@ -1661,7 +1660,7 @@ typedef struct tEulerFilter {
 	
 	ID *id;                         /* ID-block which owns the channels */
 	FCurve *(fcurves[3]);           /* 3 Pointers to F-Curves */
-	char *rna_path;                 /* Pointer to one of the RNA Path's used by one of the F-Curves */
+	const char *rna_path;           /* Pointer to one of the RNA Path's used by one of the F-Curves */
 } tEulerFilter;
  
 static int graphkeys_euler_filter_exec(bContext *C, wmOperator *op)
@@ -1968,11 +1967,16 @@ static void snap_graph_keys(bAnimContext *ac, short mode)
 	/* snap keyframes */
 	for (ale = anim_data.first; ale; ale = ale->next) {
 		AnimData *adt = ANIM_nla_mapping_get(ac, ale);
-		short mapping_flag = ANIM_get_normalization_flags(ac);
-		float unit_scale = ANIM_unit_mapping_get_factor(ac->scene, ale->id, ale->key_data, mapping_flag);
-
-		ked.f1 = cursor_value / unit_scale;
-
+		
+		/* normalise cursor value (for normalised F-Curves display) */
+		if (mode == GRAPHKEYS_SNAP_VALUE) {
+			short mapping_flag = ANIM_get_normalization_flags(ac);
+			float unit_scale = ANIM_unit_mapping_get_factor(ac->scene, ale->id, ale->key_data, mapping_flag);
+			
+			ked.f1 = cursor_value / unit_scale;
+		}
+		
+		/* perform snapping */
 		if (adt) {
 			ANIM_nla_mapping_apply_fcurve(adt, ale->key_data, 0, 1); 
 			ANIM_fcurve_keyframes_loop(&ked, ale->key_data, NULL, edit_cb, calchandles_fcurve);
@@ -2090,12 +2094,16 @@ static void mirror_graph_keys(bAnimContext *ac, short mode)
 	/* mirror keyframes */
 	for (ale = anim_data.first; ale; ale = ale->next) {
 		AnimData *adt = ANIM_nla_mapping_get(ac, ale);
-		short mapping_flag = ANIM_get_normalization_flags(ac);
-		float unit_scale = ANIM_unit_mapping_get_factor(ac->scene, ale->id, ale->key_data, mapping_flag | ANIM_UNITCONV_ONLYKEYS);
-
+		
 		/* apply unit corrections */
-		ked.f1 = cursor_value * unit_scale;
-
+		if (mode == GRAPHKEYS_MIRROR_VALUE) {
+			short mapping_flag = ANIM_get_normalization_flags(ac);
+			float unit_scale = ANIM_unit_mapping_get_factor(ac->scene, ale->id, ale->key_data, mapping_flag | ANIM_UNITCONV_ONLYKEYS);
+			
+			ked.f1 = cursor_value * unit_scale;
+		}
+		
+		/* perform actual mirroring */
 		if (adt) {
 			ANIM_nla_mapping_apply_fcurve(adt, ale->key_data, 0, 1); 
 			ANIM_fcurve_keyframes_loop(&ked, ale->key_data, NULL, edit_cb, calchandles_fcurve);
@@ -2320,7 +2328,7 @@ static int graph_fmodifier_copy_exec(bContext *C, wmOperator *op)
 {
 	bAnimContext ac;
 	bAnimListElem *ale;
-	short ok = 0;
+	bool ok = false;
 	
 	/* get editor data */
 	if (ANIM_animdata_get_context(C, &ac) == 0)
@@ -2394,7 +2402,7 @@ static int graph_fmodifier_paste_exec(bContext *C, wmOperator *op)
 		/* TODO: do we want to replace existing modifiers? add user pref for that! */
 		ok += ANIM_fmodifiers_paste_from_buf(&fcu->modifiers, 0);
 	}
-
+	
 	/* clean up */
 	BLI_freelistN(&anim_data);
 	

@@ -69,6 +69,7 @@
 #include "BKE_report.h"
 #include "BKE_object.h"
 #include "BKE_ocean.h"
+#include "BKE_paint.h"
 #include "BKE_particle.h"
 #include "BKE_softbody.h"
 #include "BKE_editmesh.h"
@@ -80,7 +81,6 @@
 #include "ED_armature.h"
 #include "ED_object.h"
 #include "ED_screen.h"
-#include "ED_sculpt.h"
 #include "ED_mesh.h"
 
 #include "WM_api.h"
@@ -161,7 +161,7 @@ ModifierData *ED_object_modifier_add(ReportList *reports, Main *bmain, Scene *sc
 
 			if (ob->mode & OB_MODE_SCULPT) {
 				/* ensure that grid paint mask layer is created */
-				ED_sculpt_mask_layers_ensure(ob, (MultiresModifierData *)new_md);
+				BKE_sculpt_mask_layers_ensure(ob, (MultiresModifierData *)new_md);
 			}
 		}
 		else if (type == eModifierType_Skin) {
@@ -175,8 +175,8 @@ ModifierData *ED_object_modifier_add(ReportList *reports, Main *bmain, Scene *sc
 	return new_md;
 }
 
-/* Return TRUE if the object has a modifier of type 'type' other than
- * the modifier pointed to be 'exclude', otherwise returns FALSE. */
+/* Return true if the object has a modifier of type 'type' other than
+ * the modifier pointed to be 'exclude', otherwise returns false. */
 static bool object_has_modifier(const Object *ob, const ModifierData *exclude,
                                 ModifierType type)
 {
@@ -184,19 +184,19 @@ static bool object_has_modifier(const Object *ob, const ModifierData *exclude,
 
 	for (md = ob->modifiers.first; md; md = md->next) {
 		if ((md != exclude) && (md->type == type))
-			return TRUE;
+			return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 /* If the object data of 'orig_ob' has other users, run 'callback' on
  * each of them.
  *
- * If include_orig is TRUE, the callback will run on 'orig_ob' too.
+ * If include_orig is true, the callback will run on 'orig_ob' too.
  * 
- * If the callback ever returns TRUE, iteration will stop and the
- * function value will be TRUE. Otherwise the function returns FALSE.
+ * If the callback ever returns true, iteration will stop and the
+ * function value will be true. Otherwise the function returns false.
  */
 bool ED_object_iter_other(Main *bmain, Object *orig_ob, const bool include_orig,
                           bool (*callback)(Object *ob, void *callback_data),
@@ -220,7 +220,7 @@ bool ED_object_iter_other(Main *bmain, Object *orig_ob, const bool include_orig,
 			    (ob->data == orig_ob->data))
 			{
 				if (callback(ob, callback_data))
-					return TRUE;
+					return true;
 
 				totfound++;
 			}
@@ -230,7 +230,7 @@ bool ED_object_iter_other(Main *bmain, Object *orig_ob, const bool include_orig,
 		return callback(orig_ob, callback_data);
 	}
 
-	return FALSE;
+	return false;
 }
 
 static bool object_has_modifier_cb(Object *ob, void *data)
@@ -254,16 +254,16 @@ bool ED_object_multires_update_totlevels_cb(Object *ob, void *totlevel_v)
 			DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 		}
 	}
-	return FALSE;
+	return false;
 }
 
-/* Return TRUE if no modifier of type 'type' other than 'exclude' */
+/* Return true if no modifier of type 'type' other than 'exclude' */
 static bool object_modifier_safe_to_delete(Main *bmain, Object *ob,
                                            ModifierData *exclude,
                                            ModifierType type)
 {
 	return (!object_has_modifier(ob, exclude, type) &&
-	        !ED_object_iter_other(bmain, ob, FALSE,
+	        !ED_object_iter_other(bmain, ob, false,
 	                              object_has_modifier_cb, &type));
 }
 
@@ -678,7 +678,7 @@ int ED_object_modifier_apply(ReportList *reports, Scene *scene, Object *ob, Modi
 	}
 	else if ((ob->mode & OB_MODE_SCULPT) &&
 	         (find_multires_modifier_before(scene, md)) &&
-	         (modifier_isSameTopology(md) == FALSE))
+	         (modifier_isSameTopology(md) == false))
 	{
 		BKE_report(reports, RPT_ERROR, "Constructive modifier cannot be applied to multi-res data in sculpt mode");
 		return 0;
@@ -834,18 +834,18 @@ static int edit_modifier_invoke_properties(bContext *C, wmOperator *op)
 	ModifierData *md;
 	
 	if (RNA_struct_property_is_set(op->ptr, "modifier")) {
-		return TRUE;
+		return true;
 	}
 	else {
 		PointerRNA ptr = CTX_data_pointer_get_type(C, "modifier", &RNA_Modifier);
 		if (ptr.data) {
 			md = ptr.data;
 			RNA_string_set(op->ptr, "modifier", md->name);
-			return TRUE;
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 static ModifierData *edit_modifier_property_get(wmOperator *op, Object *ob, int type)
@@ -1134,7 +1134,7 @@ static int multires_higher_levels_delete_exec(bContext *C, wmOperator *op)
 	
 	multiresModifier_del_levels(mmd, ob, 1);
 
-	ED_object_iter_other(CTX_data_main(C), ob, TRUE,
+	ED_object_iter_other(CTX_data_main(C), ob, true,
 	                     ED_object_multires_update_totlevels_cb,
 	                     &mmd->totlvl);
 	
@@ -1178,7 +1178,7 @@ static int multires_subdivide_exec(bContext *C, wmOperator *op)
 	
 	multiresModifier_subdivide(mmd, ob, 0, mmd->simple);
 
-	ED_object_iter_other(CTX_data_main(C), ob, TRUE,
+	ED_object_iter_other(CTX_data_main(C), ob, true,
 	                     ED_object_multires_update_totlevels_cb,
 	                     &mmd->totlvl);
 
@@ -1187,7 +1187,7 @@ static int multires_subdivide_exec(bContext *C, wmOperator *op)
 
 	if (ob->mode & OB_MODE_SCULPT) {
 		/* ensure that grid paint mask layer is created */
-		ED_sculpt_mask_layers_ensure(ob, mmd);
+		BKE_sculpt_mask_layers_ensure(ob, mmd);
 	}
 	
 	return OPERATOR_FINISHED;
@@ -1454,7 +1454,7 @@ static int skin_edit_poll(bContext *C)
 	        edit_modifier_poll_generic(C, &RNA_SkinModifier, (1 << OB_MESH)));
 }
 
-static void skin_root_clear(BMesh *bm, BMVert *bm_vert, GHash *visited)
+static void skin_root_clear(BMesh *bm, BMVert *bm_vert, GSet *visited)
 {
 	BMEdge *bm_edge;
 	BMIter bm_iter;
@@ -1462,14 +1462,14 @@ static void skin_root_clear(BMesh *bm, BMVert *bm_vert, GHash *visited)
 	BM_ITER_ELEM (bm_edge, &bm_iter, bm_vert, BM_EDGES_OF_VERT) {
 		BMVert *v2 = BM_edge_other_vert(bm_edge, bm_vert);
 
-		if (!BLI_ghash_lookup(visited, v2)) {
+		if (!BLI_gset_haskey(visited, v2)) {
 			MVertSkin *vs = CustomData_bmesh_get(&bm->vdata,
 			                                     v2->head.data,
 			                                     CD_MVERT_SKIN);
 
 			/* clear vertex root flag and add to visited set */
 			vs->flag &= ~MVERT_SKIN_ROOT;
-			BLI_ghash_insert(visited, v2, v2);
+			BLI_gset_insert(visited, v2);
 
 			skin_root_clear(bm, v2, visited);
 		}
@@ -1483,14 +1483,14 @@ static int skin_root_mark_exec(bContext *C, wmOperator *UNUSED(op))
 	BMesh *bm = em->bm;
 	BMVert *bm_vert;
 	BMIter bm_iter;
-	GHash *visited;
+	GSet *visited;
 
-	visited = BLI_ghash_ptr_new("skin_root_mark_exec visited");
+	visited = BLI_gset_ptr_new(__func__);
 
 	BKE_mesh_ensure_skin_customdata(ob->data);
 
 	BM_ITER_MESH (bm_vert, &bm_iter, bm, BM_VERTS_OF_MESH) {
-		if (!BLI_ghash_lookup(visited, bm_vert) &&
+		if (!BLI_gset_haskey(visited, bm_vert) &&
 		    BM_elem_flag_test(bm_vert, BM_ELEM_SELECT))
 		{
 			MVertSkin *vs = CustomData_bmesh_get(&bm->vdata,
@@ -1499,14 +1499,14 @@ static int skin_root_mark_exec(bContext *C, wmOperator *UNUSED(op))
 
 			/* mark vertex as root and add to visited set */
 			vs->flag |= MVERT_SKIN_ROOT;
-			BLI_ghash_insert(visited, bm_vert, bm_vert);
+			BLI_gset_insert(visited, bm_vert);
 
 			/* clear root flag from all connected vertices (recursively) */
 			skin_root_clear(bm, bm_vert, visited);
 		}
 	}
 
-	BLI_ghash_free(visited, NULL, NULL);
+	BLI_gset_free(visited, NULL);
 
 	DAG_id_tag_update(&ob->id, OB_RECALC_DATA);
 	WM_event_add_notifier(C, NC_OBJECT | ND_MODIFIER, ob);
@@ -1974,7 +1974,7 @@ static void init_ocean_modifier_bake(struct Ocean *oc, struct OceanModifierData 
 	
 	if (!omd || !oc) return; 
 	
-	do_heightfield = TRUE;
+	do_heightfield = true;
 	do_chop = (omd->chop_amount > 0);
 	do_normals = (omd->flag & MOD_OCEAN_GENERATE_NORMALS);
 	do_jacobian = (omd->flag & MOD_OCEAN_GENERATE_FOAM);
@@ -2023,7 +2023,7 @@ static void oceanbake_update(void *customdata, float progress, int *cancel)
 	if (oceanbake_breakjob(oj))
 		*cancel = 1;
 	
-	*(oj->do_update) = TRUE;
+	*(oj->do_update) = true;
 	*(oj->progress) = progress;
 }
 
@@ -2035,11 +2035,11 @@ static void oceanbake_startjob(void *customdata, short *stop, short *do_update, 
 	oj->do_update = do_update;
 	oj->progress = progress;
 	
-	G.is_break = FALSE;   /* XXX shared with render - replace with job 'stop' switch */
+	G.is_break = false;   /* XXX shared with render - replace with job 'stop' switch */
 	
 	BKE_bake_ocean(oj->ocean, oj->och, oceanbake_update, (void *)oj);
 	
-	*do_update = TRUE;
+	*do_update = true;
 	*stop = 0;
 }
 
@@ -2053,7 +2053,7 @@ static void oceanbake_endjob(void *customdata)
 	}
 	
 	oj->omd->oceancache = oj->och;
-	oj->omd->cached = TRUE;
+	oj->omd->cached = true;
 }
 
 static int ocean_bake_exec(bContext *C, wmOperator *op)
@@ -2120,7 +2120,7 @@ static int ocean_bake_exec(bContext *C, wmOperator *op)
 	BKE_bake_ocean(ocean, och);
 	
 	omd->oceancache = och;
-	omd->cached = TRUE;
+	omd->cached = true;
 	
 	scene->r.cfra = cfra;
 	
@@ -2174,7 +2174,7 @@ void OBJECT_OT_ocean_bake(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO | OPTYPE_INTERNAL;
 	edit_modifier_properties(ot);
 	
-	RNA_def_boolean(ot->srna, "free", FALSE, "Free", "Free the bake, rather than generating it");
+	RNA_def_boolean(ot->srna, "free", false, "Free", "Free the bake, rather than generating it");
 }
 
 /************************ LaplacianDeform bind operator *********************/

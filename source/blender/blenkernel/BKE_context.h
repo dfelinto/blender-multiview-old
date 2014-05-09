@@ -185,7 +185,7 @@ enum {
 PointerRNA CTX_data_pointer_get(const bContext *C, const char *member);
 PointerRNA CTX_data_pointer_get_type(const bContext *C, const char *member, StructRNA *type);
 ListBase CTX_data_collection_get(const bContext *C, const char *member);
-ListBase CTX_data_dir_get_ex(const bContext *C, const short use_store, const short use_rna, const short use_all);
+ListBase CTX_data_dir_get_ex(const bContext *C, const bool use_store, const bool use_rna, const bool use_all);
 ListBase CTX_data_dir_get(const bContext *C);
 int CTX_data_get(const bContext *C, const char *member, PointerRNA *r_ptr, ListBase *r_lb, short *r_type);
 
@@ -234,6 +234,7 @@ int ctx_data_list_count(const bContext *C, int (*func)(const bContext *, ListBas
 struct Main *CTX_data_main(const bContext *C);
 struct Scene *CTX_data_scene(const bContext *C);
 struct ToolSettings *CTX_data_tool_settings(const bContext *C);
+struct FreestyleLineStyle *CTX_data_linestyle_from_scene(struct Scene *scene);
 
 const char *CTX_data_mode_string(const bContext *C);
 int CTX_data_mode_enum(const bContext *C);

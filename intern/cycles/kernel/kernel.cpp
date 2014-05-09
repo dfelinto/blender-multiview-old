@@ -37,7 +37,7 @@ void kernel_const_copy(KernelGlobals *kg, const char *name, void *host, size_t s
 		assert(0);
 }
 
-void kernel_tex_copy(KernelGlobals *kg, const char *name, device_ptr mem, size_t width, size_t height, InterpolationType interpolation)
+void kernel_tex_copy(KernelGlobals *kg, const char *name, device_ptr mem, size_t width, size_t height, size_t depth, InterpolationType interpolation)
 {
 	if(0) {
 	}
@@ -61,8 +61,7 @@ void kernel_tex_copy(KernelGlobals *kg, const char *name, device_ptr mem, size_t
 
 		if(tex) {
 			tex->data = (float4*)mem;
-			tex->width = width;
-			tex->height = height;
+			tex->dimensions_set(width, height, depth);
 			tex->interpolation = interpolation;
 		}
 	}
@@ -77,8 +76,7 @@ void kernel_tex_copy(KernelGlobals *kg, const char *name, device_ptr mem, size_t
 
 		if(tex) {
 			tex->data = (uchar4*)mem;
-			tex->width = width;
-			tex->height = height;
+			tex->dimensions_set(width, height, depth);
 			tex->interpolation = interpolation;
 		}
 	}

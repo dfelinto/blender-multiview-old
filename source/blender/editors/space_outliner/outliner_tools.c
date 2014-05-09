@@ -35,6 +35,7 @@
 #include "DNA_armature_types.h"
 #include "DNA_group_types.h"
 #include "DNA_lamp_types.h"
+#include "DNA_linestyle_types.h"
 #include "DNA_material_types.h"
 #include "DNA_mesh_types.h"
 #include "DNA_meta_types.h"
@@ -45,7 +46,6 @@
 
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
-#include "BLI_ghash.h"
 
 #include "BKE_animsys.h"
 #include "BKE_context.h"
@@ -57,7 +57,6 @@
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_sequencer.h"
-#include "BKE_treehash.h"
 
 #include "ED_armature.h"
 #include "ED_object.h"
@@ -192,6 +191,10 @@ static void unlink_texture_cb(bContext *UNUSED(C), Scene *UNUSED(scene), TreeEle
 	else if (GS(tsep->id->name) == ID_WO) {
 		World *wrld = (World *)tsep->id;
 		mtex = wrld->mtex;
+	}
+	else if (GS(tsep->id->name) == ID_LS) {
+		FreestyleLineStyle *ls = (FreestyleLineStyle *)tsep->id;
+		mtex = ls->mtex;
 	}
 	else {
 		return;
@@ -419,7 +422,7 @@ static void group_instance_cb(bContext *C, Scene *scene, TreeElement *UNUSED(te)
 {
 	Group *group = (Group *)tselem->id;
 
-	Object *ob = ED_object_add_type(C, OB_EMPTY, scene->cursor, NULL, FALSE, scene->layact);
+	Object *ob = ED_object_add_type(C, OB_EMPTY, scene->cursor, NULL, false, scene->layact);
 	rename_id(&ob->id, group->id.name + 2);
 	ob->dup_group = group;
 	ob->transflag |= OB_DUPLIGROUP;
@@ -1064,6 +1067,7 @@ void OUTLINER_OT_action_set(wmOperatorType *ot)
 	// TODO: this would be nicer as an ID-pointer...
 	prop = RNA_def_enum(ot->srna, "action", DummyRNA_NULL_items, 0, "Action", "");
 	RNA_def_enum_funcs(prop, RNA_action_itemf);
+	RNA_def_property_flag(prop, PROP_ENUM_NO_TRANSLATE);
 	ot->prop = prop;
 }
 
@@ -1345,7 +1349,7 @@ static int outliner_operation(bContext *C, wmOperator *UNUSED(op), const wmEvent
 	TreeElement *te;
 	float fmval[2];
 
-	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], fmval, fmval + 1);
+	UI_view2d_region_to_view(&ar->v2d, event->mval[0], event->mval[1], &fmval[0], &fmval[1]);
 	
 	for (te = soops->tree.first; te; te = te->next) {
 		if (do_outliner_operation_event(C, scene, ar, soops, te, event, fmval)) {

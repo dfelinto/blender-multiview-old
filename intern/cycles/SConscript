@@ -72,6 +72,12 @@ if env['OURPLATFORM'] in ('win32-vc', 'win64-vc'):
 else:
     cxxflags.append('-ffast-math'.split())
 
+# Warnings
+# XXX Not supported by gcc < 4.9, since we do not have any 'supported flags' test as in cmake,
+#     simpler to comment for now.
+#if env['C_COMPILER_ID'] == 'gcc':
+#    cxxflags.append(['-Werror=float-conversion'])
+
 if env['OURPLATFORM'] in ('win32-vc', 'win32-mingw', 'linuxcross', 'win64-vc', 'win64-mingw'):
     incs.append(env['BF_PTHREADS_INC'])
 
@@ -81,12 +87,12 @@ kernel_flags = {}
 
 if env['OURPLATFORM'] == 'win32-vc':
     # there is no /arch:SSE3, but intrinsics are available anyway
-    kernel_flags['sse2'] = '/arch:SSE /arch:SSE2 -D_CRT_SECURE_NO_WARNINGS /fp:fast /Ox /Gs-'
+    kernel_flags['sse2'] = '/arch:SSE /arch:SSE2 -D_CRT_SECURE_NO_WARNINGS /fp:fast /Ox /GS-'
     kernel_flags['sse3'] = kernel_flags['sse2']
 
 elif env['OURPLATFORM'] == 'win64-vc':
     # /arch:AVX only available from visual studio 2012
-    kernel_flags['sse2'] = '-D_CRT_SECURE_NO_WARNINGS /fp:fast /Ox /Gs-'
+    kernel_flags['sse2'] = '-D_CRT_SECURE_NO_WARNINGS /fp:fast /Ox /GS-'
     kernel_flags['sse3'] = kernel_flags['sse2']
 
     if env['MSVC_VERSION'] in ('11.0', '12.0'):

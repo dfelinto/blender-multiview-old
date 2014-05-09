@@ -23,6 +23,7 @@
 
 from freestyle.types import (
     BinaryPredicate1D,
+    IntegrationType,
     Interface0DIterator,
     Nature,
     Noise,
@@ -51,6 +52,8 @@ from freestyle.predicates import (
     ExternalContourUP1D,
     FalseBP1D,
     FalseUP1D,
+    Length2DBP1D,
+    NotBP1D,
     NotUP1D,
     OrUP1D,
     QuantitativeInvisibilityUP1D,
@@ -58,16 +61,19 @@ from freestyle.predicates import (
     TrueUP1D,
     WithinImageBoundaryUP1D,
     pyNatureUP1D,
+    pyZBP1D,
     )
 from freestyle.shaders import (
     BackboneStretcherShader,
     BezierCurveShader,
+    BlenderTextureShader,
     ConstantColorShader,
     GuidingLinesShader,
     PolygonalizationShader,
     SamplingShader,
     SpatialNoiseShader,
     StrokeShader,
+    StrokeTextureStepShader,
     TipRemoverShader,
     pyBluePrintCirclesShader,
     pyBluePrintEllipsesShader,
@@ -76,6 +82,7 @@ from freestyle.shaders import (
 from freestyle.utils import (
     ContextFunctions,
     getCurrentScene,
+    stroke_normal,
     )
 from _freestyle import (
     blendRamp,
@@ -582,13 +589,15 @@ class SinusDisplacementShader(StrokeShader):
         self._wavelength = wavelength
         self._amplitude = amplitude
         self._phase = phase / wavelength * 2 * math.pi
-        self._getNormal = Normal2DF0D()
 
     def shade(self, stroke):
+        # separately iterate over stroke vertices to compute normals
+        buf = []
         for it, distance in iter_distance_along_stroke(stroke):
-            v = it.object
-            n = self._getNormal(Interface0DIterator(it))
-            n = n * self._amplitude * math.cos(distance / self._wavelength * 2 * math.pi + self._phase)
+            buf.append((it.object, distance, stroke_normal(it)))
+        # iterate over the vertices again to displace them
+        for v, distance, normal in buf:
+            n = normal * self._amplitude * math.cos(distance / self._wavelength * 2 * math.pi + self._phase)
             v.point = v.point + n
         stroke.update_length()
 
@@ -639,18 +648,19 @@ class Offset2DShader(StrokeShader):
         self.__start = start
         self.__end = end
         self.__xy = mathutils.Vector((x, y))
-        self.__getNormal = Normal2DF0D()
 
     def shade(self, stroke):
+        # first iterate over stroke vertices to compute normals
+        buf = []
         it = stroke.stroke_vertices_begin()
         while not it.is_end:
-            v = it.object
-            u = v.u
-            a = self.__start + u * (self.__end - self.__start)
-            n = self.__getNormal(Interface0DIterator(it))
+            buf.append((it.object, stroke_normal(it)))
+            it.increment()
+        # again iterate over the vertices to add displacement
+        for v, n in buf:
+            a = self.__start + v.u * (self.__end - self.__start)
             n = n * a
             v.point = v.point + n + self.__xy
-            it.increment()
         stroke.update_length()
 
 
@@ -945,7 +955,8 @@ class DashedLineShader(StrokeShader):
                 if index == len(self._pattern):
                     index = 0
                 visible = not visible
-            it.object.attribute.visible = visible
+            if not visible:
+                it.object.attribute.visible = visible
             it.increment()
 
 
@@ -1159,6 +1170,14 @@ class StrokeCleaner(StrokeShader):
         stroke.update_length()
 
 
+integration_types = {
+    'MEAN': IntegrationType.MEAN,
+    'MIN': IntegrationType.MIN,
+    'MAX': IntegrationType.MAX,
+    'FIRST': IntegrationType.FIRST,
+    'LAST': IntegrationType.LAST}
+
+
 # main function for parameter processing
 
 def process(layer_name, lineset_name):
@@ -1287,6 +1306,16 @@ def process(layer_name, lineset_name):
         length_min = linestyle.length_min if linestyle.use_length_min else None
         length_max = linestyle.length_max if linestyle.use_length_max else None
         Operators.select(LengthThresholdUP1D(length_min, length_max))
+    # sort selected chains
+    if linestyle.use_sorting:
+        integration = integration_types.get(linestyle.integration_type, IntegrationType.MEAN)
+        if linestyle.sort_key == 'DISTANCE_FROM_CAMERA':
+            bpred = pyZBP1D(integration)
+        elif linestyle.sort_key == '2D_LENGTH':
+            bpred = Length2DBP1D()
+        if linestyle.sort_order == 'REVERSE':
+            bpred = NotBP1D(bpred)
+        Operators.sort(bpred)
     # prepare a list of stroke shaders
     shaders_list = []
     ###
@@ -1341,6 +1370,14 @@ def process(layer_name, lineset_name):
         elif m.type == '2D_TRANSFORM':
             shaders_list.append(Transform2DShader(
                 m.pivot, m.scale_x, m.scale_y, m.angle, m.pivot_u, m.pivot_x, m.pivot_y))
+    if linestyle.use_texture:
+        has_tex = False
+        for slot in linestyle.texture_slots:
+            if slot is not None:
+                shaders_list.append(BlenderTextureShader(slot))
+                has_tex = True
+        if has_tex:
+            shaders_list.append(StrokeTextureStepShader(linestyle.texture_spacing))
     color = linestyle.color
     if (not linestyle.use_chaining) or (linestyle.chaining == 'PLAIN' and linestyle.use_same_object):
         thickness_position = linestyle.thickness_position

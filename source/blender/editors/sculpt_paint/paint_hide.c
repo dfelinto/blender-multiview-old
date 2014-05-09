@@ -35,7 +35,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_bitmap.h"
-#include "BLI_listbase.h"
 #include "BLI_math_vector.h"
 #include "BLI_utildefines.h"
 
@@ -98,7 +97,7 @@ static void partialvis_update_mesh(Object *ob,
 {
 	Mesh *me = ob->data;
 	MVert *mvert;
-	float *paint_mask;
+	const float *paint_mask;
 	int *vert_indices;
 	int totvert, i;
 	bool any_changed = false, any_visible = false;
@@ -253,6 +252,20 @@ static void partialvis_update_bmesh_verts(BMesh *bm,
 	}
 }
 
+static void partialvis_update_bmesh_faces(GSet *faces, PartialVisAction action)
+{
+	GSetIterator gs_iter;
+
+	GSET_ITER (gs_iter, faces) {
+		BMFace *f = BLI_gsetIterator_getKey(&gs_iter);
+
+		if ((action == PARTIALVIS_HIDE) && paint_is_bmesh_face_hidden(f))
+			BM_elem_flag_enable(f, BM_ELEM_HIDDEN);
+		else
+			BM_elem_flag_disable(f, BM_ELEM_HIDDEN);
+	}
+}
+
 static void partialvis_update_bmesh(Object *ob,
                                     PBVH *pbvh,
                                     PBVHNode *node,
@@ -261,12 +274,13 @@ static void partialvis_update_bmesh(Object *ob,
                                     float planes[4][4])
 {
 	BMesh *bm;
-	GSet *unique, *other;
+	GSet *unique, *other, *faces;
 	bool any_changed = false, any_visible = false;
 
 	bm = BKE_pbvh_get_bmesh(pbvh);
 	unique = BKE_pbvh_bmesh_node_unique_verts(node);
 	other = BKE_pbvh_bmesh_node_other_verts(node);
+	faces = BKE_pbvh_bmesh_node_faces(node);
 
 	sculpt_undo_push_node(ob, node, SCULPT_UNDO_HIDDEN);
 
@@ -285,6 +299,9 @@ static void partialvis_update_bmesh(Object *ob,
 	                              planes,
 	                              &any_changed,
 	                              &any_visible);
+
+	/* finally loop over node faces and tag the ones that are fully hidden */
+	partialvis_update_bmesh_faces(faces, action);
 
 	if (any_changed) {
 		BKE_pbvh_node_mark_rebuild_draw(node);

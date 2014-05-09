@@ -897,7 +897,7 @@ static void calc_shapeKeys(Object *obedit)
 				}
 				else {
 					int index;
-					float *curofp;
+					const float *curofp;
 
 					if (oldkey) {
 						if (nu->bezt) {
@@ -1111,7 +1111,7 @@ static void curve_rename_fcurves(Curve *cu, ListBase *orig_curves)
 		next = fcu->next;
 
 		if (!strncmp(fcu->rna_path, "splines", 7)) {
-			char *ch = strchr(fcu->rna_path, '.');
+			const char *ch = strchr(fcu->rna_path, '.');
 
 			if (ch && (!strncmp(ch, ".bezier_points", 14) || !strncmp(ch, ".points", 7)))
 				fcurve_remove(adt, orig_curves, fcu);
@@ -2565,55 +2565,128 @@ void CURVE_OT_radius_set(wmOperatorType *ot)
 
 /********************* smooth operator ********************/
 
+static void smooth_single_bezt(
+        BezTriple *bezt,
+        const BezTriple *bezt_orig_prev, const BezTriple *bezt_orig_next,
+        float factor)
+{
+	int i;
+
+	BLI_assert(IN_RANGE_INCL(factor, 0.0f, 1.0f));
+
+	for (i = 0; i < 3; i++) {
+		float val_old, val_new, offset;
+
+		/* get single dimension pos of the mid handle */
+		val_old = bezt->vec[1][i];
+
+		/* get the weights of the previous/next mid handles and calc offset */
+		val_new = (bezt_orig_prev->vec[1][i] * 0.5f) + (bezt_orig_next->vec[1][i] * 0.5f);
+		offset = (val_old * (1.0f - factor)) + (val_new * factor) - val_old;
+
+		/* offset midpoint and 2 handles */
+		bezt->vec[1][i] += offset;
+		bezt->vec[0][i] += offset;
+		bezt->vec[2][i] += offset;
+	}
+}
+
+/**
+ * Same as smooth_single_bezt(), keep in sync
+ */
+static void smooth_single_bp(
+        BPoint *bp,
+        const BPoint *bp_orig_prev, const BPoint *bp_orig_next,
+        float factor)
+{
+	int i;
+
+	BLI_assert(IN_RANGE_INCL(factor, 0.0f, 1.0f));
+
+	for (i = 0; i < 3; i++) {
+		float val_old, val_new, offset;
+
+		val_old = bp->vec[i];
+		val_new = (bp_orig_prev->vec[i] * 0.5f) + (bp_orig_next->vec[i] * 0.5f);
+		offset = (val_old * (1.0f - factor)) + (val_new * factor) - val_old;
+
+		bp->vec[i] += offset;
+	}
+}
+
 static int smooth_exec(bContext *C, wmOperator *UNUSED(op))
 {
+	const float factor = 1.0f / 6.0f;
 	Object *obedit = CTX_data_edit_object(C);
 	ListBase *editnurb = object_editcurve_get(obedit);
 	Nurb *nu;
-	BezTriple *bezt, *beztOrig;
-	BPoint *bp, *bpOrig;
-	float val, newval, offset;
-	int a, i;
+
+	int a, a_end;
 	bool changed = false;
-	
+
 	for (nu = editnurb->first; nu; nu = nu->next) {
 		if (nu->bezt) {
+			/* duplicate the curve to use in weight calculation */
+			const BezTriple *bezt_orig = MEM_dupallocN(nu->bezt);
+			BezTriple *bezt;
 			changed = false;
-			beztOrig = MEM_dupallocN(nu->bezt);
-			for (bezt = &nu->bezt[1], a = 1; a < nu->pntsu - 1; a++, bezt++) {
+
+			/* check whether its cyclic or not, and set initial & final conditions */
+			if (nu->flagu & CU_NURB_CYCLIC) {
+				a = 0;
+				a_end = nu->pntsu;
+			}
+			else {
+				a = 1;
+				a_end = nu->pntsu - 1;
+			}
+
+			/* for all the curve points */
+			for (; a < a_end; a++) {
+				/* respect selection */
+				bezt = &nu->bezt[a];
 				if (bezt->f2 & SELECT) {
-					for (i = 0; i < 3; i++) {
-						val = bezt->vec[1][i];
-						newval = ((beztOrig + (a - 1))->vec[1][i] * 0.5f) + ((beztOrig + (a + 1))->vec[1][i] * 0.5f);
-						offset = (val * ((1.0f / 6.0f) * 5.0f)) + (newval * (1.0f / 6.0f)) - val;
-						/* offset handles */
-						bezt->vec[1][i] += offset;
-						bezt->vec[0][i] += offset;
-						bezt->vec[2][i] += offset;
-					}
+					const BezTriple *bezt_orig_prev, *bezt_orig_next;
+
+					bezt_orig_prev = &bezt_orig[mod_i(a - 1, nu->pntsu)];
+					bezt_orig_next = &bezt_orig[mod_i(a + 1, nu->pntsu)];
+
+					smooth_single_bezt(bezt, bezt_orig_prev, bezt_orig_next, factor);
+
 					changed = true;
 				}
 			}
-			MEM_freeN(beztOrig);
+			MEM_freeN((void *)bezt_orig);
 			if (changed) {
 				BKE_nurb_handles_calc(nu);
 			}
 		}
 		else if (nu->bp) {
-			bpOrig = MEM_dupallocN(nu->bp);
 			/* Same as above, keep these the same! */
-			for (bp = &nu->bp[1], a = 1; a < nu->pntsu - 1; a++, bp++) {
+			const BPoint *bp_orig = MEM_dupallocN(nu->bp);
+			BPoint *bp;
+
+			if (nu->flagu & CU_NURB_CYCLIC) {
+				a = 0;
+				a_end = nu->pntsu;
+			}
+			else {
+				a = 1;
+				a_end = nu->pntsu - 1;
+			}
+
+			for (; a < a_end; a++) {
+				bp = &nu->bp[a];
 				if (bp->f1 & SELECT) {
-					for (i = 0; i < 3; i++) {
-						val = bp->vec[i];
-						newval = ((bpOrig + (a - 1))->vec[i] * 0.5f) + ((bpOrig + (a + 1))->vec[i] * 0.5f);
-						offset = (val * ((1.0f / 6.0f) * 5.0f)) + (newval * (1.0f / 6.0f)) - val;
-					
-						bp->vec[i] += offset;
-					}
+					const BPoint *bp_orig_prev, *bp_orig_next;
+
+					bp_orig_prev = &bp_orig[mod_i(a - 1, nu->pntsu)];
+					bp_orig_next = &bp_orig[mod_i(a + 1, nu->pntsu)];
+
+					smooth_single_bp(bp, bp_orig_prev, bp_orig_next, factor);
 				}
 			}
-			MEM_freeN(bpOrig);
+			MEM_freeN((void *)bp_orig);
 		}
 	}
 
@@ -2898,7 +2971,7 @@ static void select_adjacent_cp(ListBase *editnurb, short next,
 	BezTriple *bezt;
 	BPoint *bp;
 	int a;
-	short lastsel = false;
+	bool lastsel = false;
 	
 	if (next == 0) return;
 	
@@ -3068,7 +3141,7 @@ void CURVE_OT_de_select_last(wmOperatorType *ot)
 
 /******************* de select all operator ***************/
 
-static short nurb_has_selected_cps(ListBase *editnurb)
+static bool nurb_has_selected_cps(ListBase *editnurb)
 {
 	Nurb *nu;
 	BezTriple *bezt;
@@ -4060,11 +4133,11 @@ static bool is_u_selected(Nurb *nu, int u)
 	bp = &nu->bp[u];
 	for (v = 0; v < nu->pntsv - 1; v++, bp += nu->pntsu) {
 		if ((v != 0) && (bp->f1 & SELECT)) {
-			return TRUE;
+			return true;
 		}
 	}
 	
-	return FALSE;
+	return false;
 }
 
 typedef struct NurbSort {
@@ -4143,7 +4216,7 @@ static void make_selection_list_nurb(ListBase *editnurb)
 	}
 }
 
-static void merge_2_nurb(wmOperator *op, ListBase *editnurb, Nurb *nu1, Nurb *nu2)
+static void merge_2_nurb(wmOperator *op, Curve *cu, ListBase *editnurb, Nurb *nu1, Nurb *nu2)
 {
 	BPoint *bp, *bp1, *bp2, *temp;
 	float len1, len2;
@@ -4258,10 +4331,12 @@ static void merge_2_nurb(wmOperator *op, ListBase *editnurb, Nurb *nu1, Nurb *nu
 
 		for (u = 0; u < nu1->pntsu; u++, bp++) {
 			if (u < origu) {
+				keyIndex_updateBP(cu->editnurb, bp1, bp, 1);
 				*bp = *bp1; bp1++;
 				select_bpoint(bp, SELECT, SELECT, HIDDEN);
 			}
 			else {
+				keyIndex_updateBP(cu->editnurb, bp2, bp, 1);
 				*bp = *bp2; bp2++;
 			}
 		}
@@ -4283,9 +4358,10 @@ static void merge_2_nurb(wmOperator *op, ListBase *editnurb, Nurb *nu1, Nurb *nu
 static int merge_nurb(bContext *C, wmOperator *op)
 {
 	Object *obedit = CTX_data_edit_object(C);
+	Curve *cu = obedit->data;
 	ListBase *editnurb = object_editcurve_get(obedit);
 	NurbSort *nus1, *nus2;
-	int ok = 1;
+	bool ok = true;
 	
 	make_selection_list_nurb(editnurb);
 	
@@ -4332,7 +4408,7 @@ static int merge_nurb(bContext *C, wmOperator *op)
 	}
 
 	while (nus2) {
-		merge_2_nurb(op, editnurb, nus1->nu, nus2->nu);
+		merge_2_nurb(op, cu, editnurb, nus1->nu, nus2->nu);
 		nus2 = nus2->next;
 	}
 	
@@ -4354,7 +4430,7 @@ static int make_segment_exec(bContext *C, wmOperator *op)
 	ListBase *nubase = object_editcurve_get(obedit);
 	Nurb *nu, *nu1 = NULL, *nu2 = NULL;
 	BPoint *bp;
-	int ok = 0;
+	bool ok = false;
 	/* int a; */ /* UNUSED */
 
 	/* first decide if this is a surface merge! */
@@ -4479,6 +4555,7 @@ static int make_segment_exec(bContext *C, wmOperator *op)
 				nu1->bezt = bezt;
 				nu1->pntsu += nu2->pntsu;
 				BLI_remlink(nubase, nu2);
+				keyIndex_delNurb(cu->editnurb, nu2);
 				BKE_nurb_free(nu2); nu2 = NULL;
 				BKE_nurb_handles_calc(nu1);
 			}
@@ -4503,6 +4580,7 @@ static int make_segment_exec(bContext *C, wmOperator *op)
 
 					BKE_nurb_knot_calc_u(nu1);
 				}
+				keyIndex_delNurb(cu->editnurb, nu2);
 				BKE_nurb_free(nu2); nu2 = NULL;
 			}
 
@@ -4840,7 +4918,7 @@ static int addvert_Nurb(bContext *C, short mode, float location[3])
 	BezTriple *bezt, *newbezt = NULL;
 	BPoint *bp, *newbp = NULL;
 	float imat[4][4], temp[3];
-	int ok = 0;
+	bool ok = false;
 	BezTriple *bezt_recalc[3] = {NULL};
 
 	invert_m4_m4(imat, obedit->obmat);
@@ -6941,7 +7019,7 @@ static int match_texture_space_exec(bContext *C, wmOperator *UNUSED(op))
 	int a;
 
 	if (object->curve_cache == NULL) {
-		BKE_displist_make_curveTypes(scene, object, FALSE);
+		BKE_displist_make_curveTypes(scene, object, false);
 	}
 
 	INIT_MINMAX(min, max);

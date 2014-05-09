@@ -33,23 +33,17 @@
 #include "DNA_object_types.h"   /* SELECT */
 #include "DNA_scene_types.h"
 
-#include "MEM_guardedalloc.h"
-
 #include "BLI_utildefines.h"
 #include "BLI_math.h"
-#include "BLI_string.h"
-#include "BLI_listbase.h"
 #include "BLI_rect.h"
 
 #include "BKE_context.h"
 #include "BKE_movieclip.h"
-#include "BKE_tracking.h"
 
 #include "ED_screen.h"
 #include "ED_clip.h"
 
 #include "BIF_gl.h"
-#include "BIF_glutil.h"
 
 #include "WM_types.h"
 
@@ -79,7 +73,7 @@ static void track_channel_color(MovieTrackingTrack *track, float default_color[3
 	}
 }
 
-static void draw_keyframe_shape(float x, float y, float xscale, float yscale, short sel, float alpha)
+static void draw_keyframe_shape(float x, float y, float xscale, float yscale, bool sel, float alpha)
 {
 	/* coordinates for diamond shape */
 	static const float _unit_diamond_shape[4][2] = {
@@ -193,7 +187,7 @@ void clip_draw_dopesheet_main(SpaceClip *sc, ARegion *ar, Scene *scene)
 
 		y = (float) CHANNEL_FIRST;
 
-		UI_view2d_getscale(v2d, &xscale, &yscale);
+		UI_view2d_scale_get(v2d, &xscale, &yscale);
 
 		/* setup colors for regular and selected strips */
 		UI_GetThemeColor3fv(TH_STRIP, strip);
@@ -216,7 +210,8 @@ void clip_draw_dopesheet_main(SpaceClip *sc, ARegion *ar, Scene *scene)
 			{
 				MovieTrackingTrack *track = channel->track;
 				float alpha;
-				int i, sel = track->flag & TRACK_DOPE_SEL;
+				int i;
+				bool sel = (track->flag & TRACK_DOPE_SEL) != 0;
 
 				/* selection background */
 				if (sel) {
@@ -329,7 +324,7 @@ void clip_draw_dopesheet_channels(const bContext *C, ARegion *ar)
 		{
 			MovieTrackingTrack *track = channel->track;
 			float font_height, color[3];
-			int sel = track->flag & TRACK_DOPE_SEL;
+			bool sel = (track->flag & TRACK_DOPE_SEL) != 0;
 
 			track_channel_color(track, NULL, color);
 			glColor3fv(color);

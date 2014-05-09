@@ -70,7 +70,7 @@
 #include "texture.h"
 #include "voxeldata.h"
 
-static int is_vd_res_ok(VoxelData *vd)
+static bool is_vd_res_ok(VoxelData *vd)
 {
 	/* arbitrary large value so corrupt headers don't break */
 	const int min = 1, max = 100000;
@@ -90,7 +90,7 @@ static int load_frame_blendervoxel(VoxelData *vd, FILE *fp, int frame)
 	const size_t size = vd_resol_size(vd);
 	size_t offset = sizeof(VoxelDataHeader);
 	
-	if (is_vd_res_ok(vd) == FALSE)
+	if (is_vd_res_ok(vd) == false)
 		return 0;
 
 	vd->dataset = MEM_mapallocN(sizeof(float) * size, "voxel dataset");
@@ -112,7 +112,7 @@ static int load_frame_raw8(VoxelData *vd, FILE *fp, int frame)
 	size_t i;
 	char *data_c;
 
-	if (is_vd_res_ok(vd) == FALSE)
+	if (is_vd_res_ok(vd) == false)
 		return 0;
 
 	vd->dataset = MEM_mapallocN(sizeof(float) * size, "voxel dataset");
@@ -154,7 +154,7 @@ static void load_frame_image_sequence(VoxelData *vd, Tex *tex)
 	ImageUser *tiuser = &tex->iuser;
 	ImageUser iuser = *(tiuser);
 	int x = 0, y = 0, z = 0;
-	float *rf;
+	const float *rf;
 
 	if (!ima) return;
 	if (iuser.frames == 0) return;

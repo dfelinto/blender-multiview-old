@@ -59,7 +59,6 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_mesh_types.h"
 #include "DNA_meshdata_types.h"
 #include "DNA_object_types.h"
 #include "DNA_modifier_types.h"
@@ -67,10 +66,8 @@
 #include "BLI_utildefines.h"
 #include "BLI_array.h"
 #include "BLI_heap.h"
-#include "BLI_listbase.h"
 #include "BLI_math.h"
 #include "BLI_stack.h"
-#include "BLI_string.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_deform.h"
@@ -217,7 +214,7 @@ static bool skin_frame_find_contained_faces(const Frame *frame,
 		return false;
 }
 
-/* Returns true if hull is successfully built, FALSE otherwise */
+/* Returns true if hull is successfully built, false otherwise */
 static bool build_hull(SkinOutput *so, Frame **frames, int totframe)
 {
 	BMesh *bm = so->bm;
@@ -752,7 +749,7 @@ static EMat *build_edge_mats(const MVertSkin *vs,
  * having any special cases for dealing with sharing a frame between
  * two hulls.) */
 static int calc_edge_subdivisions(const MVert *mvert, const MVertSkin *nodes,
-                                  const MEdge *e, int *degree)
+                                  const MEdge *e, const int *degree)
 {
 	/* prevent memory errors [#38003] */
 #define NUM_SUBDIVISIONS_MAX 128
@@ -1664,7 +1661,7 @@ static void skin_smooth_hulls(BMesh *bm, SkinNode *skin_nodes,
 	BM_data_layer_free_n(bm, &bm->vdata, CD_SHAPEKEY, skey);
 }
 
-/* Returns TRUE if all hulls are successfully built, false otherwise */
+/* Returns true if all hulls are successfully built, false otherwise */
 static bool skin_output_branch_hulls(SkinOutput *so, SkinNode *skin_nodes,
                                      int totvert, const MeshElemMap *emap,
                                      const MEdge *medge)

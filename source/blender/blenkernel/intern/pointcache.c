@@ -37,7 +37,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "DNA_ID.h"
-#include "DNA_cloth_types.h"
 #include "DNA_dynamicpaint_types.h"
 #include "DNA_modifier_types.h"
 #include "DNA_object_types.h"
@@ -51,6 +50,8 @@
 #include "BLI_threads.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
+#include "BLI_system.h"
+#include BLI_SYSTEM_PID_H
 
 #include "BLF_translation.h"
 
@@ -61,10 +62,8 @@
 #include "BKE_anim.h"
 #include "BKE_blender.h"
 #include "BKE_cloth.h"
-#include "BKE_depsgraph.h"
 #include "BKE_dynamicpaint.h"
 #include "BKE_global.h"
-#include "BKE_library.h"
 #include "BKE_main.h"
 #include "BKE_modifier.h"
 #include "BKE_object.h"
@@ -100,9 +99,7 @@
 /* untitled blend's need getpid for a unique name */
 #ifndef WIN32
 #  include <dirent.h>
-#  include <unistd.h>
 #else
-#  include <process.h>
 #  include "BLI_winstuff.h"
 #endif
 
@@ -1059,7 +1056,7 @@ static void ptcache_rigidbody_interpolate(int index, void *rb_v, void **data, fl
 		if (rbo->type == RBO_TYPE_ACTIVE) {
 			
 			copy_v3_v3(keys[1].co, rbo->pos);
-			copy_v3_v3(keys[1].rot, rbo->orn);
+			copy_qt_qt(keys[1].rot, rbo->orn);
 			
 			if (old_data) {
 				memcpy(keys[2].co, data, 3 * sizeof(float));
@@ -1075,7 +1072,7 @@ static void ptcache_rigidbody_interpolate(int index, void *rb_v, void **data, fl
 			interp_qt_qtqt(keys->rot, keys[1].rot, keys[2].rot, (cfra - cfra1) / dfra);
 			
 			copy_v3_v3(rbo->pos, keys->co);
-			copy_v3_v3(rbo->orn, keys->rot);
+			copy_qt_qt(rbo->orn, keys->rot);
 		}
 	}
 }
@@ -1409,7 +1406,7 @@ void BKE_ptcache_ids_from_object(ListBase *lb, Object *ob, Scene *scene, int dup
 	if (scene && (duplis-- > 0) && (ob->transflag & OB_DUPLI)) {
 		ListBase *lb_dupli_ob;
 		/* don't update the dupli groups, we only want their pid's */
-		if ((lb_dupli_ob = object_duplilist_ex(G.main->eval_ctx, scene, ob, FALSE))) {
+		if ((lb_dupli_ob = object_duplilist_ex(G.main->eval_ctx, scene, ob, false))) {
 			DupliObject *dob;
 			for (dob= lb_dupli_ob->first; dob; dob= dob->next) {
 				if (dob->ob != ob) { /* avoids recursive loops with dupliframes: bug 22988 */
@@ -1493,7 +1490,7 @@ static int ptcache_filename(PTCacheID *pid, char *filename, int cfra, short do_p
 		idname = (pid->ob->id.name + 2);
 		/* convert chars to hex so they are always a valid filename */
 		while ('\0' != *idname) {
-			BLI_snprintf(newname, MAX_PTCACHE_FILE, "%02X", (char)(*idname++));
+			BLI_snprintf(newname, MAX_PTCACHE_FILE, "%02X", (unsigned int)(*idname++));
 			newname+=2;
 			len += 2;
 		}
@@ -3000,7 +2997,7 @@ PointCache *BKE_ptcache_add(ListBase *ptcaches)
 	cache= MEM_callocN(sizeof(PointCache), "PointCache");
 	cache->startframe= 1;
 	cache->endframe= 250;
-	cache->step= 10;
+	cache->step = 1;
 	cache->index = -1;
 
 	BLI_addtail(ptcaches, cache);
@@ -3039,7 +3036,7 @@ void BKE_ptcache_free_list(ListBase *ptcaches)
 	}
 }
 
-static PointCache *ptcache_copy(PointCache *cache, int copy_data)
+static PointCache *ptcache_copy(PointCache *cache, bool copy_data)
 {
 	PointCache *ncache;
 
@@ -3047,7 +3044,7 @@ static PointCache *ptcache_copy(PointCache *cache, int copy_data)
 
 	BLI_listbase_clear(&ncache->mem_cache);
 
-	if (copy_data == FALSE) {
+	if (copy_data == false) {
 		ncache->cached_frames = NULL;
 
 		/* flag is a mix of user settings and simulator/baking state */
@@ -3082,7 +3079,7 @@ static PointCache *ptcache_copy(PointCache *cache, int copy_data)
 }
 
 /* returns first point cache */
-PointCache *BKE_ptcache_copy_list(ListBase *ptcaches_new, ListBase *ptcaches_old, int copy_data)
+PointCache *BKE_ptcache_copy_list(ListBase *ptcaches_new, ListBase *ptcaches_old, bool copy_data)
 {
 	PointCache *cache = ptcaches_old->first;
 
@@ -3144,7 +3141,8 @@ static void ptcache_dt_to_str(char *str, double dtime)
 
 static void *ptcache_bake_thread(void *ptr)
 {
-	int use_timer = FALSE, sfra, efra;
+	bool use_timer = false;
+	int sfra, efra;
 	double stime, ptime, ctime, fetd;
 	char run[32], cur[32], etd[32];
 
@@ -3165,7 +3163,7 @@ static void *ptcache_bake_thread(void *ptr)
 			fetd = (ctime-ptime)*(efra-*data->cfra_ptr)/data->step;
 
 			if (use_timer || fetd > 60.0) {
-				use_timer = TRUE;
+				use_timer = true;
 
 				ptcache_dt_to_str(cur, ctime-ptime);
 				ptcache_dt_to_str(run, ctime-stime);
@@ -3183,7 +3181,7 @@ static void *ptcache_bake_thread(void *ptr)
 		printf("\nBake %s %s (%i frames simulated).\n", (data->break_operation ? "canceled after" : "finished in"), run, *data->cfra_ptr-sfra);
 	}
 
-	data->thread_ended = TRUE;
+	data->thread_ended = true;
 	return NULL;
 }
 
@@ -3212,7 +3210,7 @@ void BKE_ptcache_bake(PTCacheBaker *baker)
 	thread_data.scene = baker->scene;
 	thread_data.main = baker->main;
 
-	G.is_break = FALSE;
+	G.is_break = false;
 
 	/* set caches to baking mode and figure out start frame */
 	if (pid) {
@@ -3304,8 +3302,8 @@ void BKE_ptcache_bake(PTCacheBaker *baker)
 
 	CFRA = startframe;
 	scene->r.framelen = 1.0;
-	thread_data.break_operation = FALSE;
-	thread_data.thread_ended = FALSE;
+	thread_data.break_operation = false;
+	thread_data.thread_ended = false;
 	old_progress = -1;
 
 	WM_cursor_wait(1);
@@ -3317,7 +3315,7 @@ void BKE_ptcache_bake(PTCacheBaker *baker)
 		BLI_init_threads(&threads, ptcache_bake_thread, 1);
 		BLI_insert_thread(&threads, (void*)&thread_data);
 
-		while (thread_data.thread_ended == FALSE) {
+		while (thread_data.thread_ended == false) {
 
 			if (bake)
 				progress = (int)(100.0f * (float)(CFRA - startframe)/(float)(thread_data.endframe-startframe));
@@ -3335,7 +3333,7 @@ void BKE_ptcache_bake(PTCacheBaker *baker)
 
 			/* NOTE: breaking baking should leave calculated frames in cache, not clear it */
 			if (blender_test_break() && !thread_data.break_operation) {
-				thread_data.break_operation = TRUE;
+				thread_data.break_operation = true;
 				if (baker->progressend)
 					baker->progressend(baker->progresscontext);
 				WM_cursor_wait(1);

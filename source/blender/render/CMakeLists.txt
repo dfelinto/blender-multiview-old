@@ -48,12 +48,12 @@ set(SRC
 	intern/raytrace/rayobject_octree.cpp
 	intern/raytrace/rayobject_raycounter.cpp
 	intern/raytrace/rayobject_svbvh.cpp
-	intern/raytrace/rayobject_blibvh.cpp
 	intern/raytrace/rayobject_instance.cpp
 	intern/raytrace/rayobject_qbvh.cpp
 	intern/raytrace/rayobject_rtbuild.cpp
 	intern/raytrace/rayobject_vbvh.cpp
 	intern/source/bake.c
+	intern/source/bake_api.c
 	intern/source/convertblender.c
 	intern/source/envmap.c
 	intern/source/external_engine.c
@@ -83,6 +83,7 @@ set(SRC
 	intern/source/zbuf.c
 
 	extern/include/RE_engine.h
+	extern/include/RE_bake.h
 	extern/include/RE_multires_bake.h
 	extern/include/RE_pipeline.h
 	extern/include/RE_render_ext.h

@@ -41,7 +41,6 @@
 #include "BLI_math.h"
 #include "BLI_path_util.h"
 #include "BLI_rand.h"
-#include "BLI_string.h"
 #include "BLI_threads.h"
 #include "BLI_utildefines.h"
 
@@ -1003,7 +1002,7 @@ static void cache_filename(char *string, const char *path, const char *relbase, 
 
 	BLI_join_dirfile(cachepath, sizeof(cachepath), path, fname);
 
-	BKE_makepicstring_from_type(string, cachepath, relbase, frame, R_IMF_IMTYPE_OPENEXR, 1, TRUE, "");
+	BKE_makepicstring_from_type(string, cachepath, relbase, frame, R_IMF_IMTYPE_OPENEXR, true, true, "");
 }
 
 /* silly functions but useful to inline when the args do a lot of indirections */

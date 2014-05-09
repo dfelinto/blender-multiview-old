@@ -69,18 +69,24 @@
 #include <ctype.h>
 
 /* ---------- FILE SELECTION ------------ */
-static FileSelection find_file_mouse_rect(SpaceFile *sfile, ARegion *ar, const rcti *rect)
+static FileSelection find_file_mouse_rect(SpaceFile *sfile, ARegion *ar, const rcti *rect_region)
 {
 	FileSelection sel;
-	float fxmin, fymin, fxmax, fymax;
 	
 	View2D *v2d = &ar->v2d;
 	rcti rect_view;
+	rctf rect_view_fl;
+	rctf rect_region_fl;
 
-	UI_view2d_region_to_view(v2d, rect->xmin, rect->ymin, &fxmin, &fymin);
-	UI_view2d_region_to_view(v2d, rect->xmax, rect->ymax, &fxmax, &fymax);
+	BLI_rctf_rcti_copy(&rect_region_fl, rect_region);
 
-	BLI_rcti_init(&rect_view, (int)(v2d->tot.xmin + fxmin), (int)(v2d->tot.xmin + fxmax), (int)(v2d->tot.ymax - fymin), (int)(v2d->tot.ymax - fymax));
+	UI_view2d_region_to_view_rctf(v2d, &rect_region_fl, &rect_view_fl);
+
+	BLI_rcti_init(&rect_view,
+	              (int)(v2d->tot.xmin + rect_view_fl.xmin),
+	              (int)(v2d->tot.xmin + rect_view_fl.xmax),
+	              (int)(v2d->tot.ymax - rect_view_fl.ymin),
+	              (int)(v2d->tot.ymax - rect_view_fl.ymax));
 
 	sel  = ED_fileselect_layout_offset_rect(sfile->layout, &rect_view);
 	
@@ -127,7 +133,7 @@ static void clamp_to_filelist(int numfiles, FileSelection *sel)
 	}
 }
 
-static FileSelection file_selection_get(bContext *C, const rcti *rect, short fill)
+static FileSelection file_selection_get(bContext *C, const rcti *rect, bool fill)
 {
 	ARegion *ar = CTX_wm_region(C);
 	SpaceFile *sfile = CTX_wm_space_file(C);
@@ -155,7 +161,7 @@ static FileSelection file_selection_get(bContext *C, const rcti *rect, short fil
 	return sel;
 }
 
-static FileSelect file_select_do(bContext *C, int selected_idx, short do_diropen)
+static FileSelect file_select_do(bContext *C, int selected_idx, bool do_diropen)
 {
 	FileSelect retval = FILE_SELECT_NOTHING;
 	SpaceFile *sfile = CTX_wm_space_file(C);
@@ -171,7 +177,7 @@ static FileSelect file_select_do(bContext *C, int selected_idx, short do_diropen
 		params->active_file = selected_idx;
 
 		if (S_ISDIR(file->type)) {
-			if (do_diropen == FALSE) {
+			if (do_diropen == false) {
 				params->file[0] = '\0';
 				retval = FILE_SELECT_DIR;
 			}
@@ -205,7 +211,7 @@ static FileSelect file_select_do(bContext *C, int selected_idx, short do_diropen
 }
 
 
-static FileSelect file_select(bContext *C, const rcti *rect, FileSelType select, short fill, short do_diropen)
+static FileSelect file_select(bContext *C, const rcti *rect, FileSelType select, bool fill, bool do_diropen)
 {
 	SpaceFile *sfile = CTX_wm_space_file(C);
 	FileSelect retval = FILE_SELECT_NOTHING;
@@ -287,7 +293,7 @@ static int file_border_select_exec(bContext *C, wmOperator *op)
 
 	BLI_rcti_isect(&(ar->v2d.mask), &rect, &rect);
 
-	ret = file_select(C, &rect, select ? FILE_SEL_ADD : FILE_SEL_REMOVE, FALSE, FALSE);
+	ret = file_select(C, &rect, select ? FILE_SEL_ADD : FILE_SEL_REMOVE, false, false);
 	if (FILE_SELECT_DIR == ret) {
 		WM_event_add_notifier(C, NC_SPACE | ND_SPACE_FILE_LIST, NULL);
 	}
@@ -363,11 +369,11 @@ void FILE_OT_select(wmOperatorType *ot)
 	ot->poll = ED_operator_file_active;
 
 	/* properties */
-	prop = RNA_def_boolean(ot->srna, "extend", FALSE, "Extend", "Extend selection instead of deselecting everything first");
+	prop = RNA_def_boolean(ot->srna, "extend", false, "Extend", "Extend selection instead of deselecting everything first");
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-	prop = RNA_def_boolean(ot->srna, "fill", FALSE, "Fill", "Select everything beginning with the last selection");
+	prop = RNA_def_boolean(ot->srna, "fill", false, "Fill", "Select everything beginning with the last selection");
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
-	prop = RNA_def_boolean(ot->srna, "open", TRUE, "Open", "Open a directory when selecting it");
+	prop = RNA_def_boolean(ot->srna, "open", true, "Open", "Open a directory when selecting it");
 	RNA_def_property_flag(prop, PROP_SKIP_SAVE);
 }
 
@@ -773,13 +779,13 @@ bool file_draw_check_exists(SpaceFile *sfile)
 				char filepath[FILE_MAX];
 				BLI_join_dirfile(filepath, sizeof(filepath), sfile->params->dir, sfile->params->file);
 				if (BLI_is_file(filepath)) {
-					return TRUE;
+					return true;
 				}
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 /* sends events now, so things get handled on windowqueue level */
@@ -851,7 +857,19 @@ int file_parent_exec(bContext *C, wmOperator *UNUSED(unused))
 	if (sfile->params) {
 		if (BLI_parent_dir(sfile->params->dir)) {
 			BLI_cleanup_dir(G.main->name, sfile->params->dir);
-			file_change_dir(C, 0);
+			/* if not browsing in .blend file, we still want to check whether the path is a directory */
+			if (sfile->params->type == FILE_LOADLIB) {
+				char tdir[FILE_MAX], tgroup[FILE_MAX];
+				if (BLO_is_a_library(sfile->params->dir, tdir, tgroup)) {
+					file_change_dir(C, 0);
+				}
+				else {
+					file_change_dir(C, 1);
+				}
+			}
+			else {
+				file_change_dir(C, 1);
+			}
 			WM_event_add_notifier(C, NC_SPACE | ND_SPACE_FILE_LIST, NULL);
 		}
 	}
@@ -1042,7 +1060,7 @@ static int file_smoothscroll_invoke(bContext *C, wmOperator *UNUSED(op), const w
 		}
 	}
 	
-	ED_region_tag_redraw(CTX_wm_region(C));
+	ED_region_tag_redraw(ar);
 	
 	/* and restore context */
 	CTX_wm_region_set(C, oldar);
@@ -1129,7 +1147,7 @@ int file_directory_new_exec(bContext *C, wmOperator *op)
 	BLI_strncpy(sfile->params->renamefile, name, FILE_MAXFILE);
 
 	/* set timer to smoothly view newly generated file */
-	sfile->smoothscroll_timer = WM_event_add_timer(CTX_wm_manager(C), CTX_wm_window(C), TIMER1, 1.0 / 1000.0);    /* max 30 frs/sec */
+	sfile->smoothscroll_timer = WM_event_add_timer(wm, CTX_wm_window(C), TIMER1, 1.0 / 1000.0);  /* max 30 frs/sec */
 	sfile->scroll_offset = 0;
 
 	/* reload dir to make sure we're seeing what's in the directory */
@@ -1200,9 +1218,29 @@ static void file_expand_directory(bContext *C)
 			sfile->params->dir[2] = '\\';
 			sfile->params->dir[3] = '\0';
 		}
+		else if (BLI_path_is_unc(sfile->params->dir)) {
+			BLI_cleanup_unc(sfile->params->dir, FILE_MAX_LIBEXTRA);
+		}
 #endif
 	}
 }
+
+#if defined(WIN32)
+static bool can_create_dir(const char *dir)
+{
+	/* for UNC paths we need to check whether the parent of the new
+	 * directory is a proper directory itself and not a share or the
+	 * UNC root (server name) itself. Calling BLI_is_dir does this
+	 */
+	if (BLI_path_is_unc(dir)) {
+		char parent[PATH_MAX];
+		BLI_strncpy(parent, dir, PATH_MAX);
+		BLI_parent_dir(parent);
+		return BLI_is_dir(parent);
+	}
+	return true;
+}
+#endif
 
 void file_directory_enter_handle(bContext *C, void *UNUSED(arg_unused), void *UNUSED(arg_but))
 {
@@ -1228,6 +1266,13 @@ void file_directory_enter_handle(bContext *C, void *UNUSED(arg_unused), void *UN
 			 * placing cursor at the end */
 			/* UI_textbutton_activate_but(C, but); */
 		}
+#if defined(WIN32)
+		else if (!can_create_dir(sfile->params->dir)) {
+			const char *lastdir = folderlist_peeklastdir(sfile->folders_prev);
+			if (lastdir)
+				BLI_strncpy(sfile->params->dir, lastdir, sizeof(sfile->params->dir));
+		}
+#endif
 		else {
 			const char *lastdir = folderlist_peeklastdir(sfile->folders_prev);
 

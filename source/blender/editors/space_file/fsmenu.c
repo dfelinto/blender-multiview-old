@@ -37,12 +37,8 @@
 
 #include "MEM_guardedalloc.h"
 
-#include "DNA_space_types.h" /* FILE_MAX */
-
 #include "BLI_utildefines.h"
 #include "BLI_blenlib.h"
-#include "BLI_linklist.h"
-#include "BLI_dynstr.h"
 
 #ifdef WIN32
 #  include <windows.h> /* need to include windows.h so _WIN32_IE is defined  */
@@ -542,7 +538,7 @@ void fsmenu_refresh_system_category(struct FSMenu *fsmenu)
 	fsmenu_set_category(fsmenu, FS_CATEGORY_SYSTEM_BOOKMARKS, NULL);
 
 	/* Add all entries to system category */
-	fsmenu_read_system(fsmenu, TRUE);
+	fsmenu_read_system(fsmenu, true);
 }
 
 void fsmenu_free(void)

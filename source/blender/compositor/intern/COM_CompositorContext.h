@@ -196,11 +196,11 @@ public:
 	 */
 	void setViewId(int view_id) { this->m_view_id = view_id; }
 
-	int getChunksize() { return this->getbNodeTree()->chunksize; }
+	int getChunksize() const { return this->getbNodeTree()->chunksize; }
 	
 	void setFastCalculation(bool fastCalculation) {this->m_fastCalculation = fastCalculation;}
-	bool isFastCalculation() {return this->m_fastCalculation;}
-	inline bool isGroupnodeBufferEnabled() {return this->getbNodeTree()->flag & NTREE_COM_GROUPNODE_BUFFER;}
+	bool isFastCalculation() const { return this->m_fastCalculation; }
+	bool isGroupnodeBufferEnabled() const { return this->getbNodeTree()->flag & NTREE_COM_GROUPNODE_BUFFER; }
 };
 
 

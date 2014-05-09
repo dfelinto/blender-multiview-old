@@ -20,6 +20,7 @@
 #include "device.h"
 #include "scene.h"
 #include "session.h"
+#include "bake.h"
 
 #include "util_vector.h"
 
@@ -50,6 +51,8 @@ public:
 
 	/* offline render */
 	void render();
+
+	void bake(BL::Object b_object, const string& pass_type, BL::BakePixel pixel_array, int num_pixels, int depth, float pixels[]);
 
 	void write_render_result(BL::RenderResult b_rr, BL::RenderLayer b_rlay, RenderTile& rtile);
 	void write_render_tile(RenderTile& rtile);
@@ -100,7 +103,7 @@ protected:
 	void do_write_update_render_tile(RenderTile& rtile, bool do_update_only);
 
 	int builtin_image_frame(const string &builtin_name);
-	void builtin_image_info(const string &builtin_name, void *builtin_data, bool &is_float, int &width, int &height, int &channels);
+	void builtin_image_info(const string &builtin_name, void *builtin_data, bool &is_float, int &width, int &height, int &depth, int &channels);
 	bool builtin_image_pixels(const string &builtin_name, void *builtin_data, unsigned char *pixels);
 	bool builtin_image_float_pixels(const string &builtin_name, void *builtin_data, float *pixels);
 };

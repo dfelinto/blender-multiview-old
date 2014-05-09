@@ -46,10 +46,8 @@
 #include "BLI_utildefines.h"
 #include "BLI_alloca.h"
 #include "BLI_math.h"
-#include "BLI_edgehash.h"
 #include "BLI_uvproject.h"
 #include "BLI_string.h"
-#include "BLI_scanfill.h"
 
 #include "BKE_cdderivedmesh.h"
 #include "BKE_subsurf.h"
@@ -58,7 +56,6 @@
 #include "BKE_depsgraph.h"
 #include "BKE_image.h"
 #include "BKE_main.h"
-#include "BKE_mesh.h"
 #include "BKE_report.h"
 #include "BKE_scene.h"
 #include "BKE_editmesh.h"
@@ -91,9 +88,9 @@ static void modifier_unwrap_state(Object *obedit, Scene *scene, bool *r_use_subs
 	/* subsurf will take the modifier settings only if modifier is first or right after mirror */
 	if (subsurf) {
 		if (md && md->type == eModifierType_Subsurf)
-			subsurf = TRUE;
+			subsurf = true;
 		else
-			subsurf = FALSE;
+			subsurf = false;
 	}
 
 	*r_use_subsurf = subsurf;
@@ -195,8 +192,8 @@ static bool uvedit_have_selection(Scene *scene, BMEditMesh *em, bool implicit)
 
 void uvedit_get_aspect(Scene *scene, Object *ob, BMEditMesh *em, float *aspx, float *aspy)
 {
-	int sloppy = TRUE;
-	int selected = FALSE;
+	bool sloppy = true;
+	bool selected = false;
 	BMFace *efa;
 	Image *ima;
 
@@ -361,7 +358,7 @@ static ParamHandle *construct_param_handle_subsurfed(Scene *scene, Object *ob, B
 	/* Used to hold subsurfed Mesh */
 	DerivedMesh *derivedMesh, *initialDerived;
 	/* holds original indices for subsurfed mesh */
-	int *origVertIndices, *origEdgeIndices, *origFaceIndices, *origPolyIndices;
+	const int *origVertIndices, *origEdgeIndices, *origFaceIndices, *origPolyIndices;
 	/* Holds vertices of subsurfed mesh */
 	MVert *subsurfedVerts;
 	MEdge *subsurfedEdges;
@@ -808,9 +805,9 @@ void ED_uvedit_live_unwrap_begin(Scene *scene, Object *obedit)
 	}
 
 	if (use_subsurf)
-		liveHandle = construct_param_handle_subsurfed(scene, obedit, em, fillholes, FALSE, TRUE);
+		liveHandle = construct_param_handle_subsurfed(scene, obedit, em, fillholes, false, true);
 	else
-		liveHandle = construct_param_handle(scene, obedit, em, FALSE, fillholes, FALSE, TRUE);
+		liveHandle = construct_param_handle(scene, obedit, em, false, fillholes, false, true);
 
 	param_lscm_begin(liveHandle, PARAM_TRUE, abf);
 }
@@ -841,7 +838,7 @@ void ED_uvedit_live_unwrap(Scene *scene, Object *obedit)
 	if (scene->toolsettings->edge_mode_live_unwrap &&
 	    CustomData_has_layer(&em->bm->ldata, CD_MLOOPUV))
 	{
-		ED_unwrap_lscm(scene, obedit, FALSE); /* unwrap all not just sel */
+		ED_unwrap_lscm(scene, obedit, false); /* unwrap all not just sel */
 	}
 }
 
@@ -1139,7 +1136,7 @@ void ED_unwrap_lscm(Scene *scene, Object *obedit, const short sel)
 	if (use_subsurf)
 		handle = construct_param_handle_subsurfed(scene, obedit, em, fill_holes, sel, correct_aspect);
 	else
-		handle = construct_param_handle(scene, obedit, em, FALSE, fill_holes, sel, correct_aspect);
+		handle = construct_param_handle(scene, obedit, em, false, fill_holes, sel, correct_aspect);
 
 	param_lscm_begin(handle, PARAM_FALSE, scene->toolsettings->unwrapper == 0);
 	param_lscm_solve(handle);
@@ -1211,7 +1208,7 @@ static int unwrap_exec(bContext *C, wmOperator *op)
 		BKE_report(op->reports, RPT_INFO, "Subsurf modifier needs to be first to work with unwrap");
 
 	/* execute unwrap */
-	ED_unwrap_lscm(scene, obedit, TRUE);
+	ED_unwrap_lscm(scene, obedit, true);
 
 	DAG_id_tag_update(obedit->data, 0);
 	WM_event_add_notifier(C, NC_GEOM | ND_DATA, obedit->data);

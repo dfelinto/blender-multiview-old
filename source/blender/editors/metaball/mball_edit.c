@@ -56,7 +56,6 @@
 #include "ED_mball.h"
 #include "ED_screen.h"
 #include "ED_view3d.h"
-#include "ED_transform.h"
 #include "ED_util.h"
 
 #include "WM_api.h"
@@ -502,7 +501,7 @@ static int hide_metaelems_exec(bContext *C, wmOperator *op)
 	Object *obedit = CTX_data_edit_object(C);
 	MetaBall *mb = (MetaBall *)obedit->data;
 	MetaElem *ml;
-	const int invert = RNA_boolean_get(op->ptr, "unselected") ? SELECT : 0;
+	const bool invert = RNA_boolean_get(op->ptr, "unselected") ? SELECT : 0;
 
 	ml = mb->editelems->first;
 

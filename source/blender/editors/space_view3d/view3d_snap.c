@@ -413,8 +413,8 @@ static void bundle_midpoint(Scene *scene, Object *ob, float vec[3])
 	MovieClip *clip = BKE_object_movieclip_get(scene, ob, false);
 	MovieTracking *tracking;
 	MovieTrackingObject *object;
-	int ok = 0;
-	float min[3], max[3], mat[4][4], pos[3], cammat[4][4] = MAT4_UNITY;
+	bool ok = false;
+	float min[3], max[3], mat[4][4], pos[3], cammat[4][4];
 
 	if (!clip)
 		return;

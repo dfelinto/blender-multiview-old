@@ -37,7 +37,6 @@
 #include "BLI_math.h"
 #include "BLI_memarena.h"
 #include "BLI_polyfill2d.h"
-#include "BLI_listbase.h"
 
 #include "bmesh.h"
 #include "bmesh_tools.h"
@@ -70,40 +69,16 @@ static bool testedgesidef(const float v1[2], const float v2[2], const float v3[2
 }
 
 /**
- * \brief COMPUTE POLY NORMAL
- *
- * Computes the normal of a planar
- * polygon See Graphics Gems for
- * computing newell normal.
- */
-static void calc_poly_normal(float normal[3], float verts[][3], int nverts)
-{
-	float const *v_prev = verts[nverts - 1];
-	float const *v_curr = verts[0];
-	float n[3] = {0.0f};
-	int i;
-
-	/* Newell's Method */
-	for (i = 0; i < nverts; v_prev = v_curr, v_curr = verts[++i]) {
-		add_newell_cross_v3_v3v3(n, v_prev, v_curr);
-	}
-
-	if (UNLIKELY(normalize_v3_v3(normal, n) == 0.0f)) {
-		normal[2] = 1.0f; /* other axis set to 0.0 */
-	}
-}
-
-/**
  * \brief COMPUTE POLY NORMAL (BMFace)
  *
- * Same as #calc_poly_normal but operates directly on a bmesh face.
+ * Same as #normal_poly_v3 but operates directly on a bmesh face.
  */
 static void bm_face_calc_poly_normal(const BMFace *f, float n[3])
 {
 	BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
 	BMLoop *l_iter  = l_first;
-	float const *v_prev = l_first->prev->v->co;
-	float const *v_curr = l_first->v->co;
+	const float *v_prev = l_first->prev->v->co;
+	const float *v_curr = l_first->v->co;
 
 	zero_v3(n);
 
@@ -133,8 +108,8 @@ static void bm_face_calc_poly_normal_vertex_cos(BMFace *f, float r_no[3],
 {
 	BMLoop *l_first = BM_FACE_FIRST_LOOP(f);
 	BMLoop *l_iter  = l_first;
-	float const *v_prev = vertexCos[BM_elem_index_get(l_first->prev->v)];
-	float const *v_curr = vertexCos[BM_elem_index_get(l_first->v)];
+	const float *v_prev = vertexCos[BM_elem_index_get(l_first->prev->v)];
+	const float *v_curr = vertexCos[BM_elem_index_get(l_first->v)];
 
 	zero_v3(r_no);
 
@@ -229,15 +204,15 @@ void BM_face_calc_tessellation(const BMFace *f, BMLoop **r_loops, unsigned int (
  */
 float BM_face_calc_area(BMFace *f)
 {
-	BMLoop *l;
-	BMIter iter;
+	BMLoop *l_iter, *l_first;
 	float (*verts)[3] = BLI_array_alloca(verts, f->len);
 	float area;
-	int i;
+	unsigned int i = 0;
 
-	BM_ITER_ELEM_INDEX (l, &iter, f, BM_LOOPS_OF_FACE, i) {
-		copy_v3_v3(verts[i], l->v->co);
-	}
+	l_iter = l_first = BM_FACE_FIRST_LOOP(f);
+	do {
+		copy_v3_v3(verts[i++], l_iter->v->co);
+	} while ((l_iter = l_iter->next) != l_first);
 
 	if (f->len == 3) {
 		area = area_tri_v3(verts[0], verts[1], verts[2]);
@@ -246,9 +221,7 @@ float BM_face_calc_area(BMFace *f)
 		area = area_quad_v3(verts[0], verts[1], verts[2], verts[3]);
 	}
 	else {
-		float normal[3];
-		calc_poly_normal(normal, verts, f->len);
-		area = area_poly_v3((const float (*)[3])verts, f->len, normal);
+		area = area_poly_v3((const float (*)[3])verts, f->len);
 	}
 
 	return area;
@@ -311,7 +284,7 @@ void BM_face_calc_plane(BMFace *f, float r_plane[3])
 		sub_v3_v3v3(vec_b, verts[1]->co, verts[2]->co);
 		add_v3_v3v3(vec, vec_a, vec_b);
 		/* use the biggest edge length */
-		if (dot_v3v3(r_plane, r_plane) < dot_v3v3(vec, vec)) {
+		if (len_squared_v3(r_plane) < len_squared_v3(vec)) {
 			copy_v3_v3(r_plane, vec);
 		}
 	}
@@ -388,46 +361,6 @@ void BM_face_calc_center_mean_weighted(BMFace *f, float r_cent[3])
 }
 
 /**
- * COMPUTE POLY PLANE
- *
- * Projects a set polygon's vertices to
- * a plane defined by the average
- * of its edges cross products
- */
-void calc_poly_plane(float (*verts)[3], const int nverts)
-{
-	
-	float avgc[3], norm[3], mag, avgn[3];
-	float *v1, *v2, *v3;
-	int i;
-	
-	if (nverts < 3)
-		return;
-
-	zero_v3(avgn);
-	zero_v3(avgc);
-
-	for (i = 0; i < nverts; i++) {
-		v1 = verts[i];
-		v2 = verts[(i + 1) % nverts];
-		v3 = verts[(i + 2) % nverts];
-		normal_tri_v3(norm, v1, v2, v3);
-
-		add_v3_v3(avgn, norm);
-	}
-
-	if (UNLIKELY(normalize_v3(avgn) == 0.0f)) {
-		avgn[2] = 1.0f;
-	}
-	
-	for (i = 0; i < nverts; i++) {
-		v1 = verts[i];
-		mag = dot_v3v3(v1, avgn);
-		madd_v3_v3fl(v1, avgn, -mag);
-	}
-}
-
-/**
  * \brief BM LEGAL EDGES
  *
  * takes in a face and a list of edges, and sets to NULL any edge in
@@ -456,15 +389,18 @@ static void scale_edge_v2f(float v1[2], float v2[2], const float fac)
  * Rotates a polygon so that it's
  * normal is pointing towards the mesh Z axis
  */
-void poly_rotate_plane(const float normal[3], float (*verts)[3], const int nverts)
+void poly_rotate_plane(const float normal[3], float (*verts)[3], const unsigned int nverts)
 {
 	float mat[3][3];
+	float co[3];
+	unsigned int i;
 
-	if (axis_dominant_v3_to_m3(mat, normal)) {
-		int i;
-		for (i = 0; i < nverts; i++) {
-			mul_m3_v3(mat, verts[i]);
-		}
+	co[2] = 0.0f;
+
+	axis_dominant_v3_to_m3(mat, normal);
+	for (i = 0; i < nverts; i++) {
+		mul_v2_m3v3(co, mat, verts[i]);
+		copy_v3_v3(verts[i], co);
 	}
 }
 
@@ -723,7 +659,7 @@ bool BM_face_point_inside_test(BMFace *f, const float co[3])
 	int crosses = 0;
 	float onepluseps = 1.0f + (float)FLT_EPSILON * 150.0f;
 	
-	if (dot_v3v3(f->no, f->no) <= FLT_EPSILON * 10)
+	if (is_zero_v3(f->no))
 		BM_face_normal_update(f);
 	
 	/* find best projection of face XY, XZ or YZ: barycentric weights of

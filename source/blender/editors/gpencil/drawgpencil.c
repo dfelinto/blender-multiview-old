@@ -36,7 +36,6 @@
 
 #include "BLI_sys_types.h"
 
-#include "BLI_blenlib.h"
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
 
@@ -44,10 +43,9 @@
 #include "DNA_scene_types.h"
 #include "DNA_screen_types.h"
 #include "DNA_space_types.h"
-#include "DNA_userdef_types.h"
 #include "DNA_view3d_types.h"
+#include "DNA_userdef_types.h"
 
-#include "BKE_blender.h"
 #include "BKE_context.h"
 #include "BKE_global.h"
 #include "BKE_gpencil.h"
@@ -58,7 +56,6 @@
 #include "BIF_glutil.h"
 
 #include "ED_gpencil.h"
-#include "ED_sequencer.h"
 #include "ED_view3d.h"
 
 #include "gpencil_intern.h"
@@ -475,7 +472,7 @@ static void gp_draw_stroke(bGPDspoint *points, int totpoints, short thickness_s,
 
 /* draw a set of strokes */
 static void gp_draw_strokes(bGPDframe *gpf, int offsx, int offsy, int winx, int winy, int dflag,
-                            short debug, short lthick, float color[4])
+                            short debug, short lthick, const float color[4])
 {
 	bGPDstroke *gps;
 	
@@ -741,7 +738,7 @@ void draw_gpencil_2dimage(const bContext *C)
 /* draw grease-pencil sketches to specified 2d-view assuming that matrices are already set correctly 
  * Note: this gets called twice - first time with onlyv2d=1 to draw 'canvas' strokes,
  * second time with onlyv2d=0 for screen-aligned strokes */
-void draw_gpencil_view2d(const bContext *C, short onlyv2d)
+void draw_gpencil_view2d(const bContext *C, bool onlyv2d)
 {
 	ScrArea *sa = CTX_wm_area(C);
 	ARegion *ar = CTX_wm_region(C);
@@ -782,7 +779,7 @@ void draw_gpencil_view3d(Scene *scene, View3D *v3d, ARegion *ar, bool only3d)
 	 * deal with the camera border, otherwise map the coords to the camera border. */
 	if ((rv3d->persp == RV3D_CAMOB) && !(G.f & G_RENDER_OGL)) {
 		rctf rectf;
-		ED_view3d_calc_camera_border(scene, ar, v3d, rv3d, &rectf, TRUE); /* no shift */
+		ED_view3d_calc_camera_border(scene, ar, v3d, rv3d, &rectf, true); /* no shift */
 
 		offsx = iroundf(rectf.xmin);
 		offsy = iroundf(rectf.ymin);

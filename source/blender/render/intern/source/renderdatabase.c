@@ -66,16 +66,12 @@
 #include "BLI_math.h"
 #include "BLI_blenlib.h"
 #include "BLI_utildefines.h"
-#include "BLI_ghash.h"
-#include "BLI_memarena.h"
 
 #include "DNA_material_types.h" 
-#include "DNA_mesh_types.h" 
 #include "DNA_meshdata_types.h" 
 #include "DNA_texture_types.h" 
 
 #include "BKE_customdata.h"
-#include "BKE_texture.h" 
 #include "BKE_DerivedMesh.h"
 
 #include "RE_render_ext.h"	/* externtex */
@@ -1234,13 +1230,13 @@ HaloRen *RE_inithalo_particle(Render *re, ObjectRen *obr, DerivedMesh *dm, Mater
 /* -------------------------- operations on entire database ----------------------- */
 
 /* ugly function for halos in panorama */
-static int panotestclip(Render *re, int do_pano, float v[4])
+static int panotestclip(Render *re, bool do_pano, float v[4])
 {
 	/* part size (ensure we run RE_parts_clamp first) */
 	BLI_assert(re->partx == min_ii(re->r.tilex, re->rectx));
 	BLI_assert(re->party == min_ii(re->r.tiley, re->recty));
 
-	if (do_pano == FALSE) {
+	if (do_pano == false) {
 		return testclip(v);
 	}
 	else {
@@ -1278,7 +1274,7 @@ static int panotestclip(Render *re, int do_pano, float v[4])
 
 void project_renderdata(Render *re,
                         void (*projectfunc)(const float *, float mat[4][4], float *),
-                        int do_pano, float xoffs, int UNUSED(do_buckets))
+                        bool do_pano, float xoffs, bool UNUSED(do_buckets))
 {
 	ObjectRen *obr;
 	HaloRen *har = NULL;

@@ -45,7 +45,6 @@
 #  include <unistd.h>
 #  include <sys/times.h>
 #  include <dirent.h>
-#  include <unistd.h>
 #endif
 
 #include "DNA_space_types.h"
@@ -55,8 +54,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_blenlib.h"
-#include "BLI_linklist.h"
-#include "BLI_dynstr.h"
 #include "BLI_utildefines.h"
 #include "BLI_fileops_types.h"
 #include "BLI_fnmatch.h"
@@ -124,7 +121,7 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 		else
 			params->type = FILE_SPECIAL;
 
-		if (is_filepath && RNA_struct_property_is_set_ex(op->ptr, "filepath", FALSE)) {
+		if (is_filepath && RNA_struct_property_is_set_ex(op->ptr, "filepath", false)) {
 			char name[FILE_MAX];
 			RNA_string_get(op->ptr, "filepath", name);
 			if (params->type == FILE_LOADLIB) {
@@ -136,12 +133,12 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 			}
 		}
 		else {
-			if (is_directory && RNA_struct_property_is_set_ex(op->ptr, "directory", FALSE)) {
+			if (is_directory && RNA_struct_property_is_set_ex(op->ptr, "directory", false)) {
 				RNA_string_get(op->ptr, "directory", params->dir);
 				sfile->params->file[0] = '\0';
 			}
 
-			if (is_filename && RNA_struct_property_is_set_ex(op->ptr, "filename", FALSE)) {
+			if (is_filename && RNA_struct_property_is_set_ex(op->ptr, "filename", false)) {
 				RNA_string_get(op->ptr, "filename", params->file);
 			}
 		}
@@ -151,7 +148,7 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 			BLI_path_abs(params->dir, G.main->name);
 		}
 
-		if (is_directory == TRUE && is_filename == FALSE && is_filepath == FALSE && is_files == FALSE) {
+		if (is_directory == true && is_filename == false && is_filepath == false && is_files == false) {
 			params->flag |= FILE_DIRSEL_ONLY;
 		}
 		else {
@@ -228,7 +225,7 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 		}
 
 		if (is_relative_path) {
-			if (!RNA_struct_property_is_set_ex(op->ptr, "relative_path", FALSE)) {
+			if (!RNA_struct_property_is_set_ex(op->ptr, "relative_path", false)) {
 				RNA_boolean_set(op->ptr, "relative_path", U.flag & USER_RELPATHS);
 			}
 		}
@@ -267,7 +264,7 @@ short ED_fileselect_set_params(SpaceFile *sfile)
 
 	/* switching thumbnails needs to recalc layout [#28809] */
 	if (sfile->layout) {
-		sfile->layout->dirty = TRUE;
+		sfile->layout->dirty = true;
 	}
 
 	return 1;
@@ -396,7 +393,7 @@ float file_shorten_string(char *string, float w, int front)
 
 	sw = file_string_width(string);
 	if (front == 1) {
-		char *s = string;
+		const char *s = string;
 		BLI_strncpy(temp, "...", 4);
 		pad = file_string_width(temp);
 		while ((*s) && (sw + pad > w)) {
@@ -412,7 +409,7 @@ float file_shorten_string(char *string, float w, int front)
 		}
 	}
 	else {
-		char *s = string;
+		const char *s = string;
 		while (sw > w) {
 			int slen = strlen(string);
 			string[slen - 1] = '\0';
@@ -498,9 +495,9 @@ void ED_fileselect_init_layout(struct SpaceFile *sfile, ARegion *ar)
 
 	if (sfile->layout == NULL) {
 		sfile->layout = MEM_callocN(sizeof(struct FileLayout), "file_layout");
-		sfile->layout->dirty = TRUE;
+		sfile->layout->dirty = true;
 	}
-	else if (sfile->layout->dirty == FALSE) {
+	else if (sfile->layout->dirty == false) {
 		return;
 	}
 
@@ -574,7 +571,7 @@ void ED_fileselect_init_layout(struct SpaceFile *sfile, ARegion *ar)
 		layout->width = sfile->layout->columns * (layout->tile_w + 2 * layout->tile_border_x) + layout->tile_border_x * 2;
 		layout->flag = FILE_LAYOUT_HOR;
 	}
-	layout->dirty = FALSE;
+	layout->dirty = false;
 }
 
 FileLayout *ED_fileselect_get_layout(struct SpaceFile *sfile, ARegion *ar)

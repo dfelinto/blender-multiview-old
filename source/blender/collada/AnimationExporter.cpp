@@ -187,7 +187,7 @@ void AnimationExporter::make_anim_frames_from_targets(Object *ob, std::vector<fl
 	for (con = (bConstraint *)conlist->first; con; con = con->next) {
 		ListBase targets = {NULL, NULL};
 		
-		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		
 		if (!validateConstraints(con)) continue;
 
@@ -999,7 +999,9 @@ std::string AnimationExporter::create_4x4_source(std::vector<float> &frames, Obj
 		BIK_release_tree(scene, ob, ctime);
 	}
 
-	enable_fcurves(ob->adt->action, NULL);
+	if (ob->adt) {
+		enable_fcurves(ob->adt->action, NULL);
+	}
 
 	source.finish();
 
@@ -1526,7 +1528,7 @@ void AnimationExporter::sample_animation(float *v, std::vector<float> &frames, i
 bool AnimationExporter::validateConstraints(bConstraint *con)
 {
 	bool valid = true;
-	bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+	bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 	/* these we can skip completely (invalid constraints...) */
 	if (cti == NULL) valid = false;
 	if (con->flag & (CONSTRAINT_DISABLE | CONSTRAINT_OFF)) valid = false;
@@ -1545,7 +1547,7 @@ void AnimationExporter::calc_ob_mat_at_time(Object *ob, float ctime , float mat[
 	for (con = (bConstraint *)conlist->first; con; con = con->next) {
 		ListBase targets = {NULL, NULL};
 		
-		bConstraintTypeInfo *cti = BKE_constraint_get_typeinfo(con);
+		bConstraintTypeInfo *cti = BKE_constraint_typeinfo_get(con);
 		
 		if (cti && cti->get_constraint_targets) {
 			bConstraintTarget *ct;

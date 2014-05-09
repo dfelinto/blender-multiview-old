@@ -29,18 +29,13 @@
  *  \ingroup spclip
  */
 
-#include "DNA_object_types.h"  /* SELECT */
 #include "DNA_scene_types.h"
-
-#include "MEM_guardedalloc.h"
 
 #include "BLI_utildefines.h"
 #include "BLI_math.h"
-#include "BLI_listbase.h"
 #include "BLI_rect.h"
 
 #include "BKE_context.h"
-#include "BKE_movieclip.h"
 #include "BKE_tracking.h"
 #include "BKE_depsgraph.h"
 
@@ -69,7 +64,7 @@ static int ED_space_clip_graph_poll(bContext *C)
 		return sc->view == SC_VIEW_GRAPH;
 	}
 
-	return FALSE;
+	return false;
 }
 
 static int clip_graph_knots_poll(bContext *C)
@@ -79,7 +74,7 @@ static int clip_graph_knots_poll(bContext *C)
 
 		return (sc->flag & SC_SHOW_GRAPH_TRACKS_MOTION) != 0;
 	}
-	return FALSE;
+	return false;
 }
 
 typedef struct {
@@ -166,7 +161,7 @@ static void find_nearest_tracking_knot_cb(void *userdata, MovieTrackingTrack *tr
 
 }
 
-static void mouse_select_init_data(MouseSelectUserData *userdata, float *co)
+static void mouse_select_init_data(MouseSelectUserData *userdata, const float co[2])
 {
 	memset(userdata, 0, sizeof(MouseSelectUserData));
 	userdata->min_dist = FLT_MAX;
@@ -193,10 +188,10 @@ static bool mouse_select_knot(bContext *C, float co[2], bool extend)
 		if (userdata.marker) {
 			int x1, y1, x2, y2;
 
-			UI_view2d_view_to_region(v2d, co[0], co[1], &x1, &y1);
-			UI_view2d_view_to_region(v2d, userdata.min_co[0], userdata.min_co[1], &x2, &y2);
-
-			if (abs(x2 - x1) <= delta && abs(y2 - y1) <= delta) {
+			if (UI_view2d_view_to_region_clip(v2d, co[0], co[1], &x1, &y1) &&
+			    UI_view2d_view_to_region_clip(v2d, userdata.min_co[0], userdata.min_co[1], &x2, &y2) &&
+			    (abs(x2 - x1) <= delta && abs(y2 - y1) <= delta))
+			{
 				if (!extend) {
 					SelectUserData selectdata = {SEL_DESELECT};
 
@@ -366,17 +361,15 @@ static int border_select_graph_exec(bContext *C, wmOperator *op)
 	MovieTracking *tracking = &clip->tracking;
 	MovieTrackingTrack *act_track = BKE_tracking_track_get_active(tracking);
 	BorderSelectuserData userdata;
-	rcti rect;
+	rctf rect;
 
 	if (act_track == NULL) {
 		return OPERATOR_CANCELLED;
 	}
 
 	/* get rectangle from operator */
-	WM_operator_properties_border_to_rcti(op, &rect);
-
-	UI_view2d_region_to_view(&ar->v2d, rect.xmin, rect.ymin, &userdata.rect.xmin, &userdata.rect.ymin);
-	UI_view2d_region_to_view(&ar->v2d, rect.xmax, rect.ymax, &userdata.rect.xmax, &userdata.rect.ymax);
+	WM_operator_properties_border_to_rctf(op, &rect);
+	UI_view2d_region_to_view_rctf(&ar->v2d, &rect, &userdata.rect);
 
 	userdata.changed = false;
 	userdata.mode = RNA_int_get(op->ptr, "gesture_mode");
@@ -410,7 +403,7 @@ void CLIP_OT_graph_select_border(wmOperatorType *ot)
 	ot->flag = OPTYPE_UNDO;
 
 	/* properties */
-	WM_operator_properties_gesture_border(ot, TRUE);
+	WM_operator_properties_gesture_border(ot, true);
 }
 
 /********************** select all operator *********************/

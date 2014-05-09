@@ -39,9 +39,7 @@
 
 #include "BLI_math.h"
 #include "BLI_utildefines.h"
-#include "BLI_string.h"
 #include "BLI_ghash.h"
-#include "BLI_edgehash.h"
 
 #include "DNA_curve_types.h"
 #include "DNA_meshdata_types.h"
@@ -51,9 +49,7 @@
 #include "BKE_cdderivedmesh.h"
 #include "BKE_displist.h"
 #include "BKE_curve.h"
-#include "BKE_mesh.h"
 #include "BKE_modifier.h"
-#include "BKE_object.h"
 
 #include "MOD_util.h"
 
@@ -191,7 +187,7 @@ static int *find_doubles_index_map(BMesh *bm, BMOperator *dupe_op,
 	}
 	/* above loops over all, so set all to dirty, if this is somehow
 	 * setting valid values, this line can be removed - campbell */
-	bm->elem_index_dirty |= BM_VERT | BM_EDGE | BM_FACE;
+	bm->elem_index_dirty |= BM_ALL;
 
 	(*index_map_length) = i;
 	index_map = MEM_callocN(sizeof(int) * (*index_map_length), "index_map");

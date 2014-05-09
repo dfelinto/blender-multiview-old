@@ -42,9 +42,7 @@
 #include "DNA_image_types.h"
 #include "DNA_movieclip_types.h"
 #include "DNA_scene_types.h"
-#include "DNA_screen_types.h"
 #include "DNA_space_types.h"
-#include "DNA_windowmanager_types.h"
 
 #include "IMB_filter.h"
 #include "IMB_imbuf.h"
@@ -66,7 +64,6 @@
 #include "BKE_colortools.h"
 #include "BKE_context.h"
 #include "BKE_image.h"
-#include "BKE_utildefines.h"
 #include "BKE_main.h"
 
 #include "RNA_define.h"
@@ -1237,7 +1234,7 @@ const char *IMB_colormanagement_get_rect_colorspace(ImBuf *ibuf)
 typedef struct DisplayBufferThread {
 	ColormanageProcessor *cm_processor;
 
-	float *buffer;
+	const float *buffer;
 	unsigned char *byte_buffer;
 
 	float *display_buffer;
@@ -1258,7 +1255,7 @@ typedef struct DisplayBufferThread {
 typedef struct DisplayBufferInitData {
 	ImBuf *ibuf;
 	ColormanageProcessor *cm_processor;
-	float *buffer;
+	const float *buffer;
 	unsigned char *byte_buffer;
 
 	float *display_buffer;
@@ -1404,12 +1401,12 @@ static void *do_display_buffer_apply_thread(void *handle_v)
 	if (cm_processor == NULL) {
 		if (display_buffer_byte) {
 			IMB_buffer_byte_from_byte(display_buffer_byte, handle->byte_buffer, IB_PROFILE_SRGB, IB_PROFILE_SRGB,
-			                          FALSE, width, height, width, width);
+			                          false, width, height, width, width);
 		}
 
 		if (display_buffer) {
 			IMB_buffer_float_from_byte(display_buffer, handle->byte_buffer, IB_PROFILE_SRGB, IB_PROFILE_SRGB,
-			                           FALSE, width, height, width, width);
+			                           false, width, height, width, width);
 		}
 	}
 	else {
@@ -1976,7 +1973,7 @@ void IMB_colormanagement_buffer_make_display_space(float *buffer, unsigned char 
 
 	IMB_buffer_byte_from_float(display_buffer, display_buffer_float,
 	                           channels, dither, IB_PROFILE_SRGB, IB_PROFILE_SRGB,
-	                           TRUE, width, height, width, width);
+	                           true, width, height, width, width);
 
 	MEM_freeN(display_buffer_float);
 	IMB_colormanagement_processor_free(cm_processor);
@@ -2095,7 +2092,7 @@ void IMB_display_buffer_transform_apply(unsigned char *display_buffer, float *li
 	IMB_colormanagement_processor_free(cm_processor);
 
 	IMB_buffer_byte_from_float(display_buffer, buffer, channels, 0.0f, IB_PROFILE_SRGB, IB_PROFILE_SRGB,
-	                           FALSE, width, height, width, width);
+	                           false, width, height, width, width);
 
 	MEM_freeN(buffer);
 }
@@ -2704,7 +2701,7 @@ static void partial_buffer_update_rect(ImBuf *ibuf, unsigned char *display_buffe
 		if (display_buffer_float) {
 			/* huh, for dither we need float buffer first, no cheaper way. currently */
 			IMB_buffer_float_from_byte(display_buffer_float, byte_buffer,
-			                           IB_PROFILE_SRGB, IB_PROFILE_SRGB, TRUE,
+			                           IB_PROFILE_SRGB, IB_PROFILE_SRGB, true,
 			                           width, height, width, display_stride);
 		}
 		else {
@@ -2723,7 +2720,7 @@ static void partial_buffer_update_rect(ImBuf *ibuf, unsigned char *display_buffe
 		int display_index = (ymin * display_stride + xmin) * channels;
 
 		IMB_buffer_byte_from_float(display_buffer + display_index, display_buffer_float, channels, dither,
-		                           IB_PROFILE_SRGB, IB_PROFILE_SRGB, TRUE, width, height, display_stride, width);
+		                           IB_PROFILE_SRGB, IB_PROFILE_SRGB, true, width, height, display_stride, width);
 
 		MEM_freeN(display_buffer_float);
 	}
@@ -2779,21 +2776,27 @@ void IMB_partial_display_buffer_update(ImBuf *ibuf, const float *linear_buffer, 
 		ColormanageProcessor *cm_processor = NULL;
 		bool skip_transform = false;
 
-		/* byte buffer is assumed to be in imbuf's rect space, so if byte buffer
+		/* Byte buffer is assumed to be in imbuf's rect space, so if byte buffer
 		 * is known we could skip display->linear->display conversion in case
-		 * display color space matches imbuf's rect space
+		 * display color space matches imbuf's rect space.
+		 *
+		 * But if there's a float buffer it's likely operation was performed on
+		 * it first and byte buffer is likely to be out of date here.
 		 */
-		if (byte_buffer != NULL)
+		if (linear_buffer == NULL && byte_buffer != NULL) {
 			skip_transform = is_ibuf_rect_in_display_space(ibuf, view_settings, display_settings);
+		}
 
-		if (!skip_transform)
+		if (!skip_transform) {
 			cm_processor = IMB_colormanagement_display_processor_new(view_settings, display_settings);
+		}
 
 		partial_buffer_update_rect(ibuf, display_buffer, linear_buffer, byte_buffer, buffer_width, stride,
 		                           offset_x, offset_y, cm_processor, xmin, ymin, xmax, ymax);
 
-		if (cm_processor)
+		if (cm_processor) {
 			IMB_colormanagement_processor_free(cm_processor);
+		}
 
 		IMB_display_buffer_release(cache_handle);
 	}

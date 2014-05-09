@@ -53,14 +53,16 @@ public:
 
 	ParticleSystem *particle_system;
 	int particle_index;
-
+	
 	Object();
 	~Object();
 
 	void tag_update(Scene *scene);
 
-	void compute_bounds(bool motion_blur, float shuttertime);
-	void apply_transform();
+	void compute_bounds(bool motion_blur);
+	void apply_transform(bool apply_to_motion);
+
+	vector<float> motion_times();
 };
 
 /* Object Manager */

@@ -63,7 +63,6 @@ typedef unsigned long uint_ptr;
 #include "KX_PythonInit.h"
 #include "KX_PyMath.h"
 #include "KX_PythonSeq.h"
-#include "KX_ConvertPhysicsObject.h"
 #include "SCA_IActuator.h"
 #include "SCA_ISensor.h"
 #include "SCA_IController.h"
@@ -307,9 +306,6 @@ KX_GameObject* KX_GameObject::GetParent()
 		if (node)
 			result = (KX_GameObject*)node->GetSGClientObject();
 	}
-	
-	if (result)
-		result->AddRef();
 
 	return result;
 	
@@ -464,6 +460,11 @@ bool KX_GameObject::IsActionDone(short layer)
 void KX_GameObject::UpdateActionManager(float curtime)
 {
 	GetActionManager()->Update(curtime);
+}
+
+void KX_GameObject::UpdateActionIPOs()
+{
+	GetActionManager()->UpdateIPOs();
 }
 
 float KX_GameObject::GetActionFrame(short layer)
@@ -759,7 +760,7 @@ void KX_GameObject::UpdateLod(MT_Vector3 &cam_pos)
 	Object *bob = this->GetBlenderObject();
 	LodLevel *lod = (LodLevel*) bob->lodlevels.first;
 	for (; lod; lod = lod->next, level++) {
-		if (!lod->source) level--;
+		if (!lod->source || lod->source->type != OB_MESH) level--;
 		if (!lod->next || lod->next->distance * lod->next->distance > distance2) break;
 	}
 
@@ -1908,11 +1909,11 @@ PyObject *KX_GameObject::PyReinstancePhysicsMesh(PyObject *args)
 		) {
 		return NULL;
 	}
-#ifdef WITH_BULLET
+
 	/* gameobj and mesh can be NULL */
-	if (KX_ReInstanceBulletShapeFromMesh(this, gameobj, mesh))
+	if (GetPhysicsController() && GetPhysicsController()->ReinstancePhysicsShape(gameobj, mesh))
 		Py_RETURN_TRUE;
-#endif
+
 	Py_RETURN_FALSE;
 }
 
@@ -2114,7 +2115,6 @@ PyObject *KX_GameObject::pyattr_get_parent(void *self_v, const KX_PYATTRIBUTE_DE
 	KX_GameObject* self = static_cast<KX_GameObject*>(self_v);
 	KX_GameObject* parent = self->GetParent();
 	if (parent) {
-		parent->Release(); /* self->GetParent() AddRef's */
 		return parent->GetProxy();
 	}
 	Py_RETURN_NONE;

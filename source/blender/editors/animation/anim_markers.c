@@ -322,7 +322,7 @@ static void draw_marker(View2D *v2d, TimeMarker *marker, int cfra, int flag)
 	
 	/* no time correction for framelen! space is drawn with old values */
 	ypixels = BLI_rcti_size_y(&v2d->mask);
-	UI_view2d_getscale(v2d, &xscale, &yscale);
+	UI_view2d_scale_get(v2d, &xscale, &yscale);
 	
 	glScalef(1.0f / xscale, 1.0f, 1.0f);
 	
@@ -1024,22 +1024,18 @@ static int ed_marker_select(bContext *C, const wmEvent *event, bool extend, bool
 	ARegion *ar = CTX_wm_region(C);
 	View2D *v2d = UI_view2d_fromcontext(C);
 	float viewx;
-	int x, y, cfra;
+	int x, cfra;
 	
 	if (markers == NULL)
 		return OPERATOR_PASS_THROUGH;
 
 	x = event->x - ar->winrct.xmin;
-	y = event->y - ar->winrct.ymin;
 	
-	UI_view2d_region_to_view(v2d, x, y, &viewx, NULL);
+	viewx = UI_view2d_region_to_view_x(v2d, x);
 	
 	cfra = ED_markers_find_nearest_marker_time(markers, viewx);
 	
-	if (extend)
-		select_timeline_marker_frame(markers, cfra, 1);
-	else
-		select_timeline_marker_frame(markers, cfra, 0);
+	select_timeline_marker_frame(markers, cfra, extend);
 	
 #ifdef DURIAN_CAMERA_SWITCH
 
@@ -1150,22 +1146,19 @@ static int ed_marker_border_select_exec(bContext *C, wmOperator *op)
 	View2D *v2d = UI_view2d_fromcontext(C);
 	ListBase *markers = ED_context_get_markers(C);
 	TimeMarker *marker;
-	float xminf, xmaxf, yminf, ymaxf;
 	int gesture_mode = RNA_int_get(op->ptr, "gesture_mode");
 	bool extend = RNA_boolean_get(op->ptr, "extend");
-	rcti rect;
+	rctf rect;
 	
-	WM_operator_properties_border_to_rcti(op, &rect);
-
-	UI_view2d_region_to_view(v2d, rect.xmin, rect.ymin, &xminf, &yminf);
-	UI_view2d_region_to_view(v2d, rect.xmax, rect.ymax, &xmaxf, &ymaxf);
+	WM_operator_properties_border_to_rctf(op, &rect);
+	UI_view2d_region_to_view_rctf(v2d, &rect, &rect);
 	
 	if (markers == NULL)
 		return 0;
 	
 	/* XXX marker context */
 	for (marker = markers->first; marker; marker = marker->next) {
-		if ((marker->frame > xminf) && (marker->frame <= xmaxf)) {
+		if (BLI_rctf_isect_x(&rect, marker->frame)) {
 			switch (gesture_mode) {
 				case GESTURE_MODAL_SELECT:
 					marker->flag |= SELECT;
@@ -1210,7 +1203,7 @@ static void MARKER_OT_select_border(wmOperatorType *ot)
 	ot->flag = OPTYPE_REGISTER | OPTYPE_UNDO;
 	
 	/* rna */
-	WM_operator_properties_gesture_border(ot, TRUE);
+	WM_operator_properties_gesture_border(ot, true);
 }
 
 /* *********************** (de)select all ***************** */
@@ -1425,6 +1418,7 @@ static void MARKER_OT_make_links_scene(wmOperatorType *ot)
 	/* properties */
 	prop = RNA_def_enum(ot->srna, "scene", DummyRNA_NULL_items, 0, "Scene", "");
 	RNA_def_enum_funcs(prop, RNA_scene_itemf);
+	RNA_def_property_flag(prop, PROP_ENUM_NO_TRANSLATE);
 	ot->prop = prop;
 
 }
@@ -1504,16 +1498,16 @@ void ED_keymap_marker(wmKeyConfig *keyconf)
 	WM_keymap_verify_item(keymap, "MARKER_OT_duplicate", DKEY, KM_PRESS, KM_SHIFT, 0);
 	WM_keymap_verify_item(keymap, "MARKER_OT_select", SELECTMOUSE, KM_PRESS, 0, 0);
 	kmi = WM_keymap_add_item(keymap, "MARKER_OT_select", SELECTMOUSE, KM_PRESS, KM_SHIFT, 0);
-	RNA_boolean_set(kmi->ptr, "extend", TRUE);
+	RNA_boolean_set(kmi->ptr, "extend", true);
 
 #ifdef DURIAN_CAMERA_SWITCH
 	kmi = WM_keymap_add_item(keymap, "MARKER_OT_select", SELECTMOUSE, KM_PRESS, KM_CTRL, 0);
-	RNA_boolean_set(kmi->ptr, "extend", FALSE);
-	RNA_boolean_set(kmi->ptr, "camera", TRUE);
+	RNA_boolean_set(kmi->ptr, "extend", false);
+	RNA_boolean_set(kmi->ptr, "camera", true);
 
 	kmi = WM_keymap_add_item(keymap, "MARKER_OT_select", SELECTMOUSE, KM_PRESS, KM_SHIFT | KM_CTRL, 0);
-	RNA_boolean_set(kmi->ptr, "extend", TRUE);
-	RNA_boolean_set(kmi->ptr, "camera", TRUE);
+	RNA_boolean_set(kmi->ptr, "extend", true);
+	RNA_boolean_set(kmi->ptr, "camera", true);
 #else
 	(void)kmi;
 #endif

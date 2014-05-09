@@ -30,7 +30,6 @@
 #include "MEM_guardedalloc.h"
 
 #include "BLI_math.h"
-#include "BLI_memarena.h"
 #include "BLI_utildefines.h"
 
 #include "BLI_strict_flags.h"
@@ -88,6 +87,27 @@ float normal_quad_v3(float n[3], const float v1[3], const float v2[3], const flo
 	return normalize_v3(n);
 }
 
+/**
+ * Computes the normal of a planar
+ * polygon See Graphics Gems for
+ * computing newell normal.
+ */
+float normal_poly_v3(float n[3], const float verts[][3], unsigned int nr)
+{
+	const float *v_prev = verts[nr - 1];
+	const float *v_curr = verts[0];
+	unsigned int i;
+
+	zero_v3(n);
+
+	/* Newell's Method */
+	for (i = 0; i < nr; v_prev = v_curr, v_curr = verts[++i]) {
+		add_newell_cross_v3_v3v3(n, v_prev, v_curr);
+	}
+
+	return normalize_v3(n);
+}
+
 /* only convex Quadrilaterals */
 float area_quad_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3])
 {
@@ -134,25 +154,10 @@ float area_tri_signed_v3(const float v1[3], const float v2[3], const float v3[3]
 	return area;
 }
 
-float area_poly_v3(const float verts[][3], unsigned int nr, const float normal[3])
+float area_poly_v3(const float verts[][3], unsigned int nr)
 {
-	unsigned int a;
-	int px, py;
-	const float max = axis_dominant_v3_max(&px, &py, normal);
-	float area;
-	const float *co_curr, *co_prev;
-
-	/* The Trapezium Area Rule */
-	co_prev = verts[nr - 1];
-	co_curr = verts[0];
-	area = 0.0f;
-	for (a = 0; a < nr; a++) {
-		area += (co_curr[px] - co_prev[px]) * (co_curr[py] + co_prev[py]);
-		co_prev = co_curr;
-		co_curr += 3;
-	}
-
-	return fabsf(0.5f * area / max);
+	float n[3];
+	return normal_poly_v3(n, verts, nr) * 0.5f;
 }
 
 float cross_poly_v2(const float verts[][2], unsigned int nr)
@@ -177,6 +182,24 @@ float cross_poly_v2(const float verts[][2], unsigned int nr)
 float area_poly_v2(const float verts[][2], unsigned int nr)
 {
 	return fabsf(0.5f * cross_poly_v2(verts, nr));
+}
+
+float cotangent_tri_weight_v3(const float v1[3], const float v2[3], const float v3[3])
+{
+	float a[3], b[3], c[3], c_len;
+
+	sub_v3_v3v3(a, v2, v1);
+	sub_v3_v3v3(b, v3, v1);
+	cross_v3_v3v3(c, a, b);
+
+	c_len = len_v3(c);
+
+	if (c_len > FLT_EPSILON) {
+		return dot_v3v3(a, b) / c_len;
+	}
+	else {
+		return 0.0f;
+	}
 }
 
 /********************************* Planes **********************************/
@@ -601,7 +624,7 @@ int isect_seg_seg_v2_point(const float v1[2], const float v2[2], const float v3[
 	return -1;
 }
 
-int isect_seg_seg_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2])
+bool isect_seg_seg_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2])
 {
 #define CCW(A, B, C) ((C[1] - A[1]) * (B[0] - A[0]) > (B[1]-A[1]) * (C[0]-A[0]))
 
@@ -638,7 +661,7 @@ int isect_line_sphere_v3(const float l1[3], const float l2[3],
 		l2[2] - l1[2]
 	};
 
-	const float a = dot_v3v3(ldir, ldir);
+	const float a = len_squared_v3(ldir);
 
 	const float b = 2.0f *
 	                (ldir[0] * (l1[0] - sp[0]) +
@@ -646,8 +669,8 @@ int isect_line_sphere_v3(const float l1[3], const float l2[3],
 	                 ldir[2] * (l1[2] - sp[2]));
 
 	const float c =
-	    dot_v3v3(sp, sp) +
-	    dot_v3v3(l1, l1) -
+	    len_squared_v3(sp) +
+	    len_squared_v3(l1) -
 	    (2.0f * dot_v3v3(sp, l1)) -
 	    (r * r);
 
@@ -854,7 +877,7 @@ bool isect_point_poly_v2_int(const int pt[2], const int verts[][2], const unsign
 /* point in tri */
 
 /* only single direction */
-int isect_point_tri_v2_cw(const float pt[2], const float v1[2], const float v2[2], const float v3[2])
+bool isect_point_tri_v2_cw(const float pt[2], const float v1[2], const float v2[2], const float v3[2])
 {
 	if (line_point_side_v2(v1, v2, pt) >= 0.0f) {
 		if (line_point_side_v2(v2, v3, pt) >= 0.0f) {
@@ -1113,7 +1136,7 @@ bool isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
 {
 	float p[3], s[3], e1[3], e2[3], q[3];
 	float a, f, u, v;
-	float du = 0, dv = 0;
+	float du, dv;
 
 	sub_v3_v3v3(e1, v1, v0);
 	sub_v3_v3v3(e2, v2, v0);
@@ -1132,20 +1155,25 @@ bool isect_ray_tri_threshold_v3(const float p1[3], const float d[3],
 	u = f * dot_v3v3(s, p);
 	v = f * dot_v3v3(d, q);
 
-	if (u < 0) du = u;
-	if (u > 1) du = u - 1;
-	if (v < 0) dv = v;
-	if (v > 1) dv = v - 1;
 	if (u > 0 && v > 0 && u + v > 1) {
-		float t = u + v - 1;
-		du = u - t / 2;
-		dv = v - t / 2;
+		float t = (u + v - 1) / 2;
+		du = u - t;
+		dv = v - t;
+	}
+	else {
+		if      (u < 0) du = u;
+		else if (u > 1) du = u - 1;
+		else            du = 0.0f;
+
+		if      (v < 0) dv = v;
+		else if (v > 1) dv = v - 1;
+		else            dv = 0.0f;
 	}
 
 	mul_v3_fl(e1, du);
 	mul_v3_fl(e2, dv);
 
-	if (dot_v3v3(e1, e1) + dot_v3v3(e2, e2) > threshold * threshold) {
+	if (len_squared_v3(e1) + len_squared_v3(e2) > threshold * threshold) {
 		return 0;
 	}
 
@@ -1244,7 +1272,7 @@ static bool getLowestRoot(const float a, const float b, const float c, const flo
 	if (determinant >= 0.0f) {
 		/* calculate the two roots: (if determinant == 0 then
 		 * x1==x2 but lets disregard that slight optimization) */
-		float sqrtD = (float)sqrt(determinant);
+		float sqrtD = sqrtf(determinant);
 		float r1 = (-b - sqrtD) / (2.0f * a);
 		float r2 = (-b + sqrtD) / (2.0f * a);
 
@@ -2104,32 +2132,20 @@ void fill_poly_v2i_n(
  * \param r_mat The matrix to return.
  * \param normal A unit length vector.
  */
-bool axis_dominant_v3_to_m3(float r_mat[3][3], const float normal[3])
+void axis_dominant_v3_to_m3(float r_mat[3][3], const float normal[3])
 {
-	float up[3] = {0.0f, 0.0f, 1.0f};
-	float axis[3];
-	float angle;
-
-	/* double check they are normalized */
 	BLI_ASSERT_UNIT_V3(normal);
 
-	cross_v3_v3v3(axis, normal, up);
-	angle = saacos(dot_v3v3(normal, up));
+	copy_v3_v3(r_mat[2], normal);
+	ortho_basis_v3v3_v3(r_mat[0], r_mat[1], r_mat[2]);
 
-	if (angle >= FLT_EPSILON) {
-		if (len_squared_v3(axis) < FLT_EPSILON) {
-			axis[0] = 0.0f;
-			axis[1] = 1.0f;
-			axis[2] = 0.0f;
-		}
+	BLI_ASSERT_UNIT_V3(r_mat[0]);
+	BLI_ASSERT_UNIT_V3(r_mat[1]);
 
-		axis_angle_to_mat3(r_mat, axis, angle);
-		return true;
-	}
-	else {
-		unit_m3(r_mat);
-		return false;
-	}
+	transpose_m3(r_mat);
+
+	BLI_assert(!is_negative_m3(r_mat));
+	BLI_assert(fabsf(dot_m3_v3_row_z(r_mat, normal) - 1.0f) < BLI_ASSERT_UNIT_EPSILON);
 }
 
 /****************************** Interpolation ********************************/
@@ -2140,7 +2156,7 @@ static float tri_signed_area(const float v1[3], const float v2[3], const float v
 }
 
 /* return 1 when degenerate */
-static int barycentric_weights(const float v1[3], const float v2[3], const float v3[3], const float co[3], const float n[3], float w[3])
+static bool barycentric_weights(const float v1[3], const float v2[3], const float v3[3], const float co[3], const float n[3], float w[3])
 {
 	float wtot;
 	int i, j;
@@ -2182,7 +2198,7 @@ void interp_weights_face_v3(float w[4], const float v1[3], const float v2[3], co
 	else {
 		/* otherwise compute barycentric interpolation weights */
 		float n1[3], n2[3], n[3];
-		int degenerate;
+		bool degenerate;
 
 		sub_v3_v3v3(n1, v1, v3);
 		if (v4) {
@@ -2255,8 +2271,9 @@ bool barycentric_coords_v2(const float v1[2], const float v2[2], const float v3[
 	return false;
 }
 
-/* used by projection painting
- * note: using area_tri_signed_v2 means locations outside the triangle are correctly weighted */
+/**
+ * \note: using #area_tri_signed_v2 means locations outside the triangle are correctly weighted
+ */
 void barycentric_weights_v2(const float v1[2], const float v2[2], const float v3[2], const float co[2], float w[3])
 {
 	float wtot;
@@ -2272,6 +2289,26 @@ void barycentric_weights_v2(const float v1[2], const float v2[2], const float v3
 	else { /* dummy values for zero area face */
 		copy_v3_fl(w, 1.0f / 3.0f);
 	}
+}
+
+/**
+ * still use 2D X,Y space but this works for verts transformed by a perspective matrix,
+ * using their 4th component as a weight
+ */
+void barycentric_weights_v2_persp(const float v1[4], const float v2[4], const float v3[4], const float co[2], float w[3])
+{
+	float wtot;
+
+	w[0] = area_tri_signed_v2(v2, v3, co) / v1[3];
+	w[1] = area_tri_signed_v2(v3, v1, co) / v2[3];
+	w[2] = area_tri_signed_v2(v1, v2, co) / v3[3];
+	wtot = w[0] + w[1] + w[2];
+
+	if (wtot != 0.0f) {
+		mul_v3_fl(w, 1.0f / wtot);
+	}
+	else /* dummy values for zero area face */
+		w[0] = w[1] = w[2] = 1.0f / 3.0f;
 }
 
 /* same as #barycentric_weights_v2 but works with a quad,
@@ -2319,7 +2356,7 @@ void barycentric_weights_v2_quad(const float v1[2], const float v2[2], const flo
 #endif
 
 		/* inline mean_value_half_tan four times here */
-		float t[4] = {
+		const float t[4] = {
 			MEAN_VALUE_HALF_TAN_V2(area, 0, 1),
 			MEAN_VALUE_HALF_TAN_V2(area, 1, 2),
 			MEAN_VALUE_HALF_TAN_V2(area, 2, 3),
@@ -2356,13 +2393,12 @@ void barycentric_transform(float pt_tar[3], float const pt_src[3],
                            const float tri_src_p1[3], const float tri_src_p2[3], const float tri_src_p3[3])
 {
 	/* this works by moving the source triangle so its normal is pointing on the Z
-	 * axis where its barycentric wights can be calculated in 2D and its Z offset can
+	 * axis where its barycentric weights can be calculated in 2D and its Z offset can
 	 *  be re-applied. The weights are applied directly to the targets 3D points and the
 	 *  z-depth is used to scale the targets normal as an offset.
 	 * This saves transforming the target into its Z-Up orientation and back (which could also work) */
-	const float z_up[3] = {0, 0, 1};
 	float no_tar[3], no_src[3];
-	float quat_src[4];
+	float mat_src[3][3];
 	float pt_src_xy[3];
 	float tri_xy_src[3][3];
 	float w_src[3];
@@ -2372,19 +2408,14 @@ void barycentric_transform(float pt_tar[3], float const pt_src[3],
 	normal_tri_v3(no_tar, tri_tar_p1, tri_tar_p2, tri_tar_p3);
 	normal_tri_v3(no_src, tri_src_p1, tri_src_p2, tri_src_p3);
 
-	rotation_between_vecs_to_quat(quat_src, no_src, z_up);
-	normalize_qt(quat_src);
-
-	copy_v3_v3(pt_src_xy, pt_src);
-	copy_v3_v3(tri_xy_src[0], tri_src_p1);
-	copy_v3_v3(tri_xy_src[1], tri_src_p2);
-	copy_v3_v3(tri_xy_src[2], tri_src_p3);
+	axis_dominant_v3_to_m3(mat_src, no_src);
 
 	/* make the source tri xy space */
-	mul_qt_v3(quat_src, pt_src_xy);
-	mul_qt_v3(quat_src, tri_xy_src[0]);
-	mul_qt_v3(quat_src, tri_xy_src[1]);
-	mul_qt_v3(quat_src, tri_xy_src[2]);
+	mul_v3_m3v3(pt_src_xy,     mat_src, pt_src);
+	mul_v3_m3v3(tri_xy_src[0], mat_src, tri_src_p1);
+	mul_v3_m3v3(tri_xy_src[1], mat_src, tri_src_p2);
+	mul_v3_m3v3(tri_xy_src[2], mat_src, tri_src_p3);
+
 
 	barycentric_weights_v2(tri_xy_src[0], tri_xy_src[1], tri_xy_src[2], pt_src_xy, w_src);
 	interp_v3_v3v3v3(pt_tar, tri_tar_p1, tri_tar_p2, tri_tar_p3, w_src);
@@ -2522,7 +2553,7 @@ void interp_weights_poly_v3(float *w, float v[][3], const int n, const float co[
 {
 	const float eps = 0.00001f;  /* take care, low values cause [#36105] */
 	const float eps_sq = eps * eps;
-	float *v_curr, *v_next;
+	const float *v_curr, *v_next;
 	float ht_prev, ht;  /* half tangents */
 	float totweight = 0.0f;
 	int i = 0;
@@ -2591,7 +2622,7 @@ void interp_weights_poly_v2(float *w, float v[][2], const int n, const float co[
 {
 	const float eps = 0.00001f;  /* take care, low values cause [#36105] */
 	const float eps_sq = eps * eps;
-	float *v_curr, *v_next;
+	const float *v_curr, *v_next;
 	float ht_prev, ht;  /* half tangents */
 	float totweight = 0.0f;
 	int i = 0;
@@ -2964,9 +2995,10 @@ void polarview_m4(float Vm[4][4], float dist, float azimuth, float incidence, fl
 void lookat_m4(float mat[4][4], float vx, float vy, float vz, float px, float py, float pz, float twist)
 {
 	float sine, cosine, hyp, hyp1, dx, dy, dz;
-	float mat1[4][4] = MAT4_UNITY;
+	float mat1[4][4];
 
 	unit_m4(mat);
+	unit_m4(mat1);
 
 	rotate_m4(mat, 'Z', -twist);
 
@@ -2974,8 +3006,8 @@ void lookat_m4(float mat[4][4], float vx, float vy, float vz, float px, float py
 	dy = py - vy;
 	dz = pz - vz;
 	hyp = dx * dx + dz * dz; /* hyp squared	*/
-	hyp1 = (float)sqrt(dy * dy + hyp);
-	hyp = (float)sqrt(hyp); /* the real hyp	*/
+	hyp1 = sqrtf(dy * dy + hyp);
+	hyp = sqrtf(hyp); /* the real hyp	*/
 
 	if (hyp1 != 0.0f) { /* rotate X	*/
 		sine = -dy / hyp1;
@@ -3097,7 +3129,7 @@ void map_to_sphere(float *r_u, float *r_v, const float x, const float y, const f
 		if (x == 0.0f && y == 0.0f) *r_u = 0.0f;  /* othwise domain error */
 		else *r_u = (1.0f - atan2f(x, y) / (float)M_PI) / 2.0f;
 
-		*r_v = 1.0f - (float)saacos(z / len) / (float)M_PI;
+		*r_v = 1.0f - saacos(z / len) / (float)M_PI;
 	}
 	else {
 		*r_v = *r_u = 0.0f; /* to avoid un-initialized variables */
@@ -3791,7 +3823,7 @@ float form_factor_hemi_poly(float p[3], float n[3], float v1[3], float v2[3], fl
 }
 
 /* evaluate if entire quad is a proper convex quad */
-int is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3])
+bool is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], const float v4[3])
 {
 	float nor[3], nor_a[3], nor_b[3], vec[4][2];
 	float mat[3][3];
@@ -3841,13 +3873,13 @@ int is_quad_convex_v3(const float v1[3], const float v2[3], const float v3[3], c
 	return (isect_line_line_v2(vec[0], vec[2], vec[1], vec[3]) > 0);
 }
 
-int is_quad_convex_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2])
+bool is_quad_convex_v2(const float v1[2], const float v2[2], const float v3[2], const float v4[2])
 {
 	/* linetests, the 2 diagonals have to instersect to be convex */
 	return (isect_line_line_v2(v1, v3, v2, v4) > 0);
 }
 
-int is_poly_convex_v2(const float verts[][2], unsigned int nr)
+bool is_poly_convex_v2(const float verts[][2], unsigned int nr)
 {
 	unsigned int sign_flag = 0;
 	unsigned int a;

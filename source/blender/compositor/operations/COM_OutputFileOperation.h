@@ -59,16 +59,19 @@ public:
 	void deinitExecution();
 	const CompositorPriority getRenderPriority() const { return COM_PRIORITY_LOW; }
 
-	bool isFileOutputOperation() { return true; }
+	bool isFileOutputOperation() const { return true; }
 };
 
 /* extra info for OpenEXR layers */
 struct OutputOpenExrLayer {
-	OutputOpenExrLayer(const char *name, DataType datatype);
+	OutputOpenExrLayer(const char *name, DataType datatype, bool use_layer);
 	
 	char name[EXR_TOT_MAXNAME - 2];
-	float *outputBuffer;
 	DataType datatype;
+	bool use_layer;
+	
+	/* internals */
+	float *outputBuffer;
 	SocketReader *imageInput;
 };
 
@@ -90,7 +93,7 @@ protected:
 public:
 	OutputOpenExrMultiLayerOperation(const RenderData *rd, const bNodeTree *tree, const char *path, char exr_codec, int actview);
 	
-	void add_layer(const char *name, DataType datatype);
+	void add_layer(const char *name, DataType datatype, bool use_layer);
 	
 	void executeRegion(rcti *rect, unsigned int tileNumber);
 	bool isOutputOperation(bool rendering) const { return true; }
@@ -98,7 +101,7 @@ public:
 	void deinitExecution();
 	const CompositorPriority getRenderPriority() const { return COM_PRIORITY_LOW; }
 
-	bool isFileOutputOperation() { return true; }
+	bool isFileOutputOperation() const { return true; }
 };
 
 #endif

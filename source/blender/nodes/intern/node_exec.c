@@ -33,7 +33,6 @@
 #include "DNA_node_types.h"
 
 #include "BLI_listbase.h"
-#include "BLI_math.h"
 #include "BLI_utildefines.h"
 
 #include "BKE_global.h"
@@ -265,7 +264,7 @@ bNodeThreadStack *ntreeGetThreadStack(bNodeTreeExec *exec, int thread)
 	
 	for (nts = lb->first; nts; nts = nts->next) {
 		if (!nts->used) {
-			nts->used = TRUE;
+			nts->used = true;
 			break;
 		}
 	}
@@ -273,7 +272,7 @@ bNodeThreadStack *ntreeGetThreadStack(bNodeTreeExec *exec, int thread)
 	if (!nts) {
 		nts = MEM_callocN(sizeof(bNodeThreadStack), "bNodeThreadStack");
 		nts->stack = MEM_dupallocN(exec->stack);
-		nts->used = TRUE;
+		nts->used = true;
 		BLI_addtail(lb, nts);
 	}
 

@@ -48,7 +48,6 @@
 #include "BLI_lasso.h"
 #include "BLI_listbase.h"
 #include "BLI_string.h"
-#include "BLI_dynstr.h"
 #include "BLI_kdtree.h"
 #include "BLI_rand.h"
 #include "BLI_utildefines.h"
@@ -62,7 +61,6 @@
 #include "BKE_modifier.h"
 #include "BKE_particle.h"
 #include "BKE_report.h"
-#include "BKE_scene.h"
 
 #include "BKE_pointcache.h"
 
@@ -3356,8 +3354,8 @@ static int brush_add(PEData *data, short number)
 	short size2= size*size;
 	DerivedMesh *dm=0;
 	RNG *rng;
-	int *index_mf_to_mpoly;
-	int *index_mp_to_orig;
+	const int *index_mf_to_mpoly;
+	const int *index_mp_to_orig;
 	bool release_dm = false;
 
 	invert_m4_m4(imat, ob->obmat);
@@ -3888,7 +3886,7 @@ static void brush_edit_apply_event(bContext *C, wmOperator *op, const wmEvent *e
 	RNA_collection_add(op->ptr, "stroke", &itemptr);
 
 	RNA_float_set_array(&itemptr, "mouse", mouse);
-	RNA_boolean_set(&itemptr, "pen_flip", event->shift != FALSE); // XXX hardcoded
+	RNA_boolean_set(&itemptr, "pen_flip", event->shift != false); // XXX hardcoded
 
 	/* apply */
 	brush_edit_apply(C, op, &itemptr);
@@ -4266,7 +4264,7 @@ int PE_minmax(Scene *scene, float min[3], float max[3])
 	}
 
 	if (!ok) {
-		BKE_object_minmax(ob, min, max, TRUE);
+		BKE_object_minmax(ob, min, max, true);
 		ok= 1;
 	}
 

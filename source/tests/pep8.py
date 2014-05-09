@@ -20,15 +20,16 @@
 
 import os
 
-# depends on pep8, pyflakes, pylint
+# depends on pep8, frosted, pylint
 # for Ubuntu
 #
-#   sudo apt-get install pylint pyflakes
+#   sudo apt-get install pylint
 #
 #   sudo apt-get install python-setuptools python-pip
 #   sudo pip install pep8
+#   sudo pip install frosted
 #
-# in Debian install pylint pyflakes pep8 with apt-get/aptitude/etc
+# in Debian install pylint pep8 with apt-get/aptitude/etc
 #
 # on *nix run
 #   python source/tests/pep8.py > test_pep8.log 2>&1
@@ -54,7 +55,7 @@ def is_pep8(path):
         print("\nfile contains BOM, remove first 3 bytes: %r\n" % path)
 
     # templates don't have a header but should be pep8
-    for d in ("presets", "templates", "examples"):
+    for d in ("presets", "templates_py", "examples"):
         if ("%s%s%s" % (os.sep, d, os.sep)) in path:
             return 1
 
@@ -118,10 +119,10 @@ def main():
 
         os.system("pep8 --repeat --ignore=%s '%s'" % (",".join(ignore_tmp), f))
 
-    # pyflakes
-    print("\n\n\n# running pyflakes...")
+    # frosted
+    print("\n\n\n# running frosted...")
     for f, pep8_type in files:
-        os.system("pyflakes '%s'" % f)
+        os.system("frosted '%s'" % f)
 
     print("\n\n\n# running pylint...")
     for f, pep8_type in files:

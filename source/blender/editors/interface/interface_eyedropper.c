@@ -149,7 +149,7 @@ static void eyedropper_color_sample_fl(bContext *C, Eyedropper *UNUSED(eye), int
 					int mval[2] = {mx - ar->winrct.xmin,
 					               my - ar->winrct.ymin};
 
-					if (ED_space_image_color_sample(sima, ar, mval, r_col)) {
+					if (ED_space_image_color_sample(CTX_data_scene(C), sima, ar, mval, r_col)) {
 						return;
 					}
 				}
@@ -161,7 +161,7 @@ static void eyedropper_color_sample_fl(bContext *C, Eyedropper *UNUSED(eye), int
 					int mval[2] = {mx - ar->winrct.xmin,
 					               my - ar->winrct.ymin};
 
-					if (ED_space_node_color_sample(snode, ar, mval, r_col)) {
+					if (ED_space_node_color_sample(CTX_data_scene(C), snode, ar, mval, r_col)) {
 						return;
 					}
 				}
@@ -173,7 +173,7 @@ static void eyedropper_color_sample_fl(bContext *C, Eyedropper *UNUSED(eye), int
 					int mval[2] = {mx - ar->winrct.xmin,
 					               my - ar->winrct.ymin};
 
-					if (ED_space_clip_color_sample(sc, ar, mval, r_col)) {
+					if (ED_space_clip_color_sample(CTX_data_scene(C), sc, ar, mval, r_col)) {
 						return;
 					}
 				}
@@ -476,8 +476,9 @@ static void datadropper_id_sample_pt(bContext *C, DataDropper *ddr, int mx, int 
 			if (sa->spacetype == SPACE_VIEW3D) {
 				ARegion *ar = BKE_area_find_region_type(sa, RGN_TYPE_WINDOW);
 				if (ar && BLI_rcti_isect_pt(&ar->winrct, mx, my)) {
-					int mval[2] = {mx - ar->winrct.xmin,
-					               my - ar->winrct.ymin};
+					const int mval[2] = {
+					    mx - ar->winrct.xmin,
+					    my - ar->winrct.ymin};
 					Base *base;
 
 					CTX_wm_area_set(C, sa);

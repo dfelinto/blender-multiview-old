@@ -35,7 +35,6 @@
 #include <math.h>
 
 #include "MEM_guardedalloc.h"
-#include "MEM_CacheLimiterC-Api.h"
 
 #include "DNA_sequence_types.h"
 #include "DNA_movieclip_types.h"
@@ -515,6 +514,7 @@ SeqRenderData BKE_sequencer_new_render_data(EvaluationContext *eval_ctx,
 	rval.motion_blur_shutter = 0;
 	rval.eval_ctx = eval_ctx;
 	rval.skip_cache = false;
+	rval.is_proxy_render = false;
 
 	return rval;
 }
@@ -947,8 +947,9 @@ static void seqbase_unique_name(ListBase *seqbasep, SeqUniqueInfo *sui)
 	Sequence *seq;
 	for (seq = seqbasep->first; seq; seq = seq->next) {
 		if ((sui->seq != seq) && STREQ(sui->name_dest, seq->name + 2)) {
-			/* SEQ_NAME_MAXSTR - 2 for prefix, -1 for \0, -4 for the number */
-			BLI_snprintf(sui->name_dest, sizeof(sui->name_dest), "%.59s.%03d",  sui->name_src, sui->count++);
+			/* SEQ_NAME_MAXSTR -4 for the number, -1 for \0, - 2 for prefix */
+			BLI_snprintf(sui->name_dest, sizeof(sui->name_dest), "%.*s.%03d", SEQ_NAME_MAXSTR - 4 - 1 - 2,
+			             sui->name_src, sui->count++);
 			sui->match = 1; /* be sure to re-scan */
 		}
 	}
@@ -1155,7 +1156,7 @@ StripElem *BKE_sequencer_give_stripelem(Sequence *seq, int cfra)
 	return se;
 }
 
-static int evaluate_seq_frame_gen(Sequence **seq_arr, ListBase *seqbase, int cfra)
+static int evaluate_seq_frame_gen(Sequence **seq_arr, ListBase *seqbase, int cfra, int chanshown)
 {
 	Sequence *seq;
 	Sequence *effect_inputs[MAXSEQ + 1];
@@ -1187,11 +1188,24 @@ static int evaluate_seq_frame_gen(Sequence **seq_arr, ListBase *seqbase, int cfr
 	}
 
 	/* Drop strips which are used for effect inputs, we don't want
-	 *them to blend into render stack in any other way than effect
+	 * them to blend into render stack in any other way than effect
 	 * string rendering.
 	 */
 	for (i = 0; i < num_effect_inputs; i++) {
 		seq = effect_inputs[i];
+		/* It's possible that effetc strip would be placed to the same
+		 * 'machine' as it's inputs. We don't want to clear such strips
+		 * from the stack.
+		 */
+		if (seq_arr[seq->machine] && seq_arr[seq->machine]->type & SEQ_TYPE_EFFECT) {
+			continue;
+		}
+		/* If we're shown a specified channel, then we want to see the stirps
+		 * which belongs to this machine.
+		 */
+		if (chanshown != 0 && chanshown <= seq->machine) {
+			continue;
+		}
 		seq_arr[seq->machine] = NULL;
 	}
 
@@ -1206,7 +1220,7 @@ int BKE_sequencer_evaluate_frame(Scene *scene, int cfra)
 	if (ed == NULL)
 		return 0;
 
-	return evaluate_seq_frame_gen(seq_arr, ed->seqbasep, cfra);
+	return evaluate_seq_frame_gen(seq_arr, ed->seqbasep, cfra, 0);
 }
 
 static bool video_seq_is_rendered(Sequence *seq)
@@ -1224,7 +1238,7 @@ static int get_shown_sequences(ListBase *seqbasep, int cfra, int chanshown, Sequ
 		return 0;
 	}
 
-	if (evaluate_seq_frame_gen(seq_arr, seqbasep, cfra)) {
+	if (evaluate_seq_frame_gen(seq_arr, seqbasep, cfra, chanshown)) {
 		if (b == 0) {
 			b = MAXSEQ;
 		}
@@ -1579,7 +1593,7 @@ void BKE_sequencer_proxy_rebuild(SeqIndexBuildContext *context, short *stop, sho
 		}
 
 		*progress = (float) (cfra - seq->startdisp - seq->startstill) / (seq->enddisp - seq->endstill - seq->startdisp - seq->startstill);
-		*do_update = TRUE;
+		*do_update = true;
 
 		if (*stop || G.is_break)
 			break;
@@ -1752,8 +1766,8 @@ static void color_balance_byte_float(StripColorBalance *cb_, unsigned char *rect
 static void color_balance_float_float(StripColorBalance *cb_, float *rect_float, float *mask_rect_float, int width, int height, float mul)
 {
 	float *p = rect_float;
-	float *e = rect_float + width * 4 * height;
-	float *m = mask_rect_float;
+	const float *e = rect_float + width * 4 * height;
+	const float *m = mask_rect_float;
 	StripColorBalance cb = calc_cb(cb_);
 
 	while (p < e) {
@@ -2400,7 +2414,7 @@ static ImBuf *seq_render_mask(const SeqRenderData *context, Mask *mask, float nr
 
 	if (make_float) {
 		/* pixels */
-		float *fp_src;
+		const float *fp_src;
 		float *fp_dst;
 
 		ibuf = IMB_allocImBuf(context->rectx, context->recty, 32, IB_rectfloat);
@@ -2418,7 +2432,7 @@ static ImBuf *seq_render_mask(const SeqRenderData *context, Mask *mask, float nr
 	}
 	else {
 		/* pixels */
-		float *fp_src;
+		const float *fp_src;
 		unsigned char *ub_dst;
 
 		ibuf = IMB_allocImBuf(context->rectx, context->recty, 32, IB_rect);
@@ -2538,6 +2552,9 @@ static ImBuf *seq_render_scene_strip(const SeqRenderData *context, Sequence *seq
 
 	if ((sequencer_view3d_cb && do_seq_gl && camera) && is_thread_main) {
 		char err_out[256] = "unknown";
+		int width = (scene->r.xsch * scene->r.size) / 100;
+		int height = (scene->r.ysch * scene->r.size) / 100;
+
 		/* for old scened this can be uninitialized,
 		 * should probably be added to do_versions at some point if the functionality stays */
 		if (context->scene->r.seq_prev_type == 0)
@@ -2545,7 +2562,7 @@ static ImBuf *seq_render_scene_strip(const SeqRenderData *context, Sequence *seq
 
 		/* opengl offscreen render */
 		BKE_scene_update_for_newframe(context->eval_ctx, context->bmain, scene, scene->lay);
-		ibuf = sequencer_view3d_cb(scene, camera, context->rectx, context->recty, IB_rect,
+		ibuf = sequencer_view3d_cb(scene, camera, width, height, IB_rect,
 		                           context->scene->r.seq_prev_type,
 		                           (context->scene->r.seq_flag & R_SEQ_SOLID_TEX) != 0,
 		                           true, scene->r.alphamode, err_out);
@@ -2570,7 +2587,7 @@ static ImBuf *seq_render_scene_strip(const SeqRenderData *context, Sequence *seq
 				re = RE_NewRender(scene->id.name);
 
 			BKE_scene_update_for_newframe(context->eval_ctx, context->bmain, scene, scene->lay);
-			RE_BlenderFrame(re, context->bmain, scene, NULL, camera, scene->lay, frame, FALSE);
+			RE_BlenderFrame(re, context->bmain, scene, NULL, camera, scene->lay, frame, false);
 
 			/* restore previous state after it was toggled on & off by RE_BlenderFrame */
 			G.is_rendering = is_rendering;
@@ -3651,7 +3668,7 @@ void BKE_sequence_sound_init(Scene *scene, Sequence *seq)
 			seq->scene_sound = sound_add_scene_sound_defaults(scene, seq);
 		}
 		if (seq->scene) {
-			sound_scene_add_scene_sound_defaults(scene, seq);
+			seq->scene_sound = sound_scene_add_scene_sound_defaults(scene, seq);
 		}
 	}
 }
@@ -4110,7 +4127,7 @@ static void seq_free_animdata(Scene *scene, Sequence *seq)
 	}
 }
 
-Sequence *BKE_sequence_get_by_name(ListBase *seqbase, const char *name, int recursive)
+Sequence *BKE_sequence_get_by_name(ListBase *seqbase, const char *name, bool recursive)
 {
 	Sequence *iseq = NULL;
 	Sequence *rseq = NULL;
