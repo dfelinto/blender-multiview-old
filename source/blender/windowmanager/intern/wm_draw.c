@@ -1028,7 +1028,7 @@ void wm_draw_update(bContext *C)
 				wm_method_draw_overlap_all(C, win, 1);
 			else // if (drawmethod == USER_DRAW_TRIPLE)
 			{
-				if ((WM_stereo_enabled(win, FALSE)) == FALSE)
+				if ((WM_stereo_enabled(C, win, FALSE)) == FALSE)
 					wm_method_draw_triple(C, win);
 				else {
 					wm_method_draw_triple_multiview(C, win, STEREO_LEFT_ID);

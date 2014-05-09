@@ -627,7 +627,7 @@ static int rna_SpaceImageEditor_show_stereo_get(PointerRNA *ptr)
 static int rna_SpaceImageEditor_is_stereo_get(PointerRNA *ptr)
 {
 	SpaceImage *sima = (SpaceImage *)(ptr->data);
-	return (sima->iuser.flag & IMA_IS_STEREO);
+	return sima->image && (sima->image->flag & IMA_IS_STEREO);
 }
 
 static int rna_SpaceImageEditor_show_render_get(PointerRNA *ptr)

@@ -376,54 +376,60 @@ static bool wm_stereo_need_fullscreen(eStereoDisplayMode stereo_display)
 	             S3D_DISPLAY_PAGEFLIP);
 }
 
-static bool wm_stereo_required(bScreen *screen)
+/*
+ * return true if any active area requires to see in 3D
+ */
+static bool wm_stereo_required(bContext *C, bScreen *screen)
 {
-	/* where there is no */
 	ScrArea *sa;
+	View3D *v3d;
+	SpaceImage *sima;
+	Scene *sce = CTX_data_scene(C);
+	const bool is_multiview = (sce->r.scemode & R_MULTIVIEW);
+
 	for (sa = screen->areabase.first; sa; sa = sa->next) {
-		SpaceLink *sl;
-		for (sl = sa->spacedata.first; sl; sl= sl->next) {
+		switch (sa->spacetype) {
+			case SPACE_VIEW3D:
+			{
+				if (!is_multiview)
+					continue;
 
-			if (sl->spacetype == SPACE_VIEW3D) {
-				View3D *v3d = (View3D*) sl;
-				if (v3d->stereo_camera == STEREO_3D_ID)
-					return TRUE;
-			}
-			if (sl->spacetype == SPACE_IMAGE) {
-				SpaceImage *sima = (SpaceImage *) sl;
-
-				/* XXX MV
-				 * 1) we need to make sure the iuser->flag IMAGE_IS_STEREO
-				 * is re-set to zero when a new image is open/created
-				 *
-				 * 2) we need to mmake sure we are only taking visible
-				 * spaces
-				 * */
-
-#if 0
-				if (sima->iuser.flag & IMA_IS_STEREO)
-					printf("IMA_IS_STEREO\n");
-				if (sima->iuser.flag & IMA_SHOW_STEREO)
-					printf("IMA_SHOW_STEREO\n");
-#endif
-
-
-				if ((sima->iuser.flag & IMA_IS_STEREO) &&
-						(sima->iuser.flag & IMA_SHOW_STEREO)) {
-					return TRUE;
+				v3d = (View3D *)sa->spacedata.first;
+				if (v3d->camera && v3d->stereo_camera == STEREO_3D_ID) {
+					ARegion *ar;
+					for (ar = sa->regionbase.first; ar; ar = ar->next) {
+						if (ar->regiondata && ar->regiontype == RGN_TYPE_WINDOW) {
+							RegionView3D *rv3d = ar->regiondata;
+							if (rv3d->persp == RV3D_CAMOB) {
+								return true;
+							}
+						}
+					}
 				}
+				break;
+			}
+			case SPACE_IMAGE:
+			{
+				/* images should always show in stereo, even if
+				 * the file doesn't have views enabled */
+				sima = (SpaceImage *) sa->spacedata.first;
+				if ((sima->image) && (sima->image->flag & IMA_IS_STEREO) &&
+					(sima->iuser.flag & IMA_SHOW_STEREO)) {
+					return true;
+				}
+				break;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
-bool WM_stereo_enabled(wmWindow *win, bool only_fullscreen_test)
+bool WM_stereo_enabled(bContext *C, wmWindow *win, bool only_fullscreen_test)
 {
 	bScreen *screen = win->screen;
 
-	if ((only_fullscreen_test == false) && wm_stereo_required(screen) == FALSE)
+	if ((only_fullscreen_test == false) && (wm_stereo_required(C, screen) == false))
 		return false;
 
 	if (wm_stereo_need_fullscreen(U.stereo_display))

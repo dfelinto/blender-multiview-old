@@ -485,7 +485,7 @@ static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v)
 {
 	ImageUser *iuser = iuser_v;
 
-	if ((iuser->flag & (IMA_IS_STEREO + IMA_SHOW_STEREO)))
+	if ((iuser->flag & IMA_SHOW_STEREO)) //XXX MV (&& image->flag & IMA_IS_STEREO)
 		update_stereo_pass(rr_v, iuser);
 
 	BKE_image_multilayer_index(rr_v, iuser); 
@@ -628,12 +628,6 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 			uiButSetFunc(but, image_multi_cb, rr, iuser);
 			uiButSetMenuFromPulldown(but);
 		}
-
-		//XXX MV this should be around when we open the image/create the iuser
-		if (RE_HasStereo3D(rr))
-			iuser->flag |= IMA_IS_STEREO;
-		else
-			iuser->flag &= ~IMA_IS_STEREO;
 	}
 }
 

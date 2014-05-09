@@ -78,8 +78,7 @@ typedef struct ImageUser {
 #define IMA_ANIM_REFRESHED	2
 /* #define IMA_DO_PREMUL	4 */
 #define IMA_NEED_FRAME_RECALC	8
-#define IMA_IS_STEREO		16
-#define IMA_SHOW_STEREO	32
+#define IMA_SHOW_STEREO		16
 
 typedef struct Image {
 	ID id;
@@ -148,6 +147,7 @@ enum {
 	IMA_USER_FRAME_IN_RANGE = (1 << 10), /* for image user, but these flags are mixed */
 	IMA_VIEW_AS_RENDER      = (1 << 11),
 	IMA_IGNORE_ALPHA        = (1 << 12),
+	IMA_IS_STEREO           = (1 << 13),
 };
 
 #if (DNA_DEPRECATED_GCC_POISON == 1)

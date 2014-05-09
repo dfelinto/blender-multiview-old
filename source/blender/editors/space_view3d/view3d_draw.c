@@ -3212,7 +3212,7 @@ static bool view3d_stereo(const bContext *C, Scene *scene)
 {
 	wmWindow *win = CTX_wm_window(C);
 
-	if (WM_stereo_enabled(win, TRUE) == FALSE)
+	if (WM_stereo_enabled(C, win, true) == false)
 		return false;
 
 	if ((scene->r.scemode & R_MULTIVIEW) == 0)
