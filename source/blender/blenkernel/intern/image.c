@@ -2370,6 +2370,10 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 
 	if (iuser) {
 		short index = 0, rl_index = 0, rp_index;
+		short view;
+		bool is_stereo = RE_HasStereo3D(rr) && (iuser->flag & IMA_SHOW_STEREO);
+
+		view = is_stereo ? iuser->eye : iuser->view;
 
 		for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
 			rp_index = 0;
@@ -2377,7 +2381,7 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 			for (rpass = rl->passes.first; rpass; rpass = rpass->next, index++, rp_index++) {
 				if (iuser->layer == rl_index &&
 				    iuser->passtype == rpass->passtype &&
-				    iuser->view == rpass->view_id) {
+				    view == rpass->view_id) {
 					break;
 				}
 			}

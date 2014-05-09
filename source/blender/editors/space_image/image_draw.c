@@ -792,19 +792,6 @@ static void draw_image_paint_helpers(const bContext *C, ARegion *ar, Scene *scen
 	}
 }
 
-/* allocates the actual pass and multi_index for stereo mode */
-static void stereo_pass(ImageUser *iuser)
-{
-	if (iuser->eye == STEREO_LEFT_ID) {
-		iuser->pass = iuser->stereo.left_pass;
-		iuser->multi_index = iuser->stereo.left_multi_index;
-	}
-	else {
-		iuser->pass = iuser->stereo.right_pass;
-		iuser->multi_index = iuser->stereo.right_pass;
-	}
-}
-
 /* draw main image area */
 
 void draw_image_main(const bContext *C, ARegion *ar)
@@ -844,7 +831,7 @@ void draw_image_main(const bContext *C, ARegion *ar)
 	show_viewer = (ima && ima->source == IMA_SRC_VIEWER) != 0;
 	show_render = (show_viewer && ima->type == IMA_TYPE_R_RESULT) != 0;
 	show_paint = (ima && (sima->mode == SI_MODE_PAINT) && (show_viewer == false) && (show_render == false));
-	show_stereo3d = (ima && (ima->flag & IMA_IS_STEREO) && (sima->iuser.flag & IMA_SHOW_STEREO));
+	show_stereo3d = (ima && ima->rr && (ima->flag & IMA_IS_STEREO) && (sima->iuser.flag & IMA_SHOW_STEREO));
 
 	if (show_viewer) {
 		/* use locked draw for drawing viewer image buffer since the compositor
@@ -856,7 +843,8 @@ void draw_image_main(const bContext *C, ARegion *ar)
 	}
 
 	if (show_stereo3d)
-		stereo_pass(&sima->iuser);
+		/* update multiindex and pass for the current eye */
+		BKE_image_multilayer_index(ima->rr, &sima->iuser);
 
 	ibuf = ED_space_image_acquire_buffer(sima, &lock);
 

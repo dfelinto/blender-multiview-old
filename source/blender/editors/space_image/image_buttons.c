@@ -456,37 +456,10 @@ static void ui_imageuser_view_menu(bContext *UNUSED(C), uiLayout *layout, void *
 	BLI_assert(nr == -1);
 }
 
-/* store the real pass id */
-/* real values used in image_draw::stereo_pass */
-static void update_stereo_pass(RenderResult *rr, ImageUser *iuser)
-{
-	RenderPass *rpass = NULL;
-	int view_id = iuser->view;
-
-	if (rr == NULL || iuser == NULL)
-		return;
-
-	iuser->view = STEREO_LEFT_ID;
-	rpass = BKE_image_multilayer_index(rr, iuser);
-	iuser->stereo.left_pass = iuser->pass;
-	iuser->stereo.left_multi_index = iuser->multi_index;
-
-	iuser->view = STEREO_RIGHT_ID;
-	rpass = BKE_image_multilayer_index(rr, iuser);
-	iuser->stereo.right_pass = iuser->pass;
-	iuser->stereo.right_multi_index = iuser->multi_index;
-
-	/* restore old settings */
-	iuser->view = view_id;
-}
-
 /* 5 layer button callbacks... */
 static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v) 
 {
 	ImageUser *iuser = iuser_v;
-
-	//if ((iuser->flag & IMA_SHOW_STEREO)) //XXX MV (&& image->flag & IMA_IS_STEREO)
-	//	update_stereo_pass(rr_v, iuser);
 
 	BKE_image_multilayer_index(rr_v, iuser); 
 	WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, NULL);

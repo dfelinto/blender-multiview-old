@@ -44,13 +44,6 @@ struct MovieCache;
 struct RenderResult;
 struct GPUTexture;
 
-typedef struct StereoImage {
-	short left_pass;
-	short right_pass;
-	short left_multi_index;
-	short right_multi_index;
-} StereoImage;
-
 /* ImageUser is in Texture, in Nodes, Background Image, Image Window, .... */
 /* should be used in conjunction with an ID * to Image. */
 typedef struct ImageUser {
@@ -68,8 +61,6 @@ typedef struct ImageUser {
 
 	short flag;
 	short passtype;
-
-	StereoImage stereo;
 
 } ImageUser;
 
