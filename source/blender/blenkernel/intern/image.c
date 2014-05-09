@@ -2374,9 +2374,13 @@ RenderPass *BKE_image_multilayer_index(RenderResult *rr, ImageUser *iuser)
 		for (rl = rr->layers.first; rl; rl = rl->next, rl_index++) {
 			rp_index = 0;
 
-			for (rpass = rl->passes.first; rpass; rpass = rpass->next, index++, rp_index++)
-				if (iuser->layer == rl_index && iuser->passtype == rpass->passtype && iuser->view == rpass->view_id)
+			for (rpass = rl->passes.first; rpass; rpass = rpass->next, index++, rp_index++) {
+				if (iuser->layer == rl_index &&
+				    iuser->passtype == rpass->passtype &&
+				    iuser->view == rpass->view_id) {
 					break;
+				}
+			}
 			if (rpass)
 				break;
 		}

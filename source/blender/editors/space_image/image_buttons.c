@@ -400,7 +400,7 @@ static void ui_imageuser_pass_menu(bContext *UNUSED(C), uiLayout *layout, void *
 	fake_name = ui_imageuser_pass_fake_name(rl);
 
 	if (fake_name) {
-		BLI_strncpy(rpass_fake.internal_name, fake_name, sizeof(rpass_fake.name));
+		BLI_strncpy(rpass_fake.internal_name, fake_name, sizeof(rpass_fake.internal_name));
 		nr += 1;
 	}
 
@@ -415,7 +415,7 @@ static void ui_imageuser_pass_menu(bContext *UNUSED(C), uiLayout *layout, void *
 
 final:
 		uiDefButS(block, BUTM, B_NOP, IFACE_(rpass->internal_name), 0, 0,
-		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->pass, (float) rpass->passtype, 0.0, 0, -1, "");
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->passtype, (float) rpass->passtype, 0.0, 0, -1, "");
 	}
 
 	if (fake_name) {
@@ -485,12 +485,13 @@ static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v)
 {
 	ImageUser *iuser = iuser_v;
 
-	if ((iuser->flag & IMA_SHOW_STEREO)) //XXX MV (&& image->flag & IMA_IS_STEREO)
-		update_stereo_pass(rr_v, iuser);
+	//if ((iuser->flag & IMA_SHOW_STEREO)) //XXX MV (&& image->flag & IMA_IS_STEREO)
+	//	update_stereo_pass(rr_v, iuser);
 
 	BKE_image_multilayer_index(rr_v, iuser); 
 	WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, NULL);
 }
+
 static void image_multi_inclay_cb(bContext *C, void *rr_v, void *iuser_v) 
 {
 	RenderResult *rr = rr_v;
@@ -614,7 +615,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 		fake_name = ui_imageuser_pass_fake_name(rl);
 		rpass = (rl ? BLI_findlink(&rl->passes, iuser->pass  - (fake_name ? 1 : 0)) : NULL);
 
-		display_name = rpass ? rpass->name : (fake_name ? fake_name : "");
+		display_name = rpass ? rpass->internal_name : (fake_name ? fake_name : "");
 		but = uiDefMenuBut(block, ui_imageuser_pass_menu, rnd_pt, display_name, 0, 0, wmenu3, UI_UNIT_Y, TIP_("Select Pass"));
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
 		uiButSetMenuFromPulldown(but);
