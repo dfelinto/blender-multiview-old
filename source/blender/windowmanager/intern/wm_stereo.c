@@ -187,19 +187,19 @@ static void wm_method_draw_stereo_anaglyph(wmWindow *win)
 		bit = view + 1;
 		switch(U.stereo_anaglyph_type) {
 			case S3D_ANAGLYPH_REDCYAN:
-				glColorMask(1&bit, 2&bit, 2&bit, FALSE);
+				glColorMask(1&bit, 2&bit, 2&bit, false);
 				break;
 			case S3D_ANAGLYPH_GREENMAGENTA:
-				glColorMask(2&bit, 1&bit, 2&bit, FALSE);
+				glColorMask(2&bit, 1&bit, 2&bit, false);
 				break;
 			case S3D_ANAGLYPH_YELLOWBLUE:
-				glColorMask(1&bit, 1&bit, 2&bit, FALSE);
+				glColorMask(1&bit, 1&bit, 2&bit, false);
 				break;
 		}
 
 		wm_triple_draw_textures(win, drawdata->triple, 1.0);
 
-		glColorMask(TRUE, TRUE, TRUE, TRUE);
+		glColorMask(true, true, true, true);
 	}
 }
 
@@ -270,7 +270,7 @@ static void wm_method_draw_stereo_sidebyside(wmWindow *win)
 
 		glBindTexture(triple->target, 0);
 		glDisable(triple->target);
-		glColorMask(TRUE, TRUE, TRUE, TRUE);
+		glColorMask(true, true, true, true);
 	}
 }
 
@@ -337,7 +337,7 @@ static void wm_method_draw_stereo_topbottom(wmWindow *win)
 
 		glBindTexture(triple->target, 0);
 		glDisable(triple->target);
-		glColorMask(TRUE, TRUE, TRUE, TRUE);
+		glColorMask(true, true, true, true);
 	}
 }
 
@@ -387,25 +387,25 @@ static bool wm_stereo_required(bScreen *screen)
 			if (sl->spacetype == SPACE_VIEW3D) {
 				View3D *v3d = (View3D*) sl;
 				if (v3d->stereo_camera == STEREO_3D_ID)
-					return TRUE;
+					return true;
 			}
 			if (sl->spacetype == SPACE_IMAGE) {
 				SpaceImage *sima = (SpaceImage *) sl;
 // XXX MV - waiting to image editor refactor, basically we will know if the image is 3d AND that it has 3d selected
 //					if (sima->iuser.view == STEREO_3D_ID)
-					return TRUE;
+					return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 bool WM_stereo_enabled(wmWindow *win, bool only_fullscreen_test)
 {
 	bScreen *screen = win->screen;
 
-	if ((only_fullscreen_test == false) && wm_stereo_required(screen) == FALSE)
+	if ((only_fullscreen_test == false) && wm_stereo_required(screen) == false)
 		return false;
 
 	if (wm_stereo_need_fullscreen(U.stereo_display))

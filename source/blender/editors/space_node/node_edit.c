@@ -254,7 +254,6 @@ static void compo_startjob(void *cjv, short *stop, short *do_update, float *prog
 	/* 1 is do_previews */
 	//MV XXX not sure if we can/should do multiview here as well
 	ntreeCompositExecTree(cj->scene, ntree, &cj->scene->r, false, true, &scene->view_settings, &scene->display_settings, 0);
->>>>>>> upstream/master
 
 	ntree->test_break = NULL;
 	ntree->stats_draw = NULL;
@@ -1665,9 +1664,9 @@ static int node_switch_view_poll(bContext *C)
 	SpaceNode *snode = CTX_wm_space_node(C);
 
 	if (snode && snode->edittree)
-		return TRUE;
+		return true;
 
-	return FALSE;
+	return false;
 }
 
 static int node_switch_view_exec(bContext *C, wmOperator *UNUSED(op))

@@ -714,9 +714,9 @@ static void rna_Scene_all_keyingsets_next(CollectionPropertyIterator *iter)
 	iter->valid = (internal->link != NULL);
 }
 
-static IteratorSkipFunc rna_RenderSettings_stereoViews_skip(CollectionPropertyIterator *iter, void *data)
+static int rna_RenderSettings_stereoViews_skip(CollectionPropertyIterator *iter, void *UNUSED(data))
 {
-	ListBaseIterator *internal = iter->internal;
+	ListBaseIterator *internal = &iter->internal.listbase;
 	SceneRenderView *srv = (SceneRenderView *)internal->link;
 
 	if ((strcmp(srv->name, STEREO_LEFT_NAME )==0) ||
@@ -1149,7 +1149,7 @@ static void rna_RenderSettings_active_view_index_set(PointerRNA *ptr, int value)
 	rd->actview = value;
 }
 
-static void rna_RenderSettings_active_view_index_range(PointerRNA *ptr, int *min, int *max, int *softmin, int *softmax)
+static void rna_RenderSettings_active_view_index_range(PointerRNA *ptr, int *min, int *max, int *UNUSED(softmin), int *UNUSED(softmax))
 {
 	RenderData *rd = (RenderData *)ptr->data;
 
@@ -1183,7 +1183,7 @@ static SceneRenderView *rna_RenderView_new(ID *id, RenderData *UNUSED(rd), const
 	return srv;
 }
 
-static void rna_RenderView_remove(ID *id, RenderData *UNUSED(rd), Main *bmain, ReportList *reports,
+static void rna_RenderView_remove(ID *id, RenderData *UNUSED(rd), Main *UNUSED(bmain), ReportList *reports,
                                    PointerRNA *srv_ptr)
 {
 	SceneRenderView *srv = srv_ptr->data;

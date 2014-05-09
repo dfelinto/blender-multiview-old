@@ -189,6 +189,8 @@ public:
 	
 	void setInstanceKey(bNodeInstanceKey instance_key) { m_instanceKey = instance_key; }
 	bNodeInstanceKey getInstanceKey() const { return m_instanceKey; }
+
+	const char *RenderData_get_actview_name (const RenderData *rd, const int actview) const;
 	
 protected:
 	/**
@@ -243,8 +245,6 @@ public:
 	float getEditorValueFloat();
 	void getEditorValueColor(float *value);
 	void getEditorValueVector(float *value);
-
-	const char *RenderData_get_actview_name (const RenderData *rd, const int actview);
 };
 
 

@@ -143,6 +143,25 @@ bNodeSocket *Node::getEditorOutputSocket(int editorNodeInputSocketIndex)
 	return NULL;
 }
 
+const char *Node::RenderData_get_actview_name (const RenderData *rd, const int actview) const
+{
+	SceneRenderView *srv;
+	int view_id;
+
+	if ((rd->scemode & R_MULTIVIEW) == 0)
+		return "";
+
+	for (view_id=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
+
+		if (srv->viewflag & SCE_VIEW_DISABLE)
+			continue;
+
+		if (actview == view_id++)
+			return srv->name;
+	}
+
+	return "";
+}
 
 /*******************
  **** NodeInput ****
@@ -215,21 +234,3 @@ void NodeOutput::getEditorValueVector(float *value)
 	return RNA_float_get_array(&ptr, "default_value", value);
 }
 
-const char *Node::RenderData_get_actview_name (const RenderData *rd, const int actview) {
-	SceneRenderView *srv;
-	int view_id;
-
-	if ((rd->scemode & R_MULTIVIEW) == 0)
-		return "";
-
-	for (view_id=0, srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
-
-		if (srv->viewflag & SCE_VIEW_DISABLE)
-			continue;
-
-		if (actview == view_id++)
-			return srv->name;
-	}
-
-	return "";
-}

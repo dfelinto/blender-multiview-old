@@ -67,13 +67,13 @@ NodeOperation *ImageNode::doMultilayerCheck(NodeConverter &converter, RenderLaye
 	return operation;
 }
 
-int ImageNode::getPassIndex(CompositorContext *context, ListBase *passes, ListBase *views, int passindex, int view_ui)
+int ImageNode::getPassIndex(const CompositorContext &context, ListBase *passes, ListBase *views, int passindex, int view_ui) const
 {
 	if (BLI_countlist(views) < 2)
 		return passindex;
 
-	const RenderData *rd= context->getRenderData();
-	int actview = context->getViewId();
+	const RenderData *rd= context.getRenderData();
+	int actview = context.getViewId();
 
 	bool is_multiview = (view_ui == 0); /* if view selected == All (0) */
 	RenderView *rv;

@@ -42,7 +42,7 @@ void RenderLayersNode::testSocketLink(NodeConverter &converter, const Compositor
 	/* MV: we need a better place for this
 	 * (so says atmind/Jeroen Bakker),
 	 * but it will do for now. */
-	operation->setViewId(context->getViewId());
+	operation->setViewId(context.getViewId());
 
 	operation->setScene(scene);
 	operation->setLayerId(layerId);

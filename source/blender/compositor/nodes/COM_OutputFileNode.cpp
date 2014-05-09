@@ -51,10 +51,10 @@ void OutputFileNode::convertToOperations(NodeConverter &converter, const Composi
 
 		if (storage->format.imtype == R_IMF_IMTYPE_MULTIVIEW) {
 			outputOperation = new OutputOpenExrMultiViewOperation(
-			        context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, context->getViewId());
+			        context.getRenderData(), context.getbNodeTree(), storage->base_path, storage->format.exr_codec, context.getViewId());
 		} else {
 			outputOperation = new OutputOpenExrMultiLayerOperation(
-		          context->getRenderData(), context->getbNodeTree(), storage->base_path, storage->format.exr_codec, context->getViewId());
+		          context.getRenderData(), context.getbNodeTree(), storage->base_path, storage->format.exr_codec, context.getViewId());
 		}
 		converter.addOperation(outputOperation);
 

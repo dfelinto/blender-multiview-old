@@ -200,11 +200,11 @@ int RE_HasFakeLayer(RenderResult *res)
 	RenderView *rv;
 
 	if (res == NULL)
-		return FALSE;
+		return false;
 
 	rv = (RenderView *)res->views.first;
 	if (rv == NULL)
-		return FALSE;
+		return false;
 
 	return (rv->rect32 || rv->rectf);
 }
@@ -212,12 +212,12 @@ int RE_HasFakeLayer(RenderResult *res)
 int RE_HasStereo3D(RenderResult *res)
 {
 	if (! BLI_findstring(&res->views, STEREO_LEFT_NAME, offsetof(RenderView, name)))
-		return FALSE;
+		return false;
 
 	if (! BLI_findstring(&res->views, STEREO_RIGHT_NAME, offsetof(RenderView, name)))
-		return FALSE;
+		return false;
 
-	return TRUE;
+	return true;
 }
 
 void RE_RenderViewSetRectf(RenderResult *res, int view_id, float *rect)
@@ -316,23 +316,23 @@ static bool dont_write_individual_views(Render *re, RenderData *rd)
 	SceneRenderView *srv;
 
 	if(!re)
-		return TRUE;
+		return true;
 
 	if (format->imtype == R_IMF_IMTYPE_MULTIVIEW)
-		return TRUE;
+		return true;
 
 	if ((rd->scemode & R_MULTIVIEW) == 0)
-		return TRUE;
+		return true;
 
 	for (srv= (SceneRenderView *) rd->views.first; srv; srv = srv->next) {
 
 		if (srv->viewflag & SCE_VIEW_DISABLE)
 			continue;
 
-		return FALSE;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 RenderResult *RE_MultilayerConvert(void *exrhandle, const char *colorspace, bool predivide, int rectx, int recty)
@@ -508,7 +508,7 @@ void RE_AcquireResultImage(Render *re, RenderResult *rr, const int view_id)
 					rr->rectz = RE_RenderLayerGetPass(rl, SCE_PASS_Z, view_id);
 			}
 
-			rr->have_combined = rv?(rv->rectf != NULL):FALSE;
+			rr->have_combined = rv?(rv->rectf != NULL):false;
 			rr->layers = re->result->layers;
 			rr->views = re->result->views;
 
@@ -2961,7 +2961,7 @@ static int do_write_image_or_movie(Render *re, Main *bmain, Scene *scene, bMovie
 	RenderResult rres;
 	Object *camera = RE_GetCamera(re);
 	double render_time;
-	int ok = TRUE;
+	int ok = true;
 	int view_id;
 	
 	view_id = render_result_get_view_id(re, view);
@@ -3492,16 +3492,16 @@ int RE_layers_have_name(struct RenderResult *rr)
 	switch (BLI_countlist(&rr->layers))
 	{
 		case 0:
-			return FALSE;
+			return false;
 			break;
 		case 1:
 			return (((RenderLayer *)rr->layers.first)->name[0] != '\0');
 			break;
 		default:
-			return TRUE;
+			return true;
 			break;
 	}
-	return FALSE;
+	return false;
 }
 
 

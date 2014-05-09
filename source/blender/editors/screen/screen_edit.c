@@ -1937,7 +1937,7 @@ ScrArea *ED_screen_clean_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		for (ar = sa->regionbase.first; ar; ar = ar->next)
 			ar->flag = ar->flagclean;
 
-		area_copy_data(old, sa, 1); /*  1 = swap spacelist */
+		ED_area_data_swap(old, sa);
 		old->fullclean = NULL;
 
 		/* animtimer back */
@@ -1947,7 +1947,7 @@ ScrArea *ED_screen_clean_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		ED_screen_set(C, sc);
 
 		BKE_screen_free(oldscreen);
-		BKE_libblock_free(&CTX_data_main(C)->screen, oldscreen);
+		BKE_libblock_free(CTX_data_main(C), oldscreen);
 
 	}
 	else {
@@ -1969,7 +1969,7 @@ ScrArea *ED_screen_clean_toggle(bContext *C, wmWindow *win, ScrArea *sa)
 		ED_area_newspace(C, newa, sa->spacetype);
 
 		/* copy area */
-		area_copy_data(newa, sa, 1);  /* 1 = swap spacelist */
+		ED_area_data_swap(newa, sa);
 
 		/* temporarily hide the side panels/header */
 		for (ar = newa->regionbase.first; ar; ar = ar->next) {

@@ -1580,7 +1580,7 @@ static bool save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 		if (simopts->im_format.imtype == R_IMF_IMTYPE_MULTIVIEW) {
 			ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.exr_codec, true, "");
 
-			save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
+			save_image_post(op, ibuf, ima, ok, true, relbase, relative, do_newpath, simopts->filepath);
 			ED_space_image_release_buffer(sima, ibuf, lock);
 		}
 
@@ -1592,7 +1592,7 @@ static bool save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 				if (numviews < 2) {
 					ok = RE_WriteRenderResult(op->reports, rr, simopts->filepath, simopts->im_format.exr_codec, false, "");
 
-					save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, simopts->filepath);
+					save_image_post(op, ibuf, ima, ok, true, relbase, relative, do_newpath, simopts->filepath);
 					ED_space_image_release_buffer(sima, ibuf, lock);
 				}
 
@@ -1614,7 +1614,7 @@ static bool save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 						BLI_path_view(filepath, suffix);
 
 						ok &= RE_WriteRenderResult(op->reports, rr, filepath, simopts->im_format.exr_codec, false, view);
-						save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, filepath);
+						save_image_post(op, ibuf, ima, ok, true, relbase, relative, do_newpath, filepath);
 					}
 					ED_space_image_release_buffer(sima, ibuf, lock);
 				}
@@ -1659,7 +1659,7 @@ static bool save_image_doit(bContext *C, SpaceImage *sima, wmOperator *op, SaveI
 				if (colormanaged_ibuf != ibuf)
 					IMB_freeImBuf(colormanaged_ibuf);
 
-				save_image_post(op, ibuf, ima, ok, TRUE, relbase, relative, do_newpath, filepath);
+				save_image_post(op, ibuf, ima, ok, true, relbase, relative, do_newpath, filepath);
 				ED_space_image_release_buffer(sima, ibuf, lock);
 			}
 

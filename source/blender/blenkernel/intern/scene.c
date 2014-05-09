@@ -1790,12 +1790,12 @@ bool BKE_scene_remove_render_view(Scene *scene, SceneRenderView *srv)
 	const int act = BLI_findindex(&scene->r.views, srv);
 
 	if (act == -1) {
-		return FALSE;
+		return false;
 	}
 	else if (scene->r.views.first == scene->r.views.last)
 	{
 		/* ensure 1 view is kept */
-		return FALSE;
+		return false;
 	}
 
 	BLI_remlink(&scene->r.views, srv);
@@ -1803,7 +1803,7 @@ bool BKE_scene_remove_render_view(Scene *scene, SceneRenderView *srv)
 
 	scene->r.actview = 0;
 
-	return TRUE;
+	return true;
 }
 
 /* render simplification */

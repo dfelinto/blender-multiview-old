@@ -4243,7 +4243,7 @@ static int redraw_timer_exec(bContext *C, wmOperator *op)
 		if (type == 0) {
 			if (ar) {
 				ED_region_do_draw(C, ar);
-				ar->do_draw = FALSE;
+				ar->do_draw = false;
 			}
 		}
 		else if (type == 1) {
@@ -4269,7 +4269,7 @@ static int redraw_timer_exec(bContext *C, wmOperator *op)
 					if (ar_iter->swinid) {
 						CTX_wm_region_set(C, ar_iter);
 						ED_region_do_draw(C, ar_iter);
-						ar->do_draw = FALSE;
+						ar->do_draw = false;
 					}
 				}
 			}

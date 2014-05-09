@@ -475,7 +475,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	int view_id = iuser->view;
 
 	int view_left, view_right;
-	int show_stereo3d = FALSE;
+	int show_stereo3d = false;
 
 	if (rr == NULL || iuser == NULL)
 		return 0;
@@ -486,7 +486,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 	/* view == 0 shows stereo */
 	if ((iuser->flag & IMA_STEREO3D)) {
 		if(view_id-- == 0)
-			show_stereo3d = TRUE;
+			show_stereo3d = true;
 	}
 
 	if (show_stereo3d) {
@@ -507,7 +507,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 			passtype = rpass->passtype;
 
 		if (rpass->passtype == passtype) {
-			if (show_stereo3d == FALSE) {
+			if (show_stereo3d == false) {
 				if (rpass->view_id == view_id)
 					return rp_index;
 			}
@@ -520,7 +520,7 @@ static int get_pass_id(RenderResult *rr, ImageUser *iuser)
 		}
 	}
 
-	if (show_stereo3d == TRUE) {
+	if (show_stereo3d == true) {
 		iuser->pass = iuser->pass_right;
 		BKE_image_multilayer_index(rr, iuser);
 		iuser->multi_index_right = iuser->multi_index;

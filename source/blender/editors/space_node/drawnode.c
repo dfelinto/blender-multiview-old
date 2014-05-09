@@ -1132,7 +1132,7 @@ static void node_buts_image_views(uiLayout *layout, bContext *UNUSED(C), Pointer
 	if (!imaptr->data)
 		return;
 
-	col = uiLayoutColumn(layout, FALSE);
+	col = uiLayoutColumn(layout, false);
 
 	if (RNA_boolean_get(ptr, "has_views")) {
 		if(RNA_enum_get(ptr, "view") == 0)

@@ -781,8 +781,8 @@ static void atm_tile(RenderPart *pa, RenderLayer *rl)
 			int sample;
 			
 			for (sample=0; sample<totsample; sample++) {
-				const float *zrect= RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_Z) + od;
-				float *rgbrect = rlpp[sample]->rectf + 4*od;
+				const float *zrect= RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_Z, R.actview) + od;
+				float *rgbrect = RE_RenderLayerGetPass(rlpp[sample], SCE_PASS_COMBINED, R.actview) + 4*od;
 				float rgb[3] = {0};
 				bool done = false;
 				

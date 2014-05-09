@@ -1030,7 +1030,7 @@ bool RE_WriteRenderResult(ReportList *reports, RenderResult *rr, const char *fil
 		}
 	}
 
-	if (success == FALSE) {
+	if (success == false) {
 		/* TODO, get the error from openexr's exception */
 		BKE_report(reports, RPT_ERROR, "Error writing render result (see console)");
 		success = false;

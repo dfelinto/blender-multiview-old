@@ -20,23 +20,21 @@
  */
 
 #include "COM_SwitchViewNode.h"
-#include "COM_ExecutionSystem.h"
-#include "COM_SocketProxyOperation.h"
 
 SwitchViewNode::SwitchViewNode(bNode *editorNode) : Node(editorNode)
 {
 	/* pass */
 }
 
-void SwitchViewNode::convertToOperations(ExecutionSystem *graph, CompositorContext *context)
+void SwitchViewNode::convertToOperations(NodeConverter &converter, const CompositorContext &context) const
 {
-	SocketProxyOperation *operation = new SocketProxyOperation(COM_DT_COLOR);
-	int actview = context->getViewId();
+	NodeOperationOutput *result;
+	int actview = context.getViewId();
 
 	bNodeSocket *sock;
 	bNode *bnode = this->getbNode();
 
-	const RenderData *rd = context->getRenderData();
+	const RenderData *rd = context.getRenderData();
 	const char *view = this->RenderData_get_actview_name(rd, actview); /* name of active view */
 
 	/* get the internal index of the socket with a matching name */
@@ -48,8 +46,7 @@ void SwitchViewNode::convertToOperations(ExecutionSystem *graph, CompositorConte
 
 	if (!sock) nr --;
 
-	this->getInputSocket(nr)->relinkConnections(operation->getInputSocket(0), nr, graph);
-	this->getOutputSocket(0)->relinkConnections(operation->getOutputSocket());
 
-	graph->addOperation(operation);
+	result = converter.addInputProxy(getInputSocket(nr));
+	converter.mapOutputSocket(getOutputSocket(0), result);
 }

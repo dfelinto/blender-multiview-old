@@ -2691,7 +2691,7 @@ static EnumPropertyItem *renderresult_views_add_enum(RenderView *rv)
 }
 
 static EnumPropertyItem *rna_Node_image_view_itemf(bContext *UNUSED(C), PointerRNA *ptr,
-                                                   PropertyRNA *UNUSED(prop), int *free)
+                                                   PropertyRNA *UNUSED(prop), bool *free)
 {
 	bNode *node = (bNode *)ptr->data;
 	Image *ima = (Image *)node->id;
@@ -2703,7 +2703,7 @@ static EnumPropertyItem *rna_Node_image_view_itemf(bContext *UNUSED(C), PointerR
 	rv = ima->rr->views.first;
 	item = renderresult_views_add_enum(rv);
 
-	*free = 1;
+	*free = true;
 
 	return item;
 }

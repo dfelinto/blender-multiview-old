@@ -24,7 +24,7 @@
 
 #include "COM_OutputFileOperation.h"
 #include "COM_OutputFileMultiViewOperation.h"
-#include "COM_SocketConnection.h"
+
 #include <string.h>
 #include "BLI_listbase.h"
 #include "BLI_path_util.h"
@@ -111,7 +111,7 @@ void *OutputOpenExrMultiViewOperation::get_handle(const char* filename)
 		BLI_make_existing_file(filename);
 
 		/* prepare the file with all the channels */
-		if(IMB_exrmultiview_begin_write(exrhandle, filename, width, height, this->m_exr_codec, TRUE) == 0)
+		if(IMB_exrmultiview_begin_write(exrhandle, filename, width, height, this->m_exr_codec, true) == 0)
 		{
 			/* TODO, get the error from openexr's exception */
 			/* XXX nice way to do report? */
