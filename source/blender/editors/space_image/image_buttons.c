@@ -305,10 +305,10 @@ static void ui_imageuser_slot_menu(bContext *UNUSED(C), uiLayout *layout, void *
 
 static const char *ui_imageuser_layer_fake_name(RenderResult *rr)
 {
-	if (rr->rectf) {
+	if (RE_RenderViewGetRectf(rr, 0)){
 		return IFACE_("Composite");
 	}
-	else if (rr->rect32) {
+	else if (RE_RenderViewGetRect32(rr, 0)) {
 		return IFACE_("Sequence");
 	}
 	else {
@@ -359,7 +359,7 @@ final:
 
 static const char *ui_imageuser_pass_fake_name(RenderLayer *rl)
 {
-	if (rl == NULL || rl->rectf) {
+	if (rl == NULL) {
 		return IFACE_("Combined");
 	}
 	else {
@@ -379,6 +379,7 @@ static void ui_imageuser_pass_menu(bContext *UNUSED(C), uiLayout *layout, void *
 	RenderPass *rpass;
 	const char *fake_name;
 	int nr;
+	int passflag = 0;
 
 	uiBlockSetCurLayout(block, layout);
 	uiLayoutColumn(layout, false);
@@ -392,15 +393,22 @@ static void ui_imageuser_pass_menu(bContext *UNUSED(C), uiLayout *layout, void *
 	fake_name = ui_imageuser_pass_fake_name(rl);
 
 	if (fake_name) {
-		BLI_strncpy(rpass_fake.name, fake_name, sizeof(rpass_fake.name));
+		BLI_strncpy(rpass_fake.internal_name, fake_name, sizeof(rpass_fake.internal_name));
 		nr += 1;
 	}
 
 	/* rendered results don't have a Combined pass */
 	for (rpass = rl ? rl->passes.last : NULL; rpass; rpass = rpass->prev, nr--) {
+
+		/* just show one pass of each kind */
+		if (passflag & rpass->passtype)
+			continue;
+
+		passflag |= rpass->passtype;
+
 final:
-		uiDefButS(block, BUTM, B_NOP, IFACE_(rpass->name), 0, 0,
-		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->pass, (float) nr, 0.0, 0, -1, "");
+		uiDefButS(block, BUTM, B_NOP, IFACE_(rpass->internal_name), 0, 0,
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->passtype, (float) rpass->passtype, 0.0, 0, -1, "");
 	}
 
 	if (fake_name) {
@@ -408,6 +416,35 @@ final:
 		rpass = &rpass_fake;
 		goto final;
 	}
+
+	BLI_assert(nr == -1);
+}
+
+static void ui_imageuser_view_menu(bContext *UNUSED(C), uiLayout *layout, void *ptrpair_p)
+{
+	void **ptrpair = ptrpair_p;
+	uiBlock *block = uiLayoutGetBlock(layout);
+	RenderResult *rr = ptrpair[0];
+	ImageUser *iuser = ptrpair[1];
+	RenderView *rview;
+	int nr;
+
+	uiBlockSetCurLayout(block, layout);
+	uiLayoutColumn(layout, false);
+
+	uiDefBut(block, LABEL, 0, IFACE_("View"),
+	         0, 0, UI_UNIT_X * 5, UI_UNIT_Y, NULL, 0.0, 0.0, 0, 0, "");
+
+	uiItemS(layout);
+
+	nr = (rr ? BLI_countlist(&rr->views) : 0) - 1;
+	for (rview = rr ? rr->views.last : NULL; rview; rview = rview->prev, nr--) {
+		uiDefButS(block, BUTM, B_NOP, IFACE_(rview->name), 0, 0,
+		          UI_UNIT_X * 5, UI_UNIT_X, &iuser->view, (float) nr, 0.0, 0, -1, "");
+	}
+
+	if (iuser->view >= nr)
+		iuser->view = 0;
 
 	BLI_assert(nr == -1);
 }
@@ -420,13 +457,14 @@ static void image_multi_cb(bContext *C, void *rr_v, void *iuser_v)
 	BKE_image_multilayer_index(rr_v, iuser); 
 	WM_event_add_notifier(C, NC_IMAGE | ND_DRAW, NULL);
 }
+
 static void image_multi_inclay_cb(bContext *C, void *rr_v, void *iuser_v) 
 {
 	RenderResult *rr = rr_v;
 	ImageUser *iuser = iuser_v;
 	int tot = BLI_countlist(&rr->layers);
 
-	if (rr->rectf || rr->rect32)
+	if (RE_HasFakeLayer(rr))
 		tot++;  /* fake compo/sequencer layer */
 
 	if (iuser->layer < tot - 1) {
@@ -454,7 +492,7 @@ static void image_multi_incpass_cb(bContext *C, void *rr_v, void *iuser_v)
 	if (rl) {
 		int tot = BLI_countlist(&rl->passes);
 
-		if (rr->rectf || rr->rect32)
+		if (RE_HasFakeLayer(rr))
 			tot++;  /* fake compo/sequencer layer */
 
 		if (iuser->pass < tot - 1) {
@@ -498,7 +536,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	uiBlock *block = uiLayoutGetBlock(layout);
 	uiBut *but;
 	RenderLayer *rl = NULL;
-	int wmenu1, wmenu2, wmenu3;
+	int wmenu1, wmenu2, wmenu3, wmenu4;
 	const char *fake_name;
 	const char *display_name;
 
@@ -508,6 +546,7 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 	wmenu1 = (2 * w) / 5;
 	wmenu2 = (3 * w) / 5;
 	wmenu3 = (3 * w) / 6;
+	wmenu4 = (3 * w) / 6;
 	
 	rnd_pt[0] = rr;
 	rnd_pt[1] = iuser;
@@ -524,26 +563,38 @@ static void uiblock_layer_pass_buttons(uiLayout *layout, RenderResult *rr, Image
 
 	if (rr) {
 		RenderPass *rpass;
+		RenderView *rview;
 
 		/* layer */
 		fake_name = ui_imageuser_layer_fake_name(rr);
 		rl = BLI_findlink(&rr->layers, iuser->layer  - (fake_name ? 1 : 0));
 		rnd_pt[2] = rl;
 
-		display_name = rl ? rl->name : (fake_name ? fake_name : "");
-		but = uiDefMenuBut(block, ui_imageuser_layer_menu, rnd_pt, display_name, 0, 0, wmenu2, UI_UNIT_Y, TIP_("Select Layer"));
-		uiButSetFunc(but, image_multi_cb, rr, iuser);
-		uiButSetMenuFromPulldown(but);
-
+		if (RE_layers_have_name(rr)) {
+			display_name = rl ? rl->name : (fake_name ? fake_name : "");
+			but = uiDefMenuBut(block, ui_imageuser_layer_menu, rnd_pt, display_name, 0, 0, wmenu2, UI_UNIT_Y, TIP_("Select Layer"));
+			uiButSetFunc(but, image_multi_cb, rr, iuser);
+			uiButSetMenuFromPulldown(but);
+		}
 
 		/* pass */
 		fake_name = ui_imageuser_pass_fake_name(rl);
 		rpass = (rl ? BLI_findlink(&rl->passes, iuser->pass  - (fake_name ? 1 : 0)) : NULL);
 
-		display_name = rpass ? rpass->name : (fake_name ? fake_name : "");
+		display_name = rpass ? rpass->internal_name : (fake_name ? fake_name : "");
 		but = uiDefMenuBut(block, ui_imageuser_pass_menu, rnd_pt, display_name, 0, 0, wmenu3, UI_UNIT_Y, TIP_("Select Pass"));
 		uiButSetFunc(but, image_multi_cb, rr, iuser);
 		uiButSetMenuFromPulldown(but);
+
+		/* view */
+		if (BLI_countlist(&rr->views) > 1 && ((iuser->flag & IMA_SHOW_STEREO) == 0)) {
+			rview = BLI_findlink(&rr->views, iuser->view);
+			display_name = rview ? rview->name : "";
+
+			but = uiDefMenuBut(block, ui_imageuser_view_menu, rnd_pt, display_name, 0, 0, wmenu4, UI_UNIT_Y, TIP_("Select View"));
+			uiButSetFunc(but, image_multi_cb, rr, iuser);
+			uiButSetMenuFromPulldown(but);
+		}
 	}
 }
 
@@ -866,7 +917,7 @@ void uiTemplateImageSettings(uiLayout *layout, PointerRNA *imfptr, int color_man
 		uiItemR(col, imfptr, "compression", 0, NULL, ICON_NONE);
 	}
 
-	if (ELEM(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER)) {
+	if (ELEM3(imf->imtype, R_IMF_IMTYPE_OPENEXR, R_IMF_IMTYPE_MULTILAYER, R_IMF_IMTYPE_MULTIVIEW)) {
 		uiItemR(col, imfptr, "exr_codec", 0, NULL, ICON_NONE);
 	}
 	
